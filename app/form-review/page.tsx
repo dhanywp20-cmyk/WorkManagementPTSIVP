@@ -10,6 +10,7 @@ import { penerimaAdminBernomor } from '@/lib/penerima-admin';
 import { logAudit } from '@/lib/audit';
 import { compressImage } from '@/lib/image-compress';
 import { hasFullAccess } from '@/lib/constants';
+import { appLink } from '@/lib/app-url';
 import {
   ReviewCategory, ReviewForm, Reminder, GuestUser,
   PIE_COLORS, REVIEW_TRIGGER_CATEGORIES,
@@ -317,7 +318,7 @@ function FormReviewPageInner() {
         `🙋 *Ditangani:* ${editingReview.assign_name || '-'}`,
         '━━━━━━━━━━━━━━━━━━',
         'Hasil penilaian sudah bisa dilihat di menu Form Review.',
-        '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+        `🔗 ${appLink()}`,
       ].join('\n');
 
       for (const u of penerima.values()) {

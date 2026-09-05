@@ -38,6 +38,7 @@ import {
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
 import { RescheduleModal } from './_components/RescheduleModal';
+import { appLink } from '@/lib/app-url';
 import { RequestJadwalModal, type JadwalRequest } from './_components/RequestJadwalModal';
 import { ReminderFormModal, type ReminderForm } from './_components/ReminderFormModal';
 import { KonfirmasiApproveInternal, ModalHapus, PopupNotifikasi, PopupLonceng } from './_components/PopupRingkas';
@@ -824,7 +825,7 @@ function ReminderSchedulePageInner() {
             (formData.pic_name  ? `🙋 PIC: ${formData.pic_name}${formData.pic_phone ? ' - ' + formData.pic_phone : ''}\n\n` : '') +
             (formData.notes     ? `📝 Catatan: ${formData.notes}\n\n` : '') +
             `-\n` +
-            `Link Dashboard: https://work-management-ptsivp.vercel.app/dashboard\n` +
+            `Link Dashboard: ${appLink()}\n` +
             `jangan lupa peralatan & Semangat💪🏼`;
           await sendFonnteWA(u.phone_number, msg, { reminderType: 'new_schedule' });
         }
@@ -1023,7 +1024,7 @@ function ReminderSchedulePageInner() {
             jenisItem: 'Jadwal',
             perubahan: perubahanEdit,
             reroute: { dari: editingReminder.assign_name ?? '', ke: supUser.full_name },
-            tautan: 'https://team-ticketing.vercel.app/reminder-schedule',
+            tautan: appLink('/reminder-schedule'),
           }));
         }
         if (supUser?.id) {
@@ -1049,7 +1050,7 @@ function ReminderSchedulePageInner() {
             jenisItem: 'Jadwal',
             perubahan: perubahanEdit,
             reroute: null,
-            tautan: 'https://team-ticketing.vercel.app/reminder-schedule',
+            tautan: appLink('/reminder-schedule'),
           }),
         );
       }
@@ -1081,7 +1082,7 @@ function ReminderSchedulePageInner() {
           `🗓️ *Tanggal :* ${formatDate(formData.due_date)} ${formData.due_time || ''}`,
           '━━━━━━━━━━━━━━━━━━',
           'Mohon tentukan anggota tim yang mengerjakan.',
-          '🔗 https://team-ticketing.vercel.app/reminder-schedule',
+          `🔗 ${appLink('/reminder-schedule')}`,
         ].join('\n'));
       }
       if (supUser?.id) {
@@ -1110,7 +1111,7 @@ function ReminderSchedulePageInner() {
         (formData.pic_name  ? `🙋 PIC: ${formData.pic_name}${formData.pic_phone ? ' - ' + formData.pic_phone : ''}\n\n`    : '') +
         (formData.notes     ? `📝 Catatan: ${formData.notes}\n\n`    : '') +
         `-\n` +
-       `Link Dashboard: https://work-management-ptsivp.vercel.app/dashboard\n` +
+       `Link Dashboard: ${appLink()}\n` +
         `jangan lupa peralatan & Semangat💪🏼`;
 
       //  Telegram TIDAK dipanggil di sini lagi: sejak lib/wa.ts mengirim ke
@@ -1303,7 +1304,7 @@ function ReminderSchedulePageInner() {
                       `📍 ${reminder.address || '-'}\n\n` +
                       `telah selesai dilaksanakan oleh tim kami.\n\n` +
                       `Mohon berikan penilaian / review Anda melalui dashboard:\n` +
-                      `🔗 https://work-management-ptsivp.vercel.app/dashboard\n\n` +
+                      `🔗 ${appLink()}\n\n` +
                       `Terima kasih! 🙏`;
                     await sendFonnteWA(resolvedGuest.phone_number, guestMsg);
                   }
@@ -1555,7 +1556,7 @@ function ReminderSchedulePageInner() {
           (r.notes ? `📝 Catatan: ${r.notes}\n` : '') +
           `telah selesai dilaksanakan oleh tim kami.\n\n` +
           `Mohon berikan penilaian / review Anda melalui dashboard:\n` +
-          `🔗 https://work-management-ptsivp.vercel.app/dashboard\n\n` +
+          `🔗 ${appLink()}\n\n` +
           `Terima kasih! 🙏`;
         const waResult = await sendFonnteWA(resolvedGuest.phone_number, guestMsg);
         if (waResult.ok) notify('success', `Form review & WA berhasil dikirim ke ${resolvedGuest.full_name}!`);
@@ -1686,7 +1687,7 @@ function ReminderSchedulePageInner() {
           (rescheduleTarget.pic_phone ? `📱 No. PIC: ${rescheduleTarget.pic_phone}\n` : '') +
           (rescheduleTarget.notes ? `📝 Catatan: ${rescheduleTarget.notes}\n` : '') +
           (reason ? `📝 Alasan: ${reason}\n` : '') +
-          `\n🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+          `\n🔗 ${appLink()}`;
         await sendFonnteWA(handlerUser.phone_number, msg);
       }
     } catch { }
@@ -2164,7 +2165,7 @@ function ReminderSchedulePageInner() {
           `${usulanLine}\n` +
           (data.description ? `📝 Deskripsi: ${data.description}\n` : '') +
           `\nSilakan review & teruskan ke Admin:\n` +
-          `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+          `🔗 ${appLink()}`;
         for (const h of internalHandlers) {
           if (h.phone_number) await sendFonnteWA(h.phone_number, internalMsg);
           createNotification({
@@ -2201,7 +2202,7 @@ function ReminderSchedulePageInner() {
             (data.description ? `📝 Deskripsi: ${data.description}\n` : '') +
             (data.pic_name ? `🙋 PIC: ${data.pic_name}${data.pic_phone ? ' - ' + data.pic_phone : ''}\n` : '') +
             `\nSilakan review & assign ke Team PTS IVP:\n` +
-            `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+            `🔗 ${appLink()}`;
           for (const admin of (admins ?? [])) {
             if (admin.phone_number) await sendFonnteWA(admin.phone_number, msg);
           }
@@ -2298,7 +2299,7 @@ function ReminderSchedulePageInner() {
         `✍️ *Direview:* ${currentUser?.full_name ?? '-'}`,
         '━━━━━━━━━━━━━━━━━━',
         'Giliran kamu — silakan approve & tentukan pengerjaannya.',
-        '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+        `🔗 ${appLink()}`,
       ].join('\n');
 
       for (const t of targets) {
@@ -2439,7 +2440,7 @@ function ReminderSchedulePageInner() {
       `📦 Product: ${approveTarget.product || '-'}\n` +
       `📍 Lokasi: ${approveTarget.address || '-'}\n` +
       `${jadwalLineRoute}\n\n` +
-      `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+      `🔗 ${appLink()}`;
     for (const sup of approveSupervisors) {
       if (sup.phone_number) await sendFonnteWA(sup.phone_number, supMsg);
       createNotification({
@@ -2577,7 +2578,7 @@ function ReminderSchedulePageInner() {
         `
 jangan lupa peralatan & Semangat💪🏼
 ` +
-        `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+        `🔗 ${appLink()}`;
       await sendFonnteWA(assignee.phone_number, msg);
     }
 
@@ -2612,7 +2613,7 @@ jangan lupa peralatan & Semangat💪🏼
 ` +
           `Terima kasih! 🙏
 ` +
-          `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+          `🔗 ${appLink()}`;
         await sendFonnteWA(salesUser.phone_number, salesMsg);
       }
     } catch { /* ignore WA error */ }
@@ -2715,7 +2716,7 @@ jangan lupa peralatan & Semangat💪🏼
         `📍 Lokasi: ${r.address || '-'}\n` +
         `${jadwalLine}\n\n` +
         `jangan lupa peralatan & Semangat💪🏼\n` +
-        `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+        `🔗 ${appLink()}`;
       await sendFonnteWA(assignee.phone_number, msg);
     }
 

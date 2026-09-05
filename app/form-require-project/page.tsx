@@ -26,6 +26,7 @@ import {
   AssignPTSModal, RoomSection, NewFormModal,
   InitialFormType, NewFormModalProps,
 } from './_components/Modals';
+import { appLink } from '@/lib/app-url';
 import { cetakRequest } from './_components/cetak-request';
 import { unduhPaketRequest } from './_components/paket-unduhan';
 
@@ -932,7 +933,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
             `📋 Project: ${form.project_name.trim()}\n` +
             `🛋️ Ruangan: ${form.room_name.trim() || '-'}\n\n` +
             `Silakan review & teruskan ke Admin:\n` +
-            `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+            `🔗 ${appLink()}`;
           await Promise.allSettled(
             internalHandlers.filter(h => h.phone_number).map(h => sendWANotif({ type: 'reminder_wa', target: h.phone_number as string, message: internalMsg }))
           );
@@ -954,7 +955,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
             `🏢 *Sales    :* ${form.sales_name.trim() || '-'}`,
             '\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501',
             'Silakan buka dashboard untuk *Approve / Reject*.',
-            '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+            `🔗 ${appLink()}`,
           ].join('\n');
           await Promise.allSettled(
             (adminUsersWA as any[]).map((a: any) =>
@@ -977,7 +978,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                   `👤 *Sales    :* ${currentUser.full_name} (${ccDiv})`,
                   '━━━━━━━━━━━━━━━━━━',
                   `📋 *CC ke   :* ${ccTargets.map(t => t.name + (t.relation === 'ivp_handler' ? ' (IVP)' : '')).join(', ')}`,
-                  '🔗 https://team-ticketing.vercel.app/dashboard',
+                  `🔗 ${appLink()}`,
                 ].join('\n');
                 await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: 'reminder_wa', target: t.phone, message: ccMsg })));
               }
@@ -1065,7 +1066,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                     return lines.join('\n');
                   }),
                   '━━━━━━━━━━━━━━━━━━',
-                  '🔗 https://team-ticketing.vercel.app/request-design-project',
+                  `🔗 ${appLink('/request-design-project')}`,
                 ].join('\n');
                 await sendWANotif({ type: 'reminder_wa', target: pic.phone_number, message: brandMsg });
               }
@@ -1152,7 +1153,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       const msg =
         `✅ *REQUEST DESIGN LOLOS REVIEW SALES INTERNAL*\n\n` +
         `Request dari *${req.sales_name}* untuk *${req.project_name}* sudah di-review oleh *${currentUser.full_name}* — silakan diproses/di-assign.\n` +
-        `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+        `🔗 ${appLink()}`;
       await Promise.allSettled((admins ?? []).filter((a: any) => a.phone_number).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: msg })));
     } catch { }
   };
@@ -1184,7 +1185,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         `📌 *Project :* ${req.project_name}`,
         '━━━━━━━━━━━━━━━━━━',
         'Sudah diperbaiki dan menunggu approval kembali.',
-        '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+        `🔗 ${appLink()}`,
       ].join('\n');
       for (const u of penerima) {
         //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
@@ -1223,7 +1224,7 @@ Halo *${req.requester_name}*, request kamu ditolak:
 ${noteMsg ? `📝 *Alasan:* ${rejectNote.trim()}
 ` : ''}
 Hubungi Admin untuk info lebih lanjut.
-🔗 https://team-ticketing.vercel.app/dashboard`,
+🔗 ${appLink()}`,
         });
       }
     } catch { /* ignore WA error */ }
@@ -1366,11 +1367,11 @@ Hubungi Admin untuk info lebih lanjut.
           ? ['🎉 *Terima Kasih!*', garis,
              `Halo *${u.full_name}*, request design ini sudah kamu tandai *Selesai*.`,
              ringkas, garis, 'Terima kasih atas kerja kerasnya! 🙌',
-             '🔗 https://work-management-ptsivp.vercel.app/dashboard'].join('\n')
+             `🔗 ${appLink()}`].join('\n')
           : [selesai ? '✅ *REQUEST DESIGN SELESAI*' : '🔄 *STATUS REQUEST DESIGN DIPERBARUI*', garis,
              `Halo *${u.full_name}*, status request berubah menjadi *${newStatus}* oleh *${currentUser.full_name}*:`,
              ringkas, garis,
-             '🔗 https://work-management-ptsivp.vercel.app/dashboard'].join('\n');
+             `🔗 ${appLink()}`].join('\n');
         //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
         if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan });
       }
@@ -1465,7 +1466,7 @@ Hubungi Admin untuk info lebih lanjut.
           jenisItem: 'Request Design Project',
           perubahan: [],
           reroute: { dari, ke: orang.full_name },
-          tautan: 'https://team-ticketing.vercel.app/form-require-project',
+          tautan: appLink('/form-require-project'),
         }) });
       }
       void createNotification({
@@ -1523,7 +1524,7 @@ Hubungi Admin untuk info lebih lanjut.
             jenisItem: 'Request Design Project',
             perubahan: perubahanReq,
             reroute: null,
-            tautan: 'https://team-ticketing.vercel.app/form-require-project',
+            tautan: appLink('/form-require-project'),
           }) });
         }
       } catch { /* WA gagal tidak membatalkan perubahan yang sudah tersimpan */ }

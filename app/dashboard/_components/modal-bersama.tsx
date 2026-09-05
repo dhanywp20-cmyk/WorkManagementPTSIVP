@@ -3,6 +3,7 @@ import React from 'react';
 import { supabase } from '@/lib/supabase';
 
 import { kirimNotifikasi } from '@/lib/notifikasi/router';
+import { appLink } from '@/lib/app-url';
 
 /**
  * Sebar perubahan nama/username user ke semua snapshot di tabel terkait, lewat
@@ -69,7 +70,7 @@ export function sendWelcomeWA(phone: string | null | undefined, fullName: string
     `👤 Username: ${username}\n` +
     `🔑 Password: ${password}\n\n` +
     `Silakan login & segera ganti password kamu.\n` +
-    `🔗 https://work-management-ptsivp.vercel.app/dashboard`;
+    `🔗 ${appLink()}`;
   void kirimNotifikasi({
     event: 'system.account_created',
     whatsapp: { penerima: [{ nama: fullName, telepon: phone }], pesan: msg },
