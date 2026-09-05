@@ -27,6 +27,7 @@ import {
   formatDate, formatDatetime, isDueToday, newBatchId,
   sendFonnteWA, resolveSupervisorsForProductType, type SupervisorCandidate,
   DEFAULT_REQUEST_NOTE, cleanRequestNotes, fetchManagerTargets,
+  layakIncentive, diluarIncentive,
 } from './_components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges';
 import {
@@ -591,22 +592,10 @@ function ReminderSchedulePageInner() {
     mengabaikannya, dan lama-lama tombol yang benar-benar penting ikut
     diabaikan.
   */
-  /**
-   * Jadwal ini termasuk yang dihitung Incentive PTS?
-   *
-   * Tombol Sync tampil pada SETIAP jadwal yang memenuhi syarat, bukan hanya
-   * yang sedang dikeluarkan. Semula saya batasi ke yang dikeluarkan saja
-   * dengan alasan "tombol yang tidak mengubah apa-apa akan diabaikan" -
-   * tetapi akibatnya tombolnya tidak pernah terlihat sama sekali sampai ada
-   * yang dikeluarkan lebih dulu, sehingga tidak ada cara menemukannya. Tombol
-   * yang tidak bisa ditemukan lebih buruk daripada tombol yang kadang
-   * bekerjanya cuma memastikan.
-   */
-  const layakIncentive = (r: Reminder): boolean =>
-    adalahKategoriInsentif(r.category)
-    && r.status === 'done';
-
-  const diluarIncentive = (r: Reminder): boolean => r.incentive_excluded === true;
+  // layakIncentive/diluarIncentive: lihat _components/shared.ts - tombol Sync
+  // tampil pada SETIAP jadwal yang memenuhi syarat, bukan hanya yang sedang
+  // dikeluarkan (tombol yang tidak bisa ditemukan lebih buruk daripada
+  // tombol yang kadang kelihatan sebelum saatnya).
 
   const [syncing, setSyncing] = useState<string | null>(null);
 
