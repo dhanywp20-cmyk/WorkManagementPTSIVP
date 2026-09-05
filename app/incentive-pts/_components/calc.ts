@@ -42,6 +42,8 @@ export interface IncentiveProjectRow {
   mode_penyelesaian: 'onsite' | 'remote' | null;
   installer_name: string | null;
   installer_daerah: string | null;
+  /** Akun PTS Cabang yang dipilih dari dropdown - null bila diketik manual. */
+  installer_user_id: string | null;
   bast_date: string | null;
   incentive_value: number;
   sales_name: string;
@@ -228,6 +230,7 @@ export function calculateStandardScheme(
   supervisorUserName: string,
   assignedSupports: { user_id: string; user_name: string }[],
   installerName?: string | null,
+  installerUserId?: string | null,
 ): SplitResult[] {
   // Supervisor merangkap PIC - porsinya dialihkan, bukan dibayar dua kali.
   //
@@ -256,7 +259,7 @@ export function calculateStandardScheme(
 
   return hitungPembagian(
     sk, pool, modePenyelesaian === 'remote', penerima,
-    support.length > 0, supervisorJadiPic, installerName,
+    support.length > 0, supervisorJadiPic, installerName, installerUserId,
   ) as SplitResult[];
 }
 
@@ -269,6 +272,7 @@ export function calculateManagerPicScheme(
   dhanyUserName: string,
   installerName?: string | null,
   assignedSupports: { user_id: string; user_name: string }[] = [],
+  installerUserId?: string | null,
 ): SplitResult[] {
   // Aturan yang sama berlaku di sini: Manager yang menangani sendiri
   // Troubleshooting proyeknya tidak menerima porsi Support di atas porsi
@@ -279,6 +283,7 @@ export function calculateManagerPicScheme(
   return hitungManagerSebagaiPic(
     sk, pool, modePenyelesaian === 'remote', dhanyUserId, dhanyUserName, installerName,
     support.map(s => ({ peran: 'support', user_id: s.user_id, user_name: s.user_name })),
+    installerUserId,
   ) as SplitResult[];
 }
 
@@ -309,7 +314,7 @@ export function calculateIncentiveSplits(
     //  pengaturan dan tidak pernah sampai ke pembayaran.
     return calculateManagerPicScheme(
       sk, pool, project.mode_penyelesaian, managerUserId, managerUserName,
-      project.installer_name, assignedSupports,
+      project.installer_name, assignedSupports, project.installer_user_id,
     );
   }
 
@@ -318,7 +323,7 @@ export function calculateIncentiveSplits(
     picUserIdTerselesaikan || project.pic_id || '', project.assign_name || '',
     managerUserId, managerUserName,
     supervisorUserId, supervisorUserName,
-    assignedSupports, project.installer_name,
+    assignedSupports, project.installer_name, project.installer_user_id,
   );
 }
 
