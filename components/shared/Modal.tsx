@@ -52,7 +52,13 @@ import { Z } from '@/lib/z-index';
 let jumlahTerkunci = 0;
 let semulaBody = '';
 let semulaHtml = '';
-const tumpukan: string[] = [];
+/**
+ * Diekspor supaya ConfirmDialog (dialog konfirmasi berlapis alertdialog,
+ * bukan turunan komponen Modal) ikut satu tumpukan yang sama - Esc, kunci
+ * gulir, dan jebakan fokusnya harus benar juga saat konfirmasi dibuka DARI
+ * DALAM modal, bukan cuma antar-Modal.
+ */
+export const tumpukan: string[] = [];
 
 /**
  * Kunci dipasang di <html> DAN <body>.
@@ -69,7 +75,7 @@ const tumpukan: string[] = [];
  * overflow:hidden, jadi ia akan melaporkan 'tidak terkunci' walau kuncinya
  * bekerja.)
  */
-function kunciGulir(): () => void {
+export function kunciGulir(): () => void {
   if (jumlahTerkunci === 0) {
     semulaBody = document.body.style.overflow;
     semulaHtml = document.documentElement.style.overflow;
@@ -87,7 +93,7 @@ function kunciGulir(): () => void {
 }
 
 /** Elemen yang bisa menerima fokus keyboard, dipakai jebakan fokus di bawah. */
-const FOCUSABLE_SELECTOR =
+export const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /** Lebar menurut isi, bukan angka - supaya pilihannya bisa dibaca maksudnya. */
