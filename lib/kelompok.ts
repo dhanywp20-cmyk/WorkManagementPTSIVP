@@ -129,6 +129,24 @@ export function kelompokPTS(): Kelompok[] { return semuaKelompok().filter(k => k
 /** Nama team_type kelompok PTS yang aktif. */
 export function namaKelompokPTS(): string[] { return kelompokPTS().map(k => k.nama); }
 
+/**
+ * Label tampilan sebuah team_type PTS, mis. 'Team PTS IVP' -> 'PTS IVP'.
+ *
+ * Dipakai form buat/edit akun (modal-akun.tsx) supaya pilihannya ikut
+ * daftar Kelompok yang sesungguhnya, bukan tiga pilihan tetap yang ditulis
+ * di kode - kelompok PTS baru yang ditambahkan admin otomatis ikut tampil.
+ * Kelompok yang tidak dikenal (team_type lama/data usang) jatuh ke nama
+ * apa adanya, supaya tampilan tidak pernah kosong.
+ */
+export function labelKelompokPTS(nama: string): string {
+  return kelompokPTS().find(k => k.nama === nama)?.label ?? nama;
+}
+
+/** Kebalikan labelKelompokPTS: 'PTS IVP' -> 'Team PTS IVP'. */
+export function teamTypeDariLabelPTS(label: string): string | null {
+  return kelompokPTS().find(k => k.label === label)?.nama ?? null;
+}
+
 /** Kelompok yang ikut daftar "assign ke tim". */
 export function kelompokDitugaskan(): Kelompok[] { return semuaKelompok().filter(k => k.ditugaskan); }
 
