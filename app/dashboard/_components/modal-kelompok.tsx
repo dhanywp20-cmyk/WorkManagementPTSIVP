@@ -57,7 +57,7 @@ export function KelompokSettingInline() {
     }
     setDaftar(d => [...d, {
       nama, label: nama.replace(/^Team /i, ''), jenis: 'pts',
-      ditugaskan: true, aktif: true, lonceng: [...SEMUA_LONCENG],
+      ditugaskan: true, cabang: false, aktif: true, lonceng: [...SEMUA_LONCENG],
     }]);
     setNamaBaru('');
   };
@@ -104,6 +104,7 @@ export function KelompokSettingInline() {
                 <th className="text-left px-4 py-2.5">Kelompok</th>
                 <th className="text-left px-3 py-2.5">Jenis</th>
                 <th className="text-center px-3 py-2.5" title="Ikut dropdown assign di Ticketing, Request Schedule, Request Design Project">Bisa&nbsp;Ditugaskan</th>
+                <th className="text-center px-3 py-2.5" title="Anggotanya muncul di dropdown PTS Cabang / Perwakilan saat jadwal Remote diselesaikan">PTS&nbsp;Cabang</th>
                 {SEMUA_LONCENG.map(l => (
                   <th key={l} className="text-center px-3 py-2.5 whitespace-nowrap">
                     {LABEL_LONCENG[l].ikon} {LABEL_LONCENG[l].label}
@@ -131,6 +132,10 @@ export function KelompokSettingInline() {
                     <td className="px-3 py-2.5 text-center">
                       <Centang aktif={k.ditugaskan} label={`${k.label} bisa ditugaskan`}
                         onKlik={() => ubah(k.nama, { ditugaskan: !k.ditugaskan })} />
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      <Centang aktif={k.cabang} label={`${k.label} PTS Cabang`}
+                        onKlik={() => ubah(k.nama, { cabang: !k.cabang })} />
                     </td>
                     {SEMUA_LONCENG.map(l => (
                       <td key={l} className="px-3 py-2.5 text-center">
