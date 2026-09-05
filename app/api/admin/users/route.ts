@@ -25,6 +25,10 @@ const ALLOWED_FIELDS = new Set([
   //  Toggle "boleh ditugaskan pekerjaan" - dibekukan trigger untuk anon, jadi
   //  hanya bisa diubah lewat route ini. Lihat lib/teams.ts bolehDitugaskan().
   'bisa_ditugaskan',
+  //  Alamat daerah/kota - hanya berarti untuk akun kelompok PTS Cabang (lihat
+  //  field `cabang` di lib/kelompok.ts). Dipakai auto-fill Daerah/Kota di
+  //  dropdown Installer, Reminder Schedule mode Remote.
+  'pts_daerah',
 ]);
 // 'password' sengaja TIDAK ada di daftar: kolom itu peninggalan dan tidak
 // pernah dibaca saat login. Password disimpan di user_credentials lewat

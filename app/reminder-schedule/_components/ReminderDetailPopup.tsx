@@ -99,7 +99,7 @@ export function ReminderDetailPopup({
   setInstallerName: (v: string) => void;
   installerUserId: string | null;
   setInstallerUserId: (v: string | null) => void;
-  daftarCabang: { id: string; full_name: string }[];
+  daftarCabang: { id: string; full_name: string; pts_daerah: string | null }[];
   installerDaerah: string;
   setInstallerDaerah: (v: string) => void;
   bastDate: string;

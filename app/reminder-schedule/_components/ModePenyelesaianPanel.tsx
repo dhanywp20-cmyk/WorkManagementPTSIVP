@@ -37,7 +37,7 @@ export function ModePenyelesaianPanel({
   setInstallerName: (v: string) => void;
   installerUserId: string | null;
   setInstallerUserId: (v: string | null) => void;
-  daftarCabang: { id: string; full_name: string }[];
+  daftarCabang: { id: string; full_name: string; pts_daerah: string | null }[];
   installerDaerah: string;
   setInstallerDaerah: (v: string) => void;
   savingMode: boolean;
@@ -150,7 +150,10 @@ export function ModePenyelesaianPanel({
                 daftarCabang={daftarCabang}
                 installerUserId={installerUserId}
                 installerName={installerName}
-                onPilihAkun={(id, nama) => { setInstallerUserId(id); setInstallerName(nama); }}
+                onPilihAkun={(id, nama, daerah) => {
+                  setInstallerUserId(id); setInstallerName(nama);
+                  if (daerah) setInstallerDaerah(daerah);
+                }}
                 onKetikManual={nama => { setInstallerUserId(null); setInstallerName(nama); }}
               />
             </div>

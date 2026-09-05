@@ -982,5 +982,6 @@ CREATE TABLE public.users (
   atasan_id uuid,
   is_internal_sales boolean NOT NULL DEFAULT false,
   access_level text NOT NULL DEFAULT 'guest'::text,
-  incentive_brand_scope text
+  incentive_brand_scope text,
+  pts_daerah text
 );

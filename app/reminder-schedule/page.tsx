@@ -273,7 +273,7 @@ function ReminderSchedulePageInner() {
   const [modePenyelesaian, setModePenyelesaian]       = useState<'onsite' | 'remote' | null>(null);
   const [installerName, setInstallerName]             = useState('');
   const [installerUserId, setInstallerUserId]         = useState<string | null>(null);
-  const [ptsCabangUsers, setPtsCabangUsers]           = useState<{ id: string; full_name: string }[]>([]);
+  const [ptsCabangUsers, setPtsCabangUsers]           = useState<{ id: string; full_name: string; pts_daerah: string | null }[]>([]);
   const [installerDaerah, setInstallerDaerah]         = useState('');
   const [bastDate, setBastDate]                       = useState<string>('');
   const [displayType, setDisplayType]                 = useState<'led' | 'lcd' | 'mix' | null>(null);
@@ -493,9 +493,9 @@ function ReminderSchedulePageInner() {
   const fetchPTSCabangUsers = async () => {
     const cabang = namaKelompokCabang();
     if (cabang.length === 0) { setPtsCabangUsers([]); return; }
-    const { data } = await supabase.from('users').select('id, full_name')
+    const { data } = await supabase.from('users').select('id, full_name, pts_daerah')
       .in('team_type', cabang).order('full_name');
-    if (data) setPtsCabangUsers(data as { id: string; full_name: string }[]);
+    if (data) setPtsCabangUsers(data as { id: string; full_name: string; pts_daerah: string | null }[]);
   };
 
   const jalankanBulkDelete = async () => {
