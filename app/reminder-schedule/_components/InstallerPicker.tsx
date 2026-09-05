@@ -20,7 +20,9 @@ export function InstallerPicker({
   onPilihAkun: (id: string, nama: string) => void;
   onKetikManual: (nama: string) => void;
 }) {
-  const [manual, setManual] = useState(!installerUserId && installerName.trim() !== '');
+  const [manual, setManual] = useState(
+    daftarCabang.length === 0 || (!installerUserId && installerName.trim() !== '')
+  );
 
   if (manual) {
     return (

@@ -512,7 +512,7 @@ export function ReminderDetailPopup({
                       else if ((INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category)) {
                         // Kategori incentive  panel Mode langsung muncul di kanan (tanpa scroll)
                         setPendingPhotoUrl(undefined);
-                        setModePenyelesaian(null); setInstallerName(''); setInstallerDaerah('');
+                        setModePenyelesaian(null); setInstallerName(''); setInstallerUserId(null); setInstallerDaerah('');
                         setBastDate(new Date().toISOString().split('T')[0]);
                         setDisplayType(null); setRequiresMiddleware(false);
                         setRequiresControllerAuto(false); setControllerBrand(null);
