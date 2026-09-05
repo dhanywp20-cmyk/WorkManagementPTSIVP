@@ -31,10 +31,7 @@ import {
   getWarrantyInfo as getWarrantyInfoShared,
   bolehUpdateTicket as bolehUpdateTicketShared,
 } from "./_components/shared";
-import {
-  StatusDonutCard, SalesDivisionDonutCard, HandlerDonutCard,
-  ProductDonutCard, InfoLine,
-} from "./_components/DonutCards";
+import { InfoLine } from "./_components/DonutCards";
 import { NewTicketModal, type NewTicketForm } from "./_components/NewTicketModal";
 import {
   OverdueSettingModal, ReopenPTSModal, ReopenServicesModal, RejectModal, DeleteModal,
@@ -46,6 +43,7 @@ import { AccountSettingsModal } from "./_components/AccountSettingsModal";
 import { ActivitySummaryModal } from "./_components/ActivitySummaryModal";
 import { AdminEditModal } from "./_components/AdminEditModal";
 import { ApprovalModal } from "./_components/ApprovalModal";
+import { StatsSection } from "./_components/StatsSection";
 import { Ico } from "./_components/Ico";
 import { appLink } from "@/lib/app-url";
 import { cetakTicket } from "./_components/cetak-ticket";
@@ -53,7 +51,7 @@ import { eksporExcel } from "./_components/ekspor-excel";
 import {
   ViewIconBtn, DeleteIconBtn,
   FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
-  Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, StatCard,
+  Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState,
   MobileListCard, MobileCardBadge,
 } from "@/components/shared";
 
@@ -2600,78 +2598,25 @@ function TicketingSystemInner() {
 
         <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
 
-          {/* ── GUEST SUMMARY SECTION (same style as admin) ── */}
-          {currentUser?.role === "guest" && (
-            <div className="mb-4 space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 animate-slide-up anim-d80">
-                {[
-                  { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket saya", accent: "#4f46e5" },
-                  { label: "Waiting Approval", value: tickets.filter((t) => t.status === "Waiting Approval").length, sub: "Menunggu persetujuan", accent: "#c2410c" },
-                  { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", accent: "#b45309" },
-                  { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", accent: "#1d4ed8" },
-                  { label: "Solved", value: stats.solved, sub: "Terselesaikan", accent: "#047857" },
-                ].map((card, i) => <StatCard key={i} {...card} />)}
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-zoom-in anim-d160">
-                <StatusDonutCard
-                  data={[
-                    { name: "Waiting Approval", value: tickets.filter((t) => t.status === "Waiting Approval").length, color: "#FB923C" },
-                    ...stats.statusData,
-                  ].filter((d) => d.value > 0)}
-                  total={stats.total}
-                  onSliceClick={() => {}}
-                  title="Status Distribution"
-                  icon="🥧"
-                />
-                <HandlerDonutCard
-                  data={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).map((h: any, i: number) => ({ name: h.name, value: h.tickets, color: ["#7c3aed","#0ea5e9","#10b981","#e11d48","#f59e0b","#6366f1"][i%6] }))}
-                  total={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).reduce((s:number,h:any) => s+h.tickets, 0)}
-                  teamToggle={selectedHandlerTeam}
-                  onToggle={(t: "PTS" | "Services") => setSelectedHandlerTeam(t)}
-                  onSliceClick={() => {}}
-                  activeHandler={null}
-                  title="Team Handlers"
-                  icon="👥"
-                />
-                <SalesDivisionDonutCard
-                  data={salesDivisionStats.data}
-                  total={salesDivisionStats.total}
-                  onSliceClick={() => {}}
-                  activeDivision={null}
-                />
-                <ProductDonutCard
-                  data={productStats.data}
-                  total={productStats.total}
-                  onSliceClick={() => {}}
-                  activeProduct={null}
-                />
-              </div>
-            </div>
-          )}
-
-          {(currentUser?.role === "admin" || currentUser?.role === "superadmin" || (currentUser?.role === "team" && currentUserTeamType === "Team PTS IVP" || currentUserTeamType === "Guest")) && (
-            <div className="mb-4 space-y-4">
-              {/* ── Stat Cards (Redesigned like ReminderSchedule) ── */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 animate-slide-up anim-d80">
-                {[
-                  { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket", accent: "#4f46e5", onClick: () => { setFilterStatus("All"); setHandlerFilter(null); }, active: filterStatus === "All" && !handlerFilter },
-                  { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", accent: "#b45309", onClick: () => { setFilterStatus(filterStatus === "Pending" ? "All" : "Pending"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Pending" },
-                  { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", accent: "#1d4ed8", onClick: () => { setFilterStatus(filterStatus === "In Progress" ? "All" : "In Progress"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "In Progress" },
-                  { label: "Solved", value: stats.solved, sub: "Terselesaikan", accent: "#047857", onClick: () => { setFilterStatus(filterStatus === "Solved" ? "All" : "Solved"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved" },
-                  { label: "Overdue", value: stats.overdue, sub: "Berpotensi denda", accent: "#b91c1c", onClick: () => { setFilterStatus(filterStatus === "Overdue" ? "All" : "Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Overdue" },
-                  { label: "Solved Overdue", value: stats.solvedOverdue, sub: "Butuh verifikasi", accent: "#6d28d9", onClick: () => { setFilterStatus(filterStatus === "Solved Overdue" ? "All" : "Solved Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved Overdue" },
-                ].map((card, i) => <StatCard key={i} {...card} />)}
-              </div>
-
-              {/* ── Donut Charts ── */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-zoom-in anim-d160">
-                <StatusDonutCard data={stats.statusData} total={stats.statusData.reduce((s, d) => s + d.value, 0)} onSliceClick={(name: string) => { const mapped = name === "Solved (Overdue)" ? "Solved Overdue" : name; setFilterStatus((prev) => prev === mapped ? "All" : mapped); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} title="Status Distribution" icon="🥧" />
-                <HandlerDonutCard data={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).map((h: any, i: number) => ({ name: h.name, value: h.tickets, color: ["#7c3aed", "#0ea5e9", "#10b981", "#e11d48", "#f59e0b", "#6366f1", "#14b8a6", "#f97316", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"][i % 12] }))} total={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).reduce((s, h) => s + h.tickets, 0)} teamToggle={selectedHandlerTeam} onToggle={(t: "PTS" | "Services") => setSelectedHandlerTeam(t)} onSliceClick={(name: string) => { setHandlerFilter((prev: string | null) => prev === name ? null : name); setFilterStatus("All"); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeHandler={handlerFilter} title="Team Handlers" icon="👥" />
-                <SalesDivisionDonutCard data={salesDivisionStats.data} total={salesDivisionStats.total} onSliceClick={(division: string) => { setSalesDivisionFilter((prev: string | null) => prev === division ? null : division); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeDivision={salesDivisionFilter} />
-                <ProductDonutCard data={productStats.data} total={productStats.total} onSliceClick={(prod: string) => { setProductFilter((prev) => prev === prod ? null : prod); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeProduct={productFilter} />
-              </div>
-            </div>
-          )}
+          <StatsSection
+            currentUser={currentUser}
+            currentUserTeamType={currentUserTeamType}
+            stats={stats}
+            tickets={tickets}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            handlerFilter={handlerFilter}
+            setHandlerFilter={setHandlerFilter}
+            ticketListRef={ticketListRef}
+            selectedHandlerTeam={selectedHandlerTeam}
+            setSelectedHandlerTeam={setSelectedHandlerTeam}
+            salesDivisionStats={salesDivisionStats}
+            salesDivisionFilter={salesDivisionFilter}
+            setSalesDivisionFilter={setSalesDivisionFilter}
+            productStats={productStats}
+            productFilter={productFilter}
+            setProductFilter={setProductFilter}
+          />
 
           {/* ── TICKET LIST (with integrated search/filter bar like image) ── */}
           <div ref={ticketListRef} className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: "rgba(255,255,255,0.97)", border: "1px solid rgba(200,200,200,0.6)", backdropFilter: "blur(12px)" }}>
