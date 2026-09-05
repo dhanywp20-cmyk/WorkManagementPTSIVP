@@ -417,6 +417,11 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           setUnreadMsgMap(counts);
         }
       }
+    } else if (error) {
+      // Tanpa ini, gagal fetch (RLS, jaringan putus, dst) tampil identik
+      // dengan "memang belum ada request" - daftar tetap pada nilai
+      // sebelumnya tanpa penjelasan apa pun ke user.
+      notify('error', 'Gagal memuat data request: ' + error.message);
     }
     setLoading(false);
     setAppReady(true);
