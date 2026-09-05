@@ -71,6 +71,8 @@ kode.
 | 5 | `users_daftar` - policy pendaftaran anonim lama, sudah tidak dipakai | P2 | P2 | ✅ Dihapus |
 | 6 | `notifications` - UPDATE bisa memindahkan notifikasi ke user lain + ganti isi (phishing internal) | P2 | P2 | ✅ Dipecah per-perintah + dites |
 | 7 | 4 storage bucket - upload/hapus tanpa syarat login | P1 | P1 | ✅ Diperbaiki + dites |
+| 8 | Tech Note - author bisa meloloskan approval sendiri via `tn_ubah` (temuan Agent 2) | P1 | P1 | ✅ Diperbaiki + dites |
+| 9 | Learning Center - kunci jawaban quiz bocor ke browser + skor dihitung client (temuan Agent 2) | P1 | P1 | ✅ Diperbaiki (penilaian dipindah ke `/api/learning-center/submit-quiz`) |
 
 **Catatan penting soal #1**: laporan awal saya menyebut ini privilege-escalation
 P0 ("user bisa jadikan diri admin sendiri"). Setelah diperiksa lebih dalam,
@@ -94,8 +96,6 @@ masuk akal, **belum dikerjakan** - masuk daftar lanjutan di bawah.
 |---|---|---|---|---|---|
 | Storage (semua bucket) | Semua bucket storage bertanda `public` - file bisa dibaca siapa saja yang tahu URL, terlepas dari RLS `storage.objects` | P1 | Desain awal memilih public bucket + `<img src>` langsung ke `file_url` di seluruh app | Migrasi ke signed URL bertahap per modul | TINGGI - banyak titik pakai, regresi kalau tergesa |
 | Sesi/JWT | Privilege yang dicabut admin baru berlaku max ~5.5 jam kemudian (token direfresh lazy di 30 menit sebelum expiry) | P2 | Trade-off desain sesi 6 jam tanpa mekanisme revocation aktif | Perpendek ambang refresh (mis. 15 menit) sebagai mitigasi cepat; revocation list penuh sebagai perbaikan jangka panjang | RENDAH untuk mitigasi cepat, SEDANG untuk revocation list |
-| Tech Note | `tn_ubah` RLS mengizinkan author UPDATE kolom `status`/`reviewed_by`/`review_note` di catatannya sendiri - bisa meloloskan approval sendiri lewat panggilan langsung ke PostgREST (Agent 2, diverifikasi baca kode) | P1 | Migration yang memperbaiki bug "author tidak bisa resubmit" tidak sekalian membatasi kolom mana yang boleh diubah | Trigger serupa `guard_users_privileged_columns` khusus `tech_notes`: reset `status`/`reviewed_*` ke nilai lama kalau bukan admin/supervisor | RENDAH - aditif, tidak mengubah alur resubmit yang sudah benar |
-| Learning Center | Kunci jawaban (`correct_answer`) terkirim ke browser sebelum soal dijawab; skor dihitung & ditulis dari client, RLS cuma cek kepemilikan baris bukan kebenaran nilai (Agent 2) | P1 | Logika penilaian ada sepenuhnya di client | Pindahkan penilaian ke route/RPC server yang terima jawaban mentah, hitung skor di server | SEDANG - perlu ubah alur pengambilan quiz, jaga UX feedback instan |
 | Incentive PTS | `incentive_splits` INSERT masih terbuka utk SEMUA user login, bukan hanya pemegang akses insentif (lihat catatan #4 di atas) | P2 | Belum disempitkan sejak perbaikan awal sesi ini | Gate dengan `akses_insentif_input()` seperti `it_tambah` | RENDAH kalau `processYearlyBatch` di UI memang sudah selalu dijalankan user yang punya akses itu (perlu 1x verifikasi) |
 | Ticketing | Race condition brand-BOTH: dua reviewer approve bersamaan bisa membuat request macet, tidak pernah sampai ke Admin (Agent 1, file+baris di laporan asli) | P1 | Client baca snapshot status sendiri-sendiri, tidak ada trigger DB yang menghitung ulang | Trigger `BEFORE UPDATE` di `project_requests`: set `routing_status='admin_review'` otomatis begitu kedua `internal_approved_at`/`internal_approved_at_2` terisi | RENDAH - aditif |
 | Ticketing | Approve tiket ke 2 handler berbeda oleh 2 admin bersamaan - tidak ada compare-and-swap di UPDATE, yang terakhir menang diam-diam (Agent 1) | P2 | Guard hanya di state UI (`uploading`), bukan di query | Tambah `.eq('status','Waiting Approval')` di update + cek row count | RENDAH - aditif |
@@ -153,8 +153,8 @@ per modul, P1 ke atas saja (P2/P3 lengkap tersedia bila diminta):
 
 ## LANJUTAN YANG DISARANKAN (urutan prioritas)
 
-1. **Jawab open question halaman share publik** (nama staf internal terlihat klien) - murni keputusan bisnis Anda.
-2. **Tutup 2 celah security P1 baru**: Tech Note self-approval, Learning Center integritas kuis.
+1. ~~Jawab open question halaman share publik~~ - **selesai**: dikonfirmasi disengaja, tidak diubah.
+2. ~~Tutup 2 celah security P1 baru~~ - **selesai**: Tech Note self-approval (trigger) & Learning Center integritas kuis (penilaian dipindah ke server), keduanya diverifikasi.
 3. **Perbaiki race condition brand-BOTH** (Request Design Project macet permanen) - data-integrity, bukan cuma UX.
 4. **Rencanakan penghapusan hardcode nama tim/perusahaan** (24 file) - ini prasyarat teknis nyata untuk menjual platform ke perusahaan lain, bukan sekadar polish.
 5. Sisanya (accessibility Modal/ConfirmDialog, performa realtime, konsolidasi komponen duplikat) - P2 ke bawah, bisa dikerjakan bertahap kapan saja.
