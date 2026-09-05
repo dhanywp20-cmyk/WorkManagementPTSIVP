@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { sendWA } from '@/lib/wa';
+import { adalahKategoriInsentif } from '@/lib/incentive-scheme';
 
 // Placeholder default saat Sales request tanpa isi notes - BUKAN catatan asli,
 // jangan ditampilkan/disimpan lagi begitu request sudah di-assign ke pengerjaan.
@@ -301,4 +302,18 @@ export async function sendFonnteWA(
   _meta?: Record<string, unknown>
 ): Promise<{ ok: boolean; reason?: string }> {
   return sendWA(target, message);
+}
+
+/**
+ * Tombol "Sync ke Incentive PTS" hanya boleh muncul untuk reminder kategori
+ * insentif yang sudah selesai - lihat catatan panjang di dekat pemakaiannya
+ * (tombol yang tidak bisa ditemukan lebih buruk daripada tombol yang kadang
+ * kelihatan sebelum saatnya).
+ */
+export function layakIncentive(r: Reminder): boolean {
+  return adalahKategoriInsentif(r.category) && r.status === 'done';
+}
+
+export function diluarIncentive(r: Reminder): boolean {
+  return r.incentive_excluded === true;
 }
