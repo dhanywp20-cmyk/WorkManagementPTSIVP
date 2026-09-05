@@ -141,6 +141,23 @@ function TicketingSystemInner() {
   useEffect(() => {
     if (searchParams.get('buat') === '1') setShowNewTicket(true);
   }, [searchParams]);
+
+  // Deep-link dari notifikasi (?open=<id>): buka detail ticket-nya langsung,
+  // bukan cuma daftar. Ref sekali-jalan - tanpa itu, tickets yang di-refetch
+  // berkala (realtime) akan membuka lagi detailnya tiap kali walau user
+  // sudah menutupnya.
+  const sudahBukaDariNotif = useRef(false);
+  useEffect(() => {
+    if (sudahBukaDariNotif.current) return;
+    const openId = searchParams.get('open');
+    if (!openId || tickets.length === 0) return;
+    const target = tickets.find(t => t.id === openId);
+    if (target) {
+      sudahBukaDariNotif.current = true;
+      setSelectedTicket(target);
+      setShowTicketDetailPopup(true);
+    }
+  }, [searchParams, tickets]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Ticket[]>([]);
   const [showNotificationPopup, setShowNotificationPopup] = useState(false);

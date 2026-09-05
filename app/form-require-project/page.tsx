@@ -77,6 +77,21 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   useEffect(() => {
     if (searchParams.get('buat') === '1') setShowNewFormModal(true);
   }, [searchParams]);
+
+  // Deep-link dari notifikasi (?open=<id>): buka detail request-nya langsung,
+  // bukan cuma daftar. Ref sekali-jalan - tanpa itu, requests yang di-refetch
+  // berkala akan membuka lagi detailnya tiap kali walau user sudah menutupnya.
+  const sudahBukaDariNotif = useRef(false);
+  useEffect(() => {
+    if (sudahBukaDariNotif.current) return;
+    const openId = searchParams.get('open');
+    if (!openId || requests.length === 0) return;
+    const target = requests.find(r => r.id === openId);
+    if (target) {
+      sudahBukaDariNotif.current = true;
+      handleOpenDetail(target);
+    }
+  }, [searchParams, requests]);
   const [searchSales, setSearchSales] = useState(() => {
     try { return sessionStorage.getItem('frp_searchSales') || ''; } catch { return ''; }
   });

@@ -490,7 +490,7 @@ export default function Dashboard() {
     if (menu && item) handleMenuClick(item, menu.title);
   };
 
-  const handleNotifNavigate = (navInternalUrl: string, title: string) => {
+  const handleNotifNavigate = (navInternalUrl: string, title: string, refId?: string) => {
     // M16 (docs/UX-WORKFLOW-AUDIT.md): sebagian notifikasi (mis. "user baru
     // mendaftar") tidak menunjuk ke HALAMAN, tapi ke tab Admin Panel - modal
     // terpisah, bukan bagian dari sistem iframe/route di bawah. action_url
@@ -501,10 +501,16 @@ export default function Dashboard() {
       setShowAdminPanel(true);
       return;
     }
+    // Deep-link: ?open=<id record> supaya halaman tujuan bisa langsung
+    // membuka detailnya, bukan cuma daftar - lihat pemakaian di masing-masing
+    // page.tsx (ticketing/reminder-schedule/form-require-project/form-review).
+    const urlDenganTarget = refId
+      ? `${navInternalUrl}${navInternalUrl.includes('?') ? '&' : '?'}open=${encodeURIComponent(refId)}`
+      : navInternalUrl;
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle(''); setShowDashboardPanel(false);
     setTimeout(() => {
       setShowTicketing(true);
-      setInternalUrl(navInternalUrl);
+      setInternalUrl(urlDenganTarget);
       setIframeTitle(title);
       setShowSidebar(true);
     }, 150);

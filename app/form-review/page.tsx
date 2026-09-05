@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { clearSession, getSession } from '@/lib/auth';
 import { sendWANotif } from '@/lib/wa';
@@ -23,8 +23,9 @@ import {
 
 // Main Component
 
-export default function FormReviewPage() {
+function FormReviewPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Auth
   const [currentUser, setCurrentUser] = useState<GuestUser | null>(null);
@@ -161,6 +162,21 @@ export default function FormReviewPage() {
     const interval = setInterval(check, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  // Deep-link dari notifikasi (?open=<id>): buka detail review-nya langsung,
+  // bukan cuma daftar. Ref sekali-jalan - tanpa itu, reviews yang di-refetch
+  // berkala akan membuka lagi detailnya tiap kali walau user sudah menutupnya.
+  const sudahBukaDariNotif = useRef(false);
+  useEffect(() => {
+    if (sudahBukaDariNotif.current) return;
+    const openId = searchParams.get('open');
+    if (!openId || reviews.length === 0) return;
+    const target = reviews.find(r => r.id === openId);
+    if (target) {
+      sudahBukaDariNotif.current = true;
+      setDetailReview(target);
+    }
+  }, [searchParams, reviews]);
 
   // Fetch
 
@@ -1444,5 +1460,13 @@ export default function FormReviewPage() {
       </ModalPortal>
       )}
     </div>
+  );
+}
+
+export default function FormReviewPage() {
+  return (
+    <Suspense>
+      <FormReviewPageInner />
+    </Suspense>
   );
 }
