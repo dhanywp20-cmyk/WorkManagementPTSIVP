@@ -32,9 +32,9 @@ import {
 import { PriorityBadge, StatusBadge, CategoryBadge } from './_components/Badges';
 import {
   FormField, SectionHeader, SectionHeaderSmall, InfoRow,
-  LoadingScreen, MiniPieChart, PageHeader,
+  LoadingScreen, PageHeader,
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
-  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, AuditTrailPanel, FlowSteps, Username, StatCard,
+  ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, AuditTrailPanel, FlowSteps, Username,
   ModalPortal, MobileListCard, MobileCardBadge,
 } from '@/components/shared';
 import { MiniCalendar } from './_components/MiniCalendar';
@@ -47,6 +47,7 @@ import { RejectReasonModal } from './_components/RejectReasonModal';
 import { BulkDeleteConfirmModal } from './_components/BulkDeleteConfirmModal';
 import { TanyaLanjutanModal, PilihTipeReminderModal, CariProyekLamaModal } from './_components/LapisEmpatModals';
 import { ApproveAssignModal, SupervisorAssignModal } from './_components/ApproveAssignModals';
+import { StatsSection } from './_components/StatsSection';
 
 
 function ReminderSchedulePageInner() {
@@ -3868,53 +3869,28 @@ jangan lupa peralatan & Semangat💪🏼
         <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-2.5 py-3 space-y-3 sm:px-5 sm:py-5 sm:space-y-4">
           {view === 'list' && (
             <>
-              {/* ── Stat cards (clickable filter) ── */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { label: 'Total Jadwal', value: totalCount, sub: 'Semua reminder', accent: '#4f46e5',
-                    onClick: () => { setFilterStatus('all'); setSelectedCalDay(null); },
-                    active: filterStatus === 'all' && !selectedCalDay },
-                  { label: 'Pending', value: pendingCount, sub: 'Menunggu tindakan', accent: '#b45309',
-                    onClick: () => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending'),
-                    active: filterStatus === 'pending' },
-                  { label: 'Selesai', value: doneCount, sub: 'Terselesaikan', accent: '#047857',
-                    onClick: () => setFilterStatus(filterStatus === 'done' ? 'all' : 'done'),
-                    active: filterStatus === 'done' },
-                  { label: 'Hari Ini', value: todayCount, sub: 'Jadwal hari ini', accent: '#0e7490',
-                    onClick: () => setSelectedCalDay(selectedCalDay === new Date().toISOString().split('T')[0] ? null : new Date().toISOString().split('T')[0]),
-                    active: selectedCalDay === new Date().toISOString().split('T')[0] },
-                ].map((card, i) => <StatCard key={i} {...card} />)}
-              </div>
-
-              {/* ── Pie Charts — klick untuk filter ── */}
-              {/* 1 kolom di ponsel (bukan 2): tiap kartu MiniPieChart berisi
-                  donat + legenda berdampingan, jauh lebih lebar isinya
-                  dibanding StatCard di atas - dipaksa 2 kolom di layar
-                  sempit membuat separuh lebar kartu kurang buat donat +
-                  legenda sekaligus, dan itulah yang membuat SELURUH
-                  halaman ikut melebar & harus digeser ke kanan. */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <MiniPieChart
-                  data={projectPieData} title="Kegiatan / Kategori" icon="🖥️"
-                  activeFilter={filterCategory !== 'all' ? filterCategory : null}
-                  onSliceClick={label => setFilterCategory(filterCategory === label ? 'all' : label)}
-                />
-                <MiniPieChart
-                  data={salesPieData} title="Divisi Sales" icon="👤"
-                  activeFilter={searchDivisionSales || null}
-                  onSliceClick={label => setSearchDivisionSales(searchDivisionSales === label ? '' : label)}
-                />
-                <MiniPieChart
-                  data={teamPtsPieData} title="Team PTS IVP" icon="👥"
-                  activeFilter={searchTeamHandler || null}
-                  onSliceClick={label => setSearchTeamHandler(searchTeamHandler === label ? '' : label)}
-                />
-                <MiniPieChart
-                  data={productPieData} title="Product / Unit" icon="📦"
-                  activeFilter={productFilter}
-                  onSliceClick={label => setProductFilter(productFilter === label ? null : label)}
-                />
-              </div>
+              <StatsSection
+                totalCount={totalCount}
+                pendingCount={pendingCount}
+                doneCount={doneCount}
+                todayCount={todayCount}
+                filterStatus={filterStatus}
+                setFilterStatus={setFilterStatus}
+                selectedCalDay={selectedCalDay}
+                setSelectedCalDay={setSelectedCalDay}
+                projectPieData={projectPieData}
+                salesPieData={salesPieData}
+                teamPtsPieData={teamPtsPieData}
+                productPieData={productPieData}
+                filterCategory={filterCategory}
+                setFilterCategory={setFilterCategory}
+                searchDivisionSales={searchDivisionSales}
+                setSearchDivisionSales={setSearchDivisionSales}
+                searchTeamHandler={searchTeamHandler}
+                setSearchTeamHandler={setSearchTeamHandler}
+                productFilter={productFilter}
+                setProductFilter={setProductFilter}
+              />
 
               {/* Active filter chips */}
               {/* Main area: list + calendar (di HP stack; kalender hanya di desktop).
