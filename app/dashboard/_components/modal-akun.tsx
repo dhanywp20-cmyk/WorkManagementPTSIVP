@@ -42,6 +42,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const [editOrig, setEditOrig] = useState<{ username: string; full_name: string } | null>(null);
   const [editDivisi, setEditDivisi] = useState('');
   const [editPtsType, setEditPtsType] = useState('');
+  const [editPtsDaerah, setEditPtsDaerah] = useState('');
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
@@ -57,6 +58,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     allowed_menus: DEFAULT_MENU_KEYS,
     divisi: '',
     pts_type: '',
+    pts_daerah: '',
   });
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
 
@@ -86,7 +88,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').order('full_name');
+    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled,pts_daerah').order('full_name');
     if (error) {
       const { data: fallback } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus').order('full_name');
       if (fallback) setUsers(fallback);
@@ -109,6 +111,10 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     }
     if ((newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && !newUser.sales_division) {
       notify('error', `${newUser.divisi} Division wajib dipilih!`); return;
+    }
+    const isCabangBaru = kelompokPTSList.find(k => k.label === newUser.pts_type)?.cabang === true;
+    if (newUser.divisi === 'PTS' && isCabangBaru && !newUser.pts_daerah.trim()) {
+      notify('error', 'Alamat Daerah wajib diisi untuk PTS Cabang!'); return;
     }
 
     let role = 'guest';
@@ -139,6 +145,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       phone_number: newUser.phone_number || null,
       sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null,
       is_internal_sales: isInternalSales,
+      pts_daerah: isCabangBaru ? newUser.pts_daerah.trim() : null,
     };
     const { id: newId, error } = await adminCreateUser(insertPayload);
     // Password disimpan ke user_credentials via server route (yang dibaca login),
@@ -155,13 +162,17 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     notify('success', 'Akun berhasil ditambahkan!');
     sendWelcomeWA(newUser.phone_number, newUser.full_name, newUser.username, newUser.password);
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'create', module: 'user', target_name: newUser.full_name, notes: `Tambah akun: ${newUser.username}` });
-    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: DEFAULT_MENU_KEYS, divisi: '', pts_type: '' });
+    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: DEFAULT_MENU_KEYS, divisi: '', pts_type: '', pts_daerah: '' });
     setActiveTab('list');
     fetchUsers();
   };
 
   const handleSaveEdit = async () => {
     if (!editingUser) return;
+    const isCabangEdit = editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang === true;
+    if (isCabangEdit && !editPtsDaerah.trim()) {
+      notify('error', 'Alamat Daerah wajib diisi untuk PTS Cabang!'); return;
+    }
     setSaving(true);
 
     let role = editingUser.role;
@@ -192,6 +203,9 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
       // Ikut update is_internal_sales HANYA kalau admin ganti divisi (editDivisi
       // terisi) - kalau cuma edit field lain, jangan sentuh nilai yang sudah ada.
       ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(editingUser.sales_division ?? '')) } : {}),
+      // pts_daerah cuma disentuh kalau admin memang sedang menyunting divisi PTS -
+      // kalau bukan, jangan timpa nilai yang sudah ada (mis. sekadar ganti No. Telepon).
+      ...(editDivisi === 'PTS' ? { pts_daerah: isCabangEdit ? editPtsDaerah.trim() : null } : {}),
     };
     // Password baru harus masuk ke user_credentials - itu satu-satunya tempat
     // yang dibaca login. Kolom lama users.password tidak dibaca siapa pun, jadi
@@ -305,7 +319,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
 
         <div className="flex border-b border-slate-200 px-6 pt-4 flex-shrink-0">
           {(['list', 'add'] as const).map(tab => (
-            <button key={tab} onClick={() => { setActiveTab(tab); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }}
+            <button key={tab} onClick={() => { setActiveTab(tab); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }}
               className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === tab ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
               {tab === 'list' ? `👥 Daftar Akun (${users.length})` : '➕ Tambah Akun'}
             </button>
@@ -328,7 +342,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                     <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-bold text-slate-800">✏️ Edit: {editingUser.full_name}</h3>
-                        <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                        <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -372,6 +386,15 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             </select>
                           </div>
                         )}
+                        {editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang && (
+                          <div className="col-span-2">
+                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
+                            <input value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
+                              placeholder="Contoh: Surabaya, Bandung, Medan..."
+                              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                            <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
+                          </div>
+                        )}
                         {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
                           <div className="col-span-2">
                             <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">
@@ -402,7 +425,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                           💾 Simpan Perubahan
                         </button>
-                        <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all">Batal</button>
+                        <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all">Batal</button>
                       </div>
                     </div>
                   ) : (
@@ -442,6 +465,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                               else if (user.team_type === 'Marketing') { d = 'Marketing'; }
                               setEditDivisi(d);
                               setEditPtsType(p);
+                              setEditPtsDaerah(user.pts_daerah ?? '');
                               setEditOrig({ username: user.username, full_name: user.full_name });
                               setEditingUser(user);
                             }} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
@@ -479,7 +503,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Divisi *</label>
-                  <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', sales_division: '' })}
+                  <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                     <option value="">-- Pilih Divisi --</option>
                     <option value="PTS">PTS</option>
@@ -490,11 +514,20 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 {newUser.divisi === 'PTS' && (
                   <div className="col-span-2">
                     <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
-                    <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value })}
+                    <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '' })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                       <option value="">-- Pilih Tipe PTS --</option>
                       {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
                     </select>
+                  </div>
+                )}
+                {newUser.divisi === 'PTS' && kelompokPTSList.find(k => k.label === newUser.pts_type)?.cabang && (
+                  <div className="col-span-2">
+                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Alamat Daerah *</label>
+                    <input value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
+                      placeholder="Contoh: Surabaya, Bandung, Medan..."
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" />
+                    <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                   </div>
                 )}
                 {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
@@ -547,10 +580,11 @@ export function AccountSettingsInline() {
   const [editOrig, setEditOrig] = useState<{ username: string; full_name: string } | null>(null);
   const [editDivisi, setEditDivisi] = useState('');
   const [editPtsType, setEditPtsType] = useState('');
+  const [editPtsDaerah, setEditPtsDaerah] = useState('');
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [newUser, setNewUser] = useState({
-    username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: DEFAULT_MENU_KEYS, divisi: '', pts_type: '',
+    username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: DEFAULT_MENU_KEYS, divisi: '', pts_type: '', pts_daerah: '',
   });
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -591,7 +625,7 @@ export function AccountSettingsInline() {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,created_at,access_level,piket_akses,bisa_ditugaskan').order('full_name');
+    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,pts_daerah,created_at,access_level,piket_akses,bisa_ditugaskan').order('full_name');
     if (error) {
       // Fallback: try without extended columns (divisi/pts_type may not exist yet)
       const { data: fallback, error: err2 } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,created_at').order('full_name');
@@ -644,6 +678,8 @@ export function AccountSettingsInline() {
     if (!newUser.divisi) { notify('error', 'Divisi wajib dipilih!'); return; }
     if (newUser.divisi === 'PTS' && !newUser.pts_type) { notify('error', 'Tipe PTS wajib dipilih!'); return; }
     if (newUser.divisi === 'Sales' && !newUser.sales_division) { notify('error', 'Sales Division wajib diisi!'); return; }
+    const isCabangBaru2 = kelompokPTSList.find(k => k.label === newUser.pts_type)?.cabang === true;
+    if (newUser.divisi === 'PTS' && isCabangBaru2 && !newUser.pts_daerah.trim()) { notify('error', 'Alamat Daerah wajib diisi untuk PTS Cabang!'); return; }
 
     let role = 'guest';
     let team_type: string | null = null;
@@ -661,7 +697,7 @@ export function AccountSettingsInline() {
     // request mereka sendiri (project direct ke user) tidak boleh kena gerbang
     // review internal. Auto-set di sini supaya admin tidak perlu toggle manual.
     const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(newUser.sales_division));
-    const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null, is_internal_sales: isInternalSales };
+    const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null, is_internal_sales: isInternalSales, pts_daerah: isCabangBaru2 ? newUser.pts_daerah.trim() : null };
     const { id: createdId, error } = await adminCreateUser(insertPayload);
     // Simpan password via server route (hash + insert ke user_credentials di server).
     if (!error && createdId && newUser.password) {
@@ -675,12 +711,14 @@ export function AccountSettingsInline() {
     notify('success', 'Akun berhasil ditambahkan!');
     sendWelcomeWA(newUser.phone_number, newUser.full_name, newUser.username, newUser.password);
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'create', module: 'user', target_name: newUser.full_name, notes: `Tambah akun: ${newUser.username}` });
-    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: DEFAULT_MENU_KEYS, divisi: '', pts_type: '' });
+    setNewUser({ username: '', password: '', full_name: '', role: 'guest', team_type: '', phone_number: '', sales_division: '', jabatan: '', allowed_menus: DEFAULT_MENU_KEYS, divisi: '', pts_type: '', pts_daerah: '' });
     setActiveTab('list'); fetchUsers();
   };
 
   const handleSaveEdit = async () => {
     if (!editingUser) return;
+    const isCabangEdit2 = editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang === true;
+    if (isCabangEdit2 && !editPtsDaerah.trim()) { notify('error', 'Alamat Daerah wajib diisi untuk PTS Cabang!'); return; }
     setSaving(true);
     let role = editingUser.role;
     let team_type: string | null = editingUser.team_type ?? null;
@@ -694,6 +732,7 @@ export function AccountSettingsInline() {
     const updatePayload: Record<string, unknown> = { username: editingUser.username, full_name: editingUser.full_name, role, team_type, allowed_menus: editingUser.allowed_menus ?? ALL_MENU_KEYS, jabatan: editingUser.jabatan ?? null, phone_number: editingUser.phone_number ?? null, sales_division: (editDivisi === 'Sales' || editDivisi === 'Marketing') ? (editingUser.sales_division ?? null) : null,
       // Ikut update is_internal_sales HANYA kalau admin ganti divisi (editDivisi terisi).
       ...(editDivisi ? { is_internal_sales: editDivisi === 'Marketing' || (editDivisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(editingUser.sales_division ?? '')) } : {}),
+      ...(editDivisi === 'PTS' ? { pts_daerah: isCabangEdit2 ? editPtsDaerah.trim() : null } : {}),
       //  Lingkup catatan tamu Piket Showroom. Ikut updatePayload biasa (bukan
       //  jalur tersendiri seperti access_level) karena route admin sudah
       //  memasukkannya ke whitelist dan menulisnya dengan service-role, jadi
@@ -719,7 +758,7 @@ export function AccountSettingsInline() {
     setSaving(false);
     notify(sebar.taraf === 'ok' ? 'success' : 'error', pesanSebar(sebar));
     const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'update', module: 'user', target_id: editingUser.id, target_name: editingUser.full_name });
-    setEditingUser(null); setEditDivisi(''); setEditPtsType(''); fetchUsers();
+    setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); fetchUsers();
   };
 
   const handleDeleteUser = (userId: string, name: string) => {
@@ -779,11 +818,11 @@ export function AccountSettingsInline() {
         <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Tab bar */}
       <div className="flex border-b border-slate-100 px-5 pt-3 flex-shrink-0 bg-slate-50/60">
-        <button onClick={() => { setActiveTab('list'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }}
+        <button onClick={() => { setActiveTab('list'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'list' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           👥 Daftar Akun ({users.length})
         </button>
-        <button onClick={() => { setActiveTab('add'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }}
+        <button onClick={() => { setActiveTab('add'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'add' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           ➕ Tambah Akun
         </button>
@@ -809,9 +848,9 @@ export function AccountSettingsInline() {
               <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-bold text-slate-800">✏️ Edit: {editingUser.full_name}</h3>
-                  <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                  <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
                     <input value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
@@ -848,6 +887,15 @@ export function AccountSettingsInline() {
                         <option value="">-- Pilih Tipe PTS --</option>
                         {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
                       </select>
+                    </div>
+                  )}
+                  {editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang && (
+                    <div className="col-span-3">
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
+                      <input value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
+                        placeholder="Contoh: Surabaya, Bandung, Medan..."
+                        className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                      <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                     </div>
                   )}
                   {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
@@ -974,7 +1022,7 @@ export function AccountSettingsInline() {
                     {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                     💾 Simpan Perubahan
                   </button>
-                  <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); }} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all">Batal</button>
+                  <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all">Batal</button>
                 </div>
               </div>
             ) : (
@@ -1015,7 +1063,7 @@ export function AccountSettingsInline() {
                                 if (user.role === 'team') { d = 'PTS'; p = labelKelompokPTS(user.team_type ?? ''); }
                                 else if (user.team_type === 'Guest') { d = 'Sales'; }
                                 else if (user.team_type === 'Marketing') { d = 'Marketing'; }
-                                setEditDivisi(d); setEditPtsType(p); setEditOrig({ username: user.username, full_name: user.full_name }); setEditAccessLevel(user.access_level === 'full' ? 'full' : 'guest'); setEditBisaDitugaskan(user.bisa_ditugaskan !== false); setEditingUser(user);
+                                setEditDivisi(d); setEditPtsType(p); setEditPtsDaerah(user.pts_daerah ?? ''); setEditOrig({ username: user.username, full_name: user.full_name }); setEditAccessLevel(user.access_level === 'full' ? 'full' : 'guest'); setEditBisaDitugaskan(user.bisa_ditugaskan !== false); setEditingUser(user);
                               }} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
                               <button onClick={() => handleDeleteUser(user.id, user.full_name)} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
                             </div>
@@ -1032,7 +1080,7 @@ export function AccountSettingsInline() {
 
         {activeTab === 'add' && (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name *</label>
                 <input value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Nama lengkap" />
@@ -1047,7 +1095,7 @@ export function AccountSettingsInline() {
               </div>
               <div className="col-span-3">
                 <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi *</label>
-                <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', sales_division: '' })}
+                <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                   <option value="">-- Pilih Divisi --</option>
                   <option value="PTS">PTS</option>
@@ -1058,11 +1106,20 @@ export function AccountSettingsInline() {
               {newUser.divisi === 'PTS' && (
                 <div className="col-span-3">
                   <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS *</label>
-                  <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value })}
+                  <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '' })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                     <option value="">-- Pilih Tipe PTS --</option>
                     {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
                   </select>
+                </div>
+              )}
+              {newUser.divisi === 'PTS' && kelompokPTSList.find(k => k.label === newUser.pts_type)?.cabang && (
+                <div className="col-span-3">
+                  <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
+                  <input value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
+                    placeholder="Contoh: Surabaya, Bandung, Medan..."
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                  <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                 </div>
               )}
               {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (

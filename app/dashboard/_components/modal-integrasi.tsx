@@ -787,7 +787,7 @@ export function IntegrasiInline() {
                   <span className="ml-auto flex-shrink-0"><LencanaStatus status={spWA.bisaCek ? koneksi.whatsapp : { keadaan: 'terhubung', info: spWA.label }} /></span>
                 </div>
                 <div className="p-3 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 formulir:grid-cols-3 gap-2">
                     {PENYEDIA_WA.map(sp => {
                       const dipilih = p.waPenyedia === sp.key;
                       return (

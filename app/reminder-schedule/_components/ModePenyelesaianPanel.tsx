@@ -37,7 +37,7 @@ export function ModePenyelesaianPanel({
   setInstallerName: (v: string) => void;
   installerUserId: string | null;
   setInstallerUserId: (v: string | null) => void;
-  daftarCabang: { id: string; full_name: string }[];
+  daftarCabang: { id: string; full_name: string; pts_daerah: string | null }[];
   installerDaerah: string;
   setInstallerDaerah: (v: string) => void;
   savingMode: boolean;
@@ -143,14 +143,17 @@ export function ModePenyelesaianPanel({
 
         {modePenyelesaian === 'remote' && (
           <div className="space-y-3 p-4 rounded-xl" style={{ background: 'rgba(59,130,246,0.06)', border: '1.5px solid rgba(59,130,246,0.25)' }}>
-            <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">🔧 Data Installer Daerah</p>
+            <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">🔧 Data PTS Daerah</p>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">PTS Cabang / Installer <span className="text-red-500">*</span></label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">PTS Daerah <span className="text-red-500">*</span></label>
               <InstallerPicker
                 daftarCabang={daftarCabang}
                 installerUserId={installerUserId}
                 installerName={installerName}
-                onPilihAkun={(id, nama) => { setInstallerUserId(id); setInstallerName(nama); }}
+                onPilihAkun={(id, nama, daerah) => {
+                  setInstallerUserId(id); setInstallerName(nama);
+                  if (daerah) setInstallerDaerah(daerah);
+                }}
                 onKetikManual={nama => { setInstallerUserId(null); setInstallerName(nama); }}
               />
             </div>

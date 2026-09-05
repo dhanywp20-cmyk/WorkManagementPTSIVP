@@ -1121,7 +1121,7 @@ export function UserManagementInline() {
                 {/* Add form */}
                 <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
                   <p className="text-xs font-bold text-amber-700 mb-3">➕ Tambah Mapping Atasan</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi / Grup</label>
                       <select aria-label="-- Pilih Divisi / Grup --" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
@@ -1189,7 +1189,7 @@ export function UserManagementInline() {
                       ))}
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi Sales</label>
                       <select aria-label="-- Pilih Divisi --" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
@@ -1261,7 +1261,7 @@ export function UserManagementInline() {
                 <div className="p-4 rounded-xl border border-rose-200 bg-rose-50">
                   <p className="text-xs font-bold text-rose-700 mb-1">🎯 Routing Tipe Produk → Tim</p>
                   <p className="text-[11px] text-slate-500 mb-3">Request diarahkan otomatis ke Supervisor tim sesuai tipe produk (Supervisor dicari live dari Struktur Organisasi — bukan hardcode nama). "LED &amp; LCD" boleh diarahkan ke 2 tim sekaligus (keduanya di-notify, 1 tim yang eksekusi).</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tipe Produk</label>
                       <select aria-label="-- Pilih Tipe --" value={prodType} onChange={e => setProdType(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 bg-white">

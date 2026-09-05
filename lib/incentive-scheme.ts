@@ -421,7 +421,7 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
   }
 
   if (sk.installerRemotePersen < 0 || sk.installerRemotePersen >= 100) {
-    masalah.push({ bidang: 'installer', pesan: 'Porsi Installer harus 0–99%.' });
+    masalah.push({ bidang: 'installer', pesan: 'Porsi PTS Daerah harus 0–99%.' });
   }
   /*
     Peta Remote yang diatur sendiri ikut wajib 100% - dan wajib SENDIRI-SENDIRI,
@@ -474,7 +474,7 @@ export function periksaSkema(sk: SkemaInsentif): MasalahSkema[] {
   if (sk.installerAktif && (sk.installerRemotePersen || 0) <= 0) {
     masalah.push({
       bidang: 'installer',
-      pesan: 'Installer dinyalakan tapi porsinya 0% — isi porsinya, atau matikan saklarnya.',
+      pesan: 'PTS Daerah dinyalakan tapi porsinya 0% — isi porsinya, atau matikan saklarnya.',
     });
   }
   if (sk.jendelaSupportBulan < 0) masalah.push({ bidang: 'jendela', pesan: 'Jendela penilaian support tidak boleh negatif.' });
@@ -838,7 +838,7 @@ export function hitungPembagian(
     hasil.push({
       role: 'installer',
       user_id: installerUserId || '',
-      user_name: namaInstaller || 'Installer Cabang',
+      user_name: namaInstaller || 'PTS Daerah',
       percentage: pctInstaller,
       amount: 0,
     });
@@ -894,7 +894,7 @@ export function hitungManagerSebagaiPic(
   if (pctInstaller > 0) {
     hasil.push({
       role: 'installer', user_id: installerUserId || '',
-      user_name: namaInstaller || 'Installer Cabang',
+      user_name: namaInstaller || 'PTS Daerah',
       percentage: pctInstaller, amount: 0,
     });
   }

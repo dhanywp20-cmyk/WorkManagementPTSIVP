@@ -31,6 +31,29 @@ const config: Config = {
         satulayar: {
           raw: '(min-width: 1280px), ((pointer: fine) and (min-width: 900px))',
         },
+
+        /**
+         * formulir - dipakai grid form pendek (2-3 kolom) di Admin Panel yang
+         * sebelumnya memakai `sm:` polos.
+         *
+         * `sm:` (min-width: 640px) SENDIRIAN salah sasaran di HP yang
+         * accessibility zoom-nya diaksesibilitas/dipaksa oleh sistem (mis.
+         * "Force enable zoom" Android menimpa `maximum-scale=1` yang dipasang
+         * app ini) - browser bisa melaporkan lebar viewport CSS yang lebih
+         * besar dari layar sungguhan, dan `sm:` ikut menyala di HP yang
+         * layarnya sungguh sempit. Labelnya jadi bertumpuk dengan input di
+         * sebelahnya - persis gejala "form berantakan di HP" yang dilaporkan
+         * walau sudah refresh berkali-kali (bukan cache, bukan kode salah
+         * kondisi - breakpoint-nya sendiri yang salah menyala).
+         *
+         * Sama seperti `satulayar` di atas: yang membedakan laptop dari HP
+         * bukan lebar yang bisa dibohongi zoom, melainkan `pointer: fine`
+         * (mouse/trackpad) - itu tidak berubah walau viewport dilaporkan
+         * lebih lebar dari layar sungguhan.
+         */
+        formulir: {
+          raw: '(min-width: 640px) and (pointer: fine)',
+        },
       },
 
       /**

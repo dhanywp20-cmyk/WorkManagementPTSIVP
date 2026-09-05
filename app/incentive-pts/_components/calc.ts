@@ -1070,7 +1070,7 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
           split: {
             ...(barisInstaller ?? {
               role: 'installer', user_id: '',
-              user_name: project.installer_name || 'Installer Cabang',
+              user_name: project.installer_name || 'PTS Daerah',
               percentage: pctInstaller,
             }),
             amount: 0,
@@ -1311,7 +1311,7 @@ export const ROLE_LABELS: Record<string, { label: string; color: string; bg: str
   support:    { label: 'Support',    color: '#7c3aed', bg: 'rgba(124,58,237,0.12)'  },
   supervisor: { label: 'Supervisor', color: '#0891b2', bg: 'rgba(8,145,178,0.12)'   },
   manager:    { label: 'Manager',    color: '#059669', bg: 'rgba(5,150,105,0.12)'   },
-  installer:  { label: 'Installer',  color: '#d97706', bg: 'rgba(217,119,6,0.12)'   },
+  installer:  { label: 'PTS Daerah', color: '#d97706', bg: 'rgba(217,119,6,0.12)'   },
 };
 
 export const TRANCHE_STATUS: Record<string, { label: string; color: string; bg: string; icon: string }> = {

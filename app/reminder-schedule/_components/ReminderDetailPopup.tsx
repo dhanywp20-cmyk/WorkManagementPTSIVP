@@ -99,7 +99,7 @@ export function ReminderDetailPopup({
   setInstallerName: (v: string) => void;
   installerUserId: string | null;
   setInstallerUserId: (v: string | null) => void;
-  daftarCabang: { id: string; full_name: string }[];
+  daftarCabang: { id: string; full_name: string; pts_daerah: string | null }[];
   installerDaerah: string;
   setInstallerDaerah: (v: string) => void;
   bastDate: string;
@@ -460,13 +460,13 @@ export function ReminderDetailPopup({
                   </div>
                   {!isOnsite && detailReminder.installer_name && (
                     <div>
-                      <p className="text-slate-400 mb-0.5">🔧 Installer</p>
+                      <p className="text-slate-400 mb-0.5">🔧 PTS Daerah</p>
                       <p className="font-semibold text-slate-700">{detailReminder.installer_name}</p>
                     </div>
                   )}
                   {!isOnsite && detailReminder.installer_daerah && (
                     <div>
-                      <p className="text-slate-400 mb-0.5">📍 Daerah Installer</p>
+                      <p className="text-slate-400 mb-0.5">📍 Daerah</p>
                       <p className="font-semibold text-slate-700">{detailReminder.installer_daerah}</p>
                     </div>
                   )}
@@ -512,7 +512,7 @@ export function ReminderDetailPopup({
                       else if ((INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category)) {
                         // Kategori incentive  panel Mode langsung muncul di kanan (tanpa scroll)
                         setPendingPhotoUrl(undefined);
-                        setModePenyelesaian(null); setInstallerName(''); setInstallerDaerah('');
+                        setModePenyelesaian(null); setInstallerName(''); setInstallerUserId(null); setInstallerDaerah('');
                         setBastDate(new Date().toISOString().split('T')[0]);
                         setDisplayType(null); setRequiresMiddleware(false);
                         setRequiresControllerAuto(false); setControllerBrand(null);

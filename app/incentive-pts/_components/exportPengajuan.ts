@@ -53,7 +53,7 @@ function sumCell(formula: string, result: number): { formula: string; result: nu
 /** Nama peran seperti yang dibaca Finance, bukan kunci teknisnya. */
 const ROLE_JUDUL: Record<string, string> = {
   pic: 'PIC', support: 'Support', supervisor: 'Supervisor',
-  manager: 'Manager', installer: 'Installer',
+  manager: 'Manager', installer: 'PTS Daerah',
 };
 
 /*
@@ -489,7 +489,7 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     }
   }
   const cInst = ws.getCell(kepalaA, kolInst.nama);
-  cInst.value = 'Installer'; cInst.font = putih(); cInst.fill = fillWarna(NAVY_HDR);
+  cInst.value = 'PTS Daerah'; cInst.font = putih(); cInst.fill = fillWarna(NAVY_HDR);
   cInst.alignment = { horizontal: 'center', vertical: 'middle' }; cInst.border = thinBorder();
   ws.mergeCells(kepalaA, kolInst.nama, kepalaA, kolInst.rp);
   for (const [off, sub] of [[0, 'Nama'], [1, 'Lokasi'], [2, '%'], [3, 'Rp']] as [number, string][]) {
@@ -824,7 +824,7 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
     //  mengulang apa yang sudah tertulis di tempat lain.
     selGabung(ws, r, KOL_REKAP.nama, `${inst.nama}${inst.lokasi ? ' · ' + inst.lokasi : '' }`,
       { isi: INSTALLER_FILL });
-    selGabung(ws, r, KOL_REKAP.peran, 'Installer', { isi: INSTALLER_FILL });
+    selGabung(ws, r, KOL_REKAP.peran, 'PTS Daerah', { isi: INSTALLER_FILL });
 
     let kk = KOL_REKAP.peran[1] + 1; let kolAmt = -1;
     for (const th of tahunUrut) {

@@ -25,6 +25,12 @@ export interface User {
    * Lihat bolehDitugaskan() di lib/teams.ts.
    */
   bisa_ditugaskan?: boolean | null;
+  /**
+   * Alamat daerah/kota - hanya berarti untuk akun kelompok PTS Cabang (lihat
+   * field `cabang` di lib/kelompok.ts). Dipakai auto-fill Daerah/Kota saat
+   * akun ini dipilih di dropdown Installer, Reminder Schedule mode Remote.
+   */
+  pts_daerah?: string | null;
 }
 
 export interface MenuItem {
