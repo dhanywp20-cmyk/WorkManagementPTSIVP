@@ -14,6 +14,7 @@ import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/compo
 import { isAssignablePTSTeam, bolehDitugaskan } from '@/lib/teams';
 import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
+import { appLink } from '@/lib/app-url';
 
 /**
  * AssignPTSModal - popup Approve & Assign dan Assign ke Tim untuk Request
@@ -127,7 +128,7 @@ export function AssignPTSModal({
         `👤 Requester: ${req.requester_name}`,
         '━━━━━━━━━━━━━━━━━━',
         'Sudah diapprove Admin/Manager — silakan assign ke anggota tim kamu atau kerjakan sendiri.',
-        '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+        `🔗 ${appLink()}`,
       ].join('\n');
       await sendWANotif({ type: 'reminder_wa', target: sup.phone_number, message: lines });
     }
@@ -216,7 +217,7 @@ export function AssignPTSModal({
           `👤 Requester: ${req.requester_name}`,
           '━━━━━━━━━━━━━━━━━━',
           'Segera proses dan update status ya! 💪',
-          '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+          `🔗 ${appLink()}`,
         ].join('\n');
         await sendWANotif({ type: 'reminder_wa', target: calonHandler.phone_number, message: lines });
       }

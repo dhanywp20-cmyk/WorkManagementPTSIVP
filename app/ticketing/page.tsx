@@ -30,6 +30,7 @@ import {
 } from "./_components/DonutCards";
 import { NewTicketModal, type NewTicketForm } from "./_components/NewTicketModal";
 import { Ico } from "./_components/Ico";
+import { appLink } from "@/lib/app-url";
 import { cetakTicket } from "./_components/cetak-ticket";
 import { eksporExcel } from "./_components/ekspor-excel";
 import {
@@ -915,7 +916,7 @@ function TicketingSystemInner() {
               `📅 *Tanggal  :* ${newTicket.date || "-"}`,
               "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
               "Silakan buka dashboard untuk *Approve / Reject*.",
-              "🔗 https://team-ticketing.vercel.app/dashboard",
+              `🔗 ${appLink()}`,
             ].join("\n");
             await Promise.allSettled(
               approvers.filter(a => a.phone_number).map((a) =>
@@ -943,7 +944,7 @@ function TicketingSystemInner() {
                 `📅 *Tanggal  :* ${newTicket.date || "-"}`,
                 "━━━━━━━━━━━━━━━━━━",
                 `📋 *CC ke   :* ${ccTargets.map(t => t.name + (t.relation === "ivp_handler" ? " (IVP)" : "")).join(", ")}`,
-                "🔗 https://team-ticketing.vercel.app/dashboard",
+                `🔗 ${appLink()}`,
               ].join("\n");
               await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: "reminder_wa", target: t.phone, message: ccMsg })));
             }
@@ -961,7 +962,7 @@ function TicketingSystemInner() {
             : { data: null };
           if (supUser?.id) void createNotification({ user_id: supUser.id, type: 'ticket', title: '🎯 Ticket perlu kamu assign', body: `${newTicket.project_name} — ${newTicket.issue_case}`, action_url: '/ticketing', ref_id: insertedTicket.id, created_by: currentUser?.full_name || '' });
           if (supUser?.phone_number) {
-            const waMsg = ["🎯 *Ticket Perlu Di-assign ke Tim*", "━━━━━━━━━━━━━━━━━━", `Halo *${supUser.full_name || supName}*, ${currentUser?.full_name} meneruskan ticket — silakan assign ke anggota tim / kerjakan sendiri:`, `📌 *Project :* ${newTicket.project_name}`, `⚠️ *Issue   :* ${newTicket.issue_case}`, "━━━━━━━━━━━━━━━━━━", "🔗 https://team-ticketing.vercel.app/dashboard"].join("\n");
+            const waMsg = ["🎯 *Ticket Perlu Di-assign ke Tim*", "━━━━━━━━━━━━━━━━━━", `Halo *${supUser.full_name || supName}*, ${currentUser?.full_name} meneruskan ticket — silakan assign ke anggota tim / kerjakan sendiri:`, `📌 *Project :* ${newTicket.project_name}`, `⚠️ *Issue   :* ${newTicket.issue_case}`, "━━━━━━━━━━━━━━━━━━", `🔗 ${appLink()}`].join("\n");
             await sendWANotif({ type: "reminder_wa", target: supUser.phone_number, message: waMsg });
           }
         } catch { }
@@ -990,7 +991,7 @@ function TicketingSystemInner() {
               `📅 *Tanggal :* ${newTicket.date || "-"}`,
               "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
               "Mohon segera ditangani. Semangat! 💪",
-              "🔗 https://team-ticketing.vercel.app/dashboard",
+              `🔗 ${appLink()}`,
             ].join("\n");
             await sendWANotif({ type: "reminder_wa", target: handlerInfo.phone_number, message: waMsg });
           }
@@ -1121,7 +1122,7 @@ function TicketingSystemInner() {
               `📌 *Project :* ${tk.project_name}`,
               `⚠️ *Issue   :* ${tk.issue_case}`,
               "━━━━━━━━━━━━━━━━━━",
-              "🔗 https://team-ticketing.vercel.app/dashboard",
+              `🔗 ${appLink()}`,
             ].join("\n");
             await sendWANotif({ type: "reminder_wa", target: supUser.phone_number, message: waMsg });
           }
@@ -1183,7 +1184,7 @@ function TicketingSystemInner() {
             `📅 *Tanggal :* ${tk.date || "-"}`,
             "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
             "Mohon segera ditangani. Semangat! 💪",
-            "🔗 https://team-ticketing.vercel.app/dashboard",
+            `🔗 ${appLink()}`,
           ].join("\n");
           await sendWANotif({ type: "reminder_wa", target: handlerUser.phone_number, message: waMsg });
         }
@@ -1206,7 +1207,7 @@ function TicketingSystemInner() {
               `👷 *Handler  :* ${asg}`,
               "━━━━━━━━━━━━━━━━━━",
               `📋 *CC ke   :* ${ccTargets.map(t => t.name + (t.relation === "ivp_handler" ? " (IVP)" : "")).join(", ")}`,
-              "🔗 https://team-ticketing.vercel.app/dashboard",
+              `🔗 ${appLink()}`,
             ].join("\n");
             await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: "reminder_wa", target: t.phone, message: ccMsg })));
           }
@@ -1255,7 +1256,7 @@ function TicketingSystemInner() {
               `⚠️ *Issue   :* ${supAssignTicket.issue_case}`,
               "━━━━━━━━━━━━━━━━━━",
               "Mohon segera ditangani. Semangat! 💪",
-              "🔗 https://team-ticketing.vercel.app/dashboard",
+              `🔗 ${appLink()}`,
             ].join("\n");
             await sendWANotif({ type: "reminder_wa", target: handlerUser.phone_number, message: waMsg });
           }
@@ -1367,7 +1368,7 @@ function TicketingSystemInner() {
               jenisItem: 'Ticket',
               perubahan,
               reroute: adaReroute ? { dari: labelTujuanLama, ke: penerimaBaru } : null,
-              tautan: 'https://team-ticketing.vercel.app/ticketing',
+              tautan: appLink('/ticketing'),
             }) });
           }
         } catch { /* WA gagal tidak boleh membatalkan perubahan yang sudah tersimpan */ }
@@ -1434,7 +1435,7 @@ function TicketingSystemInner() {
                 `📝 *Alasan  :* ${rejectReason.trim()}`,
                 '━━━━━━━━━━━━━━━━━━',
                 'Silakan perbaiki datanya lalu ajukan ulang bila masih diperlukan.',
-                '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+                `🔗 ${appLink()}`,
               ].join('\n'),
             });
           }
@@ -1490,7 +1491,7 @@ function TicketingSystemInner() {
             `⚠️ *Issue   :* ${reopenTargetTicket.issue_case}`,
             "\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501",
             "Mohon segera ditangani. Semangat! 💪",
-            "🔗 https://team-ticketing.vercel.app/dashboard",
+            `🔗 ${appLink()}`,
           ].join("\n");
           await sendWANotif({ type: "reminder_wa", target: reopenHandler.phone_number, message: waMsg });
         }
@@ -1609,12 +1610,12 @@ function TicketingSystemInner() {
              `Halo *${u.full_name}*, ticket ini sudah kamu tutup sebagai *Solved*.`,
              ringkas, garis,
              'Terima kasih atas kerja kerasnya! 🙌',
-             '🔗 https://work-management-ptsivp.vercel.app/dashboard'].join('\n')
+             `🔗 ${appLink()}`].join('\n')
           : ['✅ *Ticket Selesai*', garis,
              `Halo *${u.full_name}*, ticket berikut sudah diselesaikan oleh *${penutup}*:`,
              ringkas, garis,
              'Silakan dicek bila masih ada yang perlu ditindaklanjuti.',
-             '🔗 https://work-management-ptsivp.vercel.app/dashboard'].join('\n');
+             `🔗 ${appLink()}`].join('\n');
 
         //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus (lihat
         //  lib/wa.ts) - jadi tidak perlu dipanggil dua kali di sini.
@@ -2464,7 +2465,7 @@ function TicketingSystemInner() {
           `✅ *Diterima:* ${currentUser?.full_name || 'Team Services'}`,
           '━━━━━━━━━━━━━━━━━━',
           'Penanganan berpindah ke Team Services dan akan segera diproses.',
-          '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+          `🔗 ${appLink()}`,
         ].join('\n');
         for (const u of penerima) {
           if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesanTerima });
@@ -2563,7 +2564,7 @@ function TicketingSystemInner() {
               `↩️ *Oleh    :* ${currentUser?.full_name || 'Team Services'}`,
               '━━━━━━━━━━━━━━━━━━',
               'Team Services tidak dapat menanganinya — penanganan kembali ke PTS.',
-              '🔗 https://work-management-ptsivp.vercel.app/dashboard',
+              `🔗 ${appLink()}`,
             ].join('\n');
             for (const u of penerima.values()) {
               //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.

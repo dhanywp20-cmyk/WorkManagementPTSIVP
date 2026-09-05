@@ -14,6 +14,7 @@ import { logAudit } from '@/lib/audit';
 import { sendWANotif } from '@/lib/wa';
 import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { hasFullAccess } from '@/lib/constants';
+import { appLink } from '@/lib/app-url';
 
 function Spinner() {
   return (
@@ -606,7 +607,7 @@ export default function TechNotePage() {
               approvalForm.action === 'approved'
                 ? 'Terima kasih sudah berbagi — catatanmu kini bisa dipakai tim. 🙌'
                 : 'Silakan ditindaklanjuti lalu ajukan kembali.',
-              '🔗 https://work-management-ptsivp.vercel.app/tech-note',
+              `🔗 ${appLink('/tech-note')}`,
             ].join('\n'),
           });
         }

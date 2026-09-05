@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendWANotif } from '@/lib/wa';
+import { appLink } from '@/lib/app-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,7 +84,7 @@ async function runEscalation() {
       `⏱️ *Idle    :* ${hoursStr}`,
       '━━━━━━━━━━━━━━━━━━',
       'Mohon segera ditindaklanjuti.',
-      '🔗 https://team-ticketing.vercel.app/dashboard',
+      `🔗 ${appLink()}`,
     ].join('\n');
 
     const targets: string[] = [];
