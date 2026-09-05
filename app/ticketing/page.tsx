@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
-import { ListEmptyState, AuditTrailPanel, ModalPortal, AdminEditFields, FlowSteps } from '@/components/shared';
+import { ListEmptyState, ModalPortal } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
@@ -42,6 +42,9 @@ import {
 import {
   BulkDeleteConfirmModal, ServicesApprovalModal, ReminderScheduleModal, SupervisorAssignModal,
 } from "./_components/AssignApprovalModals";
+import { AccountSettingsModal } from "./_components/AccountSettingsModal";
+import { ActivitySummaryModal } from "./_components/ActivitySummaryModal";
+import { AdminEditModal } from "./_components/AdminEditModal";
 import { Ico } from "./_components/Ico";
 import { appLink } from "@/lib/app-url";
 import { cetakTicket } from "./_components/cetak-ticket";
@@ -3843,103 +3846,33 @@ function TicketingSystemInner() {
 
         {/* ── ACCOUNT SETTINGS MODAL (Redesigned) ── */}
         {showAccountSettings && canAccessAccountSettings && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-5xl w-full max-h-full overflow-y-auto p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(75,85,99,0.3)" }}>
-              <div className="flex justify-between items-center mb-6 sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-6 px-6 py-3 border-b border-gray-100"><h2 className="text-2xl font-bold text-gray-800">⚙️ Account Management</h2><button aria-label="Tutup" onClick={() => setShowAccountSettings(false)} className="text-gray-500 hover:text-gray-700 text-xl font-bold">✕</button></div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="rounded-xl p-5" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.08)" }}><h3 className="font-bold mb-4 text-blue-900">➕ Create New Account</h3><div className="space-y-3"><input type="text" placeholder="Username" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input aria-label="Password" type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input aria-label="Full Name" type="text" placeholder="Full Name" value={newUser.full_name} onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="admin">Administrator</option><option value="team">Team</option><option value="guest">Guest</option></select>{newUser.role === "team" && (<select value={newUser.team_type} onChange={(e) => setNewUser({ ...newUser, team_type: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="Team PTS IVP">Team PTS IVP</option><option value="Team Services">Team Services</option></select>)}<button onClick={createUser} className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-3 rounded-xl hover:from-blue-700 hover:to-blue-900 font-bold transition-all">➕ Create Account</button></div></div>
-                <div className="rounded-xl p-5" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.08)" }}><h3 className="font-bold mb-4 text-orange-900">🔒 Change Password</h3><div className="space-y-3"><select value={selectedUserForPassword} onChange={(e) => { setSelectedUserForPassword(e.target.value); setChangePassword({ current: "", new: "", confirm: "" }); }} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="">Select User</option>{users.map((u) => (<option key={u.id} value={u.id}>{u.full_name} ({u.username})</option>))}</select>{selectedUserForPassword && (<><input type="password" placeholder="Old Password" value={changePassword.current} onChange={(e) => setChangePassword({ ...changePassword, current: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input aria-label="New Password" type="password" placeholder="New Password" value={changePassword.new} onChange={(e) => setChangePassword({ ...changePassword, new: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input aria-label="Confirm Password" type="password" placeholder="Confirm Password" value={changePassword.confirm} onChange={(e) => setChangePassword({ ...changePassword, confirm: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><button onClick={updatePassword} className="w-full bg-gradient-to-r from-orange-600 to-orange-800 text-white py-3 rounded-xl hover:from-orange-700 hover:to-orange-900 font-bold transition-all">🔒 Change Password</button></>)}</div></div>
-              </div>
-              <div className="rounded-xl p-5" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.08)" }}><h3 className="font-bold mb-4 text-gray-800">👥 User List</h3><div className="max-h-[400px] overflow-y-auto"><div className="space-y-2">{users.map((u) => (<div key={u.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex justify-between items-center"><div><p className="font-bold text-sm">{u.full_name}</p><p className="text-xs text-gray-600">{u.username}</p></div><div className="flex gap-2"><span className={`text-xs px-2 py-1 rounded ${u.role === "admin" ? "bg-red-100 text-red-800" : u.role === "team" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}>{u.role === "admin" ? "Admin" : u.role === "team" ? "Team" : "Guest"}</span>{u.team_type && <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-800">{u.team_type}</span>}</div></div>))}</div></div></div>
-            </div>
-          </div>
-        </ModalPortal>
+          <AccountSettingsModal
+            newUser={newUser}
+            setNewUser={setNewUser}
+            createUser={createUser}
+            selectedUserForPassword={selectedUserForPassword}
+            setSelectedUserForPassword={setSelectedUserForPassword}
+            changePassword={changePassword}
+            setChangePassword={setChangePassword}
+            updatePassword={updatePassword}
+            users={users}
+            onClose={() => setShowAccountSettings(false)}
+          />
         )}
 
-        {/* ── GUEST MAPPING MODAL (Redesigned) ── */}
-
-        {/* ── NEW TICKET MODAL  ── */}
-        {/* ── ADMIN: EDIT DETAIL & RE-ROUTE ── */}
-        {/* Z.overlayTop — dibuka DARI DALAM popup detail (Z.overlay). */}
         {adminEditTicket && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
-            onClick={e => { if (e.target === e.currentTarget && !adminEditSaving) setAdminEditTicket(null); }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-full flex flex-col overflow-hidden"
-              style={{ animation: 'scale-in 0.25s ease-out' }}>
-              <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
-                <div className="min-w-0">
-                  <h3 className="text-lg font-bold text-white">🛠️ Edit Detail &amp; Re-route</h3>
-                  <p className="text-indigo-100/90 text-xs mt-0.5 truncate">{adminEditTicket.project_name}</p>
-                </div>
-                <button aria-label="Tutup" onClick={() => setAdminEditTicket(null)} disabled={adminEditSaving}
-                  className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg disabled:opacity-40">✕</button>
-              </div>
-
-              <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
-                {/* ── Re-route ── */}
-                <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)' }}>
-                  <p className="text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-2">🔀 Alihkan Pekerjaan</p>
-                  {bolehReroute(adminEditTicket) ? (
-                    <>
-                      <select aria-label="— Biarkan seperti sekarang —" value={adminRerouteTo} onChange={e => setAdminRerouteTo(e.target.value)}
-                        className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-amber-200">
-                        <option value="">— Biarkan seperti sekarang —</option>
-                        <option value="SELF">🙋 Saya kerjakan sendiri</option>
-                        {supervisorMembers.length > 0 && (
-                          <optgroup label="🎯 Route ke Supervisor">
-                            {supervisorMembers.map(m => <option key={`ar-sup-${m.id}`} value={`SUP::${m.id}::${m.name}`}>{m.name} (Supervisor)</option>)}
-                          </optgroup>
-                        )}
-                        {teamPTSMembers.length > 0 && (
-                          <optgroup label="👥 Assign langsung ke Tim">
-                            {teamPTSMembers.map(m => <option key={`ar-tm-${m.id}`} value={m.name}>{m.name}</option>)}
-                          </optgroup>
-                        )}
-                      </select>
-                      <p className="text-[11px] text-amber-700 mt-1.5">
-                        Sekarang ditangani: <strong>{adminEditTicket.assign_name || (adminEditTicket.routing_status === 'supervisor_assign' ? 'menunggu assign Supervisor' : '—')}</strong>.
-                        Yang dipilih akan langsung dikabari lewat WA.
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-xs text-amber-800">
-                      Pengalihan tidak tersedia — status ticket sudah <strong>{adminEditTicket.status}</strong>,
-                      artinya pengerjaannya sudah berjalan. Detail di bawah tetap bisa dibetulkan.
-                    </p>
-                  )}
-                </div>
-
-                {/* ── Edit detail ── */}
-                <div>
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">✏️ Detail Ticket</p>
-                  <AdminEditFields fields={TICKET_ADMIN_FIELDS} value={adminEditForm} disabled={adminEditSaving}
-                    onChange={(k, v) => setAdminEditForm(prev => ({ ...prev, [k]: v }))} />
-                </div>
-
-                <p className="text-[11px] text-slate-400">
-                  Setiap perubahan tercatat di Audit Trail lengkap dengan nilai sebelum dan sesudahnya,
-                  dan diberitahukan ke yang menangani lewat WA.
-                </p>
-              </div>
-
-              <div className="px-6 py-4 flex gap-3 flex-shrink-0 border-t border-slate-100">
-                <button onClick={() => setAdminEditTicket(null)} disabled={adminEditSaving}
-                  className="flex-1 py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40">
-                  Batal
-                </button>
-                <button onClick={simpanAdminEdit} disabled={adminEditSaving}
-                  className="flex-[2] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                  style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
-                  {adminEditSaving
-                    ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
-                    : <>💾 Simpan Perubahan</>}
-                </button>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+          <AdminEditModal
+            adminEditTicket={adminEditTicket}
+            adminRerouteTo={adminRerouteTo}
+            setAdminRerouteTo={setAdminRerouteTo}
+            adminEditSaving={adminEditSaving}
+            supervisorMembers={supervisorMembers}
+            teamPTSMembers={teamPTSMembers}
+            adminEditForm={adminEditForm}
+            setAdminEditForm={setAdminEditForm}
+            simpanAdminEdit={simpanAdminEdit}
+            onClose={() => setAdminEditTicket(null)}
+          />
         )}
 
         {supAssignTicket && (
@@ -4011,117 +3944,12 @@ function TicketingSystemInner() {
 
         {/* ── ACTIVITY SUMMARY MODAL (Redesigned) ── */}
         {showActivitySummary && summaryTicket && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-2">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full h-[96vh] flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(59,130,246,0.5)" }}>
-              <div className="p-5 border-b flex-shrink-0" style={{ background: "linear-gradient(135deg,#2563eb,#1d4ed8)", borderColor: "rgba(0,0,0,0.1)" }}>
-                <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-2xl">🔄</span><div><h3 className="text-lg font-bold text-white">Activity Summary</h3><p className="text-sm text-blue-100 font-medium">{summaryTicket.project_name}</p><p className="text-xs text-blue-200">{summaryTicket.issue_case}</p></div></div><button aria-label="Tutup" onClick={() => { setShowActivitySummary(false); setSummaryTicket(null); }} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all text-lg">✕</button></div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-5">
-                <div className="mb-4">
-                  {/* Baris pembuatan diturunkan dari ticket-nya sendiri: logAudit
-                      baru mencatat 'create' sejak perbaikan terakhir, jadi tanpa
-                      ini seluruh ticket LAMA tampak tidak punya pangkal — padahal
-                      created_by & created_at-nya tersimpan sejak awal. */}
-                  {(() => {
-                    const pembuat = users.find(u => u.username === summaryTicket.created_by);
-                    const namaPembuat = pembuat?.full_name || summaryTicket.created_by || null;
-                    const atasNama = summaryTicket.sales_name || "";
-                    return (
-                      <AuditTrailPanel targetId={summaryTicket.id} modul="ticket"
-                        awal={{
-                          oleh: namaPembuat,
-                          waktu: summaryTicket.created_at ?? null,
-                          keterangan: `Ticket dibuat · ${summaryTicket.issue_case}`
-                            + (atasNama && namaPembuat && atasNama !== namaPembuat ? ` · atas nama Sales ${atasNama}` : ''),
-                        }} />
-                    );
-                  })()}
-                </div>
-
-                {/* Alur tiket - diagram yang sama dengan Request Schedule dan
-                    Request Design Project. Ticketing satu-satunya yang belum
-                    memakainya, jadi pembacanya harus menyimpulkan sendiri sudah
-                    sampai mana sebuah tiket, dari daftar riwayat.
-
-                    Tahap "Ke Services" hanya disisipkan bila tiketnya memang
-                    pernah dilimpahkan. Dasarnya ringkasPenanganan(), helper yang
-                    sama yang dipakai layar View Ticket dan lembar cetak - supaya
-                    ketiganya tidak pernah menjawab berbeda untuk tiket yang sama. */}
-                <div className="mb-5">
-                  {(() => {
-                    const t = summaryTicket;
-                    const ringkas = ringkasPenanganan(t);
-                    const pembuat = users.find(u => u.username === t.created_by);
-                    const sudahAssign = !!(t.assign_name && t.assign_name.trim() !== "");
-                    const menungguSupervisor = t.routing_status === "supervisor_assign";
-                    const selesai = t.status === "Solved" || t.status === "Completed";
-                    const batal   = t.status === "Rejected" || t.status === "Cancelled";
-
-                    const tahap = [
-                      { label: "Diajukan",   pelaku: t.sales_name || pembuat?.full_name || t.created_by || "Sales" },
-                      { label: "Di-assign",  pelaku: menungguSupervisor ? "Supervisor" : "Admin" },
-                      { label: "Dikerjakan", pelaku: ringkas.handlerPTS || t.assign_name || "Team PTS" },
-                      ...(ringkas.keServices
-                        ? [{ label: "Ke Services", pelaku: t.services_status || "Team Services" }]
-                        : []),
-                      { label: "Selesai",    pelaku: ringkas.keServices ? "Services" : "Team PTS" },
-                    ];
-
-                    //  0 diajukan · 1 menunggu assign · 2 dikerjakan · ... · terakhir selesai
-                    //  tahap.length berarti seluruh alur tuntas (indeks di luar daftar)
-                    const aktif = selesai ? tahap.length : sudahAssign ? 2 : 1;
-
-                    return <FlowSteps judul="Alur Tiket" aktif={aktif} dibatalkan={batal} steps={tahap} />;
-                  })()}
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-5 p-3 rounded-xl text-xs" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)" }}>
-                  <span className="flex items-center gap-1"><span className="text-gray-500">👤 Handler:</span><span className="font-bold">{summaryTicket.assign_name || "-"}</span></span><span className="text-gray-300">|</span>
-                  <span className="flex items-center gap-1"><span className="text-gray-500">📅 Dibuat:</span><span className="font-bold">{summaryTicket.created_at ? formatDateTime(summaryTicket.created_at) : "-"}</span></span><span className="text-gray-300">|</span>
-                  <span className={`px-2 py-0.5 rounded-full font-bold border ${statusColors[summaryTicket.status]}`}>{summaryTicket.status}</span>
-                  {summaryTicket.services_status && (<><span className="text-gray-300">|</span><span className={`px-2 py-0.5 rounded-full font-bold border ${statusColors[summaryTicket.services_status]}`}>Svc: {summaryTicket.services_status}</span></>)}
-                  {/* Warranty badge */}
-                  {(() => {
-                    const w = getWarrantyInfo(summaryTicket.project_name);
-                    if (!w) return null;
-                    return (<>
-                      <span className="text-gray-300">|</span>
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px]"
-                        style={w.isIn
-                          ? { background: "rgba(14,165,233,0.15)", color: "#0369a1", border: "1px solid rgba(14,165,233,0.3)" }
-                          : { background: "rgba(239,68,68,0.12)", color: "#dc2626", border: "1px solid rgba(239,68,68,0.3)" }}>
-                        {w.isIn ? "🛡️" : "⚠️"} {w.isIn ? "In Warranty" : "Out of Warranty"}
-                        <span className="opacity-70 ml-0.5">· {w.wy}Y · {w.isIn ? `sisa ${w.diffDays}h` : `lewat ${Math.abs(w.diffDays)}h`}</span>
-                      </span>
-                    </>);
-                  })()}
-                </div>
-                {!summaryTicket.activity_logs || summaryTicket.activity_logs.length === 0 ? (<div className="text-center py-10 text-gray-400"><div className="text-5xl mb-3">📭</div><p className="font-semibold">Belum ada activity yang tercatat</p></div>) : (
-                  <div className="relative">
-                    <div className="flex items-center gap-3 mb-1"><div className="flex flex-col items-center"><div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-base shadow-md">🎫</div></div><div className="flex-1 rounded-xl px-4 py-2" style={{ background: "rgba(59,130,246,0.1)", border: "2px solid rgba(59,130,246,0.3)" }}><p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Ticket Dibuat</p><p className="text-sm font-semibold text-gray-800">{summaryTicket.project_name}</p><p className="text-xs text-gray-500">{summaryTicket.created_at ? formatDateTime(summaryTicket.created_at) : "-"}</p></div></div>
-                    {[...summaryTicket.activity_logs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).map((log, idx, arr) => {
-                      const isLast = idx === arr.length - 1;
-                      const isSolved = log.new_status === "Solved";
-                      const isServices = log.assigned_to_services;
-                      const nodeColor = isSolved ? "bg-green-500" : isServices ? "bg-red-500" : log.new_status === "In Progress" ? "bg-blue-500" : "bg-yellow-500";
-                      const cardBorder = isSolved ? "border-green-300 bg-green-50" : isServices ? "border-red-300 bg-red-50" : log.new_status === "In Progress" ? "border-blue-300 bg-blue-50" : "border-yellow-300 bg-yellow-50";
-                      return (
-                        <div key={log.id}>
-                          <div className="flex items-stretch gap-3"><div className="flex flex-col items-center"><div className="w-0.5 bg-gray-300 flex-1 mx-auto" style={{ minHeight: "16px" }}></div></div><div className="flex-1" /></div>
-                          <div className="flex items-start gap-3"><div className="flex flex-col items-center flex-shrink-0"><div className={`w-9 h-9 rounded-full ${nodeColor} flex items-center justify-center text-white text-xs font-bold shadow-md`}>{isSolved ? "✅" : isServices ? "🔄" : idx + 1}</div>{!isLast && <div className="w-0.5 bg-gray-300 flex-1" style={{ minHeight: "12px" }}></div>}</div><div className={`flex-1 border-2 rounded-xl px-4 py-3 mb-1 ${cardBorder}`}><div className="flex justify-between items-start mb-1"><div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-bold text-gray-800">{log.handler_name}</span><span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold">{log.team_type}</span></div><span className={`text-xs px-2 py-0.5 rounded-full font-bold border flex-shrink-0 ml-2 ${statusColors[log.new_status] || "bg-gray-100 text-gray-700 border-gray-300"}`}>{log.new_status}</span></div><p className="text-xs text-gray-500 mb-2">{formatDateTime(log.created_at)}</p>{log.action_taken && (<div className="rounded-lg px-3 py-1.5 mb-2" style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)" }}><p className="text-xs font-bold text-blue-700">🔧 Action:</p><p className="text-xs text-gray-800">{log.action_taken}</p></div>)}<div className="rounded-lg px-3 py-1.5" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)" }}><p className="text-xs font-bold text-gray-600">📝 Notes:</p><p className="text-xs text-gray-800 whitespace-pre-line">{log.notes}</p></div>{isServices && <div className="mt-2 flex items-center gap-1 text-xs font-bold text-red-700 rounded-lg px-2 py-1" style={{ background: "rgba(220,38,38,0.1)" }}><span>🔄</span> Diteruskan ke Team Services</div>}{log.photo_url && <div className="mt-2"><img src={log.photo_url} alt="bukti" loading="lazy" decoding="async" className="max-h-28 rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(log.photo_url!, "_blank")} /></div>}{log.file_url && <a href={log.file_url} download={log.file_name} className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-700 rounded-lg px-2 py-1 hover:bg-blue-200 transition-colors" style={{ background: "rgba(59,130,246,0.1)" }}>📎 {log.file_name || "Download Report"}</a>}</div></div>
-                        </div>
-                      );
-                    })}
-                    <div className="flex items-stretch gap-3"><div className="flex flex-col items-center"><div className="w-0.5 bg-gray-300 mx-auto" style={{ minHeight: "16px" }}></div></div><div className="flex-1" /></div>
-                    <div className="flex items-center gap-3"><div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-base shadow-md flex-shrink-0 ${summaryTicket.status === "Solved" ? "bg-green-600" : "bg-gray-400"}`}>{summaryTicket.status === "Solved" ? "🏁" : "⏳"}</div><div className={`flex-1 rounded-xl px-4 py-2 border-2 ${summaryTicket.status === "Solved" ? "bg-green-50 border-green-300" : "bg-gray-50 border-gray-300"}`}><p className={`text-xs font-bold uppercase tracking-wide ${summaryTicket.status === "Solved" ? "text-green-700" : "text-gray-500"}`}>{summaryTicket.status === "Solved" ? "✅ Ticket Selesai" : `⏳ Status: ${summaryTicket.status}`}</p><p className="text-xs text-gray-500 mt-0.5">{summaryTicket.activity_logs?.length || 0} aktivitas tercatat</p></div></div>
-                  </div>
-                )}
-              </div>
-              <div className="p-4 border-t flex-shrink-0" style={{ background: "rgba(0,0,0,0.03)", borderColor: "rgba(0,0,0,0.08)" }}><button onClick={() => { setShowActivitySummary(false); setSummaryTicket(null); }} className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-3 rounded-xl font-bold hover:from-blue-700 hover:to-blue-900 transition-all">✕ Tutup</button></div>
-            </div>
-          </div>
-        </ModalPortal>
+          <ActivitySummaryModal
+            summaryTicket={summaryTicket}
+            users={users}
+            getWarrantyInfo={getWarrantyInfo}
+            onClose={() => { setShowActivitySummary(false); setSummaryTicket(null); }}
+          />
         )}
         {showRejectModal && rejectTargetTicket && (
           <RejectModal
