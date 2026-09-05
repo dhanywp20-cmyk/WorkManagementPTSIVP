@@ -588,11 +588,14 @@ export function IntegrasiInline() {
           ket="Lonceng & banner di portal. Tidak perlu disiapkan." />
         <Ubin warna="#16a34a" nama="WhatsApp"
           nilai={totalTim ? `${timWA} dari ${totalTim}` : '—'}
-          lencana={koneksi.whatsapp.keadaan === 'terhubung' ? `${spWA.label} tersambung`
+          lencana={!p.aktif.whatsapp ? 'Kanal masih mati'
+                   : koneksi.whatsapp.keadaan === 'terhubung' ? `${spWA.label} tersambung`
                    : koneksi.whatsapp.keadaan === 'memuat' ? 'Mengecek…' : 'Belum tersambung'}
-          jenis={koneksi.whatsapp.keadaan === 'terhubung' ? 'ok' : koneksi.whatsapp.keadaan === 'memuat' ? 'diam' : 'warn'}
-          ket={tanpaWA.length ? `Belum punya nomor: ${tanpaWA.slice(0, 2).join(', ')}${tanpaWA.length > 2 ? ` +${tanpaWA.length - 2}` : ''}.`
-                              : 'Semua anggota punya nomor.'} />
+          jenis={!p.aktif.whatsapp ? 'warn'
+                 : koneksi.whatsapp.keadaan === 'terhubung' ? 'ok' : koneksi.whatsapp.keadaan === 'memuat' ? 'diam' : 'warn'}
+          ket={!p.aktif.whatsapp ? 'Saklar kanalnya belum dinyalakan.'
+               : tanpaWA.length ? `Belum punya nomor: ${tanpaWA.slice(0, 2).join(', ')}${tanpaWA.length > 2 ? ` +${tanpaWA.length - 2}` : ''}.`
+                                : 'Semua anggota punya nomor.'} />
         <Ubin warna="#0088cc" nama="Telegram"
           nilai={totalTim ? `${timTG} dari ${totalTim}` : '—'}
           lencana={!p.aktif.telegram ? 'Kanal masih mati'
@@ -664,6 +667,13 @@ export function IntegrasiInline() {
                       );
                     })}
                   </div>
+                  {!p.aktif.whatsapp && timWA > 0 && (
+                    <div className="mt-2.5 rounded-lg px-3 py-2.5 text-[11.5px] leading-relaxed"
+                      style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
+                      <b>WhatsApp masih mati.</b> {timWA} anggota sudah punya nomor terdaftar, tapi selama saklar ini
+                      mati tidak ada pesan WhatsApp yang benar-benar terkirim.
+                    </div>
+                  )}
                   {!p.aktif.telegram && timTG > 0 && (
                     <div className="mt-2.5 rounded-lg px-3 py-2.5 text-[11.5px] leading-relaxed"
                       style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
@@ -849,6 +859,13 @@ export function IntegrasiInline() {
                 <p className="text-[10px] text-slate-400 mt-2 leading-relaxed">
                   Tekan <b>Simpan</b> dulu setelah berpindah penyedia — tes memakai penyedia yang tersimpan.
                 </p>
+                {!p.aktif.whatsapp && (
+                  <div className="mt-2 rounded-lg px-2.5 py-2 text-[10.5px] font-semibold leading-relaxed"
+                    style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
+                    ⚠️ Kanal WhatsApp masih mati di <b>Kanal &amp; Event</b>. Tes di sini tetap jalan, tapi notifikasi
+                    asli belum akan terkirim.
+                  </div>
+                )}
               </div>
             </div>
           )}
