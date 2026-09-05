@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/app/dashboard/_components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
@@ -278,6 +278,7 @@ export default function TechNotePage() {
   const [folders,    setFolders]    = useState<TechNoteFolder[]>([]);
   const [technotes,  setTechnotes]  = useState<TechNote[]>([]);
   const [loading,    setLoading]    = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [tab,         setTab]         = useState<'all'|'pending'|'mine'>('all');
   const [search,      setSearch]      = useState('');
@@ -348,6 +349,7 @@ export default function TechNotePage() {
   const fetchNotes = useCallback(async () => {
     if (!currentUser) return;
     setLoading(true);
+    setFetchError(null);
 
     // Aturan visibilitas Tech Note
     // Admin/supervisor: semua tech note (untuk bisa melakukan approval)
@@ -357,12 +359,16 @@ export default function TechNotePage() {
 
     if (canManage) {
       // Admin: ambil semua tech note tahun ini
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('tech_notes')
         .select('*')
         .gte('submitted_at', `${year}-01-01`)
         .lte('submitted_at', `${year}-12-31T23:59:59`)
         .order('submitted_at', { ascending: false });
+      // Tanpa ini, gagal fetch (RLS, jaringan putus, dst) tampil identik
+      // dengan "memang belum ada tech note" - tidak ada tanda apa pun ke user
+      // bahwa datanya sebenarnya gagal dimuat, bukan kosong.
+      if (error) setFetchError(error.message);
       setTechnotes((data ?? []) as TechNote[]);
     } else {
       // Team user: ambil (approved semua orang) UNION (milik sendiri apapun statusnya)
@@ -381,6 +387,9 @@ export default function TechNotePage() {
           .gte('submitted_at', `${year}-01-01`)
           .lte('submitted_at', `${year}-12-31T23:59:59`),
       ]);
+      if (approvedRes.error || mineRes.error) {
+        setFetchError((approvedRes.error ?? mineRes.error)!.message);
+      }
 
       const approved = (approvedRes.data ?? []) as TechNote[];
       const mine     = (mineRes.data ?? []) as TechNote[];
@@ -707,7 +716,9 @@ export default function TechNotePage() {
             </div>
 
             {/* Cards */}
-            {loading ? <Spinner /> : filtered.length === 0 ? (
+            {loading ? <Spinner /> : fetchError ? (
+              <ErrorState message={`Gagal memuat Tech Note: ${fetchError}`} onRetry={fetchNotes} />
+            ) : filtered.length === 0 ? (
               <div className="rounded-2xl shadow-sm" style={{ background: 'rgba(255,255,255,0.90)' }}>
                 <ListEmptyState
                   adaFilterAktif={search.trim() !== '' || filterStatus !== 'all' || tab !== 'all' || selectedFolder !== null}
