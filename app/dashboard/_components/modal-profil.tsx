@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { setSession } from '@/lib/auth';
 
@@ -8,6 +8,7 @@ import { ModalPortal, formatUsername } from '@/components/shared';
 
 import { ambilProfil, Kartu, Baris, Kelompok } from './modal-bersama';
 import { hasFullAccess } from '@/lib/constants';
+import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 
 // UserProfileModal
 
@@ -32,6 +33,16 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
   const [telegramBot, setTelegramBot] = useState<{ status: 'memuat' | 'siap' | 'galat'; username?: string; alasan?: string }>({ status: 'memuat' });
   const [menghubungkan, setMenghubungkan] = useState(false);
   const [pesanTelegram, setPesanTelegram] = useState<{ tipe: 'ok' | 'gagal'; teks: string } | null>(null);
+  /**
+   * Kanal Telegram bisa dimatikan admin (Admin Panel → Integrations). Kalau
+   * mati, TIDAK ADA gunanya menawarkan "hubungkan Telegram" ke siapa pun -
+   * pesan memang tidak akan pernah terkirim ke kanal itu. null = belum
+   * diketahui (jangan render dulu, supaya tidak sempat kelihatan lalu hilang).
+   */
+  const [telegramAktif, setTelegramAktif] = useState<boolean | null>(null);
+  /** Auto-cek koneksi Telegram setelah bot dibuka - lihat mulaiAutoHubung(). */
+  const [autoHubung, setAutoHubung] = useState<'diam' | 'menunggu' | 'gagal'>('diam');
+  const autoHubungRef = useRef<{ interval?: ReturnType<typeof setInterval>; timeout?: ReturnType<typeof setTimeout> }>({});
 
   const notify = (type: 'success' | 'error', msg: string) => {
     setNotification({ type, msg });
@@ -103,38 +114,70 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
     })();
   }, []);
 
-  /**
-   * Membuka bot Telegram dengan payload = id akun sendiri, lalu (setelah
-   * orangnya menekan Start di sana) memverifikasi ikatannya lewat aksi
-   * 'hubungkan'. Lihat catatan panjang di app/api/notifikasi/telegram/route.ts
-   * tentang kenapa payload ini aman dipakai siapa saja untuk dirinya sendiri.
-   */
-  const bukaBotTelegram = () => {
-    if (telegramBot.status !== 'siap' || !telegramBot.username) return;
-    window.open(`https://t.me/${telegramBot.username}?start=${currentUser.id}`, '_blank', 'noopener,noreferrer');
-  };
+  // Kanal Telegram (Admin Panel → Integrations → Kanal & Event) - kalau admin
+  // mematikannya, seluruh blok "Notifikasi Telegram" disembunyikan untuk
+  // SEMUA akun (lihat pemakaian telegramAktif di JSX).
+  useEffect(() => {
+    (async () => {
+      try {
+        const p = await bacaPengaturan();
+        setTelegramAktif(p.aktif.telegram);
+      } catch { setTelegramAktif(false); }
+    })();
+  }, []);
 
-  const cekHubunganTelegram = async () => {
-    setMenghubungkan(true);
-    setPesanTelegram(null);
+  const hentikanAutoHubung = () => {
+    if (autoHubungRef.current.interval) clearInterval(autoHubungRef.current.interval);
+    if (autoHubungRef.current.timeout) clearTimeout(autoHubungRef.current.timeout);
+    autoHubungRef.current = {};
+  };
+  useEffect(() => hentikanAutoHubung, []);
+
+  const cekHubunganTelegramSekali = async (): Promise<boolean> => {
     try {
       const r = await fetch('/api/notifikasi/telegram', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ aksi: 'hubungkan' }),
       });
-      const j = await r.json() as { ok?: boolean; alasan?: string };
-      if (j?.ok) {
-        setPesanTelegram({ tipe: 'ok', teks: 'Telegram terhubung! Notifikasi akan masuk ke chat itu.' });
-        const { data } = await ambilProfil(currentUser.id);
-        if (data) { setUserData(data); setSession(data); }
-      } else {
-        setPesanTelegram({ tipe: 'gagal', teks: j?.alasan ?? 'Belum terhubung.' });
-      }
-    } catch {
-      setPesanTelegram({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' });
-    }
-    setMenghubungkan(false);
+      const j = await r.json() as { ok?: boolean };
+      return !!j?.ok;
+    } catch { return false; }
+  };
+
+  /**
+   * Membuka bot Telegram dengan payload = id akun sendiri, LALU otomatis
+   * mengecek berkala (tiap 4 detik, sampai 5 menit) apakah orangnya sudah
+   * menekan Start di sana - tidak ada lagi tombol konfirmasi manual. Kalau
+   * sampai 5 menit belum terbaca, berhenti dan statusnya kembali "Belum
+   * Terhubung" (orangnya tinggal tekan tombolnya lagi untuk mencoba ulang).
+   *
+   * Lihat catatan panjang di app/api/notifikasi/telegram/route.ts tentang
+   * kenapa payload start=<id akun sendiri> ini aman dipakai siapa saja.
+   */
+  const mulaiAutoHubung = () => {
+    if (telegramBot.status !== 'siap' || !telegramBot.username) return;
+    window.open(`https://t.me/${telegramBot.username}?start=${currentUser.id}`, '_blank', 'noopener,noreferrer');
+
+    hentikanAutoHubung();
+    setPesanTelegram(null);
+    setAutoHubung('menunggu');
+
+    const cekSekali = async () => {
+      const berhasil = await cekHubunganTelegramSekali();
+      if (!berhasil) return;
+      hentikanAutoHubung();
+      setAutoHubung('diam');
+      setPesanTelegram({ tipe: 'ok', teks: 'Telegram terhubung! Notifikasi akan masuk ke chat itu.' });
+      const { data } = await ambilProfil(currentUser.id);
+      if (data) { setUserData(data); setSession(data); }
+    };
+    cekSekali(); // langsung cek sekali, jangan tunggu interval pertama
+    autoHubungRef.current.interval = setInterval(cekSekali, 4000);
+    autoHubungRef.current.timeout = setTimeout(() => {
+      hentikanAutoHubung();
+      setAutoHubung('gagal');
+    }, 5 * 60 * 1000);
   };
 
   const putuskanTelegram = async () => {
@@ -315,6 +358,80 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
             {/* ══ KIRI ══ */}
             <div className="lg:col-span-2 space-y-4">
 
+              {/*
+                Notifikasi Telegram sengaja diletakkan PALING ATAS, sebelum
+                Informasi Pribadi - supaya langsung terlihat tanpa scroll ke
+                tengah. Orang awam yang belum terhubung jarang scroll mencari
+                sendiri; kartu ini justru satu-satunya yang butuh tindakan
+                dari pemilik akun begitu profil dibuka.
+              */}
+              {telegramAktif && (
+              <Kartu icon="✈️" judul="Notifikasi Telegram">
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Status</span>
+                    {userData.telegram_chat_id ? (
+                      <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold text-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Terhubung
+                      </span>
+                    ) : autoHubung === 'menunggu' ? (
+                      <span className="inline-flex items-center gap-1.5 text-sky-600 font-bold text-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" /> Menunggu konfirmasi…
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-amber-600 font-bold text-sm">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Belum Terhubung
+                      </span>
+                    )}
+                  </div>
+
+                  {userData.telegram_chat_id ? (
+                    <>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        Notifikasi assign & jadwal akan ikut masuk ke Telegram, berdampingan dengan WhatsApp.
+                      </p>
+                      <button onClick={putuskanTelegram} disabled={menghubungkan}
+                        className="w-full py-2 rounded-xl border border-red-200 bg-white text-xs font-bold text-red-600 hover:bg-red-50 transition-all disabled:opacity-40">
+                        {menghubungkan ? 'Memutuskan…' : 'Putuskan Telegram'}
+                      </button>
+                    </>
+                  ) : telegramBot.status === 'galat' ? (
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      Belum bisa dipakai - {telegramBot.alasan}
+                    </p>
+                  ) : (
+                    <>
+                      <ol className="text-[11px] text-slate-500 leading-relaxed space-y-1 list-decimal list-inside">
+                        <li>Tekan <b>Buka Bot &amp; Kirim Start</b> - Telegram terbuka, tekan <b>Start</b> di sana.</li>
+                        <li>Kembali ke sini - koneksi terdeteksi otomatis, tidak perlu menekan apa pun lagi.</li>
+                      </ol>
+                      <button onClick={mulaiAutoHubung} disabled={autoHubung === 'menunggu' || telegramBot.status !== 'siap'}
+                        className="w-full py-2.5 rounded-xl text-white text-sm font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
+                        style={{ background: '#0088cc' }}>
+                        {telegramBot.status === 'memuat' ? 'Memuat…' : autoHubung === 'menunggu' ? 'Menunggu konfirmasi…' : '➤ Buka Bot & Kirim Start'}
+                      </button>
+                      {autoHubung === 'menunggu' && (
+                        <p className="text-[11px] text-sky-600 leading-relaxed">
+                          ⏳ Mengecek otomatis tiap beberapa detik, maks. 5 menit setelah Anda menekan Start di Telegram.
+                        </p>
+                      )}
+                      {autoHubung === 'gagal' && (
+                        <p className="text-[11px] text-red-600 leading-relaxed">
+                          ⚠️ Belum terhubung. Pastikan sudah menekan Start di bot, lalu tekan tombolnya lagi.
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  {pesanTelegram && (
+                    <div className={`rounded-lg px-2.5 py-2 text-[11px] font-semibold ${pesanTelegram.tipe === 'ok' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
+                      {pesanTelegram.tipe === 'ok' ? '✅' : '⚠️'} {pesanTelegram.teks}
+                    </div>
+                  )}
+                </div>
+              </Kartu>
+              )}
+
               <Kartu icon="👤" judul="Informasi Pribadi & Kontak">
                 <div className="divide-y divide-slate-100">
                   <Baris icon="#"  label="Username / NIK"  value={formatUsername(userData.username)} />
@@ -356,61 +473,6 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                   <Kelompok label={`Atasan${userData.sales_division ? ' · ' + userData.sales_division : ''}`} kosong="Belum ada atasan terdaftar" orang={atasanList} warna="#b45309" />
                   <Kelompok label="Sales Internal (IVP)" kosong="Belum ada Sales Internal terpetakan" orang={ivpList} warna="#0369a1" />
                   <Kelompok label="Bawahan" kosong="Belum ada bawahan terdaftar" orang={sortedSubordinates} warna="#4d7c0f" />
-                </div>
-              </Kartu>
-
-              <Kartu icon="✈️" judul="Notifikasi Telegram">
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Status</span>
-                    {userData.telegram_chat_id ? (
-                      <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold text-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Terhubung
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 text-amber-600 font-bold text-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Belum Terhubung
-                      </span>
-                    )}
-                  </div>
-
-                  {userData.telegram_chat_id ? (
-                    <>
-                      <p className="text-[11px] text-slate-400 leading-relaxed">
-                        Notifikasi assign & jadwal akan ikut masuk ke Telegram, berdampingan dengan WhatsApp.
-                      </p>
-                      <button onClick={putuskanTelegram} disabled={menghubungkan}
-                        className="w-full py-2 rounded-xl border border-red-200 bg-white text-xs font-bold text-red-600 hover:bg-red-50 transition-all disabled:opacity-40">
-                        {menghubungkan ? 'Memutuskan…' : 'Putuskan Telegram'}
-                      </button>
-                    </>
-                  ) : telegramBot.status === 'galat' ? (
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      Belum bisa dipakai - {telegramBot.alasan}
-                    </p>
-                  ) : (
-                    <>
-                      <ol className="text-[11px] text-slate-500 leading-relaxed space-y-1 list-decimal list-inside">
-                        <li>Tekan <b>Buka Bot &amp; Kirim Start</b> - Telegram terbuka, tekan <b>Start</b> di sana.</li>
-                        <li>Kembali ke sini, tekan <b>Sudah Saya Tekan Start</b>.</li>
-                      </ol>
-                      <button onClick={bukaBotTelegram} disabled={telegramBot.status !== 'siap'}
-                        className="w-full py-2.5 rounded-xl text-white text-sm font-bold transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-                        style={{ background: '#0088cc' }}>
-                        {telegramBot.status === 'memuat' ? 'Memuat…' : '➤ Buka Bot & Kirim Start'}
-                      </button>
-                      <button onClick={cekHubunganTelegram} disabled={menghubungkan || telegramBot.status !== 'siap'}
-                        className="w-full py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-40">
-                        {menghubungkan ? 'Mengecek…' : 'Sudah Saya Tekan Start'}
-                      </button>
-                    </>
-                  )}
-
-                  {pesanTelegram && (
-                    <div className={`rounded-lg px-2.5 py-2 text-[11px] font-semibold ${pesanTelegram.tipe === 'ok' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-600 border border-red-200'}`}>
-                      {pesanTelegram.tipe === 'ok' ? '✅' : '⚠️'} {pesanTelegram.teks}
-                    </div>
-                  )}
                 </div>
               </Kartu>
 
