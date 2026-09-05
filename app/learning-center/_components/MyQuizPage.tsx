@@ -36,6 +36,14 @@ function terjemahkanGalatUnggah(pesan?: string): string {
   return p;
 }
 
+/**
+ * Soal seperti yang ditarik SAAT MENGERJAKAN quiz - TANPA `correct_answer`.
+ * Kunci jawaban baru boleh diketahui klien SETELAH submit (lihat
+ * perQuestionResult di bawah) - sebelum itu, mengirim correct_answer ke
+ * browser sama saja membocorkan kunci jawaban sebelum soal dijawab.
+ */
+type QuizQuestion = Omit<Question, 'correct_answer' | 'model_answer'>;
+
 function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   session: QuizSession; user: User; attempt: QuizAttempt; onDone: () => void;
   /** Minor (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada CTA langsung "Coba Lagi"
@@ -43,7 +51,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
    *  daftar quiz, baru mulai lagi dari sana. */
   onRetake?: (session: QuizSession) => void;
 }) {
-  const [questions, setQuestions] = useState<Question[]>([]);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [savedAnswers, setSavedAnswers] = useState<Record<string, string>>({});
   /** Pratinjau gambar jawaban per soal - yang ditampilkan, bukan gambar penuhnya. */
@@ -51,6 +59,12 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   const [current, setCurrent] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<{ score: number; correct: number; passed: boolean; pendingReview?: boolean } | null>(null);
+  /**
+   * Kunci jawaban per soal - HANYA terisi setelah submit berhasil (dari
+   * response /api/learning-center/submit-quiz), dipakai layar "Review
+   * Jawaban". Sebelum submit ini selalu kosong.
+   */
+  const [perQuestionResult, setPerQuestionResult] = useState<Record<string, { correct_answer: string; is_correct: boolean }>>({});
   const isEssay = session.session_type === 'essay';
   const [timeLeft, setTimeLeft] = useState<number | null>(session.timer_minutes ? session.timer_minutes * 60 : null);
   const [tabSwitches, setTabSwitches] = useState(0);
@@ -87,8 +101,13 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   useEffect(() => {
     const load = async () => {
       if (!session.question_ids?.length) return;
-      const { data } = await supabase.from('lc_questions').select('*').in('id', session.question_ids);
-      const ordered = session.question_ids.map(id => data?.find((q: any) => q.id === id)).filter(Boolean) as Question[];
+      // TANPA correct_answer/model_answer - lihat catatan QuizQuestion di atas.
+      // Kolom ini yang dulu membocorkan kunci jawaban ke browser sebelum
+      // soal dijawab.
+      const { data } = await supabase.from('lc_questions')
+        .select('id, material_id, materi_name, question, option_a, option_b, option_c, option_d, difficulty, batch_name, created_at, urutan, question_type, answer_format')
+        .in('id', session.question_ids);
+      const ordered = session.question_ids.map(id => data?.find((q: any) => q.id === id)).filter(Boolean) as QuizQuestion[];
       setQuestions(ordered);
     };
     load();
@@ -234,10 +253,12 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
         .eq('attempt_id', attempt.id).eq('question_id', questionId).select('id');
       error = r.error ?? (!r.data || r.data.length === 0 ? { message: 'tersimpan 0 baris' } : null);
     } else {
-      const q = questions.find(q => q.id === questionId);
+      // is_correct SELALU false di sini - klien tidak lagi punya kunci
+      // jawaban untuk dicocokkan (lihat QuizQuestion). Nilai sebenarnya
+      // ditulis server saat submit (/api/learning-center/submit-quiz).
       ({ error } = await supabase.from('lc_answers').insert([{
         attempt_id: attempt.id, user_id: user.id, quiz_session_id: session.id,
-        question_id: questionId, answer, is_correct: q?.correct_answer === answer,
+        question_id: questionId, answer, is_correct: false,
       }]));
       if (!error) setSavedAnswers(p => ({ ...p, [questionId]: answer }));
     }
@@ -295,25 +316,30 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
       return;
     }
 
-    let correct = 0;
-    questions.forEach(q => { if ((answers[q.id] ?? savedAnswers[q.id]) === q.correct_answer) correct++; });
-    const score = questions.length ? (correct / questions.length) * 100 : 0;
-    const passed = score >= session.passing_grade;
-    await Promise.all(questions.map(q => {
-      const ans = answers[q.id] ?? savedAnswers[q.id];
-      if (!ans) return;
-      return supabase.from('lc_answers').update({ is_correct: ans === q.correct_answer })
-        .eq('attempt_id', attempt.id).eq('question_id', q.id);
-    }));
-    const { error } = await supabase.from('lc_quiz_attempts').update({
-      submitted_at: new Date().toISOString(), score, total_correct: correct,
-      total_questions: questions.length, passed, is_submitted: true, time_taken_sec: timeTaken,
-      tab_switches: tabSwitchesRef.current, grading_status: 'auto',
-    }).eq('id', attempt.id);
-    if (error) {
-      setDialog({ type: 'error', title: 'Submit Gagal', message: `Gagal menyimpan hasil quiz (${error.message}). Coba klik Submit sekali lagi.` });
+    // Penilaian ABCD dikerjakan SERVER, bukan di sini - lihat komentar panjang
+    // di app/api/learning-center/submit-quiz/route.ts. Klien tidak lagi
+    // punya kunci jawaban (QuizQuestion tidak membawa correct_answer) untuk
+    // dicocokkan sendiri.
+    let res: Response;
+    try {
+      res = await fetch('/api/learning-center/submit-quiz', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attemptId: attempt.id }),
+      });
+    } catch {
+      setDialog({ type: 'error', title: 'Submit Gagal', message: 'Gagal menghubungi server. Periksa koneksi internet lalu coba lagi.' });
       return;
     }
+    const hasil = await res.json().catch(() => null);
+    if (!res.ok || !hasil) {
+      setDialog({ type: 'error', title: 'Submit Gagal', message: `Gagal menyimpan hasil quiz (${hasil?.error ?? res.statusText}). Coba klik Submit sekali lagi.` });
+      return;
+    }
+    const { score, correct, passed, perQuestion } = hasil as {
+      score: number; correct: number; passed: boolean;
+      perQuestion: Record<string, { correct_answer: string; is_correct: boolean }>;
+    };
+    setPerQuestionResult(perQuestion);
     setResult({ score, correct, passed }); setSubmitted(true);
   };
 
@@ -334,7 +360,10 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           <div className="p-4 sm:p-8 space-y-4 max-w-3xl mx-auto w-full">
             {questions.map((q, idx) => {
               const userAnswer = answers[q.id] ?? savedAnswers[q.id] ?? null;
-              const isCorrect = userAnswer === q.correct_answer;
+              // Kunci jawaban HANYA tersedia di sini (setelah submit, dari
+              // perQuestionResult) - lihat catatan QuizQuestion di atas.
+              const correctAnswer = perQuestionResult[q.id]?.correct_answer;
+              const isCorrect = perQuestionResult[q.id]?.is_correct ?? false;
               const notAnswered = !userAnswer;
               return (
                 <div key={q.id} className={`rounded-2xl border-2 p-5 bg-white ${notAnswered ? 'border-slate-200' : isCorrect ? 'border-emerald-300' : 'border-rose-300'}`}>
@@ -352,7 +381,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                     {(['A','B','C','D'] as const).map(opt => {
                       const optVal = (q as any)[`option_${opt.toLowerCase()}`];
                       const isUserChoice = userAnswer === opt;
-                      const isCorrectOpt = q.correct_answer === opt;
+                      const isCorrectOpt = correctAnswer === opt;
                       let cls = 'bg-slate-50 border-slate-200 text-slate-600';
                       if (isCorrectOpt) cls = 'bg-emerald-50 border-emerald-400 text-emerald-800 font-bold';
                       if (isUserChoice && !isCorrectOpt) cls = 'bg-rose-50 border-rose-400 text-rose-800 font-bold';
