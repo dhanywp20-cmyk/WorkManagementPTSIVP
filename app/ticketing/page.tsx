@@ -10,11 +10,11 @@ import { adminCreateUser } from "@/lib/admin-users";
 import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { penerimaAdminBernomor } from "@/lib/penerima-admin";
 import { logAudit } from "@/lib/audit";
-import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from "@/lib/admin-edit";
+import { bandingkan, ringkasPerubahan, pesanWAPerubahan } from "@/lib/admin-edit";
 import { isAssignablePTSTeam, bolehDitugaskan } from "@/lib/teams";
 import { hasFullAccess } from "@/lib/constants";
 import { idDariNama, kutipNilai, tanpaIdentitas, cobaIdentitas } from "@/lib/identitas";
-import { resolveBrandInternals, BRAND_OPTIONS, type Brand } from "@/lib/brand-routing";
+import { resolveBrandInternals, type Brand } from "@/lib/brand-routing";
 import { compressImage } from "@/lib/image-compress";
 
 import {
@@ -23,6 +23,13 @@ import {
   SERVICES_STATUSES, ServicesStatus,
   User, TeamMember, ActivityLog, Ticket, OverdueSetting,
   SALES_DIVISIONS, formatDateTime, ringkasPenanganan,
+  statusColors, TICKET_ADMIN_FIELDS, adalahPending, bolehReroute,
+  getDeadline as getDeadlineShared,
+  isTicketOverdue as isTicketOverdueShared,
+  getOverdueSetting as getOverdueSettingShared,
+  getCronDisplay as getCronDisplayShared,
+  getWarrantyInfo as getWarrantyInfoShared,
+  bolehUpdateTicket as bolehUpdateTicketShared,
 } from "./_components/shared";
 import {
   StatusDonutCard, SalesDivisionDonutCard, HandlerDonutCard,
@@ -235,24 +242,6 @@ function TicketingSystemInner() {
     confirm: "",
   });
 
-  const statusColors: Record<string, string> = {
-    "Waiting Approval": "bg-orange-50 text-orange-600 border-orange-200",
-    Rejected: "bg-red-100 text-red-700 border-red-300",
-    Pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    Call: "bg-sky-50 text-sky-600 border-sky-200",
-    Onsite: "bg-purple-50 text-purple-600 border-purple-200",
-    "In Progress": "bg-blue-50 text-blue-600 border-blue-200",
-    "Pending Action": "bg-orange-50 text-orange-700 border-orange-200",
-    Solved: "bg-emerald-50 text-emerald-600 border-emerald-200",
-    Overdue: "bg-red-50 text-red-600 border-red-200",
-    Warranty: "bg-green-50 text-green-700 border-green-300",
-    "Out Of Warranty": "bg-red-50 text-red-700 border-red-300",
-    "Waiting PO from Sales": "bg-amber-50 text-amber-700 border-amber-300",
-    "Submit RMA": "bg-orange-50 text-orange-700 border-orange-300",
-    "Waiting sparepart": "bg-rose-50 text-rose-700 border-rose-300",
-    "Process Repair": "bg-blue-50 text-blue-700 border-blue-300",
-  };
-
   const checkSessionTimeout = () => {
     if (!getSession()) {
       clearSession();
@@ -261,31 +250,9 @@ function TicketingSystemInner() {
     }
   };
 
-  const DEFAULT_OVERDUE_HOURS = 48;
-  const getDeadline = (ticket: Ticket): Date | null => {
-    const setting = overdueSettings.find((o) => o.ticket_id === ticket.id);
-    if (setting) {
-      if (setting.due_date) return new Date(setting.due_date);
-      if (setting.due_hours && ticket.created_at)
-        return new Date(new Date(ticket.created_at).getTime() + setting.due_hours * 3600000);
-    }
-    if (ticket.created_at)
-      return new Date(new Date(ticket.created_at).getTime() + DEFAULT_OVERDUE_HOURS * 3600000);
-    return null;
-  };
-
-  const isTicketOverdue = (ticket: Ticket): boolean => {
-    const deadline = getDeadline(ticket);
-    if (!deadline) return false;
-    if (ticket.status === "Solved") {
-      const solvedLog = ticket.activity_logs?.filter((l) => l.new_status === "Solved").sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
-      if (solvedLog) return new Date(solvedLog.created_at) > deadline;
-      return false;
-    }
-    return new Date() > deadline;
-  };
-
-  const getOverdueSetting = (ticketId: string) => overdueSettings.find((o) => o.ticket_id === ticketId);
+  const getDeadline = (ticket: Ticket) => getDeadlineShared(ticket, overdueSettings);
+  const isTicketOverdue = (ticket: Ticket) => isTicketOverdueShared(ticket, overdueSettings);
+  const getOverdueSetting = (ticketId: string) => getOverdueSettingShared(ticketId, overdueSettings);
 
   const loadReminderSchedule = async () => {
     try {
@@ -294,17 +261,7 @@ function TicketingSystemInner() {
     } catch (e) {}
   };
 
-  const getCronDisplay = () => {
-    const h = reminderSchedule.hour_wib.padStart(2, "0");
-    const m = reminderSchedule.minute.padStart(2, "0");
-    const days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-    let freq = "Setiap hari";
-    if (reminderSchedule.frequency === "weekdays") freq = "Senin–Jumat";
-    else if (reminderSchedule.frequency === "custom" && reminderSchedule.custom_days.length > 0) {
-      freq = reminderSchedule.custom_days.map((d) => days[d]).join(", ");
-    }
-    return `${freq}, jam ${h}:${m} WIB`;
-  };
+  const getCronDisplay = () => getCronDisplayShared(reminderSchedule);
 
   const saveCronSchedule = async () => {
     setReminderSaving(true);
@@ -1036,26 +993,7 @@ function TicketingSystemInner() {
   };
 
   // Helper: ambil warranty info terbaik (paling recent) untuk sebuah project
-  const getWarrantyInfo = (projectName: string) => {
-    const key = (projectName || "").trim().toLowerCase();
-    const refs = projectReminders[key];
-    if (!refs || refs.length === 0) return null;
-    // Prioritaskan yang punya warranty_years, lalu ambil yang due_date paling baru
-    const withWarranty = refs.filter(r => r.warranty_years);
-    const best = withWarranty.length > 0
-      ? withWarranty.reduce((a, b) => (a.due_date > b.due_date ? a : b))
-      : refs.reduce((a, b) => (a.due_date > b.due_date ? a : b));
-    if (!best.warranty_years || !best.due_date) return null;
-    const wy = best.warranty_years as number;
-    const expiry = new Date(best.due_date + "T00:00:00");
-    expiry.setFullYear(expiry.getFullYear() + wy);
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const isIn = today <= expiry;
-    const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
-    const bastStr = new Date(best.due_date + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-    const expiryStr = expiry.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-    return { isIn, diffDays, wy, bastStr, expiryStr, assignName: best.assign_name, category: best.category };
-  };
+  const getWarrantyInfo = (projectName: string) => getWarrantyInfoShared(projectName, projectReminders);
 
   /**
    * Beres-beres setelah SATU ticket selesai diproses di modal approval. Modal
@@ -2157,17 +2095,6 @@ function TicketingSystemInner() {
     return filteredTickets.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredTickets, currentPage, ITEMS_PER_PAGE]);
 
-  /**
-   * "Pending" bukan satu status, melainkan beberapa: Pending, Pending Action,
-   * dan Pending Check. Kartu ringkasan dulu mencocokkannya PERSIS dengan
-   * "Pending" saja, sehingga ticket yang duduk di Pending Action tidak
-   * terhitung di kartu mana pun - bukan pending, bukan in-progress, bukan
-   * solved. Ia hilang begitu saja dari ringkasan, padahal justru status itulah
-   * yang paling perlu ditindaklanjuti.
-   */
-  const adalahPending = (st: string | undefined | null) =>
-    (st ?? '').startsWith('Pending');
-
   const stats = useMemo(() => {
     const total = tickets.length;
     const processing = tickets.filter((t) => t.status === "In Progress").length;
@@ -2327,23 +2254,7 @@ function TicketingSystemInner() {
   }, [tickets, overdueSettings]);
 
   const canCreateTicket = true;
-  /*
-    DULU: currentUser?.role !== "guest" - artinya SIAPA PUN yang bukan Guest
-    (anggota Team mana pun, terlepas dari apakah tiket ini ditugaskan
-    kepadanya) bisa mengedit/melunaskan tiket siapa saja. Itu tidak sesuai
-    kebijakan platform: Team boleh edit HANYA yang di-assign atas namanya
-    sendiri; di luar itu dilarang. Admin & akun ber-Full Access tetap tanpa
-    batas seperti biasa.
-
-    Diubah jadi fungsi (bukan boolean tetap) karena "milik siapa" berbeda per
-    tiket - t.assign_name adalah handler yang ditugaskan.
-  */
-  const bolehUpdateTicket = (t: Ticket): boolean =>
-    !!currentUser && (
-      currentUser.role === 'admin' || currentUser.role === 'superadmin'
-      || hasFullAccess(currentUser)
-      || t.assign_name === currentUser.full_name
-    );
+  const bolehUpdateTicket = (t: Ticket): boolean => bolehUpdateTicketShared(t, currentUser);
   // canAccessAccountSettings TETAP admin/superadmin murni - khusus modal
   // "Account Management" (buat akun, ganti password, daftar user), bukan
   // untuk aksi tiket biasa.
@@ -2357,51 +2268,6 @@ function TicketingSystemInner() {
   // setting) - BUKAN hak kelola akun. Dipisah dari canAccessAccountSettings
   // supaya Full Access tidak otomatis dapat modal Account Management.
   const canManageTickets = canApproveAssign;
-
-  /**
-   * Field ticket yang boleh dibetulkan admin lewat panel Edit Detail. Sengaja
-   * TIDAK memuat assign_name / routing_status / assigned_supervisor_id:
-   * ketiganya milik bagian Re-route yang punya syarat (bolehReroute) dan efek
-   * samping sendiri (WA ke penerima baru). Kalau ikut di sini, mengetik nama
-   * di kotak teks bisa memindahkan pekerjaan orang tanpa ada yang diberi tahu.
-   */
-  const TICKET_ADMIN_FIELDS: AdminField[] = [
-    { key: 'project_name',   label: 'Nama Project',    span: 2 },
-    { key: 'date',           label: 'Tanggal',         type: 'date' },
-    { key: 'sales_name',     label: 'Sales',           span: 1 },
-    { key: 'sales_division', label: 'Divisi Sales',    span: 1 },
-    { key: 'customer_phone', label: 'Telepon Customer', type: 'tel' },
-    { key: 'address',        label: 'Alamat',          span: 3 },
-    { key: 'issue_case',     label: 'Issue / Kasus',   span: 3 },
-    { key: 'description',    label: 'Deskripsi',       type: 'textarea', span: 3 },
-    { key: 'sn_unit',        label: 'Serial Number' },
-    { key: 'product',        label: 'Produk' },
-    { key: 'priority',       label: 'Prioritas', type: 'select',
-      options: ['Low', 'Medium', 'High', 'Critical'].map(v => ({ value: v, label: v })) },
-    { key: 'status',         label: 'Status', type: 'select',
-      options: ['Waiting Approval', 'Pending', 'Call', 'Onsite', 'In Progress', 'Solved', 'Rejected'].map(v => ({ value: v, label: v })) },
-    { key: 'current_team',   label: 'Team Penanganan', type: 'select',
-      options: ['Team PTS IVP', 'Team PTS MVI', 'Team PTS UMP', 'Team Services'].map(v => ({ value: v, label: v })) },
-    { key: 'brand',          label: 'Brand', type: 'select',
-      options: BRAND_OPTIONS.map(b => ({ value: b.value, label: b.label })) },
-  ];
-
-  /**
-   * Re-route hanya boleh selama pekerjaannya BELUM jalan.
-   *
-   * Begitu ticket melewati "Pending", sudah ada orang yang menelepon customer,
-   * datang ke lokasi, atau mulai memperbaiki. Memindahkannya saat itu bukan
-   * membetulkan salah route - itu membuang pekerjaan yang sudah terlanjur
-   * dikerjakan, dan riwayatnya jadi menunjuk orang yang tidak mengerjakannya.
-   */
-  const bolehReroute = (t: Ticket): boolean => {
-    if (['Call', 'Onsite', 'In Progress', 'Solved', 'Rejected'].includes(t.status)) return false;
-    // Ticket yang sudah masuk alur Team Services punya tahapannya sendiri.
-    const ss = t.services_status ?? '';
-    if (ss && !['Waiting Approval', 'Pending'].includes(ss)) return false;
-    return true;
-  };
-
 
   const pendingApprovalTickets = useMemo(() => {
     if (currentUser?.role !== "admin" && currentUser?.role !== "superadmin" && !isManagerPTS) return [];
