@@ -8,6 +8,7 @@ import { hitungReviewMenggantung } from '@/lib/form-review-gate';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin, hasFullAccess } from '@/lib/constants';
 import { isAssignablePTSTeam, bolehDitugaskan } from '@/lib/teams';
+import { namaKelompokCabang } from '@/lib/kelompok';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { normalkanNama } from '@/lib/kelompok-insentif';
 import { notifyReminderApproved, createNotification, createNotificationForAdmins } from '@/lib/notifications';
@@ -271,6 +272,8 @@ function ReminderSchedulePageInner() {
   const [showModeModal, setShowModeModal]             = useState(false);
   const [modePenyelesaian, setModePenyelesaian]       = useState<'onsite' | 'remote' | null>(null);
   const [installerName, setInstallerName]             = useState('');
+  const [installerUserId, setInstallerUserId]         = useState<string | null>(null);
+  const [ptsCabangUsers, setPtsCabangUsers]           = useState<{ id: string; full_name: string }[]>([]);
   const [installerDaerah, setInstallerDaerah]         = useState('');
   const [bastDate, setBastDate]                       = useState<string>('');
   const [displayType, setDisplayType]                 = useState<'led' | 'lcd' | 'mix' | null>(null);
@@ -394,6 +397,7 @@ function ReminderSchedulePageInner() {
     Promise.all([
       fetchTeamUsers(),
       fetchGuestUsers(),
+      fetchPTSCabangUsers(),
       fetchRemindersQuiet(user),
     ]).then(() => {
       setAppReady(true); //  tampilkan konten setelah data siap
@@ -479,6 +483,19 @@ function ReminderSchedulePageInner() {
       .eq('role', 'guest')
       .order('full_name');
     if (data) setGuestUsers(data as GuestUser[]);
+  };
+
+  /**
+   * Akun kelompok "PTS Cabang" - dipakai dropdown Installer di panel Mode
+   * Penyelesaian (menggantikan isian nama installer manual). Lihat catatan
+   * field `cabang` di lib/kelompok.ts.
+   */
+  const fetchPTSCabangUsers = async () => {
+    const cabang = namaKelompokCabang();
+    if (cabang.length === 0) { setPtsCabangUsers([]); return; }
+    const { data } = await supabase.from('users').select('id, full_name')
+      .in('team_type', cabang).order('full_name');
+    if (data) setPtsCabangUsers(data as { id: string; full_name: string }[]);
   };
 
   const jalankanBulkDelete = async () => {
@@ -1338,6 +1355,7 @@ function ReminderSchedulePageInner() {
       setPendingPhotoUrl(photoUrl);
       setModePenyelesaian(null);
       setInstallerName('');
+      setInstallerUserId(null);
       setInstallerDaerah('');
       setBastDate(new Date().toISOString().split('T')[0]);
       setDisplayType(null);
@@ -1365,7 +1383,7 @@ function ReminderSchedulePageInner() {
     if (!displayType) { notify('error', 'Tipe Display wajib dipilih (LED / LCD / Mix)!'); return; }
     if (requiresControllerAuto && !controllerBrand) { notify('error', 'Pilih brand Controller Automation (Cue / Extron / Wyrestorm)!'); return; }
     if (modePenyelesaian === 'remote') {
-      if (!installerName.trim()) { notify('error', 'Nama Installer wajib diisi untuk mode Remote!'); return; }
+      if (!installerName.trim()) { notify('error', 'PTS Cabang / Installer wajib diisi untuk mode Remote!'); return; }
       if (!installerDaerah.trim()) { notify('error', 'Daerah Installer wajib diisi untuk mode Remote!'); return; }
     }
     const snap = detailReminder;
@@ -1384,6 +1402,7 @@ function ReminderSchedulePageInner() {
       mode_penyelesaian: modeVal,
       installer_name: modeVal === 'remote' ? installerNameVal : null,
       installer_daerah: modeVal === 'remote' ? installerDaerahVal : null,
+      installer_user_id: modeVal === 'remote' ? installerUserId : null,
       bast_date: bastDateVal,
       display_type: displayType,
       requires_middleware: requiresMiddleware,
@@ -3042,6 +3061,8 @@ jangan lupa peralatan & Semangat💪🏼
             guestUsers={guestUsers}
             modePenyelesaian={modePenyelesaian} setModePenyelesaian={setModePenyelesaian}
             installerName={installerName} setInstallerName={setInstallerName}
+            installerUserId={installerUserId} setInstallerUserId={setInstallerUserId}
+            daftarCabang={ptsCabangUsers}
             installerDaerah={installerDaerah} setInstallerDaerah={setInstallerDaerah}
             bastDate={bastDate} setBastDate={setBastDate}
             displayType={displayType} setDisplayType={setDisplayType}

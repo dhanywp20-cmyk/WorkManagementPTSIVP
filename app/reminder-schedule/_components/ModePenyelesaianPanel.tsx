@@ -1,4 +1,5 @@
 'use client';
+import { InstallerPicker } from './InstallerPicker';
 
 /**
  * Panel "Mode Penyelesaian" (muncul saat klik Completed) — dipindah dari
@@ -13,6 +14,8 @@ export function ModePenyelesaianPanel({
   controllerBrand, setControllerBrand,
   requiresMiddleware, setRequiresMiddleware,
   installerName, setInstallerName,
+  installerUserId, setInstallerUserId,
+  daftarCabang,
   installerDaerah, setInstallerDaerah,
   savingMode,
   handleModeConfirm,
@@ -32,6 +35,9 @@ export function ModePenyelesaianPanel({
   setRequiresMiddleware: (v: boolean) => void;
   installerName: string;
   setInstallerName: (v: string) => void;
+  installerUserId: string | null;
+  setInstallerUserId: (v: string | null) => void;
+  daftarCabang: { id: string; full_name: string }[];
   installerDaerah: string;
   setInstallerDaerah: (v: string) => void;
   savingMode: boolean;
@@ -139,10 +145,14 @@ export function ModePenyelesaianPanel({
           <div className="space-y-3 p-4 rounded-xl" style={{ background: 'rgba(59,130,246,0.06)', border: '1.5px solid rgba(59,130,246,0.25)' }}>
             <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">🔧 Data Installer Daerah</p>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Nama Installer <span className="text-red-500">*</span></label>
-              <input value={installerName} onChange={e => setInstallerName(e.target.value)}
-                placeholder="Nama installer / mitra daerah"
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+              <label className="block text-xs font-semibold text-gray-600 mb-1">PTS Cabang / Installer <span className="text-red-500">*</span></label>
+              <InstallerPicker
+                daftarCabang={daftarCabang}
+                installerUserId={installerUserId}
+                installerName={installerName}
+                onPilihAkun={(id, nama) => { setInstallerUserId(id); setInstallerName(nama); }}
+                onKetikManual={nama => { setInstallerUserId(null); setInstallerName(nama); }}
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">Daerah / Kota <span className="text-red-500">*</span></label>

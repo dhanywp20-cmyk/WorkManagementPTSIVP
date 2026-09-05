@@ -43,6 +43,8 @@ export function ReminderDetailPopup({
   guestUsers,
   modePenyelesaian, setModePenyelesaian,
   installerName, setInstallerName,
+  installerUserId, setInstallerUserId,
+  daftarCabang,
   installerDaerah, setInstallerDaerah,
   bastDate, setBastDate,
   displayType, setDisplayType,
@@ -95,6 +97,9 @@ export function ReminderDetailPopup({
   setModePenyelesaian: (v: 'onsite' | 'remote' | null) => void;
   installerName: string;
   setInstallerName: (v: string) => void;
+  installerUserId: string | null;
+  setInstallerUserId: (v: string | null) => void;
+  daftarCabang: { id: string; full_name: string }[];
   installerDaerah: string;
   setInstallerDaerah: (v: string) => void;
   bastDate: string;
@@ -765,6 +770,8 @@ export function ReminderDetailPopup({
           controllerBrand={controllerBrand} setControllerBrand={setControllerBrand}
           requiresMiddleware={requiresMiddleware} setRequiresMiddleware={setRequiresMiddleware}
           installerName={installerName} setInstallerName={setInstallerName}
+          installerUserId={installerUserId} setInstallerUserId={setInstallerUserId}
+          daftarCabang={daftarCabang}
           installerDaerah={installerDaerah} setInstallerDaerah={setInstallerDaerah}
           savingMode={savingMode}
           handleModeConfirm={handleModeConfirm}
