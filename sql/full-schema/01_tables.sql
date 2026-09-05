@@ -792,6 +792,7 @@ CREATE TABLE public.reminders (
   mode_penyelesaian character varying(10),
   installer_name text,
   installer_daerah text,
+  installer_user_id uuid,
   requires_controller_automation boolean DEFAULT false,
   controller_automation_brand text,
   pic_type text DEFAULT 'standard'::text,

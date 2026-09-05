@@ -135,6 +135,7 @@ ALTER TABLE public.reminders ADD CONSTRAINT reminders_pkey PRIMARY KEY (id);
 ALTER TABLE public.reminders ADD CONSTRAINT reminders_assigned_supervisor_id_fkey FOREIGN KEY (assigned_supervisor_id) REFERENCES users(id);
 ALTER TABLE public.reminders ADD CONSTRAINT reminders_internal_approved_by_fkey FOREIGN KEY (internal_approved_by) REFERENCES users(id);
 ALTER TABLE public.reminders ADD CONSTRAINT reminders_internal_sales_id_fkey FOREIGN KEY (internal_sales_id) REFERENCES users(id);
+ALTER TABLE public.reminders ADD CONSTRAINT reminders_installer_user_id_fkey FOREIGN KEY (installer_user_id) REFERENCES users(id) ON DELETE SET NULL;
 ALTER TABLE public.reminders ADD CONSTRAINT reminders_pic_id_fkey FOREIGN KEY (pic_id) REFERENCES users(id);
 ALTER TABLE public.reminders ADD CONSTRAINT reminders_warranty_years_check CHECK ((warranty_years = ANY (ARRAY[1, 2, 3])));
 ALTER TABLE public.sql_diterapkan ADD CONSTRAINT sql_diterapkan_pkey PRIMARY KEY (berkas);
