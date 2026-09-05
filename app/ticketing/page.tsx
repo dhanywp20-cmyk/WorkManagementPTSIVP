@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
-import { ListEmptyState, AuditTrailPanel, ModalPortal, AdminEditFields, FlowSteps } from '@/components/shared';
+import { ModalPortal } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
@@ -22,8 +22,8 @@ import {
   JABATAN_TIER, JABATAN_CC_RULES,
   SERVICES_STATUSES, ServicesStatus,
   User, TeamMember, ActivityLog, Ticket, OverdueSetting,
-  SALES_DIVISIONS, formatDateTime, ringkasPenanganan,
-  statusColors, TICKET_ADMIN_FIELDS, adalahPending, bolehReroute,
+  SALES_DIVISIONS, formatDateTime,
+  statusColors, TICKET_ADMIN_FIELDS, adalahPending,
   getDeadline as getDeadlineShared,
   isTicketOverdue as isTicketOverdueShared,
   getOverdueSetting as getOverdueSettingShared,
@@ -31,21 +31,24 @@ import {
   getWarrantyInfo as getWarrantyInfoShared,
   bolehUpdateTicket as bolehUpdateTicketShared,
 } from "./_components/shared";
-import {
-  StatusDonutCard, SalesDivisionDonutCard, HandlerDonutCard,
-  ProductDonutCard, InfoLine,
-} from "./_components/DonutCards";
 import { NewTicketModal, type NewTicketForm } from "./_components/NewTicketModal";
-import { Ico } from "./_components/Ico";
-import { appLink } from "@/lib/app-url";
-import { cetakTicket } from "./_components/cetak-ticket";
-import { eksporExcel } from "./_components/ekspor-excel";
 import {
-  ViewIconBtn, DeleteIconBtn,
-  FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
-  Toast, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, StatCard,
-  MobileListCard, MobileCardBadge,
-} from "@/components/shared";
+  OverdueSettingModal, ReopenPTSModal, ReopenServicesModal, RejectModal, DeleteModal,
+} from "./_components/SimpleActionModals";
+import {
+  BulkDeleteConfirmModal, ServicesApprovalModal, ReminderScheduleModal, SupervisorAssignModal,
+} from "./_components/AssignApprovalModals";
+import { AccountSettingsModal } from "./_components/AccountSettingsModal";
+import { ActivitySummaryModal } from "./_components/ActivitySummaryModal";
+import { AdminEditModal } from "./_components/AdminEditModal";
+import { ApprovalModal } from "./_components/ApprovalModal";
+import { StatsSection } from "./_components/StatsSection";
+import { FilterBar } from "./_components/FilterBar";
+import { TicketListBody } from "./_components/TicketListBody";
+import { TicketDetailPopup } from "./_components/TicketDetailPopup";
+import { appLink } from "@/lib/app-url";
+import { eksporExcel } from "./_components/ekspor-excel";
+import { Toast, PageHeader, ConfirmDialog, type ConfirmState } from "@/components/shared";
 
 function TicketingSystemInner() {
   const router = useRouter();
@@ -1157,6 +1160,33 @@ function TicketingSystemInner() {
     } catch (err: any) { notify("error", "Error: " + err.message); } finally { setUploading(false); setApprovingId(null); }
   };
 
+  // Ticket & handler baris INI dikirim eksplisit — bukan lewat state bersama —
+  // supaya yang diproses tidak mungkin tertukar dengan baris lain di modal
+  // Approval yang sama.
+  const jalankanApproveTicket = async (ticket: Ticket) => {
+    const pilihan = approvalAssignees[ticket.id];
+    if (!pilihan) { notify("error", "Pilih handler atau Supervisor terlebih dahulu!"); return; }
+    await approveTicket(ticket, pilihan);
+  };
+
+  // Pembuka aksi baris tiket (mobile card + tabel desktop) - dikumpulkan di
+  // satu tempat supaya kedua tampilan memanggil handler yang SAMA, bukan
+  // masing-masing menulis ulang urutan setState-nya sendiri.
+  const bukaDetailTicket = (ticket: Ticket) => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); };
+  const bukaRingkasanAktivitas = (ticket: Ticket) => { setSummaryTicket(ticket); setShowActivitySummary(true); };
+  const bukaApprovalUntukTicket = (ticket: Ticket) => {
+    setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee("");
+    fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true);
+  };
+  const bukaReopenTicket = (ticket: Ticket) => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); };
+  const bukaDeleteTicket = (ticket: Ticket) => { setDeleteTargetTicket(ticket); setDeleteConfirmText(""); setShowDeleteModal(true); };
+  const bukaOverdueSetting = (ticket: Ticket) => {
+    setOverdueTargetTicket(ticket);
+    const existing = getOverdueSetting(ticket.id);
+    setOverdueForm({ due_hours: existing?.due_hours ? String(existing.due_hours) : "48" });
+    setShowOverdueSetting(true);
+  };
+
   // Supervisor: assign final ticket yg di-route ke dia  anggota tim / sendiri
   const handleSupervisorAssignTicket = async () => {
     if (!supAssignTicket || !supAssignTo) { notify("error", "Pilih anggota tim atau kerjakan sendiri!"); return; }
@@ -2048,6 +2078,17 @@ function TicketingSystemInner() {
     prev.size === filteredTickets.length ? new Set() : new Set(filteredTickets.map(t => t.id))
   );
 
+  const jalankanEksporExcel = () => eksporExcel({ tickets, filteredTickets, currentUserTeamType, stats, isTicketOverdue, notify });
+
+  const jalankanBulkDelete = async () => {
+    setBulkConfirm(false); setBulkDeleting(true);
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from("tickets").delete().in("id", ids);
+    if (!error) { setTickets(prev => prev.filter(t => !selectedIds.has(t.id))); setSelectedIds(new Set()); setSelectMode(false); }
+    else notify("error", "Gagal: " + error.message);
+    setBulkDeleting(false);
+  };
+
 
   const currentUserTeamType = useMemo(() => {
     if (!currentUser) return "Team PTS IVP";
@@ -2572,583 +2613,107 @@ function TicketingSystemInner() {
 
         <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
 
-          {/* ── GUEST SUMMARY SECTION (same style as admin) ── */}
-          {currentUser?.role === "guest" && (
-            <div className="mb-4 space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 animate-slide-up anim-d80">
-                {[
-                  { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket saya", accent: "#4f46e5" },
-                  { label: "Waiting Approval", value: tickets.filter((t) => t.status === "Waiting Approval").length, sub: "Menunggu persetujuan", accent: "#c2410c" },
-                  { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", accent: "#b45309" },
-                  { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", accent: "#1d4ed8" },
-                  { label: "Solved", value: stats.solved, sub: "Terselesaikan", accent: "#047857" },
-                ].map((card, i) => <StatCard key={i} {...card} />)}
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-zoom-in anim-d160">
-                <StatusDonutCard
-                  data={[
-                    { name: "Waiting Approval", value: tickets.filter((t) => t.status === "Waiting Approval").length, color: "#FB923C" },
-                    ...stats.statusData,
-                  ].filter((d) => d.value > 0)}
-                  total={stats.total}
-                  onSliceClick={() => {}}
-                  title="Status Distribution"
-                  icon="🥧"
-                />
-                <HandlerDonutCard
-                  data={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).map((h: any, i: number) => ({ name: h.name, value: h.tickets, color: ["#7c3aed","#0ea5e9","#10b981","#e11d48","#f59e0b","#6366f1"][i%6] }))}
-                  total={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).reduce((s:number,h:any) => s+h.tickets, 0)}
-                  teamToggle={selectedHandlerTeam}
-                  onToggle={(t: "PTS" | "Services") => setSelectedHandlerTeam(t)}
-                  onSliceClick={() => {}}
-                  activeHandler={null}
-                  title="Team Handlers"
-                  icon="👥"
-                />
-                <SalesDivisionDonutCard
-                  data={salesDivisionStats.data}
-                  total={salesDivisionStats.total}
-                  onSliceClick={() => {}}
-                  activeDivision={null}
-                />
-                <ProductDonutCard
-                  data={productStats.data}
-                  total={productStats.total}
-                  onSliceClick={() => {}}
-                  activeProduct={null}
-                />
-              </div>
-            </div>
-          )}
-
-          {(currentUser?.role === "admin" || currentUser?.role === "superadmin" || (currentUser?.role === "team" && currentUserTeamType === "Team PTS IVP" || currentUserTeamType === "Guest")) && (
-            <div className="mb-4 space-y-4">
-              {/* ── Stat Cards (Redesigned like ReminderSchedule) ── */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-3 animate-slide-up anim-d80">
-                {[
-                  { label: "Total Tickets", value: stats.total, sub: "Seluruh tiket", accent: "#4f46e5", onClick: () => { setFilterStatus("All"); setHandlerFilter(null); }, active: filterStatus === "All" && !handlerFilter },
-                  { label: "Pending", value: stats.pending, sub: "Menunggu tindakan", accent: "#b45309", onClick: () => { setFilterStatus(filterStatus === "Pending" ? "All" : "Pending"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Pending" },
-                  { label: "In Progress", value: stats.processing, sub: "Sedang ditangani", accent: "#1d4ed8", onClick: () => { setFilterStatus(filterStatus === "In Progress" ? "All" : "In Progress"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "In Progress" },
-                  { label: "Solved", value: stats.solved, sub: "Terselesaikan", accent: "#047857", onClick: () => { setFilterStatus(filterStatus === "Solved" ? "All" : "Solved"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved" },
-                  { label: "Overdue", value: stats.overdue, sub: "Berpotensi denda", accent: "#b91c1c", onClick: () => { setFilterStatus(filterStatus === "Overdue" ? "All" : "Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Overdue" },
-                  { label: "Solved Overdue", value: stats.solvedOverdue, sub: "Butuh verifikasi", accent: "#6d28d9", onClick: () => { setFilterStatus(filterStatus === "Solved Overdue" ? "All" : "Solved Overdue"); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }, active: filterStatus === "Solved Overdue" },
-                ].map((card, i) => <StatCard key={i} {...card} />)}
-              </div>
-
-              {/* ── Donut Charts ── */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 animate-zoom-in anim-d160">
-                <StatusDonutCard data={stats.statusData} total={stats.statusData.reduce((s, d) => s + d.value, 0)} onSliceClick={(name: string) => { const mapped = name === "Solved (Overdue)" ? "Solved Overdue" : name; setFilterStatus((prev) => prev === mapped ? "All" : mapped); setHandlerFilter(null); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} title="Status Distribution" icon="🥧" />
-                <HandlerDonutCard data={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).map((h: any, i: number) => ({ name: h.name, value: h.tickets, color: ["#7c3aed", "#0ea5e9", "#10b981", "#e11d48", "#f59e0b", "#6366f1", "#14b8a6", "#f97316", "#8b5cf6", "#06b6d4", "#ec4899", "#84cc16"][i % 12] }))} total={stats.handlerData.filter((h: any) => h.team.startsWith(`Team ${selectedHandlerTeam}`)).reduce((s, h) => s + h.tickets, 0)} teamToggle={selectedHandlerTeam} onToggle={(t: "PTS" | "Services") => setSelectedHandlerTeam(t)} onSliceClick={(name: string) => { setHandlerFilter((prev: string | null) => prev === name ? null : name); setFilterStatus("All"); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeHandler={handlerFilter} title="Team Handlers" icon="👥" />
-                <SalesDivisionDonutCard data={salesDivisionStats.data} total={salesDivisionStats.total} onSliceClick={(division: string) => { setSalesDivisionFilter((prev: string | null) => prev === division ? null : division); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeDivision={salesDivisionFilter} />
-                <ProductDonutCard data={productStats.data} total={productStats.total} onSliceClick={(prod: string) => { setProductFilter((prev) => prev === prod ? null : prod); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }} activeProduct={productFilter} />
-              </div>
-            </div>
-          )}
+          <StatsSection
+            currentUser={currentUser}
+            currentUserTeamType={currentUserTeamType}
+            stats={stats}
+            tickets={tickets}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            handlerFilter={handlerFilter}
+            setHandlerFilter={setHandlerFilter}
+            ticketListRef={ticketListRef}
+            selectedHandlerTeam={selectedHandlerTeam}
+            setSelectedHandlerTeam={setSelectedHandlerTeam}
+            salesDivisionStats={salesDivisionStats}
+            salesDivisionFilter={salesDivisionFilter}
+            setSalesDivisionFilter={setSalesDivisionFilter}
+            productStats={productStats}
+            productFilter={productFilter}
+            setProductFilter={setProductFilter}
+          />
 
           {/* ── TICKET LIST (with integrated search/filter bar like image) ── */}
           <div ref={ticketListRef} className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: "rgba(255,255,255,0.97)", border: "1px solid rgba(200,200,200,0.6)", backdropFilter: "blur(12px)" }}>
-            {/* Header with title and actions */}
-            <div className="flex flex-wrap items-center justify-between px-6 py-4 border-b" style={{ borderBottom: "1px solid rgba(0,0,0,0.07)" }}>
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Ticket List</span>
-                <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{ticketsLoading ? "..." : filteredTickets.length}</span>
-              </div>
-              <div className="flex items-center gap-2 mt-2 sm:mt-0">
-                {/* Ketiga tombol memakai kerangka yang SAMA (tinggi, padding, radius,
-                    ukuran ikon) dan hanya dibedakan oleh peran: Export adalah aksi
-                    utama sehingga dibuat solid, dua lainnya sekunder sehingga bergaris.
-                    Sebelumnya tiap tombol punya tinggi & gaya sendiri — Export bahkan
-                    membesar saat disentuh — sehingga barisnya terlihat tidak rapi. */}
-                {canManageTickets && (
-                  <button onClick={() => { setSelectMode(m => !m); setSelectedIds(new Set()); }}
-                    className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400 ${selectMode ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
-                    <Ico name={selectMode ? "close" : "check"} className="w-3.5 h-3.5" />
-                    {selectMode ? 'Batal' : 'Select'}
-                  </button>
-                )}
-                <button onClick={() => fetchData()} disabled={loading}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400">
-                  <Ico name="refresh" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </button>
-                <button onClick={() => eksporExcel({ tickets, filteredTickets, currentUserTeamType, stats, isTicketOverdue, notify })} disabled={uploading}
-                  className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-white border border-transparent transition-colors disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
-                  style={{ background: '#be123c' }}>
-                  {uploading
-                    ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    : <Ico name="chart" className="w-3.5 h-3.5" />}
-                  Export
-                </button>
-              </div>
-            </div>
+            <FilterBar
+              canManageTickets={canManageTickets}
+              selectMode={selectMode}
+              setSelectMode={setSelectMode}
+              setSelectedIds={setSelectedIds}
+              fetchData={fetchData}
+              loading={loading}
+              onExport={jalankanEksporExcel}
+              uploading={uploading}
+              ticketsLoading={ticketsLoading}
+              filteredTickets={filteredTickets}
+              searchProject={searchProject}
+              setSearchProject={setSearchProject}
+              searchSalesName={searchSalesName}
+              setSearchSalesName={setSearchSalesName}
+              searchProduct={searchProduct}
+              setSearchProduct={setSearchProduct}
+              setProductFilter={setProductFilter}
+              handlerFilter={handlerFilter}
+              setHandlerFilter={setHandlerFilter}
+              teamMembers={teamMembers}
+              selectedHandlerTeam={selectedHandlerTeam}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              currentUser={currentUser}
+              filterYear={filterYear}
+              setFilterYear={setFilterYear}
+              availableYears={availableYears}
+              selectedIds={selectedIds}
+              bulkDeleting={bulkDeleting}
+              setBulkConfirm={setBulkConfirm}
+              salesDivisionFilter={salesDivisionFilter}
+              setSalesDivisionFilter={setSalesDivisionFilter}
+              productFilter={productFilter}
+            />
 
-            {/* Integrated search filters row - like the image */}
-            <div className="px-6 py-3 border-b border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Project / Location</label>
-                  <div className="relative">
-                    <Ico name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input aria-label="Search project / lokasi..." 
-                      type="text" 
-                      value={searchProject} 
-                      onChange={(e) => setSearchProject(e.target.value)} 
-                      placeholder="Search project / lokasi..." 
-                      className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Sales Name</label>
-                  <div className="relative">
-                    <Ico name="user" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input aria-label="Search sales name..." 
-                      type="text" 
-                      value={searchSalesName} 
-                      onChange={(e) => setSearchSalesName(e.target.value)} 
-                      placeholder="Search sales name..." 
-                      className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Product</label>
-                  <div className="relative">
-                    <Ico name="package" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input aria-label="Cari product..."
-                      type="text"
-                      value={searchProduct}
-                      onChange={(e) => { setSearchProduct(e.target.value); setProductFilter(null); }}
-                      placeholder="Cari product..."
-                      className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Team Handler</label>
-                  <div className="relative">
-                    <Ico name="users" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <select aria-label="All Handlers" 
-                      value={handlerFilter || ""} 
-                      onChange={(e) => setHandlerFilter(e.target.value || null)} 
-                      className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
-                    >
-                      <option value="">All Handlers</option>
-                      {teamMembers.filter(m => m.team_type?.startsWith(`Team ${selectedHandlerTeam}`)).map((m) => (
-                        <option key={m.id} value={m.name}>{m.name}</option>
-                      ))}
-                    </select>
-                    <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status</label>
-                  <div className="relative">
-                    <Ico name="tag" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <select aria-label="All Status" 
-                      value={filterStatus} 
-                      onChange={(e) => setFilterStatus(e.target.value)} 
-                      className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
-                    >
-                      <option value="All">All Status</option>
-                      <option value="Waiting Approval">⏳ Waiting Approval</option>
-                      <option value="Pending">🟡 Pending</option>
-                      <option value="Call">📞 Call</option>
-                      <option value="Onsite">🚗 Onsite</option>
-                      <option value="In Progress">🔵 In Progress</option>
-                      <option value="Solved">✅ Solved</option>
-                      {(currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
-                        <>
-                          <option value="Overdue">🚨 Overdue</option>
-                          <option value="Solved Overdue">⚠️ Solved Overdue</option>
-                        </>
-                      )}
-                    </select>
-                    <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filter Year</label>
-                  <div className="relative">
-                    <Ico name="calendar" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <select aria-label="All Years" 
-                      value={filterYear} 
-                      onChange={(e) => setFilterYear(e.target.value)} 
-                      className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
-                    >
-                      <option value="all">All Years</option>
-                      {availableYears.map((year) => (<option key={year} value={year}>{year}</option>))}
-                    </select>
-                    <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Bulk delete bar — admin only, selectMode only */}
-            {selectMode && canManageTickets && selectedIds.size > 0 && (
-              <div className="px-6 py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(220,38,38,0.07)' }}>
-                <span className="text-sm font-bold text-red-700">{selectedIds.size} ticket dipilih</span>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setSelectedIds(new Set())}
-                    className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Batal Pilih</button>
-                  <button onClick={() => setBulkConfirm(true)} disabled={bulkDeleting}
-                    className="text-xs font-bold text-white px-4 py-1.5 rounded-lg disabled:opacity-50 flex items-center gap-1"
-                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-                    {bulkDeleting ? '⏳ Menghapus...' : `🗑️ Hapus ${selectedIds.size} Ticket`}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* ── Filter Aktif chips — posisi di bawah filter bar ── */}
-            {(filterStatus !== "All" || handlerFilter || salesDivisionFilter || productFilter || searchProject || searchSalesName || searchProduct) && (
-              <div className="px-6 py-2.5 border-b border-gray-100 flex flex-wrap gap-2 items-center" style={{ background: "rgba(255,255,255,0.97)" }}>
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
-                {filterStatus !== "All" && (
-                  <button onClick={() => setFilterStatus("All")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#d97706" }}>Status: {filterStatus} ✕</button>
-                )}
-                {handlerFilter && (
-                  <button onClick={() => setHandlerFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#7c3aed" }}>Handler: {handlerFilter} ✕</button>
-                )}
-                {salesDivisionFilter && (
-                  <button onClick={() => setSalesDivisionFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#ec4899" }}>Division: {salesDivisionFilter} ✕</button>
-                )}
-                {productFilter && (
-                  <button onClick={() => { setProductFilter(null); setSearchProduct(""); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#6366f1" }}>📦 {productFilter} ✕</button>
-                )}
-                {searchProject && (
-                  <button onClick={() => setSearchProject("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#475569" }}>🔍 {searchProject} ✕</button>
-                )}
-                {searchSalesName && (
-                  <button onClick={() => setSearchSalesName("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#475569" }}>👤 {searchSalesName} ✕</button>
-                )}
-                <button onClick={() => { setFilterStatus("All"); setHandlerFilter(null); setSalesDivisionFilter(null); setProductFilter(null); setSearchProduct(""); setSearchProject(""); setSearchSalesName(""); }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: "rgba(220,38,38,0.12)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.25)" }}>🗑️ Reset Semua</button>
-              </div>
-            )}
-
-            {fetchError ? (
-              <ErrorState message={fetchError} onRetry={() => { setFetchError(null); fetchData(); }} />
-            ) : ticketsLoading ? (
-              <div className="space-y-3 py-2 p-4">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="animate-pulse flex gap-3 items-center bg-white/60 rounded-xl p-4 border border-gray-200">
-                    <div className="flex-1 space-y-2"><div className="h-4 bg-gray-200 rounded w-2/5"></div><div className="h-3 bg-gray-100 rounded w-1/4"></div></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/6"></div><div className="h-4 bg-gray-200 rounded w-1/5"></div><div className="h-6 bg-gray-200 rounded-full w-20"></div><div className="h-8 bg-gray-200 rounded-lg w-16"></div>
-                  </div>
-                ))}
-                <div className="flex items-center justify-center gap-3 py-4 text-gray-500"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div><span className="text-sm font-medium">Memuat daftar ticket...</span></div>
-              </div>
-            ) : filteredTickets.length === 0 ? (
-              <ListEmptyState
-                adaFilterAktif={searchProject.trim() !== '' || searchSalesName.trim() !== '' || filterStatus !== 'All' || filterYear !== 'all'}
-                onReset={() => { setSearchProject(''); setSearchSalesName(''); setFilterStatus('All'); setFilterYear('all'); }}
-                icon="🎫"
-                judulKosong="Belum ada tiket"
-                deskripsiKosong="Tiket kendala yang dilaporkan akan muncul di sini."
-              />
-            ) : (
-              <>
-              {/* ── MOBILE: Card view (hidden on md+) ── */}
-              <div className="md:hidden divide-y divide-gray-100">
-                {paginatedTickets.map((ticket) => {
-                  const overdue = isTicketOverdue(ticket);
-                  const overdueSetting = getOverdueSetting(ticket.id);
-                  const isActiveOverdue = overdue && ticket.status !== "Solved";
-                  return (
-                    <MobileListCard
-                      key={ticket.id}
-                      highlight={isActiveOverdue}
-                      accent={isActiveOverdue ? "#f87171" : undefined}
-                      titlePrefix={isActiveOverdue ? <Ico name="alert" className="w-3.5 h-3.5 text-red-500 shrink-0" /> : undefined}
-                      title={ticket.project_name}
-                      meta={<>
-                        {ticket.address && (
-                          <p className="truncate flex items-center gap-1"><Ico name="pin" className="w-3 h-3 shrink-0" />{ticket.address.split(',')[0]}</p>
-                        )}
-                        <p>{ticket.created_at ? formatDateTime(ticket.created_at) : '—'}</p>
-                      </>}
-                      badges={<>
-                        <MobileCardBadge className={ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}>
-                          {ticket.status === "Waiting Approval" ? "⏳ Waiting" : ticket.status}
-                        </MobileCardBadge>
-                        {overdue && (
-                          <MobileCardBadge className={ticket.status === "Solved" ? "bg-purple-100 text-purple-800 border-purple-400" : statusColors["Overdue"]}>
-                            {ticket.status === "Solved" ? "⚠️ Overdue" : "🚨 Overdue"}
-                          </MobileCardBadge>
-                        )}
-                      </>}
-                      fields={[
-                        { label: "Issue",   value: ticket.issue_case },
-                        { label: "Handler", value: ticket.assign_name || '—' },
-                        { label: "Product", value: ticket.product, valueClass: "text-indigo-600 font-semibold", hide: !ticket.product },
-                        { label: "Sales",   value: ticket.sales_name, hide: !ticket.sales_name },
-                        { label: "SN",      value: ticket.sn_unit, span2: true, valueClass: "text-gray-600", hide: !ticket.sn_unit },
-                      ]}
-                      actions={<>
-                        <ViewIconBtn onClick={() => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); }} title="Detail" />
-                        <FlowchartIconBtn onClick={() => { setSummaryTicket(ticket); setShowActivitySummary(true); }} />
-                        <PrintIconBtn onClick={() => cetakTicket(ticket)} />
-                        {canApproveAssign && ticket.status === "Waiting Approval" && (
-                          <ApproveIconBtn onClick={() => { setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
-                        )}
-                        {/* M2: disamakan dengan detail popup - Reopen PTS ini bukan
-                            urusan Team Services (mereka punya Reopen Services sendiri,
-                            lihat C2), tanpa syarat ini tombol tampil di list tapi
-                            hilang begitu ticket yang sama dibuka di detail. */}
-                        {ticket.status === "Solved" && bolehUpdateTicket(ticket) && currentUserTeamType !== "Team Services" && (
-                          <ReopenIconBtn onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} />
-                        )}
-                        {canManageTickets && (
-                          <DeleteIconBtn onClick={() => { setDeleteTargetTicket(ticket); setDeleteConfirmText(""); setShowDeleteModal(true); }} />
-                        )}
-                        {canManageTickets && (
-                          <OverdueIconBtn onClick={() => { setOverdueTargetTicket(ticket); const existing = getOverdueSetting(ticket.id); setOverdueForm({ due_hours: existing?.due_hours ? String(existing.due_hours) : "48" }); setShowOverdueSetting(true); }} active={!!overdueSetting} />
-                        )}
-                      </>}
-                    />
-                  );
-                })}
-                {/* Mobile pagination */}
-                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
-                  <span className="text-xs text-gray-400">{filteredTickets.length} tiket</span>
-                  {totalPages > 1 && (
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage===1}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 disabled:opacity-30">‹ Prev</button>
-                      <span className="text-xs text-gray-500 font-medium">{currentPage}/{totalPages}</span>
-                      <button onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))} disabled={currentPage===totalPages}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 disabled:opacity-30">Next ›</button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* ── DESKTOP: Table view (hidden on mobile) ── */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full table-fixed border-collapse table-zebra" style={{ background: "transparent", minWidth: '1100px' }}>
-                  <colgroup>
-                    <col style={{ width: "3%" }} />   {/* No */}
-                    <col style={{ width: "15%" }} />  {/* Project / Lokasi*/}
-                    <col style={{ width: "9%" }} />   {/* Warranty */}
-                    <col style={{ width: "16%" }} />  {/* Product */}
-                    <col style={{ width: "12%" }} />   {/* SN Unit */}
-                    <col style={{ width: "13%" }} />  {/* Issue */}
-                    <col style={{ width: "9%" }} />   {/* Assigned */}
-                    <col style={{ width: "7%" }} />   {/* Status */}
-                    <col style={{ width: "7%" }} />   {/* Sales */}
-                    <col style={{ width: "10%" }} />  {/* Action */}
-                  </colgroup>
-                  {/* Header menempel saat digulir: daftar tiket bisa panjang, dan tanpa ini
-                      pembaca kehilangan acuan kolom begitu baris pertama lewat layar. */}
-                  <thead className="sticky top-0 z-10">
-                    <tr className="border-b border-slate-200" style={{ background: "#f8fafc" }}>
-                      <th className="px-2 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                        {selectMode && canManageTickets
-                          ? <input type="checkbox"
-                              checked={selectedIds.size === filteredTickets.length && filteredTickets.length > 0}
-                              onChange={toggleSelectAll}
-                              className="w-4 h-4 rounded accent-red-600 cursor-pointer" title="Pilih Semua" />
-                          : 'No'}
-                      </th>
-                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Project / Lokasi</th>
-                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Warranty</th>
-                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Product</th>
-                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">SN Unit</th>
-                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Issue</th>
-                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Assigned</th>
-                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Status</th>
-                      <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Sales</th>
-                      <th className="px-2 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedTickets.map((ticket, index) => {
-                      const overdue = isTicketOverdue(ticket);
-                      const overdueSetting = getOverdueSetting(ticket.id);
-                      const creatorUser = users.find((u) => u.username === ticket.created_by);
-                      const creatorLabel = creatorUser ? creatorUser.full_name : ticket.created_by || "-";
-                      const isSolvedOverdue = overdue && ticket.status === "Solved";
-                      const isActiveOverdue = overdue && ticket.status !== "Solved";
-                      return (
-                        <tr key={ticket.id} className={`stagger-item border-b border-gray-100 hover:bg-gray-50/70 transition-colors ${isActiveOverdue ? "bg-red-50 border-l-4 border-l-red-400" : isSolvedOverdue ? "bg-purple-50/60 border-l-4 border-l-purple-300" : ""}`}>
-                          <td className="px-2 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
-                            {selectMode && canManageTickets
-                              ? <input type="checkbox" checked={selectedIds.has(ticket.id)}
-                                  onChange={() => toggleSelectId(ticket.id)}
-                                  className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
-                              : <span className="text-[11px] font-bold text-gray-400">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</span>}
-                          </td>
-                          <td className="px-3 py-3 align-middle">
-                            <div className="flex items-start gap-1">
-                              {isActiveOverdue && <span className="mt-0.5 shrink-0" title="Overdue!"><Ico name="alert" className="w-3.5 h-3.5 text-red-500" /></span>}
-                              <div className="font-bold text-gray-800 text-sm break-words leading-tight">{ticket.project_name}</div>
-                            </div>
-                            {ticket.address && (
-                              <div className="text-[10px] text-gray-500 mt-0.5 flex items-center gap-0.5">
-                                <Ico name="pin" className="w-3 h-3 shrink-0" />
-                                <span className="truncate">{ticket.address.split(',')[0]}</span>
-                              </div>
-                            )}
-                            
-                            <div className="text-[10px] text-gray-400 mt-1">{ticket.created_at ? formatDateTime(ticket.created_at) : "-"}</div>
-                            {isActiveOverdue && <div className="text-xs text-red-600 font-bold mt-0.5">⏰ OVERDUE</div>}
-                          </td>
-                          {/* Warranty cell */}
-                          <td className="px-3 py-3 align-middle">
-                            {(() => {
-                              const w = getWarrantyInfo(ticket.project_name);
-                              if (!w) return <span className="text-gray-300 text-xs">—</span>;
-                              return (
-                                <div>
-                                  <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold"
-                                    style={w.isIn
-                                      ? { background: "rgba(14,165,233,0.14)", color: "#0369a1" }
-                                      : { background: "rgba(239,68,68,0.12)", color: "#dc2626" }}>
-                                    {w.isIn ? "🛡️" : "⚠️"} {w.isIn ? "In" : "Out"}
-                                  </span>
-                                  <div className="text-[9px] text-gray-400 mt-0.5 leading-tight">
-                                    {w.wy}Y · s/d {w.expiryStr}
-                                  </div>
-                                  <div className="text-[9px] font-semibold mt-0.5"
-                                    style={{ color: w.isIn ? "#0369a1" : "#dc2626" }}>
-                                    {w.isIn ? `sisa ${w.diffDays}h` : `lewat ${Math.abs(w.diffDays)}h`}
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </td>
-                          <td className="px-3 py-3 align-middle">
-                            {ticket.product && (
-                              /*
-                                text-left BUKAN gaya bawaan di sini: peramban memberi
-                                <button> text-align:center, jadi begitu nama produk
-                                cukup panjang untuk turun ke baris kedua, teksnya
-                                menengah sendiri sementara seluruh kolom lain rata
-                                kiri. Baris pendek tidak terlihat salah karena
-                                tombolnya sepas isinya - yang panjang yang membuka
-                                perbedaannya.
-                              */
-                              <button onClick={() => { setProductFilter(prev => prev === ticket.product ? null : (ticket.product ?? null)); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }}
-                                className="text-left text-[12px] font-semibold px-1.5 py-0.5 rounded break-words leading-tight transition-all inline-block"
-                                style={{ background: productFilter === ticket.product ? '#6366f1' : '#eef2ff', color: productFilter === ticket.product ? 'white' : '#4338ca' }}>
-                                📦 {ticket.product}
-                              </button>
-                            )}
-                          </td>
-                          <td className="px-3 py-3 align-middle py-4"><div className="text-[13px] text-gray-600 break-words leading-tight">{ticket.sn_unit || "—"}</div></td>
-                          <td className="px-3 py-3 align-middle py-4"><div className="text-[13px] text-gray-700 break-words leading-tight">{ticket.issue_case}</div></td>
-                          <td className="px-3 py-3 align-middle py-4">
-                            <div className="text-sm text-gray-700 break-words leading-tight">{ticket.assign_name}</div>
-                            {/* Tampilkan team handler (dari users), bukan current_team ticket */}
-                            {(() => {
-                              const handler = teamMembers.find(m => m.name === ticket.assign_name);
-                              const handlerTeam = handler?.team_type || "Team PTS IVP";
-                              const isServices = ticket.current_team === "Team Services" || !!ticket.services_status;
-                              return (
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <span className="text-xs font-semibold" style={{ color: handlerTeam === "Team Services" ? "#7c3aed" : "#2563eb" }}>
-                                    {handlerTeam}
-                                  </span>
-                                  {isServices && handlerTeam !== "Team Services" && (
-                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "rgba(220,38,38,0.1)", color: "#dc2626" }}>
-                                      → Svc
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })()}
-                          </td>
-                          <td className="px-3 py-3 align-middle py-4">
-                            <div className="flex flex-col gap-1 items-start">
-                              <span className={`px-2 py-0.5 text-xs font-bold ${ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}`}>{ticket.status === "Waiting Approval" ? "⏳ Waiting Approval" : ticket.status}</span>
-                              {overdue && <span className={`px-2 py-0.5 text-xs font-bold ${ticket.status === "Solved" ? "bg-purple-100 text-purple-800 border-purple-400" : statusColors["Overdue"]}`}>{ticket.status === "Solved" ? "⚠️ Solved Overdue" : "🚨 Overdue"}</span>}
-                              {ticket.services_status && <span className={`px-2 py-0.5 text-xs font-bold ${statusColors[ticket.services_status]}`}>Svc: {ticket.services_status}</span>}
-                              {ticket.status === "Onsite" && (
-                                <button
-                                  onClick={e => { e.stopPropagation(); router.push('/reminder-schedule'); }}
-                                  className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded transition-colors"
-                                  style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
-                                  🗓️ Jadwal
-                                </button>
-                              )}
-                            </div>
-                           </td>
-                          <td className="px-2 py-3 align-middle"><div className="text-xs text-gray-600 break-words leading-tight">{ticket.sales_name || "—"}</div>{ticket.sales_division && <div className="text-xs text-purple-500 font-semibold mt-0.5">{ticket.sales_division}</div>}</td>
-                          <td className="px-1 py-2 align-middle">
-                            <div className="flex flex-wrap items-center justify-center gap-1">
-                              {/* Activity log badge + View */}
-                              <div className="relative inline-flex">
-                                <ViewIconBtn onClick={() => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); }} title="Detail" />
-                                {ticket.activity_logs && ticket.activity_logs.length > 0 && (
-                                  <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white text-[9px] font-bold rounded-full w-3.5 h-3.5 flex items-center justify-center leading-none">{ticket.activity_logs.length}</span>
-                                )}
-                              </div>
-                              {/* Flowchart */}
-                              <FlowchartIconBtn onClick={() => { setSummaryTicket(ticket); setShowActivitySummary(true); }} />
-                              {/* Print PDF */}
-                              <PrintIconBtn onClick={() => cetakTicket(ticket)} />
-                              {/* Waiting Approval — admin only */}
-                              {canApproveAssign && ticket.status === "Waiting Approval" && (
-                                <ApproveIconBtn onClick={() => { setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee(""); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} pulse />
-                              )}
-                              {/* Re-open */}
-                              {ticket.status === "Solved" && bolehUpdateTicket(ticket) && (
-                                <ReopenIconBtn onClick={() => { setReopenTargetTicket(ticket); setReopenAssignee(ticket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} />
-                              )}
-                              {/* Hapus — admin only */}
-                              {canManageTickets && (
-                                <DeleteIconBtn onClick={() => { setDeleteTargetTicket(ticket); setDeleteConfirmText(""); setShowDeleteModal(true); }} />
-                              )}
-                              {/* Overdue Setting — admin only */}
-                              {canManageTickets && (
-                                <OverdueIconBtn onClick={() => { setOverdueTargetTicket(ticket); const existing = getOverdueSetting(ticket.id); setOverdueForm({ due_hours: existing?.due_hours ? String(existing.due_hours) : "48" }); setShowOverdueSetting(true); }} active={!!overdueSetting} />
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                <div className="flex items-center justify-between px-5 py-3 border-t border-gray-200 flex-wrap gap-2" style={{ background: "rgba(255,255,255,0.97)" }}>
-                  <span className="text-xs text-gray-400">{filteredTickets.length} ticket{filteredTickets.length !== 1 ? "s" : ""} ditemukan</span>
-                  {totalPages > 1 && (
-                    <div className="flex items-center gap-1.5">
-                      <button aria-label="Awal" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}
-                        className="px-2 py-1 rounded-lg text-xs font-bold border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-all" title="First page">«</button>
-                      <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}
-                        className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-all">‹ Prev</button>
-                      <div className="flex items-center gap-1">
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          let page: number;
-                          if (totalPages <= 5) page = i + 1;
-                          else if (currentPage <= 3) page = i + 1;
-                          else if (currentPage >= totalPages - 2) page = totalPages - 4 + i;
-                          else page = currentPage - 2 + i;
-                          return (
-                            <button key={page} onClick={() => setCurrentPage(page)}
-                              className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${currentPage === page ? 'text-white border-0' : 'border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-                              style={currentPage === page ? { background: 'linear-gradient(135deg,#dc2626,#b91c1c)' } : {}}>
-                              {page}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}
-                        className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-all">Next ›</button>
-                      <button aria-label="Akhir" onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages}
-                        className="px-2 py-1 rounded-lg text-xs font-bold border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-all" title="Last page">»</button>
-                    </div>
-                  )}
-                  <span className="text-xs text-gray-400">
-                    {filteredTickets.length > 0 ? `${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, filteredTickets.length)}` : "0"} of {tickets.length}
-                  </span>
-                </div>
-              </div>{/* end hidden md:block */}
-              </>
-            )}
+            <TicketListBody
+              fetchError={fetchError}
+              setFetchError={setFetchError}
+              fetchData={fetchData}
+              ticketsLoading={ticketsLoading}
+              searchProject={searchProject}
+              setSearchProject={setSearchProject}
+              searchSalesName={searchSalesName}
+              setSearchSalesName={setSearchSalesName}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+              filterYear={filterYear}
+              setFilterYear={setFilterYear}
+              filteredTickets={filteredTickets}
+              paginatedTickets={paginatedTickets}
+              tickets={tickets}
+              users={users}
+              teamMembers={teamMembers}
+              isTicketOverdue={isTicketOverdue}
+              getOverdueSetting={getOverdueSetting}
+              getWarrantyInfo={getWarrantyInfo}
+              bolehUpdateTicket={bolehUpdateTicket}
+              canApproveAssign={canApproveAssign}
+              canManageTickets={canManageTickets}
+              currentUserTeamType={currentUserTeamType}
+              bukaDetailTicket={bukaDetailTicket}
+              bukaRingkasanAktivitas={bukaRingkasanAktivitas}
+              bukaApprovalUntukTicket={bukaApprovalUntukTicket}
+              bukaReopenTicket={bukaReopenTicket}
+              bukaDeleteTicket={bukaDeleteTicket}
+              bukaOverdueSetting={bukaOverdueSetting}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              totalPages={totalPages}
+              ITEMS_PER_PAGE={ITEMS_PER_PAGE}
+              selectMode={selectMode}
+              selectedIds={selectedIds}
+              toggleSelectId={toggleSelectId}
+              toggleSelectAll={toggleSelectAll}
+              productFilter={productFilter}
+              setProductFilter={setProductFilter}
+              ticketListRef={ticketListRef}
+            />
           </div>
         </div>
 
@@ -3157,40 +2722,11 @@ function TicketingSystemInner() {
 
         {/* Bulk Delete Confirm Modal */}
         {bulkConfirm && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
-              <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
-                <span className="text-2xl">🗑️</span>
-                <div>
-                  <h3 className="font-bold text-white">Hapus {selectedIds.size} Ticket?</h3>
-                  <p className="text-red-100 text-xs mt-0.5">Tindakan ini tidak dapat dibatalkan</p>
-                </div>
-              </div>
-              <div className="p-6">
-                <p className="text-sm text-gray-600 mb-5">
-                  Kamu akan menghapus <strong>{selectedIds.size} ticket</strong> yang dipilih secara permanen dari sistem.
-                </p>
-                <div className="flex gap-3">
-                  <button onClick={() => setBulkConfirm(false)}
-                    className="flex-1 border-2 border-gray-300 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm">
-                    Batal
-                  </button>
-                  <button onClick={async () => {
-                    setBulkConfirm(false); setBulkDeleting(true);
-                    const ids = Array.from(selectedIds);
-                    const { error } = await supabase.from("tickets").delete().in("id", ids);
-                    if (!error) { setTickets(prev => prev.filter(t => !selectedIds.has(t.id))); setSelectedIds(new Set()); setSelectMode(false); }
-                    else notify("error", "Gagal: " + error.message);
-                    setBulkDeleting(false);
-                  }} className="flex-[2] bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm hover:from-red-700 hover:to-red-800">
-                    🗑️ Ya, Hapus Permanen
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+          <BulkDeleteConfirmModal
+            jumlah={selectedIds.size}
+            onCancel={() => setBulkConfirm(false)}
+            onConfirm={jalankanBulkDelete}
+          />
         )}
 
         {/* ── NOTIFICATION POPUP (Redesigned) ── */}
@@ -3252,580 +2788,49 @@ function TicketingSystemInner() {
 
         {/* ── TICKET DETAIL POPUP — detail kiri + update panel kanan ── */}
         {showTicketDetailPopup && selectedTicket && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-3"
-            onClick={e => { if (e.target === e.currentTarget) { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); } }}>
-            <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1120px' : '720px', transition: 'max-width 0.2s' }}>
-
-              {/* LEFT: Detail */}
-              <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden w-full flex flex-col flex-1 min-w-0"
-                style={{ animation: "scale-in 0.25s ease-out", border: "1px solid rgba(0,0,0,0.1)", maxHeight: "94vh" }}>
-                {/* Header */}
-                <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
-                  {/* Latar bulat dibuang: di atas kepala merah ini lencana
-                      putih-transparan membuat tulisannya nyaris tak terbaca.
-                      Teks putih polos di atas merah jauh lebih terbaca, dan
-                      ruangnya cukup untuk menyebut keterangan pelimpahan. */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[10px] font-bold text-white/90">
-                    <span>🎫 Tim: {ringkasPenanganan(selectedTicket).teamHandler}</span>
-                    <span>Status: {ringkasPenanganan(selectedTicket).statusLengkap}</span>
-                    {selectedTicket.services_status && <span>Services: {selectedTicket.services_status}</span>}
-                  </div>
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
-                  <h2 className="text-lg font-bold text-white leading-tight">{selectedTicket.project_name}</h2>
-                  {selectedTicket.address && (
-                    <>
-                      <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
-                      <p className="text-white/75 text-xs flex items-center gap-1">📍 {selectedTicket.address}</p>
-                    </>
-                  )}
-                  {selectedTicket.status === "Onsite" && (
-                    <button onClick={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); router.push('/reminder-schedule'); }}
-                      className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white"
-                      style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.92)' }}>
-                      🗓️ Lihat Jadwal Reminder
-                    </button>
-                  )}
-                  <button aria-label="Tutup" onClick={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); }}
-                    className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
-                </div>
-
-                <div className="overflow-y-auto flex-1 min-h-0">
-                  {/* Supervisor: ticket di-route ke kamu → wajib assign lanjut ke tim */}
-                  {selectedTicket.routing_status === "supervisor_assign" && selectedTicket.assigned_supervisor_id === currentUser?.id && (
-                    <div className="mx-4 mt-3 rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(245,158,11,0.1)", border: "1.5px solid rgba(245,158,11,0.4)" }}>
-                      <span className="text-2xl">🎯</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-amber-800">Ticket ini menunggu kamu assign ke tim</p>
-                        <p className="text-[11px] text-amber-700">Sudah diapprove Admin — pilih anggota tim atau kerjakan sendiri.</p>
-                      </div>
-                      <button onClick={() => { setSupAssignTicket(selectedTicket); setSupAssignTo(""); }}
-                        className="flex-shrink-0 text-white px-3 py-2 rounded-lg text-xs font-bold" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
-                        🎯 Assign ke Tim
-                      </button>
-                    </div>
-                  )}
-                  {/* Admin / Full Access: betulkan data & alihkan pekerjaan.
-                      Sebelum ini satu-satunya cara membetulkan ticket yang salah
-                      adalah mengeditnya langsung di Supabase — tanpa jejak dan
-                      tanpa pemberitahuan ke yang menangani. */}
-                  {canManageTickets && (
-                    <div className="mx-4 mt-3 rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(99,102,241,0.08)', border: '1.5px solid rgba(99,102,241,0.25)' }}>
-                      <span className="text-2xl">🛠️</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-indigo-800">Koreksi data ticket</p>
-                        <p className="text-[11px] text-indigo-700">
-                          {bolehReroute(selectedTicket)
-                            ? 'Betulkan detail atau alihkan ke supervisor/tim lain.'
-                            : 'Detail bisa dibetulkan. Pengalihan tidak tersedia — pengerjaannya sudah jalan.'}
-                        </p>
-                      </div>
-                      <button onClick={() => bukaAdminEdit(selectedTicket)}
-                        className="flex-shrink-0 text-white px-3 py-2 rounded-lg text-xs font-bold" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
-                        🛠️ Edit &amp; Re-route
-                      </button>
-                    </div>
-                  )}
-                  {/* Progress Flowchart */}
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Progress</p>
-                      {/* Status Pending menahan pekerjaan, bukan membatalkannya —
-                          jadi yang perlu diketahui adalah berapa lama lagi
-                          tenggatnya, bukan sekadar bahwa ia sedang tertahan. */}
-                      {adalahPending(selectedTicket.status) && (() => {
-                        const dl = getDeadline(selectedTicket);
-                        if (!dl) return null;
-                        const sisaHari = Math.ceil((dl.getTime() - Date.now()) / 86400000);
-                        const lewat = sisaHari < 0;
-                        return (
-                          <span className="text-[10px] font-bold px-2 py-1 rounded-full border"
-                            style={lewat
-                              ? { background: 'rgba(220,38,38,0.08)', borderColor: 'rgba(220,38,38,0.3)', color: '#b91c1c' }
-                              : { background: 'rgba(245,158,11,0.1)', borderColor: 'rgba(245,158,11,0.35)', color: '#b45309' }}>
-                            {selectedTicket.status} · {lewat
-                              ? `lewat ${Math.abs(sisaHari)} hari`
-                              : `${sisaHari} hari lagi`}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                    <div className="flex items-center">
-                      {(["Pending","Call","Onsite","In Progress","Solved"] as const).map((step, idx, arr) => {
-                        const order = ["Pending","Call","Onsite","In Progress","Solved"];
-                        /* Posisi diambil dari langkah TERJAUH yang pernah dicapai menurut riwayat
-                           aktivitas, bukan status sekarang. "Pending Action" dan
-                           "Pending Check" tidak ada di daftar ini, jadi memakai status
-                           sekarang akan membuat ticket yang sudah jauh terlihat mundur
-                           ke titik awal. */
-                        const dariRiwayat = (selectedTicket.activity_logs ?? [])
-                          .map(l => order.indexOf(l.new_status))
-                          .filter(i => i >= 0);
-                        const curIdx = Math.max(
-                          order.indexOf(selectedTicket.status),
-                          ...(dariRiwayat.length ? dariRiwayat : [-1]),
-                        );
-                        const stepIdx = order.indexOf(step);
-                        const done = stepIdx < curIdx;
-                        const active = stepIdx === curIdx;
-                        const icons: Record<string,string> = { Pending:'🟡', Call:'📞', Onsite:'🚗', 'In Progress':'🔵', Solved:'✅' };
-                        return (
-                          <div key={step} className="flex items-center flex-1 last:flex-none">
-                            <div className="flex flex-col items-center gap-0.5">
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 ${active ? 'border-red-500 bg-red-50 shadow-md scale-110' : done ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                                {done ? '✓' : icons[step]}
-                              </div>
-                              <span className={`text-[7px] font-bold text-center leading-tight whitespace-nowrap ${active ? 'text-red-600' : done ? 'text-green-600' : 'text-gray-400'}`}>{step}</span>
-                            </div>
-                            {idx < arr.length - 1 && <div className={`flex-1 h-0.5 mx-0.5 mb-3 ${done ? 'bg-green-400' : 'bg-gray-200'}`} />}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Info grid — print style */}
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
-                      <div>
-                        <InfoLine label="Handler" value={ringkasPenanganan(selectedTicket).handlerPTS || '-'} />
-                        <InfoLine label="Team" value={ringkasPenanganan(selectedTicket).teamHandler} />
-                        <InfoLine label="Issue" value={selectedTicket.issue_case} />
-                        {selectedTicket.product && <InfoLine label="Product" value={selectedTicket.product} />}
-                        {selectedTicket.sn_unit && <InfoLine label="SN Unit" value={selectedTicket.sn_unit} />}
-                        {selectedTicket.customer_phone && <InfoLine label="Customer" value={selectedTicket.customer_phone} />}
-                      </div>
-                      <div>
-                        {selectedTicket.sales_name && <InfoLine label="Sales" value={`${selectedTicket.sales_name}${selectedTicket.sales_division ? ` (${selectedTicket.sales_division})` : ''}`} />}
-                        <InfoLine label="Dibuat" value={selectedTicket.created_at ? formatDateTime(selectedTicket.created_at) : '-'} />
-                        {/* "Sales" di atas = ATAS NAMA siapa ticket diajukan; baris ini =
-                            siapa yang benar-benar mengetik & submit. Lewat SBU, Sales
-                            Internal bisa mengajukan atas nama Sales External, jadi kalau
-                            keduanya beda disebut tegas supaya Sales yang namanya tercantum
-                            tidak dikira membuat ticket yang tak pernah ia buat. */}
-                        {selectedTicket.created_by && (() => {
-                          const pembuat = users.find(u => u.username === selectedTicket.created_by);
-                          const namaPembuat = pembuat?.full_name || selectedTicket.created_by;
-                          const atasNama = selectedTicket.sales_name || "";
-                          const beda = atasNama && atasNama !== namaPembuat;
-                          return <InfoLine label={beda ? "Diinput oleh" : "Oleh"}
-                            value={beda ? `${namaPembuat} (${selectedTicket.created_by}) — atas nama Sales ${atasNama}` : `${namaPembuat} (${selectedTicket.created_by})`} />;
-                        })()}
-                        {selectedTicket.description && <InfoLine label="Deskripsi" value={selectedTicket.description} />}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Warranty Info */}
-                  {(() => {
-                    const w = getWarrantyInfo(selectedTicket.project_name);
-                    if (!w) return null;
-                    return (
-                      <div className="px-4 py-3 border-b border-gray-100">
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">🛡️ Status Garansi Project</p>
-                        <div className="rounded-xl p-3 flex flex-wrap items-center gap-3"
-                          style={w.isIn
-                            ? { background: "rgba(14,165,233,0.08)", border: "1.5px solid rgba(14,165,233,0.3)" }
-                            : { background: "rgba(239,68,68,0.07)", border: "1.5px solid rgba(239,68,68,0.3)" }}>
-                          <span className="text-2xl">{w.isIn ? "🛡️" : "⚠️"}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-xs font-bold"
-                                style={{ color: w.isIn ? "#0369a1" : "#dc2626" }}>
-                                {w.isIn ? "✅ In Warranty" : "❌ Out of Warranty"}
-                              </span>
-                              <span className="text-xs font-bold" style={{ color: w.isIn ? "#0369a1" : "#dc2626" }}>
-                                {w.isIn ? `Sisa ${w.diffDays} hari` : `Sudah lewat ${Math.abs(w.diffDays)} hari`}
-                              </span>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2 mt-2 text-[10px] text-gray-500">
-                              <div><span className="block text-gray-400">BAST</span><strong className="text-gray-700">{w.bastStr}</strong></div>
-                              <div><span className="block text-gray-400">Berakhir</span><strong style={{ color: w.isIn ? "#0369a1" : "#dc2626" }}>{w.expiryStr}</strong></div>
-                              <div><span className="block text-gray-400">Durasi</span><strong className="text-gray-700">{w.wy} Tahun</strong></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Foto awal */}
-                  {selectedTicket.photo_url && (
-                    <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">📸 Foto Awal</p>
-                      <img src={selectedTicket.photo_url} alt="foto" loading="lazy" decoding="async" className="w-full max-h-36 object-cover rounded-xl border cursor-pointer hover:opacity-90" onClick={() => window.open(selectedTicket.photo_url!, "_blank")} />
-                    </div>
-                  )}
-
-                  {/* Activity log compact */}
-                  <div className="px-4 py-3">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">📝 Activity Log ({selectedTicket.activity_logs?.length || 0})</p>
-                    <div className="space-y-2">
-                      {selectedTicket.activity_logs && selectedTicket.activity_logs.length > 0
-                        ? selectedTicket.activity_logs.map(log => (
-                          <div key={log.id} className="rounded-lg p-2.5 border border-gray-100 bg-gray-50/80">
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs font-bold text-gray-800">{log.handler_name}</span>
-                                <span className="text-[9px] text-purple-700 font-semibold">{log.team_type}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className={`text-[9px] font-bold ${(statusColors[log.new_status] || 'text-gray-600').split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>{log.new_status}</span>
-                                <span className="text-[9px] text-gray-400">{formatDateTime(log.created_at)}</span>
-                              </div>
-                            </div>
-                            {log.action_taken && <p className="text-[10px] text-blue-700 font-semibold">🔧 {log.action_taken}</p>}
-                            <p className="text-xs text-gray-600">{log.notes}</p>
-                            {log.photo_url && <img src={log.photo_url} alt="log" loading="lazy" decoding="async" className="mt-1.5 max-h-24 rounded-lg border cursor-pointer" onClick={() => window.open(log.photo_url!, "_blank")} />}
-                            {log.file_url && <a href={log.file_url} download className="inline-block mt-1 text-[10px] font-bold text-blue-600 hover:underline">📄 {log.file_name || "Download"}</a>}
-                          </div>
-                        ))
-                        : <p className="text-xs text-gray-400 text-center py-3">Belum ada aktivitas</p>
-                      }
-                    </div>
-                  </div>
-
-                </div>
-                {/* Footer actions — outside overflow, always visible */}
-                <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-2 bg-gray-50/50 flex-shrink-0">
-                    <button onClick={() => cetakTicket(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}>📄 PDF</button>
-                    {selectedTicket.status === "Solved" && bolehUpdateTicket(selectedTicket) && currentUserTeamType !== "Team Services" && (
-                      <button onClick={() => { setReopenTargetTicket(selectedTicket); setReopenAssignee(selectedTicket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>🔓 Re-open</button>
-                    )}
-                    {/* C2: dulu jalan buntu - services_status "Solved" tidak bisa dibuka siapa
-                        pun. Team Services (membetulkan salah klik sendiri) atau Admin/
-                        Superadmin (pengawasan) sekarang bisa. */}
-                    {selectedTicket.services_status === "Solved" && bolehUpdateTicket(selectedTicket) &&
-                      (currentUserTeamType === "Team Services" || currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
-                      <button onClick={() => setReopenServicesTarget(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}>🔓 Re-open Services</button>
-                    )}
-                    {bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
-                      <button onClick={() => setShowUpdateForm(!showUpdateForm)}
-                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${showUpdateForm ? 'bg-gray-200 text-gray-700' : 'text-white'}`}
-                        style={showUpdateForm ? {} : { background: "linear-gradient(135deg,#dc2626,#b91c1c)" }}>
-                        {showUpdateForm ? '✕ Tutup' : '➕ Update Status'}
-                      </button>
-                    )}
-                    {bolehUpdateTicket(selectedTicket) && currentUserTeamType === "Team Services" && selectedTicket.services_status === "Waiting Approval" && (
-                      <button onClick={() => setShowServicesApprovalModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}>🔧 Konfirmasi</button>
-                    )}
-                    <button onClick={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); setShowUpdateForm(false); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-gray-200 text-gray-600 bg-white">✕ Close</button>
-                  </div>
-              </div>
-
-              {/* RIGHT: Update Status Panel */}
-              {showUpdateForm && bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
-                <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden flex-shrink-0"
-                  style={{ width: 340, animation: "scale-in 0.2s ease-out", border: "2px solid rgba(220,38,38,0.25)", maxHeight: "94vh" }}>
-                  <div className="px-4 py-3" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-bold text-white text-sm">{currentUserTeamType === "Team Services" ? "🔧 Update Services" : "➕ Update Status"}</h3>
-                        <p className="text-red-200 text-[10px]">Handler: {newActivity.handler_name}</p>
-                      </div>
-                      <button aria-label="Tutup" onClick={() => setShowUpdateForm(false)} className="text-white hover:bg-white/20 rounded-lg p-1 font-bold text-xs">✕</button>
-                    </div>
-                  </div>
-
-                  <div className="overflow-y-auto p-3 space-y-3" style={{ maxHeight: 'calc(94vh - 70px)' }}>
-                    {/* SN Unit */}
-                    <div>
-                      <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">🔢 SN Unit</label>
-                      <input type="text" value={newActivity.sn_unit} onChange={e => setNewActivity({ ...newActivity, sn_unit: e.target.value })}
-                        placeholder="Update SN Unit..." className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40"
-                        style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
-                    </div>
-
-                    {/* Status flowchart buttons */}
-                    <div>
-                      <label className="block text-[9px] font-bold mb-2 tracking-widest uppercase text-gray-400">Pilih Status *</label>
-                      {currentUserTeamType === "Team Services" ? (
-                        <div className="flex flex-col gap-1.5">
-                          {(["Pending","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart","Process Repair","Solved"] as const).map(s => (
-                            <button key={s} onClick={() => setNewActivity({ ...newActivity, new_status: s, action_taken: "", notes: "" })}
-                              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border-2 font-semibold text-xs transition-all text-left ${newActivity.new_status === s ? "bg-purple-600 text-white border-purple-600 shadow-md" : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"}`}>
-                              <span className="flex-1">{s}</span>
-                              {newActivity.new_status === s && <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-1.5">
-                          {(() => {
-                            const flow = ["Pending","Call","Onsite","In Progress","Pending Action","Solved"] as const;
-                            const curStatus = selectedTicket.status;
-                            const curIdx = flow.indexOf(curStatus as any);
-                            const styleMap: Record<string,{icon:string;sel:string;unsel:string}> = {
-                              Pending:      { icon:'🟡', sel:'bg-amber-500 text-white border-amber-500',    unsel:'bg-white text-amber-700 border-amber-200 hover:bg-amber-50' },
-                              Call:         { icon:'📞', sel:'bg-cyan-600 text-white border-cyan-600',      unsel:'bg-white text-cyan-700 border-cyan-200 hover:bg-cyan-50' },
-                              Onsite:       { icon:'🚗', sel:'bg-purple-600 text-white border-purple-600',  unsel:'bg-white text-purple-700 border-purple-200 hover:bg-purple-50' },
-                              'In Progress':{ icon:'🔵', sel:'bg-blue-600 text-white border-blue-600',      unsel:'bg-white text-blue-700 border-blue-200 hover:bg-blue-50' },
-                              'Pending Action':{ icon:'⏸️', sel:'bg-orange-600 text-white border-orange-600', unsel:'bg-white text-orange-700 border-orange-200 hover:bg-orange-50' },
-                              Solved:       { icon:'✅', sel:'bg-emerald-500 text-white border-emerald-500',unsel:'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50' },
-                            };
-                            return flow.map((step, idx) => {
-                              const stepIdx = flow.indexOf(step);
-                              // Boleh mundur ke "In Progress" dari "Pending Action" (kendala selesai, lanjut kerja).
-                              const locked = stepIdx < curIdx && !(curStatus === "Pending Action" && step === "In Progress");
-                              // Solved hanya dari Onsite+; Pending Action hanya dari In Progress+.
-                              const skipLocked = (step === 'Solved' && curIdx < 2) || (step === 'Pending Action' && curIdx < 3);
-                              const disabled = locked || skipLocked;
-                              const st = styleMap[step];
-                              const isSelected = newActivity.new_status === step;
-                              return (
-                                <div key={step}>
-                                  <button disabled={disabled}
-                                    onClick={() => setNewActivity({ ...newActivity, new_status: step, action_taken: "", notes: "", onsite_use_schedule: false })}
-                                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border-2 font-semibold text-xs transition-all ${isSelected ? st.sel : disabled ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' : st.unsel}`}>
-                                    <span>{st.icon}</span>
-                                    <span className="flex-1 text-left">{step}</span>
-                                    {disabled && <span className="text-[9px]">🔒</span>}
-                                    {isSelected && <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
-                                  </button>
-                                  {/* Onsite schedule */}
-                                  {step === 'Onsite' && isSelected && (
-                                    <div className="mt-1.5 p-2.5 rounded-lg border" style={{ background: 'rgba(124,58,237,0.06)', borderColor: 'rgba(124,58,237,0.25)' }}>
-                                      <div className="flex items-center gap-1.5 mb-1.5">
-                                        <input type="checkbox" id="onsite-sched-r" checked={newActivity.onsite_use_schedule}
-                                          onChange={e => setNewActivity({ ...newActivity, onsite_use_schedule: e.target.checked })}
-                                          className="w-3.5 h-3.5 accent-purple-600" />
-                                        <label htmlFor="onsite-sched-r" className="text-[10px] font-bold text-purple-700">Jadwalkan (bukan hari ini)</label>
-                                      </div>
-                                      {newActivity.onsite_use_schedule && (
-                                        <div className="space-y-1.5">
-                                          <input type="date" value={newActivity.onsite_schedule_date}
-                                            onChange={e => setNewActivity({ ...newActivity, onsite_schedule_date: e.target.value })}
-                                            className="w-full rounded-lg px-2.5 py-1.5 text-xs border border-purple-200 outline-none" style={{ background: 'white' }} />
-                                          <div className="flex gap-1.5 items-center">
-                                            <select value={newActivity.onsite_schedule_hour} onChange={e => setNewActivity({ ...newActivity, onsite_schedule_hour: e.target.value })}
-                                              className="flex-1 rounded-lg px-2 py-1.5 text-xs border border-purple-200" style={{ background: 'white' }}>
-                                              {Array.from({length:24},(_,i)=>String(i).padStart(2,'0')).map(h=><option key={h} value={h}>{h}</option>)}
-                                            </select>
-                                            <span className="text-gray-400 text-xs font-bold">:</span>
-                                            <select value={newActivity.onsite_schedule_minute} onChange={e => setNewActivity({ ...newActivity, onsite_schedule_minute: e.target.value })}
-                                              className="flex-1 rounded-lg px-2 py-1.5 text-xs border border-purple-200" style={{ background: 'white' }}>
-                                              {["00","15","30","45"].map(m=><option key={m} value={m}>{m}</option>)}
-                                            </select>
-                                            <span className="text-[9px] text-gray-500">WIB</span>
-                                          </div>
-                                          <div className="flex items-center gap-1.5 p-1.5 rounded-lg" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
-                                            <span className="text-xs">🗓️</span>
-                                            <p className="text-[9px] text-purple-700 font-semibold flex-1">Otomatis buat jadwal Troubleshooting di Reminder Schedule</p>
-                                            <button onClick={() => { setShowTicketDetailPopup(false); setShowUpdateForm(false); router.push('/reminder-schedule'); }}
-                                                className="text-[9px] font-bold px-1.5 py-0.5 rounded text-purple-700 hover:text-purple-900"
-                                                style={{ background: 'rgba(124,58,237,0.15)' }}>Buka</button>
-                                          </div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Notes/Action for statuses that need detail */}
-                    {!["Call","Onsite","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart"].includes(newActivity.new_status) && (
-                      <>
-                        <div>
-                          <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">🔧 Action Taken</label>
-                          <textarea value={newActivity.action_taken} onChange={e => setNewActivity({ ...newActivity, action_taken: e.target.value })}
-                            placeholder="Cek kabel HDMI, restart sistem..." rows={2}
-                            className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
-                            style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
-                        </div>
-                        <div>
-                          <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">
-                            📝 Notes {newActivity.new_status === "In Progress" ? <span className="text-gray-300 normal-case">(opsional)</span> : "*"}
-                          </label>
-                          <textarea value={newActivity.notes} onChange={e => setNewActivity({ ...newActivity, notes: e.target.value })}
-                            placeholder={newActivity.new_status === "Pending Action" ? "Kendala apa? (mis. menunggu konfirmasi user, akses lokasi belum tersedia)" : "Detail penanganan..."} rows={3}
-                            className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
-                            style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
-                        </div>
-                        {/* Pending Action: perpanjang deadline overdue (kendala bisa dari sisi user) */}
-                        {newActivity.new_status === "Pending Action" && (
-                          <div className="rounded-lg p-2.5" style={{ background: 'rgba(234,88,12,0.06)', border: '1px solid rgba(234,88,12,0.25)' }}>
-                            <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-orange-700">⏱️ Perpanjang Overdue</label>
-                            <div className="flex items-center gap-2">
-                              <input type="number" min={0} value={newActivity.extend_days}
-                                onChange={e => setNewActivity({ ...newActivity, extend_days: e.target.value })}
-                                placeholder="0" className="w-20 rounded-lg px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-orange-500/40"
-                                style={{ background: 'white', border: '1px solid rgba(0,0,0,0.12)' }} />
-                              <span className="text-[11px] font-semibold text-orange-700">hari dari sekarang</span>
-                            </div>
-                            <p className="text-[9px] text-orange-500 mt-1">Deadline overdue digeser sesuai hari yang dipilih. Kosong/0 = deadline tidak diubah.</p>
-                          </div>
-                        )}
-                      </>
-                    )}
-
-                    {/* Assign to Services */}
-                    {currentUserTeamType !== "Team Services" && newActivity.new_status === "In Progress" && (
-                      <div className="rounded-lg p-2.5" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.2)' }}>
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <input type="checkbox" id="assign-svc-r" checked={newActivity.assign_to_services}
-                            onChange={e => setNewActivity({ ...newActivity, assign_to_services: e.target.checked, services_assignee: "" })}
-                            className="w-3.5 h-3.5 accent-red-600" />
-                          <label htmlFor="assign-svc-r" className="text-[10px] font-bold text-red-700">🔧 Teruskan ke Team Services</label>
-                        </div>
-                        {newActivity.assign_to_services && (
-                          <p className="text-[10px] text-red-500 mt-1 font-medium">
-                            Ticket akan dikirim ke Admin Team Services. Mereka yang akan assign ke anggota tim mereka.
-                          </p>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Photo */}
-                    <div>
-                      <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">📷 Foto Bukti</label>
-                      <input type="file" accept="image/jpeg,image/jpg,image/png"
-                        onChange={e => setNewActivity({ ...newActivity, photo: e.target.files?.[0] || null })}
-                        className="w-full border rounded-lg px-2.5 py-1.5 text-xs bg-white file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-red-50 file:text-red-700"
-                        style={{ borderColor: "rgba(0,0,0,0.12)" }} />
-                    </div>
-
-                    <button onClick={addActivity}
-                      disabled={uploading || (!newActivity.notes && !["Pending","Call","Onsite","In Progress","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart","Process Repair"].includes(newActivity.new_status))}
-                      className="w-full text-white py-2.5 rounded-xl font-bold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                      style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 4px 14px rgba(220,38,38,0.35)" }}>
-                      {uploading ? "⏳ Menyimpan..." : "💾 Simpan Activity"}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </ModalPortal>
+          <TicketDetailPopup
+            selectedTicket={selectedTicket}
+            currentUser={currentUser}
+            currentUserTeamType={currentUserTeamType}
+            canManageTickets={canManageTickets}
+            users={users}
+            showUpdateForm={showUpdateForm}
+            setShowUpdateForm={setShowUpdateForm}
+            onClose={() => { setShowTicketDetailPopup(false); setSelectedTicket(null); }}
+            bukaAdminEdit={bukaAdminEdit}
+            getDeadline={getDeadline}
+            getWarrantyInfo={getWarrantyInfo}
+            bolehUpdateTicket={bolehUpdateTicket}
+            setSupAssignTicket={setSupAssignTicket}
+            setSupAssignTo={setSupAssignTo}
+            setReopenTargetTicket={setReopenTargetTicket}
+            setReopenAssignee={setReopenAssignee}
+            setReopenNotes={setReopenNotes}
+            setShowReopenModal={setShowReopenModal}
+            setReopenServicesTarget={setReopenServicesTarget}
+            setShowServicesApprovalModal={setShowServicesApprovalModal}
+            newActivity={newActivity}
+            setNewActivity={setNewActivity}
+            addActivity={addActivity}
+            uploading={uploading}
+          />
         )}
 
                 {/* ── APPROVAL MODAL (Redesigned) ── */}
         {showApprovalModal && canApproveAssign && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full max-h-full overflow-hidden flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
-              <div className="p-6 flex-shrink-0" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
-                <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-3xl">⏳</span><div><h3 className="text-xl font-bold text-white">Ticket Approval</h3><p className="text-sm text-white/90">{pendingApprovalTickets.length} ticket menunggu persetujuan</p></div></div><button aria-label="Tutup" onClick={() => { setShowApprovalModal(false); setApprovalAssignees({}); setApprovalTicket(null); setApprovalAssignee(""); }} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all">✕</button></div>
-              </div>
-              <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-                {pendingApprovalTickets.length === 0 ? (<div className="text-center py-12"><div className="text-5xl mb-3">✅</div><p className="text-gray-500 font-medium">Tidak ada ticket yang menunggu approval</p></div>) : pendingApprovalTickets.map((ticket) => (
-                  <div key={ticket.id} className="rounded-xl p-4" style={{ background: "rgba(245,158,11,0.1)", border: "2px solid rgba(245,158,11,0.3)" }}>
-                    <div className="flex justify-between items-start mb-3"><div><p className="font-bold text-lg text-gray-800">🏢 {ticket.project_name}</p><p className="text-sm text-gray-600 mt-0.5">⚠️ {ticket.issue_case}</p>{ticket.description && <p className="text-xs text-gray-500 mt-1">{ticket.description}</p>}<div className="flex gap-2 mt-2 flex-wrap text-xs text-gray-500">{ticket.customer_phone && <span>👤 {ticket.customer_phone}</span>}{ticket.sales_name && <span>💼 {ticket.sales_name}</span>}{ticket.sn_unit && <span>🔢 {ticket.sn_unit}</span>}</div><p className="text-xs text-orange-700 font-semibold mt-2">Dibuat oleh: {ticket.created_by || "-"} • {ticket.date}</p></div><span className="px-3 py-1 rounded-full text-xs font-bold border-2 bg-orange-100 text-orange-800 border-orange-400 whitespace-nowrap ml-2">⏳ Waiting Approval</span></div>
-
-                    {/* ── Referensi Project dari Reminder Schedule ── */}
-                    {(() => {
-                      const key = (ticket.project_name || "").trim().toLowerCase();
-                      const refs = projectReminders[key];
-                      if (!refs || refs.length === 0) return null;
-                      return (
-                        <div className="mb-3 rounded-xl p-3" style={{ background: "rgba(16,185,129,0.08)", border: "1.5px solid rgba(16,185,129,0.35)" }}>
-                          <p className="text-xs font-bold text-emerald-700 mb-2">📋 Referensi Project di Reminder Schedule</p>
-                          {refs.map((ref, idx) => {
-                            const bastDate = ref.due_date ? new Date(ref.due_date + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-";
-                            // Hitung warranty status
-                            const wy = (ref as any).warranty_years as 1 | 2 | 3 | null | undefined;
-                            let warrantyBadge: React.ReactNode = null;
-                            if (wy && ref.due_date) {
-                              const expiry = new Date(ref.due_date + "T00:00:00");
-                              expiry.setFullYear(expiry.getFullYear() + wy);
-                              const today = new Date(); today.setHours(0, 0, 0, 0);
-                              const isIn = today <= expiry;
-                              const diffDays = Math.ceil((expiry.getTime() - today.getTime()) / 86400000);
-                              const expiryStr = expiry.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-                              warrantyBadge = (
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
-                                  style={isIn ? { background: "rgba(14,165,233,0.18)", color: "#0369a1" } : { background: "rgba(239,68,68,0.15)", color: "#dc2626" }}>
-                                  {isIn ? "🛡️ In Warranty" : "⚠️ Out of Warranty"}
-                                  <span className="opacity-70">· s/d {expiryStr} ({isIn ? `sisa ${diffDays}h` : `lewat ${Math.abs(diffDays)}h`})</span>
-                                </span>
-                              );
-                            }
-                            return (
-                              <div key={idx} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs mb-1.5">
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold" style={{ background: "rgba(16,185,129,0.15)", color: "#065f46" }}>
-                                  {ref.category === "Konfigurasi & Training" ? "📌" : "⚙️"} {ref.category}
-                                </span>
-                                <span className="text-gray-600">🗓️ BAST: <strong className="text-emerald-800">{bastDate}</strong></span>
-                                {ref.assign_name && ref.assign_name !== "-" && (
-                                  <span className="text-gray-600">👷 Handler: <strong className="text-emerald-800">{ref.assign_name}</strong></span>
-                                )}
-                                {warrantyBadge && <div className="w-full mt-0.5">{warrantyBadge}</div>}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
-
-                    <div className="mt-3 border-t pt-3" style={{ borderColor: "rgba(245,158,11,0.3)" }}>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">👨‍💼 Assign ke Team PTS IVP:</label>
-                      {/* Suggested handler dari referensi project */}
-                      {(() => {
-                        const key = (ticket.project_name || "").trim().toLowerCase();
-                        const refs = projectReminders[key];
-                        if (!refs || refs.length === 0) return null;
-                        const suggested = refs.filter(r => r.assign_name && r.assign_name !== "-");
-                        if (suggested.length === 0) return null;
-                        // Deduplicate by assign_name
-                        const unique = Array.from(new Map(suggested.map(r => [r.assign_name, r])).values());
-                        return (
-                          <div className="mb-2">
-                            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide mb-1.5">💡 Saran Handler (handle project ini sebelumnya)</p>
-                            <div className="flex flex-wrap gap-2">
-                              {unique.map((ref, idx) => {
-                                const isSelected = approvalAssignees[ticket.id] === ref.assign_name;
-                                return (
-                                  <button key={idx}
-                                    onClick={() => setApprovalAssignees(prev => ({ ...prev, [ticket.id]: ref.assign_name }))}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${isSelected ? "bg-emerald-600 text-white border-emerald-600 scale-105" : "bg-emerald-50 text-emerald-800 border-emerald-400 hover:bg-emerald-100"}`}>
-                                    ⭐ {ref.assign_name}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            <p className="text-[10px] text-gray-400 mt-1 mb-2">Atau pilih anggota lain:</p>
-                          </div>
-                        );
-                      })()}
-                      <div className="flex gap-2">
-                        <select aria-label="Pilih handler / Supervisor"
-                          className="flex-1 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-orange-500"
-                          style={{ border: "2px solid rgba(245,158,11,0.3)", background: "white" }}
-                          value={approvalAssignees[ticket.id] ?? ""}
-                          onChange={(e) => setApprovalAssignees(prev => ({ ...prev, [ticket.id]: e.target.value }))}>
-                          <option value="">Pilih handler / Supervisor</option>
-                          <optgroup label="👷 Assign langsung ke Team PTS">
-                            {teamPTSMembers.map((m) => (<option key={m.id} value={m.name}>{m.name}</option>))}
-                          </optgroup>
-                          {supervisorMembers.length > 0 && (
-                            <optgroup label="🎯 Route ke Supervisor">
-                              {supervisorMembers.map((m) => (<option key={`sup-${m.id}`} value={`SUP::${m.id}::${m.name}`}>{m.name} (Supervisor)</option>))}
-                            </optgroup>
-                          )}
-                        </select>
-                        {/* Ticket & handler baris INI dikirim eksplisit — bukan lewat state
-                            bersama — supaya yang diproses tidak mungkin tertukar dengan
-                            baris lain di modal yang sama. */}
-                        <button onClick={async () => {
-                          const pilihan = approvalAssignees[ticket.id];
-                          if (!pilihan) { notify("error", "Pilih handler atau Supervisor terlebih dahulu!"); return; }
-                          await approveTicket(ticket, pilihan);
-                        }} disabled={uploading || !approvalAssignees[ticket.id]} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">
-                          {approvingId === ticket.id ? "⏳ Memproses..." : "✅ Approve"}
-                        </button>
-                        <button onClick={() => rejectTicket(ticket)} disabled={uploading} className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm">❌ Reject</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+          <ApprovalModal
+            pendingApprovalTickets={pendingApprovalTickets}
+            projectReminders={projectReminders}
+            approvalAssignees={approvalAssignees}
+            setApprovalAssignees={setApprovalAssignees}
+            teamPTSMembers={teamPTSMembers}
+            supervisorMembers={supervisorMembers}
+            approvingId={approvingId}
+            uploading={uploading}
+            jalankanApproveTicket={jalankanApproveTicket}
+            rejectTicket={rejectTicket}
+            onClose={() => { setShowApprovalModal(false); setApprovalAssignees({}); setApprovalTicket(null); setApprovalAssignee(""); }}
+          />
         )}
 
         {/* ── SERVICES APPROVAL MODAL (Redesigned) ── */}
@@ -3835,183 +2840,68 @@ function TicketingSystemInner() {
             urutan blok ini bergeser ke atas popup detail, ia langsung hilang
             ke belakang. */}
         {showServicesApprovalModal && currentUserTeamType === "Team Services" && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full max-h-full overflow-hidden flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(219,39,119,0.5)" }}>
-              <div className="p-6 flex-shrink-0" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}>
-                <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-3xl">🔧</span><div><h3 className="text-xl font-bold text-white">Ticket Masuk — Team Services</h3><p className="text-sm text-white/90">{pendingServicesApprovalTickets.length} ticket menunggu konfirmasi</p></div></div><button aria-label="Tutup" onClick={() => setShowServicesApprovalModal(false)} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all">✕</button></div>
-              </div>
-              <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-                {pendingServicesApprovalTickets.length === 0 ? (<div className="text-center py-12"><div className="text-5xl mb-3">✅</div><p className="text-gray-500 font-medium">Tidak ada ticket yang menunggu konfirmasi</p></div>) : pendingServicesApprovalTickets.map((ticket) => (
-                  <div key={ticket.id} className="rounded-xl p-4" style={{ background: "rgba(219,39,119,0.1)", border: "2px solid rgba(219,39,119,0.3)" }}>
-                    <div className="flex justify-between items-start mb-3"><div className="flex-1"><p className="font-bold text-lg text-gray-800">🏢 {ticket.project_name}</p><p className="text-sm text-gray-600 mt-0.5">⚠️ {ticket.issue_case}</p>{ticket.description && <p className="text-xs text-gray-500 mt-1">{ticket.description}</p>}<div className="flex gap-3 mt-2 flex-wrap text-xs text-gray-500">{ticket.customer_phone && <span>👤 {ticket.customer_phone}</span>}{ticket.sales_name && <span>💼 {ticket.sales_name}</span>}{ticket.sn_unit && <span>🔢 SN: {ticket.sn_unit}</span>}{ticket.address && <span>📍 {ticket.address}</span>}</div><p className="text-xs text-rose-700 font-semibold mt-2">Dikirim oleh Team PTS IVP • {ticket.date}</p></div><span className="px-3 py-1 rounded-full text-xs font-bold border-2 bg-rose-100 text-rose-800 border-rose-400 whitespace-nowrap ml-3">⏳ Menunggu Konfirmasi</span></div>
-                    <div className="mt-3 border-t pt-3" style={{ borderColor: "rgba(219,39,119,0.3)" }}><p className="text-xs text-gray-600 mb-3 rounded-lg px-3 py-2" style={{ background: "rgba(219,39,119,0.05)", border: "1px solid rgba(219,39,119,0.2)" }}>💡 Terima ticket untuk mulai proses penanganan, atau tolak untuk mengembalikan ke Team PTS IVP.</p><div className="flex gap-2"><button onClick={() => approveServicesTicket(ticket)} disabled={uploading} className="flex-1 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2.5 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">✅ Terima & Mulai Proses</button><button onClick={() => rejectServicesTicket(ticket)} disabled={uploading} className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2.5 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm">❌ Tolak (Kembalikan ke PTS)</button></div></div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+          <ServicesApprovalModal
+            pendingServicesApprovalTickets={pendingServicesApprovalTickets}
+            uploading={uploading}
+            approveServicesTicket={approveServicesTicket}
+            rejectServicesTicket={rejectServicesTicket}
+            onClose={() => setShowServicesApprovalModal(false)}
+          />
         )}
 
-        {/* ── REMINDER SCHEDULE MODAL (Redesigned) ── */}
         {showReminderSchedule && canManageTickets && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(124,58,237,0.5)" }}>
-              <div className="flex items-center justify-between mb-5"><div className="flex items-center gap-3"><span className="text-3xl">⏰</span><div><h3 className="text-lg font-bold text-gray-800">Jadwal WA Reminder</h3><p className="text-xs text-gray-500">Kirim reminder otomatis ke semua handler</p></div></div><button aria-label="Tutup" onClick={() => setShowReminderSchedule(false)} className="text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button></div>
-              <div className="flex items-center justify-between rounded-xl p-3 mb-4" style={{ background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)" }}><div><p className="text-sm font-bold text-violet-800">Status Reminder</p><p className="text-xs text-violet-600">{reminderSchedule.active ? "Aktif — akan kirim WA otomatis" : "Nonaktif — tidak ada WA dikirim"}</p></div><button onClick={() => setReminderSchedule((prev) => ({ ...prev, active: !prev.active }))} className={`relative w-12 h-6 rounded-full transition-colors ${reminderSchedule.active ? "bg-violet-600" : "bg-gray-300"}`}><span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${reminderSchedule.active ? "translate-x-6" : "translate-x-0.5"}`} /></button></div>
-              <div className="mb-4"><label className="block text-sm font-bold text-gray-700 mb-2">🕐 Jam Pengiriman (WIB)</label><div className="flex items-center gap-2"><select value={reminderSchedule.hour_wib} onChange={(e) => setReminderSchedule((prev) => ({ ...prev, hour_wib: e.target.value }))} className="flex-1 rounded-lg px-3 py-2.5 font-bold text-center text-lg focus:ring-2 focus:ring-violet-500" style={{ border: "2px solid rgba(124,58,237,0.3)", background: "white" }}>{Array.from({ length: 24 }, (_, i) => (<option key={i} value={String(i)}>{String(i).padStart(2, "0")}:00</option>))}</select><span className="text-gray-500 font-semibold">:</span><select value={reminderSchedule.minute} onChange={(e) => setReminderSchedule((prev) => ({ ...prev, minute: e.target.value }))} className="w-24 rounded-lg px-3 py-2.5 font-bold text-center text-lg focus:ring-2 focus:ring-violet-500" style={{ border: "2px solid rgba(124,58,237,0.3)", background: "white" }}>{["00", "15", "30", "45"].map((m) => (<option key={m} value={m}>{m}</option>))}</select><span className="text-sm font-bold text-gray-600">WIB</span></div><div className="flex gap-2 mt-2 flex-wrap">{[{ label: "07:00", h: "7", m: "0" }, { label: "08:00", h: "8", m: "0" }, { label: "09:00", h: "9", m: "0" }, { label: "13:00", h: "13", m: "0" }].map((t) => (<button key={t.label} onClick={() => setReminderSchedule((prev) => ({ ...prev, hour_wib: t.h, minute: t.m }))} className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${reminderSchedule.hour_wib === t.h && reminderSchedule.minute === t.m ? "bg-violet-600 text-white border-violet-600" : "bg-violet-50 text-violet-700 border-violet-300 hover:bg-violet-100"}`}>{t.label}</button>))}</div></div>
-              <div className="mb-5"><label className="block text-sm font-bold text-gray-700 mb-2">📅 Frekuensi</label><div className="grid grid-cols-3 gap-2"><button onClick={() => setReminderSchedule((prev) => ({ ...prev, frequency: "daily" }))} className={`py-2 px-2 rounded-lg text-xs font-bold border transition-all ${reminderSchedule.frequency === "daily" ? "bg-violet-600 text-white border-violet-600" : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"}`}>📆 Setiap Hari</button><button onClick={() => setReminderSchedule((prev) => ({ ...prev, frequency: "weekdays" }))} className={`py-2 px-2 rounded-lg text-xs font-bold border transition-all ${reminderSchedule.frequency === "weekdays" ? "bg-violet-600 text-white border-violet-600" : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"}`}>💼 Senin–Jumat</button><button onClick={() => setReminderSchedule((prev) => ({ ...prev, frequency: "custom" }))} className={`py-2 px-2 rounded-lg text-xs font-bold border transition-all ${reminderSchedule.frequency === "custom" ? "bg-violet-600 text-white border-violet-600" : "bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100"}`}>✏️ Pilih Hari</button></div>{reminderSchedule.frequency === "custom" && (<div className="mt-3 flex gap-1.5 flex-wrap">{["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((day, idx) => (<button key={idx} onClick={() => { const days = reminderSchedule.custom_days.includes(idx) ? reminderSchedule.custom_days.filter((d) => d !== idx) : [...reminderSchedule.custom_days, idx].sort(); setReminderSchedule((prev) => ({ ...prev, custom_days: days })); }} className={`w-10 h-10 rounded-full text-xs font-bold border-2 transition-all ${reminderSchedule.custom_days.includes(idx) ? "bg-violet-600 text-white border-violet-600" : "bg-white text-gray-600 border-gray-300 hover:border-violet-400"}`}>{day}</button>))}</div>)}</div>
-              <div className="rounded-xl p-3 mb-5" style={{ background: "rgba(0,0,0,0.05)", border: "1px solid rgba(0,0,0,0.08)" }}><p className="text-xs text-gray-500 mb-1">Preview jadwal:</p><p className="text-sm font-bold text-gray-800">📬 {getCronDisplay()}</p><p className="text-xs text-gray-400 mt-1">Reminder dikirim ke WA semua handler dengan ticket Pending/In Progress</p></div>
-              <div className="grid grid-cols-2 gap-3"><button onClick={saveCronSchedule} disabled={reminderSaving} className="bg-gradient-to-r from-violet-600 to-violet-800 text-white py-3 rounded-xl font-bold hover:from-violet-700 hover:to-violet-900 transition-all disabled:opacity-50">{reminderSaving ? "⏳ Menyimpan..." : "💾 Simpan"}</button><button onClick={() => setShowReminderSchedule(false)} className="bg-gray-100 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-200 transition-all">✕ Batal</button></div>
-            </div>
-          </div>
-        </ModalPortal>
+          <ReminderScheduleModal
+            reminderSchedule={reminderSchedule}
+            setReminderSchedule={setReminderSchedule}
+            reminderSaving={reminderSaving}
+            saveCronSchedule={saveCronSchedule}
+            getCronDisplay={getCronDisplay}
+            onClose={() => setShowReminderSchedule(false)}
+          />
         )}
 
         {/* ── ACCOUNT SETTINGS MODAL (Redesigned) ── */}
         {showAccountSettings && canAccessAccountSettings && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-5xl w-full max-h-full overflow-y-auto p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(75,85,99,0.3)" }}>
-              <div className="flex justify-between items-center mb-6 sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-6 px-6 py-3 border-b border-gray-100"><h2 className="text-2xl font-bold text-gray-800">⚙️ Account Management</h2><button aria-label="Tutup" onClick={() => setShowAccountSettings(false)} className="text-gray-500 hover:text-gray-700 text-xl font-bold">✕</button></div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <div className="rounded-xl p-5" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.08)" }}><h3 className="font-bold mb-4 text-blue-900">➕ Create New Account</h3><div className="space-y-3"><input type="text" placeholder="Username" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input aria-label="Password" type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input aria-label="Full Name" type="text" placeholder="Full Name" value={newUser.full_name} onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><select value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="admin">Administrator</option><option value="team">Team</option><option value="guest">Guest</option></select>{newUser.role === "team" && (<select value={newUser.team_type} onChange={(e) => setNewUser({ ...newUser, team_type: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="Team PTS IVP">Team PTS IVP</option><option value="Team Services">Team Services</option></select>)}<button onClick={createUser} className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-3 rounded-xl hover:from-blue-700 hover:to-blue-900 font-bold transition-all">➕ Create Account</button></div></div>
-                <div className="rounded-xl p-5" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.08)" }}><h3 className="font-bold mb-4 text-orange-900">🔒 Change Password</h3><div className="space-y-3"><select value={selectedUserForPassword} onChange={(e) => { setSelectedUserForPassword(e.target.value); setChangePassword({ current: "", new: "", confirm: "" }); }} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="">Select User</option>{users.map((u) => (<option key={u.id} value={u.id}>{u.full_name} ({u.username})</option>))}</select>{selectedUserForPassword && (<><input type="password" placeholder="Old Password" value={changePassword.current} onChange={(e) => setChangePassword({ ...changePassword, current: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input aria-label="New Password" type="password" placeholder="New Password" value={changePassword.new} onChange={(e) => setChangePassword({ ...changePassword, new: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><input aria-label="Confirm Password" type="password" placeholder="Confirm Password" value={changePassword.confirm} onChange={(e) => setChangePassword({ ...changePassword, confirm: e.target.value })} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /><button onClick={updatePassword} className="w-full bg-gradient-to-r from-orange-600 to-orange-800 text-white py-3 rounded-xl hover:from-orange-700 hover:to-orange-900 font-bold transition-all">🔒 Change Password</button></>)}</div></div>
-              </div>
-              <div className="rounded-xl p-5" style={{ background: "rgba(255,255,255,0.6)", border: "1px solid rgba(0,0,0,0.08)" }}><h3 className="font-bold mb-4 text-gray-800">👥 User List</h3><div className="max-h-[400px] overflow-y-auto"><div className="space-y-2">{users.map((u) => (<div key={u.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 flex justify-between items-center"><div><p className="font-bold text-sm">{u.full_name}</p><p className="text-xs text-gray-600">{u.username}</p></div><div className="flex gap-2"><span className={`text-xs px-2 py-1 rounded ${u.role === "admin" ? "bg-red-100 text-red-800" : u.role === "team" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-800"}`}>{u.role === "admin" ? "Admin" : u.role === "team" ? "Team" : "Guest"}</span>{u.team_type && <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-800">{u.team_type}</span>}</div></div>))}</div></div></div>
-            </div>
-          </div>
-        </ModalPortal>
+          <AccountSettingsModal
+            newUser={newUser}
+            setNewUser={setNewUser}
+            createUser={createUser}
+            selectedUserForPassword={selectedUserForPassword}
+            setSelectedUserForPassword={setSelectedUserForPassword}
+            changePassword={changePassword}
+            setChangePassword={setChangePassword}
+            updatePassword={updatePassword}
+            users={users}
+            onClose={() => setShowAccountSettings(false)}
+          />
         )}
 
-        {/* ── GUEST MAPPING MODAL (Redesigned) ── */}
-
-        {/* ── NEW TICKET MODAL  ── */}
-        {/* ── ADMIN: EDIT DETAIL & RE-ROUTE ── */}
-        {/* Z.overlayTop — dibuka DARI DALAM popup detail (Z.overlay). */}
         {adminEditTicket && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
-            onClick={e => { if (e.target === e.currentTarget && !adminEditSaving) setAdminEditTicket(null); }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-full flex flex-col overflow-hidden"
-              style={{ animation: 'scale-in 0.25s ease-out' }}>
-              <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
-                <div className="min-w-0">
-                  <h3 className="text-lg font-bold text-white">🛠️ Edit Detail &amp; Re-route</h3>
-                  <p className="text-indigo-100/90 text-xs mt-0.5 truncate">{adminEditTicket.project_name}</p>
-                </div>
-                <button aria-label="Tutup" onClick={() => setAdminEditTicket(null)} disabled={adminEditSaving}
-                  className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg disabled:opacity-40">✕</button>
-              </div>
-
-              <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
-                {/* ── Re-route ── */}
-                <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)' }}>
-                  <p className="text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-2">🔀 Alihkan Pekerjaan</p>
-                  {bolehReroute(adminEditTicket) ? (
-                    <>
-                      <select aria-label="— Biarkan seperti sekarang —" value={adminRerouteTo} onChange={e => setAdminRerouteTo(e.target.value)}
-                        className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-amber-200">
-                        <option value="">— Biarkan seperti sekarang —</option>
-                        <option value="SELF">🙋 Saya kerjakan sendiri</option>
-                        {supervisorMembers.length > 0 && (
-                          <optgroup label="🎯 Route ke Supervisor">
-                            {supervisorMembers.map(m => <option key={`ar-sup-${m.id}`} value={`SUP::${m.id}::${m.name}`}>{m.name} (Supervisor)</option>)}
-                          </optgroup>
-                        )}
-                        {teamPTSMembers.length > 0 && (
-                          <optgroup label="👥 Assign langsung ke Tim">
-                            {teamPTSMembers.map(m => <option key={`ar-tm-${m.id}`} value={m.name}>{m.name}</option>)}
-                          </optgroup>
-                        )}
-                      </select>
-                      <p className="text-[11px] text-amber-700 mt-1.5">
-                        Sekarang ditangani: <strong>{adminEditTicket.assign_name || (adminEditTicket.routing_status === 'supervisor_assign' ? 'menunggu assign Supervisor' : '—')}</strong>.
-                        Yang dipilih akan langsung dikabari lewat WA.
-                      </p>
-                    </>
-                  ) : (
-                    <p className="text-xs text-amber-800">
-                      Pengalihan tidak tersedia — status ticket sudah <strong>{adminEditTicket.status}</strong>,
-                      artinya pengerjaannya sudah berjalan. Detail di bawah tetap bisa dibetulkan.
-                    </p>
-                  )}
-                </div>
-
-                {/* ── Edit detail ── */}
-                <div>
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">✏️ Detail Ticket</p>
-                  <AdminEditFields fields={TICKET_ADMIN_FIELDS} value={adminEditForm} disabled={adminEditSaving}
-                    onChange={(k, v) => setAdminEditForm(prev => ({ ...prev, [k]: v }))} />
-                </div>
-
-                <p className="text-[11px] text-slate-400">
-                  Setiap perubahan tercatat di Audit Trail lengkap dengan nilai sebelum dan sesudahnya,
-                  dan diberitahukan ke yang menangani lewat WA.
-                </p>
-              </div>
-
-              <div className="px-6 py-4 flex gap-3 flex-shrink-0 border-t border-slate-100">
-                <button onClick={() => setAdminEditTicket(null)} disabled={adminEditSaving}
-                  className="flex-1 py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40">
-                  Batal
-                </button>
-                <button onClick={simpanAdminEdit} disabled={adminEditSaving}
-                  className="flex-[2] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                  style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
-                  {adminEditSaving
-                    ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
-                    : <>💾 Simpan Perubahan</>}
-                </button>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+          <AdminEditModal
+            adminEditTicket={adminEditTicket}
+            adminRerouteTo={adminRerouteTo}
+            setAdminRerouteTo={setAdminRerouteTo}
+            adminEditSaving={adminEditSaving}
+            supervisorMembers={supervisorMembers}
+            teamPTSMembers={teamPTSMembers}
+            adminEditForm={adminEditForm}
+            setAdminEditForm={setAdminEditForm}
+            simpanAdminEdit={simpanAdminEdit}
+            onClose={() => setAdminEditTicket(null)}
+          />
         )}
 
-        {/* ── SUPERVISOR ASSIGN TICKET MODAL ── */}
         {supAssignTicket && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1200] p-4"
-            onClick={e => { if (e.target === e.currentTarget) { setSupAssignTicket(null); setSupAssignTo(""); } }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.4)" }}>
-              <div className="px-6 py-5 flex items-center justify-between" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
-                <div>
-                  <h3 className="text-lg font-bold text-white">🎯 Assign ke Tim</h3>
-                  <p className="text-amber-100/90 text-xs mt-0.5 truncate max-w-[280px]">{supAssignTicket.project_name}</p>
-                </div>
-                <button aria-label="Tutup" onClick={() => { setSupAssignTicket(null); setSupAssignTo(""); }} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">✕</button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="rounded-xl p-3 text-xs text-slate-600" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)" }}>
-                  ⚠️ {supAssignTicket.issue_case} · {supAssignTicket.sales_name || "-"}{supAssignTicket.sales_division ? ` (${supAssignTicket.sales_division})` : ""}
-                </div>
-                <div>
-                  <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase text-slate-400">Assign ke *</label>
-                  <select aria-label="-- Pilih --" value={supAssignTo} onChange={e => setSupAssignTo(e.target.value)}
-                    className="w-full rounded-xl px-4 py-3 text-sm outline-none text-slate-800 focus:ring-2 focus:ring-amber-500/40"
-                    style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.12)" }}>
-                    <option value="">-- Pilih --</option>
-                    <option value="SELF">🙋 Saya kerjakan sendiri</option>
-                    <optgroup label="Anggota Tim">
-                      {teamPTSMembers.filter(m => m.name !== currentUser?.full_name).map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
-                    </optgroup>
-                  </select>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={() => { setSupAssignTicket(null); setSupAssignTo(""); }} className="flex-1 py-3 rounded-xl font-semibold text-sm" style={{ background: "#f8fafc", color: "#64748b", border: "1px solid rgba(0,0,0,0.12)" }}>Batal</button>
-                  <button onClick={handleSupervisorAssignTicket} disabled={supAssignSaving || !supAssignTo}
-                    className="flex-[2] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                    style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
-                    {supAssignSaving ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</> : <>🎯 Assign</>}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+          <SupervisorAssignModal
+            supAssignTicket={supAssignTicket}
+            supAssignTo={supAssignTo}
+            setSupAssignTo={setSupAssignTo}
+            teamPTSMembers={teamPTSMembers}
+            currentUser={currentUser}
+            supAssignSaving={supAssignSaving}
+            handleSupervisorAssignTicket={handleSupervisorAssignTicket}
+            onClose={() => { setSupAssignTicket(null); setSupAssignTo(""); }}
+          />
         )}
 
         {showNewTicket && canCreateTicket && (
@@ -4030,239 +2920,73 @@ function TicketingSystemInner() {
 
         {/* ── OVERDUE SETTING MODAL (Redesigned) ── */}
         {showOverdueSetting && overdueTargetTicket && canManageTickets && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
-              <div className="flex items-center gap-3 mb-4"><span className="text-3xl">⏰</span><div><h3 className="text-lg font-bold text-gray-800">Overdue Setting</h3><p className="text-xs text-gray-500 font-medium">{overdueTargetTicket.project_name}</p><p className="text-xs text-gray-400">{overdueTargetTicket.issue_case}</p></div></div>
-              <p className="text-xs text-orange-700 rounded-lg p-2 mb-4" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}>⚠️ Setting ini hanya terlihat oleh admin Anda. Handler akan mendapat notifikasi merah ketika ticket overdue. Default otomatis: ticket overdue setelah 48 jam jika tidak di-set manual.</p>
-              <div className="space-y-4"><div><label className="block text-sm font-bold mb-1 text-gray-700">⏱️ Overdue Setelah Berapa Jam?</label><div className="flex items-center gap-3"><input type="number" min="1" value={overdueForm.due_hours} onChange={(e) => setOverdueForm({ due_hours: e.target.value })} className="flex-1 rounded-lg px-3 py-2.5 text-lg font-bold text-center focus:ring-2 focus:ring-orange-500" style={{ border: "2px solid rgba(245,158,11,0.3)", background: "white" }} /><span className="text-gray-600 font-semibold text-sm">jam</span></div><div className="flex gap-2 mt-2">{[24, 48, 72, 96].map((h) => (<button key={h} type="button" onClick={() => setOverdueForm({ due_hours: String(h) })} className={`flex-1 py-1 rounded-lg text-xs font-bold border transition-all ${overdueForm.due_hours === String(h) ? "bg-orange-500 text-white border-orange-500" : "bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100"}`}>{h}j{h === 48 ? " (default)" : ""}</button>))}</div><p className="text-xs text-gray-400 mt-2">⏰ Dihitung dari waktu ticket pertama kali dibuat</p></div><div className="grid grid-cols-2 gap-3 pt-2"><button onClick={saveOverdueSetting} className="bg-gradient-to-r from-orange-500 to-orange-700 text-white py-2.5 rounded-xl font-bold hover:from-orange-600 hover:to-orange-800 transition-all">💾 Simpan</button><button onClick={() => { setShowOverdueSetting(false); setOverdueTargetTicket(null); setOverdueForm({ due_hours: "48" }); }} className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all">✕ Batal</button></div>{getOverdueSetting(overdueTargetTicket.id) && (<button onClick={() => { deleteOverdueSetting(overdueTargetTicket.id); setShowOverdueSetting(false); setOverdueTargetTicket(null); }} className="w-full bg-red-100 text-red-700 py-2 rounded-xl font-bold hover:bg-red-200 transition-all text-sm border border-red-300">🗑️ Hapus Setting Overdue</button>)}</div>
-            </div>
-          </div>
-        </ModalPortal>
+          <OverdueSettingModal
+            overdueTargetTicket={overdueTargetTicket}
+            overdueForm={overdueForm}
+            setOverdueForm={setOverdueForm}
+            saveOverdueSetting={saveOverdueSetting}
+            onClose={() => { setShowOverdueSetting(false); setOverdueTargetTicket(null); setOverdueForm({ due_hours: "48" }); }}
+            punyaSettingTersimpan={!!getOverdueSetting(overdueTargetTicket.id)}
+            onHapusSetting={() => { deleteOverdueSetting(overdueTargetTicket.id); setShowOverdueSetting(false); setOverdueTargetTicket(null); }}
+          />
         )}
 
-        {/* ── RE-OPEN TICKET MODAL (Redesigned) ── */}
         {/* Z.overlayTop — bisa dibuka dari daftar MAUPUN dari dalam popup
             detail (Z.overlay), jadi harus selapis di atasnya. */}
         {showReopenModal && reopenTargetTicket && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
-              <div className="flex items-center gap-3 mb-5"><span className="text-3xl">🔓</span><div><h3 className="text-lg font-bold text-gray-800">Re-open Ticket</h3><p className="text-xs text-gray-500">{reopenTargetTicket.project_name} · {reopenTargetTicket.issue_case}</p></div></div>
-              <div className="rounded-xl p-3 mb-4 text-xs" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#b45309" }}>⚠️ Status akan berubah ke <strong>Pending</strong> dan activity log baru ditambahkan otomatis.</div>
-              <div className="space-y-4"><div><label className="block text-sm font-bold mb-1 text-gray-700">Assign ke Handler *</label><select aria-label="— Pilih Handler —" value={reopenAssignee} onChange={(e) => setReopenAssignee(e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="">— Pilih Handler —</option>{teamPTSMembers.map((m) => (<option key={m.id} value={m.name}>{m.name}</option>))}</select></div><div><label className="block text-sm font-bold mb-1 text-gray-700">Alasan (opsional)</label><textarea value={reopenNotes} onChange={(e) => setReopenNotes(e.target.value)} placeholder="Masalah muncul kembali..." rows={3} className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all focus:ring-2 focus:ring-red-500/40 resize-none" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /></div><div className="grid grid-cols-2 gap-3"><button onClick={reopenTicket} disabled={uploading || !reopenAssignee} className="bg-gradient-to-r from-amber-500 to-amber-700 text-white py-2.5 rounded-xl font-bold hover:from-amber-600 hover:to-amber-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{uploading ? "⏳..." : "🔓 Re-open"}</button><button onClick={() => { setShowReopenModal(false); setReopenTargetTicket(null); setReopenAssignee(""); setReopenNotes(""); }} className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all">Batal</button></div></div>
-            </div>
-          </div>
-        </ModalPortal>
+          <ReopenPTSModal
+            reopenTargetTicket={reopenTargetTicket}
+            reopenAssignee={reopenAssignee}
+            setReopenAssignee={setReopenAssignee}
+            reopenNotes={reopenNotes}
+            setReopenNotes={setReopenNotes}
+            teamPTSMembers={teamPTSMembers}
+            reopenTicket={reopenTicket}
+            uploading={uploading}
+            onClose={() => { setShowReopenModal(false); setReopenTargetTicket(null); setReopenAssignee(""); setReopenNotes(""); }}
+          />
         )}
 
         {/* C2: konfirmasi Reopen Services - lebih sederhana dari modal PTS di atas
             (tidak perlu pilih assignee, sisi Services memang tidak punya konsep itu). */}
         {reopenServicesTarget && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
-            onClick={(e) => { if (e.target === e.currentTarget && !reopeningServices) setReopenServicesTarget(null); }}>
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(219,39,119,0.5)" }}>
-              <div className="flex items-center gap-3 mb-5"><span className="text-3xl">🔓</span><div><h3 className="text-lg font-bold text-gray-800">Re-open Services</h3><p className="text-xs text-gray-500">{reopenServicesTarget.project_name} · {reopenServicesTarget.issue_case}</p></div></div>
-              <div className="rounded-xl p-3 mb-5 text-xs" style={{ background: "rgba(219,39,119,0.1)", border: "1px solid rgba(219,39,119,0.2)", color: "#be185d" }}>⚠️ Status Services akan kembali ke <strong>Pending</strong>. Status utama PTS tidak ikut berubah.</div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={reopenServicesTicket} disabled={reopeningServices} className="bg-gradient-to-r from-pink-600 to-rose-700 text-white py-2.5 rounded-xl font-bold hover:from-pink-700 hover:to-rose-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{reopeningServices ? "⏳..." : "🔓 Re-open"}</button>
-                <button onClick={() => setReopenServicesTarget(null)} disabled={reopeningServices} className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50">Batal</button>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+          <ReopenServicesModal
+            reopenServicesTarget={reopenServicesTarget}
+            reopeningServices={reopeningServices}
+            reopenServicesTicket={reopenServicesTicket}
+            onClose={() => setReopenServicesTarget(null)}
+          />
         )}
 
         {/* ── ACTIVITY SUMMARY MODAL (Redesigned) ── */}
         {showActivitySummary && summaryTicket && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-2">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full h-[96vh] flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(59,130,246,0.5)" }}>
-              <div className="p-5 border-b flex-shrink-0" style={{ background: "linear-gradient(135deg,#2563eb,#1d4ed8)", borderColor: "rgba(0,0,0,0.1)" }}>
-                <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-2xl">🔄</span><div><h3 className="text-lg font-bold text-white">Activity Summary</h3><p className="text-sm text-blue-100 font-medium">{summaryTicket.project_name}</p><p className="text-xs text-blue-200">{summaryTicket.issue_case}</p></div></div><button aria-label="Tutup" onClick={() => { setShowActivitySummary(false); setSummaryTicket(null); }} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all text-lg">✕</button></div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-5">
-                <div className="mb-4">
-                  {/* Baris pembuatan diturunkan dari ticket-nya sendiri: logAudit
-                      baru mencatat 'create' sejak perbaikan terakhir, jadi tanpa
-                      ini seluruh ticket LAMA tampak tidak punya pangkal — padahal
-                      created_by & created_at-nya tersimpan sejak awal. */}
-                  {(() => {
-                    const pembuat = users.find(u => u.username === summaryTicket.created_by);
-                    const namaPembuat = pembuat?.full_name || summaryTicket.created_by || null;
-                    const atasNama = summaryTicket.sales_name || "";
-                    return (
-                      <AuditTrailPanel targetId={summaryTicket.id} modul="ticket"
-                        awal={{
-                          oleh: namaPembuat,
-                          waktu: summaryTicket.created_at ?? null,
-                          keterangan: `Ticket dibuat · ${summaryTicket.issue_case}`
-                            + (atasNama && namaPembuat && atasNama !== namaPembuat ? ` · atas nama Sales ${atasNama}` : ''),
-                        }} />
-                    );
-                  })()}
-                </div>
-
-                {/* Alur tiket - diagram yang sama dengan Request Schedule dan
-                    Request Design Project. Ticketing satu-satunya yang belum
-                    memakainya, jadi pembacanya harus menyimpulkan sendiri sudah
-                    sampai mana sebuah tiket, dari daftar riwayat.
-
-                    Tahap "Ke Services" hanya disisipkan bila tiketnya memang
-                    pernah dilimpahkan. Dasarnya ringkasPenanganan(), helper yang
-                    sama yang dipakai layar View Ticket dan lembar cetak - supaya
-                    ketiganya tidak pernah menjawab berbeda untuk tiket yang sama. */}
-                <div className="mb-5">
-                  {(() => {
-                    const t = summaryTicket;
-                    const ringkas = ringkasPenanganan(t);
-                    const pembuat = users.find(u => u.username === t.created_by);
-                    const sudahAssign = !!(t.assign_name && t.assign_name.trim() !== "");
-                    const menungguSupervisor = t.routing_status === "supervisor_assign";
-                    const selesai = t.status === "Solved" || t.status === "Completed";
-                    const batal   = t.status === "Rejected" || t.status === "Cancelled";
-
-                    const tahap = [
-                      { label: "Diajukan",   pelaku: t.sales_name || pembuat?.full_name || t.created_by || "Sales" },
-                      { label: "Di-assign",  pelaku: menungguSupervisor ? "Supervisor" : "Admin" },
-                      { label: "Dikerjakan", pelaku: ringkas.handlerPTS || t.assign_name || "Team PTS" },
-                      ...(ringkas.keServices
-                        ? [{ label: "Ke Services", pelaku: t.services_status || "Team Services" }]
-                        : []),
-                      { label: "Selesai",    pelaku: ringkas.keServices ? "Services" : "Team PTS" },
-                    ];
-
-                    //  0 diajukan · 1 menunggu assign · 2 dikerjakan · ... · terakhir selesai
-                    //  tahap.length berarti seluruh alur tuntas (indeks di luar daftar)
-                    const aktif = selesai ? tahap.length : sudahAssign ? 2 : 1;
-
-                    return <FlowSteps judul="Alur Tiket" aktif={aktif} dibatalkan={batal} steps={tahap} />;
-                  })()}
-                </div>
-
-                <div className="flex flex-wrap gap-2 mb-5 p-3 rounded-xl text-xs" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)" }}>
-                  <span className="flex items-center gap-1"><span className="text-gray-500">👤 Handler:</span><span className="font-bold">{summaryTicket.assign_name || "-"}</span></span><span className="text-gray-300">|</span>
-                  <span className="flex items-center gap-1"><span className="text-gray-500">📅 Dibuat:</span><span className="font-bold">{summaryTicket.created_at ? formatDateTime(summaryTicket.created_at) : "-"}</span></span><span className="text-gray-300">|</span>
-                  <span className={`px-2 py-0.5 rounded-full font-bold border ${statusColors[summaryTicket.status]}`}>{summaryTicket.status}</span>
-                  {summaryTicket.services_status && (<><span className="text-gray-300">|</span><span className={`px-2 py-0.5 rounded-full font-bold border ${statusColors[summaryTicket.services_status]}`}>Svc: {summaryTicket.services_status}</span></>)}
-                  {/* Warranty badge */}
-                  {(() => {
-                    const w = getWarrantyInfo(summaryTicket.project_name);
-                    if (!w) return null;
-                    return (<>
-                      <span className="text-gray-300">|</span>
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px]"
-                        style={w.isIn
-                          ? { background: "rgba(14,165,233,0.15)", color: "#0369a1", border: "1px solid rgba(14,165,233,0.3)" }
-                          : { background: "rgba(239,68,68,0.12)", color: "#dc2626", border: "1px solid rgba(239,68,68,0.3)" }}>
-                        {w.isIn ? "🛡️" : "⚠️"} {w.isIn ? "In Warranty" : "Out of Warranty"}
-                        <span className="opacity-70 ml-0.5">· {w.wy}Y · {w.isIn ? `sisa ${w.diffDays}h` : `lewat ${Math.abs(w.diffDays)}h`}</span>
-                      </span>
-                    </>);
-                  })()}
-                </div>
-                {!summaryTicket.activity_logs || summaryTicket.activity_logs.length === 0 ? (<div className="text-center py-10 text-gray-400"><div className="text-5xl mb-3">📭</div><p className="font-semibold">Belum ada activity yang tercatat</p></div>) : (
-                  <div className="relative">
-                    <div className="flex items-center gap-3 mb-1"><div className="flex flex-col items-center"><div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-base shadow-md">🎫</div></div><div className="flex-1 rounded-xl px-4 py-2" style={{ background: "rgba(59,130,246,0.1)", border: "2px solid rgba(59,130,246,0.3)" }}><p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Ticket Dibuat</p><p className="text-sm font-semibold text-gray-800">{summaryTicket.project_name}</p><p className="text-xs text-gray-500">{summaryTicket.created_at ? formatDateTime(summaryTicket.created_at) : "-"}</p></div></div>
-                    {[...summaryTicket.activity_logs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).map((log, idx, arr) => {
-                      const isLast = idx === arr.length - 1;
-                      const isSolved = log.new_status === "Solved";
-                      const isServices = log.assigned_to_services;
-                      const nodeColor = isSolved ? "bg-green-500" : isServices ? "bg-red-500" : log.new_status === "In Progress" ? "bg-blue-500" : "bg-yellow-500";
-                      const cardBorder = isSolved ? "border-green-300 bg-green-50" : isServices ? "border-red-300 bg-red-50" : log.new_status === "In Progress" ? "border-blue-300 bg-blue-50" : "border-yellow-300 bg-yellow-50";
-                      return (
-                        <div key={log.id}>
-                          <div className="flex items-stretch gap-3"><div className="flex flex-col items-center"><div className="w-0.5 bg-gray-300 flex-1 mx-auto" style={{ minHeight: "16px" }}></div></div><div className="flex-1" /></div>
-                          <div className="flex items-start gap-3"><div className="flex flex-col items-center flex-shrink-0"><div className={`w-9 h-9 rounded-full ${nodeColor} flex items-center justify-center text-white text-xs font-bold shadow-md`}>{isSolved ? "✅" : isServices ? "🔄" : idx + 1}</div>{!isLast && <div className="w-0.5 bg-gray-300 flex-1" style={{ minHeight: "12px" }}></div>}</div><div className={`flex-1 border-2 rounded-xl px-4 py-3 mb-1 ${cardBorder}`}><div className="flex justify-between items-start mb-1"><div className="flex items-center gap-2 flex-wrap"><span className="text-sm font-bold text-gray-800">{log.handler_name}</span><span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 font-bold">{log.team_type}</span></div><span className={`text-xs px-2 py-0.5 rounded-full font-bold border flex-shrink-0 ml-2 ${statusColors[log.new_status] || "bg-gray-100 text-gray-700 border-gray-300"}`}>{log.new_status}</span></div><p className="text-xs text-gray-500 mb-2">{formatDateTime(log.created_at)}</p>{log.action_taken && (<div className="rounded-lg px-3 py-1.5 mb-2" style={{ background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.2)" }}><p className="text-xs font-bold text-blue-700">🔧 Action:</p><p className="text-xs text-gray-800">{log.action_taken}</p></div>)}<div className="rounded-lg px-3 py-1.5" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)" }}><p className="text-xs font-bold text-gray-600">📝 Notes:</p><p className="text-xs text-gray-800 whitespace-pre-line">{log.notes}</p></div>{isServices && <div className="mt-2 flex items-center gap-1 text-xs font-bold text-red-700 rounded-lg px-2 py-1" style={{ background: "rgba(220,38,38,0.1)" }}><span>🔄</span> Diteruskan ke Team Services</div>}{log.photo_url && <div className="mt-2"><img src={log.photo_url} alt="bukti" loading="lazy" decoding="async" className="max-h-28 rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => window.open(log.photo_url!, "_blank")} /></div>}{log.file_url && <a href={log.file_url} download={log.file_name} className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-blue-700 rounded-lg px-2 py-1 hover:bg-blue-200 transition-colors" style={{ background: "rgba(59,130,246,0.1)" }}>📎 {log.file_name || "Download Report"}</a>}</div></div>
-                        </div>
-                      );
-                    })}
-                    <div className="flex items-stretch gap-3"><div className="flex flex-col items-center"><div className="w-0.5 bg-gray-300 mx-auto" style={{ minHeight: "16px" }}></div></div><div className="flex-1" /></div>
-                    <div className="flex items-center gap-3"><div className={`w-9 h-9 rounded-full flex items-center justify-center text-white text-base shadow-md flex-shrink-0 ${summaryTicket.status === "Solved" ? "bg-green-600" : "bg-gray-400"}`}>{summaryTicket.status === "Solved" ? "🏁" : "⏳"}</div><div className={`flex-1 rounded-xl px-4 py-2 border-2 ${summaryTicket.status === "Solved" ? "bg-green-50 border-green-300" : "bg-gray-50 border-gray-300"}`}><p className={`text-xs font-bold uppercase tracking-wide ${summaryTicket.status === "Solved" ? "text-green-700" : "text-gray-500"}`}>{summaryTicket.status === "Solved" ? "✅ Ticket Selesai" : `⏳ Status: ${summaryTicket.status}`}</p><p className="text-xs text-gray-500 mt-0.5">{summaryTicket.activity_logs?.length || 0} aktivitas tercatat</p></div></div>
-                  </div>
-                )}
-              </div>
-              <div className="p-4 border-t flex-shrink-0" style={{ background: "rgba(0,0,0,0.03)", borderColor: "rgba(0,0,0,0.08)" }}><button onClick={() => { setShowActivitySummary(false); setSummaryTicket(null); }} className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white py-3 rounded-xl font-bold hover:from-blue-700 hover:to-blue-900 transition-all">✕ Tutup</button></div>
-            </div>
-          </div>
-        </ModalPortal>
+          <ActivitySummaryModal
+            summaryTicket={summaryTicket}
+            users={users}
+            getWarrantyInfo={getWarrantyInfo}
+            onClose={() => { setShowActivitySummary(false); setSummaryTicket(null); }}
+          />
         )}
-        {/* ── REJECT TICKET MODAL — Soft reject dengan alasan ── */}
         {showRejectModal && rejectTargetTicket && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(220,38,38,0.4)" }}>
-              <div className="flex items-center gap-3 mb-1">
-                <span className="text-3xl">❌</span>
-                <div>
-                  <h3 className="text-lg font-bold text-gray-800">Tolak Ticket</h3>
-                  <p className="text-xs text-gray-500 font-medium">{rejectTargetTicket.project_name}</p>
-                  <p className="text-xs text-gray-400">{rejectTargetTicket.issue_case}</p>
-                </div>
-              </div>
-              <div className="rounded-xl p-3 mb-4 mt-3 text-xs" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)", color: "#92400e" }}>
-                💡 Ticket <strong>tidak dihapus</strong> — tetap tersimpan dengan status "Rejected". Sales dapat melihat alasan penolakan dan mengajukan ulang jika diperlukan.
-              </div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#64748b" }}>Alasan Penolakan *</label>
-              <textarea
-                value={rejectReason}
-                onChange={e => setRejectReason(e.target.value)}
-                rows={3}
-                placeholder="Contoh: Data tidak lengkap, harap isi nomor SN unit dan deskripsi masalah lebih detail..."
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none focus:ring-2 focus:ring-red-400"
-                style={{ border: "1.5px solid rgba(220,38,38,0.3)", background: "rgba(255,255,255,0.95)" }}
-                autoFocus
-              />
-              <div className="flex gap-3 mt-4">
-                <button onClick={() => { setShowRejectModal(false); setRejectTargetTicket(null); setRejectReason(""); }}
-                  className="flex-1 py-2.5 rounded-xl font-semibold text-sm" style={{ background: "rgba(0,0,0,0.06)", color: "#475569" }}>
-                  Batal
-                </button>
-                <button onClick={confirmReject} disabled={uploading || !rejectReason.trim()}
-                  className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white disabled:opacity-50"
-                  style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
-                  {uploading ? "⏳ Menyimpan..." : "❌ Tolak Ticket"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+          <RejectModal
+            rejectTargetTicket={rejectTargetTicket}
+            rejectReason={rejectReason}
+            setRejectReason={setRejectReason}
+            uploading={uploading}
+            confirmReject={confirmReject}
+            onClose={() => { setShowRejectModal(false); setRejectTargetTicket(null); setRejectReason(""); }}
+          />
         )}
 
-        {/* ── DELETE TICKET MODAL (Admin Only) ── */}
         {showDeleteModal && deleteTargetTicket && (
-        <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(220,38,38,0.5)" }}>
-              <div className="flex items-center gap-3 mb-4"><span className="text-3xl">🗑️</span><div><h3 className="text-lg font-bold text-gray-800">Hapus Ticket</h3><p className="text-xs text-gray-500 font-medium">{deleteTargetTicket.project_name}</p><p className="text-xs text-gray-400">{deleteTargetTicket.issue_case}</p></div></div>
-              <div className="rounded-xl p-3 mb-4 text-xs" style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "#b91c1c" }}>
-                ⚠️ <strong>Tindakan ini tidak dapat dibatalkan.</strong> Ticket beserta seluruh activity log dan overdue setting akan dihapus permanen dari database.
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-bold mb-1 text-gray-700">Ketik <span className="font-mono bg-red-100 text-red-700 px-1 rounded">HAPUS</span> untuk konfirmasi</label>
-                <input
-                  type="text"
-                  value={deleteConfirmText}
-                  onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  placeholder="Ketik HAPUS di sini..."
-                  className="w-full rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500"
-                  style={{ border: "2px solid rgba(220,38,38,0.3)", background: "white" }}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={deleteTicket}
-                  disabled={deleteConfirmText !== "HAPUS" || uploading}
-                  className="bg-gradient-to-r from-red-600 to-red-800 text-white py-2.5 rounded-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:from-red-700 hover:to-red-900"
-                >
-                  {uploading ? "⏳..." : "🗑️ Hapus Permanen"}
-                </button>
-                <button onClick={() => { setShowDeleteModal(false); setDeleteTargetTicket(null); setDeleteConfirmText(""); }} className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all">✕ Batal</button>
-              </div>
-            </div>
-          </div>
-        </ModalPortal>
+          <DeleteModal
+            deleteTargetTicket={deleteTargetTicket}
+            deleteConfirmText={deleteConfirmText}
+            setDeleteConfirmText={setDeleteConfirmText}
+            uploading={uploading}
+            deleteTicket={deleteTicket}
+            onClose={() => { setShowDeleteModal(false); setDeleteTargetTicket(null); setDeleteConfirmText(""); }}
+          />
         )}
 
       </div>
