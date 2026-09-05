@@ -308,10 +308,20 @@ export async function saveTeamEntries(
     ulang tidak menumpuk duplikat. Kalau delete-nya ditolak RLS diam-diam
     (0 baris, tanpa galat) dan insert di bawah tetap jalan, hasilnya justru
     KEBALIKAN dari yang dimaksud - entri lama DAN baru sama-sama ada.
+
+    Dihitung dulu berapa baris yang SEHARUSNYA ada (existingCount) sebelum
+    delete - tanpa ini, "0 baris terhapus" tidak bisa dibedakan antara
+    "memang belum pernah menyimpan hari ini" (wajar) dan "RLS menolak diam-
+    diam" (harus dibatalkan, bukan lanjut insert dan menumpuk duplikat).
   */
-  const { error: galatHapus } = await supabase.from('daily_report_team_entries')
+  const { count: existingCount } = await supabase.from('daily_report_team_entries')
+    .select('id', { count: 'exact', head: true }).eq('report_date', reportDate).eq('entered_by', enteredBy);
+  const { data: dihapus, error: galatHapus } = await supabase.from('daily_report_team_entries')
     .delete().eq('report_date', reportDate).eq('entered_by', enteredBy).select('id');
   if (galatHapus) return { ok: false, error: 'Gagal membersihkan entri lama: ' + galatHapus.message };
+  if ((existingCount ?? 0) > 0 && (dihapus?.length ?? 0) < (existingCount ?? 0)) {
+    return { ok: false, error: 'Entri lama gagal dibersihkan sepenuhnya (kemungkinan ditolak akses). Tidak disimpan ulang supaya tidak menumpuk duplikat - coba lagi atau hubungi admin.' };
+  }
   const rows = entries.map(e => ({ ...e, entered_by: enteredBy, source: 'manual' as const }));
   const { error } = await supabase.from('daily_report_team_entries').insert(rows);
   return error ? { ok: false, error: error.message } : { ok: true };

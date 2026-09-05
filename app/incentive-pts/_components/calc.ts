@@ -167,14 +167,6 @@ export function resolveUserId(idCandidate: string | null | undefined, nameCandid
   return (idCandidate && UUID_RE.test(idCandidate)) ? idCandidate : '';
 }
 
-// Deprecated - name-based fallback lama. Hanya dipakai bila Struktur Organisasi belum diisi.
-export function getSupervisorTeamForPic(picName: string): 'wahyu' | 'yoga' | null {
-  const n = (picName || '').toLowerCase();
-  if (n.includes('wahyu') || n.includes('ade') || n.includes('pandu')) return 'wahyu';
-  if (n.includes('yoga') || n.includes('farhan') || n.includes('ferdin') || n.includes('deni')) return 'yoga';
-  return null;
-}
-
 /**
  * Apakah dua penunjuk ini mengarah ke orang yang sama.
  *

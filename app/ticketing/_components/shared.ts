@@ -3,20 +3,14 @@ import { supabase } from '@/lib/supabase';
 // WA notif terpusat di lib/wa.ts - re-export agar call-site lama tetap jalan.
 export { sendWANotif } from '@/lib/wa';
 
-// Hierarki jabatan (bawah  atas)
-export const JABATAN_TIER: Record<string, number> = {
-  'Staff': 1, 'Supervisor': 2, 'Manager': 3,
-  'Deputy General Manager': 4, 'General Manager': 5, 'Direktur': 6,
-};
-// Rules CC otomatis: jabatan sender  list jabatan yang wajib di-CC
-export const JABATAN_CC_RULES: Record<string, string[]> = {
-  'Staff':                   ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager'],
-  'Supervisor':              ['Manager', 'Deputy General Manager', 'General Manager'],
-  'Manager':                 ['General Manager', 'Deputy General Manager', 'Direktur'],
-  'Deputy General Manager':  ['General Manager', 'Direktur'],
-  'General Manager':         ['Direktur'],
-  'Direktur':                [],
-};
+// Hierarki jabatan & aturan CC - satu sumber kebenaran di lib/jabatan.ts,
+// diimpor (bukan cuma re-export) karena JABATAN_CC_RULES juga dipakai
+// langsung di fetchWACCTargets di bawah ini. Dilonggarkan ke Record<string,...>
+// di sini karena diindeks dengan jabatan dinamis (kolom users.jabatan, tipe
+// string biasa) - lib/jabatan.ts sendiri tetap ketat (Record<JabatanType,...>).
+import { JABATAN_TIER, JABATAN_CC_RULES as JABATAN_CC_RULES_KETAT } from '@/lib/jabatan';
+const JABATAN_CC_RULES: Record<string, string[]> = JABATAN_CC_RULES_KETAT;
+export { JABATAN_TIER, JABATAN_CC_RULES };
 
 // CC ke atasan berdasarkan jabatan tier + IVP handler
 // userId  = id user yang trigger event (untuk lookup jabatan mereka)
