@@ -764,6 +764,8 @@ export function hitungPembagian(
   adaSupport: boolean,
   supervisorJadiPic: boolean,
   namaInstaller?: string | null,
+  /** Akun PTS Cabang yang dipilih dari dropdown - kosong bila diketik manual. */
+  installerUserId?: string | null,
 ): HasilBagi[] {
   if (pool <= 0) return [];
 
@@ -835,7 +837,7 @@ export function hitungPembagian(
   if (pctInstaller > 0) {
     hasil.push({
       role: 'installer',
-      user_id: '',
+      user_id: installerUserId || '',
       user_name: namaInstaller || 'Installer Cabang',
       percentage: pctInstaller,
       amount: 0,
@@ -864,6 +866,8 @@ export function hitungManagerSebagaiPic(
    * berbeda untuk pekerjaan yang sama persis.
    */
   penerimaSupport: PenerimaPeran[] = [],
+  /** Akun PTS Cabang yang dipilih dari dropdown - kosong bila diketik manual. */
+  installerUserId?: string | null,
 ): HasilBagi[] {
   if (pool <= 0) return [];
   const pctInstaller = persenInstaller(sk, remote);
@@ -889,7 +893,7 @@ export function hitungManagerSebagaiPic(
   }
   if (pctInstaller > 0) {
     hasil.push({
-      role: 'installer', user_id: '',
+      role: 'installer', user_id: installerUserId || '',
       user_name: namaInstaller || 'Installer Cabang',
       percentage: pctInstaller, amount: 0,
     });

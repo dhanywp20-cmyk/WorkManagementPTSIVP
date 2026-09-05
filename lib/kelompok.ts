@@ -59,6 +59,14 @@ export interface Kelompok {
    * Showroom, yang punya daftar tim sendiri.
    */
   ditugaskan: boolean;
+  /**
+   * Anggota kelompok ini muncul di dropdown "PTS Cabang / Perwakilan" saat
+   * jadwal Konfigurasi/Training diselesaikan secara Remote (menggantikan
+   * isian manual "Nama Installer") - lihat ModePenyelesaianPanel.tsx di
+   * app/reminder-schedule/. SENGAJA independen dari `ditugaskan`: PTS Cabang
+   * dipilih hanya di titik itu, bukan ikut daftar "assign ke tim" biasa.
+   */
+  cabang: boolean;
   /** Lonceng yang boleh dilihat anggota kelompok ini. */
   lonceng: Lonceng[];
   aktif: boolean;
@@ -78,12 +86,12 @@ const EMPAT: Lonceng[] = ['tiket', 'require', 'jadwal', 'review'];
  * yang sedang bekerja.
  */
 export const KELOMPOK_BAWAAN: Kelompok[] = [
-  { nama: 'Team PTS IVP', label: 'PTS IVP',   jenis: 'pts',       ditugaskan: true,  aktif: true, lonceng: EMPAT },
-  { nama: 'Team PTS MVI', label: 'PTS MVI',   jenis: 'pts',       ditugaskan: true,  aktif: true, lonceng: EMPAT },
-  { nama: 'Team PTS UMP', label: 'PTS UMP',   jenis: 'pts',       ditugaskan: false, aktif: true, lonceng: ['jadwal'] },
-  { nama: 'Team Services', label: 'Services', jenis: 'services',  ditugaskan: false, aktif: true, lonceng: ['tiket', 'require', 'jadwal'] },
-  { nama: 'Marketing',    label: 'Marketing', jenis: 'marketing', ditugaskan: false, aktif: true, lonceng: EMPAT },
-  { nama: '',             label: 'Sales',     jenis: 'sales',     ditugaskan: false, aktif: true, lonceng: EMPAT },
+  { nama: 'Team PTS IVP', label: 'PTS IVP',   jenis: 'pts',       ditugaskan: true,  cabang: false, aktif: true, lonceng: EMPAT },
+  { nama: 'Team PTS MVI', label: 'PTS MVI',   jenis: 'pts',       ditugaskan: true,  cabang: false, aktif: true, lonceng: EMPAT },
+  { nama: 'Team PTS UMP', label: 'PTS UMP',   jenis: 'pts',       ditugaskan: false, cabang: false, aktif: true, lonceng: ['jadwal'] },
+  { nama: 'Team Services', label: 'Services', jenis: 'services',  ditugaskan: false, cabang: false, aktif: true, lonceng: ['tiket', 'require', 'jadwal'] },
+  { nama: 'Marketing',    label: 'Marketing', jenis: 'marketing', ditugaskan: false, cabang: false, aktif: true, lonceng: EMPAT },
+  { nama: '',             label: 'Sales',     jenis: 'sales',     ditugaskan: false, cabang: false, aktif: true, lonceng: EMPAT },
 ];
 
 export const KUNCI_KELOMPOK = 'kelompok';
@@ -129,6 +137,24 @@ export function kelompokPTS(): Kelompok[] { return semuaKelompok().filter(k => k
 /** Nama team_type kelompok PTS yang aktif. */
 export function namaKelompokPTS(): string[] { return kelompokPTS().map(k => k.nama); }
 
+/**
+ * Label tampilan sebuah team_type PTS, mis. 'Team PTS IVP' -> 'PTS IVP'.
+ *
+ * Dipakai form buat/edit akun (modal-akun.tsx) supaya pilihannya ikut
+ * daftar Kelompok yang sesungguhnya, bukan tiga pilihan tetap yang ditulis
+ * di kode - kelompok PTS baru yang ditambahkan admin otomatis ikut tampil.
+ * Kelompok yang tidak dikenal (team_type lama/data usang) jatuh ke nama
+ * apa adanya, supaya tampilan tidak pernah kosong.
+ */
+export function labelKelompokPTS(nama: string): string {
+  return kelompokPTS().find(k => k.nama === nama)?.label ?? nama;
+}
+
+/** Kebalikan labelKelompokPTS: 'PTS IVP' -> 'Team PTS IVP'. */
+export function teamTypeDariLabelPTS(label: string): string | null {
+  return kelompokPTS().find(k => k.label === label)?.nama ?? null;
+}
+
 /** Kelompok yang ikut daftar "assign ke tim". */
 export function kelompokDitugaskan(): Kelompok[] { return semuaKelompok().filter(k => k.ditugaskan); }
 
@@ -147,6 +173,16 @@ export function kelompokPTSDitugaskan(): Kelompok[] {
 /** Nama team_type kelompok PTS yang menerima penugasan. */
 export function namaKelompokPTSDitugaskan(): string[] {
   return kelompokPTSDitugaskan().map(k => k.nama);
+}
+
+/** Kelompok bertanda PTS Cabang - lihat catatan field `cabang` di atas. */
+export function kelompokCabang(): Kelompok[] {
+  return semuaKelompok().filter(k => k.cabang);
+}
+
+/** Nama team_type kelompok PTS Cabang. */
+export function namaKelompokCabang(): string[] {
+  return kelompokCabang().map(k => k.nama);
 }
 
 /**
@@ -251,6 +287,7 @@ function rapikanKelompok(x: unknown): Kelompok | null {
     label: typeof o.label === 'string' && o.label.trim() ? o.label.trim() : (o.nama.trim() || 'Sales'),
     jenis: (['pts', 'services', 'marketing', 'sales'] as string[]).includes(jenis) ? jenis : 'pts',
     ditugaskan: o.ditugaskan === true,
+    cabang: o.cabang === true,
     lonceng,
     aktif: o.aktif !== false,
   };
@@ -365,4 +402,5 @@ function pakai<T>(ambil: () => T): T {
 export function useKelompok(): Kelompok[] { return pakai(semuaKelompok); }
 export function useKelompokPTS(): Kelompok[] { return pakai(kelompokPTS); }
 export function useKelompokPTSDitugaskan(): Kelompok[] { return pakai(kelompokPTSDitugaskan); }
+export function useKelompokCabang(): Kelompok[] { return pakai(kelompokCabang); }
 export function useLingkupManager(): LingkupManager { return pakai(lingkupManager); }

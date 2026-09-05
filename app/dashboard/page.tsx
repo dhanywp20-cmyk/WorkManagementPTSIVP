@@ -24,11 +24,13 @@ import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
 import { ModalPortal, LogoMerek } from '@/components/shared';
+import { useKelompokPTS } from '@/lib/kelompok';
 
 export default function Dashboard() {
   const router = useRouter();
   const daftarDivisi = useDivisiSales();
   const merek = useMerek();
+  const daftarKelompokPTS = useKelompokPTS();
   // Guard: ensure auto-navigation to first menu only happens ONCE per login session
   // (prevents race-condition re-fires when currentUser/showSidebar update multiple times)
   const autoNavigatedRef = useRef(false);
@@ -946,9 +948,7 @@ export default function Dashboard() {
                             <select aria-label="-- Pilih Tipe PTS --" value={registerForm.pts_type} onChange={e => setRegisterForm({ ...registerForm, pts_type: e.target.value })}
                               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                               <option value="">-- Pilih Tipe PTS --</option>
-                              <option value="PTS IVP">PTS IVP</option>
-                              <option value="PTS UMP">PTS UMP</option>
-                              <option value="PTS MVI">PTS MVI</option>
+                              {daftarKelompokPTS.map(k => <option key={k.nama} value={k.label}>{k.label}</option>)}
                             </select>
                           </div>
                         )}

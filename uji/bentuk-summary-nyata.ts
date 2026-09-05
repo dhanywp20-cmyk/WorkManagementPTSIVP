@@ -73,7 +73,8 @@ const proyek = (o: Record<string, any>) => ({
   assign_name: o.picNama, status: 'done', requires_controller_automation: false,
   controller_automation_brand: null, pic_type: 'standard' as const, pic_id: o.picId,
   domain_owner: null, mode_penyelesaian: o.mode, installer_name: o.installer ?? null,
-  installer_daerah: o.daerah ?? null, bast_date: o.bast, incentive_value: o.nominal,
+  installer_daerah: o.daerah ?? null, installer_user_id: o.installerUserId ?? null,
+  bast_date: o.bast, incentive_value: o.nominal,
   sales_name: '', sales_division: '', address: '', product: '',
   created_at: '2026-01-01', due_date: o.bast ?? '2026-01-01',
 });
