@@ -155,9 +155,16 @@ per modul, P1 ke atas saja (P2/P3 lengkap tersedia bila diminta):
 
 1. ~~Jawab open question halaman share publik~~ - **selesai**: dikonfirmasi disengaja, tidak diubah.
 2. ~~Tutup 2 celah security P1 baru~~ - **selesai**: Tech Note self-approval (trigger) & Learning Center integritas kuis (penilaian dipindah ke server), keduanya diverifikasi.
-3. **Perbaiki race condition brand-BOTH** (Request Design Project macet permanen) - data-integrity, bukan cuma UX.
-4. **Rencanakan penghapusan hardcode nama tim/perusahaan** (24 file) - ini prasyarat teknis nyata untuk menjual platform ke perusahaan lain, bukan sekadar polish.
-5. Sisanya (accessibility Modal/ConfirmDialog, performa realtime, konsolidasi komponen duplikat) - P2 ke bawah, bisa dikerjakan bertahap kapan saja.
+3. ~~Perbaiki race condition brand-BOTH~~ - **selesai**: trigger DB, diverifikasi.
+4. ~~Race condition approve tiket 2 admin~~ - **selesai**: compare-and-swap + cek row count.
+5. ~~Perketat incentive_splits INSERT~~ - **selesai**: disamakan dengan incentive_tranches (akses_insentif_input()).
+6. ~~Konsolidasi JABATAN_TIER/CC_RULES (4 salinan → 1)~~, ~~cek row-count daily report~~, ~~hapus dead code~~ - **selesai**.
+7. ~~Galat fetch yang ditelan diam-diam~~ (Request Design Project, Tech Note) - **selesai**: ErrorState + notify.
+8. ~~Notifikasi deep-link ke record spesifik~~ (ref_id) - **selesai**: 4 halaman tujuan disambungkan.
+9. ~~Domain hardcode di 47 pesan WA~~ - **selesai**: lib/app-url.ts (window.location.origin di browser, NEXT_PUBLIC_APP_URL di server).
+10. **Hardcode nama tim/perusahaan (21 file)** - DICEK LEBIH DALAM, TERNYATA LEBIH BESAR dari perkiraan awal: bukan sekadar string yang bisa diganti (mis. `app/kpi-team/page.tsx` punya kolom TERPISAH per tim - `pic_ivp_name`/`pic_ump_name`/`pic_mvi_name` - nama tim sudah tertanam di level SKEMA DATABASE, bukan cuma di kode). Membenarkannya perlu redesain skema (mis. satu kolom `pic_by_team` JSONB generik), bukan refactor string. Konsisten dengan Phase 19 dokumen asli sendiri ("JANGAN memaksakan multi-tenant migration sekarang... buat architecture roadmap") - **sengaja tidak dikerjakan sesi ini**, didokumentasikan di sini sebagai roadmap, bukan ditebak/dipaksakan.
+    - Catatan baik: modul assignment inti (Reminder Schedule/Ticketing/Request Design Project) SUDAH memakai sistem "Kelompok" yang benar (`lib/kelompok.ts`, dibaca dari database, bisa diatur dari Admin Panel tanpa deploy) - gap-nya ada di modul LAIN (KPI Team, Unit Movement, Incentive PTS, Picket Showroom, beberapa bagian Dashboard) yang belum ikut memakai sistem itu.
+11. Sisanya (accessibility Modal/ConfirmDialog, performa realtime, konsolidasi komponen duplikat, storage signed-URL, sesi/JWT revocation) - P1-P2, bisa dikerjakan bertahap.
 
 Dokumen ini TIDAK mencakup Phase 4 (Race Condition mendalam di luar yang
 ditemukan), Phase 8 (Accessibility penuh - baru sampel), Phase 13 (Testing),

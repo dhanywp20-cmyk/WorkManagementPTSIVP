@@ -86,6 +86,10 @@ function kunciGulir(): () => void {
   };
 }
 
+/** Elemen yang bisa menerima fokus keyboard, dipakai jebakan fokus di bawah. */
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 /** Lebar menurut isi, bukan angka - supaya pilihannya bisa dibaca maksudnya. */
 const LEBAR = {
   sm: 'max-w-sm',   // konfirmasi, pesan pendek
@@ -164,6 +168,42 @@ export function Modal({
   useEffect(() => {
     if (buka) badan.current?.focus();
   }, [buka]);
+
+  // Jebakan fokus: Tab tidak boleh lompat ke konten di belakang overlay.
+  // Sama seperti Esc, hanya berlaku untuk modal PALING ATAS di tumpukan -
+  // modal di bawahnya memang tidak boleh diakses sama sekali selagi ada
+  // modal lain di atasnya.
+  useEffect(() => {
+    if (!buka) return;
+    const tekan = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (tumpukan[tumpukan.length - 1] !== idJudul) return;
+      const kontainer = badan.current;
+      if (!kontainer) return;
+      const focusable = Array.from(
+        kontainer.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      ).filter(el => el.offsetParent !== null);
+      if (focusable.length === 0) {
+        e.preventDefault();
+        kontainer.focus();
+        return;
+      }
+      const pertama = focusable[0];
+      const terakhir = focusable[focusable.length - 1];
+      const aktif = document.activeElement;
+      if (e.shiftKey) {
+        if (aktif === pertama || aktif === kontainer) {
+          e.preventDefault();
+          terakhir.focus();
+        }
+      } else if (aktif === terakhir) {
+        e.preventDefault();
+        pertama.focus();
+      }
+    };
+    document.addEventListener('keydown', tekan);
+    return () => document.removeEventListener('keydown', tekan);
+  }, [buka, idJudul]);
 
   if (!buka) return null;
 
