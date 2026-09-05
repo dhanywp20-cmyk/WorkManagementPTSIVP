@@ -1944,6 +1944,22 @@ function ReminderSchedulePageInner() {
     }
   }, [searchParams, currentUser, isGuest, jumlahReviewSiap, pendingReviewCount, canAddReminder]);
 
+  // Deep-link dari notifikasi (?open=<id>): buka detail reminder-nya langsung,
+  // bukan cuma daftar. Ref sekali-jalan - tanpa itu, reminders yang di-refetch
+  // berkala (realtime) akan membuka lagi detailnya tiap kali walau user
+  // sudah menutupnya.
+  const sudahBukaDariNotif = useRef(false);
+  useEffect(() => {
+    if (sudahBukaDariNotif.current) return;
+    const openId = searchParams.get('open');
+    if (!openId || reminders.length === 0) return;
+    const target = reminders.find(r => r.id === openId);
+    if (target) {
+      sudahBukaDariNotif.current = true;
+      setDetailReminder(target);
+    }
+  }, [searchParams, reminders]);
+
   // Cari Supervisor tim sesuai tipe produk saat modal Approve dibuka
   useEffect(() => {
     if (!approveTarget) { setApproveSupervisors([]); return; }

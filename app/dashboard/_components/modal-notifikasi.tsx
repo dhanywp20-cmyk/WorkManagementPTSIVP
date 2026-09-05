@@ -119,7 +119,7 @@ export function NotifBell({ icon, label, count, color, bgColor, borderColor, dot
 // Notification Bar Component
 interface NotificationBarProps {
   currentUser: User;
-  onNavigate: (internalUrl: string, title: string) => void;
+  onNavigate: (internalUrl: string, title: string, refId?: string) => void;
 }
 
 export function NotificationBar({ currentUser, onNavigate }: NotificationBarProps) {
@@ -557,7 +557,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     try {
       const { data: pn } = await supabase
         .from('notifications')
-        .select('id, type, title, body, action_url, created_at')
+        .select('id, type, title, body, action_url, ref_id, created_at')
         .eq('user_id', currentUser.id)
         .eq('is_read', false)
         .order('created_at', { ascending: false })
@@ -571,6 +571,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         url: n.action_url ?? '/dashboard',
         internalUrl: n.action_url ?? '',
         menuTitle: 'Notifikasi',
+        refId: n.ref_id ?? undefined,
       })));
     } catch { /* notifications table might not exist yet — fail silently */ }
     // Keempat izin ikut jadi dependensi: kalau tidak, pengaturan lonceng yang
@@ -601,7 +602,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         .then(() => setPersonalNotifs(p => p.filter(n => n.id !== item.id)))
         .catch(() => {});
     }
-    if (item.internalUrl) onNavigate(item.internalUrl, item.menuTitle);
+    if (item.internalUrl) onNavigate(item.internalUrl, item.menuTitle, item.refId ?? item.id);
   };
 
   const handleMarkAllPersonalRead = () => {

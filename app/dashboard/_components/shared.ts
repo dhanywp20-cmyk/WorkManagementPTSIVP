@@ -54,6 +54,16 @@ export interface NotificationItem {
   url: string;
   internalUrl?: string;
   menuTitle: string;
+  /**
+   * Id record TUJUAN untuk deep-link (dipakai destinasi membuka detailnya
+   * langsung, bukan cuma daftar). Untuk notif dari tickets/project_requests/
+   * reminders/form_reviews, `id` di atas SUDAH id record aslinya - refId
+   * tidak perlu diisi. HANYA notifikasi dari tabel `notifications` (personal)
+   * butuh ini terpisah, karena `id`-nya di sana adalah id baris notifikasi
+   * itu sendiri (dipakai utk mark-as-read), bukan id record yang dituju -
+   * itu ada di kolom ref_id.
+   */
+  refId?: string;
 }
 
 /**
