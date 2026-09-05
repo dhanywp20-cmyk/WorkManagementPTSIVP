@@ -70,28 +70,9 @@ export interface NotificationItem {
  */
 export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
 
-// Hierarki jabatan - urutan dari bawah ke atas
-export const JABATAN_LIST = ['Staff', 'Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'] as const;
-export type JabatanType = typeof JABATAN_LIST[number];
-
-export const JABATAN_CONFIG: Record<JabatanType, { icon: string; color: string; bg: string; border: string; tier: number }> = {
-  'Staff':                  { icon: '👤', color: '#374151', bg: '#f9fafb',   border: '#d1d5db', tier: 1 },
-  'Supervisor':             { icon: '👥', color: '#1e40af', bg: '#eff6ff',   border: '#93c5fd', tier: 2 },
-  'Manager':                { icon: '🏅', color: '#7e22ce', bg: '#faf5ff',   border: '#c4b5fd', tier: 3 },
-  'Deputy General Manager': { icon: '🎖️', color: '#b45309', bg: '#fffbeb',   border: '#fcd34d', tier: 4 },
-  'General Manager':        { icon: '🌟', color: '#065f46', bg: '#ecfdf5',   border: '#6ee7b7', tier: 5 },
-  'Direktur':               { icon: '👑', color: '#991b1b', bg: '#fff1f2',   border: '#fca5a5', tier: 6 },
-};
-
-// Rules CC otomatis berdasarkan jabatan (bawahan  CC ke jabatan mana di atas)
-export const JABATAN_CC_RULES: Record<JabatanType, JabatanType[]> = {
-  'Staff':                  ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager'],
-  'Supervisor':             ['Manager', 'Deputy General Manager', 'General Manager'],
-  'Manager':                ['General Manager', 'Deputy General Manager', 'Direktur'],
-  'Deputy General Manager': ['General Manager', 'Direktur'],
-  'General Manager':        ['Direktur'],
-  'Direktur':               [],
-};
+// Hierarki jabatan & aturan CC - satu sumber kebenaran di lib/jabatan.ts,
+// re-export agar call-site lama tetap jalan.
+export { JABATAN_LIST, JABATAN_CONFIG, JABATAN_CC_RULES, type JabatanType } from '@/lib/jabatan';
 
 
 // Account Settings Modal
