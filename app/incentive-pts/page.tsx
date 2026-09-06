@@ -1468,7 +1468,7 @@ export default function IncentivePTSPage() {
                   tahun proyek/BAST.
                 */}
                 <label className="text-xs font-bold text-gray-500">Tahun Bayar:</label>
-                <select value={tahunAktif} onChange={e => setFilterYear(Number(e.target.value))}
+                <select aria-label="Tahun Bayar:" value={tahunAktif} onChange={e => setFilterYear(Number(e.target.value))}
                   className="px-3 py-2 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-400">
                   {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
                   {uniqueYears.length === 0 && <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>}
@@ -1816,7 +1816,7 @@ export default function IncentivePTSPage() {
                     ? <span className="flex-shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">Auto ✓</span>
                     : <span className="flex-shrink-0 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">Perlu diisi</span>}
                 </div>
-                <input type="date" value={nominalBast} onChange={e => setNominalBast(e.target.value)}
+                <input aria-label="Perlu diisi" type="date" value={nominalBast} onChange={e => setNominalBast(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-rose-400" />
                 <p className="text-[11px] text-gray-400 mt-1.5">
                   {nominalBast

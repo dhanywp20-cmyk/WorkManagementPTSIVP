@@ -303,9 +303,11 @@ export async function sendFonnteWA(
   target: string,
   message: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _meta?: Record<string, unknown>
+  _meta?: Record<string, unknown>,
+  /** Kunci KATALOG_EVENT - diisi = saklar per-event di Admin Panel berlaku. */
+  event?: string,
 ): Promise<{ ok: boolean; reason?: string }> {
-  return sendWA(target, message);
+  return sendWA(target, message, 'reminder_wa', event);
 }
 
 /**

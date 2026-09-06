@@ -10,7 +10,7 @@ import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
-import { KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
+import { KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
 import { exportKPIExcel } from './_components/ekspor-kpi';
 import { DrillModal, ProgressBar } from './_components/DrillModal';
 
@@ -649,7 +649,7 @@ export default function KPITeamPage() {
             return (
               <div className="p-4 space-y-3">
                 {rows.map(({ tt, ms }) => {
-                  const col = TEAM_COLORS[tt] ?? '#64748b';
+                  const col = warnaTim(tt);
                   const abbr = tt.replace('Team PTS ', '').replace('Team PTS IVP', 'IVP');
                   const scored = ms.filter(m => !(m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0));
                   const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
@@ -782,7 +782,7 @@ export default function KPITeamPage() {
             {!loading && sortedMembers.map((m) => {
               const solveRate = m.ticketsHandled > 0 ? Math.round((m.ticketsSolved / m.ticketsHandled) * 100) : 0;
               const remRate = m.remindersAssigned > 0 ? Math.round((m.remindersDone / m.remindersAssigned) * 100) : 0;
-              const teamCol = TEAM_COLORS[m.team_type] ?? '#64748b';
+              const teamCol = warnaTim(m.team_type);
               return (
                 <MobileListCard
                   key={m.id}
@@ -842,7 +842,7 @@ export default function KPITeamPage() {
                 {!loading && sortedMembers.map((m, idx) => {
                   const solveRate  = m.ticketsHandled > 0 ? Math.round((m.ticketsSolved / m.ticketsHandled) * 100) : 0;
                   const remRate    = m.remindersAssigned > 0 ? Math.round((m.remindersDone / m.remindersAssigned) * 100) : 0;
-                  const teamCol    = TEAM_COLORS[m.team_type] ?? '#64748b';
+                  const teamCol    = warnaTim(m.team_type);
                   const dayColor   = m.avgResolutionDays === 0 ? '#94a3b8'
                     : m.avgResolutionDays <= 3 ? '#10b981'
                     : m.avgResolutionDays <= 7 ? '#f59e0b' : '#ef4444';
@@ -975,7 +975,7 @@ export default function KPITeamPage() {
                   </div>
                   {/* Start month (only for 6m) */}
                   {kpiPeriodLen === '6m' && (
-                    <select value={kpiStartMonth} onChange={e => setKpiStartMonth(Number(e.target.value))}
+                    <select aria-label="Periode awal KPI" value={kpiStartMonth} onChange={e => setKpiStartMonth(Number(e.target.value))}
                       className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
                       {[{v:1,l:'Jan–Jun'},{v:2,l:'Feb–Jul'},{v:3,l:'Mar–Agt'},{v:4,l:'Apr–Sep'},{v:5,l:'Mei–Okt'},{v:6,l:'Jun–Nov'},{v:7,l:'Jul–Des'}].map(o=>(
                         <option key={o.v} value={o.v}>{o.l}</option>
@@ -983,7 +983,7 @@ export default function KPITeamPage() {
                     </select>
                   )}
                   {/* Year */}
-                  <select value={kpiYear} onChange={e => setKpiYear(Number(e.target.value))}
+                  <select aria-label="Tahun KPI" value={kpiYear} onChange={e => setKpiYear(Number(e.target.value))}
                     className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
                     {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
                   </select>
@@ -1026,7 +1026,7 @@ export default function KPITeamPage() {
                 return (
                   <div className="p-4 space-y-3">
                     {rows.map(({ tt, ms }) => {
-                      const col = TEAM_COLORS[tt] ?? '#64748b';
+                      const col = warnaTim(tt);
                       const abbr = tt.replace('Team PTS ', '').replace('Team PTS IVP', 'IVP');
                       const scored = ms.filter(m => !(m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0));
                       const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
@@ -1145,7 +1145,7 @@ export default function KPITeamPage() {
                       {snapMs.map((m, idx) => {
                         const c   = m.finalKPI >= 85 ? '#10b981' : m.finalKPI >= 70 ? '#3b82f6' : m.finalKPI >= 50 ? '#f59e0b' : '#ef4444';
                         const lbl = m.finalKPI >= 85 ? 'Excellent' : m.finalKPI >= 70 ? 'Good' : m.finalKPI >= 50 ? 'Fair' : 'Needs Work';
-                        const tc  = TEAM_COLORS[m.team_type] ?? '#64748b';
+                        const tc  = warnaTim(m.team_type);
                         const sc  = (v: number) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
                         return (
                           <tr key={m.id} className="cursor-pointer transition-colors"
@@ -1279,7 +1279,7 @@ export default function KPITeamPage() {
         const c         = noData ? '#94a3b8' : finalKPI >= 85 ? '#10b981' : finalKPI >= 70 ? '#3b82f6' : finalKPI >= 50 ? '#f59e0b' : '#ef4444';
 
         return createPortal(
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+          <div role="dialog" aria-modal="true" aria-label="Detail KPI anggota" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
             onClick={e => { if (e.target === e.currentTarget) setSelectedKPIMember(null); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-y-auto" style={{ maxHeight: '100%', scrollbarWidth: 'thin' }}>
@@ -1430,7 +1430,7 @@ export default function KPITeamPage() {
 
       {/* ── Mulai KPI Confirm Modal ── */}
       {showStartKPI && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" aria-label="Mulai periode KPI" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowStartKPI(false); }}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -1483,10 +1483,10 @@ export default function KPITeamPage() {
         if (!snap || !m) return null;
         const c   = m.finalKPI >= 85 ? '#10b981' : m.finalKPI >= 70 ? '#3b82f6' : m.finalKPI >= 50 ? '#f59e0b' : '#ef4444';
         const lbl = m.finalKPI >= 85 ? 'Excellent' : m.finalKPI >= 70 ? 'Good' : m.finalKPI >= 50 ? 'Fair' : 'Needs Work';
-        const tc  = TEAM_COLORS[m.team_type] ?? '#64748b';
+        const tc  = warnaTim(m.team_type);
         const sc  = (v: number) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
         return createPortal(
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+          <div role="dialog" aria-modal="true" aria-label="Detail anggota" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
             onClick={e => { if (e.target === e.currentTarget) setSelectedSnapMember(null); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-y-auto" style={{ maxHeight: '100%' }}>
@@ -1543,7 +1543,7 @@ export default function KPITeamPage() {
 
       {/* ── KPI Settings Modal ── */}
       {showSettings && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" aria-label="Pengaturan KPI" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowSettings(false); }}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -1559,7 +1559,7 @@ export default function KPITeamPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">🎓 Learning Center — Batas Nilai Minimum</label>
                 <div className="flex items-center gap-3">
-                  <input type="range" min={40} max={85} step={5} value={kpiSettings.lcMinScore}
+                  <input aria-label="🎓 Learning Center — Batas Nilai Minimum" type="range" min={40} max={85} step={5} value={kpiSettings.lcMinScore}
                     onChange={e => setKpiSettings(p => ({ ...p, lcMinScore: Number(e.target.value) }))}
                     className="flex-1 accent-violet-600" />
                   <span className="text-lg font-black text-violet-600 w-12 text-right">&lt;{kpiSettings.lcMinScore}</span>
@@ -1570,7 +1570,7 @@ export default function KPITeamPage() {
               <div>
                 <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wide">📝 R&D Tech Note — Target per Tahun</label>
                 <div className="flex items-center gap-3">
-                  <input type="range" min={1} max={8} step={1} value={kpiSettings.rndTarget}
+                  <input aria-label="📝 R&D Tech Note — Target per Tahun" type="range" min={1} max={8} step={1} value={kpiSettings.rndTarget}
                     onChange={e => setKpiSettings(p => ({ ...p, rndTarget: Number(e.target.value) }))}
                     className="flex-1 accent-pink-600" />
                   <span className="text-lg font-black text-pink-600 w-12 text-right">{kpiSettings.rndTarget}x</span>
@@ -1589,7 +1589,7 @@ export default function KPITeamPage() {
                   ]).map(item => (
                     <div key={item.key} className="flex items-center gap-3">
                       <span className="text-xs font-semibold text-slate-600 w-36 flex-shrink-0">{item.label}</span>
-                      <input type="range" min={5} max={60} step={5}
+                      <input aria-label="Bobot KPI" type="range" min={5} max={60} step={5}
                         value={Math.round((kpiSettings[item.key] as number) * 100)}
                         onChange={e => setKpiSettings(p => ({ ...p, [item.key]: Number(e.target.value) / 100 }))}
                         className="flex-1" style={{ accentColor: item.color }} />

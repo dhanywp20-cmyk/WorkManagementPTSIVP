@@ -9,6 +9,7 @@ import {
 } from './shared';
 import { FormField, SectionHeader, MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
+import { useKelompokPTSDitugaskan } from '@/lib/kelompok';
 
 export type ReminderForm = Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'>;
 export type BulkTarget = 'none' | 'ivp' | 'mvi' | 'ump';
@@ -48,6 +49,7 @@ interface Props {
 }
 
 export function ReminderFormModal({ editingReminder, formData, setFormData, saving, teamUsers, guestUsers, bulkTarget, onBulkTargetChange, extraDates, onExtraDatesChange, onClose, onSubmit, canAssignSelf, selfUser, supervisorUsers = [], jumlahJadwalLama = 0 }: Props) {
+  const kelompokDitugaskan = useKelompokPTSDitugaskan();
   const [guestSearch, setGuestSearch] = useState('');
   const [guestDropdownOpen, setGuestDropdownOpen] = useState(false);
   const [err, setErr] = useState('');
@@ -268,17 +270,28 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                     ))}
                   </optgroup>
                 )}
-                {/* Manager dikecualikan di semua grup — bukan anggota tim biasa yg di-assign tugas */}
-                {teamUsers.filter(u => u.team_type === 'Team PTS IVP' && u.jabatan !== 'Manager').length > 0 && (
-                  <optgroup label="PTS IVP">
-                    {teamUsers.filter(u => u.team_type === 'Team PTS IVP' && u.jabatan !== 'Manager').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
-                  </optgroup>
-                )}
-                {teamUsers.filter(u => u.team_type === 'Team PTS MVI' && u.jabatan !== 'Manager').length > 0 && (
-                  <optgroup label="PTS MVI">
-                    {teamUsers.filter(u => u.team_type === 'Team PTS MVI' && u.jabatan !== 'Manager').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
-                  </optgroup>
-                )}
+                {/*
+                  Satu optgroup per kelompok PTS yang BISA DITUGASKAN, dari
+                  lib/kelompok.ts - bukan dua grup PTS IVP/MVI yang dulu
+                  ditulis langsung di sini. Perilakunya untuk kelompok yang
+                  ada sekarang sama persis (UMP tetap tidak muncul karena
+                  "Bisa Ditugaskan"-nya memang mati, begitu juga kelompok
+                  Cabang), tapi kelompok baru yang ditambahkan admin lewat
+                  Admin Panel ikut muncul tanpa perlu deploy - sebelumnya
+                  anggotanya tidak pernah bisa dipilih sama sekali.
+
+                  Manager dikecualikan di semua grup - bukan anggota tim
+                  biasa yang di-assign tugas.
+                */}
+                {kelompokDitugaskan.map(k => {
+                  const anggota = teamUsers.filter(u => u.team_type === k.nama && u.jabatan !== 'Manager');
+                  if (anggota.length === 0) return null;
+                  return (
+                    <optgroup key={k.nama} label={k.label}>
+                      {anggota.map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                    </optgroup>
+                  );
+                })}
               </select>
             ) : (
               <div className="rounded-xl px-4 py-3 flex items-center gap-3"
@@ -574,7 +587,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                     )}
                   </div>
                   {guestDropdownOpen && (
-                    <div className="fixed inset-0 z-40" onClick={() => { setGuestDropdownOpen(false); setGuestSearch(''); }} />
+                    <div aria-hidden="true" className="fixed inset-0 z-40" onClick={() => { setGuestDropdownOpen(false); setGuestSearch(''); }} />
                   )}
                 </FormField>
 

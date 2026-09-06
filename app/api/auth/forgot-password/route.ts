@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
       'Abaikan pesan ini jika kamu tidak meminta reset password.',
     ].join('\n');
 
-    const waResult = await sendWA(user.phone_number, waMsg, 'forgot_password_otp');
+    const waResult = await sendWA(user.phone_number, waMsg, 'forgot_password_otp', 'system.password_reset');
 
     return NextResponse.json({
       success: true,

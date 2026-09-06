@@ -361,11 +361,11 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                       <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
-                          <input value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                          <input aria-label="Full Name" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
-                          <input value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                          <input aria-label="Username" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password Baru</label>
@@ -373,7 +373,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         </div>
                         <div>
                           <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
-                          <select value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                          <select aria-label="Role" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="superadmin">Superadmin</option>
                             <option value="admin">Admin</option>
                             <option value="team">Team</option>
@@ -867,19 +867,19 @@ export function AccountSettingsInline() {
                 <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
-                    <input value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                    <input aria-label="Full Name" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
-                    <input value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                    <input aria-label="Username" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password</label>
-                    <input value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                    <input aria-label="Password" value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
-                    <select value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                    <select aria-label="Role" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                       <option value="superadmin">Superadmin</option><option value="admin">Admin</option><option value="team">Team</option><option value="guest">Guest</option>
                     </select>
                   </div>

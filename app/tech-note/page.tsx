@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState } from '@/components/shared';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState, Toast, type Notif } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/app/dashboard/_components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
@@ -176,7 +177,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
   return (<>
     {/* Backdrop - mobile drawer only */}
     {mobileOpen && (
-      <div className="fixed inset-0 z-30 md:hidden" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onCloseMobile} />
+      <div aria-hidden="true" className="fixed inset-0 z-30 md:hidden" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onCloseMobile} />
     )}
     <div className={`w-56 shrink-0 overflow-y-auto flex flex-col gap-1 p-3 border-r border-gray-200 z-40
         fixed top-0 bottom-0 left-0 md:static
@@ -260,11 +261,14 @@ function Modal({ open, onClose, title, width=560, children }:{
 }
 
 function Field({ label, children }:{ label:string; children:React.ReactNode }) {
+  //  Isian dibungkus DI DALAM <label> - lihat catatan yang sama di FormField
+  //  bersama (components/shared/FormParts.tsx). <label> yang cuma berdiri di
+  //  atasnya tidak menamai isiannya secara program.
   return (
-    <div className="mb-4">
-      <label className="block text-[12px] font-bold text-slate-600 mb-1.5">{label}</label>
+    <label className="block mb-4">
+      <span className="block text-[12px] font-bold text-slate-600 mb-1.5">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 
@@ -274,7 +278,7 @@ const inputCls = [
 ].join(' ');
 
 // Main Page
-export default function TechNotePage() {
+function TechNotePageInner() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [folders,    setFolders]    = useState<TechNoteFolder[]>([]);
   const [technotes,  setTechnotes]  = useState<TechNote[]>([]);
@@ -292,6 +296,16 @@ export default function TechNotePage() {
   // Edit & hapus tech note.
   const [editingNote, setEditingNote] = useState<TechNote | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  /*
+    Toast menggantikan alert() bawaan browser (4 titik) - tampilannya beda
+    total dari seluruh platform, menyebutkan nama domain, dan memblokir
+    halaman sampai ditekan OK.
+  */
+  const [toast, setToast] = useState<Notif | null>(null);
+  const beritahu = (type: 'success' | 'error', msg: string) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 3600);
+  };
   const [detailNote,       setDetailNote]       = useState<TechNote | null>(null);
   const [detailHistory,    setDetailHistory]    = useState<TechNoteHistory[]>([]);
   const [approveModal,     setApproveModal]     = useState<TechNote | null>(null);
@@ -306,9 +320,22 @@ export default function TechNotePage() {
     const dirty = uploadSnapshotRef.current
       ? JSON.stringify(uploadForm) !== JSON.stringify(uploadSnapshotRef.current)
       : Object.values(uploadForm).some(v => v);
-    if (dirty && !window.confirm('Ada isian yang belum disimpan. Yakin mau menutup tanpa menyimpan?')) return;
-    setShowUploadModal(false); setEditingNote(null);
-    setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
+    const tutup = () => {
+      setShowUploadModal(false); setEditingNote(null);
+      setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
+    };
+    //  ConfirmDialog, bukan window.confirm: yang bawaan memblokir seluruh
+    //  halaman, tidak bisa diberi gaya, dan menyebutkan nama domain di
+    //  judulnya - padahal ini pertanyaan biasa tentang isian yang belum
+    //  disimpan.
+    if (!dirty) { tutup(); return; }
+    setConfirmState({
+      message: 'Tutup tanpa menyimpan?',
+      description: 'Ada isian yang belum disimpan. Kalau ditutup sekarang, isian itu hilang.',
+      confirmLabel: 'Tutup tanpa simpan',
+      danger: true,
+      onConfirm: () => { setConfirmState(null); tutup(); },
+    });
   };
   const [approvalForm, setApprovalForm] = useState({ action:'approved', note:'' });
   const [saving, setSaving] = useState(false);
@@ -412,6 +439,30 @@ export default function TechNotePage() {
   useEffect(() => { fetchFolders(); }, [fetchFolders]);
   useEffect(() => { if (currentUser) fetchNotes(); }, [fetchNotes, currentUser]);
 
+  /*
+    Deep-link dari notifikasi (?open=<id>): buka Tech Note-nya langsung,
+    bukan cuma daftarnya. Ketiga notifikasi Tech Note ("menunggu review",
+    "diajukan ulang", "sudah direview") membawa ref_id catatannya, dan
+    tanpa ini penerimanya mendarat di daftar lalu harus mencari sendiri
+    catatan mana yang dimaksud.
+
+    Ref sekali-jalan: daftar catatan di-fetch ulang tiap kali tahun/filter
+    berubah, dan tanpa penjaga ini detailnya akan terbuka lagi setiap fetch
+    walau sudah ditutup.
+  */
+  const searchParams = useSearchParams();
+  const sudahBukaDariNotif = useRef(false);
+  useEffect(() => {
+    if (sudahBukaDariNotif.current) return;
+    const openId = searchParams.get('open');
+    if (!openId || technotes.length === 0) return;
+    const target = technotes.find(t => t.id === openId);
+    if (target) {
+      sudahBukaDariNotif.current = true;
+      void openDetail(target);
+    }
+  }, [searchParams, technotes]);
+
   async function openDetail(tn: TechNote) {
     setDetailNote(tn);
     const { data } = await supabase.from('tech_note_history').select('*').eq('tech_note_id', tn.id).order('created_at');
@@ -438,7 +489,7 @@ export default function TechNotePage() {
       ({ error } = await supabase.from('tech_note_folders').insert(dasar));
     }
     setSaving(false);
-    if (error) { alert('Gagal membuat folder: ' + error.message); return; }
+    if (error) { beritahu('error', 'Gagal membuat folder: ' + error.message); return; }
     setFolderForm({ name:'', icon:'🖥️', color:'#ec4899', parent_id:'', category:'display' });
     setShowFolderModal(false); fetchFolders();
   }
@@ -472,7 +523,7 @@ export default function TechNotePage() {
         //  dihapus" akan menyembunyikan catatan yatim tanpa riwayat.
         const { data: terhapus, error } = await supabase.from('tech_notes').delete().eq('id', n.id).select('id');
         if (error || !terhapus || terhapus.length === 0) {
-          alert(error ? 'Gagal menghapus: ' + error.message : 'Gagal menghapus (tidak punya akses). Riwayatnya sudah terhapus - hubungi admin.');
+          beritahu('error', error ? 'Gagal menghapus: ' + error.message : 'Gagal menghapus (tidak punya akses). Riwayatnya sudah terhapus - hubungi admin.');
           return;
         }
         void logAudit({
@@ -511,7 +562,7 @@ export default function TechNotePage() {
       if (resubmit) { payload.status = 'pending'; payload.submitted_at = now; }
       const { error } = await supabase.from('tech_notes').update(payload).eq('id', editingNote.id);
       setSaving(false);
-      if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+      if (error) { beritahu('error', 'Gagal menyimpan: ' + error.message); return; }
       await supabase.from('tech_note_history').insert({
         tech_note_id: editingNote.id, action: resubmit ? 'resubmitted' : 'edited',
         performed_by: currentUser.id, performed_by_name: currentUser.full_name,
@@ -568,7 +619,7 @@ export default function TechNotePage() {
       .eq('id',approveModal.id).select('id');
     if (galatUbah || !terubah || terubah.length === 0) {
       setSaving(false);
-      alert('Gagal menyimpan keputusan review. Coba lagi atau hubungi admin.');
+      beritahu('error', 'Gagal menyimpan keputusan review. Coba lagi atau hubungi admin.');
       return;
     }
     await supabase.from('tech_note_history').insert({
@@ -830,6 +881,7 @@ export default function TechNotePage() {
       </Modal>
 
       <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
+      <Toast notif={toast} />
 
       {/* ══ MODAL: Upload Tech Note ══ */}
       <Modal open={showUploadModal}
@@ -984,5 +1036,18 @@ export default function TechNotePage() {
         </Modal>
       )}
     </div>
+  );
+}
+
+/*
+  useSearchParams() (dipakai deep-link ?open= di dalam) WAJIB berada di dalam
+  batas Suspense - tanpa itu Next.js menolak halaman ini saat prerender.
+  Pola yang sama dipakai app/ticketing/page.tsx.
+*/
+export default function TechNotePage() {
+  return (
+    <Suspense>
+      <TechNotePageInner />
+    </Suspense>
   );
 }

@@ -36,12 +36,37 @@ memindahkan 62 titik sekaligus tanpa cara menguji pengiriman sungguhan
 dianggap terlalu berisiko). Yang belum ada: tanda di layarnya. Admin tidak
 punya cara tahu mana centang yang hidup.
 
-**Pilihan perbaikan, dari yang paling murah:**
-1. Beri label jujur di UI — tandai event yang belum tersambung sebagai
-   "belum aktif", dan sebut saklar induk sebagai satu-satunya yang berlaku.
-   *(kecil, tanpa risiko)*
-2. Pindahkan titik-titiknya ke `kirimNotifikasi()` bertahap per modul,
-   dimulai dari Ticketing. *(besar, perlu pengujian pengiriman sungguhan)*
+**SUDAH DIKERJAKAN — keduanya.**
+
+1. `EVENT_TERSAMBUNG` di `katalog.ts` jadi satu sumber kebenaran, dan UI-nya
+   menandai sendiri kejadian yang saklarnya belum berlaku ("belum aktif" +
+   pemberitahuan "baru N dari 22").
+2. Titik pengirimannya disambungkan — tapi **bukan** dengan memindahkan 62
+   titik ke `kirimNotifikasi()`. Cara itu memang berisiko. Yang dipakai:
+   parameter `event` OPSIONAL pada `sendWA`/`sendWANotif`/`sendFonnteWA`.
+   Titik yang menyebutkan kuncinya tunduk pada saklar per-event; titik yang
+   belum menyebutkannya berperilaku **persis** seperti sebelumnya. Tidak ada
+   momen "semua pindah sekaligus", jadi tidak ada momen semua bisa rusak
+   sekaligus.
+
+   21 dari 22 kejadian kini tersambung. Yang tersisa,
+   `system.user_registered`, memang bukan titik WA/Telegram — ia menulis
+   notifikasi in-app langsung di `/api/auth/register`.
+
+**Diverifikasi terhadap setelan produksi yang sebenarnya** (dibaca dari
+`app_settings.notifikasi.kanal`), bukan terhadap bawaan: WhatsApp memang
+sudah dimatikan admin, Telegram hidup, dan 22 kejadian sudah diatur satu per
+satu. Hasil simulasi seluruh 21 kejadian: **tepat 5 yang berhenti terkirim,
+dan kelimanya adalah kejadian yang admin sendiri kosongkan** (`perEvent: []`)
+— `project.internal_review`, `project.updated`, `project.brand_cc`,
+`reminder.form_review_sent`, `system.account_created`. Enam belas sisanya
+tidak berubah sama sekali. Jadi yang terjadi bukan "notifikasi mati", tapi
+"pengaturan yang selama ini diabaikan akhirnya dipatuhi".
+
+Empat titik di Ticketing (ticket ditolak, ticket selesai, diterima Team
+Services, dikembalikan ke PTS) sengaja **tidak** dianotasi: belum ada kunci
+yang cocok di katalog, dan memaksakan kunci yang salah lebih buruk daripada
+membiarkannya memakai jalur lama.
 
 ---
 
@@ -96,18 +121,29 @@ Tapi hanya **4 halaman** yang membacanya:
 | `/reminder-schedule` | ✅ | 10 |
 | `/form-require-project` | ✅ | 5 |
 | `/form-review` | ✅ | 1 |
-| `/tech-note` | ❌ | **3** |
-| `/project-progress` | ❌ | 1 |
-| `/incentive-pts` | ❌ | 1 |
-| `/learning-center` | ❌ | 1 |
-| `/kpi-team` | ❌ | 1 |
+| `/tech-note` | ❌ | **3** (semuanya ber-`ref_id`) |
+| `/project-progress` | ❌ | 1 (ber-`ref_id`) |
+| `/incentive-pts` | ❌ | 1 — **tanpa `ref_id`** |
+| `/learning-center` | ❌ | 1 — **tanpa `ref_id`** |
+| `/kpi-team` | ❌ | 1 — **tanpa `ref_id`** |
 
-Untuk 5 tujuan terakhir, notifikasi "X menunggu review kamu" mendarat di daftar
-— penerimanya harus mencari sendiri record yang dimaksud. Tech Note paling
-terasa karena punya 3 titik notifikasi, semuanya soal review.
+**Koreksi saat pengerjaan.** Tiga tujuan terakhir ternyata tidak mengirim
+`ref_id` sama sekali — notifikasinya memang bersifat kabar ("insentif tahap 2
+cair", "essay kamu sudah dinilai"), tidak menunjuk satu record yang bisa
+dibuka. Jadi tidak ada yang bisa di-deep-link di sana, dan menambahkannya
+hanya akan jadi kode yang tidak pernah jalan. Yang dikerjakan: **Tech Note**
+dan **Project Progress**.
 
-Perbaikannya kecil dan seragam: tiap halaman membaca `?open=` lalu membuka
-detailnya, meniru yang sudah ada di `/ticketing`.
+Sebaliknya, penyisiran ulang menemukan yang terlewat dari audit awal: **4
+notifikasi Request Schedule tidak menyertakan `ref_id`** padahal halamannya
+sudah mendukung deep-link — jadwal baru yang di-route ke Supervisor, request
+yang perlu review Sales Internal, dan dua notifikasi approval Admin/Manager.
+Keempatnya sudah diperbaiki.
+
+Perbaikannya seragam: tiap halaman membaca `?open=` lalu membuka detailnya,
+meniru yang sudah ada di `/ticketing` (termasuk penjaga sekali-jalan supaya
+detail tidak terbuka lagi tiap daftarnya di-fetch ulang, dan pembungkus
+`<Suspense>` yang diwajibkan Next.js untuk `useSearchParams`).
 
 ---
 
@@ -128,9 +164,56 @@ bernama "Team PTS IVP". Daftar kelompok sudah bisa diatur admin
 
 `lib/kelompok.ts` (8) sah — itu daftar bawaannya sendiri.
 
-Piket Showroom yang paling padat: tiga berkas menyalin daftar tim yang sama.
-Kalau perusahaan lain memasang platform ini, modul itu akan tampil kosong
-tanpa pesan apa pun.
+### Koreksi & pembagian saat pengerjaan
+
+Setelah dibaca satu per satu, 78 titik itu terbagi tiga, dan hanya kelompok
+pertama yang bisa diperbaiki tanpa menyentuh basis data:
+
+**a. Murni kode — sudah diperbaiki.**
+- `ReminderFormModal.tsx` — dua optgroup "PTS IVP"/"PTS MVI" pada dropdown
+  assign diganti satu optgroup per kelompok yang "Bisa Ditugaskan". Ini yang
+  paling berdampak: sebelumnya anggota kelompok baru **tidak pernah bisa
+  dipilih sama sekali** saat menugaskan jadwal.
+- `kpi-team/_components/shared.ts` — `TEAM_COLORS` hanya mengenal tiga
+  kelompok; sisanya jatuh ke abu-abu yang sama, jadi dua kelompok baru tidak
+  bisa dibedakan di grafik. Ditambah `warnaTim()` dengan warna cadangan yang
+  dipilih dari nama kelompoknya — satu kelompok selalu mendapat warna yang
+  sama di seluruh layar, bukan warna acak per render. Tujuh titik pemanggil
+  ikut dipindahkan.
+- `GlobalSearch.tsx` — gerbang `isPTSsup` memakai tiga nama tetap, sehingga
+  Supervisor di kelompok baru tidak dikenali dan lingkup pencariannya
+  diam-diam menyempit.
+
+**b. False positive — tidak ada yang perlu diperbaiki.**
+`modal-admin-panel.tsx` sudah punya `FALLBACK_PALETTE` untuk kelompok yang
+tidak dikenal; tiga entri yang terdeteksi pemindai adalah warna pilihan untuk
+kelompok bawaan, bukan asumsi bahwa hanya ada tiga. `lib/kelompok.ts` sendiri
+sama — itu memang daftar bawaannya.
+
+**c. Terhalang SKEMA, bukan kode — belum dikerjakan.**
+Piket Showroom (27 titik) dan turunannya (`kpi-team/page.tsx:206`,
+`GlobalSearch.tsx:364-366`, `DashboardKPI.tsx:703-705`) tidak bisa
+digenerikkan dengan mengganti daftar nama, karena **tabel `picket_schedules`
+sendiri punya satu pasang kolom per tim**: `pic_ivp_id`/`pic_ivp_name`,
+`pic_ump_id`/`pic_ump_name`, `pic_mvi_id`/`pic_mvi_name`. Tim keempat tidak
+punya tempat untuk disimpan.
+
+Perbaikannya perlu migrasi skema, dan urutannya:
+
+1. Tambah kolom `pic jsonb` (`{ "<team_type>": { "id": "...", "name": "..." } }`).
+2. Backfill dari enam kolom lama; kolom lamanya **dibiarkan dulu**, tidak
+   dihapus, supaya bisa dikembalikan kalau ada yang meleset.
+3. Pindahkan pembacaan (`page.tsx`, `FillDetailModal`, `ScheduleModal`,
+   `GlobalSearch`, `kpi-team`) ke `pic`, sambil tetap menulis ke kedua
+   bentuk selama satu siklus pemakaian.
+4. Setelah terbukti, hentikan penulisan ke kolom lama, lalu hapus kolomnya
+   di migrasi terpisah.
+
+Sengaja **tidak** dikerjakan dalam satu jalan sekarang: Piket Showroom
+dipakai setiap hari, migrasinya menyentuh data yang sudah ada, dan tidak ada
+cara mengujinya dari lingkungan ini. Menggabungkannya dengan perbaikan lain
+di komit yang sama juga akan membuat pengembaliannya sulit kalau ada yang
+salah.
 
 ---
 

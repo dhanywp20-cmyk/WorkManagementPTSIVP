@@ -31,7 +31,7 @@ import {
 } from '@/lib/notifikasi/pengaturan';
 import { ambilPengaturanAI, simpanPengaturanAI, AI_BAWAAN, type PengaturanAI,
   ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type PengaturanPenilai } from '@/lib/ai-pengaturan';
-import { KATALOG_EVENT, type KategoriEvent } from '@/lib/notifikasi/katalog';
+import { KATALOG_EVENT, EVENT_TERSAMBUNG, eventTersambung, type KategoriEvent } from '@/lib/notifikasi/katalog';
 import { PENYEDIA_WA, penyediaWA } from '@/lib/notifikasi/penyedia-wa';
 import { supabase } from '@/lib/supabase';
 
@@ -709,6 +709,24 @@ export function IntegrasiInline() {
                   </div>
                 </div>
                 <div className="p-3">
+                  {/*
+                    Pemberitahuan ini sengaja ada dan sengaja tidak dihaluskan.
+                    Setelan per-kejadian baru berlaku untuk titik pengiriman
+                    yang sudah menyebutkan kunci event-nya; sisanya cuma
+                    tunduk pada saklar induk kanal di atas. Tanpa disebut,
+                    admin mematikan sebuah kejadian, centangnya tersimpan,
+                    lalu pesannya tetap terkirim - dan tidak ada satu pun
+                    petunjuk kenapa.
+                  */}
+                  {EVENT_TERSAMBUNG.size < KATALOG_EVENT.length && (
+                    <div className="rounded-lg px-3 py-2.5 mb-2.5 text-[11px] leading-relaxed"
+                      style={{ background: 'rgba(245,158,11,0.09)', border: '1px solid rgba(245,158,11,0.35)', color: '#92400e' }}>
+                      <span className="font-bold">Baru {EVENT_TERSAMBUNG.size} dari {KATALOG_EVENT.length} kejadian yang saklarnya berlaku.</span>{' '}
+                      Kejadian bertanda <span className="font-bold">belum aktif</span> masih memakai jalur pengiriman lama:
+                      centangnya tersimpan, tapi yang menentukan terkirim atau tidak hanya saklar induk kanal di atas.
+                      Sisanya menyusul saat tiap titik pengiriman dipindahkan.
+                    </div>
+                  )}
                   <input value={cariEvent} onChange={e => setCariEvent(e.target.value)}
                     placeholder="🔍 Cari kejadian…" aria-label="Cari kejadian"
                     className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-cyan-400 mb-2.5" />
@@ -737,7 +755,16 @@ export function IntegrasiInline() {
                               return (
                                 <div key={e.key} className="grid grid-cols-[1fr_46px_46px_46px] items-center px-3.5 py-2 border-b border-slate-50 last:border-0 hover:bg-slate-50">
                                   <div className="min-w-0 pr-2">
-                                    <div className="text-[12.5px] text-slate-700 truncate">{e.label}</div>
+                                    <div className="text-[12.5px] text-slate-700 truncate flex items-center gap-1.5">
+                                      <span className="truncate">{e.label}</span>
+                                      {!eventTersambung(e.key) && (
+                                        <span title="Titik pengirimannya belum menyebutkan kunci event ini — centang di baris ini belum berpengaruh, yang berlaku hanya saklar induk kanal di atas."
+                                          className="flex-shrink-0 text-[8.5px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                                          style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
+                                          belum aktif
+                                        </span>
+                                      )}
+                                    </div>
                                     <div className="text-[9.5px] text-slate-300 font-mono truncate">{e.key}</div>
                                     {dipilih.length > 0 && berlaku.length === 0 && (
                                       <div className="text-[10px] text-amber-600 font-semibold mt-0.5">

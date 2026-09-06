@@ -27,6 +27,55 @@ export interface DefinisiEvent {
   bawaanKanal: Array<'in_app' | 'whatsapp'>;
 }
 
+/**
+ * Event yang saklarnya BENAR-BENAR BERLAKU.
+ *
+ * Ini pembedaan yang penting dan harus jujur. Setelan per-event hanya
+ * berpengaruh pada titik pengiriman yang menyebutkan kunci event-nya - lewat
+ * kirimNotifikasi() (lib/notifikasi/router.ts) atau lewat parameter `event`
+ * pada sendWA/sendWANotif (lib/wa.ts). Titik yang belum menyebutkannya hanya
+ * tunduk pada SAKLAR INDUK kanal, bukan pada centang per-event.
+ *
+ * Tanpa daftar ini, Admin Panel menampilkan 22 centang yang tampak setara
+ * padahal sebagian tidak mengubah apa pun - admin mematikan sebuah kejadian,
+ * centangnya tersimpan, lalu pesannya tetap terkirim. Itu lebih buruk
+ * daripada tidak punya setelan sama sekali.
+ *
+ * Bertambah seiring titik pengirimannya dianotasi. Satu-satunya aturan:
+ * JANGAN menambahkan kunci ke sini sebelum titik pengirimannya benar-benar
+ * menyebutkan kunci itu.
+ */
+export const EVENT_TERSAMBUNG: ReadonlySet<string> = new Set<string>([
+  //  Lewat kirimNotifikasi() (router)
+  'system.account_created',      // modal-bersama.tsx - WA selamat datang
+  //  Lewat parameter `event` pada sendWA/sendWANotif/sendFonnteWA (lib/wa.ts)
+  'ticket.approval_needed',      // ticketing: ticket baru menunggu approval + CC atasan
+  'ticket.assigned',             // ticketing: assign ke handler (create, approve, supervisor)
+  'ticket.routed_supervisor',    // ticketing: diteruskan ke Supervisor
+  'ticket.updated',              // ticketing: koreksi/pengalihan lewat Admin Edit
+  'ticket.reopened',             // ticketing: ticket dibuka kembali
+  'reminder.new_schedule',       // reminder: request baru & pengingat jadwal
+  'reminder.assigned',           // reminder: jadwal di-assign ke pelaksana
+  'reminder.routed_supervisor',  // reminder: diteruskan ke Supervisor tim
+  'reminder.rescheduled',        // reminder: jadwal dipindah
+  'reminder.updated',            // reminder: detail diperbarui / selesai
+  'reminder.form_review_sent',   // reminder: form review dikirim ke Guest/Sales
+  'project.approval_needed',     // design project: menunggu approval Admin
+  'project.assigned',            // design project: di-assign ke handler
+  'project.routed_supervisor',   // design project: diteruskan ke Supervisor
+  'project.updated',             // design project: detail diperbarui
+  'project.internal_review',     // design project: menunggu review Sales Internal
+  'project.brand_cc',            // design project: CC ke PIC Brand & atasan
+  'system.digest',               // cron: ringkasan harian
+  'system.overdue_escalation',   // cron: eskalasi tiket/jadwal terlambat
+  'system.password_reset',       // forgot-password: kode OTP
+]);
+
+/** Apakah saklar per-event untuk kunci ini benar-benar berpengaruh? */
+export function eventTersambung(key: string): boolean {
+  return EVENT_TERSAMBUNG.has(key);
+}
+
 export const KATALOG_EVENT: DefinisiEvent[] = [
   { key: 'ticket.assigned',           label: 'Tiket di-assign ke anggota',        kategori: 'ticket',      bawaanKanal: ['in_app', 'whatsapp'] },
   { key: 'ticket.reopened',           label: 'Tiket dibuka kembali',              kategori: 'ticket',      bawaanKanal: ['in_app', 'whatsapp'] },

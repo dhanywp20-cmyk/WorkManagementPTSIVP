@@ -7,6 +7,35 @@ import {
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_MENU_KEYS, SALES_MENU_KEYS } from './shared';
 
+/**
+ * Bentuk nama kelompok dari apa yang diketik admin.
+ *
+ * Nama yang disimpan HARUS sama persis dengan isi users.team_type - itulah
+ * yang dicocokkan seluruh platform - jadi awalannya dibakukan di sini supaya
+ * admin cukup mengetik "SBY", bukan menghafal bentuk penuhnya.
+ *
+ * Awalan yang SUDAH diketik ikut dibuang lebih dulu. Tanpa itu, admin yang
+ * mengetik "PTS Daerah" mendapat "Team PTS PTS Daerah" - persis yang terjadi
+ * pada kelompok PTS Daerah pertama, dan label dobelnya ("PTS PTS Daerah")
+ * ikut tampil di dropdown Tipe PTS pada form akun.
+ */
+export function namaKelompokDari(ketikan: string): string {
+  const asli = ketikan.trim();
+  let inti = asli;
+  //  Berulang, bukan sekali: "Team PTS PTS Daerah" (nama yang terlanjur dobel)
+  //  harus ikut kembali menjadi "Team PTS Daerah" kalau diketik ulang.
+  let sebelum: string;
+  do {
+    sebelum = inti;
+    inti = inti.replace(/^team\s+/i, '').replace(/^pts\s+/i, '').trim();
+  } while (inti !== sebelum);
+  //  Kalau seluruh ketikan habis tersaring (admin mengetik "PTS" saja),
+  //  pakai ketikan aslinya - lebih baik namanya kurang rapi daripada tombol
+  //  Tambah yang diam saja tanpa memberi tahu kenapa.
+  const dipakai = inti || asli;
+  return dipakai ? `Team PTS ${dipakai}` : '';
+}
+
 const LABEL_JENIS: Record<JenisKelompok, string> = {
   pts: 'Team PTS', services: 'Services', marketing: 'Marketing', sales: 'Sales',
 };
@@ -63,6 +92,33 @@ export function KelompokSettingInline() {
     beritahu('ok', `Menu ${jumlah} akun di ${k.label} disamakan dengan tampilan "${k.dashboard === 'sales' ? 'Seperti Sales' : 'Seperti Team'}". Mereka perlu memuat ulang halamannya.`);
   };
 
+  /**
+   * Centang "PTS Cabang" ikut menyesuaikan dua bawaan yang, kalau dibiarkan,
+   * membuat mitra luar diperlakukan seperti anggota tim internal.
+   *
+   * Kelompok baru lahir dengan ditugaskan:true dan SELURUH lonceng - masuk
+   * akal untuk tim internal, tapi salah untuk kelompok Cabang: anggotanya
+   * memang hanya dipilih di SATU titik (dropdown PTS Daerah saat jadwal
+   * Remote diselesaikan), bukan di dropdown assign Ticketing/Request
+   * Schedule/Design Project, dan tidak perlu menerima lonceng tiket internal.
+   * Ini persis yang terjadi pada kelompok PTS Daerah pertama yang dibuat.
+   *
+   * Hanya menyesuaikan saat DINYALAKAN, dan semuanya tetap bisa dikembalikan
+   * admin - ini bawaan yang menolong, bukan aturan yang mengunci.
+   */
+  const tandaiCabang = (k: Kelompok) => {
+    if (k.cabang) { ubah(k.nama, { cabang: false }); return; }
+    const perluDisesuaikan = k.ditugaskan || k.lonceng.length > 1;
+    ubah(k.nama, {
+      cabang: true,
+      ditugaskan: false,
+      lonceng: k.lonceng.filter(l => l === 'jadwal'),
+    });
+    if (perluDisesuaikan) {
+      beritahu('ok', `${k.label} ditandai PTS Cabang — "Bisa Ditugaskan" dimatikan dan loncengnya disisakan Jadwal saja. Ubah lagi kalau memang perlu.`);
+    }
+  };
+
   const geserLonceng = (nama: string, l: Lonceng) =>
     setDaftar(d => d.map(k => k.nama !== nama ? k : {
       ...k,
@@ -72,10 +128,7 @@ export function KelompokSettingInline() {
   const tambah = () => {
     const inti = namaBaru.trim();
     if (!inti) return;
-    // Nama yang disimpan HARUS sama persis dengan nilai users.team_type -
-    // itulah yang dicocokkan seluruh platform. Awalan "Team PTS " ditambahkan
-    // di sini supaya admin cukup mengetik "SBY", bukan menghafal bentuk penuhnya.
-    const nama = /^team /i.test(inti) ? inti : `Team PTS ${inti}`;
+    const nama = namaKelompokDari(inti);
     if (daftar.some(k => k.nama.toLowerCase() === nama.toLowerCase())) {
       beritahu('gagal', `"${nama}" sudah ada.`);
       return;
@@ -161,7 +214,7 @@ export function KelompokSettingInline() {
                     </td>
                     <td className="px-3 py-2.5 text-center">
                       <Centang aktif={k.cabang} label={`${k.label} PTS Cabang`}
-                        onKlik={() => ubah(k.nama, { cabang: !k.cabang })} />
+                        onKlik={() => tandaiCabang(k)} />
                     </td>
                     <td className="px-3 py-2.5">
                       <div className="flex items-center justify-center gap-1.5">
@@ -215,9 +268,15 @@ export function KelompokSettingInline() {
                 Tambah
               </button>
             </div>
+            {namaBaru.trim() && (
+              <p className="text-[11px] mt-1.5 font-semibold" style={{ color: '#6b21a8' }}>
+                Akan disimpan sebagai: <span className="font-mono">{namaKelompokDari(namaBaru)}</span>
+              </p>
+            )}
             <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
               Namanya harus sama persis dengan isi kolom <span className="font-mono">team_type</span> di akun —
-              itulah yang dicocokkan seluruh platform. Awalan &quot;Team PTS &quot; ditambahkan otomatis.
+              itulah yang dicocokkan seluruh platform. Awalan &quot;Team PTS &quot; ditambahkan otomatis
+              (awalan yang sudah kamu ketik tidak akan dobel).
             </p>
           </div>
 

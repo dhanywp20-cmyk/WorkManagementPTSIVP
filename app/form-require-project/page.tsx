@@ -935,14 +935,14 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
             `Silakan review & teruskan ke Admin:\n` +
             `🔗 ${appLink()}`;
           await Promise.allSettled(
-            internalHandlers.filter(h => h.phone_number).map(h => sendWANotif({ type: 'reminder_wa', target: h.phone_number as string, message: internalMsg }))
+            internalHandlers.filter(h => h.phone_number).map(h => sendWANotif({ type: 'reminder_wa', target: h.phone_number as string, message: internalMsg, event: 'project.internal_review' }))
           );
           const adminHeadsUp =
             `ℹ️ *ADA REQUEST DESIGN BARU (pengingat)*\n\n` +
             `Sales External *${currentUser.full_name}* mengajukan request untuk *${form.project_name.trim()}*.\n` +
             `Sedang menunggu review dari Sales Internal *${internalHandlers[0]?.full_name ?? '-'}* sebelum bisa diproses Admin.`;
           await Promise.allSettled(
-            (adminUsersWA as any[]).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: adminHeadsUp }))
+            (adminUsersWA as any[]).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: adminHeadsUp, event: 'project.approval_needed' }))
           );
         }
         if (adminUsersWA && adminUsersWA.length > 0 && routingStatus !== 'internal_review') {
@@ -959,7 +959,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           ].join('\n');
           await Promise.allSettled(
             (adminUsersWA as any[]).map((a: any) =>
-              sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: approvalWaMsg })
+              sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: approvalWaMsg, event: 'project.approval_needed' })
             )
           );
         }
@@ -980,7 +980,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                   `📋 *CC ke   :* ${ccTargets.map(t => t.name + (t.relation === 'ivp_handler' ? ' (IVP)' : '')).join(', ')}`,
                   `🔗 ${appLink()}`,
                 ].join('\n');
-                await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: 'reminder_wa', target: t.phone, message: ccMsg })));
+                await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: 'reminder_wa', target: t.phone, message: ccMsg, event: 'project.brand_cc' })));
               }
             }
           } catch { }
@@ -1068,7 +1068,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
                   '━━━━━━━━━━━━━━━━━━',
                   `🔗 ${appLink('/request-design-project')}`,
                 ].join('\n');
-                await sendWANotif({ type: 'reminder_wa', target: pic.phone_number, message: brandMsg });
+                await sendWANotif({ type: 'reminder_wa', target: pic.phone_number, message: brandMsg, event: 'project.brand_cc' });
               }
             }
           } catch { }
@@ -1154,7 +1154,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         `✅ *REQUEST DESIGN LOLOS REVIEW SALES INTERNAL*\n\n` +
         `Request dari *${req.sales_name}* untuk *${req.project_name}* sudah di-review oleh *${currentUser.full_name}* — silakan diproses/di-assign.\n` +
         `🔗 ${appLink()}`;
-      await Promise.allSettled((admins ?? []).filter((a: any) => a.phone_number).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: msg })));
+      await Promise.allSettled((admins ?? []).filter((a: any) => a.phone_number).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: msg, event: 'project.approval_needed' })));
       (admins ?? []).forEach((a: any) => { if (a.id) void createNotification({ user_id: a.id, type: 'project', title: '✅ Request lolos review Sales Internal', body: `${req.sales_name} — ${req.project_name}`, action_url: '/form-require-project', ref_id: req.id, created_by: currentUser.full_name }); });
     } catch { }
   };
@@ -1190,7 +1190,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       ].join('\n');
       for (const u of penerima) {
         //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
-        if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan });
+        if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan , event: 'project.updated' });
       }
     } catch { /* kabar gagal tidak boleh membatalkan pengajuan ulangnya */ }
   };
@@ -1374,7 +1374,7 @@ Hubungi Admin untuk info lebih lanjut.
              ringkas, garis,
              `🔗 ${appLink()}`].join('\n');
         //  sendWANotif mengirim ke WhatsApp DAN Telegram sekaligus.
-        if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan });
+        if (u.phone_number) void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesan , event: 'project.updated' });
       }
     } catch { /* kabar gagal tidak boleh membatalkan perubahan statusnya */ }
     // Audit
@@ -1460,7 +1460,7 @@ Hubungi Admin untuk info lebih lanjut.
       });
 
       if (orang.phone_number && orang.full_name !== currentUser.full_name) {
-        void sendWANotif({ type: 'reminder_wa', target: orang.phone_number, message: pesanWAPerubahan({
+        void sendWANotif({ type: 'reminder_wa', event: 'project.assigned', target: orang.phone_number, message: pesanWAPerubahan({
           namaPenerima: orang.full_name,
           namaPengubah: currentUser.full_name,
           judulItem: rerouteTarget.project_name,
@@ -1518,7 +1518,7 @@ Hubungi Admin untuk info lebih lanjut.
         const { data: u } = await supabase.from('users')
           .select('id, phone_number, full_name').eq('full_name', penangani).maybeSingle();
         if (u?.phone_number) {
-          void sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesanWAPerubahan({
+          void sendWANotif({ type: 'reminder_wa', event: 'project.updated', target: u.phone_number, message: pesanWAPerubahan({
             namaPenerima: u.full_name || penangani,
             namaPengubah: currentUser.full_name,
             judulItem: String(updateData.project_name ?? selectedRequest.project_name),
@@ -3075,7 +3075,7 @@ Hubungi Admin untuk info lebih lanjut.
                               {uploadingFile ? 'Uploading...' : 'Upload File'}
                             </button>
                             {showUploadChoice && ptsUploadAllowed && (<>
-                              <div className="fixed inset-0 z-10" onClick={() => setShowUploadChoice(false)} />
+                              <div aria-hidden="true" className="fixed inset-0 z-10" onClick={() => setShowUploadChoice(false)} />
                               <div className="absolute right-0 top-full mt-1.5 z-20 w-64 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
                                 <button onClick={() => { setShowUploadChoice(false); fileInputRef.current?.click(); }}
                                   className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-start gap-2 border-b border-gray-100">
@@ -3596,7 +3596,7 @@ Hubungi Admin untuk info lebih lanjut.
                 </h3>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Target Selesai</label>
-                  <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)}
+                  <input aria-label="Target Selesai" type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
                     className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-amber-400 transition-all text-sm bg-white outline-none cursor-pointer"
                     style={{ color: editDueDate ? '#374151' : '#9ca3af' }} />

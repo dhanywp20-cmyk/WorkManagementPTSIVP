@@ -373,7 +373,7 @@ export function RequestJadwalModal({
               <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Tanggal Usulan *
               </label>
-              <input
+              <input aria-label="Tanggal Usulan"
                 type="date"
                 value={form.due_date}
                 onChange={e => f({ due_date: e.target.value })}
@@ -384,7 +384,7 @@ export function RequestJadwalModal({
               <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Waktu Usulan
               </label>
-              <input
+              <input aria-label="Waktu Usulan"
                 type="time"
                 value={form.due_time}
                 onChange={e => f({ due_time: e.target.value })}
@@ -412,7 +412,7 @@ export function RequestJadwalModal({
                   <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                     Mulai Pengerjaan
                   </label>
-                  <input type="date" value={form.progress_start_date}
+                  <input aria-label="Mulai Pengerjaan" type="date" value={form.progress_start_date}
                     onChange={e => f({ progress_start_date: e.target.value })}
                     className={inputCls} style={inputStyle} />
                 </div>
@@ -420,7 +420,7 @@ export function RequestJadwalModal({
                   <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                     Target Selesai
                   </label>
-                  <input type="date" value={form.progress_target_date}
+                  <input aria-label="Target Selesai" type="date" value={form.progress_target_date}
                     min={form.progress_start_date || undefined}
                     onChange={e => f({ progress_target_date: e.target.value })}
                     className={inputCls} style={inputStyle} />

@@ -179,7 +179,7 @@ async function jalankan() {
       items.map(i => `${i.terlambat ? '🔴' : '•'} ${i.label}\n   _${labelTanggal(i.tanggal)}_`).join('\n') +
       `\n\nBuka Work Management untuk memperbarui progres.`;
 
-    const hasil = await sendWA(wa, pesan, 'digest_wa');
+    const hasil = await sendWA(wa, pesan, 'digest_wa', 'system.digest');
     if (hasil.ok) terkirim++; else gagal++;
   }
 

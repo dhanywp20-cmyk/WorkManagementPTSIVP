@@ -84,7 +84,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
           {error&&<div className="px-4 py-3 rounded-xl text-sm font-semibold text-red-700 bg-red-50 border border-red-200">{error}</div>}
 
           <div><label className={lbl}>📅 Tanggal In/Out</label>
-            <input type="date" className={inp} value={form.tanggal} onChange={e=>set('tanggal',e.target.value)}/></div>
+            <input aria-label="📅 Tanggal In/Out" type="date" className={inp} value={form.tanggal} onChange={e=>set('tanggal',e.target.value)}/></div>
 
           <div><label className={lbl}>📦 Status Barang</label>
             <div className="flex gap-2">
@@ -116,7 +116,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
             <input type="text" className={inp} placeholder="Nama project..." value={form.project_name} onChange={e=>set('project_name',e.target.value)}/></div>
 
           <div><label className={lbl}>🎯 Event</label>
-            <select className={inp+" cursor-pointer"} value={form.event} onChange={e=>set('event',e.target.value)}>
+            <select aria-label="🎯 Event" className={inp+" cursor-pointer"} value={form.event} onChange={e=>set('event',e.target.value)}>
               {EVENTS.map(ev=><option key={ev} value={ev}>{ev}</option>)}
             </select>
           </div>
@@ -149,7 +149,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
           {!isMasuk && (
             <div>
               <label className={lbl}>📅 Perkiraan Tanggal Kembali</label>
-              <input type="date" className={inp} value={form.expected_return_date}
+              <input aria-label="📅 Perkiraan Tanggal Kembali" type="date" className={inp} value={form.expected_return_date}
                 onChange={e=>set('expected_return_date',e.target.value)}
                 min={form.tanggal}/>
               <p className="text-[10px] text-amber-600 mt-1 font-medium">

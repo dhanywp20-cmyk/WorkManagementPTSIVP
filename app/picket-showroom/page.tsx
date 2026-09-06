@@ -14,7 +14,7 @@ import {
   JENIS_KEGIATAN_LIST, KEGIATAN_COLORS, PIE_COLORS,
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
 } from './_components/shared';
-import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, ModalPortal } from '@/components/shared';
+import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, ModalPortal, Toast, type Notif } from '@/components/shared';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
 import { FillDetailModal } from './_components/FillDetailModal';
@@ -56,6 +56,13 @@ function PiketShowroomPageInner() {
   const [summaryYear,setSummaryYear]=useState<number>(new Date().getFullYear());
   const [summaryMonth,setSummaryMonth]=useState<number|null>(null);
   const [confirmState,setConfirmState]=useState<ConfirmState|null>(null);
+  /*
+    Toast menggantikan alert() bawaan browser. Tiga kegagalan di halaman ini
+    dulu dilaporkan lewat alert: tampilannya beda total dari seluruh platform,
+    menyebutkan nama domain, dan memblokir halaman sampai ditekan OK.
+  */
+  const [toast,setToast]=useState<Notif|null>(null);
+  const beritahu=(type:'success'|'error',msg:string)=>{ setToast({type,msg}); setTimeout(()=>setToast(null),3200); };
   const wk=toKey(weekStart);
 
   useEffect(()=>{
@@ -229,7 +236,7 @@ function PiketShowroomPageInner() {
         //  (jadi layar tidak berbohong), tapi tanpa ini kegagalan lewat tanpa
         //  penjelasan - kelihatannya "tidak terjadi apa-apa".
         const { data, error } = await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id).select('id');
-        if (error || !data || data.length === 0) alert('Gagal menghapus kegiatan. Coba lagi.');
+        if (error || !data || data.length === 0) beritahu('error','Gagal menghapus kegiatan. Coba lagi.');
         else void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? currentUser?.username ?? '', action: 'delete', module: 'picket-showroom', target_id: row.id, notes: `Hapus kegiatan ${row.day_of_week} ${row.day_date}` });
         fetchData();
       },
@@ -247,12 +254,12 @@ function PiketShowroomPageInner() {
     */
     if (holidays.includes(date)) {
       const { data, error } = await supabase.from('picket_holidays').delete().eq('date', date).select('date');
-      if (error || !data || data.length === 0) { alert('Gagal membatalkan libur. Coba lagi.'); return; }
+      if (error || !data || data.length === 0) { beritahu('error','Gagal membatalkan libur. Coba lagi.'); return; }
       setHolidays(prev => prev.filter(d => d !== date));
     } else {
       const { data, error } = await supabase.from('picket_holidays')
         .insert({ date, label: 'Libur', created_by: currentUser?.full_name ?? '' }).select('date');
-      if (error || !data || data.length === 0) { alert('Gagal menandai libur. Coba lagi.'); return; }
+      if (error || !data || data.length === 0) { beritahu('error','Gagal menandai libur. Coba lagi.'); return; }
       setHolidays(prev => [...prev, date]);
     }
   }, [holidays, currentUser]);
@@ -346,6 +353,7 @@ function PiketShowroomPageInner() {
   return(
     <div className="h-screen overflow-hidden flex flex-col relative" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover',backgroundPosition:'center',backgroundAttachment:'fixed'}}>
       <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
+      <Toast notif={toast} />
       <div className="absolute inset-0 pointer-events-none" style={{background:'rgba(255,255,255,0.08)'}}/>
       {loading&&rows.length===0&&(
       <ModalPortal>

@@ -131,7 +131,7 @@ export function AssignPTSModal({
         'Sudah diapprove Admin/Manager — silakan assign ke anggota tim kamu atau kerjakan sendiri.',
         `🔗 ${appLink()}`,
       ].join('\n');
-      await sendWANotif({ type: 'reminder_wa', target: sup.phone_number, message: lines });
+      await sendWANotif({ type: 'reminder_wa', target: sup.phone_number, message: lines , event: 'project.routed_supervisor' });
     }
     if (sup?.id) {
       void createNotification({
@@ -231,7 +231,7 @@ export function AssignPTSModal({
           'Segera proses dan update status ya! 💪',
           `🔗 ${appLink()}`,
         ].join('\n');
-        await sendWANotif({ type: 'reminder_wa', target: calonHandler.phone_number, message: lines });
+        await sendWANotif({ type: 'reminder_wa', target: calonHandler.phone_number, message: lines , event: 'project.assigned' });
       }
       void createNotification({
         user_id: calonHandler.id, type: 'project',

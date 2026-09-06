@@ -844,7 +844,7 @@ function ReminderSchedulePageInner() {
             `-\n` +
             `Link Dashboard: ${appLink()}\n` +
             `jangan lupa peralatan & Semangat💪🏼`;
-          await sendFonnteWA(u.phone_number, msg, { reminderType: 'new_schedule' });
+          await sendFonnteWA(u.phone_number, msg, { reminderType: 'new_schedule' }, 'reminder.assigned');
         }
       }
       setSaving(false);
@@ -1042,7 +1042,7 @@ function ReminderSchedulePageInner() {
             perubahan: perubahanEdit,
             reroute: { dari: editingReminder.assign_name ?? '', ke: supUser.full_name },
             tautan: appLink('/reminder-schedule'),
-          }));
+          }), undefined, 'reminder.updated');
         }
         if (supUser?.id) {
           void createNotification({
@@ -1081,6 +1081,7 @@ function ReminderSchedulePageInner() {
               reroute: null,
               tautan: appLink('/reminder-schedule'),
             }),
+            undefined, 'reminder.updated',
           );
         }
       }
@@ -1113,7 +1114,7 @@ function ReminderSchedulePageInner() {
           '━━━━━━━━━━━━━━━━━━',
           'Mohon tentukan anggota tim yang mengerjakan.',
           `🔗 ${appLink('/reminder-schedule')}`,
-        ].join('\n'));
+        ].join('\n'), undefined, 'reminder.routed_supervisor');
       }
       if (supUser?.id) {
         void createNotification({
@@ -1121,6 +1122,9 @@ function ReminderSchedulePageInner() {
           title: '🎯 Jadwal perlu kamu assign',
           body: `${formData.project_name} — dari ${currentUser?.full_name ?? 'Admin'}`,
           action_url: '/reminder-schedule',
+          //  ref_id membuat notifikasi ini membuka jadwalnya langsung
+          //  (?open=<id>), bukan cuma daftar - lihat deep-link di page ini.
+          ref_id: barisBaru[0]?.id,
           created_by: currentUser?.full_name ?? 'Admin',
         });
       }
@@ -1147,7 +1151,7 @@ function ReminderSchedulePageInner() {
       //  Telegram TIDAK dipanggil di sini lagi: sejak lib/wa.ts mengirim ke
       //  dua kanal sekaligus, memanggilnya terpisah di sini membuat orang yang
       //  sama menerima pesan Telegram dua kali untuk satu jadwal.
-      const waResult = await sendFonnteWA(assignee.phone_number, msg, { reminderType: 'new_schedule' });
+      const waResult = await sendFonnteWA(assignee.phone_number, msg, { reminderType: 'new_schedule' }, 'reminder.assigned');
       if (waResult.ok) notify('success', `WA notifikasi terkirim ke ${assigneeName}!`);
     }
 
@@ -1259,7 +1263,7 @@ function ReminderSchedulePageInner() {
               `📦 *Product: ${reminder.product ?? '-'}*\n` +
               `🏷️ ${reminder.category} · ${formatDate(reminder.due_date)}\n` +
               `\nTetap semangat! 💪`;
-            await sendFonnteWA(handlerUser.phone_number, msg);
+            await sendFonnteWA(handlerUser.phone_number, msg, undefined, 'reminder.updated');
           }
 
           // Auto-insert ke form_reviews jika kategori trigger & ada sales_name
@@ -1336,7 +1340,7 @@ function ReminderSchedulePageInner() {
                       `Mohon berikan penilaian / review Anda melalui dashboard:\n` +
                       `🔗 ${appLink()}\n\n` +
                       `Terima kasih! 🙏`;
-                    await sendFonnteWA(resolvedGuest.phone_number, guestMsg);
+                    await sendFonnteWA(resolvedGuest.phone_number, guestMsg, undefined, 'reminder.form_review_sent');
                   }
                 }
               }
@@ -1637,7 +1641,7 @@ function ReminderSchedulePageInner() {
           `Mohon berikan penilaian / review Anda melalui dashboard:\n` +
           `🔗 ${appLink()}\n\n` +
           `Terima kasih! 🙏`;
-        const waResult = await sendFonnteWA(resolvedGuest.phone_number, guestMsg);
+        const waResult = await sendFonnteWA(resolvedGuest.phone_number, guestMsg, undefined, 'reminder.form_review_sent');
         if (waResult.ok) notify('success', `Form review & WA berhasil dikirim ke ${resolvedGuest.full_name}!`);
         else notify('success', `Form review OK. WA gagal: ${waResult.reason ?? 'unknown'}`);
       } else {
@@ -1767,7 +1771,7 @@ function ReminderSchedulePageInner() {
           (rescheduleTarget.notes ? `📝 Catatan: ${rescheduleTarget.notes}\n` : '') +
           (reason ? `📝 Alasan: ${reason}\n` : '') +
           `\n🔗 ${appLink()}`;
-        await sendFonnteWA(handlerUser.phone_number, msg);
+        await sendFonnteWA(handlerUser.phone_number, msg, undefined, 'reminder.rescheduled');
       }
     } catch { }
     setRescheduleTarget(null);
@@ -1812,7 +1816,7 @@ function ReminderSchedulePageInner() {
       (r.notes ? `📝 Catatan: ${r.notes}\n` : '') +
       `\n_Pesan dari Request Schedule PTS IVP_`;
 
-    const result = await sendFonnteWA(handlerData.phone_number, msg, { reminderType: 'manual', reminderId: r.id });
+    const result = await sendFonnteWA(handlerData.phone_number, msg, { reminderType: 'manual', reminderId: r.id }, 'reminder.new_schedule');
     setSendingWA(null);
     if (result.ok) notify('success', `WA berhasil dikirim ke ${handlerData.full_name}!`);
     else notify('error', `Gagal kirim WA: ${result.reason ?? 'Unknown error'}`);
@@ -2246,13 +2250,14 @@ function ReminderSchedulePageInner() {
           `\nSilakan review & teruskan ke Admin:\n` +
           `🔗 ${appLink()}`;
         for (const h of internalHandlers) {
-          if (h.phone_number) await sendFonnteWA(h.phone_number, internalMsg);
+          if (h.phone_number) await sendFonnteWA(h.phone_number, internalMsg, undefined, 'reminder.new_schedule');
           createNotification({
             user_id: h.id,
             type: 'reminder',
             title: `📩 Request jadwal perlu review kamu`,
             body: `${currentUser.full_name} (${salesDivision}) — ${data.project_name}`,
             action_url: '/reminder-schedule',
+            ref_id: dibuat?.[0]?.id,
             created_by: currentUser.full_name,
           }).catch(() => {});
         }
@@ -2263,7 +2268,7 @@ function ReminderSchedulePageInner() {
             `Sales External *${currentUser.full_name}* mengajukan request untuk *${data.project_name}*.\n` +
             `Sedang menunggu review dari Sales Internal *${internalHandlers[0]?.full_name ?? '-'}* sebelum bisa diproses Admin.`;
           for (const admin of admins) {
-            if (admin.phone_number) await sendFonnteWA(admin.phone_number, adminHeadsUp);
+            if (admin.phone_number) await sendFonnteWA(admin.phone_number, adminHeadsUp, undefined, 'reminder.new_schedule');
           }
         }
       } else {
@@ -2283,12 +2288,12 @@ function ReminderSchedulePageInner() {
             `\nSilakan review & assign ke Team PTS IVP:\n` +
             `🔗 ${appLink()}`;
           for (const admin of (admins ?? [])) {
-            if (admin.phone_number) await sendFonnteWA(admin.phone_number, msg);
+            if (admin.phone_number) await sendFonnteWA(admin.phone_number, msg, undefined, 'reminder.new_schedule');
           }
           // Manager (role='team') tidak ke-cover query role='admin' di atas - WA & badge terpisah,
           // dikirim BERSAMAAN dengan admin (bukan menyusul), sesuai jadi PENTING sama.
           for (const mgr of managerTargets) {
-            if (mgr.phone_number) await sendFonnteWA(mgr.phone_number, msg);
+            if (mgr.phone_number) await sendFonnteWA(mgr.phone_number, msg, undefined, 'reminder.new_schedule');
           }
         }
         // Badge notifikasi in-app - supaya tidak perlu buka tabel utk tahu ada yg perlu approval.
@@ -2300,6 +2305,7 @@ function ReminderSchedulePageInner() {
           title: `📩 Request jadwal baru menunggu approval`,
           body: `${currentUser.full_name} — ${data.project_name}`,
           action_url: '/reminder-schedule',
+          ref_id: dibuat?.[0]?.id,
           created_by: currentUser.full_name,
         }).catch(() => {});
         for (const mgr of managerTargets) {
@@ -2309,6 +2315,7 @@ function ReminderSchedulePageInner() {
             title: `📩 Request jadwal baru menunggu approval kamu`,
             body: `${currentUser.full_name} — ${data.project_name}`,
             action_url: '/reminder-schedule',
+            ref_id: dibuat?.[0]?.id,
             created_by: currentUser.full_name,
           }).catch(() => {});
         }
@@ -2384,7 +2391,7 @@ function ReminderSchedulePageInner() {
       for (const t of targets) {
         //  sendFonnteWA mengirim ke WhatsApp DAN Telegram sekaligus
         //  (lihat lib/wa.ts) - tidak perlu dipanggil dua kali.
-        if (t.phone_number) void sendFonnteWA(t.phone_number, pesanLolos);
+        if (t.phone_number) void sendFonnteWA(t.phone_number, pesanLolos, undefined, 'reminder.new_schedule');
         createNotification({
           user_id: t.id,
           type: 'reminder',
@@ -2521,7 +2528,7 @@ function ReminderSchedulePageInner() {
       `${jadwalLineRoute}\n\n` +
       `🔗 ${appLink()}`;
     for (const sup of approveSupervisors) {
-      if (sup.phone_number) await sendFonnteWA(sup.phone_number, supMsg);
+      if (sup.phone_number) await sendFonnteWA(sup.phone_number, supMsg, undefined, 'reminder.routed_supervisor');
       createNotification({
         user_id: sup.id,
         type: 'reminder',
@@ -2658,7 +2665,7 @@ function ReminderSchedulePageInner() {
 jangan lupa peralatan & Semangat💪🏼
 ` +
         `🔗 ${appLink()}`;
-      await sendFonnteWA(assignee.phone_number, msg);
+      await sendFonnteWA(assignee.phone_number, msg, undefined, 'reminder.assigned');
     }
 
     // WA ke sales yang request - konfirmasi approved
@@ -2805,7 +2812,7 @@ jangan lupa peralatan & Semangat💪🏼
         `${jadwalLine}\n\n` +
         `jangan lupa peralatan & Semangat💪🏼\n` +
         `🔗 ${appLink()}`;
-      await sendFonnteWA(assignee.phone_number, msg);
+      await sendFonnteWA(assignee.phone_number, msg, undefined, 'reminder.assigned');
     }
 
     // WA ke sales requester - kasih tau siapa yg akan menangani.

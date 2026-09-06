@@ -880,7 +880,7 @@ function TicketingSystemInner() {
             ].join("\n");
             await Promise.allSettled(
               approvers.filter(a => a.phone_number).map((a) =>
-                sendWANotif({ type: "reminder_wa", target: a.phone_number, message: waMsg })
+                sendWANotif({ type: "reminder_wa", event: "ticket.approval_needed", target: a.phone_number, message: waMsg })
               )
             );
             // Badge in-app ke Admin & Manager
@@ -906,7 +906,7 @@ function TicketingSystemInner() {
                 `📋 *CC ke   :* ${ccTargets.map(t => t.name + (t.relation === "ivp_handler" ? " (IVP)" : "")).join(", ")}`,
                 `🔗 ${appLink()}`,
               ].join("\n");
-              await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: "reminder_wa", target: t.phone, message: ccMsg })));
+              await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: "reminder_wa", event: "ticket.approval_needed", target: t.phone, message: ccMsg })));
             }
           }
         } catch { }
@@ -923,7 +923,7 @@ function TicketingSystemInner() {
           if (supUser?.id) void createNotification({ user_id: supUser.id, type: 'ticket', title: '🎯 Ticket perlu kamu assign', body: `${newTicket.project_name} — ${newTicket.issue_case}`, action_url: '/ticketing', ref_id: insertedTicket.id, created_by: currentUser?.full_name || '' });
           if (supUser?.phone_number) {
             const waMsg = ["🎯 *Ticket Perlu Di-assign ke Tim*", "━━━━━━━━━━━━━━━━━━", `Halo *${supUser.full_name || supName}*, ${currentUser?.full_name} meneruskan ticket — silakan assign ke anggota tim / kerjakan sendiri:`, `📌 *Project :* ${newTicket.project_name}`, `⚠️ *Issue   :* ${newTicket.issue_case}`, "━━━━━━━━━━━━━━━━━━", `🔗 ${appLink()}`].join("\n");
-            await sendWANotif({ type: "reminder_wa", target: supUser.phone_number, message: waMsg });
+            await sendWANotif({ type: "reminder_wa", event: "ticket.routed_supervisor", target: supUser.phone_number, message: waMsg });
           }
         } catch { }
       }
@@ -953,7 +953,7 @@ function TicketingSystemInner() {
               "Mohon segera ditangani. Semangat! 💪",
               `🔗 ${appLink()}`,
             ].join("\n");
-            await sendWANotif({ type: "reminder_wa", target: handlerInfo.phone_number, message: waMsg });
+            await sendWANotif({ type: "reminder_wa", event: "ticket.assigned", target: handlerInfo.phone_number, message: waMsg });
           }
         } catch (err: any) {
           console.warn('[ticket] WA to handler (new ticket) failed:', err?.message);
@@ -1065,7 +1065,7 @@ function TicketingSystemInner() {
               "━━━━━━━━━━━━━━━━━━",
               `🔗 ${appLink()}`,
             ].join("\n");
-            await sendWANotif({ type: "reminder_wa", target: supUser.phone_number, message: waMsg });
+            await sendWANotif({ type: "reminder_wa", event: "ticket.routed_supervisor", target: supUser.phone_number, message: waMsg });
           }
         } catch { }
         logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'approve', module: 'ticket', target_id: tk.id, target_name: tk.project_name, notes: `Routed to supervisor: ${supName}` }).catch(() => {});
@@ -1127,7 +1127,7 @@ function TicketingSystemInner() {
             "Mohon segera ditangani. Semangat! 💪",
             `🔗 ${appLink()}`,
           ].join("\n");
-          await sendWANotif({ type: "reminder_wa", target: handlerUser.phone_number, message: waMsg });
+          await sendWANotif({ type: "reminder_wa", event: "ticket.assigned", target: handlerUser.phone_number, message: waMsg });
         }
       } catch (err: any) {
         console.warn('[ticket] WA to handler (approval) failed:', err?.message);
@@ -1150,7 +1150,7 @@ function TicketingSystemInner() {
               `📋 *CC ke   :* ${ccTargets.map(t => t.name + (t.relation === "ivp_handler" ? " (IVP)" : "")).join(", ")}`,
               `🔗 ${appLink()}`,
             ].join("\n");
-            await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: "reminder_wa", target: t.phone, message: ccMsg })));
+            await Promise.allSettled(ccTargets.map(t => sendWANotif({ type: "reminder_wa", event: "ticket.approval_needed", target: t.phone, message: ccMsg })));
           }
         }
       } catch { }
@@ -1231,7 +1231,7 @@ function TicketingSystemInner() {
               "Mohon segera ditangani. Semangat! 💪",
               `🔗 ${appLink()}`,
             ].join("\n");
-            await sendWANotif({ type: "reminder_wa", target: handlerUser.phone_number, message: waMsg });
+            await sendWANotif({ type: "reminder_wa", event: "ticket.assigned", target: handlerUser.phone_number, message: waMsg });
           }
         } catch { }
       }
@@ -1345,7 +1345,7 @@ function TicketingSystemInner() {
             });
           }
           if (u?.phone_number) {
-            await sendWANotif({ type: 'reminder_wa', target: u.phone_number, message: pesanWAPerubahan({
+            await sendWANotif({ type: 'reminder_wa', event: 'ticket.updated', target: u.phone_number, message: pesanWAPerubahan({
               namaPenerima: u.full_name || targetNama,
               namaPengubah: currentUser?.full_name ?? 'Admin',
               judulItem: String(adminEditForm.project_name ?? t.project_name),
@@ -1477,7 +1477,7 @@ function TicketingSystemInner() {
             "Mohon segera ditangani. Semangat! 💪",
             `🔗 ${appLink()}`,
           ].join("\n");
-          await sendWANotif({ type: "reminder_wa", target: reopenHandler.phone_number, message: waMsg });
+          await sendWANotif({ type: "reminder_wa", event: "ticket.reopened", target: reopenHandler.phone_number, message: waMsg });
         }
       } catch { }
       await fetchData();

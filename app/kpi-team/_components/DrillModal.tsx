@@ -6,7 +6,7 @@ import * as XLSX from 'xlsx-js-style';
 
 import { MonthBarChart, TrendBadge, ModalPortal } from '@/components/shared';
 
-import { KPIMember, PeriodKey, TEAM_COLORS, KPI_COLOR, progressColor } from './shared';
+import { KPIMember, PeriodKey, warnaTim, KPI_COLOR, progressColor } from './shared';
 
 /**
  * Popup rincian satu metrik KPI, berikut dua komponen kecil yang hanya dipakai di dalamnya.
@@ -17,7 +17,7 @@ import { KPIMember, PeriodKey, TEAM_COLORS, KPI_COLOR, progressColor } from './s
 export function DrillModal({ member, onClose, period, onViewBreakdown }: { member: KPIMember; onClose: () => void; period: PeriodKey; onViewBreakdown?: () => void }) {
   const solveRate = member.ticketsHandled > 0 ? Math.round((member.ticketsSolved / member.ticketsHandled) * 100) : 0;
   const remRate   = member.remindersAssigned > 0 ? Math.round((member.remindersDone / member.remindersAssigned) * 100) : 0;
-  const teamColor = TEAM_COLORS[member.team_type] ?? KPI_COLOR;
+  const teamColor = warnaTim(member.team_type);
 
   return (
   <ModalPortal>

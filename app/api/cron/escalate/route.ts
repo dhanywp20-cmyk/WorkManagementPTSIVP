@@ -94,7 +94,7 @@ async function runEscalation() {
     });
 
     await Promise.allSettled(
-      targets.map(phone => sendWANotif({ type: 'reminder_wa', target: phone, message: waMsg }))
+      targets.map(phone => sendWANotif({ type: 'reminder_wa', event: 'system.overdue_escalation', target: phone, message: waMsg }))
     );
 
     await supabase

@@ -957,7 +957,7 @@ export default function Dashboard() {
                             <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
                               {registerForm.divisi === 'Marketing' ? 'Marketing Division *' : 'Sales Division *'}
                             </label>
-                            <select value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
+                            <select aria-label="Sales Division" value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
                               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                               <option value="">-- Pilih {registerForm.divisi} Division --</option>
                               {daftarDivisi.map(d => <option key={d} value={d}>{d}</option>)}
@@ -1293,6 +1293,7 @@ export default function Dashboard() {
         {/* Mobile sidebar backdrop */}
         {sidebarMobileOpen && (
           <div
+            aria-hidden="true"
             className="fixed inset-0 z-[180] md:hidden"
             style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}
             onClick={() => setSidebarMobileOpen(false)}

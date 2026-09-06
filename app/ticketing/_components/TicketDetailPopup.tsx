@@ -401,16 +401,16 @@ export function TicketDetailPopup({
                                   </div>
                                   {newActivity.onsite_use_schedule && (
                                     <div className="space-y-1.5">
-                                      <input type="date" value={newActivity.onsite_schedule_date}
+                                      <input aria-label="Tanggal jadwal onsite" type="date" value={newActivity.onsite_schedule_date}
                                         onChange={e => setNewActivity({ ...newActivity, onsite_schedule_date: e.target.value })}
                                         className="w-full rounded-lg px-2.5 py-1.5 text-xs border border-purple-200 outline-none" style={{ background: 'white' }} />
                                       <div className="flex gap-1.5 items-center">
-                                        <select value={newActivity.onsite_schedule_hour} onChange={e => setNewActivity({ ...newActivity, onsite_schedule_hour: e.target.value })}
+                                        <select aria-label="Jam jadwal onsite" value={newActivity.onsite_schedule_hour} onChange={e => setNewActivity({ ...newActivity, onsite_schedule_hour: e.target.value })}
                                           className="flex-1 rounded-lg px-2 py-1.5 text-xs border border-purple-200" style={{ background: 'white' }}>
                                           {Array.from({length:24},(_,i)=>String(i).padStart(2,'0')).map(h=><option key={h} value={h}>{h}</option>)}
                                         </select>
                                         <span className="text-gray-400 text-xs font-bold">:</span>
-                                        <select value={newActivity.onsite_schedule_minute} onChange={e => setNewActivity({ ...newActivity, onsite_schedule_minute: e.target.value })}
+                                        <select aria-label="Menit jadwal onsite" value={newActivity.onsite_schedule_minute} onChange={e => setNewActivity({ ...newActivity, onsite_schedule_minute: e.target.value })}
                                           className="flex-1 rounded-lg px-2 py-1.5 text-xs border border-purple-200" style={{ background: 'white' }}>
                                           {["00","15","30","45"].map(m=><option key={m} value={m}>{m}</option>)}
                                         </select>
