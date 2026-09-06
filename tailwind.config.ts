@@ -36,23 +36,26 @@ const config: Config = {
          * formulir - dipakai grid form pendek (2-3 kolom) di Admin Panel yang
          * sebelumnya memakai `sm:` polos.
          *
-         * `sm:` (min-width: 640px) SENDIRIAN salah sasaran di HP yang
-         * accessibility zoom-nya diaksesibilitas/dipaksa oleh sistem (mis.
-         * "Force enable zoom" Android menimpa `maximum-scale=1` yang dipasang
-         * app ini) - browser bisa melaporkan lebar viewport CSS yang lebih
-         * besar dari layar sungguhan, dan `sm:` ikut menyala di HP yang
-         * layarnya sungguh sempit. Labelnya jadi bertumpuk dengan input di
-         * sebelahnya - persis gejala "form berantakan di HP" yang dilaporkan
-         * walau sudah refresh berkali-kali (bukan cache, bukan kode salah
-         * kondisi - breakpoint-nya sendiri yang salah menyala).
+         * CATATAN PENTING - jangan mengulangi salah diagnosis yang sama:
+         * breakpoint ini BUKAN yang memperbaiki bug "form Tambah Akun
+         * berantakan di HP". Penyebab bug itu adalah `col-span-2`/`col-span-3`
+         * TANPA prefix di dalam grid yang mobile-nya `grid-cols-1`: CSS Grid
+         * membuat KOLOM IMPLISIT selebar isinya untuk menampung span itu,
+         * jadi kolom pertama tergencet sampai ~55px dan labelnya melimpah
+         * menimpa kolom sebelahnya. Perbaikannya ada di komponennya
+         * (col-span ikut diberi prefix breakpoint yang sama dengan gridnya),
+         * bukan di sini. Kalau suatu saat ada grid tampak berantakan di HP,
+         * periksa col-span anak-anaknya LEBIH DULU sebelum menyalahkan
+         * breakpoint.
          *
-         * Sama seperti `satulayar` di atas: yang membedakan laptop dari HP
-         * bukan lebar yang bisa dibohongi zoom, melainkan `pointer: fine`
-         * (mouse/trackpad) - itu tidak berubah walau viewport dilaporkan
-         * lebih lebar dari layar sungguhan.
+         * Yang breakpoint ini kerjakan hanya satu: menahan form pendek tetap
+         * 1 kolom di layar sentuh sempit, walau lebar viewport CSS-nya
+         * dilaporkan besar (mis. "Force enable zoom" Android yang menimpa
+         * `maximum-scale=1`). Batas 900px tetap meloloskan tablet - layar
+         * selebar itu memang muat 2-3 kolom walau layarnya sentuh.
          */
         formulir: {
-          raw: '(min-width: 640px) and (pointer: fine)',
+          raw: '(min-width: 900px), ((pointer: fine) and (min-width: 640px))',
         },
       },
 

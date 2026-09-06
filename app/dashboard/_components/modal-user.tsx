@@ -1269,7 +1269,7 @@ export function UserManagementInline() {
                         {PRODUCT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
-                    <div className="col-span-2">
+                    <div className="formulir:col-span-2">
                       <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tim PTS (bisa pilih lebih dari 1)</label>
                       <div className="flex flex-wrap gap-2">
                         {['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI'].map(tt => (
