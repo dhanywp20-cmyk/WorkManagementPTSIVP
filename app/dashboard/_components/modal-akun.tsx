@@ -7,7 +7,7 @@ import { logAudit } from '@/lib/audit';
 
 import { createNotification } from '@/lib/notifications';
 
-import { User, JABATAN_LIST, JABATAN_CONFIG, ALL_MENU_KEYS, DEFAULT_MENU_KEYS } from './shared';
+import { User, JABATAN_LIST, JABATAN_CONFIG, ALL_MENU_KEYS, DEFAULT_MENU_KEYS, SALES_MENU_KEYS } from './shared';
 import { useDivisiSales } from '@/lib/merek';
 import { useKelompokPTS, labelKelompokPTS, teamTypeDariLabelPTS } from '@/lib/kelompok';
 import { ConfirmDialog, type ConfirmState, Username, ModalPortal } from '@/components/shared';
@@ -21,6 +21,20 @@ import { propagateUserRename, pesanSebar, sendWelcomeWA } from './modal-bersama'
  * perusahaan lain, jadi kesan "dibuat developer untuk developer" ini
  * kecil tapi sebaiknya tidak ada.
  */
+/**
+ * Paket menu bawaan untuk sebuah kelompok PTS - mengikuti setelan "Tampilan
+ * Dashboard" di Admin Panel -> Kelompok.
+ *
+ * Dipakai saat Tipe PTS dipilih di form Tambah Akun, jadi akun baru langsung
+ * lahir dengan tampilan yang benar tanpa admin mencentang satu per satu.
+ * Centangnya tetap bisa disesuaikan setelahnya - ini paket awal, bukan kunci.
+ */
+function paketMenuKelompok(labelPTS: string, daftar: { label: string; dashboard: 'team' | 'sales' }[]): string[] {
+  return daftar.find(k => k.label === labelPTS)?.dashboard === 'sales'
+    ? [...SALES_MENU_KEYS]
+    : [...DEFAULT_MENU_KEYS];
+}
+
 const LABEL_ROLE: Record<string, string> = {
   superadmin: 'Superadmin', admin: 'Admin', team: 'Team', guest: 'Guest',
 };
@@ -514,7 +528,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 {newUser.divisi === 'PTS' && (
                   <div className="formulir:col-span-2">
                     <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
-                    <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '' })}
+                    <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                       <option value="">-- Pilih Tipe PTS --</option>
                       {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
@@ -1106,7 +1120,7 @@ export function AccountSettingsInline() {
               {newUser.divisi === 'PTS' && (
                 <div className="formulir:col-span-3">
                   <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS *</label>
-                  <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '' })}
+                  <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                     <option value="">-- Pilih Tipe PTS --</option>
                     {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
