@@ -11,6 +11,7 @@ import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
+import { bacaPicPiket } from '@/app/picket-showroom/_components/shared';
 import { exportKPIExcel } from './_components/ekspor-kpi';
 import { DrillModal, ProgressBar } from './_components/DrillModal';
 
@@ -142,7 +143,7 @@ export default function KPITeamPage() {
       supabase.from('lc_quiz_attempts').select('id,user_id,score,passed,is_submitted,started_at,grading_status')
         .in('user_id', mIds).eq('is_submitted', true)
         .gte('started_at', start).lte('started_at', endFull),
-      supabase.from('piket_schedules').select('pic_ivp_name,pic_ump_name,pic_mvi_name,day_date')
+      supabase.from('piket_schedules').select('pic,pic_ivp_name,pic_ump_name,pic_mvi_name,pic_ivp_id,pic_ump_id,pic_mvi_id,day_date')
         .gte('day_date', start).lte('day_date', end),
       supabase.from('form_reviews')
         .select('id,assign_name,grade_product_knowledge,grade_training_customer,grade_product_knowledge_bast,created_at')
@@ -201,10 +202,11 @@ export default function KPITeamPage() {
       // Tech Notes approved (R&D - auto from platform)
       const techNotesApproved = techNotes.filter((tn: any) => tn.author_id === uid).length;
 
-      // Piket
-      const tt     = m.team_type as string;
-      const picCol = tt === 'Team PTS IVP' ? 'pic_ivp_name' : tt === 'Team PTS UMP' ? 'pic_ump_name' : 'pic_mvi_name';
-      const piketFilled = piketRows.filter((p: any) => p[picCol] === name).length;
+      //  Piket - dicocokkan lewat bacaPicPiket(), bukan menebak nama kolom dari
+      //  tim orangnya. Cara lama hanya mengenal tiga tim: anggota kelompok PTS
+      //  yang ditambahkan admin selalu jatuh ke kolom 'pic_mvi_name' dan
+      //  piketnya tidak pernah terhitung sama sekali.
+      const piketFilled = piketRows.filter((p: any) => bacaPicPiket(p)?.name === name).length;
 
       // Avg response time (first activity per ticket)
       const myTIds = new Set(myT.map((t: any) => t.id as string));
@@ -650,7 +652,7 @@ export default function KPITeamPage() {
               <div className="p-4 space-y-3">
                 {rows.map(({ tt, ms }) => {
                   const col = warnaTim(tt);
-                  const abbr = tt.replace('Team PTS ', '').replace('Team PTS IVP', 'IVP');
+                  const abbr = tt.replace('Team PTS ', '');
                   const scored = ms.filter(m => !(m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0));
                   const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
                   const avgC = avg == null ? '#94a3b8' : avg >= 85 ? '#10b981' : avg >= 70 ? '#3b82f6' : avg >= 50 ? '#f59e0b' : '#ef4444';
@@ -1027,7 +1029,7 @@ export default function KPITeamPage() {
                   <div className="p-4 space-y-3">
                     {rows.map(({ tt, ms }) => {
                       const col = warnaTim(tt);
-                      const abbr = tt.replace('Team PTS ', '').replace('Team PTS IVP', 'IVP');
+                      const abbr = tt.replace('Team PTS ', '');
                       const scored = ms.filter(m => !(m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0));
                       const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
                       const avgC = avg == null ? '#94a3b8' : avg >= 85 ? '#10b981' : avg >= 70 ? '#3b82f6' : avg >= 50 ? '#f59e0b' : '#ef4444';

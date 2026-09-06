@@ -195,6 +195,18 @@ export function kelompokCabang(): Kelompok[] {
   return semuaKelompok().filter(k => k.cabang);
 }
 
+/**
+ * Nama seluruh kelompok yang berupa TIM (punya team_type), untuk dipakai
+ * sebagai daftar pilihan - mis. filter "Team Penanganan" di Ticketing.
+ *
+ * Kelompok Sales sengaja dilewati: nama team_type-nya memang kosong (ia
+ * dibedakan lewat role, bukan tim), jadi memasukkannya hanya akan
+ * menghasilkan pilihan tanpa nilai.
+ */
+export function namaSemuaKelompokTim(): string[] {
+  return semuaKelompok().filter(k => k.nama.trim() !== '').map(k => k.nama);
+}
+
 /** Nama team_type kelompok PTS Cabang. */
 export function namaKelompokCabang(): string[] {
   return kelompokCabang().map(k => k.nama);

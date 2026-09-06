@@ -56,6 +56,15 @@ export function KelompokSettingInline() {
   const [kabar, setKabar] = useState<{ jenis: 'ok' | 'gagal'; teks: string } | null>(null);
   const [siap, setSiap] = useState(false);
   const [menerapkan, setMenerapkan] = useState<string | null>(null);
+  /**
+   * Nilai "Tampilan Dashboard" saat halaman dimuat / terakhir diterapkan.
+   *
+   * Dipakai untuk tahu kelompok mana yang setelannya BARU diubah tapi akun
+   * lamanya belum disamakan - tanpa penanda ini, admin mengubah dropdown,
+   * menekan Simpan, lalu heran kenapa akun yang sudah ada tidak berubah.
+   * Persis yang terjadi pada kelompok PTS Daerah.
+   */
+  const [dashboardTerpakai, setDashboardTerpakai] = useState<Record<string, 'team' | 'sales'>>({});
 
   const beritahu = (jenis: 'ok' | 'gagal', teks: string) => {
     setKabar({ jenis, teks });
@@ -63,7 +72,12 @@ export function KelompokSettingInline() {
   };
 
   useEffect(() => {
-    void muatKelompok().then(() => { setDaftar(semuaKelompok()); setSiap(true); });
+    void muatKelompok().then(() => {
+      const k = semuaKelompok();
+      setDaftar(k);
+      setDashboardTerpakai(Object.fromEntries(k.map(x => [x.nama, x.dashboard])));
+      setSiap(true);
+    });
     void kelompokTerpakai().then(setTerpakai);
   }, []);
 
@@ -89,6 +103,7 @@ export function KelompokSettingInline() {
       .eq('team_type', k.nama);
     setMenerapkan(null);
     if (error) { beritahu('gagal', 'Gagal menerapkan: ' + error.message); return; }
+    setDashboardTerpakai(prev => ({ ...prev, [k.nama]: k.dashboard }));
     beritahu('ok', `Menu ${jumlah} akun di ${k.label} disamakan dengan tampilan "${k.dashboard === 'sales' ? 'Seperti Sales' : 'Seperti Team'}". Mereka perlu memuat ulang halamannya.`);
   };
 
@@ -150,8 +165,15 @@ export function KelompokSettingInline() {
     setMenyimpan(true);
     const { error } = await simpanKelompok(daftar);
     setMenyimpan(false);
-    if (error) beritahu('gagal', 'Gagal menyimpan: ' + error);
-    else beritahu('ok', 'Tersimpan. Lonceng ikut berubah tanpa perlu deploy.');
+    if (error) { beritahu('gagal', 'Gagal menyimpan: ' + error); return; }
+    //  Menyimpan setelan TIDAK menyentuh akun yang sudah ada - itu disengaja
+    //  (lihat terapkanKeAkun), tapi diam saja soal itu membuat admin mengira
+    //  perubahannya gagal. Jadi disebutkan, lengkap dengan nama kelompoknya.
+    const perluTerapkan = daftar.filter(k =>
+      k.nama && (terpakai[k.nama] ?? 0) > 0 && dashboardTerpakai[k.nama] !== k.dashboard);
+    beritahu('ok', perluTerapkan.length > 0
+      ? `Tersimpan. Tapi menu akun yang SUDAH ADA belum ikut berubah — tekan "Terapkan" pada baris ${perluTerapkan.map(k => k.label).join(', ')}.`
+      : 'Tersimpan. Lonceng ikut berubah tanpa perlu deploy.');
   };
 
   if (!siap) return <div className="p-6 text-sm text-slate-400">Memuat pengaturan…</div>;
@@ -224,13 +246,23 @@ export function KelompokSettingInline() {
                           <option value="team">Seperti Team</option>
                           <option value="sales">Seperti Sales</option>
                         </select>
-                        {jumlah > 0 && (
-                          <button type="button" onClick={() => terapkanKeAkun(k)} disabled={menerapkan === k.nama}
-                            title={`Samakan menu ${jumlah} akun yang sudah ada di ${k.label} dengan pilihan ini`}
-                            className="text-[10px] font-bold px-1.5 py-1 rounded-lg border border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700 disabled:opacity-50 transition-all whitespace-nowrap">
-                            {menerapkan === k.nama ? '…' : 'Terapkan'}
-                          </button>
-                        )}
+                        {jumlah > 0 && (() => {
+                          //  Menonjol kalau setelannya sudah diubah tapi akun lamanya
+                          //  belum disamakan - tombol yang tampak sama saja dalam dua
+                          //  keadaan itulah yang membuat orang mengira sudah selesai.
+                          const belumSelaras = dashboardTerpakai[k.nama] !== k.dashboard;
+                          return (
+                            <button type="button" onClick={() => terapkanKeAkun(k)} disabled={menerapkan === k.nama}
+                              title={belumSelaras
+                                ? `${jumlah} akun di ${k.label} masih memakai menu lama — tekan untuk menyamakannya`
+                                : `Samakan menu ${jumlah} akun yang sudah ada di ${k.label} dengan pilihan ini`}
+                              className={`text-[10px] font-bold px-1.5 py-1 rounded-lg border disabled:opacity-50 transition-all whitespace-nowrap ${belumSelaras
+                                ? 'border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100'
+                                : 'border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700'}`}>
+                              {menerapkan === k.nama ? '…' : belumSelaras ? `Terapkan ke ${jumlah} akun` : 'Terapkan'}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </td>
                     {SEMUA_LONCENG.map(l => (

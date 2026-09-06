@@ -4,11 +4,14 @@ import { supabase } from '@/lib/supabase';
 import { ModalPortal } from '@/components/shared';
 import {
   PiketRow, UserRow, DayOfWeek,
-  DAYS_OF_WEEK, DAY_COLOR, DAY_EN, TEAM_LABEL,
+  DAYS_OF_WEEK, DAY_COLOR, DAY_EN, TEAM_LABEL, tulisPicPiket,
   addDays, toKey, getDayDate, isToday, getRollingUserIdForDate,
 } from './shared';
+import { useKelompokPTS, labelKelompokPTS } from '@/lib/kelompok';
 
 export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{weekStart:Date;users:UserRow[];currentUser:any;onClose:()=>void;onSaved:()=>void}) {
+  const kelompokPTSList = useKelompokPTS();
+
   const week2Start=addDays(weekStart,7);
   const wk1=toKey(weekStart),wk2=toKey(week2Start);
   type W2 = Record<string,Record<DayOfWeek,string>>;
@@ -74,23 +77,16 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
             continue;
           }
 
-          const tt=u.team_type||'';
-          const isIVP=tt==='Team PTS IVP';
-          const isUMP=tt==='Team PTS UMP';
-          const isMvi=tt==='Team PTS MVI';
-
           const existing=existingMap.get(`${wk}__${day}`);
 
           const payload: Record<string,any> = {
             week_start:wk,
             day_of_week:day,
             day_date:toKey(getDayDate(ws,day)),
-            pic_ivp_id:isIVP?uid:null,
-            pic_ivp_name:isIVP?u.full_name||null:null,
-            pic_ump_id:isUMP?uid:null,
-            pic_ump_name:isUMP?u.full_name||null:null,
-            pic_mvi_id:isMvi?uid:null,
-            pic_mvi_name:isMvi?u.full_name||null:null,
+            //  Satu pintu tulis (shared.ts): mengisi kolom `pic` sekaligus tiga
+            //  kolom lama selama masa transisi. Tim di luar ketiganya - kelompok
+            //  PTS yang ditambahkan admin - tetap tersimpan lengkap di `pic`.
+            ...tulisPicPiket(u),
             // FIX #3: Pertahankan created_at asli jika row sudah exist, baru set jika insert baru
             created_at:existing?.created_at||new Date().toISOString(),
             updated_at:new Date().toISOString(),
@@ -153,7 +149,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                       const date=getDayDate(ws,day);
                       const u=users.find(x=>x.id===assign[wk]?.[day]);
                       const tt=u?.team_type||'';
-                      const teamKey=tt==='Team PTS IVP'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MVI'?'PTS MVI':'';
+                      const teamKey=tt?labelKelompokPTS(tt):'';
                       const tc=teamKey?TEAM_LABEL[teamKey]:null;
                       return(
                         <div key={wk} className="relative">
@@ -163,15 +159,18 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                             <select aria-label="— Belum —" value={assign[wk]?.[day]||''} onChange={e=>setAssign(p=>({...p,[wk]:{...p[wk],[day]:e.target.value}}))}
                               className="flex-1 text-[11px] outline-none bg-transparent min-w-0 py-1">
                               <option value="">— Belum —</option>
-                              <optgroup label="Team PTS IVP">
-                                {users.filter(u=>u.team_type==='Team PTS IVP').map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}
-                              </optgroup>
-                              <optgroup label="Team PTS UMP">
-                                {users.filter(u=>u.team_type==='Team PTS UMP').map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}
-                              </optgroup>
-                              <optgroup label="Team PTS MVI">
-                                {users.filter(u=>u.team_type==='Team PTS MVI').map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}
-                              </optgroup>
+                              {/* Satu optgroup per kelompok PTS dari pengaturan admin -
+                                  bukan tiga nama yang dipaku. Kelompok baru langsung
+                                  bisa dijadwalkan piket tanpa deploy. */}
+                              {kelompokPTSList.map(k=>{
+                                const anggota=users.filter(u=>u.team_type===k.nama);
+                                if(anggota.length===0) return null;
+                                return (
+                                  <optgroup key={k.nama} label={k.nama}>
+                                    {anggota.map(u=><option key={u.id} value={u.id}>{u.full_name}</option>)}
+                                  </optgroup>
+                                );
+                              })}
                             </select>
                           </div>
                         </div>

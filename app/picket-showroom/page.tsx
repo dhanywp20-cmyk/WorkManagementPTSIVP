@@ -13,7 +13,9 @@ import {
   DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL,
   JENIS_KEGIATAN_LIST, KEGIATAN_COLORS, PIE_COLORS,
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
+  bacaPicPiket, tulisPicPiket,
 } from './_components/shared';
+import { namaKelompokPTS, labelKelompokPTS } from '@/lib/kelompok';
 import { MiniPieChart, PageHeader, ConfirmDialog, type ConfirmState, ErrorState, ListEmptyState, ModalPortal, Toast, type Notif } from '@/components/shared';
 import { TamuSummaryCards } from './_components/TamuSummaryCards';
 import { MiniCalendarPopup } from './_components/MiniCalendarPopup';
@@ -127,8 +129,8 @@ function PiketShowroomPageInner() {
 
       const[wRes,aRes,uRes,kgRes,plRes]=await Promise.all([
         supabase.from('piket_schedules').select('*').in('week_start',[wk,wk2]).order('day_date'),
-        supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_name,pic_ump_name,pic_mvi_name'),
-        supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MVI']).order('full_name'),
+        supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic,pic_ivp_name,pic_ump_name,pic_mvi_name,pic_ivp_id,pic_ump_id,pic_mvi_id'),
+        supabase.from('users').select('id,full_name,username,team_type,role').in('team_type',namaKelompokPTS()).order('full_name'),
         kgQ,
         supabase.from('piket_produk_lain').select('kegiatan_id,nama,watt'), // optional — tabel mungkin belum ada
       ]);
@@ -183,22 +185,17 @@ function PiketShowroomPageInner() {
         const isPast = dateKey < todayKey;
         const name = isPast ? null : getRollingNameForDate(date, allRows, holidays);
         const u = name ? ptUsers.find(x=>x.full_name===name) : undefined;
-        const tt = u?.team_type||'';
-        const isIVP=tt==='Team PTS IVP', isUMP=tt==='Team PTS UMP', isMvi=tt==='Team PTS MVI';
         virtual.push({
           id: `virtual-${wkKey}-${day}`,
           week_start: wkKey,
           day_of_week: day,
           day_date: dateKey,
-          pic_ivp_id: isIVP?(u?.id||null):null,
-          pic_ivp_name: isIVP?(name||null):null,
-          pic_ump_id: isUMP?(u?.id||null):null,
-          pic_ump_name: isUMP?(name||null):null,
-          pic_mvi_id: isMvi?(u?.id||null):null,
-          pic_mvi_name: isMvi?(name||null):null,
+          //  Satu pintu tulis - tim mana pun ikut tersimpan, bukan hanya tiga
+          //  yang kebetulan punya kolom sendiri.
+          ...tulisPicPiket(u ? { id: u.id, full_name: name, team_type: u.team_type } : null),
           tamu_instansi: null, kebutuhan: [],
           created_at: '', updated_at: '',
-        });
+        } as PiketRow);
       });
     });
     return [...rows, ...virtual];
@@ -641,7 +638,7 @@ function PiketShowroomPageInner() {
                                     {/* Cari PTS team dari ptUsers */}
                                     {(()=>{
                                       const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);
-                                      const teamLabel=u?.team_type==='Team PTS IVP'?'PTS IVP':u?.team_type==='Team PTS UMP'?'PTS UMP':u?.team_type==='Team PTS MVI'?'PTS MVI':'';
+                                      const teamLabel=u?.team_type?labelKelompokPTS(u.team_type):'';
                                       const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
                                       return tc?<span className="text-[8px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
                                     })()}
