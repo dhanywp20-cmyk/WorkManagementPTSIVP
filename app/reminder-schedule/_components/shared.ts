@@ -54,6 +54,10 @@ export interface Reminder {
   mode_penyelesaian?: 'onsite' | 'remote' | null;
   installer_name?: string | null;
   installer_daerah?: string | null;
+  /** Akun PTS Cabang yang tertaut (kalau dipilih dari dropdown, bukan diketik
+   *  manual). Dipakai Incentive PTS untuk menaut bagian PTS Daerah ke akun
+   *  sungguhan - lihat installer_user_id di calc.ts. */
+  installer_user_id?: string | null;
   display_type?: 'led' | 'lcd' | 'mix' | null;
   requires_middleware?: boolean;
   requires_controller_automation?: boolean;

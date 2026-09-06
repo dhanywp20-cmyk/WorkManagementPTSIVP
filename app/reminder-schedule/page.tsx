@@ -282,6 +282,18 @@ function ReminderSchedulePageInner() {
   const [controllerBrand, setControllerBrand]         = useState<'cue' | 'extron' | 'wyrestorm' | null>(null);
   const [pendingPhotoUrl, setPendingPhotoUrl]         = useState<string | undefined>(undefined);
   const [savingMode, setSavingMode]                   = useState(false);
+  /**
+   * true = panel Mode dibuka untuk MENGISI/MENGUBAH detail jadwal yang sudah
+   * Completed, bukan sebagai syarat sebelum menyelesaikannya.
+   *
+   * Kenapa perlu: dulu detail pelaksanaan HANYA bisa diisi tepat pada saat
+   * menekan Completed. Begitu statusnya jadi Completed tombol statusnya
+   * hilang ("tidak dapat diubah kembali"), jadi jadwal yang terlanjur selesai
+   * tanpa detail - mis. diselesaikan sebelum fitur ini ada - tidak punya
+   * jalan sama sekali untuk dilengkapi. Padahal jadwal itu tetap ikut ke
+   * Incentive PTS, dan di sana tampil sebagai "Mode belum diset".
+   */
+  const [modeEditSaja, setModeEditSaja]               = useState(false);
 
   // Resend Form Review
   const [resendingFormReview, setResendingFormReview] = useState(false);
@@ -1365,6 +1377,7 @@ function ReminderSchedulePageInner() {
     // Jika kategori incentive-trigger dan status Completed  tampilkan mode modal
     const isIncentiveCat = (INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category);
     if (pendingStatus === 'done' && isIncentiveCat) {
+      setModeEditSaja(false);
       setPendingPhotoUrl(photoUrl);
       setModePenyelesaian(null);
       setInstallerName('');
@@ -1385,6 +1398,28 @@ function ReminderSchedulePageInner() {
     setStatusPhoto(null);
     setStatusPhotoPreview(null);
     setUpdatingStatus(false);
+  };
+
+  /**
+   * Buka panel Mode untuk jadwal yang statusnya SUDAH Completed - mengisi
+   * detail yang belum pernah diisi, atau membetulkan yang salah. Nilai lama
+   * dimuat ulang lebih dulu supaya yang tinggal dibetulkan cukup satu field,
+   * bukan mengetik ulang semuanya.
+   */
+  const bukaEditDetailPelaksanaan = (r: Reminder) => {
+    setModeEditSaja(true);
+    setPendingStatus(null);
+    setPendingPhotoUrl(undefined);
+    setModePenyelesaian(r.mode_penyelesaian ?? null);
+    setInstallerName(r.installer_name ?? '');
+    setInstallerUserId(r.installer_user_id ?? null);
+    setInstallerDaerah(r.installer_daerah ?? '');
+    setBastDate(r.bast_date ?? new Date().toISOString().split('T')[0]);
+    setDisplayType(r.display_type ?? null);
+    setRequiresMiddleware(r.requires_middleware === true);
+    setRequiresControllerAuto(r.requires_controller_automation === true);
+    setControllerBrand(r.controller_automation_brand ?? null);
+    setShowModeModal(true);
   };
 
   const handleModeConfirm = async () => {
@@ -1440,12 +1475,35 @@ function ReminderSchedulePageInner() {
       Satu pekerjaan = satu tanggal BAST, jadi seluruh barisnya harus membawa
       keterangan yang sama - bukan hanya salah satunya.
     */
-    await (snap.batch_id
-      ? supabase.from('reminders').update(isiPenyelesaian).eq('batch_id', snap.batch_id)
-      : supabase.from('reminders').update(isiPenyelesaian).eq('id', reminderId));
-    setShowModeModal(false);
+    const { data: barisTerisi, error: galatIsi } = await (snap.batch_id
+      ? supabase.from('reminders').update(isiPenyelesaian).eq('batch_id', snap.batch_id).select('id')
+      : supabase.from('reminders').update(isiPenyelesaian).eq('id', reminderId).select('id'));
     setSavingMode(false);
-    await handleStatusChange(reminderId, 'done', pendingPhotoUrl);
+    //  select('id') + cek baris: RLS yang menolak diam-diam (0 baris, tanpa
+    //  galat) dulu tidak terlihat sama sekali di sini - panel tertutup, semua
+    //  tampak berhasil, padahal detailnya tidak pernah tersimpan. Persis
+    //  kejadian yang membuat jadwal Completed berakhir tanpa detail.
+    //  Panel sengaja TIDAK ditutup saat gagal: isian yang sudah diketik tidak
+    //  boleh ikut hilang hanya karena penyimpanannya ditolak.
+    if (galatIsi || !barisTerisi || barisTerisi.length === 0) {
+      notify('error', galatIsi
+        ? 'Gagal menyimpan detail pelaksanaan: ' + galatIsi.message
+        : 'Gagal menyimpan detail pelaksanaan: akun ini bukan aktor pada jadwal ini (RLS menolak).');
+      return;
+    }
+    setShowModeModal(false);
+
+    if (modeEditSaja) {
+      //  Jadwal ini SUDAH Completed - yang diperbarui hanya detailnya, status
+      //  tidak disentuh sama sekali (kalau lewat handleStatusChange, WA
+      //  "jadwal selesai" akan terkirim ulang ke handler untuk kedua kalinya).
+      setModeEditSaja(false);
+      notify('success', 'Detail pelaksanaan tersimpan!');
+      await fetchRemindersQuiet();
+      setDetailReminder(prev => prev ? { ...prev, ...isiPenyelesaian } as Reminder : null);
+    } else {
+      await handleStatusChange(reminderId, 'done', pendingPhotoUrl);
+    }
 
     /*
       Tulisan ke tabel `incentive_projects` DIHAPUS dari sini - kode zombie
@@ -1468,6 +1526,7 @@ function ReminderSchedulePageInner() {
     setStatusPhotoPreview(null);
     setModePenyelesaian(null);
     setInstallerName('');
+    setInstallerUserId(null);
     setInstallerDaerah('');
     setDisplayType(null);
     setRequiresMiddleware(false);
@@ -3059,11 +3118,18 @@ jangan lupa peralatan & Semangat💪🏼
             sama-sama benar (110 > 100) tapi tidak pernah dibandingkan karena
             yang satu di-portal dan yang lain terkurung pembungkus `relative
             z-10` — itulah sebabnya popup Assign muncul di belakang. */}
+        {/* setShowModeModal & setPendingStatus sengaja dibungkus: keduanya
+            menjaga modeEditSaja tidak tertinggal menyala. Kalau panel edit
+            ditutup/dibatalkan lalu jadwal LAIN ditandai Completed, flag yang
+            tertinggal akan membuat statusnya tidak pernah ikut tersimpan. */}
         {detailReminder && (
           <ReminderDetailPopup
             detailReminder={detailReminder} setDetailReminder={setDetailReminder}
-            showModeModal={showModeModal} setShowModeModal={setShowModeModal}
-            pendingStatus={pendingStatus} setPendingStatus={setPendingStatus}
+            showModeModal={showModeModal}
+            setShowModeModal={(v: boolean) => { setShowModeModal(v); if (!v) setModeEditSaja(false); }}
+            modeEditSaja={modeEditSaja} bukaEditDetailPelaksanaan={bukaEditDetailPelaksanaan}
+            pendingStatus={pendingStatus}
+            setPendingStatus={(v: Status | null) => { setPendingStatus(v); if (v) setModeEditSaja(false); }}
             statusPhoto={statusPhoto} setStatusPhoto={setStatusPhoto}
             statusPhotoPreview={statusPhotoPreview} setStatusPhotoPreview={setStatusPhotoPreview}
             showRiwayat={showRiwayat} setShowRiwayat={setShowRiwayat}
