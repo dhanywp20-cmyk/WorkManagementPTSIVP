@@ -190,30 +190,47 @@ tidak dikenal; tiga entri yang terdeteksi pemindai adalah warna pilihan untuk
 kelompok bawaan, bukan asumsi bahwa hanya ada tiga. `lib/kelompok.ts` sendiri
 sama — itu memang daftar bawaannya.
 
-**c. Terhalang SKEMA, bukan kode — belum dikerjakan.**
-Piket Showroom (27 titik) dan turunannya (`kpi-team/page.tsx:206`,
-`GlobalSearch.tsx:364-366`, `DashboardKPI.tsx:703-705`) tidak bisa
-digenerikkan dengan mengganti daftar nama, karena **tabel `picket_schedules`
-sendiri punya satu pasang kolom per tim**: `pic_ivp_id`/`pic_ivp_name`,
-`pic_ump_id`/`pic_ump_name`, `pic_mvi_id`/`pic_mvi_name`. Tim keempat tidak
-punya tempat untuk disimpan.
+**c. Terhalang SKEMA — SUDAH DIKERJAKAN.**
+Piket Showroom (27 titik) dan turunannya tidak bisa digenerikkan dengan
+mengganti daftar nama, karena **tabel `piket_schedules` sendiri punya sepasang
+kolom per tim**: `pic_ivp_id`/`pic_ivp_name`, `pic_ump_*`, `pic_mvi_*`. Tim
+keempat tidak punya tempat untuk disimpan.
 
-Perbaikannya perlu migrasi skema, dan urutannya:
+Dikerjakan sesuai rencana empat langkah, dan langkah 1–3 sudah selesai:
 
-1. Tambah kolom `pic jsonb` (`{ "<team_type>": { "id": "...", "name": "..." } }`).
-2. Backfill dari enam kolom lama; kolom lamanya **dibiarkan dulu**, tidak
-   dihapus, supaya bisa dikembalikan kalau ada yang meleset.
-3. Pindahkan pembacaan (`page.tsx`, `FillDetailModal`, `ScheduleModal`,
-   `GlobalSearch`, `kpi-team`) ke `pic`, sambil tetap menulis ke kedua
-   bentuk selama satu siklus pemakaian.
-4. Setelah terbukti, hentikan penulisan ke kolom lama, lalu hapus kolomnya
-   di migrasi terpisah.
+1. ✅ Kolom `pic jsonb` (`{user_id, name, team_type}`) — migrasi
+   `piket_pic_jsonb`, sudah dijalankan ke produksi.
+2. ✅ Backfill dari enam kolom lama: **90 dari 90 baris, nol yang meleset**
+   (diperiksa: tidak ada baris ber-PIC ganda, dan tidak ada selisih antara
+   `pic->>'user_id'` dengan kolom lamanya). Kolom lama **tidak dihapus**.
+3. ✅ Seluruh pembacaan & penulisan lewat satu pintu di
+   `picket-showroom/_components/shared.ts` — `bacaPicPiket()` (baca `pic`,
+   cadangan ke kolom lama) dan `tulisPicPiket()` (tulis keduanya sekaligus).
+   Dropdown PIC dan dropdown Team R&D kini satu optgroup per kelompok PTS.
+4. ⬜ **Belum**: hentikan penulisan ke kolom lama, lalu hapus kolomnya di
+   migrasi tersendiri. Sengaja ditunda sampai terbukti satu siklus pemakaian —
+   selama kolom lamanya masih terisi, perubahan ini bisa dibatalkan tanpa
+   kehilangan data.
 
-Sengaja **tidak** dikerjakan dalam satu jalan sekarang: Piket Showroom
-dipakai setiap hari, migrasinya menyentuh data yang sudah ada, dan tidak ada
-cara mengujinya dari lingkungan ini. Menggabungkannya dengan perbaikan lain
-di komit yang sama juga akan membuat pengembaliannya sulit kalau ada yang
-salah.
+Piket Showroom: 27 hardcode → 6, dan keenamnya berada di dalam dua fungsi
+transisi itu — tempatnya memang di situ, dan hilang sendiri di langkah 4.
+
+**Dua bug ikut ketemu saat memindahkan turunannya:**
+
+- `GlobalSearch.tsx` — penyaringan piket untuk Supervisor menyebut tiga nama
+  tim lalu `return true` sebagai penutup. Supervisor kelompok PTS **baru**
+  jatuh ke penutup itu dan melihat piket **seluruh** tim — kebalikan dari yang
+  dimaksud penyaringnya.
+- `kpi-team/page.tsx` — jumlah piket dihitung dengan menebak nama kolom dari
+  tim orangnya, dengan tebakan terakhir `pic_mvi_name`. Anggota kelompok baru
+  selalu jatuh ke sana, jadi piketnya **tidak pernah terhitung**.
+
+`DashboardKPI.tsx` — `isPTSIVP`/`isPTSUMP`/`isPTSMVI` dihapus: dideklarasikan
+tapi tidak pernah dipakai di mana pun.
+
+Sisa hardcode se-repo: **78 → 47**, dan yang tersisa adalah palet warna yang
+sudah bercadangan, daftar bawaan `lib/kelompok.ts` sendiri, serta dua fungsi
+transisi di atas.
 
 ---
 
