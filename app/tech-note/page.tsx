@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/app/dashboard/_components/shared';
@@ -274,7 +275,7 @@ const inputCls = [
 ].join(' ');
 
 // Main Page
-export default function TechNotePage() {
+function TechNotePageInner() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [folders,    setFolders]    = useState<TechNoteFolder[]>([]);
   const [technotes,  setTechnotes]  = useState<TechNote[]>([]);
@@ -411,6 +412,30 @@ export default function TechNotePage() {
 
   useEffect(() => { fetchFolders(); }, [fetchFolders]);
   useEffect(() => { if (currentUser) fetchNotes(); }, [fetchNotes, currentUser]);
+
+  /*
+    Deep-link dari notifikasi (?open=<id>): buka Tech Note-nya langsung,
+    bukan cuma daftarnya. Ketiga notifikasi Tech Note ("menunggu review",
+    "diajukan ulang", "sudah direview") membawa ref_id catatannya, dan
+    tanpa ini penerimanya mendarat di daftar lalu harus mencari sendiri
+    catatan mana yang dimaksud.
+
+    Ref sekali-jalan: daftar catatan di-fetch ulang tiap kali tahun/filter
+    berubah, dan tanpa penjaga ini detailnya akan terbuka lagi setiap fetch
+    walau sudah ditutup.
+  */
+  const searchParams = useSearchParams();
+  const sudahBukaDariNotif = useRef(false);
+  useEffect(() => {
+    if (sudahBukaDariNotif.current) return;
+    const openId = searchParams.get('open');
+    if (!openId || technotes.length === 0) return;
+    const target = technotes.find(t => t.id === openId);
+    if (target) {
+      sudahBukaDariNotif.current = true;
+      void openDetail(target);
+    }
+  }, [searchParams, technotes]);
 
   async function openDetail(tn: TechNote) {
     setDetailNote(tn);
@@ -984,5 +1009,18 @@ export default function TechNotePage() {
         </Modal>
       )}
     </div>
+  );
+}
+
+/*
+  useSearchParams() (dipakai deep-link ?open= di dalam) WAJIB berada di dalam
+  batas Suspense - tanpa itu Next.js menolak halaman ini saat prerender.
+  Pola yang sama dipakai app/ticketing/page.tsx.
+*/
+export default function TechNotePage() {
+  return (
+    <Suspense>
+      <TechNotePageInner />
+    </Suspense>
   );
 }

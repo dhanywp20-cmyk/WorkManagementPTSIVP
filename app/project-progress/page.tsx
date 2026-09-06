@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useCurrentUser, type CurrentUser } from '@/lib/use-current-user';
 import { logAudit } from '@/lib/audit';
@@ -26,7 +27,7 @@ import {
 import { isAssignablePTSTeam } from '@/lib/teams';
 import { compressImage } from '@/lib/image-compress';
 
-export default function ProjectProgressPage() {
+function ProjectProgressPageInner() {
   const currentUser = useCurrentUser();
   const canEdit = canEditProjectProgress(currentUser?.role, currentUser?.team_type, currentUser?.access_level);
 
@@ -201,6 +202,31 @@ export default function ProjectProgressPage() {
     }
     exportProjectToExcel({ project: p, locations, components: comps, issues: (iRes.data ?? []) as ProgressIssue[] });
   };
+
+  /*
+    Deep-link dari notifikasi (?open=<id lokasi>): buka proyek yang MEMUAT
+    lokasi itu. Notifikasi "Lokasi X diblokir" membawa id lokasinya, bukan
+    id proyeknya - jadi proyeknya dicari lebih dulu lewat progress_locations,
+    baru detailnya dibuka. Tanpa ini penerimanya mendarat di daftar proyek
+    dan harus menebak lokasi itu ada di proyek yang mana.
+  */
+  const searchParams = useSearchParams();
+  const sudahBukaDariNotif = useRef(false);
+  useEffect(() => {
+    if (sudahBukaDariNotif.current) return;
+    const openId = searchParams.get('open');
+    if (!openId || projects.length === 0) return;
+    sudahBukaDariNotif.current = true;
+    void (async () => {
+      //  id-nya bisa id proyek (notifikasi lain kelak) atau id lokasi.
+      const langsung = projects.find(p => p.id === openId);
+      if (langsung) { await openDetail(langsung); return; }
+      const { data } = await supabase.from('progress_locations')
+        .select('project_id').eq('id', openId).maybeSingle();
+      const induk = data?.project_id ? projects.find(p => p.id === data.project_id) : null;
+      if (induk) await openDetail(induk);
+    })();
+  }, [searchParams, projects]);
 
   const reloadDetail = async () => {
     if (!detail) return;
@@ -1590,5 +1616,18 @@ function IconBtn({ label, color, onClick, children, badge }: {
           style={{ background: '#059669' }} />
       )}
     </button>
+  );
+}
+
+/*
+  useSearchParams() (dipakai deep-link ?open= di dalam) WAJIB berada di dalam
+  batas Suspense - tanpa itu Next.js menolak halaman ini saat prerender.
+  Pola yang sama dipakai app/ticketing/page.tsx.
+*/
+export default function ProjectProgressPage() {
+  return (
+    <Suspense>
+      <ProjectProgressPageInner />
+    </Suspense>
   );
 }

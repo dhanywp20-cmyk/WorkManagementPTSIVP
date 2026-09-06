@@ -1121,6 +1121,9 @@ function ReminderSchedulePageInner() {
           title: '🎯 Jadwal perlu kamu assign',
           body: `${formData.project_name} — dari ${currentUser?.full_name ?? 'Admin'}`,
           action_url: '/reminder-schedule',
+          //  ref_id membuat notifikasi ini membuka jadwalnya langsung
+          //  (?open=<id>), bukan cuma daftar - lihat deep-link di page ini.
+          ref_id: barisBaru[0]?.id,
           created_by: currentUser?.full_name ?? 'Admin',
         });
       }
@@ -2253,6 +2256,7 @@ function ReminderSchedulePageInner() {
             title: `📩 Request jadwal perlu review kamu`,
             body: `${currentUser.full_name} (${salesDivision}) — ${data.project_name}`,
             action_url: '/reminder-schedule',
+            ref_id: dibuat?.[0]?.id,
             created_by: currentUser.full_name,
           }).catch(() => {});
         }
@@ -2300,6 +2304,7 @@ function ReminderSchedulePageInner() {
           title: `📩 Request jadwal baru menunggu approval`,
           body: `${currentUser.full_name} — ${data.project_name}`,
           action_url: '/reminder-schedule',
+          ref_id: dibuat?.[0]?.id,
           created_by: currentUser.full_name,
         }).catch(() => {});
         for (const mgr of managerTargets) {
@@ -2309,6 +2314,7 @@ function ReminderSchedulePageInner() {
             title: `📩 Request jadwal baru menunggu approval kamu`,
             body: `${currentUser.full_name} — ${data.project_name}`,
             action_url: '/reminder-schedule',
+            ref_id: dibuat?.[0]?.id,
             created_by: currentUser.full_name,
           }).catch(() => {});
         }

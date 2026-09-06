@@ -96,18 +96,29 @@ Tapi hanya **4 halaman** yang membacanya:
 | `/reminder-schedule` | ✅ | 10 |
 | `/form-require-project` | ✅ | 5 |
 | `/form-review` | ✅ | 1 |
-| `/tech-note` | ❌ | **3** |
-| `/project-progress` | ❌ | 1 |
-| `/incentive-pts` | ❌ | 1 |
-| `/learning-center` | ❌ | 1 |
-| `/kpi-team` | ❌ | 1 |
+| `/tech-note` | ❌ | **3** (semuanya ber-`ref_id`) |
+| `/project-progress` | ❌ | 1 (ber-`ref_id`) |
+| `/incentive-pts` | ❌ | 1 — **tanpa `ref_id`** |
+| `/learning-center` | ❌ | 1 — **tanpa `ref_id`** |
+| `/kpi-team` | ❌ | 1 — **tanpa `ref_id`** |
 
-Untuk 5 tujuan terakhir, notifikasi "X menunggu review kamu" mendarat di daftar
-— penerimanya harus mencari sendiri record yang dimaksud. Tech Note paling
-terasa karena punya 3 titik notifikasi, semuanya soal review.
+**Koreksi saat pengerjaan.** Tiga tujuan terakhir ternyata tidak mengirim
+`ref_id` sama sekali — notifikasinya memang bersifat kabar ("insentif tahap 2
+cair", "essay kamu sudah dinilai"), tidak menunjuk satu record yang bisa
+dibuka. Jadi tidak ada yang bisa di-deep-link di sana, dan menambahkannya
+hanya akan jadi kode yang tidak pernah jalan. Yang dikerjakan: **Tech Note**
+dan **Project Progress**.
 
-Perbaikannya kecil dan seragam: tiap halaman membaca `?open=` lalu membuka
-detailnya, meniru yang sudah ada di `/ticketing`.
+Sebaliknya, penyisiran ulang menemukan yang terlewat dari audit awal: **4
+notifikasi Request Schedule tidak menyertakan `ref_id`** padahal halamannya
+sudah mendukung deep-link — jadwal baru yang di-route ke Supervisor, request
+yang perlu review Sales Internal, dan dua notifikasi approval Admin/Manager.
+Keempatnya sudah diperbaiki.
+
+Perbaikannya seragam: tiap halaman membaca `?open=` lalu membuka detailnya,
+meniru yang sudah ada di `/ticketing` (termasuk penjaga sekali-jalan supaya
+detail tidak terbuka lagi tiap daftarnya di-fetch ulang, dan pembungkus
+`<Suspense>` yang diwajibkan Next.js untuk `useSearchParams`).
 
 ---
 
