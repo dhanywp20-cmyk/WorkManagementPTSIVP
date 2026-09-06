@@ -8,6 +8,7 @@
  */
 
 import type { User } from '../shared';
+import { gayaDashboard } from '@/lib/kelompok';
 
 const ADMIN_ROLES = ['admin', 'superadmin'];
 
@@ -33,6 +34,18 @@ export function hasMenu(u: User, key: string): boolean {
  */
 export function canAccessAnalytics(u: User): boolean {
   if (isAdminRole(u)) return true;
+  //  Kelompok yang di Admin Panel disetel "Tampilan Dashboard: Seperti Sales"
+  //  TIDAK mendapat Analytics penuh, walau role-nya 'team'.
+  //
+  //  Tanpa syarat ini setelan itu setengah jalan: menu di sidebar memang ikut
+  //  berubah (itu dari allowed_menus), tapi isi dashboard-nya tidak - karena
+  //  widget Analytics dipilih dari ROLE, bukan dari menu. Akibatnya akun PTS
+  //  Daerah tetap melihat Struktur Organisasi, statistik Ticket seluruh tim,
+  //  dan papan Piket Showroom; persis yang dilaporkan.
+  //
+  //  Role-nya sendiri sengaja TIDAK diubah: ia tetap 'team' supaya tetap bisa
+  //  ditugaskan jadwal dan tetap tercatat di Incentive PTS.
+  if (gayaDashboard(u.team_type) === 'sales') return false;
   return (u.role ?? '').toLowerCase() === 'team';
 }
 

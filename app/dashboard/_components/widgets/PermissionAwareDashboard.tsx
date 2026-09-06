@@ -15,6 +15,7 @@ import type { User } from '../shared';
 import { WIDGETS, type WidgetDef } from './Widgets';
 import { supabase } from '@/lib/supabase';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
+import { useKelompok } from '@/lib/kelompok';
 import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 
 const SIZE_SPAN: Record<string, string> = {
@@ -104,6 +105,16 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
     return () => { batal = true; };
   }, [currentUser.id]);
   // Resolve: filter by permission  sort by priority.
+  /*
+    Berlangganan daftar kelompok. Nilainya tidak dipakai langsung - yang
+    dibutuhkan efek sampingnya: daftar kelompok dimuat asinkron, dan
+    canAccessAnalytics() membacanya lewat gayaDashboard(). Tanpa langganan
+    ini, resolusi widget berjalan sekali saat daftar itu masih kosong
+    (jatuh ke bawaan 'team'), lalu tidak pernah diulang - jadi setelan
+    "Seperti Sales" baru terlihat setelah halaman dimuat ulang penuh.
+  */
+  useKelompok();
+
   const visible = WIDGETS
     .filter(w => w.permission(currentUser))
     .sort((a, b) => a.priority - b.priority);
