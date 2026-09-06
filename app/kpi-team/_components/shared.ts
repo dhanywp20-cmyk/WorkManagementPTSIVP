@@ -90,6 +90,28 @@ export const TEAM_COLORS: Record<string, string> = {
   'Team PTS IVP': '#0284c7', 'Team PTS UMP': '#7c3aed', 'Team PTS MVI': '#0d9488',
 };
 
+/** Warna cadangan untuk kelompok yang tidak ada di TEAM_COLORS. */
+const WARNA_CADANGAN = ['#c2410c', '#4d7c0f', '#be185d', '#0f766e', '#4338ca', '#a16207'];
+
+/**
+ * Warna sebuah kelompok - selalu memberi warna, tidak pernah kosong.
+ *
+ * TEAM_COLORS cuma mengenal tiga kelompok bawaan. Kelompok yang ditambahkan
+ * admin lewat Admin Panel dulu jatuh ke abu-abu yang sama untuk semuanya,
+ * jadi dua kelompok baru tidak bisa dibedakan di grafik maupun lencana.
+ * Cadangannya dipilih dari nama kelompoknya (dijumlah kodenya), jadi satu
+ * kelompok SELALU mendapat warna yang sama di seluruh layar dan di antara
+ * sesi - bukan warna acak yang berubah tiap render.
+ */
+export function warnaTim(teamType: string | null | undefined): string {
+  const t = (teamType ?? '').trim();
+  if (!t) return '#64748b';
+  if (TEAM_COLORS[t]) return TEAM_COLORS[t];
+  let jumlah = 0;
+  for (let i = 0; i < t.length; i++) jumlah = (jumlah + t.charCodeAt(i)) % 9973;
+  return WARNA_CADANGAN[jumlah % WARNA_CADANGAN.length];
+}
+
 export const STATUS_COLORS: Record<string, string> = {
   'Solved': '#10b981', 'Pending': '#3b82f6', 'Overdue': '#ef4444',
   'Waiting Approval': '#f59e0b', 'Cancelled': '#6b7280',

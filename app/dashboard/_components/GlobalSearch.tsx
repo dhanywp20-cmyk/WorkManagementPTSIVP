@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { namaKelompokPTS } from '@/lib/kelompok';
 import { User } from './shared';
 import { ModalPortal } from '@/components/shared';
 import { cariReminderByNama } from '@/lib/cari-reminder';
@@ -72,8 +73,12 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   const isAdmin  = ['admin','superadmin'].includes(currentUser.role?.toLowerCase() ?? '');
   /** Orang dalam PTS: admin, superadmin, dan seluruh role team. */
   const tanpaBatas = isAdmin || currentUser.role?.toLowerCase() === 'team';
+  //  Kelompok PTS dari lib/kelompok.ts, bukan tiga nama yang ditulis
+  //  langsung: Supervisor di kelompok PTS yang ditambahkan admin lewat Admin
+  //  Panel dulu tidak dikenali sebagai Supervisor PTS sama sekali, jadi
+  //  lingkup pencariannya diam-diam menyempit.
   const isPTSsup = currentUser.role === 'team' &&
-    ['Team PTS IVP','Team PTS UMP','Team PTS MVI'].includes(currentUser.team_type ?? '') &&
+    namaKelompokPTS().includes(currentUser.team_type ?? '') &&
     currentUser.jabatan === 'Supervisor';
   const isSalesSup = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') &&
     ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(currentUser.jabatan ?? '');

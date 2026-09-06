@@ -10,7 +10,7 @@ import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
-import { KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
+import { KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
 import { exportKPIExcel } from './_components/ekspor-kpi';
 import { DrillModal, ProgressBar } from './_components/DrillModal';
 
@@ -649,7 +649,7 @@ export default function KPITeamPage() {
             return (
               <div className="p-4 space-y-3">
                 {rows.map(({ tt, ms }) => {
-                  const col = TEAM_COLORS[tt] ?? '#64748b';
+                  const col = warnaTim(tt);
                   const abbr = tt.replace('Team PTS ', '').replace('Team PTS IVP', 'IVP');
                   const scored = ms.filter(m => !(m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0));
                   const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
@@ -782,7 +782,7 @@ export default function KPITeamPage() {
             {!loading && sortedMembers.map((m) => {
               const solveRate = m.ticketsHandled > 0 ? Math.round((m.ticketsSolved / m.ticketsHandled) * 100) : 0;
               const remRate = m.remindersAssigned > 0 ? Math.round((m.remindersDone / m.remindersAssigned) * 100) : 0;
-              const teamCol = TEAM_COLORS[m.team_type] ?? '#64748b';
+              const teamCol = warnaTim(m.team_type);
               return (
                 <MobileListCard
                   key={m.id}
@@ -842,7 +842,7 @@ export default function KPITeamPage() {
                 {!loading && sortedMembers.map((m, idx) => {
                   const solveRate  = m.ticketsHandled > 0 ? Math.round((m.ticketsSolved / m.ticketsHandled) * 100) : 0;
                   const remRate    = m.remindersAssigned > 0 ? Math.round((m.remindersDone / m.remindersAssigned) * 100) : 0;
-                  const teamCol    = TEAM_COLORS[m.team_type] ?? '#64748b';
+                  const teamCol    = warnaTim(m.team_type);
                   const dayColor   = m.avgResolutionDays === 0 ? '#94a3b8'
                     : m.avgResolutionDays <= 3 ? '#10b981'
                     : m.avgResolutionDays <= 7 ? '#f59e0b' : '#ef4444';
@@ -1026,7 +1026,7 @@ export default function KPITeamPage() {
                 return (
                   <div className="p-4 space-y-3">
                     {rows.map(({ tt, ms }) => {
-                      const col = TEAM_COLORS[tt] ?? '#64748b';
+                      const col = warnaTim(tt);
                       const abbr = tt.replace('Team PTS ', '').replace('Team PTS IVP', 'IVP');
                       const scored = ms.filter(m => !(m.ticketsHandled === 0 && m.lcAttempts === 0 && m.techNotesApproved === 0));
                       const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
@@ -1145,7 +1145,7 @@ export default function KPITeamPage() {
                       {snapMs.map((m, idx) => {
                         const c   = m.finalKPI >= 85 ? '#10b981' : m.finalKPI >= 70 ? '#3b82f6' : m.finalKPI >= 50 ? '#f59e0b' : '#ef4444';
                         const lbl = m.finalKPI >= 85 ? 'Excellent' : m.finalKPI >= 70 ? 'Good' : m.finalKPI >= 50 ? 'Fair' : 'Needs Work';
-                        const tc  = TEAM_COLORS[m.team_type] ?? '#64748b';
+                        const tc  = warnaTim(m.team_type);
                         const sc  = (v: number) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
                         return (
                           <tr key={m.id} className="cursor-pointer transition-colors"
@@ -1483,7 +1483,7 @@ export default function KPITeamPage() {
         if (!snap || !m) return null;
         const c   = m.finalKPI >= 85 ? '#10b981' : m.finalKPI >= 70 ? '#3b82f6' : m.finalKPI >= 50 ? '#f59e0b' : '#ef4444';
         const lbl = m.finalKPI >= 85 ? 'Excellent' : m.finalKPI >= 70 ? 'Good' : m.finalKPI >= 50 ? 'Fair' : 'Needs Work';
-        const tc  = TEAM_COLORS[m.team_type] ?? '#64748b';
+        const tc  = warnaTim(m.team_type);
         const sc  = (v: number) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
         return createPortal(
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"

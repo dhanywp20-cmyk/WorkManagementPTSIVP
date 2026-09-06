@@ -139,9 +139,56 @@ bernama "Team PTS IVP". Daftar kelompok sudah bisa diatur admin
 
 `lib/kelompok.ts` (8) sah — itu daftar bawaannya sendiri.
 
-Piket Showroom yang paling padat: tiga berkas menyalin daftar tim yang sama.
-Kalau perusahaan lain memasang platform ini, modul itu akan tampil kosong
-tanpa pesan apa pun.
+### Koreksi & pembagian saat pengerjaan
+
+Setelah dibaca satu per satu, 78 titik itu terbagi tiga, dan hanya kelompok
+pertama yang bisa diperbaiki tanpa menyentuh basis data:
+
+**a. Murni kode — sudah diperbaiki.**
+- `ReminderFormModal.tsx` — dua optgroup "PTS IVP"/"PTS MVI" pada dropdown
+  assign diganti satu optgroup per kelompok yang "Bisa Ditugaskan". Ini yang
+  paling berdampak: sebelumnya anggota kelompok baru **tidak pernah bisa
+  dipilih sama sekali** saat menugaskan jadwal.
+- `kpi-team/_components/shared.ts` — `TEAM_COLORS` hanya mengenal tiga
+  kelompok; sisanya jatuh ke abu-abu yang sama, jadi dua kelompok baru tidak
+  bisa dibedakan di grafik. Ditambah `warnaTim()` dengan warna cadangan yang
+  dipilih dari nama kelompoknya — satu kelompok selalu mendapat warna yang
+  sama di seluruh layar, bukan warna acak per render. Tujuh titik pemanggil
+  ikut dipindahkan.
+- `GlobalSearch.tsx` — gerbang `isPTSsup` memakai tiga nama tetap, sehingga
+  Supervisor di kelompok baru tidak dikenali dan lingkup pencariannya
+  diam-diam menyempit.
+
+**b. False positive — tidak ada yang perlu diperbaiki.**
+`modal-admin-panel.tsx` sudah punya `FALLBACK_PALETTE` untuk kelompok yang
+tidak dikenal; tiga entri yang terdeteksi pemindai adalah warna pilihan untuk
+kelompok bawaan, bukan asumsi bahwa hanya ada tiga. `lib/kelompok.ts` sendiri
+sama — itu memang daftar bawaannya.
+
+**c. Terhalang SKEMA, bukan kode — belum dikerjakan.**
+Piket Showroom (27 titik) dan turunannya (`kpi-team/page.tsx:206`,
+`GlobalSearch.tsx:364-366`, `DashboardKPI.tsx:703-705`) tidak bisa
+digenerikkan dengan mengganti daftar nama, karena **tabel `picket_schedules`
+sendiri punya satu pasang kolom per tim**: `pic_ivp_id`/`pic_ivp_name`,
+`pic_ump_id`/`pic_ump_name`, `pic_mvi_id`/`pic_mvi_name`. Tim keempat tidak
+punya tempat untuk disimpan.
+
+Perbaikannya perlu migrasi skema, dan urutannya:
+
+1. Tambah kolom `pic jsonb` (`{ "<team_type>": { "id": "...", "name": "..." } }`).
+2. Backfill dari enam kolom lama; kolom lamanya **dibiarkan dulu**, tidak
+   dihapus, supaya bisa dikembalikan kalau ada yang meleset.
+3. Pindahkan pembacaan (`page.tsx`, `FillDetailModal`, `ScheduleModal`,
+   `GlobalSearch`, `kpi-team`) ke `pic`, sambil tetap menulis ke kedua
+   bentuk selama satu siklus pemakaian.
+4. Setelah terbukti, hentikan penulisan ke kolom lama, lalu hapus kolomnya
+   di migrasi terpisah.
+
+Sengaja **tidak** dikerjakan dalam satu jalan sekarang: Piket Showroom
+dipakai setiap hari, migrasinya menyentuh data yang sudah ada, dan tidak ada
+cara mengujinya dari lingkungan ini. Menggabungkannya dengan perbaikan lain
+di komit yang sama juga akan membuat pengembaliannya sulit kalau ada yang
+salah.
 
 ---
 
