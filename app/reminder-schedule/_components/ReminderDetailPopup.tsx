@@ -53,6 +53,7 @@ export function ReminderDetailPopup({
   controllerBrand, setControllerBrand,
   setPendingPhotoUrl,
   savingMode, handleModeConfirm,
+  modeEditSaja, bukaEditDetailPelaksanaan,
 }: {
   detailReminder: Reminder;
   setDetailReminder: (r: Reminder | null) => void;
@@ -115,6 +116,10 @@ export function ReminderDetailPopup({
   setPendingPhotoUrl: (v: undefined) => void;
   savingMode: boolean;
   handleModeConfirm: () => void;
+  /** true saat panel Mode dipakai mengisi ulang jadwal yang sudah Completed. */
+  modeEditSaja: boolean;
+  /** Buka panel Mode untuk jadwal yang sudah Completed (status tidak diubah). */
+  bukaEditDetailPelaksanaan: (r: Reminder) => void;
 }) {
   const router = useRouter();
 
@@ -429,9 +434,16 @@ export function ReminderDetailPopup({
                 : { background: 'rgba(59,130,246,0.07)', border: '1.5px solid rgba(59,130,246,0.3)' }}>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-lg">{isOnsite ? '🏠' : '📡'}</span>
-                  <p className="text-xs font-bold uppercase tracking-wide" style={{ color: isOnsite ? '#047857' : '#1d4ed8' }}>
+                  <p className="text-xs font-bold uppercase tracking-wide flex-1" style={{ color: isOnsite ? '#047857' : '#1d4ed8' }}>
                     Detail Pelaksanaan · {isOnsite ? 'ONSITE' : 'REMOTE'}
                   </p>
+                  {(isAdmin || currentUser?.role === 'team') && (
+                    <button onClick={() => bukaEditDetailPelaksanaan(detailReminder)}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all hover:scale-105"
+                      style={{ background: 'rgba(255,255,255,0.9)', color: isOnsite ? '#047857' : '#1d4ed8', border: `1px solid ${isOnsite ? 'rgba(16,185,129,0.4)' : 'rgba(59,130,246,0.4)'}` }}>
+                      ✏️ Ubah
+                    </button>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   {detailReminder.bast_date && (
@@ -474,6 +486,36 @@ export function ReminderDetailPopup({
               </div>
             );
           })()}
+
+          {/* ── Jadwal SUDAH Completed tapi detail pelaksanaannya kosong ──
+              Terjadi pada jadwal yang diselesaikan sebelum panel Mode ada, atau
+              yang penyimpanan detailnya dulu gagal diam-diam. Tanpa jalan
+              masuk di sini, jadwal seperti itu MACET selamanya: tombol status
+              sudah hilang ("tidak dapat diubah kembali"), padahal jadwalnya
+              tetap ikut ke Incentive PTS dan di sana tampil sebagai "Mode
+              belum diset". ── */}
+          {(INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category)
+            && detailReminder.status === 'done'
+            && !detailReminder.mode_penyelesaian
+            && (isAdmin || currentUser?.role === 'team') && (
+            <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.35)' }}>
+              <div className="flex items-start gap-2 mb-3">
+                <span className="text-lg">⚠️</span>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Detail Pelaksanaan Belum Diisi</p>
+                  <p className="text-[11px] text-amber-700/80 mt-1 leading-relaxed">
+                    Jadwal ini sudah Completed tapi mode Onsite/Remote, tanggal BAST, dan tipe display-nya belum tercatat —
+                    di Incentive PTS akan terbaca sebagai &quot;Mode belum diset&quot;. Lengkapi di sini; statusnya tidak berubah.
+                  </p>
+                </div>
+              </div>
+              <button onClick={() => bukaEditDetailPelaksanaan(detailReminder)}
+                className="w-full py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:scale-[1.02]"
+                style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', boxShadow: '0 3px 12px rgba(245,158,11,0.35)' }}>
+                ➕ Isi Detail Pelaksanaan
+              </button>
+            </div>
+          )}
 
           {/* Update Status BARU BISA setelah request selesai di-approve & di-assign
              ke pengerjaan (assigned_to terisi). Selama masih di alur approval
@@ -775,6 +817,7 @@ export function ReminderDetailPopup({
           installerDaerah={installerDaerah} setInstallerDaerah={setInstallerDaerah}
           savingMode={savingMode}
           handleModeConfirm={handleModeConfirm}
+          modeEditSaja={modeEditSaja}
           setShowModeModal={setShowModeModal} setPendingStatus={setPendingStatus}
           setStatusPhoto={setStatusPhoto} setStatusPhotoPreview={setStatusPhotoPreview}
           setPendingPhotoUrl={setPendingPhotoUrl}

@@ -19,6 +19,7 @@ export function ModePenyelesaianPanel({
   installerDaerah, setInstallerDaerah,
   savingMode,
   handleModeConfirm,
+  modeEditSaja = false,
   setShowModeModal, setPendingStatus, setStatusPhoto, setStatusPhotoPreview, setPendingPhotoUrl,
 }: {
   modePenyelesaian: 'onsite' | 'remote' | null;
@@ -42,6 +43,13 @@ export function ModePenyelesaianPanel({
   setInstallerDaerah: (v: string) => void;
   savingMode: boolean;
   handleModeConfirm: () => void;
+  /**
+   * true = panel dibuka untuk MENGISI/MENGUBAH detail jadwal yang statusnya
+   * sudah Completed, bukan sebagai syarat sebelum menyelesaikan. Statusnya
+   * tidak ikut berubah, jadi judul & tombolnya tidak boleh menjanjikan
+   * "menyelesaikan" - itu yang bikin orang ragu menekannya.
+   */
+  modeEditSaja?: boolean;
   setShowModeModal: (v: boolean) => void;
   setPendingStatus: (v: null) => void;
   setStatusPhoto: (v: null) => void;
@@ -54,8 +62,10 @@ export function ModePenyelesaianPanel({
     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 overflow-hidden flex flex-col"
       style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', height: '100%' }}>
       <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
-        <h3 className="text-white font-bold text-base">📍 Mode Penyelesaian</h3>
-        <p className="text-emerald-100 text-[11px] mt-0.5">Lengkapi data sebelum status jadi Completed</p>
+        <h3 className="text-white font-bold text-base">📍 {modeEditSaja ? 'Detail Pelaksanaan' : 'Mode Penyelesaian'}</h3>
+        <p className="text-emerald-100 text-[11px] mt-0.5">
+          {modeEditSaja ? 'Status tetap Completed — hanya detailnya yang disimpan' : 'Lengkapi data sebelum status jadi Completed'}
+        </p>
         <button aria-label="Tutup" onClick={batalkan}
           className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
       </div>
@@ -174,7 +184,7 @@ export function ModePenyelesaianPanel({
           <button onClick={handleModeConfirm} disabled={savingMode || !modePenyelesaian}
             className="flex-[2] py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
             style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
-            {savingMode ? 'Menyimpan...' : '✅ Konfirmasi & Selesaikan'}
+            {savingMode ? 'Menyimpan...' : (modeEditSaja ? '💾 Simpan Detail' : '✅ Konfirmasi & Selesaikan')}
           </button>
         </div>
       </div>
