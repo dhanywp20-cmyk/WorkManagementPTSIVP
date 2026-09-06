@@ -15,7 +15,7 @@
  * ada alasan route server punya jalur sendiri.
  */
 
-import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
+import { bacaPengaturan, kanalUntuk } from '@/lib/notifikasi/pengaturan';
 import { kirimTelegramKeNomor } from '@/lib/telegram-pribadi';
 
 /**
@@ -123,15 +123,51 @@ async function kirimLewatPenyedia(
  * mematikan Telegram, dan sebaliknya. Karena itu penjagaan waMenyala() tidak
  * boleh membungkus keduanya sekaligus.
  */
+/**
+ * Kanal yang berlaku untuk sebuah kejadian - HANYA kalau pemanggilnya
+ * menyebutkan kunci event-nya.
+ *
+ * Tanpa `event`, hasilnya null dan pengiriman berperilaku persis seperti
+ * sebelum penyaringan per-event ada: WhatsApp tunduk pada saklar induk,
+ * Telegram selalu dicoba. Itu disengaja - 62 titik pengiriman tidak
+ * dipindahkan sekaligus, dan titik yang belum dianotasi tidak boleh
+ * berubah perilakunya diam-diam.
+ *
+ * Gagal membaca pengaturan juga menghasilkan null: notifikasi yang berhenti
+ * karena jaringan pengaturan sedang bermasalah jauh lebih berbahaya daripada
+ * notifikasi yang terkirim padahal admin baru saja mematikannya.
+ */
+async function kanalBerlaku(event?: string): Promise<{ wa: boolean; tg: boolean } | null> {
+  if (!event) return null;
+  try {
+    const p = await bacaPengaturan();
+    const kanal = kanalUntuk(event, p);
+    return {
+      wa: kanal.includes('whatsapp') && p.aktif.whatsapp !== false,
+      tg: kanal.includes('telegram') && p.aktif.telegram !== false,
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function kirimDuaKanal(
   target: string,
   message: string,
   type: string,
+  event?: string,
 ): Promise<{ ok: boolean; reason?: string }> {
+  const berlaku = await kanalBerlaku(event);
+
   //  Telegram dijalankan tanpa ditunggu: ia tidak boleh memperlambat - apalagi
   //  menggagalkan - pengiriman WhatsApp yang sudah berjalan selama ini.
-  void kirimTelegramKeNomor(target, message).catch(() => { /* diam */ });
+  if (!berlaku || berlaku.tg) {
+    void kirimTelegramKeNomor(target, message).catch(() => { /* diam */ });
+  }
 
+  if (berlaku && !berlaku.wa) {
+    return { ok: false, reason: `kanal WhatsApp dimatikan admin untuk kejadian ${event}` };
+  }
   if (!(await waMenyala())) return { ok: false, reason: 'kanal WhatsApp dimatikan admin' };
   const data = await kirimLewatPenyedia({ type, target, message });
   return { ok: data?.ok === true, reason: data?.reason };
@@ -151,6 +187,7 @@ export async function sendWANotif(body: Record<string, unknown>): Promise<void> 
       String(body.target ?? ''),
       String(body.message ?? ''),
       String(body.type ?? 'reminder_wa'),
+      typeof body.event === 'string' ? body.event : undefined,
     );
   } catch {
     // silent — kegagalan WA tidak boleh memutus alur utama
@@ -166,12 +203,14 @@ export async function sendWA(
   target: string,
   message: string,
   type = 'reminder_wa',
+  /** Kunci di KATALOG_EVENT. Diisi = saklar per-event di Admin Panel berlaku. */
+  event?: string,
 ): Promise<{ ok: boolean; reason?: string }> {
   try {
     //  Kanal dimatikan admin BUKAN kegagalan - alasannya dibedakan supaya
     //  layar yang menampilkan hasil kirim (Reminder Schedule) bisa berkata
     //  "WhatsApp sedang dimatikan", bukan "gagal kirim" yang menyesatkan.
-    return await kirimDuaKanal(target, message, type);
+    return await kirimDuaKanal(target, message, type, event);
   } catch {
     return { ok: false, reason: 'network error' };
   }

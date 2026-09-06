@@ -36,12 +36,37 @@ memindahkan 62 titik sekaligus tanpa cara menguji pengiriman sungguhan
 dianggap terlalu berisiko). Yang belum ada: tanda di layarnya. Admin tidak
 punya cara tahu mana centang yang hidup.
 
-**Pilihan perbaikan, dari yang paling murah:**
-1. Beri label jujur di UI — tandai event yang belum tersambung sebagai
-   "belum aktif", dan sebut saklar induk sebagai satu-satunya yang berlaku.
-   *(kecil, tanpa risiko)*
-2. Pindahkan titik-titiknya ke `kirimNotifikasi()` bertahap per modul,
-   dimulai dari Ticketing. *(besar, perlu pengujian pengiriman sungguhan)*
+**SUDAH DIKERJAKAN — keduanya.**
+
+1. `EVENT_TERSAMBUNG` di `katalog.ts` jadi satu sumber kebenaran, dan UI-nya
+   menandai sendiri kejadian yang saklarnya belum berlaku ("belum aktif" +
+   pemberitahuan "baru N dari 22").
+2. Titik pengirimannya disambungkan — tapi **bukan** dengan memindahkan 62
+   titik ke `kirimNotifikasi()`. Cara itu memang berisiko. Yang dipakai:
+   parameter `event` OPSIONAL pada `sendWA`/`sendWANotif`/`sendFonnteWA`.
+   Titik yang menyebutkan kuncinya tunduk pada saklar per-event; titik yang
+   belum menyebutkannya berperilaku **persis** seperti sebelumnya. Tidak ada
+   momen "semua pindah sekaligus", jadi tidak ada momen semua bisa rusak
+   sekaligus.
+
+   21 dari 22 kejadian kini tersambung. Yang tersisa,
+   `system.user_registered`, memang bukan titik WA/Telegram — ia menulis
+   notifikasi in-app langsung di `/api/auth/register`.
+
+**Diverifikasi terhadap setelan produksi yang sebenarnya** (dibaca dari
+`app_settings.notifikasi.kanal`), bukan terhadap bawaan: WhatsApp memang
+sudah dimatikan admin, Telegram hidup, dan 22 kejadian sudah diatur satu per
+satu. Hasil simulasi seluruh 21 kejadian: **tepat 5 yang berhenti terkirim,
+dan kelimanya adalah kejadian yang admin sendiri kosongkan** (`perEvent: []`)
+— `project.internal_review`, `project.updated`, `project.brand_cc`,
+`reminder.form_review_sent`, `system.account_created`. Enam belas sisanya
+tidak berubah sama sekali. Jadi yang terjadi bukan "notifikasi mati", tapi
+"pengaturan yang selama ini diabaikan akhirnya dipatuhi".
+
+Empat titik di Ticketing (ticket ditolak, ticket selesai, diterima Team
+Services, dikembalikan ke PTS) sengaja **tidak** dianotasi: belum ada kunci
+yang cocok di katalog, dan memaksakan kunci yang salah lebih buruk daripada
+membiarkannya memakai jalur lama.
 
 ---
 

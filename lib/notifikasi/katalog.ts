@@ -46,7 +46,29 @@ export interface DefinisiEvent {
  * menyebutkan kunci itu.
  */
 export const EVENT_TERSAMBUNG: ReadonlySet<string> = new Set<string>([
-  'system.account_created',   // modal-bersama.tsx - WA selamat datang, lewat kirimNotifikasi()
+  //  Lewat kirimNotifikasi() (router)
+  'system.account_created',      // modal-bersama.tsx - WA selamat datang
+  //  Lewat parameter `event` pada sendWA/sendWANotif/sendFonnteWA (lib/wa.ts)
+  'ticket.approval_needed',      // ticketing: ticket baru menunggu approval + CC atasan
+  'ticket.assigned',             // ticketing: assign ke handler (create, approve, supervisor)
+  'ticket.routed_supervisor',    // ticketing: diteruskan ke Supervisor
+  'ticket.updated',              // ticketing: koreksi/pengalihan lewat Admin Edit
+  'ticket.reopened',             // ticketing: ticket dibuka kembali
+  'reminder.new_schedule',       // reminder: request baru & pengingat jadwal
+  'reminder.assigned',           // reminder: jadwal di-assign ke pelaksana
+  'reminder.routed_supervisor',  // reminder: diteruskan ke Supervisor tim
+  'reminder.rescheduled',        // reminder: jadwal dipindah
+  'reminder.updated',            // reminder: detail diperbarui / selesai
+  'reminder.form_review_sent',   // reminder: form review dikirim ke Guest/Sales
+  'project.approval_needed',     // design project: menunggu approval Admin
+  'project.assigned',            // design project: di-assign ke handler
+  'project.routed_supervisor',   // design project: diteruskan ke Supervisor
+  'project.updated',             // design project: detail diperbarui
+  'project.internal_review',     // design project: menunggu review Sales Internal
+  'project.brand_cc',            // design project: CC ke PIC Brand & atasan
+  'system.digest',               // cron: ringkasan harian
+  'system.overdue_escalation',   // cron: eskalasi tiket/jadwal terlambat
+  'system.password_reset',       // forgot-password: kode OTP
 ]);
 
 /** Apakah saklar per-event untuk kunci ini benar-benar berpengaruh? */
