@@ -62,12 +62,12 @@ export function RescheduleModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Tanggal Baru *</label>
-              <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
+              <input aria-label="Tanggal Baru" type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
                 className={inputCls} style={inputStyle} />
             </div>
             <div>
               <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Waktu Baru</label>
-              <input type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
+              <input aria-label="Waktu Baru" type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
                 className={inputCls} style={inputStyle} />
             </div>
           </div>

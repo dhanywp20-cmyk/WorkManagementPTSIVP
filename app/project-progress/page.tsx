@@ -834,7 +834,7 @@ function ProjectProgressPageInner() {
                   <div className="flex flex-col gap-1.5">
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Link</p>
                     <div className="flex gap-2">
-                      <input readOnly value={shareUrl(shareFor.share_token)}
+                      <input aria-label="Tautan berbagi" readOnly value={shareUrl(shareFor.share_token)}
                         onFocus={e => e.currentTarget.select()}
                         className="flex-1 px-3 py-2.5 rounded-xl text-[11px] font-mono border-2 border-gray-200 bg-gray-50 outline-none" />
                       <button onClick={() => copyLink(shareFor.share_token!)}
@@ -1335,7 +1335,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                     <option value={loc.pic}>{loc.pic} (di luar daftar)</option>
                   )}
                 </select>
-                <select value={loc.status} onChange={e => patchLoc(loc.id, { status: e.target.value as ProjectStatus })}
+                <select aria-label="Status lokasi" value={loc.status} onChange={e => patchLoc(loc.id, { status: e.target.value as ProjectStatus })}
                   className={inputSm}>
                   {(['in_progress', 'done', 'blocked'] as ProjectStatus[]).map(s => (
                     <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>
@@ -1405,7 +1405,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                 {loc.components.map(c => (
                   <div key={c.id} className="flex flex-col gap-0.5">
                     <div className="flex items-center gap-1.5">
-                      <select value={c.state} onChange={e => patchComp(loc.id, c.id, { state: e.target.value as ComponentState })}
+                      <select aria-label="Status komponen" value={c.state} onChange={e => patchComp(loc.id, c.id, { state: e.target.value as ComponentState })}
                         className="px-1.5 py-1 rounded-md text-[10px] font-bold border border-gray-200 outline-none flex-shrink-0"
                         style={{ color: COMPONENT_STATE_CONFIG[c.state]?.dot }}>
                         {COMPONENT_STATES.map(st => (
@@ -1413,7 +1413,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                         ))}
                       </select>
                       {isFull && (
-                        <input type="number" min={0.1} step={0.1} value={c.weight}
+                        <input aria-label="Bobot komponen" type="number" min={0.1} step={0.1} value={c.weight}
                           title="Bobot komponen ini dalam progres lokasi (default 1)"
                           onChange={e => {
                             const n = parseFloat(e.target.value);
@@ -1514,7 +1514,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
             <input value={is.issue} placeholder="Isu"
               onChange={e => patchIssue(is.id, { issue: e.target.value })}
               className={`${inputSm} md:col-span-3`} />
-            <select value={is.severity} onChange={e => patchIssue(is.id, { severity: e.target.value as Severity })}
+            <select aria-label="Tingkat keparahan isu" value={is.severity} onChange={e => patchIssue(is.id, { severity: e.target.value as Severity })}
               className={`${inputSm} md:col-span-2`}>
               {(['tinggi', 'sedang', 'rendah'] as Severity[]).map(s => (
                 <option key={s} value={s}>{SEVERITY_CONFIG[s].label}</option>
@@ -1589,11 +1589,17 @@ function RowActions({ p, canEditRow, canDeleteRow, onView, onExport, onShare, on
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  //  Isian dibungkus DI DALAM <label>, bukan diletakkan sebagai saudaranya.
+  //  <label> yang cuma berdiri di atas isian tidak menamainya: secara program
+  //  keduanya tidak berhubungan, jadi isiannya terbaca tanpa nama sama sekali,
+  //  dan mengklik labelnya tidak memfokuskan isiannya. Membungkus membuat
+  //  tautannya berlaku tanpa perlu id di setiap pemanggil - pola yang sama
+  //  dipakai FormField bersama (components/shared/FormParts.tsx).
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{label}</label>
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 

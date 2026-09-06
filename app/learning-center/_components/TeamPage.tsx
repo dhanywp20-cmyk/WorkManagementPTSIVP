@@ -497,7 +497,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                             )}
                             <div className="flex items-center gap-3">
                               <label className="text-xs font-bold text-slate-600">Nilai (0-100):</label>
-                              <input type="number" min={0} max={100}
+                              <input aria-label="Nilai (0-100):" type="number" min={0} max={100}
                                 value={manualScores[q.id] ?? ''}
                                 onChange={e => setManualScores(p => ({ ...p, [q.id]: e.target.value }))}
                                 className="w-24 border border-slate-300 rounded-lg px-3 py-1.5 text-sm font-bold outline-none focus:border-indigo-400" />

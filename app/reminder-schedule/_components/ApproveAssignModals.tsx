@@ -123,7 +123,7 @@ export function ApproveAssignModal({
                 <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                   Tanggal (opsional ubah)
                 </label>
-                <input type="date"
+                <input aria-label="Tanggal (opsional ubah)" type="date"
                   value={approveDate || approveTarget.due_date}
                   onChange={e => setApproveDate(e.target.value)}
                   className="w-full rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500/40 text-slate-800"
@@ -133,7 +133,7 @@ export function ApproveAssignModal({
                 <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                   Waktu (opsional ubah)
                 </label>
-                <input type="time"
+                <input aria-label="Waktu (opsional ubah)" type="time"
                   value={approveTime || approveTarget.due_time}
                   onChange={e => setApproveTime(e.target.value)}
                   className="w-full rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500/40 text-slate-800"
@@ -159,7 +159,7 @@ export function ApproveAssignModal({
                     <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                       Mulai Pengerjaan
                     </label>
-                    <input type="date" value={approveStart}
+                    <input aria-label="Mulai Pengerjaan" type="date" value={approveStart}
                       onChange={e => setApproveStart(e.target.value)}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-800"
                       style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
@@ -168,7 +168,7 @@ export function ApproveAssignModal({
                     <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                       Target Selesai
                     </label>
-                    <input type="date" value={approveTarget2} min={approveStart || undefined}
+                    <input aria-label="Target Selesai" type="date" value={approveTarget2} min={approveStart || undefined}
                       onChange={e => setApproveTarget2(e.target.value)}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-800"
                       style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />

@@ -177,7 +177,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
   return (<>
     {/* Backdrop - mobile drawer only */}
     {mobileOpen && (
-      <div className="fixed inset-0 z-30 md:hidden" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onCloseMobile} />
+      <div aria-hidden="true" className="fixed inset-0 z-30 md:hidden" style={{ background: 'rgba(0,0,0,0.45)' }} onClick={onCloseMobile} />
     )}
     <div className={`w-56 shrink-0 overflow-y-auto flex flex-col gap-1 p-3 border-r border-gray-200 z-40
         fixed top-0 bottom-0 left-0 md:static
@@ -261,11 +261,14 @@ function Modal({ open, onClose, title, width=560, children }:{
 }
 
 function Field({ label, children }:{ label:string; children:React.ReactNode }) {
+  //  Isian dibungkus DI DALAM <label> - lihat catatan yang sama di FormField
+  //  bersama (components/shared/FormParts.tsx). <label> yang cuma berdiri di
+  //  atasnya tidak menamai isiannya secara program.
   return (
-    <div className="mb-4">
-      <label className="block text-[12px] font-bold text-slate-600 mb-1.5">{label}</label>
+    <label className="block mb-4">
+      <span className="block text-[12px] font-bold text-slate-600 mb-1.5">{label}</span>
       {children}
-    </div>
+    </label>
   );
 }
 

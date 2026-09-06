@@ -587,7 +587,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                     )}
                   </div>
                   {guestDropdownOpen && (
-                    <div className="fixed inset-0 z-40" onClick={() => { setGuestDropdownOpen(false); setGuestSearch(''); }} />
+                    <div aria-hidden="true" className="fixed inset-0 z-40" onClick={() => { setGuestDropdownOpen(false); setGuestSearch(''); }} />
                   )}
                 </FormField>
 

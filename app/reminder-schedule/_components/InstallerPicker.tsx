@@ -43,6 +43,7 @@ export function InstallerPicker({
 
   return (
     <select
+      aria-label="Pilih PTS Daerah"
       value={installerUserId ?? ''}
       onChange={e => {
         if (e.target.value === '__manual__') { setManual(true); return; }

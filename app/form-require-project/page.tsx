@@ -3075,7 +3075,7 @@ Hubungi Admin untuk info lebih lanjut.
                               {uploadingFile ? 'Uploading...' : 'Upload File'}
                             </button>
                             {showUploadChoice && ptsUploadAllowed && (<>
-                              <div className="fixed inset-0 z-10" onClick={() => setShowUploadChoice(false)} />
+                              <div aria-hidden="true" className="fixed inset-0 z-10" onClick={() => setShowUploadChoice(false)} />
                               <div className="absolute right-0 top-full mt-1.5 z-20 w-64 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
                                 <button onClick={() => { setShowUploadChoice(false); fileInputRef.current?.click(); }}
                                   className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-start gap-2 border-b border-gray-100">
@@ -3596,7 +3596,7 @@ Hubungi Admin untuk info lebih lanjut.
                 </h3>
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Target Selesai</label>
-                  <input type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)}
+                  <input aria-label="Target Selesai" type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
                     className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-amber-400 transition-all text-sm bg-white outline-none cursor-pointer"
                     style={{ color: editDueDate ? '#374151' : '#9ca3af' }} />

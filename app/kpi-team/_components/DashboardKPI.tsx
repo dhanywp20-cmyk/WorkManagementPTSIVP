@@ -1346,7 +1346,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
       {/* ══ Settings Modal ══ */}
       {showSettings && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" aria-label="Pengaturan KPI" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowSettings(false); }}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -1362,7 +1362,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               <div>
                 <label className="block text-sm font-bold text-slate-600 mb-1.5 uppercase tracking-wide">🎓 Learning Center — Batas Nilai Minimum</label>
                 <div className="flex items-center gap-3">
-                  <input type="range" min={40} max={85} step={5} value={kpiSettings.lcMinScore}
+                  <input aria-label="🎓 Learning Center — Batas Nilai Minimum" type="range" min={40} max={85} step={5} value={kpiSettings.lcMinScore}
                     onChange={e=>setKpiSettings(p=>({...p, lcMinScore:Number(e.target.value)}))}
                     className="flex-1 accent-violet-600"/>
                   <span className="text-lg font-black text-violet-600 w-12 text-right">&lt;{kpiSettings.lcMinScore}</span>
@@ -1373,7 +1373,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               <div>
                 <label className="block text-sm font-bold text-slate-600 mb-1.5 uppercase tracking-wide">📝 R&D Tech Note — Target per Tahun</label>
                 <div className="flex items-center gap-3">
-                  <input type="range" min={1} max={8} step={1} value={kpiSettings.rndTarget}
+                  <input aria-label="📝 R&D Tech Note — Target per Tahun" type="range" min={1} max={8} step={1} value={kpiSettings.rndTarget}
                     onChange={e=>setKpiSettings(p=>({...p, rndTarget:Number(e.target.value)}))}
                     className="flex-1 accent-pink-600"/>
                   <span className="text-lg font-black text-pink-600 w-12 text-right">{kpiSettings.rndTarget}x</span>
@@ -1392,7 +1392,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   ] as {key: keyof KPISettings, label:string, color:string}[]).map(item=>(
                     <div key={item.key} className="flex items-center gap-3">
                       <span className="text-sm font-semibold text-slate-600 w-36 flex-shrink-0">{item.label}</span>
-                      <input type="range" min={5} max={60} step={5} value={Math.round((kpiSettings[item.key] as number)*100)}
+                      <input aria-label="Bobot KPI" type="range" min={5} max={60} step={5} value={Math.round((kpiSettings[item.key] as number)*100)}
                         onChange={e=>setKpiSettings(p=>({...p, [item.key]:Number(e.target.value)/100}))}
                         className="flex-1" style={{accentColor:item.color}}/>
                       <span className="text-sm font-black w-10 text-right" style={{color:item.color}}>

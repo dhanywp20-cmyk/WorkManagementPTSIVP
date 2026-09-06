@@ -154,7 +154,7 @@ function SalesDrop({ value, division, guests, onChange }: { value: string; divis
               ))}
             </div>
           </div>
-          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setQ(''); }} />
+          <div aria-hidden="true" className="fixed inset-0 z-40" onClick={() => { setOpen(false); setQ(''); }} />
         </>
       )}
     </div>

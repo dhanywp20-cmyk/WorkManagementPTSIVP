@@ -707,12 +707,12 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
         <div>
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
-          <input type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
+          <input aria-label="Jumlah Soal" type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white" />
         </div>
         <div>
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
-          <select value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
+          <select aria-label="Tingkat Kesulitan" value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
             <option value="mixed">Mixed (Campuran)</option>
             <option value="easy">Easy — Mudah</option>
@@ -768,7 +768,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 ] as const).map(m => (
                   <div key={m.lbl}>
                     <label className="block text-[10px] font-bold text-violet-600 uppercase tracking-wide mb-1">{m.lbl}</label>
-                    <select value={m.val} onChange={e => m.set(e.target.value)}
+                    <select aria-label="Model AI" value={m.val} onChange={e => m.set(e.target.value)}
                       className="w-full text-xs px-2.5 py-2 rounded-lg border border-violet-200 bg-white outline-none focus:border-violet-400">
                       {daftarModelGen.map(x => <option key={x.id} value={x.id}>{x.id}</option>)}
                     </select>
@@ -992,7 +992,7 @@ export function QuestionsPage({ user }: { user: User }) {
           </div>
           <div>
             <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
-            <select value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
+            <select aria-label="Tingkat Kesulitan" value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
               className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
               <option value="easy">Easy</option>
               <option value="medium">Medium</option>
@@ -1428,7 +1428,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 ) : (['a','b','c','d'] as const).map(opt => (
                   <div key={opt} className="flex items-center gap-2">
                     <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${editQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
-                    <input value={(editQ as any)[`option_${opt}`]} onChange={e => setEditQ(p => p && ({ ...p, [`option_${opt}`]: e.target.value }))}
+                    <input aria-label={`Pilihan jawaban ${opt.toUpperCase()}`} value={(editQ as any)[`option_${opt}`]} onChange={e => setEditQ(p => p && ({ ...p, [`option_${opt}`]: e.target.value }))}
                       className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400" />
                     <button onClick={() => setEditQ(p => p && ({ ...p, correct_answer: opt.toUpperCase() as any }))}
                       className={`text-xs px-2 py-1 rounded-lg font-semibold transition-all ${editQ.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-slate-100 text-slate-500 hover:bg-green-50'}`}>
@@ -1436,7 +1436,7 @@ export function QuestionsPage({ user }: { user: User }) {
                     </button>
                   </div>
                 ))}
-                <select value={editQ.difficulty} onChange={e => setEditQ(p => p && ({ ...p, difficulty: e.target.value as any }))}
+                <select aria-label="Tingkat kesulitan" value={editQ.difficulty} onChange={e => setEditQ(p => p && ({ ...p, difficulty: e.target.value as any }))}
                   className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400">
                   <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
                 </select>

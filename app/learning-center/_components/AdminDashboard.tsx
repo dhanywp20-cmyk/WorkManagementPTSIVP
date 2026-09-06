@@ -365,7 +365,7 @@ export function AdminDashboard({ user }: { user: User }) {
                   <TeamSwitch active={activeTeam} onChange={setActiveTeam} />
                   {/* Tempat dropdown tetap dipesan di tab non-Sales supaya tinggi
                       header tidak berubah saat berpindah tab. */}
-                  <select value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
+                  <select aria-label="Filter divisi" value={performerDivisionFilter} onChange={e => setPerformerDivisionFilter(e.target.value)}
                     disabled={activeTeam !== 'Sales'}
                     aria-hidden={activeTeam !== 'Sales'}
                     className={`text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600 ${activeTeam === 'Sales' && divisionStats.length > 0 ? '' : 'invisible pointer-events-none'}`}>

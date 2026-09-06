@@ -280,7 +280,7 @@ export function AnalyticsPage() {
                 </span>
               )}
               {divisionStats.length > 0 && (
-                <select value={divisionFilter} onChange={e => setDivisionFilter(e.target.value)}
+                <select aria-label="Filter divisi" value={divisionFilter} onChange={e => setDivisionFilter(e.target.value)}
                   className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600">
                   <option value="">🏢 Semua Divisi</option>
                   {divisionStats.map(d => <option key={d.div} value={d.div}>{d.div}</option>)}

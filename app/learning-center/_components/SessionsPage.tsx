@@ -394,7 +394,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                       Grup / Batch Soal
                       <span className="ml-1.5 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
                     </label>
-                    <select
+                    <select aria-label="Optional"
                       value={form.batch_filter}
                       onChange={e => setForm(p => ({ ...p, batch_filter: e.target.value }))}
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
@@ -415,31 +415,31 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
               })()}
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
-                <input type="number" min={1} max={100} value={form.question_count}
+                <input aria-label="Jumlah Soal" type="number" min={1} max={100} value={form.question_count}
                   onChange={e => setForm(p => ({ ...p, question_count: +e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Timer (menit, 0 = tanpa timer)</label>
-                <input type="number" min={0} value={form.timer_minutes}
+                <input aria-label="Timer (menit, 0 = tanpa timer)" type="number" min={0} value={form.timer_minutes}
                   onChange={e => setForm(p => ({ ...p, timer_minutes: +e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Passing Grade (%)</label>
-                <input type="number" min={0} max={100} value={form.passing_grade}
+                <input aria-label="Passing Grade (%)" type="number" min={0} max={100} value={form.passing_grade}
                   onChange={e => setForm(p => ({ ...p, passing_grade: +e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">⏰ Waktu Dibuka</label>
-                <input type="datetime-local" value={form.open_at} onChange={e => setForm(p => ({ ...p, open_at: e.target.value }))}
+                <input aria-label="⏰ Waktu Dibuka" type="datetime-local" value={form.open_at} onChange={e => setForm(p => ({ ...p, open_at: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
                 <p className="text-[10px] text-slate-400 mt-1">Kosongkan = langsung aktif sekarang</p>
               </div>
               <div>
                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">🔒 Waktu Ditutup</label>
-                <input type="datetime-local" value={form.close_at} onChange={e => setForm(p => ({ ...p, close_at: e.target.value }))}
+                <input aria-label="🔒 Waktu Ditutup" type="datetime-local" value={form.close_at} onChange={e => setForm(p => ({ ...p, close_at: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
                 <p className="text-[10px] text-slate-400 mt-1">Kosongkan = tidak ada batas waktu</p>
               </div>
@@ -789,13 +789,13 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Timer (mnt)</label>
-                  <input type="number" min={0} value={reassignForm.timer_minutes}
+                  <input aria-label="Timer (mnt)" type="number" min={0} value={reassignForm.timer_minutes}
                     onChange={e => setReassignForm(p => ({ ...p, timer_minutes: +e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Passing (%)</label>
-                  <input type="number" min={0} max={100} value={reassignForm.passing_grade}
+                  <input aria-label="Passing (%)" type="number" min={0} max={100} value={reassignForm.passing_grade}
                     onChange={e => setReassignForm(p => ({ ...p, passing_grade: +e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 </div>
@@ -813,13 +813,13 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">⏰ Waktu Dibuka</label>
-                  <input type="datetime-local" value={reassignForm.open_at}
+                  <input aria-label="⏰ Waktu Dibuka" type="datetime-local" value={reassignForm.open_at}
                     onChange={e => setReassignForm(p => ({ ...p, open_at: e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">🔒 Waktu Ditutup</label>
-                  <input type="datetime-local" value={reassignForm.close_at}
+                  <input aria-label="🔒 Waktu Ditutup" type="datetime-local" value={reassignForm.close_at}
                     onChange={e => setReassignForm(p => ({ ...p, close_at: e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 </div>

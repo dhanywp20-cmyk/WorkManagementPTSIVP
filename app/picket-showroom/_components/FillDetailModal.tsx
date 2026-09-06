@@ -161,7 +161,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
               <div className="p-4 space-y-4">
                 <div>
                   <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🎯 Jenis Kegiatan</label>
-                  <select value={entry.jenis_kegiatan} onChange={e=>upd(idx,{jenis_kegiatan:e.target.value as JenisKegiatan})}
+                  <select aria-label="🎯 Jenis Kegiatan" value={entry.jenis_kegiatan} onChange={e=>upd(idx,{jenis_kegiatan:e.target.value as JenisKegiatan})}
                     className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                     {JENIS_KEGIATAN_LIST.map(j=><option key={j} value={j}>{j}</option>)}
                   </select>
@@ -169,12 +169,12 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🕐 Jam Mulai</label>
-                    <input type="time" value={entry.jam_mulai} onChange={e=>upd(idx,{jam_mulai:e.target.value})}
+                    <input aria-label="🕐 Jam Mulai" type="time" value={entry.jam_mulai} onChange={e=>upd(idx,{jam_mulai:e.target.value})}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🕐 Jam Selesai</label>
-                    <input type="time" value={entry.jam_selesai} onChange={e=>upd(idx,{jam_selesai:e.target.value})}
+                    <input aria-label="🕐 Jam Selesai" type="time" value={entry.jam_selesai} onChange={e=>upd(idx,{jam_selesai:e.target.value})}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                   </div>
                 </div>
