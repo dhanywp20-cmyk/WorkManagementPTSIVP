@@ -366,7 +366,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             <option value="guest">Guest</option>
                           </select>
                         </div>
-                        <div className="col-span-2">
+                        <div className="formulir:col-span-2">
                           <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
                           <select aria-label="-- Pilih Divisi --" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
@@ -377,7 +377,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           </select>
                         </div>
                         {editDivisi === 'PTS' && (
-                          <div className="col-span-2">
+                          <div className="formulir:col-span-2">
                             <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
                             <select aria-label="-- Pilih Tipe PTS --" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
@@ -387,7 +387,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           </div>
                         )}
                         {editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang && (
-                          <div className="col-span-2">
+                          <div className="formulir:col-span-2">
                             <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
                             <input value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
                               placeholder="Contoh: Surabaya, Bandung, Medan..."
@@ -396,7 +396,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           </div>
                         )}
                         {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
-                          <div className="col-span-2">
+                          <div className="formulir:col-span-2">
                             <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">
                               {editDivisi === 'Marketing' ? 'Marketing Division' : 'Sales Division'}
                             </label>
@@ -414,7 +414,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                           </select>
                         </div>
-                        <div className="col-span-2">
+                        <div className="formulir:col-span-2">
                           <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Nomor Telepon / WhatsApp</label>
                           <input value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
                         </div>
@@ -501,7 +501,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Password *</label>
                   <input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Minimal 6 karakter" />
                 </div>
-                <div className="col-span-2">
+                <div className="formulir:col-span-2">
                   <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Divisi *</label>
                   <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
@@ -512,7 +512,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   </select>
                 </div>
                 {newUser.divisi === 'PTS' && (
-                  <div className="col-span-2">
+                  <div className="formulir:col-span-2">
                     <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
                     <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '' })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
@@ -522,7 +522,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   </div>
                 )}
                 {newUser.divisi === 'PTS' && kelompokPTSList.find(k => k.label === newUser.pts_type)?.cabang && (
-                  <div className="col-span-2">
+                  <div className="formulir:col-span-2">
                     <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Alamat Daerah *</label>
                     <input value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                       placeholder="Contoh: Surabaya, Bandung, Medan..."
@@ -531,7 +531,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   </div>
                 )}
                 {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
-                  <div className="col-span-2">
+                  <div className="formulir:col-span-2">
                     <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">
                       {newUser.divisi === 'Marketing' ? 'Marketing Division *' : 'Sales Division *'}
                     </label>
@@ -869,7 +869,7 @@ export function AccountSettingsInline() {
                       <option value="superadmin">Superadmin</option><option value="admin">Admin</option><option value="team">Team</option><option value="guest">Guest</option>
                     </select>
                   </div>
-                  <div className="col-span-3">
+                  <div className="formulir:col-span-3">
                     <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
                     <select aria-label="-- Pilih Divisi --" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
@@ -880,7 +880,7 @@ export function AccountSettingsInline() {
                     </select>
                   </div>
                   {editDivisi === 'PTS' && (
-                    <div className="col-span-3">
+                    <div className="formulir:col-span-3">
                       <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
                       <select aria-label="-- Pilih Tipe PTS --" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
@@ -890,7 +890,7 @@ export function AccountSettingsInline() {
                     </div>
                   )}
                   {editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang && (
-                    <div className="col-span-3">
+                    <div className="formulir:col-span-3">
                       <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
                       <input value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
                         placeholder="Contoh: Surabaya, Bandung, Medan..."
@@ -899,7 +899,7 @@ export function AccountSettingsInline() {
                     </div>
                   )}
                   {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
-                    <div className="col-span-3">
+                    <div className="formulir:col-span-3">
                       <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
                       <select aria-label="-- Pilih Divisi Sales --" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
@@ -921,7 +921,7 @@ export function AccountSettingsInline() {
                       supaya perubahannya melewati "Simpan Perubahan" seperti field lain,
                       bukan berubah seketika begitu tersenggol di daftar. */}
                   {editingUser.role === 'team' && (
-                    <div className="col-span-3">
+                    <div className="formulir:col-span-3">
                       <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🔑 Akses Platform</label>
                       <div className="flex gap-2">
                         {([
@@ -953,7 +953,7 @@ export function AccountSettingsInline() {
                       sehingga Supervisor bisa (dan pernah) meng-assign
                       pekerjaan ke Manager karena namanya memang ditawarkan. */}
                   {editingUser.role === 'team' && (
-                    <div className="col-span-3">
+                    <div className="formulir:col-span-3">
                       <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🎯 Penerima Tugas</label>
                       <div className="flex gap-2">
                         {([
@@ -987,7 +987,7 @@ export function AccountSettingsInline() {
                       nama_sales, sehingga batas itu menyisakan NOL baris dan
                       seluruh ringkasan Piket Showroom tampil kosong. */}
                   {editingUser.role !== 'team' && (
-                    <div className="col-span-3">
+                    <div className="formulir:col-span-3">
                       <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🏪 Piket Showroom — Catatan Tamu</label>
                       <div className="flex gap-2">
                         {([
@@ -1013,7 +1013,7 @@ export function AccountSettingsInline() {
                       </p>
                     </div>
                   )}
-                  <div className="col-span-3">
+                  <div className="formulir:col-span-3">
                     <MenuPermissionSelector selected={editingUser.allowed_menus ?? ALL_MENU_KEYS} target="edit" />
                   </div>
                 </div>
@@ -1093,7 +1093,7 @@ export function AccountSettingsInline() {
                 <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password *</label>
                 <input value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="min 6 karakter" />
               </div>
-              <div className="col-span-3">
+              <div className="formulir:col-span-3">
                 <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi *</label>
                 <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
@@ -1104,7 +1104,7 @@ export function AccountSettingsInline() {
                 </select>
               </div>
               {newUser.divisi === 'PTS' && (
-                <div className="col-span-3">
+                <div className="formulir:col-span-3">
                   <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS *</label>
                   <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '' })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
@@ -1114,7 +1114,7 @@ export function AccountSettingsInline() {
                 </div>
               )}
               {newUser.divisi === 'PTS' && kelompokPTSList.find(k => k.label === newUser.pts_type)?.cabang && (
-                <div className="col-span-3">
+                <div className="formulir:col-span-3">
                   <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
                   <input value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                     placeholder="Contoh: Surabaya, Bandung, Medan..."
@@ -1123,7 +1123,7 @@ export function AccountSettingsInline() {
                 </div>
               )}
               {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
-                <div className="col-span-3">
+                <div className="formulir:col-span-3">
                   <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division *</label>
                   <select aria-label="-- Pilih Sales Division --" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
@@ -1141,7 +1141,7 @@ export function AccountSettingsInline() {
                 <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">📱 No. Telepon / WA</label>
                 <input value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
               </div>
-              <div className="col-span-3">
+              <div className="formulir:col-span-3">
                 <MenuPermissionSelector selected={newUser.allowed_menus} target="new" />
               </div>
             </div>

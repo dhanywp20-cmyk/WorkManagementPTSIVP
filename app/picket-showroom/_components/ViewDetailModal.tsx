@@ -63,7 +63,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                   </div>
                 );
               }):(
-                <div className="col-span-3 py-4 text-center text-gray-400 text-sm">Belum ada PIC ditetapkan</div>
+                <div className="md:col-span-3 py-4 text-center text-gray-400 text-sm">Belum ada PIC ditetapkan</div>
               )}
             </div>
           </div>
