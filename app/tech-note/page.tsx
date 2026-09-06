@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState } from '@/components/shared';
+import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState, Toast, type Notif } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/app/dashboard/_components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
@@ -293,6 +293,16 @@ function TechNotePageInner() {
   // Edit & hapus tech note.
   const [editingNote, setEditingNote] = useState<TechNote | null>(null);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  /*
+    Toast menggantikan alert() bawaan browser (4 titik) - tampilannya beda
+    total dari seluruh platform, menyebutkan nama domain, dan memblokir
+    halaman sampai ditekan OK.
+  */
+  const [toast, setToast] = useState<Notif | null>(null);
+  const beritahu = (type: 'success' | 'error', msg: string) => {
+    setToast({ type, msg });
+    setTimeout(() => setToast(null), 3600);
+  };
   const [detailNote,       setDetailNote]       = useState<TechNote | null>(null);
   const [detailHistory,    setDetailHistory]    = useState<TechNoteHistory[]>([]);
   const [approveModal,     setApproveModal]     = useState<TechNote | null>(null);
@@ -307,9 +317,22 @@ function TechNotePageInner() {
     const dirty = uploadSnapshotRef.current
       ? JSON.stringify(uploadForm) !== JSON.stringify(uploadSnapshotRef.current)
       : Object.values(uploadForm).some(v => v);
-    if (dirty && !window.confirm('Ada isian yang belum disimpan. Yakin mau menutup tanpa menyimpan?')) return;
-    setShowUploadModal(false); setEditingNote(null);
-    setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
+    const tutup = () => {
+      setShowUploadModal(false); setEditingNote(null);
+      setUploadForm({ title:'', description:'', product:'', one_drive_link:'', folder_id:'', tags:'' });
+    };
+    //  ConfirmDialog, bukan window.confirm: yang bawaan memblokir seluruh
+    //  halaman, tidak bisa diberi gaya, dan menyebutkan nama domain di
+    //  judulnya - padahal ini pertanyaan biasa tentang isian yang belum
+    //  disimpan.
+    if (!dirty) { tutup(); return; }
+    setConfirmState({
+      message: 'Tutup tanpa menyimpan?',
+      description: 'Ada isian yang belum disimpan. Kalau ditutup sekarang, isian itu hilang.',
+      confirmLabel: 'Tutup tanpa simpan',
+      danger: true,
+      onConfirm: () => { setConfirmState(null); tutup(); },
+    });
   };
   const [approvalForm, setApprovalForm] = useState({ action:'approved', note:'' });
   const [saving, setSaving] = useState(false);
@@ -463,7 +486,7 @@ function TechNotePageInner() {
       ({ error } = await supabase.from('tech_note_folders').insert(dasar));
     }
     setSaving(false);
-    if (error) { alert('Gagal membuat folder: ' + error.message); return; }
+    if (error) { beritahu('error', 'Gagal membuat folder: ' + error.message); return; }
     setFolderForm({ name:'', icon:'🖥️', color:'#ec4899', parent_id:'', category:'display' });
     setShowFolderModal(false); fetchFolders();
   }
@@ -497,7 +520,7 @@ function TechNotePageInner() {
         //  dihapus" akan menyembunyikan catatan yatim tanpa riwayat.
         const { data: terhapus, error } = await supabase.from('tech_notes').delete().eq('id', n.id).select('id');
         if (error || !terhapus || terhapus.length === 0) {
-          alert(error ? 'Gagal menghapus: ' + error.message : 'Gagal menghapus (tidak punya akses). Riwayatnya sudah terhapus - hubungi admin.');
+          beritahu('error', error ? 'Gagal menghapus: ' + error.message : 'Gagal menghapus (tidak punya akses). Riwayatnya sudah terhapus - hubungi admin.');
           return;
         }
         void logAudit({
@@ -536,7 +559,7 @@ function TechNotePageInner() {
       if (resubmit) { payload.status = 'pending'; payload.submitted_at = now; }
       const { error } = await supabase.from('tech_notes').update(payload).eq('id', editingNote.id);
       setSaving(false);
-      if (error) { alert('Gagal menyimpan: ' + error.message); return; }
+      if (error) { beritahu('error', 'Gagal menyimpan: ' + error.message); return; }
       await supabase.from('tech_note_history').insert({
         tech_note_id: editingNote.id, action: resubmit ? 'resubmitted' : 'edited',
         performed_by: currentUser.id, performed_by_name: currentUser.full_name,
@@ -593,7 +616,7 @@ function TechNotePageInner() {
       .eq('id',approveModal.id).select('id');
     if (galatUbah || !terubah || terubah.length === 0) {
       setSaving(false);
-      alert('Gagal menyimpan keputusan review. Coba lagi atau hubungi admin.');
+      beritahu('error', 'Gagal menyimpan keputusan review. Coba lagi atau hubungi admin.');
       return;
     }
     await supabase.from('tech_note_history').insert({
@@ -855,6 +878,7 @@ function TechNotePageInner() {
       </Modal>
 
       <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
+      <Toast notif={toast} />
 
       {/* ══ MODAL: Upload Tech Note ══ */}
       <Modal open={showUploadModal}
