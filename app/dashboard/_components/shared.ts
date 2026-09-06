@@ -124,6 +124,35 @@ export const RESTRICTED_MENU_KEYS = ['project-progress'];
  */
 export const DEFAULT_MENU_KEYS = ALL_MENU_KEYS.filter(k => !RESTRICTED_MENU_KEYS.includes(k));
 
+/**
+ * Paket menu bergaya SALES - dipakai kelompok PTS yang di Admin Panel ->
+ * Kelompok disetel "Tampilan Dashboard: Seperti Sales" (lihat `dashboard`
+ * di lib/kelompok.ts).
+ *
+ * Isinya mengikuti apa yang benar-benar dipakai akun Sales/Marketing di
+ * basis data ini: mengajukan jadwal & request design, membuat ticket,
+ * mengisi form review, membaca Learning Center - TANPA Daily Report,
+ * Incentive PTS, KPI Team, maupun Unit Movement yang memang urusan tim
+ * internal.
+ *
+ * Disaring lewat ALL_MENU_KEYS supaya tidak bisa memuat kunci yang tidak
+ * punya menu sungguhan. Akun Sales lama menyimpan 'form-require-project' di
+ * allowed_menus padahal tidak ada satu pun menu berkunci itu - kunci hantu
+ * yang tidak membuka apa-apa, dan tidak perlu ikut diwariskan ke sini.
+ *
+ * Hanya soal MENU: role akun tidak ikut berubah, jadi PTS Daerah tetap bisa
+ * ditugaskan jadwal dan tetap tercatat bagiannya di Incentive PTS - yang
+ * berubah hanya apa yang ia lihat di layarnya sendiri.
+ */
+export const SALES_MENU_KEYS = ALL_MENU_KEYS.filter(k => [
+  'dashboard',
+  'form-bast',
+  'request-design-project',
+  'ticket-troubleshooting',
+  'reminder-schedule',
+  'learning-center',
+].includes(k));
+
 export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = {
   'dashboard':              { label: 'Analytics Dashboard (KPI)', icon: '📊' },
   'kpi-team':               { label: 'KPI Team', icon: '📊' },

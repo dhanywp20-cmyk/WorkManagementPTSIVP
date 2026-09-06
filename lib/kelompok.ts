@@ -67,6 +67,21 @@ export interface Kelompok {
    * dipilih hanya di titik itu, bukan ikut daftar "assign ke tim" biasa.
    */
   cabang: boolean;
+  /**
+   * Gaya dashboard yang didapat anggota kelompok ini.
+   *
+   *   'team'  - paket menu lengkap tim internal (bawaan, perilaku lama persis).
+   *   'sales' - paket menu bergaya Sales: mengajukan jadwal/request design,
+   *             ticket, form review, Learning Center. Tanpa Daily Report,
+   *             Incentive PTS, KPI Team, Unit Movement.
+   *
+   * HANYA soal MENU. Role akun TIDAK ikut berubah - anggota kelompok PTS
+   * tetap role 'team', jadi tetap bisa ditugaskan jadwal dan tetap tercatat
+   * bagiannya di Incentive PTS. Yang berubah hanya apa yang ia lihat di
+   * layarnya sendiri. Dipakai sebagai paket bawaan saat akun dibuat, dan bisa
+   * diterapkan ke akun yang sudah ada lewat tombol di Admin Panel -> Kelompok.
+   */
+  dashboard: 'team' | 'sales';
   /** Lonceng yang boleh dilihat anggota kelompok ini. */
   lonceng: Lonceng[];
   aktif: boolean;
@@ -86,12 +101,12 @@ const EMPAT: Lonceng[] = ['tiket', 'require', 'jadwal', 'review'];
  * yang sedang bekerja.
  */
 export const KELOMPOK_BAWAAN: Kelompok[] = [
-  { nama: 'Team PTS IVP', label: 'PTS IVP',   jenis: 'pts',       ditugaskan: true,  cabang: false, aktif: true, lonceng: EMPAT },
-  { nama: 'Team PTS MVI', label: 'PTS MVI',   jenis: 'pts',       ditugaskan: true,  cabang: false, aktif: true, lonceng: EMPAT },
-  { nama: 'Team PTS UMP', label: 'PTS UMP',   jenis: 'pts',       ditugaskan: false, cabang: false, aktif: true, lonceng: ['jadwal'] },
-  { nama: 'Team Services', label: 'Services', jenis: 'services',  ditugaskan: false, cabang: false, aktif: true, lonceng: ['tiket', 'require', 'jadwal'] },
-  { nama: 'Marketing',    label: 'Marketing', jenis: 'marketing', ditugaskan: false, cabang: false, aktif: true, lonceng: EMPAT },
-  { nama: '',             label: 'Sales',     jenis: 'sales',     ditugaskan: false, cabang: false, aktif: true, lonceng: EMPAT },
+  { nama: 'Team PTS IVP', label: 'PTS IVP',   jenis: 'pts',       ditugaskan: true,  cabang: false, dashboard: 'team', aktif: true, lonceng: EMPAT },
+  { nama: 'Team PTS MVI', label: 'PTS MVI',   jenis: 'pts',       ditugaskan: true,  cabang: false, dashboard: 'team', aktif: true, lonceng: EMPAT },
+  { nama: 'Team PTS UMP', label: 'PTS UMP',   jenis: 'pts',       ditugaskan: false, cabang: false, dashboard: 'team', aktif: true, lonceng: ['jadwal'] },
+  { nama: 'Team Services', label: 'Services', jenis: 'services',  ditugaskan: false, cabang: false, dashboard: 'team', aktif: true, lonceng: ['tiket', 'require', 'jadwal'] },
+  { nama: 'Marketing',    label: 'Marketing', jenis: 'marketing', ditugaskan: false, cabang: false, dashboard: 'team', aktif: true, lonceng: EMPAT },
+  { nama: '',             label: 'Sales',     jenis: 'sales',     ditugaskan: false, cabang: false, dashboard: 'team', aktif: true, lonceng: EMPAT },
 ];
 
 export const KUNCI_KELOMPOK = 'kelompok';
@@ -183,6 +198,19 @@ export function kelompokCabang(): Kelompok[] {
 /** Nama team_type kelompok PTS Cabang. */
 export function namaKelompokCabang(): string[] {
   return kelompokCabang().map(k => k.nama);
+}
+
+/**
+ * Gaya dashboard sebuah kelompok, dicari lewat team_type akun.
+ *
+ * Kelompok yang tidak dikenal (mis. akun lama dengan team_type yang sudah
+ * dihapus dari daftar) dianggap 'team' - persis perilaku sebelum setelan ini
+ * ada. Ketiadaan setelan tidak boleh mengubah tampilan siapa pun.
+ */
+export function gayaDashboard(teamType: string | null | undefined): 'team' | 'sales' {
+  const nama = (teamType ?? '').trim();
+  if (!nama) return 'team';
+  return semuaKelompok().find(k => k.nama === nama)?.dashboard ?? 'team';
 }
 
 /**
@@ -288,6 +316,7 @@ function rapikanKelompok(x: unknown): Kelompok | null {
     jenis: (['pts', 'services', 'marketing', 'sales'] as string[]).includes(jenis) ? jenis : 'pts',
     ditugaskan: o.ditugaskan === true,
     cabang: o.cabang === true,
+    dashboard: o.dashboard === 'sales' ? 'sales' : 'team',
     lonceng,
     aktif: o.aktif !== false,
   };

@@ -4,6 +4,8 @@ import {
   Kelompok, JenisKelompok, Lonceng, SEMUA_LONCENG, LABEL_LONCENG,
   KELOMPOK_BAWAAN, semuaKelompok, muatKelompok, simpanKelompok, kelompokTerpakai,
 } from '@/lib/kelompok';
+import { supabase } from '@/lib/supabase';
+import { DEFAULT_MENU_KEYS, SALES_MENU_KEYS } from './shared';
 
 const LABEL_JENIS: Record<JenisKelompok, string> = {
   pts: 'Team PTS', services: 'Services', marketing: 'Marketing', sales: 'Sales',
@@ -24,6 +26,7 @@ export function KelompokSettingInline() {
   const [menyimpan, setMenyimpan] = useState(false);
   const [kabar, setKabar] = useState<{ jenis: 'ok' | 'gagal'; teks: string } | null>(null);
   const [siap, setSiap] = useState(false);
+  const [menerapkan, setMenerapkan] = useState<string | null>(null);
 
   const beritahu = (jenis: 'ok' | 'gagal', teks: string) => {
     setKabar({ jenis, teks });
@@ -37,6 +40,28 @@ export function KelompokSettingInline() {
 
   const ubah = (nama: string, patch: Partial<Kelompok>) =>
     setDaftar(d => d.map(k => (k.nama === nama ? { ...k, ...patch } : k)));
+
+  /**
+   * Samakan menu akun yang SUDAH ADA di kelompok ini dengan pilihan
+   * "Tampilan Dashboard"-nya.
+   *
+   * Sengaja tombol terpisah, bukan otomatis ikut saat pilihannya diganti:
+   * menu tiap akun boleh disesuaikan satu per satu di Account Settings, dan
+   * menimpanya diam-diam akan menghapus penyesuaian yang sudah dibuat admin
+   * tanpa ia sadari. Di sini admin memilih sendiri kapan menyamakannya.
+   */
+  const terapkanKeAkun = async (k: Kelompok) => {
+    const jumlah = terpakai[k.nama] ?? 0;
+    if (!k.nama || jumlah === 0) return;
+    const paket = k.dashboard === 'sales' ? SALES_MENU_KEYS : DEFAULT_MENU_KEYS;
+    setMenerapkan(k.nama);
+    const { error } = await supabase.from('users')
+      .update({ allowed_menus: paket })
+      .eq('team_type', k.nama);
+    setMenerapkan(null);
+    if (error) { beritahu('gagal', 'Gagal menerapkan: ' + error.message); return; }
+    beritahu('ok', `Menu ${jumlah} akun di ${k.label} disamakan dengan tampilan "${k.dashboard === 'sales' ? 'Seperti Sales' : 'Seperti Team'}". Mereka perlu memuat ulang halamannya.`);
+  };
 
   const geserLonceng = (nama: string, l: Lonceng) =>
     setDaftar(d => d.map(k => k.nama !== nama ? k : {
@@ -57,7 +82,7 @@ export function KelompokSettingInline() {
     }
     setDaftar(d => [...d, {
       nama, label: nama.replace(/^Team /i, ''), jenis: 'pts',
-      ditugaskan: true, cabang: false, aktif: true, lonceng: [...SEMUA_LONCENG],
+      ditugaskan: true, cabang: false, dashboard: 'team', aktif: true, lonceng: [...SEMUA_LONCENG],
     }]);
     setNamaBaru('');
   };
@@ -105,6 +130,7 @@ export function KelompokSettingInline() {
                 <th className="text-left px-3 py-2.5">Jenis</th>
                 <th className="text-center px-3 py-2.5" title="Ikut dropdown assign di Ticketing, Request Schedule, Request Design Project">Bisa&nbsp;Ditugaskan</th>
                 <th className="text-center px-3 py-2.5" title="Anggotanya muncul di dropdown PTS Cabang / Perwakilan saat jadwal Remote diselesaikan">PTS&nbsp;Cabang</th>
+                <th className="text-center px-3 py-2.5" title="Paket menu yang didapat anggota kelompok ini. Hanya soal menu - role, hak assign, dan pencatatan Incentive PTS tidak berubah.">Tampilan&nbsp;Dashboard</th>
                 {SEMUA_LONCENG.map(l => (
                   <th key={l} className="text-center px-3 py-2.5 whitespace-nowrap">
                     {LABEL_LONCENG[l].ikon} {LABEL_LONCENG[l].label}
@@ -136,6 +162,23 @@ export function KelompokSettingInline() {
                     <td className="px-3 py-2.5 text-center">
                       <Centang aktif={k.cabang} label={`${k.label} PTS Cabang`}
                         onKlik={() => ubah(k.nama, { cabang: !k.cabang })} />
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <select aria-label={`Tampilan dashboard ${k.label}`} value={k.dashboard}
+                          onChange={e => ubah(k.nama, { dashboard: e.target.value as 'team' | 'sales' })}
+                          className="border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-semibold bg-white outline-none focus:border-slate-400">
+                          <option value="team">Seperti Team</option>
+                          <option value="sales">Seperti Sales</option>
+                        </select>
+                        {jumlah > 0 && (
+                          <button type="button" onClick={() => terapkanKeAkun(k)} disabled={menerapkan === k.nama}
+                            title={`Samakan menu ${jumlah} akun yang sudah ada di ${k.label} dengan pilihan ini`}
+                            className="text-[10px] font-bold px-1.5 py-1 rounded-lg border border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700 disabled:opacity-50 transition-all whitespace-nowrap">
+                            {menerapkan === k.nama ? '…' : 'Terapkan'}
+                          </button>
+                        )}
+                      </div>
                     </td>
                     {SEMUA_LONCENG.map(l => (
                       <td key={l} className="px-3 py-2.5 text-center">
