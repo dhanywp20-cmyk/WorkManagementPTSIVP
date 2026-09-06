@@ -27,6 +27,33 @@ export interface DefinisiEvent {
   bawaanKanal: Array<'in_app' | 'whatsapp'>;
 }
 
+/**
+ * Event yang saklarnya BENAR-BENAR BERLAKU.
+ *
+ * Ini pembedaan yang penting dan harus jujur. Setelan per-event hanya
+ * berpengaruh pada titik pengiriman yang menyebutkan kunci event-nya - lewat
+ * kirimNotifikasi() (lib/notifikasi/router.ts) atau lewat parameter `event`
+ * pada sendWA/sendWANotif (lib/wa.ts). Titik yang belum menyebutkannya hanya
+ * tunduk pada SAKLAR INDUK kanal, bukan pada centang per-event.
+ *
+ * Tanpa daftar ini, Admin Panel menampilkan 22 centang yang tampak setara
+ * padahal sebagian tidak mengubah apa pun - admin mematikan sebuah kejadian,
+ * centangnya tersimpan, lalu pesannya tetap terkirim. Itu lebih buruk
+ * daripada tidak punya setelan sama sekali.
+ *
+ * Bertambah seiring titik pengirimannya dianotasi. Satu-satunya aturan:
+ * JANGAN menambahkan kunci ke sini sebelum titik pengirimannya benar-benar
+ * menyebutkan kunci itu.
+ */
+export const EVENT_TERSAMBUNG: ReadonlySet<string> = new Set<string>([
+  'system.account_created',   // modal-bersama.tsx - WA selamat datang, lewat kirimNotifikasi()
+]);
+
+/** Apakah saklar per-event untuk kunci ini benar-benar berpengaruh? */
+export function eventTersambung(key: string): boolean {
+  return EVENT_TERSAMBUNG.has(key);
+}
+
 export const KATALOG_EVENT: DefinisiEvent[] = [
   { key: 'ticket.assigned',           label: 'Tiket di-assign ke anggota',        kategori: 'ticket',      bawaanKanal: ['in_app', 'whatsapp'] },
   { key: 'ticket.reopened',           label: 'Tiket dibuka kembali',              kategori: 'ticket',      bawaanKanal: ['in_app', 'whatsapp'] },
