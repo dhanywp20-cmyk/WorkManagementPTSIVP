@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { TeamSwitch, matchesTeamFilter, TEAM_FILTER_CONFIG, type TeamFilter } from './team-filter';
+import { useKelompokCabang } from '@/lib/kelompok';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
 import { StatCardGrid, ModalPortal, DonutChart } from '@/components/shared';
 
@@ -12,49 +14,14 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Team Switch
-type TeamFilter = 'PTS' | 'Sales' | 'Marketing';
-
-const TEAM_FILTER_CONFIG: Record<TeamFilter, { label: string; emoji: string; activeClass: string }> = {
-  PTS:       { label: 'PTS',       emoji: '🔵', activeClass: 'bg-indigo-600 text-white' },
-  Sales:     { label: 'Sales',     emoji: '🟠', activeClass: 'bg-orange-500 text-white' },
-  Marketing: { label: 'Marketing', emoji: '🟣', activeClass: 'bg-purple-600 text-white' },
-};
-
-function isPTSUser(u: any)       { return u.role === 'team'; }
-function isSalesUser(u: any)     { return ['sales','guest'].includes((u.role ?? '').toLowerCase()) && !(u.sales_division ?? '').startsWith('Marketing:'); }
-function isMarketingUser(u: any) { return ['sales','guest'].includes((u.role ?? '').toLowerCase()) && (u.sales_division ?? '').startsWith('Marketing:'); }
-
-function matchesTeamFilter(u: any, filter: TeamFilter): boolean {
-  if (filter === 'PTS')       return isPTSUser(u);
-  if (filter === 'Sales')     return isSalesUser(u);
-  if (filter === 'Marketing') return isMarketingUser(u);
-  return false;
-}
-
-function TeamSwitch({ active, onChange }: { active: TeamFilter; onChange: (t: TeamFilter) => void }) {
-  return (
-    <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 flex-shrink-0">
-      {(Object.keys(TEAM_FILTER_CONFIG) as TeamFilter[]).map(t => {
-        const cfg = TEAM_FILTER_CONFIG[t];
-        return (
-          <button
-            key={t}
-            onClick={() => onChange(t)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              active === t ? cfg.activeClass + ' shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            {cfg.emoji} {cfg.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 // Main Dashboard
 export function AdminDashboard({ user }: { user: User }) {
+  // Berlangganan daftar kelompok "PTS Cabang" supaya penyaringan dihitung
+  // ulang begitu daftarnya selesai dimuat (lihat catatan di useEffect saring).
+  // Dipakai sebagai kunci string, bukan lariknya langsung: pakai() membuat
+  // larik BARU tiap pemberitahuan, jadi larik mentah akan memicu efek walau
+  // isinya sama persis.
+  const kunciCabang = useKelompokCabang().map(k => k.nama).join('|');
   const [stats, setStats] = useState({ materials: 0, activeTeam: 0, sessions: 0, attempts: 0 });
   const [recentAttempts, setRecentAttempts] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -248,7 +215,13 @@ export function AdminDashboard({ user }: { user: User }) {
     if (activeTeam !== 'Sales' && performerDivisionFilter) setPerformerDivisionFilter('');
       setSearchPerformer('');
     }
-  }, [activeTeam, allTopUsers]);
+    // kunciCabang ikut jadi pemicu: daftar kelompok dimuat ASINKRON, sering
+    // selesai SESUDAH data attempt. Tanpa ini, saat kelompok telat datang
+    // anggota PTS Daerah terlanjur ikut terhitung di tab PTS dan tidak pernah
+    // dihitung ulang sampai pengguna menekan tab lain - persis kelirunya
+    // yang tidak kelihatan salah di layar.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTeam, allTopUsers, kunciCabang]);
 
   useEffect(() => {
     if (!selectedUser) return;
