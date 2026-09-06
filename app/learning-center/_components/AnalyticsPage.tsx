@@ -1,49 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { TeamSwitch, matchesTeamFilter, TEAM_FILTER_CONFIG, type TeamFilter } from './team-filter';
+import { useKelompokCabang } from '@/lib/kelompok';
 import { supabase, SearchInput } from './shared';
 import { ModalPortal, DonutChart } from '@/components/shared';
 
-type TeamFilter = 'PTS' | 'Sales' | 'Marketing';
-
-const TEAM_FILTER_CONFIG: Record<TeamFilter, { label: string; emoji: string; activeClass: string }> = {
-  PTS:       { label: 'PTS',       emoji: '🔵', activeClass: 'bg-indigo-600 text-white' },
-  Sales:     { label: 'Sales',     emoji: '🟠', activeClass: 'bg-orange-500 text-white' },
-  Marketing: { label: 'Marketing', emoji: '🟣', activeClass: 'bg-purple-600 text-white' },
-};
-
-function matchesTeamFilter(u: any, filter: TeamFilter): boolean {
-  const role = (u.role ?? '').toLowerCase();
-  const sd   = u.salesDivision ?? '';
-  if (filter === 'PTS')       return role === 'team';
-  if (filter === 'Sales')     return ['sales','guest'].includes(role) && !sd.startsWith('Marketing:');
-  if (filter === 'Marketing') return ['sales','guest'].includes(role) && sd.startsWith('Marketing:');
-  return false;
-}
-
-// Team Switch Button
-function TeamSwitch({ active, onChange }: { active: TeamFilter; onChange: (t: TeamFilter) => void }) {
-  return (
-    <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1">
-      {(Object.keys(TEAM_FILTER_CONFIG) as TeamFilter[]).map(t => {
-        const cfg = TEAM_FILTER_CONFIG[t];
-        return (
-          <button
-            key={t}
-            onClick={() => onChange(t)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              active === t ? cfg.activeClass + ' shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            {cfg.emoji} {cfg.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 export function AnalyticsPage() {
+  // Lihat catatan yang sama di AdminDashboard.tsx.
+  const kunciCabang = useKelompokCabang().map(k => k.nama).join('|');
   const [topUsers, setTopUsers] = useState<any[]>([]);
   const [allTopUsers, setAllTopUsers] = useState<any[]>([]);
   const [sessionStats, setSessionStats] = useState<any[]>([]);
@@ -154,7 +120,11 @@ export function AnalyticsPage() {
       setTopUsers(allTopUsers.filter(u => matchesTeamFilter(u, activeTeam)).slice(0, 20));
       setSearch('');
     }
-  }, [activeTeam, allTopUsers]);
+    // kunciCabang: lihat catatan yang sama di AdminDashboard.tsx - daftar
+    // kelompok datang asinkron, jadi hasil saringan harus dihitung ulang
+    // begitu daftar itu tiba.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTeam, allTopUsers, kunciCabang]);
 
   // Load detail attempts when a user is selected
   useEffect(() => {
