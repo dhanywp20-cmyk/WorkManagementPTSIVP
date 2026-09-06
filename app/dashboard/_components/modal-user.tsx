@@ -251,7 +251,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                 <p className="text-[11px] text-amber-700 leading-relaxed">
                   Mapping divisi → atasan. User dengan <strong>divisi yang sama</strong> otomatis ter-CC ke atasan terdaftar. Untuk user beda divisi (misal Handono SGP 1 → Rainata SGP), gunakan tab <strong>CC per User</strong>.
                 </p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division</label>
                     <select aria-label="— Pilih Divisi —" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)}
@@ -427,7 +427,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                     ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division (External)</label>
                     <select aria-label="— Pilih Divisi —" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)}
@@ -1144,7 +1144,7 @@ export function UserManagementInline() {
                   </div>
                 </div>
                 {/* List */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                   {filteredAtasanByDiv.map(([div, maps]) => (
                     <div key={div} className="rounded-xl border border-amber-200 overflow-hidden">
                       <div className="px-3 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
@@ -1220,7 +1220,7 @@ export function UserManagementInline() {
                   </div>
                 </div>
                 {/* List — grouped by person */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                   {filteredIvpByUser.map(([userId, { user, group, maps }]) => (
                     <div key={userId} className="rounded-xl border border-violet-200 overflow-hidden">
                       {/* Card header — person name */}
@@ -1366,7 +1366,7 @@ export function UserManagementInline() {
                   <input aria-label="Cari nama user..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama user..."
                     className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
                 </div>
-                <div className="flex-1 min-h-0 grid grid-cols-2 gap-5">
+                <div className="flex-1 min-h-0 grid grid-cols-1 formulir:grid-cols-2 gap-5">
                   {/* Left: user list */}
                   <div className="flex flex-col min-h-0">
                     <p className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-widest flex-shrink-0">Pilih User</p>
