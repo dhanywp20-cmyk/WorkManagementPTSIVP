@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { namaKelompokPTS } from '@/lib/kelompok';
+import { bacaPicPiket } from '@/app/picket-showroom/_components/shared';
 import { User } from './shared';
 import { ModalPortal } from '@/components/shared';
 import { cariReminderByNama } from '@/lib/cari-reminder';
@@ -356,7 +357,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     // 4. Piket Showroom
     if (bolehModul('picket-showroom')) try {
       const { data: pkData } = await supabase.from('piket_schedules')
-        .select('id, day_date, day_of_week, pic_ivp_name, pic_ump_name, pic_mvi_name')
+        .select('id, day_date, day_of_week, pic, pic_ivp_name, pic_ump_name, pic_mvi_name, pic_ivp_id, pic_ump_id, pic_mvi_id')
         .or(`pic_ivp_name.ilike.%${q}%,pic_ump_name.ilike.%${q}%,pic_mvi_name.ilike.%${q}%,day_date.ilike.%${q}%`)
         .order('day_date', { ascending: false }).limit(10);
       let pikets = (pkData ?? []) as any[];
@@ -365,11 +366,14 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         pikets = []; // Piket showroom bukan wilayah Sales
       } else if (isPTSsup) {
         const myTeam = currentUser.team_type;
+        //  Disaring lewat bacaPicPiket(): Supervisor hanya melihat piket
+        //  anggota TIMNYA SENDIRI. Cara lama menyebut tiga nama tim satu per
+        //  satu, jadi Supervisor kelompok PTS baru jatuh ke `return true` -
+        //  ia melihat piket SEMUA tim, kebalikan dari yang dimaksud.
         pikets = pikets.filter((p: any) => {
-          if (myTeam === 'Team PTS IVP') return (p.pic_ivp_name ?? '').toLowerCase().includes(ql);
-          if (myTeam === 'Team PTS UMP') return (p.pic_ump_name ?? '').toLowerCase().includes(ql);
-          if (myTeam === 'Team PTS MVI') return (p.pic_mvi_name ?? '').toLowerCase().includes(ql);
-          return true;
+          const pic = bacaPicPiket(p);
+          if (!pic) return false;
+          return pic.team_type === myTeam && (pic.name ?? '').toLowerCase().includes(ql);
         });
       }
 

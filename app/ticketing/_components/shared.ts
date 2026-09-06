@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { namaSemuaKelompokTim } from '@/lib/kelompok';
 import { hasFullAccess } from '@/lib/constants';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import type { AdminField } from '@/lib/admin-edit';
@@ -419,7 +420,9 @@ export const TICKET_ADMIN_FIELDS: AdminField[] = [
   { key: 'status',         label: 'Status', type: 'select',
     options: ['Waiting Approval', 'Pending', 'Call', 'Onsite', 'In Progress', 'Solved', 'Rejected'].map(v => ({ value: v, label: v })) },
   { key: 'current_team',   label: 'Team Penanganan', type: 'select',
-    options: ['Team PTS IVP', 'Team PTS MVI', 'Team PTS UMP', 'Team Services'].map(v => ({ value: v, label: v })) },
+    //  Dari pengaturan admin, bukan empat nama tetap - kelompok baru
+    //  langsung bisa dijadikan filter tanpa deploy.
+    options: namaSemuaKelompokTim().map(v => ({ value: v, label: v })) },
   { key: 'brand',          label: 'Brand', type: 'select',
     options: BRAND_OPTIONS.map(b => ({ value: b.value, label: b.label })) },
 ];

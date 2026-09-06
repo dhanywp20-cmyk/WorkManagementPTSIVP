@@ -59,12 +59,84 @@ export interface UserRow { id:string; full_name:string; username:string; team_ty
 
 export interface PiketRow {
   id:string; week_start:string; day_of_week:DayOfWeek; day_date:string;
+  /**
+   * PIC piket hari itu. Menggantikan tiga pasang kolom per-tim di bawahnya,
+   * yang memaku jumlah tim di dalam SKEMA - tim keempat tidak punya tempat
+   * disimpan sama sekali, jadi kelompok PTS baru yang ditambahkan admin
+   * tidak akan pernah bisa dijadwalkan piket.
+   */
+  pic?:PicPiket|null;
+  /**
+   * Kolom lama, MASIH DITULIS selama masa transisi dan masih dibaca sebagai
+   * cadangan oleh bacaPicPiket(). Jangan dibaca langsung di kode baru.
+   */
   pic_ivp_id:string|null; pic_ivp_name:string|null;
   pic_ump_id:string|null; pic_ump_name:string|null;
   pic_mvi_id:string|null; pic_mvi_name:string|null;
   tamu_instansi:string|null; kebutuhan:string[];
   created_at:string; updated_at:string;
   edited_by_name?:string|null;
+}
+
+export interface PicPiket { user_id:string; name:string; team_type:string }
+
+/** Bagian PIC dari payload simpan - bentuknya dipakai langsung sebagai bagian PiketRow. */
+export interface PicPayload {
+  pic: PicPiket | null;
+  pic_ivp_id: string|null; pic_ivp_name: string|null;
+  pic_ump_id: string|null; pic_ump_name: string|null;
+  pic_mvi_id: string|null; pic_mvi_name: string|null;
+}
+
+/**
+ * Siapa PIC piket sebuah baris - SATU pintu baca untuk seluruh modul.
+ *
+ * Membaca kolom `pic` lebih dulu, lalu jatuh ke tiga pasang kolom lama.
+ * Cadangannya bukan basa-basi: ia yang membuat pemasangan yang belum
+ * menjalankan migrasi tetap bekerja, dan yang membuat perubahan ini bisa
+ * dibatalkan dengan berhenti membaca `pic` tanpa kehilangan data apa pun.
+ */
+export function bacaPicPiket(r: Partial<PiketRow> | null | undefined): PicPiket | null {
+  if (!r) return null;
+  const p = r.pic;
+  if (p && typeof p === 'object' && p.user_id) {
+    return { user_id: p.user_id, name: p.name ?? '', team_type: p.team_type ?? '' };
+  }
+  if (r.pic_ivp_id) return { user_id: r.pic_ivp_id, name: r.pic_ivp_name ?? '', team_type: 'Team PTS IVP' };
+  if (r.pic_ump_id) return { user_id: r.pic_ump_id, name: r.pic_ump_name ?? '', team_type: 'Team PTS UMP' };
+  if (r.pic_mvi_id) return { user_id: r.pic_mvi_id, name: r.pic_mvi_name ?? '', team_type: 'Team PTS MVI' };
+  return null;
+}
+
+/**
+ * Bagian PIC dari payload simpan - SATU pintu tulis untuk seluruh modul.
+ *
+ * Menulis ke kolom `pic` DAN ke tiga kolom lama sekaligus. Tulis-ganda ini
+ * disengaja dan sementara: selama satu siklus pemakaian, data tetap benar
+ * dibaca oleh kode versi lama maupun baru. Begitu terbukti, penulisan ke
+ * kolom lama dihentikan lalu kolomnya dihapus di migrasi tersendiri.
+ *
+ * Tim di luar ketiga kolom lama (mis. kelompok PTS baru) tetap tersimpan
+ * lengkap di `pic` - kolom lamanya memang tidak punya tempat untuknya, dan
+ * itu justru alasan perubahan ini ada.
+ */
+export function tulisPicPiket(u: { id:string; full_name?:string|null; team_type?:string|null } | null): PicPayload {
+  if (!u) {
+    return {
+      pic: null,
+      pic_ivp_id: null, pic_ivp_name: null,
+      pic_ump_id: null, pic_ump_name: null,
+      pic_mvi_id: null, pic_mvi_name: null,
+    };
+  }
+  const tt = u.team_type ?? '';
+  const nama = u.full_name ?? null;
+  return {
+    pic: { user_id: u.id, name: nama ?? '', team_type: tt },
+    pic_ivp_id: tt === 'Team PTS IVP' ? u.id : null, pic_ivp_name: tt === 'Team PTS IVP' ? nama : null,
+    pic_ump_id: tt === 'Team PTS UMP' ? u.id : null, pic_ump_name: tt === 'Team PTS UMP' ? nama : null,
+    pic_mvi_id: tt === 'Team PTS MVI' ? u.id : null, pic_mvi_name: tt === 'Team PTS MVI' ? nama : null,
+  };
 }
 
 // Barang temporer di luar PRODUK_LIST default - dicatat beban dayanya (watt)
@@ -159,8 +231,9 @@ function buildDayMaps(wk: string, dbRows: PiketRow[]): { nameMap: DayNameMap; ui
   dbRows.forEach(r => {
     if (r.week_start !== wk || !r.day_of_week) return;
     const day  = r.day_of_week;
-    const name = r.pic_ivp_name || r.pic_ump_name || r.pic_mvi_name || '';
-    const uid  = r.pic_ivp_id  || r.pic_ump_id  || r.pic_mvi_id  || '';
+    const pic  = bacaPicPiket(r);
+    const name = pic?.name ?? '';
+    const uid  = pic?.user_id ?? '';
     if (name) nameMap[day] = name;
     if (uid)  uidMap[day]  = uid;
   });

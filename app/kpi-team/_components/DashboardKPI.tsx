@@ -699,10 +699,14 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
       <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin"/>
     </div>
   );
-  // Piket card highlight per team
-  const isPTSIVP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS IVP';
-  const isPTSUMP  = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS UMP';
-  const isPTSMVI = scope.kind==='pts_sup'&&scope.ptsTeamType==='Team PTS MVI';
+  /*
+    DIHAPUS: isPTSIVP / isPTSUMP / isPTSMVI ("Piket card highlight per team").
+    Ketiganya dideklarasikan tapi TIDAK PERNAH dipakai di mana pun - sisa
+    penyorotan per-tim yang sudah tidak ada lagi. Dibiarkan berdiri justru
+    menyesatkan: ia tampak seperti daftar tim yang harus ikut diperbarui
+    setiap kali ada kelompok baru, padahal menghapusnya tidak mengubah apa
+    pun di layar.
+  */
 
   const scopeTitle = scope.kind==='admin' ? 'Dashboard'
     : scope.kind==='pts_sup' ? `Summary ${scope.ptsTeamType}`

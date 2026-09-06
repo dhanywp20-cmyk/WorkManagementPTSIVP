@@ -8,6 +8,7 @@ import {
   DAY_COLOR, JENIS_KEGIATAN_LIST, KEGIATAN_COLORS,
   KEBUTUHAN_LIST, PRODUK_LIST, TEAM_LABEL,
 } from './shared';
+import { useKelompokPTS, namaKelompokPTS, labelKelompokPTS } from '@/lib/kelompok';
 
 interface KFEntry {
   id?:string; jenis_kegiatan:JenisKegiatan; jam_mulai:string; jam_selesai:string; produk:string[];
@@ -18,6 +19,7 @@ interface KFEntry {
 const emptyKF=():KFEntry=>({jenis_kegiatan:'Demo Product',jam_mulai:'09:00',jam_selesai:'10:00',produk:[],produk_lain:[],tamu_instansi:'',nama_sales:'',sales_division:'',kebutuhan:[],keterangan:'',team_rnd:''});
 
 export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;onClose:()=>void;onSaved:()=>void;currentUser?:any}) {
+  const kelompokPTSList = useKelompokPTS();
   const daftarDivisi = useDivisiSales();
   const [entries,setEntries]=useState<KFEntry[]>([emptyKF()]);
   const [loadingE,setLoadingE]=useState(true);
@@ -42,7 +44,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       setLoadingE(true);
       const[detailRes,usersRes,plRes]=await Promise.all([
         supabase.from('piket_tamu_detail').select('*').eq('piket_id',row.id).order('created_at'),
-        supabase.from('users').select('id,full_name,team_type,role').in('team_type',['Team PTS IVP','Team PTS UMP','Team PTS MVI']).order('full_name'),
+        supabase.from('users').select('id,full_name,team_type,role').in('team_type',namaKelompokPTS()).order('full_name'),
         supabase.from('piket_produk_lain').select('kegiatan_id,nama,watt').eq('piket_id',row.id),
       ]);
       const plByKg:Record<string,ProdukLain[]>={};
@@ -76,7 +78,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   const getPTSTeamLabel=(name:string)=>{
     const u=ptUsers.find(x=>x.full_name===name);
     const tt=u?.team_type||'';
-    return tt==='Team PTS IVP'?'PTS IVP':tt==='Team PTS UMP'?'PTS UMP':tt==='Team PTS MVI'?'PTS MVI':'';
+    return tt?labelKelompokPTS(tt):'';
   };
 
   const handleSave=async()=>{
@@ -290,15 +292,16 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                           <select aria-label="— Pilih Team —" value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
                             className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                             <option value="">— Pilih Team —</option>
-                            <optgroup label="Team PTS IVP">
-                              {ptUsers.filter(u=>u.team_type==='Team PTS IVP').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
-                            </optgroup>
-                            <optgroup label="Team PTS UMP">
-                              {ptUsers.filter(u=>u.team_type==='Team PTS UMP').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
-                            </optgroup>
-                            <optgroup label="Team PTS MVI">
-                              {ptUsers.filter(u=>u.team_type==='Team PTS MVI').map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
-                            </optgroup>
+                            {/* Satu optgroup per kelompok PTS dari pengaturan admin. */}
+                            {kelompokPTSList.map(k=>{
+                              const anggota=ptUsers.filter(u=>u.team_type===k.nama);
+                              if(anggota.length===0) return null;
+                              return (
+                                <optgroup key={k.nama} label={k.nama}>
+                                  {anggota.map(u=><option key={u.id} value={u.full_name}>{u.full_name}</option>)}
+                                </optgroup>
+                              );
+                            })}
                           </select>
                           {entry.team_rnd&&(()=>{
                             const teamLabel=getPTSTeamLabel(entry.team_rnd);

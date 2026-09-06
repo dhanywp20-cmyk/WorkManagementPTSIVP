@@ -14,6 +14,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { namaKelompokPTS } from '@/lib/kelompok';
 import type { User } from '../shared';
 import { hasMenu, canAccessAnalytics, canSeeTeamMonitoring } from './permissions';
 import {
@@ -497,9 +498,9 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
     (async () => {
       try {
         const [rowsRes, holRes, usersRes] = await Promise.all([
-          supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic_ivp_id,pic_ivp_name,pic_ump_id,pic_ump_name,pic_mvi_id,pic_mvi_name'),
+          supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic,pic_ivp_id,pic_ivp_name,pic_ump_id,pic_ump_name,pic_mvi_id,pic_mvi_name'),
           supabase.from('picket_holidays').select('date'),
-          supabase.from('users').select('full_name, team_type').in('team_type', ['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI']),
+          supabase.from('users').select('full_name, team_type').in('team_type', namaKelompokPTS()),
         ]);
         const allRows = (rowsRes.data ?? []) as unknown as PiketRow[];
         const holidays = (holRes.data ?? []).map((h: any) => h.date as string);

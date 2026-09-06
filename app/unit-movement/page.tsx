@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { namaKelompokPTSDitugaskan } from '@/lib/kelompok';
 import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
@@ -101,8 +102,10 @@ function UnitMovementPageInner() {
   };
 
   const fetchTeamMembers = async () => {
-    // Hanya Team PTS IVP
-    const {data} = await supabase.from('users').select('full_name').in('team_type', ['Team PTS IVP','Team PTS MVI']).order('full_name');
+    //  Anggota kelompok PTS yang bisa ditugaskan, dari pengaturan admin -
+    //  bukan dua nama tim yang dipaku (komentar lamanya bahkan menyebut
+    //  "Hanya Team PTS IVP" padahal isinya sudah dua).
+    const {data} = await supabase.from('users').select('full_name').in('team_type', namaKelompokPTSDitugaskan()).order('full_name');
     if (data&&data.length>0) setTeamMembers(data.map((u:any)=>u.full_name));
   };
 
