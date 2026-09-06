@@ -1207,8 +1207,13 @@ function TicketingSystemInner() {
       }).eq("id", supAssignTicket.id).select("id");
       if (error) throw error;
       if (!data || data.length === 0) throw new Error("Perubahan ditolak sistem (RLS). Hubungi admin.");
-      // WA + badge ke anggota tim yg di-assign (kalau bukan Supervisor sendiri)
-      if (!isSelf) {
+      // Badge in-app + WA ke anggota tim yg di-assign. Badge TETAP dikirim kalau
+      // Supervisor kerjakan sendiri (isSelf) - supaya ada catatan/link yang bisa
+      // dibuka lagi nanti, sama seperti assign ke anggota lain. WA ke diri
+      // sendiri tetap dilewati - tidak berguna mengirim WA ke nomor sendiri.
+      if (isSelf) {
+        if (currentUser?.id) notifyTicketAssigned(currentUser.id, assigneeName, supAssignTicket.id, supAssignTicket.project_name, currentUser?.full_name ?? 'Supervisor').catch(() => {});
+      } else {
         try {
           const tm = teamMembers.find(m => m.name === assigneeName);
           const { data: handlerUser } = tm?.username
@@ -1314,6 +1319,17 @@ function TicketingSystemInner() {
       // Dikirim ke penerima BARU kalau dialihkan, dan ke penanganya sekarang
       // kalau cuma koreksi data. Keduanya sama-sama perlu tahu.
       const targetNama = penerimaBaru || t.assign_name || '';
+      // Admin mengalihkan ke DIRI SENDIRI: WA ke nomor sendiri tidak berguna,
+      // tapi badge in-app tetap dikirim - supaya ada catatan/link yang bisa
+      // dibuka lagi nanti, sama seperti reroute ke orang lain.
+      if (adaReroute && targetNama && targetNama === currentUser?.full_name && currentUser?.id) {
+        void createNotification({
+          user_id: currentUser.id, type: 'ticket',
+          title: '🔀 Kamu alihkan ticket ini ke diri sendiri',
+          body: `${adminEditForm.project_name ?? t.project_name}`,
+          action_url: '/ticketing', ref_id: t.id, created_by: currentUser.full_name ?? 'Admin',
+        });
+      }
       if (targetNama && targetNama !== currentUser?.full_name) {
         try {
           const tm = teamMembers.find(m => m.name === targetNama);

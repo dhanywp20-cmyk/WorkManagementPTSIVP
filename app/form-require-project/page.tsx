@@ -1147,7 +1147,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     logAudit({ user_id: currentUser.id, user_name: currentUser.full_name, action: 'approve', module: 'project', target_id: req.id, target_name: req.project_name, notes: 'Internal review approved' }).catch(() => {});
     fetchRequests();
     if (selectedRequest?.id === req.id) setSelectedRequest({ ...req, routing_status: 'admin_review' });
-    // WA ke Admin - actionable, sudah lolos review Sales Internal.
+    // WA + badge in-app ke Admin - actionable, sudah lolos review Sales Internal.
     try {
       const admins = await penerimaAdminBernomor();
       const msg =
@@ -1155,6 +1155,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         `Request dari *${req.sales_name}* untuk *${req.project_name}* sudah di-review oleh *${currentUser.full_name}* — silakan diproses/di-assign.\n` +
         `🔗 ${appLink()}`;
       await Promise.allSettled((admins ?? []).filter((a: any) => a.phone_number).map((a: any) => sendWANotif({ type: 'reminder_wa', target: a.phone_number, message: msg })));
+      (admins ?? []).forEach((a: any) => { if (a.id) void createNotification({ user_id: a.id, type: 'project', title: '✅ Request lolos review Sales Internal', body: `${req.sales_name} — ${req.project_name}`, action_url: '/form-require-project', ref_id: req.id, created_by: currentUser.full_name }); });
     } catch { }
   };
 
