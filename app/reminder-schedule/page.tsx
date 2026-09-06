@@ -1045,19 +1045,32 @@ function ReminderSchedulePageInner() {
 
       // Beri tahu yang menangani. Tanpa ini, koreksi tanggal atau alamat tidak
       // pernah sampai ke orang yang akan berangkat ke lokasi.
-      if (perubahanEdit.length > 0 && assignee?.phone_number && assignee.full_name !== currentUser?.full_name) {
-        void sendFonnteWA(
-          assignee.phone_number,
-          pesanWAPerubahan({
-            namaPenerima: assignee.full_name ?? formData.assigned_to,
-            namaPengubah: currentUser?.full_name ?? 'Admin',
-            judulItem: formData.project_name,
-            jenisItem: 'Jadwal',
-            perubahan: perubahanEdit,
-            reroute: null,
-            tautan: appLink('/reminder-schedule'),
-          }),
-        );
+      // Badge in-app TETAP dikirim walau penanganya diri sendiri (mis. memilih
+      // diri sendiri lewat dropdown assignee) - WA ke nomor sendiri tetap
+      // dilewati karena tidak berguna.
+      if (perubahanEdit.length > 0 && assignee?.id) {
+        if (assignee.full_name === currentUser?.full_name) {
+          void createNotification({
+            user_id: assignee.id, type: 'reminder',
+            title: '✏️ Jadwal kamu diperbarui',
+            body: `${formData.project_name}`,
+            action_url: '/reminder-schedule', ref_id: editingReminder.id,
+            created_by: currentUser?.full_name ?? 'Admin',
+          });
+        } else if (assignee.phone_number) {
+          void sendFonnteWA(
+            assignee.phone_number,
+            pesanWAPerubahan({
+              namaPenerima: assignee.full_name ?? formData.assigned_to,
+              namaPengubah: currentUser?.full_name ?? 'Admin',
+              judulItem: formData.project_name,
+              jenisItem: 'Jadwal',
+              perubahan: perubahanEdit,
+              reroute: null,
+              tautan: appLink('/reminder-schedule'),
+            }),
+          );
+        }
       }
     } else {
       for (const row of barisBaru) {
@@ -2712,7 +2725,16 @@ jangan lupa peralatan & Semangat💪🏼
     setSupervisorAssignTarget(null); setSupervisorAssignBatchSiblings([]); setSupervisorAssignTo('');
     fetchRemindersQuiet();
 
-    // WA ke assignee (kalau bukan Supervisor sendiri yg baru saja klik tombolnya)
+    // Badge in-app - TETAP dikirim walau Supervisor kerjakan sendiri (isSelf),
+    // supaya ada catatan/link yang bisa dibuka lagi nanti, sama seperti assign
+    // ke anggota lain. WA ke diri sendiri tetap dilewati (tidak berguna).
+    createNotification({
+      user_id: assignee.id, type: 'reminder',
+      title: isSelf ? '🗓️ Kamu jadi PIC jadwal ini' : '🗓️ Jadwal di-assign ke kamu',
+      body: `${r.project_name} — ${r.category}`,
+      action_url: '/reminder-schedule', ref_id: r.id,
+      created_by: currentUser.full_name,
+    }).catch(() => {});
     if (!isSelf && assignee.phone_number) {
       const msg =
         `🗓️ *JADWAL BARU — PTS IVP*\n\n` +

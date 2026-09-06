@@ -15,6 +15,7 @@ import { isAssignablePTSTeam, bolehDitugaskan } from '@/lib/teams';
 import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import { appLink } from '@/lib/app-url';
+import { createNotification } from '@/lib/notifications';
 
 /**
  * AssignPTSModal - popup Approve & Assign dan Assign ke Tim untuk Request
@@ -132,6 +133,15 @@ export function AssignPTSModal({
       ].join('\n');
       await sendWANotif({ type: 'reminder_wa', target: sup.phone_number, message: lines });
     }
+    if (sup?.id) {
+      void createNotification({
+        user_id: sup.id, type: 'project',
+        title: '🎯 Request perlu kamu assign',
+        body: `${req.sales_name || '-'} — ${req.project_name}`,
+        action_url: '/form-require-project', ref_id: req.id,
+        created_by: currentUser.full_name,
+      });
+    }
     setRouteSaving(false);
     onAssigned();
   };
@@ -206,7 +216,9 @@ export function AssignPTSModal({
       // WA notif ke PTS. (IVP Sales internal reviewer sudah dinotif via WA saat
       // request dibuat - lihat resolveBrandInternals/internalHandlers di page.tsx -
       // jadi tidak perlu dikirim ulang di sini.)
-      // Tidak dikirim ke diri sendiri: yang menekan tombolnya sudah tahu.
+      // WA tidak dikirim ke diri sendiri: yang menekan tombolnya sudah tahu.
+      // Badge in-app TETAP dikirim walau ke diri sendiri - supaya ada
+      // catatan/link yang bisa dibuka lagi nanti, sama seperti assign ke orang lain.
       if (calonHandler.phone_number && calonHandler.id !== currentUser.id) {
         const lines = [
           '🏗️ *request design Project — Assigned ke Kamu*',
@@ -221,6 +233,13 @@ export function AssignPTSModal({
         ].join('\n');
         await sendWANotif({ type: 'reminder_wa', target: calonHandler.phone_number, message: lines });
       }
+      void createNotification({
+        user_id: calonHandler.id, type: 'project',
+        title: calonHandler.id === currentUser.id ? '🏗️ Kamu assign request ini ke diri sendiri' : '🏗️ Request design di-assign ke kamu',
+        body: `${req.project_name} — ${req.room_name || '-'}`,
+        action_url: '/form-require-project', ref_id: req.id,
+        created_by: currentUser.full_name,
+      });
 
       onAssigned();
     } else {
