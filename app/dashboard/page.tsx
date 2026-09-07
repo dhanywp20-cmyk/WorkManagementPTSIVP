@@ -1176,7 +1176,7 @@ export default function Dashboard() {
   // VIEW: NO SIDEBAR (main dashboard)
   if (!showSidebar) {
     return (
-      <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
+      <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, height: '100dvh' }}>
         {renderModals()}
         {/* ── Jelajahi Button (always visible while logged-in, before sidebar loads) ── */}
         {currentUser && !tourVisible && (
@@ -1267,7 +1267,7 @@ export default function Dashboard() {
 
   // VIEW: SIDEBAR
   return (
-    <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ backgroundImage: 'url(/IVP_Background.png)', height: '100dvh' }}>
+    <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, height: '100dvh' }}>
       {isLoggedIn && <SessionExpiryBanner />}
       {renderModals()}
 
@@ -1750,7 +1750,7 @@ export default function Dashboard() {
                  Background transparan (IVP bg tembus); hanya card yg opaque.
                  Analytics = launcher full-screen (bukan embed) utk yg berhak. */
               <div className="w-full h-full overflow-hidden relative"
-                style={{ backgroundImage: 'url(/IVP_Background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
                 <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} openUrl={handleNotifNavigate}
                   onHubungkanTelegram={() => setShowUserProfile(true)} />
               </div>
@@ -1796,7 +1796,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-slate-400"
-                style={{ backgroundImage: 'url(/IVP_Background.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
                 <div className="text-center bg-white/75 rounded-2xl px-8 py-6 shadow-lg backdrop-blur-md">
                   <div className="text-5xl mb-3">📂</div>
                   <p className="font-semibold text-base text-slate-600">Pilih menu dari sidebar</p>
