@@ -121,9 +121,9 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
   }
 
   return (
-     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-     {/* MY ACTION - selebar 2 kolom, paling menonjol */}
-     <div className="lg:col-span-2">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+        {/* MY ACTION - selebar 2 kolom, paling menonjol */}
+        <div className="lg:col-span-2 h-full">
         <WidgetCard title="My Action" icon="🎯" accent="#dc2626">
           {myAction.length === 0 ? (
             <EmptyState text="Tidak ada item mendesak - lihat Hari Ini & Mendatang di samping." />
