@@ -121,7 +121,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
   }
 
   return (
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
         {/* MY ACTION - selebar 2 kolom, paling menonjol */}
         <div className="lg:col-span-2 h-full">
         <WidgetCard title="My Action" icon="🎯" accent="#dc2626">
@@ -142,8 +142,8 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
         </WidgetCard>
       </div>
 
-      {/* TODAY + UPCOMING - satu kolom kanan, dua kartu ringkas */}
-      <div className="flex flex-col gap-4">
+      {/* TODAY */}
+     <div className="h-full">
         <WidgetCard title="Hari Ini" icon="📅" accent="#0891b2">
           {today.length === 0 ? (
             <EmptyState text="Tidak ada jadwal untuk hari ini." />
@@ -151,6 +151,9 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
             <ActionRow key={item.id} item={item} onClick={() => openMenu(item.menuKey)} showUrgencyDot={false} />
           ))}
         </WidgetCard>
+        </div>
+      {/* MENDATANG */}
+      <div className="h-full">
         <WidgetCard title="Mendatang" icon="🔜" accent="#7c3aed">
           {upcoming.length === 0 ? (
             <EmptyState text="Tidak ada jadwal dalam waktu dekat." />
