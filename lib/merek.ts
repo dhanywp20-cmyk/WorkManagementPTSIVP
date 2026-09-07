@@ -41,6 +41,8 @@ export interface Merek {
   warnaUtama2: string;
   /** Warna label portal di header. */
   warnaAksen: string;
+  /** Gambar latar layar dashboard (setelah login), diisi lewat unggahan. */
+  gambarLatarDasbor: string;
 
   // ── Halaman login ──
   //  Punya warna sendiri, sengaja tidak menumpang warna dashboard: panel kiri
@@ -71,6 +73,7 @@ export const MEREK_BAWAAN: Merek = {
   warnaUtama: '#e11d48',
   warnaUtama2: '#be123c',
   warnaAksen: '#c8861d',
+  gambarLatarDasbor: '/IVP_Background.png',
 
   gambarLatar: '/IVP_Background.png',
   warnaLogin: '#be123c',
@@ -350,7 +353,7 @@ const BATAS_LATAR = 8 * 1024 * 1024;
  */
 export async function unggahBerkasMerek(
   berkas: File,
-  jenis: 'logo' | 'latar',
+  jenis: 'logo' | 'latar' | 'latarDasbor',
 ): Promise<{ url: string | null; error: string | null }> {
   if (!berkas.type.startsWith('image/')) {
     return { url: null, error: 'Berkasnya harus gambar (PNG, JPG, SVG, atau WebP).' };
@@ -361,7 +364,7 @@ export async function unggahBerkasMerek(
   }
 
   let siap = berkas;
-  if (jenis === 'latar') {
+  if (jenis === 'latar' || jenis === 'latarDasbor') {
     try {
       const { compressImage } = await import('./image-compress');
       siap = await compressImage(berkas, { maxDim: 2400, quality: 0.82 });
