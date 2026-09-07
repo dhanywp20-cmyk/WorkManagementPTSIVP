@@ -1,20 +1,5 @@
 'use client';
 
-/**
- * WorkQueueSection.tsx - "My Action" + "Today" + "Upcoming", satu hook
- * (useWorkQueue) dipakai bertiga supaya tidak fetch data yang sama 3x.
- *
- * Ini widget FULL-width paling atas di Work Center (priority 0 di registry),
- * menjawab "apa yang harus saya kerjakan sekarang" sebelum apa pun lain di
- * halaman - sesuai tujuan Work Center: action dulu, statistik belakangan.
- *
- * Quick Action untuk role TEAM/ADMIN dirender DI DALAM kartu "My Action" ini
- * sendiri (di bawah daftar item, mis. di bawah "Daily Report hari ini belum
- * diisi") - bukan sebagai section terpisah di luar kartu, sesuai permintaan.
- * Sales/Guest TIDAK mendapat chip di sini - milik mereka ada di dalam kartu
- * "Analytics Saya" (lihat widgets/SalesAnalyticsWidget.tsx).
- */
-
 import React from 'react';
 import { type WidgetProps, WidgetCard, EmptyState, Loading, QuickActionChip } from '../widgets/primitives';
 import { isAdminRole, isTeamMember, hasMenu } from '../widgets/permissions';
@@ -138,7 +123,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
       {/* MY ACTION - selebar 2 kolom, paling menonjol */}
-      <div className="lg:col-span-2">
+      <div className="lg:col-span-2 min-h-[400px]">
         <WidgetCard title="My Action" icon="🎯" accent="#dc2626">
           {myAction.length === 0 ? (
             <EmptyState text="Tidak ada item mendesak - lihat Hari Ini & Mendatang di samping." />
