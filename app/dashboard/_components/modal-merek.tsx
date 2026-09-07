@@ -20,7 +20,7 @@ import {
 export function MerekSettingInline() {
   const [form, setForm] = useState<Merek>(MEREK_BAWAAN);
   const [menyimpan, setMenyimpan] = useState(false);
-  const [mengunggah, setMengunggah] = useState<'logo' | 'latar' | null>(null);
+  const [mengunggah, setMengunggah] = useState<'logo' | 'latar' | 'latarDasbor' | null>(null);
   const [kabar, setKabar] = useState<{ jenis: 'ok' | 'gagal'; teks: string } | null>(null);
   const [siap, setSiap] = useState(false);
 
@@ -40,17 +40,18 @@ export function MerekSettingInline() {
     const { error } = await simpanMerek(form);
     setMenyimpan(false);
     if (error) beritahu('gagal', 'Gagal menyimpan: ' + error);
-    else beritahu('ok', 'Tersimpan. Header & halaman login langsung ikut berubah.');
+    else beritahu('ok', 'Tersimpan. Header, background dashboard & halaman login langsung ikut berubah.');
   };
 
-  const terimaBerkas = async (berkas: File, jenis: 'logo' | 'latar') => {
+  const terimaBerkas = async (berkas: File, jenis: 'logo' | 'latar' | 'latarDasbor') => {
     setMengunggah(jenis);
     const { url, error } = await unggahBerkasMerek(berkas, jenis);
     setMengunggah(null);
     if (error || !url) { beritahu('gagal', error ?? 'Unggahan gagal.'); return; }
     // Hanya mengisi kolomnya - belum tersimpan. Supaya bisa dilihat dulu di
     // pratinjau dan dibatalkan kalau ternyata tidak cocok.
-    ubah(jenis === 'logo' ? 'logoUrl' : 'gambarLatar', url);
+    const kunci = jenis === 'logo' ? 'logoUrl' : jenis === 'latar' ? 'gambarLatar' : 'gambarLatarDasbor';
+    ubah(kunci, url);
     beritahu('ok', 'Berhasil diunggah. Lihat pratinjaunya, lalu tekan Simpan.');
   };
 
@@ -112,6 +113,10 @@ export function MerekSettingInline() {
             <Warna label="Warna Utama 2" nilai={form.warnaUtama2} onChange={v => ubah('warnaUtama2', v)} />
             <Warna label="Warna Aksen (nama portal)" nilai={form.warnaAksen} onChange={v => ubah('warnaAksen', v)} />
           </div>
+
+          <Unggah label="Gambar Latar Dashboard" jenis="latarDasbor" nilai={form.gambarLatarDasbor} sedang={mengunggah === 'latarDasbor'}
+            keterangan="Foto latar layar dashboard setelah masuk (boleh beda dari foto Halaman Login). Maks 8MB, dikecilkan otomatis ke 2400px."
+            onBerkas={f => terimaBerkas(f, 'latarDasbor')} onHapus={() => ubah('gambarLatarDasbor', MEREK_BAWAAN.gambarLatarDasbor)} />
         </div>
       </section>
 
@@ -216,11 +221,12 @@ function KotakLogo({ url, a, b, tembus, sisi }: { url: string; a?: string; b?: s
 }
 
 function Unggah({ label, jenis, nilai, sedang, keterangan, onBerkas, onHapus }: {
-  label: string; jenis: 'logo' | 'latar'; nilai: string; sedang: boolean;
+  label: string; jenis: 'logo' | 'latar' | 'latarDasbor'; nilai: string; sedang: boolean;
   keterangan: string; onBerkas: (f: File) => void; onHapus: () => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
-  const bawaan = jenis === 'latar' && nilai === MEREK_BAWAAN.gambarLatar;
+  const bawaan = (jenis === 'latar' && nilai === MEREK_BAWAAN.gambarLatar)
+    || (jenis === 'latarDasbor' && nilai === MEREK_BAWAAN.gambarLatarDasbor);
   return (
     <div>
       <Label>{label}</Label>
