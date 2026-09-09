@@ -4,39 +4,30 @@ import { getAdminClient } from '@/lib/supabase-admin';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * POST /api/auth/register - pendaftaran akun mandiri, dikerjakan di server.
- *
- * KENAPA PINDAH KE SINI
- *
- * Sebelumnya form registrasi melakukan dua hal langsung dari peramban:
- * memeriksa apakah username sudah dipakai, lalu menulis baris users baru.
- * Keduanya menuntut tabel `users` terbuka untuk pengunjung yang belum login -
- * dan "terbuka" itu berlaku untuk SELURUH tabel, bukan hanya untuk pemeriksaan
- * satu username.
- *
- * Akibatnya, siapa pun yang memegang anon key (yang ikut terkirim ke peramban
- * setiap kali halaman dibuka) bisa membaca seluruh daftar 74 akun beserta nama
- * lengkap, username, dan nomor teleponnya. Username di platform ini adalah
- * pengenal login, jadi daftar itu sekaligus menyerahkan daftar sasaran yang
- * lengkap.
- *
- * Dengan pendaftaran dikerjakan di sini memakai service role, tabel `users`
- * tidak perlu terbuka lagi untuk pengunjung anonim.
- *
- * BATAS YANG DIJAGA DI SINI
- *
- * Route ini memang harus bisa dipanggil tanpa sesi. Karena itu akun yang
- * lahir darinya SELALU dipaksa berbentuk pendaftaran menunggu persetujuan:
- * role 'guest', team_type 'Pending Approval', tanpa satu pun menu. Nilai yang
- * dikirim peramban untuk ketiga hal itu diabaikan, tidak dipercaya.
- */
-
-/** Umur minimum password. Sama dengan yang dijaga set-credential. */
 const MIN_PASSWORD = 6;
+
+/** team_type khusus untuk akun hasil bypass - sengaja beda dari 'Pending
+ *  Approval' (supaya lolos gerbang login) dan gampang difilter/diaudit admin
+ *  di Admin Panel > User Management. */
+const BYPASS_TEAM_TYPE = 'Learning Center - Bypass Event';
 
 function bersih(v: unknown): string {
   return typeof v === 'string' ? v.trim() : '';
+}
+
+/** Menentukan apakah pendaftaran ini berhak lolos tanpa approval admin. */
+function bypassAktif(kodeDikirim: string): boolean {
+  const kodeRahasia = process.env.REGISTER_BYPASS_CODE || '';
+  const saklarNyala = process.env.REGISTER_BYPASS_ENABLED === 'true';
+  if (!saklarNyala || !kodeRahasia || !kodeDikirim) return false;
+  if (kodeDikirim !== kodeRahasia) return false;
+
+  const batasWaktu = process.env.REGISTER_BYPASS_UNTIL;
+  if (batasWaktu) {
+    const batas = new Date(batasWaktu);
+    if (!Number.isNaN(batas.getTime()) && new Date() > batas) return false;
+  }
+  return true;
 }
 
 export async function POST(request: NextRequest) {
@@ -49,6 +40,8 @@ export async function POST(request: NextRequest) {
     const sales_division = bersih(body.sales_division) || null;
     const jabatan = bersih(body.jabatan) || null;
     const phone_number = bersih(body.phone_number) || null;
+    const event_code = bersih(body.event_code);
+    const bypass = bypassAktif(event_code);
 
     if (!full_name || !username) {
       return NextResponse.json({ error: 'Nama dan email wajib diisi.' }, { status: 400 });
@@ -75,18 +68,20 @@ export async function POST(request: NextRequest) {
 
     // role, team_type, dan allowed_menus TIDAK diambil dari permintaan.
     // Route ini terbuka tanpa sesi; menerima ketiganya dari peramban berarti
-    // menyerahkan pembuatan akun admin kepada siapa pun.
+    // menyerahkan pembuatan akun admin kepada siapa pun. Ini berlaku juga
+    // untuk jalur bypass: yang berubah cuma team_type & allowed_menus, role
+    // tetap dipaksa 'guest' apa pun hasil bypassAktif().
     const { data: baru, error: galatUser } = await supabase
       .from('users')
       .insert([{
         full_name,
         username,
         role: 'guest',
-        team_type: 'Pending Approval',
+        team_type: bypass ? BYPASS_TEAM_TYPE : 'Pending Approval',
         sales_division,
         jabatan,
         phone_number,
-        allowed_menus: [],
+        allowed_menus: bypass ? ['learning-center'] : [],
       }])
       .select('id')
       .single();
@@ -133,8 +128,12 @@ export async function POST(request: NextRequest) {
         await supabase.from('notifications').insert(tujuan.map(a => ({
           user_id: a.id,
           type: 'user',
-          title: '👥 User baru menunggu approval',
-          body: `${full_name} baru mendaftar dan menunggu aktivasi akun.`,
+          title: bypass
+            ? '🎓 Akun event LC auto-aktif (bypass)'
+            : '👥 User baru menunggu approval',
+          body: bypass
+            ? `${full_name} mendaftar lewat kode event dan langsung aktif (akses: Learning Center saja). Tidak perlu approval, ini info saja.`
+            : `${full_name} baru mendaftar dan menunggu aktivasi akun.`,
           // M16 (docs/UX-WORKFLOW-AUDIT.md): dulu mengarah ke '/dashboard' generik -
           // admin harus cari sendiri tab Admin Panel > User Management. "admin:<tab>"
           // dikenali khusus oleh handleNotifNavigate di app/dashboard/page.tsx.
@@ -150,7 +149,7 @@ export async function POST(request: NextRequest) {
       // di Admin Panel. Gagal mengabari bukan alasan menggagalkan pendaftaran.
     }
 
-    return NextResponse.json({ success: true, id: baru.id });
+    return NextResponse.json({ success: true, id: baru.id, bypass });
   } catch {
     return NextResponse.json({ error: 'Pendaftaran gagal.' }, { status: 500 });
   }
