@@ -83,9 +83,13 @@ export default function Dashboard() {
     sales_division: '',
     jabatan: '',
     phone_number: '',
+    event_code: '',
   });
   const [registerLoading, setRegisterLoading] = useState(false);
   const [registerSuccess, setRegisterSuccess] = useState(false);
+  // true kalau pendaftaran ini lolos lewat kode event (lihat REGISTER_BYPASS_*
+  // di app/api/auth/register/route.ts) dan langsung aktif tanpa approval admin.
+  const [registerBypass, setRegisterBypass] = useState(false);
   // Forgot password flow
   const [showForgot, setShowForgot] = useState(false);
   const [forgotStep, setForgotStep] = useState<'request' | 'verify'>('request');
@@ -124,6 +128,7 @@ export default function Dashboard() {
       setShowRegister(false);
       setRegisterErr('');
       setRegisterSuccess(false);
+      setRegisterBypass(false);
       setAnimKartu('masuk');
       setPutaranAnim((n) => n + 1);
     }
@@ -390,6 +395,7 @@ export default function Dashboard() {
           sales_division: requestedDivision,
           jabatan: registerForm.jabatan.trim() || null,
           phone_number: registerForm.phone_number.trim() || null,
+          event_code: registerForm.event_code.trim() || null,
         }),
       });
       const hasilDaftar = await daftarRes.json().catch(() => ({}));
@@ -401,8 +407,11 @@ export default function Dashboard() {
       // Pemberitahuan ke admin ikut dikerjakan /api/auth/register - versi
       // lamanya di sini harus membaca tabel users tanpa token untuk mencari
       // siapa adminnya, persis pembacaan yang sedang ditutup.
+      // `bypass` datang dari server (lihat REGISTER_BYPASS_* di route.ts) -
+      // peramban cuma menampilkan hasilnya, tidak pernah menentukan sendiri.
+      setRegisterBypass(Boolean(hasilDaftar.bypass));
       setRegisterSuccess(true);
-      setRegisterForm({ full_name: '', username: '', password: '', confirm_password: '', divisi: '', pts_type: '', sales_division: '', jabatan: '', phone_number: '' });
+      setRegisterForm({ full_name: '', username: '', password: '', confirm_password: '', divisi: '', pts_type: '', sales_division: '', jabatan: '', phone_number: '', event_code: '' });
     } catch (err: any) {
       setRegisterErr('Registrasi gagal: ' + err.message);
     }
@@ -899,9 +908,13 @@ export default function Dashboard() {
               <div>
                 {registerSuccess ? (
                   <div className="text-center py-6">
-                    <div className="text-5xl mb-4">✅</div>
+                    <div className="text-5xl mb-4">{registerBypass ? '🎓' : '✅'}</div>
                     <h3 className="font-bold text-slate-800 text-lg mb-2">Pendaftaran Berhasil!</h3>
-                    <p className="text-slate-500 text-sm mb-4">Akun kamu akan diverifikasi oleh admin. Kamu akan dihubungi setelah akun diaktifkan.</p>
+                    <p className="text-slate-500 text-sm mb-4">
+                      {registerBypass
+                        ? 'Akun kamu sudah langsung aktif untuk Learning Center - tidak perlu menunggu admin. Silakan login sekarang.'
+                        : 'Akun kamu akan diverifikasi oleh admin. Kamu akan dihubungi setelah akun diaktifkan.'}
+                    </p>
                     <button onClick={() => pindahForm(false)} className="text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all hover:opacity-90" style={{ background: merek.warnaUtama }}>Kembali ke Login</button>
                   </div>
                 ) : (
@@ -978,6 +991,14 @@ export default function Dashboard() {
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="08xx..." />
                         </div>
                       </div>
+                    </div>
+                    {/* Kode Acara: opsional, hanya dipakai untuk onboarding massal
+                        (mis. peserta Learning Center) yang dibagikan panitia. Kosong
+                        = alur normal, tetap menunggu approval admin seperti biasa. */}
+                    <div>
+                      <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Kode Acara (opsional)</label>
+                      <input type="text" value={registerForm.event_code} onChange={e => setRegisterForm({ ...registerForm, event_code: e.target.value })}
+                        className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Isi hanya jika diberikan panitia event" />
                     </div>
                     {registerErr && (
                       <div className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200">{registerErr}</div>
