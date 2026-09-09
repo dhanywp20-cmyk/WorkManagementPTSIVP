@@ -56,7 +56,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
       let userMap: Record<string, any> = {};
       if (userIds.length > 0) {
         const { data: us } = await supabase
-          .from('users').select('id, full_name, username, jabatan, role').in('id', userIds);
+          .from('users').select('id, full_name, username, jabatan, role, sales_division').in('id', userIds);
         (us ?? []).forEach((u: any) => { userMap[u.id] = u; });
       }
       if (dibatalkan) return;
@@ -136,6 +136,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Benar</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Skor</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Status</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Flags</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Waktu</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Tanggal</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Detail</th>
@@ -143,7 +144,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filtered.length === 0 && (
-                    <tr><td colSpan={8} className="text-center py-10 text-slate-400">Tidak ada peserta yang cocok</td></tr>
+                    <tr><td colSpan={9} className="text-center py-10 text-slate-400">Tidak ada peserta yang cocok</td></tr>
                   )}
                   {filtered.map((a: any, i: number) => (
                     <tr key={a.id} className="stagger-item hover:bg-slate-50 transition-colors">
@@ -152,7 +153,14 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                           {i < 3 ? ['🥇','🥈','🥉'][i] : i+1}
                         </span>
                       </td>
-                      <td className="px-5 py-3.5 font-semibold text-slate-800">{a.users?.full_name ?? <span className="text-slate-400 italic font-normal">(nama tidak termuat)</span>}</td>
+                      <td className="px-5 py-3.5 font-semibold text-slate-800">
+                        {a.users?.full_name ?? <span className="text-slate-400 italic font-normal">(nama tidak termuat)</span>}
+                        {a.users?.sales_division && (
+                          <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 align-middle">
+                            {a.users.sales_division}
+                          </span>
+                        )}
+                      </td>
                       <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
                       <td className="px-5 py-3.5 text-center">
                         {a.grading_status === 'pending_review'
@@ -161,6 +169,32 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                       </td>
                       <td className="px-5 py-3.5 text-center">
                         <GradingStatusBadge attempt={a} />
+                      </td>
+                      <td className="px-5 py-3.5 text-center">
+                        {(() => {
+                          // Sama seperti deteksi di AdminDashboard/AnalyticsPage:
+                          // tab_switches (pindah tab saat quiz) + pengerjaan
+                          // tidak wajar cepat (< 5 detik/soal, min. 5 soal).
+                          const tabSw = a.tab_switches ?? 0;
+                          const tq = a.total_questions ?? 0;
+                          const ts = a.time_taken_sec ?? Infinity;
+                          const isFast = tq >= 5 && ts < tq * 5;
+                          if (!tabSw && !isFast) return <span className="text-slate-300 text-sm">—</span>;
+                          return (
+                            <div className="flex items-center justify-center gap-1 flex-wrap">
+                              {isFast && (
+                                <span className="text-[11px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                  🚨 {Math.round(ts)}s
+                                </span>
+                              )}
+                              {tabSw > 0 && (
+                                <span className="text-[11px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                  ⚠️ {tabSw}× tab
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.time_taken_sec ? `${Math.floor(a.time_taken_sec/60)}m ${a.time_taken_sec%60}s` : '—'}</td>
                       <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
