@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { SALES_MENU_KEYS } from '@/app/dashboard/_components/shared';
+import { teamTypeDariLabelPTS } from '@/lib/kelompok';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +30,26 @@ function bypassAktif(kodeDikirim: string): boolean {
     if (!Number.isNaN(batas.getTime()) && new Date() > batas) return false;
   }
   return true;
+}
+
+/**
+ * Menu default untuk pendaftaran normal (non-bypass), berdasarkan divisi.
+ *
+ * `sales_division` di sini nilainya bisa: nama divisi Sales polos (mis.
+ * 'IVP'), 'Marketing:<sub>' untuk Marketing, atau label kelompok PTS (mis.
+ * 'PTS IVP') untuk divisi PTS - lihat handleRegister di app/dashboard/page.tsx.
+ *
+ * Sales & Marketing dapat SALES_MENU_KEYS langsung saat daftar (sama seperti
+ * preset "Tampilan Dashboard: Seperti Sales" di Admin Panel > Kelompok) -
+ * supaya tidak nyangkut kosong menunggu admin toggle satu-satu tiap kali ada
+ * pendaftar baru. PTS tetap `[]`: perannya jadi 'team' saat admin approve
+ * (lihat handleApproveUser), bukan 'guest', jadi preset menu Sales tidak
+ * relevan untuknya - admin yang menentukan saat approve seperti biasa.
+ */
+function menuDefaultPendaftaran(salesDivision: string | null): string[] {
+  if (!salesDivision) return [];
+  if (teamTypeDariLabelPTS(salesDivision)) return [];
+  return SALES_MENU_KEYS;
 }
 
 export async function POST(request: NextRequest) {
@@ -81,7 +103,7 @@ export async function POST(request: NextRequest) {
         sales_division,
         jabatan,
         phone_number,
-        allowed_menus: bypass ? ['learning-center'] : [],
+        allowed_menus: bypass ? ['learning-center'] : menuDefaultPendaftaran(sales_division),
       }])
       .select('id')
       .single();
