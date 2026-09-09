@@ -27,7 +27,7 @@ export function AdminDashboard({ user }: { user: User }) {
   const [search, setSearch] = useState('');
 
   const [overviewStats, setOverviewStats] = useState({
-    totalUsers: 0, participants: 0,
+    totalUsers: 0, participants: 0, mulai: 0,
     passCount: 0, failCount: 0,
     scoreGood: 0, scoreMid: 0, scoreLow: 0,
     submitted: 0, abandoned: 0,
@@ -51,12 +51,18 @@ export function AdminDashboard({ user }: { user: User }) {
   useEffect(() => {
     const load = async () => {
       // Round 1: counts
-      const [mat, ses, att, totalUsersRes, abandonedRes] = await Promise.all([
+      const [mat, ses, att, totalUsersRes, abandonedRes, pemulaiRes] = await Promise.all([
         supabase.from('lc_materials').select('id', { count: 'exact', head: true }),
         supabase.from('lc_quiz_sessions').select('id', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('lc_quiz_attempts').select('id', { count: 'exact', head: true }),
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('lc_quiz_attempts').select('id', { count: 'exact', head: true }).eq('is_submitted', false),
+        //  Siapa saja yang sudah MEMBUKA quiz - submit atau belum. Barisnya
+        //  dibuat begitu quiz dimulai, jadi ini yang menjawab "berapa orang
+        //  sudah mengaksesnya", pertanyaan yang berbeda dari "berapa yang
+        //  selesai". Diambil barisnya (bukan count) karena satu orang bisa
+        //  punya banyak attempt dan yang dihitung adalah ORANG.
+        supabase.from('lc_quiz_attempts').select('user_id'),
       ]);
       const { data: teamData } = await supabase.from('lc_quiz_attempts').select('user_id').eq('is_submitted', true);
       const uniqueTeam = new Set((teamData ?? []).map((a: any) => a.user_id)).size;
@@ -99,9 +105,11 @@ export function AdminDashboard({ user }: { user: User }) {
       const scoreGood    = allAtt.filter((a: any) => (a.score ?? 0) >= 80).length;
       const scoreMid     = allAtt.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
       const scoreLow     = allAtt.filter((a: any) => (a.score ?? 0) < 60).length;
+      const mulai = new Set(((pemulaiRes.data ?? []) as { user_id: string }[]).map(a => a.user_id)).size;
       setOverviewStats({
         totalUsers: totalUsersRes.count ?? 0,
         participants,
+        mulai,
         passCount,
         failCount: allAtt.length - passCount,
         scoreGood, scoreMid, scoreLow,
@@ -271,13 +279,18 @@ export function AdminDashboard({ user }: { user: User }) {
 
           {/* Left: Analytics Overview mini pies */}
           {overviewStats.submitted > 0 && (() => {
-            const partPct   = overviewStats.totalUsers > 0 ? Math.round(overviewStats.participants / overviewStats.totalUsers * 100) : 0;
+            const partPct   = overviewStats.totalUsers > 0 ? Math.round(overviewStats.mulai / overviewStats.totalUsers * 100) : 0;
             const passPct   = overviewStats.submitted > 0 ? Math.round(overviewStats.passCount / overviewStats.submitted * 100) : 0;
             const compTotal = overviewStats.submitted + overviewStats.abandoned;
             const compPct   = compTotal > 0 ? Math.round(overviewStats.submitted / compTotal * 100) : 0;
             const miniCards = [
-              { title: 'Partisipasi Tim',  sub: `${overviewStats.participants} dari ${overviewStats.totalUsers} anggota`, label: `${partPct}%`,
-                segments: [{ value: overviewStats.participants, color: '#6366f1' }, { value: Math.max(overviewStats.totalUsers - overviewStats.participants, 0), color: '#e0e7ff' }] },
+              /*  Yang diukur di sini SUDAH MENGAKSES, bukan sudah selesai.
+                  Dua-duanya disebut di sub supaya selisihnya - orang yang
+                  membuka quiz lalu berhenti di tengah - terbaca langsung.  */
+              { title: 'Sudah Akses Quiz',
+                sub: `${overviewStats.mulai} mulai · ${overviewStats.participants} selesai · dari ${overviewStats.totalUsers} akun`,
+                label: `${partPct}%`,
+                segments: [{ value: overviewStats.mulai, color: '#6366f1' }, { value: Math.max(overviewStats.totalUsers - overviewStats.mulai, 0), color: '#e0e7ff' }] },
               { title: 'Pass Rate Global', sub: `${overviewStats.passCount} lulus · ${overviewStats.failCount} gagal`, label: `${passPct}%`,
                 segments: [{ value: overviewStats.passCount, color: '#10b981' }, { value: overviewStats.failCount, color: '#f43f5e' }] },
               { title: 'Distribusi Nilai', sub: `≥80: ${overviewStats.scoreGood} · 60–79: ${overviewStats.scoreMid} · <60: ${overviewStats.scoreLow}`, label: `${overviewStats.submitted}`,

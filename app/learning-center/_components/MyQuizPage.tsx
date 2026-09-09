@@ -44,6 +44,42 @@ function terjemahkanGalatUnggah(pesan?: string): string {
  */
 type QuizQuestion = Omit<Question, 'correct_answer' | 'model_answer'>;
 
+/**
+ * Pengacak urutan soal - Fisher-Yates dengan benih (seed), bukan Math.random().
+ *
+ * Benihnya `attempt.id`, jadi urutannya BERBEDA antar peserta tapi SAMA setiap
+ * kali attempt yang sama dibuka lagi. Itu bukan detail kosmetik: peserta boleh
+ * menutup tab, kehabisan baterai, atau memuat ulang halaman di tengah quiz
+ * berbatas waktu. Dengan Math.random() urutannya akan disusun ulang saat itu,
+ * sementara jawaban tersimpan per question_id - nomor 3 yang tadi dijawab
+ * mendadak jadi soal lain, dan papan navigasi menunjuk ke tempat yang keliru.
+ *
+ * Ini pengacakan tampilan, bukan pengamanan: penilaian tetap per question_id
+ * di server (/api/learning-center/submit-quiz), tidak bergantung urutan.
+ */
+function acakDenganBenih<T>(daftar: T[], benih: string): T[] {
+  // Hash string -> uint32 (FNV-1a), lalu dipakai sebagai state PRNG mulberry32.
+  let h = 2166136261;
+  for (let i = 0; i < benih.length; i++) {
+    h ^= benih.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  let state = h >>> 0;
+  const acak = () => {
+    state = (state + 0x6D2B79F5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const hasil = [...daftar];
+  for (let i = hasil.length - 1; i > 0; i--) {
+    const j = Math.floor(acak() * (i + 1));
+    [hasil[i], hasil[j]] = [hasil[j], hasil[i]];
+  }
+  return hasil;
+}
+
 function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   session: QuizSession; user: User; attempt: QuizAttempt; onDone: () => void;
   /** Minor (docs/UX-WORKFLOW-AUDIT.md): dulu tidak ada CTA langsung "Coba Lagi"
@@ -108,7 +144,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
         .select('id, material_id, materi_name, question, option_a, option_b, option_c, option_d, difficulty, batch_name, created_at, urutan, question_type, answer_format')
         .in('id', session.question_ids);
       const ordered = session.question_ids.map(id => data?.find((q: any) => q.id === id)).filter(Boolean) as QuizQuestion[];
-      setQuestions(ordered);
+      setQuestions(session.acak_soal ? acakDenganBenih(ordered, attempt.id) : ordered);
     };
     load();
     const loadAnswers = async () => {
@@ -627,12 +663,57 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                 <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 Sebelumnya
               </button>
-              <button onClick={() => setCurrent(p => Math.min(questions.length-1, p+1))} disabled={current === questions.length-1}
-                className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-900 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm">
-                Berikutnya
-                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-              </button>
+              {/*
+                Di soal TERAKHIR, "Berikutnya" berganti jadi Submit.
+
+                Sebelumnya Submit hanya ada di bilah atas. Saat peserta selesai
+                menjawab, matanya ada di bawah - di tombol Berikutnya yang baru
+                saja ditekan berkali-kali - dan yang ditemukannya di sana cuma
+                tombol mati. Tombol Submit-nya tidak hilang, tapi tidak terlihat
+                justru pada saat ia dibutuhkan; keduanya tetap ada supaya
+                kebiasaan lama tidak patah.
+              */}
+              {current === questions.length - 1 ? (
+                <button onClick={() => handleSubmit(false)}
+                  className={`flex items-center gap-2 px-5 py-2.5 text-white text-sm font-bold rounded-xl transition-all shadow-sm ${
+                    answered === questions.length
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-slate-800 hover:bg-slate-900'
+                  }`}>
+                  {answered === questions.length ? '✓ Submit Quiz' : `Submit (${answered}/${questions.length})`}
+                </button>
+              ) : (
+                <button onClick={() => setCurrent(p => Math.min(questions.length-1, p+1))}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-900 transition-all shadow-sm">
+                  Berikutnya
+                  <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+              )}
             </div>
+            {/*
+              Sisa soal yang belum dijawab, tepat di atas tombol - supaya
+              "Submit (7/10)" tidak cuma memberi angka tapi juga jalan
+              menujunya. Tanpa ini peserta harus menebak nomor mana yang
+              tertinggal dari papan navigasi di sisi kanan, yang di ponsel
+              malah tidak tampil sama sekali.
+            */}
+            {current === questions.length - 1 && answered < questions.length && (
+              <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                <p className="text-xs font-bold text-amber-800 mb-2">
+                  ⚠️ Masih ada {questions.length - answered} soal yang belum dijawab
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {questions.map((qq, i) =>
+                    (answers[qq.id] ?? savedAnswers[qq.id]) ? null : (
+                      <button key={qq.id} onClick={() => setCurrent(i)}
+                        className="w-8 h-8 rounded-lg bg-white border border-amber-300 text-amber-700 text-xs font-bold hover:bg-amber-100 transition-all">
+                        {i + 1}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

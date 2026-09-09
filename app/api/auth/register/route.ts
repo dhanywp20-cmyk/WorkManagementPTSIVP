@@ -6,10 +6,59 @@ export const dynamic = 'force-dynamic';
 
 const MIN_PASSWORD = 6;
 
-/** team_type khusus untuk akun hasil bypass - sengaja beda dari 'Pending
- *  Approval' (supaya lolos gerbang login) dan gampang difilter/diaudit admin
- *  di Admin Panel > User Management. */
-const BYPASS_TEAM_TYPE = 'Learning Center - Bypass Event';
+/** Menu yang didapat akun hasil pendaftaran lewat kode acara. */
+const MENU_BYPASS = ['learning-center', 'reminder-schedule', 'ticket-troubleshooting', 'request-design-project', 'form-bast'];
+
+/**
+ * team_type untuk akun hasil kode acara.
+ *
+ * DULU kolom ini dipakai sebagai penanda bypass ('Learning Center - Bypass
+ * Event'). Akibatnya divisi/tim yang DIPILIH pendaftar ikut tertimpa dan tidak
+ * pernah terpasang: akun bypass memang tidak pernah melewati approval admin -
+ * langkah yang biasanya mengisi team_type - jadi tidak ada satu pun titik yang
+ * memperbaikinya belakangan. Yang terlihat oleh admin: akun yang divisinya
+ * seolah tidak tersimpan.
+ *
+ * Sekarang penandanya punya kolom sendiri (users.daftar_via_event), dan
+ * team_type diisi nilai sungguhan sesuai pilihan pendaftar - memakai konvensi
+ * yang sama dengan akun yang disetujui manual.
+ */
+async function teamTypeDariPilihan(
+  supabase: ReturnType<typeof getAdminClient>, divisi: string, ptsType: string,
+): Promise<string> {
+  if (divisi === 'Marketing') return 'Marketing';
+  if (divisi !== 'PTS' || !ptsType) return 'Guest';
+
+  /*
+    Label PTS ('PTS IVP') dipetakan ke team_type ('Team PTS IVP') dengan
+    membaca app_settings.kelompok - SUMBER YANG SAMA dengan yang dipakai
+    formulirnya, jadi kelompok yang baru ditambahkan admin langsung ikut
+    tanpa deploy.
+
+    Dibaca di sini lewat SQL, bukan dengan mengimpor lib/kelompok.ts: modul itu
+    modul klien (memakai hook React dan klien Supabase peramban) dan cache-nya
+    diisi ASINKRON di peramban - di server cache itu selalu kosong, jadi
+    hasilnya akan selalu null tanpa satu pun pesan galat.
+
+    Pilihan yang tidak dikenal jatuh ke 'Guest': akun tetap bisa masuk dan
+    tetap terdata, tinggal dirapikan admin - lebih baik daripada menolak
+    pendaftaran peserta acara di depan mejanya.
+  */
+  try {
+    const { data } = await supabase.from('app_settings')
+      .select('value').eq('key', 'kelompok').maybeSingle();
+    const mentah = (data as { value?: unknown } | null)?.value;
+    //  Nilainya disimpan sebagai STRING JSON (jsonb berisi string), jadi perlu
+    //  satu lapis parse lagi sebelum jadi larik.
+    const isi = typeof mentah === 'string' ? JSON.parse(mentah) : mentah;
+    if (Array.isArray(isi)) {
+      const cocok = (isi as { nama?: unknown; label?: unknown }[])
+        .find(k => typeof k?.label === 'string' && k.label === ptsType);
+      if (cocok && typeof cocok.nama === 'string' && cocok.nama.trim()) return cocok.nama;
+    }
+  } catch { /* pengaturan belum ada/rusak - jatuh ke bawaan */ }
+  return 'Guest';
+}
 
 function bersih(v: unknown): string {
   return typeof v === 'string' ? v.trim() : '';
@@ -53,6 +102,10 @@ export async function POST(request: NextRequest) {
     const jabatan = bersih(body.jabatan) || null;
     const phone_number = bersih(body.phone_number) || null;
     const event_code = bersih(body.event_code);
+    //  Dipakai HANYA untuk menyusun team_type di jalur kode acara. role tetap
+    //  tidak pernah diambil dari permintaan - lihat catatan di bawah.
+    const divisi = bersih(body.divisi);
+    const pts_type = bersih(body.pts_type);
 
     if (!full_name || !username) {
       return NextResponse.json({ error: 'Nama dan email wajib diisi.' }, { status: 400 });
@@ -100,11 +153,14 @@ export async function POST(request: NextRequest) {
         full_name,
         username,
         role: 'guest',
-        team_type: bypass ? BYPASS_TEAM_TYPE : 'Pending Approval',
+        team_type: bypass ? await teamTypeDariPilihan(supabase, divisi, pts_type) : 'Pending Approval',
+        //  Penanda akun acara ada di kolomnya sendiri, bukan menumpang
+        //  team_type - lihat teamTypeDariPilihan di atas.
+        daftar_via_event: bypass,
         sales_division,
         jabatan,
         phone_number,
-        allowed_menus: bypass ? ['learning-center', 'reminder-schedule', 'ticket-troubleshooting', 'request-design-project', 'form-bast'] : [],
+        allowed_menus: bypass ? MENU_BYPASS : [],
       }])
       .select('id')
       .single();
@@ -155,7 +211,7 @@ export async function POST(request: NextRequest) {
             ? '🎓 Akun event LC auto-aktif (bypass)'
             : '👥 User baru menunggu approval',
           body: bypass
-            ? `${full_name} mendaftar lewat kode event dan langsung aktif (akses: Learning Center saja). Tidak perlu approval, ini info saja.`
+            ? `${full_name} mendaftar lewat kode event dan langsung aktif (divisi: ${sales_division ?? '-'}). Tidak perlu approval, ini info saja.`
             : `${full_name} baru mendaftar dan menunggu aktivasi akun.`,
           // M16 (docs/UX-WORKFLOW-AUDIT.md): dulu mengarah ke '/dashboard' generik -
           // admin harus cari sendiri tab Admin Panel > User Management. "admin:<tab>"

@@ -33,6 +33,7 @@ export interface BarisAttempt {
  * pun.
  */
 export interface BarisPapan {
+  /** Peringkat sebenarnya di dalam kelompok. 0 = belum punya nilai terhitung. */
   rank: number;
   nama: string;
   quiz: number;
@@ -41,6 +42,17 @@ export interface BarisPapan {
   flags: number;
   /** true = baris milik pemanggil sendiri; hanya baris ini yang bernama asli. */
   aku: boolean;
+  /**
+   * Baris pemanggil yang DISISIPKAN karena peringkatnya di luar papan teratas.
+   * Dipakai tampilan untuk memberi pemisah, supaya "#47" tidak terbaca seolah
+   * menempel persis di bawah "#10".
+   */
+  disisipkan?: boolean;
+  /**
+   * Pemanggil belum punya nilai yang bisa diperingkat - belum pernah submit,
+   * atau semua jawabannya masih menunggu penilaian essay.
+   */
+  belumDinilai?: boolean;
 }
 
 export interface HasilPeringkat {
@@ -53,6 +65,9 @@ export interface HasilPeringkat {
   /** Papan peringkat sekelompok (role yang sama), nama peserta lain sudah disamarkan. */
   papan: BarisPapan[];
 }
+
+/** Berapa baris teratas yang dikirim ke papan. Baris pemanggil selalu ikut di luar ini. */
+export const PAPAN_TERATAS = 20;
 
 /**
  * Hitung peringkat SATU pemanggil dari seluruh baris attempt yang sudah
@@ -111,7 +126,7 @@ export function hitungPeringkat(
     pemanggil sendiri tetap bernama asli, karena itu memang datanya sendiri
     dan ia harus bisa menemukan dirinya di papan.
   */
-  const papan: BarisPapan[] = sekelompok.map((p, i) => {
+  const jadiBaris = (p: typeof sekelompok[number], i: number): BarisPapan => {
     const aku = p.userId === caller.id;
     return {
       rank: i + 1,
@@ -122,7 +137,33 @@ export function hitungPeringkat(
       flags: p.flags,
       aku,
     };
-  });
+  };
+
+  /*
+    Papan dipotong PAPAN_TERATAS baris - TAPI baris pemanggil selalu ikut.
+
+    Dulu seluruh kelompok dikirim tanpa batas. Untuk kelompok kecil itu tidak
+    terasa, tapi begitu satu acara menambah puluhan peserta sekaligus, papannya
+    jadi daftar panjang berisi "Peserta #38" yang tidak memberi tahu apa pun -
+    sementara satu-satunya baris yang dicari orang, barisnya sendiri, terkubur
+    di tengahnya.
+
+    Dan bila pemanggil belum punya nilai terhitung (belum pernah submit, atau
+    semua essay-nya masih menunggu dinilai) ia dulu TIDAK PUNYA BARIS SAMA
+    SEKALI: papan tampil berisi orang lain semua, tanpa satu pun keterangan
+    kenapa dirinya tidak ada di sana. Sekarang barisnya tetap muncul, ditandai
+    belum dinilai.
+  */
+  const papan: BarisPapan[] = sekelompok.slice(0, PAPAN_TERATAS).map(jadiBaris);
+
+  if (globalIdx >= PAPAN_TERATAS) {
+    papan.push({ ...jadiBaris(sekelompok[globalIdx], globalIdx), disisipkan: true });
+  } else if (globalIdx < 0) {
+    papan.push({
+      rank: 0, nama: 'Kamu', quiz: 0, avg: 0, lulus: 0, flags: 0,
+      aku: true, disisipkan: true, belumDinilai: true,
+    });
+  }
 
   return { role: myRole, globalRank, globalTotal, divisi: caller.sales_division, divisiRank, divisiTotal, papan };
 }

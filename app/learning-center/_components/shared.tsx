@@ -83,6 +83,13 @@ export interface QuizSession {
   close_at: string | null;
   // Essay addition
   session_type?: 'abcd' | 'essay';
+  /**
+   * Urutan soal diacak per peserta (diatur admin per sesi).
+   *
+   * Opsional di tipe ini supaya sesi yang diambil sebelum migrasi kolomnya
+   * jalan tidak menjadi galat tipe; false/undefined = urutan apa adanya.
+   */
+  acak_soal?: boolean;
 }
 
 export interface QuizAttempt {

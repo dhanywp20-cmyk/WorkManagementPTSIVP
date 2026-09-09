@@ -396,6 +396,12 @@ export default function Dashboard() {
           username: username.trim().toLowerCase(),
           password,
           sales_division: requestedDivision,
+          //  Dipakai server HANYA untuk menyusun team_type di jalur kode acara
+          //  (akun itu tidak pernah lewat approval admin, jadi tidak ada
+          //  langkah lain yang mengisinya). role & allowed_menus tetap tidak
+          //  pernah ditentukan peramban - lihat catatan di /api/auth/register.
+          divisi,
+          pts_type,
           jabatan: registerForm.jabatan.trim() || null,
           phone_number: registerForm.phone_number.trim() || null,
           event_code: registerForm.event_code.trim() || null,

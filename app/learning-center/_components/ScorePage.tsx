@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } from './shared';
 import { DonutChart } from '@/components/shared';
 import { UserAnswerReview } from './TeamPage';
-import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
+import { ambilPeringkatSaya, PAPAN_TERATAS, type HasilPeringkat } from '@/lib/learning-rank';
 import { isSalesGuest } from '@/lib/constants';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -216,9 +216,14 @@ export function ScorePage({ user }: { user: User }) {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {papan.map(r => (
-                      <tr key={r.rank} className={`stagger-item ${r.aku ? 'bg-indigo-50 border-l-[3px] border-indigo-400' : 'hover:bg-slate-50'}`}>
+                      <tr key={r.aku ? 'aku' : r.rank}
+                        className={`stagger-item ${r.aku ? 'bg-indigo-50 border-l-[3px] border-indigo-400' : 'hover:bg-slate-50'} ${
+                          /* Pemisah tegas: baris ini melompati peringkat di antaranya,
+                             jadi ia tidak boleh terbaca seolah menempel di bawah baris atasnya. */
+                          r.disisipkan ? 'border-t-2 border-dashed border-indigo-300' : ''
+                        }`}>
                         <td className={`px-3 py-3 text-center font-black text-sm ${r.aku ? 'text-indigo-600' : 'text-slate-300'}`}>
-                          {r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : r.rank}
+                          {r.belumDinilai ? '—' : r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : r.rank}
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-2">
@@ -226,6 +231,9 @@ export function ScorePage({ user }: { user: User }) {
                               <>
                                 <span className="font-semibold text-sm text-indigo-700">{r.nama}</span>
                                 <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full border border-indigo-200">KAMU</span>
+                                {r.belumDinilai && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full border border-amber-200">BELUM DINILAI</span>
+                                )}
                               </>
                             ) : (
                               <span className="font-semibold text-sm text-slate-400 select-none" style={{ filter: 'blur(4px)', userSelect: 'none' }}>
@@ -254,7 +262,8 @@ export function ScorePage({ user }: { user: User }) {
                 </table>
               </div>
               <p className="text-[11px] text-slate-400 text-center leading-relaxed px-2 mt-2">
-                Nama peserta lain disamarkan di server — yang terkirim ke halaman ini hanya angkanya, tanpa identitas siapa pun.
+                Menampilkan {PAPAN_TERATAS} besar — barismu selalu ikut ditampilkan walau di luar itu.
+                Nama peserta lain disamarkan di server; yang terkirim ke halaman ini hanya angkanya, tanpa identitas siapa pun.
               </p>
             </div>
           </div>

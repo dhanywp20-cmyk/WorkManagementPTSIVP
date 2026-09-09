@@ -14,7 +14,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
   const [form, setForm] = useState({
     session_name: '', material_id: '', batch_filter: '',
     question_count: 10, timer_minutes: 30, passing_grade: 70,
-    allow_retake: true, target_mode: 'all' as 'all' | 'role' | 'user' | 'division',
+    allow_retake: true, acak_soal: false, target_mode: 'all' as 'all' | 'role' | 'user' | 'division',
     target_roles: [] as string[],
     target_user_ids: [] as string[],
     target_divisions: [] as string[],
@@ -47,6 +47,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     timer_minutes : 30,
     passing_grade : 70,
     allow_retake  : true,
+    acak_soal     : false,
     target_mode   : 'all' as 'all' | 'role' | 'user' | 'division',
     target_roles  : [] as string[],
     target_user_ids : [] as string[],
@@ -56,17 +57,44 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
   });
   const [reassigning, setReassigning] = useState(false);
 
+  /**
+   * Berapa orang sudah MEMULAI tiap sesi, dan berapa yang sudah submit.
+   *
+   * "Memulai" = punya baris lc_quiz_attempts (dibuat saat quiz dibuka), submit
+   * atau belum. Dua angka ini beda pertanyaan: yang pertama menjawab "sudah
+   * berapa orang yang mengaksesnya", yang kedua "berapa yang selesai". Tanpa
+   * yang pertama, sesi yang baru dibagikan terlihat sama persis dengan sesi
+   * yang tidak dibuka siapa pun.
+   */
+  const [progresSesi, setProgresSesi] = useState<Record<string, { mulai: number; submit: number }>>({});
+
   const load = useCallback(async () => {
-    const [{ data: s }, { data: m }, { data: q }, { data: u }] = await Promise.all([
+    const [{ data: s }, { data: m }, { data: q }, { data: u }, { data: att }] = await Promise.all([
       supabase.from('lc_quiz_sessions').select('*').order('created_at', { ascending: false }),
       supabase.from('lc_materials').select('*').order('materi_name'),
       supabase.from('lc_questions').select('id, material_id, difficulty, batch_name, question_type'),
       supabase.from('users').select('id, full_name, username, role, jabatan, sales_division').order('full_name'),
+      supabase.from('lc_quiz_attempts').select('quiz_session_id, user_id, is_submitted'),
     ]);
     setSessions((s as QuizSession[]) ?? []);
     setMaterials(m ?? []);
     setQuestions(q ?? []);
     setTeamUsers((u ?? []) as User[]);
+
+    //  Dihitung per ORANG, bukan per baris attempt: satu peserta yang mengulang
+    //  quiz 3x tetap satu orang yang mengaksesnya.
+    type BarisAtt = { quiz_session_id: string; user_id: string; is_submitted: boolean };
+    const mulai: Record<string, Set<string>> = {};
+    const submit: Record<string, Set<string>> = {};
+    for (const a of ((att ?? []) as BarisAtt[])) {
+      (mulai[a.quiz_session_id] ??= new Set()).add(a.user_id);
+      if (a.is_submitted) (submit[a.quiz_session_id] ??= new Set()).add(a.user_id);
+    }
+    const rekap: Record<string, { mulai: number; submit: number }> = {};
+    for (const id of Object.keys(mulai)) {
+      rekap[id] = { mulai: mulai[id].size, submit: submit[id]?.size ?? 0 };
+    }
+    setProgresSesi(rekap);
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -146,7 +174,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       materi_name: form.batch_filter ? `${mat?.materi_name ?? ''} — ${form.batch_filter}` : (mat?.materi_name ?? ''),
       question_ids: shuffled.map(q => q.id), question_count: form.question_count,
       timer_minutes: form.timer_minutes || null, passing_grade: form.passing_grade,
-      allow_retake: form.allow_retake, is_active: true, created_by: user.id,
+      allow_retake: form.allow_retake, acak_soal: form.acak_soal, is_active: true, created_by: user.id,
       target_user_ids: resolvedTargetIds,
       open_at: form.open_at ? new Date(form.open_at).toISOString() : null,
       close_at: form.close_at ? new Date(form.close_at).toISOString() : null,
@@ -156,7 +184,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     setSaving(false);
     if (error) { setDialog({ type: 'error', message: 'Error: ' + error.message }); return; }
     setShowForm(false);
-    setForm({ session_name: '', material_id: '', batch_filter: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, target_mode: 'all', target_roles: [], target_user_ids: [], target_divisions: [], open_at: '', close_at: '', session_type: 'abcd' });
+    setForm({ session_name: '', material_id: '', batch_filter: '', question_count: 10, timer_minutes: 30, passing_grade: 70, allow_retake: true, acak_soal: false, target_mode: 'all', target_roles: [], target_user_ids: [], target_divisions: [], open_at: '', close_at: '', session_type: 'abcd' });
     load();
     setDialog({ type: 'success', message: 'Sesi quiz berhasil dibuat!' });
   };
@@ -189,6 +217,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
           timer_minutes   : session.timer_minutes,
           passing_grade   : session.passing_grade,
           allow_retake    : session.allow_retake,
+          acak_soal       : session.acak_soal ?? false,
           is_active       : true,
           created_by      : user.id,
           target_user_ids : session.target_user_ids ?? null,
@@ -212,6 +241,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       timer_minutes  : session.timer_minutes ?? 30,
       passing_grade  : session.passing_grade,
       allow_retake   : session.allow_retake,
+      acak_soal      : session.acak_soal ?? false,
       target_mode    : 'all',
       target_roles   : [],
       target_user_ids: [],
@@ -259,6 +289,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       timer_minutes   : reassignForm.timer_minutes || null,
       passing_grade   : reassignForm.passing_grade,
       allow_retake    : reassignForm.allow_retake,
+      acak_soal       : reassignForm.acak_soal,
       is_active       : true,
       created_by      : user.id,
       target_user_ids : resolvedTargetIds,
@@ -443,11 +474,19 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
                 <p className="text-[10px] text-slate-400 mt-1">Kosongkan = tidak ada batas waktu</p>
               </div>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={form.allow_retake} onChange={e => setForm(p => ({ ...p, allow_retake: e.target.checked }))}
                     className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-400" />
                   <span className="text-sm font-medium text-slate-700">Boleh Retake</span>
+                </label>
+                {/* Mengacak urutan TAMPIL saja - penilaian tetap per question_id
+                    di server, jadi tidak ada hubungannya dengan kunci jawaban. */}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.acak_soal} onChange={e => setForm(p => ({ ...p, acak_soal: e.target.checked }))}
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400" />
+                  <span className="text-sm font-medium text-slate-700">🔀 Acak Urutan Soal</span>
+                  <span className="text-[10px] text-slate-400">(beda tiap peserta)</span>
                 </label>
               </div>
               <div className="col-span-2">
@@ -658,6 +697,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                       <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'No timer'}</span>
                       <span>🎯 Passing: {s.passing_grade}%</span>
                       <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
+                      {s.acak_soal && <span className="text-indigo-600 font-semibold">🔀 Soal diacak</span>}
                       <span>📅 {fmtDate(s.created_at)}</span>
                     </div>
                     {(s.open_at || s.close_at) && (
@@ -666,6 +706,42 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                         {s.close_at && <span className="text-rose-600 font-semibold">🔒 Tutup: {fmtDT(s.close_at)}</span>}
                       </div>
                     )}
+                    {/*
+                      Berapa orang sudah MEMBUKA quiz ini, dan berapa yang sudah
+                      selesai - dari total sasarannya. Tanpa angka "mulai", sesi
+                      yang baru dibagikan terlihat sama persis dengan sesi yang
+                      tidak dibuka siapa pun.
+                    */}
+                    {(() => {
+                      const p = progresSesi[s.id] ?? { mulai: 0, submit: 0 };
+                      //  Sasaran 'semua' tidak menyimpan daftar id (target_user_ids
+                      //  null), jadi totalnya dihitung dari daftar akun yang ada.
+                      const total = s.target_user_ids?.length ?? teamUsers.length;
+                      const persen = total > 0 ? Math.round((p.mulai / total) * 100) : 0;
+                      return (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold border ${
+                            p.mulai === 0
+                              ? 'bg-slate-100 text-slate-500 border-slate-200'
+                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                          }`}>
+                            👀 {p.mulai} dari {total} sudah mulai{total > 0 && ` (${persen}%)`}
+                          </span>
+                          <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold border ${
+                            p.submit === 0
+                              ? 'bg-slate-100 text-slate-500 border-slate-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          }`}>
+                            ✅ {p.submit} selesai
+                          </span>
+                          {p.mulai > p.submit && (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold border bg-amber-50 text-amber-700 border-amber-200">
+                              ⏳ {p.mulai - p.submit} sedang mengerjakan
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
                     <div className="mt-2">
                       {targetNames === null ? (
                         <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-semibold">🌐 Semua Team</span>
@@ -799,12 +875,18 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                     onChange={e => setReassignForm(p => ({ ...p, passing_grade: +e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 </div>
-                <div className="flex items-end pb-2">
+                <div className="flex items-end pb-2 gap-4">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={reassignForm.allow_retake}
                       onChange={e => setReassignForm(p => ({ ...p, allow_retake: e.target.checked }))}
                       className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-400" />
                     <span className="text-sm font-medium text-slate-700">Retake</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={reassignForm.acak_soal}
+                      onChange={e => setReassignForm(p => ({ ...p, acak_soal: e.target.checked }))}
+                      className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400" />
+                    <span className="text-sm font-medium text-slate-700">🔀 Acak</span>
                   </label>
                 </div>
               </div>
