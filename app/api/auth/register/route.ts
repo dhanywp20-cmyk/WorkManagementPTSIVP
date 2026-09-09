@@ -17,8 +17,8 @@ function bersih(v: unknown): string {
 
 /** Menentukan apakah pendaftaran ini berhak lolos tanpa approval admin. */
 function bypassAktif(kodeDikirim: string): boolean {
-  const kodeRahasia = process.env.REGISTER_BYPASS_CODE || '';
-  const saklarNyala = process.env.REGISTER_BYPASS_ENABLED === 'true';
+  const kodeRahasia = (process.env.REGISTER_BYPASS_CODE || '').trim();
+  const saklarNyala = (process.env.REGISTER_BYPASS_ENABLED || '').trim() === 'true';
   if (!saklarNyala || !kodeRahasia || !kodeDikirim) return false;
   if (kodeDikirim !== kodeRahasia) return false;
 
