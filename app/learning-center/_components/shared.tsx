@@ -192,6 +192,21 @@ export function SearchInput({ value, onChange, placeholder }: { value: string; o
 
 // Gemini helpers
 
+/**
+ * Batas ukuran PDF di sisi client, sebelum sempat di-upload.
+ *
+ * Base64 membengkakkan file biner ~1.33x (4/3). Route /api/ai/generate
+ * sendiri menolak body > 4.000.000 karakter JSON (lihat MAX_BODY_BYTES di
+ * route.ts) - jadi PDF biner harus di bawah ~3MB SUDAH supaya hasil base64
+ * + overhead JSON-nya tidak melewati batas itu. Platform hosting (mis.
+ * limit payload Vercel ~4.5MB) juga bisa menolak duluan SEBELUM request
+ * sampai ke route - dengan balasan teks polos macam "Request Entity Too
+ * Large", bukan JSON. Angka di bawah sengaja dikasih jarak dari kedua
+ * batas itu, supaya penolakannya terjadi di client dengan pesan yang
+ * jelas, bukan JSON.parse yang pecah di tengah jalan.
+ */
+export const MAX_PDF_BYTES = 2.5 * 1024 * 1024; // 2.5 MB biner (~3.4MB setelah base64)
+
 export async function fileToBase64(f: File): Promise<string> {
   return new Promise((res, rej) => {
     const reader = new FileReader();
@@ -212,6 +227,11 @@ export async function generateWithGemini(
    */
   model?: string,
 ): Promise<string> {
+  if (pdfFile && pdfFile.size > MAX_PDF_BYTES) {
+    throw new Error(
+      `PDF terlalu besar (${(pdfFile.size / 1_000_000).toFixed(1)} MB, maks ${(MAX_PDF_BYTES / 1_000_000).toFixed(1)} MB). Coba PDF yang lebih kecil atau kompres dulu.`
+    );
+  }
   const parts: any[] = [];
   if (pdfFile) {
     const base64 = await fileToBase64(pdfFile);
@@ -232,11 +252,28 @@ export async function generateWithGemini(
       ...(model ? { model } : {}),
     }),
   });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err?.error?.message ?? 'Gemini API error');
+
+  /*
+    Dibaca sebagai teks dulu, BUKAN langsung res.json().
+    Kalau request ditolak oleh layer di depan route.ts (mis. limit payload
+    platform hosting), balasannya teks polos ("Request Entity Too Large"),
+    bukan JSON - res.json() akan melempar "Unexpected token" yang membingungkan.
+    Dengan raw text dulu, pesan errornya bisa dibuat jelas.
+  */
+  const raw = await res.text();
+  let data: any;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(
+      res.ok
+        ? 'Respons server tidak valid (bukan JSON). Coba ulangi, atau pakai PDF yang lebih kecil.'
+        : `Server menolak request (HTTP ${res.status}), kemungkinan karena file terlalu besar. Coba PDF yang lebih kecil.`
+    );
   }
-  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(data?.error?.message ?? 'Gemini API error');
+  }
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }
 
