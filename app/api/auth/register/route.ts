@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         sales_division,
         jabatan,
         phone_number,
-        allowed_menus: bypass ? ['learning-center'] : [],
+        allowed_menus: bypass ? ['learning-center', 'reminder-schedule', 'ticket-troubleshooting', 'request-design-project', 'form-bast'] : [],
       }])
       .select('id')
       .single();
