@@ -185,7 +185,6 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-base shadow">🎓</div>
         <div>
           <span className="text-sm font-bold text-slate-800 leading-tight">Learning Center</span>
-          <span className="ml-2 text-[10px] text-blue-600 font-semibold uppercase tracking-wider bg-blue-50 px-2 py-0.5 rounded-full">Admin Portal</span>
         </div>
       </div>
       {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
@@ -234,7 +233,6 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-base shadow">🎓</div>
         <div>
           <span className="text-sm font-bold text-slate-800 leading-tight">Learning Center</span>
-          <span className="ml-2 text-[10px] text-indigo-500 font-semibold uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded-full">Team Portal</span>
         </div>
       </div>
       {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
