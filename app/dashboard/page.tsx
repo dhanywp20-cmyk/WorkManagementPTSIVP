@@ -1034,7 +1034,7 @@ export default function Dashboard() {
                     <div>
                       <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Kode Acara (opsional)</label>
                       <input type="text" value={registerForm.event_code} onChange={e => setRegisterForm({ ...registerForm, event_code: e.target.value })}
-                        className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Isi hanya jika diberikan panitia event" />
+                        className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Isi hanya jika diberikan admin" />
                     </div>
                     {registerErr && (
                       <div className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200">{registerErr}</div>
