@@ -41,6 +41,8 @@ export default function Dashboard() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [registerErr, setRegisterErr] = useState('');
   const [showRegister, setShowRegister] = useState(false);
+  const [showRegPwd, setShowRegPwd] = useState(false);
+  const [showRegConfirmPwd, setShowRegConfirmPwd] = useState(false);
   /* Animasi kartu login saat berpindah masuk  daftar.
      'masuk'       kartu tumbuh keluar dari koper (adegan penuh diputar ulang)
      'tukarKeluar' kartu lama menyusut & memudar, isinya belum diganti
@@ -934,13 +936,35 @@ export default function Dashboard() {
                         </div>
                         <div>
                           <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Password *</label>
-                          <input type="password" value={registerForm.password} onChange={e => setRegisterForm({ ...registerForm, password: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="min. 8 karakter, ada kapital & angka" />
+                          <div className="relative">
+                            <input type={showRegPwd ? 'text' : 'password'} value={registerForm.password} onChange={e => setRegisterForm({ ...registerForm, password: e.target.value })}
+                              className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="min. 8 karakter, ada kapital & angka" />
+                            <button type="button" onClick={() => setShowRegPwd(v => !v)} tabIndex={-1}
+                              aria-label={showRegPwd ? 'Sembunyikan password' : 'Tampilkan password'}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                              {showRegPwd ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" /><circle cx="12" cy="12" r="3" /></svg>
+                              )}
+                            </button>
+                          </div>
                         </div>
                         <div>
                           <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Konfirmasi Password *</label>
-                          <input type="password" value={registerForm.confirm_password} onChange={e => setRegisterForm({ ...registerForm, confirm_password: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="ulangi password" />
+                          <div className="relative">
+                            <input type={showRegConfirmPwd ? 'text' : 'password'} value={registerForm.confirm_password} onChange={e => setRegisterForm({ ...registerForm, confirm_password: e.target.value })}
+                              className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="ulangi password" />
+                            <button type="button" onClick={() => setShowRegConfirmPwd(v => !v)} tabIndex={-1}
+                              aria-label={showRegConfirmPwd ? 'Sembunyikan password' : 'Tampilkan password'}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                              {showRegConfirmPwd ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" /><circle cx="12" cy="12" r="3" /></svg>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                       {/* Kolom Kanan */}
