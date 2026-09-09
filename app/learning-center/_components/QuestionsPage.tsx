@@ -6,7 +6,7 @@ import { bandingkanUrutan, perubahanUrutan, geser, nomorBerikutnya } from '@/lib
 import {
   supabase, User, Material, Question, FolderNode,
   buildFolderTree, DIFF_COLOR, SearchInput,
-  generateWithGemini, fileToBase64, AppDialog, DialogState,
+  generateWithGemini, fileToBase64, MAX_PDF_BYTES, AppDialog, DialogState,
   BtnEdit, BtnDelete, ambilDaftarModel, type ModelAI,
 } from './shared';
 
@@ -724,7 +724,20 @@ export function QuestionsPage({ user }: { user: User }) {
           <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Upload PDF <span className="text-[10px] font-normal text-violet-500 normal-case tracking-normal">(sementara, tidak disimpan)</span>
           </label>
-          <input ref={pdfRef} type="file" accept=".pdf" onChange={e => setPdfFile(e.target.files?.[0] ?? null)} className="hidden" />
+          <input ref={pdfRef} type="file" accept=".pdf" onChange={e => {
+            const f = e.target.files?.[0] ?? null;
+            if (f && f.size > MAX_PDF_BYTES) {
+              setDialog({
+                type: 'error',
+                title: 'PDF Terlalu Besar',
+                message: `File "${f.name}" berukuran ${(f.size / 1_000_000).toFixed(1)} MB, maksimal ${(MAX_PDF_BYTES / 1_000_000).toFixed(1)} MB. Kompres dulu atau pakai PDF yang lebih kecil.`,
+              });
+              e.target.value = '';
+              setPdfFile(null);
+              return;
+            }
+            setPdfFile(f);
+          }} className="hidden" />
           <div className="flex items-center gap-2">
             <button onClick={() => pdfRef.current?.click()}
               className="px-3 py-2 bg-white border border-violet-200 hover:bg-violet-50 text-violet-700 text-xs font-semibold rounded-xl transition-all">
