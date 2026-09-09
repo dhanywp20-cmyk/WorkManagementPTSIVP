@@ -457,7 +457,13 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       </div>
                     )}
                   </Baris>
-                  <Baris icon="🏢" label="Divisi / Team" value={userData.team_type || userData.sales_division || '—'} />
+                  {/* team_type bisa dipaksa jadi label status bypass ('Learning Center -
+                      Bypass Event') oleh app/api/auth/register/route.ts supaya gampang
+                      difilter admin. Itu benar di kolom database, tapi salah kalau ikut
+                      dipakai buat menutupi divisi ASLI yang dipilih user (sales_division)
+                      di sini - makanya field ini dikecualikan khusus untuk label bypass. */}
+                  <Baris icon="🏢" label="Divisi / Team"
+                    value={(userData.team_type !== 'Learning Center - Bypass Event' && userData.team_type) || userData.sales_division || '—'} />
                   <Baris icon="⭐" label="Jabatan"       value={userData.jabatan || '—'} />
                   <Baris icon="📅" label="Bergabung Sejak" value={bergabung} />
                   <Baris icon="🔑" label="Status Akun">
