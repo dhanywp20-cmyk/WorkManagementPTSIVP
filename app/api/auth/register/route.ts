@@ -15,19 +15,31 @@ function bersih(v: unknown): string {
   return typeof v === 'string' ? v.trim() : '';
 }
 
-/** Menentukan apakah pendaftaran ini berhak lolos tanpa approval admin. */
-function bypassAktif(kodeDikirim: string): boolean {
+type StatusKodeAcara = 'kosong' | 'valid' | 'tidak_valid';
+
+/** Menentukan status kode acara yang dikirim.
+ *
+ *  Sebelumnya ini cuma balikin boolean "bypass aktif atau tidak", jadi kode
+ *  yang SALAH KETIK diperlakukan sama persis dengan field yang DIKOSONGKAN -
+ *  keduanya diam-diam jatuh ke pendaftaran normal (Pending Approval) tanpa
+ *  memberi tahu pemakai kalau kodenya salah. Dipisah jadi 3 status supaya
+ *  pemanggil bisa membedakan "memang tidak isi kode" (wajar, lanjut normal)
+ *  dari "isi kode tapi salah/kedaluwarsa/fitur nonaktif" (harus ditolak
+ *  dengan pesan, bukan lolos senyap). */
+function periksaKodeAcara(kodeDikirim: string): StatusKodeAcara {
+  if (!kodeDikirim) return 'kosong';
+
   const kodeRahasia = (process.env.REGISTER_BYPASS_CODE || '').trim();
   const saklarNyala = (process.env.REGISTER_BYPASS_ENABLED || '').trim() === 'true';
-  if (!saklarNyala || !kodeRahasia || !kodeDikirim) return false;
-  if (kodeDikirim !== kodeRahasia) return false;
+  if (!saklarNyala || !kodeRahasia) return 'tidak_valid';
+  if (kodeDikirim !== kodeRahasia) return 'tidak_valid';
 
   const batasWaktu = process.env.REGISTER_BYPASS_UNTIL;
   if (batasWaktu) {
     const batas = new Date(batasWaktu);
-    if (!Number.isNaN(batas.getTime()) && new Date() > batas) return false;
+    if (!Number.isNaN(batas.getTime()) && new Date() > batas) return 'tidak_valid';
   }
-  return true;
+  return 'valid';
 }
 
 export async function POST(request: NextRequest) {
@@ -41,7 +53,6 @@ export async function POST(request: NextRequest) {
     const jabatan = bersih(body.jabatan) || null;
     const phone_number = bersih(body.phone_number) || null;
     const event_code = bersih(body.event_code);
-    const bypass = bypassAktif(event_code);
 
     if (!full_name || !username) {
       return NextResponse.json({ error: 'Nama dan email wajib diisi.' }, { status: 400 });
@@ -51,6 +62,18 @@ export async function POST(request: NextRequest) {
         { error: `Password minimal ${MIN_PASSWORD} karakter.` }, { status: 400 },
       );
     }
+
+    // Kode acara diisi tapi salah/kedaluwarsa/fitur lagi nonaktif -> tolak di
+    // sini dengan pesan jelas. Jangan biarkan lolos ke pendaftaran normal
+    // seolah-olah field-nya memang dikosongkan.
+    const statusKode = periksaKodeAcara(event_code);
+    if (statusKode === 'tidak_valid') {
+      return NextResponse.json(
+        { error: 'Kode acara tidak valid atau sudah kedaluwarsa. Kosongkan field ini jika tidak punya kode.' },
+        { status: 400 },
+      );
+    }
+    const bypass = statusKode === 'valid';
 
     const supabase = getAdminClient();
 
