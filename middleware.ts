@@ -21,6 +21,7 @@ const PUBLIC_EXACT = [
   '/api/auth/hash',
   '/api/auth/session',
   '/api/auth/set-credential', // registrasi publik: set password user baru (first-time only)
+  '/api/auth/register', // registrasi publik: buat akun baru (guest/Pending Approval, atau bypass event LC)
 ];
 
 // Cron jobs are called by Vercel scheduler with CRON_SECRET, not a user session
