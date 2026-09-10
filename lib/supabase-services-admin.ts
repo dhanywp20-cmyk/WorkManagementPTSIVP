@@ -16,6 +16,12 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
  */
 let cached: SupabaseClient | null = null;
 
+//  Lihat catatan panjang di lib/supabase-admin.ts: TANPA ini, Next.js membekukan
+//  hasil kueri pertama untuk selamanya sampai deploy berikutnya.
+function fetchTanpaCache(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  return fetch(input, { ...init, cache: 'no-store' });
+}
+
 export function getServicesAdminClient(): SupabaseClient | null {
   if (cached) return cached;
   const url = process.env.NEXT_PUBLIC_SUPABASE_SERVICES_URL;
@@ -25,6 +31,7 @@ export function getServicesAdminClient(): SupabaseClient | null {
   if (!url || !key) return null;
   cached = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: fetchTanpaCache },
   });
   return cached;
 }

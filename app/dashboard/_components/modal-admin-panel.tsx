@@ -201,7 +201,19 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
           </div>
 
           {/* Embedded content — no backdrop/fixed positioning */}
-          <div className="flex-1 overflow-hidden">
+          {/*
+            overflow-y-auto DI SINI, bukan overflow-hidden seperti sebelumnya.
+
+            Dengan overflow-hidden, konten yang lebih tinggi dari ruang yang
+            tersisa (mis. tab Kode Acara begitu daftar pendaftarnya bertambah)
+            terpotong TANPA cara menggulungnya - bukan cuma tidak rapi, tapi
+            informasi di bawahnya benar-benar tidak terjangkau. Tab Integrations
+            sebelumnya diam-diam membungkus dirinya sendiri dengan
+            overflow-y-auto untuk mengakali ini; sekarang pembungkus bersama
+            di sini yang menggulung, jadi SETIAP tab ikut benar tanpa perlu
+            menambal dirinya sendiri satu per satu.
+          */}
+          <div className="flex-1 overflow-y-auto">
             {activeSection === 'settings' && <AccountSettingsInline />}
             {activeSection === 'userManagement' && <UserManagementInline />}
             {activeSection === 'kodeAcara' && <KodeAcaraInline />}
@@ -210,7 +222,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             {activeSection === 'merek' && <MerekSettingInline />}
             {activeSection === 'kelompok' && <KelompokSettingInline />}
             {activeSection === 'integrasi' && (
-              <div className="h-full overflow-y-auto p-4"><IntegrasiInline /></div>
+              <div className="p-4"><IntegrasiInline /></div>
             )}
           </div>
         </div>

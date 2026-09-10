@@ -513,7 +513,10 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
       : (totalDetik !== null && timeLeft <= totalDetik * 0.25) ? 'waspada'
       : 'tenang';
   const isUrgent = tingkatWaktu === 'kritis';
-  const WARNA_WAKTU = { tenang: '#2DD4A0', waspada: '#FBBF24', kritis: '#FB5779' } as const;
+  //  Digelapkan dari versi mode-gelap sebelumnya (#2DD4A0/#FBBF24/#FB5779) -
+  //  warna itu dipilih supaya menyala di atas latar gelap, dan jadi pudar/
+  //  kurang kontras kalau dipakai sebagai teks angka di atas KARTU PUTIH.
+  const WARNA_WAKTU = { tenang: '#059669', waspada: '#D97706', kritis: '#DC2626' } as const;
   const KET_WAKTU = { tenang: 'Sisa waktu', waspada: 'Waktu menipis', kritis: 'Segera kumpulkan' } as const;
   //  Cincin waktu: keliling lingkaran r=19. Porsi yang tersisa digambar sebagai
   //  busur, jadi sisa waktu terbaca SEKILAS tanpa memproses angkanya.
@@ -536,8 +539,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   //  yang bisa berisi 50 tombol, itu pekerjaan sia-sia tiap kali detik timer
   //  berdetak.
   const relSoal = () => (
-    <div className="flex gap-[3px] px-4 sm:px-6 py-3 overflow-x-auto flex-shrink-0"
-      style={{ background: '#171C2E', borderBottom: '1px solid #2E3550' }}
+    <div className="flex gap-[3px] px-4 sm:px-6 py-3 overflow-x-auto flex-shrink-0 bg-white border-b border-slate-200"
       role="group" aria-label="Navigasi soal">
       {questions.map((qq, i) => {
         const sudah = !!(answers[qq.id] ?? savedAnswers[qq.id]);
@@ -550,7 +552,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
             style={{
               height: kini ? 12 : 7,
               alignSelf: 'center',
-              background: kini ? '#F3F5FB' : sudah ? '#2DD4A0' : '#232941',
+              background: kini ? '#1E293B' : sudah ? '#10B981' : '#E2E8F0',
             }} />
         );
       })}
@@ -571,25 +573,21 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
       postMessage (lihat useEffect di atas); lapisan di sini yang menutup
       sisanya bila halaman dibuka langsung.
     */}
-    <div className="fixed inset-0 z-[250] flex" style={{ background: '#0E1220' }}>
+    <div className="fixed inset-0 z-[250] flex bg-slate-100">
       <div className="flex-1 flex flex-col overflow-hidden">
 
         {/*
-          Bilah atas gelap - dan itu keputusan, bukan selera.
-
-          Dengan chrome yang gelap, kartu soal jadi benda paling TERANG di
-          layar, dan mata pergi ke pertanyaannya tanpa perlu dipaksa lewat
-          ukuran font yang saling berebut besar. Bentuk lamanya putih semua:
-          antarmuka dan soal punya bobot visual yang sama, jadi tidak ada yang
-          menuntun mata ke mana pun.
+          Bilah atas TERANG - permintaan eksplisit: mode gelap sebelumnya tidak
+          disukai. Kejelasan "ini yang sedang dikerjakan" sekarang dipegang
+          oleh UKURAN kartu soal dan garis pemisahnya yang tegas, bukan lagi
+          kontras terang-gelap.
         */}
-        <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 flex-shrink-0"
-          style={{ background: '#171C2E', borderBottom: '1px solid #2E3550' }}>
+        <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 flex-shrink-0 bg-white border-b border-slate-200">
           <div className="min-w-0 flex-1">
-            <h2 className="font-bold text-[12.5px] sm:text-sm truncate" style={{ color: '#F3F5FB' }}>
+            <h2 className="font-bold text-[12.5px] sm:text-sm truncate text-slate-800">
               {session.session_name}
             </h2>
-            <p className="text-[10.5px] sm:text-[11.5px] mt-0.5" style={{ color: '#6E7695' }}>
+            <p className="text-[10.5px] sm:text-[11.5px] mt-0.5 text-slate-500">
               {answered} dari {questions.length} soal terjawab
             </p>
           </div>
@@ -607,7 +605,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
               <div className="relative flex-shrink-0" style={{ width: 38, height: 38 }}>
                 <svg width="38" height="38" viewBox="0 0 46 46" aria-hidden="true"
                   style={{ transform: 'rotate(-90deg)', display: 'block' }}>
-                  <circle cx="23" cy="23" r="19" fill="none" stroke="#232941" strokeWidth="4" />
+                  <circle cx="23" cy="23" r="19" fill="none" stroke="#E2E8F0" strokeWidth="4" />
                   <circle cx="23" cy="23" r="19" fill="none" strokeWidth="4" strokeLinecap="round"
                     stroke={WARNA_WAKTU[tingkatWaktu]}
                     strokeDasharray={KELILING}
@@ -621,8 +619,8 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                   style={{ color: WARNA_WAKTU[tingkatWaktu], letterSpacing: '-0.02em' }}>
                   {fmtTimer(timeLeft)}
                 </div>
-                <span className="block text-[8.5px] sm:text-[9.5px] font-bold uppercase mt-1"
-                  style={{ color: '#6E7695', letterSpacing: '0.16em' }}>
+                <span className="block text-[8.5px] sm:text-[9.5px] font-bold uppercase mt-1 text-slate-400"
+                  style={{ letterSpacing: '0.16em' }}>
                   {KET_WAKTU[tingkatWaktu]}
                 </span>
               </div>
@@ -637,8 +635,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           */}
           {answered < questions.length && (
             <button onClick={() => handleSubmit(false)}
-              className="px-3 py-2 text-[12px] font-bold rounded-lg transition-all flex-shrink-0 hidden formulir:block"
-              style={{ background: '#232941', color: '#A9B0C9', border: '1px solid #2E3550' }}>
+              className="px-3 py-2 text-[12px] font-bold rounded-lg transition-all flex-shrink-0 hidden formulir:block bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200">
               Submit
             </button>
           )}
@@ -647,8 +644,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
               Menutup quiz berbatas waktu tanpa peringatan berarti kehilangan
               kesempatan mengerjakan, dan itu tidak bisa dibatalkan. */}
           <button onClick={() => setKonfirmasiKeluar(true)} aria-label="Keluar dari quiz"
-            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
-            style={{ background: 'transparent', color: '#6E7695', border: '1px solid #2E3550' }}>
+            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all flex-shrink-0 bg-transparent hover:bg-slate-100 text-slate-500 border border-slate-200">
             <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -657,25 +653,32 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
 
         {relSoal()}
 
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 sm:py-7">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 sm:py-8 lg:py-10">
           {/*
-            SATU kartu putih memuat nomor, soal, dan pilihan - dulu tiga blok
-            terpisah di atas latar terang, yang membuat batas antara "soal" dan
-            "antarmuka" kabur. Di ruang gelap, kartu ini jadi satu benda utuh
-            yang jelas: inilah pekerjaannya.
+            SATU kartu memuat nomor, soal, dan pilihan - dulu tiga blok
+            terpisah di atas latar yang sama, yang membuat batas antara "soal"
+            dan "antarmuka" kabur.
+
+            Lebar dan padding-nya bertingkat lebih besar di layar lebar
+            (sm/lg) - di laptop, kartu 672px yang cocok untuk ponsel duduk
+            kecil di tengah layar kosong dan terasa sempit. Di ponsel ukurannya
+            tidak diubah dari sebelumnya, sesuai yang diminta.
           */}
-          <div className="max-w-2xl mx-auto rounded-2xl p-5 sm:p-6"
-            style={{ background: '#FFFFFF', boxShadow: '0 10px 34px -14px rgba(0,0,0,.5)' }}>
-            <div className="flex items-center gap-2.5 mb-3.5 flex-wrap">
-              <span className="text-[11px] font-bold uppercase px-2.5 py-1 rounded-md"
+          <div className="max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto rounded-2xl bg-white border border-slate-200 p-5 sm:p-8 lg:p-10"
+            style={{ boxShadow: '0 1px 2px rgba(15,23,42,.04), 0 16px 32px -16px rgba(15,23,42,.14)' }}>
+            <div className="flex items-center gap-2.5 mb-3.5 lg:mb-5 flex-wrap">
+              <span className="text-[11px] lg:text-xs font-bold uppercase px-2.5 py-1 rounded-md"
                 style={{ background: '#EEEEFE', color: '#5B5BF5', letterSpacing: '0.1em' }}>
                 Soal {current + 1} / {questions.length}
               </span>
-              <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full border ${q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : q.difficulty === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{q.difficulty}</span>
+              <span className={`text-[10.5px] lg:text-xs font-bold px-2 py-0.5 rounded-full border ${q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : q.difficulty === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{q.difficulty}</span>
             </div>
-            <p className="text-[17px] sm:text-[19px] font-semibold leading-snug mb-5"
+            {/*  break-words: pengaman untuk teks panjang tanpa spasi (mis. satu
+                 kata sangat panjang atau tautan) supaya tetap terbungkus rapi
+                 di layar sempit, bukan meluber keluar kartu. */}
+            <p className="text-[17px] sm:text-xl lg:text-2xl font-semibold leading-snug mb-5 lg:mb-7 break-words"
               style={{ color: '#141828', letterSpacing: '-0.015em' }}>{q.question}</p>
-            <div className="space-y-2.5">
+            <div className="space-y-2.5 lg:space-y-3">
               {isEssay && q.answer_format === 'image' ? (
                 /* Jawaban berupa foto - untuk soal merancang yang paling wajar
                    digambar tangan. Yang ditampilkan setelah unggah adalah
@@ -748,20 +751,24 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                   */
                   <button key={opt} onClick={() => handleAnswer(q.id, opt)}
                     aria-pressed={selected}
-                    className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all"
+                    className="w-full flex items-center gap-3 lg:gap-4 px-4 py-3.5 sm:px-5 sm:py-4 lg:py-5 rounded-xl text-left transition-all"
                     style={{
                       border: `1.5px solid ${selected ? '#5B5BF5' : '#E4E7F0'}`,
                       background: selected ? '#EEEEFE' : '#FFFFFF',
                       color: '#141828',
                     }}>
-                    <span className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[13px] font-black flex-shrink-0 transition-all tabular-nums"
+                    <span className="w-[30px] h-[30px] sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center text-[13px] sm:text-sm lg:text-base font-black flex-shrink-0 transition-all tabular-nums"
                       style={{
                         background: selected ? '#5B5BF5' : '#F1F2F8',
                         color: selected ? '#FFFFFF' : '#5A6180',
                       }}>{opt}</span>
-                    <span className="text-[14.5px] font-medium flex-1">{val}</span>
+                    {/*  min-w-0: tanpa ini, span di dalam flex row tidak mau
+                         menyusut di bawah lebar isinya sendiri untuk teks yang
+                         panjang tanpa spasi - baris pilihannya akan meluber
+                         keluar kartu alih-alih membungkus rapi ke bawah. */}
+                    <span className="text-[14.5px] sm:text-base lg:text-lg font-medium flex-1 min-w-0 break-words">{val}</span>
                     {selected && (
-                      <svg aria-hidden="true" focusable="false" className="w-5 h-5 flex-shrink-0" style={{ color: '#5B5BF5' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" focusable="false" className="w-5 h-5 lg:w-6 lg:h-6 flex-shrink-0" style={{ color: '#5B5BF5' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -777,13 +784,12 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           soal. Di ponsel inilah tempat ibu jari berada, dan tombolnya tidak
           perlu dicari dengan menggulung sampai habis.
         */}
-        <div className="flex-shrink-0 px-4 sm:px-6 py-3.5"
-          style={{ background: '#171C2E', borderTop: '1px solid #2E3550' }}>
-          <div className="max-w-2xl mx-auto flex flex-col gap-2.5">
+        <div className="flex-shrink-0 px-4 sm:px-6 py-3.5 bg-white border-t border-slate-200">
+          <div className="max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto flex flex-col gap-2.5">
 
             {answered < questions.length && (
-              <p className="text-[12px]" style={{ color: '#6E7695' }}>
-                <b style={{ color: '#F3F5FB' }}>{questions.length - answered} soal belum dijawab.</b>{' '}
+              <p className="text-[12px] text-slate-500">
+                <b className="text-slate-800">{questions.length - answered} soal belum dijawab.</b>{' '}
                 Ketuk ruas abu di rel atas untuk lompat ke sana.
               </p>
             )}
@@ -797,21 +803,18 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
             {answered === questions.length ? (
               <div className="flex gap-2.5">
                 <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
-                  className="px-4 sm:px-5 py-4 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
-                  style={{ background: '#232941', color: '#F3F5FB', border: '1px solid #2E3550' }}>
+                  className="px-4 sm:px-5 py-4 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">
                   ←<span className="hidden formulir:inline"> Sebelumnya</span>
                 </button>
                 <button onClick={() => handleSubmit(false)}
-                  className="flex-1 px-6 py-4 text-[15px] sm:text-base font-black rounded-xl transition-all"
-                  style={{ background: '#2DD4A0', color: '#06281D' }}>
+                  className="flex-1 px-6 py-4 text-[15px] sm:text-base font-black rounded-xl transition-all bg-emerald-600 hover:bg-emerald-700 text-white">
                   ✓ Kumpulkan Jawaban
                 </button>
               </div>
             ) : (
               <div className="flex gap-2.5">
                 <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
-                  className="px-4 sm:px-5 py-3.5 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
-                  style={{ background: '#232941', color: '#F3F5FB', border: '1px solid #2E3550' }}>
+                  className="px-4 sm:px-5 py-3.5 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">
                   ←<span className="hidden formulir:inline"> Sebelumnya</span>
                 </button>
                 {current === questions.length - 1 ? (
@@ -819,8 +822,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                   //  ada gunanya lagi, jadi tempatnya dipakai Submit - dengan
                   //  angkanya, supaya jelas ini mengumpulkan pekerjaan separuh.
                   <button onClick={() => handleSubmit(false)}
-                    className="flex-1 px-5 py-3.5 text-sm font-bold rounded-xl transition-all"
-                    style={{ background: '#232941', color: '#F3F5FB', border: '1px solid #2E3550' }}>
+                    className="flex-1 px-5 py-3.5 text-sm font-bold rounded-xl transition-all bg-slate-800 hover:bg-slate-900 text-white">
                     Submit ({answered}/{questions.length})
                   </button>
                 ) : (
@@ -834,7 +836,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
             )}
 
             {tabSwitches > 0 && (
-              <p className="text-[11px] font-semibold" style={{ color: '#FB5779' }}>
+              <p className="text-[11px] font-semibold text-rose-600">
                 ⚠️ Berpindah tab tercatat: {tabSwitches}x
               </p>
             )}

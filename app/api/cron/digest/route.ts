@@ -53,6 +53,10 @@ async function jalankan() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    //  Lihat catatan di lib/supabase-admin.ts: tanpa cache:'no-store' di sini,
+    //  digest cron ini bisa mengirim rekap tiket yang sama berulang-ulang -
+    //  dibekukan sejak jadwal pertama route ini jalan setelah deploy.
+    { global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) } },
   );
 
   const hariIni = tanggalISO(0);
