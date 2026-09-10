@@ -119,13 +119,13 @@ export function AdminDashboard({ user }: { user: User }) {
 
       // Top performers + consistency + fast-submit
       const byUser: Record<string, {
-        name: string; scores: number[]; passed: number; tabSw: number;
+        name: string; scores: number[]; times: number[]; passed: number; tabSw: number;
         minScore: number; maxScore: number; fastCount: number;
         role: string | null; teamType: string | null; salesDivision: string | null;
       }> = {};
       allAtt.forEach((a: any) => {
         if (!byUser[a.user_id]) byUser[a.user_id] = {
-          name: a.users?.full_name ?? '-', scores: [], passed: 0, tabSw: 0,
+          name: a.users?.full_name ?? '-', scores: [], times: [], passed: 0, tabSw: 0,
           minScore: Infinity, maxScore: -Infinity, fastCount: 0,
           role: a.users?.role ?? null,
           teamType: a.users?.team_type ?? null,
@@ -133,6 +133,7 @@ export function AdminDashboard({ user }: { user: User }) {
         };
         const sc = a.score ?? 0;
         byUser[a.user_id].scores.push(sc);
+        if (typeof a.time_taken_sec === 'number') byUser[a.user_id].times.push(a.time_taken_sec);
         if (a.passed) byUser[a.user_id].passed++;
         byUser[a.user_id].tabSw += a.tab_switches ?? 0;
         if (sc < byUser[a.user_id].minScore) byUser[a.user_id].minScore = sc;
@@ -141,14 +142,21 @@ export function AdminDashboard({ user }: { user: User }) {
         const ts = a.time_taken_sec ?? Infinity;
         if (tq >= 5 && ts < tq * 5) byUser[a.user_id].fastCount++;
       });
+      //  Skor rata-rata sama TIDAK berarti urutannya bebas - sort JS di sini
+      //  cuma membandingkan avg, jadi dua peserta yang seri (mis. sama-sama
+      //  100) berakhir terurut menurut urutan baris apa adanya dari
+      //  database, bukan berdasar siapa yang lebih cepat. Sama seperti
+      //  perbaikan di ReportPage.tsx - waktu rata-rata lebih singkat menang
+      //  saat skor seri.
       const allUsers = Object.entries(byUser).map(([uid, v]) => ({
         uid, name: v.name,
         role: v.role, teamType: v.teamType, salesDivision: v.salesDivision,
         avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
+        avgTime: v.times.length ? v.times.reduce((s: number, n: number) => s + n, 0) / v.times.length : Infinity,
         total: v.scores.length, passed: v.passed, tabSw: v.tabSw,
         consistency: v.scores.length >= 2 ? v.maxScore - v.minScore : null,
         fastCount: v.fastCount,
-      })).sort((a, b) => b.avg - a.avg);
+      })).sort((a, b) => b.avg - a.avg || a.avgTime - b.avgTime);
       setAllTopUsers(allUsers);
       setTopUsers(allUsers.filter(u => matchesTeamFilter(u, 'PTS')).slice(0, 20));
 
