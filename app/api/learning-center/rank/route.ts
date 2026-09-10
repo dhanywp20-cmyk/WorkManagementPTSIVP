@@ -69,13 +69,13 @@ export async function GET(request: NextRequest) {
 
   type Baris = {
     user_id: string; score: number | null; grading_status: string | null;
-    passed: boolean | null; tab_switches: number | null;
+    passed: boolean | null; tab_switches: number | null; time_taken_sec: number | null;
   };
   const diratakan: BarisAttempt[] = ((attRes.data ?? []) as Baris[]).map(a => {
     const u = petaUser.get(a.user_id);
     return {
       user_id: a.user_id, score: a.score, grading_status: a.grading_status,
-      passed: a.passed, tab_switches: a.tab_switches,
+      passed: a.passed, tab_switches: a.tab_switches, time_taken_sec: a.time_taken_sec,
       full_name: u?.full_name ?? null,
       role: u?.role ?? null, sales_division: u?.sales_division ?? null,
     };

@@ -20,6 +20,7 @@ export interface BarisAttempt {
   full_name?: string | null;
   passed?: boolean | null;
   tab_switches?: number | null;
+  time_taken_sec?: number | null;
 }
 
 /**
@@ -82,7 +83,7 @@ export function hitungPeringkat(
 
   const perOrang = new Map<string, {
     role: string; divisi: string | null; nama: string;
-    total: number; jumlah: number; lulus: number; flags: number;
+    total: number; jumlah: number; lulus: number; flags: number; waktu: number;
   }>();
   for (const a of rows) {
     if (a.grading_status === 'pending_review') continue;   // belum dinilai final
@@ -90,22 +91,31 @@ export function hitungPeringkat(
     const rec = perOrang.get(a.user_id)
       ?? {
         role: a.role.toLowerCase(), divisi: a.sales_division, nama: a.full_name ?? '-',
-        total: 0, jumlah: 0, lulus: 0, flags: 0,
+        total: 0, jumlah: 0, lulus: 0, flags: 0, waktu: 0,
       };
     rec.total += a.score ?? 0;
     rec.jumlah += 1;
     if (a.passed) rec.lulus += 1;
     rec.flags += a.tab_switches ?? 0;
+    rec.waktu += a.time_taken_sec ?? 0;
     perOrang.set(a.user_id, rec);
   }
 
+  //  Skor rata-rata sama TIDAK berarti peringkatnya bebas - tanpa tie-break
+  //  kedua, dua peserta yang seri (mis. sama-sama 100) terurut menurut
+  //  urutan baris apa adanya dari database, bukan berdasar siapa yang lebih
+  //  cepat. Ini papan yang dilihat peserta SENDIRI soal peringkat mereka,
+  //  jadi urutan yang terlihat acak persis di sinilah yang paling sering
+  //  memicu komplain "nilai saya sama tapi peringkat saya kalah". Waktu
+  //  rata-rata lebih singkat menang saat skor seri - sama seperti perbaikan
+  //  di ReportPage.tsx dan AdminDashboard.tsx.
   const sekelompok = [...perOrang.entries()]
     .filter(([, r]) => r.role === myRole)
     .map(([userId, r]) => ({
-      userId, avg: r.total / r.jumlah, divisi: r.divisi,
+      userId, avg: r.total / r.jumlah, avgWaktu: r.waktu / r.jumlah, divisi: r.divisi,
       nama: r.nama, quiz: r.jumlah, lulus: r.lulus, flags: r.flags,
     }))
-    .sort((a, b) => b.avg - a.avg);
+    .sort((a, b) => b.avg - a.avg || a.avgWaktu - b.avgWaktu);
 
   const globalIdx = sekelompok.findIndex(p => p.userId === caller.id);
   const globalRank = globalIdx >= 0 ? globalIdx + 1 : null;
