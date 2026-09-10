@@ -440,10 +440,16 @@ export function QuestionsPage({ user }: { user: User }) {
           difficulty: newQ.difficulty, question_type: 'essay', model_answer: newQ.model_answer,
           answer_format: newQ.answer_format ?? 'text',
           option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: null }
-      // answer_format sengaja TIDAK dikirim untuk soal abcd - kolomnya memang
-      // tidak berarti di sana, dan mengirim nilai yang tak bermakna hanya
-      // membuat orang berikutnya mengira ia dipakai.
-      : { ...newQ, question_type: 'abcd', answer_format: undefined };
+      //  answer_format tetap DITULIS 'text' walau tidak berarti apa-apa untuk
+      //  soal abcd - kolomnya NOT NULL. Menyetelnya ke `undefined` (versi
+      //  sebelumnya) TIDAK membuat PostgREST melewatkan kolom ini seperti
+      //  dugaan semula: klien Supabase membangun daftar kolom insert dari
+      //  Object.keys(objeknya), dan Object.keys() tetap menyertakan kunci
+      //  yang nilainya undefined - PostgREST lalu mengirim NULL eksplisit
+      //  untuk kolom yang "disebut tapi tidak diisi" itu, bukan memakai
+      //  default tabelnya. Baris yang sama persis membuat generate-AI gagal
+      //  (lihat simpanHasil), dan berlaku juga di sini walau cuma satu baris.
+      : { ...newQ, question_type: 'abcd', answer_format: 'text' };
     /*
       Soal baru diberi nomor di EKOR grupnya. Tanpa ini ia masuk tanpa nomor,
       dan soal tanpa nomor jatuh ke pengurutan created_at - artinya begitu
