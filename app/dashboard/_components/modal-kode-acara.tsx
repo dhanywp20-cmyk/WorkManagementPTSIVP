@@ -104,8 +104,12 @@ export function KodeAcaraInline() {
   //  diketik - QR/link yang dibagikan ke peserta harus selalu mengarah ke
   //  kode yang benar-benar aktif di server saat ini, bukan draf yang belum
   //  ditekan Simpan.
+  //
+  //  Mendarat di form MASUK, bukan langsung form Daftar (lihat catatan di
+  //  dashboard/page.tsx) - QR yang sama dibagikan ke semua peserta, dan
+  //  sebagian dari mereka sudah pernah mendaftar sebelumnya.
   const linkDaftar = asalUrl && awal?.kode?.trim()
-    ? `${asalUrl}/dashboard?daftar=1&kode=${encodeURIComponent(awal.kode.trim())}`
+    ? `${asalUrl}/dashboard?kode=${encodeURIComponent(awal.kode.trim())}`
     : '';
 
   useEffect(() => {
@@ -325,8 +329,9 @@ export function KodeAcaraInline() {
                 )}
                 <div className="flex-1 min-w-0 w-full space-y-2">
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Cetak atau tampilkan QR ini di acara. Yang memindai langsung dibawa ke form Daftar dengan Kode
-                    Acara sudah terisi otomatis.
+                    Cetak atau tampilkan QR ini di acara. Yang memindai dibawa ke halaman Masuk - cocok untuk
+                    peserta yang sudah pernah daftar. Yang belum punya akun tinggal klik Daftar sendiri, Kode
+                    Acara sudah terisi otomatis di situ.
                   </p>
                   <div className="flex flex-col formulir:flex-row gap-2">
                     <input readOnly value={linkDaftar} onFocus={e => e.target.select()}

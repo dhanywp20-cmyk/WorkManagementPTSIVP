@@ -139,22 +139,23 @@ export default function Dashboard() {
   useEffect(() => () => { if (jedaTukarRef.current) window.clearTimeout(jedaTukarRef.current); }, []);
 
   /*
-    Link/QR Code pendaftaran dari Admin Panel > Kode Acara membawa
-    ?daftar=1&kode=XXXX supaya peserta yang memindai langsung disambut form
-    Daftar (bukan form Masuk) dengan kode acara SUDAH terisi - tidak perlu
-    mengetik ulang kode yang baru saja mereka lihat di poster/undangan.
+    Link/QR Code dari Admin Panel > Kode Acara membawa ?kode=XXXX.
+
+    SENGAJA mendarat di form MASUK, bukan langsung dilempar ke form Daftar -
+    QR/link yang sama dibagikan ke SEMUA peserta acara, dan sebagian dari
+    mereka sudah pernah mendaftar sebelumnya (lewat kode acara acara lalu,
+    atau didaftarkan admin). Memaksa semua orang ke form Daftar berarti yang
+    sudah punya akun harus mencari sendiri tombol "Masuk" dulu. Kode acara
+    tetap disiapkan di sini - begitu orang yang BELUM punya akun mengklik
+    Daftar sendiri, kodenya sudah terisi, tidak perlu mengetik ulang.
 
     window.location.search dibaca langsung (bukan useSearchParams) karena
     ini cuma dibaca SEKALI saat halaman terbuka, dan menghindari keharusan
     membungkus seluruh halaman ini dengan <Suspense> hanya untuk itu.
   */
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const kode = params.get('kode');
-    if (params.get('daftar') === '1' || kode) {
-      pindahForm(true);
-      if (kode) setRegisterForm(f => ({ ...f, event_code: kode }));
-    }
+    const kode = new URLSearchParams(window.location.search).get('kode');
+    if (kode) setRegisterForm(f => ({ ...f, event_code: kode }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
