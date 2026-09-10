@@ -358,9 +358,17 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
     // dicocokkan sendiri.
     let res: Response;
     try {
+      //  tabSwitches disertakan di sini sebagai sumber kebenaran TERAKHIR -
+      //  pencatatan tab_switches per-kejadian selama quiz berjalan (di atas)
+      //  fire-and-forget tanpa penanganan galat, jadi bisa gagal diam-diam
+      //  di tengah jalan (jaringan sempat putus, dst) dan angkanya di
+      //  database ketinggalan dari yang sebenarnya. tabSwitchesRef.current
+      //  di browser tidak pernah kehilangan hitungan itu, jadi server
+      //  menuliskannya ulang di sini sebagai penyelamat terakhir - persis
+      //  pola yang sudah dipakai jalur essay saat submit.
       res = await fetch('/api/learning-center/submit-quiz', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ attemptId: attempt.id }),
+        body: JSON.stringify({ attemptId: attempt.id, tabSwitches: tabSwitchesRef.current }),
       });
     } catch {
       setDialog({ type: 'error', title: 'Submit Gagal', message: 'Gagal menghubungi server. Periksa koneksi internet lalu coba lagi.' });

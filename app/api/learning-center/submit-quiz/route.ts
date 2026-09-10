@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   const caller = await getSessionUser(request);
   if (!caller) return NextResponse.json({ error: 'Sesi tidak valid. Login ulang.' }, { status: 401 });
 
-  const { attemptId } = await request.json().catch(() => ({}));
+  const { attemptId, tabSwitches } = await request.json().catch(() => ({}));
   if (!attemptId) return NextResponse.json({ error: 'attemptId wajib diisi.' }, { status: 400 });
 
   const supabase = getAdminClient();
@@ -92,10 +92,19 @@ export async function POST(request: NextRequest) {
   const passed = score >= session.passing_grade;
   const timeTakenSec = Math.round((Date.now() - new Date(attempt.started_at).getTime()) / 1000);
 
+  //  tabSwitches dari klien dipakai sebagai penyelamat terakhir - pencatatan
+  //  per-kejadian saat quiz berjalan (MyQuizPage.tsx) fire-and-forget tanpa
+  //  penanganan galat, jadi bisa gagal diam-diam dan angkanya di baris ini
+  //  ketinggalan dari yang sebenarnya terjadi di browser peserta. Diambil
+  //  yang LEBIH BESAR antara yang sudah tersimpan dan yang dilaporkan klien
+  //  saat submit - tidak pernah mengurangi jumlah pelanggaran yang sudah
+  //  tercatat, cuma menambal yang sempat hilang.
+  const tabSwitchesFinal = Math.max(attempt.tab_switches ?? 0, typeof tabSwitches === 'number' ? tabSwitches : 0);
+
   const { error } = await supabase.from('lc_quiz_attempts').update({
     submitted_at: new Date().toISOString(), score, total_correct: correct,
     total_questions: total, passed, is_submitted: true, time_taken_sec: timeTakenSec,
-    grading_status: 'auto',
+    grading_status: 'auto', tab_switches: tabSwitchesFinal,
   }).eq('id', attemptId);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 

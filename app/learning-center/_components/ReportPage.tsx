@@ -40,12 +40,19 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
       // jalan bila PostgREST mengenali relasi lc_quiz_attempts ke users; kalau
       // relasi itu tidak ada, seluruh query gagal dan halaman tampak "belum ada
       // peserta" padahal datanya ada.
+      //  Skor sama TIDAK berarti urutannya bebas - tanpa order kedua ini,
+      //  Postgres mengembalikan baris yang seri skornya dalam urutan yang
+      //  tidak ditentukan (bukan berdasar waktu pengerjaan sama sekali),
+      //  jadi peserta yang lebih LAMA bisa saja tampil di atas yang lebih
+      //  cepat padahal skornya identik - lencana 🥇/🥈/🥉 di bawah cuma
+      //  mengikuti posisi baris apa adanya. Waktu lebih singkat menang.
       const { data: attempts, error } = await supabase
         .from('lc_quiz_attempts')
         .select('*')
         .eq('quiz_session_id', selectedSession)
         .eq('is_submitted', true)
-        .order('score', { ascending: false });
+        .order('score', { ascending: false })
+        .order('time_taken_sec', { ascending: true });
       if (dibatalkan) return;
       if (error) {
         setLoadErr(error.message); setData([]); setLoading(false);
