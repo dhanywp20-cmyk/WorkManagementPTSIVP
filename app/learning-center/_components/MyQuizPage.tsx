@@ -497,8 +497,65 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
 
   const q = questions[current];
   const answered = Object.keys(answers).filter(k => answers[k]).length;
-  const progress = ((current + 1) / questions.length) * 100;
-  const isUrgent = timeLeft !== null && timeLeft < 60;
+
+  /*
+    Status timer - tiga tingkat, bukan dua.
+
+    Warna hanya berarti kalau ia tidak selalu menyala. Merah dari awal membuat
+    merah kehilangan arti persis pada menit terakhir, saat ia paling
+    dibutuhkan. Jadi: tenang selama masih lega, kuning saat tersisa seperempat,
+    merah berdenyut di bawah satu menit.
+  */
+  const totalDetik = session.timer_minutes ? session.timer_minutes * 60 : null;
+  const tingkatWaktu: 'tenang' | 'waspada' | 'kritis' =
+    timeLeft === null ? 'tenang'
+      : timeLeft <= 60 ? 'kritis'
+      : (totalDetik !== null && timeLeft <= totalDetik * 0.25) ? 'waspada'
+      : 'tenang';
+  const isUrgent = tingkatWaktu === 'kritis';
+  const WARNA_WAKTU = { tenang: '#2DD4A0', waspada: '#FBBF24', kritis: '#FB5779' } as const;
+  const KET_WAKTU = { tenang: 'Sisa waktu', waspada: 'Waktu menipis', kritis: 'Segera kumpulkan' } as const;
+  //  Cincin waktu: keliling lingkaran r=19. Porsi yang tersisa digambar sebagai
+  //  busur, jadi sisa waktu terbaca SEKILAS tanpa memproses angkanya.
+  const KELILING = 2 * Math.PI * 19;
+  const porsiWaktu = (timeLeft !== null && totalDetik) ? Math.max(0, Math.min(1, timeLeft / totalDetik)) : 1;
+
+  /*
+    Rel kemajuan yang SEKALIGUS navigasi - satu ruas per soal.
+
+    Menggantikan tiga hal yang dulu terpisah dan saling tumpang tindih: garis
+    kemajuan setebal 1px (praktis tak terlihat), deret nomor bergulir khusus
+    ponsel, dan panel nomor di kanan khusus desktop. Ketiganya menjawab
+    pertanyaan yang sama - "sudah sampai mana, mana yang masih kosong" -
+    dengan tiga tampilan berbeda, dan dua di antaranya memakan ruang yang
+    seharusnya milik soal.
+  */
+  //  Fungsi render biasa, BUKAN komponen inline. Komponen yang didefinisikan
+  //  di dalam render punya identitas baru tiap kali render, jadi React
+  //  membongkar-pasang seluruh isinya alih-alih memperbaruinya - untuk deret
+  //  yang bisa berisi 50 tombol, itu pekerjaan sia-sia tiap kali detik timer
+  //  berdetak.
+  const relSoal = () => (
+    <div className="flex gap-[3px] px-4 sm:px-6 py-3 overflow-x-auto flex-shrink-0"
+      style={{ background: '#171C2E', borderBottom: '1px solid #2E3550' }}
+      role="group" aria-label="Navigasi soal">
+      {questions.map((qq, i) => {
+        const sudah = !!(answers[qq.id] ?? savedAnswers[qq.id]);
+        const kini = i === current;
+        return (
+          <button key={qq.id} onClick={() => setCurrent(i)}
+            aria-label={`Soal ${i + 1}${sudah ? ' (sudah dijawab)' : ' (belum dijawab)'}`}
+            aria-current={kini ? 'true' : undefined}
+            className="flex-1 min-w-[14px] rounded p-0 border-0 cursor-pointer transition-all hover:scale-y-150"
+            style={{
+              height: kini ? 12 : 7,
+              alignSelf: 'center',
+              background: kini ? '#F3F5FB' : sudah ? '#2DD4A0' : '#232941',
+            }} />
+        );
+      })}
+    </div>
+  );
 
   return (
     <ModalPortal>
@@ -514,83 +571,111 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
       postMessage (lihat useEffect di atas); lapisan di sini yang menutup
       sisanya bila halaman dibuka langsung.
     */}
-    <div className="fixed inset-0 z-[250] flex" style={{ background: '#f1f5f9' }}>
+    <div className="fixed inset-0 z-[250] flex" style={{ background: '#0E1220' }}>
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex items-center gap-2 px-3 sm:px-6 py-2.5 sm:py-3 border-b border-slate-200 flex-shrink-0" style={{ background: '#ffffff' }}>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-bold text-slate-900 text-[13px] sm:text-sm truncate">{session.session_name}</h2>
-            <p className="text-[11px] sm:text-xs text-slate-400">{answered}/{questions.length} dijawab</p>
-          </div>
-          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
-            {timeLeft !== null && (
-              <div className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg font-black text-[13px] sm:text-sm tabular-nums ${isUrgent ? 'bg-rose-600 text-white animate-pulse' : 'bg-slate-100 text-slate-700'}`}>
-                ⏱ {fmtTimer(timeLeft)}
-              </div>
-            )}
-            {/*
-              Submit di bilah atas TINGGAL jalan keluar untuk mengumpulkan
-              lebih awal - dan hanya muncul selama masih ada soal kosong.
 
-              Begitu semua terjawab ia menghilang, digantikan tombol besar di
-              BAWAH (lihat akhir daftar pilihan). Di sanalah mata peserta
-              berada saat ia selesai: di tombol Berikutnya yang baru ditekan
-              berkali-kali. Tombol kecil di pojok atas layar bukan tempat
-              menaruh tindakan terpenting dalam alur ini.
-            */}
-            {answered < questions.length && (
-              <button onClick={() => handleSubmit(false)}
-                className="px-3 sm:px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-[12px] sm:text-[13px] font-bold rounded-lg transition-all">
-                Submit
-              </button>
-            )}
-            {/* Tutup TIDAK langsung keluar - lihat dialog konfirmasi di bawah.
-                Menutup quiz berbatas waktu tanpa peringatan berarti kehilangan
-                kesempatan mengerjakan, dan itu tidak bisa dibatalkan. */}
-            <button onClick={() => setKonfirmasiKeluar(true)} aria-label="Tutup quiz"
-              title="Tutup quiz"
-              className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all flex-shrink-0">
-              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+        {/*
+          Bilah atas gelap - dan itu keputusan, bukan selera.
+
+          Dengan chrome yang gelap, kartu soal jadi benda paling TERANG di
+          layar, dan mata pergi ke pertanyaannya tanpa perlu dipaksa lewat
+          ukuran font yang saling berebut besar. Bentuk lamanya putih semua:
+          antarmuka dan soal punya bobot visual yang sama, jadi tidak ada yang
+          menuntun mata ke mana pun.
+        */}
+        <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 flex-shrink-0"
+          style={{ background: '#171C2E', borderBottom: '1px solid #2E3550' }}>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-bold text-[12.5px] sm:text-sm truncate" style={{ color: '#F3F5FB' }}>
+              {session.session_name}
+            </h2>
+            <p className="text-[10.5px] sm:text-[11.5px] mt-0.5" style={{ color: '#6E7695' }}>
+              {answered} dari {questions.length} soal terjawab
+            </p>
+          </div>
+
+          {/*
+            TIMER - benda terbesar di bilah ini, dan memang seharusnya.
+
+            Bentuk lamanya sebuah pil kecil seukuran tombol Submit di sebelahnya.
+            Padahal di quiz berbatas waktu, inilah angka yang paling sering
+            dicari orang. Cincin di kirinya menyusut mengikuti sisa waktu, jadi
+            bisa dibaca sekilas tanpa memproses angkanya.
+          */}
+          {timeLeft !== null && (
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <div className="relative flex-shrink-0" style={{ width: 38, height: 38 }}>
+                <svg width="38" height="38" viewBox="0 0 46 46" aria-hidden="true"
+                  style={{ transform: 'rotate(-90deg)', display: 'block' }}>
+                  <circle cx="23" cy="23" r="19" fill="none" stroke="#232941" strokeWidth="4" />
+                  <circle cx="23" cy="23" r="19" fill="none" strokeWidth="4" strokeLinecap="round"
+                    stroke={WARNA_WAKTU[tingkatWaktu]}
+                    strokeDasharray={KELILING}
+                    strokeDashoffset={KELILING * (1 - porsiWaktu)}
+                    style={{ transition: 'stroke-dashoffset 1s linear, stroke .3s' }} />
+                </svg>
+              </div>
+              <div>
+                <div role="timer"
+                  className={`font-black tabular-nums leading-none text-[26px] sm:text-[34px] ${isUrgent ? 'animate-pulse' : ''}`}
+                  style={{ color: WARNA_WAKTU[tingkatWaktu], letterSpacing: '-0.02em' }}>
+                  {fmtTimer(timeLeft)}
+                </div>
+                <span className="block text-[8.5px] sm:text-[9.5px] font-bold uppercase mt-1"
+                  style={{ color: '#6E7695', letterSpacing: '0.16em' }}>
+                  {KET_WAKTU[tingkatWaktu]}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/*
+            Submit di bilah atas TINGGAL jalan keluar untuk mengumpulkan lebih
+            awal - dan hanya selama masih ada soal kosong. Begitu semua
+            terjawab ia menghilang, digantikan tombol besar di bawah, tempat
+            mata peserta sudah berada.
+          */}
+          {answered < questions.length && (
+            <button onClick={() => handleSubmit(false)}
+              className="px-3 py-2 text-[12px] font-bold rounded-lg transition-all flex-shrink-0 hidden formulir:block"
+              style={{ background: '#232941', color: '#A9B0C9', border: '1px solid #2E3550' }}>
+              Submit
             </button>
-          </div>
+          )}
+
+          {/* Tutup TIDAK langsung keluar - lihat dialog konfirmasi di bawah.
+              Menutup quiz berbatas waktu tanpa peringatan berarti kehilangan
+              kesempatan mengerjakan, dan itu tidak bisa dibatalkan. */}
+          <button onClick={() => setKonfirmasiKeluar(true)} aria-label="Keluar dari quiz"
+            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
+            style={{ background: 'transparent', color: '#6E7695', border: '1px solid #2E3550' }}>
+            <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-        <div className="h-1 bg-slate-200 flex-shrink-0">
-          <div className="h-1 bg-slate-700 transition-all duration-300" style={{ width: `${progress}%` }} />
-        </div>
-        {/* Navigasi soal versi ponsel. Panel di kanan disembunyikan di layar
-            sempit (hidden sm:flex), dan tanpa penggantinya peserta hanya bisa
-            maju-mundur satu per satu - menengok kembali soal nomor 3 dari soal
-            nomor 18 berarti delapan belas kali ketuk. */}
-        <div className="sm:hidden flex-shrink-0 border-b border-slate-200 bg-white overflow-x-auto">
-          <div className="flex gap-1.5 px-3 py-2 w-max">
-            {questions.map((_, i) => {
-              const ans = answers[questions[i].id] ?? savedAnswers[questions[i].id];
-              const isActive = i === current;
-              return (
-                <button key={i} onClick={() => setCurrent(i)}
-                  aria-label={`Soal ${i + 1}${ans ? ' (sudah dijawab)' : ''}`}
-                  aria-current={isActive ? 'true' : undefined}
-                  className={`w-8 h-8 rounded-lg text-[11px] font-bold flex-shrink-0 transition-all
-                    ${isActive ? 'bg-slate-800 text-white shadow-md'
-                      : ans ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
-                            : 'bg-slate-100 text-slate-500'}`}>
-                  {i + 1}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-5 sm:py-8">
-          <div className="max-w-2xl mx-auto">
-            <div className="flex items-center justify-between mb-5">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Soal {current + 1} / {questions.length}</span>
-              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full border ${q.difficulty === 'easy' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : q.difficulty === 'medium' ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>{q.difficulty}</span>
+
+        {relSoal()}
+
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 sm:py-7">
+          {/*
+            SATU kartu putih memuat nomor, soal, dan pilihan - dulu tiga blok
+            terpisah di atas latar terang, yang membuat batas antara "soal" dan
+            "antarmuka" kabur. Di ruang gelap, kartu ini jadi satu benda utuh
+            yang jelas: inilah pekerjaannya.
+          */}
+          <div className="max-w-2xl mx-auto rounded-2xl p-5 sm:p-6"
+            style={{ background: '#FFFFFF', boxShadow: '0 10px 34px -14px rgba(0,0,0,.5)' }}>
+            <div className="flex items-center gap-2.5 mb-3.5 flex-wrap">
+              <span className="text-[11px] font-bold uppercase px-2.5 py-1 rounded-md"
+                style={{ background: '#EEEEFE', color: '#5B5BF5', letterSpacing: '0.1em' }}>
+                Soal {current + 1} / {questions.length}
+              </span>
+              <span className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full border ${q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : q.difficulty === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{q.difficulty}</span>
             </div>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-5">
-              <p className="text-base font-semibold text-slate-800 leading-relaxed">{q.question}</p>
-            </div>
-            <div className="space-y-3">
+            <p className="text-[17px] sm:text-[19px] font-semibold leading-snug mb-5"
+              style={{ color: '#141828', letterSpacing: '-0.015em' }}>{q.question}</p>
+            <div className="space-y-2.5">
               {isEssay && q.answer_format === 'image' ? (
                 /* Jawaban berupa foto - untuk soal merancang yang paling wajar
                    digambar tangan. Yang ditampilkan setelah unggah adalah
@@ -654,14 +739,29 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                 const val = (q as any)[`option_${opt.toLowerCase()}`];
                 const selected = (answers[q.id] ?? savedAnswers[q.id]) === opt;
                 return (
+                  /*
+                    Terpilih ditandai lewat KOTAK HURUF yang jadi solid, bukan
+                    seluruh baris yang menghitam. Yang lama membalik latar dan
+                    teksnya sekaligus - terbaca seperti tombol yang sedang
+                    ditekan, bukan pilihan yang sudah diambil, dan di layar
+                    terang perbedaannya menyilaukan saat berpindah soal.
+                  */
                   <button key={opt} onClick={() => handleAnswer(q.id, opt)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all
-                      ${selected ? 'bg-slate-800 border-slate-800 text-white shadow-md' : 'bg-white border-slate-200 text-slate-700 hover:border-slate-400 hover:bg-slate-50'}`}>
-                    <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black flex-shrink-0 transition-all
-                      ${selected ? 'bg-white text-slate-800' : 'bg-slate-100 text-slate-500'}`}>{opt}</span>
-                    <span className="text-sm font-medium flex-1">{val}</span>
+                    aria-pressed={selected}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all"
+                    style={{
+                      border: `1.5px solid ${selected ? '#5B5BF5' : '#E4E7F0'}`,
+                      background: selected ? '#EEEEFE' : '#FFFFFF',
+                      color: '#141828',
+                    }}>
+                    <span className="w-[30px] h-[30px] rounded-lg flex items-center justify-center text-[13px] font-black flex-shrink-0 transition-all tabular-nums"
+                      style={{
+                        background: selected ? '#5B5BF5' : '#F1F2F8',
+                        color: selected ? '#FFFFFF' : '#5A6180',
+                      }}>{opt}</span>
+                    <span className="text-[14.5px] font-medium flex-1">{val}</span>
                     {selected && (
-                      <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-white flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" focusable="false" className="w-5 h-5 flex-shrink-0" style={{ color: '#5B5BF5' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -669,110 +769,76 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                 );
               })}
             </div>
-            <div className="flex justify-between mt-8">
-              <button onClick={() => setCurrent(p => Math.max(0, p-1))} disabled={current === 0}
-                className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-600 text-sm font-semibold rounded-xl border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm">
-                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                Sebelumnya
-              </button>
-              {/*
-                Di soal TERAKHIR, "Berikutnya" berganti jadi Submit.
-
-                Sebelumnya Submit hanya ada di bilah atas. Saat peserta selesai
-                menjawab, matanya ada di bawah - di tombol Berikutnya yang baru
-                saja ditekan berkali-kali - dan yang ditemukannya di sana cuma
-                tombol mati. Tombol Submit-nya tidak hilang, tapi tidak terlihat
-                justru pada saat ia dibutuhkan; keduanya tetap ada supaya
-                kebiasaan lama tidak patah.
-              */}
-              {current === questions.length - 1 && answered < questions.length ? (
-                //  Soal terakhir tapi masih ada yang kosong: Berikutnya sudah
-                //  tidak ada gunanya, jadi tempatnya dipakai Submit - dengan
-                //  angkanya, supaya jelas ini mengumpulkan pekerjaan separuh.
-                <button onClick={() => handleSubmit(false)}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl transition-all shadow-sm">
-                  Submit ({answered}/{questions.length})
-                </button>
-              ) : current === questions.length - 1 ? (
-                //  Semua terjawab: tombol besar di bawah yang mengambil alih.
-                <span />
-              ) : (
-                <button onClick={() => setCurrent(p => Math.min(questions.length-1, p+1))}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-900 transition-all shadow-sm">
-                  Berikutnya
-                  <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                </button>
-              )}
-            </div>
-            {/*
-              Sisa soal yang belum dijawab, tepat di atas tombol - supaya
-              "Submit (7/10)" tidak cuma memberi angka tapi juga jalan
-              menujunya. Tanpa ini peserta harus menebak nomor mana yang
-              tertinggal dari papan navigasi di sisi kanan, yang di ponsel
-              malah tidak tampil sama sekali.
-            */}
-            {/*
-              Tombol besar - muncul di soal MANA PUN begitu seluruh soal
-              terjawab, bukan cuma di soal terakhir.
-
-              Orang tidak selalu selesai di nomor terakhir: ia melompat ke
-              nomor yang tadi dilewati, mengisinya, lalu berhenti di sana.
-              Kalau Submit besar cuma ada di soal terakhir, ia harus menebak
-              bahwa dirinya masih perlu menekan Berikutnya beberapa kali
-              sampai ke ujung - padahal pekerjaannya sudah selesai.
-            */}
-            {answered === questions.length && (
-              <button onClick={() => handleSubmit(false)}
-                className="w-full mt-4 px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white text-base sm:text-lg font-black rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
-                ✓ Submit Quiz
-                <span className="text-xs font-bold opacity-80">({answered}/{questions.length} terjawab)</span>
-              </button>
-            )}
-            {current === questions.length - 1 && answered < questions.length && (
-              <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
-                <p className="text-xs font-bold text-amber-800 mb-2">
-                  ⚠️ Masih ada {questions.length - answered} soal yang belum dijawab
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {questions.map((qq, i) =>
-                    (answers[qq.id] ?? savedAnswers[qq.id]) ? null : (
-                      <button key={qq.id} onClick={() => setCurrent(i)}
-                        className="w-8 h-8 rounded-lg bg-white border border-amber-300 text-amber-700 text-xs font-bold hover:bg-amber-100 transition-all">
-                        {i + 1}
-                      </button>
-                    ),
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </div>
-      </div>
-      <div className="hidden sm:flex w-48 bg-white border-l border-slate-200 p-4 overflow-y-auto flex-shrink-0 flex-col gap-4">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Navigasi Soal</p>
-        <div className="grid grid-cols-5 gap-1.5">
-          {questions.map((_, i) => {
-            const ans = answers[questions[i].id] ?? savedAnswers[questions[i].id];
-            const isActive = i === current;
-            return (
-              <button key={i} onClick={() => setCurrent(i)}
-                className={`w-full aspect-square rounded-lg text-xs font-bold transition-all
-                  ${isActive ? 'bg-slate-800 text-white shadow-md' : ans ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
-                {i+1}
-              </button>
-            );
-          })}
-        </div>
-        <div className="space-y-1.5 text-[11px] text-slate-500">
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-slate-800 flex-shrink-0" />Aktif</div>
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-emerald-200 border border-emerald-300 flex-shrink-0" />Dijawab</div>
-          <div className="flex items-center gap-2"><span className="w-3 h-3 rounded bg-slate-100 border border-slate-200 flex-shrink-0" />Belum</div>
-        </div>
-        {tabSwitches > 0 && (
-          <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-semibold">⚠️ Tab switch: {tabSwitches}x</div>
-        )}
-        <div className="mt-auto pt-2 border-t border-slate-100">
-          <p className="text-[10px] text-slate-400 text-center">{answered} / {questions.length} dijawab</p>
+
+        {/*
+          Bilah aksi menempel di BAWAH layar, bukan ikut menggulung bersama
+          soal. Di ponsel inilah tempat ibu jari berada, dan tombolnya tidak
+          perlu dicari dengan menggulung sampai habis.
+        */}
+        <div className="flex-shrink-0 px-4 sm:px-6 py-3.5"
+          style={{ background: '#171C2E', borderTop: '1px solid #2E3550' }}>
+          <div className="max-w-2xl mx-auto flex flex-col gap-2.5">
+
+            {answered < questions.length && (
+              <p className="text-[12px]" style={{ color: '#6E7695' }}>
+                <b style={{ color: '#F3F5FB' }}>{questions.length - answered} soal belum dijawab.</b>{' '}
+                Ketuk ruas abu di rel atas untuk lompat ke sana.
+              </p>
+            )}
+
+            {/*
+              Tombol besar muncul di soal MANA PUN begitu seluruh soal
+              terjawab, bukan cuma di soal terakhir: orang tidak selalu selesai
+              di nomor terakhir - ia melompat ke nomor yang tadi dilewati,
+              mengisinya, lalu berhenti di sana.
+            */}
+            {answered === questions.length ? (
+              <div className="flex gap-2.5">
+                <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
+                  className="px-4 sm:px-5 py-4 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+                  style={{ background: '#232941', color: '#F3F5FB', border: '1px solid #2E3550' }}>
+                  ←<span className="hidden formulir:inline"> Sebelumnya</span>
+                </button>
+                <button onClick={() => handleSubmit(false)}
+                  className="flex-1 px-6 py-4 text-[15px] sm:text-base font-black rounded-xl transition-all"
+                  style={{ background: '#2DD4A0', color: '#06281D' }}>
+                  ✓ Kumpulkan Jawaban
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2.5">
+                <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
+                  className="px-4 sm:px-5 py-3.5 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0"
+                  style={{ background: '#232941', color: '#F3F5FB', border: '1px solid #2E3550' }}>
+                  ←<span className="hidden formulir:inline"> Sebelumnya</span>
+                </button>
+                {current === questions.length - 1 ? (
+                  //  Soal terakhir tapi masih ada yang kosong: Berikutnya tidak
+                  //  ada gunanya lagi, jadi tempatnya dipakai Submit - dengan
+                  //  angkanya, supaya jelas ini mengumpulkan pekerjaan separuh.
+                  <button onClick={() => handleSubmit(false)}
+                    className="flex-1 px-5 py-3.5 text-sm font-bold rounded-xl transition-all"
+                    style={{ background: '#232941', color: '#F3F5FB', border: '1px solid #2E3550' }}>
+                    Submit ({answered}/{questions.length})
+                  </button>
+                ) : (
+                  <button onClick={() => setCurrent(p => Math.min(questions.length - 1, p + 1))}
+                    className="flex-1 px-5 py-3.5 text-sm font-bold rounded-xl transition-all"
+                    style={{ background: '#5B5BF5', color: '#FFFFFF' }}>
+                    Berikutnya →
+                  </button>
+                )}
+              </div>
+            )}
+
+            {tabSwitches > 0 && (
+              <p className="text-[11px] font-semibold" style={{ color: '#FB5779' }}>
+                ⚠️ Berpindah tab tercatat: {tabSwitches}x
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
