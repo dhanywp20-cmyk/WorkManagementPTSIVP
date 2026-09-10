@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
+import {
+  TABEL_KODE_ACARA, dariBaris, periksaKodeAcara,
+  type PengaturanKodeAcara, type BarisKodeAcara,
+} from '@/lib/kode-acara';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,31 +68,41 @@ function bersih(v: unknown): string {
   return typeof v === 'string' ? v.trim() : '';
 }
 
-type StatusKodeAcara = 'kosong' | 'valid' | 'tidak_valid';
-
-/** Menentukan status kode acara yang dikirim.
+/**
+ * Pengaturan kode acara - dari Admin Panel, dengan variabel lingkungan sebagai
+ * cadangan.
  *
- *  Sebelumnya ini cuma balikin boolean "bypass aktif atau tidak", jadi kode
- *  yang SALAH KETIK diperlakukan sama persis dengan field yang DIKOSONGKAN -
- *  keduanya diam-diam jatuh ke pendaftaran normal (Pending Approval) tanpa
- *  memberi tahu pemakai kalau kodenya salah. Dipisah jadi 3 status supaya
- *  pemanggil bisa membedakan "memang tidak isi kode" (wajar, lanjut normal)
- *  dari "isi kode tapi salah/kedaluwarsa/fitur nonaktif" (harus ditolak
- *  dengan pesan, bukan lolos senyap). */
-function periksaKodeAcara(kodeDikirim: string): StatusKodeAcara {
-  if (!kodeDikirim) return 'kosong';
+ * Dulu satu-satunya sumbernya REGISTER_BYPASS_* di Vercel, jadi membuka
+ * pendaftaran untuk satu acara berarti menyunting variabel lingkungan lalu
+ * menunggu deploy ulang - dan menutupnya kembali sesudah acara menuntut hal
+ * yang sama sekali lagi. Sekarang admin mengaturnya dari layar, berlaku
+ * seketika.
+ *
+ * Variabel lingkungannya SENGAJA tetap dibaca sebagai cadangan: pemasangan
+ * yang sudah terlanjur memakainya tidak boleh mendadak menolak kode yang
+ * sedang dipakai peserta hanya karena kode ini naik ke produksi. Begitu admin
+ * menyimpan sekali lewat layar, nilai di basis data yang dipakai dan env
+ * diabaikan.
+ */
+async function bacaPengaturanKodeAcara(
+  supabase: ReturnType<typeof getAdminClient>,
+): Promise<PengaturanKodeAcara | null> {
+  try {
+    const { data } = await supabase.from(TABEL_KODE_ACARA)
+      .select('aktif, kode, berlaku_sampai').maybeSingle();
+    const tersimpan = dariBaris(data as BarisKodeAcara | null);
+    //  Baris ada tapi kodenya kosong = admin belum pernah mengisinya lewat
+    //  layar; itu bukan "pengaturan tersimpan", jadi tetap jatuh ke env.
+    if (tersimpan && tersimpan.kode) return tersimpan;
+  } catch { /* pengaturan belum ada - jatuh ke env di bawah */ }
 
-  const kodeRahasia = (process.env.REGISTER_BYPASS_CODE || '').trim();
-  const saklarNyala = (process.env.REGISTER_BYPASS_ENABLED || '').trim() === 'true';
-  if (!saklarNyala || !kodeRahasia) return 'tidak_valid';
-  if (kodeDikirim !== kodeRahasia) return 'tidak_valid';
-
-  const batasWaktu = process.env.REGISTER_BYPASS_UNTIL;
-  if (batasWaktu) {
-    const batas = new Date(batasWaktu);
-    if (!Number.isNaN(batas.getTime()) && new Date() > batas) return 'tidak_valid';
-  }
-  return 'valid';
+  const kode = (process.env.REGISTER_BYPASS_CODE || '').trim();
+  if (!kode) return null;
+  return {
+    aktif: (process.env.REGISTER_BYPASS_ENABLED || '').trim() === 'true',
+    kode,
+    berlakuSampai: (process.env.REGISTER_BYPASS_UNTIL || '').trim() || null,
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -116,10 +130,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabase = getAdminClient();
+
     // Kode acara diisi tapi salah/kedaluwarsa/fitur lagi nonaktif -> tolak di
     // sini dengan pesan jelas. Jangan biarkan lolos ke pendaftaran normal
     // seolah-olah field-nya memang dikosongkan.
-    const statusKode = periksaKodeAcara(event_code);
+    const statusKode = periksaKodeAcara(event_code, await bacaPengaturanKodeAcara(supabase));
     if (statusKode === 'tidak_valid') {
       return NextResponse.json(
         { error: 'Kode acara tidak valid atau sudah kedaluwarsa. Kosongkan field ini jika tidak punya kode.' },
@@ -127,8 +143,6 @@ export async function POST(request: NextRequest) {
       );
     }
     const bypass = statusKode === 'valid';
-
-    const supabase = getAdminClient();
 
     // Pemeriksaan ganda tetap di sini supaya pesannya bisa dibaca manusia.
     // Kolom username juga UNIQUE di database, jadi dua pendaftaran yang datang
