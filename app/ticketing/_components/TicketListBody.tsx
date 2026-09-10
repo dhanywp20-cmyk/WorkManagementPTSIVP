@@ -6,9 +6,8 @@ import {
   ViewIconBtn, DeleteIconBtn, FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
 } from '@/components/shared';
 import { Ico } from './Ico';
-import { cetakTicket } from './cetak-ticket';
 import type { Ticket, TeamMember, User, OverdueSetting } from './shared';
-import { formatDateTime, statusColors } from './shared';
+import { formatDateTime, statusColors, TAHUN_TERBARU } from './shared';
 
 /**
  * Isi "Ticket List": error/loading/kosong, kartu mobile, tabel desktop, dan
@@ -24,7 +23,7 @@ export function TicketListBody({
   filteredTickets, paginatedTickets, tickets, users, teamMembers,
   isTicketOverdue, getOverdueSetting, getWarrantyInfo, bolehUpdateTicket,
   canApproveAssign, canManageTickets, currentUserTeamType,
-  bukaDetailTicket, bukaRingkasanAktivitas, bukaApprovalUntukTicket,
+  bukaDetailTicket, bukaRingkasanAktivitas, bukaApprovalUntukTicket, cetakTicket,
   bukaReopenTicket, bukaDeleteTicket, bukaOverdueSetting,
   currentPage, setCurrentPage, totalPages, ITEMS_PER_PAGE,
   selectMode, selectedIds, toggleSelectId, toggleSelectAll,
@@ -47,6 +46,15 @@ export function TicketListBody({
   tickets: Ticket[];
   users: User[];
   teamMembers: TeamMember[];
+  /*
+    Cetak diterima sebagai PROP, bukan diimpor langsung dari './cetak-ticket'
+    seperti sebelumnya. Daftar tiket kini cuma membawa log RINGKAS (tanpa notes
+    dan tautan berkas - lihat KOLOM_LOG_RINGKAS), sementara hasil cetak justru
+    menuliskan isi itu. Mengimpornya di sini berarti mencetak lembar dengan
+    kolom catatan kosong tanpa satu pun tanda ada yang salah. Induknya yang
+    memuat log penuh dulu, baru mencetak.
+  */
+  cetakTicket: (t: Ticket) => void;
   isTicketOverdue: (t: Ticket) => boolean;
   getOverdueSetting: (id: string) => OverdueSetting | undefined;
   getWarrantyInfo: (projectName: string) => { isIn: boolean; diffDays: number; wy: number; expiryStr: string } | null;
@@ -90,7 +98,7 @@ export function TicketListBody({
 
   if (filteredTickets.length === 0) return (
     <ListEmptyState
-      adaFilterAktif={searchProject.trim() !== '' || searchSalesName.trim() !== '' || filterStatus !== 'All' || filterYear !== 'all'}
+      adaFilterAktif={searchProject.trim() !== '' || searchSalesName.trim() !== '' || filterStatus !== 'All' || filterYear !== TAHUN_TERBARU}
       onReset={() => { setSearchProject(''); setSearchSalesName(''); setFilterStatus('All'); setFilterYear('all'); }}
       icon="🎫"
       judulKosong="Belum ada tiket"

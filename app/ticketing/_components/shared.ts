@@ -130,6 +130,74 @@ export interface TeamMember {
   jabatan?: string | null;
 }
 
+/**
+ * Jeda polling cadangan di halaman Ticketing.
+ *
+ * Realtime (postgres_changes) yang menangani perubahan langsung; polling ini
+ * cuma jaring pengaman kalau realtime meleset - dan jaring pengaman tidak perlu
+ * ditebar dua kali semenit. Lihat catatan panjangnya di page.tsx: nilai lama
+ * (30 detik, tanpa henti walau tab tersembunyi) sanggup menghabiskan hampir
+ * seluruh kuota egress bulanan lewat satu tab yang menganggur.
+ */
+export const JEDA_POLLING_MS = 120_000;
+
+/**
+ * Kolom activity_logs yang benar-benar dibutuhkan DAFTAR tiket.
+ *
+ * Daftar memakai log untuk tiga hal saja: lencana jumlah, menebak handler PTS
+ * saat assign_name kosong (ringkasPenanganan), dan mencari kapan tiket jadi
+ * Solved (isTicketOverdue). Ketiganya tidak menyentuh notes, action_taken,
+ * maupun tautan berkas/foto - padahal justru kolom-kolom itu yang membentuk
+ * 61% ukuran log (129 KB -> 50 KB pada data hari ini).
+ *
+ * Isi lengkapnya dimuat saat satu tiket benar-benar dibuka - lihat
+ * muatLogPenuh() di page.tsx.
+ */
+export const KOLOM_LOG_RINGKAS =
+  'id, ticket_id, handler_name, team_type, assigned_to_services, new_status, created_at';
+
+/**
+ * Berapa bulan ke belakang yang ditarik saat filter tahun masih "terbaru".
+ *
+ * Biaya polling tumbuh mengikuti besar tabel: hari ini 84 tiket, tahun depan
+ * bisa ribuan, dan SETIAP polling ikut membesar. Jendela ini yang membuatnya
+ * berhenti tumbuh.
+ *
+ * Tiket lama TIDAK hilang - pemakai tinggal memilih tahunnya di penyaring, dan
+ * kueri berikutnya mengambil tahun itu. Karena itu pilihan bawaannya diberi
+ * label "12 Bulan Terakhir", bukan "Semua Tahun": daftar yang menyebut dirinya
+ * memuat semuanya padahal berhenti di 12 bulan adalah kebohongan kecil yang
+ * baru ketahuan saat seseorang mencari tiket lama dan menyimpulkan datanya
+ * hilang.
+ */
+export const RENTANG_BULAN_TIKET = 12;
+
+/** Penyaring tahun bawaan - lihat RENTANG_BULAN_TIKET. */
+export const TAHUN_TERBARU = 'terbaru';
+
+export interface RentangTiket { dari: string; sebelum: string }
+
+/**
+ * Batas created_at untuk kueri daftar tiket.
+ *
+ * `sebelum` selalu ada supaya kedua cabang memakai bentuk rantai yang sama;
+ * untuk jendela bergulir ia sengaja ditaruh sangat jauh di depan, yang artinya
+ * "tanpa batas atas" - tiket yang dibuat saat halaman sedang terbuka tetap
+ * ikut terambil, berapa lama pun tab itu ditinggalkan.
+ */
+export function rentangTiket(filterTahun: string): RentangTiket {
+  if (filterTahun && filterTahun !== TAHUN_TERBARU && /^\d{4}$/.test(filterTahun)) {
+    const t = Number(filterTahun);
+    return {
+      dari: new Date(Date.UTC(t, 0, 1)).toISOString(),
+      sebelum: new Date(Date.UTC(t + 1, 0, 1)).toISOString(),
+    };
+  }
+  const dari = new Date();
+  dari.setMonth(dari.getMonth() - RENTANG_BULAN_TIKET);
+  return { dari: dari.toISOString(), sebelum: new Date(Date.UTC(3000, 0, 1)).toISOString() };
+}
+
 export interface ActivityLog {
   id: string;
   ticket_id?: string;

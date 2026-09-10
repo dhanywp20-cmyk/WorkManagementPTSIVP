@@ -30,6 +30,7 @@ import {
   getCronDisplay as getCronDisplayShared,
   getWarrantyInfo as getWarrantyInfoShared,
   bolehUpdateTicket as bolehUpdateTicketShared,
+  JEDA_POLLING_MS, KOLOM_LOG_RINGKAS, TAHUN_TERBARU, rentangTiket, RENTANG_BULAN_TIKET,
 } from "./_components/shared";
 import { NewTicketModal, type NewTicketForm } from "./_components/NewTicketModal";
 import {
@@ -48,6 +49,7 @@ import { TicketListBody } from "./_components/TicketListBody";
 import { TicketDetailPopup } from "./_components/TicketDetailPopup";
 import { appLink } from "@/lib/app-url";
 import { eksporExcel } from "./_components/ekspor-excel";
+import { cetakTicket } from "./_components/cetak-ticket";
 import { Toast, PageHeader, ConfirmDialog, type ConfirmState } from "@/components/shared";
 
 function TicketingSystemInner() {
@@ -136,7 +138,7 @@ function TicketingSystemInner() {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [searchProject, setSearchProject] = useState("");
   const [searchSalesName, setSearchSalesName] = useState("");
-  const [filterYear, setFilterYear] = useState<string>("all");
+  const [filterYear, setFilterYear] = useState<string>(TAHUN_TERBARU);
   const [filterStatus, setFilterStatus] = useState("All");
   const [selectedHandlerTeam, setSelectedHandlerTeam] = useState<"PTS" | "Services">("PTS");
 
@@ -387,7 +389,11 @@ function TicketingSystemInner() {
     setCurrentUser(null); setLoginTime(null); setSelectedTicket(null);
     setSelectMode(false); setSelectedIds(new Set()); setHandlerFilter(null); setSalesDivisionFilter(null); setProductFilter(null);
     setSearchProduct(""); setSearchProject(""); setSearchSalesName("");
-    setFilterYear("All"); setFilterStatus("All"); setSelectedHandlerTeam("PTS");
+    //  "All" (huruf besar) tidak pernah cocok dengan nilai penyaring mana pun -
+    //  bawaannya dulu "all". Jadi reset saat logout sebenarnya tidak pernah
+    //  mengembalikan penyaring tahun ke posisi semula. Sekarang memakai
+    //  konstanta yang sama dengan nilai awalnya.
+    setFilterYear(TAHUN_TERBARU); setFilterStatus("All"); setSelectedHandlerTeam("PTS");
     clearSession();
     const target = window.top !== window ? window.top : window;
     if (target) target.location.href = "/dashboard";
@@ -396,6 +402,15 @@ function TicketingSystemInner() {
   const fetchData = async (userOverride?: User | null, silent = false) => {
     try {
       if (!silent) setTicketsLoading(true);
+      /*
+        Jendela tanggal untuk SELURUH kueri daftar di bawah - dibaca dari ref,
+        bukan dari state langsung. fetchData dipanggil juga oleh polling dan
+        oleh langganan realtime, yang keduanya menangkap nilai state pada saat
+        efeknya dipasang; tanpa ref mereka akan selamanya memakai tahun yang
+        terpilih saat login, dan mengganti penyaring tahun tidak akan pernah
+        mengubah apa yang ditarik.
+      */
+      const rentang = rentangTiket(filterYearRef.current);
       const [membersData, usersData] = await Promise.all([
         // team_members tidak ada - ambil dari users dengan role team
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, bisa_ditugaskan").in("role", ["team", "team_pts"]).order("full_name"),
@@ -470,8 +485,9 @@ function TicketingSystemInner() {
         const ownBase: Ticket[] = [];
         const addOwn = (t: Ticket) => { if (!ownBase.find(x => x.id === t.id)) ownBase.push(t); };
         const { data: milikSaya } = await cobaIdentitas(async pakaiUuid => await supabase.from("tickets")
-          .select("*, activity_logs(*)")
+          .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
           .or(pakaiUuid ? klausaMilik : klausaMilikTanpaUuid)
+          .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
           .order("created_at", { ascending: false }));
         (milikSaya ?? []).forEach(addOwn);
 
@@ -489,7 +505,8 @@ function TicketingSystemInner() {
           let ivpTickets: Ticket[] = [...ownBase];
           const addIVP = (t: Ticket) => { if (!ivpTickets.find(x => x.id === t.id)) ivpTickets.push(t); };
           if (handledDivisions.length > 0) {
-            const { data: divTickets } = await supabase.from("tickets").select("*, activity_logs(*)").in("sales_division", handledDivisions).order("created_at", { ascending: false });
+            const { data: divTickets } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).in("sales_division", handledDivisions).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
+          .order("created_at", { ascending: false });
             (divTickets ?? []).forEach((t: Ticket) => {
               const tBrand = (t.brand ?? null) as string | null;
               const myBrands = myBrandMaps.filter(m => m.sales_division === t.sales_division).map(m => m.brand_type);
@@ -498,8 +515,9 @@ function TicketingSystemInner() {
             });
           }
           // Ticket yg secara eksplisit di-CC ke guest ini (internal_sales_id / _2) - brand match.
-          const { data: byInternalId } = await supabase.from("tickets").select("*, activity_logs(*)")
-            .or(`internal_sales_id.eq.${resolvedUser.id},internal_sales_id_2.eq.${resolvedUser.id}`).order("created_at", { ascending: false });
+          const { data: byInternalId } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
+            .or(`internal_sales_id.eq.${resolvedUser.id},internal_sales_id_2.eq.${resolvedUser.id}`).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
+          .order("created_at", { ascending: false });
           (byInternalId ?? []).forEach(addIVP);
           // Sort akhir berdasarkan created_at descending
           ivpTickets.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
@@ -568,9 +586,10 @@ function TicketingSystemInner() {
             let allDivTickets: Ticket[] = [];
             if (supervisedDivisions.length > 0) {
               const { data: dt } = await supabase.from("tickets")
-                .select("*, activity_logs(*)")
+                .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
                 .in("sales_division", supervisedDivisions)
-                .order("created_at", { ascending: false });
+                .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
+          .order("created_at", { ascending: false });
               if (dt) allDivTickets = dt;
             }
 
@@ -580,9 +599,10 @@ function TicketingSystemInner() {
               const manualUsernames = manualUsers.map((u: any) => u.username).filter(Boolean);
               if (manualUsernames.length > 0) {
                 const { data: manualTickets } = await supabase.from("tickets")
-                  .select("*, activity_logs(*)")
+                  .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
                   .in("created_by", manualUsernames)
-                  .order("created_at", { ascending: false });
+                  .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
+          .order("created_at", { ascending: false });
                 (manualTickets ?? []).forEach((t: Ticket) => {
                   if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
                 });
@@ -606,10 +626,11 @@ function TicketingSystemInner() {
               )) as string[];
               if (subordinateNames.length > 0) {
                 const { data: noDivTickets } = await supabase.from("tickets")
-                  .select("*, activity_logs(*)")
+                  .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
                   .in("sales_name", subordinateNames)
                   .is("sales_division", null)
-                  .order("created_at", { ascending: false });
+                  .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
+          .order("created_at", { ascending: false });
                 (noDivTickets ?? []).forEach((t: Ticket) => {
                   if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
                 });
@@ -643,9 +664,10 @@ function TicketingSystemInner() {
             // Guest biasa: HANYA ticket milik sendiri berdasarkan sales_name atau created_by
             if (selfDiv) {
               const { data: divTickets } = await supabase.from("tickets")
-                .select("*, activity_logs(*)")
+                .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
                 .eq("sales_division", selfDiv)
-                .order("created_at", { ascending: false });
+                .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
+          .order("created_at", { ascending: false });
               (divTickets ?? []).forEach((t: Ticket) => {
                 if (isMyTicket(t)) addUnique(t);
               });
@@ -658,7 +680,8 @@ function TicketingSystemInner() {
           if (selectedTicket && !finalTickets.find((t: Ticket) => t.id === selectedTicket.id)) setSelectedTicket(null);
         }
       } else {
-        const { data: ticketsData } = await supabase.from("tickets").select("*, activity_logs(*)").order("created_at", { ascending: false });
+        const { data: ticketsData } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
+          .order("created_at", { ascending: false });
         let mergedTickets: Ticket[] = ticketsData || [];
         // Visibility (catatan spec): anggota tim biasa (bukan admin/superadmin,
         // bukan Manager) TIDAK lihat ticket yg masih pending approval / belum
@@ -681,7 +704,15 @@ function TicketingSystemInner() {
           const svcLogs: ActivityLog[] = [];
           for (let i = 0; i < idTampil.length; i += 100) {
             const { data } = await supabaseServices.from("activity_logs")
-              .select("id,ticket_id,handler_name,handler_username,action_taken,notes,file_url,file_name,photo_url,photo_name,new_status,team_type,assigned_to_services,created_at")
+              //  Ringkas juga: kueri ini ikut jalan pada SETIAP polling, jadi
+              //  kolom berat di sini sama mahalnya dengan yang di basis PTS.
+              .select(KOLOM_LOG_RINGKAS)
+              //  TANPA batas rentang: yang disaring di sini LOG, bukan tiket.
+              //  Log ditulis SESUDAH tiketnya dibuat - kadang jauh sesudahnya -
+              //  jadi memakai jendela tanggal milik tiket akan membuang catatan
+              //  terbaru pada tiket lama, tepat pada saat seseorang membuka
+              //  tahun lampau untuk membacanya. Pembatasnya sudah ticket_id:
+              //  daftarnya cuma berisi tiket yang memang sedang ditampilkan.
               .in("ticket_id", idTampil.slice(i, i + 100))
               .order("created_at", { ascending: false });
             if (data) svcLogs.push(...(data as ActivityLog[]));
@@ -1172,8 +1203,75 @@ function TicketingSystemInner() {
   // Pembuka aksi baris tiket (mobile card + tabel desktop) - dikumpulkan di
   // satu tempat supaya kedua tampilan memanggil handler yang SAMA, bukan
   // masing-masing menulis ulang urutan setState-nya sendiri.
-  const bukaDetailTicket = (ticket: Ticket) => { setSelectedTicket(ticket); setShowTicketDetailPopup(true); };
-  const bukaRingkasanAktivitas = (ticket: Ticket) => { setSummaryTicket(ticket); setShowActivitySummary(true); };
+  /*
+    Muat ISI LENGKAP activity log untuk beberapa tiket sekaligus.
+
+    Daftar tiket sengaja cuma membawa kolom ringkas (lihat KOLOM_LOG_RINGKAS):
+    notes, action_taken, dan tautan berkas/foto adalah 61% ukuran log, dan
+    tidak satu pun dipakai daftar. Tapi begitu satu tiket DIBUKA - atau dicetak,
+    atau diekspor - isi itulah yang jadi intinya.
+
+    Jadi ia dimuat di sini, saat dibutuhkan, untuk tiket yang bersangkutan
+    saja. Gagal memuat TIDAK menggagalkan apa pun: yang tampil tinggal log
+    ringkas seperti sebelum dibuka, dan itu masih menyebut siapa dan kapan.
+    Log dari kedua basis data (PTS dan Services) digabung, sama seperti yang
+    dilakukan fetchData.
+  */
+  const muatLogPenuh = async (idTiket: string[]): Promise<Record<string, ActivityLog[]>> => {
+    const peta: Record<string, ActivityLog[]> = {};
+    if (idTiket.length === 0) return peta;
+    const ambil = async (klien: typeof supabase, ids: string[]) => {
+      const keluar: ActivityLog[] = [];
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data } = await klien.from("activity_logs")
+          .select("*")
+          .in("ticket_id", ids.slice(i, i + 100))
+          .order("created_at", { ascending: true });
+        if (data) keluar.push(...(data as ActivityLog[]));
+      }
+      return keluar;
+    };
+    const [logPTS, logSvc] = await Promise.all([
+      ambil(supabase, idTiket).catch(() => [] as ActivityLog[]),
+      ambil(supabaseServices as typeof supabase, idTiket).catch(() => [] as ActivityLog[]),
+    ]);
+    for (const log of [...logPTS, ...logSvc]) {
+      const kunci = log.ticket_id ?? "";
+      if (!kunci) continue;
+      const sudah = (peta[kunci] ??= []);
+      if (!sudah.find(l => l.id === log.id)) sudah.push(log);
+    }
+    for (const kunci of Object.keys(peta)) {
+      peta[kunci].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    }
+    return peta;
+  };
+
+  /** Kembalikan satu tiket dengan log penuh; kalau gagal, tiket apa adanya. */
+  const denganLogPenuh = async (ticket: Ticket): Promise<Ticket> => {
+    try {
+      const peta = await muatLogPenuh([ticket.id]);
+      const penuh = peta[ticket.id];
+      return penuh && penuh.length > 0 ? { ...ticket, activity_logs: penuh } : ticket;
+    } catch { return ticket; }
+  };
+
+  const bukaDetailTicket = (ticket: Ticket) => {
+    //  Popup dibuka LANGSUNG dengan data ringkas yang sudah ada, lalu
+    //  diperkaya begitu log penuhnya tiba. Menunggu dulu berarti satu klik
+    //  yang tidak terasa apa-apa selama beberapa ratus milidetik, dan itu
+    //  jauh lebih terasa daripada catatan log yang menyusul sesaat kemudian.
+    setSelectedTicket(ticket); setShowTicketDetailPopup(true);
+    void denganLogPenuh(ticket).then(lengkap => {
+      setSelectedTicket(prev => (prev && prev.id === lengkap.id ? lengkap : prev));
+    });
+  };
+  const bukaRingkasanAktivitas = (ticket: Ticket) => {
+    setSummaryTicket(ticket); setShowActivitySummary(true);
+    void denganLogPenuh(ticket).then(lengkap => {
+      setSummaryTicket(prev => (prev && prev.id === lengkap.id ? lengkap : prev));
+    });
+  };
   const bukaApprovalUntukTicket = (ticket: Ticket) => {
     setApprovalAssignees({}); setApprovalTicket(ticket); setApprovalAssignee("");
     fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true);
@@ -2061,7 +2159,35 @@ function TicketingSystemInner() {
     prev.size === filteredTickets.length ? new Set() : new Set(filteredTickets.map(t => t.id))
   );
 
-  const jalankanEksporExcel = () => eksporExcel({ tickets, filteredTickets, currentUserTeamType, stats, isTicketOverdue, notify });
+  /*
+    Ekspor Excel memuat log PENUH dulu - sheet "Activity Log"-nya menuliskan
+    notes dan action_taken tiap langkah, dan itu justru kolom yang sengaja
+    tidak dibawa daftar. Tanpa langkah ini file ekspornya tetap jadi, tapi
+    kolom catatannya kosong semua: rusak yang tidak terlihat rusak.
+
+    Dimuat hanya untuk tiket yang benar-benar diekspor (filteredTickets), dan
+    hanya saat tombolnya ditekan.
+  */
+  const jalankanEksporExcel = async () => {
+    notify('success', 'Menyiapkan data ekspor...');
+    let ticketsPenuh = tickets;
+    let terfilterPenuh = filteredTickets;
+    try {
+      const peta = await muatLogPenuh(filteredTickets.map(t => t.id));
+      const lengkapi = (t: Ticket) => (peta[t.id] ? { ...t, activity_logs: peta[t.id] } : t);
+      terfilterPenuh = filteredTickets.map(lengkapi);
+      ticketsPenuh = tickets.map(lengkapi);
+    } catch {
+      //  Gagal memuat log bukan alasan membatalkan ekspor - datanya masih
+      //  berguna, cuma catatan per langkahnya yang tidak selengkap biasanya.
+    }
+    eksporExcel({ tickets: ticketsPenuh, filteredTickets: terfilterPenuh, currentUserTeamType, stats, isTicketOverdue, notify });
+  };
+
+  /** Cetak satu tiket - log penuhnya dimuat dulu, alasannya sama dgn ekspor. */
+  const jalankanCetakTicket = async (ticket: Ticket) => {
+    cetakTicket(await denganLogPenuh(ticket));
+  };
 
   const jalankanBulkDelete = async () => {
     setBulkConfirm(false); setBulkDeleting(true);
@@ -2087,7 +2213,10 @@ function TicketingSystemInner() {
       const match = projectName.toLowerCase().includes(searchProject.toLowerCase()) || issueCase.toLowerCase().includes(searchProject.toLowerCase());
       const salesNameMatch = salesName.toLowerCase().includes(searchSalesName.toLowerCase());
       const ticketYear = t.created_at ? new Date(t.created_at).getFullYear().toString() : "";
-      const yearMatch = filterYear === "all" || ticketYear === filterYear;
+      //  Server sudah membatasi rentangnya (lihat rentangTiket), jadi di sini
+      //  'terbaru' tidak menyaring apa pun lagi - menyaring dua kali dengan
+      //  aturan berbeda cuma menghasilkan baris yang hilang tanpa sebab.
+      const yearMatch = filterYear === TAHUN_TERBARU || ticketYear === filterYear;
       let statusMatch = false;
       if (filterStatus === "All") statusMatch = true;
       else if (filterStatus === "Overdue") statusMatch = isTicketOverdue(t) && t.status !== "Solved";
@@ -2162,11 +2291,43 @@ function TicketingSystemInner() {
     return { data, total: data.reduce((s, d) => s + d.value, 0) };
   }, [tickets]);
 
+  /*
+    Daftar tahun untuk penyaring - DARI SERVER, bukan disimpulkan dari tiket
+    yang sedang tampil.
+
+    Dulu ia dikumpulkan dari array `tickets`. Itu benar selama seluruh tiket
+    memang ditarik. Sekarang tarikan bawaannya dibatasi 12 bulan terakhir
+    (lihat rentangTiket), jadi menyimpulkannya dari sana akan membuat pilihan
+    tahun lama HILANG dari dropdown - dan begitu pilihannya hilang, tiket lama
+    tidak bisa dijangkau sama sekali. Yang tadinya cuma "tidak ditampilkan"
+    berubah jadi "tidak ada".
+
+    Kuerinya sendiri murah: satu kolom, tanpa join, dan hanya dijalankan sekali
+    saat halaman dibuka.
+  */
+  const [tahunTersedia, setTahunTersedia] = useState<string[]>([]);
+  useEffect(() => {
+    if (!currentUser) return;
+    let hidup = true;
+    (async () => {
+      const { data } = await supabase.from("tickets").select("created_at");
+      if (!hidup || !data) return;
+      const tahun = new Set<string>();
+      for (const b of data as { created_at: string | null }[]) {
+        if (b.created_at) tahun.add(new Date(b.created_at).getFullYear().toString());
+      }
+      setTahunTersedia(Array.from(tahun).sort((a, b) => parseInt(b) - parseInt(a)));
+    })();
+    return () => { hidup = false; };
+  }, [currentUser]);
+
   const availableYears = useMemo(() => {
-    const years = new Set<string>();
+    //  Gabungkan dengan tahun yang muncul di tiket yang sedang tampil, supaya
+    //  penyaringnya tetap berguna kalau kueri daftar tahun di atas gagal.
+    const years = new Set<string>(tahunTersedia);
     tickets.forEach((t) => { if (t.created_at) years.add(new Date(t.created_at).getFullYear().toString()); });
     return Array.from(years).sort((a, b) => parseInt(b) - parseInt(a));
-  }, [tickets]);
+  }, [tickets, tahunTersedia]);
 
   const uniqueProjectNames = useMemo(() => {
     const names = tickets.map((t) => t.project_name);
@@ -2223,7 +2384,17 @@ function TicketingSystemInner() {
     if (currentUser) fetchOverdueSettings();
   }, [currentUser]);
 
+  //  Lihat catatan di fetchData: polling & realtime menangkap nilai lama.
+  const filterYearRef = useRef(filterYear);
+  useEffect(() => { filterYearRef.current = filterYear; }, [filterYear]);
+
   useEffect(() => { if (currentUser) fetchData(); }, [currentUser]);
+  //  Mengganti tahun mengubah APA yang ditarik server, bukan cuma menyaring
+  //  yang sudah ada - jadi ia harus memicu pengambilan ulang.
+  useEffect(() => {
+    if (currentUser) fetchData(currentUser, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterYear]);
 
   // Realtime subscription: auto-update tanpa refresh
   useEffect(() => {
@@ -2246,12 +2417,50 @@ function TicketingSystemInner() {
         fetchData(currentUser, true);
       })
       .subscribe();
-    // Polling fallback setiap 30 detik - juga silent
-    const pollInterval = setInterval(() => fetchData(currentUser, true), 30000);
+    /*
+      Polling cadangan - JARING PENGAMAN kalau realtime di atas meleset, bukan
+      sumber data utama.
+
+      Dulu 30 detik dan berjalan terus tanpa syarat. Biayanya nyata: sekali
+      tarik ~150 KB (seluruh tiket beserta ringkasan lognya), dua kali semenit,
+      per tab yang terbuka - sekitar 4,8 GB sebulan untuk SATU orang yang
+      meninggalkan halaman ini terbuka sepanjang jam kerja. Kuota egress
+      Supabase Free-nya 5 GB. Satu tab yang menganggur nyaris menghabiskan
+      jatah sebulan tanpa ada yang mengerjakan apa pun.
+
+      Dua perubahan:
+
+      1. BERHENTI saat tab tidak terlihat. Halaman yang ditinggal di belakang
+         tidak punya siapa pun yang membaca hasilnya. Saat tab kembali dilihat
+         kita menarik SEKALI supaya layarnya langsung segar - tanpa itu
+         penghematannya dibayar dengan data basi, dan orang akan menekan
+         refresh sendiri (yang jauh lebih mahal).
+      2. 30 detik -> 2 menit. Realtime yang menangani perubahan langsung;
+         jaring pengaman tidak perlu ditebar dua kali semenit.
+    */
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    const mulaiPolling = () => {
+      if (pollInterval) return;
+      pollInterval = setInterval(() => fetchData(currentUser, true), JEDA_POLLING_MS);
+    };
+    const hentikanPolling = () => {
+      if (!pollInterval) return;
+      clearInterval(pollInterval);
+      pollInterval = null;
+    };
+    const saatVisibilitasBerubah = () => {
+      if (document.visibilityState === 'hidden') { hentikanPolling(); return; }
+      fetchData(currentUser, true);   // segarkan sekali begitu kembali dilihat
+      mulaiPolling();
+    };
+    if (document.visibilityState !== 'hidden') mulaiPolling();
+    document.addEventListener('visibilitychange', saatVisibilitasBerubah);
+
     return () => {
       supabase.removeChannel(ptsCh);
       supabaseServices.removeChannel(svcCh);
-      clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', saatVisibilitasBerubah);
+      hentikanPolling();
     };
   }, [currentUser]);
 
@@ -2681,6 +2890,7 @@ function TicketingSystemInner() {
               currentUserTeamType={currentUserTeamType}
               bukaDetailTicket={bukaDetailTicket}
               bukaRingkasanAktivitas={bukaRingkasanAktivitas}
+            cetakTicket={jalankanCetakTicket}
               bukaApprovalUntukTicket={bukaApprovalUntukTicket}
               bukaReopenTicket={bukaReopenTicket}
               bukaDeleteTicket={bukaDeleteTicket}

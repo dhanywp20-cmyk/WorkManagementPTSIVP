@@ -2,6 +2,8 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { Ico } from './Ico';
 import type { Ticket, TeamMember, User } from './shared';
+//  Nilai (bukan tipe) - dipakai label & nilai opsi penyaring tahun.
+import { TAHUN_TERBARU, RENTANG_BULAN_TIKET } from './shared';
 
 /**
  * Header "Ticket List" (Select/Refresh/Export) + baris search/filter +
@@ -190,7 +192,11 @@ export function FilterBar({
                 onChange={(e) => setFilterYear(e.target.value)}
                 className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
-                <option value="all">All Years</option>
+                {/*  Label jujur: pilihan ini TIDAK memuat semua tahun - server
+                     membatasinya 12 bulan terakhir (lihat rentangTiket). Menyebutnya
+                     "All Years" membuat orang menyimpulkan tiket lamanya hilang,
+                     padahal ia tinggal memilih tahunnya di bawah. */}
+                <option value={TAHUN_TERBARU}>{RENTANG_BULAN_TIKET} Bulan Terakhir</option>
                 {availableYears.map((year) => (<option key={year} value={year}>{year}</option>))}
               </select>
               <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
