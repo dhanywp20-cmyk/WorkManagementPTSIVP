@@ -125,7 +125,8 @@ export function KodeAcaraInline() {
         setMenghapus(id);
         const { error } = await supabase.from('users').delete().eq('id', id).eq('daftar_via_event', true);
         setMenghapus(null);
-        if (error) { setPesan({ tipe: 'galat', teks: 'Gagal menghapus akun.' }); return; }
+        //  Pesan asli disertakan - lihat catatan yang sama di modal-akun.tsx.
+        if (error) { setPesan({ tipe: 'galat', teks: `Gagal menghapus akun: ${error.message}` }); return; }
         setPesan({ tipe: 'ok', teks: `Akun "${nama || ''}" dihapus.` });
         const admin = getSession<User>();
         void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'delete', module: 'user', target_id: id });

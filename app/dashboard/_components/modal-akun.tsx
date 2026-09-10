@@ -253,7 +253,11 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
   const handleDeleteUser = (userId: string, name: string) => {
     setConfirmState({ message: `Hapus akun "${name}"?`, description: 'Tindakan ini tidak bisa dibatalkan.', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
       const { error } = await supabase.from('users').delete().eq('id', userId);
-      if (error) { notify('error', 'Gagal menghapus akun.'); return; }
+      //  Pesan asli Supabase disertakan - dulu selalu "Gagal menghapus akun."
+      //  polos, jadi galat pelanggaran foreign key (akun yang sudah punya
+      //  aktivitas: quiz, reminder, tiket, dst) tidak bisa dibedakan dari
+      //  galat RLS tanpa membongkar basis data langsung.
+      if (error) { notify('error', `Gagal menghapus akun: ${error.message}`); return; }
       notify('success', 'Akun dihapus.');
       const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'delete', module: 'user', target_id: userId });
       fetchUsers();
@@ -778,7 +782,11 @@ export function AccountSettingsInline() {
   const handleDeleteUser = (userId: string, name: string) => {
     setConfirmState({ message: `Hapus akun "${name}"?`, description: 'Tindakan ini tidak bisa dibatalkan.', danger: true, confirmLabel: 'Hapus', onConfirm: async () => {
       const { error } = await supabase.from('users').delete().eq('id', userId);
-      if (error) { notify('error', 'Gagal menghapus akun.'); return; }
+      //  Pesan asli Supabase disertakan - dulu selalu "Gagal menghapus akun."
+      //  polos, jadi galat pelanggaran foreign key (akun yang sudah punya
+      //  aktivitas: quiz, reminder, tiket, dst) tidak bisa dibedakan dari
+      //  galat RLS tanpa membongkar basis data langsung.
+      if (error) { notify('error', `Gagal menghapus akun: ${error.message}`); return; }
       notify('success', 'Akun dihapus.');
       const admin = getSession<User>(); void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'delete', module: 'user', target_id: userId });
       fetchUsers();
