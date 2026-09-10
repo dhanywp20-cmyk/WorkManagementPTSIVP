@@ -362,9 +362,17 @@ export function AdminDashboard({ user }: { user: User }) {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              {/*
+                max-h TETAP (bukan 100vh) - lihat catatan yang sama di
+                modal-kode-acara.tsx: tanpa batas tinggi, daftar performer
+                yang panjang (mis. "Semua Divisi") membuat KARTU INI sendiri
+                memanjang tak terbatas, dan yang ikut menggulung jadi seluruh
+                halaman dashboard, bukan cuma tabelnya. thead dibuat sticky
+                supaya label kolom tetap terlihat saat menggulung ke bawah.
+              */}
+              <div className="overflow-x-auto overflow-y-auto max-h-[440px]">
               <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
-                <thead className="border-b border-slate-200 bg-slate-50">
+                <thead className="border-b border-slate-200 bg-slate-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest w-8">#</th>
                     <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Nama</th>
