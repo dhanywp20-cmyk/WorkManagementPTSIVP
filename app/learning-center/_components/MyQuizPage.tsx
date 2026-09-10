@@ -636,7 +636,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           */}
           {answered < questions.length && (
             <button onClick={() => handleSubmit(false)}
-              className="px-3 py-2 lg:px-5 lg:py-2.5 text-[12px] lg:text-sm font-bold rounded-lg transition-all flex-shrink-0 hidden formulir:block bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200">
+              className="px-3 py-2 lg:px-7 lg:py-3.5 text-[12px] lg:text-base font-bold rounded-lg lg:rounded-xl transition-all flex-shrink-0 hidden formulir:block bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200">
               Submit
             </button>
           )}
@@ -645,8 +645,8 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
               Menutup quiz berbatas waktu tanpa peringatan berarti kehilangan
               kesempatan mengerjakan, dan itu tidak bisa dibatalkan. */}
           <button onClick={() => setKonfirmasiKeluar(true)} aria-label="Keluar dari quiz"
-            className="w-9 h-9 rounded-lg flex items-center justify-center transition-all flex-shrink-0 bg-transparent hover:bg-slate-100 text-slate-500 border border-slate-200">
-            <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            className="w-9 h-9 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center transition-all flex-shrink-0 bg-transparent hover:bg-slate-100 text-slate-500 border border-slate-200">
+            <svg aria-hidden="true" focusable="false" className="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
