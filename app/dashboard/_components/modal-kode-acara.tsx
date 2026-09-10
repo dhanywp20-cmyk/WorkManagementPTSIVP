@@ -376,7 +376,16 @@ export function KodeAcaraInline() {
         </div>
 
         {/* ── Ringkasan pendaftar acara ── */}
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col lg:sticky lg:top-4 lg:max-h-[calc(100vh-8rem)]">
+        {/*
+          max-h TETAP (bukan berbasis 100vh) - Admin Panel-nya sendiri sudah
+          punya tinggi tetap h-[90vh] (lihat modal-admin-panel.tsx), jadi
+          menghitung dari 100vh membuat panel ini bisa lebih tinggi dari
+          bingkai modal yang sebenarnya terlihat, dan ujungnya baru kelihatan
+          setelah menggulung seluruh modal - bukan lagi "panel yang bisa
+          digulung sendiri" seperti yang diminta. Angka tetap di sini sengaja
+          konservatif supaya selalu muat di dalam bingkai h-[90vh] itu.
+        */}
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col lg:max-h-[420px]">
           <div className="flex items-center gap-3 p-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
             <span className="text-2xl">🎓</span>
             <div className="flex-1 min-w-0">
