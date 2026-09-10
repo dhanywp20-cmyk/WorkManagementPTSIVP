@@ -146,15 +146,7 @@ export function KodeAcaraInline() {
     );
   }
 
-  //  Dikelompokkan per divisi - itu pertanyaan pertama yang muncul sesudah
-  //  "berapa orang": dari mana saja mereka.
   const daftar = form.daftarAkun ?? [];
-  const perDivisi = new Map<string, number>();
-  for (const a of daftar) {
-    const k = a.sales_division?.trim() || a.team_type?.trim() || 'Tanpa divisi';
-    perDivisi.set(k, (perDivisi.get(k) ?? 0) + 1);
-  }
-  const urut = [...perDivisi.entries()].sort((a, b) => b[1] - a[1]);
 
   return (
     <div className="p-4 sm:p-6">
@@ -321,16 +313,6 @@ export function KodeAcaraInline() {
             <p className="p-4 text-sm text-slate-400">Belum ada yang mendaftar lewat kode acara.</p>
           ) : (
             <>
-              <div className="flex flex-wrap gap-2 p-4 border-b border-slate-100 flex-shrink-0">
-                {urut.map(([divisi, jml]) => (
-                  <span key={divisi}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    {divisi}
-                    <span className="px-1.5 rounded-full bg-white text-indigo-600 tabular-nums">{jml}</span>
-                  </span>
-                ))}
-              </div>
-
               {/* Daftar namanya sendiri - bergulir sendiri, lepas dari form
                   di kolom kiri, supaya panel tidak memanjang tak terbatas
                   saat satu acara membawa puluhan peserta. */}
