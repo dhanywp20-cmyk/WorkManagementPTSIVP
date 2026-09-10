@@ -794,6 +794,37 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   );
 }
 
+/**
+ * Sisa waktu sampai quiz ditutup, dalam kalimat yang bisa langsung dibaca.
+ *
+ * close_at SUDAH lama dipakai untuk MENYARING daftar - begitu lewat, quiz-nya
+ * hilang dari layar peserta. Yang tidak pernah ada: tanggalnya sendiri.
+ * Peserta tidak punya satu pun cara mengetahui quiz akan tutup nanti malam,
+ * sampai ia membuka halaman dan quiz-nya sudah tidak ada di sana.
+ *
+ * `mendesak` dipisah dari teksnya supaya warna merah hanya dipakai saat
+ * tenggatnya memang tinggal hitungan jam. Kalau setiap tenggat merah, tidak
+ * ada satu pun yang terbaca mendesak.
+ */
+function tenggatQuiz(closeAt: string | null | undefined): { teks: string; mendesak: boolean } | null {
+  if (!closeAt) return null;
+  const tutup = new Date(closeAt);
+  if (Number.isNaN(tutup.getTime())) return null;
+
+  const sisaJam = (tutup.getTime() - Date.now()) / 3_600_000;
+  if (sisaJam <= 0) return null;   // sudah lewat - kartunya memang tidak akan tampil
+
+  const jam = tutup.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  if (sisaJam < 1) {
+    return { teks: `Tutup ${Math.max(1, Math.round(sisaJam * 60))} menit lagi · ${jam}`, mendesak: true };
+  }
+  if (sisaJam < 24) {
+    return { teks: `Tutup ${Math.round(sisaJam)} jam lagi · ${jam}`, mendesak: true };
+  }
+  const tanggal = tutup.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+  return { teks: `Tutup ${tanggal} · ${jam}`, mendesak: false };
+}
+
 export function MyQuizPage({ user }: { user: User }) {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
   const [activeAttempts, setActiveAttempts]     = useState<Record<string, QuizAttempt>>({});
@@ -820,10 +851,27 @@ export function MyQuizPage({ user }: { user: User }) {
     (a ?? []).forEach((att: any) => { map[att.quiz_session_id] = att; });
     setActiveAttempts(map);
 
-    // Fetch submitted attempts - used to disable button when allow_retake=false
+    /*
+      Attempt yang sudah disubmit - dipakai dua hal: mematikan tombol saat
+      allow_retake=false, DAN menandai essay yang masih menunggu dinilai.
+
+      '*' disengaja, bukan daftar kolom. Versi sebelumnya mengambil
+      `quiz_session_id` saja dengan alasan yang benar - menyebut kolom yang
+      belum ada di skema membuat PostgREST menolak SELURUH kueri, jadi
+      grading_status sengaja tidak disebut. Tapi baris di bawah tetap
+      menyaring memakai kolom itu: yang dibaca selalu undefined, himpunannya
+      selalu kosong, dan lencana "Menunggu Penilaian Admin" TIDAK PERNAH
+      muncul sekali pun - peserta essay melihat quiz-nya seolah belum
+      dikerjakan.
+
+      '*' menyelesaikan keduanya: kolomnya ikut terbaca kalau ada, dan kueri
+      tetap tidak pernah gagal kalau migrasinya belum jalan. Pola yang sama
+      sudah dipakai di AdminDashboard.tsx dan /api/learning-center/rank untuk
+      alasan yang persis sama.
+    */
     const { data: submitted } = await supabase
       .from('lc_quiz_attempts')
-      .select('quiz_session_id')  // grading_status tidak dipakai di sini; jangan disebut agar tidak gagal sebelum migrasi
+      .select('*')
       .eq('user_id', user.id)
       .eq('is_submitted', true);
     setSubmittedIds(new Set((submitted ?? []).map((r: any) => r.quiz_session_id)));
@@ -890,47 +938,86 @@ export function MyQuizPage({ user }: { user: User }) {
         {filteredSessions.map(s => {
           const inProgress  = activeAttempts[s.id];
           const alreadyDone = !s.allow_retake && submittedSessionIds.has(s.id);
+          const menungguNilai = pendingReviewIds.has(s.id);
+          const tenggat = tenggatQuiz(s.close_at);
+
+          /*
+            Tombolnya ditulis sekali lalu dipakai di dua tempat: di kanan judul
+            saat ruangnya cukup, dan selebar kartu di layar sempit. Menyalinnya
+            dua kali berarti dua tombol yang bisa berbeda diam-diam - dan yang
+            di ponsel justru yang paling jarang dilihat saat menyunting.
+          */
+          const tombol = alreadyDone ? (
+            <button disabled
+              className="px-5 py-2.5 text-sm font-bold rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed w-full formulir:w-auto"
+              title="Quiz ini sudah kamu kerjakan dan tidak bisa diulang">
+              ✅ Selesai
+            </button>
+          ) : (
+            <button onClick={() => handleStart(s)}
+              className={`px-5 py-2.5 text-sm font-bold rounded-xl shadow transition-all w-full formulir:w-auto ${inProgress ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
+              {inProgress ? '▶️ Lanjutkan Quiz' : '🚀 Mulai Quiz'}
+            </button>
+          );
+
           return (
-            <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-6 flex items-start gap-5 hover:shadow-md transition-all"
+            <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-5 sm:p-6 hover:shadow-md transition-all"
               style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', opacity: alreadyDone ? 0.75 : 1 }}>
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
-              <div className="flex-1 min-w-0">
-                <h4 className="font-bold text-slate-800 text-lg">{s.session_name}{s.session_type === 'essay' && <span className="ml-2 align-middle text-xs px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">📝 Essay</span>}</h4>
-                <p className="text-sm text-slate-500 mt-1">{s.materi_name}</p>
-                <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
-                  <span>📝 {s.question_count} soal</span>
-                  <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'No timer'}</span>
-                  <span>🎯 Passing: {s.passing_grade}%</span>
-                  <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
+              <div className="flex items-start gap-4 sm:gap-5">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-slate-800 text-base sm:text-lg">
+                    {s.session_name}
+                    {s.session_type === 'essay' && <span className="ml-2 align-middle text-xs px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">📝 Essay</span>}
+                  </h4>
+                  <p className="text-sm text-slate-500 mt-1">{s.materi_name}</p>
                 </div>
-                {inProgress && (
-                  <div className="mt-2">
-                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Sedang Berlangsung</span>
-                  </div>
-                )}
-                {pendingReviewIds.has(s.id) && (
-                  <div className="mt-2">
-                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Menunggu Penilaian Admin</span>
-                  </div>
-                )}
-                {alreadyDone && !pendingReviewIds.has(s.id) && (
-                  <div className="mt-2">
-                    <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">✅ Sudah Dikerjakan</span>
-                  </div>
-                )}
+                {/*
+                  Tombol di kanan HANYA saat ruangnya cukup. Di lebar ponsel ia
+                  dan judul quiz berebut lebar yang sama: judulnya pecah jadi
+                  beberapa baris sementara tombolnya tetap menahan ruangnya.
+                  Di bawah 'formulir' tombolnya turun ke bawah, selebar kartu.
+                */}
+                <div className="hidden formulir:block flex-shrink-0">{tombol}</div>
               </div>
-              {alreadyDone ? (
-                <button disabled
-                  className="px-5 py-2.5 text-sm font-bold rounded-xl flex-shrink-0 bg-gray-200 text-gray-400 cursor-not-allowed"
-                  title="Quiz ini sudah kamu kerjakan dan tidak bisa diulang">
-                  ✅ Selesai
-                </button>
-              ) : (
-                <button onClick={() => handleStart(s)}
-                  className={`px-5 py-2.5 text-sm font-bold rounded-xl shadow transition-all flex-shrink-0 ${inProgress ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
-                  {inProgress ? '▶️ Lanjutkan' : '🚀 Mulai Quiz'}
-                </button>
+
+              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 text-xs text-slate-500">
+                <span>📝 {s.question_count} soal</span>
+                <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'Tanpa batas waktu'}</span>
+                <span>🎯 Passing: {s.passing_grade}%</span>
+                <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
+              </div>
+
+              {/*
+                SATU baris lencana yang membungkus, bukan tiga div bertumpuk.
+                Yang lama memberi tiap lencana div-nya sendiri dengan mt-2, jadi
+                kartunya memanjang ke bawah satu tingkat per lencana - melar
+                persis saat isinya paling ramai.
+              */}
+              {(inProgress || menungguNilai || alreadyDone || tenggat) && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {inProgress && (
+                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Sedang Berlangsung</span>
+                  )}
+                  {menungguNilai && (
+                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Menunggu Penilaian Admin</span>
+                  )}
+                  {alreadyDone && !menungguNilai && (
+                    <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">✅ Sudah Dikerjakan</span>
+                  )}
+                  {tenggat && !alreadyDone && (
+                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold border ${
+                      tenggat.mendesak
+                        ? 'bg-rose-100 text-rose-700 border-rose-200'
+                        : 'bg-slate-100 text-slate-600 border-slate-200'
+                    }`}>
+                      🔒 {tenggat.teks}
+                    </span>
+                  )}
+                </div>
               )}
+
+              <div className="formulir:hidden mt-4">{tombol}</div>
             </div>
           );
         })}
