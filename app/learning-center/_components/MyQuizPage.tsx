@@ -582,7 +582,8 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           oleh UKURAN kartu soal dan garis pemisahnya yang tegas, bukan lagi
           kontras terang-gelap.
         */}
-        <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 flex-shrink-0 bg-white border-b border-slate-200">
+        <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 flex-shrink-0 bg-white border-b border-slate-200"
+          style={{ boxShadow: '0 8px 24px -18px rgba(15,23,42,.18)' }}>
           <div className="min-w-0 flex-1">
             <h2 className="font-bold text-[12.5px] sm:text-sm truncate text-slate-800">
               {session.session_name}
@@ -653,7 +654,24 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
 
         {relSoal()}
 
-        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 sm:py-8 lg:py-10">
+        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-5 sm:py-8 lg:py-10">
+          {/*
+            Panah sebelumnya/berikutnya di SAMPING kartu, khusus laptop
+            (lg+) - permintaan eksplisit supaya navigasi tidak melulu numpuk
+            di bilah bawah yang sempit. Di ponsel/tablet tetap lewat bilah
+            bawah seperti sebelumnya (dianggap sudah cukup), jadi tombol ini
+            disembunyikan di bawah lg lewat hidden lg:flex, bukan dihapus.
+          */}
+          <div className="max-w-5xl mx-auto flex items-center gap-3 lg:gap-5">
+            <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
+              aria-label="Soal sebelumnya"
+              className="hidden lg:flex flex-shrink-0 w-12 h-12 rounded-full items-center justify-center bg-white border border-slate-200 text-slate-500 transition-all hover:text-[#5B5BF5] hover:border-[#5B5BF5] hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-500 disabled:hover:border-slate-200 disabled:hover:shadow-none"
+              style={{ boxShadow: '0 1px 2px rgba(15,23,42,.04), 0 6px 16px -6px rgba(15,23,42,.12)' }}>
+              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
           {/*
             SATU kartu memuat nomor, soal, dan pilihan - dulu tiga blok
             terpisah di atas latar yang sama, yang membuat batas antara "soal"
@@ -664,8 +682,8 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
             kecil di tengah layar kosong dan terasa sempit. Di ponsel ukurannya
             tidak diubah dari sebelumnya, sesuai yang diminta.
           */}
-          <div className="max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto rounded-2xl bg-white border border-slate-200 p-5 sm:p-8 lg:p-10"
-            style={{ boxShadow: '0 1px 2px rgba(15,23,42,.04), 0 16px 32px -16px rgba(15,23,42,.14)' }}>
+          <div className="flex-1 min-w-0 max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto rounded-2xl bg-white border border-slate-200 p-5 sm:p-8 lg:p-10"
+            style={{ boxShadow: '0 1px 3px rgba(15,23,42,.05), 0 20px 40px -20px rgba(15,23,42,.18)' }}>
             <div className="flex items-center gap-2.5 mb-3.5 lg:mb-5 flex-wrap">
               <span className="text-[11px] lg:text-xs font-bold uppercase px-2.5 py-1 rounded-md"
                 style={{ background: '#EEEEFE', color: '#5B5BF5', letterSpacing: '0.1em' }}>
@@ -751,11 +769,12 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                   */
                   <button key={opt} onClick={() => handleAnswer(q.id, opt)}
                     aria-pressed={selected}
-                    className="w-full flex items-center gap-3 lg:gap-4 px-4 py-3.5 sm:px-5 sm:py-4 lg:py-5 rounded-xl text-left transition-all"
+                    className={`w-full flex items-center gap-3 lg:gap-4 px-4 py-3.5 sm:px-5 sm:py-4 lg:py-5 rounded-xl text-left transition-all duration-200 ${selected ? '' : 'hover:border-[#C7CBF5] hover:-translate-y-px hover:shadow-sm'}`}
                     style={{
                       border: `1.5px solid ${selected ? '#5B5BF5' : '#E4E7F0'}`,
                       background: selected ? '#EEEEFE' : '#FFFFFF',
                       color: '#141828',
+                      boxShadow: selected ? '0 1px 2px rgba(91,91,245,.12)' : undefined,
                     }}>
                     <span className="w-[30px] h-[30px] sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center text-[13px] sm:text-sm lg:text-base font-black flex-shrink-0 transition-all tabular-nums"
                       style={{
@@ -777,6 +796,16 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
               })}
             </div>
           </div>
+
+            <button onClick={() => setCurrent(p => Math.min(questions.length - 1, p + 1))} disabled={current === questions.length - 1}
+              aria-label="Soal berikutnya"
+              className="hidden lg:flex flex-shrink-0 w-12 h-12 rounded-full items-center justify-center bg-white border border-slate-200 text-slate-500 transition-all hover:text-[#5B5BF5] hover:border-[#5B5BF5] hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-500 disabled:hover:border-slate-200 disabled:hover:shadow-none"
+              style={{ boxShadow: '0 1px 2px rgba(15,23,42,.04), 0 6px 16px -6px rgba(15,23,42,.12)' }}>
+              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/*
@@ -784,13 +813,15 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           soal. Di ponsel inilah tempat ibu jari berada, dan tombolnya tidak
           perlu dicari dengan menggulung sampai habis.
         */}
-        <div className="flex-shrink-0 px-4 sm:px-6 py-3.5 bg-white border-t border-slate-200">
+        <div className="flex-shrink-0 px-4 sm:px-6 py-3.5 bg-white border-t border-slate-200"
+          style={{ boxShadow: '0 -8px 24px -16px rgba(15,23,42,.16)' }}>
           <div className="max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto flex flex-col gap-2.5">
 
             {answered < questions.length && (
               <p className="text-[12px] text-slate-500">
                 <b className="text-slate-800">{questions.length - answered} soal belum dijawab.</b>{' '}
-                Ketuk ruas abu di rel atas untuk lompat ke sana.
+                <span className="lg:hidden">Ketuk ruas abu di rel atas untuk lompat ke sana.</span>
+                <span className="hidden lg:inline">Pakai panah di samping soal, atau ruas abu di rel atas, untuk lompat ke sana.</span>
               </p>
             )}
 
@@ -799,11 +830,15 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
               terjawab, bukan cuma di soal terakhir: orang tidak selalu selesai
               di nomor terakhir - ia melompat ke nomor yang tadi dilewati,
               mengisinya, lalu berhenti di sana.
+
+              Tombol Sebelumnya/Berikutnya polos disembunyikan di layar lg -
+              di laptop navigasinya sudah dipegang panah di samping kartu
+              soal (lihat di atas), jadi tidak perlu dobel di sini.
             */}
             {answered === questions.length ? (
               <div className="flex gap-2.5">
                 <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
-                  className="px-4 sm:px-5 py-4 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">
+                  className="lg:hidden px-4 sm:px-5 py-4 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">
                   ←<span className="hidden formulir:inline"> Sebelumnya</span>
                 </button>
                 <button onClick={() => handleSubmit(false)}
@@ -814,20 +849,21 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
             ) : (
               <div className="flex gap-2.5">
                 <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
-                  className="px-4 sm:px-5 py-3.5 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">
+                  className="lg:hidden px-4 sm:px-5 py-3.5 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">
                   ←<span className="hidden formulir:inline"> Sebelumnya</span>
                 </button>
                 {current === questions.length - 1 ? (
                   //  Soal terakhir tapi masih ada yang kosong: Berikutnya tidak
                   //  ada gunanya lagi, jadi tempatnya dipakai Submit - dengan
                   //  angkanya, supaya jelas ini mengumpulkan pekerjaan separuh.
+                  //  Tombol ini TETAP tampil di lg (bukan navigasi polos).
                   <button onClick={() => handleSubmit(false)}
                     className="flex-1 px-5 py-3.5 text-sm font-bold rounded-xl transition-all bg-slate-800 hover:bg-slate-900 text-white">
                     Submit ({answered}/{questions.length})
                   </button>
                 ) : (
                   <button onClick={() => setCurrent(p => Math.min(questions.length - 1, p + 1))}
-                    className="flex-1 px-5 py-3.5 text-sm font-bold rounded-xl transition-all"
+                    className="lg:hidden flex-1 px-5 py-3.5 text-sm font-bold rounded-xl transition-all"
                     style={{ background: '#5B5BF5', color: '#FFFFFF' }}>
                     Berikutnya →
                   </button>

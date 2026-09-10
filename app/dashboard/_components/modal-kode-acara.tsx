@@ -303,6 +303,17 @@ export function KodeAcaraInline() {
                 di dalam divisi atau tim — jadi akunnya tetap terdata persis seperti akun yang dibuat admin.
               </p>
             </div>
+            {/*  Panel ini tidak ikut ke-refresh otomatis saat ada yang
+                mendaftar lewat kode acara di tab lain - tanpa tombol ini
+                satu-satunya cara melihat pendaftar terbaru adalah memuat
+                ulang seluruh URL Admin Panel. */}
+            <button type="button" onClick={() => ambil()} disabled={muat} title="Muat ulang daftar pendaftar"
+              aria-label="Muat ulang daftar pendaftar"
+              className="w-8 h-8 flex-shrink-0 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              <svg aria-hidden="true" focusable="false" className={`w-4 h-4 ${muat ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
           </div>
 
           {daftar.length === 0 ? (

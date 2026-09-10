@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput, GradingStatusBadge } from './shared';
 import { DonutChart } from '@/components/shared';
 import { UserAnswerReview } from './TeamPage';
-import { ambilPeringkatSaya, PAPAN_TERATAS, type HasilPeringkat } from '@/lib/learning-rank';
+import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
 import { isSalesGuest } from '@/lib/constants';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
@@ -85,7 +85,13 @@ export function ScorePage({ user }: { user: User }) {
     : attempts;
 
   if (viewingAttempt) {
-    return <UserAnswerReview user={user} onBack={() => setViewingAttempt(null)} isAdminView={false} />;
+    //  autoOpenAttemptId: TANPA ini, UserAnswerReview membuka LIST attempt
+    //  miliknya sendiri dari awal - orang yang baru saja klik "Review" pada
+    //  satu baris tertentu harus mengklik baris yang SAMA sekali lagi di
+    //  dalam sana untuk benar-benar melihat jawabannya. Attempt yang mau
+    //  dibuka sudah diketahui di sini (viewingAttempt), jadi langsung
+    //  diteruskan.
+    return <UserAnswerReview user={user} onBack={() => setViewingAttempt(null)} isAdminView={false} autoOpenAttemptId={viewingAttempt.id} />;
   }
 
   const summaryCards = [
@@ -261,10 +267,6 @@ export function ScorePage({ user }: { user: User }) {
                   </tbody>
                 </table>
               </div>
-              <p className="text-[11px] text-slate-400 text-center leading-relaxed px-2 mt-2">
-                Menampilkan {PAPAN_TERATAS} besar — barismu selalu ikut ditampilkan walau di luar itu.
-                Nama peserta lain disamarkan di server; yang terkirim ke halaman ini hanya angkanya, tanpa identitas siapa pun.
-              </p>
             </div>
           </div>
         )}

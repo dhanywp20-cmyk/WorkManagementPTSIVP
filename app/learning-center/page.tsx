@@ -141,7 +141,15 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
           ? <AdminTopNav view={adminView} onChange={changeAdminView} />
           : <TeamTopNav view={teamView} onChange={changeTeamView} />}
 
-        <div className="flex-1 overflow-y-auto">
+        {/*
+          bg-slate-50 DISENGAJA - tanpa ini, latar foto gedung di pembungkus
+          luar (baris backgroundImage di atas) tembus lewat kartu-kartu
+          bg-white/90 yang transparan DAN lewat area kosong di bawah konten
+          pendek (mis. layar hasil quiz, tabel riwayat yang cuma sebaris) -
+          terlihat seperti bug tampilan padahal fotonya memang selalu ada di
+          sana, cuma baru kelihatan begitu kontennya tidak penuh satu layar.
+        */}
+        <div className="flex-1 overflow-y-auto bg-slate-50">
           {loading ? <LoadingView /> : (
             <div key={contentKey} className="lc-page-enter">
               {isAdmin ? (
