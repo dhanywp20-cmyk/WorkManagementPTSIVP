@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import QRCode from 'qrcode';
 import { supabase } from '@/lib/supabase';
 import { getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
@@ -74,6 +75,13 @@ export function KodeAcaraInline() {
   const [lihatKode, setLihatKode] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [menghapus, setMenghapus] = useState<string | null>(null);
+  const [asalUrl, setAsalUrl] = useState('');
+  const [gambarQr, setGambarQr] = useState<string | null>(null);
+  const [disalin, setDisalin] = useState(false);
+  //  Dibaca dari window.location.origin, BUKAN ditulis di kode - domain
+  //  produksi bisa beda (custom domain, staging, dst) dan platform ini dijual
+  //  ke banyak company, jadi tidak boleh ada satu domain yang di-hardcode.
+  useEffect(() => { setAsalUrl(window.location.origin); }, []);
 
   const ambil = useCallback(async () => {
     setMuat(true);
@@ -91,6 +99,33 @@ export function KodeAcaraInline() {
   const berubah = form && awal && (
     form.aktif !== awal.aktif || form.kode !== awal.kode || form.berlakuSampai !== awal.berlakuSampai
   );
+
+  //  Dibangun dari kode yang TERSIMPAN (awal), bukan form.kode yang sedang
+  //  diketik - QR/link yang dibagikan ke peserta harus selalu mengarah ke
+  //  kode yang benar-benar aktif di server saat ini, bukan draf yang belum
+  //  ditekan Simpan.
+  const linkDaftar = asalUrl && awal?.kode?.trim()
+    ? `${asalUrl}/dashboard?daftar=1&kode=${encodeURIComponent(awal.kode.trim())}`
+    : '';
+
+  useEffect(() => {
+    if (!linkDaftar) { setGambarQr(null); return; }
+    let batal = false;
+    QRCode.toDataURL(linkDaftar, { width: 240, margin: 1, color: { dark: '#312E81', light: '#FFFFFF' } })
+      .then(url => { if (!batal) setGambarQr(url); })
+      .catch(() => { if (!batal) setGambarQr(null); });
+    return () => { batal = true; };
+  }, [linkDaftar]);
+
+  const salinLink = async () => {
+    try {
+      await navigator.clipboard.writeText(linkDaftar);
+      setDisalin(true);
+      window.setTimeout(() => setDisalin(false), 2000);
+    } catch {
+      setPesan({ tipe: 'galat', teks: 'Gagal menyalin link. Salin manual dari kotak di atas.' });
+    }
+  };
 
   const kirim = async () => {
     if (!form) return;
@@ -266,6 +301,58 @@ export function KodeAcaraInline() {
               Lewat waktu ini kode ditolak walau saklarnya masih menyala. Kosong = berlaku sampai kamu mematikannya
               sendiri — yang gampang terlupa setelah acara bubar.
             </p>
+          </div>
+
+          {/* Link & QR Code pendaftaran - dibagikan lewat poster/undangan
+              acara supaya peserta tidak perlu mengetik ulang kode yang baru
+              saja mereka lihat. */}
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
+              Link &amp; QR Code Pendaftaran
+            </label>
+            {!awal?.kode?.trim() ? (
+              <p className="text-sm text-slate-400">Isi dan simpan Kode Acara dulu untuk membuat link pendaftarannya.</p>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-start gap-4">
+                {gambarQr ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={gambarQr} alt="QR Code pendaftaran" width={128} height={128}
+                    className="w-32 h-32 rounded-lg border border-slate-200 flex-shrink-0" />
+                ) : (
+                  <div className="w-32 h-32 rounded-lg border border-slate-200 flex items-center justify-center text-[11px] text-slate-400 flex-shrink-0">
+                    Membuat QR…
+                  </div>
+                )}
+                <div className="flex-1 min-w-0 w-full space-y-2">
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Cetak atau tampilkan QR ini di acara. Yang memindai langsung dibawa ke form Daftar dengan Kode
+                    Acara sudah terisi otomatis.
+                  </p>
+                  <div className="flex flex-col formulir:flex-row gap-2">
+                    <input readOnly value={linkDaftar} onFocus={e => e.target.select()}
+                      aria-label="Link pendaftaran"
+                      className="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-600 bg-slate-50" />
+                    <div className="flex gap-2">
+                      <button type="button" onClick={salinLink}
+                        className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all whitespace-nowrap">
+                        {disalin ? '✓ Disalin' : '📋 Salin'}
+                      </button>
+                      {gambarQr && (
+                        <a href={gambarQr} download={`qr-daftar-${awal.kode.trim()}.png`}
+                          className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all whitespace-nowrap">
+                          ⬇ Unduh QR
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  {berubah && (
+                    <p className="text-[11px] text-amber-700 font-semibold">
+                      Link/QR ini memakai kode yang sudah TERSIMPAN, bukan perubahan di atas yang belum disimpan.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col formulir:flex-row gap-2 formulir:items-center">

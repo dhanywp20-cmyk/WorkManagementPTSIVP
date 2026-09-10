@@ -138,6 +138,26 @@ export default function Dashboard() {
   }, []);
   useEffect(() => () => { if (jedaTukarRef.current) window.clearTimeout(jedaTukarRef.current); }, []);
 
+  /*
+    Link/QR Code pendaftaran dari Admin Panel > Kode Acara membawa
+    ?daftar=1&kode=XXXX supaya peserta yang memindai langsung disambut form
+    Daftar (bukan form Masuk) dengan kode acara SUDAH terisi - tidak perlu
+    mengetik ulang kode yang baru saja mereka lihat di poster/undangan.
+
+    window.location.search dibaca langsung (bukan useSearchParams) karena
+    ini cuma dibaca SEKALI saat halaman terbuka, dan menghindari keharusan
+    membungkus seluruh halaman ini dengan <Suspense> hanya untuk itu.
+  */
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const kode = params.get('kode');
+    if (params.get('daftar') === '1' || kode) {
+      pindahForm(true);
+      if (kode) setRegisterForm(f => ({ ...f, event_code: kode }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [showSidebar, setShowSidebar] = useState(false);
   const [iframeUrl, setIframeUrl] = useState<string | null>(null);
   const [iframeTitle, setIframeTitle] = useState<string>('');
