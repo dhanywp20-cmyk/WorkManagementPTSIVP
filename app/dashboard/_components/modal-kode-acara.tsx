@@ -1,6 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { getSession } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared';
+import type { User } from './shared';
 
 /**
  * Pengaturan pendaftaran lewat Kode Acara.
@@ -67,6 +72,8 @@ export function KodeAcaraInline() {
   const [simpan, setSimpan] = useState(false);
   const [pesan, setPesan] = useState<{ tipe: 'ok' | 'galat'; teks: string } | null>(null);
   const [lihatKode, setLihatKode] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+  const [menghapus, setMenghapus] = useState<string | null>(null);
 
   const ambil = useCallback(async () => {
     setMuat(true);
@@ -105,6 +112,28 @@ export function KodeAcaraInline() {
     } finally { setSimpan(false); }
   };
 
+  //  Sama seperti hapus akun di modal-akun.tsx: langsung ke tabel users (RLS
+  //  sudah mengizinkan admin), bukan lewat /api/admin/kode-acara - route itu
+  //  cuma mengurus kode & tanggalnya, bukan akun orangnya.
+  const handleDeleteAkun = (id: string, nama: string) => {
+    setConfirmState({
+      message: `Hapus akun "${nama || 'ini'}"?`,
+      description: 'Akun ini terdaftar lewat kode acara. Tindakan ini tidak bisa dibatalkan.',
+      danger: true,
+      confirmLabel: 'Hapus',
+      onConfirm: async () => {
+        setMenghapus(id);
+        const { error } = await supabase.from('users').delete().eq('id', id).eq('daftar_via_event', true);
+        setMenghapus(null);
+        if (error) { setPesan({ tipe: 'galat', teks: 'Gagal menghapus akun.' }); return; }
+        setPesan({ tipe: 'ok', teks: `Akun "${nama || ''}" dihapus.` });
+        const admin = getSession<User>();
+        void logAudit({ user_id: admin?.id ?? '', user_name: admin?.full_name ?? '', action: 'delete', module: 'user', target_id: id });
+        void ambil();
+      },
+    });
+  };
+
   if (muat) return <div className="p-6 text-sm text-slate-400">Memuat pengaturan…</div>;
   if (!form) {
     return (
@@ -116,185 +145,20 @@ export function KodeAcaraInline() {
     );
   }
 
+  //  Dikelompokkan per divisi - itu pertanyaan pertama yang muncul sesudah
+  //  "berapa orang": dari mana saja mereka.
+  const daftar = form.daftarAkun ?? [];
+  const perDivisi = new Map<string, number>();
+  for (const a of daftar) {
+    const k = a.sales_division?.trim() || a.team_type?.trim() || 'Tanpa divisi';
+    perDivisi.set(k, (perDivisi.get(k) ?? 0) + 1);
+  }
+  const urut = [...perDivisi.entries()].sort((a, b) => b[1] - a[1]);
+
   return (
-    <div className="p-4 sm:p-6 space-y-5 max-w-3xl">
-
-      {/* Apa yang sebenarnya dilakukan saklar ini - disebut apa adanya, karena
-          yang dilewati adalah persetujuan admin, bukan sekadar "kemudahan". */}
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-        <p className="text-sm font-bold text-amber-900 mb-1">Apa yang dilakukan kode ini</p>
-        <p className="text-xs text-amber-800 leading-relaxed">
-          Siapa pun yang memegang kode ini bisa mendaftar dan <strong>langsung aktif tanpa persetujuan admin</strong>.
-          Divisi dan jabatan tetap diisi sendiri oleh pendaftar seperti biasa. Matikan lagi setelah acara selesai,
-          atau isi tanggal berlakunya supaya ia menutup sendiri.
-        </p>
-      </div>
-
-      {form.dariEnv && (
-        <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
-          <p className="text-xs text-sky-900 leading-relaxed">
-            <strong>Nilai ini masih dibaca dari variabel lingkungan Vercel</strong> (REGISTER_BYPASS_*), karena belum
-            pernah disimpan dari layar ini. Begitu kamu menekan Simpan, yang dipakai adalah nilai di sini dan
-            variabel lingkungannya tidak lagi berpengaruh — kamu boleh menghapusnya dari Vercel setelah itu.
-          </p>
-        </div>
-      )}
-
-      {/* Saklar utama */}
-      <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 bg-white cursor-pointer">
-        <input
-          id="kode-acara-aktif"
-          type="checkbox"
-          checked={form.aktif}
-          onChange={e => setForm({ ...form, aktif: e.target.checked })}
-          className="w-5 h-5 mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0"
-        />
-        <span>
-          <span className="block text-sm font-bold text-slate-800">Aktifkan pendaftaran lewat Kode Acara</span>
-          <span className="block text-xs text-slate-500 mt-0.5">
-            {form.aktif
-              ? 'Menyala — pendaftar yang memasukkan kode di bawah langsung bisa login.'
-              : 'Mati — semua pendaftar menunggu persetujuan admin seperti biasa.'}
-          </span>
-        </span>
-      </label>
-
-      {/* Kode */}
-      <div>
-        <label htmlFor="kode-acara-nilai" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
-          Kode Acara
-        </label>
-        <div className="flex flex-col formulir:flex-row gap-2">
-          <input
-            id="kode-acara-nilai"
-            type={lihatKode ? 'text' : 'password'}
-            value={form.kode}
-            onChange={e => setForm({ ...form, kode: e.target.value })}
-            placeholder="mis. IVPEXPO2026"
-            autoComplete="off"
-            className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono tracking-wider outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
-          />
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setLihatKode(v => !v)}
-              className="px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all whitespace-nowrap">
-              {lihatKode ? '🙈 Sembunyikan' : '👁 Lihat'}
-            </button>
-            <button type="button" onClick={() => { setForm({ ...form, kode: acakKode() }); setLihatKode(true); }}
-              className="px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all whitespace-nowrap">
-              🎲 Acak
-            </button>
-          </div>
-        </div>
-        <p className="text-[11px] text-slate-400 mt-1.5">
-          Minimal 6 karakter. Tombol Acak menghindari 0/O dan 1/I/L — pasangan yang paling sering tertukar saat kode
-          dibacakan lalu diketik ulang di ponsel.
-        </p>
-      </div>
-
-      {/* Berlaku sampai */}
-      <div>
-        <label htmlFor="kode-acara-sampai" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
-          Berlaku Sampai <span className="text-slate-400 normal-case tracking-normal font-medium">(opsional)</span>
-        </label>
-        <div className="flex flex-col formulir:flex-row gap-2">
-          <input
-            id="kode-acara-sampai"
-            type="datetime-local"
-            value={keInputLokal(form.berlakuSampai)}
-            onChange={e => setForm({
-              ...form,
-              berlakuSampai: e.target.value ? new Date(e.target.value).toISOString() : null,
-            })}
-            className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
-          />
-          {form.berlakuSampai && (
-            <button type="button" onClick={() => setForm({ ...form, berlakuSampai: null })}
-              className="px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all whitespace-nowrap">
-              ✕ Kosongkan
-            </button>
-          )}
-        </div>
-        <p className="text-[11px] text-slate-400 mt-1.5">
-          Lewat waktu ini kode ditolak walau saklarnya masih menyala. Kosong = berlaku sampai kamu mematikannya
-          sendiri — yang gampang terlupa setelah acara bubar.
-        </p>
-      </div>
-
-      {/* ── Ringkasan pendaftar acara ── */}
-      {(() => {
-        const daftar = form.daftarAkun ?? [];
-        //  Dikelompokkan per divisi - itu pertanyaan pertama yang muncul
-        //  sesudah "berapa orang": dari mana saja mereka.
-        const perDivisi = new Map<string, number>();
-        for (const a of daftar) {
-          const k = a.sales_division?.trim() || a.team_type?.trim() || 'Tanpa divisi';
-          perDivisi.set(k, (perDivisi.get(k) ?? 0) + 1);
-        }
-        const urut = [...perDivisi.entries()].sort((a, b) => b[1] - a[1]);
-
-        return (
-          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-            <div className="flex items-center gap-3 p-4 border-b border-slate-100 bg-slate-50">
-              <span className="text-2xl">🎓</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-800">
-                  {daftar.length} akun terdaftar lewat kode acara
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Ditandai <code className="font-mono text-[11px]">daftar_via_event</code> di kolomnya sendiri — bukan
-                  di dalam divisi atau tim — jadi akunnya tetap terdata persis seperti akun yang dibuat admin.
-                </p>
-              </div>
-            </div>
-
-            {daftar.length === 0 ? (
-              <p className="p-4 text-sm text-slate-400">Belum ada yang mendaftar lewat kode acara.</p>
-            ) : (
-              <>
-                <div className="flex flex-wrap gap-2 p-4 border-b border-slate-100">
-                  {urut.map(([divisi, jml]) => (
-                    <span key={divisi}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                      {divisi}
-                      <span className="px-1.5 rounded-full bg-white text-indigo-600 tabular-nums">{jml}</span>
-                    </span>
-                  ))}
-                </div>
-
-                {/* Daftar namanya sendiri - bergulir supaya panel tidak memanjang
-                    tak terbatas saat satu acara membawa puluhan peserta. */}
-                <div className="max-h-72 overflow-y-auto">
-                  <table className="w-full text-xs">
-                    <thead className="sticky top-0 bg-white border-b border-slate-200">
-                      <tr>
-                        <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-4 py-2">Nama</th>
-                        <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-4 py-2 hidden formulir:table-cell">Email</th>
-                        <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-4 py-2">Divisi</th>
-                        <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-4 py-2">Daftar</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {daftar.map(a => (
-                        <tr key={a.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-2 font-semibold text-slate-800">{a.full_name || '—'}</td>
-                          <td className="px-4 py-2 text-slate-500 hidden formulir:table-cell">{a.username || '—'}</td>
-                          <td className="px-4 py-2 text-slate-600">
-                            {a.sales_division || a.team_type || <span className="text-slate-300">—</span>}
-                          </td>
-                          <td className="px-4 py-2 text-slate-500 whitespace-nowrap tabular-nums">{tglSingkat(a.created_at)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </div>
-        );
-      })()}
-
+    <div className="p-4 sm:p-6">
       {pesan && (
-        <div className={`px-4 py-3 rounded-xl text-sm font-medium border ${
+        <div className={`mb-5 px-4 py-3 rounded-xl text-sm font-medium border ${
           pesan.tipe === 'ok'
             ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
             : 'text-red-700 bg-red-50 border-red-200'
@@ -303,19 +167,204 @@ export function KodeAcaraInline() {
         </div>
       )}
 
-      <div className="flex flex-col formulir:flex-row gap-2 formulir:items-center">
-        <button
-          type="button"
-          onClick={kirim}
-          disabled={!berubah || simpan}
-          className="px-5 py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-700"
-        >
-          {simpan ? 'Menyimpan…' : 'Simpan Pengaturan'}
-        </button>
-        {berubah && !simpan && (
-          <span className="text-xs text-amber-700 font-semibold">Ada perubahan yang belum disimpan.</span>
-        )}
+      {/* Kiri: pengaturan saklar & kode. Kanan: daftar pendaftar - kolom
+          sendiri supaya bisa bergulir sendiri tanpa menyeret form di
+          sebelahnya, sesuai permintaan: "list di samping kanan saja
+          supaya ideal untuk di scroll". */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 items-start">
+        <div className="space-y-5">
+
+          {/* Apa yang sebenarnya dilakukan saklar ini - disebut apa adanya, karena
+              yang dilewati adalah persetujuan admin, bukan sekadar "kemudahan". */}
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-bold text-amber-900 mb-1">Apa yang dilakukan kode ini</p>
+            <p className="text-xs text-amber-800 leading-relaxed">
+              Siapa pun yang memegang kode ini bisa mendaftar dan <strong>langsung aktif tanpa persetujuan admin</strong>.
+              Divisi dan jabatan tetap diisi sendiri oleh pendaftar seperti biasa. Matikan lagi setelah acara selesai,
+              atau isi tanggal berlakunya supaya ia menutup sendiri.
+            </p>
+          </div>
+
+          {form.dariEnv && (
+            <div className="rounded-xl border border-sky-200 bg-sky-50 p-4">
+              <p className="text-xs text-sky-900 leading-relaxed">
+                <strong>Nilai ini masih dibaca dari variabel lingkungan Vercel</strong> (REGISTER_BYPASS_*), karena belum
+                pernah disimpan dari layar ini. Begitu kamu menekan Simpan, yang dipakai adalah nilai di sini dan
+                variabel lingkungannya tidak lagi berpengaruh — kamu boleh menghapusnya dari Vercel setelah itu.
+              </p>
+            </div>
+          )}
+
+          {/* Saklar utama */}
+          <label className="flex items-start gap-3 p-4 rounded-xl border border-slate-200 bg-white cursor-pointer">
+            <input
+              id="kode-acara-aktif"
+              type="checkbox"
+              checked={form.aktif}
+              onChange={e => setForm({ ...form, aktif: e.target.checked })}
+              className="w-5 h-5 mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0"
+            />
+            <span>
+              <span className="block text-sm font-bold text-slate-800">Aktifkan pendaftaran lewat Kode Acara</span>
+              <span className="block text-xs text-slate-500 mt-0.5">
+                {form.aktif
+                  ? 'Menyala — pendaftar yang memasukkan kode di bawah langsung bisa login.'
+                  : 'Mati — semua pendaftar menunggu persetujuan admin seperti biasa.'}
+              </span>
+            </span>
+          </label>
+
+          {/* Kode */}
+          <div>
+            <label htmlFor="kode-acara-nilai" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
+              Kode Acara
+            </label>
+            <div className="flex flex-col formulir:flex-row gap-2">
+              <input
+                id="kode-acara-nilai"
+                type={lihatKode ? 'text' : 'password'}
+                value={form.kode}
+                onChange={e => setForm({ ...form, kode: e.target.value })}
+                placeholder="mis. IVPEXPO2026"
+                autoComplete="off"
+                className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono tracking-wider outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+              />
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setLihatKode(v => !v)}
+                  className="px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all whitespace-nowrap">
+                  {lihatKode ? '🙈 Sembunyikan' : '👁 Lihat'}
+                </button>
+                <button type="button" onClick={() => { setForm({ ...form, kode: acakKode() }); setLihatKode(true); }}
+                  className="px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all whitespace-nowrap">
+                  🎲 Acak
+                </button>
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1.5">
+              Minimal 6 karakter. Tombol Acak menghindari 0/O dan 1/I/L — pasangan yang paling sering tertukar saat kode
+              dibacakan lalu diketik ulang di ponsel.
+            </p>
+          </div>
+
+          {/* Berlaku sampai */}
+          <div>
+            <label htmlFor="kode-acara-sampai" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
+              Berlaku Sampai <span className="text-slate-400 normal-case tracking-normal font-medium">(opsional)</span>
+            </label>
+            <div className="flex flex-col formulir:flex-row gap-2">
+              <input
+                id="kode-acara-sampai"
+                type="datetime-local"
+                value={keInputLokal(form.berlakuSampai)}
+                onChange={e => setForm({
+                  ...form,
+                  berlakuSampai: e.target.value ? new Date(e.target.value).toISOString() : null,
+                })}
+                className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+              />
+              {form.berlakuSampai && (
+                <button type="button" onClick={() => setForm({ ...form, berlakuSampai: null })}
+                  className="px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all whitespace-nowrap">
+                  ✕ Kosongkan
+                </button>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-400 mt-1.5">
+              Lewat waktu ini kode ditolak walau saklarnya masih menyala. Kosong = berlaku sampai kamu mematikannya
+              sendiri — yang gampang terlupa setelah acara bubar.
+            </p>
+          </div>
+
+          <div className="flex flex-col formulir:flex-row gap-2 formulir:items-center">
+            <button
+              type="button"
+              onClick={kirim}
+              disabled={!berubah || simpan}
+              className="px-5 py-3 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-indigo-600 hover:bg-indigo-700"
+            >
+              {simpan ? 'Menyimpan…' : 'Simpan Pengaturan'}
+            </button>
+            {berubah && !simpan && (
+              <span className="text-xs text-amber-700 font-semibold">Ada perubahan yang belum disimpan.</span>
+            )}
+          </div>
+        </div>
+
+        {/* ── Ringkasan pendaftar acara ── */}
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col lg:sticky lg:top-4 lg:max-h-[calc(100vh-8rem)]">
+          <div className="flex items-center gap-3 p-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+            <span className="text-2xl">🎓</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-slate-800">
+                {daftar.length} akun terdaftar lewat kode acara
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Ditandai <code className="font-mono text-[11px]">daftar_via_event</code> di kolomnya sendiri — bukan
+                di dalam divisi atau tim — jadi akunnya tetap terdata persis seperti akun yang dibuat admin.
+              </p>
+            </div>
+          </div>
+
+          {daftar.length === 0 ? (
+            <p className="p-4 text-sm text-slate-400">Belum ada yang mendaftar lewat kode acara.</p>
+          ) : (
+            <>
+              <div className="flex flex-wrap gap-2 p-4 border-b border-slate-100 flex-shrink-0">
+                {urut.map(([divisi, jml]) => (
+                  <span key={divisi}
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    {divisi}
+                    <span className="px-1.5 rounded-full bg-white text-indigo-600 tabular-nums">{jml}</span>
+                  </span>
+                ))}
+              </div>
+
+              {/* Daftar namanya sendiri - bergulir sendiri, lepas dari form
+                  di kolom kiri, supaya panel tidak memanjang tak terbatas
+                  saat satu acara membawa puluhan peserta. */}
+              <div className="overflow-y-auto flex-1">
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-white border-b border-slate-200">
+                    <tr>
+                      <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-3 py-2">Nama</th>
+                      <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-3 py-2">Divisi</th>
+                      <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-3 py-2">Daftar</th>
+                      <th className="px-3 py-2" aria-label="Aksi" />
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {daftar.map(a => (
+                      <tr key={a.id} className="hover:bg-slate-50">
+                        <td className="px-3 py-2 font-semibold text-slate-800">
+                          {a.full_name || '—'}
+                          {a.username && <span className="block font-normal text-slate-400 truncate">{a.username}</span>}
+                        </td>
+                        <td className="px-3 py-2 text-slate-600">
+                          {a.sales_division || a.team_type || <span className="text-slate-300">—</span>}
+                        </td>
+                        <td className="px-3 py-2 text-slate-500 whitespace-nowrap tabular-nums">{tglSingkat(a.created_at)}</td>
+                        <td className="px-3 py-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAkun(a.id, a.full_name || a.username || '')}
+                            disabled={menghapus === a.id}
+                            title="Hapus akun ini"
+                            className="text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
     </div>
   );
 }
