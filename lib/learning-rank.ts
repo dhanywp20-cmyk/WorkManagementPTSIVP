@@ -159,10 +159,33 @@ export function hitungPeringkat(
   if (globalIdx >= PAPAN_TERATAS) {
     papan.push({ ...jadiBaris(sekelompok[globalIdx], globalIdx), disisipkan: true });
   } else if (globalIdx < 0) {
-    papan.push({
-      rank: 0, nama: 'Kamu', quiz: 0, avg: 0, lulus: 0, flags: 0,
-      aku: true, disisipkan: true, belumDinilai: true,
-    });
+    /*
+      Pemanggil tidak ada di kelompoknya. Dua sebab yang SANGAT berbeda, dan
+      keduanya dulu ditampilkan sama - "0 quiz, 0 nilai, belum dinilai":
+
+      a. Ia memang belum punya nilai terhitung. Nol memang benar.
+      b. Ia PUNYA nilai, tapi role-nya berbeda dari kelompok yang sedang
+         ditampilkan (mis. datanya terbaca 'sales' sementara papan ini
+         'guest'). Menampilkan nol di sini adalah kebohongan: nilainya ada,
+         cuma tidak di papan ini. Peserta yang baru saja mengerjakan quiz lalu
+         melihat "0 - belum dinilai" wajar menyimpulkan pekerjaannya hilang.
+
+      Jadi angkanya diambil dari perOrang - yang memuat SEMUA peserta tanpa
+      penyaring role - dan tanda "belum dinilai" hanya dipasang kalau di sana
+      pun ia tidak ada.
+    */
+    const milikku = perOrang.get(caller.id);
+    papan.push(milikku
+      ? {
+          rank: 0, nama: milikku.nama, quiz: milikku.jumlah,
+          avg: Math.round((milikku.total / milikku.jumlah) * 10) / 10,
+          lulus: milikku.lulus, flags: milikku.flags,
+          aku: true, disisipkan: true,
+        }
+      : {
+          rank: 0, nama: 'Kamu', quiz: 0, avg: 0, lulus: 0, flags: 0,
+          aku: true, disisipkan: true, belumDinilai: true,
+        });
   }
 
   return { role: myRole, globalRank, globalTotal, divisi: caller.sales_division, divisiRank, divisiTotal, papan };
@@ -170,7 +193,20 @@ export function hitungPeringkat(
 
 export async function ambilPeringkatSaya(): Promise<HasilPeringkat | null> {
   try {
-    const res = await fetch('/api/learning-center/rank', { credentials: 'include' });
+    /*
+      cache: 'no-store' - WAJIB, bukan kehati-hatian berlebihan.
+
+      Halaman ini dibuka tepat SESUDAH peserta menekan Submit. URL-nya sama
+      persis dengan yang dibuka sebelum quiz, tanpa parameter apa pun, dan
+      jawabannya GET 200 biasa - jadi peramban berhak menyajikan salinan
+      lamanya. Yang terlihat: peringkat yang dihitung SEBELUM nilainya masuk.
+      Peserta melihat papan berisi orang lain semua dan barisnya sendiri
+      bertanda "belum dinilai", padahal nilainya sudah ada di basis data.
+    */
+    const res = await fetch('/api/learning-center/rank', {
+      credentials: 'include',
+      cache: 'no-store',
+    });
     if (!res.ok) return null;
     return (await res.json()) as HasilPeringkat;
   } catch {

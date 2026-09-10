@@ -85,5 +85,10 @@ export async function GET(request: NextRequest) {
     id: caller.id, role: caller.role, sales_division: caller.sales_division,
   });
 
-  return NextResponse.json(hasil);
+  //  Peringkat berubah setiap kali ada yang submit, dan halaman ini dibuka
+  //  persis sesudah submit. Menyimpannya di cache mana pun - peramban maupun
+  //  perantara - berarti menyajikan papan dari sebelum nilainya masuk.
+  return NextResponse.json(hasil, {
+    headers: { 'Cache-Control': 'no-store, max-age=0' },
+  });
 }
