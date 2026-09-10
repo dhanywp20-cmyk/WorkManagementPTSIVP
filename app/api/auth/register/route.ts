@@ -105,6 +105,46 @@ async function bacaPengaturanKodeAcara(
   };
 }
 
+/**
+ * Kolom yang membuat akun hasil KODE ACARA identik dengan akun yang dibuat
+ * admin lewat Admin Panel - bukan cuma "mirip".
+ *
+ * Jalur bypass tidak pernah melewati approval admin, jadi tidak ada satu pun
+ * langkah yang merapikan barisnya belakangan. Apa pun yang ditulis di sini
+ * itulah bentuk akhirnya, selamanya. Dua hal berbeda dari pendaftaran biasa
+ * kalau dibiarkan apa adanya:
+ *
+ * 1. sales_division. Formulir mengirim `Marketing:MVI` untuk Marketing, dan
+ *    mengirim TIPE PTS (mis. 'PTS IVP') ke kolom itu untuk pendaftar PTS.
+ *    Admin Panel menyimpannya lain: divisi bersih tanpa awalan ('MVI'), dan
+ *    NULL untuk PTS - karena tim PTS memang tidak punya divisi penjualan;
+ *    identitasnya ada di team_type. Menyimpan 'PTS IVP' di kolom divisi
+ *    penjualan membuat akun itu muncul sebagai "divisi PTS IVP" di setiap
+ *    rekap yang mengelompokkan per divisi.
+ * 2. is_internal_sales. Admin Panel menghitungnya otomatis: Marketing, atau
+ *    Sales di divisi IVP/MVI/MLDS. Nilai ini menentukan apakah request milik
+ *    orang itu kena gerbang review internal. Dibiarkan false, akun acara akan
+ *    berperilaku beda dari akun setara yang dibuat admin - dan bedanya baru
+ *    ketahuan berminggu-minggu kemudian saat satu request tersangkut.
+ *
+ * Untuk pendaftaran NORMAL bentuk lamanya sengaja dipertahankan: di sana
+ * team_type masih 'Pending Approval' dan admin-lah yang merapikan saat
+ * menyetujui - termasuk membaca 'Marketing:MVI' untuk tahu apa yang dipilih
+ * pendaftar. Mengubahnya berarti mengubah alur persetujuan yang sudah jalan.
+ */
+function barisSetara(divisi: string, salesDivision: string | null) {
+  //  Buang awalan 'Marketing:' - Admin Panel menyimpan divisinya bersih dan
+  //  menandai Marketing lewat team_type.
+  const divisiBersih = (salesDivision ?? '').replace(/^Marketing:/, '').trim() || null;
+  const untukSales = divisi === 'Sales' || divisi === 'Marketing';
+  return {
+    sales_division: untukSales ? divisiBersih : null,
+    is_internal_sales:
+      divisi === 'Marketing'
+      || (divisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(divisiBersih ?? '')),
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -171,7 +211,7 @@ export async function POST(request: NextRequest) {
         //  Penanda akun acara ada di kolomnya sendiri, bukan menumpang
         //  team_type - lihat teamTypeDariPilihan di atas.
         daftar_via_event: bypass,
-        sales_division,
+        ...(bypass ? barisSetara(divisi, sales_division) : { sales_division }),
         jabatan,
         phone_number,
         allowed_menus: bypass ? MENU_BYPASS : [],

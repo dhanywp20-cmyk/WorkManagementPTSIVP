@@ -18,13 +18,27 @@ import { useState, useEffect, useCallback } from 'react';
  * langsung - yang kembali cuma kosong.
  */
 
+interface AkunEvent {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  sales_division: string | null;
+  team_type: string | null;
+  jabatan: string | null;
+  created_at: string | null;
+}
+
 interface Pengaturan {
   aktif: boolean;
   kode: string;
   berlakuSampai: string | null;
   dariEnv?: boolean;
   jumlahAkunEvent?: number;
+  daftarAkun?: AkunEvent[];
 }
+
+const tglSingkat = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
 /** ISO -> nilai untuk <input type="datetime-local"> di zona waktu pemakai. */
 function keInputLokal(iso: string | null): string {
@@ -206,19 +220,78 @@ export function KodeAcaraInline() {
         </p>
       </div>
 
-      {/* Berapa yang sudah masuk lewat jalur ini */}
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 flex items-center gap-3">
-        <span className="text-2xl">🎓</span>
-        <div>
-          <p className="text-sm font-bold text-slate-800">
-            {form.jumlahAkunEvent ?? 0} akun terdaftar lewat kode acara
-          </p>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Ditandai <code className="font-mono">daftar_via_event</code> di basis data, jadi tetap bisa dibedakan dari
-            akun biasa walau divisi dan timnya terisi normal.
-          </p>
-        </div>
-      </div>
+      {/* ── Ringkasan pendaftar acara ── */}
+      {(() => {
+        const daftar = form.daftarAkun ?? [];
+        //  Dikelompokkan per divisi - itu pertanyaan pertama yang muncul
+        //  sesudah "berapa orang": dari mana saja mereka.
+        const perDivisi = new Map<string, number>();
+        for (const a of daftar) {
+          const k = a.sales_division?.trim() || a.team_type?.trim() || 'Tanpa divisi';
+          perDivisi.set(k, (perDivisi.get(k) ?? 0) + 1);
+        }
+        const urut = [...perDivisi.entries()].sort((a, b) => b[1] - a[1]);
+
+        return (
+          <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+            <div className="flex items-center gap-3 p-4 border-b border-slate-100 bg-slate-50">
+              <span className="text-2xl">🎓</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-800">
+                  {daftar.length} akun terdaftar lewat kode acara
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Ditandai <code className="font-mono text-[11px]">daftar_via_event</code> di kolomnya sendiri — bukan
+                  di dalam divisi atau tim — jadi akunnya tetap terdata persis seperti akun yang dibuat admin.
+                </p>
+              </div>
+            </div>
+
+            {daftar.length === 0 ? (
+              <p className="p-4 text-sm text-slate-400">Belum ada yang mendaftar lewat kode acara.</p>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-2 p-4 border-b border-slate-100">
+                  {urut.map(([divisi, jml]) => (
+                    <span key={divisi}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      {divisi}
+                      <span className="px-1.5 rounded-full bg-white text-indigo-600 tabular-nums">{jml}</span>
+                    </span>
+                  ))}
+                </div>
+
+                {/* Daftar namanya sendiri - bergulir supaya panel tidak memanjang
+                    tak terbatas saat satu acara membawa puluhan peserta. */}
+                <div className="max-h-72 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="sticky top-0 bg-white border-b border-slate-200">
+                      <tr>
+                        <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-4 py-2">Nama</th>
+                        <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-4 py-2 hidden formulir:table-cell">Email</th>
+                        <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-4 py-2">Divisi</th>
+                        <th className="text-left font-bold text-slate-500 uppercase tracking-widest px-4 py-2">Daftar</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {daftar.map(a => (
+                        <tr key={a.id} className="hover:bg-slate-50">
+                          <td className="px-4 py-2 font-semibold text-slate-800">{a.full_name || '—'}</td>
+                          <td className="px-4 py-2 text-slate-500 hidden formulir:table-cell">{a.username || '—'}</td>
+                          <td className="px-4 py-2 text-slate-600">
+                            {a.sales_division || a.team_type || <span className="text-slate-300">—</span>}
+                          </td>
+                          <td className="px-4 py-2 text-slate-500 whitespace-nowrap tabular-nums">{tglSingkat(a.created_at)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {pesan && (
         <div className={`px-4 py-3 rounded-xl text-sm font-medium border ${

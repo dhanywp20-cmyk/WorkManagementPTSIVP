@@ -527,10 +527,22 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                 ⏱ {fmtTimer(timeLeft)}
               </div>
             )}
-            <button onClick={() => handleSubmit(false)}
-              className="px-3 sm:px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-[13px] sm:text-sm font-bold rounded-lg shadow transition-all">
-              Submit
-            </button>
+            {/*
+              Submit di bilah atas TINGGAL jalan keluar untuk mengumpulkan
+              lebih awal - dan hanya muncul selama masih ada soal kosong.
+
+              Begitu semua terjawab ia menghilang, digantikan tombol besar di
+              BAWAH (lihat akhir daftar pilihan). Di sanalah mata peserta
+              berada saat ia selesai: di tombol Berikutnya yang baru ditekan
+              berkali-kali. Tombol kecil di pojok atas layar bukan tempat
+              menaruh tindakan terpenting dalam alur ini.
+            */}
+            {answered < questions.length && (
+              <button onClick={() => handleSubmit(false)}
+                className="px-3 sm:px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-[12px] sm:text-[13px] font-bold rounded-lg transition-all">
+                Submit
+              </button>
+            )}
             {/* Tutup TIDAK langsung keluar - lihat dialog konfirmasi di bawah.
                 Menutup quiz berbatas waktu tanpa peringatan berarti kehilangan
                 kesempatan mengerjakan, dan itu tidak bisa dibatalkan. */}
@@ -673,15 +685,17 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                 justru pada saat ia dibutuhkan; keduanya tetap ada supaya
                 kebiasaan lama tidak patah.
               */}
-              {current === questions.length - 1 ? (
+              {current === questions.length - 1 && answered < questions.length ? (
+                //  Soal terakhir tapi masih ada yang kosong: Berikutnya sudah
+                //  tidak ada gunanya, jadi tempatnya dipakai Submit - dengan
+                //  angkanya, supaya jelas ini mengumpulkan pekerjaan separuh.
                 <button onClick={() => handleSubmit(false)}
-                  className={`flex items-center gap-2 px-5 py-2.5 text-white text-sm font-bold rounded-xl transition-all shadow-sm ${
-                    answered === questions.length
-                      ? 'bg-emerald-600 hover:bg-emerald-700'
-                      : 'bg-slate-800 hover:bg-slate-900'
-                  }`}>
-                  {answered === questions.length ? '✓ Submit Quiz' : `Submit (${answered}/${questions.length})`}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-xl transition-all shadow-sm">
+                  Submit ({answered}/{questions.length})
                 </button>
+              ) : current === questions.length - 1 ? (
+                //  Semua terjawab: tombol besar di bawah yang mengambil alih.
+                <span />
               ) : (
                 <button onClick={() => setCurrent(p => Math.min(questions.length-1, p+1))}
                   className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white text-sm font-semibold rounded-xl hover:bg-slate-900 transition-all shadow-sm">
@@ -697,6 +711,23 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
               tertinggal dari papan navigasi di sisi kanan, yang di ponsel
               malah tidak tampil sama sekali.
             */}
+            {/*
+              Tombol besar - muncul di soal MANA PUN begitu seluruh soal
+              terjawab, bukan cuma di soal terakhir.
+
+              Orang tidak selalu selesai di nomor terakhir: ia melompat ke
+              nomor yang tadi dilewati, mengisinya, lalu berhenti di sana.
+              Kalau Submit besar cuma ada di soal terakhir, ia harus menebak
+              bahwa dirinya masih perlu menekan Berikutnya beberapa kali
+              sampai ke ujung - padahal pekerjaannya sudah selesai.
+            */}
+            {answered === questions.length && (
+              <button onClick={() => handleSubmit(false)}
+                className="w-full mt-4 px-6 py-4 bg-emerald-600 hover:bg-emerald-700 text-white text-base sm:text-lg font-black rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2">
+                ✓ Submit Quiz
+                <span className="text-xs font-bold opacity-80">({answered}/{questions.length} terjawab)</span>
+              </button>
+            )}
             {current === questions.length - 1 && answered < questions.length && (
               <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200">
                 <p className="text-xs font-bold text-amber-800 mb-2">

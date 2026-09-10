@@ -457,13 +457,30 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       </div>
                     )}
                   </Baris>
-                  {/* team_type bisa dipaksa jadi label status bypass ('Learning Center -
-                      Bypass Event') oleh app/api/auth/register/route.ts supaya gampang
-                      difilter admin. Itu benar di kolom database, tapi salah kalau ikut
-                      dipakai buat menutupi divisi ASLI yang dipilih user (sales_division)
-                      di sini - makanya field ini dikecualikan khusus untuk label bypass. */}
-                  <Baris icon="🏢" label="Divisi / Team"
-                    value={(userData.team_type !== 'Learning Center - Bypass Event' && userData.team_type) || userData.sales_division || '—'} />
+                  {/*
+                    Tim dan Divisi ditampilkan TERPISAH, bukan satu baris
+                    "Divisi / Team" yang diisi salah satunya.
+
+                    Bentuk lamanya `team_type || sales_division`: begitu
+                    team_type ada isinya, divisi penjualan tidak pernah
+                    tampil. Untuk akun Guest - yang team_type-nya memang selalu
+                    'Guest' - artinya barisnya SELALU berbunyi "Guest", dan
+                    divisi yang susah-susah dipilih orangnya saat mendaftar
+                    tidak muncul di mana pun di layar ini. Terbaca persis
+                    seperti data yang gagal tersimpan, padahal ada di database.
+
+                    Dua nilai yang menjawab dua pertanyaan berbeda tidak boleh
+                    berebut satu baris.
+                  */}
+                  {userData.team_type && (
+                    <Baris icon="👥" label="Tim" value={userData.team_type} />
+                  )}
+                  {userData.sales_division && (
+                    <Baris icon="🏢" label="Divisi" value={userData.sales_division} />
+                  )}
+                  {!userData.team_type && !userData.sales_division && (
+                    <Baris icon="🏢" label="Divisi / Tim" value="—" />
+                  )}
                   <Baris icon="⭐" label="Jabatan"       value={userData.jabatan || '—'} />
                   <Baris icon="📅" label="Bergabung Sejak" value={bergabung} />
                   <Baris icon="🔑" label="Status Akun">

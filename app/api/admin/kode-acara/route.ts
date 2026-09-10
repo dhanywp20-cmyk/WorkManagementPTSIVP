@@ -30,6 +30,16 @@ export const dynamic = 'force-dynamic';
  * dan ia memakai service-role setelah memastikan pemanggilnya memang admin.
  */
 
+export interface AkunEvent {
+  id: string;
+  full_name: string | null;
+  username: string | null;
+  sales_division: string | null;
+  team_type: string | null;
+  jabatan: string | null;
+  created_at: string | null;
+}
+
 async function pastikanAdmin(request: NextRequest) {
   const caller = await getSessionUser(request);
   if (!caller) return { galat: NextResponse.json({ error: 'Sesi tidak valid. Login ulang.' }, { status: 401 }) };
@@ -44,11 +54,21 @@ export async function GET(request: NextRequest) {
   if (galat) return galat;
 
   const supabase = getAdminClient();
-  const [{ data: baris }, { count }] = await Promise.all([
+  const [{ data: baris }, { data: akunEvent }] = await Promise.all([
     supabase.from(TABEL_KODE_ACARA).select('aktif, kode, berlaku_sampai').maybeSingle(),
-    //  Berapa akun yang sudah masuk lewat kode acara - dipakai layar admin
-    //  untuk memberi tahu apakah gerbangnya benar-benar terpakai.
-    supabase.from('users').select('id', { count: 'exact', head: true }).eq('daftar_via_event', true),
+    /*
+      Siapa saja yang masuk lewat kode acara - bukan cuma berapa banyak.
+
+      Angka telanjang ("18 akun") tidak bisa ditindaklanjuti: admin yang
+      melihatnya tetap harus membuka User Management dan mencocokkan satu per
+      satu untuk tahu SIAPA mereka dan dari divisi mana. Barisnya dikirim
+      sekalian - jumlahnya memang sengaja dibatasi peserta satu acara, jadi
+      murah - lalu layarnya yang merangkum per divisi.
+    */
+    supabase.from('users')
+      .select('id, full_name, username, sales_division, team_type, jabatan, created_at')
+      .eq('daftar_via_event', true)
+      .order('created_at', { ascending: false }),
   ]);
 
   const pengaturan = dariBaris(baris as BarisKodeAcara | null);
@@ -64,15 +84,19 @@ export async function GET(request: NextRequest) {
   //  akan menampilkan satu kode sementara pendaftaran memakai kode yang lain.
   //  Baris yang ada tapi kodenya kosong dihitung belum diatur di kedua tempat.
   const belumPernahDisimpan = pengaturan === null || pengaturan.kode === '';
-  const hasil: PengaturanKodeAcara & { dariEnv: boolean; jumlahAkunEvent: number } = belumPernahDisimpan
+  const daftarAkun = (akunEvent ?? []) as AkunEvent[];
+  const hasil: PengaturanKodeAcara & {
+    dariEnv: boolean; jumlahAkunEvent: number; daftarAkun: AkunEvent[];
+  } = belumPernahDisimpan
     ? {
         aktif: (process.env.REGISTER_BYPASS_ENABLED || '').trim() === 'true',
         kode: (process.env.REGISTER_BYPASS_CODE || '').trim(),
         berlakuSampai: (process.env.REGISTER_BYPASS_UNTIL || '').trim() || null,
         dariEnv: true,
-        jumlahAkunEvent: count ?? 0,
+        jumlahAkunEvent: daftarAkun.length,
+        daftarAkun,
       }
-    : { ...pengaturan, dariEnv: false, jumlahAkunEvent: count ?? 0 };
+    : { ...pengaturan, dariEnv: false, jumlahAkunEvent: daftarAkun.length, daftarAkun };
 
   return NextResponse.json(hasil);
 }
