@@ -257,12 +257,20 @@ export function QuestionsPage({ user }: { user: User }) {
       }
 
       const parsed: any[] = JSON.parse(jsonMatch[0]);
+      //  answer_format DISERTAKAN eksplisit di kedua cabang - kolomnya NOT
+      //  NULL dengan default 'text', tapi INSERT banyak baris sekaligus lewat
+      //  PostgREST menyamakan daftar kolom lintas SEMUA baris dalam satu
+      //  panggilan; baris yang tidak menyebut kolom ini bisa berakhir NULL
+      //  eksplisit alih-alih memakai default-nya begitu baris lain (mis. dari
+      //  sesi banding yang mencampur genType) menyebutnya. Ditulis 'text'
+      //  di sini menghilangkan ambiguitasnya sama sekali.
       const rows = genType === 'essay'
         ? parsed.map(q => ({
             material_id: selectedMat, materi_name: mat?.materi_name ?? '',
             batch_name: batchName.trim() || null,
             question: q.question, option_a: '', option_b: '', option_c: '', option_d: '',
             correct_answer: null, question_type: 'essay', model_answer: q.model_answer ?? '',
+            answer_format: 'text',
             difficulty: q.difficulty ?? 'medium', created_by: user.id,
           }))
         : parsed.map(q => ({
@@ -271,6 +279,7 @@ export function QuestionsPage({ user }: { user: User }) {
             question: q.question, option_a: q.option_a, option_b: q.option_b,
             option_c: q.option_c, option_d: q.option_d,
             correct_answer: (q.correct_answer ?? 'A').toUpperCase(), question_type: 'abcd',
+            answer_format: 'text',
             difficulty: q.difficulty ?? 'medium', created_by: user.id,
           }));
     return rows as Record<string, unknown>[];
