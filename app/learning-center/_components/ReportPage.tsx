@@ -52,7 +52,14 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
         .eq('quiz_session_id', selectedSession)
         .eq('is_submitted', true)
         .order('score', { ascending: false })
-        .order('time_taken_sec', { ascending: true });
+        .order('time_taken_sec', { ascending: true })
+        //  Kunci KETIGA - penentu terakhir supaya urutannya tidak bisa
+        //  berubah sendiri. Kalau skor DAN waktu sama persis, tanpa ini
+        //  Postgres bebas mengembalikan baris dalam susunan apa pun, dan
+        //  susunan itu tidak dijamin sama antar permintaan: admin membuka
+        //  laporan yang sama dua kali bisa melihat dua urutan berbeda
+        //  padahal tidak ada satu data pun yang berubah.
+        .order('id', { ascending: true });
       if (dibatalkan) return;
       if (error) {
         setLoadErr(error.message); setData([]); setLoading(false);
@@ -86,6 +93,31 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
         (a.users?.username ?? '').toLowerCase().includes(search.toLowerCase())
       )
     : data;
+
+  /*
+    Nomor peringkat dihitung dari SELURUH peserta (data), bukan dari posisi
+    baris di daftar yang sedang tampil (filtered).
+
+    Sebelumnya nomor & lencana diambil dari indeks hasil filter, jadi begitu
+    admin mengetik satu nama di kotak pencarian, peserta itu muncul sebagai
+    "#1" lengkap dengan 🥇 - siapa pun peringkat aslinya. Mencari seseorang
+    tidak boleh mengubah peringkatnya.
+
+    Sekaligus peringkat KEMBAR: dua peserta dengan skor DAN waktu sama persis
+    mendapat nomor yang sama. Urutan barisnya memang sudah dipatok stabil
+    lewat .order('id') di atas, tapi "stabil" bukan berarti "pantas" - tidak
+    ada alasan yang bisa dijelaskan kenapa yang satu #2 dan yang lain #3.
+  */
+  const peringkatPerAttempt = new Map<string, number>();
+  {
+    let nomor = 0;
+    data.forEach((a: any, i: number) => {
+      const sblm: any = i > 0 ? data[i - 1] : null;
+      const seri = sblm && Number(sblm.score) === Number(a.score) && sblm.time_taken_sec === a.time_taken_sec;
+      if (!seri) nomor = i + 1;
+      peringkatPerAttempt.set(a.id, nomor);
+    });
+  }
 
   return (
     <div>
@@ -154,11 +186,13 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                   {filtered.length === 0 && (
                     <tr><td colSpan={9} className="text-center py-10 text-slate-400">Tidak ada peserta yang cocok</td></tr>
                   )}
-                  {filtered.map((a: any, i: number) => (
+                  {filtered.map((a: any) => {
+                    const pr = peringkatPerAttempt.get(a.id) ?? 0;
+                    return (
                     <tr key={a.id} className="stagger-item hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3.5 text-center">
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mx-auto ${i === 0 ? 'bg-amber-400 text-white' : i === 1 ? 'bg-slate-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : 'text-slate-400'}`}>
-                          {i < 3 ? ['🥇','🥈','🥉'][i] : i+1}
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mx-auto ${pr === 1 ? 'bg-amber-400 text-white' : pr === 2 ? 'bg-slate-400 text-white' : pr === 3 ? 'bg-orange-400 text-white' : 'text-slate-400'}`}>
+                          {pr <= 3 ? ['🥇','🥈','🥉'][pr - 1] : pr}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 font-semibold text-slate-800">
@@ -224,7 +258,8 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                         })()}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

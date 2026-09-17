@@ -182,8 +182,11 @@ export function ScorePage({ user }: { user: User }) {
                 cenderung menyimpulkan urutannya acak/bug, padahal tie-break
                 waktu pengerjaan-nya memang sedang bekerja seperti seharusnya.
               */}
-              <p className="text-[11px] text-slate-400 mb-3 -mt-2">
-                Diurutkan dari skor rata-rata tertinggi. Jika skor sama, peserta dengan rata-rata waktu pengerjaan tercepat menang.
+              <p className="text-[11px] text-slate-400 mb-3 -mt-2 leading-relaxed">
+                Urutan: <b className="text-slate-500">skor rata-rata</b> tertinggi dulu → kalau seri,{' '}
+                <b className="text-slate-500">waktu pengerjaan</b> tercepat menang → kalau keduanya sama persis,
+                peringkatnya <b className="text-slate-500">kembar</b> (nomor yang sama, bukan diacak).
+                Peringkat dihitung ulang tiap halaman dibuka dan hasilnya selalu sama untuk data yang sama.
               </p>
 
               <div className={`grid grid-cols-1 ${pakaiDivisi ? 'sm:grid-cols-2' : ''} gap-3 mb-3`}>
@@ -228,12 +231,17 @@ export function ScorePage({ user }: { user: User }) {
                       <th className="px-3 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest">Nama</th>
                       <th className="px-3 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Quiz</th>
                       <th className="px-3 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Score</th>
+                      <th className="px-3 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest" title="Rata-rata waktu pengerjaan - penentu urutan saat skor sama">Waktu</th>
                       <th className="px-3 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {papan.map(r => (
-                      <tr key={r.aku ? 'aku' : r.rank}
+                    {/*  Kunci pakai posisi baris, BUKAN r.rank - sejak peringkat
+                        kembar diperkenalkan (dua peserta dengan skor & waktu
+                        identik dapat nomor yang sama), r.rank tidak lagi unik
+                        dan React akan menabrakkan dua baris jadi satu. */}
+                    {papan.map((r, iBaris) => (
+                      <tr key={r.aku ? 'aku' : `b${iBaris}`}
                         className={`stagger-item ${r.aku ? 'bg-indigo-50 border-l-[3px] border-indigo-400' : 'hover:bg-slate-50'} ${
                           /* Pemisah tegas: baris ini melompati peringkat di antaranya,
                              jadi ia tidak boleh terbaca seolah menempel di bawah baris atasnya. */
@@ -261,9 +269,20 @@ export function ScorePage({ user }: { user: User }) {
                         </td>
                         <td className="px-3 py-3 text-center text-xs font-bold text-slate-500">{r.quiz}</td>
                         <td className="px-3 py-3 text-center">
+                          {/*  1 desimal, BUKAN toFixed(0). Dengan pembulatan ke
+                              bilangan bulat, 98.08 dan 97.62 sama-sama tampil
+                              "98" - dua baris terlihat bernilai sama persis tapi
+                              peringkatnya beda, tanpa apa pun di layar yang
+                              menjelaskan. Itu bentuk paling murni dari "kelihatan
+                              seperti bug" padahal urutannya benar. */}
                           <span className={`text-xs font-bold ${r.avg >= 80 ? 'text-emerald-600' : r.avg >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>
-                            {r.avg.toFixed(0)}
+                            {r.avg.toFixed(1)}
                           </span>
+                        </td>
+                        <td className="px-3 py-3 text-center text-xs font-semibold text-slate-500 whitespace-nowrap">
+                          {r.belumDinilai || !r.avgWaktu
+                            ? '—'
+                            : `${Math.floor(r.avgWaktu / 60)}m ${String(r.avgWaktu % 60).padStart(2, '0')}s`}
                         </td>
                         <td className="px-3 py-3 text-center">
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${r.lulus > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
@@ -318,6 +337,10 @@ export function ScorePage({ user }: { user: User }) {
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
                   <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Quiz</th>
+                  <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest whitespace-nowrap"
+                    title="Peringkat kamu DI SESI INI SAJA. Angka ini tidak ikut berubah ketika ada sesi quiz lain berjalan.">
+                    Peringkat Sesi
+                  </th>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Skor</th>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Benar</th>
                   <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Status</th>
@@ -327,13 +350,25 @@ export function ScorePage({ user }: { user: User }) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.length === 0 && (
-                  <tr><td colSpan={6} className="text-center py-10 text-slate-400">
+                  <tr><td colSpan={7} className="text-center py-10 text-slate-400">
                     {search ? 'Tidak ada hasil' : 'Belum ada quiz yang diselesaikan'}
                   </td></tr>
                 )}
-                {filtered.map((a: any) => (
+                {filtered.map((a: any) => {
+                  const ps = peringkat?.peringkatSesi?.[a.id];
+                  return (
                   <tr key={a.id} className="hover:bg-slate-50">
                     <td className="px-5 py-3.5 font-semibold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</td>
+                    <td className="px-5 py-3.5 text-center whitespace-nowrap">
+                      {ps
+                        ? <span className="inline-flex items-baseline gap-1">
+                            <span className={`text-sm font-black ${ps.rank === 1 ? 'text-amber-500' : ps.rank <= 3 ? 'text-slate-600' : 'text-slate-700'}`}>
+                              {ps.rank <= 3 ? ['🥇','🥈','🥉'][ps.rank - 1] : `#${ps.rank}`}
+                            </span>
+                            <span className="text-[10px] text-slate-400">dari {ps.total}</span>
+                          </span>
+                        : <span className="text-slate-300 text-xs">—</span>}
+                    </td>
                     <td className="px-5 py-3.5 text-center"><ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} /></td>
                     <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
                     <td className="px-5 py-3.5 text-center">
@@ -347,7 +382,8 @@ export function ScorePage({ user }: { user: User }) {
                       </button>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

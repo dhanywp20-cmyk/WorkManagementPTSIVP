@@ -16,6 +16,10 @@ export interface BarisAttempt {
   grading_status: string | null;
   role: string | null;
   sales_division: string | null;
+  /** id baris attempt - kunci hasil peringkat per sesi. */
+  attempt_id?: string | null;
+  /** sesi quiz asal attempt ini - dasar peringkat per sesi. */
+  quiz_session_id?: string | null;
   /** Nama asli - HANYA dipakai server; yang bukan milik pemanggil disamarkan sebelum dikirim. */
   full_name?: string | null;
   passed?: boolean | null;
@@ -39,6 +43,13 @@ export interface BarisPapan {
   nama: string;
   quiz: number;
   avg: number;
+  /**
+   * Rata-rata waktu pengerjaan (detik) - DITAMPILKAN, bukan cuma dipakai
+   * mengurutkan. Ini tie-break kedua: tanpa kolomnya di layar, peserta yang
+   * skornya sama dengan baris di atasnya tidak punya SATU PUN petunjuk kenapa
+   * ia ada di bawah, dan wajar menyimpulkan urutannya acak/bug.
+   */
+  avgWaktu: number;
   lulus: number;
   flags: number;
   /** true = baris milik pemanggil sendiri; hanya baris ini yang bernama asli. */
@@ -65,6 +76,21 @@ export interface HasilPeringkat {
   divisiTotal: number;
   /** Papan peringkat sekelompok (role yang sama), nama peserta lain sudah disamarkan. */
   papan: BarisPapan[];
+  /**
+   * Peringkat pemanggil DI DALAM SATU SESI QUIZ, dikunci per attempt.
+   *
+   * Ini jawaban atas keluhan "peringkat saya pindah padahal saya tidak ikut
+   * quiz baru". Peringkat global di atas dihitung dari RATA-RATA seluruh sesi,
+   * jadi begitu ada sesi baru berjalan, rata-rata peserta lain berubah dan
+   * urutan ikut bergeser - termasuk bagi orang yang tidak ikut sesi itu sama
+   * sekali. Dilihat dari kursi peserta, peringkatnya berubah tanpa ada satu
+   * pun hal yang ia lakukan: persis seperti bug.
+   *
+   * Angka per sesi TIDAK PERNAH berubah oleh sesi lain - ia hanya
+   * membandingkan peserta yang mengerjakan sesi yang sama. Hanya berisi
+   * attempt MILIK pemanggil; peringkat orang lain tidak pernah dikirim.
+   */
+  peringkatSesi: Record<string, { rank: number; total: number }>;
 }
 
 /** Berapa baris teratas yang dikirim ke papan. Baris pemanggil selalu ikut di luar ini. */
@@ -109,24 +135,64 @@ export function hitungPeringkat(
   //  memicu komplain "nilai saya sama tapi peringkat saya kalah". Waktu
   //  rata-rata lebih singkat menang saat skor seri - sama seperti perbaikan
   //  di ReportPage.tsx dan AdminDashboard.tsx.
-  const sekelompok = [...perOrang.entries()]
+  /*
+    Tie-break KETIGA (userId) bukan hiasan - ia yang membuat papan ini tidak
+    berubah sendiri antar muat ulang.
+
+    Dengan dua kunci saja, peserta yang skor DAN waktunya sama persis
+    berakhir terurut menurut urutan baris apa adanya dari database. Urutan
+    itu tidak dijamin stabil: kueri yang sama bisa mengembalikan baris dalam
+    susunan berbeda (rencana kueri berubah, baris diperbarui, dst). Akibatnya
+    peserta bisa melihat peringkatnya bertukar hanya karena me-refresh
+    halaman - tepat kejadian yang terbaca sebagai "peringkat pindah sendiri,
+    kayak bug". userId tidak pernah berubah, jadi urutan untuk data yang
+    sama selalu identik, hari ini maupun bulan depan.
+  */
+  const terurut = [...perOrang.entries()]
     .filter(([, r]) => r.role === myRole)
     .map(([userId, r]) => ({
       userId, avg: r.total / r.jumlah, avgWaktu: r.waktu / r.jumlah, divisi: r.divisi,
       nama: r.nama, quiz: r.jumlah, lulus: r.lulus, flags: r.flags,
     }))
-    .sort((a, b) => b.avg - a.avg || a.avgWaktu - b.avgWaktu);
+    .sort((a, b) => b.avg - a.avg || a.avgWaktu - b.avgWaktu || a.userId.localeCompare(b.userId));
+
+  /*
+    Peringkat KEMBAR untuk statistik yang benar-benar identik (1, 2, 2, 4 -
+    bukan 1, 2, 3, 4). Kalau dua peserta skor dan waktunya sama persis, tidak
+    ada satu pun alasan yang bisa dijelaskan kenapa yang satu "#2" dan yang
+    lain "#3" - urutan barisnya memang ditentukan userId semata supaya stabil,
+    dan itu bukan prestasi yang bisa dipertanggungjawabkan. Keduanya dapat
+    nomor yang sama; nomor berikutnya melompat sebanyak yang seri.
+  */
+  const sekelompok = terurut.map((p, i) => {
+    const sblm = i > 0 ? terurut[i - 1] : null;
+    return { ...p, peringkat: 0, seriDenganAtas: !!sblm && sblm.avg === p.avg && sblm.avgWaktu === p.avgWaktu };
+  });
+  let nomor = 0;
+  sekelompok.forEach((p, i) => { if (!p.seriDenganAtas) nomor = i + 1; p.peringkat = nomor; });
 
   const globalIdx = sekelompok.findIndex(p => p.userId === caller.id);
-  const globalRank = globalIdx >= 0 ? globalIdx + 1 : null;
+  const globalRank = globalIdx >= 0 ? sekelompok[globalIdx].peringkat : null;
   const globalTotal = sekelompok.length;
 
   let divisiRank: number | null = null;
   let divisiTotal = 0;
   if (caller.sales_division) {
+    //  Peringkat kembar dihitung ULANG di dalam divisi - peringkat global
+    //  tidak bisa dipakai apa adanya di sini karena anggota divisi lain yang
+    //  terselip di antaranya sudah disaring keluar.
     const sedivisi = sekelompok.filter(p => p.divisi === caller.sales_division);
     const idx = sedivisi.findIndex(p => p.userId === caller.id);
-    divisiRank = idx >= 0 ? idx + 1 : null;
+    if (idx >= 0) {
+      let n = 0;
+      let rankKu = 1;
+      sedivisi.forEach((p, i) => {
+        const sblm = i > 0 ? sedivisi[i - 1] : null;
+        if (!sblm || sblm.avg !== p.avg || sblm.avgWaktu !== p.avgWaktu) n = i + 1;
+        if (i === idx) rankKu = n;
+      });
+      divisiRank = rankKu;
+    }
     divisiTotal = sedivisi.length;
   }
 
@@ -139,10 +205,14 @@ export function hitungPeringkat(
   const jadiBaris = (p: typeof sekelompok[number], i: number): BarisPapan => {
     const aku = p.userId === caller.id;
     return {
-      rank: i + 1,
+      //  Nomor peringkat (bisa kembar), BUKAN posisi baris - lihat catatan
+      //  peringkat kembar di atas. Nama samaran tetap memakai posisi baris
+      //  supaya tidak ada dua "Peserta #2" di papan yang sama.
+      rank: p.peringkat,
       nama: aku ? p.nama : `Peserta #${i + 1}`,
       quiz: p.quiz,
       avg: Math.round(p.avg * 10) / 10,
+      avgWaktu: Math.round(p.avgWaktu),
       lulus: p.lulus,
       flags: p.flags,
       aku,
@@ -189,16 +259,58 @@ export function hitungPeringkat(
       ? {
           rank: 0, nama: milikku.nama, quiz: milikku.jumlah,
           avg: Math.round((milikku.total / milikku.jumlah) * 10) / 10,
+          avgWaktu: Math.round(milikku.waktu / milikku.jumlah),
           lulus: milikku.lulus, flags: milikku.flags,
           aku: true, disisipkan: true,
         }
       : {
-          rank: 0, nama: 'Kamu', quiz: 0, avg: 0, lulus: 0, flags: 0,
+          rank: 0, nama: 'Kamu', quiz: 0, avg: 0, avgWaktu: 0, lulus: 0, flags: 0,
           aku: true, disisipkan: true, belumDinilai: true,
         });
   }
 
-  return { role: myRole, globalRank, globalTotal, divisi: caller.sales_division, divisiRank, divisiTotal, papan };
+  /*
+    Peringkat per sesi - dihitung dari baris MENTAH (bukan agregat per orang),
+    karena satuannya di sini adalah satu kali pengerjaan, bukan rata-rata
+    seseorang. Aturan urutannya sengaja sama persis dengan papan global supaya
+    tidak ada dua definisi "menang" yang berbeda di satu produk: skor tertinggi
+    dulu, lalu waktu tercepat, lalu id attempt sebagai penentu terakhir supaya
+    hasilnya tidak bisa berubah antar permintaan. Yang seri sempurna berbagi
+    nomor yang sama.
+  */
+  const perSesi = new Map<string, BarisAttempt[]>();
+  for (const a of rows) {
+    if (a.grading_status === 'pending_review') continue;
+    if (!a.role || !a.quiz_session_id) continue;
+    //  Dibandingkan hanya dengan sesama role - sama seperti papan global,
+    //  supaya Guest tidak diadu dengan Team di sesi yang sama.
+    if (a.role.toLowerCase() !== myRole) continue;
+    const daftar = perSesi.get(a.quiz_session_id) ?? [];
+    daftar.push(a);
+    perSesi.set(a.quiz_session_id, daftar);
+  }
+
+  const peringkatSesi: Record<string, { rank: number; total: number }> = {};
+  for (const [, daftar] of perSesi) {
+    const urut = [...daftar].sort((x, y) =>
+      (y.score ?? 0) - (x.score ?? 0)
+      || (x.time_taken_sec ?? Infinity) - (y.time_taken_sec ?? Infinity)
+      || String(x.attempt_id ?? '').localeCompare(String(y.attempt_id ?? '')));
+    let nomor = 0;
+    urut.forEach((a, i) => {
+      const sblm = i > 0 ? urut[i - 1] : null;
+      const seri = !!sblm && (sblm.score ?? 0) === (a.score ?? 0)
+        && (sblm.time_taken_sec ?? null) === (a.time_taken_sec ?? null);
+      if (!seri) nomor = i + 1;
+      //  Hanya attempt milik pemanggil yang dikembalikan - peringkat peserta
+      //  lain tidak pernah meninggalkan server.
+      if (a.user_id === caller.id && a.attempt_id) {
+        peringkatSesi[a.attempt_id] = { rank: nomor, total: urut.length };
+      }
+    });
+  }
+
+  return { role: myRole, globalRank, globalTotal, divisi: caller.sales_division, divisiRank, divisiTotal, papan, peringkatSesi };
 }
 
 export async function ambilPeringkatSaya(): Promise<HasilPeringkat | null> {

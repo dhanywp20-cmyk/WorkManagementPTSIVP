@@ -65,7 +65,9 @@ export function AnalyticsPage() {
           // peringkat orang yang SAMA, jadi kalau cuma salah satu yang
           // dibetulkan, admin akan melihat urutan berbeda antar dua layar
           // untuk data yang identik.
-        })).sort((a, b) => b.avg - a.avg || a.avgTime - b.avgTime);
+          //  Kunci ketiga (uid): hasil untuk data yang sama harus selalu
+          //  identik. Lihat catatan yang sama di AdminDashboard.tsx.
+        })).sort((a, b) => b.avg - a.avg || a.avgTime - b.avgTime || a.uid.localeCompare(b.uid));
         setAllTopUsers(allUsers);
         setTopUsers(allUsers.filter(u => matchesTeamFilter(u, 'PTS')).slice(0, 20));
 

@@ -156,7 +156,12 @@ export function AdminDashboard({ user }: { user: User }) {
         total: v.scores.length, passed: v.passed, tabSw: v.tabSw,
         consistency: v.scores.length >= 2 ? v.maxScore - v.minScore : null,
         fastCount: v.fastCount,
-      })).sort((a, b) => b.avg - a.avg || a.avgTime - b.avgTime);
+        //  Kunci ketiga (uid) memastikan hasilnya sama persis tiap kali
+        //  dimuat. Tanpa itu, peserta yang skor & waktunya identik terurut
+        //  mengikuti urutan Object.entries atas data dari database - yang
+        //  bisa berbeda antar permintaan, sehingga peringkat tampak bertukar
+        //  sendiri padahal tidak ada data yang berubah.
+      })).sort((a, b) => b.avg - a.avg || a.avgTime - b.avgTime || a.uid.localeCompare(b.uid));
       setAllTopUsers(allUsers);
       setTopUsers(allUsers.filter(u => matchesTeamFilter(u, 'PTS')).slice(0, 20));
 

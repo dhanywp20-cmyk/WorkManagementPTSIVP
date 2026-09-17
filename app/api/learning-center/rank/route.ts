@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
   for (const u of (usersRes.data ?? []) as BarisUser[]) petaUser.set(u.id, u);
 
   type Baris = {
+    id: string; quiz_session_id: string | null;
     user_id: string; score: number | null; grading_status: string | null;
     passed: boolean | null; tab_switches: number | null; time_taken_sec: number | null;
   };
@@ -76,6 +77,9 @@ export async function GET(request: NextRequest) {
     return {
       user_id: a.user_id, score: a.score, grading_status: a.grading_status,
       passed: a.passed, tab_switches: a.tab_switches, time_taken_sec: a.time_taken_sec,
+      //  Dua kolom ini yang membuat peringkat PER SESI bisa dihitung - angka
+      //  yang tidak ikut bergeser ketika sesi quiz lain berjalan.
+      attempt_id: a.id, quiz_session_id: a.quiz_session_id,
       full_name: u?.full_name ?? null,
       role: u?.role ?? null, sales_division: u?.sales_division ?? null,
     };

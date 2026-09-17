@@ -154,10 +154,111 @@ console.log('\n9. Papan peringkat: hanya nama SENDIRI yang asli');
   ok('Flag pindah-tab ikut terhitung', h.papan.find(p => p.aku)?.flags === 2);
 }
 
-console.log('\n10. Papan kosong tidak meledak');
+console.log('\n10. Tanpa data apa pun: papan berisi SATU baris "belum dinilai"');
 {
+  /*
+    Pengujian ini dulu berbunyi `h.papan.length === 0` dan karena itu MERAH
+    permanen - bertentangan dengan perilaku yang justru sengaja dibangun di
+    hitungPeringkat: pemanggil yang belum punya nilai tetap diberi barisnya
+    sendiri bertanda belumDinilai, supaya papannya tidak tampil berisi orang
+    lain semua tanpa satu pun keterangan kenapa dirinya tidak ada di sana.
+
+    Yang diperbaiki adalah HARAPANNYA, bukan kode produksinya. Pengujian yang
+    merah terus-menerus lebih berbahaya daripada tidak ada pengujian sama
+    sekali: ia melatih orang mengabaikan kegagalan, termasuk yang sungguhan.
+  */
   const h = hitungPeringkat([], { id: 'u1', role: 'guest', sales_division: null });
-  ok('Papan kosong, bukan undefined', Array.isArray(h.papan) && h.papan.length === 0);
+  ok('Papan berupa array, bukan undefined', Array.isArray(h.papan));
+  sama('Tepat satu baris - milik pemanggil sendiri', h.papan.length, 1);
+  ok('Baris itu ditandai belum dinilai', h.papan[0]?.belumDinilai === true);
+  ok('Tidak mengarang peringkat', h.globalRank === null && h.papan[0]?.rank === 0);
+}
+
+/*
+  11-13. ATURAN URUTAN - ini yang selama ini memicu komplain "peringkat saya
+  pindah sendiri". Ketiganya menguji hal yang sama dari tiga sisi: hasil
+  untuk data yang sama harus SELALU identik, apa pun urutan baris masuknya.
+*/
+console.log('\n11. Skor seri -> waktu pengerjaan tercepat menang');
+{
+  const rows: BarisAttempt[] = [
+    { user_id: 'lambat', score: 100, grading_status: null, role: 'guest', sales_division: 'Jakarta', full_name: 'Lambat', time_taken_sec: 1800 },
+    { user_id: 'cepat',  score: 100, grading_status: null, role: 'guest', sales_division: 'Jakarta', full_name: 'Cepat',  time_taken_sec: 600 },
+  ];
+  const h = hitungPeringkat(rows, { id: 'cepat', role: 'guest', sales_division: 'Jakarta' });
+  sama('Yang lebih cepat dapat peringkat 1', h.globalRank, 1);
+  ok('Waktu ikut dikirim ke papan supaya alasannya terlihat di layar',
+    h.papan.find(p => p.aku)?.avgWaktu === 600);
+}
+
+console.log('\n12. Skor DAN waktu sama persis -> peringkat kembar, bukan diacak');
+{
+  const kembar = (id: string): BarisAttempt => ({
+    user_id: id, score: 90, grading_status: null, role: 'guest',
+    sales_division: 'Jakarta', full_name: id, time_taken_sec: 900,
+  });
+  const rows = [
+    kembar('a'), kembar('b'),
+    { ...kembar('c'), score: 95, time_taken_sec: 500 } as BarisAttempt,
+  ];
+  const h = hitungPeringkat(rows, { id: 'a', role: 'guest', sales_division: 'Jakarta' });
+  sama('Nomor peringkat papan: 1, 2, 2 (yang seri kembar)', h.papan.map(p => p.rank), [1, 2, 2]);
+  sama('Pemanggil yang seri tetap dapat nomor peringkat yang sama', h.globalRank, 2);
+}
+
+console.log('\n13. Urutan baris masukan tidak mengubah hasil (stabil antar reload)');
+{
+  const buat = (id: string): BarisAttempt => ({
+    user_id: id, score: 88, grading_status: null, role: 'guest',
+    sales_division: 'Jakarta', full_name: id, time_taken_sec: 1200,
+  });
+  //  Semua peserta seri SEMPURNA - inilah kasus yang dulu urutannya
+  //  ditentukan urutan baris apa adanya dari database, dan karena itu bisa
+  //  berubah antar permintaan tanpa ada satu pun data yang berubah.
+  const maju  = ['u1', 'u2', 'u3', 'u4'].map(buat);
+  const mundur = [...maju].reverse();
+  const h1 = hitungPeringkat(maju,  { id: 'u3', role: 'guest', sales_division: 'Jakarta' });
+  const h2 = hitungPeringkat(mundur, { id: 'u3', role: 'guest', sales_division: 'Jakarta' });
+  sama('Peringkat pemanggil identik walau urutan baris dibalik', h1.globalRank, h2.globalRank);
+  ok('Seluruh papan identik walau urutan baris dibalik',
+    JSON.stringify(h1.papan) === JSON.stringify(h2.papan));
+  sama('Semua seri sempurna -> semua dapat nomor 1', h1.papan.map(p => p.rank), [1, 1, 1, 1]);
+}
+
+console.log('\n14. Peringkat PER SESI tidak digeser oleh sesi lain');
+{
+  const att = (
+    attempt_id: string, quiz_session_id: string, user_id: string, score: number, time_taken_sec: number,
+  ): BarisAttempt => ({
+    attempt_id, quiz_session_id, user_id, score, time_taken_sec,
+    grading_status: null, role: 'guest', sales_division: 'Jakarta', full_name: user_id,
+  });
+
+  //  Sesi A: aku juara 1. Sesi B (yang TIDAK aku ikuti) dipakai untuk
+  //  membuktikan angkanya tidak ikut berubah gara-gara sesi lain berjalan.
+  const sesiA = [
+    att('a-aku', 'A', 'aku', 100, 600),
+    att('a-x',   'A', 'x',   90,  500),
+    att('a-y',   'A', 'y',   80,  400),
+  ];
+  const sesiB = [
+    att('b-x', 'B', 'x', 100, 100),
+    att('b-y', 'B', 'y', 100, 120),
+    att('b-z', 'B', 'z', 100, 130),
+  ];
+  const aku = { id: 'aku', role: 'guest', sales_division: 'Jakarta' };
+
+  const sebelum = hitungPeringkat(sesiA, aku);
+  const sesudah = hitungPeringkat([...sesiA, ...sesiB], aku);
+
+  sama('Sesi A: aku juara 1 dari 3', sebelum.peringkatSesi['a-aku'], { rank: 1, total: 3 });
+  sama('Setelah sesi B berjalan, peringkat sesi A TIDAK berubah',
+    sesudah.peringkatSesi['a-aku'], { rank: 1, total: 3 });
+  ok('Peringkat GLOBAL memang bergeser oleh sesi B - itu sebabnya angka per sesi dibutuhkan',
+    sebelum.globalRank !== sesudah.globalRank,
+    `global ${sebelum.globalRank} -> ${sesudah.globalRank}`);
+  ok('Hanya attempt milik pemanggil yang dikembalikan',
+    Object.keys(sesudah.peringkatSesi).every(k => k.startsWith('a-aku')));
 }
 
 console.log(`\n${gagal === 0 ? 'SEMUA LULUS' : 'ADA GAGAL'} — ${lulus} lulus, ${gagal} gagal\n`);
