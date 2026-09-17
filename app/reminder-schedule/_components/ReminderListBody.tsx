@@ -318,7 +318,7 @@ export function ReminderListBody({
                         });
                       }}
                       className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
-                  : <span className="text-[11px] font-bold text-gray-500">{idx + 1}</span>}
+                  : <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>}
               </td>
                     {/* Project */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
