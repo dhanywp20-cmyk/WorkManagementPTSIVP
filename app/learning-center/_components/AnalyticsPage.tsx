@@ -36,7 +36,7 @@ export function AnalyticsPage() {
       if (a) {
         const graded = a.filter((att: any) => att.grading_status !== 'pending_review'); // skor essay yg belum dinilai jangan masuk rata-rata
         // Per user
-        const byUser: Record<string, { name: string; division: string | null; teamType: string | null; role: string | null; salesDivision: string | null; scores: number[]; passed: number; flags: number }> = {};
+        const byUser: Record<string, { name: string; division: string | null; teamType: string | null; role: string | null; salesDivision: string | null; scores: number[]; times: number[]; passed: number; flags: number }> = {};
         graded.forEach((att: any) => {
           if (!byUser[att.user_id]) byUser[att.user_id] = {
             name: att.users?.full_name ?? '-',
@@ -44,9 +44,10 @@ export function AnalyticsPage() {
             teamType: att.users?.team_type ?? null,
             role: att.users?.role ?? null,
             salesDivision: att.users?.sales_division ?? null,
-            scores: [], passed: 0, flags: 0,
+            scores: [], times: [], passed: 0, flags: 0,
           };
           byUser[att.user_id].scores.push(att.score ?? 0);
+          if (typeof att.time_taken_sec === 'number') byUser[att.user_id].times.push(att.time_taken_sec);
           if (att.passed) byUser[att.user_id].passed++;
           byUser[att.user_id].flags += att.tab_switches ?? 0;
         });
@@ -54,8 +55,17 @@ export function AnalyticsPage() {
           uid, name: v.name, division: v.division, teamType: v.teamType,
           role: v.role, salesDivision: v.salesDivision,
           avg: v.scores.reduce((s: number, n: number) => s + n, 0) / v.scores.length,
+          avgTime: v.times.length ? v.times.reduce((s: number, n: number) => s + n, 0) / v.times.length : Infinity,
           total: v.scores.length, passed: v.passed, flags: v.flags,
-        })).sort((a, b) => b.avg - a.avg);
+          // Sama seperti AdminDashboard.tsx (Top Performers) - skor rata-rata
+          // sama TIDAK berarti urutannya bebas. Tanpa tie-break kedua ini,
+          // dua peserta yang seri terurut menurut urutan baris apa adanya dari
+          // database, bukan siapa yang mengerjakan lebih cepat - halaman ini
+          // (Analytics, dilihat admin) dan AdminDashboard menampilkan
+          // peringkat orang yang SAMA, jadi kalau cuma salah satu yang
+          // dibetulkan, admin akan melihat urutan berbeda antar dua layar
+          // untuk data yang identik.
+        })).sort((a, b) => b.avg - a.avg || a.avgTime - b.avgTime);
         setAllTopUsers(allUsers);
         setTopUsers(allUsers.filter(u => matchesTeamFilter(u, 'PTS')).slice(0, 20));
 

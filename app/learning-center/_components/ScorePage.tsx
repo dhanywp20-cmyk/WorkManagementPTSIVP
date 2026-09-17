@@ -174,6 +174,17 @@ export function ScorePage({ user }: { user: User }) {
                 terbaca utuh di DevTools/Network, jadi bukan proteksi. */}
             <div>
               <SectionHeader>🏆 Peringkat — {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Semua'}</SectionHeader>
+              {/*
+                Aturan urutan ditulis eksplisit di UI - bukan cuma di kode.
+                Skor rata-rata yang seri (mis. sama-sama 100) itu WAJAR terjadi
+                dan bisa terlihat berkali-kali di satu papan; tanpa keterangan
+                ini, peserta yang skornya identik dengan orang di atas/bawahnya
+                cenderung menyimpulkan urutannya acak/bug, padahal tie-break
+                waktu pengerjaan-nya memang sedang bekerja seperti seharusnya.
+              */}
+              <p className="text-[11px] text-slate-400 mb-3 -mt-2">
+                Diurutkan dari skor rata-rata tertinggi. Jika skor sama, peserta dengan rata-rata waktu pengerjaan tercepat menang.
+              </p>
 
               <div className={`grid grid-cols-1 ${pakaiDivisi ? 'sm:grid-cols-2' : ''} gap-3 mb-3`}>
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">

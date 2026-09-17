@@ -138,7 +138,8 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
               <table className="w-full text-sm table-zebra" style={{ minWidth: '680px' }}>
                 <thead className="border-b border-slate-200" style={{ background: 'rgba(248,250,252,0.98)' }}>
                   <tr>
-                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest w-10">#</th>
+                    <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest w-10"
+                      title="Diurutkan dari skor tertinggi. Jika skor sama, waktu pengerjaan tercepat menang.">#</th>
                     <th className="px-5 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-widest">Peserta</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Benar</th>
                     <th className="px-5 py-3 text-center text-xs font-bold text-slate-600 uppercase tracking-widest">Skor</th>

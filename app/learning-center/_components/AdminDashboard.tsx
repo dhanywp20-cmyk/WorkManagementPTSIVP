@@ -334,7 +334,8 @@ export function AdminDashboard({ user }: { user: User }) {
               <div className="px-5 py-3.5 border-b border-slate-200 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                 {/* Kiri: judul + rata-rata nasional */}
                 <div className="flex items-center gap-3 flex-wrap min-w-0">
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap"
+                    title="Diurutkan dari skor rata-rata tertinggi. Jika skor sama, rata-rata waktu pengerjaan tercepat menang.">
                     🏆 Top Performers
                   </span>
                   {nationalAvg !== null && (
