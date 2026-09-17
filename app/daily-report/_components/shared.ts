@@ -116,8 +116,27 @@ export interface LiveRow {
   report_id?: string;
 }
 
+/**
+ * Business date Daily Report - SELALU Asia/Jakarta (WIB, UTC+7), tidak
+ * pernah tanggal UTC mentah dan tidak bergantung pada timezone environment
+ * (server Vercel berjalan di UTC; browser peserta bisa disetel timezone
+ * apa saja). `new Date().toISOString().split('T')[0]` - pola yang dipakai
+ * fungsi ini SEBELUMNYA - mengambil tanggal UTC: jam 00:00-06:59 WIB
+ * (yang di Jakarta SUDAH masuk hari baru) di UTC belum lewat tengah malam,
+ * jadi terbaca sebagai tanggal KEMARIN. Aktivitas jam 01:00 WIB tanggal 15
+ * bisa salah masuk Daily Report tanggal 14.
+ *
+ * Satu fungsi terpusat ini dipakai SEMUA tempat di Daily Report yang
+ * butuh tanggal bisnis - lihat pemakainya di fetchAllTickets (report_date
+ * dari created_at UTC) dan todayISO (tanggal "hari ini" untuk form/stats).
+ */
+export function getBusinessDateJakarta(d: Date = new Date()): string {
+  const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+  return `${wib.getUTCFullYear()}-${String(wib.getUTCMonth() + 1).padStart(2, '0')}-${String(wib.getUTCDate()).padStart(2, '0')}`;
+}
+
 export function todayISO(): string {
-  return new Date().toISOString().split('T')[0];
+  return getBusinessDateJakarta();
 }
 
 export function formatLogTime(isoStr: string): string {
@@ -186,6 +205,21 @@ export async function fetchAllTickets(opts: {
   const { data, error } = await q;
   if (error) { console.error('[DR] fetchAllTickets:', error.message); return []; }
 
+  /*
+    1 baris per TICKET per pemanggilan fetch ini, bukan 1 baris per activity
+    log - keputusan yang sudah ada sebelumnya, dipertahankan di sini apa
+    adanya. Query di atas diurutkan created_at DESC, jadi baris pertama yang
+    ditemui untuk satu ticket_id adalah aktivitas TERBARUnya - itu yang
+    disimpan, entri lebih lama untuk ticket yang sama dibuang.
+    Konsekuensinya: kalau satu ticket ditangani 3x di hari yang sama (mis.
+    09:00 dibuka, 13:00 update status, 16:00 solved), Daily Report cuma
+    menampilkan baris 16:00 - representatif untuk status akhir hari itu,
+    tapi 2 activity sebelumnya tidak muncul sebagai baris terpisah. Ini
+    disengaja (mengikuti pola tampilan Ticketing sendiri: satu ticket = satu
+    status terkini, riwayatnya dilihat lewat detail ticket), BUKAN bug -
+    tidak diubah tanpa keluhan eksplisit karena mengubahnya berarti satu
+    ticket bisa muncul berkali-kali dan mengubah angka "Total Aktivitas".
+  */
   const seen = new Map<string, TicketActivity & { handler_username: string; report_date: string }>();
   for (const log of (data ?? []) as any[]) {
     const t = log.tickets as any;
@@ -203,7 +237,14 @@ export async function fetchAllTickets(opts: {
         sales_name: t?.sales_name ?? '',
         sales_division: t?.sales_division ?? '',
         handler_username: log.handler_username ?? '',
-        report_date: createdAt ? createdAt.split('T')[0] : '',
+        //  createdAt.split('T')[0] SEBELUMNYA di sini - itu tanggal UTC dari
+        //  timestamptz, bukan tanggal WIB. Aktivitas jam 18:00 UTC (01:00 WIB
+        //  keesokan harinya) tercatat masuk Daily Report tanggal HARI SEBELUM
+        //  yang sebenarnya menurut jam Jakarta. Query di atas SUDAH menyaring
+        //  memakai batas +07:00 (benar), tapi nilai report_date yang dikirim
+        //  ke tampilan tetap salah karena dihitung ulang dari createdAt UTC
+        //  dengan cara yang berbeda dari filternya.
+        report_date: createdAt ? getBusinessDateJakarta(new Date(createdAt)) : '',
       } as any);
     }
   }
