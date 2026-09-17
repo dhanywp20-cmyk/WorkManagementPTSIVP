@@ -309,9 +309,41 @@ export function AnalyticsPlatform({
       supabase.channel('cc-r').on('postgres_changes',{event:'*',schema:'public',table:'reminders'},loadStats).subscribe(),
       supabase.channel('cc-p').on('postgres_changes',{event:'*',schema:'public',table:'project_requests'},loadStats).subscribe(),
     ];
-    // Polling fallback - realtime can miss events in iframe context
-    const poll = setInterval(loadStats, 30000);
-    return () => { chs.forEach(c => supabase.removeChannel(c)); clearInterval(poll); };
+    /*
+      Polling fallback - realtime bisa terlewat di konteks iframe.
+
+      Dulu setInterval(loadStats, 30000) TANPA syarat apa pun - berjalan
+      terus tiap 30 detik selama halaman ini terbuka, tidak peduli tabnya
+      sedang dilihat atau tidak. Halaman ini ("Command Center") justru jenis
+      dashboard yang biasa ditinggal terbuka berjam-jam di layar kantor -
+      jadi 4 query (tickets+reminders+project_requests+users) tiap 30 detik
+      itu terus berjalan 24/7 walau tidak ada yang melihatnya. Sama persis
+      kelas bug yang sudah diperbaiki di Ticketing (lihat komentar
+      "BERHENTI saat tab tidak terlihat" di app/ticketing/page.tsx) - di sini
+      belum pernah ikut dibetulkan.
+
+      Pola yang sama diterapkan di sini: polling berhenti total saat tab
+      disembunyikan, ditarik SEKALI + polling dilanjutkan begitu tab dilihat
+      lagi (supaya tidak menyajikan data basi), dan jedanya dilebarkan dari
+      30 detik ke 2 menit - realtime di atas sudah menangani perubahan
+      langsung, jaring pengaman ini tidak perlu ditebar sesering itu.
+    */
+    let poll: ReturnType<typeof setInterval> | null = null;
+    const mulaiPolling = () => { if (!poll) poll = setInterval(loadStats, 120_000); };
+    const hentikanPolling = () => { if (poll) { clearInterval(poll); poll = null; } };
+    const saatVisibilitasBerubah = () => {
+      if (document.visibilityState === 'hidden') { hentikanPolling(); return; }
+      loadStats();
+      mulaiPolling();
+    };
+    if (document.visibilityState !== 'hidden') mulaiPolling();
+    document.addEventListener('visibilitychange', saatVisibilitasBerubah);
+
+    return () => {
+      chs.forEach(c => supabase.removeChannel(c));
+      document.removeEventListener('visibilitychange', saatVisibilitasBerubah);
+      hentikanPolling();
+    };
   }, [auth, user, loadStats]);
 
   useEffect(() => {
