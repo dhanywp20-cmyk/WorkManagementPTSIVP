@@ -377,15 +377,20 @@ export function KodeAcaraInline() {
 
         {/* ── Ringkasan pendaftar acara ── */}
         {/*
-          max-h TETAP (bukan berbasis 100vh) - Admin Panel-nya sendiri sudah
-          punya tinggi tetap h-[90vh] (lihat modal-admin-panel.tsx), jadi
-          menghitung dari 100vh membuat panel ini bisa lebih tinggi dari
-          bingkai modal yang sebenarnya terlihat, dan ujungnya baru kelihatan
-          setelah menggulung seluruh modal - bukan lagi "panel yang bisa
-          digulung sendiri" seperti yang diminta. Angka tetap di sini sengaja
-          konservatif supaya selalu muat di dalam bingkai h-[90vh] itu.
+          Tingginya diturunkan dari 90vh - tinggi Admin Panel yang sebenarnya
+          (lihat h-[90vh] di modal-admin-panel.tsx) - BUKAN dari 100vh.
+          Menghitung dari 100vh membuat panel ini bisa lebih tinggi daripada
+          bingkai modal yang benar-benar terlihat, sehingga ujung daftarnya
+          baru muncul setelah menggulung seluruh modal.
+
+          Angka tetap 420px yang dipakai sebelumnya menyelesaikan masalah itu
+          tapi kebablasan ke arah sebaliknya: pada layar mana pun panelnya
+          berhenti di sekitar setengah tinggi modal dan menyisakan ruang
+          kosong di bawahnya. 160px yang dikurangi di sini adalah jatah untuk
+          bilah judul Admin Panel plus padding isi - sisanya milik daftar,
+          jadi panel tumbuh mengikuti layar dan tetap muat di dalam modal.
         */}
-        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col lg:max-h-[420px]">
+        <div className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col lg:max-h-[calc(90vh-160px)]">
           <div className="flex items-center gap-3 p-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
             <span className="text-2xl">🎓</span>
             <div className="flex-1 min-w-0">

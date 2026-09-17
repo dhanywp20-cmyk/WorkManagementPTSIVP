@@ -39,3 +39,6 @@ export { BatalButton, SubmitFormButton } from './FormActions';
 export { LogoMerek } from './LogoMerek';
 // Kerangka modal baku - lihat komentar di Modal.tsx sebelum membuat popup baru.
 export { Modal, TombolModal, type ModalProps } from './Modal';
+// Paginasi daftar - satu mekanisme & satu angka baris/halaman untuk semua
+// modul. Lihat catatan di Paginasi.tsx.
+export { Paginasi, usePaginasi, BARIS_PER_HALAMAN, type HasilPaginasi } from './Paginasi';

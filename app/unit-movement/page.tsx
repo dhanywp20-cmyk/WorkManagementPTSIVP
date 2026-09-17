@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { namaKelompokPTSDitugaskan } from '@/lib/kelompok';
-import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal } from '@/components/shared';
+import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal , Paginasi, usePaginasi } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
 import { logAudit } from '@/lib/audit';
@@ -151,6 +151,11 @@ function UnitMovementPageInner() {
     }
     return true;
   }),[logs,filterStatus,filterEvent,filterPTS,filterYear,searchQuery]);
+
+  //  Paginasi riwayat log. Tabel "Pinjaman Aktif" di atasnya sengaja
+  //  TIDAK dipaginasi - isinya cuma unit yang sedang keluar, dan justru
+  //  daftar itu yang harus terlihat utuh sekali pandang.
+  const hal = usePaginasi(filteredLogs);
 
   const exportToExcel = () => {
     const runExport = (XLSX: any) => {
@@ -447,7 +452,7 @@ function UnitMovementPageInner() {
                 deskripsiKosong="Perpindahan unit yang tercatat akan muncul di sini."
               />
             )}
-            {filteredLogs.map((log) => {
+            {hal.potongan.map((log) => {
               const isMasuk = log.status_barang === 'Masuk';
               const typeLines = splitTypeLines(log.type_barang);
               return (
@@ -507,12 +512,12 @@ function UnitMovementPageInner() {
                       <p className="text-xs text-gray-400">Coba ubah filter atau tambahkan log baru</p>
                     </div>
                   </td></tr>
-                ) : filteredLogs.map((log,idx)=>{
+                ) : hal.potongan.map((log,idx)=>{
                   const isMasuk   = log.status_barang==='Masuk';
                   const typeLines = splitTypeLines(log.type_barang);
                   return (
                     <tr key={log.id} className="stagger-item transition-colors hover:bg-amber-50/40" style={{borderBottom:'1px solid #e5e7eb'}}>
-                      <td className="px-3 py-3 text-xs font-bold text-gray-400">{idx+1}</td>
+                      <td className="px-3 py-3 text-xs font-bold text-gray-400">{hal.mulai + idx + 1}</td>
                       <td className="px-3 py-3 text-xs text-gray-600 whitespace-nowrap">{fmtDate(log.tanggal)}</td>
                       <td className="px-3 py-3">
                         {isMasuk
@@ -568,8 +573,9 @@ function UnitMovementPageInner() {
 
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100" style={{background:'rgba(255,255,255,0.97)'}}>
             <span className="text-[10px] text-gray-400">{filteredLogs.length} log ditemukan</span>
-            <span className="text-[10px] text-gray-400">{filteredLogs.length>0?`1–${filteredLogs.length}`:'0'} of {logs.length}</span>
+            <span className="text-[10px] text-gray-400">dari {logs.length} log keseluruhan</span>
           </div>
+          <Paginasi {...hal} satuan="log" />
         </div>
 
       </div>

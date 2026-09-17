@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
-import { ModalPortal } from '@/components/shared';
+import { ModalPortal, BARIS_PER_HALAMAN } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
@@ -184,7 +184,11 @@ function TicketingSystemInner() {
   const [bulkConfirm, setBulkConfirm] = useState(false);
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [newMapping, setNewMapping] = useState({ guestUsername: "", projectName: "" });
-  const ITEMS_PER_PAGE = 30;
+  //  Angka baris/halaman diambil dari konstanta bersama, tidak ditulis di
+  //  sini lagi. Sebelumnya Ticketing memakai 30 sendirian sementara modul
+  //  lain tidak berpaginasi sama sekali - dua perilaku berbeda untuk daftar
+  //  yang sama bentuknya. Lihat components/shared/Paginasi.tsx.
+  const ITEMS_PER_PAGE = BARIS_PER_HALAMAN;
   const [currentPage, setCurrentPage] = useState(1);
 
   const getJakartaDateString = () => {

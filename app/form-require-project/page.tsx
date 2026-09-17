@@ -10,7 +10,7 @@ import { logAudit } from '@/lib/audit';
 import { idDariNama, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { compressImage } from '@/lib/image-compress';
-import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard, ModalPortal } from '@/components/shared';
+import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard, ModalPortal, Paginasi, usePaginasi } from '@/components/shared';
 import { hasFullAccess } from '@/lib/constants';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from '@/lib/admin-edit';
 import { penerimaAdminBernomor } from '@/lib/penerima-admin';
@@ -641,6 +641,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   const availableYears = [...new Set(requests.map(r => new Date(r.created_at).getFullYear().toString()))].sort((a, b) => b.localeCompare(a));
 
+  // Paginasi daftar - lihat components/shared/Paginasi.tsx.
   const filteredRequests = requests.filter(r => {
     const matchStatus = filterStatus === 'all' || r.status === filterStatus;
     const matchYear = filterYear === 'all' || new Date(r.created_at).getFullYear().toString() === filterYear;
@@ -655,6 +656,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       || (r.sales_division || '').toLowerCase().includes(searchSales.toLowerCase());
     return matchStatus && matchYear && matchMonth && matchHandler && matchDivision && matchProject && matchSales;
   });
+
+  const hal = usePaginasi(filteredRequests);
 
   const stats = {
     total: requests.length,
@@ -2046,7 +2049,7 @@ Hubungi Admin untuk info lebih lanjut.
               {filteredRequests.length === 0 && (
                 <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada request.</div>
               )}
-              {filteredRequests.map((req) => {
+              {hal.potongan.map((req) => {
                 const sc = statusConfig[req.status] || statusConfig.pending;
                 const solution = Array.isArray(req.solution_product) ? req.solution_product.join(', ') : (req.solution_product || '');
                 return (
@@ -2076,6 +2079,7 @@ Hubungi Admin untuk info lebih lanjut.
                   />
                 );
               })}
+              <Paginasi {...hal} satuan="request" />
             </div>
 
             {/* ── DESKTOP: tabel ── */}
@@ -2117,7 +2121,7 @@ Hubungi Admin untuk info lebih lanjut.
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredRequests.map((req, index) => {
+                  {hal.potongan.map((req, index) => {
                     const sc = statusConfig[req.status] || statusConfig.pending;
                     const unread = unreadMsgMap[req.id] || 0;
                     const dueStatus = getDueStatus(req.due_date, req.status);
@@ -2132,7 +2136,7 @@ Hubungi Admin untuk info lebih lanjut.
                                 onChange={() => toggleSelectId(req.id)} className="w-4 h-4 rounded accent-teal-600 cursor-pointer" />
                             : (
                               <span className="text-xs font-bold text-gray-500">
-                                {index + 1}
+                                {hal.mulai + index + 1}
                               </span>
                             )}
                         </td>
@@ -2223,8 +2227,9 @@ Hubungi Admin untuk info lebih lanjut.
               </table>
               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
                 <span className="text-xs text-gray-400">{filteredRequests.length} request ditemukan</span>
-                <span className="text-xs text-gray-400">{filteredRequests.length > 0 ? `1–${filteredRequests.length}` : '0'} of {requests.length}</span>
+                <span className="text-xs text-gray-400">dari {requests.length} request keseluruhan</span>
               </div>
+              <Paginasi {...hal} satuan="request" />
             </div>
             </>
           )}

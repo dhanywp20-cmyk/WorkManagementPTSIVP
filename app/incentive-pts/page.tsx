@@ -23,7 +23,7 @@ import {
   bisaKonfigPenuh, bisaInputNominal, tingkatAkses,
   LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES, type TingkatAkses,
 } from '@/lib/incentive-akses';
-import { MobileListCard, MobileCardBadge, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { MobileListCard, MobileCardBadge, ModalPortal, ConfirmDialog, type ConfirmState, Paginasi, usePaginasi } from '@/components/shared';
 import { logAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
 import { managerUtama } from '@/lib/penerima-admin';
@@ -889,6 +889,14 @@ export default function IncentivePTSPage() {
   const bastYearsProjects = [...new Set(
     projects.filter(p => p.bast_date).map(p => new Date(p.bast_date as string).getFullYear()),
   )].sort((a, b) => b - a);
+  /*
+    Paginasi hanya memotong BARIS yang dirender. Baris TOTAL di <tfoot>
+    sengaja tetap dihitung dari seluruh filteredProjects - total yang cuma
+    menjumlah 15 baris yang kebetulan sedang tampil adalah angka uang yang
+    salah, dan itu jenis kesalahan yang tidak akan langsung terlihat.
+  */
+  const hal = usePaginasi(filteredProjects);
+
   const uniqueYears = [...new Set(tranches.map(t => t.payment_year))].sort();
   /*
     Tahun yang dipilih HARUS salah satu yang benar-benar ada tahapannya.
@@ -1137,7 +1145,7 @@ export default function IncentivePTSPage() {
             <div className="md:hidden divide-y divide-gray-100">
               {filteredProjects.length === 0 ? (
                 <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada project incentive.</div>
-              ) : filteredProjects.map((p) => {
+              ) : hal.potongan.map((p) => {
                 const hasNominal = (p.incentive_value || 0) > 0;
                 const handlerSplit = calcHandlerSplit(skema, p);
                 //  Diurutkan ulang di sini - fetchTranches() mengurutkan lewat
@@ -1208,6 +1216,7 @@ export default function IncentivePTSPage() {
                   />
                 );
               })}
+              <Paginasi {...hal} satuan="project" warna="#4f46e5" />
             </div>
 
             {/* ── DESKTOP: tabel penuh (TIDAK diubah) ── */}
@@ -1245,7 +1254,7 @@ export default function IncentivePTSPage() {
                       <p className="text-gray-500 font-medium">Belum ada project incentive</p>
                       <p className="text-gray-400 text-xs mt-1">Data muncul dari Reminder Schedule kategori Konfigurasi / Training yang sudah Completed</p>
                     </td></tr>
-                  ) : filteredProjects.map((p, idx) => {
+                  ) : hal.potongan.map((p, idx) => {
                     const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-rose-50/30';
                     const cellCls = `border border-gray-200 px-3 py-2.5 ${rowBg}`;
                     const hasNominal = (p.incentive_value || 0) > 0;
@@ -1256,7 +1265,7 @@ export default function IncentivePTSPage() {
                     const handlerSplit = calcHandlerSplit(skema, p);
                     return (
                       <tr key={p.id} className="hover:bg-rose-50/60 transition-colors group">
-                        <td className={`${cellCls} text-xs text-gray-400 text-center`}>{idx + 1}</td>
+                        <td className={`${cellCls} text-xs text-gray-400 text-center`}>{hal.mulai + idx + 1}</td>
                         <td className={`${cellCls} max-w-[210px]`}>
                           <p className="font-semibold text-gray-800 leading-snug truncate max-w-[195px]" title={p.project_name}>{p.project_name}</p>
                           {p.product && <p className="text-[11px] text-rose-500 mt-0.5 truncate max-w-[195px]" title={p.product}>📦 {p.product}</p>}
@@ -1450,6 +1459,7 @@ export default function IncentivePTSPage() {
                   </tfoot>
                 ))}
               </table>
+              <Paginasi {...hal} satuan="project" warna="#4f46e5" />
             </div>
           </div>
         )}

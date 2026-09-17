@@ -27,7 +27,7 @@ import { namaKelompokPTSDitugaskan, useKelompokPTSDitugaskan } from '@/lib/kelom
 
 import {
   FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal } from '@/components/shared';
-import { MiniPieChart, PageHeader, StatCardGrid } from '@/components/shared';
+import { MiniPieChart, PageHeader, StatCardGrid, Paginasi, usePaginasi } from '@/components/shared';
 
 // Styles
 const inp: React.CSSProperties = {
@@ -463,6 +463,9 @@ export default function DailyReportPage() {
       return true;
     });
   }, [allRows, searchProject, filterStatus, filterCategory, filterHandler, filterDivision, filterProduct]);
+
+  // Paginasi daftar - lihat components/shared/Paginasi.tsx.
+  const hal = usePaginasi(filteredRows);
 
   const stats = useMemo(() => {
     const total = allRows.length;
@@ -1075,7 +1078,7 @@ export default function DailyReportPage() {
                 pada tabel lebar untuk cek riwayat. Tap kartu membuka modal
                 detail yang sama dengan klik baris tabel (termasuk tombol Edit). */}
             <div className="md:hidden space-y-2">
-              {filteredRows.map(row => {
+              {hal.potongan.map(row => {
                 const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
                 const badge = row.source === 'manual' ? SB.manual : sb(row.status);
                 return (
@@ -1140,14 +1143,14 @@ export default function DailyReportPage() {
                     </tr>
                   </thead>
                   <tbody>
-                  {filteredRows.map((row, i) => {
+                  {hal.potongan.map((row, i) => {
                     const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
                     const badge = row.source === 'manual' ? SB.manual : sb(row.status);
                     return (
                       <tr key={row.id} className="hover:bg-red-50/20 transition-colors cursor-pointer"
                         style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.6)' : 'rgba(248,250,252,0.5)' }}
                         onClick={() => setModalRow(row)}>
-                        <td style={{ ...TD, textAlign: 'center' as const, color: '#94a3b8', fontSize: '12px' }}>{i + 1}</td>
+                        <td style={{ ...TD, textAlign: 'center' as const, color: '#94a3b8', fontSize: '12px' }}>{hal.mulai + i + 1}</td>
                         <td style={TD}>
                           <p className="font-semibold text-slate-800 text-sm leading-tight truncate" title={row.project_name}>{row.project_name}</p>
                           {row.address && <p className="text-[11px] text-slate-400 mt-0.5 truncate" title={row.address}>📍 {row.address}</p>}
@@ -1222,6 +1225,7 @@ export default function DailyReportPage() {
                 </tbody>
               </table>
             </div>
+            <Paginasi {...hal} satuan="aktivitas" />
             </>
           )}
         </div>

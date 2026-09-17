@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import {
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
   ErrorState, ListEmptyState, MobileListCard, MobileCardBadge,
+  Paginasi, usePaginasi,
 } from '@/components/shared';
 import { StatusBadge } from './Badges';
 import {
@@ -89,6 +90,13 @@ export function ReminderListBody({
 }) {
   const router = useRouter();
 
+  /*
+    Dipaginasi per EVENT (groupedReminders), bukan per jadwal mentah - satu
+    event bisa memuat beberapa tanggal dan sudah dirender sebagai satu baris.
+    Memotong per jadwal akan memecah satu event ke dua halaman.
+  */
+  const hal = usePaginasi(groupedReminders);
+
   return (
     <>
       {fetchError ? (
@@ -132,7 +140,7 @@ export function ReminderListBody({
             komponen bersama ini truncate SEMUANYA secara bawaan,
             jadi bukan lagi sesuatu yang bisa lupa ditulis. */}
         <div className="md:hidden divide-y divide-gray-100">
-          {groupedReminders.map((group) => {
+          {hal.potongan.map((group) => {
             const r = group[0];
             const today = isDueToday(r.due_date);
             const dueDate = new Date(r.due_date + 'T00:00:00');
@@ -235,6 +243,7 @@ export function ReminderListBody({
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
             <span className="text-xs text-gray-400">{groupedReminders.length} event · {filteredReminders.length} jadwal</span>
           </div>
+          <Paginasi {...hal} satuan="event" />
         </div>
 
         {/* ── DESKTOP: Table view ── */}
@@ -285,7 +294,7 @@ export function ReminderListBody({
               </tr>
             </thead>
             <tbody>
-              {groupedReminders.map((group, idx) => {
+              {hal.potongan.map((group, idx) => {
                 const r = group[0];
                 const today = isDueToday(r.due_date);
                 const uniqueDates = Array.from(new Set(group.map(gr => gr.due_date))).sort();
@@ -522,10 +531,15 @@ export function ReminderListBody({
               })}
             </tbody>
           </table>
+          {/*  Label lama menulis "1–{semua} of {total}" apa adanya - benar
+              ketika seluruh daftar dirender sekaligus, menyesatkan sekarang
+              karena yang tampil cuma satu halaman. Rentang yang sebenarnya
+              ditampilkan Paginasi di bawahnya. */}
           <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
             <span className="text-[10px] text-gray-400">{groupedReminders.length} event ({filteredReminders.length} jadwal)</span>
-            <span className="text-[10px] text-gray-400">{filteredReminders.length > 0 ? `1–${filteredReminders.length}` : '0'} of {reminders.length}</span>
+            <span className="text-[10px] text-gray-400">dari {reminders.length} jadwal keseluruhan</span>
           </div>
+          <Paginasi {...hal} satuan="event" />
         </div>{/* end hidden md:block */}
         </>
       )}

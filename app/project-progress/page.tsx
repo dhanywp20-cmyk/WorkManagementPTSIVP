@@ -10,6 +10,7 @@ import {
   PageHeader, LoadingScreen, Toast, type Notif,
   ConfirmDialog, type ConfirmState, EmptyState,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
+  Paginasi, usePaginasi,
   MobileListCard, MobileCardBadge, MiniPieChart, AuditTrailPanel, ModalPortal } from '@/components/shared';
 import { ProjectDetailView, SectionLabel } from './_components/ProjectDetailView';
 import { exportProjectToExcel } from './_components/excel-export';
@@ -399,6 +400,9 @@ function ProjectProgressPageInner() {
     });
   }, [projects, search, statusFilter]);
 
+  // Paginasi daftar - lihat components/shared/Paginasi.tsx.
+  const hal = usePaginasi(filtered);
+
   if (loading) return <LoadingScreen />;
 
   return (
@@ -481,7 +485,7 @@ function ProjectProgressPageInner() {
 
                 {/* ── MOBILE: kartu daftar ── */}
                 <div className="md:hidden divide-y divide-gray-100">
-                  {filtered.map(p => {
+                  {hal.potongan.map(p => {
                     const cfg = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.in_progress;
                     const agg = locCount[p.id] ?? { total: 0, avg: 0, issues: 0, locsLite: [] };
                     const health = projectHealth(p, agg.locsLite);
@@ -551,7 +555,7 @@ function ProjectProgressPageInner() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filtered.map((p, idx) => {
+                      {hal.potongan.map((p, idx) => {
                         const cfg = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.in_progress;
                         const agg = locCount[p.id] ?? { total: 0, avg: 0, issues: 0, locsLite: [] };
                         const health = projectHealth(p, agg.locsLite);
@@ -560,7 +564,7 @@ function ProjectProgressPageInner() {
                             className="border-b border-gray-200 hover:bg-cyan-50/40 transition-colors cursor-pointer"
                             onClick={() => openDetail(p)}>
                             <td className="px-3 py-3 border-r border-gray-200 text-center align-middle">
-                              <span className="text-[11px] font-bold text-gray-500">{idx + 1}</span>
+                              <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
                               <p className="text-xs font-bold text-gray-800 leading-snug break-words">
@@ -645,6 +649,7 @@ function ProjectProgressPageInner() {
                 <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: `1px solid ${PALETTE.border}` }}>
                   <span className="text-xs" style={{ color: PALETTE.inkFaint }}>{filtered.length} project</span>
                 </div>
+                <Paginasi {...hal} satuan="project" />
               </div>
             )}
           </div>

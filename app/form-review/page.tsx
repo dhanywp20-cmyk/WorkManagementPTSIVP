@@ -19,6 +19,7 @@ import {
 import {
   FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart,
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
+  Paginasi, usePaginasi,
   ConfirmDialog, type ConfirmState, ErrorState,
   MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal } from '@/components/shared';
 
@@ -433,6 +434,15 @@ function FormReviewPageInner() {
   const demoReviews = filteredReviews.filter(r => r.review_category === 'Demo Product');
   const bastReviews = filteredReviews.filter(r => r.review_category === 'BAST');
   const tableReviews = switchTab === 'Demo Product' ? demoReviews : bastReviews;
+
+  /*
+    Paginasi mengikuti tab yang sedang aktif (Demo Product / BAST) - keduanya
+    daftar terpisah, jadi berpindah tab memang seharusnya memulai lagi dari
+    halaman 1. Itu terjadi sendirinya lewat pengaman "halaman melebihi total"
+    di usePaginasi ketika jumlah barisnya berbeda; kalau kebetulan sama
+    persis, halamannya bertahan dan itu juga masuk akal.
+  */
+  const hal = usePaginasi(tableReviews);
 
   // Dashboard counts
   const totalDemo = reviews.filter(r => r.review_category === 'Demo Product').length;
@@ -1247,7 +1257,7 @@ function FormReviewPageInner() {
               <>
               {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
               <div className="md:hidden divide-y divide-gray-100">
-                {tableReviews.map((r) => {
+                {hal.potongan.map((r) => {
                   const isDemo = r.review_category === 'Demo Product';
                   const hasReview = isDemo ? !!r.grade_product_knowledge : !!(r.grade_training_customer && r.grade_product_knowledge_bast);
                   const grade1 = isDemo ? r.grade_product_knowledge : r.grade_training_customer;
@@ -1276,6 +1286,7 @@ function FormReviewPageInner() {
                     />
                   );
                 })}
+                <Paginasi {...hal} satuan="review" />
               </div>
 
               {/* ── DESKTOP: tabel ── */}
@@ -1317,7 +1328,7 @@ function FormReviewPageInner() {
                     </tr>
                   </thead>
                   <tbody>
-                    {tableReviews.map((r, idx) => {
+                    {hal.potongan.map((r, idx) => {
                       const isDemo = r.review_category === 'Demo Product';
                       const hasReview = isDemo
                         ? !!r.grade_product_knowledge
@@ -1332,7 +1343,7 @@ function FormReviewPageInner() {
                             {selectMode && isAdmin
                               ? <input type="checkbox" checked={selectedIds.has(r.id)}
                                   onChange={() => toggleSelectId(r.id)} className="w-4 h-4 rounded accent-violet-600 cursor-pointer" />
-                              : <span className="text-[11px] font-bold text-gray-400">{idx + 1}</span>}
+                              : <span className="text-[11px] font-bold text-gray-400">{hal.mulai + idx + 1}</span>}
                           </td>
                           {/* Project */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle">
@@ -1406,8 +1417,9 @@ function FormReviewPageInner() {
                 </table>
                 <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
                   <span className="text-[10px] text-gray-400">{tableReviews.length} review ditemukan ({switchTab})</span>
-                  <span className="text-[10px] text-gray-400">{tableReviews.length} of {reviews.length} total</span>
+                  <span className="text-[10px] text-gray-400">dari {reviews.length} review keseluruhan</span>
                 </div>
+                <Paginasi {...hal} satuan="review" />
               </div>
               </>
             )}
