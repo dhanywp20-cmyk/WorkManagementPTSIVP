@@ -880,7 +880,17 @@ export default function DailyReportPage() {
 
         {/* M7: siapa yang belum lapor hari ini - hanya untuk admin/supervisor */}
         {belumLaporHariIni.length > 0 && (
-          <div className="rounded-2xl px-5 py-3.5 flex items-center gap-3 flex-wrap" style={{ background: 'rgba(220,38,38,0.06)', border: '1px solid rgba(220,38,38,0.18)' }}>
+          // Latar SEBELUMNYA rgba(220,38,38,0.06) - opasitas 6% - hampir
+          // tembus pandang. Halaman ini punya foto latar tetap
+          // (backgroundAttachment: fixed di PW di atas), jadi panel ini
+          // dulu nyaris hanya berupa teks merah tua mengambang langsung di
+          // atas foto gedung, tanpa kartu solid di belakangnya - persis
+          // yang bikin tulisan "sangat transparan"/susah dibaca. Kartu lain
+          // di halaman ini (mis. strip "Sumber Data" di bawah) sudah pakai
+          // latar putih ~92% + backdrop-blur; panel ini disamakan, dengan
+          // aksen merah tetap dipertahankan di border supaya nuansa
+          // "peringatan"-nya tidak hilang.
+          <div className="rounded-2xl px-5 py-3.5 flex items-center gap-3 flex-wrap" style={{ background: 'rgba(255,255,255,0.94)', border: '1px solid rgba(220,38,38,0.25)', backdropFilter: 'blur(10px)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
             <span className="text-[11px] font-black uppercase tracking-widest flex items-center gap-1.5" style={{ color: '#b91c1c' }}>
               🔴 Belum Lapor Hari Ini ({belumLaporHariIni.length})
             </span>
@@ -1217,8 +1227,22 @@ export default function DailyReportPage() {
         </div>
       </div>
 
-      <FormModal />
-      <DetailModal />
+      {/*  Dipanggil sebagai FUNGSI biasa ({FormModal()}), BUKAN elemen JSX
+          (<FormModal />) - FormModal/DetailModal didefinisikan ulang di
+          setiap render DailyReportPage (identitas fungsinya berubah tiap
+          kali), jadi <FormModal /> membuat React melihat "tipe komponen
+          baru" pada SETIAP keystroke di input mana pun di dalam modal
+          (typing memanggil setState di parent -> re-render -> FormModal
+          didefinisikan ulang). React lalu meng-unmount seluruh pohon modal
+          lama dan mount ulang yang baru - input kehilangan fokus persis
+          sebelum karakternya sempat kelihatan, terasa seperti modal
+          tertutup/mundur sendiri padahal cuma mengetik satu huruf.
+          Memanggilnya sebagai fungsi membuat JSX yang dikembalikan menyatu
+          langsung ke pohon render DailyReportPage - React membandingkan
+          elemen DOM sebenarnya (ModalPortal, div, input, ...) yang
+          tipenya stabil antar render, bukan identitas FormModal. */}
+      {FormModal()}
+      {DetailModal()}
       <Toast t={toast} />
     </PW>
   );

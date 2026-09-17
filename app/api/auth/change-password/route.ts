@@ -69,6 +69,31 @@ export async function POST(request: NextRequest) {
     // Invalidate semua session user ini (force re-login)
     await supabase.from('user_sessions').delete().eq('user_id', userId);
 
+    /*
+      Bersihkan lockout brute-force (login/route.ts) UNTUK USERNAME INI.
+
+      Lockout dihitung dari baris login_attempts (success=false) 15 menit
+      terakhir, sepenuhnya lepas dari tabel user_credentials. Sebelum baris
+      ini, admin yang membantu reset password user yang lupa password (dan
+      sudah mencoba login berkali-kali sebelumnya, memicu lockout 5x gagal)
+      akan melihat notif "Password berhasil diubah" - BENAR, password memang
+      berubah - tapi user itu tetap terkunci sampai 15 menit lewat, karena
+      reset password tidak pernah menyentuh baris login_attempts lamanya.
+      Saat kondisinya mendesak (mis. di tengah acara/assessment), 15 menit
+      itu tidak ada gantinya - tidak ada tombol lain untuk membuka lockout.
+
+      Dihapus HANYA baris punya username ini (bukan per-IP) - lockout per-IP
+      sengaja dibiarkan (ambang 30, berbagi 1 kantor) karena tidak spesifik
+      ke satu akun dan mereset semuanya lewat sini akan melemahkan proteksi
+      brute-force untuk akun lain di IP yang sama.
+    */
+    const { data: targetUser } = await supabase
+      .from('users').select('username').eq('id', userId).maybeSingle();
+    if (targetUser?.username) {
+      await supabase.from('login_attempts').delete()
+        .eq('username', targetUser.username).eq('success', false);
+    }
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: 'Terjadi kesalahan server.' }, { status: 500 });

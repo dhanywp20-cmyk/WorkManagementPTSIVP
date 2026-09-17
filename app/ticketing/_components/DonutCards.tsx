@@ -135,7 +135,14 @@ export function HandlerDonutCard({
             <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{total}</text>
             <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">TOTAL</text>
           </svg>
-          <div className="flex flex-col gap-1.5 flex-1 min-w-0">
+          {/*  max-h + overflow-y-auto - HandlerDonutCard dulu satu-satunya
+              donut di platform ini yang legendanya TIDAK dibatasi (beda dari
+              MiniPieChart bersama yang sudah punya max-h-[120px]). Begitu
+              jumlah handler bertambah (staf baru direkrut), legendanya
+              memanjang ke bawah tanpa batas dan kartu ini jadi lebih TINGGI
+              dari 3 donut lain di baris grid yang sama - baris donut jadi
+              tidak rata, persis kebalikan dari kartu sebelahnya. */}
+          <div className="flex flex-col gap-1.5 flex-1 min-w-0 max-h-[120px] overflow-y-auto">
             {slices.map((s) => (
               <div key={s.i} className="flex items-center gap-1.5 cursor-pointer rounded-lg px-1.5 py-0.5 transition-all"
                 style={{ background: hov === s.i || activeHandler === s.name ? `${s.color}20` : "transparent", outline: activeHandler === s.name ? `1px solid ${s.color}` : "none" }}
