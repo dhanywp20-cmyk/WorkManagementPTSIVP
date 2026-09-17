@@ -1291,7 +1291,13 @@ function FormReviewPageInner() {
                     <col style={{ width: '10%' }} />  {/* Grade 1 */}
                     {switchTab === 'BAST' && <col style={{ width: '10%' }} />}  {/* Grade 2 */}
                     <col style={{ width: '9%' }} />   {/* Status */}
-                    <col style={{ width: '7%' }} />   {/* Action */}
+                    {/*  Piksel, bukan persen. Isi kolom ini tombol ikon
+                        berukuran TETAP (32px + gap 4px), jadi persen adalah
+                        satuan yang keliru: 7% dari 920px cuma ~64px, sementara
+                        tiga tombol butuh 104px - dan makin lebar layarnya,
+                        makin banyak ruang terbuang untuk isi yang ukurannya
+                        tidak pernah berubah. */}
+                    <col style={{ width: '116px' }} />   {/* Action */}
                   </colgroup>
                   <thead>
                     <tr className="border-b-2 border-gray-300" style={{ background: 'rgba(255,255,255,0.97)' }}>

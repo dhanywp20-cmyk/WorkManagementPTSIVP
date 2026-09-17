@@ -532,7 +532,13 @@ function ProjectProgressPageInner() {
                       <col style={{ width: '12%' }} />
                       <col style={{ width: '8%' }} />
                       <col style={{ width: '9%' }} />
-                      <col style={{ width: '11%' }} />
+                      {/*  Action dipatok piksel: isinya tombol ikon berukuran
+                          tetap, dan jumlahnya berubah menurut hak akses -
+                          Lihat + Export selalu ada, Share + Edit muncul untuk
+                          yang boleh menyunting, Hapus untuk admin (lima
+                          tombol, ~176px). Persen membuatnya ikut menyusut di
+                          layar sempit justru saat tombolnya paling banyak. */}
+                      <col style={{ width: '116px' }} />
                     </colgroup>
                     <thead>
                       <tr style={{ background: PALETTE.surfaceSunken, borderBottom: `1px solid ${PALETTE.border}` }}>

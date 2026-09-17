@@ -81,7 +81,11 @@ function IcoClock({ s = 15 }: { s?: number }) {
 }
 
 // Base style - icon-only, no background
-const base = 'inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
+//  shrink-0 WAJIB: w-8 cuma menetapkan lebar DASAR: sebagai item flex, tombol
+//  tetap boleh dipipihkan browser di bawah 32px saat selnya sempit - ikonnya
+//  jadi lonjong dan tidak lagi seragam antar baris. Dengan shrink-0 ukurannya
+//  tetap kotak, dan kelebihannya ditangani ActionGroup lewat wrap.
+const base = 'inline-flex shrink-0 items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
 
 // Action Button Components
 
@@ -212,5 +216,27 @@ export function OverdueIconBtn({ onClick, title = 'Overdue Setting', disabled, a
 export function ActionGroup({ children, label = 'Aksi baris' }: { children: React.ReactNode; label?: string }) {
   // role="group" + nama: tanpa ini pembaca layar membacakan deretan tombol
   // tanpa memberi tahu bahwa semuanya berlaku untuk satu baris yang sama.
-  return <div role="group" aria-label={label} className="flex items-center justify-center gap-1 flex-nowrap">{children}</div>;
+
+  /*
+    flex-wrap, BUKAN flex-nowrap - dan ini bukan soal kerapian.
+
+    Jumlah tombol di satu baris TIDAK tetap: ia tumbuh mengikuti status baris
+    dan hak akses yang membukanya. Satu baris Reminder yang menunggu
+    persetujuan bisa memunculkan Detail + Re-Schedule + Approve + Tolak +
+    Sync + Hapus sekaligus - enam tombol, sekitar 204px - sementara kolom
+    Action-nya dipatok 7% lebar tabel (~88px). Dengan flex-nowrap tombol itu
+    tidak punya pilihan selain MELUBER keluar sel: ia menumpuk kolom
+    sebelahnya dan tabelnya terlihat jebol, persis ketika ikon approve
+    muncul. Kolomnya sendiri tidak bisa ikut melebar karena tabelnya
+    table-layout: fixed.
+
+    Dengan wrap, kelebihan tombol turun ke baris kedua DI DALAM sel. Barisnya
+    memang jadi sedikit lebih tinggi, tapi tabelnya tidak pernah jebol dan
+    tidak ada tombol yang tertutup - dan tinggi baris yang bertambah jauh
+    lebih murah daripada tata letak yang rusak.
+
+    shrink-0 pada tiap tombol (lihat `base`) menjaga tombol tetap kotak:
+    tanpa itu flexbox boleh memipihkannya jadi lonjong saat ruang sempit.
+  */
+  return <div role="group" aria-label={label} className="flex items-center justify-center gap-1 flex-wrap gap-y-1">{children}</div>;
 }

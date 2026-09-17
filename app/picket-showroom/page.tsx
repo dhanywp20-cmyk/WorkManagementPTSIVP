@@ -550,7 +550,10 @@ function PiketShowroomPageInner() {
                 <table className="w-full text-sm border-collapse" style={{minWidth:'1050px'}}>
                   <colgroup>
                     <col style={{width:'3%'}}/><col style={{width:'8%'}}/><col style={{width:'7%'}}/><col style={{width:'15%'}}/><col style={{width:'6%'}}/><col style={{width:'9%'}}/>
-                    <col style={{width:'9%'}}/><col style={{width:'7%'}}/><col style={{width:'21%'}}/><col style={{width:'5%'}}/><col style={{width:'9%'}}/>
+                    {/*  Action (kolom terakhir) dipatok 116px, bukan 9%:
+                        isinya tiga tombol ikon berukuran tetap (Lihat/Edit/
+                        Hapus = 104px), sementara 9% dari 1050px cuma ~94px. */}
+                    <col style={{width:'9%'}}/><col style={{width:'7%'}}/><col style={{width:'21%'}}/><col style={{width:'5%'}}/><col style={{width:'116px'}}/>
                   </colgroup>
                   <thead>
                     <tr style={{background:'linear-gradient(135deg,#fff1f2 0%,#ffe4e6 100%)',borderBottom:'2px solid rgba(220,38,38,0.18)'}}>

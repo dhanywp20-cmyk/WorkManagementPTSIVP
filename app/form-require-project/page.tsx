@@ -590,11 +590,11 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       {canInternalApproveProject(req) && (
         <>
           <button aria-label="Approve & Teruskan ke Admin" onClick={() => setInternalApproveTarget(req)} title="Approve & Teruskan ke Admin"
-            className="w-7 h-7 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
+            className="w-8 h-8 shrink-0 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>
           <button aria-label="Tolak" onClick={() => handleReject(req)} title="Tolak"
-            className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+            className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </>
@@ -602,18 +602,18 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       {bisaKelolaRequest && req.status === 'pending' && req.routing_status !== 'internal_review' && (
         <>
           <button aria-label="Approve" onClick={() => handleApprove(req)} title="Approve"
-            className="w-7 h-7 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
+            className="w-8 h-8 shrink-0 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>
           <button aria-label="Tolak" onClick={() => handleReject(req)} title="Tolak"
-            className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+            className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </>
       )}
       {isTeamPTS && req.status === 'approved' && req.assign_name === currentUser.full_name && (
         <button aria-label="Mulai In Progress" onClick={() => handleStatusUpdate(req, 'in_progress')} title="Mulai In Progress"
-          className="w-7 h-7 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white border border-blue-200 rounded-lg flex items-center justify-center transition-all">
+          className="w-8 h-8 shrink-0 bg-blue-50 hover:bg-blue-500 text-blue-600 hover:text-white border border-blue-200 rounded-lg flex items-center justify-center transition-all">
           <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         </button>
       )}
@@ -2090,7 +2090,12 @@ Hubungi Admin untuk info lebih lanjut.
                   <col style={{ width: '105px' }} />
                   <col style={{ width: '80px' }} />  {/* DueDate lebih sempit */}
                   <col style={{ width: '80px' }} />  {/* CreatedBy lebih sempit */}
-                  <col style={{ width: '90px' }} />  {/* Action — cukup untuk 2-3 icon button */}
+                  {/*  120px, bukan 90px. Komentar lama mengklaim 90px "cukup
+                      untuk 2-3 icon button" - tidak: satu tombol 32px dengan
+                      gap 4px membuat 3 tombol butuh 104px, dan sel ini masih
+                      dipotong padding px-2 (16px). Baris pending menampilkan
+                      Approve + Tolak + Detail + Hapus sekaligus. */}
+                  <col style={{ width: '120px' }} />  {/* Action */}
                 </colgroup>
                 <thead>
                   <tr className="border-b-2 border-gray-300" style={{ background: 'rgba(255,255,255,0.97)' }}>
@@ -2201,9 +2206,15 @@ Hubungi Admin untuk info lebih lanjut.
                           )}
                         </td>
                         <td className="px-2 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
-                          <div className="flex items-center justify-center gap-1">
+                          {/*  ActionGroup, bukan div flex tulisan tangan. Yang
+                              tulisan tangan di sini tidak punya flex-wrap, jadi
+                              baris "pending" (Approve + Tolak + Detail + Hapus =
+                              ~132px) meluber keluar kolom 90px alih-alih turun
+                              ke baris kedua. Sekalian ikut role="group" +
+                              aria-label yang sudah dipakai tabel lain. */}
+                          <ActionGroup>
                             {renderRequestActions(req)}
-                          </div>
+                          </ActionGroup>
                         </td>
                       </tr>
                     );
@@ -2843,7 +2854,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Project Info — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm satulayar:col-span-2">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📁</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📁</span>
                       Informasi Project
                     </h3>
                     <div className="space-y-4">
@@ -2928,7 +2939,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Kategori & Solution — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">🎯</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">🎯</span>
                       Kategori Kebutuhan & Solution
                     </h3>
                     <div className="space-y-4">
@@ -2945,7 +2956,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Layout Konten & Jaringan — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📺</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📺</span>
                       Layout Konten & Jaringan
                     </h3>
                     <div className="space-y-4">
@@ -2961,7 +2972,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Source & Peripheral — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">🔌</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">🔌</span>
                       Source & Peripheral
                     </h3>
                     <div className="space-y-4">
@@ -3036,7 +3047,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Ruangan & Keterangan — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📐</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📐</span>
                       Ruangan & Informasi Lainnya
                     </h3>
                     <div className="space-y-3">
@@ -3059,7 +3070,7 @@ Hubungi Admin untuk info lebih lanjut.
                       return (<>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                        <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📎</span>
+                        <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📎</span>
                         Dokumen & File Attachment
                         {detailRoomIdx > 0 && <span className="text-[10px] font-bold text-teal-500 normal-case bg-teal-50 px-2 py-0.5 rounded-full">{(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}</span>}
                       </h3>
@@ -3252,7 +3263,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {isPTS && !isTeamPTS && (
                     <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                       <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                        <span className="w-7 h-7 bg-rose-500 text-white rounded-lg flex items-center justify-center text-xs shadow">⚙️</span>
+                        <span className="w-8 h-8 shrink-0 bg-rose-500 text-white rounded-lg flex items-center justify-center text-xs shadow">⚙️</span>
                         Admin Controls
                       </h3>
                       <div className="space-y-3">
@@ -3553,7 +3564,7 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-7 h-7 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📁</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📁</span>
                   Informasi Project
                 </h3>
                 <div className="grid grid-cols-1 gap-3">
@@ -3591,7 +3602,7 @@ Hubungi Admin untuk info lebih lanjut.
               {/* Target Selesai — semua role termasuk Guest bisa ubah */}
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-7 h-7 bg-teal-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📅</span>
+                  <span className="w-8 h-8 shrink-0 bg-teal-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📅</span>
                   Target Selesai
                 </h3>
                 <div>
@@ -3610,7 +3621,7 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-7 h-7 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🎯</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🎯</span>
                   Kategori Kebutuhan & Solution
                 </h3>
                 <CheckGroup label="Kebutuhan" options={['Signage', 'Immersive', 'Meeting Room', 'Mapping', 'Command Center', 'Hybrid Classroom']}
@@ -3632,7 +3643,7 @@ Hubungi Admin untuk info lebih lanjut.
               {editFormData.kebutuhan.includes('Signage') && (
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-7 h-7 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📺</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📺</span>
                   Layout Konten & Jaringan
                 </h3>
                 <RadioGroup label="Layout Signage" options={['Single Zone', 'Multi Zone', 'Full Screen', 'Custom Layout']}
@@ -3656,7 +3667,7 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-7 h-7 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🔌</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🔌</span>
                   Source & Peripheral
                 </h3>
                 <CheckGroup label="Source" options={['PC / Mini PC', 'Laptop', 'URL Dashboard', 'NVR CCTV', 'Media Player', 'IPTV', 'Set Top Box']}
@@ -3738,7 +3749,7 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-7 h-7 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📐</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📐</span>
                   Ruangan & Informasi Lainnya
                 </h3>
                 <div className="space-y-3">

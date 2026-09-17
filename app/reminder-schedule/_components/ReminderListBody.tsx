@@ -193,7 +193,7 @@ export function ReminderListBody({
                     <>
                       <ApproveIconBtn onClick={() => setInternalApproveTarget(r)} title="Approve & Teruskan ke Admin" pulse />
                       <button aria-label="Tolak" onClick={() => handleInternalReject(r)} title="Tolak"
-                        className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                        className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
                         <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </>
@@ -202,7 +202,7 @@ export function ReminderListBody({
                     <>
                       <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
                       <button aria-label="Tolak" onClick={() => handleAdminReject(r)} title="Tolak"
-                        className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                        className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
                         <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                       </button>
                     </>
@@ -216,7 +216,7 @@ export function ReminderListBody({
                       title={diluarIncentive(r)
                         ? 'Sedang DI LUAR Incentive PTS — klik untuk memasukkannya kembali'
                         : 'Sudah masuk Incentive PTS — klik untuk memastikan ulang'}
-                      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 border ${
+                      className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 border ${
                         diluarIncentive(r)
                           ? 'bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border-amber-300'
                           : 'bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border-emerald-200'}`}>
@@ -248,14 +248,22 @@ export function ReminderListBody({
                 terpotong. */}
             <colgroup>
               <col style={{ width: '4%'  }} />{/* No / pilih   */}
-              <col style={{ width: '18%' }} />{/* Project      */}
-              <col style={{ width: '14%' }} />{/* Product      */}
-              <col style={{ width: '12%' }} />{/* Kegiatan     */}
-              <col style={{ width: '13%' }} />{/* Sales        */}
-              <col style={{ width: '15%' }} />{/* Handler — nama lengkap sering panjang */}
+              <col style={{ width: '16%' }} />{/* Project      */}
+              <col style={{ width: '13%' }} />{/* Product      */}
+              <col style={{ width: '11%' }} />{/* Kegiatan     */}
+              <col style={{ width: '12%' }} />{/* Sales        */}
+              <col style={{ width: '14%' }} />{/* Handler — nama lengkap sering panjang */}
               <col style={{ width: '9%'  }} />{/* Status       */}
               <col style={{ width: '8%'  }} />{/* Tanggal      */}
-              <col style={{ width: '7%'  }} />{/* Action       */}
+              {/*  Action 7% -> 13%. Isinya BUKAN teks yang bisa dipotong,
+                  melainkan tombol berukuran tetap 32px yang jumlahnya
+                  berubah menurut status baris: baris menunggu persetujuan
+                  bisa memunculkan Detail + Re-Schedule + Approve + Tolak +
+                  Sync + Hapus sekaligus. Pada 7% (~88px di layar 1400px)
+                  tiga tombol pun sudah tidak muat. 13% memberi ruang untuk
+                  tiga tombol sebaris; selebihnya turun rapi ke baris kedua
+                  lewat wrap di ActionGroup, bukan meluber keluar tabel. */}
+              <col style={{ width: '13%' }} />{/* Action       */}
             </colgroup>
             <thead>
               <tr className="border-b-2 border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
@@ -453,7 +461,10 @@ export function ReminderListBody({
                       )}
                     </td>
                     {/* ACT */}
-                    <td className="px-3 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
+                    {/*  px-1, menyamai <th>-nya (yang memang sudah px-1).
+                        px-3 membuang 24px dari kolom yang justru paling
+                        kekurangan ruang. */}
+                    <td className="px-1 py-1 align-middle text-center" onClick={e => e.stopPropagation()}>
                       <ActionGroup>
                         {/* Detail */}
                         <ViewIconBtn onClick={() => setDetailReminder(group[0])} title="Detail" />
@@ -466,7 +477,7 @@ export function ReminderListBody({
                           <>
                             <ApproveIconBtn onClick={() => setInternalApproveTarget(group[0])} title="Approve & Teruskan ke Admin" pulse />
                             <button aria-label="Tolak" onClick={() => handleInternalReject(group[0])} title="Tolak"
-                              className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                              className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
                               <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                           </>
@@ -476,7 +487,7 @@ export function ReminderListBody({
                           <>
                             <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Approve & Assign" pulse />
                             <button aria-label="Tolak" onClick={() => handleAdminReject(group[0])} title="Tolak"
-                              className="w-7 h-7 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
+                              className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
                               <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                           </>
@@ -491,7 +502,7 @@ export function ReminderListBody({
                             title={diluarIncentive(group[0])
                               ? 'Sedang DI LUAR Incentive PTS — klik untuk memasukkannya kembali'
                               : 'Sudah masuk Incentive PTS — klik untuk memastikan ulang'}
-                            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 border ${
+                            className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 border ${
                               diluarIncentive(group[0])
                                 ? 'bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border-amber-300'
                                 : 'bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border-emerald-200'}`}>
