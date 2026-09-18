@@ -12,7 +12,7 @@ import { User, NotificationItem, NotifBellProps } from './shared';
 import { markAllNotifsRead } from '@/lib/notifications';
 import { useNotifSoundAlarm } from '@/lib/notif-sound';
 import { pushDidukung, statusIzinNotif, sudahBerlanggananPush, aktifkanPushNotif, matikanPushNotif } from '@/lib/push-client';
-import { IconTicket, IconBriefcase, IconCalendar, IconStar, IconBell, IconSpeaker, IconDevicePhone } from './notif-icons';
+import { IconTicket, IconBriefcase, IconCalendar, IconStar, IconBell, IconSpeaker } from './notif-icons';
 
 // Notification Bell Component
 
@@ -158,17 +158,30 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     })();
   }, []);
 
-  const togglePush = async () => {
+  /**
+   * Satu saklar untuk suara DAN push - sebelumnya dua tombol terpisah
+   * (speaker + HP) padahal bagi pengguna keduanya sama-sama berarti "beri
+   * tahu aku ada notifikasi baru". Klik menyalakan/mematikan alarm suara
+   * tab ini SEKALIGUS mencoba menyalakan/mematikan push perangkat kalau
+   * peramban mendukungnya - kalau tidak didukung/diblokir, saklar tetap
+   * bekerja sebagai alarm suara saja (soundMuted adalah sumber kebenaran).
+   */
+  const toggleNotifAlerts = async () => {
+    const akanAktif = soundMuted;
+    toggleSoundMuted();
+    if (pushStatus === 'unsupported' || pushStatus === 'denied') return;
     setPushGalat(null);
     setPushProses(true);
     try {
-      if (pushStatus === 'on') {
+      if (akanAktif) {
+        if (pushStatus !== 'on') {
+          const hasil = await aktifkanPushNotif();
+          if (hasil.ok) setPushStatus('on');
+          else setPushGalat(hasil.alasan ?? 'Notifikasi HP gagal diaktifkan - alarm suara tetap aktif.');
+        }
+      } else if (pushStatus === 'on') {
         await matikanPushNotif();
         setPushStatus('off');
-      } else {
-        const hasil = await aktifkanPushNotif();
-        if (hasil.ok) setPushStatus('on');
-        else setPushGalat(hasil.alasan ?? 'Gagal mengaktifkan.');
       }
     } finally {
       setPushProses(false);
@@ -723,48 +736,36 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           </svg>
         </div>
       )}
-      {/* Saklar alarm suara - status & pengaturannya per-browser (localStorage),
-          bukan per-akun, karena memang soal "browser ini dibiarkan terbuka",
-          bukan preferensi akun yang harus ikut ke perangkat lain. */}
-      <button type="button" onClick={toggleSoundMuted}
-        aria-label={soundMuted ? 'Aktifkan alarm suara notifikasi' : 'Matikan alarm suara notifikasi'}
-        title={soundMuted ? 'Alarm suara: MATI - klik untuk aktifkan' : 'Alarm suara: AKTIF - klik untuk matikan'}
-        className="flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0 transition-all hover:scale-105 active:scale-95"
-        style={{ background: soundMuted ? 'rgba(0,0,0,0.05)' : 'rgba(79,70,229,0.12)', border: `1px solid ${soundMuted ? 'rgba(0,0,0,0.1)' : 'rgba(79,70,229,0.3)'}` }}>
-        <IconSpeaker muted={soundMuted} className="w-4 h-4" style={{ color: soundMuted ? '#94a3b8' : '#4338ca' }} />
-      </button>
-      {/* Saklar push notification asli - bunyi & muncul walau app/tab HP
-          tertutup (perangkat harus didaftarkan satu per satu, bukan
-          preferensi akun - lihat lib/push-client.ts). Disembunyikan total
-          kalau peramban tidak mendukung Push API sama sekali. */}
-      {pushStatus !== 'unsupported' && pushStatus !== 'cek' && (
-        <div className="relative">
-          <button type="button" onClick={togglePush} disabled={pushProses || pushStatus === 'denied'}
-            aria-label={pushStatus === 'on' ? 'Matikan push notification di perangkat ini' : 'Aktifkan push notification di perangkat ini'}
-            title={
-              pushStatus === 'denied' ? 'Izin notifikasi ditolak - aktifkan lewat pengaturan peramban/HP untuk situs ini'
-              : pushStatus === 'on' ? 'Push notification: AKTIF di perangkat ini - klik untuk matikan'
-              : 'Push notification: belum aktif di perangkat ini - klik untuk aktifkan'
-            }
-            className="flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
-            style={{
-              background: pushStatus === 'on' ? 'rgba(5,150,105,0.12)' : 'rgba(0,0,0,0.05)',
-              border: `1px solid ${pushStatus === 'on' ? 'rgba(5,150,105,0.3)' : 'rgba(0,0,0,0.1)'}`,
-            }}>
-            {pushProses ? (
-              <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" aria-hidden="true" />
-            ) : (
-              <IconDevicePhone className="w-4 h-4" style={{ color: pushStatus === 'on' ? '#059669' : pushStatus === 'denied' ? '#cbd5e1' : '#64748b' }} />
-            )}
-          </button>
-          {pushGalat && (
-            <div className="absolute top-full mt-2 right-0 z-[50] w-56 px-3 py-2 rounded-xl text-[11px] font-medium text-white shadow-xl"
-              style={{ background: '#991b1b' }}>
-              {pushGalat}
-            </div>
+      {/* Satu saklar notifikasi (suara + push HP jadi satu aksi, bukan dua
+          ikon terpisah). soundMuted = sumber kebenaran status; push HP
+          ikut nyala/mati mengikutinya kalau peramban mendukung & izinnya
+          belum ditolak (lihat toggleNotifAlerts di atas). Status & alarm
+          suara sendiri tetap per-browser (localStorage), bukan per-akun. */}
+      <div className="relative">
+        <button type="button" onClick={toggleNotifAlerts} disabled={pushProses}
+          aria-label={soundMuted ? 'Aktifkan notifikasi' : 'Matikan notifikasi'}
+          title={
+            pushStatus === 'denied'
+              ? `Alarm suara: ${soundMuted ? 'MATI' : 'AKTIF'} - notifikasi HP diblokir peramban, aktifkan lewat pengaturan situs`
+              : pushStatus === 'on'
+              ? `Notifikasi (suara & HP): ${soundMuted ? 'MATI' : 'AKTIF'} - klik untuk ${soundMuted ? 'aktifkan' : 'matikan'}`
+              : `Alarm suara: ${soundMuted ? 'MATI' : 'AKTIF'} - klik untuk ${soundMuted ? 'aktifkan' : 'matikan'}`
+          }
+          className="flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+          style={{ background: soundMuted ? 'rgba(0,0,0,0.05)' : 'rgba(79,70,229,0.12)', border: `1px solid ${soundMuted ? 'rgba(0,0,0,0.1)' : 'rgba(79,70,229,0.3)'}` }}>
+          {pushProses ? (
+            <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" aria-hidden="true" />
+          ) : (
+            <IconSpeaker muted={soundMuted} className="w-4 h-4" style={{ color: soundMuted ? '#94a3b8' : '#4338ca' }} />
           )}
-        </div>
-      )}
+        </button>
+        {pushGalat && (
+          <div className="absolute top-full mt-2 right-0 z-[50] w-56 px-3 py-2 rounded-xl text-[11px] font-medium text-white shadow-xl"
+            style={{ background: '#991b1b' }}>
+            {pushGalat}
+          </div>
+        )}
+      </div>
       {/* Separator — hidden on small mobile */}
       <div className="hidden sm:block w-px h-5 flex-shrink-0" style={{ background: 'rgba(0,0,0,0.09)' }} />
       {/* Individual bells — hidden on small mobile (summary badge is enough) */}
