@@ -8,6 +8,26 @@
 
 import { supabase } from '@/lib/supabase';
 
+/**
+ * Push notification asli (bunyi + notifikasi sistem walau app/tab tertutup) -
+ * dipicu SETIAP notifikasi in-app dibuat, lewat titik ini saja, supaya
+ * seluruh alur yang sudah memanggil createNotification()/
+ * createNotificationForAdmins() di berbagai modul otomatis ikut, tanpa
+ * menyentuh satu pun titik pemanggilan itu.
+ *
+ * Fire-and-forget dan gagal diam-diam: push cuma pelengkap, notifikasi
+ * in-app-nya sendiri sudah tersimpan lebih dulu di pemanggil di atas.
+ */
+function pushSetelahNotif(userIds: string[], title: string, body?: string, actionUrl?: string): void {
+  try {
+    void fetch('/api/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_ids: userIds, title, body, url: actionUrl }),
+    }).catch(() => { /* jaringan bermasalah - abaikan */ });
+  } catch { /* abaikan */ }
+}
+
 // Types
 
 export type NotifType = 'ticket' | 'reminder' | 'project' | 'user' | 'kpi' | 'system';
@@ -41,7 +61,8 @@ export async function createNotification(payload: NotifPayload): Promise<void> {
       is_read:    false,
       created_at: new Date().toISOString(),
     }]);
-    if (error) console.warn('[notifications] insert error:', error.message);
+    if (error) { console.warn('[notifications] insert error:', error.message); return; }
+    pushSetelahNotif([payload.user_id], payload.title, payload.body, payload.action_url);
   } catch (e) {
     console.warn('[notifications] createNotification failed:', e);
   }
@@ -79,7 +100,8 @@ export async function createNotificationForAdmins(
     }));
 
     const { error } = await supabase.from('notifications').insert(rows);
-    if (error) console.warn('[notifications] admin insert error:', error.message);
+    if (error) { console.warn('[notifications] admin insert error:', error.message); return; }
+    pushSetelahNotif(targets.map(t => t.id), payload.title, payload.body, payload.action_url);
   } catch (e) {
     console.warn('[notifications] createNotificationForAdmins failed:', e);
   }

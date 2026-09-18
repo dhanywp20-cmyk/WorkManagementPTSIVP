@@ -42,3 +42,6 @@ export { Modal, TombolModal, type ModalProps } from './Modal';
 // Paginasi daftar - satu mekanisme & satu angka baris/halaman untuk semua
 // modul. Lihat catatan di Paginasi.tsx.
 export { Paginasi, usePaginasi, BARIS_PER_HALAMAN, type HasilPaginasi } from './Paginasi';
+// Bootstrap PWA - daftar service worker + banner "Pasang aplikasi ke HP".
+// Dipasang sekali di root layout, bukan per-modul.
+export { PwaBootstrap } from './PwaBootstrap';

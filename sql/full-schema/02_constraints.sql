@@ -130,6 +130,9 @@ ALTER TABLE public.pts_team_mappings ADD CONSTRAINT pts_team_mappings_pkey PRIMA
 ALTER TABLE public.pts_team_mappings ADD CONSTRAINT pts_team_mappings_staff_user_id_key UNIQUE (staff_user_id);
 ALTER TABLE public.pts_team_mappings ADD CONSTRAINT pts_team_mappings_staff_user_id_fkey FOREIGN KEY (staff_user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.pts_team_mappings ADD CONSTRAINT pts_team_mappings_supervisor_user_id_fkey FOREIGN KEY (supervisor_user_id) REFERENCES users(id) ON DELETE CASCADE;
+ALTER TABLE public.push_subscriptions ADD CONSTRAINT push_subscriptions_pkey PRIMARY KEY (id);
+ALTER TABLE public.push_subscriptions ADD CONSTRAINT push_subscriptions_endpoint_key UNIQUE (endpoint);
+ALTER TABLE public.push_subscriptions ADD CONSTRAINT push_subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 ALTER TABLE public.rahasia_integrasi ADD CONSTRAINT rahasia_integrasi_pkey PRIMARY KEY (kunci);
 ALTER TABLE public.reminders ADD CONSTRAINT reminders_pkey PRIMARY KEY (id);
 ALTER TABLE public.reminders ADD CONSTRAINT reminders_assigned_supervisor_id_fkey FOREIGN KEY (assigned_supervisor_id) REFERENCES users(id) ON DELETE SET NULL;

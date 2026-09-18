@@ -54,6 +54,7 @@ ALTER TABLE public.project_attachments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.project_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.project_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pts_team_mappings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rahasia_integrasi ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reminders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sql_diterapkan ENABLE ROW LEVEL SECURITY;

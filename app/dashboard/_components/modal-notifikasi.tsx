@@ -11,6 +11,7 @@ import {
 import { User, NotificationItem, NotifBellProps } from './shared';
 import { markAllNotifsRead } from '@/lib/notifications';
 import { useNotifSoundAlarm } from '@/lib/notif-sound';
+import { pushDidukung, statusIzinNotif, sudahBerlanggananPush, aktifkanPushNotif, matikanPushNotif } from '@/lib/push-client';
 
 // Notification Bell Component
 
@@ -134,6 +135,44 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
   //  Alarm suara - bunyi begitu ada ticket/notifikasi BARU, supaya orang yang
   //  membiarkan tab ini terbuka seharian tidak harus melirik layar terus.
   const { muted: soundMuted, toggleMuted: toggleSoundMuted, playIfAllowed: mainkanAlarm } = useNotifSoundAlarm();
+
+  /*
+    Push notification asli (bunyi + notifikasi sistem walau app/tab HP
+    tertutup) - beda dari alarm suara di atas yang cuma bunyi SELAMA tab ini
+    terbuka. 'unsupported' disembunyikan total (peramban lama/desktop
+    tertentu memang tidak punya Push API - tombol yang tidak akan pernah
+    berhasil lebih membingungkan daripada tidak ada).
+  */
+  const [pushStatus, setPushStatus] = useState<'cek' | 'unsupported' | 'off' | 'denied' | 'on'>('cek');
+  const [pushProses, setPushProses] = useState(false);
+  const [pushGalat, setPushGalat] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      if (!pushDidukung()) { setPushStatus('unsupported'); return; }
+      const izin = statusIzinNotif();
+      if (izin === 'denied') { setPushStatus('denied'); return; }
+      const sudah = await sudahBerlanggananPush();
+      setPushStatus(sudah ? 'on' : 'off');
+    })();
+  }, []);
+
+  const togglePush = async () => {
+    setPushGalat(null);
+    setPushProses(true);
+    try {
+      if (pushStatus === 'on') {
+        await matikanPushNotif();
+        setPushStatus('off');
+      } else {
+        const hasil = await aktifkanPushNotif();
+        if (hasil.ok) setPushStatus('on');
+        else setPushGalat(hasil.alasan ?? 'Gagal mengaktifkan.');
+      }
+    } finally {
+      setPushProses(false);
+    }
+  };
 
   const roleLC = (currentUser.role ?? '').trim().toLowerCase();
   const teamType = (currentUser.team_type ?? '').trim();
@@ -693,6 +732,36 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         style={{ background: soundMuted ? 'rgba(0,0,0,0.05)' : 'rgba(79,70,229,0.12)', border: `1px solid ${soundMuted ? 'rgba(0,0,0,0.1)' : 'rgba(79,70,229,0.3)'}` }}>
         <span className="text-sm" aria-hidden="true">{soundMuted ? '🔇' : '🔔'}</span>
       </button>
+      {/* Saklar push notification asli - bunyi & muncul walau app/tab HP
+          tertutup (perangkat harus didaftarkan satu per satu, bukan
+          preferensi akun - lihat lib/push-client.ts). Disembunyikan total
+          kalau peramban tidak mendukung Push API sama sekali. */}
+      {pushStatus !== 'unsupported' && pushStatus !== 'cek' && (
+        <div className="relative">
+          <button type="button" onClick={togglePush} disabled={pushProses || pushStatus === 'denied'}
+            aria-label={pushStatus === 'on' ? 'Matikan push notification di perangkat ini' : 'Aktifkan push notification di perangkat ini'}
+            title={
+              pushStatus === 'denied' ? 'Izin notifikasi ditolak - aktifkan lewat pengaturan peramban/HP untuk situs ini'
+              : pushStatus === 'on' ? 'Push notification: AKTIF di perangkat ini - klik untuk matikan'
+              : 'Push notification: belum aktif di perangkat ini - klik untuk aktifkan'
+            }
+            className="flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+            style={{
+              background: pushStatus === 'on' ? 'rgba(5,150,105,0.12)' : 'rgba(0,0,0,0.05)',
+              border: `1px solid ${pushStatus === 'on' ? 'rgba(5,150,105,0.3)' : 'rgba(0,0,0,0.1)'}`,
+            }}>
+            <span className="text-sm" aria-hidden="true">
+              {pushProses ? '⏳' : pushStatus === 'denied' ? '🚫' : pushStatus === 'on' ? '📱' : '📲'}
+            </span>
+          </button>
+          {pushGalat && (
+            <div className="absolute top-full mt-2 right-0 z-[50] w-56 px-3 py-2 rounded-xl text-[11px] font-medium text-white shadow-xl"
+              style={{ background: '#991b1b' }}>
+              {pushGalat}
+            </div>
+          )}
+        </div>
+      )}
       {/* Separator — hidden on small mobile */}
       <div className="hidden sm:block w-px h-5 flex-shrink-0" style={{ background: 'rgba(0,0,0,0.09)' }} />
       {/* Individual bells — hidden on small mobile (summary badge is enough) */}

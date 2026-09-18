@@ -76,6 +76,7 @@ CREATE INDEX idx_project_requests_internal_sales ON public.project_requests USIN
 CREATE INDEX idx_project_requests_ivp ON public.project_requests USING btree (ivp_assignee);
 CREATE INDEX idx_pts_team_staff ON public.pts_team_mappings USING btree (staff_user_id);
 CREATE INDEX idx_pts_team_supervisor ON public.pts_team_mappings USING btree (supervisor_user_id);
+CREATE INDEX push_subscriptions_user_id_idx ON public.push_subscriptions USING btree (user_id);
 CREATE INDEX idx_reminders_assign_user ON public.reminders USING btree (assign_user_id);
 CREATE INDEX idx_reminders_assigned_supervisor ON public.reminders USING btree (assigned_supervisor_id) WHERE (assigned_supervisor_id IS NOT NULL);
 CREATE INDEX idx_reminders_batch_id ON public.reminders USING btree (batch_id) WHERE (batch_id IS NOT NULL);

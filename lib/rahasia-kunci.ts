@@ -35,6 +35,17 @@ export const KUNCI_RAHASIA = [
     tetap jalan tanpa diubah.
   */
   'ai.gemini_token_koreksi',
+  /*
+    Pasangan kunci VAPID untuk push notification asli (bunyi + notifikasi
+    sistem walau app/tab tertutup). Berbeda dari kunci lain di atas: kedua
+    nilai ini di-GENERATE oleh server sendiri (lihat /api/push/setup, tombol
+    "Aktifkan" di Admin Panel → Integrations), bukan token yang admin salin
+    dari layanan luar. push.vapid_public_key TIDAK rahasia - memang dikirim
+    ke peramban lewat /api/push/vapid-public-key (standar Push API), cuma
+    disimpan lewat jalur yang sama demi konsistensi tempat penyimpanan.
+  */
+  'push.vapid_public_key',
+  'push.vapid_private_key',
 ] as const;
 
 export type KunciRahasia = typeof KUNCI_RAHASIA[number];

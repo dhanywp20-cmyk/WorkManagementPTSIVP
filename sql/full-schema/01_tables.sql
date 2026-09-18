@@ -749,6 +749,18 @@ CREATE TABLE public.pts_team_mappings (
   created_at timestamp with time zone DEFAULT now()
 );
 
+-- Perangkat (browser/HP) yang mendaftar push notification asli - TIDAK punya
+-- policy RLS, pola yang sama seperti rahasia_integrasi di bawah.
+CREATE TABLE public.push_subscriptions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  endpoint text NOT NULL,
+  p256dh text NOT NULL,
+  auth text NOT NULL,
+  user_agent text,
+  created_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
 -- Kredensial integrasi pihak ketiga (mis. kunci API). NILAI KOSONG di
 -- instalasi baru - isi ulang lewat aplikasi (Admin Panel), JANGAN copy nilai
 -- dari instalasi lama ke instalasi Company baru.

@@ -1,15 +1,32 @@
 import './globals.css';
-import type { Viewport } from 'next';
+import type { Metadata, Viewport } from 'next';
+import { PwaBootstrap } from '@/components/shared';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Dashboard PTS IVP - IndoVisual',
   description: 'Portal Terpadu Support IndoVisual',
+  // TIDAK perlu field `manifest` di sini - app/manifest.ts (konvensi khusus
+  // Next.js App Router) sudah otomatis disajikan di /manifest.webmanifest
+  // DAN otomatis disisipkan sebagai <link rel="manifest"> oleh Next.js
+  // sendiri. Menambahkannya lagi di sini akan dobel.
+  appleWebApp: {
+    // iOS Safari tidak baca manifest.json untuk mode "Tambah ke Layar Utama" -
+    // meta tag Apple sendiri yang menentukan judul & mode tampilan di sana.
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'PTS Portal',
+  },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/icons/apple-touch-icon.png',
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  themeColor: '#e11d48',
 };
 
 export default function RootLayout({
@@ -20,6 +37,7 @@ export default function RootLayout({
   return (
     <html lang="id">
       <body className="antialiased">
+        <PwaBootstrap />
         {children}
         {/*
           DI SINI DULU ADA SUNTIKAN CSS — SENGAJA DIHAPUS, JANGAN DIKEMBALIKAN.
