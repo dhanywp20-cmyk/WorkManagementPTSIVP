@@ -298,7 +298,11 @@ export function IntegrasiInline() {
    * notifikasi. Akibatnya hal yang paling sering disentuh terdorong jauh ke
    * bawah, dan tombol Simpan-nya lebih jauh lagi.
    */
-  const [seksi, setSeksi] = useState<'kanal' | 'wa' | 'tg' | 'tim' | 'ai'>('kanal');
+  const [seksi, setSeksi] = useState<'kanal' | 'wa' | 'tg' | 'push' | 'tim' | 'ai'>('kanal');
+  /** Push notification asli (aplikasi/PWA) - status kunci VAPID + jumlah perangkat terdaftar. */
+  const [pushInfo, setPushInfo] = useState<{ aktif: boolean; jumlahPerangkat: number } | null>(null);
+  const [pushMemuat, setPushMemuat] = useState(false);
+  const [pushPesan, setPushPesan] = useState<{ tipe: 'ok' | 'gagal'; teks: string } | null>(null);
   /** Siapa yang benar-benar bisa dijangkau lewat kanal apa. */
   const [tim, setTim] = useState<{ nama: string; tim: string; jabatan: string; wa: boolean; tg: boolean }[]>([]);
   /** Penyaring matriks - 22 baris terlalu banyak untuk dipindai dengan mata. */
@@ -306,6 +310,34 @@ export function IntegrasiInline() {
   /* Pengaturan pembuat soal AI - lihat lib/ai-pengaturan.ts. */
   const [ai, setAi] = useState<PengaturanAI>(AI_BAWAAN);
   const [penilai, setPenilai] = useState<PengaturanPenilai>(PENILAI_BAWAAN);
+
+  const muatPushInfo = async () => {
+    try {
+      const r = await fetch('/api/push/setup', { credentials: 'include' });
+      const j = await r.json() as { ok?: boolean; aktif?: boolean; jumlahPerangkat?: number };
+      if (j?.ok) setPushInfo({ aktif: !!j.aktif, jumlahPerangkat: j.jumlahPerangkat ?? 0 });
+    } catch { /* diam - kartu akan tampil "belum diketahui" */ }
+  };
+
+  /** aktifkan=true untuk penyalaan pertama, false untuk "Generate Ulang Kunci" (force). */
+  const aktifkanPushServer = async (paksa: boolean) => {
+    setPushMemuat(true);
+    setPushPesan(null);
+    try {
+      const r = await fetch(`/api/push/setup${paksa ? '?force=1' : ''}`, { method: 'POST', credentials: 'include' });
+      const j = await r.json() as { ok?: boolean; alasan?: string };
+      if (j?.ok) {
+        setPushPesan({ tipe: 'ok', teks: paksa ? 'Kunci baru dibuat. Semua perangkat lama perlu mendaftar ulang.' : 'Push notification aktif!' });
+        await muatPushInfo();
+      } else {
+        setPushPesan({ tipe: 'gagal', teks: j?.alasan ?? 'Gagal mengaktifkan.' });
+      }
+    } catch {
+      setPushPesan({ tipe: 'gagal', teks: 'Tidak bisa menghubungi server.' });
+    } finally {
+      setPushMemuat(false);
+    }
+  };
 
   const muatRahasia = async () => {
     try {
@@ -373,6 +405,7 @@ export function IntegrasiInline() {
     void muatTim();
     void cekKoneksi('telegram');
     void cekKoneksi('whatsapp');
+    void muatPushInfo();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -554,6 +587,7 @@ export function IntegrasiInline() {
     { key: 'kanal', label: 'Kanal & Event', hitung: String(KATALOG_EVENT.length) },
     { key: 'wa',    label: 'WhatsApp' },
     { key: 'tg',    label: 'Telegram', tanda: p.aktif.telegram && koneksi.telegram.keadaan === 'putus' },
+    { key: 'push',  label: 'Push Notifikasi (App)', hitung: pushInfo?.aktif ? String(pushInfo.jumlahPerangkat) : undefined, tanda: pushInfo !== null && !pushInfo.aktif },
     { key: 'tim',   label: 'Jangkauan Tim', hitung: totalTim ? String(totalTim) : undefined },
     { key: 'ai',    label: 'AI Learning Center' },
   ];
@@ -604,6 +638,11 @@ export function IntegrasiInline() {
           jenis={!p.aktif.telegram || koneksi.telegram.keadaan === 'putus' ? 'warn'
                  : koneksi.telegram.keadaan === 'memuat' ? 'diam' : 'ok'}
           ket={!p.aktif.telegram ? 'Saklar kanalnya belum dinyalakan.' : 'Tiap orang menghubungkan akunnya sendiri.'} />
+        <Ubin warna="#e11d48" nama="Push Notifikasi"
+          nilai={pushInfo === null ? '—' : pushInfo.aktif ? `${pushInfo.jumlahPerangkat} perangkat` : 'Belum aktif'}
+          lencana={pushInfo?.aktif ? 'Aktif' : 'Perlu diaktifkan'}
+          jenis={pushInfo?.aktif ? 'ok' : 'warn'}
+          ket={pushInfo?.aktif ? 'Bunyi + notifikasi sistem walau app HP tertutup.' : 'Aktifkan sekali - berlaku untuk semua orang.'} />
         <Ubin warna={belumTG > 0 ? '#f59e0b' : '#16a34a'} nama="Perlu tindakan"
           nilai={belumTG > 0 ? `${belumTG} anggota` : 'Tidak ada'}
           lencana={belumTG > 0 ? 'Belum hubungkan Telegram' : 'Semua siap'}
@@ -1011,6 +1050,68 @@ export function IntegrasiInline() {
                     asli belum akan terkirim.
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ══ PUSH NOTIFIKASI (APP/PWA) ══ */}
+          {seksi === 'push' && (
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_290px] gap-3 items-start">
+              <div className="space-y-3">
+                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                  <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-700">Push Notification Aplikasi</h3>
+                      <p className="text-[11.5px] text-slate-400 mt-0.5">
+                        Notifikasi sistem asli + bunyi di HP, walau aplikasi/tab sedang tertutup - seperti WhatsApp.
+                      </p>
+                    </div>
+                    <span className={`ml-auto flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      pushInfo?.aktif ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {pushInfo === null ? 'Memuat…' : pushInfo.aktif ? 'Aktif' : 'Belum aktif'}
+                    </span>
+                  </div>
+                  <div className="p-3 space-y-3">
+                    {!pushInfo?.aktif ? (
+                      <>
+                        <p className="text-[11.5px] text-slate-500 leading-relaxed">
+                          Sekali diaktifkan, siapa pun di tim yang menekan tombol 🔔 di lonceng notifikasi dashboard
+                          bisa mendaftarkan HP-nya sendiri untuk menerima notifikasi ini - tidak perlu diatur admin
+                          per-orang.
+                        </p>
+                        <button type="button" onClick={() => aktifkanPushServer(false)} disabled={pushMemuat}
+                          className="text-[12px] font-bold px-3 py-2 rounded-lg text-white disabled:opacity-50"
+                          style={{ background: 'linear-gradient(135deg,#e11d48,#be123c)' }}>
+                          {pushMemuat ? 'Mengaktifkan…' : '📲 Aktifkan Push Notification'}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-[11.5px] text-slate-500 leading-relaxed">
+                          <b>{pushInfo.jumlahPerangkat}</b> perangkat terdaftar saat ini.
+                        </p>
+                        <button type="button" onClick={() => { if (confirm('Yakin? SEMUA perangkat yang sudah terdaftar akan terputus dan harus mendaftar ulang.')) void aktifkanPushServer(true); }}
+                          disabled={pushMemuat}
+                          className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                          {pushMemuat ? 'Memproses…' : '🔁 Generate Ulang Kunci'}
+                        </button>
+                      </>
+                    )}
+                    <PesanKotak pesan={pushPesan} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-3.5" style={{ background: '#f8fafc' }}>
+                <h4 className="text-[13px] font-bold text-slate-700">Cara anggota mengaktifkan</h4>
+                <p className="text-[11.5px] text-slate-400 mt-1.5 leading-relaxed">
+                  Buka Dashboard di HP → tekan ikon <b>📲</b> di sebelah lonceng notifikasi → izinkan saat diminta.
+                  Sekali per HP/browser, tidak perlu diulang.
+                </p>
+                <p className="text-[10.5px] text-slate-400 mt-2.5 leading-relaxed">
+                  Di iPhone, notifikasi push HANYA berjalan setelah platform ini dipasang lewat &quot;Tambah ke Layar
+                  Utama&quot; (Safari) - batasan dari Apple, bukan platform ini.
+                </p>
               </div>
             </div>
           )}
