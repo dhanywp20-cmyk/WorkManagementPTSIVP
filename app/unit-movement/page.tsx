@@ -459,7 +459,7 @@ function UnitMovementPageInner() {
           </div>
 
           {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
-          <div className="md:hidden bg-gray-50/70 p-2.5 space-y-2.5">
+          <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
             {filteredLogs.length === 0 && (
               <ListEmptyState
                 adaFilterAktif={filterStatus !== 'All' || filterEvent !== 'All' || filterPTS !== 'All' || filterYear !== 'All'}

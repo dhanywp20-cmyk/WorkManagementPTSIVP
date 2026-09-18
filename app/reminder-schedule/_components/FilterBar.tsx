@@ -64,7 +64,7 @@ export function FilterBar({
   return (
     <>
       {/* ── TICKET LIST header + refresh/export ── */}
-      <div className="flex flex-wrap items-center justify-between px-5 py-3.5 border-b border-gray-100">
+      <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-5 sm:py-3.5 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Schedule List</span>
           <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{filteredReminders.length}</span>
@@ -91,50 +91,50 @@ export function FilterBar({
       </div>
 
       {/* ── Search / Filter bar — tepat di bawah TICKET LIST ── */}
-      <div className="px-5 py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2">
+      <div className="px-3 py-2 sm:px-5 sm:py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-2">
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Project / Location</label>
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Location</label>
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">🔍</span>
               <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
-                className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
+                className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
                 placeholder="Search project / lokasi..." />
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Sales Name</label>
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales Name</label>
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👤</span>
               <input aria-label="Search sales..." value={searchSales} onChange={e => setSearchSales(e.target.value)}
-                className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
+                className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
                 placeholder="Search sales..." />
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">📦 Product</label>
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">📦 Product</label>
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">📦</span>
               <input aria-label="Cari product..." value={searchProduct} onChange={e => { setSearchProduct(e.target.value); setProductFilter(null); }}
-                className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
+                className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
                 placeholder="Cari product..." />
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Team Handler</label>
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👷</span>
               <input aria-label="Search handler..." value={searchTeamHandler} onChange={e => setSearchTeamHandler(e.target.value)}
-                className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-purple-300 transition-all"
+                className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-purple-300 transition-all"
                 placeholder="Search handler..." />
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status</label>
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">🏷️</span>
               <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value as Status | 'all')}
-                className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer transition-all">
+                className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer transition-all">
                 <option value="all">All Status</option>
                 {(Object.keys(STATUS_CONFIG) as Status[]).map(s => <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>)}
               </select>
@@ -142,11 +142,11 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filter Year</label>
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">📅</span>
               <select aria-label="All Years" value={filterYear} onChange={e => setFilterYear(e.target.value)}
-                className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer transition-all">
+                className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer transition-all">
                 <option value="all">All Years</option>
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
@@ -158,7 +158,7 @@ export function FilterBar({
 
       {/* Bulk delete bar — admin only, selectMode only */}
       {selectMode && (isAdmin || isManager) && selectedIds.size > 0 && (
-        <div className="px-5 py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(220,38,38,0.07)' }}>
+        <div className="px-3 py-1.5 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(220,38,38,0.07)' }}>
           <span className="text-sm font-bold text-red-700">{selectedIds.size} jadwal dipilih</span>
           <div className="flex items-center gap-2">
             <button onClick={() => setSelectedIds(new Set())} className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Batal Pilih</button>
@@ -173,7 +173,7 @@ export function FilterBar({
 
       {/* ── Filter Aktif chips — di bawah filter bar ── */}
       {(filterCategory !== 'all' || filterStatus !== 'all' || searchSales || searchDivisionSales || searchTeamHandler || searchProject || selectedCalDay || productFilter || searchProduct) && (
-        <div className="px-5 py-2.5 border-b border-gray-100 flex flex-wrap gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
+        <div className="px-3 py-1.5 sm:px-5 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
           {filterCategory !== 'all' && <button onClick={() => setFilterCategory('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}>🏷️ {filterCategory} ✕</button>}
           {filterStatus !== 'all' && <button onClick={() => setFilterStatus('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#d97706' }}>Status: {STATUS_CONFIG[filterStatus as Status]?.label} ✕</button>}

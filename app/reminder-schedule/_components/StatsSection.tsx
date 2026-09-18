@@ -42,7 +42,7 @@ export function StatsSection({
   return (
     <>
       {/* ── Stat cards (clickable filter) ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3">
         {[
           { label: 'Total Jadwal', value: totalCount, sub: 'Semua reminder', accent: '#4f46e5',
             onClick: () => { setFilterStatus('all'); setSelectedCalDay(null); },
@@ -66,7 +66,7 @@ export function StatsSection({
           sempit membuat separuh lebar kartu kurang buat donat +
           legenda sekaligus, dan itulah yang membuat SELURUH
           halaman ikut melebar & harus digeser ke kanan. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4">
         <MiniPieChart
           data={projectPieData} title="Kegiatan / Kategori" icon="🖥️"
           activeFilter={filterCategory !== 'all' ? filterCategory : null}

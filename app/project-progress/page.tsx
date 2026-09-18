@@ -484,7 +484,7 @@ function ProjectProgressPageInner() {
                 style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
 
                 {/* ── MOBILE: kartu daftar ── */}
-                <div className="md:hidden bg-gray-50/70 p-2.5 space-y-2.5">
+                <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
                   {hal.potongan.map(p => {
                     const cfg = STATUS_CONFIG[p.status] ?? STATUS_CONFIG.in_progress;
                     const agg = locCount[p.id] ?? { total: 0, avg: 0, issues: 0, locsLite: [] };

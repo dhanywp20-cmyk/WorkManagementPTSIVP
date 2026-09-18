@@ -61,24 +61,24 @@ export function MobileListCard({
           onClick();
         }
       } : undefined}
-      className={`rounded-2xl px-3.5 py-3 border shadow-sm transition-all ${
+      className={`rounded-xl px-3 py-2 border shadow-sm transition-all ${
         highlight ? 'bg-red-50/70 border-red-100' : 'bg-white border-gray-100'
       } ${onClick ? 'active:scale-[0.985] active:shadow-none cursor-pointer' : ''}`}
-      style={accent ? { borderLeftWidth: 4, borderLeftColor: accent } : undefined}
+      style={accent ? { borderLeftWidth: 3, borderLeftColor: accent } : undefined}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-2.5">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             {titlePrefix}
-            <p className="font-bold text-[13.5px] text-gray-800 leading-tight break-words">{title}</p>
+            <p className="font-bold text-[13px] text-gray-800 leading-tight break-words">{title}</p>
           </div>
-          {meta && <div className="text-[11px] text-gray-400 mt-1 space-y-0.5">{meta}</div>}
+          {meta && <div className="text-[10.5px] text-gray-400 mt-0.5 space-y-0">{meta}</div>}
         </div>
         {badges && <div className="flex flex-col items-end gap-1 shrink-0">{badges}</div>}
       </div>
 
       {visibleFields.length > 0 && (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-2.5 p-2.5 rounded-xl bg-gray-50/80 text-xs">
+        <div className="grid grid-cols-2 gap-x-2.5 gap-y-1 mt-1.5 px-2 py-1.5 rounded-lg bg-gray-50/80 text-[11.5px]">
           {visibleFields.map((f, i) => (
             <div key={i} className={`truncate ${f.span2 ? 'col-span-2' : ''}`}>
               <span className="text-gray-400">{f.label}: </span>
@@ -89,7 +89,7 @@ export function MobileListCard({
       )}
 
       {actions && (
-        <div className="flex items-center justify-end gap-1.5 mt-2.5 pt-2.5 border-t border-gray-100 flex-wrap" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-1 mt-1.5 pt-1.5 border-t border-gray-100 flex-wrap" onClick={e => e.stopPropagation()}>
           {actions}
         </div>
       )}

@@ -1256,7 +1256,7 @@ function FormReviewPageInner() {
             ) : (
               <>
               {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
-              <div className="md:hidden bg-gray-50/70 p-2.5 space-y-2.5">
+              <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
                 {hal.potongan.map((r) => {
                   const isDemo = r.review_category === 'Demo Product';
                   const hasReview = isDemo ? !!r.grade_product_knowledge : !!(r.grade_training_customer && r.grade_product_knowledge_bast);

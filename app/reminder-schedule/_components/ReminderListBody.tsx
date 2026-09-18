@@ -139,7 +139,7 @@ export function ReminderListBody({
             seluruh halaman bisa digeser ke samping - field pada
             komponen bersama ini truncate SEMUANYA secara bawaan,
             jadi bukan lagi sesuatu yang bisa lupa ditulis. */}
-        <div className="md:hidden bg-gray-50/70 p-2.5 space-y-2.5">
+        <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
           {hal.potongan.map((group) => {
             const r = group[0];
             const today = isDueToday(r.due_date);

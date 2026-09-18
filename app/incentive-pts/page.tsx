@@ -1142,7 +1142,7 @@ export default function IncentivePTSPage() {
               </p>
             </div>
             {/* ── MOBILE: kartu ringkas (nama + total incentive, tap utk detail) ── */}
-            <div className="md:hidden bg-gray-50/70 p-2.5 space-y-2.5">
+            <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
               {filteredProjects.length === 0 ? (
                 <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada project incentive.</div>
               ) : hal.potongan.map((p) => {
