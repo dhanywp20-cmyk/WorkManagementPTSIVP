@@ -47,18 +47,18 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
       {/* Pita aksen: penanda kategori yang tetap terbaca tanpa mendominasi kartu. */}
       <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent, opacity: active ? 1 : 0.55 }} />
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-2xl sm:text-3xl font-black leading-none tabular-nums" style={{ color: active ? accent : '#0f172a' }}>
+        <span className="text-lg sm:text-3xl font-black leading-none tabular-nums" style={{ color: active ? accent : '#0f172a' }}>
           {value}
         </span>
         {active && (
-          <span className="text-[9px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: accent }}>
+          <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: accent }}>
             Aktif
           </span>
         )}
       </div>
       <div>
-        <p className="text-[13px] font-bold leading-tight" style={{ color: active ? accent : '#1e293b' }}>{label}</p>
-        {sub && <p className="text-[10px] font-medium leading-tight text-slate-500">{sub}</p>}
+        <p className="text-[11px] sm:text-[13px] font-bold leading-tight" style={{ color: active ? accent : '#1e293b' }}>{label}</p>
+        {sub && <p className="text-[9px] sm:text-[10px] font-medium leading-tight text-slate-500">{sub}</p>}
       </div>
     </>
   );
@@ -70,7 +70,7 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
     boxShadow: active ? `0 0 0 1px ${accent}` : '0 1px 2px rgba(15,23,42,0.06)',
   };
 
-  const kelasDasar = 'relative overflow-hidden rounded-xl px-4 py-3.5 flex flex-col gap-1.5';
+  const kelasDasar = 'relative overflow-hidden rounded-lg sm:rounded-xl px-2.5 py-2 sm:px-4 sm:py-3.5 flex flex-col gap-0.5 sm:gap-1.5';
 
   // Kartu yang bisa diklik HARUS berupa <button>: ini kontrol filter, jadi wajib
   // bisa dicapai lewat keyboard dan punya cincin fokus. Kartu yang hanya
@@ -97,7 +97,7 @@ export function StatCardGrid({ items, cols = 4, className = '' }: {
 }) {
   const kolom = { 3: 'md:grid-cols-3', 4: 'md:grid-cols-4', 5: 'md:grid-cols-5', 6: 'md:grid-cols-6' }[cols];
   return (
-    <div className={`grid grid-cols-2 ${kolom} gap-3 ${className}`}>
+    <div className={`grid grid-cols-2 ${kolom} gap-2 sm:gap-3 ${className}`}>
       {items.map((it, i) => <StatCard key={`${it.label}-${i}`} {...it} />)}
     </div>
   );

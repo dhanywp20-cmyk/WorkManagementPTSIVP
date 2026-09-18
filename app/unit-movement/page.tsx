@@ -310,7 +310,7 @@ function UnitMovementPageInner() {
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto px-6 py-6 space-y-6 w-full">
 
         {/* Stat Cards — 3 saja, tanpa Anggota PTS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-slide-up anim-d80">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 sm:gap-4 animate-slide-up anim-d80">
           {[
             { label:'Total Log',     value:filteredLogs.length, sub:'Semua catatan', accent:'#4f46e5' },
             { label:'Barang Masuk',  value:filteredLogs.filter(l=>l.status_barang==='Masuk').length,  sub:'Diterima', accent:'#047857' },
@@ -398,7 +398,7 @@ function UnitMovementPageInner() {
         )}
 
         {/* Pie Charts */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 animate-zoom-in anim-d160">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 sm:gap-4 animate-zoom-in anim-d160">
           <MiniPieChart data={statusPieData} title="Status Barang" icon="📦"
             activeFilter={filterStatus!=='All'?filterStatus:null}
             onSliceClick={l=>setFilterStatus(p=>p===l?'All':l as any)}/>
@@ -412,7 +412,7 @@ function UnitMovementPageInner() {
 
         {/* Table */}
         <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(200,200,200,0.6)',backdropFilter:'blur(12px)'}}>
-          <div className="flex flex-wrap items-center justify-between px-6 py-4 gap-3" style={{borderBottom:'1px solid rgba(0,0,0,0.07)'}}>
+          <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-6 sm:py-4 gap-2 sm:gap-3" style={{borderBottom:'1px solid rgba(0,0,0,0.07)'}}>
             <div className="flex items-center gap-3">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Movement Log</span>
               <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">{loading?'…':filteredLogs.length}</span>

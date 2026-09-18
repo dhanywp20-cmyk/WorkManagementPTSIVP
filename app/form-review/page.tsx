@@ -1081,7 +1081,7 @@ function FormReviewPageInner() {
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-slide-up anim-d80">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 animate-slide-up anim-d80">
             {[
               { label: 'Total Review', value: reviews.length, sub: 'Semua form review', accent: '#4f46e5',
                 onClick: () => { setFilterReviewCat('all'); setHandlerFilter(null); setProductFilterChart(null); },
@@ -1095,7 +1095,7 @@ function FormReviewPageInner() {
           </div>
 
           {/* Mini Pie Charts */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 animate-zoom-in anim-d160">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4 animate-zoom-in anim-d160">
             <MiniPieChart data={categoryPieData} title="Kategori Kegiatan" icon="📋"
               activeFilter={filterReviewCat !== 'all' ? filterReviewCat : null}
               onSliceClick={label => setFilterReviewCat(prev => (prev === label ? 'all' : label as any))} />
@@ -1113,7 +1113,7 @@ function FormReviewPageInner() {
           {/* Table */}
           <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
             {/* Table Header */}
-            <div className="flex flex-wrap items-center justify-between px-5 py-3.5 border-b border-gray-100">
+            <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-5 sm:py-3.5 border-b border-gray-100">
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Review List</span>
                 <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{tableReviews.length}</span>
@@ -1146,40 +1146,40 @@ function FormReviewPageInner() {
             </div>
 
             {/* Filter Bar — sama persis dengan Reminder Schedule */}
-            <div className="px-5 py-3 flex flex-wrap gap-3 items-end border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
+            <div className="px-3 py-2 sm:px-5 sm:py-3 flex flex-wrap gap-1.5 sm:gap-3 items-end border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">🔍 Search Project / Lokasi</label>
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">🔍 Search Project / Lokasi</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">🔍</span>
                   <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search project / lokasi..." style={{ minWidth: 180 }} />
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">👤 Sales Name</label>
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">👤 Sales Name</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👤</span>
                   <input aria-label="Search sales..." value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search sales..." />
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Team Handler</label>
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👷</span>
                   <input aria-label="Search handler..." value={searchHandler} onChange={e => setSearchHandler(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search handler..." />
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Kategori</label>
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Kategori</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">📋</span>
                   <select aria-label="Semua Kategori" value={filterReviewCat} onChange={e => setFilterReviewCat(e.target.value as any)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
                     <option value="all">Semua Kategori</option>
                     <option value="Demo Product">Demo Product</option>
                     <option value="BAST">BAST</option>
@@ -1190,7 +1190,7 @@ function FormReviewPageInner() {
             </div>
             {/* Bulk delete bar — admin only, selectMode only */}
             {selectMode && isAdmin && selectedIds.size > 0 && (
-              <div className="px-5 py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(124,58,237,0.07)' }}>
+              <div className="px-3 py-1.5 sm:px-5 sm:py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(124,58,237,0.07)' }}>
                 <span className="text-sm font-bold text-violet-700">{selectedIds.size} review dipilih</span>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setSelectedIds(new Set())} className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Batal Pilih</button>
@@ -1205,7 +1205,7 @@ function FormReviewPageInner() {
 
             {/* Active Filters Chips */}
             {(handlerFilter || productFilterChart || salesDivisionFilter || filterReviewCat !== 'all' || searchProject || searchSalesName || searchHandler) && (
-              <div className="px-5 py-2.5 border-b border-gray-100 flex flex-wrap gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
+              <div className="px-3 py-1.5 sm:px-5 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
                 {filterReviewCat !== 'all' && (
                   <button onClick={() => setFilterReviewCat('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}>📋 {filterReviewCat} ✕</button>

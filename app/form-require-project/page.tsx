@@ -1807,7 +1807,7 @@ Hubungi Admin untuk info lebih lanjut.
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
 
         {/* Stat Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 animate-slide-up anim-d80">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3 animate-slide-up anim-d80">
           {[
             { label: 'Total', value: stats.total, sub: 'Semua request', accent: '#4f46e5', onClick: () => setFilterStatus('all'), active: filterStatus === 'all' },
             { label: 'Pending', value: stats.pending, sub: 'Menunggu approval', accent: '#b45309', onClick: () => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending'), active: filterStatus === 'pending' },
@@ -1818,7 +1818,7 @@ Hubungi Admin untuk info lebih lanjut.
         </div>
 
         {/* Charts - guest sees handler + product, PTS sees all 3 */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 animate-zoom-in anim-d160">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-4 animate-zoom-in anim-d160">
           {isPTS ? (
             <>
               <MiniPieChart data={statusPieData} title="Status Distribution" icon="🥧"
@@ -1851,7 +1851,7 @@ Hubungi Admin untuk info lebih lanjut.
         <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
 
           {/* Header with title + actions — same as reference */}
-          <div className="flex flex-wrap items-center justify-between px-6 py-4" style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+          <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-6 sm:py-4" style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
             <div className="flex items-center gap-3">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Ticket List</span>
               <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{loading ? '…' : filteredRequests.length}</span>
@@ -1872,32 +1872,32 @@ Hubungi Admin untuk info lebih lanjut.
           </div>
 
           {/* Search + filter grid — labeled like reference */}
-          <div className="px-6 py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+          <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3">
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Project / Lokasi</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Lokasi</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
                   <input aria-label="Search project / lokasi..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Search project / lokasi..."
-                    className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
+                    className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Sales / Requester</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales / Requester</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">👤</span>
                   <input aria-label="Search sales / requester..." value={searchSales} onChange={e => setSearchSales(e.target.value)}
                     placeholder="Search sales / requester..."
-                    className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
+                    className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Team Handler</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">👥</span>
                   <select aria-label="All Handlers" value={filterHandler} onChange={e => setFilterHandler(e.target.value)}
-                    className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
+                    className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Handlers</option>
                     {ptsMembersList.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
@@ -1905,11 +1905,11 @@ Hubungi Admin untuk info lebih lanjut.
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🏷️</span>
                   <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                    className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
+                    className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Status</option>
                     <option value="pending">⏳ Pending</option>
                     <option value="approved">✅ Approved</option>
@@ -1921,11 +1921,11 @@ Hubungi Admin untuk info lebih lanjut.
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filter Year</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">📅</span>
                   <select aria-label="All Years" value={filterYear} onChange={e => setFilterYear(e.target.value)}
-                    className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
+                    className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Years</option>
                     {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
@@ -1933,11 +1933,11 @@ Hubungi Admin untuk info lebih lanjut.
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filter Bulan</label>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Bulan</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🗓️</span>
                   <select aria-label="All Months" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
-                    className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
+                    className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Months</option>
                     <option value="01">Januari</option>
                     <option value="02">Februari</option>
@@ -1961,7 +1961,7 @@ Hubungi Admin untuk info lebih lanjut.
           {/* Active filter chips — inside table */}
           {/* Bulk delete bar — admin only, selectMode only */}
           {selectMode && bisaKelolaRequest && selectedIds.size > 0 && (
-            <div className="px-6 py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(13,148,136,0.07)' }}>
+            <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(13,148,136,0.07)' }}>
               <span className="text-sm font-bold text-teal-700">{selectedIds.size} request dipilih</span>
               <div className="flex items-center gap-2">
                 <button onClick={() => setSelectedIds(new Set())} className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Batal Pilih</button>
@@ -1975,7 +1975,7 @@ Hubungi Admin untuk info lebih lanjut.
           )}
 
           {(filterStatus !== 'all' || filterYear !== 'all' || filterMonth !== 'all' || filterHandler !== 'all' || filterDivision !== 'all' || searchQuery || searchSales) && (
-            <div className="px-6 py-2.5 border-b border-gray-100 flex flex-wrap gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
+            <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
               {filterStatus !== 'all' && (
                 <button onClick={() => setFilterStatus('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#d97706' }}>Status: {filterStatus} ✕</button>

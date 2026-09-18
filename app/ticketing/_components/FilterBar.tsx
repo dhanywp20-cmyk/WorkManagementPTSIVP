@@ -64,7 +64,7 @@ export function FilterBar({
   return (
     <>
       {/* Header with title and actions */}
-      <div className="flex flex-wrap items-center justify-between px-6 py-4 border-b" style={{ borderBottom: "1px solid rgba(0,0,0,0.07)" }}>
+      <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-6 sm:py-4 border-b" style={{ borderBottom: "1px solid rgba(0,0,0,0.07)" }}>
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Ticket List</span>
           <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{ticketsLoading ? "..." : filteredTickets.length}</span>
@@ -99,10 +99,10 @@ export function FilterBar({
       </div>
 
       {/* Integrated search filters row - like the image */}
-      <div className="px-6 py-3 border-b border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+      <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3">
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Project / Location</label>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Location</label>
             <div className="relative">
               <Ico name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input aria-label="Search project / lokasi..."
@@ -110,12 +110,12 @@ export function FilterBar({
                 value={searchProject}
                 onChange={(e) => setSearchProject(e.target.value)}
                 placeholder="Search project / lokasi..."
-                className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
               />
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Search Sales Name</label>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales Name</label>
             <div className="relative">
               <Ico name="user" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input aria-label="Search sales name..."
@@ -123,12 +123,12 @@ export function FilterBar({
                 value={searchSalesName}
                 onChange={(e) => setSearchSalesName(e.target.value)}
                 placeholder="Search sales name..."
-                className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
               />
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Product</label>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Product</label>
             <div className="relative">
               <Ico name="package" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input aria-label="Cari product..."
@@ -136,18 +136,18 @@ export function FilterBar({
                 value={searchProduct}
                 onChange={(e) => { setSearchProduct(e.target.value); setProductFilter(null); }}
                 placeholder="Cari product..."
-                className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
               />
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Team Handler</label>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
             <div className="relative">
               <Ico name="users" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <select aria-label="All Handlers"
                 value={handlerFilter || ""}
                 onChange={(e) => setHandlerFilter(e.target.value || null)}
-                className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
                 <option value="">All Handlers</option>
                 {teamMembers.filter(m => m.team_type?.startsWith(`Team ${selectedHandlerTeam}`)).map((m) => (
@@ -158,13 +158,13 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status</label>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
             <div className="relative">
               <Ico name="tag" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <select aria-label="All Status"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
                 <option value="All">All Status</option>
                 <option value="Waiting Approval">⏳ Waiting Approval</option>
@@ -184,13 +184,13 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Filter Year</label>
+            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
             <div className="relative">
               <Ico name="calendar" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <select aria-label="All Years"
                 value={filterYear}
                 onChange={(e) => setFilterYear(e.target.value)}
-                className="w-full rounded-xl pl-8 pr-4 py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
                 {/*  Label jujur: pilihan ini TIDAK memuat semua tahun - server
                      membatasinya 12 bulan terakhir (lihat rentangTiket). Menyebutnya
@@ -207,7 +207,7 @@ export function FilterBar({
 
       {/* Bulk delete bar — admin only, selectMode only */}
       {selectMode && canManageTickets && selectedIds.size > 0 && (
-        <div className="px-6 py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(220,38,38,0.07)' }}>
+        <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(220,38,38,0.07)' }}>
           <span className="text-sm font-bold text-red-700">{selectedIds.size} ticket dipilih</span>
           <div className="flex items-center gap-2">
             <button onClick={() => setSelectedIds(new Set())}
@@ -223,7 +223,7 @@ export function FilterBar({
 
       {/* ── Filter Aktif chips — posisi di bawah filter bar ── */}
       {(filterStatus !== "All" || handlerFilter || salesDivisionFilter || productFilter || searchProject || searchSalesName || searchProduct) && (
-        <div className="px-6 py-2.5 border-b border-gray-100 flex flex-wrap gap-2 items-center" style={{ background: "rgba(255,255,255,0.97)" }}>
+        <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: "rgba(255,255,255,0.97)" }}>
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
           {filterStatus !== "All" && (
             <button onClick={() => setFilterStatus("All")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#d97706" }}>Status: {filterStatus} ✕</button>

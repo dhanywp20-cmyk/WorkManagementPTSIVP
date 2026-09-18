@@ -441,7 +441,7 @@ function ProjectProgressPageInner() {
 
             {/* ── Ringkasan semua project ── */}
             {projects.length > 0 && (
-              <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 xl:grid-cols-3 gap-1.5 sm:gap-3">
                 <MiniPieChart data={projectStatusBreakdown(projects)}
                   title="Distribusi Status Project" icon="📁" />
                 {/* Nilai = persentase, jadi total slice tidak bermakna → pusat
