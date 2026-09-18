@@ -201,7 +201,7 @@ export function TicketListBody({
           {/* Header menempel saat digulir: daftar tiket bisa panjang, dan tanpa ini
               pembaca kehilangan acuan kolom begitu baris pertama lewat layar. */}
           <thead className="sticky top-0 z-10">
-            <tr className="border-b border-slate-200" style={{ background: "#f8fafc" }}>
+            <tr className="border-b-2 border-rose-100" style={{ background: "linear-gradient(180deg,#fafbfc,#f4f5f7)" }}>
               <th className="px-2 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                 {selectMode && canManageTickets
                   ? <input type="checkbox"
@@ -228,7 +228,7 @@ export function TicketListBody({
               const isSolvedOverdue = overdue && ticket.status === "Solved";
               const isActiveOverdue = overdue && ticket.status !== "Solved";
               return (
-                <tr key={ticket.id} className={`stagger-item border-b border-gray-100 hover:bg-gray-50/70 transition-colors ${isActiveOverdue ? "bg-red-50 border-l-4 border-l-red-400" : isSolvedOverdue ? "bg-purple-50/60 border-l-4 border-l-purple-300" : ""}`}>
+                <tr key={ticket.id} className={`stagger-item border-b border-gray-100 hover:bg-rose-50/50 transition-colors ${isActiveOverdue ? "bg-red-50 border-l-4 border-l-red-400" : isSolvedOverdue ? "bg-purple-50/60 border-l-4 border-l-purple-300" : ""}`}>
                   <td className="px-2 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
                     {selectMode && canManageTickets
                       ? <input type="checkbox" checked={selectedIds.has(ticket.id)}
@@ -318,9 +318,9 @@ export function TicketListBody({
                   </td>
                   <td className="px-3 py-3 align-middle py-4">
                     <div className="flex flex-col gap-1 items-start">
-                      <span className={`px-2 py-0.5 text-xs font-bold ${ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}`}>{ticket.status === "Waiting Approval" ? "⏳ Waiting Approval" : ticket.status}</span>
-                      {overdue && <span className={`px-2 py-0.5 text-xs font-bold ${ticket.status === "Solved" ? "bg-purple-100 text-purple-800 border-purple-400" : statusColors["Overdue"]}`}>{ticket.status === "Solved" ? "⚠️ Solved Overdue" : "🚨 Overdue"}</span>}
-                      {ticket.services_status && <span className={`px-2 py-0.5 text-xs font-bold ${statusColors[ticket.services_status]}`}>Svc: {ticket.services_status}</span>}
+                      <span className={`px-2 py-0.5 rounded text-xs font-bold ${ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}`}>{ticket.status === "Waiting Approval" ? "⏳ Waiting Approval" : ticket.status}</span>
+                      {overdue && <span className={`px-2 py-0.5 rounded text-xs font-bold ${ticket.status === "Solved" ? "bg-purple-100 text-purple-800 border-purple-400" : statusColors["Overdue"]}`}>{ticket.status === "Solved" ? "⚠️ Solved Overdue" : "🚨 Overdue"}</span>}
+                      {ticket.services_status && <span className={`px-2 py-0.5 rounded text-xs font-bold ${statusColors[ticket.services_status]}`}>Svc: {ticket.services_status}</span>}
                       {ticket.status === "Onsite" && (
                         <button
                           onClick={e => { e.stopPropagation(); router.push('/reminder-schedule'); }}
