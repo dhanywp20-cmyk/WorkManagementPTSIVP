@@ -540,7 +540,25 @@ function ReminderSchedulePageInner() {
     */
     const perlakukanSebagaiGuest = activeUser?.role === 'guest' || activeUser?.role === 'sales';
     if (!activeUser || !perlakukanSebagaiGuest) {
-      const { data, error } = await supabase.from('reminders').select('*').order('created_at', { ascending: false }).limit(500);
+      /*
+        H1 (audit): dulu limit(500) TANPA batas tanggal apa pun - begitu total
+        baris reminders lewat 500, sisanya diam-diam tidak pernah terambil.
+        Beda dengan Ticketing (jendela bergulir 12 bulan), halaman ini
+        menyaring Filter Tahun di client dari SELURUH baris yang sudah
+        ter-fetch - membatasi query ke jendela tanggal akan membuat tahun lama
+        tampak kosong padahal datanya ada. Jadi dihitung dulu total barisnya
+        supaya limit fetch selalu cukup (dibatasi MAKS_REMINDERS supaya tidak
+        menarik data tak terbatas kalau suatu saat membengkak jauh - kalau
+        sampai kejadian, dicatat lewat console, bukan diam-diam terpotong
+        seperti sebelumnya).
+      */
+      const { count } = await supabase.from('reminders').select('id', { count: 'exact', head: true });
+      const MAKS_REMINDERS = 5000;
+      const batasAmbil = Math.min(Math.max(500, count ?? 0), MAKS_REMINDERS);
+      if ((count ?? 0) > MAKS_REMINDERS) {
+        console.error(`[reminder-schedule] total reminders (${count}) melebihi batas aman ${MAKS_REMINDERS} - sebagian data terlama tidak ikut termuat.`);
+      }
+      const { data, error } = await supabase.from('reminders').select('*').order('created_at', { ascending: false }).limit(batasAmbil);
       if (error) throw new Error(error.message);
       const all = (data as Reminder[]) ?? [];
       if (!activeUser) return all;
