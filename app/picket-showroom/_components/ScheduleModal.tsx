@@ -65,19 +65,34 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
       for(const [wk,ws] of [[wk1,weekStart],[wk2,week2Start]] as [string,Date][]){
         for(const day of DAYS_OF_WEEK){
           const uid=assign[wk]?.[day]||'';
+          const existing=existingMap.get(`${wk}__${day}`);
 
-          // FIX #1: Skip hari "- Belum -" - jangan timpa data existing dengan null
-          if(!uid) continue;
+          if(!uid){
+            /*
+              H2 (audit): dulu baris "— Belum —" SELALU dilewati (continue),
+              termasuk untuk hari yang SUDAH punya PIC tersimpan di DB - jadi
+              admin tidak pernah bisa mengosongkan PIC yang sudah di-set,
+              cuma bisa menggantinya dengan nama lain. Sekarang dibedakan:
+              kalau baris ini memang sudah tersimpan di DB, "— Belum —"
+              berarti admin sengaja mengosongkannya - hapus barisnya. Kalau
+              belum pernah tersimpan (termasuk yang cuma pre-fill rolling di
+              layar, belum disimpan), tetap dilewati seperti sebelumnya -
+              supaya hari yang belum disentuh tidak tertimpa baris kosong.
+            */
+            if(existing){
+              const{error:delErr}=await supabase.from('piket_schedules').delete().eq('id',existing.id);
+              if(delErr){notify('error',`Gagal mengosongkan PIC ${day} ${wk}: ${delErr.message}`);setSaving(false);return;}
+            }
+            continue;
+          }
 
           const u=users.find(x=>x.id===uid);
 
-          // FIX #2: Skip jika user tidak ditemukan - jangan simpan row rusak
+          // Skip jika user tidak ditemukan - jangan simpan row rusak
           if(!u){
             console.warn(`[ScheduleModal] User not found for id: "${uid}", skipping ${day} ${wk}`);
             continue;
           }
-
-          const existing=existingMap.get(`${wk}__${day}`);
 
           const payload: Record<string,any> = {
             week_start:wk,

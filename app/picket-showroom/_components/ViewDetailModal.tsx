@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { PiketRow, KegiatanEntry, DAY_COLOR, TEAM_LABEL, KEGIATAN_COLORS } from './shared';
+import { PiketRow, KegiatanEntry, DAY_COLOR, TEAM_LABEL, DEFAULT_TEAM_COLOR, KEGIATAN_COLORS, bacaPicPiket } from './shared';
+import { labelKelompokPTS } from '@/lib/kelompok';
 import { ModalPortal } from '@/components/shared';
 
 export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{row:PiketRow;kegiatanList:KegiatanEntry[];currentUser?:any;onClose:()=>void;onEdit?:()=>void}) {
@@ -9,11 +10,11 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
   const kgs=kegiatanList.filter(k=>k.piket_id===row.id);
   const dateLabel=new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-  const picList=([
-    [row.pic_ivp_name,'PTS IVP'],
-    [row.pic_ump_name,'PTS UMP'],
-    [row.pic_mvi_name,'PTS MVI'],
-  ] as [string|null,string][]).filter(([n])=>!!n);
+  //  H4 (audit): dulu membaca 3 kolom lama langsung - PIC dari kelompok PTS
+  //  di luar IVP/UMP/MVI (tersimpan di kolom `pic` JSONB) tidak pernah
+  //  tampil di sini.
+  const picBaris=bacaPicPiket(row);
+  const picList=picBaris?[[picBaris.name,labelKelompokPTS(picBaris.team_type)||picBaris.team_type] as [string,string]]:[];
 
   const handleEditClick = () => {
     onEdit?.();
@@ -50,7 +51,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
             <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">👥 Petugas Piket (PIC)</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {picList.length>0?picList.map(([name,team])=>{
-                const tc=TEAM_LABEL[team];
+                const tc=TEAM_LABEL[team]??DEFAULT_TEAM_COLOR;
                 return(
                   <div key={team} className="flex items-center gap-3 p-4 rounded-xl transition-all"
                     style={{background:`${tc.dot}08`,border:`1.5px solid ${tc.dot}25`}}>

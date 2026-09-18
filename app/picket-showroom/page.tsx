@@ -10,7 +10,7 @@ import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
 import { bisaLihatSemuaTamu, bisaIsiKegiatan } from '@/lib/piket-akses';
 import {
   PiketRow, KegiatanEntry, UserRow, DayOfWeek,
-  DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL,
+  DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL, DEFAULT_TEAM_COLOR,
   JENIS_KEGIATAN_LIST, KEGIATAN_COLORS, PIE_COLORS,
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
   bacaPicPiket, tulisPicPiket,
@@ -481,7 +481,10 @@ function PiketShowroomPageInner() {
               const todayName=DAYS_OF_WEEK[todayDow-1];
               const todayDc=isWeekday&&todayName?DAY_COLOR[todayName]:null;
               const todayInView=displayRows.find(r=>r.day_date===toKey(now));
-              const todayPIC=todayInView?[todayInView.pic_ivp_name,todayInView.pic_ump_name,todayInView.pic_mvi_name].filter(Boolean).join(' / ')||'Belum ada PIC':null;
+              //  H4 (audit): dulu membaca 3 kolom lama langsung - PIC dari
+              //  kelompok PTS di luar IVP/UMP/MVI (tersimpan di kolom `pic`
+              //  JSONB lewat bacaPicPiket) tidak pernah muncul di sini.
+              const todayPIC=todayInView?(bacaPicPiket(todayInView)?.name||'Belum ada PIC'):null;
               if(!isWeekday)return null;
               return(
                 <div className="mx-4 mb-3 mt-1 flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{background:`${todayDc?.accent||'#dc2626'}10`,border:`1px solid ${todayDc?.accent||'#dc2626'}30`}}>
@@ -513,8 +516,11 @@ function PiketShowroomPageInner() {
                   const dc=DAY_COLOR[row.day_of_week];
                   const todayRow=row.day_date===toKey(new Date());
                   const isHoliday=holidays.includes(row.day_date);
-                  const pics=([['pic_ivp_name','PTS IVP'],['pic_ump_name','PTS UMP'],['pic_mvi_name','PTS MVI']] as [keyof PiketRow,string][])
-                    .map(([f,team])=>({team,name:row[f] as string|null})).filter(p=>p.name);
+                  //  H4 (audit): dulu membaca 3 kolom lama langsung, jadi PIC
+                  //  dari kelompok PTS di luar IVP/UMP/MVI (tersimpan di kolom
+                  //  `pic` JSONB) tidak pernah tampil di sini.
+                  const picBaris=bacaPicPiket(row);
+                  const pics=picBaris?[{team:labelKelompokPTS(picBaris.team_type)||picBaris.team_type,name:picBaris.name}]:[];
                   return (
                     <div key={row.id} className={`px-4 py-3 flex items-start gap-3 ${todayRow?'bg-green-50/60':''}`}>
                       <div className="flex flex-col items-center w-11 flex-shrink-0" style={{color:dc.accent}}>
@@ -607,20 +613,29 @@ function PiketShowroomPageInner() {
                               {/* PIC — tambah keterangan tim */}
                               <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>
                                 <div className="space-y-1.5">
-                                  {([['pic_ivp_name','PTS IVP'],['pic_ump_name','PTS UMP'],['pic_mvi_name','PTS MVI']] as [keyof PiketRow,string][]).map(([f,team])=>{
-                                    const name=row[f] as string|null;if(!name)return null;
-                                    const tc=TEAM_LABEL[team];
+                                  {/*
+                                    H4 (audit): dulu membaca 3 kolom lama langsung -
+                                    PIC dari kelompok PTS di luar IVP/UMP/MVI
+                                    (tersimpan di kolom `pic` JSONB) tidak pernah
+                                    tampil, dan `tc.dot` tanpa cadangan warna akan
+                                    membuat baris ini crash kalau nama timnya tidak
+                                    ada di TEAM_LABEL.
+                                  */}
+                                  {(()=>{
+                                    const picBaris=bacaPicPiket(row);
+                                    if(!picBaris) return <span className="text-gray-300 text-xs">—</span>;
+                                    const team=labelKelompokPTS(picBaris.team_type)||picBaris.team_type;
+                                    const tc=TEAM_LABEL[team]??DEFAULT_TEAM_COLOR;
                                     return(
-                                      <div key={team} className="flex items-center gap-1.5">
-                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{name.charAt(0).toUpperCase()}</div>
+                                      <div className="flex items-center gap-1.5">
+                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{picBaris.name.charAt(0).toUpperCase()}</div>
                                         <div className="min-w-0">
-                                          <p className="text-[13px] font-semibold text-slate-800 truncate leading-tight">{name}</p>
+                                          <p className="text-[13px] font-semibold text-slate-800 truncate leading-tight">{picBaris.name}</p>
                                           <span className="text-[8px] font-bold uppercase" style={{color:tc.text}}>{team}</span>
                                         </div>
                                       </div>
                                     );
-                                  })}
-                                  {![row.pic_ivp_name,row.pic_ump_name,row.pic_mvi_name].some(Boolean)&&<span className="text-gray-300 text-xs">—</span>}
+                                  })()}
                                 </div>
                               </td>
                             </>

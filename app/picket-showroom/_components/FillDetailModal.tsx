@@ -89,9 +89,22 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
         disisipkan di bawah. Kalau RLS menolak diam-diam (0 baris, tanpa
         galat) dan insert-nya tetap jalan, hasilnya BUKAN "tersimpan ulang" -
         entri lama dan baru sama-sama ada, dobel.
+
+        H3 (audit): dulu cuma galat eksplisit yang diperiksa - delete yang
+        ditolak RLS diam-diam (0 dari N baris terhapus, tanpa galat) tetap
+        lolos ke insert di bawah, jadi baris lama tetap nyangkut jadi
+        duplikat. Dihitung dulu berapa baris yang SEHARUSNYA ada sebelum
+        delete (pola sama seperti saveTeamEntries di Daily Report), supaya
+        "terhapus kurang dari seharusnya" bisa dibedakan dari "memang belum
+        pernah ada data" dan dibatalkan sebelum sempat dobel.
       */
-      const{error:delErr}=await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id).select('id');
+      const{count:jumlahSebelum}=await supabase.from('piket_tamu_detail')
+        .select('id',{count:'exact',head:true}).eq('piket_id',row.id);
+      const{data:terhapus,error:delErr}=await supabase.from('piket_tamu_detail').delete().eq('piket_id',row.id).select('id');
       if(delErr) throw delErr;
+      if((jumlahSebelum??0)>0&&(terhapus?.length??0)<(jumlahSebelum??0)){
+        throw new Error('Data lama gagal dibersihkan sepenuhnya (kemungkinan ditolak akses). Tidak disimpan ulang supaya tidak dobel - coba lagi atau hubungi admin.');
+      }
       const editedByName=currentUser?.full_name||null;
       const now=new Date().toISOString();
       // id kegiatan dibuat di client agar bisa langsung dipakai sebagai kegiatan_id produk_lain

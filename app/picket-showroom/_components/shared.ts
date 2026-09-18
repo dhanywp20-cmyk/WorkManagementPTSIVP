@@ -19,6 +19,15 @@ export const TEAM_LABEL: Record<string,{dot:string;text:string}> = {
   'PTS MVI': {dot:'#7c3aed',text:'#6d28d9'},
 };
 
+/**
+ * Warna cadangan untuk kelompok PTS di luar 3 nama di atas (mis. kelompok
+ * baru yang ditambahkan admin lewat Admin Panel  Kelompok). Tanpa ini,
+ * `TEAM_LABEL[team]` bernilai undefined dan mengakses `.dot`/`.text`
+ * langsung (tanpa `?.`) di beberapa tempat akan membuat halaman crash,
+ * bukan sekadar tampil tanpa warna.
+ */
+export const DEFAULT_TEAM_COLOR = {dot:'#64748b',text:'#475569'};
+
 export const KEBUTUHAN_LIST = [
   'Meeting Room','Auditorium','Command Center','Digital Signage Kiosk',
   'Digital Signage Custom','Paging System','Background Music','Signage LED Outdoor',

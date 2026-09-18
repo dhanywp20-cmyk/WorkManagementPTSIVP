@@ -1,5 +1,6 @@
 import { loadXLSX } from '@/lib/xlsx-loader';
-import { PiketRow, KegiatanEntry } from './shared';
+import { PiketRow, KegiatanEntry, bacaPicPiket } from './shared';
+import { labelKelompokPTS } from '@/lib/kelompok';
 
 export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], periodLabel?:string) {
   const runExport = (XLSX:any) => {
@@ -157,10 +158,13 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       }
 
       // Statistik PIC
+      //  H4 (audit): dulu membaca 3 kolom lama langsung - PIC dari kelompok
+      //  PTS di luar IVP/UMP/MVI (tersimpan di kolom `pic` JSONB) tidak
+      //  pernah ikut terhitung di sini.
       const picMap:Record<string,number>={};
       sorted.forEach(r=>{
-        const names=[r.pic_ivp_name,r.pic_ump_name,r.pic_mvi_name].filter(Boolean) as string[];
-        names.forEach(n=>{picMap[n]=(picMap[n]||0)+1;});
+        const p=bacaPicPiket(r);
+        if(p?.name) picMap[p.name]=(picMap[p.name]||0)+1;
       });
       const picArr = Object.entries(picMap).sort(([,a],[,b])=>b-a);
       if(picArr.length>0){
@@ -216,9 +220,13 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const toR=kgs.length>0?kgs:[null];
         const dateObj=new Date(piket.day_date+'T00:00:00');
         const dateStr=dateObj.toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-        const picNames=[piket.pic_ivp_name,piket.pic_ump_name,piket.pic_mvi_name].filter(Boolean).join(' / ')||'-';
-        const picTeams=[piket.pic_ivp_name?'PTS IVP':'',piket.pic_ump_name?'PTS UMP':'',piket.pic_mvi_name?'PTS MVI':''].filter(Boolean).join(' / ')||'-';
-        const teamKey=piket.pic_ivp_name?'PTS IVP':piket.pic_ump_name?'PTS UMP':'PTS MVI';
+        //  H4 (audit): dulu membaca 3 kolom lama langsung - PIC dari
+        //  kelompok PTS di luar IVP/UMP/MVI (kolom `pic` JSONB) tidak
+        //  pernah muncul di ekspor ini.
+        const picInfoRow=bacaPicPiket(piket);
+        const picNames=picInfoRow?.name||'-';
+        const teamKey=picInfoRow?(labelKelompokPTS(picInfoRow.team_type)||picInfoRow.team_type):'';
+        const picTeams=teamKey||'-';
         toR.forEach((kg,ki)=>{
           const rs = rowIdx%2===0?cellStyle:altStyle;
           const ctrStyle = {...rs,alignment:{horizontal:'center',vertical:'center'}};
@@ -269,7 +277,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const rs=i%2===0?cellStyle:altStyle;
         const ctrStyle={...rs,alignment:{horizontal:'center',vertical:'center'}};
         const dateStr=new Date(piket.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-        const picNames=[piket.pic_ivp_name,piket.pic_ump_name,piket.pic_mvi_name].filter(Boolean).join(' / ')||'-';
+        const picNames=bacaPicPiket(piket)?.name||'-';
         data.push([
           ctr(i+1,ctrStyle),
           cell(dateStr,rs),
@@ -308,7 +316,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const rs=i%2===0?cellStyle:altStyle;
         const ctrStyle={...rs,alignment:{horizontal:'center',vertical:'center'}};
         const dateStr=new Date(piket.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-        const picNames=[piket.pic_ivp_name,piket.pic_ump_name,piket.pic_mvi_name].filter(Boolean).join(' / ')||'-';
+        const picNames=bacaPicPiket(piket)?.name||'-';
         data.push([
           ctr(i+1,ctrStyle),
           cell(dateStr,rs),
@@ -358,7 +366,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
         const rs=i%2===0?cellStyle:altStyle;
         const ctrStyle={...rs,alignment:{horizontal:'center',vertical:'center'}};
         const dateStr=new Date(r.piket.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
-        const picNames=[r.piket.pic_ivp_name,r.piket.pic_ump_name,r.piket.pic_mvi_name].filter(Boolean).join(' / ')||'-';
+        const picNames=bacaPicPiket(r.piket)?.name||'-';
         const dur=hoursBetween(r.kg.jam_mulai,r.kg.jam_selesai);
         const wh=Math.round(r.watt*dur);
         totalWatt+=r.watt; totalWh+=wh;
