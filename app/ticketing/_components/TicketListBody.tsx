@@ -317,10 +317,19 @@ export function TicketListBody({
                     })()}
                   </td>
                   <td className="px-3 py-3 align-middle py-4">
-                    <div className="flex flex-col gap-1 items-start">
-                      <span className={`px-2.5 py-1 rounded-full border text-[11px] font-bold whitespace-nowrap ${ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}`}>{ticket.status === "Waiting Approval" ? "⏳ Waiting Approval" : ticket.status}</span>
-                      {overdue && <span className={`px-2.5 py-1 rounded-full border text-[11px] font-bold whitespace-nowrap ${ticket.status === "Solved" ? "bg-purple-100 text-purple-800 border-purple-400" : statusColors["Overdue"]}`}>{ticket.status === "Solved" ? "⚠️ Solved Overdue" : "🚨 Overdue"}</span>}
-                      {ticket.services_status && <span className={`px-2.5 py-1 rounded-full border text-[11px] font-bold whitespace-nowrap ${statusColors[ticket.services_status]}`}>Svc: {ticket.services_status}</span>}
+                    <div className="flex flex-col gap-1 items-start max-w-full">
+                      {/*  TANPA whitespace-nowrap: kolom Status cuma ~7% dari tabel
+                          (sekitar 77px pada minWidth 1100px) - jauh lebih sempit
+                          dari teks "Solved Overdue". Sebelumnya badge boleh
+                          membungkus ke baris kedua sehingga tetap di dalam
+                          selnya; menambah whitespace-nowrap membuatnya
+                          meluber ke kolom sebelah (itulah yang bikin tabel
+                          "hancur"). Rounded-full + padding tetap dipakai
+                          untuk bentuk pil, tapi lebar pilnya sekarang mengikuti
+                          selnya (max-w-full) alih-alih memaksa satu baris. */}
+                      <span className={`inline-block max-w-full px-2 py-0.5 rounded-full border text-[10.5px] font-bold leading-tight ${ticket.status === "Waiting Approval" ? statusColors["Waiting Approval"] : statusColors[ticket.status] || statusColors["Pending"]}`}>{ticket.status === "Waiting Approval" ? "⏳ Waiting Approval" : ticket.status}</span>
+                      {overdue && <span className={`inline-block max-w-full px-2 py-0.5 rounded-full border text-[10.5px] font-bold leading-tight ${ticket.status === "Solved" ? "bg-purple-100 text-purple-800 border-purple-400" : statusColors["Overdue"]}`}>{ticket.status === "Solved" ? "⚠️ Solved Overdue" : "🚨 Overdue"}</span>}
+                      {ticket.services_status && <span className={`inline-block max-w-full px-2 py-0.5 rounded-full border text-[10.5px] font-bold leading-tight ${statusColors[ticket.services_status]}`}>Svc: {ticket.services_status}</span>}
                       {ticket.status === "Onsite" && (
                         <button
                           onClick={e => { e.stopPropagation(); router.push('/reminder-schedule'); }}
