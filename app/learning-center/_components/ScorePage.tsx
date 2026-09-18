@@ -138,7 +138,7 @@ export function ScorePage({ user }: { user: User }) {
           {summaryCards.map(c => (
             <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-5 text-white shadow-lg`}>
               <div className="text-3xl mb-2">{c.icon}</div>
-              <div className="text-3xl font-black">{c.value}</div>
+              <div className="text-xl sm:text-3xl font-black">{c.value}</div>
               <div className="text-white/80 text-sm font-medium mt-1">{c.label}</div>
             </div>
           ))}
@@ -192,7 +192,7 @@ export function ScorePage({ user }: { user: User }) {
               <div className={`grid grid-cols-1 ${pakaiDivisi ? 'sm:grid-cols-2' : ''} gap-3 mb-3`}>
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
                   <div className="text-xl mb-0.5">🏆</div>
-                  <div className="text-2xl font-black text-indigo-700">{myRank > 0 ? `#${myRank}` : '—'}</div>
+                  <div className="text-lg sm:text-2xl font-black text-indigo-700">{myRank > 0 ? `#${myRank}` : '—'}</div>
                   <p className="text-xs text-slate-500 mt-1">
                     {rankTotal ? `dari ${rankTotal} peserta ${user.role}` : 'Belum ada data'}
                   </p>
@@ -211,7 +211,7 @@ export function ScorePage({ user }: { user: User }) {
                 {pakaiDivisi && (
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
                   <div className="text-xl mb-0.5">🏢</div>
-                  <div className="text-2xl font-black text-indigo-700">
+                  <div className="text-lg sm:text-2xl font-black text-indigo-700">
                     {peringkat?.divisiRank ? `#${peringkat.divisiRank}` : '—'}
                   </div>
                   <p className="text-xs text-slate-500 mt-1">

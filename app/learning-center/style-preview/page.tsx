@@ -432,7 +432,7 @@ export default function MateriStylePreview() {
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-lg shadow-lg">🎨</div>
           <div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Style Preview — Materi Training</h1>
+            <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight">Style Preview — Materi Training</h1>
             <p className="text-slate-400 text-sm">Klik tab untuk melihat masing-masing style. Semua komponen bisa diklik / diinteraksi.</p>
           </div>
         </div>

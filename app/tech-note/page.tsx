@@ -83,7 +83,7 @@ function TechNoteKPISummary({ technotes, currentUser, year }:
           ].map(c => (
             <div key={c.label} className="rounded-xl p-3 text-center border shadow-sm"
               style={{ background: c.bg, borderColor: c.border }}>
-              <div className="text-2xl font-black" style={{ color: c.color }}>{c.value}</div>
+              <div className="text-lg sm:text-2xl font-black" style={{ color: c.color }}>{c.value}</div>
               <div className="text-[11px] text-slate-500 font-medium mt-0.5">{c.label}</div>
             </div>
           ))}
@@ -104,11 +104,11 @@ function TechNoteKPISummary({ technotes, currentUser, year }:
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl p-3 text-center border shadow-sm" style={{ borderColor:'#d1fae5' }}>
-          <div className="text-2xl font-black text-emerald-600">{approvedCount}</div>
+          <div className="text-lg sm:text-2xl font-black text-emerald-600">{approvedCount}</div>
           <div className="text-[11px] text-slate-500 font-medium mt-0.5">Approved (Semua Tim)</div>
         </div>
         <div className="rounded-xl p-3 text-center border shadow-sm" style={{ borderColor:'#fef3c7' }}>
-          <div className="text-2xl font-black text-amber-600">{myPendingCount}</div>
+          <div className="text-lg sm:text-2xl font-black text-amber-600">{myPendingCount}</div>
           <div className="text-[11px] text-slate-500 font-medium mt-0.5">Milik Saya — Pending</div>
         </div>
       </div>

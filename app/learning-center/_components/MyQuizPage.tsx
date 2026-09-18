@@ -452,7 +452,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           {result.pendingReview ? (
             <>
               <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl bg-amber-100">⏳</div>
-              <h2 className="text-2xl font-black text-slate-800 mb-1">Jawaban Terkirim</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-1">Jawaban Terkirim</h2>
               <p className="text-slate-500 text-sm mb-6">{session.session_name}</p>
               <p className="text-sm text-slate-600 leading-relaxed mb-8">
                 Ini adalah quiz essay. Jawabanmu sudah tersimpan dan akan dinilai manual oleh admin.
@@ -468,9 +468,9 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           <div className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl ${result.passed ? 'bg-emerald-100' : 'bg-rose-100'}`}>
             {result.passed ? '🎉' : '😔'}
           </div>
-          <h2 className="text-2xl font-black text-slate-800 mb-1">{result.passed ? 'Selamat, Lulus!' : 'Belum Lulus'}</h2>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-1">{result.passed ? 'Selamat, Lulus!' : 'Belum Lulus'}</h2>
           <p className="text-slate-500 text-sm mb-8">{session.session_name}</p>
-          <div className={`text-7xl font-black mb-1 ${result.passed ? 'text-emerald-500' : 'text-rose-500'}`}>{result.score.toFixed(0)}</div>
+          <div className={`text-5xl sm:text-7xl font-black mb-1 ${result.passed ? 'text-emerald-500' : 'text-rose-500'}`}>{result.score.toFixed(0)}</div>
           <p className="text-slate-400 text-sm mb-2">dari 100 poin</p>
           <div className="flex justify-center gap-4 text-xs text-slate-500 mb-8">
             <span className="bg-slate-100 px-3 py-1.5 rounded-lg font-semibold">✓ {result.correct}/{questions.length} benar</span>

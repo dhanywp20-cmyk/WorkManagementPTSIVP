@@ -58,7 +58,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
               ].map(s => (
                 <div key={s.label} className="flex flex-col items-center p-2.5 rounded-xl"
                   style={{ background: `${s.c}12` }}>
-                  <span className="text-2xl font-black leading-none" style={{ color: s.c }}>{s.value}</span>
+                  <span className="text-lg sm:text-2xl font-black leading-none" style={{ color: s.c }}>{s.value}</span>
                   <span className="text-[10px] text-slate-400 mt-0.5 text-center leading-tight">{s.label}</span>
                 </div>
               ))}
@@ -113,7 +113,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
               ].map(s => (
                 <div key={s.label} className="flex flex-col items-center p-2.5 rounded-xl"
                   style={{ background: `${s.c}12` }}>
-                  <span className="text-2xl font-black leading-none" style={{ color: s.c }}>{s.value}</span>
+                  <span className="text-lg sm:text-2xl font-black leading-none" style={{ color: s.c }}>{s.value}</span>
                   <span className="text-[10px] text-slate-400 mt-0.5 text-center leading-tight">{s.label}</span>
                 </div>
               ))}
@@ -124,7 +124,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
           <section>
             <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">🏪 Piket Showroom</p>
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-black" style={{ color: '#0d9488' }}>{member.piketFilled}</span>
+              <span className="text-xl sm:text-3xl font-black" style={{ color: '#0d9488' }}>{member.piketFilled}</span>
               <span className="text-[11px] text-slate-500">hari piket pada periode ini</span>
             </div>
           </section>
@@ -168,7 +168,7 @@ export function SummaryCard({ icon, label, value, sub, color, trend, lowerIsBett
         <span className="text-sm">{icon}</span>
         <span className="text-[11px] font-bold uppercase tracking-widest truncate" style={{ color: 'rgba(0,0,0,0.38)' }}>{label}</span>
       </div>
-      <div className="text-2xl font-black leading-none tracking-tight" style={{ color }}>{value}</div>
+      <div className="text-lg sm:text-2xl font-black leading-none tracking-tight" style={{ color }}>{value}</div>
       <div className="flex items-center justify-between gap-1 min-h-[14px]">
         {sub && <span className="text-[10px] text-slate-400 truncate">{sub}</span>}
         {trend !== undefined && <TrendBadge delta={trend} lowerIsBetter={lowerIsBetter} />}

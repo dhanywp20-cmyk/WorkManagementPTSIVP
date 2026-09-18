@@ -335,7 +335,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
             </div>
             <div className="flex gap-2.5 flex-shrink-0">
               <div className="rounded-xl px-4 py-2.5 text-center min-w-[76px]" style={{ background: 'rgba(0,0,0,0.22)' }}>
-                <p className="text-2xl font-black text-white leading-none">{menuAktif.length}</p>
+                <p className="text-lg sm:text-2xl font-black text-white leading-none">{menuAktif.length}</p>
                 <p className="text-[9px] font-bold uppercase tracking-widest text-rose-200/80 mt-1">Modul</p>
               </div>
               <div className="rounded-xl px-4 py-2.5 text-center min-w-[76px]" style={{ background: 'rgba(250,204,21,0.9)' }}>

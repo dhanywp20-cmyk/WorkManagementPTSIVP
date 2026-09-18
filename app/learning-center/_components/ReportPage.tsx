@@ -157,7 +157,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-4">
                   {cards.map(c => (
                     <div key={c.label} className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-center">
-                      <div className="text-2xl font-black text-slate-800">{c.value}</div>
+                      <div className="text-lg sm:text-2xl font-black text-slate-800">{c.value}</div>
                       <div className="text-xs text-slate-500 font-medium mt-1">{c.label}</div>
                     </div>
                   ))}

@@ -885,7 +885,7 @@ export default function Dashboard() {
                 <LogoMerek ukuran="lg" />
                 <span className="text-lg font-bold text-slate-800">{merek.namaPlatform} <span className="text-slate-400 font-normal">· {merek.namaPortal}</span></span>
               </div>
-              <h2 className="text-3xl font-bold text-slate-800 tracking-tight">{showRegister ? 'Buat Akun Baru' : 'Selamat Datang'}</h2>
+              <h2 className="text-xl sm:text-3xl font-bold text-slate-800 tracking-tight">{showRegister ? 'Buat Akun Baru' : 'Selamat Datang'}</h2>
               <p className="text-slate-500 text-sm mt-1.5">{showRegister ? 'Lengkapi data untuk mendaftar. Akun akan diverifikasi admin.' : 'Masuk ke akun Anda untuk melanjutkan'}</p>
             </div>
 

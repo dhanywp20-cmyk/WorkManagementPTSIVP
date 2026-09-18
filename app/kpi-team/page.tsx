@@ -1297,7 +1297,7 @@ export default function KPITeamPage() {
                   <div className="text-xs text-slate-400">{member.jabatan} · {member.team_type}</div>
                 </div>
                 <div className="flex flex-col items-end mr-1 flex-shrink-0">
-                  <div className="text-2xl font-black" style={{ color: c }}>{noData ? '—' : `${finalKPI}%`}</div>
+                  <div className="text-lg sm:text-2xl font-black" style={{ color: c }}>{noData ? '—' : `${finalKPI}%`}</div>
                   <div className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">KPI Score</div>
                 </div>
                 <button aria-label="Tutup" onClick={() => setSelectedKPIMember(null)}
@@ -1411,7 +1411,7 @@ export default function KPITeamPage() {
                     Target: <b className="text-slate-700">{_s.rndTarget} Tech Note approved</b> per tahun
                   </div>
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-2xl font-black" style={{ color: rndScore >= 1 ? '#059669' : '#dc2626' }}>{member.techNotesApproved}</span>
+                    <span className="text-lg sm:text-2xl font-black" style={{ color: rndScore >= 1 ? '#059669' : '#dc2626' }}>{member.techNotesApproved}</span>
                     <span className="text-[10px] text-slate-400 font-medium">/ {_s.rndTarget}</span>
                     <div className="h-2 flex-1 rounded-full bg-pink-100 overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, rndScore * 100)}%`, background: rndScore >= 1 ? '#10b981' : '#f472b6' }} />
@@ -1503,7 +1503,7 @@ export default function KPITeamPage() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end mr-1 flex-shrink-0">
-                  <div className="text-2xl font-black" style={{ color: c }}>{m.finalKPI}%</div>
+                  <div className="text-lg sm:text-2xl font-black" style={{ color: c }}>{m.finalKPI}%</div>
                   <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
                 </div>
                 <button aria-label="Tutup" onClick={() => setSelectedSnapMember(null)}

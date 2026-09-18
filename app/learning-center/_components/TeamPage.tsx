@@ -402,7 +402,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
               { label: 'Waktu', value: selectedAttempt.time_taken_sec ? `${Math.floor(selectedAttempt.time_taken_sec/60)}m ${selectedAttempt.time_taken_sec%60}s` : '—', color: 'from-indigo-500 to-indigo-600' },
             ].map(c => (
               <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-4 text-white shadow-lg text-center`}>
-                <div className="text-2xl font-black">{c.value}</div>
+                <div className="text-xl sm:text-2xl font-black">{c.value}</div>
                 <div className="text-white/80 text-xs font-medium mt-1">{c.label}</div>
               </div>
             ))}

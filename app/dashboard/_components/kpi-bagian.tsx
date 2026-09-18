@@ -166,7 +166,7 @@ export function StatCard({ icon, label, value, sub, color, sparkline, donut, loa
             <span className="text-[11px] font-semibold tracking-wide uppercase truncate" style={{ color:'rgba(0,0,0,0.4)' }}>{label}</span>
           </div>
           {loading ? <div className="h-7 w-16 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.08)' }}/> :
-            <div className="text-2xl font-black tracking-tight" style={{ color }}>{value}</div>}
+            <div className="text-lg sm:text-2xl font-black tracking-tight" style={{ color }}>{value}</div>}
           {sub && <div className="text-[11px] mt-0.5 truncate" style={{ color:'rgba(0,0,0,0.35)' }}>{sub}</div>}
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
