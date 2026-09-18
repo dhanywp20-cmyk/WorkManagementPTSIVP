@@ -109,7 +109,7 @@ export function TicketListBody({
   return (
     <>
       {/* ── MOBILE: Card view (hidden on md+) ── */}
-      <div className="md:hidden divide-y divide-gray-100">
+      <div className="md:hidden bg-gray-50/70 p-2.5 space-y-2.5">
         {paginatedTickets.map((ticket) => {
           const overdue = isTicketOverdue(ticket);
           const overdueSetting = getOverdueSetting(ticket.id);

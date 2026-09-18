@@ -771,7 +771,7 @@ export default function KPITeamPage() {
           </div>
 
           {/* ── MOBILE: kartu ringkas KPI per anggota (tap utk detail) ── */}
-          <div className="md:hidden divide-y divide-gray-100">
+          <div className="md:hidden bg-gray-50/70 p-2.5 space-y-2.5">
             {!loading && sortedMembers.length === 0 && (
               <ListEmptyState
                 adaFilterAktif={filterTeam !== 'all' || searchQ.trim() !== ''}

@@ -2045,7 +2045,7 @@ Hubungi Admin untuk info lebih lanjut.
           ) : (
             <>
             {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
-            <div className="md:hidden divide-y divide-gray-100">
+            <div className="md:hidden bg-gray-50/70 p-2.5 space-y-2.5">
               {filteredRequests.length === 0 && (
                 <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada request.</div>
               )}

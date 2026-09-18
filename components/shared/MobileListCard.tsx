@@ -8,8 +8,16 @@ import React from 'react';
  * (lokasi/tanggal), grid 2-kolom label:value, lalu baris ikon aksi.
  *
  * Dipakai agar SEMUA platform punya gaya kartu mobile yang sama. Bungkus dalam
- * `<div className="md:hidden divide-y divide-gray-100">` dan sembunyikan tabel
- * desktop dengan `hidden md:block`.
+ * `<div className="md:hidden bg-gray-50/70 p-2.5 space-y-2.5">` dan sembunyikan
+ * tabel desktop dengan `hidden md:block` - TIDAK menyentuh tampilan desktop
+ * sama sekali, keduanya cabang terpisah lewat Tailwind responsive prefix.
+ *
+ * Sebelumnya baris-baris ini rata dengan latar (divide-y tipis antar baris,
+ * tanpa jarak/elevasi) - terlihat seperti daftar spreadsheet yang dipadatkan,
+ * bukan kartu aplikasi mobile yang lazim (kartu terangkat dengan jarak &
+ * bayangan tipis di atas kanvas abu-abu, ikon kategori di kiri, blok detail
+ * yang disekat dari header). Diseragamkan ke bentuk itu di sini SEKALI -
+ * otomatis berlaku ke 8 modul yang memakai komponen ini.
  */
 
 export interface MobileCardField {
@@ -53,22 +61,24 @@ export function MobileListCard({
           onClick();
         }
       } : undefined}
-      className={`px-4 py-3.5 border-l-4 ${highlight ? 'bg-red-50/60' : ''} ${onClick ? 'active:bg-gray-50 cursor-pointer' : ''}`}
-      style={{ borderLeftColor: accent ?? 'transparent' }}
+      className={`rounded-2xl px-3.5 py-3 border shadow-sm transition-all ${
+        highlight ? 'bg-red-50/70 border-red-100' : 'bg-white border-gray-100'
+      } ${onClick ? 'active:scale-[0.985] active:shadow-none cursor-pointer' : ''}`}
+      style={accent ? { borderLeftWidth: 4, borderLeftColor: accent } : undefined}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             {titlePrefix}
-            <p className="font-bold text-sm text-gray-800 leading-tight break-words">{title}</p>
+            <p className="font-bold text-[13.5px] text-gray-800 leading-tight break-words">{title}</p>
           </div>
-          {meta && <div className="text-[10px] text-gray-400 mt-0.5 space-y-0.5">{meta}</div>}
+          {meta && <div className="text-[11px] text-gray-400 mt-1 space-y-0.5">{meta}</div>}
         </div>
         {badges && <div className="flex flex-col items-end gap-1 shrink-0">{badges}</div>}
       </div>
 
       {visibleFields.length > 0 && (
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2.5 text-xs">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-2.5 p-2.5 rounded-xl bg-gray-50/80 text-xs">
           {visibleFields.map((f, i) => (
             <div key={i} className={`truncate ${f.span2 ? 'col-span-2' : ''}`}>
               <span className="text-gray-400">{f.label}: </span>
@@ -79,7 +89,7 @@ export function MobileListCard({
       )}
 
       {actions && (
-        <div className="flex items-center gap-1.5 mt-3 flex-wrap" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-end gap-1.5 mt-2.5 pt-2.5 border-t border-gray-100 flex-wrap" onClick={e => e.stopPropagation()}>
           {actions}
         </div>
       )}
