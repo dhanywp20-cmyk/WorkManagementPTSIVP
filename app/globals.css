@@ -154,6 +154,51 @@ html {
   }
 }
 
+/* ── Baris tabel bergaya kartu ─────────────────────────────────────────────
+   Untuk tabel desktop yang ingin dibaca sebagai DAFTAR KARTU, bukan kisi
+   rapat - nuansanya disamakan dengan kartu daftar di ponsel: permukaan
+   putih, sudut membulat, pita warna di tepi kiri, dan jarak antar baris.
+
+   border-collapse HARUS separate. Dengan collapse (bawaan tabel), jarak
+   antar baris dan sudut membulat per baris TIDAK MUNGKIN ada - garis antar
+   sel dilebur jadi satu, itu sebabnya tabel biasa selalu terlihat rapat.
+
+   Latar dipasang di <td>, bukan <tr>: sudut membulat hanya berlaku pada
+   sel, jadi kalau latarnya di baris, warnanya tetap menyembul persegi di
+   pojok dan kartunya terlihat "kotak yang gagal bulat". Warna per baris
+   dioper lewat custom property supaya baris overdue cukup mengubah satu
+   nilai, bukan menimpa kelas di sepuluh sel.                              */
+.tabel-kartu {
+  border-collapse: separate;
+  border-spacing: 0 8px;
+}
+.tabel-kartu thead th {
+  background: linear-gradient(180deg, #ffffff, #f1f5f9);
+  border-bottom: 2px solid rgba(225, 29, 72, 0.15);
+}
+.tabel-kartu tbody td {
+  background: var(--bg-baris, #ffffff);
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+  /* Bayangan tegak lurus saja - sel-sel bersebelahan menyatukannya jadi
+     satu pita bayangan di bawah baris, bukan sepuluh bayangan terpisah. */
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+  transition: background-color .15s ease;
+}
+.tabel-kartu tbody td:first-child {
+  border-left: 3px solid var(--aksen-baris, #cbd5e1);
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+.tabel-kartu tbody td:last-child {
+  border-right: 1px solid rgba(15, 23, 42, 0.07);
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+.tabel-kartu tbody tr:hover td {
+  background: var(--bg-baris-sorot, #fff5f5);
+}
+
 /* ── Dashboard KPI + GlobalSearch animations ──────────────────────────────── */
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(16px); }

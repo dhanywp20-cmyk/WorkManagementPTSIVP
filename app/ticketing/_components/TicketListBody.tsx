@@ -1,5 +1,5 @@
 'use client';
-import type { Dispatch, SetStateAction, RefObject } from 'react';
+import type { Dispatch, SetStateAction, RefObject, CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ListEmptyState, ErrorState, MobileListCard, MobileCardBadge,
@@ -184,8 +184,10 @@ export function TicketListBody({
       </div>
 
       {/* ── DESKTOP: Table view (hidden on mobile) ── */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="w-full table-fixed border-collapse table-zebra" style={{ background: "transparent", minWidth: '1100px' }}>
+      {/* Latar abu-abu muda di belakang tabel: tanpa ini kartu putih tiap
+          baris menempel di atas putih dan bentuk kartunya tidak terbaca. */}
+      <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
+        <table className="w-full table-fixed tabel-kartu" style={{ background: "transparent", minWidth: '1100px' }}>
           <colgroup>
             <col style={{ width: "3%" }} />   {/* No */}
             <col style={{ width: "15%" }} />  {/* Project / Lokasi*/}
@@ -201,7 +203,9 @@ export function TicketListBody({
           {/* Header menempel saat digulir: daftar tiket bisa panjang, dan tanpa ini
               pembaca kehilangan acuan kolom begitu baris pertama lewat layar. */}
           <thead className="sticky top-0 z-10">
-            <tr className="border-b-2 border-rose-100" style={{ background: "linear-gradient(180deg,#fafbfc,#f4f5f7)" }}>
+            {/* Latar & garis bawah header diatur .tabel-kartu di globals.css -
+                di sini cukup kolomnya. */}
+            <tr>
               <th className="px-2 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                 {selectMode && canManageTickets
                   ? <input type="checkbox"
@@ -227,8 +231,15 @@ export function TicketListBody({
               const overdueSetting = getOverdueSetting(ticket.id);
               const isSolvedOverdue = overdue && ticket.status === "Solved";
               const isActiveOverdue = overdue && ticket.status !== "Solved";
+              // Warna kartu & pita aksen dioper lewat custom property - lihat
+              // .tabel-kartu di globals.css untuk alasannya.
               return (
-                <tr key={ticket.id} className={`stagger-item border-b border-gray-100 hover:bg-rose-50/50 transition-colors ${isActiveOverdue ? "bg-red-50 border-l-4 border-l-red-400" : isSolvedOverdue ? "bg-purple-50/60 border-l-4 border-l-purple-300" : ""}`}>
+                <tr key={ticket.id} className="stagger-item"
+                  style={{
+                    '--aksen-baris': isActiveOverdue ? '#f87171' : isSolvedOverdue ? '#c4b5fd' : '#cbd5e1',
+                    '--bg-baris': isActiveOverdue ? '#fef2f2' : isSolvedOverdue ? 'rgba(250,245,255,0.9)' : '#ffffff',
+                    '--bg-baris-sorot': isActiveOverdue ? '#fee2e2' : isSolvedOverdue ? '#f5f3ff' : '#fff5f5',
+                  } as CSSProperties}>
                   <td className="px-2 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
                     {selectMode && canManageTickets
                       ? <input type="checkbox" checked={selectedIds.has(ticket.id)}
