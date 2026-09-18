@@ -638,18 +638,56 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, isAdmin, roleLC, teamType, bolehTiket, bolehRequire, bolehJadwal, bolehReview, batasiLingkup, kunciLingkup]);
 
+  /*
+    NotificationBar terpasang di HAMPIR SETIAP halaman (header dashboard) -
+    beda dari daftar Ticketing/Command Center yang cuma polling saat
+    halaman itu sendiri dibuka. Sebelumnya interval ini jalan terus tiap 2
+    menit TANPA peduli tab sedang dilihat atau tidak - satu tab yang
+    dibiarkan terbuka seharian di background tetap menembak 6-7 query tiap
+    2 menit. Pola berhenti-saat-tersembunyi yang sudah dipakai di Ticketing
+    (lihat app/ticketing/page.tsx) diterapkan di sini juga.
+  */
   useEffect(() => {
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
+    const mulaiPolling = () => {
+      if (pollInterval) return;
+      pollInterval = setInterval(fetchAll, 120_000); // setiap 2 menit
+    };
+    const hentikanPolling = () => {
+      if (!pollInterval) return;
+      clearInterval(pollInterval);
+      pollInterval = null;
+    };
+    const saatVisibilitasBerubah = () => {
+      if (document.visibilityState === 'hidden') { hentikanPolling(); return; }
+      fetchAll();
+      mulaiPolling();
+    };
     fetchAll();
-    const interval = setInterval(fetchAll, 120_000); // setiap 2 menit
-    return () => clearInterval(interval);
+    if (document.visibilityState !== 'hidden') mulaiPolling();
+    document.addEventListener('visibilitychange', saatVisibilitasBerubah);
+    return () => {
+      hentikanPolling();
+      document.removeEventListener('visibilitychange', saatVisibilitasBerubah);
+    };
   }, [fetchAll]);
 
+  /*
+    Setiap tulis ke salah satu tabel ini, dari SIAPA PUN, memicu refetch di
+    SEMUA sesi yang sedang terbuka - tersembunyi maupun tidak. Tab yang
+    diminimize/pindah ke background tidak butuh data real-time (pengguna
+    memang tidak sedang melihatnya); begitu dilihat lagi, useEffect polling
+    di atas sudah menyegarkan sekali lewat visibilitychange. Guard ini
+    mencegah tab-tab tersembunyi ikut menembak 6-7 query tiap kali ada
+    satu ticket/request/reminder/review dibuat/diubah di mana pun.
+  */
+  const fetchAllJikaTerlihat = () => { if (document.visibilityState !== 'hidden') fetchAll(); };
   useEffect(() => {
-    const ch1 = supabase.channel('dash-notif-tickets-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => { setTimeout(fetchAll, 400); }).subscribe();
-    const ch2 = supabase.channel('dash-notif-requires-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'project_requests' }, () => { setTimeout(fetchAll, 400); }).subscribe();
-    const ch3 = supabase.channel('dash-notif-reminders-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => { setTimeout(fetchAll, 400); }).subscribe();
-    const ch4 = supabase.channel('dash-notif-reviews-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'form_reviews' }, () => { setTimeout(fetchAll, 400); }).subscribe();
-    const ch5 = supabase.channel(`dash-notif-personal-${currentUser.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` }, () => { setTimeout(fetchAll, 400); }).subscribe();
+    const ch1 = supabase.channel('dash-notif-tickets-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'tickets' }, () => { setTimeout(fetchAllJikaTerlihat, 400); }).subscribe();
+    const ch2 = supabase.channel('dash-notif-requires-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'project_requests' }, () => { setTimeout(fetchAllJikaTerlihat, 400); }).subscribe();
+    const ch3 = supabase.channel('dash-notif-reminders-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'reminders' }, () => { setTimeout(fetchAllJikaTerlihat, 400); }).subscribe();
+    const ch4 = supabase.channel('dash-notif-reviews-v2').on('postgres_changes', { event: '*', schema: 'public', table: 'form_reviews' }, () => { setTimeout(fetchAllJikaTerlihat, 400); }).subscribe();
+    const ch5 = supabase.channel(`dash-notif-personal-${currentUser.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` }, () => { setTimeout(fetchAllJikaTerlihat, 400); }).subscribe();
     return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3); supabase.removeChannel(ch4); supabase.removeChannel(ch5); };
   }, [fetchAll]);
 
