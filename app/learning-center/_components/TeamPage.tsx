@@ -263,12 +263,27 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
     //  Diperiksa: nilai peserta ikut memengaruhi KPI-nya - kalau tersimpannya
     //  gagal diam-diam (RLS menolak 0 baris tanpa galat), "berhasil disimpan"
     //  akan menampilkan nilai yang sebetulnya masih belum ada di basis data.
+    /*
+      H7 (audit): dua admin bisa membuka attempt yang sama dan menekan Simpan
+      hampir bersamaan - tanpa penjaga, keduanya sama-sama berhasil menimpa
+      nilai satu sama lain tanpa pemberitahuan. `.eq('grading_status',
+      'pending_review')` membuat update kedua (yang datang setelah attempt
+      ini sudah 'graded') tidak mengenai baris mana pun - dibedakan dari
+      galat lain lewat pengecekan status terkini di bawah.
+    */
     const { data: terubah, error } = await supabase.from('lc_quiz_attempts').update({
       score: finalScore, passed, total_correct: totalCorrect, total_questions: questions.length,
       grading_status: 'graded', graded_by: grader?.id ?? null, graded_at: new Date().toISOString(),
-    }).eq('id', selectedAttempt.id).select('id');
+    }).eq('id', selectedAttempt.id).eq('grading_status', 'pending_review').select('id');
     setSavingGrade(false);
     if (error || !terubah || terubah.length === 0) {
+      if (!error) {
+        const { data: cekAttempt } = await supabase.from('lc_quiz_attempts').select('grading_status').eq('id', selectedAttempt.id).single();
+        if (cekAttempt?.grading_status === 'graded') {
+          setDialog({ type: 'error', message: 'Essay ini baru saja dinilai oleh admin lain - nilai kamu TIDAK disimpan supaya tidak saling menimpa. Muat ulang untuk melihat nilai terbaru.' });
+          return;
+        }
+      }
       setDialog({ type: 'error', message: 'Gagal menyimpan nilai essay. Coba lagi.' });
       return;
     }

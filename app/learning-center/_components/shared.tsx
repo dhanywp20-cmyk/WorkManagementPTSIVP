@@ -128,7 +128,7 @@ export interface AnswerRecord {
   ai_feedback?: string | null;
 }
 
-export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report';
+export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report' | 'analytics';
 export type TeamView = 'my-quiz' | 'materi' | 'history' | 'score';
 
 // Gemini (server-side proxy - API key tidak terekspos ke browser)

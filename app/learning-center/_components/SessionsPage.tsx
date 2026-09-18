@@ -317,10 +317,15 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
           .select('id')
           .eq('quiz_session_id', id);
 
-        // 2. Hapus answer records untuk setiap attempt (jika tabel lc_answer_records ada FK ke attempts)
+        // 2. Hapus jawaban untuk setiap attempt
+        //  H8 (audit): dulu menghapus dari 'lc_answer_records' - tabel itu
+        //  bukan tempat jawaban sungguhan disimpan (lihat runAiGrading di
+        //  TeamPage.tsx, semuanya menulis/membaca 'lc_answers'). Akibatnya
+        //  jawaban attempt yang dihapus TIDAK PERNAH ikut terhapus - baris
+        //  yatim menumpuk tiap kali sesi quiz dihapus.
         if (attempts && attempts.length > 0) {
           const attemptIds = attempts.map((a: any) => a.id);
-          await supabase.from('lc_answer_records').delete().in('attempt_id', attemptIds);
+          await supabase.from('lc_answers').delete().in('attempt_id', attemptIds);
         }
 
         // 3. Hapus semua attempts terkait sesi ini
