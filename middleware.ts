@@ -8,12 +8,18 @@ const PUBLIC_PREFIXES = [
   '/_next/', '/favicon', '/IVP_Background',
   '/project-progress/share/',
   '/api/project-progress/share/',
+  '/icons/',
 ];
 
 // Exact public paths (pages + API routes that handle their own auth or need no auth)
 const PUBLIC_EXACT = [
   '/dashboard',
   '/',
+  // PWA installability: Chrome fetches ini SEBELUM login (dari layar login) -
+  // kalau diblok jadi 302 ke /dashboard, Chrome dapat HTML bukan JSON/JS dan
+  // diam-diam menganggap app tidak installable (menu "Install app" tak muncul).
+  '/manifest.webmanifest',
+  '/sw.js',
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/forgot-password',
