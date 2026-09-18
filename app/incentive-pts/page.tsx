@@ -503,7 +503,8 @@ export default function IncentivePTSPage() {
       return;
     }
 
-    const { error } = await insertTranches(skema!, generateProject.id, generateProject.bast_date, generateProject.mode_penyelesaian);
+    if (!skema) { notify('error', 'Skema insentif belum termuat, coba lagi sesaat lagi.'); setGenerating(false); return; }
+    const { error } = await insertTranches(skema, generateProject.id, generateProject.bast_date, generateProject.mode_penyelesaian);
     if (error) { notify('error', 'Gagal: ' + error.message); } else { notify('success', 'Tranche berhasil di-generate!'); }
     setGenerating(false); setShowGenerateModal(false); setGenerateProject(null);
     loadAll();
@@ -1959,6 +1960,10 @@ export default function IncentivePTSPage() {
 
               {/* Pembagian Incentive — auto-calculated, selalu tampil */}
               {(() => {
+                //  Skema dimuat async di loadAll() - kalau popup ini sempat terbuka
+                //  sebelum itu selesai (mis. refresh cepat), skema masih null.
+                //  Tanpa penjagaan ini seluruh popup detail proyek crash.
+                if (!skema) return <p className="text-sm text-gray-400">Memuat skema insentif...</p>;
                 const pool = detailProject.incentive_value || 0;
                 const effectiveMode = detailProject.mode_penyelesaian || 'onsite';
                 const effectivePool = pool > 0 ? pool : 1_000_000;
@@ -1987,7 +1992,7 @@ export default function IncentivePTSPage() {
                 //  tahun, jadi satu angka gabungan tidak akan pernah benar untuk
                 //  tahun mana pun. Rinciannya ada di daftar per tahun di bawah.
                 const supportTahun1 = detailSupports.find(x => x.tahunKe === 1)?.orang ?? [];
-                const splits = calculateIncentiveSplits(skema!, displayProject, managerId, managerName, supervisorId, supervisorName, supportTahun1, picId);
+                const splits = calculateIncentiveSplits(skema, displayProject, managerId, managerName, supervisorId, supervisorName, supportTahun1, picId);
                 if (!splits.length) return null;
                 // Privasi: non-privileged (selain Admin & yang ditunjuk input nominal)
                 // hanya melihat bagiannya sendiri - bukan total pool / bagian orang lain.
@@ -2166,20 +2171,28 @@ export default function IncentivePTSPage() {
               Installer sudah dipotong lebih dulu dari pool Tim PTS.
             */}
             {(() => {
+              if (!skema) return <p className="text-sm text-gray-400 mb-6">Memuat skema insentif...</p>;
+              //  Pratinjau ini jalan begitu modal dibuka, sebelum tombol Generate
+              //  ditekan - kalau proyeknya belum punya BAST, generateTranches()
+              //  di bawah menghitung tanggal dari nilai yang tidak valid dan
+              //  crash. handleGenerateTranches() sudah menolak kasus ini saat
+              //  submit; pratinjau perlu penjagaan yang sama karena jalan lebih
+              //  dulu.
+              if (!generateProject.bast_date) return <p className="text-sm text-amber-600 mb-6">⚠️ BAST belum diisi — isi lewat tombol 💲 Input Nominal pada proyek ini sebelum generate tranche.</p>;
               const pool = generateProject.incentive_value || 0;
               //  Lewat petaPorsiBerlaku, bukan persenInstaller: saat tabel Porsi
               //  Remote diatur sendiri, porsi Installer diambil dari baris di
               //  tabel itu - bukan dari kolom "Porsi Installer".
               const pctInst = petaPorsiBerlaku(
-                skema!, generateProject.mode_penyelesaian === 'remote', true,
+                skema, generateProject.mode_penyelesaian === 'remote', true,
               ).pctInstaller;
               const poolTim = pool * ((100 - pctInst) / 100);
-              const daftar = generateTranches(skema!, generateProject.id, generateProject.bast_date!, generateProject.mode_penyelesaian);
+              const daftar = generateTranches(skema, generateProject.id, generateProject.bast_date!, generateProject.mode_penyelesaian);
               const tahapPertama = daftar.length ? Math.min(...daftar.map(t => t.tranche_number)) : 1;
               return (
                 <div className="space-y-2 mb-6">
                   {daftar.map(t => {
-                    const installerDiSini = pctInst > 0 && skema!.installerBayarDiMuka && t.tranche_number === tahapPertama;
+                    const installerDiSini = pctInst > 0 && skema.installerBayarDiMuka && t.tranche_number === tahapPertama;
                     return (
                       <div key={t.tranche_number} className="rounded-lg px-4 py-2.5 border border-gray-100" style={{ background: 'rgb(249,250,251)' }}>
                         <div className="flex justify-between items-baseline gap-2 flex-wrap">
