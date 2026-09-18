@@ -9,6 +9,9 @@ import { ModalPortal, formatUsername } from '@/components/shared';
 import { ambilProfil, Kartu, Baris, Kelompok } from './modal-bersama';
 import { hasFullAccess } from '@/lib/constants';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
+import { statusInstalasiPWA, subscribeInstallPWA, pasangAplikasiPWA, type StatusInstallPWA } from '@/lib/pwa-install';
+import { useMerek } from '@/lib/merek';
+import { InstallGuideModal } from './InstallGuideModal';
 
 // UserProfileModal
 
@@ -43,6 +46,22 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
   /** Auto-cek koneksi Telegram setelah bot dibuka - lihat mulaiAutoHubung(). */
   const [autoHubung, setAutoHubung] = useState<'diam' | 'menunggu' | 'gagal'>('diam');
   const autoHubungRef = useRef<{ interval?: ReturnType<typeof setInterval>; timeout?: ReturnType<typeof setTimeout> }>({});
+
+  /** Kartu "Aplikasi di HP" - status live yang sama dengan banner install
+   *  otomatis (lib/pwa-install.ts), supaya tombolnya di sini juga memicu
+   *  prompt asli Chrome/Android, bukan sekadar tautan ke panduan. */
+  const merek = useMerek();
+  const [statusInstall, setStatusInstall] = useState<StatusInstallPWA>('belum-siap');
+  const [memasang, setMemasang] = useState(false);
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
+  useEffect(() => {
+    setStatusInstall(statusInstalasiPWA());
+    return subscribeInstallPWA(() => setStatusInstall(statusInstalasiPWA()));
+  }, []);
+  const handlePasangAplikasi = async () => {
+    setMemasang(true);
+    try { await pasangAplikasiPWA(); } finally { setMemasang(false); }
+  };
 
   const notify = (type: 'success' | 'error', msg: string) => {
     setNotification({ type, msg });
@@ -548,6 +567,47 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
 
             {/* ══ KANAN ══ */}
             <div className="space-y-4">
+              {/*
+                Sebelumnya cara pasang aplikasi HANYA lewat banner otomatis
+                (bisa lewat/ditutup) atau tautan di layar login (harus logout
+                dulu untuk melihatnya lagi). Kartu ini membuatnya selalu ada
+                di satu tempat yang pasti dicari orang: profil akun sendiri.
+              */}
+              <Kartu icon="📲" judul="Aplikasi di HP">
+                <div className="p-4 space-y-3">
+                  {statusInstall === 'terpasang' ? (
+                    <p className="text-sm font-semibold text-emerald-600 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Sudah terpasang di perangkat ini.
+                    </p>
+                  ) : statusInstall === 'siap' ? (
+                    <>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Akses lebih cepat + notifikasi langsung ke HP, seperti aplikasi biasa - tanpa file .apk.
+                      </p>
+                      <button onClick={handlePasangAplikasi} disabled={memasang}
+                        className="w-full py-2.5 rounded-xl text-white text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        style={{ background: `linear-gradient(135deg, ${merek.warnaUtama}, #881337)` }}>
+                        {memasang ? 'Memasang…' : '⬇️ Install Aplikasi'}
+                      </button>
+                    </>
+                  ) : statusInstall === 'ios' ? (
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Tap ikon <strong>Share</strong> di Safari, lalu pilih <strong>&quot;Tambah ke Layar Utama&quot;</strong>.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Peramban ini belum menawarkan prompt install otomatis.
+                      </p>
+                      <button onClick={() => setShowInstallGuide(true)}
+                        className="w-full py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">
+                        Lihat cara pasang manual
+                      </button>
+                    </>
+                  )}
+                </div>
+              </Kartu>
+
               <Kartu icon="🎭" judul="Peran Pengguna" hitung="1 Role">
                 <div className="p-4 space-y-3">
                   <span className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-bold border ${roleClass}`}>
@@ -602,6 +662,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
         </div>
       </div>
     </div>
+    {showInstallGuide && <InstallGuideModal warnaUtama={merek.warnaUtama} onClose={() => setShowInstallGuide(false)} />}
   </ModalPortal>
   );
 }

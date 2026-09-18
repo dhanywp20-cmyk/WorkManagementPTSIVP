@@ -1,68 +1,46 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { daftarSW } from '@/lib/push-client';
+import { statusInstalasiPWA, subscribeInstallPWA, pasangAplikasiPWA } from '@/lib/pwa-install';
 
 const KUNCI_DITUTUP = 'wm_install_banner_ditutup';
-
-/** true bila aplikasi SEDANG berjalan sebagai PWA terpasang (bukan tab peramban biasa). */
-function sudahTerpasang(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (window.matchMedia?.('(display-mode: standalone)').matches) return true;
-  // iOS Safari lama belum punya display-mode media query - pakai properti khususnya.
-  return !!(window.navigator as any).standalone;
-}
-
-function iOSSafari(): boolean {
-  if (typeof navigator === 'undefined') return false;
-  const ua = navigator.userAgent;
-  const iOS = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && 'ontouchend' in document);
-  const safari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua);
-  return iOS && safari;
-}
 
 /**
  * Dipasang sekali di root layout - dua pekerjaan lintas-halaman:
  *   1. Daftarkan service worker (syarat installability PWA + push notification)
  *      seawal mungkin, tidak menunggu pengguna membuka dashboard dulu.
  *   2. Tampilkan banner "Pasang aplikasi ini di HP" - tombol Install asli di
- *      Android/Chrome (event beforeinstallprompt), petunjuk manual "Tambahkan
- *      ke Layar Utama" di iPhone/Safari (iOS tidak punya event itu sama sekali).
+ *      Android/Chrome (event beforeinstallprompt, lihat lib/pwa-install.ts),
+ *      petunjuk manual "Tambahkan ke Layar Utama" di iPhone/Safari (iOS tidak
+ *      punya event itu sama sekali).
  *
  * Tidak tampil sama sekali kalau: sudah terpasang, sudah pernah ditutup
  * (localStorage - jangan menagih tiap kunjungan), atau di peramban yang tidak
  * mendukung install PWA dan bukan iOS Safari.
  */
 export function PwaBootstrap() {
-  const [promptEvent, setPromptEvent] = useState<any>(null);
   const [tampilBanner, setTampilBanner] = useState(false);
   const [modeIOS, setModeIOS] = useState(false);
 
   useEffect(() => {
     void daftarSW();
 
-    if (sudahTerpasang()) return;
     let sudahDitutup = false;
     try { sudahDitutup = localStorage.getItem(KUNCI_DITUTUP) === '1'; } catch { /* abaikan */ }
     if (sudahDitutup) return;
 
-    if (iOSSafari()) {
-      setModeIOS(true);
-      setTampilBanner(true);
-      return;
-    }
-
-    const onBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setPromptEvent(e);
-      setTampilBanner(true);
+    const evaluasi = () => {
+      const status = statusInstalasiPWA();
+      if (status === 'terpasang') {
+        setTampilBanner(false);
+        try { localStorage.setItem(KUNCI_DITUTUP, '1'); } catch { /* abaikan */ }
+        return;
+      }
+      if (status === 'ios') { setModeIOS(true); setTampilBanner(true); return; }
+      if (status === 'siap') { setModeIOS(false); setTampilBanner(true); return; }
     };
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
-    const onInstalled = () => { setTampilBanner(false); try { localStorage.setItem(KUNCI_DITUTUP, '1'); } catch { /* abaikan */ } };
-    window.addEventListener('appinstalled', onInstalled);
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
-      window.removeEventListener('appinstalled', onInstalled);
-    };
+    evaluasi();
+    return subscribeInstallPWA(evaluasi);
   }, []);
 
   const tutup = () => {
@@ -71,10 +49,7 @@ export function PwaBootstrap() {
   };
 
   const install = async () => {
-    if (!promptEvent) return;
-    promptEvent.prompt();
-    await promptEvent.userChoice.catch(() => null);
-    setPromptEvent(null);
+    await pasangAplikasiPWA();
     setTampilBanner(false);
   };
 
