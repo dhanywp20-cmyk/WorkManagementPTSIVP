@@ -119,6 +119,20 @@ function UnitMovementPageInner() {
     notify('success','Log berhasil dihapus!'); fetchLogs();
   };
 
+  /*
+    H5 (audit): return_confirmed dibaca (dipakai openLoans buat menyaring
+    barang yang belum kembali) tapi tidak pernah ditulis di mana pun - Open
+    Loan tidak akan pernah kosong walau barangnya sudah sungguh kembali,
+    karena tidak ada jalan untuk menandainya. Ditulis langsung di baris
+    "Keluar" yang sama - tidak perlu baris "Masuk" pasangan untuk kasus ini.
+  */
+  const handleMarkReturned = async (log: MovementLog) => {
+    const {error} = await supabase.from('movement_logs').update({return_confirmed:true}).eq('id',log.id);
+    if (error) { notify('error','Gagal menandai kembali: '+error.message); return; }
+    void logAudit({ user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '', action: 'update', module: 'movement', target_id: log.id, target_name: log.project_name ?? '', notes: 'Tandai barang sudah kembali' });
+    notify('success','Barang ditandai sudah kembali!'); fetchLogs();
+  };
+
   // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
   // (lihat lib/constants.ts hasFullAccess).
   const isAdmin   = hasFullAccess(currentUser);
@@ -363,11 +377,14 @@ function UnitMovementPageInner() {
                               </span>
                             : <span className="text-[10px] text-gray-300">—</span>}
                         </td>
-                        {(bolehEditLog(loan)) && (
+                        {isAdmin && (
                           <td className="px-4 py-2.5 text-center">
                             <ActionGroup>
                               <ViewIconBtn onClick={()=>setViewLog(loan)} label="Lihat" />
-                              <EditIconBtn onClick={()=>setEditLog(loan)} />
+                              {bolehEditLog(loan) && <EditIconBtn onClick={()=>setEditLog(loan)} />}
+                              <button onClick={()=>handleMarkReturned(loan)} title="Tandai barang sudah kembali"
+                                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white transition-all hover:opacity-90"
+                                style={{background:'linear-gradient(135deg,#10b981,#059669)'}}>✅</button>
                             </ActionGroup>
                           </td>
                         )}
