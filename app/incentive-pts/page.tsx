@@ -841,17 +841,18 @@ export default function IncentivePTSPage() {
     notify('success', `Brand diset ke ${brand}.`);
   }
 
-  if (!appReady) return (
-    <div className="flex items-center justify-center" style={{ minHeight: '100vh', backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-      <div className="flex flex-col items-center gap-3 bg-white/90 rounded-2xl px-8 py-6 shadow-xl">
-        <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#f43f5e' }} />
-        <p className="text-slate-500 text-sm font-semibold">Memuat Incentive PTS...</p>
-      </div>
-    </div>
-  );
-
-  // Privasi list: non-privileged hanya melihat project di mana dia terlibat
-  // (handler/PIC, support dari ticket Troubleshooting, supervisor, atau manager).
+  //  Privasi list: non-privileged hanya melihat project di mana dia terlibat
+  //  (handler/PIC, support dari ticket Troubleshooting, supervisor, atau manager).
+  //
+  //  Blok ini (sampai `hal`) HARUS dihitung di atas gerbang `!appReady` di
+  //  bawah - usePaginasi() di dalamnya adalah HOOK React. Sebelumnya blok ini
+  //  ada SESUDAH `if (!appReady) return (...)`, jadi render pertama (appReady
+  //  masih false) melompati usePaginasi() sama sekali, sementara render
+  //  berikutnya (sesudah loadAll() selesai) memanggilnya - jumlah hook yang
+  //  dipanggil jadi beda antar render, dan React melempar error #310
+  //  ("Rendered more hooks than during the previous render"), meng-crash
+  //  SELURUH halaman. Menyalakan hook ini di setiap render (apa pun nilai
+  //  appReady) menghapus akar masalahnya.
   const canSeeAll = bisaInput(currentUser);
   const orgListAll = allUsers as unknown as OrgUser[];
   const userInProject = (p: IncentiveProjectRow): boolean => {
@@ -896,6 +897,15 @@ export default function IncentivePTSPage() {
     salah, dan itu jenis kesalahan yang tidak akan langsung terlihat.
   */
   const hal = usePaginasi(filteredProjects);
+
+  if (!appReady) return (
+    <div className="flex items-center justify-center" style={{ minHeight: '100vh', backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="flex flex-col items-center gap-3 bg-white/90 rounded-2xl px-8 py-6 shadow-xl">
+        <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#f43f5e' }} />
+        <p className="text-slate-500 text-sm font-semibold">Memuat Incentive PTS...</p>
+      </div>
+    </div>
+  );
 
   const uniqueYears = [...new Set(tranches.map(t => t.payment_year))].sort();
   /*
