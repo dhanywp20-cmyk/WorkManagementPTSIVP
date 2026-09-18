@@ -672,13 +672,37 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
   // Effects: trigger fetch when scope is resolved
 
+  /*
+    Egress: fetchKPI() mengambil SELURUH tabel tickets & reminders tanpa
+    limit (dibutuhkan untuk hitungan byHandler/byStatus/byDivision/dst) -
+    jangan sampai itu juga jalan tiap 3 menit di tab yang ditinggal di
+    background. Pola berhenti-saat-tersembunyi yang sama dengan Ticketing/
+    NotificationBar diterapkan di sini.
+  */
   useEffect(() => {
     if (!scopeReady) return;
-    fetchKPI(); fetchAudit();
-    intervalRef.current = setInterval(() => {
-      fetchKPI(); fetchAudit(); setLastRefresh(new Date());
-    }, 3 * 60 * 1000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    const segarkan = () => { fetchKPI(); fetchAudit(); setLastRefresh(new Date()); };
+    const mulaiPolling = () => {
+      if (intervalRef.current) return;
+      intervalRef.current = setInterval(segarkan, 3 * 60 * 1000);
+    };
+    const hentikanPolling = () => {
+      if (!intervalRef.current) return;
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    };
+    const saatVisibilitasBerubah = () => {
+      if (document.visibilityState === 'hidden') { hentikanPolling(); return; }
+      segarkan();
+      mulaiPolling();
+    };
+    segarkan();
+    if (document.visibilityState !== 'hidden') mulaiPolling();
+    document.addEventListener('visibilitychange', saatVisibilitasBerubah);
+    return () => {
+      hentikanPolling();
+      document.removeEventListener('visibilitychange', saatVisibilitasBerubah);
+    };
   }, [scopeReady, fetchKPI, fetchAudit]);
 
   // Filtered Audit
