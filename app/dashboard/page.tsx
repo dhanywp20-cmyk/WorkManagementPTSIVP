@@ -19,6 +19,7 @@ import {
   AccountSettingsInline, UserManagementInline, BrandPicSettingInline,
 } from './_components/Modals';
 import GlobalSearch from './_components/GlobalSearch';
+import { InstallGuideModal } from './_components/InstallGuideModal';
 import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashboard';
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/merek';
@@ -93,6 +94,10 @@ export default function Dashboard() {
   // true kalau pendaftaran ini lolos lewat kode event (lihat REGISTER_BYPASS_*
   // di app/api/auth/register/route.ts) dan langsung aktif tanpa approval admin.
   const [registerBypass, setRegisterBypass] = useState(false);
+  // Panduan pasang aplikasi ke HP - tautan permanen, tidak bergantung ke
+  // banner otomatis PwaBootstrap yang bisa saja tidak muncul untuk sebagian
+  // orang (lihat catatan di InstallGuideModal.tsx).
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   // Forgot password flow
   const [showForgot, setShowForgot] = useState(false);
   const [forgotStep, setForgotStep] = useState<'request' | 'verify'>('request');
@@ -942,8 +947,15 @@ export default function Dashboard() {
                   <span className="mx-2 text-slate-300">|</span>
                   <button onClick={() => { setShowForgot(true); setForgotStep('request'); setForgotMsg(null); }} className="font-bold hover:underline" style={{ color: merek.warnaUtama }}>Lupa Password?</button>
                 </p>
+                <p className="text-center text-xs pt-2">
+                  <button type="button" onClick={() => setShowInstallGuide(true)}
+                    className="font-bold hover:underline inline-flex items-center gap-1" style={{ color: merek.warnaUtama }}>
+                    📲 Pasang aplikasi ini di HP
+                  </button>
+                </p>
               </div>
             )}
+            {showInstallGuide && <InstallGuideModal warnaUtama={merek.warnaUtama} onClose={() => setShowInstallGuide(false)} />}
 
             {showRegister && (
               <div>
