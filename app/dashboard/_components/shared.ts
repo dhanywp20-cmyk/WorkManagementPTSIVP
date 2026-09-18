@@ -1,3 +1,5 @@
+import type { ComponentType, SVGProps } from 'react';
+
 export interface User {
   id: string;
   username: string;
@@ -193,7 +195,8 @@ export interface BrandPicMappingDB {
 
 // Notif Bell props (from NotifBell section)
 export interface NotifBellProps {
-  icon: string;
+  /** Komponen ikon garis (lihat notif-icons.tsx) - BUKAN emoji, supaya seragam dengan ikon lain di header. */
+  icon: ComponentType<SVGProps<SVGSVGElement>>;
   label: string;
   count: number;
   color: string;

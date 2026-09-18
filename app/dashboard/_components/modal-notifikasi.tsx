@@ -12,10 +12,11 @@ import { User, NotificationItem, NotifBellProps } from './shared';
 import { markAllNotifsRead } from '@/lib/notifications';
 import { useNotifSoundAlarm } from '@/lib/notif-sound';
 import { pushDidukung, statusIzinNotif, sudahBerlanggananPush, aktifkanPushNotif, matikanPushNotif } from '@/lib/push-client';
+import { IconTicket, IconBriefcase, IconCalendar, IconStar, IconBell, IconSpeaker, IconDevicePhone } from './notif-icons';
 
 // Notification Bell Component
 
-export function NotifBell({ icon, label, count, color, bgColor, borderColor, dotColor, items, onItemClick, onMarkAllRead }: NotifBellProps) {
+export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColor, dotColor, items, onItemClick, onMarkAllRead }: NotifBellProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -51,7 +52,7 @@ export function NotifBell({ icon, label, count, color, bgColor, borderColor, dot
           boxShadow: count > 0 ? `0 2px 12px ${borderColor}55` : 'none',
         }}
       >
-        <span className="text-base leading-none">{icon}</span>
+        <Icon className="w-4 h-4 flex-shrink-0" style={{ color: count > 0 ? color : '#94a3b8' }} />
         <span className="text-xs font-bold hidden sm:block" style={{ color: count > 0 ? color : '#64748b' }}>{label}</span>
         {count > 0 && (
           <span className="flex items-center justify-center rounded-full text-white font-black text-[10px] min-w-[18px] h-[18px] px-1 animate-pulse"
@@ -74,7 +75,7 @@ export function NotifBell({ icon, label, count, color, bgColor, borderColor, dot
           }}>
           <div className="px-4 py-3 flex items-center justify-between" style={{ background: bgColor, borderBottom: `1px solid ${borderColor}44` }}>
             <div className="flex items-center gap-2">
-              <span className="text-lg">{icon}</span>
+              <Icon className="w-[18px] h-[18px] flex-shrink-0" style={{ color }} />
               <span className="text-sm font-bold" style={{ color }}>{label}</span>
             </div>
             {count > 0 && (
@@ -730,7 +731,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
         title={soundMuted ? 'Alarm suara: MATI - klik untuk aktifkan' : 'Alarm suara: AKTIF - klik untuk matikan'}
         className="flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0 transition-all hover:scale-105 active:scale-95"
         style={{ background: soundMuted ? 'rgba(0,0,0,0.05)' : 'rgba(79,70,229,0.12)', border: `1px solid ${soundMuted ? 'rgba(0,0,0,0.1)' : 'rgba(79,70,229,0.3)'}` }}>
-        <span className="text-sm" aria-hidden="true">{soundMuted ? '🔇' : '🔔'}</span>
+        <IconSpeaker muted={soundMuted} className="w-4 h-4" style={{ color: soundMuted ? '#94a3b8' : '#4338ca' }} />
       </button>
       {/* Saklar push notification asli - bunyi & muncul walau app/tab HP
           tertutup (perangkat harus didaftarkan satu per satu, bukan
@@ -750,9 +751,11 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
               background: pushStatus === 'on' ? 'rgba(5,150,105,0.12)' : 'rgba(0,0,0,0.05)',
               border: `1px solid ${pushStatus === 'on' ? 'rgba(5,150,105,0.3)' : 'rgba(0,0,0,0.1)'}`,
             }}>
-            <span className="text-sm" aria-hidden="true">
-              {pushProses ? '⏳' : pushStatus === 'denied' ? '🚫' : pushStatus === 'on' ? '📱' : '📲'}
-            </span>
+            {pushProses ? (
+              <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" aria-hidden="true" />
+            ) : (
+              <IconDevicePhone className="w-4 h-4" style={{ color: pushStatus === 'on' ? '#059669' : pushStatus === 'denied' ? '#cbd5e1' : '#64748b' }} />
+            )}
           </button>
           {pushGalat && (
             <div className="absolute top-full mt-2 right-0 z-[50] w-56 px-3 py-2 rounded-xl text-[11px] font-medium text-white shadow-xl"
@@ -768,25 +771,25 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
       <div className="hidden sm:flex items-center gap-1">
         {/* Ticket */}
         {bolehTiket && (
-          <NotifBell icon="🎫" label="Ticket" count={ticketNotifs.length} color="#be123c" bgColor="rgba(254,205,211,0.6)" borderColor="#fda4af" dotColor="#e11d48" items={ticketNotifs} onItemClick={handleClick} />
+          <NotifBell icon={IconTicket} label="Ticket" count={ticketNotifs.length} color="#be123c" bgColor="rgba(254,205,211,0.6)" borderColor="#fda4af" dotColor="#e11d48" items={ticketNotifs} onItemClick={handleClick} />
         )}
         {/* Require */}
         {bolehRequire && (
-          <NotifBell icon="🏗️" label="Require" count={requireNotifs.length} color="#7e22ce" bgColor="rgba(233,213,255,0.6)" borderColor="#c4b5fd" dotColor="#9333ea" items={requireNotifs} onItemClick={handleClick} />
+          <NotifBell icon={IconBriefcase} label="Require" count={requireNotifs.length} color="#7e22ce" bgColor="rgba(233,213,255,0.6)" borderColor="#c4b5fd" dotColor="#9333ea" items={requireNotifs} onItemClick={handleClick} />
         )}
         {/* Reminder — semua Team PTS (IVP/UMP/MVI), bukan cuma IVP, supaya Supervisor
             tim mana pun tetap dapat badge "perlu di-assign" (routing pipeline). */}
         {bolehJadwal && (
-          <NotifBell icon="🗓️" label="Reminder" count={reminderNotifs.length} color="#0e7490" bgColor="rgba(207,250,254,0.6)" borderColor="#67e8f9" dotColor="#0891b2" items={reminderNotifs} onItemClick={handleClick} />
+          <NotifBell icon={IconCalendar} label="Reminder" count={reminderNotifs.length} color="#0e7490" bgColor="rgba(207,250,254,0.6)" borderColor="#67e8f9" dotColor="#0891b2" items={reminderNotifs} onItemClick={handleClick} />
         )}
         {/* Review */}
         {bolehReview && (
-          <NotifBell icon="⭐" label="Review" count={reviewNotifs.length} color="#b45309" bgColor="rgba(254,243,199,0.6)" borderColor="#fcd34d" dotColor="#d97706" items={reviewNotifs} onItemClick={handleClick} />
+          <NotifBell icon={IconStar} label="Review" count={reviewNotifs.length} color="#b45309" bgColor="rgba(254,243,199,0.6)" borderColor="#fcd34d" dotColor="#d97706" items={reviewNotifs} onItemClick={handleClick} />
         )}
         {/* Notifikasi personal (tabel `notifications`) - peringatan KPI, dst.
             Ditampilkan untuk SEMUA role, tidak digerbangi bolehLonceng seperti
             4 lonceng di atas karena isinya memang personal per akun. */}
-        <NotifBell icon="🔔" label="Notifikasi" count={personalNotifs.length} color="#4338ca" bgColor="rgba(224,231,255,0.6)" borderColor="#a5b4fc" dotColor="#4f46e5" items={personalNotifs} onItemClick={handleClick} onMarkAllRead={handleMarkAllPersonalRead} />
+        <NotifBell icon={IconBell} label="Notifikasi" count={personalNotifs.length} color="#4338ca" bgColor="rgba(224,231,255,0.6)" borderColor="#a5b4fc" dotColor="#4f46e5" items={personalNotifs} onItemClick={handleClick} onMarkAllRead={handleMarkAllPersonalRead} />
       </div>
     </div>
   );
