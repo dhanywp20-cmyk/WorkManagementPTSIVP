@@ -322,7 +322,15 @@ function TicketingSystemInner() {
 
   const deleteTicket = async () => {
     if (!deleteTargetTicket) return;
-    if (currentUser?.role !== 'admin' && currentUser?.role !== 'superadmin') { notify("error", "Tidak ada akses untuk menghapus ticket."); return; }
+    /*
+      H9 (audit): dulu cuma admin/superadmin - RLS (tk_delete, lihat
+      admin_atau_full_access() di database) sudah lebih dulu diperluas ke
+      akun Team PTS dengan toggle "Full Access" aktif (mis. Manager PTS),
+      tapi gerbang di client ini ketinggalan. Akibatnya Manager PTS menekan
+      Hapus, RLS mengizinkan, TAPI baris ini menolaknya duluan dengan pesan
+      "Tidak ada akses" yang salah - padahal dia memang berhak.
+    */
+    if (currentUser?.role !== 'admin' && currentUser?.role !== 'superadmin' && !hasFullAccess(currentUser)) { notify("error", "Tidak ada akses untuk menghapus ticket."); return; }
     try {
       setUploading(true);
       setShowLoadingPopup(true);

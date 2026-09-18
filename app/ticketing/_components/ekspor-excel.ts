@@ -21,7 +21,14 @@ export interface ArgEkspor {
 
 export function eksporExcel({ tickets, filteredTickets, currentUserTeamType, stats, isTicketOverdue, notify }: ArgEkspor): void {
   const runExport = (XLSX: any) => {
-    const exportTickets = currentUserTeamType === "Team Services" ? filteredTickets : tickets;
+    /*
+      H10 (audit): dulu hanya Team Services yang diekspor dari daftar yang
+      SUDAH tersaring (filteredTickets) - tim lain selalu mengekspor SELURUH
+      ticket (tickets), tidak peduli filter/pencarian yang sedang aktif di
+      layar. Admin/Manager yang menyaring dulu lalu klik Ekspor akan
+      mendapat file berisi ticket yang tidak sesuai dengan yang mereka lihat.
+    */
+    const exportTickets = filteredTickets;
     const isServicesExport = currentUserTeamType === "Team Services";
     const border = { top: { style: "thin", color: { rgb: "D1D5DB" } }, bottom: { style: "thin", color: { rgb: "D1D5DB" } }, left: { style: "thin", color: { rgb: "D1D5DB" } }, right: { style: "thin", color: { rgb: "D1D5DB" } } };
     const boldBorder = { top: { style: "thin", color: { rgb: "000000" } }, bottom: { style: "thin", color: { rgb: "000000" } }, left: { style: "thin", color: { rgb: "000000" } }, right: { style: "thin", color: { rgb: "000000" } } };
