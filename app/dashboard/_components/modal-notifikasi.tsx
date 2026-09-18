@@ -10,6 +10,7 @@ import {
 
 import { User, NotificationItem, NotifBellProps } from './shared';
 import { markAllNotifsRead } from '@/lib/notifications';
+import { useNotifSoundAlarm } from '@/lib/notif-sound';
 
 // Notification Bell Component
 
@@ -129,6 +130,10 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
   const [reviewNotifs, setReviewNotifs]   = useState<NotificationItem[]>([]);
   // User-specific in-app notifications (from `notifications` table)
   const [personalNotifs, setPersonalNotifs] = useState<NotificationItem[]>([]);
+
+  //  Alarm suara - bunyi begitu ada ticket/notifikasi BARU, supaya orang yang
+  //  membiarkan tab ini terbuka seharian tidak harus melirik layar terus.
+  const { muted: soundMuted, toggleMuted: toggleSoundMuted, playIfAllowed: mainkanAlarm } = useNotifSoundAlarm();
 
   const roleLC = (currentUser.role ?? '').trim().toLowerCase();
   const teamType = (currentUser.team_type ?? '').trim();
@@ -595,6 +600,34 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
     return () => { supabase.removeChannel(ch1); supabase.removeChannel(ch2); supabase.removeChannel(ch3); supabase.removeChannel(ch4); supabase.removeChannel(ch5); };
   }, [fetchAll]);
 
+  /*
+    Alarm suara: dibunyikan begitu MUNCUL id notifikasi baru yang sebelumnya
+    tidak ada di salah satu dari 5 daftar ini - bukan sekadar "totalCount
+    berubah", karena total yang turun (item ditandai selesai/dibaca orang
+    lain) tidak boleh ikut berbunyi.
+
+    prevIdsRef sengaja mulai dari `null` (bukan Set kosong) supaya alarm
+    TIDAK bunyi pada pemuatan pertama halaman - tanpa ini, siapa pun yang
+    login dan langsung punya beberapa notifikasi lama akan disambut alarm,
+    padahal tidak ada satu pun yang baru.
+  */
+  const prevNotifIdsRef = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    const idSekarang = new Set<string>([
+      ...ticketNotifs.map(n => `tk:${n.id}`),
+      ...requireNotifs.map(n => `rq:${n.id}`),
+      ...reminderNotifs.map(n => `rm:${n.id}`),
+      ...reviewNotifs.map(n => `rv:${n.id}`),
+      ...personalNotifs.map(n => `pn:${n.id}`),
+    ]);
+    if (prevNotifIdsRef.current) {
+      let adaBaru = false;
+      for (const id of idSekarang) { if (!prevNotifIdsRef.current.has(id)) { adaBaru = true; break; } }
+      if (adaBaru) mainkanAlarm();
+    }
+    prevNotifIdsRef.current = idSekarang;
+  }, [ticketNotifs, requireNotifs, reminderNotifs, reviewNotifs, personalNotifs, mainkanAlarm]);
+
   const handleClick = (item: NotificationItem) => {
     // Mark personal notification as read if it came from the `notifications` table
     if (personalNotifs.find(n => n.id === item.id)) {
@@ -650,6 +683,16 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           </svg>
         </div>
       )}
+      {/* Saklar alarm suara - status & pengaturannya per-browser (localStorage),
+          bukan per-akun, karena memang soal "browser ini dibiarkan terbuka",
+          bukan preferensi akun yang harus ikut ke perangkat lain. */}
+      <button type="button" onClick={toggleSoundMuted}
+        aria-label={soundMuted ? 'Aktifkan alarm suara notifikasi' : 'Matikan alarm suara notifikasi'}
+        title={soundMuted ? 'Alarm suara: MATI - klik untuk aktifkan' : 'Alarm suara: AKTIF - klik untuk matikan'}
+        className="flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0 transition-all hover:scale-105 active:scale-95"
+        style={{ background: soundMuted ? 'rgba(0,0,0,0.05)' : 'rgba(79,70,229,0.12)', border: `1px solid ${soundMuted ? 'rgba(0,0,0,0.1)' : 'rgba(79,70,229,0.3)'}` }}>
+        <span className="text-sm" aria-hidden="true">{soundMuted ? '🔇' : '🔔'}</span>
+      </button>
       {/* Separator — hidden on small mobile */}
       <div className="hidden sm:block w-px h-5 flex-shrink-0" style={{ background: 'rgba(0,0,0,0.09)' }} />
       {/* Individual bells — hidden on small mobile (summary badge is enough) */}
