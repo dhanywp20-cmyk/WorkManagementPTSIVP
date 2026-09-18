@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, setDbToken } from '@/lib/supabase';
-import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
+import { setSession, clearSession, getSession, verifySessionFromCookie, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin, hasFullAccess, SESSION_DURATION_MS } from '@/lib/constants';
 import {
   User, MenuItem, NotificationItem,
@@ -641,7 +641,17 @@ export default function Dashboard() {
 
   useEffect(() => {
     const load = async () => {
-      const parsed = getSession<User>();
+      /*
+        sessionStorage kosong bukan berarti sesinya sudah habis - itu cuma
+        berarti tab/proses ini baru (refresh yang mendaur ulang proses tab,
+        PWA yang dibuka lagi setelah OS membekukan/menutupnya di HP, dst).
+        Cookie httpOnly (umurnya 6 jam, sama dengan SESSION_DURATION_MS) yang
+        jadi sumber kebenaran sebenarnya - verifySessionFromCookie() sudah
+        ada persis untuk kasus ini tapi sebelumnya tidak pernah dipanggil,
+        jadi orang selalu dilempar ke layar login walau cookie-nya masih sah.
+      */
+      let parsed = getSession<User>();
+      if (!parsed) parsed = await verifySessionFromCookie<User>();
       if (!parsed) { setLoading(false); return; }
       try {
         setCurrentUser(parsed);
