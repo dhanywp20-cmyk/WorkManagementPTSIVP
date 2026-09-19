@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { gabungkanProyek } from '@/lib/kelompok-insentif';
+import { createNotification } from '@/lib/notifications';
 import {
   SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
   persenInstaller, persenPicBerlaku, petaPorsiBerlaku, bagikanTepat, labelSkema, INCENTIVE_CATEGORIES,
@@ -1155,6 +1156,25 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
         : `Project "${project.project_name}" tranche ${tranche.tranche_number}: gagal insert splits (${splitErr.message}). Status dikembalikan ke pending, aman dicoba lagi.`);
       continue;
     }
+
+    /*
+      Kabari tiap penerima BEGITU tahapannya diproses - sebelumnya orang cuma
+      tahu bagiannya bertambah kalau kebetulan membuka Incentive PTS sendiri.
+      Fire-and-forget (createNotification sudah gagal diam-diam di dalamnya)
+      supaya satu baris notifikasi gagal tidak menggagalkan/menunda batch
+      yang splits-nya sendiri sudah berhasil tertulis di atas.
+    */
+    void Promise.all(trancheSplits
+      .filter(s => s.user_id && UUID_RE.test(s.user_id) && s.amount > 0)
+      .map(s => createNotification({
+        user_id: s.user_id,
+        type: 'project',
+        title: '💰 Tahapan insentif diproses',
+        body: `${project.project_name} - tahap ${tranche.tranche_number} tahun ${tranche.payment_year}: ${formatRupiah(s.amount)}`,
+        action_url: '/incentive-pts',
+        ref_id: project.id,
+        created_by: managerUserName,
+      })));
 
     processed++;
   }
