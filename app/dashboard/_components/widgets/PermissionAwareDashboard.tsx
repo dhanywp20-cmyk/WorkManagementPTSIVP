@@ -186,7 +186,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
                       grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-start">
 
         {ajakTelegram && !tutupAjakan && (
-          <div className="rounded-xl flex items-center gap-3 md:gap-4 px-4 py-3.5 flex-wrap"
+          <div className="lg:col-span-12 rounded-xl flex items-center gap-3 md:gap-4 px-4 py-3.5 flex-wrap"
             style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
             <span className="w-9 h-9 rounded-lg grid place-items-center flex-shrink-0 text-white text-base"
               style={{ background: '#f59e0b' }}>➤</span>

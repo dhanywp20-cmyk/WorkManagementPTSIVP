@@ -45,8 +45,22 @@ export interface WidgetDef {
  * kecil satu per satu, tapi berdampingan terbaca seperti dua aplikasi yang
  * ditempel jadi satu - itulah keluhan "tidak senada".
  */
-export const UBIN = 'rounded-[18px] bg-white border border-black/[0.07] p-4 flex flex-col min-w-0';
-export const BAYANG_UBIN = '0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -16px rgba(15,23,42,0.18)';
+export const UBIN = 'relative overflow-hidden rounded-[18px] bg-white border border-black/[0.07] p-4 flex flex-col min-w-0';
+export const BAYANG_UBIN = '0 1px 2px rgba(15,23,42,0.04), 0 10px 26px -18px rgba(15,23,42,0.30)';
+
+/**
+ * Rel aksen setebal 3px di tepi atas ubin - penanda IDENTITAS modul, bukan
+ * sandi data: warnanya menjawab "ubin ini milik modul apa", sementara warna
+ * di dalam grafik tetap menjawab "angka ini baik atau buruk". Keduanya tidak
+ * pernah bertabrakan karena hidup di tempat berbeda.
+ *
+ * Ini yang membuat sederet ubin putih berhenti terbaca monoton tanpa harus
+ * memberi tiap ubin permukaan, bayangan, atau radius yang berbeda-beda -
+ * cara lama yang justru membuat satu layar terlihat seperti dua aplikasi.
+ */
+export function RelAksen({ warna }: { warna: string }) {
+  return <span aria-hidden="true" className="absolute left-0 right-0 top-0 h-[3px]" style={{ background: warna }} />;
+}
 
 export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabel }: {
   title: string; icon: string; accent: string;
@@ -54,6 +68,7 @@ export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabe
 }) {
   return (
     <div className={`${UBIN} h-full`} style={{ boxShadow: BAYANG_UBIN }}>
+      <RelAksen warna={accent} />
       <div className="flex items-center gap-2 mb-3">
         <div className="w-[26px] h-[26px] rounded-[9px] flex items-center justify-center text-[13px] flex-shrink-0"
           style={{ background: `${accent}1a`, color: accent }}>{icon}</div>

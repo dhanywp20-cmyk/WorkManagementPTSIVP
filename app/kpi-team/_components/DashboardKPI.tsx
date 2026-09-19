@@ -3,7 +3,7 @@ import { MiniSpark, DonutChart } from '@/components/shared';
 //  Permukaan ubin dipakai BERSAMA dengan widget dashboard (My Action, Team
 //  Monitoring) - satu-satunya cara memastikan keduanya benar-benar senada,
 //  bukan "mirip" karena angkanya kebetulan disalin.
-import { UBIN, BAYANG_UBIN } from '@/app/dashboard/_components/widgets/primitives';
+import { UBIN, BAYANG_UBIN, RelAksen } from '@/app/dashboard/_components/widgets/primitives';
 import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
@@ -300,13 +300,13 @@ const BAIK   = '#059669';
 const HATI   = '#d97706';
 const KRITIS = '#e11d48';
 
-function HBarChart({ data, color, maxItems=6 }: { data:{label:string;value:number}[]; color?:string; maxItems?:number }) {
+function HBarChart({ data, color, maxItems=6, lebarLabel='7rem' }: { data:{label:string;value:number}[]; color?:string; maxItems?:number; lebarLabel?:string }) {
   const top = data.slice(0, maxItems), max = Math.max(...top.map(d=>d.value), 1);
   return (
-    <div className="space-y-1.5">
+    <div className="flex flex-col gap-[7px]">
       {top.map((d,i) => (
         <div key={i} className="flex items-center gap-2">
-          <span title={d.label} className="text-[11px] font-semibold flex-shrink-0 text-right" style={{ color:'rgba(0,0,0,0.55)', width:'7rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.label}</span>
+          <span title={d.label} className="text-[11px] font-semibold flex-shrink-0 text-right" style={{ color:'rgba(0,0,0,0.55)', width:lebarLabel, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.label}</span>
           <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background:'rgba(15,23,42,0.07)' }}>
             {/*  Opacity TETAP. Versi lama memudarkan tiap batang menurut
                 peringkatnya (0.85 - i*0.07), jadi warna ikut menyandikan
@@ -342,32 +342,293 @@ function BarisRincian({ label, value, total, warna, teks }: {
 }
 
 /**
- * Kartu modul dengan anatomi SERAGAM: judul, satu angka utama, lalu rincian.
- *
- * Sebelumnya tiap modul menyusun isinya sendiri - ada yang kotak-kotak angka
- * berwarna, ada yang donat + legenda, ada yang campuran - sehingga kartu
- * bersebelahan tingginya jauh berbeda dan yang pendek menyisakan rongga.
- * h-full + rincian yang didorong ke bawah (mt-auto) membuat tepi bawahnya
- * berbaris tanpa perlu menebak tinggi.
+ * Kartu modul: anatomi seragam (kepala berwarna modul, satu angka utama,
+ * rincian di tepi bawah) TAPI tidak seragam sampai membosankan - rel aksen
+ * di tepi atas, chip ikon, dan percikan opsional membuat sederet ubin putih
+ * punya identitas masing-masing tanpa mengubah permukaannya.
  */
-function KartuModul({ judul, catatan, angka, satuan, kaki, kelas, children }: {
-  judul:string; catatan?:string; angka:React.ReactNode; satuan:string;
-  kaki?:React.ReactNode; kelas?:string; children:React.ReactNode;
+function KartuModul({ ikon, judul, warna, catatan, angka, satuan, percik, kaki, kelas, children }: {
+  ikon: string; judul: string; warna: string; catatan?: React.ReactNode;
+  angka: React.ReactNode; satuan: string; percik?: number[];
+  kaki?: React.ReactNode; kelas?: string; children: React.ReactNode;
 }) {
   return (
     <div className={`${UBIN} h-full ${kelas ?? ''}`} style={{ boxShadow: BAYANG_UBIN }}>
-      <div className="flex items-center justify-between gap-2 mb-2.5">
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 truncate">{judul}</span>
-        {catatan && <span className="text-[10px] text-slate-400 flex-shrink-0">{catatan}</span>}
+      <RelAksen warna={warna}/>
+      <KepalaUbin ikon={ikon} judul={judul} warna={warna} catatan={catatan}/>
+      <div className="flex items-end justify-between gap-2">
+        <div className="flex items-baseline gap-1.5 min-w-0">
+          <span className="text-[38px] font-black leading-[0.92] text-slate-900 tabular-nums" style={{ letterSpacing: '-0.035em' }}>{angka}</span>
+          <span className="text-[11px] font-bold text-slate-400 truncate">{satuan}</span>
+        </div>
+        {percik && percik.length > 1 && <Percik nilai={percik} warna={warna} lebar={88} tinggi={32}/>}
       </div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-black leading-none text-slate-900" style={{ letterSpacing:'-0.02em' }}>{angka}</span>
-        <span className="text-[11px] font-bold text-slate-400">{satuan}</span>
-      </div>
-      <div className="flex flex-col gap-1.5 mt-auto pt-3.5">{children}</div>
-      {kaki && <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">{kaki}</div>}
+      <div className="flex flex-col gap-[7px] mt-auto pt-3.5">{children}</div>
+      {kaki}
     </div>
   );
+}
+
+/**
+ * Garis percikan + bidang isi. SENGAJA hanya dipakai di tempat yang deret
+ * aslinya memang ada (monthlyTickets). Sparkline hiasan di kartu yang tidak
+ * punya riwayat adalah kebohongan grafis: bentuknya terbaca seperti tren
+ * padahal tidak ada datanya.
+ */
+function Percik({ nilai, warna, lebar = 88, tinggi = 30 }: {
+  nilai: number[]; warna: string; lebar?: number; tinggi?: number;
+}) {
+  if (nilai.length < 2) return null;
+  const mx = Math.max(...nilai), mn = Math.min(...nilai), rg = (mx - mn) || 1, pad = 3;
+  const tt = nilai.map((v, i) => [
+    (i / (nilai.length - 1)) * lebar,
+    tinggi - pad - ((v - mn) / rg) * (tinggi - pad * 2),
+  ] as const);
+  const d  = tt.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  const ak = tt[tt.length - 1];
+  const gid = `pk${warna.replace('#', '')}${lebar}x${tinggi}`;
+  return (
+    <svg aria-hidden="true" focusable="false" width={lebar} height={tinggi}
+      viewBox={`0 0 ${lebar} ${tinggi}`} className="flex-shrink-0">
+      <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor={warna} stopOpacity="0.30"/>
+        <stop offset="1" stopColor={warna} stopOpacity="0"/>
+      </linearGradient></defs>
+      <path d={`${d} L ${lebar} ${tinggi} L 0 ${tinggi} Z`} fill={`url(#${gid})`}/>
+      <path d={d} fill="none" stroke={warna} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx={ak[0].toFixed(1)} cy={ak[1].toFixed(1)} r={2.8} fill={warna}/>
+    </svg>
+  );
+}
+
+/**
+ * Cincin kemajuan. Bentuk lingkaran SAH di sini - tidak seperti donat yang
+ * kemarin dilepas - karena yang diplot benar-benar bagian-dari-keseluruhan
+ * (hari piket terisi dari total hari, attempt lulus dari total attempt),
+ * bukan sekadar beberapa angka yang kebetulan berdampingan.
+ */
+function Cincin({ nilai, dari, warna, ukuran = 84, teks }: {
+  nilai: number; dari: number; warna: string; ukuran?: number; teks: React.ReactNode;
+}) {
+  const pct = dari > 0 ? Math.min(1, nilai / dari) : 0;
+  const r = ukuran / 2 - 7, kel = 2 * Math.PI * r;
+  return (
+    <div className="relative flex-shrink-0" style={{ width: ukuran, height: ukuran }}>
+      <svg aria-hidden="true" focusable="false" width={ukuran} height={ukuran} viewBox={`0 0 ${ukuran} ${ukuran}`}>
+        <circle cx={ukuran/2} cy={ukuran/2} r={r} fill="none" stroke="rgba(15,23,42,0.07)" strokeWidth={9}/>
+        <circle cx={ukuran/2} cy={ukuran/2} r={r} fill="none" stroke={warna} strokeWidth={9} strokeLinecap="round"
+          strokeDasharray={kel} strokeDashoffset={kel * (1 - pct)}
+          transform={`rotate(-90 ${ukuran/2} ${ukuran/2})`}
+          style={{ transition: 'stroke-dashoffset .8s ease' }}/>
+      </svg>
+      <span className="absolute inset-0 grid place-items-center font-black"
+        style={{ color: warna, fontSize: Math.round(ukuran * 0.215), letterSpacing: '-0.03em' }}>{teks}</span>
+    </div>
+  );
+}
+
+/**
+ * Rel judul seksi. Tanpa ini kisinya adalah 11 ubin seragam tanpa jeda sama
+ * sekali - itulah yang terbaca "monoton": bukan karena tiap ubin jelek, tapi
+ * karena mata tidak pernah diberi tempat berhenti.
+ */
+function RelSeksi({ judul }: { judul: string }) {
+  return (
+    <div className="lg:col-span-12 flex items-center gap-2.5 mt-1 -mb-0.5">
+      <span className="text-[10.5px] font-black uppercase tracking-[0.16em] text-slate-500 flex-shrink-0">{judul}</span>
+      <span aria-hidden="true" className="flex-1 h-px"
+        style={{ background: 'linear-gradient(90deg,rgba(15,23,42,0.16),rgba(15,23,42,0))' }}/>
+    </div>
+  );
+}
+
+/** Kepala ubin seragam: chip ikon berwarna modul + judul + catatan kecil. */
+function KepalaUbin({ ikon, judul, warna, catatan }: {
+  ikon: string; judul: string; warna: string; catatan?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2 mb-3">
+      <span aria-hidden="true" className="w-[26px] h-[26px] rounded-[9px] grid place-items-center text-[13px] flex-shrink-0"
+        style={{ background: `${warna}1a`, color: warna }}>{ikon}</span>
+      <h3 className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-slate-500 flex-1 truncate">{judul}</h3>
+      {catatan && <span className="text-[10px] font-semibold text-slate-400 flex-shrink-0">{catatan}</span>}
+    </div>
+  );
+}
+
+/** Kaki ubin: satu keterangan kiri, satu angka kanan, dipisah garis putus. */
+function KakiUbin({ kiri, kanan, warna }: { kiri: React.ReactNode; kanan: React.ReactNode; warna?: string }) {
+  return (
+    <div className="flex justify-between items-center mt-2.5 pt-2.5" style={{ borderTop: '1px dashed rgba(15,23,42,0.10)' }}>
+      <span className="text-[10px] font-bold text-slate-400">{kiri}</span>
+      <span className="text-[11.5px] font-black" style={{ color: warna ?? '#475569' }}>{kanan}</span>
+    </div>
+  );
+}
+
+/**
+ * Pita ringkas gelap di puncak halaman.
+ *
+ * Akar keluhan "monoton" bukan warna tiap ubin, tapi TIDAK ADANYA jangkar:
+ * 11 kotak putih berukuran mirip di atas kanvas terang, tanpa satu pun titik
+ * yang lebih berat dari yang lain, jadi mata tidak tahu harus mulai dari
+ * mana. Satu bidang gelap melebar di atas menyelesaikan itu sekaligus
+ * memberi tempat angka-angka yang memang paling sering ditanyakan.
+ *
+ * Semua angka di sini NYATA. Hanya tiket yang punya deret bulanan, jadi
+ * hanya tiket yang memakai percikan dan selisih "vs bulan lalu"; empat
+ * lainnya memakai meter rasio yang benar-benar bisa dihitung dari datanya.
+ */
+function PitaItem({ label, angka, satuan, garis, children }: {
+  label: string; angka: React.ReactNode; satuan?: string; garis?: boolean; children?: React.ReactNode;
+}) {
+  return (
+    <div className={`min-w-0 ${garis ? 'lg:pl-5 lg:border-l lg:border-white/[0.12]' : ''}`}>
+      <p className="text-[9.5px] font-black uppercase tracking-[0.11em] truncate" style={{ color: 'rgba(199,210,254,0.85)' }}>{label}</p>
+      <p className="text-[26px] sm:text-[30px] font-black leading-none mt-1 tabular-nums" style={{ letterSpacing: '-0.035em' }}>
+        {angka}{satuan && <span className="text-[13px] font-bold ml-1" style={{ color: 'rgba(199,210,254,0.75)' }}>{satuan}</span>}
+      </p>
+      <div className="flex items-center gap-2 mt-2 h-[20px]">{children}</div>
+    </div>
+  );
+}
+
+function MeterGelap({ pct, warna }: { pct: number; warna: string }) {
+  return (
+    <div className="h-1.5 rounded-full overflow-hidden w-full max-w-[92px]" style={{ background: 'rgba(255,255,255,0.16)' }}>
+      <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: warna }}/>
+    </div>
+  );
+}
+
+function LabelPita({ children }: { children: React.ReactNode }) {
+  return <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: 'rgba(199,210,254,0.72)' }}>{children}</span>;
+}
+
+function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: boolean; catatan: string }) {
+  const bln = new Date().getMonth();
+  const deret = (kpi?.tickets.monthlyTickets ?? []).slice(0, bln + 1);
+  const tIni  = deret[bln] ?? 0;
+  const tLalu = bln > 0 ? (deret[bln - 1] ?? 0) : null;
+  const beda  = tLalu === null ? null : tIni - tLalu;
+  const rTot  = kpi?.reminders.total ?? 0;
+  const pTot  = kpi?.piket.weekTotal ?? 0;
+  const kosong = <span className="inline-block h-6 w-12 rounded bg-white/10 animate-pulse"/>;
+  return (
+    <div className="lg:col-span-12 relative overflow-hidden rounded-[20px] px-5 py-4 md:px-6 md:py-5 text-white"
+      style={{ background: 'linear-gradient(118deg,#141a3a 0%,#231a56 46%,#3b1d52 100%)',
+               boxShadow: '0 18px 40px -24px rgba(20,26,58,0.85)' }}>
+      <span aria-hidden="true" className="absolute pointer-events-none rounded-full"
+        style={{ right: -60, top: -90, width: 340, height: 340,
+                 background: 'radial-gradient(circle,rgba(129,140,248,0.30),transparent 62%)' }}/>
+      <div className="relative flex items-center justify-between gap-3 flex-wrap mb-4">
+        <h2 className="text-[15px] font-black tracking-tight flex items-center gap-2"><span aria-hidden="true">📊</span> Ringkasan Platform</h2>
+        <div className="flex items-center gap-2">
+          <span className="text-[10.5px] font-bold px-2.5 py-1 rounded-full"
+            style={{ color: '#c7d2fe', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.14)' }}>
+            {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+          </span>
+          <span className="text-[10.5px] font-bold px-2.5 py-1 rounded-full"
+            style={{ color: '#c7d2fe', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.14)' }}>
+            {catatan}
+          </span>
+        </div>
+      </div>
+      <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-4">
+        <PitaItem label="Tiket bulan ini" angka={loading ? kosong : tIni}>
+          {!loading && beda !== null && (
+            <span title={`Bulan lalu ${tLalu} tiket`} className="text-[10px] font-black px-1.5 py-0.5 rounded-full whitespace-nowrap"
+              style={{ background: 'rgba(255,255,255,0.12)', color: '#c7d2fe' }}>
+              {beda > 0 ? '▲' : beda < 0 ? '▼' : '='} {Math.abs(beda)}
+            </span>
+          )}
+          {!loading && <Percik nilai={deret} warna="#a5b4fc" lebar={76} tinggi={20}/>}
+        </PitaItem>
+
+        <PitaItem label="Avg resolusi" satuan="hari" garis angka={loading ? kosong : (kpi?.tickets.avgResolutionDays ?? 0)}>
+          {!loading && <LabelPita>{kpi?.tickets.solved ?? 0} tiket selesai</LabelPita>}
+        </PitaItem>
+
+        <PitaItem label="Reminder overdue" garis angka={loading ? kosong : (kpi?.reminders.overdueCount ?? 0)}>
+          {!loading && <>
+            <MeterGelap pct={rTot ? ((kpi?.reminders.overdueCount ?? 0) / rTot) * 100 : 0} warna="#fda4af"/>
+            <LabelPita>dari {rTot}</LabelPita>
+          </>}
+        </PitaItem>
+
+        <PitaItem label="Piket minggu ini" garis satuan={pTot ? `/${pTot}` : undefined}
+          angka={loading ? kosong : (kpi?.piket.weekFilled ?? 0)}>
+          {!loading && <>
+            <MeterGelap pct={pTot ? ((kpi?.piket.weekFilled ?? 0) / pTot) * 100 : 0} warna="#6ee7b7"/>
+            <LabelPita>{pTot ? Math.round(((kpi?.piket.weekFilled ?? 0) / pTot) * 100) : 0}%</LabelPita>
+          </>}
+        </PitaItem>
+
+        <PitaItem label="LC avg skor" garis angka={loading ? kosong : (kpi?.learning.avgScore ?? 0)}>
+          {!loading && <>
+            <MeterGelap pct={kpi?.learning.avgScore ?? 0} warna="#6ee7b7"/>
+            <LabelPita>{kpi?.learning.totalParticipants ?? 0} peserta</LabelPita>
+          </>}
+        </PitaItem>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Trend bulanan sebagai AREA, bukan 12 batang pucat.
+ *
+ * Batang membandingkan besaran antar kategori yang berdiri sendiri; yang
+ * ditanyakan di sini adalah bentuk perjalanan sepanjang tahun, dan itu
+ * dibaca dari kemiringan garis. Bulan yang belum terjadi tidak digambar
+ * sebagai nol - digambar sebagai garis putus, karena "belum ada datanya"
+ * bukan "nilainya nol".
+ */
+function TrenBulanan({ data }: { data: number[] }) {
+  const MN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  const cur = Math.min(new Date().getMonth(), 11);
+  const W = 640, H = 168, pb = 26, pt = 18, sisi = 10;
+  const mx = Math.max(...data, 1);
+  const X = (i: number) => sisi + (i / 11) * (W - sisi * 2);
+  const Y = (v: number) => pt + (1 - v / mx) * (H - pt - pb);
+  const tt = data.slice(0, cur + 1).map((v, i) => [X(i), Y(v)] as const);
+  const d  = tt.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
+  const total = data.reduce((s, v) => s + v, 0);
+  return (
+    <svg role="img" aria-label={`Trend ticket bulanan, total ${total} tiket`}
+      viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" style={{ display: 'block' }}>
+      <defs><linearGradient id="trenIsi" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stopColor={AKSEN} stopOpacity="0.26"/>
+        <stop offset="1" stopColor={AKSEN} stopOpacity="0"/>
+      </linearGradient></defs>
+      {[0, 0.5, 1].map(f => {
+        const y = pt + f * (H - pt - pb);
+        return <line key={f} x1={0} y1={y} x2={W} y2={y} stroke="rgba(15,23,42,0.07)" strokeWidth={1}/>;
+      })}
+      {tt.length > 1 && <path d={`${d} L ${X(cur)} ${H - pb} L ${X(0)} ${H - pb} Z`} fill="url(#trenIsi)"/>}
+      <path d={d} fill="none" stroke={AKSEN} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"/>
+      {cur < 11 && <line x1={X(cur)} y1={H - pb} x2={X(11)} y2={H - pb}
+        stroke="#cbd5e1" strokeWidth={1.5} strokeDasharray="3 4"/>}
+      {tt.map((p, i) => {
+        const kini = i === cur;
+        return <circle key={i} cx={p[0].toFixed(1)} cy={p[1].toFixed(1)} r={kini ? 5 : 3}
+          fill="#fff" stroke={AKSEN} strokeWidth={kini ? 3 : 2}><title>{`${MN[i]}: ${data[i]} ticket`}</title></circle>;
+      })}
+      {tt.length > 0 && (
+        <text x={X(cur)} y={Y(data[cur] ?? 0) - 13} textAnchor="middle"
+          fontSize="12.5" fontWeight="900" fill={AKSEN}>{data[cur] ?? 0}</text>
+      )}
+      {MN.map((m, i) => (
+        <text key={m} x={X(i)} y={H - 7} textAnchor="middle" fontSize="10"
+          fontWeight={i === cur ? 800 : 500} fill={i === cur ? AKSEN : '#94a3b8'}>{m}</text>
+      ))}
+    </svg>
+  );
+}
+
+/** Inisial nama untuk avatar papan peringkat. */
+function inisial(nama: string) {
+  return nama.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('') || '?';
 }
 
 function AuditRow({ entry }: { entry: AuditEntry }) {
@@ -843,27 +1104,30 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
           {tab==='analytics' && (
             <div className="grid grid-cols-1 gap-3 lg:contents">
 
+              {/*  Jangkar halaman. Lihat PitaRingkas untuk alasannya. */}
+              <PitaRingkas kpi={kpi} loading={loading}
+                catatan={scope.kind==='pts_sup' ? (scope.ptsTeamType ?? 'Tim') : scope.kind==='admin' ? 'Semua Tim' : 'Tim Saya'}/>
+
+              <RelSeksi judul="Operasional"/>
+
               {/*
-                Kartu modul dengan anatomi SERAGAM (lihat KartuModul): judul,
-                satu angka utama, lalu rincian yang didorong ke tepi bawah.
-                Donat dilepas - donat menjawab "berapa bagian dari keseluruhan",
-                sementara yang ditanyakan di sini "berapa banyak, dan mana yang
-                menumpuk". Untuk itu deretan bilah jauh lebih mudah dibandingkan,
-                dan tidak pernah menyisakan rongga seperti donat 80px di kartu
-                yang isinya cuma dua angka.
+                Empat ubin operasional. Anatominya SENADA (permukaan, kepala,
+                angka utama) tapi tidak identik: Ticket/Reminder/Unit memakai
+                bilah rasio, Piket memakai cincin + papan nama karena isinya
+                memang NAMA, bukan besaran yang bisa dibandingkan panjangnya.
               */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
 
                 {/* TICKET */}
                 <KartuModul
-                  kelas="lg:col-span-3" judul="🎫 Ticket"
+                  kelas="lg:col-span-3" ikon="🎫" judul="Ticket" warna="#e11d48"
                   catatan={scope.kind==='pts_sup'?scope.ptsTeamType:'Semua'}
                   angka={loading?'—':(kpi?.tickets.total??0)}
-                  satuan="total tiket"
-                  kaki={!loading&&kpi?<>
-                    <span className="text-[10px] text-slate-400 font-semibold">Avg resolusi</span>
-                    <span className="text-[11px] font-black text-slate-600">{kpi.tickets.avgResolutionDays}h</span>
-                  </>:undefined}>
+                  satuan="tiket"
+                  percik={loading?undefined:(kpi?.tickets.monthlyTickets??[]).slice(0, new Date().getMonth()+1)}
+                  kaki={!loading&&kpi
+                    ? <KakiUbin kiri="Avg resolusi" warna={BAIK} kanan={`${kpi.tickets.avgResolutionDays} hari`}/>
+                    : undefined}>
                   {loading
                     ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
                     : batasDenganLainnya(kpi?.tickets.byStatus??[], 4, count=>({status:'Lainnya',count,color:'#94a3b8'}))
@@ -876,15 +1140,13 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
                 {/* REMINDER SCHEDULE */}
                 <KartuModul
-                  kelas="lg:col-span-3" judul="📅 Reminder Schedule"
+                  kelas="lg:col-span-3" ikon="📅" judul="Reminder Schedule" warna="#7c3aed"
                   angka={loading?'—':(kpi?.reminders.total??0)}
-                  satuan="total jadwal"
-                  kaki={!loading&&kpi?<>
-                    <span className="text-[10px] text-slate-400 font-semibold">Done rate</span>
-                    <span className="text-[11px] font-black" style={{color:BAIK}}>
-                      {kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%
-                    </span>
-                  </>:undefined}>
+                  satuan="jadwal"
+                  kaki={!loading&&kpi
+                    ? <KakiUbin kiri="Done rate" warna={BAIK}
+                        kanan={`${kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%`}/>
+                    : undefined}>
                   {loading
                     ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
                     : <>
@@ -894,12 +1156,51 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       </>}
                 </KartuModul>
 
+                {/* PIKET SHOWROOM — cincin + papan nama, bukan bilah */}
+                <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
+                  <RelAksen warna="#0891b2"/>
+                  <KepalaUbin ikon="🏪" judul="Piket Showroom" warna="#0891b2"
+                    catatan={new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}/>
+                  <div className="flex items-center gap-3.5">
+                    <Cincin ukuran={82} warna="#0891b2"
+                      nilai={kpi?.piket.weekFilled??0} dari={kpi?.piket.weekTotal??0}
+                      teks={loading?'—':`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??0}`}/>
+                    {/*  PIC piket adalah NAMA, bukan angka - bilah sepanjang nol
+                        untuk "belum diisi" cuma menipu mata: terbaca seperti
+                        nilai nol padahal artinya "belum ada datanya". */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                      {[
+                        {team:'IVP', person:kpi?.piket.todayIVP},
+                        {team:'UMP', person:kpi?.piket.todayUMP},
+                        {team:'MVI', person:kpi?.piket.todayMvi},
+                      ].map(p=>(
+                        <div key={p.team} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-[10px] bg-slate-50 border border-black/[0.05]">
+                          <span className="text-[10px] font-black tracking-[0.08em] flex-shrink-0" style={{color:'#0891b2'}}>{p.team}</span>
+                          {loading
+                            ? <span className="inline-block h-2.5 w-16 rounded bg-slate-100 animate-pulse"/>
+                            : p.person
+                              ? <span className="text-[11px] font-bold text-slate-600 truncate">{p.person}</span>
+                              : <span className="text-[11px] font-semibold text-slate-300 italic truncate">Belum diisi</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mt-auto">
+                    {!loading&&kpi&&<KakiUbin kiri={`${kpi.piket.kegiatanToday} tamu hari ini`} warna="#0891b2"
+                      kanan={`${Math.min(100,Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100))}% terpenuhi`}/>}
+                  </div>
+                </div>
+
                 {/* UNIT MOVEMENT */}
                 <KartuModul
-                  kelas="lg:col-span-3" judul="🚚 Unit Movement"
+                  kelas="lg:col-span-3" ikon="🚚" judul="Unit Movement" warna="#d97706"
                   catatan="Bulan ini"
                   angka={loading?'—':(kpi?.units.totalLogs??0)}
-                  satuan="log tercatat">
+                  satuan="log tercatat"
+                  kaki={!loading&&kpi
+                    ? <KakiUbin kiri="Saldo bulan ini" warna="#d97706"
+                        kanan={`${kpi.units.masukThisMonth-kpi.units.keluarThisMonth>0?'+':''}${kpi.units.masukThisMonth-kpi.units.keluarThisMonth} unit`}/>
+                    : undefined}>
                   {loading
                     ? [0,1].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
                     : <>
@@ -907,221 +1208,169 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                         <BarisRincian label="Masuk"  value={kpi?.units.masukThisMonth??0}  total={kpi?.units.totalLogs??0} warna={BAIK}/>
                       </>}
                 </KartuModul>
-
-                {/* PIKET SHOWROOM */}
-                <KartuModul
-                  kelas="lg:col-span-3" judul="🏪 Piket Showroom"
-                  catatan={new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}
-                  angka={loading?'—':`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??0}`}
-                  satuan="hari terisi minggu ini"
-                  kaki={!loading&&kpi?<>
-                    <span className="text-[10px] text-slate-400 font-semibold">{kpi.piket.kegiatanToday} tamu hari ini</span>
-                    <span className="text-[11px] font-black" style={{color:BAIK}}>
-                      {Math.min(100,Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100))}% terpenuhi
-                    </span>
-                  </>:undefined}>
-                  {/*  PIC piket adalah NAMA, bukan angka - jadi barisnya memakai
-                      varian teks, bukan bilah. Bilah sepanjang nol untuk "belum
-                      diisi" cuma menipu mata: terbaca seperti nilai nol padahal
-                      artinya "belum ada datanya". */}
-                  {[
-                    {team:'IVP', person:kpi?.piket.todayIVP},
-                    {team:'UMP', person:kpi?.piket.todayUMP},
-                    {team:'MVI', person:kpi?.piket.todayMvi},
-                  ].map(p=>(
-                    <BarisRincian key={p.team} label={p.team}
-                      teks={loading
-                        ? <span className="inline-block h-2.5 w-20 rounded bg-slate-100 animate-pulse"/>
-                        : (p.person ?? <span className="italic text-slate-300">Belum diisi</span>)}/>
-                  ))}
-                </KartuModul>
               </div>
 
-              {/* ── Learning Center + Pengguna (admin) ── */}
-              {scope.kind==='admin'&&(
-                <div className="grid grid-cols-1 gap-3 lg:contents">
+              <RelSeksi judul="Distribusi Tiket"/>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
+
+                {/*
+                  Beban handler sebagai PAPAN PERINGKAT, bukan bar chart.
+                  Datanya sering cuma satu atau dua orang, dan grafik batang
+                  berisi satu batang tidak membandingkan apa pun - yang dibaca
+                  orang di sana adalah nama dan angkanya. Orang teratas diberi
+                  aksen penuh, sisanya abu: penekanan, bukan peringkat berwarna.
+                */}
+                <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
+                  <RelAksen warna={AKSEN}/>
+                  <KepalaUbin ikon="🏅" judul="Beban Handler" warna={AKSEN} catatan="Open"/>
+                  {loading ? <div className="h-28 rounded animate-pulse bg-slate-100"/>
+                    : kpi?.tickets.byHandler.length ? <>
+                      <div className="flex flex-col">
+                        {kpi.tickets.byHandler.slice(0,5).map((h,i)=>(
+                          <div key={h.name} className="flex items-center gap-2.5 py-[7px] border-b border-black/[0.05] last:border-b-0">
+                            <span aria-hidden="true" className="w-7 h-7 rounded-[10px] grid place-items-center text-[10.5px] font-black text-white flex-shrink-0"
+                              style={{ background: i===0 ? AKSEN : '#cbd5e1' }}>{inisial(h.name)}</span>
+                            <span className="text-[12px] font-extrabold text-slate-800 flex-1 truncate">{h.name}</span>
+                            <span className="text-[16px] font-black tabular-nums flex-shrink-0"
+                              style={{ color: i===0 ? AKSEN : '#94a3b8' }}>{h.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-auto">
+                        <KakiUbin kiri="Rata-rata beban" warna={AKSEN}
+                          kanan={`${(kpi.tickets.open/Math.max(kpi.tickets.byHandler.length,1)).toFixed(1).replace('.',',')} tiket/orang`}/>
+                      </div>
+                    </> : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
+                </div>
+
+                {/* DIVISI */}
+                <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
+                  <RelAksen warna={AKSEN}/>
+                  <KepalaUbin ikon="🏢" judul="Ticket per Divisi" warna={AKSEN}/>
+                  {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
+                    kpi?.tickets.byDivision.length
+                      ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))}/>
+                      : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
+                </div>
+
+                {/*
+                  Produk enam kolom: labelnya yang paling panjang di baris ini
+                  ("Philips 55BDL2105X", "Microvision MV-U55…"), dan 3+3+6
+                  menggenapkan barisnya jadi dua belas tanpa slot menggantung.
+                */}
+                <div className={`${UBIN} lg:col-span-6 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
+                  <RelAksen warna={AKSEN}/>
+                  <KepalaUbin ikon="📦" judul="Ticket per Produk" warna={AKSEN} catatan="6 teratas"/>
+                  {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
+                    kpi?.tickets.byProduct?.length
+                      ? <HBarChart lebarLabel="10rem" data={kpi.tickets.byProduct.map(p=>({label:p.product,value:p.count}))}/>
+                      : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data produk</p>}
+                </div>
+              </div>
+
+              <RelSeksi judul="Tim & Pembelajaran"/>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
+
+                {/* TREND — area, lihat TrenBulanan */}
+                <div className={`${UBIN} ${scope.kind==='admin'?'lg:col-span-6':'lg:col-span-12'} h-full`} style={{ boxShadow: BAYANG_UBIN }}>
+                  <RelAksen warna={AKSEN}/>
+                  <KepalaUbin ikon="📈" judul={`Trend Ticket Bulanan ${new Date().getFullYear()}`} warna={AKSEN}
+                    catatan={!loading&&kpi ? `${kpi.tickets.monthlyTickets.reduce((s,v)=>s+v,0)} total` : undefined}/>
+                  {loading ? <div className="h-36 rounded animate-pulse bg-slate-100"/>
+                    : kpi?.tickets.monthlyTickets?.some(v=>v>0)
+                      ? <TrenBulanan data={kpi.tickets.monthlyTickets}/>
+                      : <div className="flex flex-col items-center gap-2 py-10">
+                          <span className="text-3xl opacity-20" aria-hidden="true">📊</span>
+                          <p className="text-[11px] text-slate-400">Belum ada data ticket tahun ini.</p>
+                        </div>}
+                </div>
+
+                {scope.kind==='admin' && <>
+                  {/* LEARNING CENTER */}
                   <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">🎓 Learning Center</span>
-                    {/*  Tiga angka polos, bukan kotak berwarna: nilainya tidak
-                        punya makna baik/buruk, jadi tidak ada yang perlu
-                        diwarnai. */}
+                    <RelAksen warna={BAIK}/>
+                    <KepalaUbin ikon="🎓" judul="Learning Center" warna={BAIK}/>
                     <div className="grid grid-cols-3 gap-3">
                       {[
-                        {label:'Peserta',        value:kpi?.learning.totalParticipants??0},
-                        {label:'Attempt',        value:kpi?.learning.totalSessions??0},
-                        {label:'Rata-rata skor', value:kpi?.learning.avgScore??0},
+                        {label:'Peserta',  value:kpi?.learning.totalParticipants??0, w:'#0f172a'},
+                        {label:'Attempt',  value:kpi?.learning.totalSessions??0,     w:'#0f172a'},
+                        {label:'Avg skor', value:kpi?.learning.avgScore??0,          w:BAIK},
                       ].map(s=>(
                         <div key={s.label}>
-                          <p className="text-[10px] font-bold text-slate-400">{s.label}</p>
+                          <p className="text-[9.5px] font-black uppercase tracking-[0.07em] text-slate-400 truncate">{s.label}</p>
                           {loading
                             ? <div className="h-6 w-10 rounded bg-slate-100 animate-pulse mt-1"/>
-                            : <p className="text-2xl font-black text-slate-900 leading-none mt-1">{s.value}</p>}
+                            : <p className="text-[24px] font-black leading-none mt-1 tabular-nums" style={{color:s.w,letterSpacing:'-0.03em'}}>{s.value}</p>}
                         </div>
                       ))}
                     </div>
-                    {/*  Pass rate sebagai SATU meter, menggantikan dua donat yang
-                        dulu berdampingan: keduanya menyatakan rasio yang sama
-                        dengan angka yang sudah tertulis di sebelahnya. */}
+                    {/*  Pass rate sebagai satu cincin - bagian-dari-keseluruhan
+                        yang sesungguhnya, menggantikan dua donat yang dulu
+                        menyatakan rasio yang sama dua kali. */}
                     {!loading&&kpi&&(()=>{
                       const gagal = Math.max(kpi.learning.totalSessions-kpi.learning.completedSessions,0);
                       const pct = kpi.learning.totalSessions>0
                         ? Math.round((kpi.learning.completedSessions/kpi.learning.totalSessions)*100) : 0;
+                      const w = pct>=80?BAIK:pct>=60?HATI:KRITIS;
                       return (
-                        <div className="mt-auto pt-4">
-                          <div className="flex justify-between items-baseline mb-1.5">
-                            <span className="text-[11px] font-bold text-slate-600">Pass rate</span>
-                            <span className="text-[11px] font-black" style={{color:pct>=80?BAIK:pct>=60?HATI:KRITIS}}>
-                              {pct}% · {kpi.learning.completedSessions} lulus, {gagal} gagal
-                            </span>
-                          </div>
-                          <div className="h-2 rounded-full overflow-hidden" style={{background:'rgba(15,23,42,0.07)'}}>
-                            <div className="h-full rounded-full" style={{width:`${pct}%`,background:pct>=80?BAIK:pct>=60?HATI:KRITIS}}/>
+                        <div className="flex items-center gap-3.5 mt-auto pt-4">
+                          <Cincin ukuran={72} warna={w} nilai={kpi.learning.completedSessions} dari={kpi.learning.totalSessions} teks={`${pct}%`}/>
+                          <div className="min-w-0">
+                            <p className="text-[11px] font-extrabold text-slate-700">Pass rate</p>
+                            <div className="flex flex-col gap-1 mt-1.5">
+                              <span className="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-500">
+                                <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:w}}/>{kpi.learning.completedSessions} lulus</span>
+                              <span className="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-500">
+                                <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:'#e2e8f0'}}/>{gagal} gagal</span>
+                            </div>
                           </div>
                         </div>
                       );
                     })()}
                   </div>
 
-                  {/*  Pengguna DILEPAS dari kartu Unit Movement. Keduanya tidak
-                      berhubungan sama sekali; menumpangkannya cuma karena ada
-                      ruang sisa membuat pembaca mengira jumlah akun ada
-                      kaitannya dengan lalu lintas unit. */}
-                  <KartuModul
-                    kelas="lg:col-span-3" judul="👥 Pengguna"
-                    angka={loading?'—':(kpi?.users.total??0)}
-                    satuan="akun terdaftar">
-                    {loading
-                      ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
-                      : (kpi?.users.byRole??[]).map(r=>(
-                          <BarisRincian key={r.role} label={(r.role??'—').toUpperCase()}
-                            value={r.count} total={kpi?.users.total??0}/>
-                        ))}
-                  </KartuModul>
-                </div>
-              )}
-
-            </div>
-          )}
-
-
-          {/* ══════════ TAB ANALYTICS — KPI Live Charts ══════════ */}
-          {tab==='analytics'&&(
-            <div className="grid grid-cols-1 gap-3 lg:contents">
-              {/*
-                SATU grid untuk seluruh tab, bukan baris-3 lalu baris-2 lalu
-                dua kartu selebar layar. Campuran itulah yang membuatnya tidak
-                pernah terlihat rapi: tiap baris punya lebar kartu sendiri,
-                jadi tepi kirinya berbaris tapi tepi kanannya tidak.
-                Empat kolom menyamakan lebar dasarnya; kartu yang isinya
-                memang butuh ruang (Reminder, Trend, Ringkasan) mengambil dua
-                kolom lewat col-span, sehingga tetap kelipatan lebar yang sama.
-              */}
-              {/*
-                items-start: tiap kartu setinggi ISINYA SENDIRI. Tanpa ini grid
-                meregangkan semuanya setinggi kartu tertinggi - "Ticket Open per
-                Handler" yang cuma berisi dua nama ikut setinggi "Ticket per
-                Produk" yang berisi enam, dan selisihnya jadi ruang kosong yang
-                tidak pernah terisi apa pun.
-              */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
-                {/* Handler */}
-                <div className={`${UBIN} lg:col-span-3`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🎫 Ticket Open per Handler</h3>
-                  {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
-                    kpi?.tickets.byHandler.length
-                      ? <HBarChart data={kpi.tickets.byHandler.map(h=>({label:h.name.split(' ')[0],value:h.count}))}/>
-                      : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
-                </div>
-                {/* Divisi */}
-                <div className={`${UBIN} lg:col-span-3`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🏢 Ticket per Divisi</h3>
-                  {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
-                    kpi?.tickets.byDivision.length
-                      ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))}/>
-                      : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
-                </div>
-                {/*
-                  Produk dua kolom: labelnya yang paling panjang di baris ini
-                  ("Philips 55BDL2105X", "Microvision MV-U55…"), DAN 1+1+2
-                  menggenapkan baris pertama jadi empat. Tanpa itu tersisa satu
-                  slot kosong di ujung kanan - lubang yang justru jadi keluhan
-                  awalnya.
-                */}
-                <div className={`${UBIN} lg:col-span-4`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">📦 Ticket per Produk</h3>
-                  {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
-                    kpi?.tickets.byProduct?.length
-                      ? <HBarChart data={kpi.tickets.byProduct.map(p=>({label:p.product,value:p.count}))}/>
-                      : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data produk</p>}
-                </div>
-
-                {/*
-                  Trend selebar grid. Sesudah tiga kartu duplikat dihapus,
-                  sisanya Handler(1) + Divisi(1) + Produk(2) = baris pertama
-                  penuh; Trend dengan 2 kolom akan menyisakan dua slot
-                  menggantung di baris kedua. Empat kolom mengisinya, dan 12
-                  batang bulan memang paling terbaca pada lebar penuh.
-                */}
-                <div className={`${UBIN} lg:col-span-8`} style={{ boxShadow: BAYANG_UBIN }}>
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">📈 Trend Ticket Bulanan {new Date().getFullYear()}</h3>
-                {loading ? <div className="h-32 rounded animate-pulse bg-slate-100"/> : (
-                  kpi?.tickets.monthlyTickets?.some(v => v > 0) ? (() => {
-                    const MN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
-                    const data = kpi.tickets.monthlyTickets;
-                    const max = Math.max(...data, 1);
-                    const total = data.reduce((s, v) => s + v, 0);
-                    const curMonth = new Date().getMonth();
-                    return (
-                      <div>
-                        {/*  Merah dilepas: jumlah tiket per bulan bukan kabar
-                            baik/buruk, sementara merah di platform ini berarti
-                            "bermasalah" (overdue, denda). Bulan berjalan
-                            ditonjolkan dengan aksen penuh, bulan lain memakai
-                            aksen muda - penekanan, bukan status. */}
-                        <div className="flex items-end gap-1" style={{height: 78}}>
-                          {data.map((v, i) => {
-                            const hPct = Math.round((v / max) * 70);
-                            const isCur = i === curMonth;
-                            return (
-                              <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group cursor-default" title={`${MN[i]}: ${v} ticket`}>
-                                {/*  Bulan tanpa tiket setinggi NOL, bukan 2px.
-                                    Tonjolan tipis terbaca seperti "ada sedikit"
-                                    padahal tidak ada sama sekali; garis dasar di
-                                    bawahnya yang menandai sumbunya. */}
-                                <div className="w-full rounded-t transition-all duration-700"
-                                  style={{ height: v > 0 ? Math.max(hPct, 4) : 0, background: isCur ? AKSEN : '#c7d2fe' }}/>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <div className="border-t border-slate-200" />
-                        <div className="flex items-center gap-1 mt-1 mb-2">
-                          {MN.map((m, i) => (
-                            <div key={i} className="flex-1 text-center">
-                              <span className="text-[9px]" style={{ color: i === curMonth ? AKSEN : '#94a3b8', fontWeight: i === curMonth ? 800 : 400 }}>{m}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{background:AKSEN}}/><span className="text-[11px] text-slate-500">Bulan ini</span></div>
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{background:'#c7d2fe'}}/><span className="text-[11px] text-slate-500">Bulan lain</span></div>
-                          </div>
-                          <span className="text-sm font-black text-slate-600">{total} total</span>
-                        </div>
-                      </div>
-                    );
-                  })() : (
-                    <div className="flex flex-col items-center gap-2 py-8">
-                      <span className="text-3xl opacity-20">📊</span>
-                      <p className="text-[11px] text-slate-400">Belum ada data ticket tahun ini.</p>
+                  {/*
+                    Pengguna: satu bilah bertumpuk, bukan empat bilah terpisah.
+                    Yang ditanyakan tentang peran akun adalah KOMPOSISI - berapa
+                    bagian dari seluruh akun - dan itu justru hilang kalau tiap
+                    peran diberi bilah sendiri dengan patokan panjang yang sama.
+                  */}
+                  <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
+                    <RelAksen warna="#475569"/>
+                    <KepalaUbin ikon="👥" judul="Pengguna" warna="#475569"/>
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-[38px] font-black leading-[0.92] text-slate-900 tabular-nums" style={{letterSpacing:'-0.035em'}}>
+                        {loading?'—':(kpi?.users.total??0)}</span>
+                      <span className="text-[11px] font-bold text-slate-400">akun terdaftar</span>
                     </div>
-                  )
-                )}
+                    {!loading&&kpi&&(()=>{
+                      const WARNA = ['#4f46e5','#7c3aed','#d97706','#94a3b8','#0891b2','#e11d48'];
+                      const peran = kpi.users.byRole.filter(r=>r.count>0);
+                      return (
+                        <div className="mt-auto pt-4">
+                          <div className="flex gap-[2px] h-3 rounded-full overflow-hidden">
+                            {peran.map((r,i)=>(
+                              <span key={r.role??i} title={`${(r.role??'—').toUpperCase()}: ${r.count}`}
+                                style={{flex:r.count, background:WARNA[i%WARNA.length]}}/>
+                            ))}
+                          </div>
+                          <div className="flex flex-wrap gap-x-3.5 gap-y-1.5 mt-2.5">
+                            {peran.map((r,i)=>(
+                              <span key={r.role??i} className="inline-flex items-center gap-1.5 text-[10.5px] font-bold text-slate-500">
+                                <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:WARNA[i%WARNA.length]}}/>
+                                {(r.role??'Belum diatur').toUpperCase()} {r.count}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </div>
+                </>}
               </div>
 
-              </div>
             </div>
           )}
 
