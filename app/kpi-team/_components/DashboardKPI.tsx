@@ -485,7 +485,7 @@ function PitaItem({ label, angka, satuan, garis, children }: {
   return (
     <div className={`min-w-0 ${garis ? 'lg:pl-5 lg:border-l lg:border-white/[0.12]' : ''}`}>
       <p className="text-[9.5px] font-black uppercase tracking-[0.11em] truncate" style={{ color: 'rgba(199,210,254,0.85)' }}>{label}</p>
-      <p className="text-[26px] sm:text-[30px] font-black leading-none mt-1 tabular-nums" style={{ letterSpacing: '-0.035em' }}>
+      <p className="text-[26px] sm:text-[28px] font-black leading-none mt-1 tabular-nums" style={{ letterSpacing: '-0.035em' }}>
         {angka}{satuan && <span className="text-[13px] font-bold ml-1" style={{ color: 'rgba(199,210,254,0.75)' }}>{satuan}</span>}
       </p>
       <div className="flex items-center gap-2 mt-2 h-[20px]">{children}</div>
@@ -534,7 +534,7 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
           </span>
         </div>
       </div>
-      <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-4">
+      <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-4">
         <PitaItem label="Tiket bulan ini" angka={loading ? kosong : tIni}>
           {!loading && beda !== null && (
             <span title={`Bulan lalu ${tLalu} tiket`} className="text-[10px] font-black px-1.5 py-0.5 rounded-full whitespace-nowrap"
@@ -545,8 +545,15 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
           {!loading && <Percik nilai={deret} warna="#a5b4fc" lebar={76} tinggi={20}/>}
         </PitaItem>
 
+        {/*  Pindah ke sini dari kartu "Ringkasan Performa" milik Team
+             Monitoring, yang dulu mencetak lima angka yang sama persis
+             dengan pita ini di layar yang sama. */}
+        <PitaItem label="Solved hari ini" garis angka={loading ? kosong : (kpi?.tickets.resolvedToday ?? 0)}>
+          {!loading && <LabelPita>dari {kpi?.tickets.open ?? 0} tiket terbuka</LabelPita>}
+        </PitaItem>
+
         <PitaItem label="Avg resolusi" satuan="hari" garis angka={loading ? kosong : (kpi?.tickets.avgResolutionDays ?? 0)}>
-          {!loading && <LabelPita>{kpi?.tickets.solved ?? 0} tiket selesai</LabelPita>}
+          {!loading && <LabelPita>{kpi?.tickets.solved ?? 0} total selesai</LabelPita>}
         </PitaItem>
 
         <PitaItem label="Reminder overdue" garis angka={loading ? kosong : (kpi?.reminders.overdueCount ?? 0)}>

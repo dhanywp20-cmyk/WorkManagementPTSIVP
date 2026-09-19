@@ -86,8 +86,20 @@ export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabe
   );
 }
 
+/**
+ * Keadaan kosong. Bingkai putus-putus, bukan sekadar teks melayang di tengah
+ * kotak putih: tanpa bingkai, ubin "Mendatang" yang memang tidak ada isinya
+ * terbaca seperti ubin yang GAGAL memuat. Tingginya juga diturunkan (60->44)
+ * karena tinggi minimum itulah yang membuat ubin kosong ikut setinggi ubin
+ * berisi dan menyisakan rongga di kisi.
+ */
 export function EmptyState({ text }: { text: string }) {
-  return <div className="flex items-center justify-center h-full min-h-[60px] text-[11px] text-slate-400 text-center px-2">{text}</div>;
+  return (
+    <div className="flex items-center justify-center min-h-[44px] rounded-xl px-3 py-3 text-[11px] text-slate-400 text-center"
+      style={{ border: '1px dashed rgba(15,23,42,0.10)', background: 'rgba(15,23,42,0.015)' }}>
+      {text}
+    </div>
+  );
 }
 
 export function Loading() {

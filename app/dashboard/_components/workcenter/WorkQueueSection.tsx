@@ -14,7 +14,7 @@ function ActionRow({ item, onClick, showUrgencyDot = true }: {
 }) {
   return (
     <button onClick={onClick}
-      className="flex items-start gap-2.5 py-2 px-1.5 w-full text-left rounded-lg hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
+      className="flex items-start gap-2.5 py-2 px-1.5 w-full text-left rounded-lg hover:bg-slate-50 transition-colors border-b border-black/[0.05] last:border-0">
       {showUrgencyDot && (
         <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: URGENCY_DOT[item.urgency] }}
           aria-label={item.urgency} title={item.urgency} />

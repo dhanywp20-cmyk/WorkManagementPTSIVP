@@ -22,8 +22,7 @@ import {
 } from '@/app/picket-showroom/_components/shared';
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
-import { ambilRingkasanPerforma, type RingkasanPerforma } from '@/lib/ringkasan-performa';
-import { isSalesGuest, hasFullAccess } from '@/lib/constants';
+import { isSalesGuest } from '@/lib/constants';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
 import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWidget';
 
@@ -41,13 +40,26 @@ import WorkQueueSection from '../workcenter/WorkQueueSection';
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
+/**
+ * Tiga angka ringkas Team Monitoring.
+ *
+ * Dulu tiap angka duduk di kotak pastel sendiri - bahasa visual yang tidak
+ * dipakai di mana pun lagi sesudah ubin Analytics disatukan, jadi bagian atas
+ * dashboard terbaca seperti tempelan dari aplikasi lain. Sekarang angkanya
+ * telanjang seperti di kartu Learning Center: titik kecil berwarna membawa
+ * identitasnya, angkanya sendiri tetap tinta gelap supaya terbaca sebagai
+ * bilangan, bukan sebagai status.
+ */
 function StatPills({ items }: { items: { label: string; value: number; color: string }[] }) {
   return (
-    <div className="grid grid-cols-3 gap-2 mb-3">
+    <div className="grid grid-cols-3 gap-3 mb-3">
       {items.map((s, i) => (
-        <div key={i} className="rounded-xl px-2 py-2 text-center" style={{ background: `${s.color}12` }}>
-          <div className="text-lg font-black leading-none" style={{ color: s.color }}>{s.value}</div>
-          <div className="text-[10px] font-semibold text-slate-500 mt-1 leading-tight">{s.label}</div>
+        <div key={i} className="min-w-0">
+          <div className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="w-2 h-2 rounded-[3px] flex-shrink-0" style={{ background: s.color }} />
+            <span className="text-[9.5px] font-black uppercase tracking-[0.07em] text-slate-400 truncate">{s.label}</span>
+          </div>
+          <div className="text-[26px] font-black leading-none mt-1 tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>{s.value}</div>
         </div>
       ))}
     </div>
@@ -80,63 +92,12 @@ interface Anggota {
   jabatan: string; atasanId: string | null;
 }
 
-/**
- * Enam angka Ringkasan Performa, ditempatkan di ruang kosong sebelah kanan
- * Team Monitoring. Angkanya dari lib/ringkasan-performa.ts - satu-satunya
- * tempat rumusnya ditulis, supaya tidak ada dua definisi untuk angka yang sama.
- */
-function KartuPerforma({ r }: { r: RingkasanPerforma }) {
-  const item = [
-    { label: 'Avg. Resolusi', nilai: `${r.avgResolusiHari} hari`,              warna: '#ef4444', ikon: '⏱️' },
-    { label: 'Solved Hari Ini', nilai: `${r.solvedHariIni} ticket`,            warna: '#10b981', ikon: '✅' },
-    { label: 'Reminder Overdue', nilai: `${r.reminderOverdue} jadwal`,         warna: '#f59e0b', ikon: '🔴' },
-    { label: 'Piket Minggu Ini', nilai: `${r.piketTerisi}/${r.piketTotal} hari`, warna: '#6366f1', ikon: '🏪' },
-    { label: 'Tamu Hari Ini', nilai: `${r.tamuHariIni} orang`,                 warna: '#0891b2', ikon: '👤' },
-    { label: 'LC Avg. Skor', nilai: `${r.lcAvgSkor} poin`,                     warna: '#8b5cf6', ikon: '🎓' },
-  ];
-  return (
-    <div>
-      <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Ringkasan Performa</div>
-      {/*
-        3 kolom x 2 baris, tiap ubin menumpuk ke bawah (ikon, angka, lalu
-        label) - bukan sebaris ikon|label|angka.
-        Tiga percobaan sebelumnya salah bergantian ke dua arah: grid 6-kolom
-        membentang panjang ke samping; tumpukan 1-kolom jadi tiang tinggi
-        kurus yang memotong labelnya sendiri jadi "REMINDER OV..."; lalu
-        blok 300px tetap yang menyisakan ruang mati selebar dirinya sendiri
-        di sebelah kanan. Yang benar: 3x2 dan MENGIKUTI lebar kolomnya
-        (1fr dari pemanggil), jadi ubinnya melar mengisi ruang yang ada.
-      */}
-      <div className="grid grid-cols-3 gap-2">
-        {item.map(m => (
-          <div key={m.label} className="rounded-xl px-2 py-2 text-center border border-slate-100"
-            style={{ background: `${m.warna}0d` }}>
-            <div className="text-xs leading-none mb-1">{m.ikon}</div>
-            <div className="text-sm font-black leading-none whitespace-nowrap" style={{ color: m.warna }}>{m.nilai}</div>
-            <div className="text-[9px] font-bold text-slate-400 uppercase leading-tight mt-1 truncate">{m.label}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // WIDGET: Team Monitoring Hari Ini (Team/Admin).
 const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<Anggota[]>([]);
   /** Nama & jabatan tiap atasan, dipakai sebagai judul kelompok. */
   const [atasan, setAtasan] = useState<Record<string, { nama: string; jabatan: string }>>({});
-  /**
-   * Ringkasan performa HANYA untuk admin. Angkanya lingkup seluruh platform
-   * tanpa saringan per-supervisor; untuk admin itu memang benar, sedangkan
-   * Supervisor PTS tetap memakai kartu lama di tab Analytics yang sudah
-   * menyaring ke anggota timnya. Lihat catatan di lib/ringkasan-performa.ts.
-   */
-  const adminPenuh = ['admin', 'superadmin'].includes((user?.role ?? '').toLowerCase())
-    || hasFullAccess(user);
-  const [performa, setPerforma] = useState<RingkasanPerforma | null>(null);
-
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -172,18 +133,11 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           (bos ?? []).forEach((b: any) => { peta[b.id] = { nama: b.full_name ?? '—', jabatan: b.jabatan ?? '' }; });
         }
         if (alive) { setRows(list); setAtasan(peta); }
-        //  Dimuat terpisah dari daftar tim: kalau salah satunya gagal,
-        //  yang lain tetap tampil - widget setengah terisi jauh lebih
-        //  berguna daripada widget kosong.
-        if (adminPenuh) {
-          try { const rp = await ambilRingkasanPerforma(); if (alive) setPerforma(rp); }
-          catch { /* diam - bagian daftar tim tetap tampil */ }
-        }
       } catch { /* silent */ }
       if (alive) setLoading(false);
     })();
     return () => { alive = false; };
-  }, [adminPenuh]);
+  }, []);
 
   if (loading) return <WidgetCard title="Team Monitoring Hari Ini" icon="🧭" accent="#0891b2"><Loading /></WidgetCard>;
 
@@ -325,27 +279,19 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
       {total === 0 ? (
         <EmptyState text="Belum ada anggota Team PTS terdaftar." />
       ) : (
-        // TIGA kolom di layar lebar: stat, nama, performa.
+        // DUA kolom di layar lebar: angka ringkas lalu daftar nama.
         //
-        // Kolom nama dibatasi minmax(0,44rem), BUKAN 1fr. Dengan 1fr ia
-        // menyerap seluruh sisa lebar kartu, jadi meski isinya cuma tiga
-        // kelompok nama, Performa terdorong sampai menempel tepi kanan dan
-        // menyisakan jurang kosong di tengah. Batasnya diukur, bukan dikira:
-        // pada 34rem daftar namanya membungkus jadi dua baris dan berlubang,
-        // pada 44rem kelompoknya muat dalam satu baris.
-        //
-        // Sisa lebarnya diberikan ke Performa lewat 1fr - bukan disisakan
-        // kosong. Percobaan sebelumnya memakunya 300px dan itu salah dari
-        // arah sebaliknya: bloknya jadi pulau sempit dengan ruang mati
-        // selebar 300px di kanannya. 1fr membuat ubinnya melebar mengisi
-        // apa pun yang tersedia, jadi proporsinya ikut lebar kartu.
-        <div className="grid grid-cols-1 lg:grid-cols-[190px_minmax(0,44rem)_1fr] gap-x-5 gap-y-3">
+        // Kolom ketiga dulu berisi "Ringkasan Performa" - enam angka yang kini
+        // sudah jadi isi pita ringkas di puncak halaman. Membiarkan keduanya
+        // berarti lima angka yang sama persis dicetak dua kali dalam satu layar,
+        // dan pembaca yang melihat angka sama di dua tempat berbeda justru jadi
+        // ragu mana yang benar. Kolom angkanya diperlebar 190px -> 220px karena
+        // labelnya sekarang di atas angka, bukan di bawahnya.
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-x-6 gap-y-3">
           {/* Kiri: ringkasan angka + progress */}
           <div>
             <StatPills items={[
-              //  'Total', bukan 'Total Team': kolom kiri kini 190px, dan pada
-              //  grid 3 pil itu menyisakan ~42px per pil - 'Total Team' pecah jadi
-              //  dua baris di sana. Judul widget sudah menyebut Team.
+              //  'Total', bukan 'Total Team' - judul widget sudah menyebut Team.
               { label: 'Total', value: total, color: '#0891b2' },
               { label: 'Sudah', value: sudah, color: '#16a34a' },
               { label: 'Belum', value: belum, color: belum > 0 ? '#ea580c' : '#94a3b8' },
@@ -377,16 +323,6 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
               </>
             )}
           </div>
-          {/*
-            Kolom KETIGA, bukan ditumpuk di bawah daftar nama. mt-3
-            border-t di layar sempit (satu kolom) supaya masih ada
-            pemisah visual saat ketiganya turun jadi bertumpuk.
-          */}
-          {adminPenuh && performa && (
-            <div className="min-w-0 mt-3 lg:mt-0 pt-3 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-              <KartuPerforma r={performa} />
-            </div>
-          )}
         </div>
       )}
     </WidgetCard>
