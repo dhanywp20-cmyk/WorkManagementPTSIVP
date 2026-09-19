@@ -18,6 +18,7 @@ import {
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
 import { exportSummaryIncentive } from './_components/exportPengajuan';
+import { exportInsentifSaya } from './_components/exportInsentifSaya';
 import { setAksesIncentive, setBrandScopeIncentive } from '@/lib/incentive-akses-api';
 import {
   bisaKonfigPenuh, bisaInputNominal, tingkatAkses,
@@ -178,6 +179,7 @@ export default function IncentivePTSPage() {
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
   const [exporting, setExporting] = useState(false);
+  const [exportingSaya, setExportingSaya] = useState(false);
   const [lateTickets, setLateTickets] = useState<LateTicketLink[]>([]);
 
   const notify = (type: 'success' | 'error', msg: string) => { setToast({ type, msg }); setTimeout(() => setToast(null), 4000); };
@@ -700,6 +702,30 @@ export default function IncentivePTSPage() {
   }
 
   /**
+   * Export personal - satu-satunya export yang boleh diakses tier 'lihat'
+   * sekalipun, karena isinya cuma baris milik currentUser sendiri (mySplitsInYear
+   * sudah difilter by user_id, terlepas dari tingkat akses). Ikut Filter Tahun
+   * BAST yang sama dengan kartu "Insentif Saya" supaya berkasnya persis
+   * mencerminkan angka yang sedang dilihat, bukan diam-diam lintas tahun.
+   */
+  async function handleExportInsentifSaya() {
+    if (!currentUser) return;
+    setExportingSaya(true);
+    try {
+      const projectById = new Map(projects.map(p => [p.id, p]));
+      await exportInsentifSaya({
+        splits: mySplitsInYear,
+        trancheById,
+        projectById,
+        userName: currentUser.full_name || currentUser.username || 'Saya',
+        year: filterBastYear,
+      });
+      notify('success', 'Export Insentif Saya berhasil!');
+    } catch (err: unknown) { notify('error', 'Export gagal: ' + (err as Error).message); }
+    setExportingSaya(false);
+  }
+
+  /**
    * Export dari tab Tranche Schedule - beda sumbu filter dari Export Summary
    * di tab Project (yang menyaring lewat BAST). Di sini yang dipilih adalah
    * TAHUN BAYAR batch (tahunAktif, dropdown "Tahun" di tab ini) - jadi
@@ -1049,6 +1075,12 @@ export default function IncentivePTSPage() {
                     {filterBastYear == null ? '· semua tahun BAST' : `· tahun BAST ${filterBastYear}`}
                   </span>
                 </h3>
+                {mySplitsInYear.length > 0 && (
+                  <button onClick={handleExportInsentifSaya} disabled={exportingSaya}
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 disabled:opacity-50 flex items-center gap-1.5">
+                    {exportingSaya ? <div className="w-3 h-3 border-2 border-rose-400/30 border-t-rose-500 rounded-full animate-spin" /> : '📥'} Export Bagian Saya
+                  </button>
+                )}
               </div>
               {mySplitsInYear.length === 0 ? (
                 <p className="text-xs text-gray-400">Belum ada bagian insentif tercatat untuk kamu di periode ini.</p>
