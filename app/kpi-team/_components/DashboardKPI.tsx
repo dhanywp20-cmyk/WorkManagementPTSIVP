@@ -603,10 +603,22 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
  * sebagai nol - digambar sebagai garis putus, karena "belum ada datanya"
  * bukan "nilainya nol".
  */
-function TrenBulanan({ data }: { data: number[] }) {
+/**
+ * viewW/viewH beda per pemanggil, BUKAN satu proporsi tetap diregangkan
+ * paksa (preserveAspectRatio="none" sempat dicoba - lingkaran titik datanya
+ * jadi lonjong karena X dan Y diregangkan beda rasio, cacat yang lebih
+ * mengganggu daripada masalah aslinya). viewBox tetap discale UNIFORM
+ * (bawaan SVG) supaya lingkaran tetap bulat - yang berubah cuma proporsi
+ * intrinsiknya sendiri, dipilih sesuai lebar kartu pemanggilnya:
+ * 640x168 untuk kartu Admin (lg:col-span-6, ~720-770px - proporsi asli,
+ * sudah pas di sana), 1400x220 untuk kartu Team (lg:col-span-12 - lebih
+ * lebar, jadi rasionya dibuat lebih landai supaya tinggi hasil akhirnya
+ * tidak ikut membengkak walau lebarnya jauh lebih besar).
+ */
+function TrenBulanan({ data, viewW = 640, viewH = 168 }: { data: number[]; viewW?: number; viewH?: number }) {
   const MN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
   const cur = Math.min(new Date().getMonth(), 11);
-  const W = 640, H = 168, pb = 26, pt = 18, sisi = 10;
+  const W = viewW, H = viewH, pb = 26, pt = 18, sisi = 10;
   const mx = Math.max(...data, 1);
   const X = (i: number) => sisi + (i / 11) * (W - sisi * 2);
   const Y = (v: number) => pt + (1 - v / mx) * (H - pt - pb);
@@ -614,24 +626,6 @@ function TrenBulanan({ data }: { data: number[] }) {
   const d  = tt.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
   const total = data.reduce((s, v) => s + v, 0);
   return (
-    /*
-      max-w + mx-auto MENGUNCI lebar grafik, terlepas dari selebar apa
-      kartunya sendiri.
-
-      SVG-nya pakai viewBox + w-full h-auto - tingginya IKUT PROPORSIONAL
-      dengan lebarnya (168/640). Kartu ini lg:col-span-12 untuk Team/non-admin
-      (satu-satunya cara mengisi baris "Tim & Pembelajaran" tanpa menyisakan
-      ruang kosong di sampingnya, karena hanya Trend sendirian di baris itu
-      untuk peran ini). Di monitor lebar, "penuh 12 kolom" bisa berarti
-      1400px+ - dan grafik garis 9 titik data ikut membengkak jadi >350px
-      tinggi, jauh lebih besar daripada yang pantas untuk grafik sesederhana
-      ini. Kartunya BOLEH selebar itu (biar bento-nya tetap mengisi baris
-      penuh, header judul+"total"-nya toh memang pantas selebar itu) - yang
-      dikunci cuma gambar grafiknya, dibatasi sama seperti lebar kartu Admin
-      (lg:col-span-6, ~720px di kontainer 1600px) supaya keduanya terasa
-      sepadan, bukan salah satu jadi raksasa.
-    */
-    <div className="max-w-[720px] mx-auto">
     <svg role="img" aria-label={`Trend ticket bulanan, total ${total} tiket`}
       viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" style={{ display: 'block' }}>
       <defs><linearGradient id="trenIsi" x1="0" y1="0" x2="0" y2="1">
@@ -660,7 +654,6 @@ function TrenBulanan({ data }: { data: number[] }) {
           fontWeight={i === cur ? 800 : 500} fill={i === cur ? AKSEN : '#94a3b8'}>{m}</text>
       ))}
     </svg>
-    </div>
   );
 }
 
@@ -1318,7 +1311,8 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     catatan={!loading&&kpi ? `${kpi.tickets.monthlyTickets.reduce((s,v)=>s+v,0)} total` : undefined}/>
                   {loading ? <div className="h-36 rounded animate-pulse bg-slate-100"/>
                     : kpi?.tickets.monthlyTickets?.some(v=>v>0)
-                      ? <TrenBulanan data={kpi.tickets.monthlyTickets}/>
+                      ? <TrenBulanan data={kpi.tickets.monthlyTickets}
+                          {...(scope.kind!=='admin' ? { viewW: 1400, viewH: 220 } : {})}/>
                       : <div className="flex flex-col items-center gap-2 py-10">
                           <span className="text-3xl opacity-20" aria-hidden="true">📊</span>
                           <p className="text-[11px] text-slate-400">Belum ada data ticket tahun ini.</p>
