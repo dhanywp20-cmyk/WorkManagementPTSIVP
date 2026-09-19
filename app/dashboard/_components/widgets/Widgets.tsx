@@ -24,6 +24,7 @@ import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/Analyti
 import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 import { isSalesGuest } from '@/lib/constants';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
+import { PopupJawabanQuiz } from './PopupJawabanQuiz';
 import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWidget';
 
 // Kontrak widget + primitif UI - dipindah ke primitives.tsx supaya widget
@@ -350,11 +351,15 @@ function fmtTglSingkat(iso: string) {
  * menunggu koreksi) memakai warna yang sama, cuma diperkecil supaya muat di
  * kartu widget yang sempit.
  */
-function BarisRiwayatQuiz({ r }: { r: RiwayatQuizRingkas }) {
+function BarisRiwayatQuiz({ r, onClick }: { r: RiwayatQuizRingkas; onClick: () => void }) {
   const menunggu = r.grading_status === 'pending_review';
   const warna = menunggu ? 'bg-amber-100 text-amber-700' : r.passed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
   return (
-    <div className="flex items-center gap-2 py-1.5 border-b border-indigo-100/70 last:border-0">
+    // Baris ini KLIK -> popup jawaban (lihat PopupJawabanQuiz), bukan cuma
+    // ringkasan pasif. <button>, bukan <div onClick>, supaya bisa dijangkau
+    // keyboard/pembaca layar seperti kontrol lain di platform ini.
+    <button type="button" onClick={onClick}
+      className="flex items-center gap-2 py-1.5 w-full text-left border-b border-indigo-100/70 last:border-0 hover:bg-indigo-100/40 rounded-lg px-1 -mx-1 transition-colors">
       <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0 ${warna}`}>
         {menunggu ? '⏳' : (r.score?.toFixed(0) ?? '—')}
       </span>
@@ -362,7 +367,8 @@ function BarisRiwayatQuiz({ r }: { r: RiwayatQuizRingkas }) {
         <p className="text-[11px] font-semibold text-indigo-900 truncate leading-tight">{r.sesi}</p>
         {r.submitted_at && <p className="text-[9px] text-indigo-400 leading-tight mt-0.5">{fmtTglSingkat(r.submitted_at)}</p>}
       </div>
-    </div>
+      <span aria-hidden="true" className="text-indigo-300 text-xs flex-shrink-0">›</span>
+    </button>
   );
 }
 
@@ -396,6 +402,7 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const [milikSaya, setMilikSaya] = useState<{ total: number; avg: number } | null>(null);
   const [peringkat, setPeringkat] = useState<HasilPeringkat | null>(null);
   const [riwayat, setRiwayat] = useState<RiwayatQuizRingkas[]>([]);
+  const [attemptDibuka, setAttemptDibuka] = useState<string | null>(null);
   const [loading, setLoading] = useState(guest);
 
   useEffect(() => {
@@ -470,13 +477,19 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
             <div className="rounded-xl bg-indigo-50/50 border border-indigo-100 px-2.5 pt-1.5 pb-0.5">
               <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-wide px-0.5 mb-0.5">Riwayat Quiz</p>
               <div className="max-h-[108px] overflow-y-auto pr-0.5">
-                {riwayat.map(r => <BarisRiwayatQuiz key={r.id} r={r} />)}
+                {riwayat.map(r => <BarisRiwayatQuiz key={r.id} r={r} onClick={() => setAttemptDibuka(r.id)} />)}
               </div>
             </div>
           )}
           <button onClick={() => openMenu('learning-center')}
             className="mt-auto px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.02] self-start"
             style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>Buka Learning →</button>
+          {/*  Klik baris riwayat -> popup jawaban & soal, TANPA membuka menu
+              Learning Center. attemptDibuka menyimpan id-nya saja; komponen
+              popup yang mengambil detail soal/jawabannya sendiri saat dibuka. */}
+          {attemptDibuka && (
+            <PopupJawabanQuiz user={user} attemptId={attemptDibuka} onClose={() => setAttemptDibuka(null)} />
+          )}
         </div>
       )}
     </WidgetCard>
