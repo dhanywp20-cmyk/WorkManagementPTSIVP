@@ -220,12 +220,28 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
 
         {composed.map((block, i) =>
           block.type === 'full' ? (
-            /*  work-queue sudah berisi tiga ubin sendiri (My Action, Hari Ini,
-                Mendatang) - `lg:contents` melarutkan pembungkusnya supaya
-                ketiganya jadi anggota langsung kisi bento di atas. Widget full
-                lain tetap selebar 12 kolom. */
+            /*
+              work-queue sudah berisi tiga ubin sendiri (My Action, Hari Ini,
+              Mendatang) - `lg:contents` melarutkan pembungkusnya supaya
+              ketiganya jadi anggota langsung kisi bento di atas.
+
+              team-monitoring TIDAK lagi ikut lg:col-span-12 seperti widget
+              full lainnya - diminta eksplisit: Mendatang (di work-queue,
+              lihat lg:row-span-2 di sana) membentang tinggi menutupi kolom
+              10-12 sampai baris INI juga, jadi Team Monitoring dipersempit
+              ke lg:col-span-9 (persis lebar My Action+Hari Ini gabungan,
+              6+3) supaya auto-placement CSS Grid menaruhnya di kolom 1-9 -
+              otomatis menghindari kolom yang sudah dipesan Mendatang, tanpa
+              koordinat manual di kedua sisi. Widget full LAIN (Analytics,
+              Sales Analytics) tetap 12 kolom - mereka tidak pernah muncul
+              berdampingan dengan Mendatang yang masih "aktif" membentang.
+            */
             <div key={`full-${block.widget.id}-${i}`}
-              className={block.widget.id === 'work-queue' ? 'lg:contents' : 'lg:col-span-12'}>
+              className={
+                block.widget.id === 'work-queue' ? 'lg:contents'
+                : block.widget.id === 'team-monitoring' ? 'lg:col-span-9'
+                : 'lg:col-span-12'
+              }>
               {/*
                 Widget Analytics dirender langsung (bukan lewat
                 block.widget.Component) supaya tab-nya bisa dikontrol dari

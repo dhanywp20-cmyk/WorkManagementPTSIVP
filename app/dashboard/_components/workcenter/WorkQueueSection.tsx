@@ -173,8 +173,22 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
           ))}
         </WidgetCard>
         </div>
-      {/* MENDATANG */}
-      <div className="lg:col-span-3 h-full">
+      {/*
+        MENDATANG - lg:row-span-2, BUKAN cuma lg:col-span-3 seperti Hari Ini
+        di sebelahnya. Diminta eksplisit: kolom ini membentang tinggi dari
+        atas (sejajar My Action/Hari Ini) sampai ke bawah tepi Team Monitoring
+        di baris berikutnya, bukan cuma setinggi barisnya sendiri.
+
+        Ini berhasil murni lewat auto-placement CSS Grid, tanpa
+        grid-template-areas manual: Mendatang memesan kolom 10-12 di KEDUA
+        baris (baris ini via urutan wajar, baris berikutnya via row-span).
+        Team Monitoring (widget FULL berikutnya dalam urutan priority, lihat
+        PermissionAwareDashboard) diperkecil ke lg:col-span-9 supaya auto-
+        placement menaruhnya di kolom 1-9 baris berikutnya - otomatis
+        menghindari kolom 10-12 yang sudah dipesan Mendatang, tanpa perlu
+        koordinat baris/kolom ditulis manual di kedua sisi.
+      */}
+      <div className="lg:col-span-3 lg:row-span-2 h-full">
         <WidgetCard title="Mendatang" icon="🔜" accent="#7c3aed">
           {upcoming.length === 0 ? (
             <EmptyState text="Tidak ada jadwal dalam waktu dekat." />
