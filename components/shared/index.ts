@@ -45,3 +45,5 @@ export { Paginasi, usePaginasi, BARIS_PER_HALAMAN, type HasilPaginasi } from './
 // Bootstrap PWA - daftar service worker + banner "Pasang aplikasi ke HP".
 // Dipasang sekali di root layout, bukan per-modul.
 export { PwaBootstrap } from './PwaBootstrap';
+// Keping identitas build (versi · commit · waktu bangun) - lihat ChipVersi.tsx.
+export { ChipVersi } from './ChipVersi';

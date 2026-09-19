@@ -18,6 +18,14 @@ export interface Merek {
   /** Baris kecil di bawah judul, mis. "IndoVisual Professional Tools". */
   namaPerusahaan: string;
   /**
+   * Kredit pembuat di baris hak cipta, mis. "Created by DWP". Ikut merek -
+   * BUKAN dipaku di kode - karena platform ini dipakai lebih dari satu
+   * company: kredit yang benar untuk satu pemasangan salah untuk pemasangan
+   * lain, dan tidak pantas cuma bisa diubah lewat deploy. Dikosongkan =
+   * barisnya tidak muncul sama sekali.
+   */
+  kredit: string;
+  /**
    * Logo, diisi lewat unggahan (unggahBerkasMerek). Kosong = ikon gedung
    * bawaan. Bawaannya sekarang berkas statis /logo-mark.png - lambang
    * WorkFlow yang sama yang dipakai favicon dan ikon aplikasi, supaya
@@ -59,6 +67,7 @@ export const MEREK_BAWAAN: Merek = {
   namaPlatformSingkat: 'WM Platform',
   namaPortal: 'PTS Portal',
   namaPerusahaan: 'IndoVisual Professional Tools',
+  kredit: 'Created by DWP',
   logoUrl: '/logo-mark.png',
   warnaUtama: '#e11d48',
   warnaUtama2: '#be123c',

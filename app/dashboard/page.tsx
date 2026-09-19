@@ -23,7 +23,7 @@ import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashb
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
-import { ModalPortal, LogoMerek } from '@/components/shared';
+import { ModalPortal, LogoMerek, ChipVersi } from '@/components/shared';
 import { useKelompokPTS } from '@/lib/kelompok';
 
 export default function Dashboard() {
@@ -875,7 +875,16 @@ export default function Dashboard() {
               ))}
             </div>
           </div>
-          <p className="text-white/55 text-xs">© 2026 {merek.namaPerusahaan}</p>
+          {/*  Kredit & identitas build duduk di baris yang sama: keduanya
+               keterangan tentang perangkat lunaknya, bukan tentang isi
+               halaman, jadi tidak pantas dipisah jadi dua blok. */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <p className="text-white/55 text-xs">
+              © 2026 {merek.namaPerusahaan}
+              {merek.kredit && <span className="text-white/40"> · {merek.kredit}</span>}
+            </p>
+            <ChipVersi gaya="terang" />
+          </div>
         </div>
 
         {/* ── RIGHT: panel form — overlay PUTIH transparan di atas bg penuh (biar tidak
@@ -1347,7 +1356,17 @@ export default function Dashboard() {
 
         <div className="bg-white/70 backdrop-blur-sm border-t border-slate-200/60 flex-shrink-0">
           <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-3 md:py-4">
-            <p className="text-slate-500 text-xs font-medium tracking-wide text-center">© 2026 IndoVisual — Work Management Support (PTS IVP)</p>
+            {/*  Nama perusahaan dari merek, bukan dipaku - baris ini dulu satu-satunya
+                 tempat "IndoVisual" masih tertulis di kode padahal sisanya sudah
+                 ikut Admin Panel, jadi mengganti nama company meninggalkan satu
+                 baris yang tidak ikut berubah. */}
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <p className="text-slate-500 text-xs font-medium tracking-wide">
+                © 2026 {merek.namaPerusahaan} — {merek.namaPlatform}
+                {merek.kredit && <span className="text-slate-400"> · {merek.kredit}</span>}
+              </p>
+              <ChipVersi />
+            </div>
           </div>
         </div>
 
