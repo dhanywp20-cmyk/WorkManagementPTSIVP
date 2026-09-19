@@ -614,6 +614,24 @@ function TrenBulanan({ data }: { data: number[] }) {
   const d  = tt.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(' ');
   const total = data.reduce((s, v) => s + v, 0);
   return (
+    /*
+      max-w + mx-auto MENGUNCI lebar grafik, terlepas dari selebar apa
+      kartunya sendiri.
+
+      SVG-nya pakai viewBox + w-full h-auto - tingginya IKUT PROPORSIONAL
+      dengan lebarnya (168/640). Kartu ini lg:col-span-12 untuk Team/non-admin
+      (satu-satunya cara mengisi baris "Tim & Pembelajaran" tanpa menyisakan
+      ruang kosong di sampingnya, karena hanya Trend sendirian di baris itu
+      untuk peran ini). Di monitor lebar, "penuh 12 kolom" bisa berarti
+      1400px+ - dan grafik garis 9 titik data ikut membengkak jadi >350px
+      tinggi, jauh lebih besar daripada yang pantas untuk grafik sesederhana
+      ini. Kartunya BOLEH selebar itu (biar bento-nya tetap mengisi baris
+      penuh, header judul+"total"-nya toh memang pantas selebar itu) - yang
+      dikunci cuma gambar grafiknya, dibatasi sama seperti lebar kartu Admin
+      (lg:col-span-6, ~720px di kontainer 1600px) supaya keduanya terasa
+      sepadan, bukan salah satu jadi raksasa.
+    */
+    <div className="max-w-[720px] mx-auto">
     <svg role="img" aria-label={`Trend ticket bulanan, total ${total} tiket`}
       viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" style={{ display: 'block' }}>
       <defs><linearGradient id="trenIsi" x1="0" y1="0" x2="0" y2="1">
@@ -642,6 +660,7 @@ function TrenBulanan({ data }: { data: number[] }) {
           fontWeight={i === cur ? 800 : 500} fill={i === cur ? AKSEN : '#94a3b8'}>{m}</text>
       ))}
     </svg>
+    </div>
   );
 }
 
