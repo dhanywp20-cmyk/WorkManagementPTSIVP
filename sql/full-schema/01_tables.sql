@@ -671,6 +671,20 @@ CREATE TABLE public.project_messages (
   created_at timestamp with time zone DEFAULT now()
 );
 
+-- Menu "Summary Project" - override manual per record (bukan per-string)
+-- untuk mengaitkan reminders/tickets/project_requests/form_reviews ke nama
+-- project kanonik, dipakai saat project_name-nya beda ketik/belum nyambung
+-- dari pengelompokan otomatis. Lihat lib/summary-project.ts.
+CREATE TABLE public.project_summary_links (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  source_table text NOT NULL CHECK (source_table IN ('reminders','tickets','project_requests','form_reviews')),
+  source_id uuid NOT NULL,
+  canonical_project_name text NOT NULL,
+  linked_by text,
+  linked_at timestamp with time zone NOT NULL DEFAULT now(),
+  UNIQUE (source_table, source_id)
+);
+
 CREATE TABLE public.project_requests (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   created_at timestamp with time zone DEFAULT now(),
