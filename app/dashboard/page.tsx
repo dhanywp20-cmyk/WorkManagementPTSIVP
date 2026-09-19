@@ -23,7 +23,7 @@ import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashb
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
 import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
-import { ModalPortal, LogoMerek, ChipVersi } from '@/components/shared';
+import { ModalPortal, LogoMerek, ChipVersi, FooterPlatform } from '@/components/shared';
 import { useKelompokPTS } from '@/lib/kelompok';
 
 export default function Dashboard() {
@@ -880,7 +880,7 @@ export default function Dashboard() {
                halaman, jadi tidak pantas dipisah jadi dua blok. */}
           <div className="flex items-center gap-3 flex-wrap">
             <p className="text-white/55 text-xs">
-              © 2026 {merek.namaPerusahaan}
+              © {new Date().getFullYear()} {merek.namaPerusahaan}
               {merek.kredit && <span className="text-white/40"> · {merek.kredit}</span>}
             </p>
             <ChipVersi gaya="terang" />
@@ -1354,21 +1354,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white/70 backdrop-blur-sm border-t border-slate-200/60 flex-shrink-0">
-          <div className="max-w-[1600px] mx-auto px-4 md:px-6 py-3 md:py-4">
-            {/*  Nama perusahaan dari merek, bukan dipaku - baris ini dulu satu-satunya
-                 tempat "IndoVisual" masih tertulis di kode padahal sisanya sudah
-                 ikut Admin Panel, jadi mengganti nama company meninggalkan satu
-                 baris yang tidak ikut berubah. */}
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <p className="text-slate-500 text-xs font-medium tracking-wide">
-                © 2026 {merek.namaPerusahaan} — {merek.namaPlatform}
-                {merek.kredit && <span className="text-slate-400"> · {merek.kredit}</span>}
-              </p>
-              <ChipVersi />
-            </div>
-          </div>
-        </div>
+        <FooterPlatform />
 
         <style>{`
           @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
@@ -1938,6 +1924,13 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/*  Anak TERAKHIR dari root flex-col, di luar baris sidebar+isi - itulah
+           yang membuatnya membentang dari ujung kiri layar sampai ujung kanan,
+           melewati bawah sidebar, bukan cuma selebar area modul. Root-nya
+           setinggi 100dvh, jadi area modul di atasnya menyusut sendiri setinggi
+           bilah ini; tidak ada yang tertutup. */}
+      <FooterPlatform />
 
       <style>{`
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }

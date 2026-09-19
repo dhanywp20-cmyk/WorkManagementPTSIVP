@@ -104,6 +104,7 @@ export function MerekSettingInline() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Isian label="Nama Platform" nilai={form.namaPlatform} bawaan={MEREK_BAWAAN.namaPlatform} onChange={v => ubah('namaPlatform', v)} />
             <Isian label="Kredit Pembuat" nilai={form.kredit} bawaan={MEREK_BAWAAN.kredit} onChange={v => ubah('kredit', v)} />
+            <Isian label="Kontak Bantuan" nilai={form.kontakDukungan} bawaan="email / no. WA — kosongkan bila tidak dipakai" onChange={v => ubah('kontakDukungan', v)} />
             <Isian label="Nama Platform (layar sempit)" nilai={form.namaPlatformSingkat} bawaan={MEREK_BAWAAN.namaPlatformSingkat} onChange={v => ubah('namaPlatformSingkat', v)} />
             <Isian label="Nama Portal" nilai={form.namaPortal} bawaan={MEREK_BAWAAN.namaPortal} onChange={v => ubah('namaPortal', v)} />
             <Isian label="Nama Perusahaan" nilai={form.namaPerusahaan} bawaan={MEREK_BAWAAN.namaPerusahaan} onChange={v => ubah('namaPerusahaan', v)} />

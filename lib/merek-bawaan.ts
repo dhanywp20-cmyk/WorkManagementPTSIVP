@@ -26,6 +26,12 @@ export interface Merek {
    */
   kredit: string;
   /**
+   * Alamat bantuan di kaki platform - email, nomor WhatsApp, atau kalimat
+   * bebas. Email dikenali sendiri lalu dijadikan tautan mailto. Dikosongkan =
+   * bagian "Butuh bantuan?" tidak muncul sama sekali, bukan muncul kosong.
+   */
+  kontakDukungan: string;
+  /**
    * Logo, diisi lewat unggahan (unggahBerkasMerek). Kosong = ikon gedung
    * bawaan. Bawaannya sekarang berkas statis /logo-mark.png - lambang
    * WorkFlow yang sama yang dipakai favicon dan ikon aplikasi, supaya
@@ -68,6 +74,7 @@ export const MEREK_BAWAAN: Merek = {
   namaPortal: 'PTS Portal',
   namaPerusahaan: 'IndoVisual Professional Tools',
   kredit: 'Created by DWP',
+  kontakDukungan: '',
   logoUrl: '/logo-mark.png',
   warnaUtama: '#e11d48',
   warnaUtama2: '#be123c',

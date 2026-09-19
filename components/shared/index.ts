@@ -47,3 +47,5 @@ export { Paginasi, usePaginasi, BARIS_PER_HALAMAN, type HasilPaginasi } from './
 export { PwaBootstrap } from './PwaBootstrap';
 // Keping identitas build (versi · commit · waktu bangun) - lihat ChipVersi.tsx.
 export { ChipVersi } from './ChipVersi';
+// Bilah kaki platform (hak cipta - kontak bantuan - identitas build).
+export { FooterPlatform } from './FooterPlatform';
