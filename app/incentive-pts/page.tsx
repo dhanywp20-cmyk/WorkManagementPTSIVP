@@ -856,8 +856,30 @@ export default function IncentivePTSPage() {
   //  appReady) menghapus akar masalahnya.
   const canSeeAll = bisaInput(currentUser);
   const orgListAll = allUsers as unknown as OrgUser[];
+  /*
+    mySplitProjectIds: proyek tempat aku SUDAH TERCATAT punya bagian
+    (incentive_splits), terlepas dari siapa PIC/handler proyek itu SEKARANG.
+
+    Kenapa ini perlu di samping pengecekan field proyek di bawah: kalau PIC
+    sebuah proyek diganti sesudah tahapannya diproses/dibayar (orang resign,
+    kesalahan data dibetulkan, reassign) - orang LAMA yang bagiannya sudah
+    Paid dan nominalnya tercatat permanen di incentive_splits akan kehilangan
+    akses melihat proyek itu SAMA SEKALI, karena userInProject() di bawah cuma
+    membaca field proyek SAAT INI (pic_id/assigned_to/assign_name), bukan
+    "apakah aku pernah tercatat dapat bagian di sana". Uang yang sudah cair
+    tidak boleh "hilang" dari pandangan pemiliknya hanya karena administrasi
+    proyeknya berubah belakangan.
+
+    allSplits SUDAH tersaring privasi dari server (lihat fetchVisibleSplits di
+    calc.ts / GET /api/incentive/splits): utk akses 'lihat' isinya HANYA
+    baris miliknya sendiri, jadi memakainya di sini tidak membocorkan bagian
+    siapa pun - persis dataset yang sama yang sudah dipercaya untuk mengisi
+    "Bagian Saya" di modal detail.
+  */
+  const mySplitProjectIds = new Set(allSplits.map(s => s.project_id));
   const userInProject = (p: IncentiveProjectRow): boolean => {
     if (!currentUser) return false;
+    if (mySplitProjectIds.has(p.id)) return true;                              // sudah tercatat dapat bagian - lihat catatan di atas
     const uid = currentUser.id;
     const uname = (currentUser.username || '').toLowerCase();
     const ufull = (currentUser.full_name || '').toLowerCase();
