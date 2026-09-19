@@ -106,11 +106,11 @@ export const ALL_MENU_KEYS = [
   'daily-report',
   'database-pts',
   'unit-movement',
+  'summary-project',
   'reminder-schedule',
   'picket-showroom',
   'learning-center',
   'tech-note',
-  'summary-project',
 ];
 
 /**

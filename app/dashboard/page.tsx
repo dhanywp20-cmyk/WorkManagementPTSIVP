@@ -210,6 +210,12 @@ export default function Dashboard() {
       items: [{ name: 'Tech Note', url: '/tech-note', icon: '📝', internal: true, embed: true }]
     },
     {
+      title: 'Summary Project', icon: '🗂️', key: 'summary-project',
+      gradient: 'from-violet-700 via-violet-600 to-indigo-500',
+      description: 'Riwayat Request Schedule, Troubleshooting & Design Project per nama project',
+      items: [{ name: 'Summary Project', url: '/summary-project', icon: '🗂️', internal: true, embed: true }]
+    },
+    {
       title: 'Request Schedule', icon: '🗓️', key: 'reminder-schedule',
       gradient: 'from-cyan-700 via-cyan-600 to-teal-500',
       description: 'Jadwal & request pekerjaan team PTS',
@@ -232,12 +238,6 @@ export default function Dashboard() {
       gradient: 'from-rose-700 via-rose-600 to-rose-500',
       description: 'Technical support & issue tracking',
       items: [{ name: 'Ticket Management', url: '/ticketing', icon: '🔧', internal: true, embed: true }]
-    },
-    {
-      title: 'Summary Project', icon: '🗂️', key: 'summary-project',
-      gradient: 'from-violet-700 via-violet-600 to-indigo-500',
-      description: 'Riwayat Request Schedule, Troubleshooting & Design Project per nama project',
-      items: [{ name: 'Summary Project', url: '/summary-project', icon: '🗂️', internal: true, embed: true }]
     },
     {
       title: 'Piket Showroom', icon: '🏪', key: 'picket-showroom',
