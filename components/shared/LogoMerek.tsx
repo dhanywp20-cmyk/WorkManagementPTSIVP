@@ -25,9 +25,25 @@ export function LogoMerek({
   const sisi = ukuran === 'sm' ? 36 : ukuran === 'lg' ? 40 : 48;
   const ikon = Math.round(sisi * 0.52);
 
+  /*
+    Ada logo -> kotaknya PUTIH, bukan gradasi warna merek.
+
+    Gradasi itu dulu benar karena isinya ikon garis putih. Begitu logo
+    sungguhan dipasang, gradasi jadi latar yang bertabrakan: lambang WorkFlow
+    biru di atas gradasi merah tidak pernah bisa terbaca, dan logo unggahan
+    admin mana pun punya masalah yang sama - pembuat logo merancangnya untuk
+    latar terang, bukan untuk warna apa pun yang kebetulan dipilih di Admin
+    Panel. Varian 'tembus' (di atas foto login) tetap dibedakan: di sana
+    putihnya ditipiskan supaya fotonya masih terasa.
+  */
+  const adaLogo = Boolean(merek.logoUrl);
   const latar = gaya === 'tembus'
-    ? { background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' }
-    : { background: `linear-gradient(135deg, ${merek.warnaUtama}, ${merek.warnaUtama2})` };
+    ? (adaLogo
+        ? { background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)' }
+        : { background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)' })
+    : (adaLogo
+        ? { background: '#ffffff', border: '1px solid rgba(15,23,42,0.08)' }
+        : { background: `linear-gradient(135deg, ${merek.warnaUtama}, ${merek.warnaUtama2})` });
 
   return (
     <div
@@ -39,7 +55,7 @@ export function LogoMerek({
         // saat berjalan, sementara next/image butuh domainnya terdaftar lebih
         // dulu di next.config - logo baru akan gagal dimuat sampai deploy.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={merek.logoUrl} alt={merek.namaPerusahaan} className="w-full h-full object-contain" />
+        <img src={merek.logoUrl} alt={merek.namaPerusahaan} className="w-full h-full object-contain p-[11%]" />
       ) : (
         <svg aria-hidden="true" focusable="false" style={{ width: ikon, height: ikon }} className="text-white"
           fill="none" stroke="currentColor" viewBox="0 0 24 24">

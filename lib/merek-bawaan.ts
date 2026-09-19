@@ -17,7 +17,13 @@ export interface Merek {
   namaPortal: string;
   /** Baris kecil di bawah judul, mis. "IndoVisual Professional Tools". */
   namaPerusahaan: string;
-  /** Logo, diisi lewat unggahan (unggahBerkasMerek). Kosong = ikon bawaan. */
+  /**
+   * Logo, diisi lewat unggahan (unggahBerkasMerek). Kosong = ikon gedung
+   * bawaan. Bawaannya sekarang berkas statis /logo-mark.png - lambang
+   * WorkFlow yang sama yang dipakai favicon dan ikon aplikasi, supaya
+   * satu lambang muncul identik di header, login, tab peramban, dan
+   * layar utama ponsel.
+   */
   logoUrl: string;
   /** Warna utama - kotak logo, tombol, pranala. */
   warnaUtama: string;
@@ -53,7 +59,7 @@ export const MEREK_BAWAAN: Merek = {
   namaPlatformSingkat: 'WM Platform',
   namaPortal: 'PTS Portal',
   namaPerusahaan: 'IndoVisual Professional Tools',
-  logoUrl: '',
+  logoUrl: '/logo-mark.png',
   warnaUtama: '#e11d48',
   warnaUtama2: '#be123c',
   warnaAksen: '#c8861d',

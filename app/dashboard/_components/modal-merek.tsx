@@ -210,11 +210,18 @@ function Label({ children }: { children: React.ReactNode }) {
 
 function KotakLogo({ url, a, b, tembus, sisi }: { url: string; a?: string; b?: string; tembus?: boolean; sisi: number }) {
   return (
+    /*  Latar mengikuti aturan yang sama dengan LogoMerek (lihat catatannya):
+        ada logo -> putih, belum ada -> gradasi warna merek. Pratinjau di sini
+        HARUS sama persis dengan hasil aslinya; kalau tidak, admin memilih warna
+        berdasarkan pratinjau yang bukan gambaran platformnya. */
     <div className="rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
-      style={{ width: sisi, height: sisi, background: tembus ? 'rgba(255,255,255,0.15)' : `linear-gradient(135deg, ${a}, ${b})` }}>
+      style={{ width: sisi, height: sisi,
+        background: url ? (tembus ? 'rgba(255,255,255,0.92)' : '#ffffff')
+                        : (tembus ? 'rgba(255,255,255,0.15)' : `linear-gradient(135deg, ${a}, ${b})`),
+        border: url && !tembus ? '1px solid rgba(15,23,42,0.08)' : undefined }}>
       {url
         // eslint-disable-next-line @next/next/no-img-element
-        ? <img src={url} alt="" className="w-full h-full object-contain" />
+        ? <img src={url} alt="" className="w-full h-full object-contain p-[11%]" />
         : <svg aria-hidden="true" className="text-white" style={{ width: sisi * 0.52, height: sisi * 0.52 }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>}
     </div>
   );

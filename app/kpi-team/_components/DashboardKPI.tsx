@@ -435,9 +435,21 @@ function Cincin({ nilai, dari, warna, ukuran = 84, teks }: {
 function RelSeksi({ judul }: { judul: string }) {
   return (
     <div className="lg:col-span-12 flex items-center gap-2.5 mt-1 -mb-0.5">
-      <span className="text-[10.5px] font-black uppercase tracking-[0.16em] text-slate-500 flex-shrink-0">{judul}</span>
+      {/*
+        Keping putih, bukan teks telanjang.
+
+        Judul seksi ini adalah SATU-SATUNYA teks di halaman yang duduk langsung
+        di atas latar dashboard - semua yang lain ada di dalam ubin putih.
+        Latar itu foto (gambarLatarDasbor), jadi terangnya berubah-ubah sepanjang
+        gambar: abu-abu slate-500 yang terbaca di satu tempat hilang sama sekali
+        di tempat lain. Warna teks apa pun akan salah di sebagian gambar; yang
+        benar adalah membawa latarnya sendiri.
+      */}
+      <span className="text-[10.5px] font-black uppercase tracking-[0.16em] text-slate-700 flex-shrink-0
+                       px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm border border-black/[0.06]"
+        style={{ boxShadow: '0 1px 2px rgba(15,23,42,0.06)' }}>{judul}</span>
       <span aria-hidden="true" className="flex-1 h-px"
-        style={{ background: 'linear-gradient(90deg,rgba(15,23,42,0.16),rgba(15,23,42,0))' }}/>
+        style={{ background: 'linear-gradient(90deg,rgba(255,255,255,0.7),rgba(255,255,255,0))' }}/>
     </div>
   );
 }
