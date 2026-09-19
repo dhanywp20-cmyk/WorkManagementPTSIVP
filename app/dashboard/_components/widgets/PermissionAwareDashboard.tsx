@@ -19,25 +19,17 @@ import { useKelompok } from '@/lib/kelompok';
 import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 
 /**
- * 'md' dan 'sm' dulu SAMA-SAMA '' - keduanya jatuh ke 1 dari 3 kolom
- * (lg:grid-cols-3) tanpa beda, padahal namanya sudah menjanjikan 'md' lebih
- * lebar dari 'sm'. Satu-satunya pasangan yang lahir bersama di kisi ini
- * adalah Piket Showroom (md) + Learning Center (sm) - keduanya sengaja hidup
- * untuk role yang sama (non-analytics), jadi baris ini SELALU cuma diisi
- * 0-2 widget, tidak pernah 3. Dengan 'md' tetap 1 kolom, 2 widget mengisi
- * 2 dari 3 kolom dan menyisakan SEPERTIGA layar kosong di sampingnya -
- * bukan di dalam kartu mana pun, jadi terlihat seperti ruang yang lupa
- * diisi, bukan jeda yang disengaja.
- *
- * 'md' -> lg:col-span-2 membuat Showroom+Learning mengisi persis 3/3 kolom
- * saat KEDUANYA hadir (kasus paling umum). Saat cuma Showroom sendirian
- * (Learning Center dimatikan admin untuk kelompok itu), sisa kosongnya
- * menyempit dari 2/3 jadi 1/3 - bukan sempurna, tapi lebih baik daripada
- * dibiarkan seperti sebelumnya, dan kasus itu jarang terjadi.
+ * Ruang kosong di sebelah Piket Showroom + Learning Center (lg:grid-cols-3
+ * dengan cuma 2 widget) DULU ditambal dengan melebarkan 'md' jadi
+ * lg:col-span-2 - salah arah. Solusi yang benar adalah widget KETIGA
+ * (Riwayat Quiz, size 'sm', lihat RiwayatQuizWidget) yang mengisi kolom itu
+ * dengan ISI, bukan meregangkan salah satu kartu yang sudah ada supaya
+ * menutupi kekosongan di sampingnya. Dengan tiga widget 1-kolom, span
+ * bawaan (semuanya '') sudah pas mengisi 3/3 kolom.
  */
 const SIZE_SPAN: Record<string, string> = {
   lg: 'sm:col-span-2 lg:col-span-2',
-  md: 'lg:col-span-2',
+  md: '',
   sm: '',
 };
 
@@ -247,7 +239,16 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
               )}
             </div>
           ) : (
-            <div key={`grid-${i}`} className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 items-start">
+            <div key={`grid-${i}`} className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+              {/*
+                TIDAK items-start di sini (beda dari grid lain di berkas ini) -
+                sengaja dibiarkan meregang (bawaan CSS Grid). Baris ini hanya
+                pernah diisi Piket Showroom + Learning Center (+ Riwayat Quiz),
+                dan menyamakan tinggi ketiganya membuat kartu ringkas (Learning
+                Center, Riwayat Quiz) berhenti mengambang setinggi isinya
+                sendiri yang jauh lebih pendek dari daftar 5 hari Piket -
+                ketiganya jadi rapi sejajar, bukan bertangga.
+              */}
               {block.widgets.map(w => (
                 <div key={w.id} className={SIZE_SPAN[w.size] ?? ''}>
                   <w.Component user={currentUser} openMenu={openMenu} openUrl={openUrl} />

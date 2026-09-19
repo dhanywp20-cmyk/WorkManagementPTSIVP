@@ -367,7 +367,10 @@ function BarisRiwayatQuiz({ r, onClick }: { r: RiwayatQuizRingkas; onClick: () =
         <p className="text-[11px] font-semibold text-indigo-900 truncate leading-tight">{r.sesi}</p>
         {r.submitted_at && <p className="text-[9px] text-indigo-400 leading-tight mt-0.5">{fmtTglSingkat(r.submitted_at)}</p>}
       </div>
-      <span aria-hidden="true" className="text-indigo-300 text-xs flex-shrink-0">›</span>
+      {/*  Lencana panah, bukan sekadar chevron tipis - diminta eksplisit
+          sebagai penanda "klik untuk buka popup", bukan hiasan yang gampang
+          terlewat matanya di kartu sepadat ini. */}
+      <span aria-hidden="true" className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 bg-indigo-100 text-indigo-500">→</span>
     </button>
   );
 }
@@ -401,25 +404,16 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const guest = isSalesGuest({ role: user.role });
   const [milikSaya, setMilikSaya] = useState<{ total: number; avg: number } | null>(null);
   const [peringkat, setPeringkat] = useState<HasilPeringkat | null>(null);
-  const [riwayat, setRiwayat] = useState<RiwayatQuizRingkas[]>([]);
-  const [attemptDibuka, setAttemptDibuka] = useState<string | null>(null);
   const [loading, setLoading] = useState(guest);
 
   useEffect(() => {
     if (!guest) return;
     let alive = true;
     (async () => {
-      const [attRes, rank, riwayatRes] = await Promise.all([
+      const [attRes, rank] = await Promise.all([
         supabase.from('lc_quiz_attempts').select('score, grading_status')
           .eq('user_id', user.id).eq('is_submitted', true),
         ambilPeringkatSaya(),
-        //  10 terbaru cukup - ini kartu ringkas di dashboard, bukan halaman
-        //  Riwayat Quiz penuh (tombol "Buka Learning" di bawah menuju ke
-        //  sana kalau orangnya perlu lihat semuanya).
-        supabase.from('lc_quiz_attempts')
-          .select('id, score, passed, grading_status, submitted_at, lc_quiz_sessions(session_name)')
-          .eq('user_id', user.id).eq('is_submitted', true)
-          .order('submitted_at', { ascending: false }).limit(10),
       ]);
       if (!alive) return;
       const dinilai = ((attRes.data ?? []) as { score: number | null; grading_status: string | null }[])
@@ -429,10 +423,6 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
         avg: dinilai.length ? dinilai.reduce((s, a) => s + (a.score ?? 0), 0) / dinilai.length : 0,
       });
       setPeringkat(rank);
-      setRiwayat(((riwayatRes.data ?? []) as any[]).map(a => ({
-        id: a.id, score: a.score, passed: a.passed, grading_status: a.grading_status,
-        submitted_at: a.submitted_at, sesi: a.lc_quiz_sessions?.session_name ?? 'Quiz',
-      })));
       setLoading(false);
     })();
     return () => { alive = false; };
@@ -462,35 +452,65 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
               value={peringkat?.divisiRank ? `#${peringkat.divisiRank}` : '—'}
               sub={peringkat?.divisiTotal ? `dari ${peringkat.divisiTotal}` : (peringkat?.divisi ? undefined : 'Divisi belum diset')} />
           </div>
-          {/*
-            Di samping keempat angka di atas: riwayat quiz yang pernah
-            diikuti, supaya terlihat LANGSUNG di dashboard tanpa perlu buka
-            menu Learning Center dulu.
-
-            Tingginya DIKUNCI (max-h) dengan overflow-y-auto DI DALAM kartu -
-            bukan kartunya sendiri yang melar mengikuti jumlah quiz. Sepuluh
-            attempt sekalipun tidak akan pernah mendorong widget ini menjadi
-            lebih tinggi dari widget lain di baris yang sama; yang bertambah
-            cuma jarak gulirnya.
-          */}
-          {riwayat.length > 0 && (
-            <div className="rounded-xl bg-indigo-50/50 border border-indigo-100 px-2.5 pt-1.5 pb-0.5">
-              <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-wide px-0.5 mb-0.5">Riwayat Quiz</p>
-              <div className="max-h-[108px] overflow-y-auto pr-0.5">
-                {riwayat.map(r => <BarisRiwayatQuiz key={r.id} r={r} onClick={() => setAttemptDibuka(r.id)} />)}
-              </div>
-            </div>
-          )}
           <button onClick={() => openMenu('learning-center')}
             className="mt-auto px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.02] self-start"
             style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>Buka Learning →</button>
-          {/*  Klik baris riwayat -> popup jawaban & soal, TANPA membuka menu
-              Learning Center. attemptDibuka menyimpan id-nya saja; komponen
-              popup yang mengambil detail soal/jawabannya sendiri saat dibuka. */}
-          {attemptDibuka && (
-            <PopupJawabanQuiz user={user} attemptId={attemptDibuka} onClose={() => setAttemptDibuka(null)} />
-          )}
         </div>
+      )}
+    </WidgetCard>
+  );
+};
+
+// WIDGET: Riwayat Quiz - kartu TERPISAH di sebelah Learning Center, BUKAN
+// digabung ke dalamnya. Klik satu baris membuka popup soal & jawaban lewat
+// PopupJawabanQuiz (dynamic import - lihat catatan di berkas itu kenapa),
+// tanpa membuka menu Learning Center. Guest saja - sama seperti bagian
+// statistik personal di LearningWidget, angka pribadi begini tidak relevan
+// untuk Team yang cuma dapat kartu CTA polos.
+const RiwayatQuizWidget: React.FC<WidgetProps> = ({ user }) => {
+  const [riwayat, setRiwayat] = useState<RiwayatQuizRingkas[] | null>(null);
+  const [attemptDibuka, setAttemptDibuka] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    supabase.from('lc_quiz_attempts')
+      .select('id, score, passed, grading_status, submitted_at, lc_quiz_sessions(session_name)')
+      .eq('user_id', user.id).eq('is_submitted', true)
+      .order('submitted_at', { ascending: false }).limit(10)
+      .then(({ data }: { data: any[] | null }) => {
+        if (!alive) return;
+        setRiwayat((data ?? []).map(a => ({
+          id: a.id, score: a.score, passed: a.passed, grading_status: a.grading_status,
+          submitted_at: a.submitted_at, sesi: a.lc_quiz_sessions?.session_name ?? 'Quiz',
+        })));
+      });
+    return () => { alive = false; };
+  }, [user.id]);
+
+  return (
+    <WidgetCard title="Riwayat Quiz" icon="🕐" accent="#4338ca">
+      {riwayat === null ? <Loading /> : riwayat.length === 0 ? (
+        <EmptyState text="Belum ada quiz yang diselesaikan." />
+      ) : (
+        /*
+          flex-col h-full + daftar sebagai flex-1 min-h-0 overflow-y-auto:
+          bukan max-h berangka tebak-tebakan. WidgetCard sudah h-full, dan
+          baris grid tempat kartu ini duduk (lihat PermissionAwareDashboard,
+          grid Piket Showroom/Learning Center/Riwayat Quiz TANPA items-start)
+          meregangkan ketiganya ke tinggi yang sama - jadi "flex-1" di sini
+          otomatis berarti "sisa tinggi sesudah judul", yang nilainya SAMA
+          dengan tinggi kartu Learning Center di sebelahnya tanpa perlu
+          disamakan manual. Kalau isinya melebihi itu, yang muncul gulir
+          DI DALAM kartu, bukan kartu yang memanjang sendiri.
+        */
+        <div className="flex flex-col h-full">
+          <div className="flex-1 min-h-0 overflow-y-auto pr-0.5 -mr-0.5">
+            {riwayat.map(r => <BarisRiwayatQuiz key={r.id} r={r} onClick={() => setAttemptDibuka(r.id)} />)}
+          </div>
+        </div>
+      )}
+      {attemptDibuka && (
+        <PopupJawabanQuiz user={user} attemptId={attemptDibuka} onClose={() => setAttemptDibuka(null)} />
       )}
     </WidgetCard>
   );
@@ -592,4 +612,8 @@ export const WIDGETS: WidgetDef[] = [
   // Piket Showroom: role tanpa analytics (Admin/Team sudah lihat piket di dalam analytics).
   { id: 'showroom',        permission: (u) => !canAccessAnalytics(u),               priority: 6, size: 'md', Component: ShowroomWidget },
   { id: 'learning',        permission: (u) => hasMenu(u, 'learning-center')        && !canAccessAnalytics(u), priority: 7, size: 'sm', Component: LearningWidget },
+  //  Guest SAJA (bukan `hasMenu` saja seperti Learning di atas) - kartu ini
+  //  cuma berarti kalau LearningWidget di sebelahnya sedang menampilkan
+  //  statistik personal (cabang guest-nya), bukan kartu CTA polos milik Team.
+  { id: 'riwayat-quiz',    permission: (u) => isSalesGuest({ role: u.role }) && hasMenu(u, 'learning-center') && !canAccessAnalytics(u), priority: 7.1, size: 'sm', Component: RiwayatQuizWidget },
 ];
