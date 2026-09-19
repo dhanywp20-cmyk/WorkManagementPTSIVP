@@ -63,8 +63,8 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-3"><WidgetCard title="My Action" icon="🎯" accent="#dc2626"><Loading /></WidgetCard></div>
+      <div className="grid grid-cols-1 gap-3 lg:contents">
+        <div className="lg:col-span-12"><WidgetCard title="My Action" icon="🎯" accent="#dc2626"><Loading /></WidgetCard></div>
       </div>
     );
   }
@@ -121,9 +121,14 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
   }
 
   return (
-       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-stretch">
-        {/* MY ACTION - selebar 2 kolom, paling menonjol */}
-        <div className="lg:col-span-2 h-full">
+    /*  lg:contents - pembungkus ini LARUT di layar lebar, jadi ketiga ubin di
+        bawah langsung jadi anggota kisi bento 12 kolom milik dashboard (lihat
+        PermissionAwareDashboard). Tanpa itu ia jadi kisi di dalam kisi:
+        jaraknya ikut gap sendiri dan tepinya tidak pernah berbaris dengan ubin
+        Analytics di bawahnya. Di layar sempit tetap satu kolom bertumpuk. */
+    <div className="grid grid-cols-1 gap-3 lg:contents">
+        {/* MY ACTION - ubin utama, 6 dari 12 kolom */}
+        <div className="lg:col-span-6 h-full">
         <WidgetCard title="My Action" icon="🎯" accent="#dc2626">
           {myAction.length === 0 ? (
             <EmptyState text="Tidak ada item mendesak - lihat Hari Ini & Mendatang di samping." />
@@ -143,7 +148,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
       </div>
 
       {/* TODAY */}
-     <div className="h-full">
+     <div className="lg:col-span-3 h-full">
         <WidgetCard title="Hari Ini" icon="📅" accent="#0891b2">
           {today.length === 0 ? (
             <EmptyState text="Tidak ada jadwal untuk hari ini." />
@@ -153,7 +158,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
         </WidgetCard>
         </div>
       {/* MENDATANG */}
-      <div className="h-full">
+      <div className="lg:col-span-3 h-full">
         <WidgetCard title="Mendatang" icon="🔜" accent="#7c3aed">
           {upcoming.length === 0 ? (
             <EmptyState text="Tidak ada jadwal dalam waktu dekat." />

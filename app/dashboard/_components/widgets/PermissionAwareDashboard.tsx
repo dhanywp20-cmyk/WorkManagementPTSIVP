@@ -167,7 +167,23 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         </div>
       </header>
 
-      <div className="max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6 space-y-4 md:space-y-5">
+      {/*
+        Kisi bento 12 kolom untuk SELURUH halaman, bukan tumpukan bagian.
+
+        Sebelumnya isinya space-y: tiap widget `full` jadi satu slab selebar
+        layar, ditumpuk ke bawah, dan masing-masing punya kisi sendiri di
+        dalamnya. Matanya membaca tiga blok bertingkat - itu yang terasa kaku,
+        dan itu tidak bisa dibereskan dengan menyeragamkan kartunya (justru
+        keseragaman tanpa variasi ukuran yang membuatnya makin kaku).
+
+        Dengan satu kisi bersama, ubin boleh berbeda lebar (My Action 6 kolom,
+        Hari Ini & Mendatang 3 kolom) tapi tepi kiri-kanannya tetap berbaris.
+        Widget yang isinya sudah berupa beberapa ubin memakai `lg:contents`
+        supaya ubinnya LANGSUNG jadi anggota kisi ini - bukan kisi di dalam
+        kisi, yang justru membuat jaraknya tidak pernah sama.
+      */}
+      <div className="max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6
+                      grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-start">
 
         {ajakTelegram && !tutupAjakan && (
           <div className="rounded-xl flex items-center gap-3 md:gap-4 px-4 py-3.5 flex-wrap"
@@ -195,7 +211,12 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
 
         {composed.map((block, i) =>
           block.type === 'full' ? (
-            <div key={`full-${block.widget.id}-${i}`}>
+            /*  work-queue sudah berisi tiga ubin sendiri (My Action, Hari Ini,
+                Mendatang) - `lg:contents` melarutkan pembungkusnya supaya
+                ketiganya jadi anggota langsung kisi bento di atas. Widget full
+                lain tetap selebar 12 kolom. */
+            <div key={`full-${block.widget.id}-${i}`}
+              className={block.widget.id === 'work-queue' ? 'lg:contents' : 'lg:col-span-12'}>
               {/*
                 Widget Analytics dirender langsung (bukan lewat
                 block.widget.Component) supaya tab-nya bisa dikontrol dari
@@ -209,7 +230,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
               )}
             </div>
           ) : (
-            <div key={`grid-${i}`} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+            <div key={`grid-${i}`} className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 items-start">
               {block.widgets.map(w => (
                 <div key={w.id} className={SIZE_SPAN[w.size] ?? ''}>
                   <w.Component user={currentUser} openMenu={openMenu} openUrl={openUrl} />

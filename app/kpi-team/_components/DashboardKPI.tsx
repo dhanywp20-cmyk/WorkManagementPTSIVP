@@ -1,5 +1,9 @@
 'use client';
 import { MiniSpark, DonutChart } from '@/components/shared';
+//  Permukaan ubin dipakai BERSAMA dengan widget dashboard (My Action, Team
+//  Monitoring) - satu-satunya cara memastikan keduanya benar-benar senada,
+//  bukan "mirip" karena angkanya kebetulan disalin.
+import { UBIN, BAYANG_UBIN } from '@/app/dashboard/_components/widgets/primitives';
 import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
@@ -346,12 +350,12 @@ function BarisRincian({ label, value, total, warna, teks }: {
  * h-full + rincian yang didorong ke bawah (mt-auto) membuat tepi bawahnya
  * berbaris tanpa perlu menebak tinggi.
  */
-function KartuModul({ judul, catatan, angka, satuan, kaki, children }: {
+function KartuModul({ judul, catatan, angka, satuan, kaki, kelas, children }: {
   judul:string; catatan?:string; angka:React.ReactNode; satuan:string;
-  kaki?:React.ReactNode; children:React.ReactNode;
+  kaki?:React.ReactNode; kelas?:string; children:React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 flex flex-col h-full">
+    <div className={`${UBIN} h-full ${kelas ?? ''}`} style={{ boxShadow: BAYANG_UBIN }}>
       <div className="flex items-center justify-between gap-2 mb-2.5">
         <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 truncate">{judul}</span>
         {catatan && <span className="text-[10px] text-slate-400 flex-shrink-0">{catatan}</span>}
@@ -830,11 +834,14 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
   return (
     <div className="w-full">
         {/* ── Content area ── */}
-        <div className="p-4 space-y-5">
+        {/*  Kisi bento 12 kolom, sama persis dengan milik dashboard - termasuk
+             jumlah kolom dan jaraknya, supaya ubin di sini berbaris dengan
+             ubin My Action / Hari Ini / Mendatang di atasnya. */}
+        <div className="p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-start">
 
           {/* ══════════ TAB ANALYTICS ══════════ */}
           {tab==='analytics' && (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 lg:contents">
 
               {/*
                 Kartu modul dengan anatomi SERAGAM (lihat KartuModul): judul,
@@ -845,11 +852,11 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 dan tidak pernah menyisakan rongga seperti donat 80px di kartu
                 yang isinya cuma dua angka.
               */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
 
                 {/* TICKET */}
                 <KartuModul
-                  judul="🎫 Ticket"
+                  kelas="lg:col-span-3" judul="🎫 Ticket"
                   catatan={scope.kind==='pts_sup'?scope.ptsTeamType:'Semua'}
                   angka={loading?'—':(kpi?.tickets.total??0)}
                   satuan="total tiket"
@@ -869,7 +876,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
                 {/* REMINDER SCHEDULE */}
                 <KartuModul
-                  judul="📅 Reminder Schedule"
+                  kelas="lg:col-span-3" judul="📅 Reminder Schedule"
                   angka={loading?'—':(kpi?.reminders.total??0)}
                   satuan="total jadwal"
                   kaki={!loading&&kpi?<>
@@ -889,7 +896,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
                 {/* UNIT MOVEMENT */}
                 <KartuModul
-                  judul="🚚 Unit Movement"
+                  kelas="lg:col-span-3" judul="🚚 Unit Movement"
                   catatan="Bulan ini"
                   angka={loading?'—':(kpi?.units.totalLogs??0)}
                   satuan="log tercatat">
@@ -903,7 +910,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
                 {/* PIKET SHOWROOM */}
                 <KartuModul
-                  judul="🏪 Piket Showroom"
+                  kelas="lg:col-span-3" judul="🏪 Piket Showroom"
                   catatan={new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}
                   angka={loading?'—':`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??0}`}
                   satuan="hari terisi minggu ini"
@@ -932,9 +939,9 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
               {/* ── Learning Center + Pengguna (admin) ── */}
               {scope.kind==='admin'&&(
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 lg:contents">
 
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 flex flex-col">
+                  <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">🎓 Learning Center</span>
                     {/*  Tiga angka polos, bukan kotak berwarna: nilainya tidak
                         punya makna baik/buruk, jadi tidak ada yang perlu
@@ -981,7 +988,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       ruang sisa membuat pembaca mengira jumlah akun ada
                       kaitannya dengan lalu lintas unit. */}
                   <KartuModul
-                    judul="👥 Pengguna"
+                    kelas="lg:col-span-3" judul="👥 Pengguna"
                     angka={loading?'—':(kpi?.users.total??0)}
                     satuan="akun terdaftar">
                     {loading
@@ -1000,7 +1007,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
 
           {/* ══════════ TAB ANALYTICS — KPI Live Charts ══════════ */}
           {tab==='analytics'&&(
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 lg:contents">
               {/*
                 SATU grid untuk seluruh tab, bukan baris-3 lalu baris-2 lalu
                 dua kartu selebar layar. Campuran itulah yang membuatnya tidak
@@ -1017,9 +1024,9 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 Produk" yang berisi enam, dan selisihnya jadi ruang kosong yang
                 tidak pernah terisi apa pun.
               */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 items-start">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
                 {/* Handler */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                <div className={`${UBIN} lg:col-span-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🎫 Ticket Open per Handler</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byHandler.length
@@ -1027,7 +1034,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
                 {/* Divisi */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                <div className={`${UBIN} lg:col-span-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🏢 Ticket per Divisi</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byDivision.length
@@ -1041,7 +1048,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   slot kosong di ujung kanan - lubang yang justru jadi keluhan
                   awalnya.
                 */}
-                <div className="sm:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                <div className={`${UBIN} lg:col-span-4`} style={{ boxShadow: BAYANG_UBIN }}>
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">📦 Ticket per Produk</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byProduct?.length
@@ -1056,7 +1063,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   menggantung di baris kedua. Empat kolom mengisinya, dan 12
                   batang bulan memang paling terbaca pada lebar penuh.
                 */}
-                <div className="sm:col-span-2 xl:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                <div className={`${UBIN} lg:col-span-8`} style={{ boxShadow: BAYANG_UBIN }}>
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">📈 Trend Ticket Bulanan {new Date().getFullYear()}</h3>
                 {loading ? <div className="h-32 rounded animate-pulse bg-slate-100"/> : (
                   kpi?.tickets.monthlyTickets?.some(v => v > 0) ? (() => {
@@ -1121,7 +1128,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
           {/* Cross-Module and Audit Trail tabs removed — moved to Analytics Platform page */}
           {(tab as string)==='cross_removed'&&(
             <div className="space-y-5">
-              <div className="text-sm font-bold uppercase tracking-widest text-slate-500 mb-1">🔀 Cross-Module Overview — Ticket · Reminder · Learning Center</div>
+              <div className="lg:col-span-12 text-sm font-bold uppercase tracking-widest text-slate-500 mb-1">🔀 Cross-Module Overview — Ticket · Reminder · Learning Center</div>
 
               {/* Monthly bar chart: 3 modules side by side */}
               {(() => {
@@ -1139,7 +1146,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 // For reminders we use kpi.reminders.byCategory total as flat (no monthly breakdown yet)
                 const maxVal = Math.max(...ticketsByMonth, ...lcByMonth, 1);
                 return (
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5">
+                  <div className={`${UBIN} lg:col-span-12`} style={{ boxShadow: BAYANG_UBIN }}>
                     <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                       <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500">📅 Aktivitas Bulanan {year}</h3>
                       <div className="flex items-center gap-4 text-sm">
@@ -1176,9 +1183,9 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               })()}
 
               {/* Module summary comparison */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Tickets */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 space-y-3">
+                <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#fee2e2'}}>🎫</div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Ticketing</span>
@@ -1196,7 +1203,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   ))}
                 </div>
                 {/* Reminders */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 space-y-3">
+                <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}>📅</div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Reminder</span>
@@ -1214,7 +1221,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   ))}
                 </div>
                 {/* Learning Center */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 space-y-3">
+                <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}>🎓</div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Learning Center</span>

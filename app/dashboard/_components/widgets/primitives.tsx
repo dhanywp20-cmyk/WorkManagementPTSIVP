@@ -34,17 +34,30 @@ export interface WidgetDef {
 
 // UI primitives
 
+/**
+ * Permukaan SATU-SATUNYA untuk seluruh ubin dashboard - dipakai widget lama
+ * (My Action, Team Monitoring, dll) MAUPUN ubin Analytics, lewat KELAS yang
+ * sama persis: lihat UBIN & KEPALA_UBIN di bawah.
+ *
+ * Sebelumnya ada dua bahasa visual di satu layar: widget memakai bayangan
+ * tebal (0 4px 20px) dengan chip ikon 32px, sementara kartu Analytics memakai
+ * bayangan tipis, border slate, padding dan radius yang lain. Perbedaannya
+ * kecil satu per satu, tapi berdampingan terbaca seperti dua aplikasi yang
+ * ditempel jadi satu - itulah keluhan "tidak senada".
+ */
+export const UBIN = 'rounded-[18px] bg-white border border-black/[0.07] p-4 flex flex-col min-w-0';
+export const BAYANG_UBIN = '0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -16px rgba(15,23,42,0.18)';
+
 export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabel }: {
   title: string; icon: string; accent: string;
   children: React.ReactNode; onSeeAll?: () => void; seeAllLabel?: string;
 }) {
   return (
-    <div className="rounded-2xl bg-white/95 backdrop-blur-sm shadow-lg border border-black/5 p-4 flex flex-col h-full"
-      style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+    <div className={`${UBIN} h-full`} style={{ boxShadow: BAYANG_UBIN }}>
       <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0"
+        <div className="w-[26px] h-[26px] rounded-[9px] flex items-center justify-center text-[13px] flex-shrink-0"
           style={{ background: `${accent}1a`, color: accent }}>{icon}</div>
-        <h3 className="font-bold text-slate-800 text-sm truncate flex-1">{title}</h3>
+        <h3 className="font-extrabold text-slate-900 text-[12.5px] tracking-[-0.01em] truncate flex-1">{title}</h3>
         {onSeeAll && (
           <button onClick={onSeeAll}
             className="text-[11px] font-semibold px-2 py-1 rounded-lg transition-all hover:scale-[1.03] flex-shrink-0"
