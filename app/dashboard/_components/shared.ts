@@ -110,14 +110,20 @@ export const ALL_MENU_KEYS = [
   'picket-showroom',
   'learning-center',
   'tech-note',
+  'summary-project',
 ];
 
 /**
  * Menu yang TIDAK ikut diberikan otomatis saat user baru dibuat.
  * Admin/superadmin tetap melihatnya (mereka bypass allowed_menus), tapi anggota
  * team baru harus diberi akses manual lewat Admin Panel.
+ *
+ * 'summary-project' opt-in: isinya menggabungkan riwayat lintas modul
+ * (termasuk Troubleshooting & Design Project) per nama project - admin yang
+ * memutuskan siapa yang perlu melihat rekapan itu, bukan diberikan otomatis
+ * ke semua akun baru.
  */
-export const RESTRICTED_MENU_KEYS = ['project-progress'];
+export const RESTRICTED_MENU_KEYS = ['project-progress', 'summary-project'];
 
 /**
  * Default allowed_menus untuk user BARU. Sengaja dipisah dari ALL_MENU_KEYS:
@@ -170,6 +176,7 @@ export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = 
   'reminder-schedule':      { label: 'Request Schedule', icon: '🗓️' },
   'picket-showroom':        { label: 'Piket Showroom', icon: '🏪' },
   'tech-note':              { label: 'Tech Note R&D', icon: '📝' },
+  'summary-project':        { label: 'Summary Project', icon: '🗂️' },
 };
 
 export const ROLE_BADGE: Record<string, string> = {
