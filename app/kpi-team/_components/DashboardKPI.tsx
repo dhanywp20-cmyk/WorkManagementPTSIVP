@@ -283,20 +283,85 @@ function SectionHeader({ icon, title, sub, right }: { icon:string; title:string;
  * sama besar, dan dua bilah sama panjang memang tidak menyampaikan apa pun -
  * yang dibaca orang di sana adalah angkanya, bukan panjangnya.
  */
-function HBarChart({ data, color, maxItems=6 }: { data:{label:string;value:number}[]; color:string; maxItems?:number }) {
+/*
+  Satu warna aksen untuk SETIAP deret tunggal di dashboard ini.
+
+  Sebelumnya tiap kartu memilih warnanya sendiri (teal, ungu, oranye, cyan,
+  indigo) tanpa arti apa pun - warna jadi hiasan, bukan informasi. Dengan satu
+  aksen, warna yang BERBEDA otomatis berarti sesuatu, dan itulah yang dipakai
+  tiga token status di bawahnya.
+*/
+const AKSEN  = '#4f46e5';
+const BAIK   = '#059669';
+const HATI   = '#d97706';
+const KRITIS = '#e11d48';
+
+function HBarChart({ data, color, maxItems=6 }: { data:{label:string;value:number}[]; color?:string; maxItems?:number }) {
   const top = data.slice(0, maxItems), max = Math.max(...top.map(d=>d.value), 1);
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       {top.map((d,i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="text-[11px] flex-shrink-0 text-right" style={{ color:'rgba(0,0,0,0.55)', width:'7rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.label}</span>
-          <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ background:'rgba(0,0,0,0.06)' }}>
+          <span title={d.label} className="text-[11px] font-semibold flex-shrink-0 text-right" style={{ color:'rgba(0,0,0,0.55)', width:'7rem', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.label}</span>
+          <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background:'rgba(15,23,42,0.07)' }}>
+            {/*  Opacity TETAP. Versi lama memudarkan tiap batang menurut
+                peringkatnya (0.85 - i*0.07), jadi warna ikut menyandikan
+                urutan - padahal panjang batang sudah melakukannya, dan
+                batang terbawah terbaca pudar seolah datanya kurang sahih. */}
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width:`${(d.value/max)*100}%`, background:color, opacity:0.85-i*0.07 }}/>
+              style={{ width:`${(d.value/max)*100}%`, background: color ?? AKSEN }}/>
           </div>
-          <span className="text-[11px] font-bold w-5 text-right flex-shrink-0" style={{ color:'rgba(0,0,0,0.6)' }}>{d.value}</span>
+          <span className="text-[11px] font-bold w-5 text-right flex-shrink-0 tabular-nums" style={{ color:'rgba(0,0,0,0.6)' }}>{d.value}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Satu baris rincian di kartu modul: label · bilah tipis · angka. */
+function BarisRincian({ label, value, total, warna, teks }: {
+  label:string; value?:number; total?:number; warna?:string; teks?:React.ReactNode;
+}) {
+  const pct = (total ?? 0) > 0 ? Math.min(100, ((value ?? 0) / (total as number)) * 100) : 0;
+  return (
+    <div className="grid items-center gap-2" style={{ gridTemplateColumns:'4.5rem 1fr auto' }}>
+      <span className="text-[11px] font-semibold text-slate-600 truncate">{label}</span>
+      {teks !== undefined
+        ? <span className="text-[11px] text-slate-700 truncate">{teks}</span>
+        : <div className="h-1.5 rounded-full overflow-hidden" style={{ background:'rgba(15,23,42,0.07)' }}>
+            <div className="h-full rounded-full" style={{ width:`${pct}%`, background: warna ?? AKSEN }}/>
+          </div>}
+      {teks === undefined &&
+        <span className="text-[11px] font-bold text-slate-600 text-right tabular-nums w-6">{value}</span>}
+    </div>
+  );
+}
+
+/**
+ * Kartu modul dengan anatomi SERAGAM: judul, satu angka utama, lalu rincian.
+ *
+ * Sebelumnya tiap modul menyusun isinya sendiri - ada yang kotak-kotak angka
+ * berwarna, ada yang donat + legenda, ada yang campuran - sehingga kartu
+ * bersebelahan tingginya jauh berbeda dan yang pendek menyisakan rongga.
+ * h-full + rincian yang didorong ke bawah (mt-auto) membuat tepi bawahnya
+ * berbaris tanpa perlu menebak tinggi.
+ */
+function KartuModul({ judul, catatan, angka, satuan, kaki, children }: {
+  judul:string; catatan?:string; angka:React.ReactNode; satuan:string;
+  kaki?:React.ReactNode; children:React.ReactNode;
+}) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 flex flex-col h-full">
+      <div className="flex items-center justify-between gap-2 mb-2.5">
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 truncate">{judul}</span>
+        {catatan && <span className="text-[10px] text-slate-400 flex-shrink-0">{catatan}</span>}
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-black leading-none text-slate-900" style={{ letterSpacing:'-0.02em' }}>{angka}</span>
+        <span className="text-[11px] font-bold text-slate-400">{satuan}</span>
+      </div>
+      <div className="flex flex-col gap-1.5 mt-auto pt-3.5">{children}</div>
+      {kaki && <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100">{kaki}</div>}
     </div>
   );
 }
@@ -772,290 +837,160 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
             <div className="space-y-3">
 
               {/*
-                Empat kartu modul dalam SATU grid, bukan dua baris berisi dua.
-                grid-cols-2 tetap (tanpa breakpoint) membuat tiap kartu
-                setengah layar penuh untuk isi yang sedikit (beberapa angka +
-                donut kecil) - persis keluhan "terlalu lega". lg:grid-cols-4
-                menyusun keempatnya sejajar begitu ada ruang; sm:grid-cols-2
-                jadi jembatan di layar sedang sebelum turun ke 1 kolom.
+                Kartu modul dengan anatomi SERAGAM (lihat KartuModul): judul,
+                satu angka utama, lalu rincian yang didorong ke tepi bawah.
+                Donat dilepas - donat menjawab "berapa bagian dari keseluruhan",
+                sementara yang ditanyakan di sini "berapa banyak, dan mana yang
+                menumpuk". Untuk itu deretan bilah jauh lebih mudah dibandingkan,
+                dan tidak pernah menyisakan rongga seperti donat 80px di kartu
+                yang isinya cuma dua angka.
               */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 
-                {/* PIKET SHOWROOM */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">🏪 Piket Showroom</span>
-                    <span className="text-[10px] text-slate-400">{new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}</span>
-                  </div>
-                  {/* PIC row */}
-                  <div className="flex flex-col gap-1.5 mb-2">
-                    {[
-                      {team:'IVP',  person:kpi?.piket.todayIVP,  c:'#ef4444', bg:'#fef2f2'},
-                      {team:'UMP',  person:kpi?.piket.todayUMP,  c:'#f59e0b', bg:'#fffbeb'},
-                      {team:'MVI', person:kpi?.piket.todayMvi, c:'#3b82f6', bg:'#eff6ff'},
-                    ].map(p=>(
-                      <div key={p.team} className="flex items-center gap-1.5">
-                        <span className="text-sm font-black px-1.5 py-0.5 rounded-md flex-shrink-0"
-                          style={{background:p.bg,color:p.c}}>{p.team}</span>
-                        {loading
-                          ? <div className="h-2.5 w-20 rounded animate-pulse bg-slate-100 flex-1"/>
-                          : <span className="text-sm font-semibold text-slate-700 truncate flex-1">
-                              {p.person ?? <span className="italic text-slate-300 text-sm">Belum diisi</span>}
-                            </span>}
-                      </div>
-                    ))}
-                  </div>
-                  {/* Week progress bar */}
-                  {!loading&&kpi&&(
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-[10px] text-slate-400">Minggu ini</span>
-                        <span className="text-[11px] font-bold text-slate-600">{kpi.piket.weekFilled}/{kpi.piket.weekTotal} hari · {kpi.piket.kegiatanToday} tamu</span>
-                      </div>
-                      <MiniBar value={kpi.piket.weekFilled} max={kpi.piket.weekTotal} color="#10b981" h={5}/>
-                      <div className="flex justify-between mt-0.5">
-                        <span className="text-sm text-slate-300">0%</span>
-                        <span className="text-sm font-bold text-emerald-600">{Math.min(100,Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100))}% terpenuhi</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* TICKET TROUBLESHOOTING */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">🎫 Ticket</span>
-                    <span className="text-[10px] text-slate-400">{scope.kind==='pts_sup'?scope.ptsTeamType:'Semua'}</span>
-                  </div>
-                  {/* Mini stat row */}
-                  <div className="grid grid-cols-4 gap-1 mb-2">
-                    {[
-                      {label:'Total', value:kpi?.tickets.total??0,         c:'#64748b'},
-                      {label:'Open',  value:kpi?.tickets.open??0,          c:'#ef4444'},
-                      {label:'Solved',value:kpi?.tickets.solved??0,        c:'#10b981'},
-                      {label:'Hari ini',value:kpi?.tickets.resolvedToday??0,c:'#0891b2'},
-                    ].map(s=>(
-                      <div key={s.label} className="flex flex-col items-center p-1 rounded-lg" style={{background:s.c+'10'}}>
-                        {loading ? <div className="h-4 w-5 rounded animate-pulse bg-slate-100 mb-0.5"/> :
-                          <span className="text-sm font-black leading-none" style={{color:s.c}}>{s.value}</span>}
-                        <span className="text-[10px] text-slate-400 mt-0.5 text-center leading-tight font-medium">{s.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Donut + status list */}
-                  {!loading&&kpi&&kpi.tickets.byStatus.length>0&&(()=>{
-                    const statusRingkas = batasDenganLainnya(kpi.tickets.byStatus, 6, count=>({status:'Lainnya',count,color:'#94a3b8'}));
-                    return (
-                    <div className="flex items-start gap-3">
-                      <DonutChart segments={statusRingkas.map(s=>({value:s.count,color:s.color}))}
-                        size={80} strokeWidth={10} label={`${kpi.tickets.total}`}/>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        {statusRingkas.map(s=>(
-                          <div key={s.status} className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{background:s.color}}/>
-                            <span className="text-[10px] text-slate-500 flex-shrink-0" style={{width:'6.5rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{s.status}</span>
-                            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{background:'#f1f5f9',minWidth:16}}>
-                              <div className="h-full rounded-full" style={{width:`${kpi.tickets.total>0?(s.count/kpi.tickets.total)*100:0}%`,background:s.color}}/>
-                            </div>
-                            <span className="text-[10px] font-bold text-slate-700 flex-shrink-0 w-5 text-right">{s.count}</span>
-                          </div>
+                {/* TICKET */}
+                <KartuModul
+                  judul="🎫 Ticket"
+                  catatan={scope.kind==='pts_sup'?scope.ptsTeamType:'Semua'}
+                  angka={loading?'—':(kpi?.tickets.total??0)}
+                  satuan="total tiket"
+                  kaki={!loading&&kpi?<>
+                    <span className="text-[10px] text-slate-400 font-semibold">Avg resolusi</span>
+                    <span className="text-[11px] font-black text-slate-600">{kpi.tickets.avgResolutionDays}h</span>
+                  </>:undefined}>
+                  {loading
+                    ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
+                    : batasDenganLainnya(kpi?.tickets.byStatus??[], 4, count=>({status:'Lainnya',count,color:'#94a3b8'}))
+                        .map(s=>(
+                          <BarisRincian key={s.status} label={s.status} value={s.count}
+                            total={kpi?.tickets.total??0}
+                            warna={/overdue/i.test(s.status)?KRITIS:/solved|selesai/i.test(s.status)?BAIK:AKSEN}/>
                         ))}
-                        <div className="flex justify-between items-center mt-1 border-t border-slate-100 pt-1">
-                          <span className="text-[10px] text-slate-400">Avg resolusi</span>
-                          <span className="text-[10px] font-black text-rose-500">{kpi.tickets.avgResolutionDays}h</span>
-                        </div>
-                      </div>
-                    </div>
-                    );
-                  })()}
-                </div>
+                </KartuModul>
 
                 {/* REMINDER SCHEDULE */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">📅 Reminder Schedule</span>
-                  </div>
-                  {/* Stat row */}
-                  <div className="grid grid-cols-4 gap-1 mb-2">
-                    {[
-                      {label:'Total',   value:kpi?.reminders.total??0,       c:'#6366f1'},
-                      {label:'Pending', value:kpi?.reminders.pending??0,     c:'#f59e0b'},
-                      {label:'Overdue', value:kpi?.reminders.overdueCount??0,c:'#ef4444'},
-                      {label:'Done',    value:kpi?.reminders.done??0,        c:'#10b981'},
-                    ].map(s=>(
-                      <div key={s.label} className="flex flex-col items-center p-1 rounded-lg" style={{background:s.c+'10'}}>
-                        {loading ? <div className="h-4 w-5 rounded animate-pulse bg-slate-100 mb-0.5"/> :
-                          <span className="text-sm font-black leading-none" style={{color:s.c}}>{s.value}</span>}
-                        <span className="text-[10px] text-slate-400 mt-0.5 text-center leading-tight font-medium">{s.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {/* Donut + category bar list */}
-                  {!loading&&kpi&&kpi.reminders.byCategory.length>0&&(()=>{
-                    const kategoriRingkas = batasDenganLainnya(kpi.reminders.byCategory, 6, count=>({cat:'Lainnya',count,color:'#94a3b8'}));
-                    return (
-                    <div className="flex items-start gap-3">
-                      <DonutChart segments={kategoriRingkas.map(c=>({value:c.count,color:c.color}))}
-                        size={80} strokeWidth={10} label={`${kpi.reminders.total}`}/>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        {kategoriRingkas.map(c=>(
-                          <div key={c.cat} className="flex items-center gap-1.5">
-                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{background:c.color}}/>
-                            <span className="text-[10px] text-slate-500 flex-shrink-0" style={{width:'6.5rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.cat}</span>
-                            <div className="flex-1 h-2 rounded-full overflow-hidden" style={{background:'#f1f5f9',minWidth:16}}>
-                              <div className="h-full rounded-full" style={{width:`${kpi.reminders.total>0?(c.count/kpi.reminders.total)*100:0}%`,background:c.color}}/>
-                            </div>
-                            <span className="text-[10px] font-bold text-slate-700 flex-shrink-0 w-5 text-right">{c.count}</span>
-                          </div>
-                        ))}
-                        {/* Done rate */}
-                        <div className="flex justify-between items-center mt-1 border-t border-slate-100 pt-1">
-                          <span className="text-[10px] text-slate-400">Done rate</span>
-                          <span className="text-[10px] font-black text-emerald-600">
-                            {kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    );
-                  })()}
-                </div>
+                <KartuModul
+                  judul="📅 Reminder Schedule"
+                  angka={loading?'—':(kpi?.reminders.total??0)}
+                  satuan="total jadwal"
+                  kaki={!loading&&kpi?<>
+                    <span className="text-[10px] text-slate-400 font-semibold">Done rate</span>
+                    <span className="text-[11px] font-black" style={{color:BAIK}}>
+                      {kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%
+                    </span>
+                  </>:undefined}>
+                  {loading
+                    ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
+                    : <>
+                        <BarisRincian label="Done"    value={kpi?.reminders.done??0}         total={kpi?.reminders.total??0} warna={BAIK}/>
+                        <BarisRincian label="Pending" value={kpi?.reminders.pending??0}      total={kpi?.reminders.total??0} warna={HATI}/>
+                        <BarisRincian label="Overdue" value={kpi?.reminders.overdueCount??0} total={kpi?.reminders.total??0} warna={KRITIS}/>
+                      </>}
+                </KartuModul>
 
-                {/* UNIT MOVEMENT + PENGGUNA (admin) / hanya unit (pts_sup) */}
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">🚚 Unit Movement</span>
-                    <span className="text-[10px] text-slate-400">Bulan ini</span>
-                  </div>
-                  {/* Unit stats */}
-                  <div className="grid grid-cols-3 gap-1 mb-2">
-                    {[
-                      {label:'Log',   value:kpi?.units.totalLogs??0,        c:'#64748b'},
-                      {label:'Keluar',value:kpi?.units.keluarThisMonth??0,  c:'#f59e0b'},
-                      {label:'Masuk', value:kpi?.units.masukThisMonth??0,   c:'#10b981'},
-                    ].map(s=>(
-                      <div key={s.label} className="flex flex-col items-center p-1 rounded-lg" style={{background:s.c+'12'}}>
-                        {loading ? <div className="h-4 w-5 rounded animate-pulse bg-slate-100 mb-0.5"/> :
-                          <span className="text-sm font-black leading-none" style={{color:s.c}}>{s.value}</span>}
-                        <span className="text-[10px] text-slate-400 mt-0.5">{s.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {!loading&&kpi&&(
-                    <div className="flex items-start gap-3 mb-2">
-                      <DonutChart size={80} strokeWidth={10}
-                        segments={[
-                          {value:kpi.units.keluarThisMonth,color:'#f59e0b'},
-                          {value:kpi.units.masukThisMonth, color:'#10b981'},
-                          {value:Math.max(kpi.units.totalLogs-kpi.units.keluarThisMonth-kpi.units.masukThisMonth,0),color:'#e2e8f0'},
-                        ]} label={`${kpi.units.totalLogs}`}/>
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0"/>
-                          <span className="text-[10px] text-slate-500 flex-shrink-0 w-10">Keluar</span>
-                          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{background:'#f1f5f9',minWidth:12}}>
-                            <div className="h-full rounded-full bg-amber-400" style={{width:`${kpi.units.totalLogs>0?(kpi.units.keluarThisMonth/kpi.units.totalLogs)*100:0}%`}}/>
-                          </div>
-                          <span className="text-[10px] font-bold text-slate-700 flex-shrink-0 w-5 text-right">{kpi.units.keluarThisMonth}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"/>
-                          <span className="text-[10px] text-slate-500 flex-shrink-0 w-10">Masuk</span>
-                          <div className="flex-1 h-2 rounded-full overflow-hidden" style={{background:'#f1f5f9',minWidth:12}}>
-                            <div className="h-full rounded-full bg-emerald-500" style={{width:`${kpi.units.totalLogs>0?(kpi.units.masukThisMonth/kpi.units.totalLogs)*100:0}%`}}/>
-                          </div>
-                          <span className="text-[10px] font-bold text-slate-700 flex-shrink-0 w-5 text-right">{kpi.units.masukThisMonth}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {/* Pengguna platform — hanya admin, inline di bawah unit */}
-                  {scope.kind==='admin'&&!loading&&kpi&&(
-                    <div className="border-t border-slate-100 pt-2 mt-1">
-                      <div className="flex items-start gap-3">
-                        <DonutChart
-                          segments={(kpi.users.byRole).map((r,i)=>({value:r.count,color:['#6366f1','#10b981','#f59e0b','#ef4444','#0891b2'][i%5]}))}
-                          size={80} strokeWidth={10} label={`${kpi.users.total}`}/>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1.5">👥 Pengguna</div>
-                          <div className="space-y-1">
-                            {kpi.users.byRole.map((r,i)=>(
-                              <div key={r.role} className="flex items-center gap-1.5">
-                                <div className="w-2 h-2 rounded-full flex-shrink-0"
-                                  style={{background:['#6366f1','#10b981','#f59e0b','#ef4444','#0891b2'][i%5]}}/>
-                                <span className="text-[10px] text-slate-500 flex-shrink-0 uppercase" style={{width:'4.5rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.role}</span>
-                                <div className="flex-1 h-2 rounded-full overflow-hidden" style={{background:'#f1f5f9',minWidth:12}}>
-                                  <div className="h-full rounded-full" style={{width:`${kpi.users.total>0?(r.count/kpi.users.total)*100:0}%`,background:['#6366f1','#10b981','#f59e0b','#ef4444','#0891b2'][i%5]}}/>
-                                </div>
-                                <span className="text-[10px] font-bold text-slate-700 flex-shrink-0 w-5 text-right">{r.count}</span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* UNIT MOVEMENT */}
+                <KartuModul
+                  judul="🚚 Unit Movement"
+                  catatan="Bulan ini"
+                  angka={loading?'—':(kpi?.units.totalLogs??0)}
+                  satuan="log tercatat">
+                  {loading
+                    ? [0,1].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
+                    : <>
+                        <BarisRincian label="Keluar" value={kpi?.units.keluarThisMonth??0} total={kpi?.units.totalLogs??0} warna={HATI}/>
+                        <BarisRincian label="Masuk"  value={kpi?.units.masukThisMonth??0}  total={kpi?.units.totalLogs??0} warna={BAIK}/>
+                      </>}
+                </KartuModul>
+
+                {/* PIKET SHOWROOM */}
+                <KartuModul
+                  judul="🏪 Piket Showroom"
+                  catatan={new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}
+                  angka={loading?'—':`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??0}`}
+                  satuan="hari terisi minggu ini"
+                  kaki={!loading&&kpi?<>
+                    <span className="text-[10px] text-slate-400 font-semibold">{kpi.piket.kegiatanToday} tamu hari ini</span>
+                    <span className="text-[11px] font-black" style={{color:BAIK}}>
+                      {Math.min(100,Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100))}% terpenuhi
+                    </span>
+                  </>:undefined}>
+                  {/*  PIC piket adalah NAMA, bukan angka - jadi barisnya memakai
+                      varian teks, bukan bilah. Bilah sepanjang nol untuk "belum
+                      diisi" cuma menipu mata: terbaca seperti nilai nol padahal
+                      artinya "belum ada datanya". */}
+                  {[
+                    {team:'IVP', person:kpi?.piket.todayIVP},
+                    {team:'UMP', person:kpi?.piket.todayUMP},
+                    {team:'MVI', person:kpi?.piket.todayMvi},
+                  ].map(p=>(
+                    <BarisRincian key={p.team} label={p.team}
+                      teks={loading
+                        ? <span className="inline-block h-2.5 w-20 rounded bg-slate-100 animate-pulse"/>
+                        : (p.person ?? <span className="italic text-slate-300">Belum diisi</span>)}/>
+                  ))}
+                </KartuModul>
               </div>
 
-              {/* ── ROW 3: Learning Center (admin) — compact 1 card full width ── */}
+              {/* ── Learning Center + Pengguna (admin) ── */}
               {scope.kind==='admin'&&(
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">🎓 Learning Center</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {/* Stat mini col */}
-                    <div className="grid grid-cols-2 gap-1 col-span-1">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3.5 flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3">🎓 Learning Center</span>
+                    {/*  Tiga angka polos, bukan kotak berwarna: nilainya tidak
+                        punya makna baik/buruk, jadi tidak ada yang perlu
+                        diwarnai. */}
+                    <div className="grid grid-cols-3 gap-3">
                       {[
-                        {label:'Attempts', value:kpi?.learning.totalSessions??0,    c:'#6366f1'},
-                        {label:'Lulus',    value:kpi?.learning.completedSessions??0, c:'#10b981'},
-                        {label:'Peserta',  value:kpi?.learning.totalParticipants??0, c:'#0891b2'},
-                        {label:'Avg Skor', value:kpi?.learning.avgScore??0,          c:'#f59e0b'},
+                        {label:'Peserta',        value:kpi?.learning.totalParticipants??0},
+                        {label:'Attempt',        value:kpi?.learning.totalSessions??0},
+                        {label:'Rata-rata skor', value:kpi?.learning.avgScore??0},
                       ].map(s=>(
-                        <div key={s.label} className="flex flex-col items-center p-1 rounded-lg" style={{background:s.c+'10'}}>
-                          {loading?<div className="h-4 w-8 rounded animate-pulse bg-slate-100 mb-0.5"/>:
-                            <span className="text-sm font-black leading-none" style={{color:s.c}}>{s.value}</span>}
-                          <span className="text-[10px] text-slate-400 mt-0.5 text-center leading-tight font-medium">{s.label}</span>
+                        <div key={s.label}>
+                          <p className="text-[10px] font-bold text-slate-400">{s.label}</p>
+                          {loading
+                            ? <div className="h-6 w-10 rounded bg-slate-100 animate-pulse mt-1"/>
+                            : <p className="text-2xl font-black text-slate-900 leading-none mt-1">{s.value}</p>}
                         </div>
                       ))}
                     </div>
-                    {/* Pass rate donut */}
-                    {!loading&&kpi&&(
-                      <>
-                        <div className="flex flex-col items-center justify-center gap-1">
-                          <DonutChart
-                            segments={[
-                              {value:kpi.learning.completedSessions,color:'#10b981'},
-                              {value:Math.max(kpi.learning.totalSessions-kpi.learning.completedSessions,0),color:'#fee2e2'},
-                            ]}
-                            size={52} strokeWidth={8}
-                            label={`${kpi.learning.totalSessions>0?Math.round((kpi.learning.completedSessions/kpi.learning.totalSessions)*100):0}%`}/>
-                          <span className="text-sm font-bold text-slate-500">Pass Rate</span>
-                          <span className="text-[10px] text-slate-400">{kpi.learning.completedSessions}✓ · {kpi.learning.totalSessions-kpi.learning.completedSessions}✗</span>
+                    {/*  Pass rate sebagai SATU meter, menggantikan dua donat yang
+                        dulu berdampingan: keduanya menyatakan rasio yang sama
+                        dengan angka yang sudah tertulis di sebelahnya. */}
+                    {!loading&&kpi&&(()=>{
+                      const gagal = Math.max(kpi.learning.totalSessions-kpi.learning.completedSessions,0);
+                      const pct = kpi.learning.totalSessions>0
+                        ? Math.round((kpi.learning.completedSessions/kpi.learning.totalSessions)*100) : 0;
+                      return (
+                        <div className="mt-auto pt-4">
+                          <div className="flex justify-between items-baseline mb-1.5">
+                            <span className="text-[11px] font-bold text-slate-600">Pass rate</span>
+                            <span className="text-[11px] font-black" style={{color:pct>=80?BAIK:pct>=60?HATI:KRITIS}}>
+                              {pct}% · {kpi.learning.completedSessions} lulus, {gagal} gagal
+                            </span>
+                          </div>
+                          <div className="h-2 rounded-full overflow-hidden" style={{background:'rgba(15,23,42,0.07)'}}>
+                            <div className="h-full rounded-full" style={{width:`${pct}%`,background:pct>=80?BAIK:pct>=60?HATI:KRITIS}}/>
+                          </div>
                         </div>
-                        {/* Avg score donut */}
-                        <div className="flex flex-col items-center justify-center gap-1">
-                          <DonutChart
-                            segments={[
-                              {value:kpi.learning.avgScore,color:kpi.learning.avgScore>=80?'#10b981':kpi.learning.avgScore>=60?'#f59e0b':'#ef4444'},
-                              {value:Math.max(100-kpi.learning.avgScore,0),color:'#f1f5f9'},
-                            ]}
-                            size={52} strokeWidth={8} label={`${kpi.learning.avgScore}`}/>
-                          <span className="text-sm font-bold text-slate-500">Avg Score</span>
-                          <span className="text-[10px] text-slate-400">{kpi.learning.totalParticipants} peserta</span>
-                        </div>
-                      </>
-                    )}
+                      );
+                    })()}
                   </div>
-                  {/*
-                    Bilah "Lulus / Tidak" DIHAPUS, bukan dikecilkan.
-                    Angkanya sudah dikatakan dua kali persis di atasnya: donat
-                    Pass Rate (79%) dan keterangan "15✓ · 4✗" di bawahnya.
-                    Bilah ketiga selebar kartu untuk rasio yang sama tidak
-                    menambah apa-apa selain satu baris kosong - dan baris itu
-                    yang membuat kartunya terasa lega tanpa isi.
-                  */}
+
+                  {/*  Pengguna DILEPAS dari kartu Unit Movement. Keduanya tidak
+                      berhubungan sama sekali; menumpangkannya cuma karena ada
+                      ruang sisa membuat pembaca mengira jumlah akun ada
+                      kaitannya dengan lalu lintas unit. */}
+                  <KartuModul
+                    judul="👥 Pengguna"
+                    angka={loading?'—':(kpi?.users.total??0)}
+                    satuan="akun terdaftar">
+                    {loading
+                      ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
+                      : (kpi?.users.byRole??[]).map(r=>(
+                          <BarisRincian key={r.role} label={(r.role??'—').toUpperCase()}
+                            value={r.count} total={kpi?.users.total??0}/>
+                        ))}
+                  </KartuModul>
                 </div>
               )}
 
@@ -1088,7 +1023,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🎫 Ticket Open per Handler</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byHandler.length
-                      ? <HBarChart data={kpi.tickets.byHandler.map(h=>({label:h.name.split(' ')[0],value:h.count}))} color="#ef4444"/>
+                      ? <HBarChart data={kpi.tickets.byHandler.map(h=>({label:h.name.split(' ')[0],value:h.count}))}/>
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
                 {/* Divisi */}
@@ -1096,7 +1031,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">🏢 Ticket per Divisi</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byDivision.length
-                      ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))} color="#6366f1"/>
+                      ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))}/>
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
                 </div>
                 {/*
@@ -1110,7 +1045,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                   <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2.5">📦 Ticket per Produk</h3>
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byProduct?.length
-                      ? <HBarChart data={kpi.tickets.byProduct.map(p=>({label:p.product,value:p.count}))} color="#0891b2"/>
+                      ? <HBarChart data={kpi.tickets.byProduct.map(p=>({label:p.product,value:p.count}))}/>
                       : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data produk</p>}
                 </div>
 
@@ -1132,31 +1067,41 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     const curMonth = new Date().getMonth();
                     return (
                       <div>
+                        {/*  Merah dilepas: jumlah tiket per bulan bukan kabar
+                            baik/buruk, sementara merah di platform ini berarti
+                            "bermasalah" (overdue, denda). Bulan berjalan
+                            ditonjolkan dengan aksen penuh, bulan lain memakai
+                            aksen muda - penekanan, bukan status. */}
                         <div className="flex items-end gap-1" style={{height: 78}}>
                           {data.map((v, i) => {
                             const hPct = Math.round((v / max) * 70);
                             const isCur = i === curMonth;
                             return (
                               <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group cursor-default" title={`${MN[i]}: ${v} ticket`}>
+                                {/*  Bulan tanpa tiket setinggi NOL, bukan 2px.
+                                    Tonjolan tipis terbaca seperti "ada sedikit"
+                                    padahal tidak ada sama sekali; garis dasar di
+                                    bawahnya yang menandai sumbunya. */}
                                 <div className="w-full rounded-t transition-all duration-700"
-                                  style={{ height: v > 0 ? Math.max(hPct, 4) : 2, background: isCur ? '#ef4444' : '#fca5a5', opacity: isCur ? 1 : 0.7 }}/>
+                                  style={{ height: v > 0 ? Math.max(hPct, 4) : 0, background: isCur ? AKSEN : '#c7d2fe' }}/>
                               </div>
                             );
                           })}
                         </div>
+                        <div className="border-t border-slate-200" />
                         <div className="flex items-center gap-1 mt-1 mb-2">
                           {MN.map((m, i) => (
                             <div key={i} className="flex-1 text-center">
-                              <span className={`text-[9px] ${i === curMonth ? 'font-black text-red-500' : 'text-slate-400'}`}>{m}</span>
+                              <span className="text-[9px]" style={{ color: i === curMonth ? AKSEN : '#94a3b8', fontWeight: i === curMonth ? 800 : 400 }}>{m}</span>
                             </div>
                           ))}
                         </div>
                         <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{background:'#ef4444'}}/><span className="text-[11px] text-slate-500">Bulan ini</span></div>
-                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{background:'#fca5a5'}}/><span className="text-[11px] text-slate-500">Bulan lain</span></div>
+                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{background:AKSEN}}/><span className="text-[11px] text-slate-500">Bulan ini</span></div>
+                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 rounded-sm" style={{background:'#c7d2fe'}}/><span className="text-[11px] text-slate-500">Bulan lain</span></div>
                           </div>
-                          <span className="text-sm font-black text-red-500">{total} total</span>
+                          <span className="text-sm font-black text-slate-600">{total} total</span>
                         </div>
                       </div>
                     );
