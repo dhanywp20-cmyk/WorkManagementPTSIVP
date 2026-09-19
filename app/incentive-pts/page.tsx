@@ -913,6 +913,34 @@ export default function IncentivePTSPage() {
   const bastYearsProjects = [...new Set(
     projects.filter(p => p.bast_date).map(p => new Date(p.bast_date as string).getFullYear()),
   )].sort((a, b) => b - a);
+
+  /*
+    Kartu "Insentif Saya" - ringkasan personal, bukan cuma bisa dilihat lewat
+    menggulir tabel proyek satu-satu. Ikut Filter Tahun BAST yang sama dengan
+    tabel di bawahnya supaya angkanya selalu konsisten dengan yang sedang
+    dilihat, bukan diam-diam total sepanjang masa.
+
+    Aman untuk SEMUA tingkat akses: allSplits sudah difilter privasi dari
+    server (tier 'lihat' cuma menerima baris miliknya sendiri), dan di sini
+    disaring lagi eksplisit by user_id - untuk tier 'input'/'penuh' yang
+    allSplits-nya berisi SEMUA orang, filter ini memastikan kartu ini tetap
+    cuma menghitung bagian milik currentUser sendiri, bukan seluruh tim.
+  */
+  const trancheById = new Map(tranches.map(t => [t.id, t]));
+  const mySplitsInYear = currentUser
+    ? allSplits.filter(s => {
+        if (s.user_id !== currentUser.id) return false;
+        if (filterBastYear == null) return true;
+        const tr = s.tranche_id ? trancheById.get(s.tranche_id) : null;
+        return tr ? tr.payment_year === filterBastYear : false;
+      })
+    : [];
+  const myTotalInsentif = mySplitsInYear.reduce((sum, s) => sum + (s.amount || 0), 0);
+  const myPaidInsentif = mySplitsInYear
+    .filter(s => trancheById.get(s.tranche_id || '')?.status === 'paid')
+    .reduce((sum, s) => sum + (s.amount || 0), 0);
+  const myPendingInsentif = myTotalInsentif - myPaidInsentif;
+  const myProjectCount = new Set(mySplitsInYear.map(s => s.project_id)).size;
   /*
     Paginasi hanya memotong BARIS yang dirender. Baris TOTAL di <tfoot>
     sengaja tetap dihitung dari seluruh filteredProjects - total yang cuma
@@ -1012,7 +1040,40 @@ export default function IncentivePTSPage() {
         )}
 
         {/* ─── Projects tab ─── */}
-        {tab === 'projects' && !loading && (
+        {tab === 'projects' && !loading && (<>
+          {currentUser && (
+            <div className="mb-4 rounded-xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-purple-50 p-4 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-black text-gray-700 flex items-center gap-1.5">💰 Insentif Saya
+                  <span className="text-[10px] font-semibold text-gray-400">
+                    {filterBastYear == null ? '· semua tahun BAST' : `· tahun BAST ${filterBastYear}`}
+                  </span>
+                </h3>
+              </div>
+              {mySplitsInYear.length === 0 ? (
+                <p className="text-xs text-gray-400">Belum ada bagian insentif tercatat untuk kamu di periode ini.</p>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total</p>
+                    <p className="text-lg font-black text-gray-700">{formatRupiah(myTotalInsentif)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Sudah Cair</p>
+                    <p className="text-lg font-black text-emerald-600">{formatRupiah(myPaidInsentif)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Belum Cair</p>
+                    <p className="text-lg font-black text-amber-600">{formatRupiah(myPendingInsentif)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Jumlah Project</p>
+                    <p className="text-lg font-black text-rose-600">{myProjectCount}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-4 pt-4 pb-3 border-b border-gray-200 space-y-2">
               <div className="flex flex-wrap gap-2 items-center justify-between">
@@ -1495,7 +1556,7 @@ export default function IncentivePTSPage() {
               <Paginasi {...hal} satuan="project" warna="#4f46e5" />
             </div>
           </div>
-        )}
+        </>)}
 
         {/* ─── Tranches tab ─── */}
         {tab === 'tranches' && bisaInput(currentUser) && !loading && (
