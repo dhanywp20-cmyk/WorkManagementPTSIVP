@@ -1,6 +1,24 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+/**
+ * Berkas statis di /public dikenali dari EKSTENSINYA, bukan dari daftar nama.
+ *
+ * Ini menutup satu kelas bug, bukan satu bug. Sebelumnya tiap berkas publik
+ * harus didaftarkan namanya di PUBLIC_PREFIXES; berkas baru yang lupa
+ * didaftarkan ikut kena gerbang sesi, jadi pengunjung yang BELUM login
+ * dialihkan ke /dashboard saat memintanya - peramban menerima HTML, bukan
+ * gambar, dan <img>-nya gagal. Persis yang terjadi pada /logo-mark.png: logo
+ * hilang di halaman login, lalu muncul sendiri sesudah login karena cookie
+ * sesinya sudah ada. Itu juga yang membuatnya terasa "sesekali".
+ *
+ * Berkas di /public memang tidak pernah rahasia - ia dilayani CDN dan bisa
+ * diambil siapa saja yang tahu URL-nya. Gerbang sesi ada untuk HALAMAN dan
+ * API, bukan untuk gambar dan suara. `.html` sengaja TIDAK ikut: beberapa
+ * berkas pratinjau di /public berupa HTML dan tidak perlu dibuka ke publik.
+ */
+const BERKAS_STATIS = /\.(png|jpe?g|gif|svg|webp|avif|ico|bmp|wav|mp3|ogg|m4a|mp4|webm|woff2?|ttf|otf|eot|txt|map|webmanifest)$/i;
+
 // Static assets + auth API endpoints that don't require a session.
 // /project-progress/share/ = link View-Only yang sengaja dibagikan ke user luar;
 // datanya dibaca lewat /api/project-progress/share/ (service_role, read-only).
@@ -38,6 +56,9 @@ export function middleware(request: NextRequest) {
 
   if (PUBLIC_EXACT.includes(pathname)) return NextResponse.next();
   if (PUBLIC_PREFIXES.some(p => pathname.startsWith(p))) return NextResponse.next();
+  //  Cek /api/ lebih dulu: rute API tidak boleh lolos hanya karena ujung
+  //  jalurnya kebetulan berakhiran seperti nama berkas.
+  if (!pathname.startsWith('/api/') && BERKAS_STATIS.test(pathname)) return NextResponse.next();
   if (pathname.startsWith(CRON_PREFIX)) return NextResponse.next();
 
   const session = request.cookies.get('ivp_session');
