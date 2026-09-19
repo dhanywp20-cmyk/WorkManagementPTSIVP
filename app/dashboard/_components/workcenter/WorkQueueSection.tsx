@@ -70,40 +70,56 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
   }
 
   if (error) {
+    //  lg:col-span-12: tanpa ini elemen jatuh ke auto-placement grid 12 kolom
+    //  milik dashboard (lihat catatan di kosongSemua di bawah - akar masalah
+    //  yang sama, cuma belum sempat ketahuan di state ini).
     return (
-      <WidgetCard title="My Action" icon="🎯" accent="#dc2626">
-        {/*
-          BEDA dari empty state "bersih, tidak ada tugas" di bawah - ini
-          gagal MEMUAT, bukan berhasil memuat lalu memang kosong. Tombol
-          Coba Lagi memuat ulang halaman - cara paling sederhana yang tidak
-          menambah state manajemen baru hanya untuk retry satu widget.
-        */}
-        <div className="flex flex-col items-center justify-center gap-2 text-center py-3">
-          <span className="text-2xl">⚠️</span>
-          <p className="text-sm font-semibold text-rose-600">Gagal memuat daftar tugas.</p>
-          <button onClick={() => window.location.reload()}
-            className="mt-1 text-xs font-bold px-3 py-1.5 rounded-lg text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100">
-            Coba lagi
-          </button>
-        </div>
-      </WidgetCard>
+      <div className="lg:col-span-12">
+        <WidgetCard title="My Action" icon="🎯" accent="#dc2626">
+          {/*
+            BEDA dari empty state "bersih, tidak ada tugas" di bawah - ini
+            gagal MEMUAT, bukan berhasil memuat lalu memang kosong. Tombol
+            Coba Lagi memuat ulang halaman - cara paling sederhana yang tidak
+            menambah state manajemen baru hanya untuk retry satu widget.
+          */}
+          <div className="flex flex-col items-center justify-center gap-2 text-center py-3">
+            <span className="text-2xl">⚠️</span>
+            <p className="text-sm font-semibold text-rose-600">Gagal memuat daftar tugas.</p>
+            <button onClick={() => window.location.reload()}
+              className="mt-1 text-xs font-bold px-3 py-1.5 rounded-lg text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100">
+              Coba lagi
+            </button>
+          </div>
+        </WidgetCard>
+      </div>
     );
   }
 
   const kosongSemua = myAction.length === 0 && today.length === 0 && upcoming.length === 0;
 
   if (kosongSemua) {
+    //  BUG YANG DIPERBAIKI: kedua cabang di bawah dulu me-return elemen
+    //  TELANJANG - tanpa lg:col-span-12 - ke induk yang sejak bento sudah
+    //  jadi `grid lg:grid-cols-12`. Anak grid tanpa span eksplisit auto-
+    //  placement ke SATU kolom dari dua belas, jadi kartunya menyempit
+    //  sampai kalimat "Tidak ada tugas aktif..." terpaksa membungkus
+    //  satu-dua kata per baris - persis yang dilaporkan akun Guest.
+    //  Tiga state lain di komponen ini (loading, error, isi penuh) sudah
+    //  benar; dua cabang inilah yang luput saat kisinya diubah.
+
     //  Role Team tetap dapat kartu My Action (bukan bilah tipis generik) -
     //  chip Quick Action-nya butuh "frame" itu untuk ditaruh di bawahnya,
     //  sesuai permintaan letaknya di dalam kartu My Action.
     if (isTeamSide) {
       return (
-        <WidgetCard title="My Action" icon="🎯" accent="#16a34a">
-          <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
-            <span className="text-lg">🎉</span> Tidak ada tugas aktif yang butuh tindakan saat ini.
-          </div>
-          <TeamActionChips user={user} openMenu={openMenu} openUrl={openUrl} />
-        </WidgetCard>
+        <div className="lg:col-span-12">
+          <WidgetCard title="My Action" icon="🎯" accent="#16a34a">
+            <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
+              <span className="text-lg">🎉</span> Tidak ada tugas aktif yang butuh tindakan saat ini.
+            </div>
+            <TeamActionChips user={user} openMenu={openMenu} openUrl={openUrl} />
+          </WidgetCard>
+        </div>
       );
     }
     /*
@@ -113,7 +129,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
       bukan di sini.
     */
     return (
-      <div className="flex items-center gap-2.5 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-black/5 px-4 py-3">
+      <div className="lg:col-span-12 flex items-center gap-2.5 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-black/5 px-4 py-3">
         <span className="text-lg flex-shrink-0">🎉</span>
         <span className="text-sm font-semibold text-emerald-700">Tidak ada tugas aktif yang butuh tindakan saat ini.</span>
       </div>
