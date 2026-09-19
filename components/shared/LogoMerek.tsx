@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useMerek } from '@/lib/merek';
 
 /**
@@ -22,6 +22,23 @@ export function LogoMerek({
   className?: string;
 }) {
   const merek = useMerek();
+  /*
+    Gambar yang GAGAL dimuat harus jatuh ke ikon bawaan, bukan ke gambar
+    rusak bawaan peramban.
+
+    Ini bukan penjagaan teoretis. merek.logoUrl untuk render PERTAMA diambil
+    dari sessionStorage (lihat lib/merek.ts) - salinan merek dari kunjungan
+    sebelumnya, yang bisa memuat URL Supabase Storage dari logo yang sejak itu
+    sudah diganti atau dihapus. URL itu 404, peramban menggambar ikon sobek,
+    lalu beberapa ratus milidetik kemudian muatMerek() selesai dan logo yang
+    benar muncul. Persis "sesekali error, harus di-refresh".
+
+    Kuncinya di-reset tiap kali URL-nya berubah - kalau tidak, satu kegagalan
+    akan menyembunyikan logo baru yang sebenarnya sehat.
+  */
+  const [gagal, setGagal] = useState(false);
+  useEffect(() => { setGagal(false); }, [merek.logoUrl]);
+
   const sisi = ukuran === 'sm' ? 36 : ukuran === 'lg' ? 40 : 48;
   const ikon = Math.round(sisi * 0.52);
 
@@ -36,7 +53,7 @@ export function LogoMerek({
     Panel. Varian 'tembus' (di atas foto login) tetap dibedakan: di sana
     putihnya ditipiskan supaya fotonya masih terasa.
   */
-  const adaLogo = Boolean(merek.logoUrl);
+  const adaLogo = Boolean(merek.logoUrl) && !gagal;
   const latar = gaya === 'tembus'
     ? (adaLogo
         ? { background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)' }
@@ -50,12 +67,14 @@ export function LogoMerek({
       className={`rounded-xl shadow-md flex items-center justify-center flex-shrink-0 overflow-hidden ${className}`}
       style={{ width: sisi, height: sisi, ...latar }}
     >
-      {merek.logoUrl ? (
+      {adaLogo ? (
         // Sengaja <img>, bukan next/image: sumbernya URL yang diisi pengguna
         // saat berjalan, sementara next/image butuh domainnya terdaftar lebih
         // dulu di next.config - logo baru akan gagal dimuat sampai deploy.
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={merek.logoUrl} alt={merek.namaPerusahaan} className="w-full h-full object-contain p-[11%]" />
+        <img src={merek.logoUrl} alt={merek.namaPerusahaan} width={sisi} height={sisi}
+          decoding="async" onError={() => setGagal(true)}
+          className="w-full h-full object-contain p-[11%]" />
       ) : (
         <svg aria-hidden="true" focusable="false" style={{ width: ikon, height: ikon }} className="text-white"
           fill="none" stroke="currentColor" viewBox="0 0 24 24">
