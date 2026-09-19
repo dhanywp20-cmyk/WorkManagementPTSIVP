@@ -334,6 +334,38 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
  * Satu baris angka - dipakai untuk rekap nilai & peringkat di LearningWidget.
  * `sub` opsional untuk keterangan singkat ("dari 12 peserta").
  */
+interface RiwayatQuizRingkas {
+  id: string; score: number | null; passed: boolean | null;
+  grading_status: string | null; submitted_at: string | null; sesi: string;
+}
+
+/** "19 Sep" - cukup untuk baris ringkas, tanggal lengkap ada di halaman Learning Center sendiri. */
+function fmtTglSingkat(iso: string) {
+  return new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+}
+
+/**
+ * Satu baris riwayat quiz: lencana skor + nama sesi + tanggal.
+ * Lencana MENJAWAB pertanyaan yang sama seperti HistoryPage (lulus/tidak/
+ * menunggu koreksi) memakai warna yang sama, cuma diperkecil supaya muat di
+ * kartu widget yang sempit.
+ */
+function BarisRiwayatQuiz({ r }: { r: RiwayatQuizRingkas }) {
+  const menunggu = r.grading_status === 'pending_review';
+  const warna = menunggu ? 'bg-amber-100 text-amber-700' : r.passed ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700';
+  return (
+    <div className="flex items-center gap-2 py-1.5 border-b border-indigo-100/70 last:border-0">
+      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0 ${warna}`}>
+        {menunggu ? '⏳' : (r.score?.toFixed(0) ?? '—')}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] font-semibold text-indigo-900 truncate leading-tight">{r.sesi}</p>
+        {r.submitted_at && <p className="text-[9px] text-indigo-400 leading-tight mt-0.5">{fmtTglSingkat(r.submitted_at)}</p>}
+      </div>
+    </div>
+  );
+}
+
 function BarisAngka({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
   return (
     <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-indigo-50/70 border border-indigo-100">
@@ -363,16 +395,24 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   const guest = isSalesGuest({ role: user.role });
   const [milikSaya, setMilikSaya] = useState<{ total: number; avg: number } | null>(null);
   const [peringkat, setPeringkat] = useState<HasilPeringkat | null>(null);
+  const [riwayat, setRiwayat] = useState<RiwayatQuizRingkas[]>([]);
   const [loading, setLoading] = useState(guest);
 
   useEffect(() => {
     if (!guest) return;
     let alive = true;
     (async () => {
-      const [attRes, rank] = await Promise.all([
+      const [attRes, rank, riwayatRes] = await Promise.all([
         supabase.from('lc_quiz_attempts').select('score, grading_status')
           .eq('user_id', user.id).eq('is_submitted', true),
         ambilPeringkatSaya(),
+        //  10 terbaru cukup - ini kartu ringkas di dashboard, bukan halaman
+        //  Riwayat Quiz penuh (tombol "Buka Learning" di bawah menuju ke
+        //  sana kalau orangnya perlu lihat semuanya).
+        supabase.from('lc_quiz_attempts')
+          .select('id, score, passed, grading_status, submitted_at, lc_quiz_sessions(session_name)')
+          .eq('user_id', user.id).eq('is_submitted', true)
+          .order('submitted_at', { ascending: false }).limit(10),
       ]);
       if (!alive) return;
       const dinilai = ((attRes.data ?? []) as { score: number | null; grading_status: string | null }[])
@@ -382,6 +422,10 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
         avg: dinilai.length ? dinilai.reduce((s, a) => s + (a.score ?? 0), 0) / dinilai.length : 0,
       });
       setPeringkat(rank);
+      setRiwayat(((riwayatRes.data ?? []) as any[]).map(a => ({
+        id: a.id, score: a.score, passed: a.passed, grading_status: a.grading_status,
+        submitted_at: a.submitted_at, sesi: a.lc_quiz_sessions?.session_name ?? 'Quiz',
+      })));
       setLoading(false);
     })();
     return () => { alive = false; };
@@ -411,6 +455,25 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
               value={peringkat?.divisiRank ? `#${peringkat.divisiRank}` : '—'}
               sub={peringkat?.divisiTotal ? `dari ${peringkat.divisiTotal}` : (peringkat?.divisi ? undefined : 'Divisi belum diset')} />
           </div>
+          {/*
+            Di samping keempat angka di atas: riwayat quiz yang pernah
+            diikuti, supaya terlihat LANGSUNG di dashboard tanpa perlu buka
+            menu Learning Center dulu.
+
+            Tingginya DIKUNCI (max-h) dengan overflow-y-auto DI DALAM kartu -
+            bukan kartunya sendiri yang melar mengikuti jumlah quiz. Sepuluh
+            attempt sekalipun tidak akan pernah mendorong widget ini menjadi
+            lebih tinggi dari widget lain di baris yang sama; yang bertambah
+            cuma jarak gulirnya.
+          */}
+          {riwayat.length > 0 && (
+            <div className="rounded-xl bg-indigo-50/50 border border-indigo-100 px-2.5 pt-1.5 pb-0.5">
+              <p className="text-[9px] font-bold text-indigo-400 uppercase tracking-wide px-0.5 mb-0.5">Riwayat Quiz</p>
+              <div className="max-h-[108px] overflow-y-auto pr-0.5">
+                {riwayat.map(r => <BarisRiwayatQuiz key={r.id} r={r} />)}
+              </div>
+            </div>
+          )}
           <button onClick={() => openMenu('learning-center')}
             className="mt-auto px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.02] self-start"
             style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>Buka Learning →</button>
