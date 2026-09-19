@@ -102,20 +102,26 @@ export function HandlerDonutCard({
     return { ...d, path, isFullCircle: false, i };
   }) : [];
   return (
-    <div className="rounded-2xl p-4 flex flex-col gap-3" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(255,255,255,0.8)", backdropFilter: "blur(10px)" }}>
-      <div className="flex items-center justify-between">
-        <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">{icon} {title}</p>
+    <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 flex flex-col gap-1 sm:gap-3" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(255,255,255,0.8)", backdropFilter: "blur(10px)" }}>
+      <div className="flex flex-wrap items-center justify-between gap-1">
+        <p className="text-[9px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest">{icon} {title}</p>
         <div className="flex bg-gray-100 rounded-lg p-0.5">
           {(["PTS", "Services"] as const).map((t) => (
-            <button key={t} onClick={() => onToggle(t)} className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${teamToggle === t ? "bg-white shadow text-purple-600" : "text-gray-500 hover:text-gray-700"}`}>{t}</button>
+            <button key={t} onClick={() => onToggle(t)} className={`px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[10px] sm:text-xs font-bold transition-all ${teamToggle === t ? "bg-white shadow text-purple-600" : "text-gray-500 hover:text-gray-700"}`}>{t}</button>
           ))}
         </div>
       </div>
       {total === 0 ? (
         <p className="text-gray-400 text-sm text-center py-4">Belum ada data handler</p>
       ) : (
-        <div className="flex items-center gap-3">
-          <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0">
+        <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3">
+          {/*  Ukuran donat MENGECIL di layar sempit - sama seperti MiniPieChart
+              bersama. Sebelumnya dipaku 120px + flex-shrink-0, jadi di grid 2
+              kolom pada ponsel isinya lebih lebar dari kolomnya; kolom grid
+              (1fr = minmax(auto,1fr)) tidak bisa menyusut di bawah lebar
+              isinya, sehingga SELURUH halaman ikut melebar dan bisa digeser
+              ke samping. */}
+          <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0 w-[58px] h-[58px] sm:w-[120px] sm:h-[120px]">
             {slices.map((s) =>
               s.isFullCircle ? (
                 <g key={s.i} style={{ cursor: "pointer" }} onClick={() => onSliceClick(s.name)}
@@ -142,14 +148,14 @@ export function HandlerDonutCard({
               memanjang ke bawah tanpa batas dan kartu ini jadi lebih TINGGI
               dari 3 donut lain di baris grid yang sama - baris donut jadi
               tidak rata, persis kebalikan dari kartu sebelahnya. */}
-          <div className="flex flex-col gap-1.5 flex-1 min-w-0 max-h-[120px] overflow-y-auto">
+          <div className="flex flex-col gap-0.5 sm:gap-1.5 flex-1 basis-[95px] min-w-[95px] sm:basis-[150px] sm:min-w-[150px] max-w-[210px] max-h-[68px] sm:max-h-[120px] overflow-y-auto">
             {slices.map((s) => (
               <div key={s.i} className="flex items-center gap-1.5 cursor-pointer rounded-lg px-1.5 py-0.5 transition-all"
                 style={{ background: hov === s.i || activeHandler === s.name ? `${s.color}20` : "transparent", outline: activeHandler === s.name ? `1px solid ${s.color}` : "none" }}
                 onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => onSliceClick(s.name)}>
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
-                <span className="text-[10px] font-semibold text-gray-600 truncate flex-1">{s.name}</span>
-                <span className="text-[10px] font-bold flex-shrink-0" style={{ color: s.color }}>{s.value}</span>
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                <span className="text-[9px] sm:text-[10px] font-semibold text-gray-600 truncate flex-1">{s.name}</span>
+                <span className="text-[9px] sm:text-[10px] font-bold flex-shrink-0" style={{ color: s.color }}>{s.value}</span>
                 {activeHandler === s.name && <span className="text-[9px] font-bold text-purple-600 flex-shrink-0">✓</span>}
               </div>
             ))}

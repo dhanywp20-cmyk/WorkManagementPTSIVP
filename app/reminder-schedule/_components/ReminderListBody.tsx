@@ -1,4 +1,5 @@
 'use client';
+import type { CSSProperties } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ViewIconBtn, RescheduleIconBtn, ApproveIconBtn, DeleteIconBtn, ActionGroup,
@@ -247,8 +248,8 @@ export function ReminderListBody({
         </div>
 
         {/* ── DESKTOP: Table view ── */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full border-collapse" style={{ tableLayout: 'fixed', background: 'transparent' }}>
+        <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
+          <table className="w-full tabel-kartu" style={{ tableLayout: 'fixed', background: 'transparent' }}>
             {/* Sembilan kolom, dijumlahkan TEPAT 100%.
                 Sebelumnya ada 10 <col> untuk 9 kolom (sisa kolom
                 Garansi yang dibuang) dan totalnya hanya 75% —
@@ -275,7 +276,8 @@ export function ReminderListBody({
               <col style={{ width: '13%' }} />{/* Action       */}
             </colgroup>
             <thead>
-              <tr className="border-b-2 border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
+              {/* Latar & garis bawah header diatur .tabel-kartu di globals.css. */}
+              <tr>
                 <th className="px-3 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">
           {selectMode && (isAdmin || isManager)
             ? <input type="checkbox"
@@ -302,7 +304,12 @@ export function ReminderListBody({
                 const fmtShort = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
                 return (
                   <tr key={r.id}
-                    className={`border-b border-gray-200 hover:bg-red-50/30 transition-colors cursor-pointer ${today ? 'bg-red-50/15 border-l-4 border-l-red-400' : 'border-l-4 border-l-transparent'}`}
+                    className="cursor-pointer"
+                    style={{
+                      '--aksen-baris': today ? '#f87171' : '#cbd5e1',
+                      '--bg-baris': today ? '#fef2f2' : '#ffffff',
+                      '--bg-baris-sorot': today ? '#fee2e2' : '#fff5f5',
+                    } as CSSProperties}
                     >
                     {/* No */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>

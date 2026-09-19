@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { namaKelompokPTSDitugaskan } from '@/lib/kelompok';
@@ -496,8 +496,8 @@ function UnitMovementPageInner() {
           </div>
 
           {/* ── DESKTOP: tabel ── */}
-          <div className="hidden md:block overflow-x-auto animate-zoom-in">
-            <table className="w-full text-sm table-zebra" style={{minWidth:1100}}>
+          <div className="hidden md:block overflow-x-auto animate-zoom-in bg-slate-100/60 px-3 pb-2">
+            <table className="w-full text-sm tabel-kartu" style={{minWidth:1100}}>
               <thead>
                 <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
                   <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 w-10">No</th>
@@ -533,7 +533,7 @@ function UnitMovementPageInner() {
                   const isMasuk   = log.status_barang==='Masuk';
                   const typeLines = splitTypeLines(log.type_barang);
                   return (
-                    <tr key={log.id} className="stagger-item transition-colors hover:bg-amber-50/40" style={{borderBottom:'1px solid #e5e7eb'}}>
+                    <tr key={log.id} className="stagger-item" style={{ '--aksen-baris': '#fbbf24', '--bg-baris-sorot': '#fffbeb' } as CSSProperties}>
                       <td className="px-3 py-3 text-xs font-bold text-gray-400">{hal.mulai + idx + 1}</td>
                       <td className="px-3 py-3 text-xs text-gray-600 whitespace-nowrap">{fmtDate(log.tanggal)}</td>
                       <td className="px-3 py-3">

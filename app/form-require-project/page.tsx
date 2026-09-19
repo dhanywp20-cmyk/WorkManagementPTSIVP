@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense, type CSSProperties } from 'react';
 import { Z } from '@/lib/z-index';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -1781,7 +1781,7 @@ Hubungi Admin untuk info lebih lanjut.
                       return (
                         <button key={req.id} onClick={() => { setBellDropdownOpen(false); handleOpenDetail(req); }}
                           className="w-full flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-all text-left">
-                          <span className={`mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</span>
+                          <span className={`mt-0.5 text-[10px] font-bold px-1.5 py-0.5 whitespace-nowrap ${sc.color} ${sc.bg}`}>{sc.label}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold text-gray-800 truncate">{req.project_name}</p>
                             <p className="text-[10px] text-gray-400 truncate">{req.sales_name} · {req.assign_name || 'Unassigned'}</p>
@@ -2083,8 +2083,8 @@ Hubungi Admin untuk info lebih lanjut.
             </div>
 
             {/* ── DESKTOP: tabel ── */}
-            <div className="hidden md:block overflow-x-auto animate-zoom-in">
-              <table className="w-full border-collapse table-fixed table-zebra" style={{ background: 'transparent', minWidth: '900px' }}>
+            <div className="hidden md:block overflow-x-auto animate-zoom-in bg-slate-100/60 px-3 pb-2">
+              <table className="w-full table-fixed tabel-kartu" style={{ background: 'transparent', minWidth: '900px' }}>
                 <colgroup>
                   <col style={{ width: '56px' }} />
                   <col style={{ width: '200px' }} />
@@ -2102,7 +2102,8 @@ Hubungi Admin untuk info lebih lanjut.
                   <col style={{ width: '120px' }} />  {/* Action */}
                 </colgroup>
                 <thead>
-                  <tr className="border-b-2 border-gray-300" style={{ background: 'rgba(255,255,255,0.97)' }}>
+                  {/* Latar & garis bawah header diatur .tabel-kartu di globals.css. */}
+                  <tr>
                     <th className="px-2 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide border-r border-gray-200">
                       {selectMode && bisaKelolaRequest
                         ? <input type="checkbox"
@@ -2128,8 +2129,11 @@ Hubungi Admin untuk info lebih lanjut.
                     const isToday = req.due_date === new Date().toISOString().split('T')[0];
                     return (
                       <tr key={req.id}
-                        className="stagger-item border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                        style={{ borderLeft: isToday ? '3px solid #0d9488' : '3px solid transparent' }}>
+                        className="stagger-item"
+                        style={{
+                          '--aksen-baris': isToday ? '#0d9488' : '#cbd5e1',
+                          '--bg-baris-sorot': isToday ? '#f0fdfa' : '#f8fafc',
+                        } as CSSProperties}>
                         <td className="px-2 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
                           {selectMode && bisaKelolaRequest
                             ? <input type="checkbox" checked={selectedIds.has(req.id)}
