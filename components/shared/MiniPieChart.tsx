@@ -59,7 +59,7 @@ export function MiniPieChart({
   });
 
   return (
-    <div className="rounded-xl sm:rounded-2xl p-1.5 sm:p-4 flex flex-col gap-0.5 sm:gap-3"
+    <div className="rounded-xl sm:rounded-2xl p-1 sm:p-4 flex flex-col gap-0.5 sm:gap-3"
       style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)' }}>
       <p className="text-[9px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest">{icon} {title}</p>
       {/* justify-center + lebar maksimum pada legenda: sebelumnya legenda memakai
@@ -78,13 +78,21 @@ export function MiniPieChart({
 
           Dengan flex-wrap + lebar minimum, legenda TURUN ke bawah donat begitu
           tidak muat di sampingnya, bukan menghilang. */}
-      <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-1 sm:gap-3">
         {/* Ukuran donat MENGECIL di layar sempit. Atribut width/height tetap
             120 sebagai cadangan bila CSS tidak termuat; kelas Tailwind di
             bawahnya yang menentukan ukuran sebenarnya - CSS menang atas
             atribut. Tanpa ini, donat 120px + legenda 150px tidak muat pada
             kartu selebar ~132px (dua kolom di ponsel 360px), dan yang
-            menjorok keluar akan membuat halamannya bisa digeser ke samping. */}
+            menjorok keluar akan membuat halamannya bisa digeser ke samping.
+
+            Diperketat SEKALI LAGI (padding 6px->4px, jarak donat-legenda
+            6px->4px, lebar minimum legenda 95px->80px) - Reminder Schedule
+            punya 4 kartu berturutan dan sebelumnya masih mepet ~4px di HP
+            selebar 360px (isi kartu ~171px vs kolom tersedia ~167px), cukup
+            untuk membuat baris itu saja yang meluber walau modul lain aman.
+            Sekarang isi minimumnya ~148px, longgar di 360px dan di layar
+            yang lebih sempit lagi. */}
         <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120"
           className="flex-shrink-0 w-[58px] h-[58px] sm:w-[120px] sm:h-[120px]">
           {slices.map((s) => (
@@ -108,7 +116,7 @@ export function MiniPieChart({
           <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{centerValue ?? total}</text>
           <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">{centerLabel ?? 'TOTAL'}</text>
         </svg>
-        <div className="flex flex-col gap-0.5 sm:gap-1.5 flex-1 basis-[95px] min-w-[95px] sm:basis-[150px] sm:min-w-[150px] max-w-[210px] max-h-[68px] sm:max-h-[120px] overflow-y-auto">
+        <div className="flex flex-col gap-0.5 sm:gap-1.5 flex-1 basis-[80px] min-w-[80px] sm:basis-[150px] sm:min-w-[150px] max-w-[210px] max-h-[68px] sm:max-h-[120px] overflow-y-auto">
           {slices.map((s) => {
             const isActive = activeFilter === s.label;
             return (

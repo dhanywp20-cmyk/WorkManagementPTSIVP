@@ -60,13 +60,20 @@ export function StatsSection({
       </div>
 
       {/* ── Pie Charts — klick untuk filter ── */}
-      {/* 1 kolom di ponsel (bukan 2): tiap kartu MiniPieChart berisi
-          donat + legenda berdampingan, jauh lebih lebar isinya
-          dibanding StatCard di atas - dipaksa 2 kolom di layar
-          sempit membuat separuh lebar kartu kurang buat donat +
-          legenda sekaligus, dan itulah yang membuat SELURUH
-          halaman ikut melebar & harus digeser ke kanan. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4">
+      {/*
+        2 kolom di ponsel, menyusul 9 modul lain yang sudah begini
+        (lihat commit "Grafik lingkaran: dua kolom di ponsel"). Sempat
+        DIKUNCI ke 1 kolom di sini secara khusus karena saat itu isi kartu
+        (donat + legenda) masih ~171px sementara kolom di HP 360px cuma
+        menyediakan ~167px - meleset tipis, dan grid tidak bisa menyusutkan
+        kartu di bawah lebar isinya sehingga baris ini saja yang mendorong
+        SELURUH halaman melebar ke samping.
+
+        MiniPieChart sendiri sudah diperketat lagi sejak itu (lihat
+        catatan di dalamnya) sampai ~148px - sekarang 2 kolom aman dengan
+        selisih yang cukup, bukan cuma pas-pasan seperti modul lain.
+      */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4">
         <MiniPieChart
           data={projectPieData} title="Kegiatan / Kategori" icon="🖥️"
           activeFilter={filterCategory !== 'all' ? filterCategory : null}
