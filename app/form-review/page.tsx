@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useState, useEffect, useRef, useCallback, Suspense, type CSSProperties } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { clearSession, getSession } from '@/lib/auth';
@@ -1290,8 +1290,8 @@ function FormReviewPageInner() {
               </div>
 
               {/* ── DESKTOP: tabel ── */}
-              <div className="hidden md:block overflow-x-auto animate-zoom-in">
-                <table className="w-full border-collapse table-zebra" style={{ tableLayout: 'fixed', background: 'transparent', minWidth: '920px' }}>
+              <div className="hidden md:block overflow-x-auto animate-zoom-in bg-slate-100/60 px-3 pb-2">
+                <table className="w-full tabel-kartu" style={{ tableLayout: 'fixed', background: 'transparent', minWidth: '920px' }}>
                   <colgroup>
                     <col style={{ width: '3%' }} />   {/* No */}
                     <col style={{ width: '14%' }} />  {/* Project */}
@@ -1311,7 +1311,8 @@ function FormReviewPageInner() {
                     <col style={{ width: '116px' }} />   {/* Action */}
                   </colgroup>
                   <thead>
-                    <tr className="border-b-2 border-gray-300" style={{ background: 'rgba(255,255,255,0.97)' }}>
+                    {/* Latar & garis bawah header diatur .tabel-kartu di globals.css. */}
+                    <tr>
                       {['No', 'Project',  'Kategori', 'Sales', 'Handler',
                         switchTab === 'Demo Product' ? 'Product Demo' : 'Product BAST',
                         switchTab === 'Demo Product' ? 'Grade PK' : 'Grade Training',
@@ -1336,7 +1337,8 @@ function FormReviewPageInner() {
                       return (
                         <tr key={r.id}
                           onClick={() => setDetailReview(r)}
-                          className="stagger-item border-b border-gray-200 hover:bg-violet-50/20 transition-colors cursor-pointer border-l-4 border-l-transparent"
+                          className="stagger-item cursor-pointer"
+                          style={{ '--aksen-baris': '#c4b5fd', '--bg-baris-sorot': '#faf5ff' } as CSSProperties}
                           >
                           {/* No / Checkbox combined */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>

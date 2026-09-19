@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, Suspense, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useCurrentUser, type CurrentUser } from '@/lib/use-current-user';
@@ -524,8 +524,8 @@ function ProjectProgressPageInner() {
                 </div>
 
                 {/* ── DESKTOP: tabel listing ── */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full border-collapse" style={{ tableLayout: 'fixed' }}>
+                <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
+                  <table className="w-full tabel-kartu" style={{ tableLayout: 'fixed' }}>
                     <colgroup>
                       <col style={{ width: '3%' }} />
                       <col style={{ width: '15%' }} />
@@ -545,7 +545,8 @@ function ProjectProgressPageInner() {
                       <col style={{ width: '116px' }} />
                     </colgroup>
                     <thead>
-                      <tr style={{ background: PALETTE.surfaceSunken, borderBottom: `1px solid ${PALETTE.border}` }}>
+                      {/* Latar & garis bawah header diatur .tabel-kartu di globals.css. */}
+                      <tr>
                         {['No', 'Nama Project', 'Client', 'Sales', 'Status', 'Health', 'Timeline', 'Lokasi', 'Progres'].map((h, i) => (
                           <th key={h} className={`px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200 ${i === 0 ? 'text-center' : 'text-left'}`}>
                             {h}
@@ -561,7 +562,8 @@ function ProjectProgressPageInner() {
                         const health = projectHealth(p, agg.locsLite);
                         return (
                           <tr key={p.id}
-                            className="border-b border-gray-200 hover:bg-cyan-50/40 transition-colors cursor-pointer"
+                            className="cursor-pointer"
+                            style={{ '--aksen-baris': cfg.border, '--bg-baris-sorot': '#ecfeff' } as CSSProperties}
                             onClick={() => openDetail(p)}>
                             <td className="px-3 py-3 border-r border-gray-200 text-center align-middle">
                               <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>
@@ -591,8 +593,9 @@ function ProjectProgressPageInner() {
                               ) : <span className="text-[11px] text-gray-300">—</span>}
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold whitespace-nowrap"
-                                style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>
+                              {/* Gaya highlight, bukan pil - sudut tegas & tanpa garis tepi. */}
+                              <span className="px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap"
+                                style={{ background: cfg.bg, color: cfg.color }}>
                                 {cfg.label}
                               </span>
                             </td>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
 import { supabase } from '@/lib/supabase';
 import { clearSession, getSession } from '@/lib/auth';
 
@@ -1116,8 +1116,8 @@ export default function DailyReportPage() {
                 );
               })}
             </div>
-            <div className="hidden md:block overflow-x-auto">
-              <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '1200px', tableLayout: 'fixed' }}>
+            <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
+              <table className="tabel-kartu" style={{ width: '100%', minWidth: '1200px', tableLayout: 'fixed' }}>
                   <colgroup>
                     <col style={{ width: '44px' }} />
                     <col style={{ width: '230px' }} />
@@ -1147,8 +1147,8 @@ export default function DailyReportPage() {
                     const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
                     const badge = row.source === 'manual' ? SB.manual : sb(row.status);
                     return (
-                      <tr key={row.id} className="hover:bg-red-50/20 transition-colors cursor-pointer"
-                        style={{ background: i % 2 === 0 ? 'rgba(255,255,255,0.6)' : 'rgba(248,250,252,0.5)' }}
+                      <tr key={row.id} className="cursor-pointer"
+                        style={{ '--aksen-baris': '#f87171', '--bg-baris-sorot': '#fff5f5' } as CSSProperties}
                         onClick={() => setModalRow(row)}>
                         <td style={{ ...TD, textAlign: 'center' as const, color: '#94a3b8', fontSize: '12px' }}>{hal.mulai + i + 1}</td>
                         <td style={TD}>
@@ -1191,8 +1191,9 @@ export default function DailyReportPage() {
                           </div>
                         </td>
                         <td style={TD}>
-                          <span className="inline-flex items-center px-2.5 py-1.5 rounded-lg text-xs font-bold"
-                            style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>
+                          {/* Gaya highlight, bukan pil - sudut tegas & tanpa garis tepi. */}
+                          <span className="inline-flex items-center px-1.5 py-0.5 text-xs font-bold"
+                            style={{ background: badge.bg, color: badge.color }}>
                             {badge.label}
                           </span>
                         </td>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, type CSSProperties } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import {
@@ -1231,8 +1231,8 @@ export default function IncentivePTSPage() {
             </div>
 
             {/* ── DESKTOP: tabel penuh (TIDAK diubah) ── */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
+            <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
+              <table className="w-full text-sm tabel-kartu">
                 <thead>
                   <tr style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.10),rgba(139,92,246,0.07))' }}>
                     <th className={`${thCls} w-10 text-center`}>No</th>
@@ -1275,7 +1275,7 @@ export default function IncentivePTSPage() {
                       .sort((a, b) => a.tranche_number - b.tranche_number);
                     const handlerSplit = calcHandlerSplit(skema, p);
                     return (
-                      <tr key={p.id} className="hover:bg-rose-50/60 transition-colors group">
+                      <tr key={p.id} className="group" style={{ '--aksen-baris': '#fb7185', '--bg-baris-sorot': '#fff1f2' } as CSSProperties}>
                         <td className={`${cellCls} text-xs text-gray-400 text-center`}>{hal.mulai + idx + 1}</td>
                         <td className={`${cellCls} max-w-[210px]`}>
                           <p className="font-semibold text-gray-800 leading-snug truncate max-w-[195px]" title={p.project_name}>{p.project_name}</p>
