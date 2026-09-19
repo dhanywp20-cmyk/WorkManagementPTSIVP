@@ -18,9 +18,26 @@ import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { useKelompok } from '@/lib/kelompok';
 import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 
+/**
+ * 'md' dan 'sm' dulu SAMA-SAMA '' - keduanya jatuh ke 1 dari 3 kolom
+ * (lg:grid-cols-3) tanpa beda, padahal namanya sudah menjanjikan 'md' lebih
+ * lebar dari 'sm'. Satu-satunya pasangan yang lahir bersama di kisi ini
+ * adalah Piket Showroom (md) + Learning Center (sm) - keduanya sengaja hidup
+ * untuk role yang sama (non-analytics), jadi baris ini SELALU cuma diisi
+ * 0-2 widget, tidak pernah 3. Dengan 'md' tetap 1 kolom, 2 widget mengisi
+ * 2 dari 3 kolom dan menyisakan SEPERTIGA layar kosong di sampingnya -
+ * bukan di dalam kartu mana pun, jadi terlihat seperti ruang yang lupa
+ * diisi, bukan jeda yang disengaja.
+ *
+ * 'md' -> lg:col-span-2 membuat Showroom+Learning mengisi persis 3/3 kolom
+ * saat KEDUANYA hadir (kasus paling umum). Saat cuma Showroom sendirian
+ * (Learning Center dimatikan admin untuk kelompok itu), sisa kosongnya
+ * menyempit dari 2/3 jadi 1/3 - bukan sempurna, tapi lebih baik daripada
+ * dibiarkan seperti sebelumnya, dan kasus itu jarang terjadi.
+ */
 const SIZE_SPAN: Record<string, string> = {
   lg: 'sm:col-span-2 lg:col-span-2',
-  md: '',
+  md: 'lg:col-span-2',
   sm: '',
 };
 
