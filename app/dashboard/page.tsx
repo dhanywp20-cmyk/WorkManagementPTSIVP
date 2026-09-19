@@ -1436,24 +1436,42 @@ export default function Dashboard() {
           {/* Top accent line */}
           <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: 'linear-gradient(90deg, transparent, #c8861d 40%, #e2a84b 60%, transparent)' }} />
 
-          {/* Collapse button — absolute top-right */}
+          {/*
+            Baris kepala sidebar - tombol ciutkan tinggal DI SINI, bukan
+            melayang absolute di pojok.
+
+            Versi lamanya `absolute top-2 right-2`, sementara daftar menu di
+            bawahnya mulai pada padding 12px. Keduanya berebut titik yang sama,
+            jadi tombolnya menumpuk persis di atas tepi kanan item menu pertama
+            (Dashboard) - terbaca seperti tombol MILIK item itu, bukan milik
+            sidebar-nya. Sebagai baris sendiri, ia punya ruangnya sendiri dan
+            tidak pernah bisa menimpa apa pun, berapa pun panjang daftar menunya.
+
+            Label "Menu" bukan sekadar pengisi: tanpanya barisnya cuma tombol
+            menggantung di kanan tanpa penjelasan apa yang diciutkan.
+          */}
           {!sidebarCollapsed && (
-            <button aria-label="Collapse sidebar"
-              onClick={() => setSidebarCollapsed(true)}
-              className="absolute top-2 right-2 z-10 w-6 h-6 rounded-md flex items-center justify-center transition-all"
-              style={{ color: '#cbd5e1' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1'; }}
-              title="Collapse sidebar"
-            >
-              <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
-              </svg>
-            </button>
+            <div className="flex items-center justify-between gap-2 flex-shrink-0 pl-3.5 pr-2 pt-2.5 pb-1">
+              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 truncate">Menu</span>
+              <button aria-label="Ciutkan menu samping" aria-expanded={!sidebarCollapsed}
+                onClick={() => setSidebarCollapsed(true)}
+                className="w-7 h-7 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
+                style={{ color: '#94a3b8' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#334155'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; }}
+                title="Ciutkan menu samping"
+              >
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
+                </svg>
+              </button>
+            </div>
           )}
 
           {/* ── SIDEBAR SCROLLABLE CONTENT ── */}
-          <div className="flex-1 overflow-y-auto py-3 px-2.5" style={{ scrollbarWidth: 'none' }}>
+          {/*  Padding atas ikut keadaan: saat mengembang, baris kepala di atas
+               sudah memberi jarak, jadi py-3 penuh akan menggandakannya. */}
+          <div className={`flex-1 overflow-y-auto px-2.5 pb-3 ${sidebarCollapsed ? 'pt-3' : 'pt-0.5'}`} style={{ scrollbarWidth: 'none' }}>
 
             {menuLoading ? (
               <div className="flex items-center justify-center py-10">
