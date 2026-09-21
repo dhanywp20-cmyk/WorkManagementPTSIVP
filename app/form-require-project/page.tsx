@@ -12,7 +12,7 @@ import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { compressImage } from '@/lib/image-compress';
 import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard, ModalPortal, Paginasi, usePaginasi } from '@/components/shared';
 import { hasFullAccess } from '@/lib/constants';
-import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField } from '@/lib/admin-edit';
+import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField, type Perubahan } from '@/lib/admin-edit';
 import { penerimaAdminBernomor } from '@/lib/penerima-admin';
 import {
   User, ProjectRequest, RoomDetail, BrandPicMapping,
@@ -29,6 +29,49 @@ import {
 import { appLink } from '@/lib/app-url';
 import { cetakRequest } from './_components/cetak-request';
 import { unduhPaketRequest } from './_components/paket-unduhan';
+
+/**
+ * Field ruangan yang boleh diubah lewat form Edit. Ruangan 1 hidup di kolom
+ * request langsung (editFormData), ruangan 2+ hidup di JSONB `rooms[]` -
+ * bentuk field-nya sama, jadi satu daftar ini dipakai untuk keduanya.
+ *
+ * Field lain di rooms[] (status, assign_*, approved_*, brand_*, PIC,
+ * survey_photos_count) SENGAJA tidak ada di sini: itu diurus alur
+ * approve/assign, bukan form Edit, dan tidak boleh tertimpa saat menyimpan.
+ */
+const EDIT_ROOM_KEYS = [
+  'room_name', 'kebutuhan', 'kebutuhan_other', 'solution_product', 'solution_other',
+  'layout_signage', 'jaringan_cms', 'jumlah_input', 'jumlah_output',
+  'source', 'source_other',
+  'camera_conference', 'camera_jumlah', 'camera_tracking',
+  'audio_system', 'audio_mixer', 'audio_detail',
+  'wallplate_input', 'wallplate_jumlah', 'tabletop_input', 'tabletop_jumlah',
+  'wireless_presentation', 'wireless_mode', 'wireless_dongle',
+  'controller_automation', 'controller_type',
+  'ukuran_ruangan', 'suggest_tampilan', 'keterangan_lain',
+] as const;
+type EditRoomKey = typeof EDIT_ROOM_KEYS[number];
+type EditRoomFields = Pick<RoomDetail, EditRoomKey>;
+
+/** Field ruangan 2+ yang dicatat ke audit & WA (sama semangatnya dengan REQUEST_FIELDS). */
+const EDIT_ROOM_LABELS: AdminField[] = [
+  { key: 'room_name',        label: 'Nama Ruangan' },
+  { key: 'kebutuhan',        label: 'Kebutuhan' },
+  { key: 'solution_product', label: 'Solution' },
+  { key: 'ukuran_ruangan',   label: 'Ukuran Ruangan' },
+  { key: 'suggest_tampilan', label: 'Saran Tampilan' },
+  { key: 'keterangan_lain',  label: 'Keterangan' },
+];
+
+/** Ambil hanya field yang bisa diedit; yang belum ada di data lama diisi default. */
+const ambilFieldRuangan = (r: Partial<RoomDetail>): EditRoomFields => {
+  const dasar = emptyRoom() as unknown as Record<string, unknown>;
+  const src = r as unknown as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const k of EDIT_ROOM_KEYS) out[k] = src[k] ?? dasar[k];
+  return out as unknown as EditRoomFields;
+};
+const namaRuangan = (r: { room_name?: string | null }, nomor: number) => r.room_name?.trim() || `Ruangan ${nomor}`;
 
 function FormRequireProject({ currentUser }: { currentUser: User }) {
   const searchParams = useSearchParams();
@@ -188,6 +231,12 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     controller_automation: 'No', controller_type: [] as string[],
     ukuran_ruangan: '', suggest_tampilan: '', keterangan_lain: '',
   });
+  // Edit per ruangan: editFormData = Ruangan 1, editRooms = Ruangan 2+ (salinan
+  // kerja dari rooms[]). editNewRoomIds = ruangan yang baru ditambah di sesi
+  // edit ini dan belum tersimpan - hanya yang ini yang boleh dihapus lagi.
+  const [editRooms, setEditRooms] = useState<RoomDetail[]>([]);
+  const [editRoomIdx, setEditRoomIdx] = useState(0);
+  const [editNewRoomIds, setEditNewRoomIds] = useState<string[]>([]);
 
   const role = currentUser.role?.toLowerCase().trim() ?? '';
   const isPTS = ['admin', 'superadmin', 'team_pts', 'team'].includes(role);
@@ -1411,7 +1460,38 @@ Hubungi Admin untuk info lebih lanjut.
       ukuran_ruangan: selectedRequest.ukuran_ruangan || '',
       suggest_tampilan: selectedRequest.suggest_tampilan || '', keterangan_lain: selectedRequest.keterangan_lain || '',
     });
+    const ruanganTersimpan = selectedRequest.rooms || [];
+    setEditRooms(ruanganTersimpan.map(r => ({ ...emptyRoom(), ...r })));
+    setEditNewRoomIds([]);
+    // Buka di tab ruangan yang sedang dilihat di modal Detail, bukan selalu Ruangan 1.
+    setEditRoomIdx(Math.min(detailRoomIdx, ruanganTersimpan.length));
     setEditFormModal(true);
+  };
+
+  // Data & pengubah untuk tab ruangan yang sedang aktif di form Edit.
+  const editCur: EditRoomFields = editRoomIdx === 0 ? editFormData : (editRooms[editRoomIdx - 1] ?? emptyRoom());
+  const editUpd = (patch: Partial<EditRoomFields>) => {
+    if (editRoomIdx === 0) setEditFormData(p => ({ ...p, ...patch }));
+    else setEditRooms(rs => rs.map((r, i) => (i === editRoomIdx - 1 ? { ...r, ...patch } : r)));
+  };
+  const editRoomAktifBaru = editRoomIdx > 0 && !!editRooms[editRoomIdx - 1] && editNewRoomIds.includes(editRooms[editRoomIdx - 1].id);
+
+  const handleEditAddRoom = () => {
+    const baru = emptyRoom();
+    setEditRooms(p => [...p, baru]);
+    setEditNewRoomIds(p => [...p, baru.id]);
+    setEditRoomIdx(1 + editRooms.length);
+  };
+  // Hanya ruangan yang BELUM tersimpan yang bisa dibuang. Ruangan yang sudah
+  // tersimpan tidak boleh dihapus/digeser dari sini: file lampiran terikat ke
+  // NOMOR ruangan ("[room3] ...") dan chat ke namanya, jadi menghapus satu
+  // ruangan membuat lampiran & chat pindah ke ruangan yang salah.
+  const handleEditRemoveNewRoom = () => {
+    const r = editRooms[editRoomIdx - 1];
+    if (!r || !editNewRoomIds.includes(r.id)) return;
+    setEditRooms(p => p.filter(x => x.id !== r.id));
+    setEditNewRoomIds(p => p.filter(id => id !== r.id));
+    setEditRoomIdx(i => Math.max(0, i - 1));
   };
 
   /**
@@ -1491,16 +1571,70 @@ Hubungi Admin untuk info lebih lanjut.
 
   const handleEditFormSubmit = async () => {
     if (!selectedRequest) return;
-    const updateData = { 
-      ...editFormData, 
+
+    // Ruangan baru wajib punya Kebutuhan - aturan yang sama dengan form pembuatan.
+    const idxKosong = editRooms.findIndex(r => editNewRoomIds.includes(r.id) && r.kebutuhan.length === 0 && !r.kebutuhan_other.trim());
+    if (idxKosong >= 0) { setEditRoomIdx(idxKosong + 1); notify('error', `Pilih Kebutuhan untuk Ruangan ${idxKosong + 2}!`); return; }
+
+    // Ruangan 2+ : gabungkan ke rooms[] TERBARU di database, bukan ke salinan
+    // yang dibuka saat form dibuka. Selama form terbuka, admin bisa saja
+    // meng-approve/assign ruangan lain - menulis balik seluruh array dari
+    // salinan lama akan menimpa status & assign itu.
+    const editanLama = editRooms.filter(r => !editNewRoomIds.includes(r.id));
+    const ruanganBaru = editRooms.filter(r => editNewRoomIds.includes(r.id));
+    let roomsPayload: RoomDetail[] | null = null;
+    const perubahanRuangan: Perubahan[] = [];
+    const namaRuanganBaru: string[] = [];
+    let butuhApprovalRuanganBaru = false;
+    if (editanLama.length > 0 || ruanganBaru.length > 0) {
+      const { data: segar } = await supabase.from('project_requests').select('rooms, status').eq('id', selectedRequest.id).maybeSingle();
+      const dbRooms: RoomDetail[] = Array.isArray(segar?.rooms) ? segar.rooms : (selectedRequest.rooms || []);
+      const statusRequest = (segar?.status ?? selectedRequest.status) as string;
+      let adaPerubahan = false;
+      const merged = dbRooms.map((dbR, i) => {
+        const e = editanLama[i];
+        if (!e) return dbR;
+        const lama = ambilFieldRuangan(dbR);
+        const baru = ambilFieldRuangan(e);
+        baru.room_name = baru.room_name.trim();
+        if (JSON.stringify(lama) === JSON.stringify(baru)) return dbR;
+        adaPerubahan = true;
+        const nama = namaRuangan(dbR, i + 2);
+        perubahanRuangan.push(...bandingkan(
+          EDIT_ROOM_LABELS.map(f => ({ ...f, label: `[${nama}] ${f.label}` })),
+          lama as unknown as Record<string, unknown>,
+          baru as unknown as Record<string, unknown>,
+        ));
+        return { ...dbR, ...baru };
+      });
+      // Ruangan yang ditambah setelah request lewat tahap pending harus
+      // menunggu approve sendiri; kalau tidak diberi status, getRoomStatus()
+      // jatuh ke status request (mis. "completed") dan ruangan baru tampak selesai.
+      butuhApprovalRuanganBaru = statusRequest !== 'pending';
+      const tambahan: RoomDetail[] = ruanganBaru.map(r => ({
+        ...r, room_name: r.room_name.trim(),
+        ...(butuhApprovalRuanganBaru ? { status: 'pending' as const } : {}),
+      }));
+      tambahan.forEach((r, i) => {
+        const nama = namaRuangan(r, dbRooms.length + i + 2);
+        namaRuanganBaru.push(nama);
+        perubahanRuangan.push({ key: 'rooms', label: 'Ruangan baru', dari: '(kosong)', ke: nama });
+      });
+      if (adaPerubahan || tambahan.length > 0) roomsPayload = [...merged, ...tambahan];
+    }
+
+    const updateData = {
+      ...editFormData,
       sales_division: editFormData.sales_division || '',
       due_date: editDueDate || null,
+      ...(roomsPayload ? { rooms: roomsPayload } : {}),
     };
     const perubahanReq = bandingkan(
       REQUEST_FIELDS,
       selectedRequest as unknown as Record<string, unknown>,
       updateData as unknown as Record<string, unknown>,
     );
+    const semuaPerubahan = [...perubahanReq, ...perubahanRuangan];
     const { error } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
       .update(pakaiUuid ? updateData : tanpaIdentitas(updateData)).eq('id', selectedRequest.id));
     if (error) { notify('error', 'Gagal menyimpan perubahan.'); return; }
@@ -1511,12 +1645,12 @@ Hubungi Admin untuk info lebih lanjut.
       user_id: currentUser.id, user_name: currentUser.full_name,
       action: 'update', module: 'require',
       target_id: selectedRequest.id, target_name: String(updateData.project_name ?? selectedRequest.project_name),
-      notes: perubahanReq.length ? ringkasPerubahan(perubahanReq) : 'Disimpan tanpa perubahan',
+      notes: semuaPerubahan.length ? ringkasPerubahan(semuaPerubahan) : 'Disimpan tanpa perubahan',
     });
 
     // Kabari yang mengerjakan: tanpa ini orang bisa berangkat memakai data lama.
     const penangani = String(selectedRequest.assign_name ?? '');
-    if (perubahanReq.length > 0 && penangani && penangani !== currentUser.full_name) {
+    if (semuaPerubahan.length > 0 && penangani && penangani !== currentUser.full_name) {
       try {
         const { data: u } = await supabase.from('users')
           .select('id, phone_number, full_name').eq('full_name', penangani).maybeSingle();
@@ -1526,7 +1660,7 @@ Hubungi Admin untuk info lebih lanjut.
             namaPengubah: currentUser.full_name,
             judulItem: String(updateData.project_name ?? selectedRequest.project_name),
             jenisItem: 'Request Design Project',
-            perubahan: perubahanReq,
+            perubahan: semuaPerubahan,
             reroute: null,
             tautan: appLink('/form-require-project'),
           }) });
@@ -1534,11 +1668,35 @@ Hubungi Admin untuk info lebih lanjut.
       } catch { /* WA gagal tidak membatalkan perubahan yang sudah tersimpan */ }
     }
 
+    // Ruangan baru yang berstatus pending butuh keputusan admin - kabari mereka,
+    // sama seperti request baru. Tanpa ini ruangannya diam menunggu tanpa ada yang tahu.
+    if (namaRuanganBaru.length > 0 && butuhApprovalRuanganBaru) {
+      try {
+        const admins = (await penerimaAdminBernomor()) as { id?: string; phone_number?: string | null }[] | null;
+        const pesanAdmin = [
+          '🏗️ *Request Design Project — Ruangan Baru*',
+          `📋 *Project  :* ${String(updateData.project_name ?? selectedRequest.project_name)}`,
+          `🛋️ *Ruangan  :* ${namaRuanganBaru.join(', ')}`,
+          `👤 *Oleh     :* ${currentUser.full_name}`,
+          'Ruangan ini berstatus *Pending* - buka dashboard untuk *Approve / Reject*.',
+          appLink('/form-require-project'),
+        ].join('\n');
+        await Promise.allSettled((admins ?? [])
+          .filter(a => a.phone_number && a.id !== currentUser.id)
+          .map(a => sendWANotif({ type: 'reminder_wa', event: 'project.approval_needed', target: a.phone_number as string, message: pesanAdmin })));
+      } catch { /* notifikasi gagal tidak membatalkan perubahan yang sudah tersimpan */ }
+    }
+
     notify('success', 'Perubahan disimpan!');
     setEditFormModal(false);
     fetchRequests();
-    setSelectedRequest(prev => prev ? { ...prev, ...editFormData, due_date: editDueDate || undefined } : null);
-    await supabase.from('project_messages').insert([{ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `✏️ Kebutuhan project diperbarui oleh ${currentUser.full_name}.` }]);
+    setSelectedRequest(prev => prev ? { ...prev, ...editFormData, due_date: editDueDate || undefined, ...(roomsPayload ? { rooms: roomsPayload } : {}) } : null);
+    setDetailRoomIdx(editRoomIdx);
+    await supabase.from('project_messages').insert([
+      { request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `✏️ Kebutuhan project diperbarui oleh ${currentUser.full_name}.` },
+      // Diberi awalan [Nama Ruangan] supaya muncul di tab chat ruangan barunya.
+      ...namaRuanganBaru.map(nama => ({ request_id: selectedRequest.id, sender_id: currentUser.id, sender_name: currentUser.full_name, sender_role: currentUser.role, message: `[${nama}] ➕ Ruangan ditambahkan oleh ${currentUser.full_name}.` })),
+    ]);
     fetchMessages(selectedRequest.id);
   };
 
@@ -3583,11 +3741,6 @@ Hubungi Admin untuk info lebih lanjut.
                       placeholder="Nama project..." className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Ruangan</label>
-                    <input value={editFormData.room_name} onChange={e => setEditFormData(p => ({ ...p, room_name: e.target.value }))}
-                      placeholder="Nama ruangan / area" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 outline-none bg-white" />
-                  </div>
-                  <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Lokasi Project</label>
                     <textarea value={editFormData.project_location} onChange={e => setEditFormData(p => ({ ...p, project_location: e.target.value }))}
                       placeholder="Contoh: Gedung Wisma 46 Lt.12, Jl. MH Thamrin No.1, Jakarta Pusat" rows={4}
@@ -3628,46 +3781,95 @@ Hubungi Admin untuk info lebih lanjut.
                 </div>
               </div>
 
+              {/* Tab per ruangan - Ruangan 1 = kolom request, Ruangan 2+ = rooms[] */}
+              <div className="sticky top-0 z-10 bg-gray-50 pb-1">
+                <div className="flex items-center bg-amber-50 border border-amber-200 rounded-2xl px-2 py-1.5 gap-1 overflow-x-auto">
+                  <button aria-label="Sebelumnya" type="button" onClick={() => setEditRoomIdx(i => Math.max(0, i - 1))} disabled={editRoomIdx === 0}
+                    className="p-1.5 rounded-lg text-amber-700 hover:bg-amber-100 disabled:opacity-30 transition-all flex-shrink-0">
+                    <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
+                  </button>
+                  {Array.from({ length: 1 + editRooms.length }).map((_, i) => {
+                    const label = i === 0 ? namaRuangan(editFormData, 1) : namaRuangan(editRooms[i - 1], i + 1);
+                    const baruDitambah = i > 0 && editNewRoomIds.includes(editRooms[i - 1].id);
+                    return (
+                      <button key={i} type="button" onClick={() => setEditRoomIdx(i)}
+                        className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${editRoomIdx === i ? 'bg-amber-500 text-white shadow' : 'text-amber-800 hover:bg-amber-100'}`}>
+                        {label}
+                        {baruDitambah && <span className={`text-[9px] px-1.5 py-0.5 rounded-full ${editRoomIdx === i ? 'bg-white/25 text-white' : 'bg-amber-200 text-amber-800'}`}>baru</span>}
+                      </button>
+                    );
+                  })}
+                  <button aria-label="Berikutnya" type="button" onClick={() => setEditRoomIdx(i => Math.min(editRooms.length, i + 1))} disabled={editRoomIdx === editRooms.length}
+                    className="p-1.5 rounded-lg text-amber-700 hover:bg-amber-100 disabled:opacity-30 transition-all flex-shrink-0">
+                    <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
+                  </button>
+                  <button type="button" onClick={handleEditAddRoom}
+                    className="flex-shrink-0 px-3 py-1.5 rounded-xl bg-teal-500 text-white text-xs font-bold hover:bg-teal-600 transition-all whitespace-nowrap ml-1">
+                    + Ruangan Lain
+                  </button>
+                  <span className="text-[10px] text-amber-700 font-bold ml-auto mr-1 flex-shrink-0">{editRoomIdx + 1}/{1 + editRooms.length}</span>
+                  {editRoomAktifBaru && (
+                    <button aria-label="Hapus ruangan baru" title="Hapus ruangan baru ini" type="button" onClick={handleEditRemoveNewRoom}
+                      className="flex-shrink-0 p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all">
+                      <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
+                <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🛋️</span>
+                  Ruangan {editRoomIdx + 1}
+                </h3>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Ruangan</label>
+                <input value={editCur.room_name} onChange={e => editUpd({ room_name: e.target.value })}
+                  placeholder="Nama ruangan / area" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 outline-none bg-white" />
+                {editRoomAktifBaru && selectedRequest.status !== 'pending' && (
+                  <p className="text-xs text-amber-700 font-semibold mt-2">Ruangan baru ini akan berstatus Pending dan perlu di-approve admin.</p>
+                )}
+              </div>
+
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
                   <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🎯</span>
                   Kategori Kebutuhan & Solution
                 </h3>
                 <CheckGroup label="Kebutuhan" options={['Signage', 'Immersive', 'Meeting Room', 'Mapping', 'Command Center', 'Hybrid Classroom']}
-                  value={editFormData.kebutuhan} onChange={v => setEditFormData(p => ({ ...p, kebutuhan: v }))} />
+                  value={editCur.kebutuhan} onChange={v => editUpd({ kebutuhan: v })} />
                 <div className="mb-4">
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Kebutuhan</label>
-                  <input value={editFormData.kebutuhan_other} onChange={e => setEditFormData(p => ({ ...p, kebutuhan_other: e.target.value }))}
+                  <input value={editCur.kebutuhan_other} onChange={e => editUpd({ kebutuhan_other: e.target.value })}
                     placeholder="Tuliskan jika ada..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                 </div>
                 <CheckGroup label="Solution Product" options={['Videowall', 'Signage Display', 'Videotron', 'Projector', 'Kiosk', 'IFP']}
-                  value={editFormData.solution_product} onChange={v => setEditFormData(p => ({ ...p, solution_product: v }))} />
+                  value={editCur.solution_product} onChange={v => editUpd({ solution_product: v })} />
                 <div>
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Solution</label>
-                  <input value={editFormData.solution_other} onChange={e => setEditFormData(p => ({ ...p, solution_other: e.target.value }))}
+                  <input value={editCur.solution_other} onChange={e => editUpd({ solution_other: e.target.value })}
                     placeholder="Tuliskan jika ada..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                 </div>
               </div>
 
-              {editFormData.kebutuhan.includes('Signage') && (
+              {editCur.kebutuhan.includes('Signage') && (
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
                   <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📺</span>
                   Layout Konten & Jaringan
                 </h3>
                 <RadioGroup label="Layout Signage" options={['Single Zone', 'Multi Zone', 'Full Screen', 'Custom Layout']}
-                  value={editFormData.layout_signage?.[0] || ''} onChange={v => setEditFormData(p => ({ ...p, layout_signage: v ? [v] : [] }))} />
+                  value={editCur.layout_signage?.[0] || ''} onChange={v => editUpd({ layout_signage: v ? [v] : [] })} />
                 <CheckGroup label="Jaringan / CMS" options={['Offline', 'Online LAN', 'Online WiFi', 'Cloud CMS', 'Local CMS']}
-                  value={editFormData.jaringan_cms} onChange={v => setEditFormData(p => ({ ...p, jaringan_cms: v }))} />
+                  value={editCur.jaringan_cms} onChange={v => editUpd({ jaringan_cms: v })} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Input</label>
-                    <input value={editFormData.jumlah_input} onChange={e => setEditFormData(p => ({ ...p, jumlah_input: e.target.value }))}
+                    <input value={editCur.jumlah_input} onChange={e => editUpd({ jumlah_input: e.target.value })}
                       placeholder="e.g. 4 input" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Output</label>
-                    <input value={editFormData.jumlah_output} onChange={e => setEditFormData(p => ({ ...p, jumlah_output: e.target.value }))}
+                    <input value={editCur.jumlah_output} onChange={e => editUpd({ jumlah_output: e.target.value })}
                       placeholder="e.g. 2 output" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                 </div>
@@ -3680,78 +3882,78 @@ Hubungi Admin untuk info lebih lanjut.
                   Source & Peripheral
                 </h3>
                 <CheckGroup label="Source" options={['PC / Mini PC', 'Laptop', 'URL Dashboard', 'NVR CCTV', 'Media Player', 'IPTV', 'Set Top Box']}
-                  value={editFormData.source} onChange={v => setEditFormData(p => ({ ...p, source: v }))} />
+                  value={editCur.source} onChange={v => editUpd({ source: v })} />
                 <div className="mb-4">
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Source</label>
-                  <input value={editFormData.source_other} onChange={e => setEditFormData(p => ({ ...p, source_other: e.target.value }))}
+                  <input value={editCur.source_other} onChange={e => editUpd({ source_other: e.target.value })}
                     placeholder="Tuliskan jika ada..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                 </div>
 
-                <RadioGroup label="Camera Conference" options={['Yes', 'No']} value={editFormData.camera_conference}
-                  onChange={v => setEditFormData(p => ({ ...p, camera_conference: v }))} />
-                {editFormData.camera_conference === 'Yes' && (
+                <RadioGroup label="Camera Conference" options={['Yes', 'No']} value={editCur.camera_conference}
+                  onChange={v => editUpd({ camera_conference: v })} />
+                {editCur.camera_conference === 'Yes' && (
                   <div className="ml-4 mb-4 space-y-3 border-l-2 border-amber-200 pl-4">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Camera</label>
-                      <input value={editFormData.camera_jumlah} onChange={e => setEditFormData(p => ({ ...p, camera_jumlah: e.target.value }))}
+                      <input value={editCur.camera_jumlah} onChange={e => editUpd({ camera_jumlah: e.target.value })}
                         placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                     </div>
                     <CheckGroup label="Camera Tracking" options={['Auto Tracking', 'Manual PTZ', 'Fixed']}
-                      value={editFormData.camera_tracking} onChange={v => setEditFormData(p => ({ ...p, camera_tracking: v }))} />
+                      value={editCur.camera_tracking} onChange={v => editUpd({ camera_tracking: v })} />
                   </div>
                 )}
 
-                <RadioGroup label="Audio System" options={['Yes', 'No']} value={editFormData.audio_system}
-                  onChange={v => setEditFormData(p => ({ ...p, audio_system: v }))} />
-                {editFormData.audio_system === 'Yes' && (
+                <RadioGroup label="Audio System" options={['Yes', 'No']} value={editCur.audio_system}
+                  onChange={v => editUpd({ audio_system: v })} />
+                {editCur.audio_system === 'Yes' && (
                   <div className="ml-4 mb-4 space-y-3 border-l-2 border-amber-200 pl-4">
                     <div>
                       <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Mixer / DSP</label>
-                      <input value={editFormData.audio_mixer} onChange={e => setEditFormData(p => ({ ...p, audio_mixer: e.target.value }))}
+                      <input value={editCur.audio_mixer} onChange={e => editUpd({ audio_mixer: e.target.value })}
                         placeholder="e.g. Yamaha QL1, QSC, etc." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                     </div>
                     <CheckGroup label="Audio Detail" options={['Speaker Ceiling', 'Speaker Line Array', 'Subwoofer', 'Microphone', 'Amplifier']}
-                      value={editFormData.audio_detail} onChange={v => setEditFormData(p => ({ ...p, audio_detail: v }))} />
+                      value={editCur.audio_detail} onChange={v => editUpd({ audio_detail: v })} />
                   </div>
                 )}
 
-                <RadioGroup label="Wallplate Input" options={['Yes', 'No']} value={editFormData.wallplate_input}
-                  onChange={v => setEditFormData(p => ({ ...p, wallplate_input: v }))} />
-                {editFormData.wallplate_input === 'Yes' && (
+                <RadioGroup label="Wallplate Input" options={['Yes', 'No']} value={editCur.wallplate_input}
+                  onChange={v => editUpd({ wallplate_input: v })} />
+                {editCur.wallplate_input === 'Yes' && (
                   <div className="ml-4 mb-4 border-l-2 border-amber-200 pl-4">
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Wallplate</label>
-                    <input value={editFormData.wallplate_jumlah} onChange={e => setEditFormData(p => ({ ...p, wallplate_jumlah: e.target.value }))}
+                    <input value={editCur.wallplate_jumlah} onChange={e => editUpd({ wallplate_jumlah: e.target.value })}
                       placeholder="e.g. 3 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                 )}
 
-                <RadioGroup label="Tabletop Input" options={['Yes', 'No']} value={editFormData.tabletop_input}
-                  onChange={v => setEditFormData(p => ({ ...p, tabletop_input: v }))} />
-                {editFormData.tabletop_input === 'Yes' && (
+                <RadioGroup label="Tabletop Input" options={['Yes', 'No']} value={editCur.tabletop_input}
+                  onChange={v => editUpd({ tabletop_input: v })} />
+                {editCur.tabletop_input === 'Yes' && (
                   <div className="ml-4 mb-4 border-l-2 border-amber-200 pl-4">
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Tabletop</label>
-                    <input value={editFormData.tabletop_jumlah} onChange={e => setEditFormData(p => ({ ...p, tabletop_jumlah: e.target.value }))}
+                    <input value={editCur.tabletop_jumlah} onChange={e => editUpd({ tabletop_jumlah: e.target.value })}
                       placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                 )}
 
-                <RadioGroup label="Wireless Presentation" options={['Yes', 'No']} value={editFormData.wireless_presentation}
-                  onChange={v => setEditFormData(p => ({ ...p, wireless_presentation: v }))} />
-                {editFormData.wireless_presentation === 'Yes' && (
+                <RadioGroup label="Wireless Presentation" options={['Yes', 'No']} value={editCur.wireless_presentation}
+                  onChange={v => editUpd({ wireless_presentation: v })} />
+                {editCur.wireless_presentation === 'Yes' && (
                   <div className="ml-4 mb-4 space-y-3 border-l-2 border-amber-200 pl-4">
                     <CheckGroup label="Wireless Mode" options={['Aplikasi', 'AirPlay', 'Miracast', 'Chromecast', 'BYOM']}
-                      value={editFormData.wireless_mode} onChange={v => setEditFormData(p => ({ ...p, wireless_mode: v }))} />
-                    <RadioGroup label="Dongle" options={['Yes', 'No']} value={editFormData.wireless_dongle}
-                      onChange={v => setEditFormData(p => ({ ...p, wireless_dongle: v }))} />
+                      value={editCur.wireless_mode} onChange={v => editUpd({ wireless_mode: v })} />
+                    <RadioGroup label="Dongle" options={['Yes', 'No']} value={editCur.wireless_dongle}
+                      onChange={v => editUpd({ wireless_dongle: v })} />
                   </div>
                 )}
 
-                <RadioGroup label="Controller / Automation" options={['Yes', 'No']} value={editFormData.controller_automation}
-                  onChange={v => setEditFormData(p => ({ ...p, controller_automation: v }))} />
-                {editFormData.controller_automation === 'Yes' && (
+                <RadioGroup label="Controller / Automation" options={['Yes', 'No']} value={editCur.controller_automation}
+                  onChange={v => editUpd({ controller_automation: v })} />
+                {editCur.controller_automation === 'Yes' && (
                   <div className="ml-4 mb-4 border-l-2 border-amber-200 pl-4">
                     <RadioGroup label="Controller Type" options={['Cue', 'Wyrestorm', 'Extron', 'Custom']}
-                      value={editFormData.controller_type?.[0] || ''} onChange={v => setEditFormData(p => ({ ...p, controller_type: v ? [v] : [] }))} />
+                      value={editCur.controller_type?.[0] || ''} onChange={v => editUpd({ controller_type: v ? [v] : [] })} />
                   </div>
                 )}
               </div>
@@ -3764,17 +3966,17 @@ Hubungi Admin untuk info lebih lanjut.
                 <div className="space-y-3">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ukuran Ruangan (P × L × T)</label>
-                    <input value={editFormData.ukuran_ruangan} onChange={e => setEditFormData(p => ({ ...p, ukuran_ruangan: e.target.value }))}
+                    <input value={editCur.ukuran_ruangan} onChange={e => editUpd({ ukuran_ruangan: e.target.value })}
                       placeholder="e.g. 8m × 6m × 3m" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Suggest Tampilan (W × H)</label>
-                    <input value={editFormData.suggest_tampilan} onChange={e => setEditFormData(p => ({ ...p, suggest_tampilan: e.target.value }))}
+                    <input value={editCur.suggest_tampilan} onChange={e => editUpd({ suggest_tampilan: e.target.value })}
                       placeholder="e.g. 1920 × 1080 px atau 4K" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Keterangan Lain</label>
-                    <textarea value={editFormData.keterangan_lain} onChange={e => setEditFormData(p => ({ ...p, keterangan_lain: e.target.value }))}
+                    <textarea value={editCur.keterangan_lain} onChange={e => editUpd({ keterangan_lain: e.target.value })}
                       rows={3} placeholder="Tuliskan informasi tambahan..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none resize-none bg-white" />
                   </div>
                 </div>
