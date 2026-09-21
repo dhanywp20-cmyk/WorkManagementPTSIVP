@@ -389,6 +389,15 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     let query = supabase.from('project_requests').select('*').order('created_at', { ascending: false });
+    // Request yang DIBUATKAN admin/PTS (atau Sales Internal) atas nama Sales lain
+    // menyimpan requester_id = si pembuat, sedangkan Sales yang dituju hanya
+    // tercatat di sales_name. Tanpa klausa ini Sales itu tidak pernah melihat
+    // request atas namanya sendiri, walau RLS di database sudah mengizinkan
+    // (boleh_lihat_baris mencocokkan sales_name) - yang menahannya di sini.
+    // Dicocokkan lewat nama, sama seperti canEdit & RLS; dikutip supaya nama
+    // yang memuat koma/titik tidak merusak sintaks or() PostgREST.
+    const kutip = (n: string) => `"${n.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
+    const atasNama = (nama?: string | null) => (nama ? `sales_name.eq.${kutip(nama)}` : '');
     if (isPTS) {
       // admin/superadmin: semua request; team PTS: semua request (filter assign di UI)
     } else if (isIVPGuest) {
@@ -397,12 +406,11 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       // Reviewer (internal_sales_id / _2) sudah ter-cover divFilter di bawah karena
       // reviewer selalu di-mapping ke divisi ybs. (Tidak menaruh internal_sales_id_2 di
       // .or() supaya query tak error kalau kolomnya belum ada / migrasi belum di-run.)
-      if (handledDivisions.length > 0) {
-        const divFilter = handledDivisions.map((d: string) => `sales_division.eq.${d}`).join(',');
-        query = query.or(`requester_id.eq.${currentUser.id},ivp_assignee.eq.${currentUser.full_name},${divFilter}`);
-      } else {
-        query = query.or(`requester_id.eq.${currentUser.id},ivp_assignee.eq.${currentUser.full_name}`);
-      }
+      const divFilter = handledDivisions.map((d: string) => `sales_division.eq.${d}`).join(',');
+      query = query.or([
+        `requester_id.eq.${currentUser.id}`, `ivp_assignee.eq.${currentUser.full_name}`,
+        atasNama(currentUser.full_name), divFilter,
+      ].filter(Boolean).join(','));
     } else {
       // non-IVP guest: cek jabatan tier untuk supervisor visibility + brand PIC
       const selfJabatan = (currentUser as any).jabatan as string | undefined;
@@ -417,7 +425,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         if (!supDivisions.includes(selfDiv)) supDivisions.push(selfDiv);
 
         // Ambil subordinate ids (tier lebih rendah)
-        const { data: allGuests } = await supabase.from('users').select('id, jabatan, sales_division').eq('role', 'guest');
+        const { data: allGuests } = await supabase.from('users').select('id, full_name, jabatan, sales_division').eq('role', 'guest');
         const subIds = (allGuests ?? [])
           .filter((u: any) => (JABATAN_TIER[(u.jabatan as string) || ''] ?? 0) < selfTier && supDivisions.includes(u.sales_division))
           .map((u: any) => u.id as string);
@@ -427,17 +435,22 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         (manualSubs ?? []).forEach((m: any) => { if (!subIds.includes(m.user_id)) subIds.push(m.user_id); });
 
         if (subIds.length > 0) {
+          const namaBawahan: string[] = subIds
+            .map((id: string) => (allGuests ?? []).find((u: any) => u.id === id)?.full_name as string | undefined)
+            .filter((n?: string): n is string => !!n);
           const orFilter = [
             `requester_id.eq.${currentUser.id}`,
+            atasNama(currentUser.full_name),
             ...subIds.map((id: string) => `requester_id.eq.${id}`),
-          ].join(',');
+            ...namaBawahan.map(n => atasNama(n)),
+          ].filter(Boolean).join(',');
           query = query.or(orFilter);
         } else {
-          query = query.eq('requester_id', currentUser.id);
+          query = query.or([`requester_id.eq.${currentUser.id}`, atasNama(currentUser.full_name)].filter(Boolean).join(','));
         }
       } else {
-        // Staff biasa: hanya request miliknya
-        query = query.eq('requester_id', currentUser.id);
+        // Staff biasa: request miliknya + request yang diatasnamakan dirinya
+        query = query.or([`requester_id.eq.${currentUser.id}`, atasNama(currentUser.full_name)].filter(Boolean).join(','));
       }
     }
     const { data, error } = await query;
