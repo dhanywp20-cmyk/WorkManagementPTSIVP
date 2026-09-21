@@ -73,6 +73,25 @@ const ambilFieldRuangan = (r: Partial<RoomDetail>): EditRoomFields => {
 };
 const namaRuangan = (r: { room_name?: string | null }, nomor: number) => r.room_name?.trim() || `Ruangan ${nomor}`;
 
+type SumberKebutuhan = { kebutuhan?: string[] | null; kebutuhan_other?: string | null };
+/**
+ * Kebutuhan sebuah request = gabungan SEMUA ruangannya (Ruangan 1 di kolom
+ * request + rooms[]), tanpa duplikat. Satu request dengan Meeting Room dan
+ * Command Center dihitung di kedua irisan. Isian "lainnya" digabung ke
+ * "Lainnya" supaya teks bebas tidak memecah pie jadi banyak irisan; request
+ * yang belum mengisi apa pun masuk "Belum diisi" agar total pie tetap utuh.
+ * Dipakai bersama oleh pie chart dan filternya - satu sumber, tidak bisa beda.
+ */
+const daftarKebutuhan = (r: SumberKebutuhan & { rooms?: SumberKebutuhan[] | null }): string[] => {
+  const hasil = new Set<string>();
+  for (const rm of [r, ...(r.rooms || [])]) {
+    for (const k of rm.kebutuhan || []) if (k) hasil.add(k);
+    if (rm.kebutuhan_other?.trim()) hasil.add('Lainnya');
+  }
+  if (hasil.size === 0) hasil.add('Belum diisi');
+  return [...hasil];
+};
+
 function FormRequireProject({ currentUser }: { currentUser: User }) {
   const searchParams = useSearchParams();
   const [appReady, setAppReady] = useState(false);
@@ -142,6 +161,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [filterDivision, setFilterDivision] = useState<string>(() => {
     try { return sessionStorage.getItem('frp_filterDivision') || 'all'; } catch { return 'all'; }
   });
+  const [filterKebutuhan, setFilterKebutuhan] = useState<string>(() => {
+    try { return sessionStorage.getItem('frp_filterKebutuhan') || 'all'; } catch { return 'all'; }
+  });
   const [ptsMembersList, setPtsMembersList] = useState<string[]>([]);
   /**
    * Roster Team PTS sebenarnya, untuk tujuan re-route.
@@ -171,6 +193,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   useEffect(() => { try { sessionStorage.setItem('frp_searchQuery', searchQuery); } catch {} }, [searchQuery]);
   useEffect(() => { try { sessionStorage.setItem('frp_searchSales', searchSales); } catch {} }, [searchSales]);
   useEffect(() => { try { sessionStorage.setItem('frp_filterDivision', filterDivision); } catch {} }, [filterDivision]);
+  useEffect(() => { try { sessionStorage.setItem('frp_filterKebutuhan', filterKebutuhan); } catch {} }, [filterKebutuhan]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -697,13 +720,14 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     const matchMonth = filterMonth === 'all' || (new Date(r.created_at).getMonth() + 1).toString().padStart(2, '0') === filterMonth;
     const matchHandler = filterHandler === 'all' || (r.assign_name || '') === filterHandler;
     const matchDivision = filterDivision === 'all' || (r.sales_division || 'Lainnya') === filterDivision;
+    const matchKebutuhan = filterKebutuhan === 'all' || daftarKebutuhan(r).includes(filterKebutuhan);
     const matchProject = !searchQuery || r.project_name.toLowerCase().includes(searchQuery.toLowerCase())
       || (r.project_location || '').toLowerCase().includes(searchQuery.toLowerCase())
       || (r.room_name || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchSales = !searchSales || (r.sales_name || '').toLowerCase().includes(searchSales.toLowerCase())
       || (r.requester_name || '').toLowerCase().includes(searchSales.toLowerCase())
       || (r.sales_division || '').toLowerCase().includes(searchSales.toLowerCase());
-    return matchStatus && matchYear && matchMonth && matchHandler && matchDivision && matchProject && matchSales;
+    return matchStatus && matchYear && matchMonth && matchHandler && matchDivision && matchKebutuhan && matchProject && matchSales;
   });
 
   const hal = usePaginasi(filteredRequests);
@@ -739,6 +763,12 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     for (const p of prods) { productCounts[p] = (productCounts[p] || 0) + 1; }
   }
   const productPieData = Object.entries(productCounts).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+
+  const kebutuhanCounts: Record<string, number> = {};
+  for (const r of requests) for (const k of daftarKebutuhan(r)) kebutuhanCounts[k] = (kebutuhanCounts[k] || 0) + 1;
+  const kebutuhanPieData = Object.entries(kebutuhanCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
 
   // CheckGroup & RadioGroup for edit modal
   const CheckGroup = ({ label, options, value, onChange }: { label: string; options: string[]; value: string[]; onChange: (v: string[]) => void }) => (
@@ -1976,7 +2006,7 @@ Hubungi Admin untuk info lebih lanjut.
         </div>
 
         {/* Charts - guest sees handler + product, PTS sees all 3 */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5 sm:gap-4 animate-zoom-in anim-d160">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-1.5 sm:gap-4 animate-zoom-in anim-d160">
           {isPTS ? (
             <>
               <MiniPieChart data={statusPieData} title="Status Distribution" icon="🥧"
@@ -1991,6 +2021,10 @@ Hubungi Admin untuk info lebih lanjut.
               <MiniPieChart data={assignedPieData} title="Team PTS Handler" icon="👥"
                 activeFilter={filterHandler !== 'all' ? filterHandler : undefined}
                 onSliceClick={label => setFilterHandler(prev => prev === label ? 'all' : label)} />
+              <MiniPieChart data={kebutuhanPieData} title="Kebutuhan" icon="🎯"
+                centerValue={requests.length} centerLabel="REQUEST"
+                activeFilter={filterKebutuhan !== 'all' ? filterKebutuhan : undefined}
+                onSliceClick={label => setFilterKebutuhan(prev => prev === label ? 'all' : label)} />
             </>
           ) : (
             <>
@@ -1999,6 +2033,10 @@ Hubungi Admin untuk info lebih lanjut.
                 activeFilter={filterHandler !== 'all' ? filterHandler : undefined}
                 onSliceClick={label => setFilterHandler(prev => prev === label ? 'all' : label)} />
               <MiniPieChart data={productPieData} title="Product" icon="📦" />
+              <MiniPieChart data={kebutuhanPieData} title="Kebutuhan" icon="🎯"
+                centerValue={requests.length} centerLabel="REQUEST"
+                activeFilter={filterKebutuhan !== 'all' ? filterKebutuhan : undefined}
+                onSliceClick={label => setFilterKebutuhan(prev => prev === label ? 'all' : label)} />
             </>
           )}
         </div>
@@ -2132,7 +2170,7 @@ Hubungi Admin untuk info lebih lanjut.
             </div>
           )}
 
-          {(filterStatus !== 'all' || filterYear !== 'all' || filterMonth !== 'all' || filterHandler !== 'all' || filterDivision !== 'all' || searchQuery || searchSales) && (
+          {(filterStatus !== 'all' || filterYear !== 'all' || filterMonth !== 'all' || filterHandler !== 'all' || filterDivision !== 'all' || filterKebutuhan !== 'all' || searchQuery || searchSales) && (
             <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
               <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
               {filterStatus !== 'all' && (
@@ -2150,6 +2188,9 @@ Hubungi Admin untuk info lebih lanjut.
               {filterDivision !== 'all' && (
                 <button onClick={() => setFilterDivision('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}>Division: {filterDivision} ✕</button>
               )}
+              {filterKebutuhan !== 'all' && (
+                <button onClick={() => setFilterKebutuhan('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0d9488' }}>Kebutuhan: {filterKebutuhan} ✕</button>
+              )}
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}>Search: {searchQuery} ✕</button>
               )}
@@ -2158,8 +2199,8 @@ Hubungi Admin untuk info lebih lanjut.
               )}
               <button onClick={() => { 
                 setFilterStatus('all'); setFilterYear('all'); setFilterMonth('all'); 
-                setFilterHandler('all'); setFilterDivision('all'); setSearchQuery(''); setSearchSales('');
-                try { ['frp_filterStatus','frp_filterYear','frp_filterMonth','frp_filterHandler','frp_filterDivision','frp_searchQuery','frp_searchSales'].forEach(k => sessionStorage.removeItem(k)); } catch {}
+                setFilterHandler('all'); setFilterDivision('all'); setFilterKebutuhan('all'); setSearchQuery(''); setSearchSales('');
+                try { ['frp_filterStatus','frp_filterYear','frp_filterMonth','frp_filterHandler','frp_filterDivision','frp_filterKebutuhan','frp_searchQuery','frp_searchSales'].forEach(k => sessionStorage.removeItem(k)); } catch {}
               }}
                 className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}>🗑️ Reset Semua</button>
             </div>
