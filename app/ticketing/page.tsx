@@ -8,7 +8,7 @@ import { supabase, supabaseServices } from "@/lib/supabase";
 import { setSession, clearSession, getSession } from "@/lib/auth";
 import { adminCreateUser } from "@/lib/admin-users";
 import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
-import { penerimaAdminBernomor } from "@/lib/penerima-admin";
+import { penerimaAdmin, penerimaAdminBernomor } from "@/lib/penerima-admin";
 import { logAudit } from "@/lib/audit";
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan } from "@/lib/admin-edit";
 import { isAssignablePTSTeam, bolehDitugaskan } from "@/lib/teams";
@@ -887,7 +887,9 @@ function TicketingSystemInner() {
           // Admin + pemegang Full Access dari satu sumber (lib/penerima-admin.ts),
           // ditambah app_settings.manager_user_id (override lama, tetap didukung).
           const approvers: { id: string; phone_number: string; full_name: string }[] =
-            (await penerimaAdminBernomor()).map(u => ({ id: u.id, phone_number: u.phone_number ?? "", full_name: u.full_name }));
+            // SEMUA penerima (bukan hanya yang bernomor): daftar ini juga dipakai
+            // untuk notifikasi in-app di bawah. WA sendiri sudah menyaring nomor kosong.
+            (await penerimaAdmin()).map(u => ({ id: u.id, phone_number: u.phone_number ?? "", full_name: u.full_name }));
           try {
             const { data: mgrSetting } = await supabase.from("app_settings").select("value").eq("key", KUNCI_PENGATURAN.MANAGER).maybeSingle();
             const managerId = mgrSetting?.value ? String(mgrSetting.value).replace(/^"|"$/g, "") : "";

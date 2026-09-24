@@ -87,14 +87,16 @@ export default function SummaryProjectPage() {
   useEffect(() => { muat(); }, [muat]);
 
   const statistik = useMemo(() => {
-    const aktif = daftar.filter(p => p.status !== 'archived');
+    // Mengikuti filter status yang sedang dipilih - kartu dan tabel harus
+    // menunjukkan angka yang sama.
+    const aktif = daftar.filter(p => filterStatus === 'semua' || p.status === filterStatus);
     const total = (k: keyof RingkasanProject) => aktif.reduce((n, p) => n + (p[k] as number), 0);
     return {
       project: aktif.length,
       schedule: total('schedule_count'), ticket: total('ticket_count'),
       design: total('design_count'), review: total('review_count'),
     };
-  }, [daftar]);
+  }, [daftar, filterStatus]);
 
   const tersaring = useMemo(() => {
     const k = normalisasiNamaProject(cari);
@@ -143,7 +145,7 @@ export default function SummaryProjectPage() {
 
             {/* Ringkasan - kartu kategori sekaligus filter */}
             <StatCardGrid cols={5} items={[
-              { label: 'Project', value: statistik.project, sub: 'tidak termasuk arsip', accent: THEME.color,
+              { label: 'Project', value: statistik.project, sub: filterStatus === 'semua' ? 'semua status' : STATUS_PROJECT[filterStatus], accent: THEME.color,
                 onClick: () => setFilterTipe('semua'), active: filterTipe === 'semua' },
               ...(['schedule', 'ticket', 'design', 'review'] as AktivitasTipe[]).map(t => ({
                 label: TIPE_CFG[t].pendek, value: statistik[t], sub: 'klik untuk saring',

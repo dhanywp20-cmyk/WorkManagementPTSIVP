@@ -8,6 +8,7 @@ import {
   type GrupAntrean, type SaranProject, type StatistikMapping, type ModulTerpeta,
 } from '@/lib/summary-project';
 import { supabase } from '@/lib/supabase';
+import { PanelDuplikat } from './PanelDuplikat';
 
 const MODUL_LABEL: Record<ModulTerpeta, { label: string; color: string }> = {
   reminders: { label: '🗓️ Schedule', color: '#0891b2' },
@@ -50,6 +51,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
   const [namaBaru, setNamaBaru] = useState('');
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState<string | null>(null);
+  const [tab, setTab] = useState<'antrean' | 'duplikat'>('antrean');
   const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
 
   const muat = useCallback(async () => {
@@ -146,6 +148,17 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
             ))}
           </div>
         )}
+
+        <div role="tablist" className="flex gap-1 border-b border-gray-200">
+          {([['antrean', `Belum terpeta${statistik ? ` (${statistik.belum_terpeta})` : ''}`], ['duplikat', 'Kemungkinan duplikat']] as const).map(([k, label]) => (
+            <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+              className={`px-3 py-2 text-xs font-bold -mb-px border-b-2 ${tab === k ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === 'antrean' && (<>
 
         {pesan && (
           <div role="status" className="rounded-lg px-3 py-2 text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">{pesan}</div>
@@ -258,6 +271,11 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
             )}
           </div>
         </div>
+        </>)}
+
+        {tab === 'duplikat' && (
+          <PanelDuplikat currentUserName={currentUserName} onBerubah={() => { muat(); onBerubah(); }} />
+        )}
       </div>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
     </Modal>

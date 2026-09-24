@@ -255,13 +255,21 @@ export async function pindahkanLink(linkId: string, projectId: string, oleh: str
  * ulang oleh trigger saat namanya diubah nanti.
  */
 export async function gabungkanProject(asal: string, tujuan: string, oleh: string): Promise<void> {
-  const { error } = await supabase.from('project_source_links').update({
-    project_id: tujuan, mapping_type: 'manual', confidence: null,
-    match_reason: 'digabung dari project lain', mapped_by: oleh, mapped_at: new Date().toISOString(),
-  }).eq('project_id', asal);
+  // Lewat RPC supaya pindah-link + hapus-project terjadi dalam SATU transaksi.
+  const { error } = await supabase.rpc('gabungkan_project', { p_asal: asal, p_tujuan: tujuan, p_oleh: oleh });
   if (error) throw new Error(error.message);
-  const { error: e2 } = await supabase.from('projects').delete().eq('id', asal);
-  if (e2) throw new Error(e2.message);
+}
+
+export interface KandidatDuplikat {
+  a_id: string; a_code: string; a_name: string; a_total: number;
+  b_id: string; b_code: string; b_name: string; b_total: number; skor: number;
+}
+
+/** Pasangan project bernama mirip - kemungkinan beda ketik dari pemetaan otomatis. */
+export async function ambilKandidatDuplikat(ambang = 0.5): Promise<KandidatDuplikat[]> {
+  const { data, error } = await supabase.rpc('kandidat_duplikat_project', { p_ambang: ambang, p_limit: 200 });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as KandidatDuplikat[];
 }
 
 export async function lepasLink(linkId: string): Promise<void> {
