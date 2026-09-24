@@ -34,6 +34,7 @@ import { ambilPengaturanAI, simpanPengaturanAI, AI_BAWAAN, type PengaturanAI,
 import { KATALOG_EVENT, EVENT_TERSAMBUNG, eventTersambung, type KategoriEvent } from '@/lib/notifikasi/katalog';
 import { PENYEDIA_WA, penyediaWA } from '@/lib/notifikasi/penyedia-wa';
 import { supabase } from '@/lib/supabase';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 
 const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
   ticket: 'Ticket', approval: 'Approval', assignment: 'Assignment',
@@ -302,6 +303,7 @@ export function IntegrasiInline() {
   /** Push notification asli (aplikasi/PWA) - status kunci VAPID + jumlah perangkat terdaftar. */
   const [pushInfo, setPushInfo] = useState<{ aktif: boolean; jumlahPerangkat: number } | null>(null);
   const [pushMemuat, setPushMemuat] = useState(false);
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [pushPesan, setPushPesan] = useState<{ tipe: 'ok' | 'gagal'; teks: string } | null>(null);
   /** Siapa yang benar-benar bisa dijangkau lewat kanal apa. */
   const [tim, setTim] = useState<{ nama: string; tim: string; jabatan: string; wa: boolean; tg: boolean }[]>([]);
@@ -1090,7 +1092,7 @@ export function IntegrasiInline() {
                         <p className="text-[11.5px] text-slate-500 leading-relaxed">
                           <b>{pushInfo.jumlahPerangkat}</b> perangkat terdaftar saat ini.
                         </p>
-                        <button type="button" onClick={() => { if (confirm('Yakin? SEMUA perangkat yang sudah terdaftar akan terputus dan harus mendaftar ulang.')) void aktifkanPushServer(true); }}
+                        <button type="button" onClick={() => setConfirmState({ message: 'Buat ulang kunci push?', description: 'SEMUA perangkat yang sudah terdaftar akan terputus dan harus mendaftar ulang.', danger: true, confirmLabel: 'Ya, buat ulang', onConfirm: () => aktifkanPushServer(true) })}
                           disabled={pushMemuat}
                           className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-50">
                           {pushMemuat ? 'Memproses…' : '🔁 Generate Ulang Kunci'}
@@ -1294,6 +1296,7 @@ export function IntegrasiInline() {
           )}
         </div>
       </div>
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
     </div>
   );
 }

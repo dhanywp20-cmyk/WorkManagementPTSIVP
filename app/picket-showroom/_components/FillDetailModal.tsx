@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useDivisiSales } from '@/lib/merek';
-import { ModalPortal } from '@/components/shared';
+import { ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import {
   PiketRow, KegiatanEntry, JenisKegiatan, UserRow, ProdukLain,
   DAY_COLOR, JENIS_KEGIATAN_LIST, KEGIATAN_COLORS,
@@ -32,9 +32,10 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   // isian tanpa peringatan. dirty ditandai true oleh SEMUA fungsi yang
   // mengubah entries setelah pemuatan awal (bukan oleh useEffect load).
   const [dirty,setDirty]=useState(false);
+  const [confirmState,setConfirmState]=useState<ConfirmState|null>(null);
   const requestClose=()=>{
     if(!dirty){onClose();return;}
-    if(window.confirm('Ada isian yang belum disimpan. Yakin mau menutup tanpa menyimpan?'))onClose();
+    setConfirmState({message:'Ada isian yang belum disimpan.',description:'Yakin mau menutup tanpa menyimpan?',danger:true,confirmLabel:'Tutup',onConfirm:onClose});
   };
   const dc=DAY_COLOR[row.day_of_week];
   const notify=(type:'success'|'error',msg:string)=>{setToast({type,msg});setTimeout(()=>setToast(null),3500);};
@@ -358,6 +359,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
         </div>
       </div>
     </div>
+    <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)}/>
   </ModalPortal>
   );
 }

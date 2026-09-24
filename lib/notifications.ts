@@ -7,6 +7,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { penerimaAdmin } from '@/lib/penerima-admin';
 
 /**
  * Push notification asli (bunyi + notifikasi sistem walau app/tab tertutup) -
@@ -80,11 +81,8 @@ export async function createNotificationForAdmins(
   payload: Omit<NotifPayload, 'user_id'>
 ): Promise<void> {
   try {
-    const [{ data: admins }, { data: fullAccessTeam }] = await Promise.all([
-      supabase.from('users').select('id').in('role', ['admin', 'superadmin']),
-      supabase.from('users').select('id').eq('role', 'team').eq('access_level', 'full'),
-    ]);
-    const targets = [...(admins ?? []), ...(fullAccessTeam ?? [])] as { id: string }[];
+    // Satu sumber aturan "siapa admin" - lihat lib/penerima-admin.ts.
+    const targets = await penerimaAdmin();
     if (!targets.length) return;
 
     const rows = targets.map(a => ({

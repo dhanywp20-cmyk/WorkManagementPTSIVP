@@ -884,23 +884,10 @@ function TicketingSystemInner() {
         // yang ditunggu user adalah kabar tiketnya, bukan detail cara sistem memberi tahu.
         setLoadingMessage("Ticket sedang diproses & menunggu approval...");
         try {
-          const { data: adminUsers } = await supabase
-            .from("users")
-            .select("id, phone_number, full_name")
-            .in("role", ["admin", "superadmin"])
-            .not("phone_number", "is", null)
-            .neq("phone_number", "");
-          // Manager - role='team' TIDAK ke-cover query role admin di atas, jadi
-          // ditambah terpisah supaya notifikasi ke Manager datang BERSAMAAN
-          // dengan admin (bukan menyusul). Dua sumber, dedup by id:
-          //   1. akun Team PTS ber-toggle "Full Access" (cara yang disarankan)
-          //   2. app_settings.manager_user_id (override lama, tetap didukung)
-          const approvers: { id: string; phone_number: string; full_name: string }[] = [...((adminUsers as any[]) ?? [])];
-          try {
-            const { data: fullAccess } = await supabase.from("users")
-              .select("id, phone_number, full_name").eq("role", "team").eq("access_level", "full");
-            ((fullAccess as any[]) ?? []).forEach(u => { if (!approvers.find(a => a.id === u.id)) approvers.push(u); });
-          } catch { }
+          // Admin + pemegang Full Access dari satu sumber (lib/penerima-admin.ts),
+          // ditambah app_settings.manager_user_id (override lama, tetap didukung).
+          const approvers: { id: string; phone_number: string; full_name: string }[] =
+            (await penerimaAdminBernomor()).map(u => ({ id: u.id, phone_number: u.phone_number ?? "", full_name: u.full_name }));
           try {
             const { data: mgrSetting } = await supabase.from("app_settings").select("value").eq("key", KUNCI_PENGATURAN.MANAGER).maybeSingle();
             const managerId = mgrSetting?.value ? String(mgrSetting.value).replace(/^"|"$/g, "") : "";

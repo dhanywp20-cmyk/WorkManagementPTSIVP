@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { SARING_PENERIMA_ADMIN } from '@/lib/penerima-admin';
 import {
   TABEL_KODE_ACARA, dariBaris, periksaKodeAcara,
   type PengaturanKodeAcara, type BarisKodeAcara,
@@ -252,11 +253,10 @@ export async function POST(request: NextRequest) {
     // pemanggilnya membungkusnya dengan catch kosong, kegagalannya tidak akan
     // terlihat oleh siapa pun.
     try {
-      const [{ data: admin }, { data: timPenuh }] = await Promise.all([
-        supabase.from('users').select('id').in('role', ['admin', 'superadmin']),
-        supabase.from('users').select('id').eq('role', 'team').eq('access_level', 'full'),
-      ]);
-      const tujuan = [...(admin ?? []), ...(timPenuh ?? [])] as { id: string }[];
+      // Aturan "siapa admin" dari lib/penerima-admin.ts - tapi lewat klien
+      // admin milik route ini, bukan klien peramban yang dipakai penerimaAdmin().
+      const { data: admin } = await supabase.from('users').select('id').or(SARING_PENERIMA_ADMIN);
+      const tujuan = (admin ?? []) as { id: string }[];
       if (tujuan.length > 0) {
         await supabase.from('notifications').insert(tujuan.map(a => ({
           user_id: a.id,
