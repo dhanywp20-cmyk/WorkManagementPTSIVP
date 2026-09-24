@@ -315,27 +315,10 @@ async function tebakPemilik(records: RecordKunci[]) {
   return {};
 }
 
-/**
- * Petakan otomatis grup yang namanya PERSIS sama (setelah normalisasi) dengan
- * satu project yang sudah ada. Nama yang cocok ke lebih dari satu project
- * dilewati - itu keputusan admin, bukan tebakan.
- */
-export async function autoPetakanNamaPersis(antrean: GrupAntrean[], oleh: string): Promise<number> {
-  const { data } = await supabase.from('projects').select('id, name').neq('status', 'archived');
-  const byNama = new Map<string, string[]>();
-  for (const p of (data ?? []) as { id: string; name: string }[]) {
-    const k = normalisasiNamaProject(p.name);
-    byNama.set(k, [...(byNama.get(k) ?? []), p.id]);
-  }
-  let jumlah = 0;
-  for (const g of antrean) {
-    const cocok = byNama.get(g.kunci);
-    if (cocok?.length !== 1) continue;
-    await simpanLinks(g.records, cocok[0], 'auto', oleh, 'nama project sama persis');
-    jumlah += g.records.length;
-  }
-  return jumlah;
-}
+// Pemetaan nama-persis kini dikerjakan trigger basis data (migrasi 015) saat
+// record dibuat/diubah namanya. Tombol "Auto nama persis" di Mapping Center
+// dihapus: antrean yang tersisa justru record yang SENGAJA dilepas admin atau
+// yang ambigu, dan tombol itu memetakan ulang record yang baru ditolak admin.
 
 export async function ubahProject(
   id: string, isian: Partial<Pick<RingkasanProject, 'name' | 'customer' | 'location' | 'sales_name' | 'sales_division' | 'status'>>,

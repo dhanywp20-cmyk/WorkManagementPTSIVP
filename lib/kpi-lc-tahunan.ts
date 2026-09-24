@@ -17,7 +17,16 @@
  * yang kebetulan tanpa sesi LC tidak boleh menghapus kegagalan di bulan lain
  * pada tahun yang sama.
  *
- * `rekapLCTahunan` murni (tanpa Supabase) - lihat uji/kpi-lc-tahunan.ts.
+ * Angka yang dipakai layar dihitung di SERVER (RPC rekap_lc_tahunan, migrasi
+ * 017): RLS membuat anggota tim hanya bisa membaca attempt miliknya, dan
+ * max-rows PostgREST memotong attempt diam-diam - dua-duanya membuat hasil
+ * hitungan di peramban berbeda antara anggota dan atasannya.
+ * `rekapLCTahunan` di bawah adalah cermin murni aturan yang sama, untuk
+ * diuji (uji/kpi-lc-tahunan.ts) - UBAH KEDUANYA bersamaan.
+ *
+ * Sesi target "semua" (target_user_ids NULL) tidak menghukum yang tidak
+ * ikut: sesi seperti itu juga dipakai untuk sesi khusus Sales. Attempt gagal
+ * di sesi yang masih buka & boleh retake belum dihitung gagal.
  */
 
 import { supabase } from './supabase';
@@ -31,6 +40,7 @@ export interface SesiLC {
   closed_at: string | null;
   is_active: boolean | null;
   target_user_ids: string[] | null;
+  allow_retake?: boolean | null;
 }
 
 export interface AttemptLC {
@@ -79,40 +89,48 @@ export function rekapLCTahunan(
   let wajib = 0, lulus = 0, gagal = 0, tidakIkut = 0;
   for (const s of sesiTahunIni) {
     const mine = milikku.filter(a => a.quiz_session_id === s.id);
+    const selesai = sesiSelesai(s, adaAttemptDiSesi.has(s.id), sekarang);
     if (mine.length) {
       if (mine.some(a => a.passed === true)) { wajib++; lulus++; continue; }
       // Essay yang belum dinilai: hasilnya belum ada - jangan dihukum dulu.
       if (mine.some(a => a.grading_status === 'pending_review')) continue;
+      // Masih bisa retake: belum final.
+      if (s.allow_retake && !selesai) continue;
       wajib++; gagal++;
       continue;
     }
     const ditargetkan = (s.target_user_ids ?? []).includes(userId);
-    if (ditargetkan && sesiSelesai(s, adaAttemptDiSesi.has(s.id), sekarang)) { wajib++; tidakIkut++; }
+    if (ditargetkan && selesai) { wajib++; tidakIkut++; }
   }
   return { wajib, lulus, gagal, tidakIkut, faktor: wajib ? lulus / wajib : 1 };
 }
 
-/** Ambil data setahun lalu rekap per user. Gagal memuat = tanpa potongan (bukan potongan penuh). */
-export async function ambilRekapLCTahunan(userIds: string[], tahun: number): Promise<Record<string, RekapLCTahunan>> {
+// buildMembers() halaman KPI dipanggil 3x per muat (periode kini, periode
+// sebelumnya, tab KPI) - tahun & anggotanya sama, jadi hasilnya dipakai ulang.
+const cache = new Map<string, { waktu: number; janji: Promise<Record<string, RekapLCTahunan>> }>();
+const UMUR_CACHE_MS = 60_000;
+
+/** Rekap per user dari RPC rekap_lc_tahunan. Gagal memuat = tanpa potongan (bukan potongan penuh). */
+export function ambilRekapLCTahunan(userIds: string[], tahun: number): Promise<Record<string, RekapLCTahunan>> {
+  const kunci = `${tahun}:${[...userIds].sort().join(',')}`;
+  const ada = cache.get(kunci);
+  if (ada && Date.now() - ada.waktu < UMUR_CACHE_MS) return ada.janji;
+  const janji = muatRekap(userIds, tahun);
+  cache.set(kunci, { waktu: Date.now(), janji });
+  return janji;
+}
+
+async function muatRekap(userIds: string[], tahun: number): Promise<Record<string, RekapLCTahunan>> {
   const hasil: Record<string, RekapLCTahunan> = {};
   userIds.forEach(id => { hasil[id] = REKAP_LC_KOSONG; });
   if (!userIds.length) return hasil;
-
-  const { data: sesiData, error: e1 } = await supabase.from('lc_quiz_sessions')
-    .select('id, open_at, scheduled_at, created_at, close_at, closed_at, is_active, target_user_ids');
-  if (e1) { console.warn('[kpi-lc-tahunan] sesi:', e1.message); return hasil; }
-  const sesi = ((sesiData ?? []) as SesiLC[]).filter(s => tahunSesi(s) === tahun);
-  if (!sesi.length) return hasil;
-
-  // Semua attempt di sesi tahun ini (bukan hanya milik anggota): dibutuhkan
-  // untuk tahu apakah sebuah sesi nonaktif pernah benar-benar dijalankan.
-  const { data: attData, error: e2 } = await supabase.from('lc_quiz_attempts')
-    .select('user_id, quiz_session_id, passed, grading_status')
-    .in('quiz_session_id', sesi.map(s => s.id)).eq('is_submitted', true);
-  if (e2) { console.warn('[kpi-lc-tahunan] attempt:', e2.message); return hasil; }
-  const attempts = (attData ?? []) as AttemptLC[];
-
-  const sekarang = new Date();
-  for (const id of userIds) hasil[id] = rekapLCTahunan(id, tahun, sesi, attempts, sekarang);
+  const { data, error } = await supabase.rpc('rekap_lc_tahunan', { p_user_ids: userIds, p_tahun: tahun });
+  if (error) { console.warn('[kpi-lc-tahunan] rekap:', error.message); return hasil; }
+  for (const r of (data ?? []) as { user_id: string; wajib: number; lulus: number; gagal: number; tidak_ikut: number }[]) {
+    hasil[r.user_id] = {
+      wajib: r.wajib, lulus: r.lulus, gagal: r.gagal, tidakIkut: r.tidak_ikut,
+      faktor: r.wajib ? r.lulus / r.wajib : 1,
+    };
+  }
   return hasil;
 }

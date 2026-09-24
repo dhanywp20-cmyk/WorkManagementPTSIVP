@@ -73,6 +73,22 @@ console.log('rekapLCTahunan');
   sama('gagal di tahun lain tidak ikut dihitung', [r.wajib, r.faktor], [1, 1]);
 }
 
+{
+  const S = [sesi('a', { allow_retake: true, is_active: true, close_at: '2026-12-01T00:00:00Z' })];
+  const r = rekapLCTahunan('u1', 2026, S, [att('u1', 'a', false)], SEKARANG);
+  sama('gagal di sesi yang masih buka & boleh retake -> belum final', r.wajib, 0);
+}
+{
+  const S = [sesi('a', { allow_retake: true })];
+  const r = rekapLCTahunan('u1', 2026, S, [att('u1', 'a', false)], SEKARANG);
+  sama('gagal & sesi sudah ditutup (walau boleh retake) -> gagal', [r.wajib, r.gagal], [1, 1]);
+}
+{
+  const S = [sesi('a', { target_user_ids: null })];
+  const r = rekapLCTahunan('u1', 2026, S, [att('u2', 'a', true)], SEKARANG);
+  sama('sesi target "semua" yang tidak diikuti -> tidak menghukum', r.wajib, 0);
+}
+
 console.log('hitungSkorKPI');
 function anggota(o: Partial<KPIMember> = {}): KPIMember {
   return { id: 'u1', name: 'A', team_type: 'T', jabatan: '', ticketsHandled: 10, ticketsSolved: 10, ticketsOverdue: 0,

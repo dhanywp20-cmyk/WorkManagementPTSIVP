@@ -85,9 +85,11 @@ export type SortKey = 'name' | 'tickets' | 'solved' | 'solveRate' | 'avgDays' | 
 export type SortDir = 'asc' | 'desc';
 
 /**
- * SATU-SATUNYA rumus skor KPI. Dulu rumus ini disalin di lima tempat
- * (simpan snapshot, kartu ringkas, popup detail, dashboard, ekspor) - dan
- * mengubah satu aturan berarti harus ingat mengubah kelimanya.
+ * Rumus skor KPI halaman KPI Team. Dulu disalin di empat tempat page.tsx
+ * (simpan snapshot, kartu ringkas, popup detail, daftar periode).
+ * Catatan: tabel "Ringkasan KPI Tim" di DashboardKPI.tsx masih punya
+ * salinannya sendiri, tetapi datanya (kpiTeam.members) tidak pernah diisi
+ * sehingga tabel itu tidak pernah tampil.
  *
  * finalKPI = KPI dasar (4 komponen berbobot) × faktor LC tahunan
  * (sesi Learning Center lulus ÷ sesi wajib di tahun itu).

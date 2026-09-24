@@ -17,11 +17,13 @@ export function PilihProject({ kecuali, onPilih, sibuk, placeholder = 'Cari proj
   useEffect(() => {
     if (!kata.trim()) { setHasil([]); return; }
     setMencari(true);
+    // `batal` membuang jawaban ketikan lama yang datang belakangan.
+    let batal = false;
     const t = setTimeout(async () => {
-      try { setHasil(await cariProjectUntukPilih(kata, kecuali)); }
-      finally { setMencari(false); }
+      try { const h = await cariProjectUntukPilih(kata, kecuali); if (!batal) setHasil(h); }
+      finally { if (!batal) setMencari(false); }
     }, 300);
-    return () => clearTimeout(t);
+    return () => { batal = true; clearTimeout(t); };
   }, [kata, kecuali]);
 
   return (

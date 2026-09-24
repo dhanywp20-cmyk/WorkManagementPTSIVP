@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Modal, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import {
   ambilAntrean, ambilStatistikMapping, saranProject, petakanKeProject,
-  abaikanRecord, buatProjectDariGrup, autoPetakanNamaPersis,
+  abaikanRecord, buatProjectDariGrup, cariProjectUntukPilih,
   type GrupAntrean, type SaranProject, type StatistikMapping, type ModulTerpeta,
 } from '@/lib/summary-project';
-import { supabase } from '@/lib/supabase';
 import { PanelDuplikat } from './PanelDuplikat';
 
 const MODUL_LABEL: Record<ModulTerpeta, { label: string; color: string }> = {
@@ -66,25 +65,28 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
 
   useEffect(() => { muat(); }, [muat]);
 
+  // Saran grup yang diklik lebih dulu bisa datang BELAKANGAN - tanpa penjaga
+  // ini saran grup lama tampil di bawah grup baru, dan satu klik memetakan
+  // record grup baru ke project yang salah.
+  const grupTerakhir = useRef<string | null>(null);
   const pilihGrup = async (g: GrupAntrean) => {
+    grupTerakhir.current = g.kunci;
     setAktif(g); setNamaBaru(g.nama); setCariManual(''); setHasilManual([]);
     setTerpilih(new Set(g.records.map(r => `${r.source_module}:${r.source_record_id}`)));
     setSaran([]);
-    setSaran(await saranProject(g.nama));
+    const hasil = await saranProject(g.nama);
+    if (grupTerakhir.current === g.kunci) setSaran(hasil);
   };
 
   // Cari project manual (nama/kode), untuk kasus saran trigram tidak menemukannya.
   useEffect(() => {
-    const kata = cariManual.replace(/[%,()*\\"]/g, ' ').trim();
-    if (!kata) { setHasilManual([]); return; }
+    if (!cariManual.trim()) { setHasilManual([]); return; }
+    let batal = false;
     const t = setTimeout(async () => {
-      const { data } = await supabase.from('projects')
-        .select('id, code, name, location, sales_name')
-        .or(`name.ilike.%${kata}%,code.ilike.%${kata}%`).neq('status', 'archived').limit(8);
-      setHasilManual(((data ?? []) as { id: string; code: string; name: string; location: string | null; sales_name: string | null }[])
-        .map(p => ({ project_id: p.id, code: p.code, name: p.name, location: p.location, sales_name: p.sales_name, skor: 0 })));
+      const h = await cariProjectUntukPilih(cariManual);
+      if (!batal) setHasilManual(h.slice(0, 8));
     }, 300);
-    return () => clearTimeout(t);
+    return () => { batal = true; clearTimeout(t); };
   }, [cariManual]);
 
   const recordTerpilih = () => (aktif?.records ?? [])
@@ -97,17 +99,6 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
       await aksi();
       setPesan(sukses); setAktif(null);
       await muat(); onBerubah();
-    } catch (e) {
-      setPesan(`Gagal: ${e instanceof Error ? e.message : String(e)}`);
-    } finally { setSibuk(false); }
-  };
-
-  const autoPetakan = async () => {
-    setSibuk(true); setPesan(null);
-    try {
-      const n = await autoPetakanNamaPersis(antrean, currentUserName);
-      setPesan(n ? `${n} record dipetakan otomatis (nama sama persis dengan project yang ada).` : 'Tidak ada nama yang sama persis dengan project yang sudah ada.');
-      if (n) { await muat(); onBerubah(); }
     } catch (e) {
       setPesan(`Gagal: ${e instanceof Error ? e.message : String(e)}`);
     } finally { setSibuk(false); }
@@ -171,11 +162,6 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
               <input aria-label="Saring antrean berdasarkan nama" value={filter} onChange={e => setFilter(e.target.value)}
                 placeholder="Saring nama..."
                 className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
-              <button type="button" onClick={autoPetakan} disabled={sibuk || memuat || !antrean.length}
-                title="Petakan grup yang namanya sama persis dengan satu project yang sudah ada"
-                className="px-3 py-2 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex-shrink-0">
-                ⚡ Auto nama persis
-              </button>
             </div>
             <div className="border border-gray-100 rounded-xl divide-y divide-gray-100 max-h-[55vh] overflow-y-auto">
               {memuat ? (
