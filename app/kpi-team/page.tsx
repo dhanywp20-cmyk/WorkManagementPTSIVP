@@ -10,8 +10,9 @@ import { notifyKPIAlert } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
-import { KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
+import { hitungSkorKPI, KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
 import { bacaPicPiket } from '@/app/picket-showroom/_components/shared';
+import { ambilRekapLCTahunan, REKAP_LC_KOSONG } from '@/lib/kpi-lc-tahunan';
 import { exportKPIExcel } from './_components/ekspor-kpi';
 import { DrillModal, ProgressBar } from './_components/DrillModal';
 
@@ -132,7 +133,8 @@ export default function KPITeamPage() {
     const mNames    = membersData.map((m: any) => m.full_name as string);
     const mIds      = membersData.map((m: any) => m.id as string);
 
-    const [ticketsR, actR, remR, lcR, piketR, formRevR, techNotesR] = await Promise.all([
+    // Tahun basis faktor LC = tahun akhir periode yang dilihat.
+    const [ticketsR, actR, remR, lcR, piketR, formRevR, techNotesR, rekapLC] = await Promise.all([
       supabase.from('tickets').select('id,assign_name,status,date,created_at')
         .in('assign_name', mNames).gte('created_at', start).lte('created_at', endFull),
       supabase.from('activity_logs').select('id,ticket_id,handler_name,created_at')
@@ -152,6 +154,7 @@ export default function KPITeamPage() {
       supabase.from('tech_notes').select('id,author_id,status,reviewed_at')
         .in('author_id', mIds).eq('status', 'approved')
         .gte('reviewed_at', start).lte('reviewed_at', endFull),
+      ambilRekapLCTahunan(mIds, new Date(end).getFullYear()),
     ]);
 
     const tickets  = (ticketsR.data  ?? []) as any[];
@@ -235,6 +238,7 @@ export default function KPITeamPage() {
         formReviewTotal, formReviewLowRating,
         techNotesApproved,
         monthlyTickets,
+        lcTahunan: rekapLC[uid] ?? REKAP_LC_KOSONG,
       };
     });
   }, []);
@@ -352,12 +356,7 @@ export default function KPITeamPage() {
     try {
       const _s = kpiSettings;
       const membersJson = kpiMembers.map(m => {
-        const lcFailedDyn = m.lcScores.filter(sc => sc < _s.lcMinScore).length;
-        const tickScore = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled, 1)) : 0;
-        const bastScore = m.formReviewTotal === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating / Math.max(m.formReviewTotal, 1));
-        const lcScore   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailedDyn / Math.max(m.lcAttempts, 1));
-        const rndScore  = m.techNotesApproved >= _s.rndTarget ? 1 : m.techNotesApproved / Math.max(_s.rndTarget, 1);
-        const finalKPI  = Math.round((_s.ticketOverdueWeight * tickScore + _s.bastWeight * bastScore + _s.lcWeight * lcScore + _s.rndWeight * rndScore) * 100);
+        const { tickScore, bastScore, lcScore, rndScore, finalKPI, kpiDasar, faktorLC } = hitungSkorKPI(m, _s);
         return {
           id: m.id, name: m.name, jabatan: m.jabatan, team_type: m.team_type,
           ticketsHandled: m.ticketsHandled, ticketsSolved: m.ticketsSolved, ticketsOverdue: m.ticketsOverdue,
@@ -365,6 +364,8 @@ export default function KPITeamPage() {
           formReviewTotal: m.formReviewTotal, formReviewLowRating: m.formReviewLowRating, techNotesApproved: m.techNotesApproved,
           tickScore: Math.round(tickScore * 100), bastScore: Math.round(bastScore * 100),
           lcScore: Math.round(lcScore * 100), rndScore: Math.round(rndScore * 100), finalKPI,
+          kpiDasar, faktorLC: Math.round(faktorLC * 1000) / 1000,
+          lcSesiWajib: m.lcTahunan?.wajib ?? 0, lcSesiLulus: m.lcTahunan?.lulus ?? 0,
         };
       });
       const endMonth = Math.min(kpiStartMonth + (kpiPeriodLen === '6m' ? 5 : 11), 12);
@@ -487,15 +488,7 @@ export default function KPITeamPage() {
   const kpiPeriodLabel = `${MN[kpiStartMonth - 1]}–${MN[kpiEndMonth - 1]} ${kpiYear}`;
   const kpiFiltered    = filterTeam === 'all' ? kpiMembers : kpiMembers.filter(m => m.team_type === filterTeam);
 
-  const calcKPI = (m: KPIMember) => {
-    const s = kpiSettings;
-    const lcFailed = m.lcScores.filter(sc => sc < s.lcMinScore).length;
-    const tickS = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled, 1)) : 0;
-    const bastS = m.formReviewTotal === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating / Math.max(m.formReviewTotal, 1));
-    const lcS   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailed / Math.max(m.lcAttempts, 1));
-    const rndS  = m.techNotesApproved >= s.rndTarget ? 1 : m.techNotesApproved / Math.max(s.rndTarget, 1);
-    return Math.round((s.ticketOverdueWeight * tickS + s.bastWeight * bastS + s.lcWeight * lcS + s.rndWeight * rndS) * 100);
-  };
+  const calcKPI = (m: KPIMember) => hitungSkorKPI(m, kpiSettings).finalKPI;
   const kpiScoreColor = (score: number, noData: boolean) =>
     noData ? '#94a3b8' : score >= 85 ? '#10b981' : score >= 70 ? '#3b82f6' : score >= 50 ? '#f59e0b' : '#ef4444';
   const kpiScoreLabel = (score: number, noData: boolean) =>
@@ -1271,12 +1264,8 @@ export default function KPITeamPage() {
         const member = kpiMembers.find(m => m.id === selectedKPIMember);
         if (!member) return null;
         const _s = kpiSettings;
-        const lcFailed = member.lcScores.filter(sc => sc < _s.lcMinScore).length;
-        const tickScore = member.ticketsHandled > 0 ? Math.max(0, 1 - member.ticketsOverdue / Math.max(member.ticketsHandled, 1)) : 0;
-        const bastScore = member.formReviewTotal === 0 ? 0 : member.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - member.formReviewLowRating / Math.max(member.formReviewTotal, 1));
-        const lcScore   = member.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailed / Math.max(member.lcAttempts, 1));
-        const rndScore  = member.techNotesApproved >= _s.rndTarget ? 1 : member.techNotesApproved / Math.max(_s.rndTarget, 1);
-        const finalKPI  = Math.round((_s.ticketOverdueWeight * tickScore + _s.bastWeight * bastScore + _s.lcWeight * lcScore + _s.rndWeight * rndScore) * 100);
+        const { lcFailed, tickScore, bastScore, lcScore, rndScore, finalKPI, kpiDasar, faktorLC, potonganLC } = hitungSkorKPI(member, _s);
+        const rekapLC = member.lcTahunan;
         const noData    = member.ticketsHandled === 0 && member.lcAttempts === 0 && member.techNotesApproved === 0;
         const c         = noData ? '#94a3b8' : finalKPI >= 85 ? '#10b981' : finalKPI >= 70 ? '#3b82f6' : finalKPI >= 50 ? '#f59e0b' : '#ef4444';
 
@@ -1323,6 +1312,29 @@ export default function KPITeamPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Potongan prorata Learning Center setahun - lib/kpi-lc-tahunan.ts */}
+                {rekapLC && rekapLC.wajib > 0 && (
+                  <div className="rounded-xl border px-3 py-2.5 flex items-center justify-between gap-3 flex-wrap"
+                    style={potonganLC > 0 ? { background: '#fef2f2', borderColor: '#fecaca' } : { background: '#f0fdf4', borderColor: '#bbf7d0' }}>
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: potonganLC > 0 ? '#b91c1c' : '#15803d' }}>
+                        🎓 Kelulusan Learning Center {kpiYear}
+                      </div>
+                      <div className="text-xs text-slate-600 mt-0.5">
+                        Lulus <b>{rekapLC.lulus}</b> dari <b>{rekapLC.wajib}</b> sesi
+                        {rekapLC.gagal > 0 && <> · {rekapLC.gagal} tidak lulus</>}
+                        {rekapLC.tidakIkut > 0 && <> · {rekapLC.tidakIkut} tidak dikerjakan</>}
+                      </div>
+                    </div>
+                    <div className="text-right text-xs">
+                      <div className="text-slate-500">KPI dasar <b className="text-slate-700">{kpiDasar}%</b> × {Math.round(faktorLC * 100)}%</div>
+                      <div className="font-black" style={{ color: potonganLC > 0 ? '#b91c1c' : '#15803d' }}>
+                        {potonganLC > 0 ? `−${potonganLC} poin` : 'Tanpa potongan'}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Auto platform data */}
                 <div>
