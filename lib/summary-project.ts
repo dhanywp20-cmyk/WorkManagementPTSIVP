@@ -1,15 +1,24 @@
 /**
- * summary-project.ts - data untuk menu "Summary Project".
+ * summary-project.ts - data untuk menu "Summary Project" (Project 360, fase 2).
  *
- * Menggabungkan riwayat 4 tabel (reminders/tickets/project_requests/
- * form_reviews) per NAMA project - platform ini tidak punya tabel master
- * "Project", jadi pengelompokannya murni by project_name yang dinormalisasi,
- * dengan pengecualian manual lewat project_summary_links (lihat migrasi
- * 013) untuk record yang label project_name-nya beda ketik/belum nyambung.
+ * Tulang punggungnya PEMETAAN YANG TERSIMPAN, bukan pencocokan nama:
+ *   - public.projects             master project (kode PRJ-0001, dst)
+ *   - public.project_source_links record reminders/tickets/project_requests/
+ *                                 form_reviews -> project_id (atau 'ignored')
+ *   - public.v_project_summary    jumlah aktivitas per project (security_invoker)
+ * Lihat supabase/migrations/014_project_360.sql.
  *
- * Scoping akses (siapa boleh lihat project siapa) memakai ulang
- * lib/project-scope.ts - SAMA PERSIS aturan yang sudah dipakai GlobalSearch,
- * bukan aturan baru.
+ * Nama project hanya dipakai sebagai SARAN di Mapping Center (RPC
+ * saran_project, trigram) - pengecekan data nyata menunjukkan dari 221 nama
+ * unik hanya segelintir yang sama persis antar modul, jadi menggabungkan
+ * otomatis by nama akan salah lebih sering daripada benar.
+ *
+ * Form Review sengaja tidak pernah dipetakan sendiri: ia selalu terikat ke
+ * satu reminder lewat reminder_id, jadi ikut project reminder-nya.
+ *
+ * Scoping akses memakai ulang lib/project-scope.ts - aturan yang sama dengan
+ * GlobalSearch, diterapkan ke daftar project (kolom sales_name/sales_division
+ * milik projects) dan ke setiap tabel sumber saat detail dibuka.
  */
 
 import { supabase } from './supabase';
@@ -18,7 +27,9 @@ import { hitungLingkupProject, filterLingkup, type LingkupProject } from './proj
 export { hitungLingkupProject };
 export type { LingkupProject };
 
-export type SourceTable = 'reminders' | 'tickets' | 'project_requests' | 'form_reviews';
+export type SourceModule = 'reminders' | 'tickets' | 'project_requests' | 'form_reviews';
+/** Modul yang dipetakan langsung di Mapping Center (form_reviews ikut reminder-nya). */
+export type ModulTerpeta = Exclude<SourceModule, 'form_reviews'>;
 
 export interface ReminderRingkas {
   id: string; project_name: string; category: string; mode_penyelesaian: string | null;
@@ -43,29 +54,23 @@ export interface DetailProject {
   tickets: TicketRingkas[];
   requests: RequestRingkas[];
   reviews: ReviewRingkas[];
+  /** `${module}:${record_id}` -> id baris project_source_links (untuk lepas link). */
+  linkId: Record<string, string>;
 }
 
+/** Satu baris v_project_summary. */
 export interface RingkasanProject {
-  /** Kunci pengelompokan - nama yang sudah dinormalisasi, JANGAN ditampilkan apa adanya. */
-  canonical: string;
-  /** Nama untuk ditampilkan ke user (casing/spasi asli, atau nama kanonik hasil link manual). */
-  display: string;
-  jumlah: { reminders: number; tickets: number; requests: number; reviews: number };
+  project_id: string; code: string; name: string;
+  customer: string | null; location: string | null;
+  sales_name: string | null; sales_division: string | null;
+  status: 'active' | 'done' | 'archived'; created_at: string;
+  schedule_count: number; ticket_count: number; design_count: number; review_count: number;
+  total_activity: number; last_activity: string | null;
 }
-
-interface OverrideRow { source_table: SourceTable; source_id: string; canonical_project_name: string }
 
 export function normalisasiNamaProject(s: string): string {
-  return (s || '').trim().toLowerCase().replace(/\s+/g, ' ');
-}
-
-async function ambilOverride(): Promise<OverrideRow[]> {
-  // Tabelnya kecil (isinya cuma pengecualian yang sengaja dibuat admin) -
-  // aman diambil utuh sekali per pemanggilan, tidak perlu paginasi.
-  const { data, error } = await supabase.from('project_summary_links')
-    .select('source_table, source_id, canonical_project_name');
-  if (error) { console.warn('[summary-project] gagal memuat override:', error.message); return []; }
-  return (data ?? []) as OverrideRow[];
+  // Harus sama persis dengan public.norm_nama_project() di basis data.
+  return (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
 /** `.or()` PostgREST untuk lingkup, atau tidak dipasang sama sekali bila `lingkup.semua`. */
@@ -77,151 +82,220 @@ function pasangLingkup<T extends { or: (s: string) => T }>(
   return filter ? q.or(filter) : q;
 }
 
-const KOLOM_JUMLAH: Record<SourceTable, keyof RingkasanProject['jumlah']> = {
-  reminders: 'reminders', tickets: 'tickets', project_requests: 'requests', form_reviews: 'reviews',
-};
+/** Karakter yang punya arti di sintaks .or()/ilike PostgREST dibuang dari kata kunci. */
+const bersihkanKataKunci = (q: string) => q.replace(/[%,()*\\"]/g, ' ').trim();
+
+// ── Daftar & detail ────────────────────────────────────────────────────────
 
 /**
- * Cari project by nama - dipakai search box halaman Summary Project.
- *
- * Query kosong -> "Project Terbaru" dari reminders (bukan kosong melompong).
+ * Daftar project dari v_project_summary. Query kosong -> aktivitas terbaru dulu.
  */
-export async function cariProject(q: string, lingkup: LingkupProject, limit = 15): Promise<RingkasanProject[]> {
-  const query = q.trim();
-  const overrides = await ambilOverride();
-  const overrideByKey = new Map(overrides.map(o => [`${o.source_table}:${o.source_id}`, o]));
+export async function cariProject(q: string, lingkup: LingkupProject, limit = 30): Promise<RingkasanProject[]> {
+  const kata = bersihkanKataKunci(q);
+  let query = supabase.from('v_project_summary').select('*')
+    .neq('status', 'archived')
+    .order('last_activity', { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (kata) query = query.or(`name.ilike.%${kata}%,code.ilike.%${kata}%,customer.ilike.%${kata}%,location.ilike.%${kata}%`);
+  query = pasangLingkup(query, lingkup, 'sales_name');
+  const { data, error } = await query;
+  if (error) { console.warn('[summary-project] gagal memuat daftar:', error.message); return []; }
+  return (data ?? []) as RingkasanProject[];
+}
 
-  type Kandidat = { table: SourceTable; id: string; project_name: string | null };
-  const kandidat: Kandidat[] = [];
-  const seen = new Set<string>();
-  const tambah = (table: SourceTable, id: string, project_name: string | null) => {
-    const key = `${table}:${id}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    kandidat.push({ table, id, project_name });
-  };
+const KOLOM_DETAIL: Record<SourceModule, string> = {
+  reminders: 'id, project_name, category, mode_penyelesaian, due_date, bast_date, status, assign_name, address',
+  tickets: 'id, project_name, issue_case, description, status, date, assign_name',
+  project_requests: 'id, project_name, status, requester_name, due_date, assigned_handler',
+  form_reviews: 'id, project_name, reminder_id, review_category, guest_fullname, grade_product_knowledge, grade_training_customer, grade_product_knowledge_bast',
+};
 
-  if (!query) {
-    // Project Terbaru: seed dari reminders yang paling baru jatuh temponya.
-    let qr = supabase.from('reminders').select('id, project_name, sales_name, sales_division')
-      .order('due_date', { ascending: false }).limit(limit * 4);
-    qr = pasangLingkup(qr, lingkup, 'sales_name');
-    const { data } = await qr;
-    (data ?? []).forEach((r: { id: string; project_name: string }) => tambah('reminders', r.id, r.project_name));
-  } else {
-    let qr = supabase.from('reminders').select('id, project_name, sales_name, sales_division')
-      .ilike('project_name', `%${query}%`).limit(30);
-    qr = pasangLingkup(qr, lingkup, 'sales_name');
-    let qt = supabase.from('tickets').select('id, project_name, sales_name, sales_division, created_by')
-      .ilike('project_name', `%${query}%`).limit(30);
-    qt = pasangLingkup(qt, lingkup, 'sales_name');
-    let qp = supabase.from('project_requests').select('id, project_name, sales_name, sales_division')
-      .ilike('project_name', `%${query}%`).limit(30);
-    qp = pasangLingkup(qp, lingkup, 'sales_name');
-    let qf = supabase.from('form_reviews').select('id, project_name, sales_name, sales_division')
-      .ilike('project_name', `%${query}%`).limit(30);
-    qf = pasangLingkup(qf, lingkup, 'sales_name');
-
-    const [rRes, tRes, pRes, fRes] = await Promise.all([qr, qt, qp, qf]);
-    (rRes.data ?? []).forEach((r: { id: string; project_name: string }) => tambah('reminders', r.id, r.project_name));
-    (tRes.data ?? []).forEach((r: { id: string; project_name: string }) => tambah('tickets', r.id, r.project_name));
-    (pRes.data ?? []).forEach((r: { id: string; project_name: string }) => tambah('project_requests', r.id, r.project_name));
-    (fRes.data ?? []).forEach((r: { id: string; project_name: string }) => tambah('form_reviews', r.id, r.project_name));
-
-    // Override yang nama kanoniknya cocok kata kunci - menutup kasus record
-    // yang project_name ASLI-nya tidak mengandung kata kunci sama sekali
-    // (justru itulah alasan record itu di-link manual).
-    const normQ = normalisasiNamaProject(query);
-    for (const o of overrides) {
-      if (normalisasiNamaProject(o.canonical_project_name).includes(normQ)) {
-        tambah(o.source_table, o.source_id, null);
-      }
-    }
+/** Seluruh riwayat satu project, dari record yang dipetakan ke project itu. */
+export async function ambilDetailProject(projectId: string, lingkup: LingkupProject): Promise<DetailProject> {
+  const { data: links } = await supabase.from('project_source_links')
+    .select('id, source_module, source_record_id').eq('project_id', projectId);
+  const linkId: Record<string, string> = {};
+  const ids: Record<SourceModule, string[]> = { reminders: [], tickets: [], project_requests: [], form_reviews: [] };
+  for (const l of (links ?? []) as { id: string; source_module: SourceModule; source_record_id: string }[]) {
+    ids[l.source_module].push(l.source_record_id);
+    linkId[`${l.source_module}:${l.source_record_id}`] = l.id;
   }
 
-  const map = new Map<string, RingkasanProject>();
-  for (const k of kandidat) {
-    const ov = overrideByKey.get(`${k.table}:${k.id}`);
-    const namaAsli = ov ? ov.canonical_project_name : (k.project_name ?? '');
-    const canonical = normalisasiNamaProject(namaAsli);
-    if (!canonical) continue;
-    const entry = map.get(canonical) ?? { canonical, display: namaAsli, jumlah: { reminders: 0, tickets: 0, requests: 0, reviews: 0 } };
-    entry.jumlah[KOLOM_JUMLAH[k.table]] += 1;
-    map.set(canonical, entry);
+  async function ambil<T>(modul: SourceModule, daftarId: string[]): Promise<T[]> {
+    if (!daftarId.length) return [];
+    let q = supabase.from(modul).select(KOLOM_DETAIL[modul]).in('id', daftarId);
+    if (modul !== 'form_reviews') q = q.or('is_deleted.is.null,is_deleted.eq.false');
+    q = pasangLingkup(q, lingkup, 'sales_name');
+    const { data } = await q;
+    return (data ?? []) as unknown as T[];
   }
-  return [...map.values()].sort((a, b) => a.display.localeCompare(b.display, 'id')).slice(0, limit);
+
+  const [reminders, tickets, requests, reviewsLangsung] = await Promise.all([
+    ambil<ReminderRingkas>('reminders', ids.reminders),
+    ambil<TicketRingkas>('tickets', ids.tickets),
+    ambil<RequestRingkas>('project_requests', ids.project_requests),
+    ambil<ReviewRingkas>('form_reviews', ids.form_reviews),
+  ]);
+
+  // Form Review ikut project reminder-nya.
+  const reviews = [...reviewsLangsung];
+  if (reminders.length) {
+    let q = supabase.from('form_reviews').select(KOLOM_DETAIL.form_reviews)
+      .in('reminder_id', reminders.map(r => r.id));
+    q = pasangLingkup(q, lingkup, 'sales_name');
+    const { data } = await q;
+    const dikenal = new Set(reviews.map(r => r.id));
+    for (const r of (data ?? []) as unknown as ReviewRingkas[]) if (!dikenal.has(r.id)) reviews.push(r);
+  }
+
+  return { reminders, tickets, requests, reviews, linkId };
+}
+
+// ── Mapping Center (admin) ─────────────────────────────────────────────────
+
+export interface RecordBelumTerpeta {
+  source_module: ModulTerpeta; source_record_id: string;
+  project_name: string; info: string; tanggal: string | null;
+}
+
+/** Record yang belum terpeta, dikelompokkan per nama yang dinormalisasi. */
+export interface GrupAntrean {
+  kunci: string; nama: string; records: RecordBelumTerpeta[];
+}
+
+export interface SaranProject {
+  project_id: string; code: string; name: string;
+  location: string | null; sales_name: string | null; skor: number;
+}
+
+export interface StatistikMapping {
+  auto_mapped: number; manual_mapped: number; diabaikan: number;
+  belum_terpeta: number; total_project: number;
+}
+
+export async function ambilStatistikMapping(): Promise<StatistikMapping | null> {
+  const { data, error } = await supabase.rpc('ringkasan_mapping');
+  if (error) { console.warn('[summary-project] ringkasan_mapping:', error.message); return null; }
+  const row = (Array.isArray(data) ? data[0] : data) as StatistikMapping | undefined;
+  return row ?? null;
+}
+
+export async function ambilAntrean(limit = 500): Promise<GrupAntrean[]> {
+  const { data, error } = await supabase.rpc('record_belum_terpeta', { p_limit: limit });
+  if (error) throw new Error(error.message);
+  const grup = new Map<string, GrupAntrean>();
+  for (const r of (data ?? []) as RecordBelumTerpeta[]) {
+    const kunci = normalisasiNamaProject(r.project_name);
+    const g = grup.get(kunci) ?? { kunci, nama: r.project_name.trim(), records: [] };
+    g.records.push(r);
+    grup.set(kunci, g);
+  }
+  // Grup terbesar dulu: satu keputusan di sana membereskan paling banyak record.
+  return [...grup.values()].sort((a, b) => b.records.length - a.records.length || a.nama.localeCompare(b.nama, 'id'));
+}
+
+export async function saranProject(nama: string, limit = 5): Promise<SaranProject[]> {
+  const { data, error } = await supabase.rpc('saran_project', { p_nama: nama, p_limit: limit });
+  if (error) { console.warn('[summary-project] saran_project:', error.message); return []; }
+  return (data ?? []) as SaranProject[];
+}
+
+type RecordKunci = Pick<RecordBelumTerpeta, 'source_module' | 'source_record_id'>;
+
+async function simpanLinks(
+  records: RecordKunci[], projectId: string | null,
+  jenis: 'auto' | 'manual' | 'ignored', oleh: string, alasan: string,
+): Promise<void> {
+  if (!records.length) return;
+  const { error } = await supabase.from('project_source_links').upsert(
+    records.map(r => ({
+      source_module: r.source_module, source_record_id: r.source_record_id,
+      project_id: projectId, mapping_type: jenis,
+      confidence: jenis === 'auto' ? 1 : null, match_reason: alasan,
+      mapped_by: oleh, mapped_at: new Date().toISOString(),
+    })),
+    { onConflict: 'source_module,source_record_id' },
+  );
+  if (error) throw new Error(error.message);
+}
+
+export function petakanKeProject(records: RecordKunci[], projectId: string, oleh: string) {
+  return simpanLinks(records, projectId, 'manual', oleh, 'dipilih admin di Mapping Center');
+}
+
+export function abaikanRecord(records: RecordKunci[], oleh: string) {
+  return simpanLinks(records, null, 'ignored', oleh, 'ditandai tanpa project');
+}
+
+export async function lepasLink(linkId: string): Promise<void> {
+  const { error } = await supabase.from('project_source_links').delete().eq('id', linkId);
+  if (error) throw new Error(error.message);
 }
 
 /**
- * Ambil SELURUH riwayat 4 tabel untuk satu project.
- *
- * @param canonical    kunci hasil normalisasi (dari RingkasanProject.canonical)
- * @param namaUntukCari nama tampilan (RingkasanProject.display) - dipakai jaring
- *                       ilike awal supaya query tidak menyisir seluruh tabel.
+ * Buat project baru dari satu grup antrean lalu petakan seluruh record-nya.
+ * Sales & lokasi diambil dari record pertama yang punya isian - admin bisa
+ * mengubahnya nanti, tapi daftar project tanpa pemilik tidak akan terlihat
+ * oleh akun Sales (lihat filterLingkup).
  */
-export async function ambilDetailProject(
-  canonical: string, namaUntukCari: string, lingkup: LingkupProject,
-): Promise<DetailProject> {
-  const overrides = await ambilOverride();
-  const targetOf = (table: SourceTable, id: string) => {
-    const o = overrides.find(x => x.source_table === table && x.source_id === id);
-    return o ? normalisasiNamaProject(o.canonical_project_name) : null;
+export async function buatProjectDariGrup(
+  nama: string, records: RecordKunci[], oleh: string,
+): Promise<string> {
+  const pemilik = await tebakPemilik(records);
+  const { data, error } = await supabase.from('projects').insert({
+    name: nama.trim(), created_by: oleh, ...pemilik,
+  }).select('id').single();
+  if (error || !data) throw new Error(error?.message ?? 'Gagal membuat project');
+  await simpanLinks(records, data.id, 'manual', oleh, 'project dibuat dari grup nama');
+  return data.id as string;
+}
+
+async function tebakPemilik(records: RecordKunci[]) {
+  const kolomLokasi: Record<ModulTerpeta, string> = {
+    reminders: 'address', tickets: 'address', project_requests: 'project_location',
   };
-  const idsIkutLewatOverride = (table: SourceTable) => overrides
-    .filter(o => o.source_table === table && normalisasiNamaProject(o.canonical_project_name) === canonical)
-    .map(o => o.source_id);
-
-  async function ambil<T extends { id: string; project_name?: string | null }>(
-    table: SourceTable, kolom: string,
-  ): Promise<T[]> {
-    let q1 = supabase.from(table).select(kolom).ilike('project_name', `%${namaUntukCari}%`).limit(100);
-    q1 = pasangLingkup(q1, lingkup, 'sales_name');
-    const idsOverride = idsIkutLewatOverride(table);
-    const q2 = idsOverride.length
-      ? pasangLingkup(supabase.from(table).select(kolom).in('id', idsOverride), lingkup, 'sales_name')
-      : null;
-    const [r1, r2] = await Promise.all([q1, q2 ?? Promise.resolve({ data: [] as T[] })]);
-    const gabung = [...((r1.data ?? []) as unknown as T[]), ...((r2?.data ?? []) as unknown as T[])];
-    const seen = new Set<string>();
-    return gabung.filter(row => {
-      if (seen.has(row.id)) return false;
-      seen.add(row.id);
-      // Buang baris yang JUSTRU di-override ke project LAIN - jaring ilike
-      // di atas cuma cocok teks, override tetap berhak mengeluarkannya dari
-      // sini walau teksnya kebetulan mirip.
-      const target = targetOf(table, row.id);
-      if (target !== null && target !== canonical) return false;
-      if (target === null && normalisasiNamaProject(row.project_name ?? '') !== canonical) return false;
-      return true;
-    });
-  }
-
-  const [reminders, tickets, requests, reviews] = await Promise.all([
-    ambil<ReminderRingkas>('reminders',
-      'id, project_name, category, mode_penyelesaian, due_date, bast_date, status, assign_name, address'),
-    ambil<TicketRingkas>('tickets',
-      'id, project_name, issue_case, description, status, date, assign_name'),
-    ambil<RequestRingkas>('project_requests',
-      'id, project_name, status, requester_name, due_date, assigned_handler'),
-    ambil<ReviewRingkas>('form_reviews',
-      'id, project_name, reminder_id, review_category, guest_fullname, grade_product_knowledge, grade_training_customer, grade_product_knowledge_bast'),
-  ]);
-
-  // Form Review kadang project_name-nya kosong (kolom nullable) - tangkap
-  // lewat reminder_id yang SUDAH ketemu di seksi Request Schedule di atas,
-  // supaya review tetap tampil walau kolom project_name-nya tidak terisi.
-  const reminderIds = new Set(reminders.map(r => r.id));
-  if (reminderIds.size) {
-    let qExtra = supabase.from('form_reviews')
-      .select('id, project_name, reminder_id, review_category, guest_fullname, grade_product_knowledge, grade_training_customer, grade_product_knowledge_bast')
-      .in('reminder_id', [...reminderIds]);
-    qExtra = pasangLingkup(qExtra, lingkup, 'sales_name');
-    const { data } = await qExtra;
-    const known = new Set(reviews.map(r => r.id));
-    for (const row of (data ?? []) as unknown as ReviewRingkas[]) {
-      if (!known.has(row.id)) { reviews.push(row); known.add(row.id); }
+  for (const modul of ['reminders', 'project_requests', 'tickets'] as ModulTerpeta[]) {
+    const idModul = records.filter(r => r.source_module === modul).map(r => r.source_record_id);
+    if (!idModul.length) continue;
+    const { data } = await supabase.from(modul)
+      .select(`sales_name, sales_division, ${kolomLokasi[modul]}`).in('id', idModul).limit(20);
+    const baris = ((data ?? []) as unknown as Record<string, string | null>[]).find(b => b.sales_name);
+    if (baris) {
+      return {
+        sales_name: baris.sales_name, sales_division: baris.sales_division ?? null,
+        location: baris[kolomLokasi[modul]] ?? null,
+      };
     }
   }
+  return {};
+}
 
-  return { reminders, tickets, requests, reviews };
+/**
+ * Petakan otomatis grup yang namanya PERSIS sama (setelah normalisasi) dengan
+ * satu project yang sudah ada. Nama yang cocok ke lebih dari satu project
+ * dilewati - itu keputusan admin, bukan tebakan.
+ */
+export async function autoPetakanNamaPersis(antrean: GrupAntrean[], oleh: string): Promise<number> {
+  const { data } = await supabase.from('projects').select('id, name').neq('status', 'archived');
+  const byNama = new Map<string, string[]>();
+  for (const p of (data ?? []) as { id: string; name: string }[]) {
+    const k = normalisasiNamaProject(p.name);
+    byNama.set(k, [...(byNama.get(k) ?? []), p.id]);
+  }
+  let jumlah = 0;
+  for (const g of antrean) {
+    const cocok = byNama.get(g.kunci);
+    if (cocok?.length !== 1) continue;
+    await simpanLinks(g.records, cocok[0], 'auto', oleh, 'nama project sama persis');
+    jumlah += g.records.length;
+  }
+  return jumlah;
+}
+
+export async function ubahProject(
+  id: string, isian: Partial<Pick<RingkasanProject, 'name' | 'customer' | 'location' | 'sales_name' | 'sales_division' | 'status'>>,
+): Promise<void> {
+  const { error } = await supabase.from('projects')
+    .update({ ...isian, updated_at: new Date().toISOString() }).eq('id', id);
+  if (error) throw new Error(error.message);
 }
