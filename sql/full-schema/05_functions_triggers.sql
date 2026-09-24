@@ -1089,3 +1089,94 @@ CREATE TRIGGER on_ticket_assigned AFTER INSERT OR UPDATE ON public.tickets FOR E
 CREATE TRIGGER update_tickets_updated_at BEFORE UPDATE ON public.tickets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER trg_user_credentials_updated BEFORE UPDATE ON public.user_credentials FOR EACH ROW EXECUTE FUNCTION update_user_credentials_timestamp();
 CREATE TRIGGER trg_guard_users_privileged BEFORE INSERT OR UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION guard_users_privileged_columns();
+
+-- ── Project 360: view ringkasan + RPC Mapping Center ─────────────────────
+-- Cerminan supabase/migrations/014_project_360.sql. Butuh extension pg_trgm.
+--
+-- security_invoker WAJIB di view ini: tanpa itu view berjalan sebagai
+-- pemiliknya dan RLS tabel sumber dilewati - view berubah jadi pintu belakang
+-- kebocoran data lintas divisi.
+
+CREATE OR REPLACE FUNCTION public.norm_nama_project(t text)
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT lower(btrim(regexp_replace(coalesce(t,''), '\s+', ' ', 'g'))) $$;
+
+CREATE OR REPLACE VIEW public.v_project_summary WITH (security_invoker = true) AS
+SELECT p.id AS project_id, p.code, p.name, p.customer, p.location,
+       p.sales_name, p.sales_division, p.status, p.created_at,
+       COALESCE(s.n,0) AS schedule_count,
+       COALESCE(t.n,0) AS ticket_count,
+       COALESCE(d.n,0) AS design_count,
+       COALESCE(f.n,0) AS review_count,
+       COALESCE(s.n,0) + COALESCE(t.n,0) + COALESCE(d.n,0) + COALESCE(f.n,0) AS total_activity,
+       GREATEST(s.last_at, t.last_at, d.last_at, f.last_at) AS last_activity
+FROM public.projects p
+LEFT JOIN (SELECT l.project_id, count(*) n, max(r.due_date) last_at
+           FROM public.project_source_links l JOIN public.reminders r ON r.id = l.source_record_id
+           WHERE l.source_module='reminders' AND COALESCE(r.is_deleted,false)=false
+           GROUP BY l.project_id) s ON s.project_id = p.id
+LEFT JOIN (SELECT l.project_id, count(*) n, max(t2.date) last_at
+           FROM public.project_source_links l JOIN public.tickets t2 ON t2.id = l.source_record_id
+           WHERE l.source_module='tickets' AND COALESCE(t2.is_deleted,false)=false
+           GROUP BY l.project_id) t ON t.project_id = p.id
+LEFT JOIN (SELECT l.project_id, count(*) n, max(d2.created_at::date) last_at
+           FROM public.project_source_links l JOIN public.project_requests d2 ON d2.id = l.source_record_id
+           WHERE l.source_module='project_requests' AND COALESCE(d2.is_deleted,false)=false
+           GROUP BY l.project_id) d ON d.project_id = p.id
+LEFT JOIN (SELECT l.project_id, count(*) n, max(f2.created_at::date) last_at
+           FROM public.project_source_links l JOIN public.form_reviews f2 ON f2.id = l.source_record_id
+           WHERE l.source_module='form_reviews'
+           GROUP BY l.project_id) f ON f.project_id = p.id;
+
+CREATE OR REPLACE FUNCTION public.saran_project(p_nama text, p_limit int DEFAULT 5)
+RETURNS TABLE (project_id uuid, code text, name text, location text, sales_name text, skor real)
+LANGUAGE sql STABLE AS
+$$
+  SELECT p.id, p.code, p.name, p.location, p.sales_name,
+         similarity(public.norm_nama_project(p.name), public.norm_nama_project(p_nama)) AS skor
+  FROM public.projects p
+  WHERE similarity(public.norm_nama_project(p.name), public.norm_nama_project(p_nama)) > 0.28
+  ORDER BY skor DESC, p.name
+  LIMIT greatest(1, least(p_limit, 20));
+$$;
+
+-- form_reviews sengaja tidak ikut antrean: ia selalu terikat ke satu reminder
+-- lewat reminder_id, jadi mengikuti pemetaan reminder-nya.
+CREATE OR REPLACE FUNCTION public.record_belum_terpeta(p_limit int DEFAULT 200)
+RETURNS TABLE (source_module text, source_record_id uuid, project_name text, info text, tanggal date)
+LANGUAGE sql STABLE AS
+$$
+  (SELECT 'reminders'::text, r.id, r.project_name,
+          concat_ws(' · ', nullif(r.sales_name,''), nullif(r.address,''), nullif(r.category,'')), r.due_date
+   FROM public.reminders r
+   WHERE COALESCE(r.is_deleted,false)=false AND btrim(COALESCE(r.project_name,'')) <> ''
+     AND NOT EXISTS (SELECT 1 FROM public.project_source_links l
+                     WHERE l.source_module='reminders' AND l.source_record_id=r.id))
+  UNION ALL
+  (SELECT 'tickets', t.id, t.project_name,
+          concat_ws(' · ', nullif(t.issue_case,''), nullif(t.assign_name,''), nullif(t.address,'')), t.date
+   FROM public.tickets t
+   WHERE COALESCE(t.is_deleted,false)=false AND btrim(COALESCE(t.project_name,'')) <> ''
+     AND NOT EXISTS (SELECT 1 FROM public.project_source_links l
+                     WHERE l.source_module='tickets' AND l.source_record_id=t.id))
+  UNION ALL
+  (SELECT 'project_requests', d.id, d.project_name,
+          concat_ws(' · ', nullif(d.requester_name,''), nullif(d.sales_name,''), nullif(d.project_location,'')), d.created_at::date
+   FROM public.project_requests d
+   WHERE COALESCE(d.is_deleted,false)=false AND btrim(COALESCE(d.project_name,'')) <> ''
+     AND NOT EXISTS (SELECT 1 FROM public.project_source_links l
+                     WHERE l.source_module='project_requests' AND l.source_record_id=d.id))
+  ORDER BY 5 DESC NULLS LAST
+  LIMIT greatest(1, least(p_limit, 500));
+$$;
+
+CREATE OR REPLACE FUNCTION public.ringkasan_mapping()
+RETURNS TABLE (auto_mapped bigint, manual_mapped bigint, diabaikan bigint, belum_terpeta bigint, total_project bigint)
+LANGUAGE sql STABLE AS
+$$
+  SELECT (SELECT count(*) FROM public.project_source_links WHERE mapping_type='auto'),
+         (SELECT count(*) FROM public.project_source_links WHERE mapping_type='manual'),
+         (SELECT count(*) FROM public.project_source_links WHERE mapping_type='ignored'),
+         (SELECT count(*) FROM public.record_belum_terpeta(500)),
+         (SELECT count(*) FROM public.projects);
+$$;

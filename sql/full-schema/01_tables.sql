@@ -671,18 +671,44 @@ CREATE TABLE public.project_messages (
   created_at timestamp with time zone DEFAULT now()
 );
 
--- Menu "Summary Project" - override manual per record (bukan per-string)
--- untuk mengaitkan reminders/tickets/project_requests/form_reviews ke nama
--- project kanonik, dipakai saat project_name-nya beda ketik/belum nyambung
--- dari pengelompokan otomatis. Lihat lib/summary-project.ts.
-CREATE TABLE public.project_summary_links (
+-- Menu "Summary Project" (Project 360) - master project sungguhan. Sebelum ini
+-- "project" hanya string project_name yang diulang di tiap tabel, sehingga satu
+-- project tidak punya identitas yang bisa dipegang. Lihat lib/summary-project.ts
+-- dan supabase/migrations/014_project_360.sql.
+CREATE SEQUENCE public.projects_code_seq;
+CREATE TABLE public.projects (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  source_table text NOT NULL CHECK (source_table IN ('reminders','tickets','project_requests','form_reviews')),
-  source_id uuid NOT NULL,
-  canonical_project_name text NOT NULL,
-  linked_by text,
-  linked_at timestamp with time zone NOT NULL DEFAULT now(),
-  UNIQUE (source_table, source_id)
+  code text NOT NULL DEFAULT ('PRJ-' || lpad(nextval('public.projects_code_seq')::text, 4, '0')),
+  name text NOT NULL,
+  customer text,
+  location text,
+  sales_name text,
+  sales_division text,
+  status text NOT NULL DEFAULT 'active'::text CHECK (status IN ('active','done','archived')),
+  notes text,
+  created_by text,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
+-- Peta satu record modul -> satu project. Pemetaan yang TERSIMPAN inilah tulang
+-- punggungnya, bukan kecocokan nama: di basis data ini dari 221 nama unik hanya
+-- 13/5/1 yang sama persis antar modul, dan hanya 2 dari 92 ticket yang menyimpan
+-- reminder_id. mapping_type 'ignored' = sudah diputuskan memang tidak punya
+-- project, dibedakan dari "belum disentuh" supaya antrean Mapping Center habis.
+CREATE TABLE public.project_source_links (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  source_module text NOT NULL CHECK (source_module IN ('reminders','tickets','project_requests','form_reviews')),
+  source_record_id uuid NOT NULL,
+  project_id uuid REFERENCES public.projects(id) ON DELETE CASCADE,
+  mapping_type text NOT NULL DEFAULT 'manual'::text CHECK (mapping_type IN ('auto','manual','ignored')),
+  confidence numeric,
+  match_reason text,
+  notes text,
+  mapped_by text,
+  mapped_at timestamp with time zone NOT NULL DEFAULT now(),
+  UNIQUE (source_module, source_record_id),
+  CONSTRAINT psl_project_wajib_chk CHECK (mapping_type = 'ignored' OR project_id IS NOT NULL)
 );
 
 CREATE TABLE public.project_requests (

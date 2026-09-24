@@ -102,3 +102,11 @@ CREATE INDEX idx_user_sessions_user ON public.user_sessions USING btree (user_id
 CREATE INDEX idx_users_atasan_id ON public.users USING btree (atasan_id);
 CREATE INDEX idx_users_role ON public.users USING btree (role);
 CREATE INDEX idx_users_username ON public.users USING btree (username);
+
+-- Project 360 (lihat supabase/migrations/014_project_360.sql).
+-- Butuh extension pg_trgm untuk indeks gin_trgm_ops.
+CREATE UNIQUE INDEX projects_code_key ON public.projects USING btree (code);
+CREATE INDEX projects_norm_name_idx ON public.projects USING btree (public.norm_nama_project(name));
+CREATE INDEX projects_name_trgm_idx ON public.projects USING gin (name gin_trgm_ops);
+CREATE INDEX projects_sales_division_idx ON public.projects USING btree (sales_division);
+CREATE INDEX psl_project_id_idx ON public.project_source_links USING btree (project_id);
