@@ -400,7 +400,7 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
 
         // Base: selalu ambil milik sendiri + yang di-assign via ivp_assignee
         // Ini cover semua kasus termasuk Hendri yang request-nya di-assign ke dia
-        const [{ data: ownReqs }, { data: ivpAssignedReqs }] = await Promise.all([
+        const [{ data: ownReqs }, { data: ivpAssignedReqs }, { data: atasNamaReqs }] = await Promise.all([
           excludeDone(
             supabase.from('project_requests')
               .select('id, project_name, status, sales_name, created_at, sales_division, requester_id, ivp_assignee')
@@ -411,11 +411,22 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
               .select('id, project_name, status, sales_name, created_at, sales_division, requester_id, ivp_assignee')
               .eq('ivp_assignee', currentUser.full_name)
           ).order('created_at', { ascending: false }).limit(50),
+          // Request yang DIBUATKAN admin/PTS atas nama Sales ini: requester_id-nya si
+          // pembuat, Sales-nya hanya tercatat di sales_name. Tanpa query ini lonceng
+          // Require Sales itu tetap 0 padahal ada request atas namanya. Dijaga supaya
+          // nama kosong tidak mencocokkan baris ber-sales_name kosong.
+          currentUser.full_name
+            ? excludeDone(
+              supabase.from('project_requests')
+                .select('id, project_name, status, sales_name, created_at, sales_division, requester_id, ivp_assignee')
+                .eq('sales_name', currentUser.full_name)
+            ).order('created_at', { ascending: false }).limit(50)
+            : Promise.resolve({ data: [] as any[] }),
         ]);
 
-        // Mulai dengan set base (milik sendiri + di-assign ke user ini)
+        // Mulai dengan set base (milik sendiri + di-assign ke user ini + diatasnamakan user ini)
         const baseMap = new Map<string, any>();
-        [...(ownReqs ?? []), ...(ivpAssignedReqs ?? [])].forEach((r: any) => {
+        [...(ownReqs ?? []), ...(ivpAssignedReqs ?? []), ...(atasNamaReqs ?? [])].forEach((r: any) => {
           if (!baseMap.has(r.id)) baseMap.set(r.id, r);
         });
 
@@ -457,10 +468,21 @@ export function NotificationBar({ currentUser, onNavigate }: NotificationBarProp
           if (!supDivsN.includes(selfDivN)) supDivsN.push(selfDivN);
 
           const { data: allGuestsN } = await supabase.from('users')
-            .select('id, jabatan, sales_division').in('role', ['guest', 'sales']);
-          const subIdsN = (allGuestsN ?? [])
-            .filter((u: any) => (TIER_MAP[(u.jabatan as string) ?? ''] ?? 0) < selfTierN && supDivsN.includes(u.sales_division))
-            .map((u: any) => u.id as string);
+            .select('id, full_name, jabatan, sales_division').in('role', ['guest', 'sales']);
+          const bawahanN = (allGuestsN ?? [])
+            .filter((u: any) => (TIER_MAP[(u.jabatan as string) ?? ''] ?? 0) < selfTierN && supDivsN.includes(u.sales_division));
+          const subIdsN = bawahanN.map((u: any) => u.id as string);
+          const subNamesN = bawahanN.map((u: any) => u.full_name as string).filter(Boolean);
+
+          // Request bawahan yang dibuatkan orang lain atas nama mereka (sales_name).
+          if (subNamesN.length > 0) {
+            const { data: subAtasNama } = await excludeDone(
+              supabase.from('project_requests')
+                .select('id, project_name, status, sales_name, created_at, sales_division, requester_id, ivp_assignee')
+                .in('sales_name', subNamesN)
+            ).order('created_at', { ascending: false }).limit(50);
+            (subAtasNama ?? []).forEach((r: any) => { if (!baseMap.has(r.id)) baseMap.set(r.id, r); });
+          }
 
           if (subIdsN.length > 0) {
             const { data: subReqs } = await excludeDone(
