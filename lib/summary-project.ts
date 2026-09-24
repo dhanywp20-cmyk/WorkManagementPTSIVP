@@ -88,19 +88,31 @@ const bersihkanKataKunci = (q: string) => q.replace(/[%,()*\\"]/g, ' ').trim();
 // ── Daftar & detail ────────────────────────────────────────────────────────
 
 /**
- * Daftar project dari v_project_summary. Query kosong -> aktivitas terbaru dulu.
+ * Seluruh project yang boleh dilihat user (v_project_summary), aktivitas
+ * terbaru dulu. Penyaringan & paginasi dilakukan di halaman - jumlahnya
+ * ratusan, bukan ribuan, jadi satu kali ambil lebih cepat dirasakan
+ * daripada query ulang tiap ketikan.
  */
-export async function cariProject(q: string, lingkup: LingkupProject, limit = 30): Promise<RingkasanProject[]> {
-  const kata = bersihkanKataKunci(q);
+export async function daftarProject(lingkup: LingkupProject): Promise<RingkasanProject[]> {
   let query = supabase.from('v_project_summary').select('*')
-    .neq('status', 'archived')
     .order('last_activity', { ascending: false, nullsFirst: false })
-    .limit(limit);
-  if (kata) query = query.or(`name.ilike.%${kata}%,code.ilike.%${kata}%,customer.ilike.%${kata}%,location.ilike.%${kata}%`);
+    .limit(3000);
   query = pasangLingkup(query, lingkup, 'sales_name');
   const { data, error } = await query;
-  if (error) { console.warn('[summary-project] gagal memuat daftar:', error.message); return []; }
+  if (error) throw new Error(error.message);
   return (data ?? []) as RingkasanProject[];
+}
+
+/** Cari project untuk dipilih (pindah record / gabung project / Mapping Center). */
+export async function cariProjectUntukPilih(kata: string, kecuali?: string): Promise<SaranProject[]> {
+  const k = bersihkanKataKunci(kata);
+  if (!k) return [];
+  let q = supabase.from('projects').select('id, code, name, location, sales_name')
+    .or(`name.ilike.%${k}%,code.ilike.%${k}%`).neq('status', 'archived').order('name').limit(10);
+  if (kecuali) q = q.neq('id', kecuali);
+  const { data } = await q;
+  return ((data ?? []) as { id: string; code: string; name: string; location: string | null; sales_name: string | null }[])
+    .map(p => ({ project_id: p.id, code: p.code, name: p.name, location: p.location, sales_name: p.sales_name, skor: 0 }));
 }
 
 const KOLOM_DETAIL: Record<SourceModule, string> = {
@@ -225,6 +237,31 @@ export function petakanKeProject(records: RecordKunci[], projectId: string, oleh
 
 export function abaikanRecord(records: RecordKunci[], oleh: string) {
   return simpanLinks(records, null, 'ignored', oleh, 'ditandai tanpa project');
+}
+
+/** Pindahkan satu record ke project lain (koreksi pemetaan otomatis). */
+export async function pindahkanLink(linkId: string, projectId: string, oleh: string): Promise<void> {
+  const { error } = await supabase.from('project_source_links').update({
+    project_id: projectId, mapping_type: 'manual', confidence: null,
+    match_reason: 'dipindah admin', mapped_by: oleh, mapped_at: new Date().toISOString(),
+  }).eq('id', linkId);
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Gabungkan project duplikat (mis. beda ketik yang dibuat terpisah oleh
+ * pemetaan otomatis): semua record `asal` pindah ke `tujuan`, lalu `asal`
+ * dihapus. Record yang dipindah bertanda 'manual' supaya tidak dihitung
+ * ulang oleh trigger saat namanya diubah nanti.
+ */
+export async function gabungkanProject(asal: string, tujuan: string, oleh: string): Promise<void> {
+  const { error } = await supabase.from('project_source_links').update({
+    project_id: tujuan, mapping_type: 'manual', confidence: null,
+    match_reason: 'digabung dari project lain', mapped_by: oleh, mapped_at: new Date().toISOString(),
+  }).eq('project_id', asal);
+  if (error) throw new Error(error.message);
+  const { error: e2 } = await supabase.from('projects').delete().eq('id', asal);
+  if (e2) throw new Error(e2.message);
 }
 
 export async function lepasLink(linkId: string): Promise<void> {

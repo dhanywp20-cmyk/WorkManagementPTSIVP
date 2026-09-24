@@ -1,182 +1,59 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User } from '@/app/dashboard/_components/shared';
-import { Toast, PageHeader, ConfirmDialog, type ConfirmState, type Notif } from '@/components/shared';
 import {
-  hitungLingkupProject, cariProject, ambilDetailProject, ambilStatistikMapping, lepasLink, ubahProject,
-  type LingkupProject, type RingkasanProject, type DetailProject, type SourceModule,
+  Toast, PageHeader, StatCardGrid, EmptyState, ViewIconBtn, LoadingScreen,
+  MobileListCard, MobileCardBadge, Paginasi, usePaginasi, type Notif,
+} from '@/components/shared';
+import {
+  hitungLingkupProject, daftarProject, ambilStatistikMapping, normalisasiNamaProject,
+  type LingkupProject, type RingkasanProject,
 } from '@/lib/summary-project';
 import { ModalMappingCenter } from './_components/ModalMappingCenter';
+import { ModalDetailProject } from './_components/ModalDetailProject';
+import { TIPE_CFG, STATUS_PROJECT, STATUS_PROJECT_WARNA, fmtTgl, type AktivitasTipe } from './_components/tampilan';
 
-/*
-  Tema visual disamakan dengan modul lain yang sudah settle: PageHeader
-  bersama (komponen yang sama dipakai Reminder Schedule/Ticketing/Request
-  Design Project/Project Progress dkk - lihat components/shared/PageHeader.tsx),
-  background IVP_Background.png, dan kartu kaca buram rgba(255,255,255,0.97) +
-  backdrop-blur. Warna aksen tiap kategori aktivitas mengikuti warna
-  PageHeader modul ASLINYA persis, supaya "Buka Detail" terasa menyambung
-  ke modul yang dituju, bukan warna baru yang diputuskan sendiri di sini.
-*/
-const KARTU: React.CSSProperties = {
-  background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-  border: '1px solid rgba(200,200,200,0.6)',
+const THEME = { color: '#6366f1', colorLight: '#4f46e5' };
+const fontMono: CSSProperties = { fontFamily: "'JetBrains Mono', ui-monospace, monospace" };
+
+type FilterStatus = 'semua' | RingkasanProject['status'];
+type FilterTipe = 'semua' | AktivitasTipe;
+
+const KOLOM_JUMLAH: Record<AktivitasTipe, keyof RingkasanProject> = {
+  schedule: 'schedule_count', ticket: 'ticket_count', design: 'design_count', review: 'review_count',
 };
 
-type AktivitasTipe = 'schedule' | 'ticket' | 'design' | 'review';
-
-const TIPE_CFG: Record<AktivitasTipe, { label: string; color: string; bg: string; icon: string }> = {
-  schedule: { label: 'REQUEST SCHEDULE', color: '#0891b2', bg: '#ecfeff', icon: '🗓️' },
-  ticket:   { label: 'TROUBLESHOOTING',  color: '#dc2626', bg: '#fef2f2', icon: '🎫' },
-  design:   { label: 'DESIGN PROJECT',   color: '#7c3aed', bg: '#f5f3ff', icon: '🏗️' },
-  review:   { label: 'FORM REVIEW',      color: '#b45309', bg: '#fffbeb', icon: '⭐' },
-};
-
-const STATUS_PROJECT: Record<RingkasanProject['status'], string> = {
-  active: 'Aktif', done: 'Selesai', archived: 'Diarsipkan',
-};
-
-interface Aktivitas {
-  id: string; tipe: AktivitasTipe; tanggal: string | null;
-  judul: string; meta: string; status?: string; href: string;
-  /** Id baris project_source_links bila record ini dipetakan langsung (bukan ikut reminder). */
-  linkId?: string;
-}
-
-const STATUS_WARNA: Record<string, string> = {
-  done: '#10b981', paid: '#10b981', approved: '#10b981', Solved: '#10b981', Done: '#10b981',
-  pending: '#f59e0b', Pending: '#f59e0b', processed: '#3b82f6',
-  cancelled: '#6b7280', rejected: '#ef4444', Rejected: '#ef4444',
-};
-const warnaStatus = (s: string): string => STATUS_WARNA[s] ?? '#3b82f6';
-
-function fmtTgl(s: string | null): string {
-  if (!s) return '-';
-  return new Date(s).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-/** Gabungkan 4 sumber jadi SATU linimasa kronologis - lebih enak dibaca daripada 4 kotak terpisah. */
-function bangunLinimasa(detail: DetailProject): Aktivitas[] {
-  const list: Aktivitas[] = [];
-  const link = (m: SourceModule, id: string) => detail.linkId[`${m}:${id}`];
-  detail.reminders.forEach(r => list.push({
-    id: `r-${r.id}`, tipe: 'schedule', tanggal: r.due_date,
-    judul: `${r.category} · ${r.mode_penyelesaian === 'remote' ? 'Remote' : 'Onsite'}`,
-    meta: `${r.assign_name}${r.address ? ' · ' + r.address : ''}`,
-    status: r.status, href: `/reminder-schedule?open=${r.id}`, linkId: link('reminders', r.id),
-  }));
-  detail.tickets.forEach(t => list.push({
-    id: `t-${t.id}`, tipe: 'ticket', tanggal: t.date,
-    judul: t.issue_case, meta: t.assign_name,
-    status: t.status, href: `/ticketing?open=${t.id}`, linkId: link('tickets', t.id),
-  }));
-  detail.requests.forEach(r => list.push({
-    id: `p-${r.id}`, tipe: 'design', tanggal: r.due_date,
-    judul: r.requester_name, meta: r.assigned_handler || 'Belum ada handler',
-    status: r.status, href: `/form-require-project?open=${r.id}`, linkId: link('project_requests', r.id),
-  }));
-  detail.reviews.forEach(r => list.push({
-    id: `f-${r.id}`, tipe: 'review', tanggal: null,
-    judul: r.review_category || 'Review', meta: r.guest_fullname,
-    href: `/form-review?open=${r.id}`, linkId: link('form_reviews', r.id),
-  }));
-  // Terbaru dulu. Yang tanpa tanggal (Form Review) diletakkan paling akhir,
-  // bukan ikut "menang" di puncak lewat perbandingan string kosong.
-  return list.sort((a, b) => {
-    if (!a.tanggal && !b.tanggal) return 0;
-    if (!a.tanggal) return 1;
-    if (!b.tanggal) return -1;
-    return b.tanggal.localeCompare(a.tanggal);
-  });
-}
-
-function JumlahChip({ p, kecil }: { p: RingkasanProject; kecil?: boolean }) {
-  const isi: [AktivitasTipe, number, string][] = [
-    ['schedule', p.schedule_count, 'Schedule'], ['ticket', p.ticket_count, 'Ticket'],
-    ['design', p.design_count, 'Design'], ['review', p.review_count, 'Review'],
-  ];
+function Jumlah({ n, tipe }: { n: number; tipe: AktivitasTipe }) {
+  if (!n) return <span className="text-[11px] text-gray-300">—</span>;
   return (
-    <span className="flex items-center gap-1 flex-shrink-0 flex-wrap">
-      {isi.filter(([, n]) => n > 0).map(([t, n, label]) => (
-        <span key={t} className={kecil ? 'text-[10px] font-bold px-1.5 py-0.5 rounded' : 'text-[11px] font-bold px-2.5 py-1 rounded-full'}
-          style={{ background: TIPE_CFG[t].bg, color: TIPE_CFG[t].color }}>
-          {TIPE_CFG[t].icon} {n}{kecil ? '' : ` ${label}`}
-        </span>
-      ))}
-    </span>
+    <span className="inline-flex min-w-[28px] justify-center px-1.5 py-0.5 rounded text-[11px] font-bold tabular-nums"
+      style={{ background: TIPE_CFG[tipe].bg, color: TIPE_CFG[tipe].color }}>{n}</span>
   );
 }
-
-function Linimasa({ data, onLepas }: { data: Aktivitas[]; onLepas?: (a: Aktivitas) => void }) {
-  if (data.length === 0) {
-    return (
-      <div className="rounded-2xl shadow-sm p-8 text-center text-sm text-gray-400" style={KARTU}>
-        Belum ada aktivitas tercatat untuk project ini.
-      </div>
-    );
-  }
-  return (
-    <div className="rounded-2xl shadow-sm p-5" style={KARTU}>
-      <h3 className="text-sm font-black text-gray-700 mb-4">📌 Linimasa Aktivitas</h3>
-      <div className="relative pl-5">
-        <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-gray-200" aria-hidden="true" />
-        <div className="space-y-5">
-          {data.map(a => {
-            const cfg = TIPE_CFG[a.tipe];
-            return (
-              <div key={a.id} className="relative">
-                <span className="absolute -left-5 top-1 w-3 h-3 rounded-full border-2 border-white shadow-sm"
-                  style={{ background: cfg.color }} aria-hidden="true" />
-                <p className="text-[10px] font-black tracking-wider" style={{ color: cfg.color }}>{cfg.icon} {cfg.label}</p>
-                <p className="text-sm font-bold text-gray-800 mt-0.5">{a.judul}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">{fmtTgl(a.tanggal)} · {a.meta}</p>
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  {a.status && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: `${warnaStatus(a.status)}18`, color: warnaStatus(a.status) }}>
-                      {a.status}
-                    </span>
-                  )}
-                  <a href={a.href} className="text-[11px] font-bold hover:underline" style={{ color: cfg.color }}>Buka Detail →</a>
-                  {onLepas && a.linkId && (
-                    <button type="button" onClick={() => onLepas(a)}
-                      className="text-[11px] font-bold text-gray-400 hover:text-red-500 hover:underline">Lepas dari project</button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Halaman utama
 
 export default function SummaryProjectPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [lingkup, setLingkup] = useState<LingkupProject | null>(null);
-  const [query, setQuery] = useState('');
-  const [hasilCari, setHasilCari] = useState<RingkasanProject[]>([]);
-  const [memuatHasil, setMemuatHasil] = useState(false);
-  const [dipilih, setDipilih] = useState<RingkasanProject | null>(null);
-  const [detail, setDetail] = useState<DetailProject | null>(null);
-  const [memuatDetail, setMemuatDetail] = useState(false);
+  const [daftar, setDaftar] = useState<RingkasanProject[]>([]);
+  const [memuat, setMemuat] = useState(true);
+  const [galat, setGalat] = useState<string | null>(null);
+  const [cari, setCari] = useState('');
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('active');
+  const [filterTipe, setFilterTipe] = useState<FilterTipe>('semua');
+  const [dipilihId, setDipilihId] = useState<string | null>(null);
   const [showMapping, setShowMapping] = useState(false);
   const [belumTerpeta, setBelumTerpeta] = useState<number | null>(null);
-  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
   const [toast, setToast] = useState<Notif | null>(null);
-  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const beritahu = (type: 'success' | 'error', msg: string) => {
+  const beritahu = useCallback((type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 3500);
-  };
+  }, []);
 
   // Hanya tampilan: penulisan ke projects/project_source_links dijaga RLS
-  // (psl_write/projects_write - admin/superadmin), bukan oleh tombol ini.
+  // (projects_write/psl_write - admin/superadmin), bukan oleh tombol ini.
   const isAdmin = ['admin', 'superadmin'].includes((currentUser?.role ?? '').toLowerCase());
 
   useEffect(() => {
@@ -195,169 +72,236 @@ export default function SummaryProjectPage() {
     hitungLingkupProject(currentUser).then(setLingkup);
   }, [currentUser]);
 
-  const jalankanCari = useCallback(async (q: string) => {
+  const muat = useCallback(async () => {
     if (!lingkup) return;
-    setMemuatHasil(true);
-    try { setHasilCari(await cariProject(q, lingkup)); }
-    finally { setMemuatHasil(false); }
-  }, [lingkup]);
-
-  // Aktivitas terbaru begitu lingkup siap, lalu debounced tiap query berubah.
-  useEffect(() => {
-    if (!lingkup) return;
-    if (debounce.current) clearTimeout(debounce.current);
-    debounce.current = setTimeout(() => jalankanCari(query), query ? 320 : 0);
-    return () => { if (debounce.current) clearTimeout(debounce.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, lingkup]);
-
-  const bukaProject = useCallback(async (p: RingkasanProject) => {
-    if (!lingkup) return;
-    setDipilih(p); setDetail(null); setMemuatDetail(true);
-    try { setDetail(await ambilDetailProject(p.project_id, lingkup)); }
-    finally { setMemuatDetail(false); }
-  }, [lingkup]);
-
-  const muatStatistik = useCallback(async () => {
-    const s = await ambilStatistikMapping();
-    setBelumTerpeta(s ? s.belum_terpeta : null);
-  }, []);
-
-  useEffect(() => { if (isAdmin) muatStatistik(); }, [isAdmin, muatStatistik]);
-
-  // Setelah pemetaan berubah, angka di kartu ikut berubah - jadi project yang
-  // sedang dibuka diambil ulang dari hasil pencarian terbaru.
-  const segarkan = useCallback(async () => {
-    if (!lingkup) return;
-    const hasil = await cariProject(query, lingkup);
-    setHasilCari(hasil);
-    if (isAdmin) muatStatistik();
-    if (dipilih) {
-      const baru = hasil.find(h => h.project_id === dipilih.project_id);
-      if (baru) bukaProject(baru); else { setDipilih(null); setDetail(null); }
+    setGalat(null);
+    try { setDaftar(await daftarProject(lingkup)); }
+    catch (e) { setGalat(e instanceof Error ? e.message : String(e)); }
+    finally { setMemuat(false); }
+    if (isAdmin) {
+      const s = await ambilStatistikMapping();
+      setBelumTerpeta(s ? s.belum_terpeta : null);
     }
-  }, [lingkup, query, isAdmin, muatStatistik, dipilih, bukaProject]);
+  }, [lingkup, isAdmin]);
 
-  const lepas = (a: Aktivitas) => setConfirmState({
-    message: 'Lepas record ini dari project?',
-    description: 'Record kembali ke antrean Mapping Center. Datanya sendiri tidak dihapus.',
-    danger: true, confirmLabel: 'Lepas',
-    onConfirm: async () => {
-      try { await lepasLink(a.linkId!); beritahu('success', 'Record dilepas dari project.'); await segarkan(); }
-      catch (e) { beritahu('error', `Gagal melepas: ${e instanceof Error ? e.message : String(e)}`); }
-    },
-  });
+  useEffect(() => { muat(); }, [muat]);
 
-  const gantiStatus = async (status: RingkasanProject['status']) => {
-    if (!dipilih) return;
-    try { await ubahProject(dipilih.project_id, { status }); beritahu('success', 'Status project diperbarui.'); await segarkan(); }
-    catch (e) { beritahu('error', `Gagal: ${e instanceof Error ? e.message : String(e)}`); }
-  };
+  const statistik = useMemo(() => {
+    const aktif = daftar.filter(p => p.status !== 'archived');
+    const total = (k: keyof RingkasanProject) => aktif.reduce((n, p) => n + (p[k] as number), 0);
+    return {
+      project: aktif.length,
+      schedule: total('schedule_count'), ticket: total('ticket_count'),
+      design: total('design_count'), review: total('review_count'),
+    };
+  }, [daftar]);
 
-  if (!currentUser || !lingkup) {
-    return (
-      <div className="flex items-center justify-center" style={{ minHeight: '100vh', backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
-        <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin"
-          style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#6366f1' }} />
-      </div>
-    );
-  }
+  const tersaring = useMemo(() => {
+    const k = normalisasiNamaProject(cari);
+    return daftar.filter(p => {
+      if (filterStatus !== 'semua' && p.status !== filterStatus) return false;
+      if (filterTipe !== 'semua' && !(p[KOLOM_JUMLAH[filterTipe]] as number)) return false;
+      if (!k) return true;
+      return [p.name, p.code, p.customer, p.location, p.sales_name]
+        .some(v => normalisasiNamaProject(v ?? '').includes(k));
+    });
+  }, [daftar, cari, filterStatus, filterTipe]);
 
-  const linimasa = detail ? bangunLinimasa(detail) : [];
+  const hal = usePaginasi(tersaring);
+  const { setHalaman } = hal;
+  useEffect(() => { setHalaman(1); }, [cari, filterStatus, filterTipe, setHalaman]);
+
+  const dipilih = dipilihId ? daftar.find(p => p.project_id === dipilihId) ?? null : null;
+
+  if (!currentUser || !lingkup || memuat) return <LoadingScreen />;
+
+  const pilihTipe = (t: FilterTipe) => setFilterTipe(prev => (prev === t ? 'semua' : t));
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
-      <Toast notif={toast} />
+    <div className="h-screen overflow-hidden flex flex-col relative" style={{
+      backgroundImage: `url('/IVP_Background.png')`,
+      backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
+    }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
+      <div className="relative flex flex-col flex-1 overflow-hidden">
+        <Toast notif={toast} />
 
-      <PageHeader icon="🗂️" title="Summary Project" color="#6366f1" colorLight="#4f46e5"
-        subtitle="Request Schedule · Troubleshooting · Design Project · Form Review">
-        {isAdmin && (
-          <button onClick={() => setShowMapping(true)}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 flex items-center gap-1.5">
-            🧭 Mapping Center
-            {!!belumTerpeta && <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-white text-[10px]">{belumTerpeta}</span>}
-          </button>
-        )}
-      </PageHeader>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-5xl mx-auto space-y-4">
-          <div className="rounded-2xl shadow-sm p-4" style={KARTU}>
-            <input aria-label="Cari project" value={query} onChange={e => setQuery(e.target.value)}
-              placeholder="🔍 Cari nama project, kode PRJ, customer, atau lokasi..."
-              className="w-full px-4 py-2.5 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
-            <p className="text-[11px] text-gray-400 mt-2 font-semibold uppercase tracking-wide">{query.trim() ? 'Hasil Pencarian' : 'Aktivitas Terbaru'}</p>
-
-            <div className="mt-2 divide-y divide-gray-100 max-h-72 overflow-y-auto">
-              {memuatHasil ? (
-                <div className="py-6 text-center text-xs text-gray-400">Memuat...</div>
-              ) : hasilCari.length === 0 ? (
-                <div className="py-6 text-center text-xs text-gray-400">
-                  {query.trim() ? `Tidak ada project cocok "${query}"`
-                    : isAdmin ? <>Belum ada project. <button type="button" onClick={() => setShowMapping(true)} className="font-bold text-indigo-600 hover:underline">Buka Mapping Center</button> untuk mulai memetakan record ke project.</>
-                    : 'Belum ada project yang dipetakan admin.'}
-                </div>
-              ) : hasilCari.map(p => (
-                <button key={p.project_id} onClick={() => bukaProject(p)}
-                  className={`w-full text-left px-2.5 py-3 rounded-lg hover:bg-indigo-50/60 transition-colors flex items-center justify-between gap-3 ${dipilih?.project_id === p.project_id ? 'bg-indigo-50' : ''}`}>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-bold text-gray-800 truncate">{p.name}</span>
-                    <span className="block text-[11px] text-gray-400 truncate">{p.code}{p.location ? ` · ${p.location}` : ''}{p.status === 'done' ? ' · Selesai' : ''}</span>
-                  </span>
-                  <JumlahChip p={p} kecil />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {dipilih && (
-            <div className="space-y-4">
-              {/* Kartu ringkasan project */}
-              <div className="rounded-2xl shadow-sm p-5 flex items-center justify-between flex-wrap gap-3" style={KARTU}>
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="w-1.5 h-9 rounded-full bg-gradient-to-b from-violet-500 to-indigo-500 flex-shrink-0" aria-hidden="true" />
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-black tracking-wider text-indigo-500">{dipilih.code}</p>
-                    <h2 className="text-lg font-black text-gray-800 truncate">{dipilih.name}</h2>
-                    <p className="text-[11px] text-gray-400 truncate">
-                      {[dipilih.customer, dipilih.location, dipilih.sales_name && `Sales: ${dipilih.sales_name}`].filter(Boolean).join(' · ') || '-'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <JumlahChip p={dipilih} />
-                  {isAdmin ? (
-                    <select aria-label="Status project" value={dipilih.status} onChange={e => gantiStatus(e.target.value as RingkasanProject['status'])}
-                      className="text-[11px] font-bold px-2 py-1 rounded-full border border-gray-200 bg-white text-gray-600">
-                      {Object.entries(STATUS_PROJECT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-                    </select>
-                  ) : (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">{STATUS_PROJECT[dipilih.status]}</span>
-                  )}
-                </div>
-              </div>
-
-              {memuatDetail || !detail ? (
-                <div className="rounded-2xl shadow-sm p-8 text-center text-sm text-gray-400" style={KARTU}>
-                  Memuat riwayat...
-                </div>
-              ) : (
-                <Linimasa data={linimasa} onLepas={isAdmin ? lepas : undefined} />
-              )}
-            </div>
+        <PageHeader icon="🗂️" title="Summary Project" color={THEME.color} colorLight={THEME.colorLight}
+          subtitle="Riwayat Request Schedule · Troubleshooting · Design Project · Form Review per project">
+          {isAdmin && (
+            <button onClick={() => setShowMapping(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
+              style={{ background: `linear-gradient(135deg, ${THEME.color}, ${THEME.colorLight})`, boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}>
+              🧭 Mapping Center
+              {!!belumTerpeta && <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-amber-950 text-[10px]">{belumTerpeta}</span>}
+            </button>
           )}
-        </div>
+        </PageHeader>
+
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-5 flex flex-col gap-4">
+
+            {/* Ringkasan - kartu kategori sekaligus filter */}
+            <StatCardGrid cols={5} items={[
+              { label: 'Project', value: statistik.project, sub: 'tidak termasuk arsip', accent: THEME.color,
+                onClick: () => setFilterTipe('semua'), active: filterTipe === 'semua' },
+              ...(['schedule', 'ticket', 'design', 'review'] as AktivitasTipe[]).map(t => ({
+                label: TIPE_CFG[t].pendek, value: statistik[t], sub: 'klik untuk saring',
+                accent: TIPE_CFG[t].color, onClick: () => pilihTipe(t), active: filterTipe === t,
+              })),
+            ]} />
+
+            {/* Filter bar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <input aria-label="Cari project" value={cari} onChange={e => setCari(e.target.value)}
+                placeholder="Cari nama project, kode PRJ, customer, lokasi, atau sales…"
+                className="flex-1 min-w-[220px] px-3.5 py-2.5 rounded-md text-sm font-medium outline-none bg-white border border-slate-300 text-slate-800 focus:ring-2 focus:ring-indigo-400" />
+              {(['semua', 'active', 'done', 'archived'] as FilterStatus[]).map(s => {
+                const aktif = filterStatus === s;
+                return (
+                  <button key={s} onClick={() => setFilterStatus(s)}
+                    className="px-3.5 py-2 rounded-md text-xs font-bold transition-all"
+                    style={aktif
+                      ? { background: '#0f172a', color: '#fff', border: '1px solid transparent' }
+                      : { background: '#fff', color: '#475569', border: '1px solid #cbd5e1' }}>
+                    {s === 'semua' ? 'Semua' : STATUS_PROJECT[s]}
+                  </button>
+                );
+              })}
+            </div>
+
+            {galat ? (
+              <div className="rounded-md bg-white border border-red-200 p-6 text-center text-sm text-red-600">Gagal memuat project: {galat}</div>
+            ) : tersaring.length === 0 ? (
+              <div className="rounded-md bg-white/95 border border-slate-200">
+                <EmptyState icon="🗂️" title={daftar.length ? 'Tidak ada project yang cocok' : 'Belum ada project'}
+                  description={daftar.length ? 'Ubah kata kunci atau filter.' : 'Project terbentuk otomatis dari Request Schedule, Ticket, dan Design Project.'} />
+              </div>
+            ) : (
+              <div className="rounded-md overflow-hidden bg-white border border-slate-200">
+
+                {/* MOBILE: kartu */}
+                <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
+                  {hal.potongan.map(p => {
+                    const st = STATUS_PROJECT_WARNA[p.status];
+                    return (
+                      <MobileListCard key={p.project_id}
+                        title={p.name}
+                        meta={<span style={fontMono}>{p.code} · {fmtTgl(p.last_activity)}</span>}
+                        accent={THEME.color}
+                        onClick={() => setDipilihId(p.project_id)}
+                        badges={<MobileCardBadge style={{ background: st.bg, color: st.color }}>{STATUS_PROJECT[p.status]}</MobileCardBadge>}
+                        fields={[
+                          { label: 'Sales', value: p.sales_name || '—' },
+                          { label: 'Customer', value: p.customer || '—', hide: !p.customer },
+                          { label: 'Aktivitas', value: `${p.schedule_count} schedule · ${p.ticket_count} ticket · ${p.design_count} design · ${p.review_count} review`, span2: true },
+                          { label: 'Lokasi', value: p.location || '—', span2: true, hide: !p.location },
+                        ]}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* DESKTOP: tabel */}
+                <div className="hidden md:block overflow-x-auto bg-slate-100/60 px-3 pb-2">
+                  <table className="w-full tabel-kartu" style={{ tableLayout: 'fixed' }}>
+                    <colgroup>
+                      <col style={{ width: '44px' }} />
+                      <col style={{ width: '92px' }} />
+                      <col style={{ width: '24%' }} />
+                      <col style={{ width: '22%' }} />
+                      <col style={{ width: '13%' }} />
+                      <col style={{ width: '64px' }} />
+                      <col style={{ width: '64px' }} />
+                      <col style={{ width: '64px' }} />
+                      <col style={{ width: '64px' }} />
+                      <col style={{ width: '104px' }} />
+                      <col style={{ width: '88px' }} />
+                      <col style={{ width: '52px' }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        {['No', 'Kode', 'Nama Project', 'Lokasi', 'Sales'].map((h, i) => (
+                          <th key={h} className={`px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide ${i === 0 ? 'text-center' : 'text-left'}`}>{h}</th>
+                        ))}
+                        {(['schedule', 'ticket', 'design', 'review'] as AktivitasTipe[]).map(t => (
+                          <th key={t} className="px-1 py-2.5 text-[10px] font-bold uppercase tracking-wide text-center" style={{ color: TIPE_CFG[t].color }}
+                            title={TIPE_CFG[t].label}>{TIPE_CFG[t].icon} {TIPE_CFG[t].pendek}</th>
+                        ))}
+                        <th className="px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide text-left">Terakhir</th>
+                        <th className="px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide text-left">Status</th>
+                        <th className="px-1 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center"><span className="sr-only">Aksi</span></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {hal.potongan.map((p, idx) => {
+                        const st = STATUS_PROJECT_WARNA[p.status];
+                        return (
+                          <tr key={p.project_id} className="cursor-pointer" onClick={() => setDipilihId(p.project_id)}
+                            style={{ '--aksen-baris': THEME.color, '--bg-baris-sorot': '#eef2ff' } as CSSProperties}>
+                            <td className="px-3 py-3 text-center align-middle">
+                              <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <span className="text-[11px] font-bold text-indigo-600" style={fontMono}>{p.code}</span>
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <p className="text-xs font-bold text-gray-800 leading-snug break-words">{p.name}</p>
+                              {p.customer && <p className="text-[10px] text-gray-400 font-semibold mt-0.5 truncate">{p.customer}</p>}
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <p className="text-[11px] text-gray-600 line-clamp-2" title={p.location ?? undefined}>{p.location || <span className="text-gray-300">—</span>}</p>
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              {p.sales_name ? (
+                                <>
+                                  <p className="text-[11px] font-semibold text-gray-700 truncate">{p.sales_name}</p>
+                                  {p.sales_division && <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wide">{p.sales_division}</p>}
+                                </>
+                              ) : <span className="text-[11px] text-gray-300">—</span>}
+                            </td>
+                            <td className="px-1 py-3 align-middle text-center"><Jumlah n={p.schedule_count} tipe="schedule" /></td>
+                            <td className="px-1 py-3 align-middle text-center"><Jumlah n={p.ticket_count} tipe="ticket" /></td>
+                            <td className="px-1 py-3 align-middle text-center"><Jumlah n={p.design_count} tipe="design" /></td>
+                            <td className="px-1 py-3 align-middle text-center"><Jumlah n={p.review_count} tipe="review" /></td>
+                            <td className="px-3 py-3 align-middle">
+                              <span className="text-[11px] font-semibold text-gray-600 whitespace-nowrap" style={fontMono}>{fmtTgl(p.last_activity)}</span>
+                            </td>
+                            <td className="px-3 py-3 align-middle">
+                              <span className="px-1.5 py-0.5 text-[11px] font-bold whitespace-nowrap" style={{ background: st.bg, color: st.color }}>
+                                {STATUS_PROJECT[p.status]}
+                              </span>
+                            </td>
+                            <td className="px-1 py-3 align-middle text-center" onClick={e => e.stopPropagation()}>
+                              <ViewIconBtn onClick={() => setDipilihId(p.project_id)} label={`Lihat ${p.name}`} />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <Paginasi {...hal} satuan="project" warna={THEME.color} />
+              </div>
+            )}
+          </div>
+        </main>
       </div>
 
+      {dipilih && (
+        <ModalDetailProject key={dipilih.project_id}
+          project={dipilih} lingkup={lingkup} isAdmin={isAdmin}
+          currentUserName={currentUser.full_name}
+          onTutup={() => setDipilihId(null)} onBerubah={muat} beritahu={beritahu} />
+      )}
       {showMapping && (
         <ModalMappingCenter
           currentUserName={currentUser.full_name}
           onTutup={() => setShowMapping(false)}
-          onBerubah={segarkan}
+          onBerubah={muat}
         />
       )}
-      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
     </div>
   );
 }
