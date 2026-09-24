@@ -286,6 +286,16 @@ CREATE POLICY pm_hapus ON public.project_messages AS PERMISSIVE FOR DELETE TO an
   USING ((jwt_claim('user_role'::text) = ANY (ARRAY['admin'::text, 'superadmin'::text])));
 CREATE POLICY pm_tulis ON public.project_messages AS PERMISSIVE FOR INSERT TO anon, authenticated
   WITH CHECK ((boleh_lihat_request(request_id) AND (sender_id = jwt_claim('sub'::text))));
+CREATE POLICY projects_select ON public.projects AS PERMISSIVE FOR SELECT TO anon, authenticated
+  USING (true);
+CREATE POLICY projects_write ON public.projects AS PERMISSIVE FOR ALL TO anon, authenticated
+  USING ((jwt_claim('user_role'::text) = ANY (ARRAY['admin'::text, 'superadmin'::text])))
+  WITH CHECK ((jwt_claim('user_role'::text) = ANY (ARRAY['admin'::text, 'superadmin'::text])));
+CREATE POLICY psl_select ON public.project_source_links AS PERMISSIVE FOR SELECT TO anon, authenticated
+  USING (true);
+CREATE POLICY psl_write ON public.project_source_links AS PERMISSIVE FOR ALL TO anon, authenticated
+  USING ((jwt_claim('user_role'::text) = ANY (ARRAY['admin'::text, 'superadmin'::text])))
+  WITH CHECK ((jwt_claim('user_role'::text) = ANY (ARRAY['admin'::text, 'superadmin'::text])));
 CREATE POLICY pr_delete ON public.project_requests AS PERMISSIVE FOR DELETE TO anon, authenticated
   USING ((jwt_claim('user_role'::text) = ANY (ARRAY['admin'::text, 'superadmin'::text])));
 CREATE POLICY pr_insert ON public.project_requests AS PERMISSIVE FOR INSERT TO anon, authenticated

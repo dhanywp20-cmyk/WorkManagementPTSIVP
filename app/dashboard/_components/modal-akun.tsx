@@ -91,6 +91,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪', gradient: 'from-teal-600 to-teal-500' },
     'tech-note': { label: 'Tech Note R&D', icon: '📝', gradient: 'from-pink-600 to-rose-500' },
     'kpi-team': { label: 'KPI Team', icon: '📊', gradient: 'from-sky-600 to-sky-500' },
+    'summary-project': { label: 'Summary Project', icon: '🗂️', gradient: 'from-violet-600 to-indigo-500' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => {
@@ -636,6 +637,7 @@ export function AccountSettingsInline() {
     'learning-center': { label: 'Learning Center', icon: '🎓' },
     'tech-note': { label: 'Tech Note R&D', icon: '📝' },
     'kpi-team': { label: 'KPI Team', icon: '📊' },
+    'summary-project': { label: 'Summary Project', icon: '🗂️' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => { setNotification({ type, msg }); setTimeout(() => setNotification(null), 3000); };
