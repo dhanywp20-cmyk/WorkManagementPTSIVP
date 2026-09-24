@@ -911,8 +911,8 @@ export default function Dashboard() {
             {!showRegister && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Email</label>
-                  <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                  <label htmlFor="f-dashboard-page-1" className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Email</label>
+                  <input id="f-dashboard-page-1" type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-none"
                     placeholder="email@perusahaan.com" onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
                 </div>
@@ -983,13 +983,13 @@ export default function Dashboard() {
                       {/* Kolom Kiri */}
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Nama Lengkap *</label>
-                          <input type="text" value={registerForm.full_name} onChange={e => setRegisterForm({ ...registerForm, full_name: e.target.value })}
+                          <label htmlFor="f-dashboard-page-2" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Nama Lengkap *</label>
+                          <input id="f-dashboard-page-2" type="text" value={registerForm.full_name} onChange={e => setRegisterForm({ ...registerForm, full_name: e.target.value })}
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Nama lengkap" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Email *</label>
-                          <input type="email" value={registerForm.username} onChange={e => setRegisterForm({ ...registerForm, username: e.target.value })}
+                          <label htmlFor="f-dashboard-page-3" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Email *</label>
+                          <input id="f-dashboard-page-3" type="email" value={registerForm.username} onChange={e => setRegisterForm({ ...registerForm, username: e.target.value })}
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="email@perusahaan.com" />
                         </div>
                         <div>
@@ -1028,8 +1028,8 @@ export default function Dashboard() {
                       {/* Kolom Kanan */}
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Divisi *</label>
-                          <select aria-label="-- Pilih Divisi --" value={registerForm.divisi} onChange={e => setRegisterForm({ ...registerForm, divisi: e.target.value, pts_type: '', sales_division: '' })}
+                          <label htmlFor="f-dashboard-page-4" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Divisi *</label>
+                          <select id="f-dashboard-page-4" value={registerForm.divisi} onChange={e => setRegisterForm({ ...registerForm, divisi: e.target.value, pts_type: '', sales_division: '' })}
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                             <option value="">-- Pilih Divisi --</option>
                             <option value="PTS">PTS</option>
@@ -1039,8 +1039,8 @@ export default function Dashboard() {
                         </div>
                         {registerForm.divisi === 'PTS' && (
                           <div>
-                            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widests uppercase">Tipe PTS *</label>
-                            <select aria-label="-- Pilih Tipe PTS --" value={registerForm.pts_type} onChange={e => setRegisterForm({ ...registerForm, pts_type: e.target.value })}
+                            <label htmlFor="f-dashboard-page-5" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widests uppercase">Tipe PTS *</label>
+                            <select id="f-dashboard-page-5" value={registerForm.pts_type} onChange={e => setRegisterForm({ ...registerForm, pts_type: e.target.value })}
                               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                               <option value="">-- Pilih Tipe PTS --</option>
                               {daftarKelompokPTS.map(k => <option key={k.nama} value={k.label}>{k.label}</option>)}
@@ -1049,10 +1049,10 @@ export default function Dashboard() {
                         )}
                         {(registerForm.divisi === 'Sales' || registerForm.divisi === 'Marketing') && (
                           <div>
-                            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
+                            <label htmlFor="f-dashboard-page-6" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
                               {registerForm.divisi === 'Marketing' ? 'Marketing Division *' : 'Sales Division *'}
                             </label>
-                            <select aria-label="Sales Division" value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
+                            <select id="f-dashboard-page-6" value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
                               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                               <option value="">-- Pilih {registerForm.divisi} Division --</option>
                               {daftarDivisi.map(d => <option key={d} value={d}>{d}</option>)}
@@ -1060,16 +1060,16 @@ export default function Dashboard() {
                           </div>
                         )}
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
-                          <select aria-label="— Pilih Jabatan —" value={registerForm.jabatan} onChange={e => setRegisterForm({ ...registerForm, jabatan: e.target.value })}
+                          <label htmlFor="f-dashboard-page-7" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
+                          <select id="f-dashboard-page-7" value={registerForm.jabatan} onChange={e => setRegisterForm({ ...registerForm, jabatan: e.target.value })}
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                             <option value="">— Pilih Jabatan —</option>
                             {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">No. HP</label>
-                          <input type="text" value={registerForm.phone_number} onChange={e => setRegisterForm({ ...registerForm, phone_number: e.target.value })}
+                          <label htmlFor="f-dashboard-page-8" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">No. HP</label>
+                          <input id="f-dashboard-page-8" type="text" value={registerForm.phone_number} onChange={e => setRegisterForm({ ...registerForm, phone_number: e.target.value })}
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="08xx..." />
                         </div>
                       </div>
@@ -1078,8 +1078,8 @@ export default function Dashboard() {
                         (mis. peserta Learning Center) yang dibagikan panitia. Kosong
                         = alur normal, tetap menunggu approval admin seperti biasa. */}
                     <div>
-                      <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Kode Acara (opsional)</label>
-                      <input type="text" value={registerForm.event_code} onChange={e => setRegisterForm({ ...registerForm, event_code: e.target.value })}
+                      <label htmlFor="f-dashboard-page-9" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Kode Acara (opsional)</label>
+                      <input id="f-dashboard-page-9" type="text" value={registerForm.event_code} onChange={e => setRegisterForm({ ...registerForm, event_code: e.target.value })}
                         className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Isi hanya jika diberikan admin" />
                     </div>
                     {registerErr && (

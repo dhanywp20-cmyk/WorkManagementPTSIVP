@@ -627,16 +627,16 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
-                <input value={form.materi_name} onChange={e => setForm(p => ({ ...p, materi_name: e.target.value }))}
+                <label htmlFor="f-learning-center-components-materipage-1" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
+                <input id="f-learning-center-components-materipage-1" value={form.materi_name} onChange={e => setForm(p => ({ ...p, materi_name: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                   placeholder="contoh: Pengenalan Produk Microvision" autoFocus />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                <label htmlFor="f-learning-center-components-materipage-2" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                   Folder Path <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
                 </label>
-                <input
+                <input id="f-learning-center-components-materipage-2"
                   value={form.folder_path}
                   onChange={e => setForm(p => ({ ...p, folder_path: e.target.value }))}
                   list="folder-path-suggestions"
@@ -650,18 +650,18 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                 )}
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                <label htmlFor="f-learning-center-components-materipage-3" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                   Link OneDrive <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
                 </label>
-                <input value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))}
+                <input id="f-learning-center-components-materipage-3" value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                   placeholder="https://1drv.ms/b/s!..." />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                <label htmlFor="f-learning-center-components-materipage-4" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                   Konten Teks untuk AI <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
                 </label>
-                <textarea value={form.content_text} onChange={e => setForm(p => ({ ...p, content_text: e.target.value }))}
+                <textarea id="f-learning-center-components-materipage-4" value={form.content_text} onChange={e => setForm(p => ({ ...p, content_text: e.target.value }))}
                   rows={3} placeholder="Paste ringkasan atau poin-poin materi..."
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none" />
                 <p className="text-xs text-slate-400 mt-1">{form.content_text.length} karakter</p>
@@ -695,8 +695,8 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
             </div>
             <div className="p-6">
               <p className="text-xs text-slate-400 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Folder Baru</label>
-              <input
+              <label htmlFor="f-learning-center-components-materipage-5" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Folder Baru</label>
+              <input id="f-learning-center-components-materipage-5"
                 value={renameFolder.newName}
                 onChange={e => setRenameFolder(p => p && ({ ...p, newName: e.target.value }))}
                 onKeyDown={e => { if (e.key === 'Enter') handleRenameFolder(); if (e.key === 'Escape') setRenameFolder(null); }}
@@ -740,8 +740,8 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
-                <input
+                <label htmlFor="f-learning-center-components-materipage-6" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Materi *</label>
+                <input id="f-learning-center-components-materipage-6"
                   value={editMaterial.materi_name}
                   onChange={e => setEditMaterial(p => p && ({ ...p, materi_name: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
@@ -749,10 +749,10 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                   placeholder="Nama materi..." />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                <label htmlFor="f-learning-center-components-materipage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                   Folder Path <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
                 </label>
-                <input
+                <input id="f-learning-center-components-materipage-7"
                   value={editMaterial.folder_path ?? ''}
                   onChange={e => setEditMaterial(p => p && ({ ...p, folder_path: e.target.value }))}
                   list="edit-folder-path-suggestions"
@@ -763,10 +763,10 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                 </datalist>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                <label htmlFor="f-learning-center-components-materipage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                   Link OneDrive <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
                 </label>
-                <input
+                <input id="f-learning-center-components-materipage-8"
                   value={editMaterial.file_url ?? ''}
                   onChange={e => setEditMaterial(p => p && ({ ...p, file_url: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"

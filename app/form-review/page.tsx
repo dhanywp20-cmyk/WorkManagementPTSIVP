@@ -544,10 +544,10 @@ function FormReviewPageInner() {
                 ⚠️ <strong>Tindakan ini tidak dapat dibatalkan.</strong> Review ini akan dihapus permanen dari database.
               </div>
               <div className="mb-4">
-                <label className="block text-sm font-bold mb-1 text-gray-700">
+                <label htmlFor="f-form-review-page-1" className="block text-sm font-bold mb-1 text-gray-700">
                   Ketik <span className="font-mono bg-red-100 text-red-700 px-1.5 py-0.5 rounded">HAPUS</span> untuk konfirmasi
                 </label>
-                <input type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)}
+                <input id="f-form-review-page-1" type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)}
                   placeholder="Ketik HAPUS di sini..."
                   className="w-full rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none"
                   style={{ border: '2px solid rgba(220,38,38,0.3)', background: 'white' }} />

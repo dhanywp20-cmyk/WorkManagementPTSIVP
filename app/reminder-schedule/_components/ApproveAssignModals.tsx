@@ -103,10 +103,10 @@ export function ApproveAssignModal({
             {/* Assign to Team — manual/fallback (dipakai jika tipe produk belum ter-mapping,
                 atau admin ingin assign langsung tanpa lewat Supervisor) */}
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label htmlFor="f-reminder-schedule-components-approveassignmodals-1" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 {approveSupervisors.length > 0 ? 'Atau Assign Langsung Manual' : 'Assign ke Team PTS *'}
               </label>
-              <select aria-label="-- Pilih Anggota Team PTS --"
+              <select id="f-reminder-schedule-components-approveassignmodals-1"
                 value={approveAssignTo}
                 onChange={e => setApproveAssignTo(e.target.value)}
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-green-500/40"
@@ -120,20 +120,20 @@ export function ApproveAssignModal({
             {/* Konfirmasi / ubah tanggal */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                <label htmlFor="f-reminder-schedule-components-approveassignmodals-2" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                   Tanggal (opsional ubah)
                 </label>
-                <input aria-label="Tanggal (opsional ubah)" type="date"
+                <input id="f-reminder-schedule-components-approveassignmodals-2" type="date"
                   value={approveDate || approveTarget.due_date}
                   onChange={e => setApproveDate(e.target.value)}
                   className="w-full rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500/40 text-slate-800"
                   style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
               </div>
               <div>
-                <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                <label htmlFor="f-reminder-schedule-components-approveassignmodals-3" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                   Waktu (opsional ubah)
                 </label>
-                <input aria-label="Waktu (opsional ubah)" type="time"
+                <input id="f-reminder-schedule-components-approveassignmodals-3" type="time"
                   value={approveTime || approveTarget.due_time}
                   onChange={e => setApproveTime(e.target.value)}
                   className="w-full rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500/40 text-slate-800"
@@ -156,19 +156,19 @@ export function ApproveAssignModal({
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                    <label htmlFor="f-reminder-schedule-components-approveassignmodals-4" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                       Mulai Pengerjaan
                     </label>
-                    <input aria-label="Mulai Pengerjaan" type="date" value={approveStart}
+                    <input id="f-reminder-schedule-components-approveassignmodals-4" type="date" value={approveStart}
                       onChange={e => setApproveStart(e.target.value)}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-800"
                       style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                    <label htmlFor="f-reminder-schedule-components-approveassignmodals-5" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                       Target Selesai
                     </label>
-                    <input aria-label="Target Selesai" type="date" value={approveTarget2} min={approveStart || undefined}
+                    <input id="f-reminder-schedule-components-approveassignmodals-5" type="date" value={approveTarget2} min={approveStart || undefined}
                       onChange={e => setApproveTarget2(e.target.value)}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-800"
                       style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
@@ -262,8 +262,8 @@ export function SupervisorAssignModal({
             )}
 
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Assign ke *</label>
-              <select aria-label="-- Pilih --" value={supervisorAssignTo} onChange={e => setSupervisorAssignTo(e.target.value)}
+              <label htmlFor="f-reminder-schedule-components-approveassignmodals-6" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Assign ke *</label>
+              <select id="f-reminder-schedule-components-approveassignmodals-6" value={supervisorAssignTo} onChange={e => setSupervisorAssignTo(e.target.value)}
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-amber-500/40"
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                 <option value="">-- Pilih --</option>

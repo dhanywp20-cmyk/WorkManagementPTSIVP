@@ -364,20 +364,20 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                       </div>
                       <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
-                          <input aria-label="Full Name" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                          <label htmlFor="f-dashboard-components-modal-akun-1" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
+                          <input id="f-dashboard-components-modal-akun-1" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
-                          <input aria-label="Username" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                          <label htmlFor="f-dashboard-components-modal-akun-2" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
+                          <input id="f-dashboard-components-modal-akun-2" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password Baru</label>
-                          <input type="password" value={editingUser.password ?? ''} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} placeholder="Kosongkan jika tidak diubah" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                          <label htmlFor="f-dashboard-components-modal-akun-3" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password Baru</label>
+                          <input id="f-dashboard-components-modal-akun-3" type="password" value={editingUser.password ?? ''} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} placeholder="Kosongkan jika tidak diubah" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
-                          <select aria-label="Role" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                          <label htmlFor="f-dashboard-components-modal-akun-4" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
+                          <select id="f-dashboard-components-modal-akun-4" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="superadmin">Superadmin</option>
                             <option value="admin">Admin</option>
                             <option value="team">Team</option>
@@ -385,8 +385,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           </select>
                         </div>
                         <div className="formulir:col-span-2">
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
-                          <select aria-label="-- Pilih Divisi --" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
+                          <label htmlFor="f-dashboard-components-modal-akun-5" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
+                          <select id="f-dashboard-components-modal-akun-5" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="">-- Pilih Divisi --</option>
                             <option value="PTS">PTS</option>
@@ -396,8 +396,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         </div>
                         {editDivisi === 'PTS' && (
                           <div className="formulir:col-span-2">
-                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
-                            <select aria-label="-- Pilih Tipe PTS --" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
+                            <label htmlFor="f-dashboard-components-modal-akun-6" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
+                            <select id="f-dashboard-components-modal-akun-6" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                               <option value="">-- Pilih Tipe PTS --</option>
                               {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
@@ -406,8 +406,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         )}
                         {editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang && (
                           <div className="formulir:col-span-2">
-                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
-                            <input value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
+                            <label htmlFor="f-dashboard-components-modal-akun-7" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
+                            <input id="f-dashboard-components-modal-akun-7" value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
                               placeholder="Contoh: Surabaya, Bandung, Medan..."
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                             <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
@@ -415,10 +415,10 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         )}
                         {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
                           <div className="formulir:col-span-2">
-                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">
+                            <label htmlFor="f-dashboard-components-modal-akun-8" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">
                               {editDivisi === 'Marketing' ? 'Marketing Division' : 'Sales Division'}
                             </label>
-                            <select aria-label="-- Pilih {editDivisi} Division --" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
+                            <select id="f-dashboard-components-modal-akun-8" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                               <option value="">-- Pilih {editDivisi} Division --</option>
                               {daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
@@ -426,15 +426,15 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           </div>
                         )}
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan / Posisi</label>
-                          <select aria-label="— Pilih Jabatan —" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                          <label htmlFor="f-dashboard-components-modal-akun-9" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan / Posisi</label>
+                          <select id="f-dashboard-components-modal-akun-9" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="">— Pilih Jabatan —</option>
                             {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                           </select>
                         </div>
                         <div className="formulir:col-span-2">
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Nomor Telepon / WhatsApp</label>
-                          <input value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
+                          <label htmlFor="f-dashboard-components-modal-akun-10" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Nomor Telepon / WhatsApp</label>
+                          <input id="f-dashboard-components-modal-akun-10" value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
                         </div>
                       </div>
                       <MenuPermissionSelector selected={editingUser.allowed_menus ?? ALL_MENU_KEYS} target="edit" />
@@ -508,20 +508,20 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
             <div className="space-y-5">
               <div className="grid grid-cols-1 formulir:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Full Name *</label>
-                  <input value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Nama lengkap" />
+                  <label htmlFor="f-dashboard-components-modal-akun-11" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Full Name *</label>
+                  <input id="f-dashboard-components-modal-akun-11" value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Nama lengkap" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Username *</label>
-                  <input value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="username" />
+                  <label htmlFor="f-dashboard-components-modal-akun-12" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Username *</label>
+                  <input id="f-dashboard-components-modal-akun-12" value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="username" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Password *</label>
-                  <input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Minimal 6 karakter" />
+                  <label htmlFor="f-dashboard-components-modal-akun-13" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Password *</label>
+                  <input id="f-dashboard-components-modal-akun-13" type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Minimal 6 karakter" />
                 </div>
                 <div className="formulir:col-span-2">
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Divisi *</label>
-                  <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
+                  <label htmlFor="f-dashboard-components-modal-akun-14" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Divisi *</label>
+                  <select id="f-dashboard-components-modal-akun-14" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                     <option value="">-- Pilih Divisi --</option>
                     <option value="PTS">PTS</option>
@@ -531,8 +531,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 </div>
                 {newUser.divisi === 'PTS' && (
                   <div className="formulir:col-span-2">
-                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
-                    <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
+                    <label htmlFor="f-dashboard-components-modal-akun-15" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
+                    <select id="f-dashboard-components-modal-akun-15" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                       <option value="">-- Pilih Tipe PTS --</option>
                       {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
@@ -541,8 +541,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 )}
                 {newUser.divisi === 'PTS' && kelompokPTSList.find(k => k.label === newUser.pts_type)?.cabang && (
                   <div className="formulir:col-span-2">
-                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Alamat Daerah *</label>
-                    <input value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
+                    <label htmlFor="f-dashboard-components-modal-akun-16" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Alamat Daerah *</label>
+                    <input id="f-dashboard-components-modal-akun-16" value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                       placeholder="Contoh: Surabaya, Bandung, Medan..."
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" />
                     <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
@@ -550,10 +550,10 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 )}
                 {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
                   <div className="formulir:col-span-2">
-                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">
+                    <label htmlFor="f-dashboard-components-modal-akun-17" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">
                       {newUser.divisi === 'Marketing' ? 'Marketing Division *' : 'Sales Division *'}
                     </label>
-                    <select aria-label="-- Pilih {newUser.divisi} Division --" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
+                    <select id="f-dashboard-components-modal-akun-17" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                       <option value="">-- Pilih {newUser.divisi} Division --</option>
                       {daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
@@ -561,15 +561,15 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   </div>
                 )}
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
-                  <select aria-label="— Pilih Jabatan —" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
+                  <label htmlFor="f-dashboard-components-modal-akun-18" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
+                  <select id="f-dashboard-components-modal-akun-18" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                     <option value="">— Pilih Jabatan —</option>
                     {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Nomor Telepon / WhatsApp</label>
-                  <input value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Contoh: 08123456789" />
+                  <label htmlFor="f-dashboard-components-modal-akun-19" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Nomor Telepon / WhatsApp</label>
+                  <input id="f-dashboard-components-modal-akun-19" value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Contoh: 08123456789" />
                 </div>
               </div>
 
@@ -874,26 +874,26 @@ export function AccountSettingsInline() {
                 </div>
                 <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
-                    <input aria-label="Full Name" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                    <label htmlFor="f-dashboard-components-modal-akun-20" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
+                    <input id="f-dashboard-components-modal-akun-20" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
-                    <input aria-label="Username" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                    <label htmlFor="f-dashboard-components-modal-akun-21" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
+                    <input id="f-dashboard-components-modal-akun-21" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password</label>
-                    <input aria-label="Password" value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                    <label htmlFor="f-dashboard-components-modal-akun-22" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password</label>
+                    <input id="f-dashboard-components-modal-akun-22" value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
-                    <select aria-label="Role" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                    <label htmlFor="f-dashboard-components-modal-akun-23" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
+                    <select id="f-dashboard-components-modal-akun-23" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                       <option value="superadmin">Superadmin</option><option value="admin">Admin</option><option value="team">Team</option><option value="guest">Guest</option>
                     </select>
                   </div>
                   <div className="formulir:col-span-3">
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
-                    <select aria-label="-- Pilih Divisi --" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
+                    <label htmlFor="f-dashboard-components-modal-akun-24" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
+                    <select id="f-dashboard-components-modal-akun-24" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                       <option value="">-- Pilih Divisi --</option>
                       <option value="PTS">PTS</option>
@@ -903,8 +903,8 @@ export function AccountSettingsInline() {
                   </div>
                   {editDivisi === 'PTS' && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
-                      <select aria-label="-- Pilih Tipe PTS --" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
+                      <label htmlFor="f-dashboard-components-modal-akun-25" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
+                      <select id="f-dashboard-components-modal-akun-25" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                         <option value="">-- Pilih Tipe PTS --</option>
                         {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
@@ -913,8 +913,8 @@ export function AccountSettingsInline() {
                   )}
                   {editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
-                      <input value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
+                      <label htmlFor="f-dashboard-components-modal-akun-26" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
+                      <input id="f-dashboard-components-modal-akun-26" value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
                         placeholder="Contoh: Surabaya, Bandung, Medan..."
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                       <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
@@ -922,22 +922,22 @@ export function AccountSettingsInline() {
                   )}
                   {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
-                      <select aria-label="-- Pilih Divisi Sales --" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
+                      <label htmlFor="f-dashboard-components-modal-akun-27" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
+                      <select id="f-dashboard-components-modal-akun-27" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                         <option value="">-- Pilih Divisi Sales --</option>{daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
                       </select>
                     </div>
                   )}
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
-                    <select aria-label="— Pilih Jabatan —" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                    <label htmlFor="f-dashboard-components-modal-akun-28" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
+                    <select id="f-dashboard-components-modal-akun-28" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                       <option value="">— Pilih Jabatan —</option>{JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">📱 No. Telepon / WA</label>
-                    <input value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
+                    <label htmlFor="f-dashboard-components-modal-akun-29" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">📱 No. Telepon / WA</label>
+                    <input id="f-dashboard-components-modal-akun-29" value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
                   </div>
                   {/* AKSES — dulu tombol di kolom tabel tersendiri. Dipindah ke sini
                       supaya perubahannya melewati "Simpan Perubahan" seperti field lain,
@@ -1104,20 +1104,20 @@ export function AccountSettingsInline() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name *</label>
-                <input value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Nama lengkap" />
+                <label htmlFor="f-dashboard-components-modal-akun-30" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name *</label>
+                <input id="f-dashboard-components-modal-akun-30" value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Nama lengkap" />
               </div>
               <div>
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username *</label>
-                <input value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="username" />
+                <label htmlFor="f-dashboard-components-modal-akun-31" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username *</label>
+                <input id="f-dashboard-components-modal-akun-31" value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="username" />
               </div>
               <div>
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password *</label>
-                <input value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="min 6 karakter" />
+                <label htmlFor="f-dashboard-components-modal-akun-32" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password *</label>
+                <input id="f-dashboard-components-modal-akun-32" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="min 6 karakter" />
               </div>
               <div className="formulir:col-span-3">
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi *</label>
-                <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
+                <label htmlFor="f-dashboard-components-modal-akun-33" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi *</label>
+                <select id="f-dashboard-components-modal-akun-33" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                   <option value="">-- Pilih Divisi --</option>
                   <option value="PTS">PTS</option>
@@ -1127,8 +1127,8 @@ export function AccountSettingsInline() {
               </div>
               {newUser.divisi === 'PTS' && (
                 <div className="formulir:col-span-3">
-                  <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS *</label>
-                  <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
+                  <label htmlFor="f-dashboard-components-modal-akun-34" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS *</label>
+                  <select id="f-dashboard-components-modal-akun-34" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                     <option value="">-- Pilih Tipe PTS --</option>
                     {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
@@ -1137,8 +1137,8 @@ export function AccountSettingsInline() {
               )}
               {newUser.divisi === 'PTS' && kelompokPTSList.find(k => k.label === newUser.pts_type)?.cabang && (
                 <div className="formulir:col-span-3">
-                  <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
-                  <input value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
+                  <label htmlFor="f-dashboard-components-modal-akun-35" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
+                  <input id="f-dashboard-components-modal-akun-35" value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                     placeholder="Contoh: Surabaya, Bandung, Medan..."
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
@@ -1146,22 +1146,22 @@ export function AccountSettingsInline() {
               )}
               {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
                 <div className="formulir:col-span-3">
-                  <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division *</label>
-                  <select aria-label="-- Pilih Sales Division --" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
+                  <label htmlFor="f-dashboard-components-modal-akun-36" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division *</label>
+                  <select id="f-dashboard-components-modal-akun-36" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                     <option value="">-- Pilih Sales Division --</option>{daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
                   </select>
                 </div>
               )}
               <div>
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
-                <select aria-label="— Pilih Jabatan —" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                <label htmlFor="f-dashboard-components-modal-akun-37" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
+                <select id="f-dashboard-components-modal-akun-37" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                   <option value="">— Pilih Jabatan —</option>{JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">📱 No. Telepon / WA</label>
-                <input value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
+                <label htmlFor="f-dashboard-components-modal-akun-38" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">📱 No. Telepon / WA</label>
+                <input id="f-dashboard-components-modal-akun-38" value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
               </div>
               <div className="formulir:col-span-3">
                 <MenuPermissionSelector selected={newUser.allowed_menus} target="new" />

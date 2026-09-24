@@ -1603,8 +1603,8 @@ export default function IncentivePTSPage() {
                   label generik "Tahun" saja gampang disalahsangka sebagai
                   tahun proyek/BAST.
                 */}
-                <label className="text-xs font-bold text-gray-500">Tahun Bayar:</label>
-                <select aria-label="Tahun Bayar:" value={tahunAktif} onChange={e => setFilterYear(Number(e.target.value))}
+                <label htmlFor="f-incentive-pts-page-1" className="text-xs font-bold text-gray-500">Tahun Bayar:</label>
+                <select id="f-incentive-pts-page-1" value={tahunAktif} onChange={e => setFilterYear(Number(e.target.value))}
                   className="px-3 py-2 rounded-lg text-sm border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-rose-400">
                   {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
                   {uniqueYears.length === 0 && <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>}
@@ -2532,10 +2532,10 @@ export default function IncentivePTSPage() {
                 Tahapannya sendiri TIDAK dihapus — hanya hasil pemrosesannya. Nominal proyek
                 tetap terkunci. Untuk menghapus tahapan, pakai tombol ↩️ di baris proyeknya.
               </p>
-              <label className="block text-xs font-bold text-gray-600 mb-1">
+              <label htmlFor="f-incentive-pts-page-2" className="block text-xs font-bold text-gray-600 mb-1">
                 Ketik <span className="font-mono text-amber-700">{kunci}</span> untuk melanjutkan
               </label>
-              <input type="text" value={ketikBatalBatch} autoFocus
+              <input id="f-incentive-pts-page-2" type="text" value={ketikBatalBatch} autoFocus
                 onChange={e => setKetikBatalBatch(e.target.value)}
                 placeholder={kunci}
                 className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-amber-400" />

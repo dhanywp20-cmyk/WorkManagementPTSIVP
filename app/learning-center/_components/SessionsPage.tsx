@@ -394,14 +394,14 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Sesi *</label>
-                <input value={form.session_name} onChange={e => setForm(p => ({ ...p, session_name: e.target.value }))}
+                <label htmlFor="f-learning-center-components-sessionspage-1" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Sesi *</label>
+                <input id="f-learning-center-components-sessionspage-1" value={form.session_name} onChange={e => setForm(p => ({ ...p, session_name: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
                   placeholder="contoh: Quiz Microvision — Batch 1 — Mei 2025" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-                <select aria-label="-- Pilih Materi --" value={form.material_id}
+                <label htmlFor="f-learning-center-components-sessionspage-2" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
+                <select id="f-learning-center-components-sessionspage-2" value={form.material_id}
                   onChange={e => setForm(p => ({ ...p, material_id: e.target.value, batch_filter: '' }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
                   <option value="">-- Pilih Materi --</option>
@@ -426,11 +426,11 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 if (batches.length === 0) return null;
                 return (
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                    <label htmlFor="f-learning-center-components-sessionspage-3" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                       Grup / Batch Soal
                       <span className="ml-1.5 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
                     </label>
-                    <select aria-label="Optional"
+                    <select id="f-learning-center-components-sessionspage-3"
                       value={form.batch_filter}
                       onChange={e => setForm(p => ({ ...p, batch_filter: e.target.value }))}
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
@@ -450,32 +450,32 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 );
               })()}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
-                <input aria-label="Jumlah Soal" type="number" min={1} max={100} value={form.question_count}
+                <label htmlFor="f-learning-center-components-sessionspage-4" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
+                <input id="f-learning-center-components-sessionspage-4" type="number" min={1} max={100} value={form.question_count}
                   onChange={e => setForm(p => ({ ...p, question_count: +e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Timer (menit, 0 = tanpa timer)</label>
-                <input aria-label="Timer (menit, 0 = tanpa timer)" type="number" min={0} value={form.timer_minutes}
+                <label htmlFor="f-learning-center-components-sessionspage-5" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Timer (menit, 0 = tanpa timer)</label>
+                <input id="f-learning-center-components-sessionspage-5" type="number" min={0} value={form.timer_minutes}
                   onChange={e => setForm(p => ({ ...p, timer_minutes: +e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Passing Grade (%)</label>
-                <input aria-label="Passing Grade (%)" type="number" min={0} max={100} value={form.passing_grade}
+                <label htmlFor="f-learning-center-components-sessionspage-6" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Passing Grade (%)</label>
+                <input id="f-learning-center-components-sessionspage-6" type="number" min={0} max={100} value={form.passing_grade}
                   onChange={e => setForm(p => ({ ...p, passing_grade: +e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">⏰ Waktu Dibuka</label>
-                <input aria-label="⏰ Waktu Dibuka" type="datetime-local" value={form.open_at} onChange={e => setForm(p => ({ ...p, open_at: e.target.value }))}
+                <label htmlFor="f-learning-center-components-sessionspage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">⏰ Waktu Dibuka</label>
+                <input id="f-learning-center-components-sessionspage-7" type="datetime-local" value={form.open_at} onChange={e => setForm(p => ({ ...p, open_at: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
                 <p className="text-[10px] text-slate-400 mt-1">Kosongkan = langsung aktif sekarang</p>
               </div>
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">🔒 Waktu Ditutup</label>
-                <input aria-label="🔒 Waktu Ditutup" type="datetime-local" value={form.close_at} onChange={e => setForm(p => ({ ...p, close_at: e.target.value }))}
+                <label htmlFor="f-learning-center-components-sessionspage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">🔒 Waktu Ditutup</label>
+                <input id="f-learning-center-components-sessionspage-8" type="datetime-local" value={form.close_at} onChange={e => setForm(p => ({ ...p, close_at: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
                 <p className="text-[10px] text-slate-400 mt-1">Kosongkan = tidak ada batas waktu</p>
               </div>
@@ -859,8 +859,8 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
             <div className="px-6 py-4 space-y-4">
               {/* Nama Sesi */}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Sesi *</label>
-                <input value={reassignForm.session_name}
+                <label htmlFor="f-learning-center-components-sessionspage-9" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Sesi *</label>
+                <input id="f-learning-center-components-sessionspage-9" value={reassignForm.session_name}
                   onChange={e => setReassignForm(p => ({ ...p, session_name: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                   placeholder="Nama sesi untuk target baru..." />
@@ -869,14 +869,14 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
               {/* Pengaturan ringkas */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Timer (mnt)</label>
-                  <input aria-label="Timer (mnt)" type="number" min={0} value={reassignForm.timer_minutes}
+                  <label htmlFor="f-learning-center-components-sessionspage-10" className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Timer (mnt)</label>
+                  <input id="f-learning-center-components-sessionspage-10" type="number" min={0} value={reassignForm.timer_minutes}
                     onChange={e => setReassignForm(p => ({ ...p, timer_minutes: +e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Passing (%)</label>
-                  <input aria-label="Passing (%)" type="number" min={0} max={100} value={reassignForm.passing_grade}
+                  <label htmlFor="f-learning-center-components-sessionspage-11" className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">Passing (%)</label>
+                  <input id="f-learning-center-components-sessionspage-11" type="number" min={0} max={100} value={reassignForm.passing_grade}
                     onChange={e => setReassignForm(p => ({ ...p, passing_grade: +e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 </div>
@@ -899,14 +899,14 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
               {/* Waktu buka / tutup */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">⏰ Waktu Dibuka</label>
-                  <input aria-label="⏰ Waktu Dibuka" type="datetime-local" value={reassignForm.open_at}
+                  <label htmlFor="f-learning-center-components-sessionspage-12" className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">⏰ Waktu Dibuka</label>
+                  <input id="f-learning-center-components-sessionspage-12" type="datetime-local" value={reassignForm.open_at}
                     onChange={e => setReassignForm(p => ({ ...p, open_at: e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">🔒 Waktu Ditutup</label>
-                  <input aria-label="🔒 Waktu Ditutup" type="datetime-local" value={reassignForm.close_at}
+                  <label htmlFor="f-learning-center-components-sessionspage-13" className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">🔒 Waktu Ditutup</label>
+                  <input id="f-learning-center-components-sessionspage-13" type="datetime-local" value={reassignForm.close_at}
                     onChange={e => setReassignForm(p => ({ ...p, close_at: e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 </div>

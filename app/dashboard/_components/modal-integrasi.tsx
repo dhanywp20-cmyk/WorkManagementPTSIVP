@@ -905,8 +905,8 @@ export function IntegrasiInline() {
                 <p className="text-[11.5px] text-slate-400 mt-0.5 mb-3 leading-relaxed">
                   Kirim satu pesan nyata untuk memastikan gateway benar-benar jalan.
                 </p>
-                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Nomor tujuan</label>
-                <input value={waTujuan} onChange={e => setWaTujuan(e.target.value)} placeholder="contoh: 6281234567890"
+                <label htmlFor="f-dashboard-components-modal-integrasi-1" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Nomor tujuan</label>
+                <input id="f-dashboard-components-modal-integrasi-1" value={waTujuan} onChange={e => setWaTujuan(e.target.value)} placeholder="contoh: 6281234567890"
                   className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
                 <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">
                   Kode negara tanpa <span className="font-mono">+</span>. Awalan <span className="font-mono">08…</span> ditulis <span className="font-mono">628…</span>
@@ -959,10 +959,10 @@ export function IntegrasiInline() {
                         baris termasuk angka sebelum titik dua (klik dua kali di Telegram sering hanya memilih separuhnya).</>} />
 
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                      <label htmlFor="f-dashboard-components-modal-integrasi-2" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                         Tujuan bawaan <span className="normal-case tracking-normal font-normal text-slate-300">— opsional</span>
                       </label>
-                      <input value={p.telegramChatId} placeholder="mis. -1001234567890"
+                      <input id="f-dashboard-components-modal-integrasi-2" value={p.telegramChatId} placeholder="mis. -1001234567890"
                         onChange={e => ubah(x => ({ ...x, telegramChatId: e.target.value }))}
                         className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400 font-mono" />
                       <div className="flex flex-wrap gap-2 mt-2">
@@ -1194,10 +1194,10 @@ export function IntegrasiInline() {
                     <PilihModel nilai={ai.model} warna="sky" onGanti={m => setAi(x => ({ ...x, model: m }))} />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    <label htmlFor="f-dashboard-components-modal-integrasi-3" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                       Arahan topik <span className="normal-case tracking-normal font-normal text-slate-300">— opsional</span>
                     </label>
-                    <textarea value={ai.arahan} rows={3} onChange={e => setAi(x => ({ ...x, arahan: e.target.value }))}
+                    <textarea id="f-dashboard-components-modal-integrasi-3" value={ai.arahan} rows={3} onChange={e => setAi(x => ({ ...x, arahan: e.target.value }))}
                       placeholder={'Contoh:\nUtamakan topik konfigurasi videowall dan troubleshooting sinyal HDMI/HDBaseT.\nHindari pertanyaan tentang sejarah merek atau harga.'}
                       className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400 leading-relaxed" />
                     <p className="text-[10px] text-slate-400 mt-1">
@@ -1205,10 +1205,10 @@ export function IntegrasiInline() {
                     </p>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    <label htmlFor="f-dashboard-components-modal-integrasi-4" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                       Variasi soal <span className="normal-case tracking-normal font-normal text-slate-400">({ai.suhu.toFixed(1)})</span>
                     </label>
-                    <input type="range" min={0} max={2} step={0.1} value={ai.suhu} aria-label="Variasi soal"
+                    <input id="f-dashboard-components-modal-integrasi-4" type="range" min={0} max={2} step={0.1} value={ai.suhu} aria-label="Variasi soal"
                       onChange={e => setAi(x => ({ ...x, suhu: Number(e.target.value) }))} className="w-full accent-sky-500" />
                     <div className="flex justify-between text-[9.5px] text-slate-400">
                       <span>0 — taat pada materi</span><span>2 — banyak variasi</span>
@@ -1237,18 +1237,18 @@ export function IntegrasiInline() {
                       onGanti={m => setPenilai(x => ({ ...x, model: m }))} />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    <label htmlFor="f-dashboard-components-modal-integrasi-5" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                       Arahan penilaian <span className="normal-case tracking-normal font-normal text-slate-300">— opsional</span>
                     </label>
-                    <textarea value={penilai.arahan} rows={3} onChange={e => setPenilai(x => ({ ...x, arahan: e.target.value }))}
+                    <textarea id="f-dashboard-components-modal-integrasi-5" value={penilai.arahan} rows={3} onChange={e => setPenilai(x => ({ ...x, arahan: e.target.value }))}
                       placeholder={'Contoh:\nHargai jawaban yang benar secara konsep walau istilahnya tidak baku.\nJangan mengurangi nilai karena ejaan.'}
                       className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-violet-400 leading-relaxed" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                    <label htmlFor="f-dashboard-components-modal-integrasi-6" className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
                       Ketaatan pada kunci <span className="normal-case tracking-normal font-normal text-slate-400">({penilai.suhu.toFixed(1)})</span>
                     </label>
-                    <input type="range" min={0} max={2} step={0.1} value={penilai.suhu}
+                    <input id="f-dashboard-components-modal-integrasi-6" type="range" min={0} max={2} step={0.1} value={penilai.suhu}
                       aria-label="Ketaatan penilaian pada kunci referensi"
                       onChange={e => setPenilai(x => ({ ...x, suhu: Number(e.target.value) }))} className="w-full accent-violet-500" />
                     <div className="flex justify-between text-[9.5px] text-slate-400">

@@ -2544,8 +2544,8 @@ Hubungi Admin untuk info lebih lanjut.
               <p className="text-red-100 text-xs mt-0.5">{rejectModal.req.project_name}</p>
             </div>
             <div className="p-6">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Alasan penolakan <span className="text-red-500">*</span></label>
-              <textarea value={rejectNote} onChange={e => setRejectNote(e.target.value)} rows={3} placeholder="Tuliskan alasan penolakan..."
+              <label htmlFor="f-form-require-project-page-1" className="block text-sm font-bold text-gray-700 mb-2">Alasan penolakan <span className="text-red-500">*</span></label>
+              <textarea id="f-form-require-project-page-1" value={rejectNote} onChange={e => setRejectNote(e.target.value)} rows={3} placeholder="Tuliskan alasan penolakan..."
                 className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-red-400 transition-all outline-none resize-none mb-4" />
               <div className="flex gap-3">
                 <button onClick={() => setRejectModal({ open: false, req: null })} className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-all">Batal</button>
@@ -3728,8 +3728,8 @@ Hubungi Admin untuk info lebih lanjut.
                 Sekarang dikerjakan: <strong>{rerouteTarget.assign_name || 'belum di-assign'}</strong>
               </div>
               <div>
-                <label className="block text-[11px] font-bold mb-1 text-slate-600 uppercase tracking-widest">Alihkan ke</label>
-                <select aria-label="— pilih tujuan —" value={rerouteTo} onChange={e => setRerouteTo(e.target.value)}
+                <label htmlFor="f-form-require-project-page-2" className="block text-[11px] font-bold mb-1 text-slate-600 uppercase tracking-widest">Alihkan ke</label>
+                <select id="f-form-require-project-page-2" value={rerouteTo} onChange={e => setRerouteTo(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-200">
                   <option value="">— pilih tujuan —</option>
                   {rosterPTS.filter(u => u.jabatan === 'Supervisor').length > 0 && (
@@ -3790,13 +3790,13 @@ Hubungi Admin untuk info lebih lanjut.
                 </h3>
                 <div className="grid grid-cols-1 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Project *</label>
-                    <input value={editFormData.project_name} onChange={e => setEditFormData(p => ({ ...p, project_name: e.target.value }))}
+                    <label htmlFor="f-form-require-project-page-3" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Project *</label>
+                    <input id="f-form-require-project-page-3" value={editFormData.project_name} onChange={e => setEditFormData(p => ({ ...p, project_name: e.target.value }))}
                       placeholder="Nama project..." className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Lokasi Project</label>
-                    <textarea value={editFormData.project_location} onChange={e => setEditFormData(p => ({ ...p, project_location: e.target.value }))}
+                    <label htmlFor="f-form-require-project-page-4" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Lokasi Project</label>
+                    <textarea id="f-form-require-project-page-4" value={editFormData.project_location} onChange={e => setEditFormData(p => ({ ...p, project_location: e.target.value }))}
                       placeholder="Contoh: Gedung Wisma 46 Lt.12, Jl. MH Thamrin No.1, Jakarta Pusat" rows={4}
                       className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 outline-none bg-white resize-none" />
                   </div>
@@ -3822,8 +3822,8 @@ Hubungi Admin untuk info lebih lanjut.
                   Target Selesai
                 </h3>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Target Selesai</label>
-                  <input aria-label="Target Selesai" type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)}
+                  <label htmlFor="f-form-require-project-page-5" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Target Selesai</label>
+                  <input id="f-form-require-project-page-5" type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
                     className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-amber-400 transition-all text-sm bg-white outline-none cursor-pointer"
                     style={{ color: editDueDate ? '#374151' : '#9ca3af' }} />
@@ -3876,8 +3876,8 @@ Hubungi Admin untuk info lebih lanjut.
                   <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🛋️</span>
                   Ruangan {editRoomIdx + 1}
                 </h3>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Ruangan</label>
-                <input value={editCur.room_name} onChange={e => editUpd({ room_name: e.target.value })}
+                <label htmlFor="f-form-require-project-page-6" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Ruangan</label>
+                <input id="f-form-require-project-page-6" value={editCur.room_name} onChange={e => editUpd({ room_name: e.target.value })}
                   placeholder="Nama ruangan / area" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 outline-none bg-white" />
                 {editRoomAktifBaru && selectedRequest.status !== 'pending' && (
                   <p className="text-xs text-amber-700 font-semibold mt-2">Ruangan baru ini akan berstatus Pending dan perlu di-approve admin.</p>
@@ -3892,15 +3892,15 @@ Hubungi Admin untuk info lebih lanjut.
                 <CheckGroup label="Kebutuhan" options={['Signage', 'Immersive', 'Meeting Room', 'Mapping', 'Command Center', 'Hybrid Classroom']}
                   value={editCur.kebutuhan} onChange={v => editUpd({ kebutuhan: v })} />
                 <div className="mb-4">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Kebutuhan</label>
-                  <input value={editCur.kebutuhan_other} onChange={e => editUpd({ kebutuhan_other: e.target.value })}
+                  <label htmlFor="f-form-require-project-page-7" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Kebutuhan</label>
+                  <input id="f-form-require-project-page-7" value={editCur.kebutuhan_other} onChange={e => editUpd({ kebutuhan_other: e.target.value })}
                     placeholder="Tuliskan jika ada..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                 </div>
                 <CheckGroup label="Solution Product" options={['Videowall', 'Signage Display', 'Videotron', 'Projector', 'Kiosk', 'IFP']}
                   value={editCur.solution_product} onChange={v => editUpd({ solution_product: v })} />
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Solution</label>
-                  <input value={editCur.solution_other} onChange={e => editUpd({ solution_other: e.target.value })}
+                  <label htmlFor="f-form-require-project-page-8" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Solution</label>
+                  <input id="f-form-require-project-page-8" value={editCur.solution_other} onChange={e => editUpd({ solution_other: e.target.value })}
                     placeholder="Tuliskan jika ada..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                 </div>
               </div>
@@ -3917,13 +3917,13 @@ Hubungi Admin untuk info lebih lanjut.
                   value={editCur.jaringan_cms} onChange={v => editUpd({ jaringan_cms: v })} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Input</label>
-                    <input value={editCur.jumlah_input} onChange={e => editUpd({ jumlah_input: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-9" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Input</label>
+                    <input id="f-form-require-project-page-9" value={editCur.jumlah_input} onChange={e => editUpd({ jumlah_input: e.target.value })}
                       placeholder="e.g. 4 input" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Output</label>
-                    <input value={editCur.jumlah_output} onChange={e => editUpd({ jumlah_output: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-10" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Output</label>
+                    <input id="f-form-require-project-page-10" value={editCur.jumlah_output} onChange={e => editUpd({ jumlah_output: e.target.value })}
                       placeholder="e.g. 2 output" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                 </div>
@@ -3938,8 +3938,8 @@ Hubungi Admin untuk info lebih lanjut.
                 <CheckGroup label="Source" options={['PC / Mini PC', 'Laptop', 'URL Dashboard', 'NVR CCTV', 'Media Player', 'IPTV', 'Set Top Box']}
                   value={editCur.source} onChange={v => editUpd({ source: v })} />
                 <div className="mb-4">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Source</label>
-                  <input value={editCur.source_other} onChange={e => editUpd({ source_other: e.target.value })}
+                  <label htmlFor="f-form-require-project-page-11" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Source</label>
+                  <input id="f-form-require-project-page-11" value={editCur.source_other} onChange={e => editUpd({ source_other: e.target.value })}
                     placeholder="Tuliskan jika ada..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                 </div>
 
@@ -3948,8 +3948,8 @@ Hubungi Admin untuk info lebih lanjut.
                 {editCur.camera_conference === 'Yes' && (
                   <div className="ml-4 mb-4 space-y-3 border-l-2 border-amber-200 pl-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Camera</label>
-                      <input value={editCur.camera_jumlah} onChange={e => editUpd({ camera_jumlah: e.target.value })}
+                      <label htmlFor="f-form-require-project-page-12" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Camera</label>
+                      <input id="f-form-require-project-page-12" value={editCur.camera_jumlah} onChange={e => editUpd({ camera_jumlah: e.target.value })}
                         placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                     </div>
                     <CheckGroup label="Camera Tracking" options={['Auto Tracking', 'Manual PTZ', 'Fixed']}
@@ -3962,8 +3962,8 @@ Hubungi Admin untuk info lebih lanjut.
                 {editCur.audio_system === 'Yes' && (
                   <div className="ml-4 mb-4 space-y-3 border-l-2 border-amber-200 pl-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Mixer / DSP</label>
-                      <input value={editCur.audio_mixer} onChange={e => editUpd({ audio_mixer: e.target.value })}
+                      <label htmlFor="f-form-require-project-page-13" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Mixer / DSP</label>
+                      <input id="f-form-require-project-page-13" value={editCur.audio_mixer} onChange={e => editUpd({ audio_mixer: e.target.value })}
                         placeholder="e.g. Yamaha QL1, QSC, etc." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                     </div>
                     <CheckGroup label="Audio Detail" options={['Speaker Ceiling', 'Speaker Line Array', 'Subwoofer', 'Microphone', 'Amplifier']}
@@ -3975,8 +3975,8 @@ Hubungi Admin untuk info lebih lanjut.
                   onChange={v => editUpd({ wallplate_input: v })} />
                 {editCur.wallplate_input === 'Yes' && (
                   <div className="ml-4 mb-4 border-l-2 border-amber-200 pl-4">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Wallplate</label>
-                    <input value={editCur.wallplate_jumlah} onChange={e => editUpd({ wallplate_jumlah: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-14" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Wallplate</label>
+                    <input id="f-form-require-project-page-14" value={editCur.wallplate_jumlah} onChange={e => editUpd({ wallplate_jumlah: e.target.value })}
                       placeholder="e.g. 3 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                 )}
@@ -3985,8 +3985,8 @@ Hubungi Admin untuk info lebih lanjut.
                   onChange={v => editUpd({ tabletop_input: v })} />
                 {editCur.tabletop_input === 'Yes' && (
                   <div className="ml-4 mb-4 border-l-2 border-amber-200 pl-4">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Tabletop</label>
-                    <input value={editCur.tabletop_jumlah} onChange={e => editUpd({ tabletop_jumlah: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-15" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Tabletop</label>
+                    <input id="f-form-require-project-page-15" value={editCur.tabletop_jumlah} onChange={e => editUpd({ tabletop_jumlah: e.target.value })}
                       placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                 )}
@@ -4019,18 +4019,18 @@ Hubungi Admin untuk info lebih lanjut.
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ukuran Ruangan (P × L × T)</label>
-                    <input value={editCur.ukuran_ruangan} onChange={e => editUpd({ ukuran_ruangan: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-16" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ukuran Ruangan (P × L × T)</label>
+                    <input id="f-form-require-project-page-16" value={editCur.ukuran_ruangan} onChange={e => editUpd({ ukuran_ruangan: e.target.value })}
                       placeholder="e.g. 8m × 6m × 3m" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Suggest Tampilan (W × H)</label>
-                    <input value={editCur.suggest_tampilan} onChange={e => editUpd({ suggest_tampilan: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-17" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Suggest Tampilan (W × H)</label>
+                    <input id="f-form-require-project-page-17" value={editCur.suggest_tampilan} onChange={e => editUpd({ suggest_tampilan: e.target.value })}
                       placeholder="e.g. 1920 × 1080 px atau 4K" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Keterangan Lain</label>
-                    <textarea value={editCur.keterangan_lain} onChange={e => editUpd({ keterangan_lain: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-18" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Keterangan Lain</label>
+                    <textarea id="f-form-require-project-page-18" value={editCur.keterangan_lain} onChange={e => editUpd({ keterangan_lain: e.target.value })}
                       rows={3} placeholder="Tuliskan informasi tambahan..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none resize-none bg-white" />
                   </div>
                 </div>

@@ -85,8 +85,8 @@ export function ModePenyelesaianPanel({
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-gray-600 mb-2">📅 Tanggal BAST <span className="text-red-500">*</span></label>
-          <input aria-label="Tanggal BAST" type="date" value={bastDate} onChange={e => setBastDate(e.target.value)}
+          <label htmlFor="f-reminder-schedule-components-modepenyelesaianpanel-1" className="block text-xs font-bold text-gray-600 mb-2">📅 Tanggal BAST <span className="text-red-500">*</span></label>
+          <input id="f-reminder-schedule-components-modepenyelesaianpanel-1" type="date" value={bastDate} onChange={e => setBastDate(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white" />
           {bastDate && (
             <p className="text-[10px] text-gray-400 mt-1">Tranche T1 bayar {new Date(bastDate).getFullYear()+1} · T2 bayar {new Date(bastDate).getFullYear()+2} · T3 bayar {new Date(bastDate).getFullYear()+3}</p>
@@ -168,8 +168,8 @@ export function ModePenyelesaianPanel({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Daerah / Kota <span className="text-red-500">*</span></label>
-              <input value={installerDaerah} onChange={e => setInstallerDaerah(e.target.value)}
+              <label htmlFor="f-reminder-schedule-components-modepenyelesaianpanel-2" className="block text-xs font-semibold text-gray-600 mb-1">Daerah / Kota <span className="text-red-500">*</span></label>
+              <input id="f-reminder-schedule-components-modepenyelesaianpanel-2" value={installerDaerah} onChange={e => setInstallerDaerah(e.target.value)}
                 placeholder="Contoh: Surabaya, Bandung, Medan..."
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>

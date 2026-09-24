@@ -338,8 +338,8 @@ export function TicketDetailPopup({
               <div className="overflow-y-auto p-3 space-y-3" style={{ maxHeight: 'calc(94vh - 70px)' }}>
                 {/* SN Unit */}
                 <div>
-                  <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">🔢 SN Unit</label>
-                  <input type="text" value={newActivity.sn_unit} onChange={e => setNewActivity({ ...newActivity, sn_unit: e.target.value })}
+                  <label htmlFor="f-ticketing-components-ticketdetailpopup-1" className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">🔢 SN Unit</label>
+                  <input id="f-ticketing-components-ticketdetailpopup-1" type="text" value={newActivity.sn_unit} onChange={e => setNewActivity({ ...newActivity, sn_unit: e.target.value })}
                     placeholder="Update SN Unit..." className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40"
                     style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                 </div>
@@ -439,17 +439,17 @@ export function TicketDetailPopup({
                 {!["Call","Onsite","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart"].includes(newActivity.new_status) && (
                   <>
                     <div>
-                      <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">🔧 Action Taken</label>
-                      <textarea value={newActivity.action_taken} onChange={e => setNewActivity({ ...newActivity, action_taken: e.target.value })}
+                      <label htmlFor="f-ticketing-components-ticketdetailpopup-2" className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">🔧 Action Taken</label>
+                      <textarea id="f-ticketing-components-ticketdetailpopup-2" value={newActivity.action_taken} onChange={e => setNewActivity({ ...newActivity, action_taken: e.target.value })}
                         placeholder="Cek kabel HDMI, restart sistem..." rows={2}
                         className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
                         style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                     </div>
                     <div>
-                      <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">
+                      <label htmlFor="f-ticketing-components-ticketdetailpopup-3" className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">
                         📝 Notes {newActivity.new_status === "In Progress" ? <span className="text-gray-300 normal-case">(opsional)</span> : "*"}
                       </label>
-                      <textarea value={newActivity.notes} onChange={e => setNewActivity({ ...newActivity, notes: e.target.value })}
+                      <textarea id="f-ticketing-components-ticketdetailpopup-3" value={newActivity.notes} onChange={e => setNewActivity({ ...newActivity, notes: e.target.value })}
                         placeholder={newActivity.new_status === "Pending Action" ? "Kendala apa? (mis. menunggu konfirmasi user, akses lokasi belum tersedia)" : "Detail penanganan..."} rows={3}
                         className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
                         style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
@@ -490,8 +490,8 @@ export function TicketDetailPopup({
 
                 {/* Photo */}
                 <div>
-                  <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">📷 Foto Bukti</label>
-                  <input type="file" accept="image/jpeg,image/jpg,image/png"
+                  <label htmlFor="f-ticketing-components-ticketdetailpopup-4" className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">📷 Foto Bukti</label>
+                  <input id="f-ticketing-components-ticketdetailpopup-4" type="file" accept="image/jpeg,image/jpg,image/png"
                     onChange={e => setNewActivity({ ...newActivity, photo: e.target.files?.[0] || null })}
                     className="w-full border rounded-lg px-2.5 py-1.5 text-xs bg-white file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-red-50 file:text-red-700"
                     style={{ borderColor: "rgba(0,0,0,0.12)" }} />

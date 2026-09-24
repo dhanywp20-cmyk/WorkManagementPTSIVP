@@ -111,10 +111,10 @@ export function ModalHapus({
             ⚠️ <strong>Tindakan ini tidak dapat dibatalkan.</strong> Reminder ini akan dihapus permanen dari database.
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-bold mb-1 text-gray-700">
+            <label htmlFor="f-reminder-schedule-components-popupringkas-1" className="block text-sm font-bold mb-1 text-gray-700">
               Ketik <span className="font-mono bg-red-100 text-red-700 px-1.5 py-0.5 rounded">HAPUS</span> untuk konfirmasi
             </label>
-            <input
+            <input id="f-reminder-schedule-components-popupringkas-1"
               type="text"
               value={deleteConfirmText}
               onChange={e => setDeleteConfirmText(e.target.value)}

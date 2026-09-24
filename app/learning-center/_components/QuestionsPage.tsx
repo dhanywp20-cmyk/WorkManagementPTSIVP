@@ -693,26 +693,26 @@ export function QuestionsPage({ user }: { user: User }) {
       </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="col-span-2">
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+          <label htmlFor="f-learning-center-components-questionspage-1" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Nama Grup / Batch
             <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
           </label>
-          <input value={batchName} onChange={e => setBatchName(e.target.value)}
+          <input id="f-learning-center-components-questionspage-1" value={batchName} onChange={e => setBatchName(e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white"
             placeholder="contoh: Instalasi Dasar, Troubleshooting Level 1, Quiz Minggu ke-3..." />
         </div>
         <div className="col-span-2">
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+          <label htmlFor="f-learning-center-components-questionspage-2" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Topik Khusus
             <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
           </label>
-          <textarea value={genExtraPrompt} onChange={e => setGenExtraPrompt(e.target.value)} rows={2}
+          <textarea id="f-learning-center-components-questionspage-2" value={genExtraPrompt} onChange={e => setGenExtraPrompt(e.target.value)} rows={2}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white resize-none"
             placeholder="contoh: Fokus pada cara pemasangan LED indoor P2.5, atau khusus troubleshooting sinyal HDMI..." />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-          <select aria-label="-- Pilih Materi --" value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
+          <label htmlFor="f-learning-center-components-questionspage-3" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
+          <select id="f-learning-center-components-questionspage-3" value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
             <option value="">-- Pilih Materi --</option>
             {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
@@ -721,13 +721,13 @@ export function QuestionsPage({ user }: { user: User }) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
-          <input aria-label="Jumlah Soal" type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
+          <label htmlFor="f-learning-center-components-questionspage-4" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
+          <input id="f-learning-center-components-questionspage-4" type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white" />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
-          <select aria-label="Tingkat Kesulitan" value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
+          <label htmlFor="f-learning-center-components-questionspage-5" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
+          <select id="f-learning-center-components-questionspage-5" value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
             <option value="mixed">Mixed (Campuran)</option>
             <option value="easy">Easy — Mudah</option>
@@ -736,10 +736,10 @@ export function QuestionsPage({ user }: { user: User }) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+          <label htmlFor="f-learning-center-components-questionspage-6" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Upload PDF <span className="text-[10px] font-normal text-violet-500 normal-case tracking-normal">(sementara, tidak disimpan)</span>
           </label>
-          <input ref={pdfRef} type="file" accept=".pdf" onChange={e => {
+          <input id="f-learning-center-components-questionspage-6" ref={pdfRef} type="file" accept=".pdf" onChange={e => {
             const f = e.target.files?.[0] ?? null;
             if (f && f.size > MAX_PDF_BYTES) {
               setDialog({
@@ -940,8 +940,8 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-            <select aria-label="-- Pilih Materi --" value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
+            <label htmlFor="f-learning-center-components-questionspage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
+            <select id="f-learning-center-components-questionspage-7" value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
               <option value="">-- Pilih Materi --</option>
               {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
@@ -950,8 +950,8 @@ export function QuestionsPage({ user }: { user: User }) {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pertanyaan *</label>
-            <textarea value={newQ.question} onChange={e => setNewQ(p => ({ ...p, question: e.target.value }))}
+            <label htmlFor="f-learning-center-components-questionspage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pertanyaan *</label>
+            <textarea id="f-learning-center-components-questionspage-8" value={newQ.question} onChange={e => setNewQ(p => ({ ...p, question: e.target.value }))}
               rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
               placeholder="Tulis pertanyaan di sini..." />
           </div>
@@ -988,11 +988,11 @@ export function QuestionsPage({ user }: { user: User }) {
               )}
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+              <label htmlFor="f-learning-center-components-questionspage-9" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                 Kunci / Referensi Jawaban
                 <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional — hanya untuk bantu admin menilai, tidak dilihat peserta</span>
               </label>
-              <textarea value={newQ.model_answer} onChange={e => setNewQ(p => ({ ...p, model_answer: e.target.value }))}
+              <textarea id="f-learning-center-components-questionspage-9" value={newQ.model_answer} onChange={e => setNewQ(p => ({ ...p, model_answer: e.target.value }))}
                 rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
                 placeholder="Contoh jawaban ideal / poin-poin kunci penilaian..." />
             </div>
@@ -1010,17 +1010,17 @@ export function QuestionsPage({ user }: { user: User }) {
             </div>
           ))}
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+            <label htmlFor="f-learning-center-components-questionspage-10" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
               Nama Grup / Batch
               <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
             </label>
-            <input value={newQ.batch_name} onChange={e => setNewQ(p => ({ ...p, batch_name: e.target.value }))}
+            <input id="f-learning-center-components-questionspage-10" value={newQ.batch_name} onChange={e => setNewQ(p => ({ ...p, batch_name: e.target.value }))}
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
               placeholder="contoh: Instalasi Dasar, Quiz Minggu 1, Troubleshooting..." />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
-            <select aria-label="Tingkat Kesulitan" value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
+            <label htmlFor="f-learning-center-components-questionspage-11" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
+            <select id="f-learning-center-components-questionspage-11" value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
               className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
               <option value="easy">Easy</option>
               <option value="medium">Medium</option>
@@ -1447,10 +1447,10 @@ export function QuestionsPage({ user }: { user: User }) {
                   rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Pertanyaan" />
                 {editQ.question_type === 'essay' ? (
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                    <label htmlFor="f-learning-center-components-questionspage-12" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                       Kunci / Referensi Jawaban <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case">Optional</span>
                     </label>
-                    <textarea value={editQ.model_answer ?? ''} onChange={e => setEditQ(p => p && ({ ...p, model_answer: e.target.value }))}
+                    <textarea id="f-learning-center-components-questionspage-12" value={editQ.model_answer ?? ''} onChange={e => setEditQ(p => p && ({ ...p, model_answer: e.target.value }))}
                       rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Contoh jawaban ideal..." />
                   </div>
                 ) : (['a','b','c','d'] as const).map(opt => (

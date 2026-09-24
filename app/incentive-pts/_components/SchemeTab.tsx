@@ -344,10 +344,10 @@ export function SchemeTab({ olehNama, notify }: {
         ) : (
           <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
+              <label htmlFor="f-incentive-pts-components-schemetab-1" className="block text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">
                 Porsi PTS Daerah (%)
               </label>
-              <input type="number" min={0} max={99} step="0.01" value={sk.installerRemotePersen}
+              <input id="f-incentive-pts-components-schemetab-1" type="number" min={0} max={99} step="0.01" value={sk.installerRemotePersen}
                 onChange={e => ubah({ installerRemotePersen: parseFloat(e.target.value) || 0 })}
                 aria-label="Porsi PTS Daerah" className={inputKecil} />
               <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">
@@ -509,10 +509,10 @@ export function SchemeTab({ olehNama, notify }: {
         </div>
         <div className="p-4 sm:p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2">
-            <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1">
+            <label htmlFor="f-incentive-pts-components-schemetab-2" className="block text-[11px] font-bold text-gray-600 uppercase tracking-widest mb-1">
               Supervisor merangkap PIC → porsi koordinasinya dialihkan ke
             </label>
-            <select value={sk.hangusSupervisorKe} onChange={e => ubah({ hangusSupervisorKe: e.target.value })}
+            <select id="f-incentive-pts-components-schemetab-2" value={sk.hangusSupervisorKe} onChange={e => ubah({ hangusSupervisorKe: e.target.value })}
               aria-label="Tujuan porsi Supervisor yang hangus" className={inputKecil}>
               <option value="">— hangus, tanpa penerima —</option>
               {sk.porsi.filter(p => p.peran !== 'supervisor').map(p => (

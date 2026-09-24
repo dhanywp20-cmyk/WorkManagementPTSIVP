@@ -253,8 +253,8 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                 </p>
                 <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division</label>
-                    <select aria-label="— Pilih Divisi —" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)}
+                    <label htmlFor="f-dashboard-components-modal-user-1" className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division</label>
+                    <select id="f-dashboard-components-modal-user-1" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)}
                       className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 bg-white">
                       <option value="">— Pilih Divisi —</option>
                       {nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}
@@ -429,8 +429,8 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                 </div>
                 <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division (External)</label>
-                    <select aria-label="— Pilih Divisi —" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)}
+                    <label htmlFor="f-dashboard-components-modal-user-2" className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division (External)</label>
+                    <select id="f-dashboard-components-modal-user-2" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)}
                       className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
                       <option value="">— Pilih Divisi —</option>
                       {nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}
@@ -1123,16 +1123,16 @@ export function UserManagementInline() {
                   <p className="text-xs font-bold text-amber-700 mb-3">➕ Tambah Mapping Atasan</p>
                   <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi / Grup</label>
-                      <select aria-label="-- Pilih Divisi / Grup --" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
+                      <label htmlFor="f-dashboard-components-modal-user-3" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi / Grup</label>
+                      <select id="f-dashboard-components-modal-user-3" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
                         <option value="">-- Pilih Divisi / Grup --</option>
                         <optgroup label="Divisi Sales">{nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}</optgroup>
                         <optgroup label="Tim Internal / IVP">{INTERNAL_GROUPS.map(d => <option key={d} value={d}>{d === 'IVP' ? '🔗' : '🔧'} {d}</option>)}</optgroup>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Atasan</label>
-                      <select aria-label="-- Pilih Atasan --" value={atasanSupId} onChange={e => setAtasanSupId(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
+                      <label htmlFor="f-dashboard-components-modal-user-4" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Atasan</label>
+                      <select id="f-dashboard-components-modal-user-4" value={atasanSupId} onChange={e => setAtasanSupId(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
                         <option value="">-- Pilih Atasan --</option>{supervisorCandidates.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.jabatan}{u.team_type ? ` · ${u.team_type}` : ''})</option>)}
                       </select>
                     </div>
@@ -1191,14 +1191,14 @@ export function UserManagementInline() {
                   </div>
                   <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi Sales</label>
-                      <select aria-label="-- Pilih Divisi --" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
+                      <label htmlFor="f-dashboard-components-modal-user-5" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi Sales</label>
+                      <select id="f-dashboard-components-modal-user-5" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
                         <option value="">-- Pilih Divisi --</option>{nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Sales Account (IVP / MVI)</label>
-                      <select aria-label="-- Pilih Account --" value={ivpUserId} onChange={e => setIvpUserId(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
+                      <label htmlFor="f-dashboard-components-modal-user-6" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Sales Account (IVP / MVI)</label>
+                      <select id="f-dashboard-components-modal-user-6" value={ivpUserId} onChange={e => setIvpUserId(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
                         <option value="">-- Pilih Account --</option>
                         {ivpUsers.length > 0 && (
                           <optgroup label="── IVP ──">
@@ -1263,8 +1263,8 @@ export function UserManagementInline() {
                   <p className="text-[11px] text-slate-500 mb-3">Request diarahkan otomatis ke Supervisor tim sesuai tipe produk (Supervisor dicari live dari Struktur Organisasi — bukan hardcode nama). "LED &amp; LCD" boleh diarahkan ke 2 tim sekaligus (keduanya di-notify, 1 tim yang eksekusi).</p>
                   <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tipe Produk</label>
-                      <select aria-label="-- Pilih Tipe --" value={prodType} onChange={e => setProdType(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 bg-white">
+                      <label htmlFor="f-dashboard-components-modal-user-7" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tipe Produk</label>
+                      <select id="f-dashboard-components-modal-user-7" value={prodType} onChange={e => setProdType(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 bg-white">
                         <option value="">-- Pilih Tipe --</option>
                         {PRODUCT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>

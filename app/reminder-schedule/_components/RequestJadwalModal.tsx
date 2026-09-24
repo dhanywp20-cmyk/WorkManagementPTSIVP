@@ -248,10 +248,10 @@ export function RequestJadwalModal({
 
           {/* Nama Project */}
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-1" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Nama Project *
             </label>
-            <input
+            <input id="f-reminder-schedule-components-requestjadwalmodal-1"
               value={form.project_name}
               onChange={e => f({ project_name: e.target.value })}
               className={inputCls} style={inputStyle}
@@ -277,10 +277,10 @@ export function RequestJadwalModal({
 
           {/* Deskripsi */}
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-2" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Deskripsi Kebutuhan
             </label>
-            <textarea
+            <textarea id="f-reminder-schedule-components-requestjadwalmodal-2"
               value={form.description}
               onChange={e => f({ description: e.target.value })}
               rows={2}
@@ -370,10 +370,10 @@ export function RequestJadwalModal({
           {/* Tanggal & Waktu */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-3" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Tanggal Usulan *
               </label>
-              <input aria-label="Tanggal Usulan"
+              <input id="f-reminder-schedule-components-requestjadwalmodal-3"
                 type="date"
                 value={form.due_date}
                 onChange={e => f({ due_date: e.target.value })}
@@ -381,10 +381,10 @@ export function RequestJadwalModal({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-4" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Waktu Usulan
               </label>
-              <input aria-label="Waktu Usulan"
+              <input id="f-reminder-schedule-components-requestjadwalmodal-4"
                 type="time"
                 value={form.due_time}
                 onChange={e => f({ due_time: e.target.value })}
@@ -409,18 +409,18 @@ export function RequestJadwalModal({
               </p>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                  <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-5" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                     Mulai Pengerjaan
                   </label>
-                  <input aria-label="Mulai Pengerjaan" type="date" value={form.progress_start_date}
+                  <input id="f-reminder-schedule-components-requestjadwalmodal-5" type="date" value={form.progress_start_date}
                     onChange={e => f({ progress_start_date: e.target.value })}
                     className={inputCls} style={inputStyle} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                  <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-6" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                     Target Selesai
                   </label>
-                  <input aria-label="Target Selesai" type="date" value={form.progress_target_date}
+                  <input id="f-reminder-schedule-components-requestjadwalmodal-6" type="date" value={form.progress_target_date}
                     min={form.progress_start_date || undefined}
                     onChange={e => f({ progress_target_date: e.target.value })}
                     className={inputCls} style={inputStyle} />
@@ -446,10 +446,10 @@ export function RequestJadwalModal({
           {/* PIC */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-7" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Nama PIC Project
               </label>
-              <input
+              <input id="f-reminder-schedule-components-requestjadwalmodal-7"
                 value={form.pic_name}
                 onChange={e => f({ pic_name: e.target.value })}
                 className={inputCls} style={inputStyle}
@@ -474,10 +474,10 @@ export function RequestJadwalModal({
 
           {/* Catatan */}
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-8" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Catatan Tambahan
             </label>
-            <textarea
+            <textarea id="f-reminder-schedule-components-requestjadwalmodal-8"
               value={form.notes}
               onChange={e => f({ notes: e.target.value })}
               rows={2}

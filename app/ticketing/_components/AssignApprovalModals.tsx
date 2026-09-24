@@ -142,8 +142,8 @@ export function SupervisorAssignModal({
               ⚠️ {supAssignTicket.issue_case} · {supAssignTicket.sales_name || "-"}{supAssignTicket.sales_division ? ` (${supAssignTicket.sales_division})` : ""}
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase text-slate-400">Assign ke *</label>
-              <select aria-label="-- Pilih --" value={supAssignTo} onChange={e => setSupAssignTo(e.target.value)}
+              <label htmlFor="f-ticketing-components-assignapprovalmodals-1" className="block text-xs font-bold mb-1.5 tracking-widest uppercase text-slate-400">Assign ke *</label>
+              <select id="f-ticketing-components-assignapprovalmodals-1" value={supAssignTo} onChange={e => setSupAssignTo(e.target.value)}
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none text-slate-800 focus:ring-2 focus:ring-amber-500/40"
                 style={{ background: "#fff", border: "1px solid rgba(0,0,0,0.12)" }}>
                 <option value="">-- Pilih --</option>
