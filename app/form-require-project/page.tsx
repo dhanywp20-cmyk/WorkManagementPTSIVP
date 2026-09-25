@@ -32,68 +32,8 @@ import { unduhPaketRequest } from './_components/paket-unduhan';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { FilterLipat } from '@/components/shared/FilterLipat';
 import { Toast as ToastBersama } from '@/components/shared/Toast';
-
-/**
- * Field ruangan yang boleh diubah lewat form Edit. Ruangan 1 hidup di kolom
- * request langsung (editFormData), ruangan 2+ hidup di JSONB `rooms[]` -
- * bentuk field-nya sama, jadi satu daftar ini dipakai untuk keduanya.
- *
- * Field lain di rooms[] (status, assign_*, approved_*, brand_*, PIC,
- * survey_photos_count) SENGAJA tidak ada di sini: itu diurus alur
- * approve/assign, bukan form Edit, dan tidak boleh tertimpa saat menyimpan.
- */
-const EDIT_ROOM_KEYS = [
-  'room_name', 'kebutuhan', 'kebutuhan_other', 'solution_product', 'solution_other',
-  'layout_signage', 'jaringan_cms', 'jumlah_input', 'jumlah_output',
-  'source', 'source_other',
-  'camera_conference', 'camera_jumlah', 'camera_tracking',
-  'audio_system', 'audio_mixer', 'audio_detail',
-  'wallplate_input', 'wallplate_jumlah', 'tabletop_input', 'tabletop_jumlah',
-  'wireless_presentation', 'wireless_mode', 'wireless_dongle',
-  'controller_automation', 'controller_type',
-  'ukuran_ruangan', 'suggest_tampilan', 'keterangan_lain',
-] as const;
-type EditRoomKey = typeof EDIT_ROOM_KEYS[number];
-type EditRoomFields = Pick<RoomDetail, EditRoomKey>;
-
-/** Field ruangan 2+ yang dicatat ke audit & WA (sama semangatnya dengan REQUEST_FIELDS). */
-const EDIT_ROOM_LABELS: AdminField[] = [
-  { key: 'room_name',        label: 'Nama Ruangan' },
-  { key: 'kebutuhan',        label: 'Kebutuhan' },
-  { key: 'solution_product', label: 'Solution' },
-  { key: 'ukuran_ruangan',   label: 'Ukuran Ruangan' },
-  { key: 'suggest_tampilan', label: 'Saran Tampilan' },
-  { key: 'keterangan_lain',  label: 'Keterangan' },
-];
-
-/** Ambil hanya field yang bisa diedit; yang belum ada di data lama diisi default. */
-const ambilFieldRuangan = (r: Partial<RoomDetail>): EditRoomFields => {
-  const dasar = emptyRoom() as unknown as Record<string, unknown>;
-  const src = r as unknown as Record<string, unknown>;
-  const out: Record<string, unknown> = {};
-  for (const k of EDIT_ROOM_KEYS) out[k] = src[k] ?? dasar[k];
-  return out as unknown as EditRoomFields;
-};
-const namaRuangan = (r: { room_name?: string | null }, nomor: number) => r.room_name?.trim() || `Ruangan ${nomor}`;
-
-type SumberKebutuhan = { kebutuhan?: string[] | null; kebutuhan_other?: string | null };
-/**
- * Kebutuhan sebuah request = gabungan SEMUA ruangannya (Ruangan 1 di kolom
- * request + rooms[]), tanpa duplikat. Satu request dengan Meeting Room dan
- * Command Center dihitung di kedua irisan. Isian "lainnya" digabung ke
- * "Lainnya" supaya teks bebas tidak memecah pie jadi banyak irisan; request
- * yang belum mengisi apa pun masuk "Belum diisi" agar total pie tetap utuh.
- * Dipakai bersama oleh pie chart dan filternya - satu sumber, tidak bisa beda.
- */
-const daftarKebutuhan = (r: SumberKebutuhan & { rooms?: SumberKebutuhan[] | null }): string[] => {
-  const hasil = new Set<string>();
-  for (const rm of [r, ...(r.rooms || [])]) {
-    for (const k of rm.kebutuhan || []) if (k) hasil.add(k);
-    if (rm.kebutuhan_other?.trim()) hasil.add('Lainnya');
-  }
-  if (hasil.size === 0) hasil.add('Belum diisi');
-  return [...hasil];
-};
+import { EDIT_ROOM_LABELS, ambilFieldRuangan, namaRuangan, daftarKebutuhan, type EditRoomFields } from './_components/ruangan';
+import { CheckGroup, RadioGroup } from './_components/InputPilihan';
 
 function FormRequireProject({ currentUser }: { currentUser: User }) {
   const searchParams = useSearchParams();
@@ -639,8 +579,6 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const toggleArr = (arr: string[], val: string): string[] =>
-    arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val];
 
   const formatFileSize = (bytes: number) =>
     bytes < 1024 ? bytes + ' B' : bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB';
@@ -785,44 +723,6 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const kebutuhanPieData = Object.entries(kebutuhanCounts)
     .sort((a, b) => b[1] - a[1])
     .map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
-
-  // CheckGroup & RadioGroup for edit modal
-  const CheckGroup = ({ label, options, value, onChange }: { label: string; options: string[]; value: string[]; onChange: (v: string[]) => void }) => (
-    <div className="mb-4">
-      <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">{label}</label>
-      <div className="flex flex-wrap gap-2">
-        {options.map(opt => {
-          const checked = value.includes(opt);
-          return (
-            <button key={opt} type="button" onClick={() => onChange(toggleArr(value, opt))}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${checked ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>
-                {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-              </div>
-              {opt}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  const RadioGroup = ({ label, options, value, onChange }: { label: string; options: string[]; value: string; onChange: (v: string) => void }) => (
-    <div className="mb-4">
-      <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">{label}</label>
-      <div className="flex flex-wrap gap-2">
-        {options.map(opt => (
-          <button key={opt} type="button" onClick={() => onChange(opt)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${value === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${value === opt ? 'border-teal-500' : 'border-gray-400'}`}>
-              {value === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}
-            </div>
-            {opt}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
 
   // Toast bersama (components/shared/Toast) - satu gaya untuk seluruh platform.
   const NotifToast = () => <ToastBersama notif={notification} />;
