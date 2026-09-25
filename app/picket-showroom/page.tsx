@@ -522,6 +522,8 @@ function PiketShowroomPageInner() {
                   //  `pic` JSONB) tidak pernah tampil di sini.
                   const picBaris=bacaPicPiket(row);
                   const pics=picBaris?[{team:labelKelompokPTS(picBaris.team_type)||picBaris.team_type,name:picBaris.name}]:[];
+                  const isVirtual=row.id.startsWith('virtual-');
+                  const jumlahKg=kegiatanList.filter(k=>k.piket_id===row.id).length;
                   return (
                     <div key={row.id} className={`px-4 py-3 flex items-start gap-3 ${todayRow?'bg-green-50/60':''}`}>
                       <div className="flex flex-col items-center w-11 flex-shrink-0" style={{color:dc.accent}}>
@@ -544,6 +546,28 @@ function PiketShowroomPageInner() {
                               </div>
                             ))}
                           </div>
+                        )}
+                        {jumlahKg>0&&<p className="text-[10px] text-slate-500 mt-1">{jumlahKg} kegiatan tercatat</p>}
+                      </div>
+                      {/* Aksi - SAMA dengan kolom Action di tabel desktop. Dulu
+                          daftar HP tidak punya tombol sama sekali, jadi dari HP
+                          tidak ada seorang pun (admin sekalipun) yang bisa
+                          mengisi atau melihat detail piket. */}
+                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                        <ActionGroup>
+                          {!isVirtual&&<ViewIconBtn onClick={()=>setViewDetail(row)} />}
+                          {bolehIsi&&<EditIconBtn onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} />}
+                          {!isVirtual&&isAdmin&&<DeleteIconBtn onClick={()=>handleDeleteRow(row)} />}
+                        </ActionGroup>
+                        {isAdmin&&(
+                          <button type="button" aria-label={isHoliday?'Batalkan libur':'Tandai sebagai hari libur'}
+                            onClick={()=>toggleHoliday(row.day_date)}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                            style={isHoliday
+                              ?{background:'#fef2f2',color:'#dc2626',border:'1px solid #fca5a5'}
+                              :{background:'#f8fafc',color:'#64748b',border:'1px solid #e2e8f0'}}>
+                            {isHoliday?'Batal libur':'Libur'}
+                          </button>
                         )}
                       </div>
                     </div>
