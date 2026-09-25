@@ -25,7 +25,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
+  // maximumScale TIDAK dipaku ke 1 lagi: itu mematikan zoom cubit - orang
+  // yang butuh memperbesar tulisan tidak bisa sama sekali (WCAG 1.4.4).
+  // Zoom otomatis iOS saat mengetik dicegah dengan cara yang benar: font
+  // isian >= 16px di layar ponsel (lihat globals.css).
   themeColor: '#e11d48',
 };
 

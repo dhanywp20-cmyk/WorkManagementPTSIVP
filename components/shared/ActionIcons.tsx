@@ -85,7 +85,8 @@ function IcoClock({ s = 15 }: { s?: number }) {
 //  tetap boleh dipipihkan browser di bawah 32px saat selnya sempit - ikonnya
 //  jadi lonjong dan tidak lagi seragam antar baris. Dengan shrink-0 ukurannya
 //  tetap kotak, dan kelebihannya ditangani ActionGroup lewat wrap.
-const base = 'inline-flex shrink-0 items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
+// Ponsel: 40px (target sentuh jari; 32px di akar 87.5% jatuh ke 28px). Desktop tetap 32px.
+const base = 'inline-flex shrink-0 items-center justify-center w-[40px] h-[40px] sm:w-8 sm:h-8 rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
 
 // Action Button Components
 

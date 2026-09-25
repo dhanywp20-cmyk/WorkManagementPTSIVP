@@ -3,6 +3,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { Reminder, Status } from './shared';
 import { STATUS_CONFIG, formatDate } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { FilterLipat } from '@/components/shared/FilterLipat';
 
 /**
  * Header "Schedule List" (Select/Refresh/Export) + baris search/filter +
@@ -93,7 +94,7 @@ export function FilterBar({
 
       {/* ── Search / Filter bar — tepat di bawah TICKET LIST ── */}
       <div className="px-3 py-2 sm:px-5 sm:py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-2">
+        <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-2" aktif={[searchSales, searchProduct, searchTeamHandler, filterStatus, filterCategory, searchDivisionSales]}>
           <div>
             <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Location</label>
             <div className="relative">
@@ -154,7 +155,7 @@ export function FilterBar({
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none">▼</span>
             </div>
           </div>
-        </div>
+        </FilterLipat>
       </div>
 
       {/* Bulk delete bar — admin only, selectMode only */}

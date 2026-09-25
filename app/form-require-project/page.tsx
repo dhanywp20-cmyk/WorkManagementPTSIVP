@@ -30,6 +30,7 @@ import { appLink } from '@/lib/app-url';
 import { cetakRequest } from './_components/cetak-request';
 import { unduhPaketRequest } from './_components/paket-unduhan';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { FilterLipat } from '@/components/shared/FilterLipat';
 
 /**
  * Field ruangan yang boleh diubah lewat form Edit. Ruangan 1 hidup di kolom
@@ -2083,7 +2084,7 @@ Hubungi Admin untuk info lebih lanjut.
 
           {/* Search + filter grid — labeled like reference */}
           <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3">
+            <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3" aktif={[searchSales, filterHandler, filterStatus, filterMonth]}>
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Lokasi</label>
                 <div className="relative">
@@ -2165,7 +2166,7 @@ Hubungi Admin untuk info lebih lanjut.
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
                 </div>
               </div>
-            </div>
+            </FilterLipat>
           </div>
 
           {/* Active filter chips — inside table */}

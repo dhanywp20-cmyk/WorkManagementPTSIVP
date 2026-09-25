@@ -80,6 +80,31 @@ html {
    Itu disengaja: yang seperti itu sudah kecil sejak awal. */
 @media (max-width: 640px) {
   html { font-size: 87.5%; }
+
+  /* ── Paket keterbacaan ponsel (2026-09-25) ──────────────────────────────
+     1. Isian >= 16px: di bawah itu Safari iOS memperbesar layar setiap kali
+        kolom diketuk. Dulu dicegah dengan mematikan zoom seluruhnya
+        (maximumScale: 1) - yang juga mengunci orang yang butuh memperbesar.
+     2. Teks berukuran px tetap (text-[7px] .. text-[10px], ~1.000 pemakaian)
+        tidak ikut skala rem, dan di ponsel jatuh ke 7-10px - di bawah batas
+        nyaman baca. Dinaikkan ke lantai 10.5-11px HANYA di layar ponsel;
+        desktop tidak berubah.
+     !important dibutuhkan karena kelas utilitas Tailwind lebih spesifik
+     daripada pemilih elemen. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  select, textarea {
+    font-size: 16px !important;
+  }
+  .text-\[7px\], .text-\[8px\], .text-\[9px\] { font-size: 10.5px !important; }
+  .text-\[10px\] { font-size: 11px !important; }
+}
+
+/* FilterLipat (components/shared/FilterLipat.tsx): di ponsel hanya isian
+   pertama yang tampil selama filter dilipat. Ditulis sebagai CSS biasa karena
+   varian max-sm: Tailwind nonaktif (tailwind.config punya screen kustom). */
+@media (max-width: 639px) {
+  .filter-lipat-tutup > *:nth-child(n+2) { display: none !important; }
+  .filter-lipat-tutup > *:first-child { grid-column: 1 / -1; }
 }
 *, *::before, *::after {
   box-sizing: border-box;
