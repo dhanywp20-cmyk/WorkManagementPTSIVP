@@ -29,6 +29,7 @@ import {
   FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal } from '@/components/shared';
 import { MiniPieChart, PageHeader, StatCardGrid, Paginasi, usePaginasi } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { Toast as ToastBersama } from '@/components/shared/Toast';
 
 // Styles
 const inp: React.CSSProperties = {
@@ -162,14 +163,9 @@ function SalesDrop({ value, division, guests, onChange }: { value: string; divis
   );
 }
 
+// Toast bersama (components/shared/Toast) - satu gaya untuk seluruh platform.
 function Toast({ t }: { t: { type: 'success' | 'error'; msg: string } | null }) {
-  if (!t) return null;
-  return (
-    <div className="fixed top-5 right-5 z-[3000] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white"
-      style={{ background: t.type === 'success' ? '#059669' : '#dc2626' }}>
-      {t.type === 'success' ? '✅' : '❌'} {t.msg}
-    </div>
-  );
+  return <ToastBersama notif={t} />;
 }
 
 // MAIN

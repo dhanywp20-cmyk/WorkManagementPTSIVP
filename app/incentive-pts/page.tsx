@@ -30,6 +30,7 @@ import { createNotification } from '@/lib/notifications';
 import { managerUtama } from '@/lib/penerima-admin';
 import { SchemeTab } from './_components/SchemeTab';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { Toast } from '@/components/shared/Toast';
 
 void insertSplits; void validateSplitTotal;
 
@@ -1013,11 +1014,7 @@ export default function IncentivePTSPage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
-      {toast && (
-        <div className={`fixed top-4 right-4 z-[3000] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}>
-          {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
-        </div>
-      )}
+      <Toast notif={toast} />
 
       {/* Header */}
       <header className="flex-shrink-0 z-50"

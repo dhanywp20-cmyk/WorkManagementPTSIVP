@@ -31,6 +31,7 @@ import { cetakRequest } from './_components/cetak-request';
 import { unduhPaketRequest } from './_components/paket-unduhan';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { FilterLipat } from '@/components/shared/FilterLipat';
+import { Toast as ToastBersama } from '@/components/shared/Toast';
 
 /**
  * Field ruangan yang boleh diubah lewat form Edit. Ruangan 1 hidup di kolom
@@ -823,18 +824,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     </div>
   );
 
-  const NotifToast = () => notification ? (
-    <div style={{ zIndex: Z.toast }} className={`fixed top-4 right-4 px-5 py-4 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-3 border-2 max-w-sm animate-scale-in ${
-      notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-400' :
-      notification.type === 'error' ? 'bg-red-50 text-red-800 border-red-400' :
-        'bg-blue-50 text-blue-800 border-blue-400'}`}>
-      <span className="text-xl">{notification.type === 'success' ? '✅' : notification.type === 'error' ? '❌' : 'ℹ️'}</span>
-      <div>
-        <p className="font-bold">{notification.type === 'success' ? 'Berhasil!' : notification.type === 'error' ? 'Gagal!' : 'Info'}</p>
-        <p className="text-xs font-medium mt-0.5 opacity-80">{notification.msg}</p>
-      </div>
-    </div>
-  ) : null;
+  // Toast bersama (components/shared/Toast) - satu gaya untuk seluruh platform.
+  const NotifToast = () => <ToastBersama notif={notification} />;
 
   // HANDLERS
 

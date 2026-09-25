@@ -12,6 +12,7 @@ import { hasFullAccess } from '@/lib/constants';
 import { ViewModal } from './_components/ViewModal';
 import { AddEditModal } from './_components/AddEditModal';
 import { Ikon } from '@/components/shared/Ikon';
+import { Toast } from '@/components/shared/Toast';
 
 // Main Page
 
@@ -289,12 +290,7 @@ function UnitMovementPageInner() {
       </ModalPortal>
       )}
 
-      {notif&&(
-        <div className="fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-semibold shadow-xl flex items-center gap-2"
-          style={{background:notif.type==='success'?'#d1fae5':'#fee2e2',color:notif.type==='success'?'#065f46':'#991b1b',border:`1px solid ${notif.type==='success'?'#6ee7b7':'#fca5a5'}`}}>
-          {notif.type==='success'?'✅':'❌'} {notif.msg}
-        </div>
-      )}
+      <Toast notif={notif} />
 
       {/* Header */}
       <PageHeader icon="🚚" title="Unit Movement Log" subtitle="PTS IVP — Equipment Tracking" color="#d97706" colorLight="#b45309">

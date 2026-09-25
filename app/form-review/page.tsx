@@ -23,6 +23,7 @@ import {
   ConfirmDialog, type ConfirmState, ErrorState,
   MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { Toast } from '@/components/shared/Toast';
 
 // Main Component
 
@@ -516,15 +517,7 @@ function FormReviewPageInner() {
       <div className="relative flex flex-col flex-1 overflow-hidden">
 
         {/* Toast */}
-        {toast && (
-          <div className={`fixed top-5 right-5 z-[3000] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white animate-bounce`}
-            style={{
-              background: toast.type === 'success' ? '#059669' : '#dc2626',
-              boxShadow: toast.type === 'success' ? '0 4px 20px rgba(5,150,105,0.4)' : '0 4px 20px rgba(220,38,38,0.4)',
-            }}>
-            {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
-          </div>
-        )}
+        <Toast notif={toast} />
 
         {/* ── DELETE MODAL ── */}
         {showDeleteModal && deleteTarget && (

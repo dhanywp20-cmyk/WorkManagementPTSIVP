@@ -49,6 +49,7 @@ import { ModePenyelesaianPanel } from './_components/ModePenyelesaianPanel';
 import { ReminderListBody } from './_components/ReminderListBody';
 import { ReminderDetailPopup } from './_components/ReminderDetailPopup';
 import { IkonTeks } from '@/components/shared/Ikon';
+import { Toast } from '@/components/shared/Toast';
 
 
 function ReminderSchedulePageInner() {
@@ -2911,12 +2912,7 @@ jangan lupa peralatan & Semangat💪🏼
       <div className="relative flex flex-col flex-1 overflow-hidden">
 
         {/* Toast */}
-        {toast && (
-          <div className={`fixed top-5 right-5 z-[3000] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}
-            style={{ boxShadow: toast.type === 'success' ? '0 4px 20px rgba(16,185,129,0.4)' : '0 4px 20px rgba(220,38,38,0.4)' }}>
-            {toast.type === 'success' ? '✅' : '❌'} {toast.msg}
-          </div>
-        )}
+        <Toast notif={toast} />
 
         {/* ── RESCHEDULE MODAL ── */}
         {rescheduleTarget && (
