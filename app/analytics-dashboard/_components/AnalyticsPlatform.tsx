@@ -133,7 +133,7 @@ export function TabBtn({ label, icon, active, onClick, badge }: {
 }) {
   return (
     <button onClick={onClick}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all relative whitespace-nowrap"
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all relative whitespace-nowrap flex-shrink-0"
       style={active
         ? { background: '#0f172a', color: 'white' }
         : { background: '#ffffff', color: '#475569', border: '1px solid #e2e8f0' }}>
@@ -383,7 +383,7 @@ export function AnalyticsPlatform({
   if (auth === 'denied') return (
     <div className="flex items-center justify-center h-screen" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
       <div className="bg-white rounded-2xl p-8 text-center shadow-xl">
-        <div className="text-5xl mb-3">🔒</div>
+        <div className="text-5xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <p className="font-bold text-gray-800">Akses Ditolak</p>
       </div>
     </div>
@@ -406,7 +406,7 @@ export function AnalyticsPlatform({
       {embedded && controlledTab === undefined && (
         /* Embedded (di dashboard): tab bar ramping di dalam panel putih supaya tab
            non-aktif tetap kontras di atas background transparan. */
-        <div className="flex items-center gap-2 flex-wrap mb-3 p-2 rounded-2xl"
+        <div className="flex items-center gap-2 overflow-x-auto sm:flex-wrap mb-3 p-2 rounded-2xl"
           style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.1)', border: '1px solid rgba(0,0,0,0.06)' }}>
           <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
           <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
@@ -442,14 +442,14 @@ export function AnalyticsPlatform({
             <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
               {totalAlerts > 0
                 ? <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'#fee2e2',border:'1px solid #fca5a5'}}>
-                    <span className="text-base animate-pulse select-none">⚠️</span>
+                    <span className="text-base animate-pulse select-none"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <div>
                       <p className="text-sm font-black text-red-700">{totalAlerts} item perlu perhatian</p>
                       <p className="text-xs text-red-400">Lihat Command Center</p>
                     </div>
                   </div>
                 : <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'#d1fae5',border:'1px solid #6ee7b7'}}>
-                    <span className="text-base select-none">✅</span>
+                    <span className="text-base select-none"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <p className="text-sm font-bold text-emerald-700">Platform berjalan baik</p>
                   </div>
               }
@@ -459,7 +459,7 @@ export function AnalyticsPlatform({
             </div>
           </div>
           {/* Tab navigation */}
-          <div className="flex gap-2 mt-3 flex-wrap">
+          <div className="flex gap-2 mt-3 overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap" style={{ scrollbarWidth: "none" }}>
             <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
             <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
             <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
@@ -527,7 +527,7 @@ export function AnalyticsPlatform({
                 {/* Recent Activity */}
                 <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(0,0,0,0.07)'}}>
                   <div className="px-4 py-3 flex items-center gap-2" style={{background:'rgba(0,0,0,0.025)',borderBottom:'1px solid rgba(0,0,0,0.06)'}}>
-                    <span className="text-base select-none">⚡</span>
+                    <span className="text-base select-none"><Ikon nama="⚡" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <span className="font-bold text-gray-700 text-sm">Aktivitas Platform Terbaru</span>
                   </div>
                   {!(stats?.activity?.length)
@@ -587,7 +587,7 @@ export function AnalyticsPlatform({
               ? <div className="flex justify-center py-16"><div className="w-8 h-8 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" /></div>
               : auditPaged.length === 0
               ? <div className="flex flex-col items-center py-16 gap-2">
-                  <span className="text-4xl">📋</span>
+                  <span className="text-4xl"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <p className="text-sm text-gray-500 font-medium">Belum ada audit log</p>
                   <p className="text-xs text-gray-400">Log muncul setelah ada aksi di platform</p>
                 </div>

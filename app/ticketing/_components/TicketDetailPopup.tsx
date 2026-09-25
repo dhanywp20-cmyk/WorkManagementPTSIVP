@@ -85,7 +85,7 @@ export function TicketDetailPopup({
               {selectedTicket.address && (
                 <>
                   <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
-                  <p className="text-white/75 text-xs flex items-center gap-1">📍 {selectedTicket.address}</p>
+                  <p className="text-white/75 text-xs flex items-center gap-1"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {selectedTicket.address}</p>
                 </>
               )}
               {selectedTicket.status === "Onsite" && (
@@ -103,7 +103,7 @@ export function TicketDetailPopup({
               {/* Supervisor: ticket di-route ke kamu → wajib assign lanjut ke tim */}
               {selectedTicket.routing_status === "supervisor_assign" && selectedTicket.assigned_supervisor_id === currentUser?.id && (
                 <div className="mx-4 mt-3 rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(245,158,11,0.1)", border: "1.5px solid rgba(245,158,11,0.4)" }}>
-                  <span className="text-2xl">🎯</span>
+                  <span className="text-2xl"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-amber-800">Ticket ini menunggu kamu assign ke tim</p>
                     <p className="text-[11px] text-amber-700">Sudah diapprove Admin — pilih anggota tim atau kerjakan sendiri.</p>
@@ -120,7 +120,7 @@ export function TicketDetailPopup({
                   tanpa pemberitahuan ke yang menangani. */}
               {canManageTickets && (
                 <div className="mx-4 mt-3 rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(99,102,241,0.08)', border: '1.5px solid rgba(99,102,241,0.25)' }}>
-                  <span className="text-2xl">🛠️</span>
+                  <span className="text-2xl"><Ikon nama="🛠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-indigo-800">Koreksi data ticket</p>
                     <p className="text-[11px] text-indigo-700">
@@ -283,10 +283,10 @@ export function TicketDetailPopup({
                             <span className="text-[9px] text-gray-400">{formatDateTime(log.created_at)}</span>
                           </div>
                         </div>
-                        {log.action_taken && <p className="text-[10px] text-blue-700 font-semibold">🔧 {log.action_taken}</p>}
+                        {log.action_taken && <p className="text-[10px] text-blue-700 font-semibold"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {log.action_taken}</p>}
                         <p className="text-xs text-gray-600">{log.notes}</p>
                         {log.photo_url && <img src={log.photo_url} alt="log" loading="lazy" decoding="async" className="mt-1.5 max-h-24 rounded-lg border cursor-pointer" onClick={() => window.open(log.photo_url!, "_blank")} />}
-                        {log.file_url && <a href={log.file_url} download className="inline-block mt-1 text-[10px] font-bold text-blue-600 hover:underline">📄 {log.file_name || "Download"}</a>}
+                        {log.file_url && <a href={log.file_url} download className="inline-block mt-1 text-[10px] font-bold text-blue-600 hover:underline"><Ikon nama="📄" ukuran="1em" className="inline-block align-[-0.12em]" /> {log.file_name || "Download"}</a>}
                       </div>
                     ))
                     : <p className="text-xs text-gray-400 text-center py-3">Belum ada aktivitas</p>
@@ -388,7 +388,7 @@ export function TicketDetailPopup({
                                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border-2 font-semibold text-xs transition-all ${isSelected ? st.sel : disabled ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' : st.unsel}`}>
                                 <span><Ikon nama={st.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                                 <span className="flex-1 text-left">{step}</span>
-                                {disabled && <span className="text-[9px]">🔒</span>}
+                                {disabled && <span className="text-[9px]"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
                                 {isSelected && <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
                               </button>
                               {/* Onsite schedule */}
@@ -418,7 +418,7 @@ export function TicketDetailPopup({
                                         <span className="text-[9px] text-gray-500">WIB</span>
                                       </div>
                                       <div className="flex items-center gap-1.5 p-1.5 rounded-lg" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
-                                        <span className="text-xs">🗓️</span>
+                                        <span className="text-xs"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                                         <p className="text-[9px] text-purple-700 font-semibold flex-1">Otomatis buat jadwal Troubleshooting di Reminder Schedule</p>
                                         <button onClick={() => { onClose(); setShowUpdateForm(false); router.push('/reminder-schedule'); }}
                                             className="text-[9px] font-bold px-1.5 py-0.5 rounded text-purple-700 hover:text-purple-900"

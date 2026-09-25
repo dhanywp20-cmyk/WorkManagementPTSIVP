@@ -434,7 +434,7 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
     <WidgetCard title="Learning Center" icon="🎓" accent="#4338ca">
       {!guest ? (
         <div className="flex flex-col items-center justify-center h-full text-center gap-2 py-2">
-          <div className="text-3xl">🎓</div>
+          <div className="text-3xl"><Ikon nama="🎓" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
           <p className="text-[11px] text-slate-500 leading-snug px-2">Training, quiz online &amp; materi pengembangan tim.</p>
           <button onClick={() => openMenu('learning-center')}
             className="mt-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.03]"

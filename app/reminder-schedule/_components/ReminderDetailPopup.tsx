@@ -138,7 +138,7 @@ export function ReminderDetailPopup({
           <button onClick={() => setShowRiwayat(v => !v)}
             title={showRiwayat ? 'Sembunyikan riwayat perubahan' : 'Tampilkan riwayat perubahan'}
             className="absolute top-4 right-14 h-7 px-2.5 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center gap-1 text-[11px] font-bold">
-            🕘 <span className="hidden sm:inline">Riwayat</span>
+            <Ikon nama="🕘" ukuran="1em" className="inline-block align-[-0.12em]" /> <span className="hidden sm:inline">Riwayat</span>
           </button>
           <div className="flex flex-wrap gap-2 mb-3">
             <PriorityBadge priority={detailReminder.priority} onHeader />
@@ -158,7 +158,7 @@ export function ReminderDetailPopup({
           {detailReminder.address && (
             <>
               <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-2 mb-0.5">Lokasi</p>
-              <p className="text-white text-sm flex items-center gap-1.5"><span>📍</span>{detailReminder.address}</p>
+              <p className="text-white text-sm flex items-center gap-1.5"><span><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>{detailReminder.address}</p>
             </>
           )}
           {detailReminder.description && (
@@ -242,7 +242,7 @@ export function ReminderDetailPopup({
 
           {detailReminder.status === 'cancelled' && detailReminder.rejection_reason && (
             <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)' }}>
-              <span className="text-base flex-shrink-0">❌</span>
+              <span className="text-base flex-shrink-0"><Ikon nama="❌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div>
                 <p className="text-xs font-bold text-red-700">Request Ditolak</p>
                 <p className="text-xs text-red-600 mt-0.5">{detailReminder.rejection_reason}</p>
@@ -269,7 +269,7 @@ export function ReminderDetailPopup({
               <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)' }}>
                 <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#64748b' }}><IkonTeks nama="📅" />Jadwal</p>
                 <p className="text-sm font-bold text-slate-800">{formatDate(detailReminder.due_date)}</p>
-                <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>⏰ {detailReminder.due_time}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#64748b' }}><Ikon nama="⏰" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailReminder.due_time}</p>
               </div>
             </div>
           </div>
@@ -282,7 +282,7 @@ export function ReminderDetailPopup({
               <InfoRow icon="👤" label="Nama Sales & Divisi" value={[detailReminder.sales_name, detailReminder.sales_division].filter(Boolean).join(' / ')} />
               {detailReminder.sales_name && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && (
                 <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(124,58,237,0.04)' }}>
-                  <span className="text-base flex-shrink-0">⭐</span>
+                  <span className="text-base flex-shrink-0"><Ikon nama="⭐" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#7c3aed' }}>Guest Review (Sales)</p>
                     <p className="text-sm font-semibold text-violet-700">{detailReminder.sales_name}</p>
@@ -304,7 +304,7 @@ export function ReminderDetailPopup({
               {detailReminder.pic_name && <InfoRow icon="🙋" label="Nama PIC Project" value={detailReminder.pic_name} />}
               {detailReminder.pic_phone && (
                 <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                  <span className="text-base flex-shrink-0">📱</span>
+                  <span className="text-base flex-shrink-0"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#64748b' }}>No. Telepon PIC</p>
                     <a href={`tel:${detailReminder.pic_phone}`} className="text-sm font-semibold hover:underline" style={{ color: '#60a5fa' }}
@@ -338,7 +338,7 @@ export function ReminderDetailPopup({
                 style={ada
                   ? { background: 'rgba(8,145,178,0.07)', border: '1px solid rgba(8,145,178,0.25)' }
                   : { background: 'rgba(100,116,139,0.07)', border: '1px solid rgba(100,116,139,0.2)' }}>
-                <span className="text-xl">📊</span>
+                <span className="text-xl"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wide" style={{ color: ada ? '#0e7490' : '#64748b' }}>
                     Timeline Project Progress
@@ -363,7 +363,7 @@ export function ReminderDetailPopup({
             const bastDate = detailReminder.due_date;
             if (!wy || !bastDate) return (
               <div className="rounded-xl p-4 flex items-center gap-3" style={{ background: 'rgba(100,116,139,0.07)', border: '1px solid rgba(100,116,139,0.2)' }}>
-                <span className="text-xl">🛡️</span>
+                <span className="text-xl"><Ikon nama="🛡" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Masa Garansi</p>
                   <p className="text-sm text-slate-400 italic">Tidak dikonfigurasi</p>
@@ -501,7 +501,7 @@ export function ReminderDetailPopup({
             && (isAdmin || currentUser?.role === 'team') && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.35)' }}>
               <div className="flex items-start gap-2 mb-3">
-                <span className="text-lg">⚠️</span>
+                <span className="text-lg"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wide text-amber-700">Detail Pelaksanaan Belum Diisi</p>
                   <p className="text-[11px] text-amber-700/80 mt-1 leading-relaxed">
@@ -524,7 +524,7 @@ export function ReminderDetailPopup({
              → belum bisa update status. */}
           {(isAdmin || currentUser?.role === 'team') && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.status !== 'done' && (
             <div className="rounded-xl px-4 py-3 flex items-center gap-2 mb-1" style={{ background: 'rgba(148,163,184,0.1)', border: '1.5px solid rgba(148,163,184,0.3)' }}>
-              <span className="text-lg">🔒</span>
+              <span className="text-lg"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div>
                 <p className="text-xs font-bold text-slate-600">Belum bisa update status</p>
                 <p className="text-[11px] text-slate-500">Menunggu approval & assignment selesai (Sales Internal → Manager → Supervisor → Team).</p>
@@ -536,7 +536,7 @@ export function ReminderDetailPopup({
             <p className="text-[10px] font-bold tracking-widest uppercase mb-3" style={{ color: '#64748b' }}>Update Status</p>
             {detailReminder.status === 'done' ? (
               <div className="rounded-xl px-4 py-3 flex items-center gap-2 mb-3" style={{ background: 'rgba(16,185,129,0.1)', border: '1.5px solid rgba(16,185,129,0.35)' }}>
-                <span className="text-lg">✅</span>
+                <span className="text-lg"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-xs font-bold text-emerald-700">Jadwal Selesai</p>
                   <p className="text-[10px] text-emerald-600">Status completed tidak dapat diubah kembali.</p>
@@ -600,14 +600,14 @@ export function ReminderDetailPopup({
                       className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-red-600">
                       ✕
                     </button>
-                    <p className="text-[11px] text-emerald-700 font-semibold mt-1.5">✅ {statusPhoto?.name}</p>
+                    <p className="text-[11px] text-emerald-700 font-semibold mt-1.5"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {statusPhoto?.name}</p>
                   </div>
                 ) : (
                   <button
                     onClick={() => statusPhotoRef.current?.click()}
                     className="w-full border-2 border-dashed rounded-xl py-6 flex flex-col items-center gap-2 transition-all hover:bg-emerald-50"
                     style={{ borderColor: 'rgba(16,185,129,0.5)' }}>
-                    <span className="text-2xl">📷</span>
+                    <span className="text-2xl"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <span className="text-xs font-bold text-emerald-700">Klik untuk upload foto</span>
                     <span className="text-[10px] text-gray-400">JPG, PNG, WEBP — maks. 10MB</span>
                   </button>
@@ -644,7 +644,7 @@ export function ReminderDetailPopup({
           {detailReminder.status === 'done' && detailReminder.completion_photo_url && (
             <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid rgba(16,185,129,0.35)', background: 'rgba(16,185,129,0.05)' }}>
               <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: 'rgba(16,185,129,0.12)', borderBottom: '1px solid rgba(16,185,129,0.2)' }}>
-                <span className="text-base">📸</span>
+                <span className="text-base"><Ikon nama="📸" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#059669' }}>Foto Bukti Selesai</p>
               </div>
               <div className="p-3">

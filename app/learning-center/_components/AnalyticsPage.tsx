@@ -5,7 +5,7 @@ import { TeamSwitch, matchesTeamFilter, TEAM_FILTER_CONFIG, type TeamFilter } fr
 import { useKelompokCabang } from '@/lib/kelompok';
 import { supabase, SearchInput } from './shared';
 import { ModalPortal, DonutChart } from '@/components/shared';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 
 export function AnalyticsPage() {
@@ -319,7 +319,7 @@ export function AnalyticsPage() {
                     <td className="px-5 py-3.5 text-center">
                       {u.flags > 0 ? (
                         <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                          ⚠️ {u.flags}×
+                          <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.flags}×
                         </span>
                       ) : (
                         <span className="text-slate-300 text-sm">—</span>
@@ -368,7 +368,7 @@ export function AnalyticsPage() {
                         <td className="px-5 py-3.5 text-center text-sm font-black text-slate-300">{i + 1}</td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm flex-shrink-0">🏢</div>
+                            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm flex-shrink-0"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                             <div>
                               <p className="font-bold text-slate-800 text-sm">{d.div}</p>
                               {medal && <p className="text-[10px] text-slate-400">{medal} Top {i + 1}</p>}
@@ -521,11 +521,11 @@ export function AnalyticsPage() {
                                 {a.passed ? 'LULUS' : 'TIDAK LULUS'}
                               </span>
                               {a.time_taken_sec != null && (
-                                <span className="text-xs text-slate-400">⏱ {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>
+                                <span className="text-xs text-slate-400"><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>
                               )}
                               {tabSw > 0 && (
                                 <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                  ⚠️ {tabSw}× pindah tab
+                                  <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {tabSw}× pindah tab
                                 </span>
                               )}
                             </div>

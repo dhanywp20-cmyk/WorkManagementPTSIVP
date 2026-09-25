@@ -266,7 +266,7 @@ export function RequestJadwalModal({
               Lokasi Project *
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2">📍</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input
                 value={form.address}
                 onChange={e => f({ address: e.target.value })}
@@ -358,7 +358,7 @@ export function RequestJadwalModal({
               Product / Unit (Opsional)
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2">📦</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input
                 value={form.product}
                 onChange={e => f({ product: e.target.value })}
@@ -401,7 +401,7 @@ export function RequestJadwalModal({
           {(form.category === 'Konfigurasi' || form.category === 'Konfigurasi & Training') && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.3)' }}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">📊</span>
+                <span className="text-lg"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-sm font-bold" style={{ color: '#0e7490' }}>Usulan Timeline Pengerjaan</p>
               </div>
               <p className="text-xs mb-3" style={{ color: '#0891b2' }}>
@@ -462,7 +462,7 @@ export function RequestJadwalModal({
                 No. Telepon PIC
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2">📱</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input
                   value={form.pic_phone}
                   onChange={e => f({ pic_phone: e.target.value })}
@@ -492,7 +492,7 @@ export function RequestJadwalModal({
             className="rounded-xl p-3 flex items-start gap-3"
             style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}
           >
-            <span className="text-lg flex-shrink-0">ℹ️</span>
+            <span className="text-lg flex-shrink-0"><Ikon nama="ℹ" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div>
               <p className="text-xs font-bold text-amber-700">Alur Approval</p>
               <p className="text-[11px] text-amber-600 leading-relaxed mt-0.5">

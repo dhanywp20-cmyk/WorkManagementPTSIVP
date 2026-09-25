@@ -509,7 +509,7 @@ export default function KPITeamPage() {
       style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <div className="flex flex-col items-center gap-3 px-8 py-6 rounded-2xl"
         style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.14)' }}>
-        <span className="text-5xl">🔒</span>
+        <span className="text-5xl"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <p className="text-slate-600 text-sm font-semibold">Akses Terbatas</p>
         <p className="text-slate-400 text-xs">Halaman ini hanya untuk Admin & Supervisor PTS</p>
       </div>
@@ -579,7 +579,7 @@ export default function KPITeamPage() {
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="🏅" />Penilaian KPI</span>
               <span className="text-[9px] font-bold px-2 py-1 rounded-lg text-blue-700" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                📅 {kpiPeriodLabel}
+                <Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {kpiPeriodLabel}
               </span>
               {kpiLoading && <div className="w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />}
             </div>
@@ -612,7 +612,7 @@ export default function KPITeamPage() {
                 Refresh
               </button>
               <span className="text-[9px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                🎫{Math.round(kpiSettings.ticketOverdueWeight*100)}% ⭐{Math.round(kpiSettings.bastWeight*100)}% 🎓{Math.round(kpiSettings.lcWeight*100)}% 📝{Math.round(kpiSettings.rndWeight*100)}%
+                <Ikon nama="🎫" ukuran="1em" className="inline-block align-[-0.12em]" />{Math.round(kpiSettings.ticketOverdueWeight*100)}% ⭐{Math.round(kpiSettings.bastWeight*100)}% 🎓{Math.round(kpiSettings.lcWeight*100)}% 📝{Math.round(kpiSettings.rndWeight*100)}%
               </span>
             </div>
           </div>
@@ -953,7 +953,7 @@ export default function KPITeamPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="🏅" />Penilaian KPI</span>
                   <span className="text-[9px] font-bold px-2 py-1 rounded-lg text-blue-700" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
-                    📅 {kpiPeriodLabel}
+                    <Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {kpiPeriodLabel}
                   </span>
                   {kpiLoading && <div className="w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />}
                 </div>
@@ -989,7 +989,7 @@ export default function KPITeamPage() {
                     Refresh
                   </button>
                   <span className="text-[9px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                    🎫{Math.round(kpiSettings.ticketOverdueWeight*100)}% ⭐{Math.round(kpiSettings.bastWeight*100)}% 🎓{Math.round(kpiSettings.lcWeight*100)}% 📝{Math.round(kpiSettings.rndWeight*100)}%
+                    <Ikon nama="🎫" ukuran="1em" className="inline-block align-[-0.12em]" />{Math.round(kpiSettings.ticketOverdueWeight*100)}% ⭐{Math.round(kpiSettings.bastWeight*100)}% 🎓{Math.round(kpiSettings.lcWeight*100)}% 📝{Math.round(kpiSettings.rndWeight*100)}%
                   </span>
                 </div>
               </div>
@@ -1357,7 +1357,7 @@ export default function KPITeamPage() {
                         <div className="flex justify-between"><span>Avg Response</span><b className={member.ticketAvgResponseHours > 24 ? 'text-red-600' : 'text-emerald-600'}>{member.ticketAvgResponseHours > 0 ? `${member.ticketAvgResponseHours}j` : '—'}</b></div>
                         {member.ticketsOverdue === 0
                           ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada overdue</div>
-                          : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.ticketsOverdue} ticket overdue</div>}
+                          : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {member.ticketsOverdue} ticket overdue</div>}
                       </div>
                     </div>
 
@@ -1377,7 +1377,7 @@ export default function KPITeamPage() {
                           ? <div className="text-[10px] text-slate-400 font-semibold bg-slate-50 rounded-lg px-2 py-1"><IkonTeks nama="⏳" />Belum ada review</div>
                           : member.formReviewLowRating === 0
                             ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada komplain dari {member.formReviewTotal} review</div>
-                            : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {member.formReviewLowRating}x komplain dari {member.formReviewTotal} review</div>}
+                            : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {member.formReviewLowRating}x komplain dari {member.formReviewTotal} review</div>}
                       </div>
                     </div>
 
@@ -1396,7 +1396,7 @@ export default function KPITeamPage() {
                         <div className="flex justify-between"><span>Lulus</span><b className="text-emerald-600">{member.lcPassed}</b></div>
                         <div className="flex justify-between"><span>Nilai &lt;{_s.lcMinScore}</span><b className={lcFailed > 0 ? 'text-red-600' : 'text-emerald-600'}>{lcFailed}x</b></div>
                         {lcFailed > 0
-                          ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1">⚠ {lcFailed}x nilai &lt;{_s.lcMinScore}</div>
+                          ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {lcFailed}x nilai &lt;{_s.lcMinScore}</div>
                           : member.lcAttempts > 0
                             ? <div className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Semua nilai ≥{_s.lcMinScore}</div>
                             : null}
@@ -1451,7 +1451,7 @@ export default function KPITeamPage() {
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
-                style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}>🚀</div>
+                style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}><Ikon nama="🚀" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <div>
                 <div className="font-bold text-slate-800 text-base">Mulai KPI {kpiYear}</div>
                 <div className="text-xs text-slate-400 mt-0.5">Simpan snapshot penilaian KPI periode ini</div>
@@ -1525,7 +1525,7 @@ export default function KPITeamPage() {
                 </button>
               </div>
               <div className="p-4 space-y-3">
-                <div className="text-[10px] text-slate-400 text-center italic">📅 {snap.period_label} — Data dibekukan pada {new Date(snap.created_at).toLocaleDateString('id-ID')}</div>
+                <div className="text-[10px] text-slate-400 text-center italic"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {snap.period_label} — Data dibekukan pada {new Date(snap.created_at).toLocaleDateString('id-ID')}</div>
                 <div className="grid grid-cols-4 gap-2">
                   {[
                     { label: 'Ticketing', val: m.tickScore, color: '#ef4444', icon: '🎫', bg: '#fef2f2' },

@@ -5,7 +5,7 @@ import { TeamSwitch, matchesTeamFilter, TEAM_FILTER_CONFIG, type TeamFilter } fr
 import { useKelompokCabang } from '@/lib/kelompok';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
 import { StatCardGrid, ModalPortal, DonutChart } from '@/components/shared';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -406,7 +406,7 @@ export function AdminDashboard({ user }: { user: User }) {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors text-sm">{u.name}</span>
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold">👁</span>
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold"><Ikon nama="👁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                           {u.consistency !== null && u.consistency > 40 && (
                             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><IkonTeks nama="⚡" />Inkonsisten</span>
                           )}
@@ -432,10 +432,10 @@ export function AdminDashboard({ user }: { user: User }) {
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1 flex-wrap">
                           {u.tabSw > 0 && (
-                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⚠️ {u.tabSw}×</span>
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.tabSw}×</span>
                           )}
                           {u.fastCount > 0 && (
-                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full">🚨 {u.fastCount}×</span>
+                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full"><Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.fastCount}×</span>
                           )}
                           {u.tabSw === 0 && u.fastCount === 0 && <span className="text-xs text-slate-300">—</span>}
                         </div>
@@ -677,12 +677,12 @@ export function AdminDashboard({ user }: { user: User }) {
                     <ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} />
                     {isFast && (
                       <span className="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full flex-shrink-0">
-                        🚨 {Math.round(ts)}s
+                        <Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.round(ts)}s
                       </span>
                     )}
                     {(a.tab_switches ?? 0) > 0 && (
                       <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-shrink-0">
-                        ⚠️ {a.tab_switches}× tab
+                        <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.tab_switches}× tab
                       </span>
                     )}
                     <span className="text-xs text-slate-400 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
@@ -770,8 +770,8 @@ export function AdminDashboard({ user }: { user: User }) {
                               <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
                                 {a.passed ? 'LULUS' : 'TIDAK LULUS'}
                               </span>
-                              {a.time_taken_sec != null && <span className="text-xs text-slate-400">⏱ {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>}
-                              {tabSw > 0 && <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">⚠️ {tabSw}× tab</span>}
+                              {a.time_taken_sec != null && <span className="text-xs text-slate-400"><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>}
+                              {tabSw > 0 && <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {tabSw}× tab</span>}
                               {isFast && <span className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full"><IkonTeks nama="🚨" />Submit terlalu cepat</span>}
                             </div>
                           </div>

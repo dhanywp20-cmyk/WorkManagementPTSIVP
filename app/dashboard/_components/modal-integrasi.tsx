@@ -35,7 +35,7 @@ import { KATALOG_EVENT, EVENT_TERSAMBUNG, eventTersambung, type KategoriEvent } 
 import { PENYEDIA_WA, penyediaWA } from '@/lib/notifikasi/penyedia-wa';
 import { supabase } from '@/lib/supabase';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
   ticket: 'Ticket', approval: 'Approval', assignment: 'Assignment',
@@ -1108,7 +1108,7 @@ export function IntegrasiInline() {
               <div className="rounded-xl border border-slate-200 p-3.5" style={{ background: '#f8fafc' }}>
                 <h4 className="text-[13px] font-bold text-slate-700">Cara anggota mengaktifkan</h4>
                 <p className="text-[11.5px] text-slate-400 mt-1.5 leading-relaxed">
-                  Buka Dashboard di HP → tekan ikon <b>📲</b> di sebelah lonceng notifikasi → izinkan saat diminta.
+                  Buka Dashboard di HP → tekan ikon <b><Ikon nama="📲" ukuran="1em" className="inline-block align-[-0.12em]" /></b> di sebelah lonceng notifikasi → izinkan saat diminta.
                   Sekali per HP/browser, tidak perlu diulang.
                 </p>
                 <p className="text-[10.5px] text-slate-400 mt-2.5 leading-relaxed">

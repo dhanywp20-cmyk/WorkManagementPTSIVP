@@ -8,7 +8,7 @@ import {
 } from './shared';
 import { logAudit } from '@/lib/audit';
 import { ModalPortal } from '@/components/shared';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // Folder Color Palette
 
@@ -384,9 +384,9 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       {/* ── Stats bar ── */}
       <div className="flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-2 border-b border-slate-100 text-xs flex-shrink-0 flex-wrap"
         style={{ background: 'rgba(248,250,252,0.8)' }}>
-        <span className="text-slate-500">📦 <strong className="text-slate-700">{materials.length}</strong> materi</span>
+        <span className="text-slate-500"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong className="text-slate-700">{materials.length}</strong> materi</span>
         <span className="text-slate-300">|</span>
-        <span className="text-slate-500">📁 <strong className="text-slate-700">{rootFolderKeys.length}</strong> folder</span>
+        <span className="text-slate-500"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong className="text-slate-700">{rootFolderKeys.length}</strong> folder</span>
         {panelOpen && panelCol && (
           <>
             <span className="text-slate-300">|</span>
@@ -408,7 +408,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
 
             {!isAdmin && (
               <div className="mb-5 bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-3 flex items-center gap-3">
-                <span className="text-lg">ℹ️</span>
+                <span className="text-lg"><Ikon nama="ℹ" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-sm text-indigo-700">Klik tombol <strong>Buka</strong> untuk mengakses file materi di OneDrive.</p>
               </div>
             )}

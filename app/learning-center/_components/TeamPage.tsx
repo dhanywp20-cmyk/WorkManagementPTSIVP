@@ -7,7 +7,7 @@ import { ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type P
 import { hasFullAccess } from '@/lib/constants';
 import { getSession } from '@/lib/auth';
 import { createNotification } from '@/lib/notifications';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   user: User; onBack: () => void; isAdminView: boolean;
@@ -422,7 +422,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                   return (
                     <div key={q.id} className="rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 shadow-sm">
                       <div className="flex items-start gap-3 mb-3">
-                        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white bg-indigo-500">📝</span>
+                        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white bg-indigo-500"><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                         <div className="flex-1">
                           <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1} · Essay · <span className={`${DIFF_COLOR[q.difficulty].split(' ')[1]}`}>{q.difficulty}</span></p>
                           <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
@@ -492,7 +492,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                               </div>
                             )}
                             {aiError[q.id] && (
-                              <p className="text-xs text-rose-500 italic">⚠️ {aiError[q.id]} — isi nilai manual di bawah.</p>
+                              <p className="text-xs text-rose-500 italic"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {aiError[q.id]} — isi nilai manual di bawah.</p>
                             )}
                             {/* Tanpa keterangan ini, admin melihat kolom nilai kosong tanpa
                                 saran AI dan tidak tahu apakah AI-nya rusak atau memang tidak
@@ -521,7 +521,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                                 <button type="button" disabled={aiGradingIds.has(q.id)}
                                   onClick={() => runAiGrading(selectedAttempt.id, q, ans.essay_text.trim())}
                                   className="text-[11px] font-bold text-violet-600 hover:text-violet-800 disabled:opacity-40 transition-colors">
-                                  🔄 {aiFeedback[q.id] || aiError[q.id] ? 'Nilai Ulang dengan AI' : 'Nilai dengan AI'}
+                                  <Ikon nama="🔄" ukuran="1em" className="inline-block align-[-0.12em]" /> {aiFeedback[q.id] || aiError[q.id] ? 'Nilai Ulang dengan AI' : 'Nilai dengan AI'}
                                 </button>
                               )}
                             </div>
@@ -627,7 +627,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
           <div className="flex justify-center py-16">
             <div className="text-center px-10 py-8 rounded-2xl"
               style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-              <div className="text-5xl mb-3">📋</div>
+              <div className="text-5xl mb-3"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <p className="font-semibold text-slate-700">Belum ada quiz yang diselesaikan</p>
               <p className="text-sm mt-1 text-slate-500">Anggota ini belum mengerjakan quiz apapun</p>
             </div>
@@ -643,10 +643,10 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
               <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
               <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
               <div className="flex gap-3 mt-1 text-xs text-slate-400">
-                {a.grading_status === 'pending_review' ? <span>📝 {a.total_questions} soal essay dikirim</span> : <span>✅ {a.total_correct}/{a.total_questions} benar</span>}
+                {a.grading_status === 'pending_review' ? <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_questions} soal essay dikirim</span> : <span><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_correct}/{a.total_questions} benar</span>}
                 <span><IkonTeks nama="🎯" />Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
-                {a.time_taken_sec && <span>⏱️ {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
-                <span>📅 {a.submitted_at ? fmtDate(a.submitted_at) : ''}</span>
+                {a.time_taken_sec && <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
+                <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.submitted_at ? fmtDate(a.submitted_at) : ''}</span>
               </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
@@ -750,7 +750,7 @@ export function TeamPage() {
                     </td>
                     <td className="px-5 py-3.5 text-center font-bold text-slate-700">
                       {ua.length}
-                      {pendingCount > 0 && <span className="ml-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⏳ {pendingCount}</span>}
+                      {pendingCount > 0 && <span className="ml-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /> {pendingCount}</span>}
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       {avg !== null ? <span className={`font-bold ${avg >= 70 ? 'text-emerald-600' : 'text-rose-600'}`}>{avg.toFixed(1)}</span> : <span className="text-slate-300">—</span>}

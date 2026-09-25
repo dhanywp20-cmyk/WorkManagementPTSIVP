@@ -8,7 +8,7 @@ import {
 import { Ico } from './Ico';
 import type { Ticket, TeamMember, User, OverdueSetting } from './shared';
 import { formatDateTime, statusColors, TAHUN_TERBARU } from './shared';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Isi "Ticket List": error/loading/kosong, kartu mobile, tabel desktop, dan
@@ -301,7 +301,7 @@ export function TicketListBody({
                       <button onClick={() => { setProductFilter(prev => prev === ticket.product ? null : (ticket.product ?? null)); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }}
                         className="text-left text-[12px] font-semibold px-1.5 py-0.5 rounded break-words leading-tight transition-all inline-block"
                         style={{ background: productFilter === ticket.product ? '#6366f1' : '#eef2ff', color: productFilter === ticket.product ? 'white' : '#4338ca' }}>
-                        📦 {ticket.product}
+                        <Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {ticket.product}
                       </button>
                     )}
                   </td>

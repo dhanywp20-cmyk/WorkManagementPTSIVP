@@ -2087,7 +2087,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Lokasi</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Search project / lokasi..."
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
@@ -2096,7 +2096,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales / Requester</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">👤</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales / requester..." value={searchSales} onChange={e => setSearchSales(e.target.value)}
                     placeholder="Search sales / requester..."
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
@@ -2105,7 +2105,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">👥</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Handlers" value={filterHandler} onChange={e => setFilterHandler(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Handlers</option>
@@ -2117,7 +2117,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🏷️</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Status</option>
@@ -2133,7 +2133,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">📅</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Years" value={filterYear} onChange={e => setFilterYear(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Years</option>
@@ -2145,7 +2145,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Bulan</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🗓️</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Months" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Months</option>
@@ -2271,7 +2271,7 @@ Hubungi Admin untuk info lebih lanjut.
                     title={req.project_name}
                     onClick={() => handleOpenDetail(req)}
                     meta={<>
-                      {req.project_location && <div className="truncate">📍 {req.project_location}</div>}
+                      {req.project_location && <div className="truncate"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {req.project_location}</div>}
                       <div className="truncate">{req.requester_name} · {formatDate(req.created_at)}</div>
                     </>}
                     badges={<>
@@ -2405,7 +2405,7 @@ Hubungi Admin untuk info lebih lanjut.
                               <div className="text-xs font-semibold text-gray-700">{formatDueDate(req.due_date)}</div>
                               {dueStatus && (
                                 <div className={`text-[10px] font-bold mt-0.5 ${dueStatus.type === 'overdue' ? 'text-red-500' : dueStatus.type === 'urgent' ? 'text-amber-500' : 'text-teal-500'}`}>
-                                  🎯 {dueStatus.label}
+                                  <Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {dueStatus.label}
                                 </div>
                               )}
                             </>
@@ -2459,7 +2459,7 @@ Hubungi Admin untuk info lebih lanjut.
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlay }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
-              <span className="text-2xl">🗑️</span>
+              <span className="text-2xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div><h3 className="font-bold text-white">Hapus {selectedIds.size} Request?</h3>
               <p className="text-red-100 text-xs mt-0.5">Tindakan ini tidak dapat dibatalkan</p></div>
             </div>
@@ -2511,7 +2511,7 @@ Hubungi Admin untuk info lebih lanjut.
               {/* Brand BOTH: dua reviewer, dan approve ini belum tentu yang terakhir. */}
               {internalApproveTarget.internal_sales_id_2 && (
                 <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                  <span className="text-base flex-shrink-0">🤝</span>
+                  <span className="text-base flex-shrink-0"><Ikon nama="🤝" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <p className="text-xs text-indigo-700 leading-relaxed">
                     Request ini <strong>Kedua Brand</strong> — perlu approve dari dua Sales Internal.
                     Kalau yang satunya belum, request menunggu dia dulu sebelum diteruskan ke Admin.
@@ -2721,7 +2721,7 @@ Hubungi Admin untuk info lebih lanjut.
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-gray-800 truncate">{req.project_name}</p>
                         <p className="text-xs text-gray-400 truncate">{req.sales_name}{req.assign_name ? ` · ${req.assign_name}` : ''}</p>
-                        {req.due_date && <p className="text-[10px] text-amber-600 font-semibold mt-0.5">📅 {formatDueDate(req.due_date)}</p>}
+                        {req.due_date && <p className="text-[10px] text-amber-600 font-semibold mt-0.5"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatDueDate(req.due_date)}</p>}
                       </div>
                       <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </button>
@@ -2880,7 +2880,7 @@ Hubungi Admin untuk info lebih lanjut.
             {/* Warning: non-IVP guest has no sales_division */}
             {isNonIVPGuest && !currentUser.sales_division && (
               <div className="mx-4 my-2 px-4 py-3 rounded-xl flex items-center gap-3 border-2 border-amber-300" style={{ background: 'rgba(254,243,199,0.9)' }}>
-                <span className="text-2xl flex-shrink-0">⚠️</span>
+                <span className="text-2xl flex-shrink-0"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-sm font-bold text-amber-800">Sales Division belum diset di akun kamu!</p>
                   <p className="text-xs text-amber-700 mt-0.5">Hubungi admin untuk set <strong>Sales Division</strong> di profil akunmu. Tanpa ini, request tidak bisa di-link ke IVP Sales internal.</p>
@@ -2891,7 +2891,7 @@ Hubungi Admin untuk info lebih lanjut.
             {/* Rejection reason banner */}
             {selectedRequest.status === 'rejected' && (
               <div className="mx-4 my-2 px-4 py-3 rounded-xl flex items-start gap-3 border-2 border-red-300" style={{ background: 'rgba(254,226,226,0.9)' }}>
-                <span className="text-2xl flex-shrink-0 mt-0.5">❌</span>
+                <span className="text-2xl flex-shrink-0 mt-0.5"><Ikon nama="❌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-red-800">Request ini ditolak</p>
                   {selectedRequest.rejection_reason && (
@@ -2915,7 +2915,7 @@ Hubungi Admin untuk info lebih lanjut.
             {isIVPGuest && selectedRequest.ivp_assignee === currentUser.full_name && selectedRequest.requester_id !== currentUser.id && (
               <div className="px-5 py-2 flex items-center gap-2 text-xs flex-shrink-0"
                 style={{ background: 'rgba(99,102,241,0.10)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}>
-                <span>🔗</span>
+                <span><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <span className="text-indigo-700 font-semibold">
                   Anda di-assign sebagai <strong>IVP Sales Internal</strong> untuk request dari divisi eksternal
                   <strong> {selectedRequest.sales_division}</strong>. Anda dapat ikut chat dan memantau progress.
@@ -3076,7 +3076,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Project Info — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm satulayar:col-span-2">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📁</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       Informasi Project
                     </h3>
                     <div className="space-y-4">
@@ -3133,7 +3133,7 @@ Hubungi Admin untuk info lebih lanjut.
                         {detailRoomAssignName && (
                           <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">PTS Handler</label>
-                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">🔧 {detailRoomAssignName}</p>
+                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailRoomAssignName}</p>
                           </div>
                         )}
                         {getCCLabel(selectedRequest) && (
@@ -3145,7 +3145,7 @@ Hubungi Admin untuk info lebih lanjut.
                         {selectedRequest.due_date && (
                           <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Target Selesai</label>
-                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">📅 {formatDueDate(selectedRequest.due_date)}{detailDueStatus ? ` (${detailDueStatus.label})` : ''}</p>
+                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatDueDate(selectedRequest.due_date)}{detailDueStatus ? ` (${detailDueStatus.label})` : ''}</p>
                           </div>
                         )}
                         {detailSc?.label && (
@@ -3161,7 +3161,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Kategori & Solution — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">🎯</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       Kategori Kebutuhan & Solution
                     </h3>
                     <div className="space-y-4">
@@ -3194,7 +3194,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Source & Peripheral — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">🔌</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="🔌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       Source & Peripheral
                     </h3>
                     <div className="space-y-4">
@@ -3269,7 +3269,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Ruangan & Keterangan — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📐</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📐" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       Ruangan & Informasi Lainnya
                     </h3>
                     <div className="space-y-3">
@@ -3292,7 +3292,7 @@ Hubungi Admin untuk info lebih lanjut.
                       return (<>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                        <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📎</span>
+                        <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📎" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                         Dokumen & File Attachment
                         {detailRoomIdx > 0 && <span className="text-[10px] font-bold text-teal-500 normal-case bg-teal-50 px-2 py-0.5 rounded-full">{(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}</span>}
                       </h3>
@@ -3312,7 +3312,7 @@ Hubungi Admin untuk info lebih lanjut.
                               <div className="absolute right-0 top-full mt-1.5 z-20 w-64 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
                                 <button onClick={() => { setShowUploadChoice(false); fileInputRef.current?.click(); }}
                                   className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-start gap-2 border-b border-gray-100">
-                                  <span className="text-base leading-none">📷</span>
+                                  <span className="text-base leading-none"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                                   <span>Foto Survey / Require BOQ<br /><span className="font-normal text-gray-400">Foto lokasi, dokumen kebutuhan dari Sales</span></span>
                                 </button>
                                 <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">File PTS - pilih kategori</p>
@@ -3485,7 +3485,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {isPTS && !isTeamPTS && (
                     <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                       <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                        <span className="w-8 h-8 shrink-0 bg-rose-500 text-white rounded-lg flex items-center justify-center text-xs shadow">⚙️</span>
+                        <span className="w-8 h-8 shrink-0 bg-rose-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="⚙" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                         Admin Controls
                       </h3>
                       <div className="space-y-3">
@@ -3493,7 +3493,7 @@ Hubungi Admin untuk info lebih lanjut.
                           <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Target Selesai</label>
                           {detailDueStatus && (
                             <div className={`mb-2 px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${detailDueStatus.type === 'overdue' ? 'bg-red-100 text-red-600' : detailDueStatus.type === 'urgent' ? 'bg-amber-100 text-amber-600' : 'bg-teal-100 text-teal-600'}`}>
-                              🎯 {detailDueStatus.label}
+                              <Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailDueStatus.label}
                             </div>
                           )}
                           <div className="flex gap-1.5">
@@ -3627,7 +3627,7 @@ Hubungi Admin untuk info lebih lanjut.
                         });
                     if (filteredMsgs.length === 0) return (
                       <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400">
-                        <div className="text-4xl">💬</div>
+                        <div className="text-4xl"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                         <p className="font-medium text-sm">{chatRoomFilter === 'all' ? 'Belum ada pesan' : `Belum ada pesan untuk ${chatRoomFilter}`}</p>
                       </div>
                     );
@@ -3786,7 +3786,7 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📁</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   Informasi Project
                 </h3>
                 <div className="grid grid-cols-1 gap-3">
@@ -3819,7 +3819,7 @@ Hubungi Admin untuk info lebih lanjut.
               {/* Target Selesai — semua role termasuk Guest bisa ubah */}
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 shrink-0 bg-teal-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📅</span>
+                  <span className="w-8 h-8 shrink-0 bg-teal-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   Target Selesai
                 </h3>
                 <div>
@@ -3887,7 +3887,7 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🎯</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   Kategori Kebutuhan & Solution
                 </h3>
                 <CheckGroup label="Kebutuhan" options={['Signage', 'Immersive', 'Meeting Room', 'Mapping', 'Command Center', 'Hybrid Classroom']}
@@ -3933,7 +3933,7 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🔌</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="🔌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   Source & Peripheral
                 </h3>
                 <CheckGroup label="Source" options={['PC / Mini PC', 'Laptop', 'URL Dashboard', 'NVR CCTV', 'Media Player', 'IPTV', 'Set Top Box']}
@@ -4015,7 +4015,7 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📐</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📐" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   Ruangan & Informasi Lainnya
                 </h3>
                 <div className="space-y-3">
@@ -4073,7 +4073,7 @@ export default function Page() {
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.4)' }} />
       <div className="relative z-10 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center"
         style={{ border: '2px solid rgba(13,148,136,0.3)' }}>
-        <div className="text-5xl mb-4">🔐</div>
+        <div className="text-5xl mb-4"><Ikon nama="🔐" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <h2 className="text-xl font-bold text-gray-800 mb-2">Sesi Habis</h2>
         <p className="text-gray-500 text-sm mb-6">Silakan login kembali melalui dashboard.</p>
         <a href="/dashboard" className="bg-gradient-to-r from-teal-600 to-teal-800 text-white px-6 py-3 rounded-xl font-bold hover:from-teal-700 hover:to-teal-900 transition-all shadow-md inline-block">

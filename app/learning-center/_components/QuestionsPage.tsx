@@ -680,7 +680,7 @@ export function QuestionsPage({ user }: { user: User }) {
       </div>
       {/* Limit info */}
       <div className="flex items-start gap-2 text-xs bg-violet-100/60 border border-violet-200 rounded-xl px-3 py-2 mb-4">
-        <span>ℹ️</span>
+        <span><Ikon nama="ℹ" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="text-violet-700">Gemini 2.5 Flash free tier: <strong>10 req/menit</strong>, ~<strong>50 req/hari</strong>. Jika error limit, tunggu 1 menit atau coba besok.</span>
       </div>
       <div className="flex items-center gap-2 mb-4">
@@ -760,7 +760,7 @@ export function QuestionsPage({ user }: { user: User }) {
               <IkonTeks nama="📄" />Pilih PDF
             </button>
             {pdfFile
-              ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✅ {pdfFile.name}</span>
+              ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {pdfFile.name}</span>
               : <span className="text-xs text-slate-400">atau dari teks materi</span>}
             {pdfFile && <button aria-label="Tutup" onClick={() => { setPdfFile(null); if (pdfRef.current) pdfRef.current.value = ''; }} className="text-xs text-rose-500">✕</button>}
           </div>
@@ -922,7 +922,7 @@ export function QuestionsPage({ user }: { user: User }) {
               </span>
               {' · '}
               {newQ.batch_name.trim()
-                ? <span className="font-bold">📌 {newQ.batch_name}</span>
+                ? <span className="font-bold"><Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /> {newQ.batch_name}</span>
                 : <span className="italic">Tanpa Grup</span>}
             </p>
             <p className="text-[11px] text-emerald-700 mt-1 leading-relaxed">
@@ -1054,7 +1054,7 @@ export function QuestionsPage({ user }: { user: User }) {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
                 style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}>
-                🧩
+                <Ikon nama="🧩" ukuran="1em" className="inline-block align-[-0.12em]" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-slate-800 tracking-tight">Bank Soal</h1>
@@ -1179,7 +1179,7 @@ export function QuestionsPage({ user }: { user: User }) {
               <div className="flex justify-center py-16">
                 <div className="text-center px-10 py-8 rounded-2xl"
                   style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-                  <div className="text-5xl mb-3">🧩</div>
+                  <div className="text-5xl mb-3"><Ikon nama="🧩" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                   <p className="font-semibold text-slate-700">Belum ada materi</p>
                   <p className="text-sm mt-1 text-slate-500">Tambah materi di tab Materi terlebih dahulu</p>
                 </div>
@@ -1485,7 +1485,7 @@ export function QuestionsPage({ user }: { user: User }) {
             <div className="flex justify-center py-16">
               <div className="text-center px-10 py-8 rounded-2xl"
                 style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-                <div className="text-5xl mb-3">🧩</div>
+                <div className="text-5xl mb-3"><Ikon nama="🧩" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 <p className="font-semibold text-slate-700">{search ? 'Tidak ada soal yang cocok' : 'Belum ada soal di folder ini'}</p>
                 {!search && <p className="text-sm mt-1 text-slate-500">Generate soal dengan AI atau tambah soal manual</p>}
               </div>
@@ -1592,7 +1592,7 @@ export function QuestionsPage({ user }: { user: User }) {
                             <div className="flex items-center gap-2.5 flex-wrap">
                               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: bc.dot }} />
                               {batchKey
-                                ? <span className="text-xs font-bold" style={{ color: bc.text }}>📌 {batchKey}</span>
+                                ? <span className="text-xs font-bold" style={{ color: bc.text }}><Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /> {batchKey}</span>
                                 : <span className="text-xs font-semibold text-slate-400 italic">Tanpa Grup</span>
                               }
                               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border" style={{ color: bc.text, borderColor: bc.border }}>

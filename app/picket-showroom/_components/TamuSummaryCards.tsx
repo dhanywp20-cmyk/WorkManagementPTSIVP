@@ -81,7 +81,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
       {/* Header */}
       <div className="px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap" style={{background:'#f8fafc',borderBottom:'1px solid rgba(15,23,42,0.08)'}}>
         <div className="flex items-center gap-2">
-          <span className="text-base">📊</span>
+          <span className="text-base"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
           <div>
             <p className="text-xs font-black leading-none" style={{color:accentColor}}>Ringkasan Aktivitas</p>
             <p className="text-[9px] text-slate-500 mt-0.5">{periodLabel}</p>

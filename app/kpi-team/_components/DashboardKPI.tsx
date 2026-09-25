@@ -533,7 +533,7 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
         style={{ right: -60, top: -90, width: 340, height: 340,
                  background: 'radial-gradient(circle,rgba(129,140,248,0.30),transparent 62%)' }}/>
       <div className="relative flex items-center justify-between gap-3 flex-wrap mb-4">
-        <h2 className="text-[15px] font-black tracking-tight flex items-center gap-2"><span aria-hidden="true">📊</span> Ringkasan Platform</h2>
+        <h2 className="text-[15px] font-black tracking-tight flex items-center gap-2"><span aria-hidden="true"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span> Ringkasan Platform</h2>
         <div className="flex items-center gap-2">
           <span className="text-[10.5px] font-bold px-2.5 py-1 rounded-full"
             style={{ color: '#c7d2fe', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.14)' }}>
@@ -1313,7 +1313,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       ? <TrenBulanan data={kpi.tickets.monthlyTickets}
                           {...(scope.kind!=='admin' ? { viewW: 1400, viewH: 220 } : {})}/>
                       : <div className="flex flex-col items-center gap-2 py-10">
-                          <span className="text-3xl opacity-20" aria-hidden="true">📊</span>
+                          <span className="text-3xl opacity-20" aria-hidden="true"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                           <p className="text-[11px] text-slate-400">Belum ada data ticket tahun ini.</p>
                         </div>}
                 </div>
@@ -1436,7 +1436,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     </div>
                     {allMembers.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-10">
-                        <span className="text-3xl opacity-20">📊</span>
+                        <span className="text-3xl opacity-20"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                         <p className="text-[10px] text-slate-400">Data KPI Team belum tersedia. Buka menu KPI Team untuk memuat data.</p>
                       </div>
                     ) : (
@@ -1467,7 +1467,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 {/* Tickets */}
                 <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#fee2e2'}}>🎫</div>
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#fee2e2'}}><Ikon nama="🎫" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Ticketing</span>
                   </div>
                   {[
@@ -1485,7 +1485,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 {/* Reminders */}
                 <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}>📅</div>
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Reminder</span>
                   </div>
                   {[
@@ -1503,7 +1503,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 {/* Learning Center */}
                 <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}>🎓</div>
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}><Ikon nama="🎓" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Learning Center</span>
                   </div>
                   {[

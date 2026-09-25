@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { PiketRow, KegiatanEntry, DAY_COLOR, TEAM_LABEL, DEFAULT_TEAM_COLOR, KEGIATAN_COLORS, bacaPicPiket } from './shared';
 import { labelKelompokPTS } from '@/lib/kelompok';
 import { ModalPortal } from '@/components/shared';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{row:PiketRow;kegiatanList:KegiatanEntry[];currentUser?:any;onClose:()=>void;onEdit?:()=>void}) {
   const dc=DAY_COLOR[row.day_of_week];
@@ -73,7 +73,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
           {/* Kegiatan Section */}
           {kgs.length===0?(
             <div className="text-center py-10 px-6 rounded-xl" style={{background:'rgba(0,0,0,0.03)',border:'1.5px dashed rgba(0,0,0,0.1)'}}>
-              <div className="text-4xl mb-2">📋</div>
+              <div className="text-4xl mb-2"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <p className="text-sm font-bold text-gray-600">Belum ada kegiatan dicatat</p>
               <p className="text-xs text-gray-500 mt-1">{onEdit?'Tambahkan kegiatan dengan mengklik tombol Edit':'Belum ada yang dicatat petugas piket untuk hari ini.'}</p>
             </div>
@@ -199,7 +199,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                   const lastEdited=kgs.filter(k=>k.edited_by_name).sort((a,b)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime())[0];
                   return lastEdited?.edited_by_name?(
                     <div className="flex items-center gap-2 text-slate-600">
-                      <span className="text-lg">✏️</span>
+                      <span className="text-lg"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       <div>
                         <p className="font-bold">Terakhir diubah oleh</p>
                         <p className="text-slate-500">{lastEdited.edited_by_name}</p>

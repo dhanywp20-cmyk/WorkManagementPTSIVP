@@ -784,7 +784,7 @@ export default function Dashboard() {
         {iframeState === 'error' && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/5 rounded-3xl z-10">
             <div className="flex flex-col items-center gap-3 text-center">
-              <span className="text-4xl">📊</span>
+              <span className="text-4xl"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <p className="text-white/80 font-semibold">Analytics tidak dapat dimuat</p>
               <p className="text-white/50 text-sm">Coba refresh halaman</p>
               <button onClick={() => setIframeState('loading')} className="mt-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all">
@@ -1498,7 +1498,7 @@ export default function Dashboard() {
                   style={showDashboardPanel
                     ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
                     : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
-                >🏠</button>
+                ><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></button>
                 {visibleMenuItems.map((menu) => (
                   <div key={menu.key}>
                     {menu.items.map((item, itemIndex) => {
@@ -1546,7 +1546,7 @@ export default function Dashboard() {
                     onMouseEnter={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.04)'; } }}
                     onMouseLeave={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; } }}
                   >
-                    <span className="w-5 h-5 text-sm flex items-center justify-center flex-shrink-0">🏠</span>
+                    <span className="w-5 h-5 text-sm flex items-center justify-center flex-shrink-0"><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <span className="text-sm font-semibold truncate">Dashboard</span>
                     {showDashboardPanel && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
                   </button>

@@ -351,7 +351,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
           {activeTab === 'list' && (
             <>
               <div className="relative mb-4">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input aria-label="Cari nama, username, atau role..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
                   className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all" />
               </div>
@@ -461,18 +461,18 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
                             <p className="text-xs text-slate-500"><Username value={user.username} /></p>
                             {user.phone_number && (
-                              <p className="text-xs text-slate-400 mt-0.5">📞 {user.phone_number}</p>
+                              <p className="text-xs text-slate-400 mt-0.5"><Ikon nama="📞" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</p>
                             )}
                             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                               <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-slate-200 text-slate-600">{labelRole(user.role)}</span>
                               {user.jabatan && (
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🏷️ {user.jabatan}</span>
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.jabatan}</span>
                               )}
                               {user.team_type && (
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-rose-100 text-rose-600 border border-rose-200">👥 {user.team_type}</span>
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-rose-100 text-rose-600 border border-rose-200"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.team_type}</span>
                               )}
                               {user.sales_division && (
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-violet-100 text-violet-600 border border-violet-200">🏢 {user.sales_division}</span>
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-violet-100 text-violet-600 border border-violet-200"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.sales_division}</span>
                               )}
                             </div>
                           </div>
@@ -496,7 +496,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                       ))}
                       {filteredUsers.length === 0 && (
                         <div className="text-center py-10 text-slate-400 text-sm">
-                          <div className="text-3xl mb-2">🔍</div>
+                          <div className="text-3xl mb-2"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                           Tidak ada akun yang cocok
                         </div>
                       )}
@@ -863,7 +863,7 @@ export function AccountSettingsInline() {
           <>
             {/* Search bar */}
             <div className="relative mb-4">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Cari nama, username, atau role..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
                 className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all" />
             </div>
@@ -1081,7 +1081,7 @@ export function AccountSettingsInline() {
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
                           <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{labelRole(user.role)}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
-                          <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600">📱 {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
+                          <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
                           <td className="md:sticky md:right-0 px-4 py-2.5" style={{ background: rowBg }}>
                             <div className="flex items-center justify-end gap-1.5">
                               <button onClick={() => {
@@ -1233,7 +1233,7 @@ export function AccountSettingsInline() {
               </div>
             ) : pendingUsers.length === 0 ? (
               <div className="text-center py-10 text-slate-400 text-sm">
-                <div className="text-3xl mb-2">✅</div>
+                <div className="text-3xl mb-2"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 Tidak ada pendaftaran yang menunggu
               </div>
             ) : (
@@ -1263,7 +1263,7 @@ export function AccountSettingsInline() {
                           {user.sales_division?.startsWith('PTS') ? `PTS • ${user.sales_division}` : user.sales_division?.startsWith('Marketing:') ? `Marketing • ${user.sales_division.replace('Marketing:', '')}` : `Sales • ${user.sales_division}`}
                         </span>
                         {user.jabatan && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">{user.jabatan}</span>}
-                        {user.phone_number && <span className="text-[9px] text-slate-500">📱 {user.phone_number}</span>}
+                        {user.phone_number && <span className="text-[9px] text-slate-500"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span>}
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 flex-shrink-0">

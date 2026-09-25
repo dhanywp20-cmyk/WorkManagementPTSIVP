@@ -132,7 +132,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           <FormField label="Lokasi Project *">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2">📍</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input value={formData.address} onChange={e => fd({ address: e.target.value })}
                 className={`${inputCls} pl-9`} style={inputStyle} placeholder="Contoh: Gedung Wisma 46 Lt. 12" />
             </div>
@@ -297,7 +297,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             ) : (
               <div className="rounded-xl px-4 py-3 flex items-center gap-3"
                 style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.3)' }}>
-                <span className="text-2xl">👥</span>
+                <span className="text-2xl"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-sm font-bold text-cyan-700">
                     {teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget]).length} anggota
@@ -327,7 +327,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           {(formData.category === 'Konfigurasi' || formData.category === 'Konfigurasi & Training') && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(14,165,233,0.07)', border: '1.5px solid rgba(14,165,233,0.3)' }}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">🛡️</span>
+                <span className="text-lg"><Ikon nama="🛡" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-sm font-bold text-sky-700">Masa Garansi (Warranty)</p>
               </div>
               <p className="text-xs text-sky-600 mb-3">Tanggal BAST (field Tanggal di atas) akan digunakan sebagai titik mulai garansi. Pilih durasi warranty project ini.</p>
@@ -349,7 +349,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               </div>
               {formData.warranty_years && formData.due_date && (
                 <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(14,165,233,0.1)', border: '1px solid rgba(14,165,233,0.2)' }}>
-                  <span className="text-sm">📅</span>
+                  <span className="text-sm"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <p className="text-xs text-sky-700 font-semibold">
                     Garansi berlaku s/d:{' '}
                     <strong>
@@ -373,7 +373,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           {(formData.category === 'Konfigurasi' || formData.category === 'Konfigurasi & Training') && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.3)' }}>
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg">📊</span>
+                <span className="text-lg"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-sm font-bold text-cyan-700">Timeline Project Progress</p>
               </div>
               <p className="text-xs text-cyan-600 mb-3">
@@ -395,7 +395,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               </div>
               {formData.progress_start_date && formData.progress_target_date && (
                 <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(8,145,178,0.1)', border: '1px solid rgba(8,145,178,0.2)' }}>
-                  <span className="text-sm">⏱️</span>
+                  <span className="text-sm"><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <p className="text-xs text-cyan-700 font-semibold">
                     Durasi pengerjaan:{' '}
                     <strong>
@@ -479,7 +479,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           <FormField label="Product / Unit (Opsional)">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2">📦</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input value={formData.product ?? ''} onChange={e => fd({ product: e.target.value })}
                 className={`${inputCls} pl-9`} style={inputStyle} placeholder="Contoh: Sony VPL-FHZ85, Crestron DMPS3..." />
             </div>
@@ -497,7 +497,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 {isTrigger && (
                   <>
                     <div className="flex items-center gap-2">
-                      <span className="text-base">⭐</span>
+                      <span className="text-base"><Ikon nama="⭐" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       <p className="text-sm font-bold text-violet-700">Assign Guest untuk Form Review</p>
                     </div>
                     <p className="text-xs text-violet-600 -mt-1">
@@ -535,7 +535,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                         style={{ background: 'white', border: '1.5px solid rgba(124,58,237,0.3)', maxHeight: '240px' }}>
                         <div className="p-2 border-b" style={{ borderColor: 'rgba(124,58,237,0.15)' }}>
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-violet-400 text-sm">🔍</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-violet-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                             <input aria-label="Cari nama sales / guest..." autoFocus type="text" value={guestSearch}
                               onChange={e => setGuestSearch(e.target.value)}
                               placeholder="Cari nama sales / guest..."
@@ -595,7 +595,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 {isTrigger && formData.sales_name && (
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
                     style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.2)' }}>
-                    <span className="text-sm">✅</span>
+                    <span className="text-sm"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <p className="text-xs font-semibold text-violet-700">
                       Form review akan otomatis muncul di akun <strong>{formData.sales_name}</strong> setelah status jadwal ini diubah ke <strong>Completed</strong>.
                       {formData.sales_division && <span className="ml-1 text-violet-500">· Divisi: <strong>{formData.sales_division}</strong></span>}
@@ -611,14 +611,14 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="Nama PIC">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2">🙋</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="🙋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input value={formData.pic_name} onChange={e => fd({ pic_name: e.target.value })}
                   className={`${inputCls} pl-9`} style={inputStyle} placeholder="Nama PIC di lokasi" />
               </div>
             </FormField>
             <FormField label="No. PIC">
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2">📱</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input type="tel" value={formData.pic_phone} onChange={e => fd({ pic_phone: e.target.value })}
                   className={`${inputCls} pl-9`} style={inputStyle} placeholder="08xxx" />
               </div>
@@ -628,7 +628,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           {(formData.assigned_to || bulkTarget !== 'none') && (
             <div className="rounded-xl p-3 flex items-start gap-3"
               style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.25)' }}>
-              <span className="text-green-500 text-lg">💬</span>
+              <span className="text-green-500 text-lg"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div>
                 <p className="text-sm font-bold text-green-700">WA Otomatis H-1</p>
                 <p className="text-xs text-green-600 mt-0.5">
@@ -659,7 +659,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           {err && (
             <div className="rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2"
               style={{ background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.3)', color: '#e11d48' }}>
-              <span>⚠️</span>{err}
+              <span><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>{err}
             </div>
           )}
 

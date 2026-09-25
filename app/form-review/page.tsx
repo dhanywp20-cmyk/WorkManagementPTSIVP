@@ -533,7 +533,7 @@ function FormReviewPageInner() {
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6"
               style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.5)' }}>
               <div className="flex items-center gap-3 mb-4">
-                <span className="text-3xl">🗑️</span>
+                <span className="text-3xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">Hapus Review</h3>
                   <p className="text-xs font-medium text-gray-500">{deleteTarget.project_name}</p>
@@ -542,7 +542,7 @@ function FormReviewPageInner() {
               </div>
               <div className="rounded-xl p-3 mb-4 text-xs"
                 style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#b91c1c' }}>
-                ⚠️ <strong>Tindakan ini tidak dapat dibatalkan.</strong> Review ini akan dihapus permanen dari database.
+                <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong>Tindakan ini tidak dapat dibatalkan.</strong> Review ini akan dihapus permanen dari database.
               </div>
               <div className="mb-4">
                 <label htmlFor="f-form-review-page-1" className="block text-sm font-bold mb-1 text-gray-700">
@@ -709,7 +709,7 @@ function FormReviewPageInner() {
                   </span>
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
                     style={{ background: 'rgba(0,0,0,0.25)', border: '2px solid rgba(255,255,255,0.4)' }}>
-                    📋 {detailReview.reminder_category}
+                    <Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailReview.reminder_category}
                   </span>
                   {/* Status badge */}
                   {(() => {
@@ -734,7 +734,7 @@ function FormReviewPageInner() {
                 {detailReview.address && (
                   <>
                     <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
-                    <p className="text-white/80 text-sm flex items-center gap-1.5">📍 {detailReview.address}</p>
+                    <p className="text-white/80 text-sm flex items-center gap-1.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailReview.address}</p>
                   </>
                 )}
                 <button aria-label="Tutup" onClick={() => setDetailReview(null)}
@@ -788,7 +788,7 @@ function FormReviewPageInner() {
                         </>
                       ) : (
                         <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                          <span className="text-sm">⏳</span>
+                          <span className="text-sm"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                           <p className="text-xs font-semibold text-amber-700">Belum diisi oleh guest</p>
                         </div>
                       )}
@@ -822,7 +822,7 @@ function FormReviewPageInner() {
                           </>
                         ) : (
                           <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                            <span className="text-sm">⏳</span>
+                            <span className="text-sm"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                             <p className="text-xs font-semibold text-amber-700">Belum diisi</p>
                           </div>
                         )}
@@ -838,7 +838,7 @@ function FormReviewPageInner() {
                           </>
                         ) : (
                           <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                            <span className="text-sm">⏳</span>
+                            <span className="text-sm"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                             <p className="text-xs font-semibold text-amber-700">Belum diisi</p>
                           </div>
                         )}
@@ -868,7 +868,7 @@ function FormReviewPageInner() {
                   </div>
                 ) : (
                   <div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.03)', border: '1px dashed rgba(0,0,0,0.15)' }}>
-                    <span className="text-gray-300 text-xl">📷</span>
+                    <span className="text-gray-300 text-xl"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <p className="text-xs text-gray-400">Belum ada foto dokumentasi</p>
                   </div>
                 )}
@@ -940,7 +940,7 @@ function FormReviewPageInner() {
                           </span>
                         </div>
                         <p className="font-bold text-sm text-gray-800 truncate">{r.project_name || '—'}</p>
-                        {r.address && <p className="text-xs text-gray-500 mt-0.5">📍 {r.address}</p>}
+                        {r.address && <p className="text-xs text-gray-500 mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</p>}
                         {isTeam && r.sales_name && (
                           <p className="text-xs text-violet-600 font-semibold mt-0.5"><IkonTeks nama="👤" />Guest: {r.sales_name}</p>
                         )}
@@ -991,7 +991,7 @@ function FormReviewPageInner() {
               <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
                 {myActivePendingReviews.length === 0 ? (
                   <div className="text-center py-10 text-gray-500">
-                    <div className="text-5xl mb-3">✅</div>
+                    <div className="text-5xl mb-3"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                     <p className="font-semibold">
                       {isTeam ? 'Semua Guest sudah mengisi review' : 'Semua review sudah diisi'}
                     </p>
@@ -1007,7 +1007,7 @@ function FormReviewPageInner() {
                           {r.review_category === 'Demo Product' ? '🖥️' : '📌'} {r.review_category}
                         </span>
                         <p className="font-bold text-sm text-gray-800 truncate">{r.project_name || '—'}</p>
-                        {r.address && <p className="text-xs text-gray-500 mt-0.5">📍 {r.address}</p>}
+                        {r.address && <p className="text-xs text-gray-500 mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</p>}
                         {isTeam && r.sales_name && (
                           <p className="text-xs text-violet-600 font-semibold mt-0.5"><IkonTeks nama="👤" />Guest: {r.sales_name}</p>
                         )}
@@ -1032,7 +1032,7 @@ function FormReviewPageInner() {
 
         {/* ── HEADER ── */}
         <div className="sticky top-0 z-50 animate-slide-down anim-d0"
-          style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(16px)', borderBottom: '3px solid #d97706', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #b45309' }}>
           {/* Loading Bar */}
           {loadingBar > 0 && (
             <div className="absolute top-0 left-0 w-full h-0.5 z-[60] overflow-hidden" style={{ background: 'rgba(217,119,6,0.15)' }}>
@@ -1051,13 +1051,14 @@ function FormReviewPageInner() {
           )}
           <div className="px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg,#d97706,#b45309)' }}>
-              <span className="text-white text-base">⭐</span>
+            {/* Disamakan dengan PageHeader modul lain: ubin ikon lembut + judul tinta. */}
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ background: '#b4530914', color: '#b45309', border: '1px solid #b4530926' }}>
+              <Ikon nama="⭐" ukuran={18} />
             </div>
             <div>
-              <p className="text-[10px] font-semibold tracking-[0.2em] uppercase" style={{ color: '#d97706' }}>IndoVisual</p>
-              <p className="font-bold text-sm leading-none tracking-wide text-slate-800">Form Review Demo & BAST</p>
+              <p className="font-bold text-base leading-tight tracking-tight text-slate-900">Form Review Demo & BAST</p>
+              <p className="text-[11px] font-medium text-slate-600">Penilaian pelanggan untuk demo & serah terima</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -1151,7 +1152,7 @@ function FormReviewPageInner() {
               <div>
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="🔍" />Search Project / Lokasi</label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">🔍</span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search project / lokasi..." style={{ minWidth: 180 }} />
@@ -1160,7 +1161,7 @@ function FormReviewPageInner() {
               <div>
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="👤" />Sales Name</label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👤</span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales..." value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search sales..." />
@@ -1169,7 +1170,7 @@ function FormReviewPageInner() {
               <div>
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👷</span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search handler..." value={searchHandler} onChange={e => setSearchHandler(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search handler..." />
@@ -1178,7 +1179,7 @@ function FormReviewPageInner() {
               <div>
                 <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Kategori</label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">📋</span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="Semua Kategori" value={filterReviewCat} onChange={e => setFilterReviewCat(e.target.value as any)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
                     <option value="all">Semua Kategori</option>
@@ -1209,25 +1210,25 @@ function FormReviewPageInner() {
               <div className="px-3 py-1.5 sm:px-5 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
                 {filterReviewCat !== 'all' && (
-                  <button onClick={() => setFilterReviewCat('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}>📋 {filterReviewCat} ✕</button>
+                  <button onClick={() => setFilterReviewCat('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterReviewCat} ✕</button>
                 )}
                 {salesDivisionFilter && (
-                  <button onClick={() => setSalesDivisionFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}>👤 {salesDivisionFilter} ✕</button>
+                  <button onClick={() => setSalesDivisionFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {salesDivisionFilter} ✕</button>
                 )}
                 {handlerFilter && (
-                  <button onClick={() => setHandlerFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}>👷 {handlerFilter} ✕</button>
+                  <button onClick={() => setHandlerFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {handlerFilter} ✕</button>
                 )}
                 {productFilterChart && (
-                  <button onClick={() => setProductFilterChart(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#6366f1' }}>📦 {productFilterChart} ✕</button>
+                  <button onClick={() => setProductFilterChart(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#6366f1' }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {productFilterChart} ✕</button>
                 )}
                 {searchProject && (
-                  <button onClick={() => setSearchProject('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}>🔍 {searchProject} ✕</button>
+                  <button onClick={() => setSearchProject('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchProject} ✕</button>
                 )}
                 {searchSalesName && (
-                  <button onClick={() => setSearchSalesName('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}>👤 {searchSalesName} ✕</button>
+                  <button onClick={() => setSearchSalesName('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchSalesName} ✕</button>
                 )}
                 {searchHandler && (
-                  <button onClick={() => setSearchHandler('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}>👷 {searchHandler} ✕</button>
+                  <button onClick={() => setSearchHandler('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchHandler} ✕</button>
                 )}
                 <button onClick={() => { setFilterReviewCat('all'); setSalesDivisionFilter(null); setHandlerFilter(null); setProductFilterChart(null); setSearchProject(''); setSearchSalesName(''); setSearchHandler(''); }}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}><IkonTeks nama="🗑" />Reset Semua</button>
@@ -1268,7 +1269,7 @@ function FormReviewPageInner() {
                       title={r.project_name || '—'}
                       onClick={() => setDetailReview(r)}
                       meta={<>
-                        {r.address && <div className="truncate">📍 {r.address}</div>}
+                        {r.address && <div className="truncate"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</div>}
                         <div className="truncate">{r.reminder_category || '—'} · {r.created_at ? formatDatetime(r.created_at) : '—'}</div>
                       </>}
                       badges={<MobileCardBadge style={hasReview ? { background: '#d1fae5', color: '#065f46', border: '1px solid #10b981' } : { background: '#fef3c7', color: '#92400e', border: '1px solid #f59e0b' }}>{hasReview ? '✅ Terisi' : '⏳ Belum'}</MobileCardBadge>}
@@ -1351,7 +1352,7 @@ function FormReviewPageInner() {
                           {/* Project */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle">
                             <div className="text-xs font-bold text-gray-800 leading-tight break-words">{r.project_name || '—'}</div>
-                            {r.address && <div className="text-[10px] text-gray-400 truncate mt-0.5">📍 {r.address}</div>}
+                            {r.address && <div className="text-[10px] text-gray-400 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</div>}
                             <div className="text-[10px] text-gray-400 mt-0.5">{r.created_at ? formatDatetime(r.created_at) : '—'}</div>
                           </td>
                           {/* Kategori */}
@@ -1458,7 +1459,7 @@ function FormReviewPageInner() {
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
-              <span className="text-2xl">🗑️</span>
+              <span className="text-2xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div><h3 className="font-bold text-white">Hapus {selectedIds.size} Review?</h3>
               <p className="text-red-100 text-xs mt-0.5">Tindakan ini tidak dapat dibatalkan</p></div>
             </div>

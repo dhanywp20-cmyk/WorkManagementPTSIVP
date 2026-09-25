@@ -16,7 +16,7 @@ import { ModalPortal } from '@/components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { Reminder, formatDate } from './shared';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function KonfirmasiApproveInternal({
   internalApproveTarget, internalApproveSaving, setInternalApproveTarget, handleInternalApprove,
@@ -100,7 +100,7 @@ export function ModalHapus({
         <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6"
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.5)' }}>
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-3xl">🗑️</span>
+            <span className="text-3xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div>
               <h3 className="text-lg font-bold text-gray-800">Hapus Reminder</h3>
               <p className="text-xs font-medium text-gray-500">{deleteTarget.project_name}</p>
@@ -109,7 +109,7 @@ export function ModalHapus({
           </div>
           <div className="rounded-xl p-3 mb-4 text-xs"
             style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#b91c1c' }}>
-            ⚠️ <strong>Tindakan ini tidak dapat dibatalkan.</strong> Reminder ini akan dihapus permanen dari database.
+            <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong>Tindakan ini tidak dapat dibatalkan.</strong> Reminder ini akan dihapus permanen dari database.
           </div>
           <div className="mb-4">
             <label htmlFor="f-reminder-schedule-components-popupringkas-1" className="block text-sm font-bold mb-1 text-gray-700">
@@ -161,7 +161,7 @@ export function PopupNotifikasi({
           <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <span className="text-3xl animate-bounce">🔔</span>
+                <span className="text-3xl animate-bounce"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <h3 className="text-lg font-bold text-white">Reminder Kamu</h3>
                   <p className="text-sm text-white/90">{myReminders.length} reminder aktif yang diassign ke kamu</p>
@@ -182,7 +182,7 @@ export function PopupNotifikasi({
                       <PriorityBadge priority={r.priority} />
                     </div>
                     <p className="font-bold text-sm text-gray-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
-                    {r.address && <p className="text-xs text-gray-500 mt-0.5">📍 {r.address}</p>}
+                    {r.address && <p className="text-xs text-gray-500 mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</p>}
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <StatusBadge status={r.status} />
@@ -223,7 +223,7 @@ export function PopupLonceng({
           <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">🔔</span>
+                <span className="text-3xl"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <h3 className="text-lg font-bold text-white">Perlu Tindakan Kamu</h3>
                   {/* Dipecah per alasan: "5 aktif" tidak memberi tahu apakah
@@ -249,7 +249,7 @@ export function PopupLonceng({
           <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
             {myActiveReminders.length === 0 ? (
               <div className="text-center py-10 text-gray-500">
-                <div className="text-5xl mb-3">✅</div>
+                <div className="text-5xl mb-3"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 <p className="font-semibold">Tidak ada reminder aktif</p>
               </div>
             ) : perluAksiSaya.map(({ r, alasan, warna }) => (
@@ -268,7 +268,7 @@ export function PopupLonceng({
                       <CategoryBadge category={r.category} />
                     </div>
                     <p className="font-bold text-sm text-gray-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
-                    {r.address && <p className="text-xs text-gray-500 mt-0.5">📍 {r.address}</p>}
+                    {r.address && <p className="text-xs text-gray-500 mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</p>}
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <StatusBadge status={r.status} />

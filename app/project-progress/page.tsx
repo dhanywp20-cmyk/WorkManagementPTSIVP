@@ -27,7 +27,7 @@ import {
 } from './_components/shared';
 import { isAssignablePTSTeam } from '@/lib/teams';
 import { compressImage } from '@/lib/image-compress';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 function ProjectProgressPageInner() {
   const currentUser = useCurrentUser();
@@ -1380,7 +1380,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                 const lt = timelineInfo(loc);
                 return (
                   <p className="text-[10px] font-semibold" style={{ color: lt.color }}>
-                    🗓️ {loc.start_date ? formatDate(loc.start_date) : '—'} → {loc.target_date ? formatDate(loc.target_date) : '—'}
+                    <Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /> {loc.start_date ? formatDate(loc.start_date) : '—'} → {loc.target_date ? formatDate(loc.target_date) : '—'}
                     <span className="ml-1.5 px-1.5 py-0.5 rounded" style={{ background: lt.bg }}>{lt.label}</span>
                   </p>
                 );

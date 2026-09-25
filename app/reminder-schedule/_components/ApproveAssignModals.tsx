@@ -3,7 +3,7 @@ import { ModalPortal } from '@/components/shared';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
 import type { Reminder, TeamUser, SupervisorCandidate } from './shared';
 import { formatDate } from './shared';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Modal Approve & Assign (Admin/Manager) dan Assign Tim (Supervisor) -
@@ -67,14 +67,14 @@ export function ApproveAssignModal({
               style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
               <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
               <p className="text-sm font-bold text-slate-800">{approveTarget.sales_name}{approveTarget.sales_division ? ` · ${approveTarget.sales_division}` : ''}</p>
-              <p className="text-xs text-slate-500">📍 {approveTarget.address || '-'} · 🏷️ {approveTarget.category}</p>
+              <p className="text-xs text-slate-500"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {approveTarget.address || '-'} · 🏷️ {approveTarget.category}</p>
               <p className="text-xs text-slate-500"><IkonTeks nama="📅" />Usulan: {formatDate(approveTarget.due_date)} {approveTarget.due_time}</p>
             </div>
 
             {approveBatchSiblings.length > 0 && (
               <div className="rounded-xl p-3 flex items-start gap-2"
                 style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                <span className="text-base flex-shrink-0">🗓️</span>
+                <span className="text-base flex-shrink-0"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-xs text-indigo-700 leading-relaxed">
                   Request ini bagian dari <strong>{approveBatchSiblings.length + 1} hari</strong> yang diminta sekaligus
                   ({[approveTarget.due_date, ...approveBatchSiblings.map(s => s.due_date)].sort().map(formatDate).join(', ')}).
@@ -181,7 +181,7 @@ export function ApproveAssignModal({
             {/* Info WA */}
             <div className="rounded-xl p-3 flex items-start gap-2"
               style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
-              <span className="text-base flex-shrink-0">💬</span>
+              <span className="text-base flex-shrink-0"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <p className="text-[11px] text-green-700 leading-relaxed">
                 WA notifikasi akan otomatis dikirim ke <strong>Team PTS IVP</strong> yang di-assign dan ke <strong>Sales</strong> yang request bahwa jadwalnya sudah disetujui.
               </p>
@@ -249,13 +249,13 @@ export function SupervisorAssignModal({
             <div className="rounded-xl p-3 space-y-1" style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
               <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
               <p className="text-sm font-bold text-slate-800">{supervisorAssignTarget.sales_name}{supervisorAssignTarget.sales_division ? ` · ${supervisorAssignTarget.sales_division}` : ''}</p>
-              <p className="text-xs text-slate-500">📍 {supervisorAssignTarget.address || '-'} · 🏷️ {supervisorAssignTarget.category}</p>
+              <p className="text-xs text-slate-500"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {supervisorAssignTarget.address || '-'} · 🏷️ {supervisorAssignTarget.category}</p>
               <p className="text-xs text-slate-500"><IkonTeks nama="📅" />Jadwal: {formatDate(supervisorAssignTarget.due_date)} {supervisorAssignTarget.due_time}</p>
             </div>
 
             {supervisorAssignBatchSiblings.length > 0 && (
               <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                <span className="text-base flex-shrink-0">🗓️</span>
+                <span className="text-base flex-shrink-0"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-xs text-indigo-700 leading-relaxed">
                   Bagian dari <strong>{supervisorAssignBatchSiblings.length + 1} hari</strong> yang diminta sekaligus — semua tanggal akan ikut di-assign ke orang yang sama.
                 </p>
@@ -279,7 +279,7 @@ export function SupervisorAssignModal({
             </div>
 
             <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
-              <span className="text-base flex-shrink-0">💬</span>
+              <span className="text-base flex-shrink-0"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <p className="text-[11px] text-green-700 leading-relaxed">
                 WA notifikasi otomatis dikirim ke yang di-assign (kecuali kamu sendiri) dan ke Sales yang request.
               </p>

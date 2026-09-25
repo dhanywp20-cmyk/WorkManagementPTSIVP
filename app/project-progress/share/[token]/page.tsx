@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ProjectDetailView } from '../../_components/ProjectDetailView';
 import { ProjectDetail, THEME, PALETTE, fontMono, STATUS_CONFIG, formatDatetime } from '../../_components/shared';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Halaman share View-Only - PUBLIK, tanpa login.
@@ -83,7 +83,7 @@ export default function SharedProjectPage({ params }: { params: { token: string 
 
         {!loading && err && (
           <div className="rounded-md p-12 text-center" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
-            <p className="text-4xl mb-3">🔒</p>
+            <p className="text-4xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
             <p className="text-base font-bold" style={{ color: PALETTE.ink }}>{err}</p>
             <p className="mt-1.5 text-xs font-medium" style={{ color: PALETTE.inkFaint }}>
               Hubungi admin untuk mendapatkan link yang masih aktif.

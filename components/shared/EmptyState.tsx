@@ -99,7 +99,7 @@ export function ErrorState({ message = 'Gagal memuat data', onRetry }: ErrorStat
     // role="alert": kegagalan memuat harus terdengar begitu terjadi, bukan
     // menunggu pengguna kebetulan menyusuri halaman sampai menemukannya.
     <div role="alert" className="flex flex-col items-center justify-center py-16 gap-2">
-      <span className="text-5xl" aria-hidden="true">⚠️</span>
+      <span className="text-5xl" aria-hidden="true"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
       <p className="font-semibold text-gray-700 text-sm mt-1">{message}</p>
       <p className="text-xs text-gray-400">Periksa koneksi internet dan coba lagi</p>
       {onRetry && (

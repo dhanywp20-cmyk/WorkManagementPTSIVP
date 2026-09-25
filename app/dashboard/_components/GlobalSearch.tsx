@@ -639,7 +639,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         <div ref={listRef} className="max-h-[52vh] overflow-y-auto">
           {!query.trim() ? (
             <div className="px-4 py-8 text-center">
-              <div className="text-4xl mb-3">🔍</div>
+              <div className="text-4xl mb-3"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <p className="text-sm font-semibold text-slate-600">Cari di seluruh platform</p>
               <p className="text-[11px] text-slate-400 mt-1">Ticket · Reminder · Project · Piket · Unit Movement · User</p>
               <div className="flex items-center justify-center gap-4 mt-4 text-[10px] text-slate-400">

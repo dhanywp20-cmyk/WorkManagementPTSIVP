@@ -35,7 +35,7 @@ function StyleA() {
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-slate-700" style={{ background: '#0f172a' }}>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs">🎓</div>
+          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-xs"><Ikon nama="🎓" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
           <span className="text-sm font-bold text-white">Materi Training</span>
           <span className="text-xs text-slate-400 font-medium bg-slate-800 px-2 py-0.5 rounded-full">Admin Portal</span>
         </div>
@@ -144,7 +144,7 @@ function StyleB() {
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100" style={{ background: 'linear-gradient(135deg,#f8fafc,#f1f5f9)' }}>
         <div>
-          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2"><span>📚</span> Materi Training</h2>
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2"><span><Ikon nama="📚" ukuran="1em" className="inline-block align-[-0.12em]" /></span> Materi Training</h2>
           <p className="text-xs text-slate-500 mt-0.5">Kelola & organisir materi training team</p>
         </div>
         <div className="flex items-center gap-2">
@@ -228,7 +228,7 @@ function StyleC() {
       <div className="px-5 py-3.5 border-b border-slate-100" style={{ background: '#fff' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-800 flex items-center gap-2"><span>📚</span> Materi Training</h2>
+            <h2 className="text-base font-bold text-slate-800 flex items-center gap-2"><span><Ikon nama="📚" ukuran="1em" className="inline-block align-[-0.12em]" /></span> Materi Training</h2>
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 mt-1">
               <button onClick={() => setBreadcrumb([])} className={`text-xs font-semibold transition-all ${breadcrumb.length === 0 ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'}`}>Beranda</button>
@@ -333,7 +333,7 @@ function StyleD() {
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100" style={{ background: 'linear-gradient(135deg,#f0f9ff,#e0f2fe)' }}>
         <div>
-          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2"><span>📚</span> Materi Training</h2>
+          <h2 className="text-base font-bold text-slate-800 flex items-center gap-2"><span><Ikon nama="📚" ukuran="1em" className="inline-block align-[-0.12em]" /></span> Materi Training</h2>
           <p className="text-xs text-slate-500 mt-0.5">Learning Management System</p>
         </div>
         <div className="flex items-center gap-2">
@@ -397,7 +397,7 @@ function StyleD() {
                       <p className="text-[10px] text-slate-400 mt-0.5 truncate">{m.folder}</p>
                       <div className="flex items-center gap-2 mt-1.5">
                         {m.hasAI && <AIBadge />}
-                        <span className="text-[10px] text-slate-400 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded">📅 {m.date}</span>
+                        <span className="text-[10px] text-slate-400 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {m.date}</span>
                       </div>
                     </div>
                     <a href="#" className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg text-white shadow-sm flex-shrink-0 transition-all"
@@ -431,7 +431,7 @@ export default function MateriStylePreview() {
       {/* Page header */}
       <div className="max-w-5xl mx-auto mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-lg shadow-lg">🎨</div>
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-lg shadow-lg"><Ikon nama="🎨" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
           <div>
             <h1 className="text-lg sm:text-2xl font-black text-white tracking-tight">Style Preview — Materi Training</h1>
             <p className="text-slate-400 text-sm">Klik tab untuk melihat masing-masing style. Semua komponen bisa diklik / diinteraksi.</p>

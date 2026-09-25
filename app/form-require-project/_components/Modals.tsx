@@ -16,7 +16,7 @@ import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import { appLink } from '@/lib/app-url';
 import { createNotification } from '@/lib/notifications';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * AssignPTSModal - popup Approve & Assign dan Assign ke Tim untuk Request
@@ -294,7 +294,7 @@ export function AssignPTSModal({
           {isExternal && (
             <div className="rounded-xl p-3 flex items-start gap-2"
               style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-              <span className="text-base flex-shrink-0">🔗</span>
+              <span className="text-base flex-shrink-0"><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <p className="text-xs text-indigo-700 leading-relaxed">
                 Request dari divisi external <strong>{req.sales_division}</strong>. Cukup pilih <strong>Tim PTS</strong> yang menangani —
                 IVP Sales internal untuk divisi ini sudah otomatis ter-mapping sejak request dibuat.
@@ -332,7 +332,7 @@ export function AssignPTSModal({
             </label>
             {teamMembers.length === 0 ? (
               <div className="text-center py-6 text-gray-400 text-sm rounded-xl" style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)' }}>
-                <div className="text-3xl mb-1">👥</div>
+                <div className="text-3xl mb-1"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 <p className="text-xs">Tidak ada Team PTS tersedia</p>
               </div>
             ) : (
@@ -354,7 +354,7 @@ export function AssignPTSModal({
           {/* Info WA */}
           <div className="rounded-xl p-3 flex items-start gap-2"
             style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
-            <span className="text-base flex-shrink-0">💬</span>
+            <span className="text-base flex-shrink-0"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <p className="text-[11px] text-green-700 leading-relaxed">
               WA notifikasi otomatis dikirim ke <strong>Tim PTS</strong> yang di-assign (kecuali kamu sendiri).
             </p>
@@ -642,7 +642,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
               onChange={e => { const files = Array.from(e.target.files||[]); if(files.length) onAddPhotos(files); e.target.value=''; }}/>
             {previews.length === 0 ? (
               <label htmlFor={`room-photo-${room.id}`} className="w-full border-2 border-dashed border-gray-300 rounded-xl py-4 flex flex-col items-center justify-center text-gray-400 hover:border-teal-400 hover:text-teal-500 transition-all cursor-pointer">
-                <span className="text-2xl mb-1">📷</span>
+                <span className="text-2xl mb-1"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <span className="text-xs font-medium">Klik upload foto</span>
                 <span className="text-[11px] opacity-70">Max 10 foto</span>
               </label>
@@ -671,14 +671,14 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             {!boqFile ? (
               <button type="button" onClick={() => boqRef.current?.click()}
                 className="w-full border-2 border-dashed border-emerald-300 rounded-xl py-4 flex flex-col items-center justify-center text-emerald-500 hover:border-emerald-500 hover:bg-emerald-50 transition-all cursor-pointer">
-                <span className="text-2xl mb-1">📊</span>
+                <span className="text-2xl mb-1"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <span className="text-xs font-medium">Klik upload BOQ</span>
                 <span className="text-[11px] opacity-70">.xlsx / .xls / .csv</span>
               </button>
             ) : (
               <div>
                 <div className="border-2 border-emerald-300 bg-emerald-50 rounded-xl p-3 flex items-center gap-3">
-                  <span className="text-xl">📊</span>
+                  <span className="text-xl"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-emerald-800 truncate">{boqFile.name}</p>
                     <p className="text-[11px] text-emerald-600">{(boqFile.size/1024).toFixed(1)} KB</p>
@@ -701,7 +701,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             onChange={e => { const files = Array.from(e.target.files||[]); if(files.length) onAddPhotos(files); e.target.value=''; }}/>
           {previews.length === 0 ? (
             <label htmlFor={`room-photo-ng-${room.id}`} className="w-full border-2 border-dashed border-gray-300 rounded-xl py-4 flex flex-col items-center justify-center text-gray-400 hover:border-teal-400 hover:text-teal-500 transition-all cursor-pointer">
-              <span className="text-2xl mb-1">📷</span><span className="text-xs font-medium">Klik upload foto</span>
+              <span className="text-2xl mb-1"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-medium">Klik upload foto</span>
               <span className="text-[11px] opacity-70">Max 10 foto</span>
             </label>
           ) : (
@@ -873,7 +873,7 @@ export function NewFormModal({
           {/* ── Project Info ── */}
           <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
             <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-              <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📁</span>
+              <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               Informasi Project
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1323,7 +1323,7 @@ export function NewFormModal({
                         onChange={e => { const files = Array.from(e.target.files||[]); if(!files.length) return; const c=[...surveyPhotos,...files].slice(0,10); setSurveyPhotos(c); setSurveyPhotosPreviews(c.map(f=>URL.createObjectURL(f))); e.target.value=''; }} />
                       {surveyPhotosPreviews.length === 0 ? (
                         <label onClick={() => surveyPhotoRef.current?.click()} className="w-full border-2 border-dashed border-gray-300 rounded-xl py-4 flex flex-col items-center justify-center text-gray-400 hover:border-teal-400 hover:text-teal-500 transition-all cursor-pointer">
-                          <span className="text-2xl mb-1">📷</span><span className="text-xs font-medium">Klik upload foto</span><span className="text-[11px] opacity-70">Max 10 foto</span>
+                          <span className="text-2xl mb-1"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-medium">Klik upload foto</span><span className="text-[11px] opacity-70">Max 10 foto</span>
                         </label>
                       ) : (
                         <div>
@@ -1347,12 +1347,12 @@ export function NewFormModal({
                       {!boqFormFile ? (
                         <button type="button" onClick={() => boqRoom1Ref.current?.click()}
                           className="w-full border-2 border-dashed border-emerald-300 rounded-xl py-4 flex flex-col items-center justify-center text-emerald-500 hover:border-emerald-500 hover:bg-emerald-50 transition-all cursor-pointer">
-                          <span className="text-2xl mb-1">📊</span><span className="text-xs font-medium">Klik upload BOQ</span><span className="text-[11px] opacity-70">.xlsx / .xls / .csv</span>
+                          <span className="text-2xl mb-1"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-medium">Klik upload BOQ</span><span className="text-[11px] opacity-70">.xlsx / .xls / .csv</span>
                         </button>
                       ) : (
                         <div>
                           <div className="border-2 border-emerald-300 bg-emerald-50 rounded-xl p-3 flex items-center gap-3">
-                            <span className="text-xl">📊</span>
+                            <span className="text-xl"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                             <div className="flex-1 min-w-0"><p className="text-xs font-bold text-emerald-800 truncate">{boqFormFile.name}</p><p className="text-[11px] text-emerald-600">{(boqFormFile.size/1024).toFixed(1)} KB</p></div>
                             <button aria-label="Tutup" type="button" onClick={() => setBoqFormFile(null)} className="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
                           </div>

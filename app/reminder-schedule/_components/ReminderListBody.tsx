@@ -160,7 +160,7 @@ export function ReminderListBody({
                 title={(r.project_name || r.title || '').trim() || '—'}
                 onClick={() => setDetailReminder(r)}
                 meta={<>
-                  {r.address && <p className="truncate">📍 {r.address.split(',')[0]}</p>}
+                  {r.address && <p className="truncate"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.split(',')[0]}</p>}
                   <p className="truncate">
                     {uniqueDates.length > 1
                       ? `🗓️ ${uniqueDates.length} hari: ${fmtShort(uniqueDates[0])}–${fmtShort(uniqueDates[uniqueDates.length - 1])}`
@@ -331,7 +331,7 @@ export function ReminderListBody({
                     {/* Project */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="font-bold text-gray-800 text-xs leading-tight break-words">{(r.project_name || '').trim() || (r.title || '').trim() || '—'}</div>
-                      {r.address && <div className="text-[10px] text-gray-400 truncate mt-0.5">📍 {r.address.split(',')[0]}</div>}
+                      {r.address && <div className="text-[10px] text-gray-400 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.split(',')[0]}</div>}
                       <div className="text-[10px] text-gray-400 mt-0.5">{formatDatetime(r.created_at).split(',')[0]}</div>
                     </td>
                     {/* Product */}
@@ -350,7 +350,7 @@ export function ReminderListBody({
                       {r.product_type && (
                         <div className="mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded inline-block"
                           style={{ background: '#fef3c7', color: '#92400e' }}>
-                          🏷️ {r.product_type}
+                          <Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.product_type}
                         </div>
                       )}
                     </td>
@@ -362,7 +362,7 @@ export function ReminderListBody({
                         {r.sales_name && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(r.category) && (
                         <div className="inline-flex items-center gap-1 mt-1 px-1.5 py-1"
                           >
-                          ⭐ {/*r.sales_name*/}
+                          <Ikon nama="⭐" ukuran="1em" className="inline-block align-[-0.12em]" /> {/*r.sales_name*/}
                         </div>
                       )}
                       </div>
@@ -455,7 +455,7 @@ export function ReminderListBody({
                       {uniqueDates.length > 1 ? (
                         <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center" title={uniqueDates.map(fmtShort).join(', ')}
                           style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
-                          <span className="text-sm font-black leading-none" style={{ color: '#4f46e5' }}>🗓️ {uniqueDates.length}h</span>
+                          <span className="text-sm font-black leading-none" style={{ color: '#4f46e5' }}><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /> {uniqueDates.length}h</span>
                           <span className="text-[8px] font-bold uppercase leading-tight" style={{ color: '#6366f1' }}>
                             {fmtShort(uniqueDates[0])}–{fmtShort(uniqueDates[uniqueDates.length - 1])}
                           </span>

@@ -164,7 +164,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
             background: isSel ? `${folder.color}15` : 'transparent',
             border: isSel ? `1.5px solid ${folder.color}40` : '1.5px solid transparent' }}>
           {children.length > 0
-            ? <span className="text-[9px] text-slate-400 transition-transform" style={{ transform: isOpen ? 'rotate(90deg)':'none' }}>▶</span>
+            ? <span className="text-[9px] text-slate-400 transition-transform" style={{ transform: isOpen ? 'rotate(90deg)':'none' }}><Ikon nama="▶" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             : <span className="w-3" />}
           <span className="text-base"><Ikon nama={folder.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
           <span className="flex-1 text-[13px] font-semibold truncate" style={{ color: isSel ? folder.color : '#475569' }}>{folder.name}</span>
@@ -201,7 +201,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
         className="flex items-center gap-2 rounded-xl px-2.5 py-2 cursor-pointer transition-all mb-1"
         style={{ background: selected===null ? 'rgba(236,72,153,0.10)':'transparent',
           border: selected===null ? '1.5px solid rgba(236,72,153,0.30)':'1.5px solid transparent' }}>
-        <span className="text-base">🏠</span>
+        <span className="text-base"><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="flex-1 text-[13px] font-semibold" style={{ color: selected===null ? '#db2777':'#475569' }}>Semua Tech Note</span>
         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white bg-rose-500">{technotes.length}</span>
       </div>
@@ -691,7 +691,7 @@ function TechNotePageInner() {
         style={{ background: 'rgba(255,255,255,0.92)', backdropFilter:'blur(16px)', borderBottom:'3px solid #ec4899' }}>
         <div className="flex items-center gap-3 px-6 py-3.5">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl shadow-md"
-            style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}>📝</div>
+            style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
           <div>
             <h1 className="font-black text-[16px] leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-rose-800">Tech Note R&D</h1>
             <p className="text-slate-500 text-[11px]">Dokumentasi teknikal & R&D · KPI 10%</p>
@@ -752,7 +752,7 @@ function TechNotePageInner() {
                   mengisi barisnya sendiri. */}
               <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-2">
                 <div className="relative flex-1 sm:flex-initial min-w-0">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Cari judul, produk, tag..." value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari judul, produk, tag..."
                     className="pl-8 pr-3 py-2 text-[13px] rounded-xl outline-none w-full sm:w-52 text-slate-700 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 placeholder-slate-400" style={{ background: 'rgba(255,255,255,0.95)' }} />
                 </div>
@@ -940,10 +940,10 @@ function TechNotePageInner() {
             </div>
             <p className="text-[13px] text-slate-500 leading-relaxed mb-3">{detailNote.description}</p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[12px] text-slate-400">
-              <span>🏷️ <b className="text-slate-600">Produk:</b> {detailNote.product}</span>
-              <span>👤 <b className="text-slate-600">Author:</b> {detailNote.author_name}</span>
-              <span>📅 <b className="text-slate-600">Submit:</b> {formatDate(detailNote.submitted_at)}</span>
-              {detailNote.reviewed_by_name && <span>✅ <b className="text-slate-600">Reviewed by:</b> {detailNote.reviewed_by_name}</span>}
+              <span><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Produk:</b> {detailNote.product}</span>
+              <span><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Author:</b> {detailNote.author_name}</span>
+              <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Submit:</b> {formatDate(detailNote.submitted_at)}</span>
+              {detailNote.reviewed_by_name && <span><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Reviewed by:</b> {detailNote.reviewed_by_name}</span>}
             </div>
             {(detailNote.tags??[]).length>0 && (
               <div className="flex flex-wrap gap-1 mt-3">

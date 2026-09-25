@@ -1023,7 +1023,7 @@ export default function IncentivePTSPage() {
       <header className="flex-shrink-0 z-50"
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '3px solid #f43f5e', boxShadow: '0 2px 12px rgba(99,102,241,0.10)' }}>
         <div className="w-full px-4 py-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0">💰</div>
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0"><Ikon nama="💰" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold text-gray-800">Incentive PTS</h1>
             <p className="text-[11px] text-gray-400">IndoVisual Professional Tools</p>
@@ -1290,8 +1290,8 @@ export default function IncentivePTSPage() {
                     title={p.project_name}
                     onClick={() => openProjectDetail(p)}
                     meta={<>
-                      {p.product && <div className="truncate">📦 {p.product}</div>}
-                      <div className="truncate">👷 {p.assign_name || '—'}{p.bast_date ? ` · BAST ${new Date(p.bast_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}` : ''}</div>
+                      {p.product && <div className="truncate"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.product}</div>}
+                      <div className="truncate"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.assign_name || '—'}{p.bast_date ? ` · BAST ${new Date(p.bast_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })}` : ''}</div>
                     </>}
                     badges={<>
                       <MobileCardBadge className="bg-purple-100 text-purple-700 border border-purple-200">{p.category}</MobileCardBadge>
@@ -1377,7 +1377,7 @@ export default function IncentivePTSPage() {
                 <tbody>
                   {filteredProjects.length === 0 ? (
                     <tr><td colSpan={bisaInput(currentUser) ? 10 : 9} className="px-4 py-16 text-center border border-gray-200">
-                      <p className="text-4xl mb-3">📭</p>
+                      <p className="text-4xl mb-3"><Ikon nama="📭" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
                       <p className="text-gray-500 font-medium">Belum ada project incentive</p>
                       <p className="text-gray-400 text-xs mt-1">Data muncul dari Reminder Schedule kategori Konfigurasi / Training yang sudah Completed</p>
                     </td></tr>
@@ -1395,8 +1395,8 @@ export default function IncentivePTSPage() {
                         <td className={`${cellCls} text-xs text-gray-400 text-center`}>{hal.mulai + idx + 1}</td>
                         <td className={`${cellCls} max-w-[210px]`}>
                           <p className="font-semibold text-gray-800 leading-snug truncate max-w-[195px]" title={p.project_name}>{p.project_name}</p>
-                          {p.product && <p className="text-[11px] text-rose-500 mt-0.5 truncate max-w-[195px]" title={p.product}>📦 {p.product}</p>}
-                          {p.address && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[195px]" title={p.address}>📍 {p.address}</p>}
+                          {p.product && <p className="text-[11px] text-rose-500 mt-0.5 truncate max-w-[195px]" title={p.product}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.product}</p>}
+                          {p.address && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[195px]" title={p.address}><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.address}</p>}
                         </td>
                         <td className={cellCls}>
                           <p className="text-sm font-medium text-gray-700">{p.assign_name || '—'}</p>
@@ -1426,7 +1426,7 @@ export default function IncentivePTSPage() {
                                   : p.brand === 'BOTH' ? 'text-violet-700 bg-violet-50 border-violet-200'
                                   : 'text-rose-700 bg-rose-50 border-rose-200'}`}>
                                 {p.brand === 'MVI' ? '🏠 MVI' : p.brand === 'IVP' ? '🌐 IVP'
-                                  : p.brand === 'BOTH' ? '🏠🌐 Kedua' : '⚠️ tanpa brand'} ✏️
+                                  : p.brand === 'BOTH' ? '🏠🌐 Kedua' : '⚠️ tanpa brand'} <Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" />
                               </button>
                               {brandEditFor === p.id && (
                                 <div className="absolute z-20 top-full left-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 p-1.5 flex gap-1 whitespace-nowrap">
@@ -1454,7 +1454,7 @@ export default function IncentivePTSPage() {
                         <td className={cellCls}>
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200">{p.category}</span>
                           {p.requires_controller_automation && (
-                            <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">⚡{p.controller_automation_brand?.toUpperCase()}</span>
+                            <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><Ikon nama="⚡" ukuran="1em" className="inline-block align-[-0.12em]" />{p.controller_automation_brand?.toUpperCase()}</span>
                           )}
                         </td>
                         <td className={cellCls}>
@@ -1462,8 +1462,8 @@ export default function IncentivePTSPage() {
                           {p.mode_penyelesaian === 'remote' && (
                             <div>
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200"><IkonTeks nama="💻" />Remote</span>
-                              {p.installer_name && <p className="text-[10px] text-blue-600 mt-0.5 truncate max-w-[90px]">🔧 {p.installer_name}</p>}
-                              {p.installer_daerah && <p className="text-[10px] text-gray-400 truncate max-w-[90px]">📍 {p.installer_daerah}</p>}
+                              {p.installer_name && <p className="text-[10px] text-blue-600 mt-0.5 truncate max-w-[90px]"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.installer_name}</p>}
+                              {p.installer_daerah && <p className="text-[10px] text-gray-400 truncate max-w-[90px]"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.installer_daerah}</p>}
                             </div>
                           )}
                           {!p.mode_penyelesaian && <span className="text-xs text-gray-300">—</span>}
@@ -1661,7 +1661,7 @@ export default function IncentivePTSPage() {
                   <tbody>
                     {filteredTranches.length === 0 ? (
                       <tr><td colSpan={7} className="px-4 py-12 text-center border border-gray-200">
-                        <p className="text-3xl mb-2">📅</p>
+                        <p className="text-3xl mb-2"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
                         <p className="text-gray-500 font-medium">Tidak ada tranche untuk Tahun Bayar {tahunAktif}</p>
                       </td></tr>
                     ) : filteredTranches.map((t, idx) => {
@@ -1739,7 +1739,7 @@ export default function IncentivePTSPage() {
             {lateTickets.length === 0
               ? (
                 <div className="px-5 py-10 text-center">
-                  <p className="text-2xl mb-2">📭</p>
+                  <p className="text-2xl mb-2"><Ikon nama="📭" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
                   <p className="text-sm text-gray-500 italic">Belum ada late ticket yang dilampirkan.</p>
                 </div>
               )
@@ -2048,7 +2048,7 @@ export default function IncentivePTSPage() {
                   <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Mode</p>
                   <p className="text-sm font-bold text-blue-700">{detailProject.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : detailProject.mode_penyelesaian === 'remote' ? '💻 Remote' : '—'}</p>
                   {detailProject.mode_penyelesaian === 'remote' && detailProject.installer_name && (
-                    <p className="text-[10px] text-blue-500 mt-0.5 font-medium">🔧 {detailProject.installer_name}{detailProject.installer_daerah ? ` · ${detailProject.installer_daerah}` : ''}</p>
+                    <p className="text-[10px] text-blue-500 mt-0.5 font-medium"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailProject.installer_name}{detailProject.installer_daerah ? ` · ${detailProject.installer_daerah}` : ''}</p>
                   )}
                 </div>
                 <div className="rounded-xl p-3 text-center bg-violet-50 border border-violet-100">
@@ -2155,7 +2155,7 @@ export default function IncentivePTSPage() {
                               <div>
                                 <p className="text-sm font-semibold text-gray-800">{s.user_name || '—'}</p>
                                 {isInstaller && detailProject.installer_daerah && (
-                                  <p className="text-[10px] text-gray-400">📍 {detailProject.installer_daerah}</p>
+                                  <p className="text-[10px] text-gray-400"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailProject.installer_daerah}</p>
                                 )}
                               </div>
                             </div>
@@ -2472,7 +2472,7 @@ export default function IncentivePTSPage() {
             {(() => {
               const cnt = tranches.filter(t => t.payment_year === batchYear && t.status === 'pending').length;
               return cnt > 0
-                ? <p className="text-sm font-bold text-rose-600 mb-3">📋 {cnt} tranche siap diproses</p>
+                ? <p className="text-sm font-bold text-rose-600 mb-3"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {cnt} tranche siap diproses</p>
                 : <p className="text-sm font-bold text-amber-600 mb-3"><IkonTeks nama="⚠" />Tidak ada tranche pending untuk tahun {batchYear}. Pastikan tranche sudah di-generate terlebih dahulu.</p>;
             })()}
             {/*

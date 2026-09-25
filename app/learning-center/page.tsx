@@ -57,7 +57,7 @@ export default function LearningCenterPage() {
         style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="text-center px-10 py-8 rounded-3xl"
           style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
-          <div className="text-4xl mb-3">🔒</div>
+          <div className="text-4xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
           <p className="text-slate-500 font-medium">Silakan login terlebih dahulu.</p>
         </div>
       </div>

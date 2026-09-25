@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput, AppDialog, DialogState } from './shared';
 import { ModalPortal } from '@/components/shared';
 import { compressImage } from '@/lib/image-compress';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /*
   Menerjemahkan galat unggah Supabase jadi kalimat yang bisa ditindaklanjuti.
@@ -452,7 +452,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
         <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-10 max-w-md w-full text-center">
           {result.pendingReview ? (
             <>
-              <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl bg-amber-100">⏳</div>
+              <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl bg-amber-100"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-1">Jawaban Terkirim</h2>
               <p className="text-slate-500 text-sm mb-6">{session.session_name}</p>
               <p className="text-sm text-slate-600 leading-relaxed mb-8">
@@ -729,7 +729,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                     </div>
                   ) : (
                     <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-5 text-center">
-                      <p className="text-3xl mb-1">📷</p>
+                      <p className="text-3xl mb-1"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
                       <p className="text-sm font-semibold text-slate-600">Belum ada foto jawaban</p>
                       <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
                         Gambar jawabanmu di kertas, lalu foto dan unggah di sini.
@@ -1073,7 +1073,7 @@ export function MyQuizPage({ user }: { user: User }) {
           <div className="flex justify-center py-16">
             <div className="text-center px-10 py-8 rounded-2xl"
               style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-              <div className="text-5xl mb-3">🎯</div>
+              <div className="text-5xl mb-3"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <p className="font-semibold text-slate-700">{search ? 'Tidak ada quiz yang cocok' : 'Belum ada quiz aktif'}</p>
               {!search && <p className="text-sm mt-1 text-slate-500">Tunggu admin membuat sesi quiz baru</p>}
             </div>
@@ -1108,7 +1108,7 @@ export function MyQuizPage({ user }: { user: User }) {
             <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-5 sm:p-6 hover:shadow-md transition-all"
               style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', opacity: alreadyDone ? 0.75 : 1 }}>
               <div className="flex items-start gap-4 sm:gap-5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-slate-800 text-base sm:text-lg">
                     {s.session_name}
@@ -1126,8 +1126,8 @@ export function MyQuizPage({ user }: { user: User }) {
               </div>
 
               <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 text-xs text-slate-500">
-                <span>📝 {s.question_count} soal</span>
-                <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'Tanpa batas waktu'}</span>
+                <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {s.question_count} soal</span>
+                <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {s.timer_minutes ? `${s.timer_minutes} mnt` : 'Tanpa batas waktu'}</span>
                 <span><IkonTeks nama="🎯" />Passing: {s.passing_grade}%</span>
                 <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
               </div>
@@ -1155,7 +1155,7 @@ export function MyQuizPage({ user }: { user: User }) {
                         ? 'bg-rose-100 text-rose-700 border-rose-200'
                         : 'bg-slate-100 text-slate-600 border-slate-200'
                     }`}>
-                      🔒 {tenggat.teks}
+                      <Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /> {tenggat.teks}
                     </span>
                   )}
                 </div>

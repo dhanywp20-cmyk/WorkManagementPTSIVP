@@ -1,6 +1,6 @@
 'use client';
 import { InstallerPicker } from './InstallerPicker';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Panel "Mode Penyelesaian" (muncul saat klik Completed) — dipindah dari
@@ -63,7 +63,7 @@ export function ModePenyelesaianPanel({
     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 overflow-hidden flex flex-col"
       style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', height: '100%' }}>
       <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
-        <h3 className="text-white font-bold text-base">📍 {modeEditSaja ? 'Detail Pelaksanaan' : 'Mode Penyelesaian'}</h3>
+        <h3 className="text-white font-bold text-base"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {modeEditSaja ? 'Detail Pelaksanaan' : 'Mode Penyelesaian'}</h3>
         <p className="text-emerald-100 text-[11px] mt-0.5">
           {modeEditSaja ? 'Status tetap Completed — hanya detailnya yang disimpan' : 'Lengkapi data sebelum status jadi Completed'}
         </p>

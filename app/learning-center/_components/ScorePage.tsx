@@ -215,7 +215,7 @@ export function ScorePage({ user }: { user: User }) {
 
               <div className={`grid grid-cols-1 ${pakaiDivisi ? 'sm:grid-cols-2' : ''} gap-3 mb-3`}>
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
-                  <div className="text-xl mb-0.5">🏆</div>
+                  <div className="text-xl mb-0.5"><Ikon nama="🏆" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                   <div className="text-lg sm:text-2xl font-black text-indigo-700">{myRank > 0 ? `#${myRank}` : '—'}</div>
                   <p className="text-xs text-slate-500 mt-1">
                     {rankTotal ? `dari ${rankTotal} peserta ${user.role}` : 'Belum ada data'}
@@ -234,7 +234,7 @@ export function ScorePage({ user }: { user: User }) {
                 */}
                 {pakaiDivisi && (
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
-                  <div className="text-xl mb-0.5">🏢</div>
+                  <div className="text-xl mb-0.5"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                   <div className="text-lg sm:text-2xl font-black text-indigo-700">
                     {peringkat?.divisiRank ? `#${peringkat.divisiRank}` : '—'}
                   </div>

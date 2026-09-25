@@ -1,6 +1,6 @@
 'use client';
 import { ModalPortal } from '@/components/shared';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Konfirmasi hapus massal - dipindah dari app/reminder-schedule/page.tsx
@@ -19,7 +19,7 @@ export function BulkDeleteConfirmModal({
       <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
         <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
           <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
-            <span className="text-2xl">🗑️</span>
+            <span className="text-2xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div><h3 className="font-bold text-white">Hapus {jumlah} Jadwal?</h3>
             <p className="text-red-100 text-xs mt-0.5">Tindakan ini tidak dapat dibatalkan</p></div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 import { Reminder, formatDate } from './shared';
 import { CategoryBadge } from './Badges';
+import { Ikon } from '@/components/shared/Ikon';
 
 export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selectedCalDay, setSelectedCalDay }: {
   reminders: Reminder[];
@@ -77,7 +78,7 @@ export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selec
         return dayRems.length > 0 ? (
           <div className="border-t p-3 space-y-2" style={{ borderColor: 'rgba(0,0,0,0.08)', background: 'rgba(249,250,251,0.8)' }}>
             <p className="text-[10px] font-bold tracking-widest uppercase text-gray-500 px-1">
-              📅 {formatDate(selectedCalDay)} — {dayRems.length} jadwal
+              <Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatDate(selectedCalDay)} — {dayRems.length} jadwal
             </p>
             {dayRems.map(r => (
               <div key={r.id} className="rounded-xl p-3 border"
@@ -85,7 +86,7 @@ export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selec
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-gray-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">⏰ {r.due_time} · 👤 {r.assign_name}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5"><Ikon nama="⏰" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.due_time} · 👤 {r.assign_name}</p>
                   </div>
                   <CategoryBadge category={r.category} />
                 </div>

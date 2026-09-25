@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Reminder, formatDate } from './shared';
 import { ModalPortal } from '@/components/shared';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function RescheduleModal({
   reminder,
@@ -53,7 +53,7 @@ export function RescheduleModal({
         <div className="p-6 space-y-4">
           {/* Current date info */}
           <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <span className="text-xl">📌</span>
+            <span className="text-xl"><Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div>
               <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Jadwal Sekarang</p>
               <p className="text-sm font-bold text-gray-800">{formatDate(reminder.due_date)} · {reminder.due_time}</p>

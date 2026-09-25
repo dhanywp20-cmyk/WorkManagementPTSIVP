@@ -84,7 +84,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
             menambah state manajemen baru hanya untuk retry satu widget.
           */}
           <div className="flex flex-col items-center justify-center gap-2 text-center py-3">
-            <span className="text-2xl">⚠️</span>
+            <span className="text-2xl"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <p className="text-sm font-semibold text-rose-600">Gagal memuat daftar tugas.</p>
             <button onClick={() => window.location.reload()}
               className="mt-1 text-xs font-bold px-3 py-1.5 rounded-lg text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100">
@@ -116,7 +116,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
         <div className="lg:col-span-12">
           <WidgetCard title="My Action" icon="🎯" accent="#16a34a">
             <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
-              <span className="text-lg">🎉</span> Tidak ada tugas aktif yang butuh tindakan saat ini.
+              <span className="text-lg"><Ikon nama="🎉" ukuran="1em" className="inline-block align-[-0.12em]" /></span> Tidak ada tugas aktif yang butuh tindakan saat ini.
             </div>
             <TeamActionChips user={user} openMenu={openMenu} openUrl={openUrl} />
           </WidgetCard>
@@ -131,7 +131,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
     */
     return (
       <div className="lg:col-span-12 flex items-center gap-2.5 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-black/5 px-4 py-3">
-        <span className="text-lg flex-shrink-0">🎉</span>
+        <span className="text-lg flex-shrink-0"><Ikon nama="🎉" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="text-sm font-semibold text-emerald-700">Tidak ada tugas aktif yang butuh tindakan saat ini.</span>
       </div>
     );

@@ -8,7 +8,7 @@ import {
   addDays, toKey, getDayDate, isToday, getRollingUserIdForDate,
 } from './shared';
 import { useKelompokPTS, labelKelompokPTS } from '@/lib/kelompok';
-import { IkonTeks } from '@/components/shared/Ikon';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{weekStart:Date;users:UserRow[];currentUser:any;onClose:()=>void;onSaved:()=>void}) {
   const kelompokPTSList = useKelompokPTS();
@@ -147,7 +147,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                 <div/>
                 {[{wk:wk1,ws:weekStart},{wk:wk2,ws:week2Start}].map(({wk,ws})=>(
                   <div key={wk} className="text-center py-1.5 rounded-lg text-[10px] font-bold" style={{background:'rgba(220,38,38,0.07)',color:'#dc2626',border:'1px solid rgba(220,38,38,0.2)'}}>
-                    📅 {fmtWk(ws)}
+                    <Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {fmtWk(ws)}
                   </div>
                 ))}
               </div>

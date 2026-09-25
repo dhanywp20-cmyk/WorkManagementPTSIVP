@@ -578,7 +578,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                             <input type="checkbox" checked={checked} onChange={() => toggleTargetDivision(div)}
                               className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 flex-shrink-0" />
                             <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 text-xs font-bold flex-shrink-0">
-                              🏢
+                              <Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" />
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold text-slate-800">{div}</p>
@@ -659,7 +659,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
             <div className="flex justify-center py-16">
               <div className="text-center px-10 py-8 rounded-2xl"
                 style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-                <div className="text-5xl mb-3">🎯</div>
+                <div className="text-5xl mb-3"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 <p className="font-semibold text-slate-700">{search ? 'Tidak ada sesi yang cocok' : 'Belum ada sesi quiz'}</p>
                 {!search && <p className="text-sm mt-1 text-slate-500">Klik + Buat Sesi Quiz untuk memulai</p>}
               </div>
@@ -691,7 +691,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                         <>
                           <span className="text-sm text-slate-500">{s.materi_name.split(' — ')[0]}</span>
                           <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-violet-100 text-violet-700 border border-violet-200">
-                            📌 {s.materi_name.split(' — ').slice(1).join(' — ')}
+                            <Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /> {s.materi_name.split(' — ').slice(1).join(' — ')}
                           </span>
                         </>
                       ) : (
@@ -699,12 +699,12 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                       )}
                     </div>
                     <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
-                      <span>📝 {s.question_count} soal</span>
-                      <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'No timer'}</span>
+                      <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {s.question_count} soal</span>
+                      <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {s.timer_minutes ? `${s.timer_minutes} mnt` : 'No timer'}</span>
                       <span><IkonTeks nama="🎯" />Passing: {s.passing_grade}%</span>
                       <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
                       {s.acak_soal && <span className="text-indigo-600 font-semibold"><IkonTeks nama="🔀" />Soal diacak</span>}
-                      <span>📅 {fmtDate(s.created_at)}</span>
+                      <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {fmtDate(s.created_at)}</span>
                     </div>
                     {(s.open_at || s.close_at) && (
                       <div className="flex flex-wrap gap-3 mt-1.5 text-xs">
@@ -738,11 +738,11 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                               ? 'bg-slate-100 text-slate-500 border-slate-200'
                               : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           }`}>
-                            ✅ {p.submit} selesai
+                            <Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.submit} selesai
                           </span>
                           {p.mulai > p.submit && (
                             <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-bold border bg-amber-50 text-amber-700 border-amber-200">
-                              ⏳ {p.mulai - p.submit} sedang mengerjakan
+                              <Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.mulai - p.submit} sedang mengerjakan
                             </span>
                           )}
                         </div>
@@ -764,7 +764,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                         if (allFromDivisions) {
                           return (
                             <div className="flex flex-wrap gap-1 items-center">
-                              <span className="text-xs text-orange-500 font-semibold mr-1">🏢</span>
+                              <span className="text-xs text-orange-500 font-semibold mr-1"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                               {divMatches.map((d, i) => (
                                 <span key={i} className="text-xs bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full font-semibold">{d}</span>
                               ))}
@@ -774,7 +774,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                         }
                         return (
                           <div className="flex flex-wrap gap-1 items-center">
-                            <span className="text-xs text-slate-400 font-semibold mr-1">👤</span>
+                            <span className="text-xs text-slate-400 font-semibold mr-1"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                             {targetNames.slice(0, 4).map((n, i) => (
                               <span key={i} className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-semibold">{n}</span>
                             ))}
@@ -849,7 +849,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
 
             {/* Info materi — read-only */}
             <div className="mx-6 mt-4 px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3 flex-wrap">
-              <span className="text-sm">📚</span>
+              <span className="text-sm"><Ikon nama="📚" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-700 truncate">{reassignSource.materi_name}</p>
                 <p className="text-[11px] text-slate-400">{reassignSource.question_count} soal · soal yang sama dipakai ulang</p>
@@ -977,7 +977,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                           <input type="checkbox" checked={checked}
                             onChange={() => setReassignForm(p => ({ ...p, target_divisions: p.target_divisions.includes(div) ? p.target_divisions.filter(d => d !== div) : [...p.target_divisions, div] }))}
                             className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 flex-shrink-0" />
-                          <span className="text-sm font-semibold text-slate-800 flex-1">🏢 {div}</span>
+                          <span className="text-sm font-semibold text-slate-800 flex-1"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {div}</span>
                           <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
                         </label>
                       );
