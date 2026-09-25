@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendWANotif } from '@/lib/wa';
+import '@/lib/wa-server';
 import { appLink } from '@/lib/app-url';
 
 export const dynamic = 'force-dynamic';

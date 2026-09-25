@@ -15,9 +15,9 @@
  * token gateway WhatsApp ditemukan tersimpan di sana dalam bentuk terbaca -
  * dan app_settings dibaca oleh siapa pun yang memegang anon key.
  *
- * Jadi token Fonnte tetap di secret Supabase Edge Function, dan token bot
- * Telegram ikut aturan yang sama (variabel lingkungan TELEGRAM_BOT_TOKEN di
- * sisi server). Yang boleh tinggal di app_settings hanyalah hal yang tidak
+ * Jadi token Fonnte & bot Telegram disimpan di tabel rahasia_integrasi
+ * (Admin Panel -> Integrations, dibaca hanya oleh server lewat
+ * lib/rahasia-server.ts). Yang boleh tinggal di app_settings hanyalah hal yang tidak
  * memberi akses kalau bocor: nyala/mati, chat id tujuan, dan matriks
  * event -> kanal.
  */

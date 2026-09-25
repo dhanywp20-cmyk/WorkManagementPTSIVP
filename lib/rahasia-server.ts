@@ -14,7 +14,7 @@
  * Basis data didahulukan supaya perubahan dari Admin Panel berlaku SEKETIKA,
  * tanpa deploy ulang - itu justru inti dari memindahkannya ke sana. Variabel
  * lingkungan tetap dibaca sebagai cadangan supaya pemasangan yang sudah ada
- * (FONNTE_TOKEN di Edge Function, token di Vercel) tidak mendadak berhenti
+ * (FONNTE_TOKEN / TELEGRAM_BOT_TOKEN di env Vercel) tidak mendadak berhenti
  * bekerja pada detik berkas ini ter-deploy sementara tabelnya masih kosong.
  */
 

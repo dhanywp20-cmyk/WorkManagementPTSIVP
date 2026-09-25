@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendWA } from '@/lib/wa';
+import '@/lib/wa-server';
 
 export const dynamic = 'force-dynamic';
 

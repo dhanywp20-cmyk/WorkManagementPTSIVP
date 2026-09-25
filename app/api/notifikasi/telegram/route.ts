@@ -3,9 +3,8 @@
  *
  * KENAPA LEWAT ROUTE SERVER, bukan langsung dari peramban seperti WhatsApp
  *
- * WhatsApp di platform ini dikirim dari sisi klien ke Supabase Edge Function
- * `swift-responder`, dan tokennya aman karena tinggal di secret Edge Function -
- * peramban tidak pernah melihatnya. Telegram tidak punya perantara semacam
+ * WhatsApp juga lewat route server (/api/notifikasi/whatsapp/kirim) yang
+ * membaca tokennya dari Admin Panel - peramban tidak pernah melihatnya. Telegram tidak punya perantara semacam
  * itu: memanggil api.telegram.org langsung dari peramban berarti token botnya
  * ikut terkirim ke setiap pengunjung, dan siapa pun yang membuka DevTools bisa
  * memakai bot itu sesukanya.

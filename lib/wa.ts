@@ -2,17 +2,13 @@
  * lib/wa.ts - Pengirim notifikasi WhatsApp terpusat (sisi klien)
  *
  * Semua modul (ticketing, form-require-project, reminder-schedule) memakai
- * helper yang sama: POST ke Supabase Edge Function `swift-responder`, yang
- * meneruskan ke gateway WA (Fonnte). Sebelumnya logika ini diduplikasi di
- * beberapa _components/shared.ts - sekarang satu sumber.
+ * helper yang sama: POST ke /api/notifikasi/whatsapp/kirim (sesi wajib),
+ * yang meneruskan ke penyedia pilihan admin memakai token dari Admin Panel.
  *
  * Catatan: gagal kirim WA TIDAK boleh menggagalkan alur utama  selalu silent.
  *
- * Route server (cron escalate, forgot-password) JUGA memakai helper ini
- * (sendWANotif/sendWA) - bukan memanggil Fonnte langsung. fetch() ke Edge
- * Function berjalan sama baiknya dari server maupun peramban, dan permintaan
- * itu hanya memakai anon key (sudah publik), bukan token rahasia - jadi tidak
- * ada alasan route server punya jalur sendiri.
+ * Route server (cron, forgot-password) JUGA memakai helper ini; di server
+ * pengirimnya kirimWA() langsung (lihat pasangPengirimServer).
  */
 
 import { bacaPengaturan, kanalUntuk } from '@/lib/notifikasi/pengaturan';
@@ -51,56 +47,40 @@ async function waMenyala(): Promise<boolean> {
   }
 }
 
-// Internal: POST mentah ke Edge Function swift-responder (jalur Fonnte).
-async function postSwift(body: Record<string, unknown>): Promise<unknown> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  const res = await fetch(`${supabaseUrl}/functions/v1/swift-responder`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${anonKey}`,
-      'apikey': anonKey,
-    },
-    body: JSON.stringify(body),
-  });
-  return res.json();
-}
+/**
+ * Pengirim sisi server. Route server (cron, forgot-password) tidak punya
+ * cookie sesi, jadi tidak bisa lewat /api/notifikasi/whatsapp/kirim - mereka
+ * memasang kirimWA() dari lib/wa-kirim-server lewat lib/wa-server.ts.
+ * Registrasi (bukan import langsung) supaya kode service-role tidak ikut
+ * terbundel ke peramban.
+ */
+type PengirimServer = (target: string, pesan: string) => Promise<{ ok: boolean; alasan?: string }>;
+let pengirimServer: PengirimServer | null = null;
+export function pasangPengirimServer(fn: PengirimServer) { pengirimServer = fn; }
 
 /**
- * Kirim lewat jalur yang sesuai dengan penyedia yang dipilih admin.
- *
- * KENAPA PERCABANGANNYA DI SINI
- *
- * Edge Function `swift-responder` punya Fonnte tertanam di dalamnya - ia tidak
- * bisa mengirim lewat Cloud API resmi maupun webhook kustom. Jadi begitu admin
- * berpindah penyedia, permintaannya harus lewat route server sendiri
- * (/api/notifikasi/whatsapp/kirim) yang membaca token penyedia baru itu.
- *
- * Selama penyedianya Fonnte - keadaan hari ini - jalurnya PERSIS seperti
- * sebelumnya: Edge Function yang sama, bentuk permintaan yang sama. Tidak ada
- * satu pun dari 48 titik pengiriman yang berubah perilakunya sampai seseorang
- * benar-benar menekan pindah penyedia di Admin Panel.
- *
- * Gagal membaca penyedia = ANGGAP FONNTE, sejalan dengan bawaan di
- * lib/notifikasi/pengaturan.ts: pengaturan yang tidak terbaca tidak boleh
- * membelokkan pengiriman ke jalur yang belum tentu terkonfigurasi.
+ * Kirim satu WA. SATU jalur untuk semua penyedia (Fonnte / Cloud API /
+ * webhook): token dibaca server dari Admin Panel -> Integrations
+ * (rahasia_integrasi), tidak lagi dari Edge Function `swift-responder`.
+ * Dulu jalur Fonnte menembak Edge Function dengan anon key publik - siapa pun
+ * yang memegang anon key bisa mengirim WA tanpa masuk. Sekarang peramban
+ * wajib punya sesi, dan route itu membatasi jumlah kirim.
  */
 async function kirimLewatPenyedia(
   body: Record<string, unknown>,
 ): Promise<{ ok?: boolean; reason?: string }> {
-  let penyedia: string = 'fonnte';
-  try { penyedia = (await bacaPengaturan()).waPenyedia ?? 'fonnte'; } catch { /* tetap fonnte */ }
-
-  if (penyedia === 'fonnte') {
-    return (await postSwift(body)) as { ok?: boolean; reason?: string };
+  const target = String(body.target ?? '');
+  const message = String(body.message ?? '');
+  if (typeof window === 'undefined') {
+    if (!pengirimServer) return { ok: false, reason: 'pengirim WA server belum dipasang (import lib/wa-server)' };
+    const h = await pengirimServer(target, message);
+    return { ok: h.ok, reason: h.alasan };
   }
-
   const res = await fetch('/api/notifikasi/whatsapp/kirim', {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ target: body.target, message: body.message }),
+    body: JSON.stringify({ target, message }),
   });
   return await res.json() as { ok?: boolean; reason?: string };
 }

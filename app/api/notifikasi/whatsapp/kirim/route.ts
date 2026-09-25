@@ -1,18 +1,9 @@
 /**
- * /api/notifikasi/whatsapp/kirim - jalur kirim WA untuk penyedia SELAIN Fonnte.
+ * /api/notifikasi/whatsapp/kirim - jalur kirim WA (semua penyedia).
  *
- * KENAPA JALUR TERPISAH, bukan mengganti yang lama
- *
- * Pengiriman WA sehari-hari (48 titik) berjalan lewat lib/wa.ts -> Edge
- * Function `swift-responder` -> Fonnte. Jalur itu melayani produksi setiap
- * hari dan tidak disentuh: selama admin memakai Fonnte, tidak ada satu byte
- * pun yang berubah dari perilaku hari ini.
- *
- * Route ini baru terpakai ketika admin BENAR-BENAR memindahkan penyedia ke
- * Cloud API resmi atau webhook kustom - hal yang tidak bisa dikerjakan Edge
- * Function itu karena Fonnte tertanam di dalamnya. Jadi risiko perpindahan
- * ditanggung oleh orang yang memilih berpindah, bukan ditimpakan lebih dulu
- * ke seluruh tim.
+ * SATU-SATUNYA jalur kirim WA dari peramban, untuk semua penyedia (Fonnte,
+ * Cloud API, webhook). Token dibaca dari Admin Panel -> Integrations
+ * (rahasia_integrasi). Edge Function `swift-responder` tidak dipakai lagi.
  *
  * PENJAGANYA SESI, BUKAN ADMIN. Yang memicu pengiriman di sini adalah
  * pekerjaan sehari-hari siapa pun di tim (membuat tiket, mengalihkan jadwal),
@@ -29,8 +20,8 @@ import { getAdminClient } from '@/lib/supabase-admin';
 //  Batas kirim (tabel wa_kirim_log, migrasi 018). Satu aksi kerja bisa memicu
 //  beberapa WA sekaligus, jadi batas per menit longgar; yang dicegah adalah
 //  pemakaian sebagai alat blast / spam ke satu nomor.
-const BATAS_PER_MENIT = 30;
-const BATAS_PER_HARI = 400;
+const BATAS_PER_MENIT = 60;
+const BATAS_PER_HARI = 600;
 const BATAS_TARGET_PER_MENIT = 6;
 
 export const runtime = 'nodejs';

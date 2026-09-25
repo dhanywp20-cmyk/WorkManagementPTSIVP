@@ -34,8 +34,8 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
  * Integrations / Security / System SENGAJA belum jadi kelompok sendiri.
  * Master prompt bagian 4 juga bilang: "JANGAN membuat menu kosong hanya
  * untuk terlihat lengkap." Hari ini tidak ada satu pun pengaturan yang
- * pantas masuk ke sana - WhatsApp masih env var Edge Function, bukan
- * sesuatu yang bisa diatur dari sini (menyusul Phase 6). Kelompok itu
+ * pantas masuk ke sana - token WhatsApp kini diatur di Integrations
+ * (rahasia_integrasi). Kelompok itu
  * ditambahkan PERSIS saat isinya ada, bukan lebih dulu.
  */
 const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications'; label: string }[] = [
