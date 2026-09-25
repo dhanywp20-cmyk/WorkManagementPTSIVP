@@ -79,6 +79,11 @@ const config: Config = {
         toast: '0 4px 32px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)',
       },
       colors: {
+        /** Warna semantik - lihat WARNA di lib/desain.ts & --tinta dkk di globals.css. */
+        halaman: 'var(--halaman)',
+        permukaan: { DEFAULT: 'var(--permukaan)', redam: 'var(--permukaan-redam)' },
+        garis: { DEFAULT: 'var(--garis)', kuat: 'var(--garis-kuat)' },
+        tinta: { DEFAULT: 'var(--tinta)', 2: 'var(--tinta-2)', 3: 'var(--tinta-3)' },
         /** Warna merek dari database - lihat tulisWarnaKeCSS di lib/merek.ts. */
         merek: {
           DEFAULT: 'var(--merek-utama)',

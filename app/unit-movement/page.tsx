@@ -237,18 +237,18 @@ function UnitMovementPageInner() {
   // Loading / Not Authenticated screen
 
   if (!appReady) return (
-    <div className="min-h-screen flex items-center justify-center" style={{backgroundImage:'url(/IVP_Background.png)',backgroundSize:'cover'}}>
+    <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
       <div className="flex flex-col items-center gap-4">
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xl" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>🚚</div>
         <div className="w-10 h-10 rounded-full" style={{border:'3px solid rgba(245,158,11,0.25)',borderTopColor:'#f59e0b',animation:'spin 0.8s linear infinite'}}/>
-        <p className="text-white/80 text-sm font-semibold tracking-wide">Memuat Unit Movement Log...</p>
+        <p className="text-slate-600 text-sm font-semibold tracking-wide">Memuat Unit Movement Log...</p>
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   if (!isLoggedIn) return (
-    <div className="min-h-screen flex items-center justify-center" style={{backgroundImage:'url(/IVP_Background.png)',backgroundSize:'cover'}}>
+    <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
       <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full mx-4">
         <div className="text-4xl mb-3">🔒</div>
         <h2 className="font-black text-gray-800 text-lg">Sesi Tidak Ditemukan</h2>
@@ -263,7 +263,7 @@ function UnitMovementPageInner() {
   );
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-cover bg-center bg-fixed" style={{backgroundImage:'url(/IVP_Background.png)'}}>
+    <div className="h-screen overflow-hidden flex flex-col bg-cover bg-center bg-fixed" style={{background: 'var(--halaman)'}}>
 
       {viewLog&&<ViewModal log={viewLog} onClose={()=>setViewLog(null)}/>}
       {editLog!==undefined&&<AddEditModal log={editLog} currentUser={currentUser!} teamMembers={teamMembers}
@@ -419,7 +419,7 @@ function UnitMovementPageInner() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <input className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white transition-all w-52"
-                placeholder="🔍 Project / Type / SN / Pihak Luar..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
+                placeholder="Project / Type / SN / Pihak Luar..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
               <select aria-label="Semua Status" className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={filterStatus} onChange={e=>setFilterStatus(e.target.value as any)}>
                 <option value="All">Semua Status</option><option value="Masuk">Masuk</option><option value="Keluar">Keluar</option>

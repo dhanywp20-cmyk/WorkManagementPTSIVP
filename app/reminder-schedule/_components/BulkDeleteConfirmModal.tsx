@@ -1,5 +1,6 @@
 'use client';
 import { ModalPortal } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Konfirmasi hapus massal - dipindah dari app/reminder-schedule/page.tsx
@@ -27,7 +28,7 @@ export function BulkDeleteConfirmModal({
             <div className="flex gap-3">
               <button onClick={onCancel} className="flex-1 border-2 border-gray-300 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm">Batal</button>
               <button onClick={onConfirm} className="flex-[2] bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm hover:from-red-700 hover:to-red-800">
-                🗑️ Ya, Hapus Permanen
+                <IkonTeks nama="🗑" />Ya, Hapus Permanen
               </button>
             </div>
           </div>

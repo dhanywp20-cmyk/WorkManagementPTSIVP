@@ -1,5 +1,6 @@
 'use client';
 import { Priority, Status, PRIORITY_CONFIG, STATUS_CONFIG, CATEGORY_CONFIG } from './shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 export function PriorityBadge({ priority, onHeader }: { priority: Priority; onHeader?: boolean }) {
   const c = PRIORITY_CONFIG[priority];
@@ -32,7 +33,7 @@ export function StatusBadge({ status, onHeader }: { status: Status; onHeader?: b
     return (
       <span className="inline-flex items-center gap-1 px-3 py-1 text-[11px] font-bold"
         style={{ color: '#fff', background: solidBg[status], border: '2px solid rgba(255,255,255,0.6)', boxShadow: '0 1px 4px rgba(0,0,0,0.25)' }}>
-        {c.icon} {c.label}
+        <Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {c.label}
       </span>
     );
   }
@@ -50,14 +51,14 @@ export function CategoryBadge({ category, onHeader }: { category: string; onHead
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold"
         style={{ color: '#fff', background: c.accent, border: '2px solid rgba(255,255,255,0.6)', boxShadow: '0 1px 4px rgba(0,0,0,0.25)' }}>
-        {c.icon} {category}
+        <Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {category}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
       style={{ color: c.color, background: c.bg, border: `1px solid ${c.border}` }}>
-      {c.icon} {category}
+      <Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {category}
     </span>
   );
 }

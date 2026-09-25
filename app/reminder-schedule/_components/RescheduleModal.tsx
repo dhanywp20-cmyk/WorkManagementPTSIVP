@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Reminder, formatDate } from './shared';
 import { ModalPortal } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 export function RescheduleModal({
   reminder,
@@ -43,7 +44,7 @@ export function RescheduleModal({
         <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#d97706,#b45309)' }}>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-white">📅 Re-Schedule Jadwal</h3>
+              <h3 className="text-lg font-bold text-white"><IkonTeks nama="📅" />Re-Schedule Jadwal</h3>
               <p className="text-amber-200/80 text-xs mt-0.5 truncate max-w-[260px]">{reminder.project_name || (reminder as any).title || '—'}</p>
             </div>
             <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">✕</button>
@@ -90,7 +91,7 @@ export function RescheduleModal({
               className="flex-1 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg,#d97706,#b45309)', boxShadow: '0 4px 14px rgba(217,119,6,0.35)' }}>
               {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              📅 Simpan Re-Schedule
+              <IkonTeks nama="📅" />Simpan Re-Schedule
             </button>
           </div>
         </div>

@@ -8,6 +8,7 @@ import {
 } from './shared';
 import { logAudit } from '@/lib/audit';
 import { ModalPortal } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 // Folder Color Palette
 
@@ -353,7 +354,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-200 flex-shrink-0"
         style={{ background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
         <div className="min-w-0">
-          <h1 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight leading-tight">📚 Materi Training</h1>
+          <h1 className="text-base sm:text-lg font-bold text-slate-800 tracking-tight leading-tight"><IkonTeks nama="📚" />Materi Training</h1>
           <p className="text-xs text-slate-500 mt-0.5">
             {isAdmin ? 'Kelola & organisir materi training team' : 'Materi training tersedia untuk dipelajari'}
           </p>
@@ -363,11 +364,11 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           <div className="flex rounded-xl border border-slate-200 overflow-hidden bg-white">
             <button onClick={() => setViewMode('folder')}
               className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'folder' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
-              📁 Folder
+              <IkonTeks nama="📁" />Folder
             </button>
             <button onClick={() => setViewMode('list')}
               className={`px-3 py-1.5 text-xs font-semibold transition-all ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
-              📋 List
+              <IkonTeks nama="📋" />List
             </button>
           </div>
           {isAdmin && (
@@ -621,7 +622,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">✏️ Tambah Materi Baru</h3>
+              <h3 className="font-bold text-slate-800 flex items-center gap-2"><IkonTeks nama="✏" />Tambah Materi Baru</h3>
               <button aria-label="Tutup" onClick={() => setShowForm(false)}
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all text-xl font-light">×</button>
             </div>
@@ -689,7 +690,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">✏️ Ubah Nama Folder</h3>
+              <h3 className="font-bold text-slate-800 flex items-center gap-2"><IkonTeks nama="✏" />Ubah Nama Folder</h3>
               <button aria-label="Tutup" onClick={() => setRenameFolder(null)}
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all text-xl font-light">×</button>
             </div>
@@ -734,7 +735,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">✏️ Edit Materi</h3>
+              <h3 className="font-bold text-slate-800 flex items-center gap-2"><IkonTeks nama="✏" />Edit Materi</h3>
               <button aria-label="Tutup" onClick={() => setEditMaterial(null)}
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all text-xl font-light">×</button>
             </div>

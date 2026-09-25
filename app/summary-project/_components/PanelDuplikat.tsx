@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { ambilKandidatDuplikat, gabungkanProject, type KandidatDuplikat } from '@/lib/summary-project';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Pasangan project bernama mirip (trigram) - hasil sampingan pemetaan
@@ -82,7 +83,7 @@ export function PanelDuplikat({ currentUserName, onBerubah }: {
         ) : galat ? (
           <p className="py-8 text-center text-xs text-red-500">Gagal memuat: {galat}</p>
         ) : tampil.length === 0 ? (
-          <p className="py-8 text-center text-xs text-gray-400">🎉 Tidak ada project bernama mirip.</p>
+          <p className="py-8 text-center text-xs text-gray-400"><IkonTeks nama="🎉" />Tidak ada project bernama mirip.</p>
         ) : tampil.map(d => {
           const a = { id: d.a_id, code: d.a_code, name: d.a_name };
           const b = { id: d.b_id, code: d.b_code, name: d.b_name };

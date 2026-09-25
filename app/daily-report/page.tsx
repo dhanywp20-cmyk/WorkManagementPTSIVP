@@ -28,6 +28,7 @@ import { namaKelompokPTSDitugaskan, useKelompokPTSDitugaskan } from '@/lib/kelom
 import {
   FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal } from '@/components/shared';
 import { MiniPieChart, PageHeader, StatCardGrid, Paginasi, usePaginasi } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // Styles
 const inp: React.CSSProperties = {
@@ -87,7 +88,7 @@ function emptyTeamEntry(m: TeamUser): TeamEntry {
 function PW({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      backgroundImage: `url('/IVP_Background.png')`,
+      background: 'var(--halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
 
@@ -112,7 +113,7 @@ function CatPicker({ value, onChange }: { value: string; onChange: (v: string) =
           <button key={cat} type="button" onClick={() => onChange(cat)}
             className="flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left transition-all"
             style={sel ? { borderColor: c.accent, background: c.bg, color: c.color } : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
-            <span className="text-lg">{c.icon}</span>
+            <span className="text-lg"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
             <span className="text-xs font-bold leading-tight flex-1">{cat}</span>
             {sel && <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
           </button>
@@ -663,7 +664,7 @@ export default function DailyReportPage() {
             {/* Manual activities */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">✍️ Aktivitas Manual ({manualActs.length})</span>
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest"><IkonTeks nama="✍" />Aktivitas Manual ({manualActs.length})</span>
               </div>
               <div className="space-y-4">
                 {manualActs.map((m, idx) => (
@@ -696,7 +697,7 @@ export default function DailyReportPage() {
             {isAdmin && teamEntries.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">👥 Input Tim (Supervisor)</span>
+                  <span className="text-xs font-bold text-slate-600 uppercase tracking-widest"><IkonTeks nama="👥" />Input Tim (Supervisor)</span>
                 </div>
                 <div className="space-y-4">
                   {teamEntries.map(e => (
@@ -779,7 +780,7 @@ export default function DailyReportPage() {
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kategori</p>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold" style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
-                  {c.icon} {row.category}
+                  <Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {row.category}
                 </span>
               </div>
               {/* Product */}
@@ -919,7 +920,7 @@ export default function DailyReportPage() {
               onClick={() => setFilterSource(filterSource === s.source ? '' : s.source)}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all hover:scale-[1.03]"
               style={{ background: filterSource === s.source ? s.bg : 'rgba(0,0,0,0.03)', color: filterSource === s.source ? s.color : '#64748b', border: filterSource === s.source ? `1.5px solid ${s.color}40` : '1.5px solid transparent' }}>
-              <span>{s.icon}</span>
+              <span><Ikon nama={s.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
               <span>{s.label}</span>
               <span className="ml-1 font-black text-sm" style={{ color: s.color }}>{s.value}</span>
               {filterSource === s.source && <span className="text-[9px] ml-0.5">✕</span>}
@@ -1035,9 +1036,9 @@ export default function DailyReportPage() {
             <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', minWidth: '140px' }}>
               <select aria-label="Semua Platform" value={filterSource} onChange={e => setFilterSource(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700 w-full">
                 <option value="">Semua Platform</option>
-                <option value="ticket">🎫 Ticketing</option>
-                <option value="reminder">🔔 Schedule</option>
-                <option value="manual">✍️ Manual</option>
+                <option value="ticket">Ticketing</option>
+                <option value="reminder">Schedule</option>
+                <option value="manual">Manual</option>
               </select>
             </div>
             <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)' }}>

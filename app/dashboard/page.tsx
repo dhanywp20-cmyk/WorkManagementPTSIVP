@@ -21,10 +21,12 @@ import {
 import GlobalSearch from './_components/GlobalSearch';
 import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashboard';
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
-import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/merek';
+import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus, latarDasbor } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
 import { ModalPortal, LogoMerek, ChipVersi, FooterPlatform } from '@/components/shared';
+import { Ikon } from '@/components/shared/Ikon';
 import { useKelompokPTS } from '@/lib/kelompok';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -818,7 +820,7 @@ export default function Dashboard() {
           </div>
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-2">
-              <div className="text-4xl">{menu.icon}</div>
+              <div className="text-4xl"><Ikon nama={menu.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
               <h3 className="text-xl font-bold tracking-tight text-white leading-tight">{menu.title}</h3>
             </div>
             <p className="text-white/90 text-sm font-medium line-clamp-2">{menu.description}</p>
@@ -835,7 +837,7 @@ export default function Dashboard() {
                   <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-400 transition-transform group-hover/item:-translate-x-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 )}
                 <span className="flex-1 text-sm tracking-wide text-right">{item.name}</span>
-                <div className="w-10 h-10 bg-white rounded-md shadow-sm flex items-center justify-center text-xl border border-slate-200 group-hover/item:scale-110 transition-transform flex-shrink-0">{item.icon}</div>
+                <div className="w-10 h-10 bg-white rounded-md shadow-sm flex items-center justify-center text-xl border border-slate-200 text-slate-600 group-hover/item:scale-110 transition-transform flex-shrink-0"><Ikon nama={item.icon} ukuran={20} /></div>
               </button>
             ))}
           </div>
@@ -847,7 +849,7 @@ export default function Dashboard() {
   // LOADING
   if (loading) {
     return (
-      <div className="flex items-center justify-center bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', minHeight: '100dvh' }}>
+      <div className="flex items-center justify-center bg-cover bg-center bg-fixed" style={{ background: 'var(--halaman)', minHeight: '100dvh' }}>
         <div className="flex flex-col items-center gap-4 px-10 py-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
           <div className="w-12 h-12 rounded-full border-4 border-t-rose-600 border-rose-200 animate-spin" />
           <p className="text-slate-700 font-semibold">Memuat portal...</p>
@@ -1095,7 +1097,7 @@ export default function Dashboard() {
                     <button onClick={() => { setRegisterErr(''); handleRegister(); }} disabled={registerLoading}
                       className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                       {registerLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                      📝 Daftar Akun
+                      <IkonTeks nama="📝" />Daftar Akun
                     </button>
                     <p className="text-center text-xs text-slate-400">Sudah punya akun? <button onClick={() => pindahForm(false)} className="font-bold hover:underline" style={{ color: merek.warnaUtama }}>Login</button></p>
                   </div>
@@ -1111,7 +1113,7 @@ export default function Dashboard() {
           <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-slate-800">🔐 Reset Password</h3>
+                <h3 className="text-base font-bold text-slate-800"><IkonTeks nama="🔐" />Reset Password</h3>
                 <button aria-label="Tutup" onClick={() => setShowForgot(false)} className="text-slate-400 hover:text-slate-600 font-bold text-lg leading-none">✕</button>
               </div>
               {forgotMsg && (
@@ -1286,7 +1288,7 @@ export default function Dashboard() {
   // VIEW: NO SIDEBAR (main dashboard)
   if (!showSidebar) {
     return (
-      <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, height: '100dvh' }}>
+      <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
         {renderModals()}
         {/* ── Jelajahi Button (always visible while logged-in, before sidebar loads) ── */}
         {currentUser && !tourVisible && (
@@ -1373,7 +1375,7 @@ export default function Dashboard() {
 
   // VIEW: SIDEBAR
   return (
-    <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, height: '100dvh' }}>
+    <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
       {isLoggedIn && <SessionExpiryBanner />}
       {renderModals()}
 
@@ -1515,7 +1517,7 @@ export default function Dashboard() {
                           onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; }}
                           onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                         >
-                          {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
+                          {MENU_ICONS[menu.key] ?? <span><Ikon nama={menu.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>}
                           {/* Antrean request jadwal muncul DI SINI — di menu yang
                               benar-benar memuatnya, bukan di ikon Admin Panel. */}
                           {menu.key === 'reminder-schedule' && isFullAccess && pendingRequests > 0 && (
@@ -1587,7 +1589,7 @@ export default function Dashboard() {
                                   color: isActive ? '#3730a3' : '#64748b',
                                 }}
                               >
-                                {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
+                                {MENU_ICONS[menu.key] ?? <span><Ikon nama={menu.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>}
                               </span>
                               <span className="flex-1 truncate text-sm font-medium">{menu.title}</span>
                               {isActive && (
@@ -1874,7 +1876,7 @@ export default function Dashboard() {
                  Background transparan (IVP bg tembus); hanya card yg opaque.
                  Analytics = launcher full-screen (bukan embed) utk yg berhak. */
               <div className="w-full h-full overflow-hidden relative"
-                style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                style={latarDasbor(merek)}>
                 <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} openUrl={handleNotifNavigate}
                   onHubungkanTelegram={() => setShowUserProfile(true)} />
               </div>
@@ -1920,7 +1922,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-slate-400"
-                style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                style={latarDasbor(merek)}>
                 <div className="text-center bg-white/75 rounded-2xl px-8 py-6 shadow-lg backdrop-blur-md">
                   <div className="text-5xl mb-3">📂</div>
                   <p className="font-semibold text-base text-slate-600">Pilih menu dari sidebar</p>

@@ -26,6 +26,16 @@
   --merek-utama-2:      #be123c;
   --merek-aksen:        #c8861d;
   --merek-utama-tembus: rgba(225, 29, 72, 0.1);
+
+  /* Warna semantik - cermin WARNA di lib/desain.ts (ubah bersamaan). */
+  --halaman:         #f3f5f8;
+  --permukaan:       #ffffff;
+  --permukaan-redam: #f8fafc;
+  --garis:           #e2e8f0;
+  --garis-kuat:      #cbd5e1;
+  --tinta:           #0f172a;
+  --tinta-2:         #475569;
+  --tinta-3:         #94a3b8;
 }
 
 /* ── Prevent white background flash on zoom/scale ───────────────────────── */

@@ -13,6 +13,7 @@ import { LingkupManagerInline } from './lingkup-manager';
 import { ConfirmDialog, type ConfirmState, Username, ModalPortal } from '@/components/shared';
 
 import { maskPhone } from './modal-bersama';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // UserManagementModal
 interface UserManagementModalProps {
@@ -169,7 +170,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     if (!u?.jabatan) return null;
     const cfg = JABATAN_CONFIG[u.jabatan as JabatanType];
     if (!cfg) return null;
-    return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}>{cfg.icon} {u.jabatan}</span>;
+    return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
   };
 
   const atasanByDiv: Record<string, typeof divSupMaps> = {};
@@ -233,11 +234,11 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
           </button>
           <button onClick={() => setActiveTab('ivp')}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${activeTab === 'ivp' ? 'border-violet-500 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            🔗 IVP & MVI Account ({Object.keys(ivpByDiv).length} divisi)
+            <IkonTeks nama="🔗" />IVP & MVI Account ({Object.keys(ivpByDiv).length} divisi)
           </button>
           <button onClick={() => setActiveTab('user_cc')}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${activeTab === 'user_cc' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-            🏷️ CC per User ({userSupMaps.length})
+            <IkonTeks nama="🏷" />CC per User ({userSupMaps.length})
           </button>
         </div>
 
@@ -247,7 +248,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
           {activeTab === 'atasan' && (
             <>
               <div className="p-5 border-b border-slate-100 bg-amber-50/60 space-y-3 flex-shrink-0">
-                <p className="text-xs font-bold text-amber-800 uppercase tracking-widest">➕ Tambah Mapping Atasan Divisi</p>
+                <p className="text-xs font-bold text-amber-800 uppercase tracking-widest"><IkonTeks nama="➕" />Tambah Mapping Atasan Divisi</p>
                 <p className="text-[11px] text-amber-700 leading-relaxed">
                   Mapping divisi → atasan. User dengan <strong>divisi yang sama</strong> otomatis ter-CC ke atasan terdaftar. Untuk user beda divisi (misal Handono SGP 1 → Rainata SGP), gunakan tab <strong>CC per User</strong>.
                 </p>
@@ -263,7 +264,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Atasan (Jabatan Supervisor+)</label>
                     {supervisorCandidates.length === 0 ? (
-                      <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200">⚠️ Set jabatan user di Account Settings terlebih dahulu.</div>
+                      <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200"><IkonTeks nama="⚠" />Set jabatan user di Account Settings terlebih dahulu.</div>
                     ) : (
                       <select aria-label="— Pilih Atasan —" value={atasanSupId} onChange={e => setAtasanSupId(e.target.value)}
                         className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 bg-white">
@@ -355,7 +356,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                       {u.jabatan && (
                                         <span className="text-[9px] font-bold px-1 py-0.5 rounded"
                                           style={{ background: cfg?.bg ?? '#f1f5f9', color: cfg?.color ?? '#475569' }}>
-                                          {cfg?.icon} {u.jabatan}
+                                          <Ikon nama={cfg?.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}
                                         </span>
                                       )}
                                       {u.sales_division && u.sales_division !== division && (
@@ -386,7 +387,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                       <p className="text-[10px] text-slate-400"><Username value={sup?.username} /></p>
                                       {sup?.phone_number
                                         ? <span className="text-[10px] text-emerald-600">📱 {maskPhone(sup.phone_number)}</span>
-                                        : <span className="text-[10px] text-rose-400">⚠️ No WA</span>}
+                                        : <span className="text-[10px] text-rose-400"><IkonTeks nama="⚠" />No WA</span>}
                                     </div>
                                   </div>
                                   <button aria-label="Tutup" onClick={() => handleDeleteAtasan(m.id)}
@@ -410,7 +411,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
           {activeTab === 'ivp' && (
             <>
               <div className="p-5 border-b border-slate-100 bg-violet-50/60 space-y-3 flex-shrink-0">
-                <p className="text-xs font-bold text-violet-800 uppercase tracking-widest">🔗 Tambah Mapping IVP & MVI Account</p>
+                <p className="text-xs font-bold text-violet-800 uppercase tracking-widest"><IkonTeks nama="🔗" />Tambah Mapping IVP & MVI Account</p>
                 <p className="text-[11px] text-violet-700 leading-relaxed">
                   Mapping divisi external ke IVP & MVI Account yang handle-nya, <strong>per brand</strong>.
                   1 divisi bisa punya 2 handler: MVI (House Brand) &amp; IVP (Global Brand). Sales External
@@ -439,7 +440,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">IVP & MVI Account (Sales Internal: IVP/MVI/MLDS)</label>
                     {ivpUsers.length === 0 ? (
-                      <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200">⚠️ Tidak ada akun Sales Internal.</div>
+                      <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200"><IkonTeks nama="⚠" />Tidak ada akun Sales Internal.</div>
                     ) : (
                       <select aria-label="— Pilih Sales Internal —" value={ivpUserId} onChange={e => setIvpUserId(e.target.value)}
                         className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
@@ -485,7 +486,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                     <p className="text-[10px] text-slate-400"><Username value={ivp?.username} /></p>
                                     {ivp?.phone_number
                                       ? <span className="text-[10px] text-emerald-600">📱 {maskPhone(ivp.phone_number)}</span>
-                                      : <span className="text-[10px] text-rose-400">⚠️ No WA</span>}
+                                      : <span className="text-[10px] text-rose-400"><IkonTeks nama="⚠" />No WA</span>}
                                   </div>
                                 </div>
                                 <button aria-label="Tutup" onClick={() => handleDeleteIvp(m.id)}
@@ -529,7 +530,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                         className={`w-full text-left px-3 py-3 border-b transition-all ${isSelected ? 'bg-teal-50 border-l-4 border-l-teal-500' : 'hover:bg-slate-50 border-l-4 border-l-transparent'}`}
                         style={{ borderBottomColor: 'rgba(0,0,0,0.05)' }}>
                         <div className="flex items-center gap-1.5 mb-0.5">
-                          {cfg && <span className="text-xs">{cfg.icon}</span>}
+                          {cfg && <span className="text-xs"><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>}
                           <p className={`text-sm font-bold truncate ${isSelected ? 'text-teal-700' : 'text-slate-700'}`}>{u.full_name}</p>
                         </div>
                         <p className="text-[9px] text-slate-400 truncate">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
@@ -560,7 +561,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                           onClick={() => { const s = new Set(autoSuggested); setCcChecked(s); }}
                           className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-all hover:bg-teal-100"
                           style={{ background: 'rgba(13,148,136,0.08)', color: '#0d9488', borderColor: 'rgba(13,148,136,0.2)' }}>
-                          ✨ Auto-pilih berdasarkan jabatan
+                          <IkonTeks nama="✨" />Auto-pilih berdasarkan jabatan
                         </button>
                       </div>
                       {selectedJabatan && JABATAN_CC_RULES[selectedJabatan as JabatanType] && (
@@ -603,12 +604,12 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <p className="font-bold text-sm" style={{ color: cfg?.color ?? '#374151' }}>{u.full_name}</p>
-                                    {isAutoSuggested && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">⭐ Disarankan</span>}
+                                    {isAutoSuggested && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><IkonTeks nama="⭐" />Disarankan</span>}
                                   </div>
                                   <p className="text-[10px] text-slate-400">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
                                   {u.phone_number
                                     ? <p className="text-[10px] text-emerald-600">📱 {maskPhone(u.phone_number)}</p>
-                                    : <p className="text-[10px] text-rose-400">⚠️ No WA — tidak akan di-CC</p>}
+                                    : <p className="text-[10px] text-rose-400"><IkonTeks nama="⚠" />No WA — tidak akan di-CC</p>}
                                 </div>
                               </button>
                             );
@@ -793,7 +794,7 @@ export function UserManagementInline() {
     if (!u?.jabatan) return null;
     const cfg = JABATAN_CONFIG[u.jabatan as JabatanType];
     if (!cfg) return null;
-    return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}>{cfg.icon} {u.jabatan}</span>;
+    return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
   };
 
   // Struktur Organisasi (atasan_id) helpers
@@ -948,32 +949,32 @@ export function UserManagementInline() {
       {/* Tabs */}
       <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap bg-slate-50/60">
         <button onClick={() => setActiveTab('org')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'org' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          🏛️ Struktur Organisasi
+          <IkonTeks nama="🏛" />Struktur Organisasi
         </button>
         <button onClick={() => setActiveTab('atasan')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'atasan' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           👨‍💼 Mapping Atasan ({Object.keys(atasanByDiv).length} divisi)
         </button>
         <button onClick={() => setActiveTab('ivp')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'ivp' ? 'border-violet-500 text-violet-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          🔗 IVP & MVI Account ({Object.keys(ivpByUser).length} orang)
+          <IkonTeks nama="🔗" />IVP & MVI Account ({Object.keys(ivpByUser).length} orang)
         </button>
         <button onClick={() => setActiveTab('product')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'product' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          🎯 Routing Tipe ({prodTeamMaps.length})
+          <IkonTeks nama="🎯" />Routing Tipe ({prodTeamMaps.length})
         </button>
         <button onClick={() => setActiveTab('user_cc')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'user_cc' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          🏷️ CC per User ({userSupMaps.length})
+          <IkonTeks nama="🏷" />CC per User ({userSupMaps.length})
         </button>
         {/* Divisi Sales ada DI SINI, bukan di pengaturan tampilan: yang
             mengurusnya orang yang sama dengan yang mengurus akun, dan divisi
             baru berarti sesuatu lewat akun yang memakainya. */}
         <button onClick={() => setActiveTab('divisi')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'divisi' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          🏷️ Divisi Sales
+          <IkonTeks nama="🏷" />Divisi Sales
         </button>
         {/* Lingkup Manager melengkapi Struktur Organisasi: pohon atasan menjawab
             siapa membawahi SIAPA, lingkup menjawab siapa membawahi KELOMPOK
             mana - dan yang kedua itulah yang menentukan pekerjaan kelompok lain
             ikut terbaca atau tidak. */}
         <button onClick={() => setActiveTab('lingkup')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'lingkup' ? 'border-teal-500 text-teal-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          🧭 Lingkup Manager
+          <IkonTeks nama="🧭" />Lingkup Manager
         </button>
       </div>
 
@@ -1012,7 +1013,7 @@ export function UserManagementInline() {
               return (
                 <div className="p-5 space-y-4">
                   <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200">
-                    <p className="text-xs font-bold text-emerald-800 mb-1">🏛️ Struktur Organisasi — satu tempat untuk semua divisi</p>
+                    <p className="text-xs font-bold text-emerald-800 mb-1"><IkonTeks nama="🏛" />Struktur Organisasi — satu tempat untuk semua divisi</p>
                     <p className="text-[11px] text-emerald-600 leading-relaxed">Atur atasan langsung setiap orang (Sales, Marketing, PTS) dalam satu pohon Direktur → Staff. Satu atasan bisa membawahi banyak orang. Klik nama untuk mengubah atasannya.</p>
                   </div>
 
@@ -1120,7 +1121,7 @@ export function UserManagementInline() {
               <div className="p-5 space-y-5">
                 {/* Add form */}
                 <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
-                  <p className="text-xs font-bold text-amber-700 mb-3">➕ Tambah Mapping Atasan</p>
+                  <p className="text-xs font-bold text-amber-700 mb-3"><IkonTeks nama="➕" />Tambah Mapping Atasan</p>
                   <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
                       <label htmlFor="f-dashboard-components-modal-user-3" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi / Grup</label>
@@ -1177,7 +1178,7 @@ export function UserManagementInline() {
               <div className="p-5 space-y-5">
                 {/* Add form */}
                 <div className="p-4 rounded-xl border border-violet-200 bg-violet-50">
-                  <p className="text-xs font-bold text-violet-700 mb-2">➕ Tambah Sales Handle (IVP / MVI) ke Divisi — <strong>per brand</strong></p>
+                  <p className="text-xs font-bold text-violet-700 mb-2"><IkonTeks nama="➕" />Tambah Sales Handle (IVP / MVI) ke Divisi — <strong>per brand</strong></p>
                   <div className="mb-3">
                     <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Brand yang di-handle *</label>
                     <div className="flex gap-2">
@@ -1235,7 +1236,7 @@ export function UserManagementInline() {
                       <div className="px-3 py-1 bg-violet-50/60 border-b border-violet-100">
                         {user?.phone_number
                           ? <p className="text-[10px] text-emerald-600">📱 {user.phone_number}</p>
-                          : <p className="text-[10px] text-rose-400">⚠️ No WA</p>}
+                          : <p className="text-[10px] text-rose-400"><IkonTeks nama="⚠" />No WA</p>}
                       </div>
                       {/* Division chips */}
                       <div className="px-3 py-2 flex flex-wrap gap-1.5 bg-white">
@@ -1259,7 +1260,7 @@ export function UserManagementInline() {
               <div className="p-5 space-y-5">
                 {/* Routing tipe produk → TIM (bukan orang) */}
                 <div className="p-4 rounded-xl border border-rose-200 bg-rose-50">
-                  <p className="text-xs font-bold text-rose-700 mb-1">🎯 Routing Tipe Produk → Tim</p>
+                  <p className="text-xs font-bold text-rose-700 mb-1"><IkonTeks nama="🎯" />Routing Tipe Produk → Tim</p>
                   <p className="text-[11px] text-slate-500 mb-3">Request diarahkan otomatis ke Supervisor tim sesuai tipe produk (Supervisor dicari live dari Struktur Organisasi — bukan hardcode nama). "LED &amp; LCD" boleh diarahkan ke 2 tim sekaligus (keduanya di-notify, 1 tim yang eksekusi).</p>
                   <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
@@ -1308,7 +1309,7 @@ export function UserManagementInline() {
 
                 {/* Akun Manager (gerbang approval) */}
                 <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
-                  <p className="text-xs font-bold text-amber-700 mb-1">👑 Akun Manager (gerbang approval)</p>
+                  <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="👑" />Akun Manager (gerbang approval)</p>
                   <p className="text-[11px] text-slate-500 mb-3">Manager yang wajib approve sebelum request turun ke supervisor. Untuk sekarang boleh sama dengan Admin (Dhany); bisa dialihkan ke akun lain kapan saja.</p>
                   <div className="flex gap-3">
                     <select aria-label="-- Pilih Akun Manager --" value={managerUserId} onChange={e => setManagerUserId(e.target.value)} className="flex-1 min-w-0 border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
@@ -1321,7 +1322,7 @@ export function UserManagementInline() {
 
                 {/* Internal / External Sales */}
                 <div className="p-4 rounded-xl border border-sky-200 bg-sky-50">
-                  <p className="text-xs font-bold text-sky-700 mb-1">🏷️ Sales Internal / External</p>
+                  <p className="text-xs font-bold text-sky-700 mb-1"><IkonTeks nama="🏷" />Sales Internal / External</p>
                   <p className="text-[11px] text-slate-500 mb-3">Tandai akun Guest mana yang Sales Internal (pemilik akun, approve request dari Sales External) — dipakai pipeline, bukan tebakan dari divisi.</p>
                   <div className="relative mb-3">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
@@ -1400,7 +1401,7 @@ export function UserManagementInline() {
                         {autoSuggested.length > 0 && (
                           <button onClick={() => setCcChecked(new Set(autoSuggested))}
                             className="mb-2 px-3 py-1.5 text-xs font-bold rounded-lg bg-teal-50 border border-teal-200 text-teal-700 hover:bg-teal-100 transition-all">
-                            ✨ Auto-suggest ({autoSuggested.length})
+                            <IkonTeks nama="✨" />Auto-suggest ({autoSuggested.length})
                           </button>
                         )}
                         <div className="space-y-1 flex-1 min-h-0 overflow-y-auto pr-1 mb-3">
@@ -1416,7 +1417,7 @@ export function UserManagementInline() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-semibold text-slate-800 text-xs truncate">{target.full_name}</p>
-                                  <p className="text-[10px]" style={{ color: cfg?.color ?? '#64748b' }}>{cfg?.icon} {target.jabatan}</p>
+                                  <p className="text-[10px]" style={{ color: cfg?.color ?? '#64748b' }}><Ikon nama={cfg?.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {target.jabatan}</p>
                                 </div>
                               </button>
                             );
@@ -1425,7 +1426,7 @@ export function UserManagementInline() {
                         <button onClick={handleSaveUserCC} disabled={ccSaving}
                           className="w-full py-2.5 bg-teal-600 text-white rounded-lg text-sm font-bold hover:bg-teal-700 disabled:opacity-50 transition-all flex items-center justify-center gap-2 flex-shrink-0">
                           {ccSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                          💾 Simpan CC Mapping
+                          <IkonTeks nama="💾" />Simpan CC Mapping
                         </button>
                       </>
                     ) : (

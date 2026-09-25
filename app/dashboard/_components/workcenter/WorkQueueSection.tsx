@@ -5,6 +5,7 @@ import { type WidgetProps, WidgetCard, EmptyState, Loading, QuickActionChip } fr
 import { isAdminRole, isTeamMember, hasMenu } from '../widgets/permissions';
 import { useWorkQueue, type ActionItem, type Urgency } from './useWorkQueue';
 import type { User } from '../shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 const URGENCY_DOT: Record<Urgency, string> = { urgent: '#dc2626', pending: '#ea580c', upcoming: '#2563eb' };
 const URGENCY_EMOJI: Record<Urgency, string> = { urgent: '🔴', pending: '🟠', upcoming: '🔵' };
@@ -19,7 +20,7 @@ function ActionRow({ item, onClick, showUrgencyDot = true }: {
         <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: URGENCY_DOT[item.urgency] }}
           aria-label={item.urgency} title={item.urgency} />
       )}
-      <span className="text-sm flex-shrink-0 leading-tight" aria-hidden="true">{item.icon}</span>
+      <span className="text-sm flex-shrink-0 leading-tight" aria-hidden="true"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-semibold text-slate-800 truncate leading-snug">{item.title}</div>
         <div className="text-[11px] text-slate-500 truncate">{item.subtitle}</div>

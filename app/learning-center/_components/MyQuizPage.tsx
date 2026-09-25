@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput, AppDialog, DialogState } from './shared';
 import { ModalPortal } from '@/components/shared';
 import { compressImage } from '@/lib/image-compress';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /*
   Menerjemahkan galat unggah Supabase jadi kalimat yang bisa ditindaklanjuti.
@@ -395,7 +396,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
         <div className="flex h-full flex-col overflow-y-auto" style={{ background: '#f8fafc' }}>
           <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-4 border-b border-slate-200" style={{ background: '#ffffff' }}>
             <div>
-              <h2 className="font-bold text-slate-800">📋 Review Jawaban</h2>
+              <h2 className="font-bold text-slate-800"><IkonTeks nama="📋" />Review Jawaban</h2>
               <p className="text-xs text-slate-500">{session.session_name} · Skor {result.score.toFixed(0)}</p>
             </div>
             <button onClick={() => setShowReview(false)}
@@ -479,12 +480,12 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           <div className="flex gap-3 justify-center flex-wrap">
             <button onClick={() => setShowReview(true)}
               className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold rounded-xl shadow-sm transition-all text-sm">
-              📋 Review Jawaban
+              <IkonTeks nama="📋" />Review Jawaban
             </button>
             {!result.passed && session.allow_retake && onRetake && (
               <button onClick={() => onRetake(session)}
                 className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all text-sm">
-                🔄 Coba Lagi
+                <IkonTeks nama="🔄" />Coba Lagi
               </button>
             )}
             <button onClick={onDone}
@@ -881,7 +882,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
 
             {tabSwitches > 0 && (
               <p className="text-[11px] font-semibold text-rose-600">
-                ⚠️ Berpindah tab tercatat: {tabSwitches}x
+                <IkonTeks nama="⚠" />Berpindah tab tercatat: {tabSwitches}x
               </p>
             )}
           </div>
@@ -1062,7 +1063,7 @@ export function MyQuizPage({ user }: { user: User }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📝 My Quiz</h1>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="📝" />My Quiz</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Quiz yang tersedia untuk kamu</p>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari quiz..." />
@@ -1094,7 +1095,7 @@ export function MyQuizPage({ user }: { user: User }) {
             <button disabled
               className="px-5 py-2.5 text-sm font-bold rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed w-full formulir:w-auto"
               title="Quiz ini sudah kamu kerjakan dan tidak bisa diulang">
-              ✅ Selesai
+              <IkonTeks nama="✅" />Selesai
             </button>
           ) : (
             <button onClick={() => handleStart(s)}
@@ -1111,7 +1112,7 @@ export function MyQuizPage({ user }: { user: User }) {
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-slate-800 text-base sm:text-lg">
                     {s.session_name}
-                    {s.session_type === 'essay' && <span className="ml-2 align-middle text-xs px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">📝 Essay</span>}
+                    {s.session_type === 'essay' && <span className="ml-2 align-middle text-xs px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700 border border-indigo-200"><IkonTeks nama="📝" />Essay</span>}
                   </h4>
                   <p className="text-sm text-slate-500 mt-1">{s.materi_name}</p>
                 </div>
@@ -1127,7 +1128,7 @@ export function MyQuizPage({ user }: { user: User }) {
               <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 text-xs text-slate-500">
                 <span>📝 {s.question_count} soal</span>
                 <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'Tanpa batas waktu'}</span>
-                <span>🎯 Passing: {s.passing_grade}%</span>
+                <span><IkonTeks nama="🎯" />Passing: {s.passing_grade}%</span>
                 <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
               </div>
 
@@ -1140,13 +1141,13 @@ export function MyQuizPage({ user }: { user: User }) {
               {(inProgress || menungguNilai || alreadyDone || tenggat) && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {inProgress && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Sedang Berlangsung</span>
+                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="⏳" />Sedang Berlangsung</span>
                   )}
                   {menungguNilai && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Menunggu Penilaian Admin</span>
+                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="⏳" />Menunggu Penilaian Admin</span>
                   )}
                   {alreadyDone && !menungguNilai && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">✅ Sudah Dikerjakan</span>
+                    <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="✅" />Sudah Dikerjakan</span>
                   )}
                   {tenggat && !alreadyDone && (
                     <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold border ${

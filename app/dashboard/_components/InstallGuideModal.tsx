@@ -1,5 +1,6 @@
 'use client';
 import { ModalPortal } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Panduan pasang aplikasi ke HP - langkah MANUAL lewat menu peramban, bukan
@@ -23,7 +24,7 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
           style={{ animation: 'scale-in 0.2s ease-out' }}>
           <div className="px-6 py-5 rounded-t-2xl text-white relative" style={{ background: `linear-gradient(135deg, ${warnaUtama}, #881337)` }}>
             <p className="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Tanpa file, tanpa admin</p>
-            <h2 className="text-lg font-black">📲 Pasang Aplikasi di HP</h2>
+            <h2 className="text-lg font-black"><IkonTeks nama="📲" />Pasang Aplikasi di HP</h2>
             <p className="text-white/75 text-xs mt-1">Cukup 1-2 ketuk lewat menu browser - tidak perlu download file .apk atau izin admin.</p>
             <button aria-label="Tutup" onClick={onClose}
               className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>

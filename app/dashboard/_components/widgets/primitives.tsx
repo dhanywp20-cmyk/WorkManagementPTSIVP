@@ -13,6 +13,7 @@
 
 import React from 'react';
 import type { User } from '../shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 // Kontrak widget
 
@@ -71,7 +72,7 @@ export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabe
       <RelAksen warna={accent} />
       <div className="flex items-center gap-2 mb-3">
         <div className="w-[26px] h-[26px] rounded-[9px] flex items-center justify-center text-[13px] flex-shrink-0"
-          style={{ background: `${accent}1a`, color: accent }}>{icon}</div>
+          style={{ background: `${accent}1a`, color: accent }}><Ikon nama={icon} ukuran={16} /></div>
         <h3 className="font-extrabold text-slate-900 text-[12.5px] tracking-[-0.01em] truncate flex-1">{title}</h3>
         {onSeeAll && (
           <button onClick={onSeeAll}
@@ -124,7 +125,7 @@ export function QuickActionChip({ label, icon, warna, onClick }: {
     <button onClick={onClick}
       className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white font-bold text-[11px] whitespace-nowrap transition-all hover:brightness-110 hover:scale-[1.03]"
       style={{ background: warna, boxShadow: `0 2px 8px ${warna}4d` }}>
-      <span aria-hidden="true" className="text-xs leading-none">{icon}</span>
+      <span aria-hidden="true" className="text-xs leading-none"><Ikon nama={icon} ukuran={13} /></span>
       <span>{label}</span>
     </button>
   );

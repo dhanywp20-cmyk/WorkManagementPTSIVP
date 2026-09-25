@@ -16,6 +16,7 @@ import { ModalPortal } from '@/components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { Reminder, formatDate } from './shared';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 export function KonfirmasiApproveInternal({
   internalApproveTarget, internalApproveSaving, setInternalApproveTarget, handleInternalApprove,
@@ -33,7 +34,7 @@ export function KonfirmasiApproveInternal({
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
           <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
-            <h3 className="text-lg font-bold text-white">✅ Approve Request?</h3>
+            <h3 className="text-lg font-bold text-white"><IkonTeks nama="✅" />Approve Request?</h3>
             <p className="text-amber-100/90 text-xs mt-0.5">Teruskan ke Admin/Manager untuk di-assign</p>
           </div>
           <div className="p-6 space-y-3">
@@ -70,7 +71,7 @@ export function KonfirmasiApproveInternal({
                 className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                 style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
                 {internalApproveSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                ✅ Ya, Approve &amp; Teruskan
+                <IkonTeks nama="✅" />Ya, Approve &amp; Teruskan
               </button>
             </div>
           </div>
@@ -128,7 +129,7 @@ export function ModalHapus({
               onClick={handleDelete}
               disabled={deleteConfirmText !== 'HAPUS'}
               className="bg-gradient-to-r from-red-600 to-red-800 text-white py-2.5 rounded-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:from-red-700 hover:to-red-900">
-              🗑️ Hapus Permanen
+              <IkonTeks nama="🗑" />Hapus Permanen
             </button>
             <button
               onClick={() => { setShowDeleteModal(false); setDeleteTarget(null); setDeleteConfirmText(''); }}

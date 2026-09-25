@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import { ModalPortal } from '@/components/shared';
 import type { Ticket, TeamMember, ProjectReminderRef } from './shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Modal "Ticket Approval" (Admin/Manager menyetujui tiket Waiting
@@ -36,7 +37,7 @@ export function ApprovalModal({
           <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
             {pendingApprovalTickets.length === 0 ? (<div className="text-center py-12"><div className="text-5xl mb-3">✅</div><p className="text-gray-500 font-medium">Tidak ada ticket yang menunggu approval</p></div>) : pendingApprovalTickets.map((ticket) => (
               <div key={ticket.id} className="rounded-xl p-4" style={{ background: "rgba(245,158,11,0.1)", border: "2px solid rgba(245,158,11,0.3)" }}>
-                <div className="flex justify-between items-start mb-3"><div><p className="font-bold text-lg text-gray-800">🏢 {ticket.project_name}</p><p className="text-sm text-gray-600 mt-0.5">⚠️ {ticket.issue_case}</p>{ticket.description && <p className="text-xs text-gray-500 mt-1">{ticket.description}</p>}<div className="flex gap-2 mt-2 flex-wrap text-xs text-gray-500">{ticket.customer_phone && <span>👤 {ticket.customer_phone}</span>}{ticket.sales_name && <span>💼 {ticket.sales_name}</span>}{ticket.sn_unit && <span>🔢 {ticket.sn_unit}</span>}</div><p className="text-xs text-orange-700 font-semibold mt-2">Dibuat oleh: {ticket.created_by || "-"} • {ticket.date}</p></div><span className="px-3 py-1 rounded-full text-xs font-bold border-2 bg-orange-100 text-orange-800 border-orange-400 whitespace-nowrap ml-2">⏳ Waiting Approval</span></div>
+                <div className="flex justify-between items-start mb-3"><div><p className="font-bold text-lg text-gray-800">🏢 {ticket.project_name}</p><p className="text-sm text-gray-600 mt-0.5">⚠️ {ticket.issue_case}</p>{ticket.description && <p className="text-xs text-gray-500 mt-1">{ticket.description}</p>}<div className="flex gap-2 mt-2 flex-wrap text-xs text-gray-500">{ticket.customer_phone && <span>👤 {ticket.customer_phone}</span>}{ticket.sales_name && <span>💼 {ticket.sales_name}</span>}{ticket.sn_unit && <span>🔢 {ticket.sn_unit}</span>}</div><p className="text-xs text-orange-700 font-semibold mt-2">Dibuat oleh: {ticket.created_by || "-"} • {ticket.date}</p></div><span className="px-3 py-1 rounded-full text-xs font-bold border-2 bg-orange-100 text-orange-800 border-orange-400 whitespace-nowrap ml-2"><IkonTeks nama="⏳" />Waiting Approval</span></div>
 
                 {/* ── Referensi Project dari Reminder Schedule ── */}
                 {(() => {
@@ -45,7 +46,7 @@ export function ApprovalModal({
                   if (!refs || refs.length === 0) return null;
                   return (
                     <div className="mb-3 rounded-xl p-3" style={{ background: "rgba(16,185,129,0.08)", border: "1.5px solid rgba(16,185,129,0.35)" }}>
-                      <p className="text-xs font-bold text-emerald-700 mb-2">📋 Referensi Project di Reminder Schedule</p>
+                      <p className="text-xs font-bold text-emerald-700 mb-2"><IkonTeks nama="📋" />Referensi Project di Reminder Schedule</p>
                       {refs.map((ref, idx) => {
                         const bastDate = ref.due_date ? new Date(ref.due_date + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-";
                         // Hitung warranty status
@@ -71,9 +72,9 @@ export function ApprovalModal({
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold" style={{ background: "rgba(16,185,129,0.15)", color: "#065f46" }}>
                               {ref.category === "Konfigurasi & Training" ? "📌" : "⚙️"} {ref.category}
                             </span>
-                            <span className="text-gray-600">🗓️ BAST: <strong className="text-emerald-800">{bastDate}</strong></span>
+                            <span className="text-gray-600"><IkonTeks nama="🗓" />BAST: <strong className="text-emerald-800">{bastDate}</strong></span>
                             {ref.assign_name && ref.assign_name !== "-" && (
-                              <span className="text-gray-600">👷 Handler: <strong className="text-emerald-800">{ref.assign_name}</strong></span>
+                              <span className="text-gray-600"><IkonTeks nama="👷" />Handler: <strong className="text-emerald-800">{ref.assign_name}</strong></span>
                             )}
                             {warrantyBadge && <div className="w-full mt-0.5">{warrantyBadge}</div>}
                           </div>
@@ -96,7 +97,7 @@ export function ApprovalModal({
                     const unique = Array.from(new Map(suggested.map(r => [r.assign_name, r])).values());
                     return (
                       <div className="mb-2">
-                        <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide mb-1.5">💡 Saran Handler (handle project ini sebelumnya)</p>
+                        <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide mb-1.5"><IkonTeks nama="💡" />Saran Handler (handle project ini sebelumnya)</p>
                         <div className="flex flex-wrap gap-2">
                           {unique.map((ref, idx) => {
                             const isSelected = approvalAssignees[ticket.id] === ref.assign_name;
@@ -133,7 +134,7 @@ export function ApprovalModal({
                       disabled={uploading || !approvalAssignees[ticket.id]} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">
                       {approvingId === ticket.id ? "⏳ Memproses..." : "✅ Approve"}
                     </button>
-                    <button onClick={() => rejectTicket(ticket)} disabled={uploading} className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm">❌ Reject</button>
+                    <button onClick={() => rejectTicket(ticket)} disabled={uploading} className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm"><IkonTeks nama="❌" />Reject</button>
                   </div>
                 </div>
               </div>

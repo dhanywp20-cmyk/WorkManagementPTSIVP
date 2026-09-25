@@ -1,5 +1,7 @@
 'use client';
 
+import { WARNA } from '@/lib/desain';
+
 /**
  * components/shared/Charts.tsx - grafik deret waktu yang dipakai semua modul.
  *
@@ -177,7 +179,7 @@ export function TrendBadge({
   return (
     <span className="text-[10px] font-bold flex-shrink-0"
       // Hijau/merah tua: kontras teks >= 4.5:1 di atas putih (hijau terang dulu 2.5:1).
-      style={{ color: bagus ? '#047857' : '#be123c' }}
+      style={{ color: bagus ? WARNA.berhasil.teks : WARNA.bahaya.teks }}
       title={`${bagus ? 'Membaik' : 'Memburuk'} ${abs.toFixed(1)}${suffix} dibanding periode sebelumnya`}>
       {panah} {abs.toFixed(1)}{suffix}
     </span>

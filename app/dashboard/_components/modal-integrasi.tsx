@@ -35,6 +35,7 @@ import { KATALOG_EVENT, EVENT_TERSAMBUNG, eventTersambung, type KategoriEvent } 
 import { PENYEDIA_WA, penyediaWA } from '@/lib/notifikasi/penyedia-wa';
 import { supabase } from '@/lib/supabase';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
   ticket: 'Ticket', approval: 'Approval', assignment: 'Assignment',
@@ -769,7 +770,7 @@ export function IntegrasiInline() {
                     </div>
                   )}
                   <input value={cariEvent} onChange={e => setCariEvent(e.target.value)}
-                    placeholder="🔍 Cari kejadian…" aria-label="Cari kejadian"
+                    placeholder="Cari kejadian…" aria-label="Cari kejadian"
                     className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-cyan-400 mb-2.5" />
                   <div className="rounded-lg border border-slate-200 overflow-hidden">
                     <div className="grid grid-cols-[1fr_46px_46px_46px] px-3.5 py-1.5 bg-slate-50 border-b border-slate-200">
@@ -930,7 +931,7 @@ export function IntegrasiInline() {
                 {!p.aktif.whatsapp && (
                   <div className="mt-2 rounded-lg px-2.5 py-2 text-[10.5px] font-semibold leading-relaxed"
                     style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
-                    ⚠️ Kanal WhatsApp masih mati di <b>Kanal &amp; Event</b>. Tes di sini tetap jalan, tapi notifikasi
+                    <IkonTeks nama="⚠" />Kanal WhatsApp masih mati di <b>Kanal &amp; Event</b>. Tes di sini tetap jalan, tapi notifikasi
                     asli belum akan terkirim.
                   </div>
                 )}
@@ -1048,7 +1049,7 @@ export function IntegrasiInline() {
                 {!p.aktif.telegram && (
                   <div className="mt-2 rounded-lg px-2.5 py-2 text-[10.5px] font-semibold leading-relaxed"
                     style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
-                    ⚠️ Kanal Telegram masih mati di <b>Kanal &amp; Event</b>. Tes di sini tetap jalan, tapi notifikasi
+                    <IkonTeks nama="⚠" />Kanal Telegram masih mati di <b>Kanal &amp; Event</b>. Tes di sini tetap jalan, tapi notifikasi
                     asli belum akan terkirim.
                   </div>
                 )}

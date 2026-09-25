@@ -8,6 +8,7 @@ import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 import { hasFullAccess } from '@/lib/constants';
 import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
 import { cariReminderByNama, reminderTerbaru } from '@/lib/cari-reminder';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 export interface NewTicketForm {
   project_name: string;
@@ -255,7 +256,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
         <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
           role="dialog" aria-modal="true" aria-labelledby="judul-tipe-project">
           <div className="px-5 py-4 text-white" style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}>
-            <h3 id="judul-tipe-project" className="font-bold text-base">🎫 Ticket Troubleshooting Baru</h3>
+            <h3 id="judul-tipe-project" className="font-bold text-base"><IkonTeks nama="🎫" />Ticket Troubleshooting Baru</h3>
             <p className="text-[12px] text-white/80 mt-0.5">Project-nya sudah pernah dikerjakan, atau baru?</p>
           </div>
           <div className="p-4 space-y-2.5">
@@ -317,7 +318,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               </svg>
             </button>
             <div className="min-w-0">
-              <h3 id="judul-cari-project" className="font-bold text-base">🔍 Cari Project yang Sudah Ada</h3>
+              <h3 id="judul-cari-project" className="font-bold text-base"><IkonTeks nama="🔍" />Cari Project yang Sudah Ada</h3>
               <p className="text-[12px] text-white/80 mt-0.5">Ketik nama project, pilih dari hasilnya, lalu konfirmasi.</p>
             </div>
           </div>
@@ -434,7 +435,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white">🎫 Create New Ticket</h2>
+              <h2 className="text-xl font-bold text-white"><IkonTeks nama="🎫" />Create New Ticket</h2>
               <p className="text-red-200/80 text-xs mt-1">Isi detail ticket & informasi troubleshooting</p>
             </div>
             <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
@@ -497,7 +498,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 style={projectType === 'new'
                   ? { background: "linear-gradient(135deg,#dc2626,#991b1b)", color: "white" }
                   : { background: "rgba(255,255,255,0.95)", color: "#64748b" }}>
-                ✏️ Project Baru
+                <IkonTeks nama="✏" />Project Baru
               </button>
               <button type="button"
                 onClick={() => switchProjectType('existing')}
@@ -505,7 +506,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 style={projectType === 'existing'
                   ? { background: "linear-gradient(135deg,#dc2626,#991b1b)", color: "white", borderColor: "transparent" }
                   : { background: "rgba(255,255,255,0.95)", color: "#64748b", borderColor: "rgba(0,0,0,0.12)" }}>
-                🔍 Project Existing
+                <IkonTeks nama="🔍" />Project Existing
               </button>
             </div>
           </div>
@@ -627,7 +628,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Project Name *
                 {projectType === 'existing' && selectedReminder && (
-                  <span className="ml-2 text-red-400 font-semibold normal-case text-[10px]">🔒 dari reminder</span>
+                  <span className="ml-2 text-red-400 font-semibold normal-case text-[10px]"><IkonTeks nama="🔒" />dari reminder</span>
                 )}
               </label>
               <div className="relative">
@@ -645,7 +646,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               </div>
             </div>
             <div>
-              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>📍 Address Detail</label>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}><IkonTeks nama="📍" />Address Detail</label>
               <div className="relative">
                 <span className="absolute left-3 top-3">📍</span>
                 <textarea value={form.address} onChange={e => set({ address: e.target.value })}
@@ -683,7 +684,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           {/* Row 2: Product | SN Unit */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>📦 Product / Brand</label>
+              <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}><IkonTeks nama="📦" />Product / Brand</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">📦</span>
                 <input type="text" value={form.product} onChange={e => set({ product: e.target.value })}
@@ -710,7 +711,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           <div>
             <div>
               <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
-                📅 Date <span className="text-gray-400 normal-case font-normal text-[10px]">(hari ini)</span>
+                <IkonTeks nama="📅" />Date <span className="text-gray-400 normal-case font-normal text-[10px]">(hari ini)</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">📅</span>
@@ -750,7 +751,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
           {/* Description */}
           <div>
-            <label htmlFor="f-ticketing-components-newticketmodal-1" className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>📝 Detailed Description</label>
+            <label htmlFor="f-ticketing-components-newticketmodal-1" className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}><IkonTeks nama="📝" />Detailed Description</label>
             <textarea id="f-ticketing-components-newticketmodal-1" value={form.description} onChange={e => set({ description: e.target.value })}
               rows={3} placeholder="Explain the problem details..."
               className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
@@ -823,7 +824,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
                   style={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}>
                   <option value="">— Pilih penanganan —</option>
-                  <option value="SELF">🙋 Saya kerjakan sendiri</option>
+                  <option value="SELF">Saya kerjakan sendiri</option>
                   <optgroup label="👷 Assign langsung ke Team PTS">
                     {teamPTSMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
                   </optgroup>

@@ -22,6 +22,7 @@ import {
   Paginasi, usePaginasi,
   ConfirmDialog, type ConfirmState, ErrorState,
   MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // Main Component
 
@@ -501,7 +502,7 @@ function FormReviewPageInner() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      backgroundImage: `url('/IVP_Background.png')`,
+      background: 'var(--halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
@@ -555,7 +556,7 @@ function FormReviewPageInner() {
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={handleDelete} disabled={deleteConfirmText !== 'HAPUS'}
                   className="bg-gradient-to-r from-red-600 to-red-800 text-white py-2.5 rounded-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed">
-                  🗑️ Hapus Permanen
+                  <IkonTeks nama="🗑" />Hapus Permanen
                 </button>
                 <button onClick={() => { setShowDeleteModal(false); setDeleteTarget(null); setDeleteConfirmText(''); }}
                   className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all">
@@ -578,7 +579,7 @@ function FormReviewPageInner() {
               <div className="px-8 py-6 rounded-t-2xl flex-shrink-0" style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-bold text-white">✏️ Isi Review</h2>
+                    <h2 className="text-xl font-bold text-white"><IkonTeks nama="✏" />Isi Review</h2>
                     <p className="text-violet-200/80 text-xs mt-1">{editingReview.project_name}</p>
                     <p className="text-violet-300/70 text-xs mt-0.5">
                       {editingReview.review_category === 'Demo Product' ? '🖥️ Demo Product' : '📌 BAST (Training)'}
@@ -664,7 +665,7 @@ function FormReviewPageInner() {
                   <button type="button" onClick={() => fotoRef.current?.click()}
                     className="w-full rounded-xl py-4 border-2 border-dashed transition-all text-sm font-semibold text-violet-600 hover:bg-violet-50"
                     style={{ borderColor: 'rgba(124,58,237,0.4)' }}>
-                    📸 Upload Foto Dokumentasi
+                    <IkonTeks nama="📸" />Upload Foto Dokumentasi
                   </button>
                   {(fotoPreview || reviewFormData.foto_dokumentasi_url) && (
                     <img src={fotoPreview || reviewFormData.foto_dokumentasi_url} alt="Foto" loading="lazy" decoding="async" className="mt-3 rounded-xl w-full max-h-48 object-cover" />
@@ -681,7 +682,7 @@ function FormReviewPageInner() {
                     className="flex-1 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02]"
                     style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 4px 14px rgba(124,58,237,0.35)' }}>
                     {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                    💾 Simpan Review
+                    <IkonTeks nama="💾" />Simpan Review
                   </button>
                 </div>
               </div>
@@ -718,12 +719,12 @@ function FormReviewPageInner() {
                     return hasReview ? (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
                         style={{ background: '#059669', border: '2px solid rgba(255,255,255,0.5)' }}>
-                        ✅ Sudah Diisi
+                        <IkonTeks nama="✅" />Sudah Diisi
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white animate-pulse"
                         style={{ background: '#d97706', border: '2px solid rgba(255,255,255,0.5)' }}>
-                        ⏳ Belum Diisi
+                        <IkonTeks nama="⏳" />Belum Diisi
                       </span>
                     );
                   })()}
@@ -753,7 +754,7 @@ function FormReviewPageInner() {
                     { icon: '🔄', label: 'Update', value: detailReview.updated_at ? formatDatetime(detailReview.updated_at) : null },
                   ].filter(x => x.value).map((item, i) => (
                     <div key={i} className="rounded-xl px-4 py-3" style={{ background: 'rgba(248,250,252,0.9)', border: '1px solid rgba(0,0,0,0.07)' }}>
-                      <p className="text-[9px] font-bold tracking-widest uppercase text-gray-400">{item.icon} {item.label}</p>
+                      <p className="text-[9px] font-bold tracking-widest uppercase text-gray-400"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {item.label}</p>
                       <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{item.value}</p>
                     </div>
                   ))}
@@ -762,7 +763,7 @@ function FormReviewPageInner() {
                 {/* Demo Product review detail */}
                 {detailReview.review_category === 'Demo Product' && (
                   <div className="rounded-xl p-4 space-y-4" style={{ background: 'rgba(124,58,237,0.04)', border: '1.5px solid rgba(124,58,237,0.15)' }}>
-                    <p className="text-[10px] font-bold tracking-widest uppercase text-violet-600">🖥️ Review Demo Product</p>
+                    <p className="text-[10px] font-bold tracking-widest uppercase text-violet-600"><IkonTeks nama="🖥" />Review Demo Product</p>
 
                     {detailReview.product_demo ? (
                       <div>
@@ -798,7 +799,7 @@ function FormReviewPageInner() {
                 {/* BAST review detail */}
                 {detailReview.review_category === 'BAST' && (
                   <div className="rounded-xl p-4 space-y-4" style={{ background: 'rgba(14,165,233,0.04)', border: '1.5px solid rgba(14,165,233,0.15)' }}>
-                    <p className="text-[10px] font-bold tracking-widest uppercase text-sky-600">📌 Review BAST (Training)</p>
+                    <p className="text-[10px] font-bold tracking-widest uppercase text-sky-600"><IkonTeks nama="📌" />Review BAST (Training)</p>
 
                     {detailReview.product_bast ? (
                       <div>
@@ -849,7 +850,7 @@ function FormReviewPageInner() {
                 {/* Foto Dokumentasi */}
                 {detailReview.foto_dokumentasi_url ? (
                   <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
-                    <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 px-4 pt-3 pb-2">📸 Foto Dokumentasi</p>
+                    <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 px-4 pt-3 pb-2"><IkonTeks nama="📸" />Foto Dokumentasi</p>
                     <img
                       src={detailReview.foto_dokumentasi_url}
                       alt="Foto Dokumentasi"
@@ -861,7 +862,7 @@ function FormReviewPageInner() {
                     <div className="px-4 pb-3 pt-1">
                       <a href={detailReview.foto_dokumentasi_url} target="_blank" rel="noopener noreferrer"
                         className="text-[11px] font-bold text-violet-600 hover:text-violet-800 transition-colors">
-                        🔗 Buka foto di tab baru
+                        <IkonTeks nama="🔗" />Buka foto di tab baru
                       </a>
                     </div>
                   </div>
@@ -879,14 +880,14 @@ function FormReviewPageInner() {
                     <button onClick={() => openEdit(detailReview)}
                       className="flex-1 text-white py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.01] flex items-center justify-center gap-2"
                       style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 3px 12px rgba(124,58,237,0.3)' }}>
-                      ✏️ Edit / Isi Review
+                      <IkonTeks nama="✏" />Edit / Isi Review
                     </button>
                   )}
                   {isAdmin && (
                     <button onClick={() => { setDetailReview(null); openDeleteModal(detailReview); }}
                       className="px-5 py-3 rounded-xl font-bold text-sm text-red-600 transition-all hover:bg-red-50 hover:scale-[1.01] flex items-center gap-2"
                       style={{ border: '1.5px solid rgba(220,38,38,0.35)' }}>
-                      🗑️ Hapus
+                      <IkonTeks nama="🗑" />Hapus
                     </button>
                   )}
                   <button onClick={() => setDetailReview(null)}
@@ -941,12 +942,12 @@ function FormReviewPageInner() {
                         <p className="font-bold text-sm text-gray-800 truncate">{r.project_name || '—'}</p>
                         {r.address && <p className="text-xs text-gray-500 mt-0.5">📍 {r.address}</p>}
                         {isTeam && r.sales_name && (
-                          <p className="text-xs text-violet-600 font-semibold mt-0.5">👤 Guest: {r.sales_name}</p>
+                          <p className="text-xs text-violet-600 font-semibold mt-0.5"><IkonTeks nama="👤" />Guest: {r.sales_name}</p>
                         )}
                       </div>
                       <div className="flex-shrink-0 text-right">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-700"
-                          style={{ background: '#fef3c7', border: '1px solid #f59e0b' }}>⏳ Belum Diisi</span>
+                          style={{ background: '#fef3c7', border: '1px solid #f59e0b' }}><IkonTeks nama="⏳" />Belum Diisi</span>
                         <p className="text-[10px] text-gray-500 mt-1">{isTeam ? r.sales_name : r.assign_name}</p>
                       </div>
                     </div>
@@ -1008,11 +1009,11 @@ function FormReviewPageInner() {
                         <p className="font-bold text-sm text-gray-800 truncate">{r.project_name || '—'}</p>
                         {r.address && <p className="text-xs text-gray-500 mt-0.5">📍 {r.address}</p>}
                         {isTeam && r.sales_name && (
-                          <p className="text-xs text-violet-600 font-semibold mt-0.5">👤 Guest: {r.sales_name}</p>
+                          <p className="text-xs text-violet-600 font-semibold mt-0.5"><IkonTeks nama="👤" />Guest: {r.sales_name}</p>
                         )}
                       </div>
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-700"
-                        style={{ background: '#fef3c7', border: '1px solid #f59e0b' }}>⏳ Belum</span>
+                        style={{ background: '#fef3c7', border: '1px solid #f59e0b' }}><IkonTeks nama="⏳" />Belum</span>
                     </div>
                   </div>
                 ))}
@@ -1148,7 +1149,7 @@ function FormReviewPageInner() {
             {/* Filter Bar — sama persis dengan Reminder Schedule */}
             <div className="px-3 py-2 sm:px-5 sm:py-3 flex flex-wrap gap-1.5 sm:gap-3 items-end border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">🔍 Search Project / Lokasi</label>
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="🔍" />Search Project / Lokasi</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">🔍</span>
                   <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
@@ -1157,7 +1158,7 @@ function FormReviewPageInner() {
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">👤 Sales Name</label>
+                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="👤" />Sales Name</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👤</span>
                   <input aria-label="Search sales..." value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
@@ -1229,7 +1230,7 @@ function FormReviewPageInner() {
                   <button onClick={() => setSearchHandler('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}>👷 {searchHandler} ✕</button>
                 )}
                 <button onClick={() => { setFilterReviewCat('all'); setSalesDivisionFilter(null); setHandlerFilter(null); setProductFilterChart(null); setSearchProject(''); setSearchSalesName(''); setSearchHandler(''); }}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}>🗑️ Reset Semua</button>
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}><IkonTeks nama="🗑" />Reset Semua</button>
               </div>
             )}
 
@@ -1472,7 +1473,7 @@ function FormReviewPageInner() {
                   else notify('error', 'Gagal: ' + error.message);
                   setBulkDeleting(false);
                 }} className="flex-[2] bg-gradient-to-r from-violet-600 to-violet-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm">
-                  🗑️ Ya, Hapus Permanen
+                  <IkonTeks nama="🗑" />Ya, Hapus Permanen
                 </button>
               </div>
             </div>

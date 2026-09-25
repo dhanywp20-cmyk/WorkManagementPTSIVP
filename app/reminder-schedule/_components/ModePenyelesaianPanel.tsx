@@ -1,5 +1,6 @@
 'use client';
 import { InstallerPicker } from './InstallerPicker';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Panel "Mode Penyelesaian" (muncul saat klik Completed) — dipindah dari
@@ -85,7 +86,7 @@ export function ModePenyelesaianPanel({
         </div>
 
         <div>
-          <label htmlFor="f-reminder-schedule-components-modepenyelesaianpanel-1" className="block text-xs font-bold text-gray-600 mb-2">📅 Tanggal BAST <span className="text-red-500">*</span></label>
+          <label htmlFor="f-reminder-schedule-components-modepenyelesaianpanel-1" className="block text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="📅" />Tanggal BAST <span className="text-red-500">*</span></label>
           <input id="f-reminder-schedule-components-modepenyelesaianpanel-1" type="date" value={bastDate} onChange={e => setBastDate(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white" />
           {bastDate && (
@@ -95,7 +96,7 @@ export function ModePenyelesaianPanel({
 
         {/* 1. Display Type — wajib pilih LED / LCD / Mix */}
         <div>
-          <p className="text-xs font-bold text-gray-600 mb-2">🖥️ Tipe Display <span className="text-red-500">*</span> <span className="font-normal text-gray-400">(Mix = LED + LCD)</span></p>
+          <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🖥" />Tipe Display <span className="text-red-500">*</span> <span className="font-normal text-gray-400">(Mix = LED + LCD)</span></p>
           <div className="grid grid-cols-3 gap-2">
             {([
               { value: 'led', label: 'LED' },
@@ -112,7 +113,7 @@ export function ModePenyelesaianPanel({
 
         {/* 2. Controller Automation — Yes/No + brand */}
         <div>
-          <p className="text-xs font-bold text-gray-600 mb-2">🎛️ Controller Automation <span className="text-red-500">*</span></p>
+          <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🎛" />Controller Automation <span className="text-red-500">*</span></p>
           <div className="grid grid-cols-2 gap-2">
             {([{ v: false, l: 'Tidak' }, { v: true, l: 'Ya' }] as { v: boolean; l: string }[]).map(opt => (
               <button key={opt.l} type="button"
@@ -140,7 +141,7 @@ export function ModePenyelesaianPanel({
 
         {/* 3. Middleware — Yes/No */}
         <div>
-          <p className="text-xs font-bold text-gray-600 mb-2">🔌 Middleware / System / Matrix <span className="text-red-500">*</span></p>
+          <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🔌" />Middleware / System / Matrix <span className="text-red-500">*</span></p>
           <div className="grid grid-cols-2 gap-2">
             {([{ v: false, l: 'Tidak' }, { v: true, l: 'Ya' }] as { v: boolean; l: string }[]).map(opt => (
               <button key={opt.l} type="button" onClick={() => setRequiresMiddleware(opt.v)}
@@ -153,7 +154,7 @@ export function ModePenyelesaianPanel({
 
         {modePenyelesaian === 'remote' && (
           <div className="space-y-3 p-4 rounded-xl" style={{ background: 'rgba(59,130,246,0.06)', border: '1.5px solid rgba(59,130,246,0.25)' }}>
-            <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">🔧 Data PTS Daerah</p>
+            <p className="text-xs font-bold text-blue-700 uppercase tracking-wide"><IkonTeks nama="🔧" />Data PTS Daerah</p>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">PTS Daerah <span className="text-red-500">*</span></label>
               <InstallerPicker

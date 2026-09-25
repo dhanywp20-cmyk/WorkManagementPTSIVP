@@ -8,6 +8,7 @@ import {
   type GrupAntrean, type SaranProject, type StatistikMapping, type ModulTerpeta,
 } from '@/lib/summary-project';
 import { PanelDuplikat } from './PanelDuplikat';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 const MODUL_LABEL: Record<ModulTerpeta, { label: string; color: string }> = {
   reminders: { label: '🗓️ Schedule', color: '#0891b2' },
@@ -239,7 +240,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
                     <button type="button" disabled={sibuk || !namaBaru.trim()}
                       onClick={() => jalankan(() => buatProjectDariGrup(namaBaru, recordTerpilih(), currentUserName), `Project "${namaBaru.trim()}" dibuat.`)}
                       className="flex-1 px-3 py-2 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50">
-                      ➕ Buat & petakan
+                      <IkonTeks nama="➕" />Buat & petakan
                     </button>
                     <button type="button" disabled={sibuk}
                       onClick={() => setConfirmState({
@@ -249,7 +250,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
                         onConfirm: () => jalankan(() => abaikanRecord(recordTerpilih(), currentUserName), 'Record diabaikan.'),
                       })}
                       className="px-3 py-2 rounded-lg text-xs font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 disabled:opacity-50">
-                      🚫 Abaikan
+                      <IkonTeks nama="🚫" />Abaikan
                     </button>
                   </div>
                 </div>

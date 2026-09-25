@@ -14,6 +14,7 @@ import {
 import { ModalMappingCenter } from './_components/ModalMappingCenter';
 import { ModalDetailProject } from './_components/ModalDetailProject';
 import { TIPE_CFG, STATUS_PROJECT, STATUS_PROJECT_WARNA, fmtTgl, type AktivitasTipe } from './_components/tampilan';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 const THEME = { color: '#6366f1', colorLight: '#4f46e5' };
 const fontMono: CSSProperties = { fontFamily: "'JetBrains Mono', ui-monospace, monospace" };
@@ -121,7 +122,7 @@ export default function SummaryProjectPage() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      backgroundImage: `url('/IVP_Background.png')`,
+      background: 'var(--halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
@@ -134,7 +135,7 @@ export default function SummaryProjectPage() {
             <button onClick={() => setShowMapping(true)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
               style={{ background: `linear-gradient(135deg, ${THEME.color}, ${THEME.colorLight})`, boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}>
-              🧭 Mapping Center
+              <IkonTeks nama="🧭" />Mapping Center
               {!!belumTerpeta && <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-amber-950 text-[10px]">{belumTerpeta}</span>}
             </button>
           )}
@@ -228,7 +229,7 @@ export default function SummaryProjectPage() {
                         ))}
                         {(['schedule', 'ticket', 'design', 'review'] as AktivitasTipe[]).map(t => (
                           <th key={t} className="px-1 py-2.5 text-[10px] font-bold uppercase tracking-wide text-center" style={{ color: TIPE_CFG[t].color }}
-                            title={TIPE_CFG[t].label}>{TIPE_CFG[t].icon} {TIPE_CFG[t].pendek}</th>
+                            title={TIPE_CFG[t].label}><Ikon nama={TIPE_CFG[t].icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {TIPE_CFG[t].pendek}</th>
                         ))}
                         <th className="px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide text-left">Terakhir</th>
                         <th className="px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide text-left">Status</th>

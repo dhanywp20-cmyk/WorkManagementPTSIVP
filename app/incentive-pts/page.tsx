@@ -29,6 +29,7 @@ import { logAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
 import { managerUtama } from '@/lib/penerima-admin';
 import { SchemeTab } from './_components/SchemeTab';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 void insertSplits; void validateSplitTotal;
 
@@ -976,7 +977,7 @@ export default function IncentivePTSPage() {
   const hal = usePaginasi(filteredProjects);
 
   if (!appReady) return (
-    <div className="flex items-center justify-center" style={{ minHeight: '100vh', backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="flex flex-col items-center gap-3 bg-white/90 rounded-2xl px-8 py-6 shadow-xl">
         <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#f43f5e' }} />
         <p className="text-slate-500 text-sm font-semibold">Memuat Incentive PTS...</p>
@@ -1010,7 +1011,7 @@ export default function IncentivePTSPage() {
   const thCls = 'px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200';
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+    <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
       {toast && (
         <div className={`fixed top-4 right-4 z-[3000] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white flex items-center gap-2 ${toast.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}>
@@ -1070,7 +1071,7 @@ export default function IncentivePTSPage() {
           {currentUser && (
             <div className="mb-4 rounded-xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-purple-50 p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-black text-gray-700 flex items-center gap-1.5">💰 Insentif Saya
+                <h3 className="text-sm font-black text-gray-700 flex items-center gap-1.5"><IkonTeks nama="💰" />Insentif Saya
                   <span className="text-[10px] font-semibold text-gray-400">
                     {filterBastYear == null ? '· semua tahun BAST' : `· tahun BAST ${filterBastYear}`}
                   </span>
@@ -1110,17 +1111,17 @@ export default function IncentivePTSPage() {
             <div className="px-4 pt-4 pb-3 border-b border-gray-200 space-y-2">
               <div className="flex flex-wrap gap-2 items-center justify-between">
                 <input aria-label="Cari project atau handler..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
-                  placeholder="🔍 Cari project atau handler..."
+                  placeholder="Cari project atau handler..."
                   className="flex-1 min-w-[180px] max-w-sm px-4 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-rose-400" />
                 <select aria-label="Filter Tahun BAST" value={filterBastYear ?? ''}
                   onChange={e => setFilterBastYear(e.target.value === '' ? null : Number(e.target.value))}
                   className="px-3 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 text-gray-700 focus:ring-2 focus:ring-rose-400">
-                  <option value="">📅 Semua Tahun BAST</option>
+                  <option value="">Semua Tahun BAST</option>
                   {bastYearsProjects.map(y => <option key={y} value={y}>Tahun BAST {y}</option>)}
                 </select>
                 <div className="flex items-center gap-2 flex-wrap">
                   {bisaInput(currentUser) && (
-                    <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200">✏️ Kamu bisa input nominal</span>
+                    <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200"><IkonTeks nama="✏" />Kamu bisa input nominal</span>
                   )}
                   {bisaInput(currentUser) && (<>
                     {/*
@@ -1145,7 +1146,7 @@ export default function IncentivePTSPage() {
                   {bisaKonfig(currentUser) && filterBastYear != null && kandidatBulkGenerate(filterBastYear).length > 0 && (
                     <button onClick={() => setBulkGenerateConfirm(kandidatBulkGenerate(filterBastYear))}
                       className="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 flex items-center gap-1.5">
-                      🚀 Generate Tahapan Massal {filterBastYear} ({kandidatBulkGenerate(filterBastYear).length})
+                      <IkonTeks nama="🚀" />Generate Tahapan Massal {filterBastYear} ({kandidatBulkGenerate(filterBastYear).length})
                     </button>
                   )}
                   {/* Tombol massal hanya muncul saat ada yang dipilih - tombol
@@ -1161,7 +1162,7 @@ export default function IncentivePTSPage() {
                       </button>
                       <button onClick={() => mintaKonfirmasiHapus(filteredProjects.filter(p => pilihHapus.has(p.id)))}
                         className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-red-600 border border-red-700 hover:bg-red-700 flex items-center gap-1.5">
-                        🗑️ Keluarkan dari Incentive
+                        <IkonTeks nama="🗑" />Keluarkan dari Incentive
                       </button>
                     </>
                   )}
@@ -1305,7 +1306,7 @@ export default function IncentivePTSPage() {
                       */}
                       {hasNominal
                         ? <span className="text-sm font-black text-emerald-600 whitespace-nowrap">{formatRupiah(p.incentive_value || 0)}</span>
-                        : <span className="text-[10px] font-bold text-amber-600 whitespace-nowrap">⏳ Belum nominal</span>}
+                        : <span className="text-[10px] font-bold text-amber-600 whitespace-nowrap"><IkonTeks nama="⏳" />Belum nominal</span>}
                     </>}
                     fields={[
                       { label: 'Mode', value: p.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : p.mode_penyelesaian === 'remote' ? '💻 Remote' : '—' },
@@ -1457,10 +1458,10 @@ export default function IncentivePTSPage() {
                           )}
                         </td>
                         <td className={cellCls}>
-                          {p.mode_penyelesaian === 'onsite' && <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">🏢 Onsite</span>}
+                          {p.mode_penyelesaian === 'onsite' && <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><IkonTeks nama="🏢" />Onsite</span>}
                           {p.mode_penyelesaian === 'remote' && (
                             <div>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200">💻 Remote</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200"><IkonTeks nama="💻" />Remote</span>
                               {p.installer_name && <p className="text-[10px] text-blue-600 mt-0.5 truncate max-w-[90px]">🔧 {p.installer_name}</p>}
                               {p.installer_daerah && <p className="text-[10px] text-gray-400 truncate max-w-[90px]">📍 {p.installer_daerah}</p>}
                             </div>
@@ -1475,7 +1476,7 @@ export default function IncentivePTSPage() {
                         <td className={`${cellCls} text-right`}>
                           {hasNominal
                             ? <p className="text-sm font-black text-emerald-600">{formatRupiah(p.incentive_value || 0)}</p>
-                            : <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">⏳ Belum</span>}
+                            : <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><IkonTeks nama="⏳" />Belum</span>}
                         </td>
                         {bisaInput(currentUser) && (
                           <td className={`${cellCls} text-right`}>
@@ -1614,7 +1615,7 @@ export default function IncentivePTSPage() {
                 {bisaKonfig(currentUser) && (
                   <button onClick={() => { setBatchYear(tahunAktif); setBatchConfirm(true); }}
                     className="px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
-                    🚀 Process Batch {tahunAktif}
+                    <IkonTeks nama="🚀" />Process Batch {tahunAktif}
                   </button>
                 )}
                 {/*
@@ -1627,7 +1628,7 @@ export default function IncentivePTSPage() {
                   <button onClick={() => { setBatalBatch(tahunAktif); setKetikBatalBatch(''); }}
                     title={`Kembalikan tahapan ${tahunAktif} dari Processed ke Pending`}
                     className="px-4 py-2 rounded-xl text-sm font-bold border-2 border-amber-400 text-amber-700 bg-amber-50 hover:bg-amber-100">
-                    ↩️ Batalkan Batch {tahunAktif}
+                    <IkonTeks nama="↩" />Batalkan Batch {tahunAktif}
                   </button>
                 )}
                 {/*
@@ -1701,14 +1702,14 @@ export default function IncentivePTSPage() {
                                     <span title={`Menurut skema seharusnya ${seharusnya} (BAST ${bast} + tahun ke-${tahunKe}). `
                                       + 'Tahapan ini kemungkinan dibuat sebelum aturannya diperbaiki — hapus tahapannya lalu Generate ulang.'}
                                       className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 whitespace-nowrap cursor-help">
-                                      ⚠ harusnya {seharusnya}
+                                      <IkonTeks nama="⚠" />harusnya {seharusnya}
                                     </span>
                                   )}
                                 </span>
                               );
                             })()}
                           </td>
-                          <td className="px-3 py-2.5 border border-gray-200"><span className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ background: st.bg, color: st.color }}>{st.icon} {st.label}</span></td>
+                          <td className="px-3 py-2.5 border border-gray-200"><span className="px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ background: st.bg, color: st.color }}><Ikon nama={st.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {st.label}</span></td>
                           <td className="px-3 py-2.5 border border-gray-200">
                             {t.status === 'processed' && bisaKonfig(currentUser) && (
                               <button onClick={() => konfirmasiMarkPaid(t.id, t.project?.project_name || '—', t.tranche_number)}
@@ -1732,7 +1733,7 @@ export default function IncentivePTSPage() {
         {tab === 'late' && bisaInput(currentUser) && !loading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.05))' }}>
-              <h2 className="font-bold text-gray-800">🕐 Late Ticket Queue</h2>
+              <h2 className="font-bold text-gray-800"><IkonTeks nama="🕐" />Late Ticket Queue</h2>
               <p className="text-xs text-gray-400 mt-0.5">Ticket Troubleshooting yang masuk setelah cutoff project induk — dilampirkan ke tranche berikutnya yang belum dibayar.</p>
             </div>
             {lateTickets.length === 0
@@ -1774,7 +1775,7 @@ export default function IncentivePTSPage() {
         {tab === 'settings' && bisaKonfig(currentUser) && !loading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.05))' }}>
-              <h2 className="font-bold text-gray-800">⚙️ Akses Incentive PTS</h2>
+              <h2 className="font-bold text-gray-800"><IkonTeks nama="⚙" />Akses Incentive PTS</h2>
               <p className="text-xs text-gray-500 mt-0.5">
                 Tingkat akses tiap orang diatur di sini — tidak ada lagi yang ditentukan dari kode.
                 Role <strong>admin</strong> selalu Konfigurasi penuh dan selalu melihat semua brand.
@@ -1798,7 +1799,7 @@ export default function IncentivePTSPage() {
                 Finance jauh lebih lambat daripada mengetik namanya.
               */}
               <input value={cariUser} onChange={e => setCariUser(e.target.value)}
-                placeholder="🔍 Cari nama atau username…" aria-label="Cari pengguna"
+                placeholder="Cari nama atau username…" aria-label="Cari pengguna"
                 className="mt-3 w-full sm:max-w-xs text-xs px-3 py-2 rounded-lg border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-indigo-300" />
             </div>
             <div className="divide-y divide-gray-100">
@@ -1875,7 +1876,7 @@ export default function IncentivePTSPage() {
                           <span title="Diberikan lewat toggle Full Access di Kelola Akun. Untuk mengubahnya, cabut Full Access di sana - bukan di sini."
                             className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold border-2"
                             style={{ borderColor: '#10b981', background: '#ecfdf5', color: '#047857' }}>
-                            🔓 Konfigurasi penuh · Full Access
+                            <IkonTeks nama="🔓" />Konfigurasi penuh · Full Access
                           </span>
                         ) : (
                         <div className="flex items-center gap-1" role="group" aria-label={`Tingkat akses ${u.full_name as string}`}>
@@ -1925,7 +1926,7 @@ export default function IncentivePTSPage() {
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ border: '1.5px solid rgba(99,102,241,0.3)' }}>
             <div className="px-5 py-4" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
-              <h3 className="text-base font-bold text-white">💰 Input Nominal Incentive</h3>
+              <h3 className="text-base font-bold text-white"><IkonTeks nama="💰" />Input Nominal Incentive</h3>
               <p className="text-xs text-rose-200 mt-0.5 truncate">{nominalProject.project_name}</p>
             </div>
             <div className="p-5 space-y-4">
@@ -2068,7 +2069,7 @@ export default function IncentivePTSPage() {
               */}
               <div className="rounded-xl p-3 border border-emerald-100 bg-emerald-50/60">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">⚡ Controller Automation</p>
+                  <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest"><IkonTeks nama="⚡" />Controller Automation</p>
                   {detailProject.requires_controller_automation ? (
                     <span className="text-[11px] font-black px-2 py-0.5 rounded-lg bg-emerald-600 text-white">
                       {detailProject.controller_automation_brand?.toUpperCase() || 'YA'}
@@ -2180,7 +2181,7 @@ export default function IncentivePTSPage() {
               })()}
 
               <div>
-                <h3 className="text-sm font-bold text-gray-700 mb-2">📅 Tranches</h3>
+                <h3 className="text-sm font-bold text-gray-700 mb-2"><IkonTeks nama="📅" />Tranches</h3>
                 {detailTranches.length === 0
                   ? <p className="text-xs text-gray-400 italic">Belum ada tranche.</p>
                   : detailTranches.map(t => {
@@ -2194,7 +2195,7 @@ export default function IncentivePTSPage() {
                           <span className="text-xs text-gray-400">Tahun {t.payment_year}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: st.bg, color: st.color }}>{st.icon} {st.label}</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: st.bg, color: st.color }}><Ikon nama={st.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {st.label}</span>
                           {t.status === 'processed' && bisaKonfig(currentUser) && (
                             <button onClick={() => konfirmasiMarkPaid(t.id, detailProject.project_name || '—', t.tranche_number)}
                               disabled={markingPaid === t.id}
@@ -2235,7 +2236,7 @@ export default function IncentivePTSPage() {
               </div>
 
               <div>
-                <h3 className="text-sm font-bold text-gray-700 mb-1">👥 Support per Tahun Pencairan</h3>
+                <h3 className="text-sm font-bold text-gray-700 mb-1"><IkonTeks nama="👥" />Support per Tahun Pencairan</h3>
                 <p className="text-[11px] text-gray-600 mb-2 leading-relaxed">
                   Diambil otomatis dari <strong>ticket Troubleshooting yang berstatus Solved</strong> dan dari
                   <strong> jadwal Troubleshooting yang ditutup selesai</strong> — keduanya dibaca, karena
@@ -2284,7 +2285,7 @@ export default function IncentivePTSPage() {
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) { setShowGenerateModal(false); setGenerateProject(null); } }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">⚡ Generate Tranche</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4"><IkonTeks nama="⚡" />Generate Tranche</h3>
             <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{generateProject.project_name}</strong></p>
             <p className="text-sm text-gray-500 mb-4">BAST: <strong>{generateProject.bast_date}</strong> · Pool: <strong className="text-emerald-600">{formatRupiah(generateProject.incentive_value || 0)}</strong></p>
             {/*
@@ -2303,7 +2304,7 @@ export default function IncentivePTSPage() {
               //  crash. handleGenerateTranches() sudah menolak kasus ini saat
               //  submit; pratinjau perlu penjagaan yang sama karena jalan lebih
               //  dulu.
-              if (!generateProject.bast_date) return <p className="text-sm text-amber-600 mb-6">⚠️ BAST belum diisi — isi lewat tombol 💲 Input Nominal pada proyek ini sebelum generate tranche.</p>;
+              if (!generateProject.bast_date) return <p className="text-sm text-amber-600 mb-6"><IkonTeks nama="⚠" />BAST belum diisi — isi lewat tombol 💲 Input Nominal pada proyek ini sebelum generate tranche.</p>;
               const pool = generateProject.incentive_value || 0;
               //  Lewat petaPorsiBerlaku, bukan persenInstaller: saat tabel Porsi
               //  Remote diatur sendiri, porsi Installer diambil dari baris di
@@ -2368,7 +2369,7 @@ export default function IncentivePTSPage() {
             aria-labelledby="judul-bulk-generate">
             <div className="px-5 py-4 bg-blue-600 text-white">
               <h3 id="judul-bulk-generate" className="font-bold text-base">
-                🚀 Generate Tahapan untuk {bulkGenerateConfirm.length} project — Tahun BAST {filterBastYear}?
+                <IkonTeks nama="🚀" />Generate Tahapan untuk {bulkGenerateConfirm.length} project — Tahun BAST {filterBastYear}?
               </h3>
             </div>
             <div className="p-5 space-y-3">
@@ -2427,7 +2428,7 @@ export default function IncentivePTSPage() {
             <div className="p-5 space-y-3 max-h-96 overflow-y-auto">
               {bulkGenerateResult.berhasil.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold text-emerald-700 mb-1">✅ Berhasil ({bulkGenerateResult.berhasil.length})</p>
+                  <p className="text-xs font-bold text-emerald-700 mb-1"><IkonTeks nama="✅" />Berhasil ({bulkGenerateResult.berhasil.length})</p>
                   <ul className="text-[13px] text-slate-600 space-y-0.5">
                     {bulkGenerateResult.berhasil.map(n => <li key={n}>• {n}</li>)}
                   </ul>
@@ -2435,7 +2436,7 @@ export default function IncentivePTSPage() {
               )}
               {bulkGenerateResult.dilewati.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold text-amber-700 mb-1">⏭️ Dilewati — sudah ada tahapan ({bulkGenerateResult.dilewati.length})</p>
+                  <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="⏭" />Dilewati — sudah ada tahapan ({bulkGenerateResult.dilewati.length})</p>
                   <ul className="text-[13px] text-slate-600 space-y-0.5">
                     {bulkGenerateResult.dilewati.map(n => <li key={n}>• {n}</li>)}
                   </ul>
@@ -2443,7 +2444,7 @@ export default function IncentivePTSPage() {
               )}
               {bulkGenerateResult.gagal.length > 0 && (
                 <div>
-                  <p className="text-xs font-bold text-red-700 mb-1">❌ Gagal ({bulkGenerateResult.gagal.length})</p>
+                  <p className="text-xs font-bold text-red-700 mb-1"><IkonTeks nama="❌" />Gagal ({bulkGenerateResult.gagal.length})</p>
                   <ul className="text-[13px] text-slate-600 space-y-0.5">
                     {bulkGenerateResult.gagal.map(g => <li key={g.nama}>• {g.nama} — {g.alasan}</li>)}
                   </ul>
@@ -2466,13 +2467,13 @@ export default function IncentivePTSPage() {
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) setBatchConfirm(false); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-red-200">
-            <h3 className="text-lg font-bold text-gray-800 mb-2">🚀 Konfirmasi Process Batch</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-2"><IkonTeks nama="🚀" />Konfirmasi Process Batch</h3>
             <p className="text-sm text-gray-500 mb-2">Proses semua tranche <strong>payment_year = {batchYear}</strong> status <strong>pending</strong>.</p>
             {(() => {
               const cnt = tranches.filter(t => t.payment_year === batchYear && t.status === 'pending').length;
               return cnt > 0
                 ? <p className="text-sm font-bold text-rose-600 mb-3">📋 {cnt} tranche siap diproses</p>
-                : <p className="text-sm font-bold text-amber-600 mb-3">⚠️ Tidak ada tranche pending untuk tahun {batchYear}. Pastikan tranche sudah di-generate terlebih dahulu.</p>;
+                : <p className="text-sm font-bold text-amber-600 mb-3"><IkonTeks nama="⚠" />Tidak ada tranche pending untuk tahun {batchYear}. Pastikan tranche sudah di-generate terlebih dahulu.</p>;
             })()}
             {/*
               Dulu tertulis "tidak bisa di-undo". Sekarang bisa - ada tombol
@@ -2482,7 +2483,7 @@ export default function IncentivePTSPage() {
               berstatus Paid, dan itulah yang disebutkan.
             */}
             <div className="px-4 py-3 rounded-xl mb-4 bg-amber-50 border border-amber-200">
-              <p className="text-xs font-bold text-amber-700 mb-1">↩️ Bisa dibatalkan.</p>
+              <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="↩" />Bisa dibatalkan.</p>
               <p className="text-[11px] text-amber-700 leading-relaxed">
                 Setelah diproses, tombol <strong>Batalkan Batch {batchYear}</strong> akan muncul untuk
                 mengembalikan tahapan ini ke Pending. Yang sudah bertanda <strong>Paid</strong> tidak
@@ -2513,7 +2514,7 @@ export default function IncentivePTSPage() {
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setBatalBatch(null); setKetikBatalBatch(''); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-amber-200">
-              <h3 id="judul-batal-batch" className="text-lg font-bold text-gray-800 mb-2">↩️ Batalkan Batch {batalBatch}</h3>
+              <h3 id="judul-batal-batch" className="text-lg font-bold text-gray-800 mb-2"><IkonTeks nama="↩" />Batalkan Batch {batalBatch}</h3>
               <p className="text-sm text-gray-500 mb-3">
                 Baris pembagian hasil batch tahun ini dihapus, dan tahapannya kembali ke
                 status <strong>Pending</strong> supaya bisa diproses ulang.
@@ -2567,7 +2568,7 @@ export default function IncentivePTSPage() {
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4"
             onClick={e => { if (e.target === e.currentTarget) { setHapusTahapan(null); setKetikHapusTahapan(''); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-amber-200">
-              <h3 id="judul-hapus-tahapan" className="text-lg font-bold text-gray-800 mb-2">↩️ Hapus Tahapan Pencairan</h3>
+              <h3 id="judul-hapus-tahapan" className="text-lg font-bold text-gray-800 mb-2"><IkonTeks nama="↩" />Hapus Tahapan Pencairan</h3>
               <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{hapusTahapan.project_name}</strong></p>
               <p className="text-sm text-gray-500 mb-3">
                 {punya.length} tahapan berikut pembagiannya akan dihapus. Sesudah itu

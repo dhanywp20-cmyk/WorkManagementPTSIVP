@@ -1,5 +1,6 @@
 'use client';
 import { useRef } from 'react';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function MultiFileField({ label, icon, files, onAdd, onRemove }: {
   label:string; icon:string; files:File[]; onAdd:(f:File[])=>void; onRemove:(i:number)=>void;
@@ -7,7 +8,7 @@ export function MultiFileField({ label, icon, files, onAdd, onRemove }: {
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div>
-      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{icon} {label}</label>
+      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {label}</label>
       <div className="w-full border-2 border-dashed rounded-xl p-3 text-center cursor-pointer transition-all hover:border-amber-400 hover:bg-amber-50/40"
         style={{borderColor:'#e2e8f0',background:'#f8fafc'}}
         onClick={()=>ref.current?.click()}
@@ -15,7 +16,7 @@ export function MultiFileField({ label, icon, files, onAdd, onRemove }: {
         onDrop={e=>{e.preventDefault();onAdd(Array.from(e.dataTransfer.files));}}>
         <input ref={ref} type="file" multiple accept="image/*,application/pdf" className="hidden"
           onChange={e=>{onAdd(Array.from(e.target.files||[]));if(ref.current)ref.current.value='';}}/>
-        <p className="text-xs text-gray-400 font-medium">📎 Klik atau drag file di sini</p>
+        <p className="text-xs text-gray-400 font-medium"><IkonTeks nama="📎" />Klik atau drag file di sini</p>
         <p className="text-[10px] text-gray-300 mt-0.5">Multiple files • Gambar / PDF</p>
       </div>
       {files.length>0&&(

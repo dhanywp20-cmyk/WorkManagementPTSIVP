@@ -6,6 +6,7 @@ import {
 } from '@/lib/kelompok';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_MENU_KEYS, SALES_MENU_KEYS } from './shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 /**
  * Bentuk nama kelompok dari apa yang diketik admin.
@@ -208,7 +209,7 @@ export function KelompokSettingInline() {
                 <th className="text-center px-3 py-2.5" title="Paket menu yang didapat anggota kelompok ini. Hanya soal menu - role, hak assign, dan pencatatan Incentive PTS tidak berubah.">Tampilan&nbsp;Dashboard</th>
                 {SEMUA_LONCENG.map(l => (
                   <th key={l} className="text-center px-3 py-2.5 whitespace-nowrap">
-                    {LABEL_LONCENG[l].ikon} {LABEL_LONCENG[l].label}
+                    <Ikon nama={LABEL_LONCENG[l].ikon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {LABEL_LONCENG[l].label}
                   </th>
                 ))}
                 <th className="px-3 py-2.5" />

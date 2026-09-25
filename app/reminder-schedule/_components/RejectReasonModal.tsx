@@ -1,6 +1,7 @@
 'use client';
 import { ModalPortal } from '@/components/shared';
 import type { Reminder } from './shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Modal "Tolak Request" dengan alasan - dipakai DUA alur yang tadinya
@@ -26,7 +27,7 @@ export function RejectReasonModal({
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.35)' }}>
           <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
-            <h3 className="text-lg font-bold text-white">❌ Tolak Request</h3>
+            <h3 className="text-lg font-bold text-white"><IkonTeks nama="❌" />Tolak Request</h3>
             <p className="text-red-100/90 text-xs mt-0.5 truncate">{target.project_name}</p>
           </div>
           <div className="p-6 space-y-4">
@@ -45,7 +46,7 @@ export function RejectReasonModal({
                 className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                 style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
                 {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                ❌ Ya, Tolak
+                <IkonTeks nama="❌" />Ya, Tolak
               </button>
             </div>
           </div>

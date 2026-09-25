@@ -8,6 +8,7 @@ import {
 } from '@/lib/summary-project';
 import { PilihProject } from './PilihProject';
 import { TIPE_CFG, STATUS_PROJECT, fmtTgl, warnaStatus, type AktivitasTipe } from './tampilan';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 interface Aktivitas {
   id: string; tipe: AktivitasTipe; tanggal: string | null;
@@ -114,7 +115,7 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
             {jumlah.map(([t, n]) => (
               <span key={t} className="text-[11px] font-bold px-2.5 py-1 rounded-full"
                 style={{ background: TIPE_CFG[t].bg, color: n ? TIPE_CFG[t].color : '#94a3b8' }}>
-                {TIPE_CFG[t].icon} {n} {TIPE_CFG[t].pendek}
+                <Ikon nama={TIPE_CFG[t].icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {n} {TIPE_CFG[t].pendek}
               </span>
             ))}
             <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600">{STATUS_PROJECT[project.status]}</span>
@@ -122,9 +123,9 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
           {isAdmin && mode === 'lihat' && (
             <div className="flex gap-1.5">
               <button type="button" onClick={() => setMode('edit')}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200">✏️ Edit</button>
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-700 bg-gray-100 hover:bg-gray-200"><IkonTeks nama="✏" />Edit</button>
               <button type="button" onClick={() => setMode('gabung')}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100">🔀 Gabungkan</button>
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 hover:bg-indigo-100"><IkonTeks nama="🔀" />Gabungkan</button>
             </div>
           )}
         </div>
@@ -186,7 +187,7 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
                   <div key={a.id} className="relative">
                     <span className="absolute -left-5 top-1 w-3 h-3 rounded-full border-2 border-white shadow-sm"
                       style={{ background: cfg.color }} aria-hidden="true" />
-                    <p className="text-[10px] font-black tracking-wider" style={{ color: cfg.color }}>{cfg.icon} {cfg.label}</p>
+                    <p className="text-[10px] font-black tracking-wider" style={{ color: cfg.color }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}</p>
                     <p className="text-sm font-bold text-gray-800 mt-0.5">{a.judul}</p>
                     <p className="text-[11px] text-gray-400 mt-0.5">{fmtTgl(a.tanggal)} · {a.meta}</p>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">

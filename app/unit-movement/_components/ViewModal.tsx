@@ -1,6 +1,7 @@
 'use client';
 import { MovementLog, fmtDate, splitTypeLines } from './shared';
 import { ModalPortal } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void }) {
   const suratUrls  = log.foto_surat_url  ? log.foto_surat_url.split(',').map(s=>s.trim()).filter(Boolean) : [];
@@ -40,7 +41,7 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
               {label:'Catatan', value:log.catatan, icon:'📝'},
             ].filter(r=>r.value).map(r=>(
               <div key={r.label} className="flex gap-3 px-4 py-3 rounded-xl" style={{background:'#f8fafc',border:'1px solid #e2e8f0'}}>
-                <span className="text-base flex-shrink-0">{r.icon}</span>
+                <span className="text-base flex-shrink-0"><Ikon nama={r.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                 <div><p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{r.label}</p>
                 <p className="text-sm font-semibold text-gray-800 mt-0.5 whitespace-pre-line">{r.value}</p></div>
               </div>
@@ -62,24 +63,24 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
           </div>
           {suratUrls.length>0&&(
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">📄 Foto Surat Jalan</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2"><IkonTeks nama="📄" />Foto Surat Jalan</p>
               <div className="flex flex-wrap gap-2">
                 {suratUrls.map((url,i)=>(
                   <a key={i} href={url} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
-                    style={{background:'linear-gradient(135deg,#3b82f6,#2563eb)',color:'white'}}>🔗 Surat {i+1}</a>
+                    style={{background:'linear-gradient(135deg,#3b82f6,#2563eb)',color:'white'}}><IkonTeks nama="🔗" />Surat {i+1}</a>
                 ))}
               </div>
             </div>
           )}
           {barangUrls.length>0&&(
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">🖼️ Foto Barang</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2"><IkonTeks nama="🖼" />Foto Barang</p>
               <div className="flex flex-wrap gap-2">
                 {barangUrls.map((url,i)=>(
                   <a key={i} href={url} target="_blank" rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
-                    style={{background:'linear-gradient(135deg,#8b5cf6,#7c3aed)',color:'white'}}>🖼️ Foto {i+1}</a>
+                    style={{background:'linear-gradient(135deg,#8b5cf6,#7c3aed)',color:'white'}}><IkonTeks nama="🖼" />Foto {i+1}</a>
                 ))}
               </div>
             </div>

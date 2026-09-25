@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase, User, Material, Question, QuizSession, fmtDate, SearchInput, AppDialog, DialogState, BtnDelete } from './shared';
 import { logAudit } from '@/lib/audit';
 import { ModalPortal } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function SessionsPage({ user, onViewResults }: { user: User; onViewResults?: (sessionId: string) => void }) {
   const [sessions, setSessions] = useState<QuizSession[]>([]);
@@ -366,7 +367,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">🎯 Sesi Quiz</h1>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="🎯" />Sesi Quiz</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Buat & kelola sesi quiz untuk team</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -380,7 +381,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
       <div className="p-4 sm:p-8 space-y-6">
         {showForm && (
           <div className="rounded-2xl border border-emerald-100 shadow-lg p-6" style={{ background: '#ffffff' }}>
-            <h3 className="font-bold text-slate-800 mb-5">📋 Form Sesi Quiz Baru</h3>
+            <h3 className="font-bold text-slate-800 mb-5"><IkonTeks nama="📋" />Form Sesi Quiz Baru</h3>
             <div className="flex items-center gap-2 mb-5">
               <span className="text-xs font-bold text-slate-600 uppercase tracking-widest mr-1">Tipe Sesi</span>
               {(['abcd', 'essay'] as const).map(t => (
@@ -468,13 +469,13 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
               </div>
               <div>
-                <label htmlFor="f-learning-center-components-sessionspage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">⏰ Waktu Dibuka</label>
+                <label htmlFor="f-learning-center-components-sessionspage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="⏰" />Waktu Dibuka</label>
                 <input id="f-learning-center-components-sessionspage-7" type="datetime-local" value={form.open_at} onChange={e => setForm(p => ({ ...p, open_at: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
                 <p className="text-[10px] text-slate-400 mt-1">Kosongkan = langsung aktif sekarang</p>
               </div>
               <div>
-                <label htmlFor="f-learning-center-components-sessionspage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">🔒 Waktu Ditutup</label>
+                <label htmlFor="f-learning-center-components-sessionspage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔒" />Waktu Ditutup</label>
                 <input id="f-learning-center-components-sessionspage-8" type="datetime-local" value={form.close_at} onChange={e => setForm(p => ({ ...p, close_at: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
                 <p className="text-[10px] text-slate-400 mt-1">Kosongkan = tidak ada batas waktu</p>
@@ -490,38 +491,38 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={form.acak_soal} onChange={e => setForm(p => ({ ...p, acak_soal: e.target.checked }))}
                     className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400" />
-                  <span className="text-sm font-medium text-slate-700">🔀 Acak Urutan Soal</span>
+                  <span className="text-sm font-medium text-slate-700"><IkonTeks nama="🔀" />Acak Urutan Soal</span>
                   <span className="text-[10px] text-slate-400">(beda tiap peserta)</span>
                 </label>
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-2">👥 Target Penerima Quiz</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-2"><IkonTeks nama="👥" />Target Penerima Quiz</label>
                 <div className="flex gap-2 mb-3 flex-wrap">
                   <button type="button"
                     onClick={() => setForm(p => ({ ...p, target_mode: 'all', target_roles: [], target_user_ids: [], target_divisions: [] }))}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'all' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
-                    🌐 Semua
+                    <IkonTeks nama="🌐" />Semua
                   </button>
                   <button type="button"
                     onClick={() => setForm(p => ({ ...p, target_mode: 'role', target_user_ids: [], target_divisions: [] }))}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'role' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
-                    🏷️ Per Role
+                    <IkonTeks nama="🏷" />Per Role
                   </button>
                   <button type="button"
                     onClick={() => setForm(p => ({ ...p, target_mode: 'division', target_roles: [], target_user_ids: [] }))}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'division' ? 'bg-orange-500 text-white border-orange-500 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-orange-300'}`}>
-                    🏢 Per Sales Division
+                    <IkonTeks nama="🏢" />Per Sales Division
                   </button>
                   <button type="button"
                     onClick={() => setForm(p => ({ ...p, target_mode: 'user', target_roles: [], target_divisions: [] }))}
                     className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'user' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
-                    👤 Per Anggota
+                    <IkonTeks nama="👤" />Per Anggota
                   </button>
                 </div>
 
                 {form.target_mode === 'all' && (
                   <p className="text-xs text-slate-500 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 font-medium">
-                    🌐 Quiz akan dikirim ke <strong>semua user</strong> (team, marketing, guest, dll.)
+                    <IkonTeks nama="🌐" />Quiz akan dikirim ke <strong>semua user</strong> (team, marketing, guest, dll.)
                   </p>
                 )}
 
@@ -557,7 +558,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                   <div>
                     <p className="text-xs text-slate-400 mb-2">Pilih Sales Division yang akan menerima quiz ini:</p>
                     <input aria-label="Cari divisi..." value={cariDivisi} onChange={e => setCariDivisi(e.target.value)}
-                      placeholder="🔍 Cari divisi..."
+                      placeholder="Cari divisi..."
                       className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
                     <div className="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
                       {uniqueDivisions.length === 0 && (
@@ -599,7 +600,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                   <div>
                     <p className="text-xs text-slate-400 mb-2">Pilih anggota secara individual:</p>
                     <input aria-label="Cari nama, role, atau jabatan..." value={cariAnggota} onChange={e => setCariAnggota(e.target.value)}
-                      placeholder="🔍 Cari nama, role, atau jabatan..."
+                      placeholder="Cari nama, role, atau jabatan..."
                       className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                     <div className="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
                       {teamUsers.length === 0 && <p className="text-xs text-slate-400 text-center py-4">Tidak ada user ditemukan</p>}
@@ -682,7 +683,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                       <h4 className="font-bold text-slate-800">{s.session_name}</h4>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${status.cls}`}>{status.label}</span>
                       {s.session_type === 'essay' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-bold border bg-indigo-100 text-indigo-700 border-indigo-200">📝 Essay</span>
+                        <span className="text-xs px-2 py-0.5 rounded-full font-bold border bg-indigo-100 text-indigo-700 border-indigo-200"><IkonTeks nama="📝" />Essay</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -700,15 +701,15 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                     <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-500">
                       <span>📝 {s.question_count} soal</span>
                       <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'No timer'}</span>
-                      <span>🎯 Passing: {s.passing_grade}%</span>
+                      <span><IkonTeks nama="🎯" />Passing: {s.passing_grade}%</span>
                       <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
-                      {s.acak_soal && <span className="text-indigo-600 font-semibold">🔀 Soal diacak</span>}
+                      {s.acak_soal && <span className="text-indigo-600 font-semibold"><IkonTeks nama="🔀" />Soal diacak</span>}
                       <span>📅 {fmtDate(s.created_at)}</span>
                     </div>
                     {(s.open_at || s.close_at) && (
                       <div className="flex flex-wrap gap-3 mt-1.5 text-xs">
-                        {s.open_at && <span className="text-amber-600 font-semibold">⏰ Buka: {fmtDT(s.open_at)}</span>}
-                        {s.close_at && <span className="text-rose-600 font-semibold">🔒 Tutup: {fmtDT(s.close_at)}</span>}
+                        {s.open_at && <span className="text-amber-600 font-semibold"><IkonTeks nama="⏰" />Buka: {fmtDT(s.open_at)}</span>}
+                        {s.close_at && <span className="text-rose-600 font-semibold"><IkonTeks nama="🔒" />Tutup: {fmtDT(s.close_at)}</span>}
                       </div>
                     )}
                     {/*
@@ -749,7 +750,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                     })()}
                     <div className="mt-2">
                       {targetNames === null ? (
-                        <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-semibold">🌐 Semua Team</span>
+                        <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="🌐" />Semua Team</span>
                       ) : targetNames.length === 0 ? (
                         <span className="text-xs text-slate-400 italic">—</span>
                       ) : (() => {
@@ -839,7 +840,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between"
               style={{ background: 'linear-gradient(135deg,#ecfdf5,#d1fae5)' }}>
               <div>
-                <div className="font-bold text-slate-800 text-base">📤 Assign Ulang Quiz</div>
+                <div className="font-bold text-slate-800 text-base"><IkonTeks nama="📤" />Assign Ulang Quiz</div>
                 <div className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">Soal dari: <span className="font-semibold text-emerald-700">{reassignSource.session_name}</span></div>
               </div>
               <button aria-label="Tutup" onClick={() => setShowReassign(false)}
@@ -891,7 +892,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                     <input type="checkbox" checked={reassignForm.acak_soal}
                       onChange={e => setReassignForm(p => ({ ...p, acak_soal: e.target.checked }))}
                       className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400" />
-                    <span className="text-sm font-medium text-slate-700">🔀 Acak</span>
+                    <span className="text-sm font-medium text-slate-700"><IkonTeks nama="🔀" />Acak</span>
                   </label>
                 </div>
               </div>
@@ -899,13 +900,13 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
               {/* Waktu buka / tutup */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="f-learning-center-components-sessionspage-12" className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">⏰ Waktu Dibuka</label>
+                  <label htmlFor="f-learning-center-components-sessionspage-12" className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="⏰" />Waktu Dibuka</label>
                   <input id="f-learning-center-components-sessionspage-12" type="datetime-local" value={reassignForm.open_at}
                     onChange={e => setReassignForm(p => ({ ...p, open_at: e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
                 </div>
                 <div>
-                  <label htmlFor="f-learning-center-components-sessionspage-13" className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">🔒 Waktu Ditutup</label>
+                  <label htmlFor="f-learning-center-components-sessionspage-13" className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔒" />Waktu Ditutup</label>
                   <input id="f-learning-center-components-sessionspage-13" type="datetime-local" value={reassignForm.close_at}
                     onChange={e => setReassignForm(p => ({ ...p, close_at: e.target.value }))}
                     className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400" />
@@ -914,7 +915,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
 
               {/* Target Penerima */}
               <div>
-                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-2">👥 Target Penerima</label>
+                <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-2"><IkonTeks nama="👥" />Target Penerima</label>
                 <div className="flex gap-2 mb-3 flex-wrap">
                   {([
                     { mode: 'all',      icon: '🌐', label: 'Semua',    active: 'bg-indigo-600 text-white border-indigo-600' },
@@ -925,14 +926,14 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                     <button key={opt.mode} type="button"
                       onClick={() => setReassignForm(p => ({ ...p, target_mode: opt.mode, target_roles: [], target_user_ids: [], target_divisions: [] }))}
                       className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${reassignForm.target_mode === opt.mode ? opt.active + ' shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
-                      {opt.icon} {opt.label}
+                      <Ikon nama={opt.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {opt.label}
                     </button>
                   ))}
                 </div>
 
                 {reassignForm.target_mode === 'all' && (
                   <p className="text-xs text-slate-500 bg-blue-50 border border-blue-100 rounded-xl px-4 py-2.5 font-medium">
-                    🌐 Quiz akan dikirim ke <strong>semua user</strong>
+                    <IkonTeks nama="🌐" />Quiz akan dikirim ke <strong>semua user</strong>
                   </p>
                 )}
 
@@ -958,7 +959,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 {reassignForm.target_mode === 'division' && (
                   <div>
                   <input aria-label="Cari divisi..." value={cariDivisiUlang} onChange={e => setCariDivisiUlang(e.target.value)}
-                    placeholder="🔍 Cari divisi..."
+                    placeholder="Cari divisi..."
                     className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
                   <div className="border border-slate-200 rounded-xl p-3 space-y-1 max-h-44 overflow-y-auto">
                     {uniqueDivisions.length === 0 && <p className="text-xs text-slate-400 text-center py-3">Tidak ada sales division ditemukan</p>}
@@ -988,7 +989,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 {reassignForm.target_mode === 'user' && (
                   <div>
                   <input aria-label="Cari nama, role, atau jabatan..." value={cariAnggotaUlang} onChange={e => setCariAnggotaUlang(e.target.value)}
-                    placeholder="🔍 Cari nama, role, atau jabatan..."
+                    placeholder="Cari nama, role, atau jabatan..."
                     className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                   <div className="border border-slate-200 rounded-xl p-3 max-h-48 overflow-y-auto space-y-1">
                     {teamUsers.length === 0 && <p className="text-xs text-slate-400 text-center py-4">Tidak ada user ditemukan</p>}

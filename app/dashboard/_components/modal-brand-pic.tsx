@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 import { DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB } from './shared';
 import { ModalPortal } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 // BrandPicSettingModal
 
@@ -83,13 +84,13 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
           {loading ? <div className="flex justify-center py-10"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin"/></div> : (
             <>
               <div>
-                <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3">🖥️ Brand Display</p>
+                <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3"><IkonTeks nama="🖥" />Brand Display</p>
                 <div className="bg-amber-50/50 rounded-xl border border-amber-200 px-4 py-1">
                   {DISPLAY_BRANDS_DB.map(b=><Row key={b} type="display" brand={b}/>)}
                 </div>
               </div>
               <div>
-                <p className="text-sm font-bold text-violet-700 uppercase tracking-widest mb-3">🔌 Brand Middleware</p>
+                <p className="text-sm font-bold text-violet-700 uppercase tracking-widest mb-3"><IkonTeks nama="🔌" />Brand Middleware</p>
                 <div className="bg-violet-50/50 rounded-xl border border-violet-200 px-4 py-1">
                   {MIDDLEWARE_BRANDS_DB.map(b=><Row key={b} type="middleware" brand={b}/>)}
                 </div>
@@ -187,13 +188,13 @@ export function BrandPicSettingContent() {
           <>
             <div className="grid grid-cols-2 gap-5">
               <div>
-                <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3">🖥️ Brand Display</p>
+                <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3"><IkonTeks nama="🖥" />Brand Display</p>
                 <div className="bg-amber-50/50 rounded-xl border border-amber-200 px-4 py-1">
                   {DISPLAY_BRANDS_DB.map(b=><Row key={b} type="display" brand={b}/>)}
                 </div>
               </div>
               <div>
-                <p className="text-sm font-bold text-violet-700 uppercase tracking-widest mb-3">🔌 Brand Middleware</p>
+                <p className="text-sm font-bold text-violet-700 uppercase tracking-widest mb-3"><IkonTeks nama="🔌" />Brand Middleware</p>
                 <div className="bg-violet-50/50 rounded-xl border border-violet-200 px-4 py-1">
                   {MIDDLEWARE_BRANDS_DB.map(b=><Row key={b} type="middleware" brand={b}/>)}
                 </div>

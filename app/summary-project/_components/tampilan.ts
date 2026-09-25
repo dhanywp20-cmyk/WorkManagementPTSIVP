@@ -1,4 +1,5 @@
 import type { RingkasanProject } from '@/lib/summary-project';
+import { WARNA, warnaUntukStatus } from '@/lib/desain';
 
 /*
   Warna aksen tiap kategori aktivitas mengikuti warna PageHeader modul
@@ -24,12 +25,8 @@ export const STATUS_PROJECT_WARNA: Record<RingkasanProject['status'], { color: s
   archived: { color: '#64748b', bg: '#f1f5f9' },
 };
 
-const STATUS_WARNA: Record<string, string> = {
-  done: '#10b981', paid: '#10b981', approved: '#10b981', Solved: '#10b981', Done: '#10b981',
-  pending: '#f59e0b', Pending: '#f59e0b', processed: '#3b82f6',
-  cancelled: '#6b7280', rejected: '#ef4444', Rejected: '#ef4444',
-};
-export const warnaStatus = (s: string): string => STATUS_WARNA[s] ?? '#3b82f6';
+/** Warna teks status record - satu sumber lintas modul (lib/desain.ts). */
+export const warnaStatus = (s: string): string => WARNA[warnaUntukStatus(s)].utama;
 
 export function fmtTgl(s: string | null): string {
   if (!s) return '-';

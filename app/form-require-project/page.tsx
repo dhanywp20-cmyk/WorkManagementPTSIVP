@@ -29,6 +29,7 @@ import {
 import { appLink } from '@/lib/app-url';
 import { cetakRequest } from './_components/cetak-request';
 import { unduhPaketRequest } from './_components/paket-unduhan';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Field ruangan yang boleh diubah lewat form Edit. Ruangan 1 hidup di kolom
@@ -1886,7 +1887,7 @@ Hubungi Admin untuk info lebih lanjut.
   const isFileType = (type: string) => type.startsWith('image/');
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
+    <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ background: 'var(--halaman)' }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <NotifToast />
 
@@ -1973,7 +1974,7 @@ Hubungi Admin untuk info lebih lanjut.
               {bellDropdownOpen && (
                 <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in" style={{ zIndex: Z.dropdown }}>
                   <div className="bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-3 flex items-center justify-between">
-                    <p className="text-white text-xs font-bold">🔔 Tiket Aktif ({activeTickets.length})</p>
+                    <p className="text-white text-xs font-bold"><IkonTeks nama="🔔" />Tiket Aktif ({activeTickets.length})</p>
                     <button aria-label="Tutup" onClick={() => setBellDropdownOpen(false)} className="text-white/70 hover:text-white text-xs font-bold">✕</button>
                   </div>
                   <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
@@ -2120,11 +2121,11 @@ Hubungi Admin untuk info lebih lanjut.
                   <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Status</option>
-                    <option value="pending">⏳ Pending</option>
-                    <option value="approved">✅ Approved</option>
-                    <option value="in_progress">🔄 In Progress</option>
-                    <option value="completed">🏆 Completed</option>
-                    <option value="rejected">❌ Rejected</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
                   </select>
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
                 </div>
@@ -2215,7 +2216,7 @@ Hubungi Admin untuk info lebih lanjut.
                 setFilterHandler('all'); setFilterDivision('all'); setFilterKebutuhan('all'); setSearchQuery(''); setSearchSales('');
                 try { ['frp_filterStatus','frp_filterYear','frp_filterMonth','frp_filterHandler','frp_filterDivision','frp_filterKebutuhan','frp_searchQuery','frp_searchSales'].forEach(k => sessionStorage.removeItem(k)); } catch {}
               }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}>🗑️ Reset Semua</button>
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}><IkonTeks nama="🗑" />Reset Semua</button>
             </div>
           )}
           {loading ? (
@@ -2275,10 +2276,10 @@ Hubungi Admin untuk info lebih lanjut.
                     </>}
                     badges={<>
                       <MobileCardBadge className={`border ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</MobileCardBadge>
-                      {req.routing_status === 'internal_review' && <span className="text-[9px] font-bold text-amber-600 whitespace-nowrap">🔍 Review Internal</span>}
+                      {req.routing_status === 'internal_review' && <span className="text-[9px] font-bold text-amber-600 whitespace-nowrap"><IkonTeks nama="🔍" />Review Internal</span>}
                       {/* Ruangan lain progresnya beda dari yang ditampilkan di sini (badge di
                           atas cuma ruangan pertama) - buka detail utk lihat per-ruangan. */}
-                      {hasDivergentRoomStatus(req) && <span className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya">🏘️ Beda per ruangan</span>}
+                      {hasDivergentRoomStatus(req) && <span className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya"><IkonTeks nama="🏘" />Beda per ruangan</span>}
                     </>}
                     fields={[
                       { label: 'Solution', value: solution || '—', span2: true },
@@ -2391,11 +2392,11 @@ Hubungi Admin untuk info lebih lanjut.
                           <div className="flex flex-col gap-1 items-start">
                             <span className={`px-2 py-0.5 text-xs font-bold border whitespace-nowrap ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</span>
                             {req.routing_status === 'internal_review' ? (
-                              <p className="text-[9px] font-bold text-amber-600">🔍 Menunggu Review Internal</p>
+                              <p className="text-[9px] font-bold text-amber-600"><IkonTeks nama="🔍" />Menunggu Review Internal</p>
                             ) : (
-                              req.status === 'pending' && isPTS && !isTeamPTS && <p className="text-[9px] font-bold text-red-500 animate-pulse">🔔 Perlu Approval</p>
+                              req.status === 'pending' && isPTS && !isTeamPTS && <p className="text-[9px] font-bold text-red-500 animate-pulse"><IkonTeks nama="🔔" />Perlu Approval</p>
                             )}
-                            {hasDivergentRoomStatus(req) && <p className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya">🏘️ Beda per ruangan</p>}
+                            {hasDivergentRoomStatus(req) && <p className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya"><IkonTeks nama="🏘" />Beda per ruangan</p>}
                           </div>
                         </td>
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
@@ -2415,13 +2416,13 @@ Hubungi Admin untuk info lebih lanjut.
                           {/* IVP guest: badge for external requests linked by admin */}
                           {isIVPGuest && req.ivp_assignee === currentUser.full_name && req.requester_id !== currentUser.id && (
                             <div className="text-[9px] font-bold text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">
-                              🔗 Ext: {req.sales_division}
+                              <IkonTeks nama="🔗" />Ext: {req.sales_division}
                             </div>
                           )}
                           {/* IVP guest: badge for own requests */}
                           {isIVPGuest && req.requester_id === currentUser.id && (
                             <div className="text-[9px] font-bold text-teal-600 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">
-                              📋 Request Saya
+                              <IkonTeks nama="📋" />Request Saya
                             </div>
                           )}
                         </td>
@@ -2473,7 +2474,7 @@ Hubungi Admin untuk info lebih lanjut.
                   else notify('error', 'Gagal: ' + error.message);
                   setBulkDeleting(false);
                 }} className="flex-[2] bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm hover:from-red-700 hover:to-red-800">
-                  🗑️ Ya, Hapus Permanen
+                  <IkonTeks nama="🗑" />Ya, Hapus Permanen
                 </button>
               </div>
             </div>
@@ -2493,7 +2494,7 @@ Hubungi Admin untuk info lebih lanjut.
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
             style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
             <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
-              <h3 className="text-lg font-bold text-white">✅ Approve Request?</h3>
+              <h3 className="text-lg font-bold text-white"><IkonTeks nama="✅" />Approve Request?</h3>
               <p className="text-amber-100/90 text-xs mt-0.5">Teruskan ke Admin/Manager untuk di-assign</p>
             </div>
             <div className="p-6 space-y-3">
@@ -2526,7 +2527,7 @@ Hubungi Admin untuk info lebih lanjut.
                   className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                   style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
                   {internalApproveSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  ✅ Ya, Approve &amp; Teruskan
+                  <IkonTeks nama="✅" />Ya, Approve &amp; Teruskan
                 </button>
               </div>
             </div>
@@ -2540,7 +2541,7 @@ Hubungi Admin untuk info lebih lanjut.
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full border-2 border-red-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-red-500 to-red-700 px-6 py-4">
-              <h3 className="font-bold text-white text-lg">❌ Tolak Request</h3>
+              <h3 className="font-bold text-white text-lg"><IkonTeks nama="❌" />Tolak Request</h3>
               <p className="text-red-100 text-xs mt-0.5">{rejectModal.req.project_name}</p>
             </div>
             <div className="p-6">
@@ -2811,7 +2812,7 @@ Hubungi Admin untuk info lebih lanjut.
                 {selectedRequest?.routing_status === 'supervisor_assign' && selectedRequest?.assigned_supervisor_id === currentUser.id && (
                   <button onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}
                     className="bg-amber-500 hover:bg-amber-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
-                    🎯 Assign ke Tim
+                    <IkonTeks nama="🎯" />Assign ke Tim
                   </button>
                 )}
                 {/* Info untuk PTS yang di-assign: tombol mulai in_progress */}
@@ -2833,7 +2834,7 @@ Hubungi Admin untuk info lebih lanjut.
                 {bisaKelolaRequest && bolehRerouteRequest(selectedRequest) && (
                   <button onClick={() => { setRerouteTarget(selectedRequest); setRerouteTo(''); }}
                     className="bg-indigo-500 hover:bg-indigo-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
-                    🔀 Re-route
+                    <IkonTeks nama="🔀" />Re-route
                   </button>
                 )}
                 {bolehEditRequest(selectedRequest) && selectedRequest.status !== 'rejected' && (
@@ -2903,7 +2904,7 @@ Hubungi Admin untuk info lebih lanjut.
                       onClick={() => handleResubmit(selectedRequest)}
                       className="mt-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-all"
                     >
-                      🔄 Submit Ulang Request
+                      <IkonTeks nama="🔄" />Submit Ulang Request
                     </button>
                   )}
                 </div>
@@ -2927,11 +2928,11 @@ Hubungi Admin untuk info lebih lanjut.
             <div className="flex sm:hidden border-b border-gray-200 bg-white flex-shrink-0">
               <button onClick={() => setDetailMobileTab('info')}
                 className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'info' ? 'text-teal-700 border-teal-600' : 'text-gray-400 border-transparent'}`}>
-                📋 Info Project
+                <IkonTeks nama="📋" />Info Project
               </button>
               <button onClick={() => setDetailMobileTab('chat')}
                 className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'chat' ? 'text-teal-700 border-teal-600' : 'text-gray-400 border-transparent'}`}>
-                💬 Chat
+                <IkonTeks nama="💬" />Chat
               </button>
             </div>
             <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
@@ -3167,9 +3168,9 @@ Hubungi Admin untuk info lebih lanjut.
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Kebutuhan</label><ChipDisplay items={[...(dr.kebutuhan||[]), dr.kebutuhan_other]} /></div>
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Solution Product</label><ChipDisplay items={[...(dr.solution_product||[]), dr.solution_other]} /></div>
                       {(dr.brand_display || dr.brand_display_2) && <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {dr.brand_display && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">🖥️ Brand Display</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display}{dr.brand_display_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_pic_name}</span>}</p></div>}
-                        {dr.brand_display_2 && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">🖥️ Brand Display 2</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display_2}{dr.brand_display_2_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_2_pic_name}</span>}</p></div>}
-                        {dr.brand_middleware && <div><label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1">🔌 Brand Middleware</label><p className="text-sm font-semibold text-gray-800 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">{dr.brand_middleware}{dr.brand_middleware_pic_name && <span className="text-[11px] text-violet-600 ml-2">· PIC: {dr.brand_middleware_pic_name}</span>}</p></div>}
+                        {dr.brand_display && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1"><IkonTeks nama="🖥" />Brand Display</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display}{dr.brand_display_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_pic_name}</span>}</p></div>}
+                        {dr.brand_display_2 && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1"><IkonTeks nama="🖥" />Brand Display 2</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display_2}{dr.brand_display_2_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_2_pic_name}</span>}</p></div>}
+                        {dr.brand_middleware && <div><label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1"><IkonTeks nama="🔌" />Brand Middleware</label><p className="text-sm font-semibold text-gray-800 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">{dr.brand_middleware}{dr.brand_middleware_pic_name && <span className="text-[11px] text-violet-600 ml-2">· PIC: {dr.brand_middleware_pic_name}</span>}</p></div>}
                       </div>}
                     </div>
                   </div>
@@ -3330,7 +3331,7 @@ Hubungi Admin untuk info lebih lanjut.
                                 ].map(({ ref, icon, label, hint }) => (
                                   <button key={label} onClick={() => { setShowUploadChoice(false); ref.current?.click(); }}
                                     className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-teal-50 flex items-start gap-2">
-                                    <span className="text-base leading-none">{icon}</span>
+                                    <span className="text-base leading-none"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                                     <span>{label}<br /><span className="font-normal text-gray-400">{hint}</span></span>
                                   </button>
                                 ))}
@@ -3509,7 +3510,7 @@ Hubungi Admin untuk info lebih lanjut.
                         {detailRoomStatus !== 'pending' && detailRoomStatus !== 'rejected' && (
                           <button onClick={() => setAssignModal({ open: true, req: selectedRequest, roomIdx: detailRoomIdx })}
                             className="w-full bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 py-2 rounded-xl text-sm font-bold transition-all">
-                            👥 Re-assign Tim PTS{detailRoomIdx > 0 ? ` — ${(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}` : ''}
+                            <IkonTeks nama="👥" />Re-assign Tim PTS{detailRoomIdx > 0 ? ` — ${(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}` : ''}
                           </button>
                         )}
                       </div>
@@ -3584,7 +3585,7 @@ Hubungi Admin untuk info lebih lanjut.
               {/* RIGHT: Chat */}
               <div className={`${detailMobileTab === 'chat' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[1.5] overflow-hidden bg-white/95 min-w-0`}>
                 <div className="px-4 py-2.5 border-b border-gray-100 flex-shrink-0 bg-gray-50">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">💬 Discussion Chat</p>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="💬" />Discussion Chat</p>
                   {/* Room filter tabs for chat */}
                   {(() => {
                     const chatRooms = selectedRequest.rooms || [];
@@ -3684,7 +3685,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {selectedRequest.status === 'rejected' ? (
                     <div className="text-center text-xs font-bold text-red-500 bg-red-50 border border-red-200 rounded-xl py-3">Request ditolak. Chat tidak tersedia.{!isPTS && <span className="block mt-1 font-normal text-red-400">Klik &quot;Submit Ulang Request&quot; di atas untuk mengajukan ulang.</span>}</div>
                   ) : selectedRequest.status === 'pending' ? (
-                    <div className="text-center text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-xl py-3">🔒 Chat tersedia setelah di-approve.</div>
+                    <div className="text-center text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-xl py-3"><IkonTeks nama="🔒" />Chat tersedia setelah di-approve.</div>
                   ) : (
                     <div className="flex gap-2">
                       <div className="flex-1 flex items-end gap-2 bg-white/90 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-teal-500 transition-all">
@@ -3720,7 +3721,7 @@ Hubungi Admin untuk info lebih lanjut.
           onClick={e => { if (e.target === e.currentTarget && !rerouteSaving) setRerouteTarget(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
-              <h3 className="text-lg font-bold text-white">🔀 Alihkan Pekerjaan</h3>
+              <h3 className="text-lg font-bold text-white"><IkonTeks nama="🔀" />Alihkan Pekerjaan</h3>
               <p className="text-indigo-100/90 text-xs mt-0.5 truncate">{rerouteTarget.project_name}</p>
             </div>
             <div className="p-6 space-y-4">
@@ -3776,7 +3777,7 @@ Hubungi Admin untuk info lebih lanjut.
           <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col border-2 border-amber-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-amber-500 to-amber-700 px-6 py-4 flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="text-lg font-bold text-white">✏️ Edit Kebutuhan Project</h2>
+                <h2 className="text-lg font-bold text-white"><IkonTeks nama="✏" />Edit Kebutuhan Project</h2>
                 <p className="text-amber-100 text-xs mt-0.5">{selectedRequest.project_name}</p>
               </div>
               <button aria-label="Tutup" onClick={() => setEditFormModal(false)} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg">✕</button>
@@ -3829,7 +3830,7 @@ Hubungi Admin untuk info lebih lanjut.
                     style={{ color: editDueDate ? '#374151' : '#9ca3af' }} />
                   {editDueDate && (
                     <p className="text-xs text-teal-600 font-semibold mt-1.5">
-                      📅 Target: {new Date(editDueDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      <IkonTeks nama="📅" />Target: {new Date(editDueDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                   )}
                 </div>
@@ -4068,7 +4069,7 @@ export default function Page() {
   if (!currentUser) return (
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center"
-      style={{ backgroundImage: `url('/IVP_Background.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.4)' }} />
       <div className="relative z-10 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center"
         style={{ border: '2px solid rgba(13,148,136,0.3)' }}>

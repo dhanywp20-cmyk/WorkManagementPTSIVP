@@ -8,6 +8,7 @@ import { ModalPortal } from '@/components/shared';
 import { cariReminderByNama } from '@/lib/cari-reminder';
 import { hitungLingkupProject, filterLingkup, type LingkupProject } from '@/lib/project-scope';
 import { hasFullAccess } from '@/lib/constants';
+import { Ikon } from '@/components/shared/Ikon';
 
 // Types
 
@@ -679,7 +680,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
                     {/* Icon */}
                     <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0"
                       style={{ background: cfg.bg }}>
-                      {r.icon}
+                      <Ikon nama={r.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" />
                     </div>
                     {/* Text */}
                     <div className="flex-1 min-w-0">

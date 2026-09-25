@@ -8,6 +8,7 @@ import {
 import { Ico } from './Ico';
 import type { Ticket, TeamMember, User, OverdueSetting } from './shared';
 import { formatDateTime, statusColors, TAHUN_TERBARU } from './shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Isi "Ticket List": error/loading/kosong, kartu mobile, tabel desktop, dan
@@ -260,7 +261,7 @@ export function TicketListBody({
                     )}
 
                     <div className="text-[10px] text-gray-400 mt-1">{ticket.created_at ? formatDateTime(ticket.created_at) : "-"}</div>
-                    {isActiveOverdue && <div className="text-xs text-red-600 font-bold mt-0.5">⏰ OVERDUE</div>}
+                    {isActiveOverdue && <div className="text-xs text-red-600 font-bold mt-0.5"><IkonTeks nama="⏰" />OVERDUE</div>}
                   </td>
                   {/* Warranty cell */}
                   <td className="px-3 py-3 align-middle">
@@ -346,7 +347,7 @@ export function TicketListBody({
                           onClick={e => { e.stopPropagation(); router.push('/reminder-schedule'); }}
                           className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded transition-colors"
                           style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
-                          🗓️ Jadwal
+                          <IkonTeks nama="🗓" />Jadwal
                         </button>
                       )}
                     </div>

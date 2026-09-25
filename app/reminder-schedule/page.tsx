@@ -48,6 +48,7 @@ import { FilterBar } from './_components/FilterBar';
 import { ModePenyelesaianPanel } from './_components/ModePenyelesaianPanel';
 import { ReminderListBody } from './_components/ReminderListBody';
 import { ReminderDetailPopup } from './_components/ReminderDetailPopup';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 
 function ReminderSchedulePageInner() {
@@ -2897,7 +2898,7 @@ jangan lupa peralatan & Semangat💪🏼
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      backgroundImage: `url('/IVP_Background.png')`,
+      background: 'var(--halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />
@@ -3228,11 +3229,11 @@ jangan lupa peralatan & Semangat💪🏼
                   ? <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
                   : <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
                 }
-                📩 Request Jadwal
+                <IkonTeks nama="📩" />Request Jadwal
               </button>
               {pendingReviewCount > 0 && (
                 <span className="text-[11px] font-semibold text-amber-600 flex items-center gap-1">
-                  ⚠️ Selesaikan {pendingReviewCount} form review dulu
+                  <IkonTeks nama="⚠" />Selesaikan {pendingReviewCount} form review dulu
                 </span>
               )}
             </div>

@@ -3,6 +3,7 @@ import { ModalPortal } from '@/components/shared';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
 import type { Reminder, TeamUser, SupervisorCandidate } from './shared';
 import { formatDate } from './shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Modal Approve & Assign (Admin/Manager) dan Assign Tim (Supervisor) -
@@ -50,7 +51,7 @@ export function ApproveAssignModal({
           <div className="px-6 py-5 flex items-center justify-between"
             style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)' }}>
             <div>
-              <h3 className="text-lg font-bold text-white">✅ Approve & Assign Request</h3>
+              <h3 className="text-lg font-bold text-white"><IkonTeks nama="✅" />Approve & Assign Request</h3>
               <p className="text-green-200/80 text-xs mt-0.5 truncate max-w-[300px]">{approveTarget.project_name}</p>
             </div>
             <button aria-label="Tutup" onClick={onClose}
@@ -67,7 +68,7 @@ export function ApproveAssignModal({
               <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
               <p className="text-sm font-bold text-slate-800">{approveTarget.sales_name}{approveTarget.sales_division ? ` · ${approveTarget.sales_division}` : ''}</p>
               <p className="text-xs text-slate-500">📍 {approveTarget.address || '-'} · 🏷️ {approveTarget.category}</p>
-              <p className="text-xs text-slate-500">📅 Usulan: {formatDate(approveTarget.due_date)} {approveTarget.due_time}</p>
+              <p className="text-xs text-slate-500"><IkonTeks nama="📅" />Usulan: {formatDate(approveTarget.due_date)} {approveTarget.due_time}</p>
             </div>
 
             {approveBatchSiblings.length > 0 && (
@@ -85,7 +86,7 @@ export function ApproveAssignModal({
             {/* Route ke Supervisor — jalur UTAMA, sesuai tipe produk */}
             {approveSupervisors.length > 0 && (
               <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.3)' }}>
-                <p className="text-xs font-bold text-amber-700 mb-1">🎯 Route ke Supervisor (Rekomendasi)</p>
+                <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="🎯" />Route ke Supervisor (Rekomendasi)</p>
                 <p className="text-[11px] text-amber-600 mb-3">
                   Tipe produk <strong>{approveTarget.product_type || '-'}</strong> → Tim{' '}
                   <strong>{Array.from(new Set(approveSupervisors.map(s => s.team_type))).join(' & ')}</strong>.
@@ -95,7 +96,7 @@ export function ApproveAssignModal({
                   className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                   style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
                   {approveRouteSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  🎯 Approve & Route ke Supervisor
+                  <IkonTeks nama="🎯" />Approve & Route ke Supervisor
                 </button>
               </div>
             )}
@@ -112,7 +113,7 @@ export function ApproveAssignModal({
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-green-500/40"
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                 <option value="">-- Pilih Anggota Team PTS --</option>
-                <option value="SELF_MANAGER">🙋 Saya (Manager) kerjakan sendiri — Supervisor &amp; tim penuh</option>
+                <option value="SELF_MANAGER">Saya (Manager) kerjakan sendiri — Supervisor &amp; tim penuh</option>
                 {teamUsers.filter(u => u.jabatan !== 'Manager').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
               </select>
             </div>
@@ -147,7 +148,7 @@ export function ApproveAssignModal({
             {triggersProjectProgress(approveTarget.category) && (
               <div className="rounded-xl p-3" style={{ background: 'rgba(8,145,178,0.07)', border: '1px solid rgba(8,145,178,0.25)' }}>
                 <p className="text-xs font-bold mb-2" style={{ color: '#0e7490' }}>
-                  📊 Timeline Project Progress
+                  <IkonTeks nama="📊" />Timeline Project Progress
                 </p>
                 <p className="text-[11px] mb-2.5" style={{ color: '#0891b2' }}>
                   {approveStart || approveTarget2
@@ -236,7 +237,7 @@ export function SupervisorAssignModal({
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
           <div className="px-6 py-5 flex items-center justify-between" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
             <div>
-              <h3 className="text-lg font-bold text-white">🎯 Assign Tim</h3>
+              <h3 className="text-lg font-bold text-white"><IkonTeks nama="🎯" />Assign Tim</h3>
               <p className="text-amber-100/90 text-xs mt-0.5 truncate max-w-[300px]">{supervisorAssignTarget.project_name}</p>
             </div>
             <button aria-label="Tutup" onClick={onClose}
@@ -249,7 +250,7 @@ export function SupervisorAssignModal({
               <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
               <p className="text-sm font-bold text-slate-800">{supervisorAssignTarget.sales_name}{supervisorAssignTarget.sales_division ? ` · ${supervisorAssignTarget.sales_division}` : ''}</p>
               <p className="text-xs text-slate-500">📍 {supervisorAssignTarget.address || '-'} · 🏷️ {supervisorAssignTarget.category}</p>
-              <p className="text-xs text-slate-500">📅 Jadwal: {formatDate(supervisorAssignTarget.due_date)} {supervisorAssignTarget.due_time}</p>
+              <p className="text-xs text-slate-500"><IkonTeks nama="📅" />Jadwal: {formatDate(supervisorAssignTarget.due_date)} {supervisorAssignTarget.due_time}</p>
             </div>
 
             {supervisorAssignBatchSiblings.length > 0 && (
@@ -267,7 +268,7 @@ export function SupervisorAssignModal({
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-amber-500/40"
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                 <option value="">-- Pilih --</option>
-                <option value="SELF">🙋 Saya kerjakan sendiri (tim penuh/sibuk)</option>
+                <option value="SELF">Saya kerjakan sendiri (tim penuh/sibuk)</option>
                 <optgroup label="Anggota Tim">
                   {/* Manager dikecualikan — bukan anggota tim biasa yang di-assign tugas oleh Supervisor */}
                   {teamUsers.filter(u => u.team_type === currentUser?.team_type && u.username !== currentUser?.username && u.jabatan !== 'Manager').map(u => (

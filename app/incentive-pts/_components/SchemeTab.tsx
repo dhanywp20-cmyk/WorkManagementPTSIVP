@@ -7,6 +7,7 @@ import {
   hitungPembagian, hitungManagerSebagaiPic, persenInstaller,
   riwayatSkema, labelSkema, type VersiSkema,
 } from '@/lib/incentive-scheme';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 const rp = (n: number) => 'Rp ' + Math.round(n).toLocaleString('id-ID');
 const inputKecil = 'w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100';
@@ -142,7 +143,7 @@ export function SchemeTab({ olehNama, notify }: {
     <div className="space-y-3">
       {/* ── Kepala ── */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5">
-        <h2 className="font-bold text-gray-800 text-base">🧮 Skema Pembagian Insentif</h2>
+        <h2 className="font-bold text-gray-800 text-base"><IkonTeks nama="🧮" />Skema Pembagian Insentif</h2>
         <p className="text-xs text-gray-500 mt-1 leading-relaxed">
           Seluruh angka pembagian diambil dari halaman ini — bukan dari kode. Mengubah porsi,
           menambah peran baru, atau menghidupkan kembali porsi PTS Daerah cukup dilakukan
@@ -325,7 +326,7 @@ export function SchemeTab({ olehNama, notify }: {
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <h3 className="font-bold text-gray-800 text-sm">🔧 Pembagian untuk PTS Daerah</h3>
+            <h3 className="font-bold text-gray-800 text-sm"><IkonTeks nama="🔧" />Pembagian untuk PTS Daerah</h3>
             <p className="text-[11px] text-gray-500">Porsinya dipotong dari pool lebih dulu; sisanya dibagi ke Tim PTS.</p>
           </div>
           <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer">
@@ -395,7 +396,7 @@ export function SchemeTab({ olehNama, notify }: {
         <div className="rounded-xl border border-blue-200 bg-blue-50 overflow-hidden h-full flex flex-col">
           <div className="px-4 sm:px-5 py-3 border-b border-blue-100 flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0">
-            <h3 className="font-bold text-gray-800 text-sm">🔧 Pola Pembagian saat PTS Daerah Aktif</h3>
+            <h3 className="font-bold text-gray-800 text-sm"><IkonTeks nama="🔧" />Pola Pembagian saat PTS Daerah Aktif</h3>
             <p className="text-[11px] text-gray-500 leading-relaxed">
               Porsi PTS Daerah <strong>{persenInstaller(sk, true)}%</strong> dipotong dari pool lebih dulu;
               sisa <strong>{(100 - persenInstaller(sk, true)).toFixed(2).replace(/\.00$/, '')}%</strong> dibagi
@@ -776,7 +777,7 @@ export function SchemeTab({ olehNama, notify }: {
       {/* ── Riwayat versi skema ── */}
       <div className="rounded-xl border border-gray-200 bg-white overflow-hidden h-full flex flex-col">
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100">
-          <h3 className="font-bold text-gray-800 text-sm">🕘 Riwayat Skema</h3>
+          <h3 className="font-bold text-gray-800 text-sm"><IkonTeks nama="🕘" />Riwayat Skema</h3>
           <p className="text-[11px] text-gray-500 leading-relaxed">
             Tiap penyimpanan membuat versi baru — versi lama tidak ditimpa. Proyek yang tahapannya
             sudah dibuat tetap dibayar memakai skema yang berlaku saat itu, jadi mengubah porsi di
@@ -812,7 +813,7 @@ export function SchemeTab({ olehNama, notify }: {
       {masalah.length > 0 && (
         <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4">
           <p className="text-xs font-bold text-rose-700 mb-1.5">
-            ⚠️ Skema belum seimbang — belum bisa disimpan:
+            <IkonTeks nama="⚠" />Skema belum seimbang — belum bisa disimpan:
           </p>
           <ul className="text-xs text-rose-600 space-y-0.5 list-disc pl-4">
             {masalah.map((m, i) => <li key={i}>{m.pesan}</li>)}

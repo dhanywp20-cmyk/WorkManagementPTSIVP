@@ -16,6 +16,7 @@ import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import { appLink } from '@/lib/app-url';
 import { createNotification } from '@/lib/notifications';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * AssignPTSModal - popup Approve & Assign dan Assign ke Tim untuk Request
@@ -304,7 +305,7 @@ export function AssignPTSModal({
           {/* Route ke Supervisor — jalur UTAMA saat approve, sama seperti Request Schedule */}
           {allowSupervisorRoute && supervisors.length > 0 && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.3)' }}>
-              <p className="text-xs font-bold text-amber-700 mb-1">🎯 Route ke Supervisor (Rekomendasi)</p>
+              <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="🎯" />Route ke Supervisor (Rekomendasi)</p>
               <p className="text-[11px] text-amber-600 mb-3">
                 Supervisor yang dipilih akan di-WA untuk meng-assign ke anggota timnya, atau mengerjakan sendiri.
               </p>
@@ -319,7 +320,7 @@ export function AssignPTSModal({
                 className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
                 {routeSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                🎯 Approve &amp; Route ke Supervisor
+                <IkonTeks nama="🎯" />Approve &amp; Route ke Supervisor
               </button>
             </div>
           )}
@@ -340,7 +341,7 @@ export function AssignPTSModal({
                 className={`w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 ${aksen.cincin}`}
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                 <option value="">-- Pilih Anggota Team PTS --</option>
-                <option value="SELF">🙋 Saya kerjakan sendiri</option>
+                <option value="SELF">Saya kerjakan sendiri</option>
                 <optgroup label="Anggota Tim">
                   {anggotaLain.map(m => (
                     <option key={m.id} value={m.id}>{m.full_name}{m.team_type ? ` · ${m.team_type}` : ''}</option>
@@ -486,7 +487,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
           yang seharusnya menangani tidak pernah tahu. */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 pt-2 border-t border-gray-100">
         <div>
-          <label htmlFor="f-form-require-project-components-modals-1" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display <span className="text-gray-400 font-normal">(opsional)</span></label>
+          <label htmlFor="f-form-require-project-components-modals-1" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display <span className="text-gray-400 font-normal">(opsional)</span></label>
           <select id="f-form-require-project-components-modals-1" value={room.brand_display} onChange={e => {
             const brand = e.target.value;
             const pic = getBrandPic('display', brand);
@@ -495,11 +496,11 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             <option value="">— Pilih Brand Display —</option>
             {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
-          {room.brand_display && room.brand_display_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1">👤 PIC: {room.brand_display_pic_name}</p>}
+          {room.brand_display && room.brand_display_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {room.brand_display_pic_name}</p>}
           {room.brand_display && !room.brand_display_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-set admin</p>}
         </div>
         <div>
-          <label htmlFor="f-form-require-project-components-modals-2" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display 2 <span className="text-gray-400 normal-case font-normal">(opsional)</span></label>
+          <label htmlFor="f-form-require-project-components-modals-2" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display 2 <span className="text-gray-400 normal-case font-normal">(opsional)</span></label>
           <select id="f-form-require-project-components-modals-2" value={room.brand_display_2 ?? ''} onChange={e => {
             const brand = e.target.value;
             const pic = getBrandPic('display', brand);
@@ -508,11 +509,11 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             <option value="">— Pilih Brand Display 2 —</option>
             {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
-          {room.brand_display_2 && room.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1">👤 PIC: {room.brand_display_2_pic_name}</p>}
+          {room.brand_display_2 && room.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1"><IkonTeks nama="👤" />PIC: {room.brand_display_2_pic_name}</p>}
           {room.brand_display_2 && !room.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-mapping</p>}
         </div>
         <div>
-          <label htmlFor="f-form-require-project-components-modals-3" className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5">🔌 Brand Middleware <span className="text-gray-400 font-normal">(opsional)</span></label>
+          <label htmlFor="f-form-require-project-components-modals-3" className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔌" />Brand Middleware <span className="text-gray-400 font-normal">(opsional)</span></label>
           <select id="f-form-require-project-components-modals-3" value={room.brand_middleware} onChange={e => {
             const brand = e.target.value;
             const pic = getBrandPic('middleware', brand);
@@ -521,7 +522,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             <option value="">— Pilih Brand Middleware —</option>
             {MIDDLEWARE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
-          {room.brand_middleware && room.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-violet-700 font-semibold bg-violet-50 border border-violet-200 rounded-lg px-2.5 py-1">👤 PIC: {room.brand_middleware_pic_name}</p>}
+          {room.brand_middleware && room.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-violet-700 font-semibold bg-violet-50 border border-violet-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {room.brand_middleware_pic_name}</p>}
           {room.brand_middleware && !room.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-set admin</p>}
         </div>
       </div>
@@ -635,7 +636,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
         <div className="pt-2 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Foto Survey */}
           <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">📸 Foto Survey Ruangan Ini</label>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="📸" />Foto Survey Ruangan Ini</label>
             <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
               id={`room-photo-${room.id}`}
               onChange={e => { const files = Array.from(e.target.files||[]); if(files.length) onAddPhotos(files); e.target.value=''; }}/>
@@ -664,7 +665,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
           </div>
           {/* BOQ Excel */}
           <div>
-            <label htmlFor="f-form-require-project-components-modals-15" className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">📊 BOQ Excel Ruangan Ini</label>
+            <label htmlFor="f-form-require-project-components-modals-15" className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="📊" />BOQ Excel Ruangan Ini</label>
             <input id="f-form-require-project-components-modals-15" ref={boqRef} type="file" accept=".xlsx,.xls,.csv" className="hidden"
               onChange={e => { const f = e.target.files?.[0]; if (f && onSetBoq) onSetBoq(f); e.target.value=''; }} />
             {!boqFile ? (
@@ -685,7 +686,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
                   <button aria-label="Tutup" type="button" onClick={() => onSetBoq && onSetBoq(null)} className="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
                 </div>
                 <button type="button" onClick={() => boqRef.current?.click()}
-                  className="mt-1.5 w-full text-xs text-emerald-600 hover:text-emerald-800 font-bold py-1 transition-all">🔄 Ganti File</button>
+                  className="mt-1.5 w-full text-xs text-emerald-600 hover:text-emerald-800 font-bold py-1 transition-all"><IkonTeks nama="🔄" />Ganti File</button>
               </div>
             )}
           </div>
@@ -694,7 +695,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
       {/* Foto only (no BOQ) for team users */}
       {!isGuest && (
         <div className="pt-2 border-t border-gray-100">
-          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">📸 Foto Survey Ruangan Ini</label>
+          <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="📸" />Foto Survey Ruangan Ini</label>
           <input ref={fileRef} type="file" accept="image/*" multiple className="hidden"
             id={`room-photo-ng-${room.id}`}
             onChange={e => { const files = Array.from(e.target.files||[]); if(files.length) onAddPhotos(files); e.target.value=''; }}/>
@@ -853,7 +854,7 @@ export function NewFormModal({
         {/* Header */}
         <div className="bg-gradient-to-r from-teal-600 to-teal-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">📋 Form Equipment Request — IVP &amp; MVI</h2>
+            <h2 className="text-xl font-bold text-white flex items-center gap-2"><IkonTeks nama="📋" />Form Equipment Request — IVP &amp; MVI</h2>
             <p className="text-teal-100 text-xs mt-0.5">Requester: <span className="font-bold">{currentUser.full_name}</span></p>
           </div>
           <button aria-label="Tutup" onClick={onClose} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold transition-all text-lg">✕</button>
@@ -1042,7 +1043,7 @@ export function NewFormModal({
                 {/* Brand Display 1 & 2 + Middleware — kembar dari RoomSection di atas. */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 pt-2 border-t border-gray-100">
                   <div>
-                    <label htmlFor="f-form-require-project-components-modals-19" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <label htmlFor="f-form-require-project-components-modals-19" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display <span className="text-gray-400 font-normal">(opsional)</span></label>
                     <select id="f-form-require-project-components-modals-19" value={form.brand_display||''} onChange={e => {
                       const brand = e.target.value;
                       const pic = brandPicMappings.find(m => m.brand_type==='display' && m.brand_name===brand);
@@ -1051,11 +1052,11 @@ export function NewFormModal({
                       <option value="">— Pilih Brand Display —</option>
                       {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
-                    {form.brand_display && form.brand_display_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1">👤 PIC: {form.brand_display_pic_name}</p>}
+                    {form.brand_display && form.brand_display_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {form.brand_display_pic_name}</p>}
                     {form.brand_display && !form.brand_display_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-set admin</p>}
                   </div>
                 <div>
-                  <label htmlFor="f-form-require-project-components-modals-20" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5">🖥️ Brand Display 2 <span className="text-gray-400 normal-case font-normal">(opsional)</span></label>
+                  <label htmlFor="f-form-require-project-components-modals-20" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display 2 <span className="text-gray-400 normal-case font-normal">(opsional)</span></label>
                   <select id="f-form-require-project-components-modals-20" value={form.brand_display_2||''} onChange={e => {
                     const brand = e.target.value;
                     const pic = brandPicMappings.find(m => m.brand_type==='display' && m.brand_name===brand);
@@ -1064,11 +1065,11 @@ export function NewFormModal({
                     <option value="">— Pilih Brand Display 2 —</option>
                     {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
-                  {form.brand_display_2 && form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1">👤 PIC: {form.brand_display_2_pic_name}</p>}
+                  {form.brand_display_2 && form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1"><IkonTeks nama="👤" />PIC: {form.brand_display_2_pic_name}</p>}
                   {form.brand_display_2 && !form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-mapping</p>}
                 </div>
                   <div>
-                    <label htmlFor="f-form-require-project-components-modals-21" className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5">🔌 Brand Middleware <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <label htmlFor="f-form-require-project-components-modals-21" className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔌" />Brand Middleware <span className="text-gray-400 font-normal">(opsional)</span></label>
                     <select id="f-form-require-project-components-modals-21" value={form.brand_middleware||''} onChange={e => {
                       const brand = e.target.value;
                       const pic = brandPicMappings.find(m => m.brand_type==='middleware' && m.brand_name===brand);
@@ -1077,7 +1078,7 @@ export function NewFormModal({
                       <option value="">— Pilih Brand Middleware —</option>
                       {MIDDLEWARE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
-                    {form.brand_middleware && form.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-violet-700 font-semibold bg-violet-50 border border-violet-200 rounded-lg px-2.5 py-1">👤 PIC: {form.brand_middleware_pic_name}</p>}
+                    {form.brand_middleware && form.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-violet-700 font-semibold bg-violet-50 border border-violet-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {form.brand_middleware_pic_name}</p>}
                     {form.brand_middleware && !form.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-set admin</p>}
                   </div>
                 </div>
@@ -1317,7 +1318,7 @@ export function NewFormModal({
                 {!['admin','superadmin','team_pts','team'].includes((currentUser?.role || '').toLowerCase().trim()) && (
                   <div className="pt-2 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label htmlFor="f-form-require-project-components-modals-33" className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">📸 Foto Survey Ruangan Ini</label>
+                      <label htmlFor="f-form-require-project-components-modals-33" className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="📸" />Foto Survey Ruangan Ini</label>
                       <input id="f-form-require-project-components-modals-33" ref={surveyPhotoRef} type="file" accept="image/*" multiple className="hidden"
                         onChange={e => { const files = Array.from(e.target.files||[]); if(!files.length) return; const c=[...surveyPhotos,...files].slice(0,10); setSurveyPhotos(c); setSurveyPhotosPreviews(c.map(f=>URL.createObjectURL(f))); e.target.value=''; }} />
                       {surveyPhotosPreviews.length === 0 ? (
@@ -1340,7 +1341,7 @@ export function NewFormModal({
                       )}
                     </div>
                     <div>
-                      <label htmlFor="f-form-require-project-components-modals-34" className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">📊 BOQ Excel Ruangan Ini</label>
+                      <label htmlFor="f-form-require-project-components-modals-34" className="block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="📊" />BOQ Excel Ruangan Ini</label>
                       <input id="f-form-require-project-components-modals-34" ref={boqRoom1Ref} type="file" accept=".xlsx,.xls,.csv" className="hidden"
                         onChange={e => { const f=e.target.files?.[0]; if(f) setBoqFormFile(f); e.target.value=''; }} />
                       {!boqFormFile ? (
@@ -1355,7 +1356,7 @@ export function NewFormModal({
                             <div className="flex-1 min-w-0"><p className="text-xs font-bold text-emerald-800 truncate">{boqFormFile.name}</p><p className="text-[11px] text-emerald-600">{(boqFormFile.size/1024).toFixed(1)} KB</p></div>
                             <button aria-label="Tutup" type="button" onClick={() => setBoqFormFile(null)} className="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
                           </div>
-                          <button type="button" onClick={() => boqRoom1Ref.current?.click()} className="mt-1.5 w-full text-xs text-emerald-600 hover:text-emerald-800 font-bold py-1 transition-all">🔄 Ganti File</button>
+                          <button type="button" onClick={() => boqRoom1Ref.current?.click()} className="mt-1.5 w-full text-xs text-emerald-600 hover:text-emerald-800 font-bold py-1 transition-all"><IkonTeks nama="🔄" />Ganti File</button>
                         </div>
                       )}
                     </div>

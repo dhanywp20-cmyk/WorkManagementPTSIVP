@@ -15,6 +15,7 @@ import { AnalyticsPage } from './_components/AnalyticsPage';
 import { MyQuizPage } from './_components/MyQuizPage';
 import { HistoryPage } from './_components/HistoryPage';
 import { ScorePage } from './_components/ScorePage';
+import { Ikon } from '@/components/shared/Ikon';
 
 export default function LearningCenterPage() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -40,10 +41,10 @@ export default function LearningCenterPage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center"
-        style={{ backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="text-center px-10 py-8 rounded-3xl"
           style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
-          <div className="text-4xl mb-3 animate-pulse">🎓</div>
+          <div className="mb-3 animate-pulse text-indigo-500 flex justify-center"><Ikon nama="🎓" ukuran={36} tebal={1.75} /></div>
           <p className="text-slate-500 font-medium">Memuat Learning Center...</p>
         </div>
       </div>
@@ -53,7 +54,7 @@ export default function LearningCenterPage() {
   if (!currentUser) {
     return (
       <div className="flex h-screen items-center justify-center"
-        style={{ backgroundImage: "url('/IVP_Background.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="text-center px-10 py-8 rounded-3xl"
           style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
           <div className="text-4xl mb-3">🔒</div>
@@ -125,7 +126,7 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
     <div
       className="flex flex-col h-screen overflow-hidden font-sans"
       style={{
-        backgroundImage: "linear-gradient(rgba(0,0,0,0.25), rgba(0,0,0,0.25)), url('/IVP_Background.png')",
+        background: 'var(--halaman)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
@@ -190,10 +191,10 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
     { key: 'analytics', icon: '📈', label: 'Analytics' },
   ];
   return (
-    <div style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)', borderBottom: '3px solid #dc2626' }}
+    <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #4f46e5' }}
       className="flex-shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
       <div className="flex items-center gap-3 px-6 pt-4 pb-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-base shadow">🎓</div>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#4f46e514', color: '#4f46e5', border: '1px solid #4f46e526' }}><Ikon nama="🎓" ukuran={16} /></div>
         <div>
           <span className="text-sm font-bold text-slate-800 leading-tight">Learning Center</span>
         </div>
@@ -210,7 +211,7 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
             <button key={i.key} type="button" role="tab" aria-selected={view === i.key} onClick={() => onChange(i.key)}
               className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
                 ${view === i.key ? 'text-blue-700 border-blue-600 bg-blue-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
-              <span className="text-sm" aria-hidden="true">{i.icon}</span>{i.label}
+              <Ikon nama={i.icon} ukuran={14} />{i.label}
             </button>
           ))}
           <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
@@ -238,10 +239,10 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
     { key: 'history', icon: '🕐', label: 'Riwayat' },
   ];
   return (
-    <div style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)', borderBottom: '3px solid #dc2626' }}
+    <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #4f46e5' }}
       className="flex-shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
       <div className="flex items-center gap-3 px-6 pt-4 pb-0">
-        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-base shadow">🎓</div>
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#4f46e514', color: '#4f46e5', border: '1px solid #4f46e526' }}><Ikon nama="🎓" ukuran={16} /></div>
         <div>
           <span className="text-sm font-bold text-slate-800 leading-tight">Learning Center</span>
         </div>
@@ -255,7 +256,7 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
             <button key={i.key} type="button" role="tab" aria-selected={view === i.key} onClick={() => onChange(i.key)}
               className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
                 ${view === i.key ? 'text-indigo-700 border-indigo-600 bg-indigo-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
-              <span className="text-sm" aria-hidden="true">{i.icon}</span>{i.label}
+              <Ikon nama={i.icon} ukuran={14} />{i.label}
             </button>
           ))}
           <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"

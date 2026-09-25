@@ -1,5 +1,6 @@
 'use client';
 import { PiketRow, KegiatanEntry, MONTH_NAMES } from './shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMonth,onYearChange,onMonthChange}:{
   allRows:PiketRow[];kegiatanList:KegiatanEntry[];
@@ -116,7 +117,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
         {highlights.map((s,i)=>(
           <div key={i} className="flex-[2] min-w-[130px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
             <div className="flex items-center gap-1 mb-0.5">
-              <span className="text-[11px]">{s.icon}</span>
+              <span className="text-[11px]"><Ikon nama={s.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">{s.label}</span>
             </div>
             <span className="text-sm font-black leading-tight" style={{color:s.color}}>{s.val}</span>

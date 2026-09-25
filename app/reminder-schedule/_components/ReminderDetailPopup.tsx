@@ -12,6 +12,7 @@ import {
   REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, CATEGORY_CONFIG, STATUS_CONFIG,
   REPEAT_OPTIONS, formatDate, cleanRequestNotes,
 } from './shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Popup detail reminder (header + info project + timeline + garansi +
@@ -149,7 +150,7 @@ export function ReminderDetailPopup({
               </span>
             )}
             {detailReminder.wa_sent_h1 && (
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/80 text-white">✅ WA H-1 Terkirim</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/80 text-white"><IkonTeks nama="✅" />WA H-1 Terkirim</span>
             )}
           </div>
           <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
@@ -172,7 +173,7 @@ export function ReminderDetailPopup({
               onClick={e => { e.stopPropagation(); setDetailReminder(null); router.push('/ticketing'); }}
               className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.03]"
               style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.92)' }}>
-              🎫 Buka Platform Ticketing
+              <IkonTeks nama="🎫" />Buka Platform Ticketing
             </button>
           )}
           <button aria-label="Tutup" onClick={() => { setDetailReminder(null); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); }}
@@ -187,31 +188,31 @@ export function ReminderDetailPopup({
                 <>
                   <button onClick={() => setInternalApproveTarget(detailReminder)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}>✅ Approve &amp; Teruskan ke Admin</button>
+                    style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}><IkonTeks nama="✅" />Approve &amp; Teruskan ke Admin</button>
                   <button onClick={() => handleInternalReject(detailReminder)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: 'white' }}>❌ Tolak</button>
+                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: 'white' }}><IkonTeks nama="❌" />Tolak</button>
                 </>
               )}
               {canApproveAssign && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.routing_status !== 'internal_review' && (
                 <>
                   <button onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>✅ Approve &amp; Assign</button>
+                    style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}><IkonTeks nama="✅" />Approve &amp; Assign</button>
                   <button onClick={() => handleAdminReject(detailReminder)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: 'white' }}>❌ Tolak</button>
+                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: 'white' }}><IkonTeks nama="❌" />Tolak</button>
                 </>
               )}
               {currentUser?.id === detailReminder.assigned_supervisor_id && detailReminder.routing_status === 'supervisor_assign' && (
                 <button onClick={() => openSupervisorAssign(detailReminder, [detailReminder, ...reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id)])}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}>🎯 Assign Tim</button>
+                  style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}><IkonTeks nama="🎯" />Assign Tim</button>
               )}
               {bolehEditReminder(detailReminder) && detailReminder.status !== 'done' && (
                 <button onClick={() => { setRescheduleTarget(detailReminder); }}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg,#d97706,#b45309)', color: 'white' }}>📅 Re-Schedule</button>
+                  style={{ background: 'linear-gradient(135deg,#d97706,#b45309)', color: 'white' }}><IkonTeks nama="📅" />Re-Schedule</button>
               )}
               {bolehEditReminder(detailReminder) && detailReminder.status === 'done' && detailReminder.sales_name?.trim() && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && (
                 <button onClick={() => handleResendFormReview(detailReminder)} disabled={resendingFormReview}
@@ -234,7 +235,7 @@ export function ReminderDetailPopup({
               {bolehEditReminder(detailReminder) && (
                 <button onClick={() => openEdit(detailReminder)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: 'white' }}>✏️ Edit</button>
+                  style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: 'white' }}><IkonTeks nama="✏" />Edit</button>
               )}
             </div>
           )}
@@ -266,7 +267,7 @@ export function ReminderDetailPopup({
                 </div>
               </div>
               <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)' }}>
-                <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#64748b' }}>📅 Jadwal</p>
+                <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#64748b' }}><IkonTeks nama="📅" />Jadwal</p>
                 <p className="text-sm font-bold text-slate-800">{formatDate(detailReminder.due_date)}</p>
                 <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>⏰ {detailReminder.due_time}</p>
               </div>
@@ -294,7 +295,7 @@ export function ReminderDetailPopup({
                       </span>
                     ) : (
                       <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#d97706', border: '1px solid rgba(245,158,11,0.4)' }}>
-                        ⏳ Setelah Completed
+                        <IkonTeks nama="⏳" />Setelah Completed
                       </span>
                     )}
                   </div>
@@ -319,7 +320,7 @@ export function ReminderDetailPopup({
               asli, jangan ditampilkan lagi (termasuk data lama yg belum sempat dibersihkan). */}
           {cleanRequestNotes(detailReminder.notes) && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.25)' }}>
-              <p className="text-[10px] font-bold tracking-widest uppercase mb-1" style={{ color: '#f59e0b' }}>📝 Catatan</p>
+              <p className="text-[10px] font-bold tracking-widest uppercase mb-1" style={{ color: '#f59e0b' }}><IkonTeks nama="📝" />Catatan</p>
               <p className="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{cleanRequestNotes(detailReminder.notes)}</p>
             </div>
           )}
@@ -441,25 +442,25 @@ export function ReminderDetailPopup({
                     <button onClick={() => bukaEditDetailPelaksanaan(detailReminder)}
                       className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all hover:scale-105"
                       style={{ background: 'rgba(255,255,255,0.9)', color: isOnsite ? '#047857' : '#1d4ed8', border: `1px solid ${isOnsite ? 'rgba(16,185,129,0.4)' : 'rgba(59,130,246,0.4)'}` }}>
-                      ✏️ Ubah
+                      <IkonTeks nama="✏" />Ubah
                     </button>
                   )}
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   {detailReminder.bast_date && (
                     <div>
-                      <p className="text-slate-400 mb-0.5">📅 Tanggal BAST</p>
+                      <p className="text-slate-400 mb-0.5"><IkonTeks nama="📅" />Tanggal BAST</p>
                       <p className="font-semibold text-slate-700">{formatDate(detailReminder.bast_date)}</p>
                     </div>
                   )}
                   {detailReminder.display_type && (
                     <div>
-                      <p className="text-slate-400 mb-0.5">🖥️ Tipe Display</p>
+                      <p className="text-slate-400 mb-0.5"><IkonTeks nama="🖥" />Tipe Display</p>
                       <p className="font-semibold text-slate-700">{displayLabel[detailReminder.display_type] ?? detailReminder.display_type}</p>
                     </div>
                   )}
                   <div>
-                    <p className="text-slate-400 mb-0.5">🎛️ Controller Automation</p>
+                    <p className="text-slate-400 mb-0.5"><IkonTeks nama="🎛" />Controller Automation</p>
                     <p className="font-semibold text-slate-700">
                       {detailReminder.requires_controller_automation
                         ? (brandLabel[detailReminder.controller_automation_brand ?? ''] ?? 'Ya')
@@ -467,18 +468,18 @@ export function ReminderDetailPopup({
                     </p>
                   </div>
                   <div>
-                    <p className="text-slate-400 mb-0.5">🔌 Middleware / System / Matrix</p>
+                    <p className="text-slate-400 mb-0.5"><IkonTeks nama="🔌" />Middleware / System / Matrix</p>
                     <p className="font-semibold text-slate-700">{detailReminder.requires_middleware ? 'Ya' : 'Tidak'}</p>
                   </div>
                   {!isOnsite && detailReminder.installer_name && (
                     <div>
-                      <p className="text-slate-400 mb-0.5">🔧 PTS Daerah</p>
+                      <p className="text-slate-400 mb-0.5"><IkonTeks nama="🔧" />PTS Daerah</p>
                       <p className="font-semibold text-slate-700">{detailReminder.installer_name}</p>
                     </div>
                   )}
                   {!isOnsite && detailReminder.installer_daerah && (
                     <div>
-                      <p className="text-slate-400 mb-0.5">📍 Daerah</p>
+                      <p className="text-slate-400 mb-0.5"><IkonTeks nama="📍" />Daerah</p>
                       <p className="font-semibold text-slate-700">{detailReminder.installer_daerah}</p>
                     </div>
                   )}
@@ -512,7 +513,7 @@ export function ReminderDetailPopup({
               <button onClick={() => bukaEditDetailPelaksanaan(detailReminder)}
                 className="w-full py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:scale-[1.02]"
                 style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', boxShadow: '0 3px 12px rgba(245,158,11,0.35)' }}>
-                ➕ Isi Detail Pelaksanaan
+                <IkonTeks nama="➕" />Isi Detail Pelaksanaan
               </button>
             </div>
           )}
@@ -563,7 +564,7 @@ export function ReminderDetailPopup({
                     }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isActive ? 'ring-2 ring-offset-1 scale-105' : 'opacity-70 hover:opacity-100'}`}
                     style={{ background: c.bg, color: c.color, border: `2px solid ${c.border}`, '--tw-ring-color': c.border } as React.CSSProperties}>
-                    {c.icon} {c.label}
+                    <Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {c.label}
                   </button>
                 );
               })}
@@ -574,7 +575,7 @@ export function ReminderDetailPopup({
             {detailReminder.status !== 'done' && (pendingStatus ?? detailReminder.status) === 'done' && !showModeModal && (
               <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(16,185,129,0.07)', border: '1.5px solid rgba(16,185,129,0.3)' }}>
                 <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#059669' }}>
-                  📸 Foto Bukti Selesai <span className="text-gray-400 font-normal normal-case">(opsional)</span>
+                  <IkonTeks nama="📸" />Foto Bukti Selesai <span className="text-gray-400 font-normal normal-case">(opsional)</span>
                 </p>
                 <input
                   ref={statusPhotoRef}
@@ -661,7 +662,7 @@ export function ReminderDetailPopup({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-emerald-700 hover:text-emerald-900 transition-colors">
-                  🔗 Buka foto di tab baru
+                  <IkonTeks nama="🔗" />Buka foto di tab baru
                 </a>
               </div>
             </div>
@@ -679,7 +680,7 @@ export function ReminderDetailPopup({
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 self-start overflow-hidden flex flex-col"
           style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '100%' }}>
           <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
-            <h3 className="text-white font-bold text-base">🕘 Riwayat Perubahan</h3>
+            <h3 className="text-white font-bold text-base"><IkonTeks nama="🕘" />Riwayat Perubahan</h3>
             <p className="text-slate-300 text-[11px] mt-0.5 truncate">{detailReminder.project_name}</p>
             <button aria-label="Tutup" onClick={() => setShowRiwayat(false)}
               className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>

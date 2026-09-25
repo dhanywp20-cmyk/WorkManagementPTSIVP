@@ -7,6 +7,7 @@ import { ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type P
 import { hasFullAccess } from '@/lib/constants';
 import { getSession } from '@/lib/auth';
 import { createNotification } from '@/lib/notifications';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   user: User; onBack: () => void; isAdminView: boolean;
@@ -312,7 +313,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
           style={{ background: '#ffffff' }}>
           <div>
-            <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📋 Review Jawaban — {user.full_name}</h1>
+            <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="📋" />Review Jawaban — {user.full_name}</h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{selectedAttempt.lc_quiz_sessions?.session_name}</p>
           </div>
           <button onClick={() => setSelectedAttempt(null)}
@@ -448,7 +449,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                                 loading="lazy"
                                 className="w-40 h-40 object-cover rounded-lg border border-slate-200 group-hover:border-slate-400 transition-all" />
                               <span className="block text-[11px] font-semibold text-slate-500 group-hover:text-slate-700 mt-1">
-                                🔍 Buka ukuran penuh
+                                <IkonTeks nama="🔍" />Buka ukuran penuh
                               </span>
                             </a>
                           ) : (
@@ -466,13 +467,13 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                             {aiGradingIds.has(q.id) && (
                               <div className="flex items-center gap-2 text-xs font-semibold text-violet-600">
                                 <span className="w-3.5 h-3.5 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
-                                🤖 AI sedang menilai...
+                                <IkonTeks nama="🤖" />AI sedang menilai...
                               </div>
                             )}
                             {aiFeedback[q.id] && (
                               <div className="bg-violet-50 rounded-xl border border-violet-200 p-3">
                                 <div className="flex items-center justify-between gap-2 mb-1">
-                                  <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">🤖 Saran AI — jawaban peserta vs kunci referensi</p>
+                                  <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest"><IkonTeks nama="🤖" />Saran AI — jawaban peserta vs kunci referensi</p>
                                   {aiScores[q.id] !== undefined && (
                                     <span className="text-[11px] font-black text-violet-700 bg-violet-100 border border-violet-300 rounded-full px-2 py-0.5 whitespace-nowrap">
                                       AI: {aiScores[q.id]}
@@ -485,7 +486,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                                 {aiScores[q.id] !== undefined && manualScores[q.id] !== undefined
                                   && manualScores[q.id] !== '' && Number(manualScores[q.id]) !== aiScores[q.id] && (
                                   <p className="text-[11px] font-semibold text-amber-700 mt-1.5">
-                                    ✏️ Dikoreksi admin: {aiScores[q.id]} → {manualScores[q.id]}
+                                    <IkonTeks nama="✏" />Dikoreksi admin: {aiScores[q.id]} → {manualScores[q.id]}
                                   </p>
                                 )}
                               </div>
@@ -498,7 +499,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                                 ada yang bisa dinilai. */}
                             {!ans?.essay_text?.trim() && !ans?.answer_thumb_url && (
                               <p className="text-xs text-slate-500 italic">
-                                🤖 Penilaian AI dilewati — peserta tidak menuliskan jawaban untuk soal ini. Isi nilai manual bila perlu.
+                                <IkonTeks nama="🤖" />Penilaian AI dilewati — peserta tidak menuliskan jawaban untuk soal ini. Isi nilai manual bila perlu.
                               </p>
                             )}
                             {/* Jawaban bergambar dinilai manusia. AI di sini hanya
@@ -507,7 +508,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                                 ia berikan akan menyesatkan. */}
                             {ans?.answer_thumb_url && (
                               <p className="text-xs text-slate-500 italic">
-                                🖐️ Jawaban berupa gambar — dinilai manual. Buka gambarnya di atas, lalu isi nilai di bawah.
+                                <IkonTeks nama="🖐" />Jawaban berupa gambar — dinilai manual. Buka gambarnya di atas, lalu isi nilai di bawah.
                               </p>
                             )}
                             <div className="flex items-center gap-3">
@@ -643,7 +644,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
               <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
               <div className="flex gap-3 mt-1 text-xs text-slate-400">
                 {a.grading_status === 'pending_review' ? <span>📝 {a.total_questions} soal essay dikirim</span> : <span>✅ {a.total_correct}/{a.total_questions} benar</span>}
-                <span>🎯 Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
+                <span><IkonTeks nama="🎯" />Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
                 {a.time_taken_sec && <span>⏱️ {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
                 <span>📅 {a.submitted_at ? fmtDate(a.submitted_at) : ''}</span>
               </div>
@@ -694,7 +695,7 @@ export function TeamPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">👥 Team</h1>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="👥" />Team</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Daftar anggota team & partisipasi quiz</p>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari anggota..." />

@@ -1,5 +1,7 @@
 'use client';
 
+import { Ikon } from './Ikon';
+
 /**
  * Shared form helpers - sama persis dipakai di reminder-schedule & form-review.
  */
@@ -35,7 +37,7 @@ export function SectionHeader({ icon, title }: { icon: string; title: string }) 
     <div className="flex items-center gap-1.5 pb-1.5 border-b" style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
       {/* Emoji di sini murni hiasan judul: dibiarkan terbaca, pembaca layar
           mengeja namanya ("wajah tersenyum", "map") sebelum judul aslinya. */}
-      <span className="text-sm" aria-hidden="true">{icon}</span>
+      <Ikon nama={icon} ukuran={14} className="text-slate-500" />
       <span className="text-xs font-bold tracking-wide text-slate-700">{title}</span>
     </div>
   );
@@ -44,7 +46,7 @@ export function SectionHeader({ icon, title }: { icon: string; title: string }) 
 export function SectionHeaderSmall({ icon, title }: { icon: string; title: string }) {
   return (
     <p className="text-[10px] font-bold tracking-widest uppercase flex items-center gap-1.5" style={{ color: '#94a3b8' }}>
-      <span aria-hidden="true">{icon}</span>{title}
+      <Ikon nama={icon} ukuran={12} />{title}
     </p>
   );
 }
@@ -53,7 +55,7 @@ export function InfoRow({ icon, label, value }: { icon: string; label: string; v
   if (!value) return null;
   return (
     <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-      <span className="text-base flex-shrink-0" aria-hidden="true">{icon}</span>
+      <Ikon nama={icon} ukuran={16} className="text-slate-400" />
       <div className="min-w-0">
         <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#64748b' }}>{label}</p>
         <p className="text-sm font-semibold text-slate-800 break-words">{value}</p>

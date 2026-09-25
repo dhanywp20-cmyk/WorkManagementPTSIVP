@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { Ikon } from '@/components/shared/Ikon';
 
 export function UrlListField({ label, icon, value, onChange }: {
   label:string; icon:string; value:string; onChange:(v:string)=>void;
@@ -10,7 +11,7 @@ export function UrlListField({ label, icon, value, onChange }: {
   const remove = (i:number) => onChange(urls.filter((_,idx)=>idx!==i).join(','));
   return (
     <div>
-      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{icon} {label}</label>
+      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {label}</label>
       <div className="flex gap-2">
         <input type="text"
           className="flex-1 px-3 py-2.5 rounded-xl text-xs outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100"

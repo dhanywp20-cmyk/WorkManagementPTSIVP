@@ -5,6 +5,7 @@ import { User, MovementLog, EVENTS, KONDISI_BARANG_LIST, KondisiBarang, uploadFi
 import { MultiFileField } from './MultiFileField';
 import { UrlListField } from './UrlListField';
 import { ModalPortal } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }: {
   log?:MovementLog|null; currentUser:User; teamMembers:string[]; onClose:()=>void; onSave:()=>void;
@@ -83,10 +84,10 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
         <div className="p-6 space-y-4">
           {error&&<div className="px-4 py-3 rounded-xl text-sm font-semibold text-red-700 bg-red-50 border border-red-200">{error}</div>}
 
-          <div><label htmlFor="f-unit-movement-components-addeditmodal-1" className={lbl}>📅 Tanggal In/Out</label>
+          <div><label htmlFor="f-unit-movement-components-addeditmodal-1" className={lbl}><IkonTeks nama="📅" />Tanggal In/Out</label>
             <input id="f-unit-movement-components-addeditmodal-1" type="date" className={inp} value={form.tanggal} onChange={e=>set('tanggal',e.target.value)}/></div>
 
-          <div><label className={lbl}>📦 Status Barang</label>
+          <div><label className={lbl}><IkonTeks nama="📦" />Status Barang</label>
             <div className="flex gap-2">
               {(['Masuk','Keluar'] as const).map(s=>(
                 <button key={s} type="button" onClick={()=>set('status_barang',s)}
@@ -112,24 +113,24 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
               <input id="f-unit-movement-components-addeditmodal-3" type="text" className={inp} placeholder="Nama pihak luar..." value={form.nama_luar} onChange={e=>set('nama_luar',e.target.value)}/></div>
           </div>
 
-          <div><label htmlFor="f-unit-movement-components-addeditmodal-4" className={lbl}>📋 Nama Project</label>
+          <div><label htmlFor="f-unit-movement-components-addeditmodal-4" className={lbl}><IkonTeks nama="📋" />Nama Project</label>
             <input id="f-unit-movement-components-addeditmodal-4" type="text" className={inp} placeholder="Nama project..." value={form.project_name} onChange={e=>set('project_name',e.target.value)}/></div>
 
-          <div><label htmlFor="f-unit-movement-components-addeditmodal-5" className={lbl}>🎯 Event</label>
+          <div><label htmlFor="f-unit-movement-components-addeditmodal-5" className={lbl}><IkonTeks nama="🎯" />Event</label>
             <select id="f-unit-movement-components-addeditmodal-5" className={inp+" cursor-pointer"} value={form.event} onChange={e=>set('event',e.target.value)}>
               {EVENTS.map(ev=><option key={ev} value={ev}>{ev}</option>)}
             </select>
           </div>
 
-          <div><label htmlFor="f-unit-movement-components-addeditmodal-6" className={lbl}>📦 Type Barang</label>
+          <div><label htmlFor="f-unit-movement-components-addeditmodal-6" className={lbl}><IkonTeks nama="📦" />Type Barang</label>
             <textarea id="f-unit-movement-components-addeditmodal-6" className={inp+" resize-none"} rows={3} placeholder="Nama / tipe barang (satu per baris jika multiple)..." value={form.type_barang} onChange={e=>set('type_barang',e.target.value)}/></div>
 
-          <div><label htmlFor="f-unit-movement-components-addeditmodal-7" className={lbl}>🔢 Serial Number</label>
+          <div><label htmlFor="f-unit-movement-components-addeditmodal-7" className={lbl}><IkonTeks nama="🔢" />Serial Number</label>
             <input id="f-unit-movement-components-addeditmodal-7" type="text" className={inp} placeholder="Serial number..." value={form.serial_number} onChange={e=>set('serial_number',e.target.value)}/></div>
 
           {/* Kondisi Barang */}
           <div>
-            <label className={lbl}>🔍 Kondisi Barang</label>
+            <label className={lbl}><IkonTeks nama="🔍" />Kondisi Barang</label>
             <div className="flex gap-2">
               {KONDISI_BARANG_LIST.map(k=>(
                 <button key={k} type="button" onClick={()=>set('kondisi_barang',k)}
@@ -148,17 +149,17 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
           {/* Expected Return Date — only for Keluar */}
           {!isMasuk && (
             <div>
-              <label htmlFor="f-unit-movement-components-addeditmodal-8" className={lbl}>📅 Perkiraan Tanggal Kembali</label>
+              <label htmlFor="f-unit-movement-components-addeditmodal-8" className={lbl}><IkonTeks nama="📅" />Perkiraan Tanggal Kembali</label>
               <input id="f-unit-movement-components-addeditmodal-8" type="date" className={inp} value={form.expected_return_date}
                 onChange={e=>set('expected_return_date',e.target.value)}
                 min={form.tanggal}/>
               <p className="text-[10px] text-amber-600 mt-1 font-medium">
-                ℹ️ Isi untuk memantau barang yang belum kembali (Open Loan alert)
+                <IkonTeks nama="ℹ" />Isi untuk memantau barang yang belum kembali (Open Loan alert)
               </p>
             </div>
           )}
 
-          <div><label htmlFor="f-unit-movement-components-addeditmodal-9" className={lbl}>📝 Catatan</label>
+          <div><label htmlFor="f-unit-movement-components-addeditmodal-9" className={lbl}><IkonTeks nama="📝" />Catatan</label>
             <textarea id="f-unit-movement-components-addeditmodal-9" className={inp+" resize-none"} rows={3} placeholder="Keterangan tambahan..." value={form.catatan} onChange={e=>set('catatan',e.target.value)}/></div>
 
           {/* Foto Surat: upload file */}
@@ -178,7 +179,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
             value={form.foto_barang_url} onChange={v=>set('foto_barang_url',v)}/>
 
           <div className="px-4 py-3 rounded-xl text-xs text-blue-700 bg-blue-50 border border-blue-100">
-            <p className="font-bold mb-1">💡 Cara pakai Google Drive link</p>
+            <p className="font-bold mb-1"><IkonTeks nama="💡" />Cara pakai Google Drive link</p>
             <p>Buka file di Google Drive → klik kanan → <strong>Get link</strong> → ubah akses ke <strong>Anyone with the link</strong> → copy URL → paste di kolom Link di atas.</p>
           </div>
 

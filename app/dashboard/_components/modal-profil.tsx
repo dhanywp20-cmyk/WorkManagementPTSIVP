@@ -12,6 +12,7 @@ import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { statusInstalasiPWA, subscribeInstallPWA, pasangAplikasiPWA, type StatusInstallPWA } from '@/lib/pwa-install';
 import { useMerek } from '@/lib/merek';
 import { InstallGuideModal } from './InstallGuideModal';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // UserProfileModal
 
@@ -339,7 +340,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
               <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                 {jabatanCfg && (
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white/15 text-white backdrop-blur">
-                    {jabatanCfg.icon} {userData.jabatan}
+                    <Ikon nama={jabatanCfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {userData.jabatan}
                   </span>
                 )}
                 {jabatanCfg && (userData.team_type || userData.sales_division) && (
@@ -431,12 +432,12 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       </button>
                       {autoHubung === 'menunggu' && (
                         <p className="text-[11px] text-sky-600 leading-relaxed">
-                          ⏳ Mengecek otomatis tiap beberapa detik, maks. 5 menit setelah Anda menekan Start di Telegram.
+                          <IkonTeks nama="⏳" />Mengecek otomatis tiap beberapa detik, maks. 5 menit setelah Anda menekan Start di Telegram.
                         </p>
                       )}
                       {autoHubung === 'gagal' && (
                         <p className="text-[11px] text-red-600 leading-relaxed">
-                          ⚠️ Belum terhubung. Pastikan sudah menekan Start di bot, lalu tekan tombolnya lagi.
+                          <IkonTeks nama="⚠" />Belum terhubung. Pastikan sudah menekan Start di bot, lalu tekan tombolnya lagi.
                         </p>
                       )}
                     </>
@@ -558,7 +559,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                   ) : (
                     <button onClick={() => setEditPassword(true)}
                       className="w-full py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all flex items-center justify-center gap-2">
-                      🔑 Ubah Password
+                      <IkonTeks nama="🔑" />Ubah Password
                     </button>
                   )}
                 </div>
@@ -629,7 +630,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
               <Kartu icon="🔐" judul="Hak Akses Modul" hitung={String(menuAktif.length)}>
                 <div className="p-4 space-y-2.5">
                   <input aria-label="Cari modul..." value={cariIzin} onChange={e => setCariIzin(e.target.value)}
-                    placeholder="🔍 Cari modul..."
+                    placeholder="Cari modul..."
                     className="w-full rounded-lg border border-slate-200 px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-rose-200" />
                   {/* TANPA max-h: halaman ini sudah menggulir sebagai satu blok
                       (bungkusnya flex-1 overflow-y-auto di induk - lihat
@@ -646,7 +647,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       return (
                         <span key={k}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                          {cfg?.icon} {cfg?.label ?? k}
+                          <Ikon nama={cfg?.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg?.label ?? k}
                         </span>
                       );
                     })}

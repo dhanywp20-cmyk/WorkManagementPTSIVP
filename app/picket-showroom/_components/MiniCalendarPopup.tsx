@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import { PiketRow, DayOfWeek, DAY_COLOR, DAYS_OF_WEEK, MONTH_NAMES, addDays, toKey, getRollingNameForDate } from './shared';
 import { ModalPortal } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRow[];holidays?:string[];onClose:()=>void}) {
   const [calMonth,setCalMonth]=useState(()=>new Date());
@@ -117,7 +118,7 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
                 {/* Holiday marker */}
                 {isHoliday && inMonth && (
                   <div className="text-[8px] font-black px-1 py-0.5 rounded-full text-white mb-0.5 w-fit"
-                    style={{background:'#dc2626'}}>🎌 LIBUR</div>
+                    style={{background:'#dc2626'}}><IkonTeks nama="🎌" />LIBUR</div>
                 )}
 
                 {/* Actual DB PIC names — hidden on holiday */}

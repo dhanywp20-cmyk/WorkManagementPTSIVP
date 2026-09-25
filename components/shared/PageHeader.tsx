@@ -1,6 +1,8 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { Ikon } from './Ikon';
+import { NETRAL } from '@/lib/desain';
 
 interface PageHeaderProps {
   icon: string;
@@ -24,17 +26,20 @@ interface PageHeaderProps {
  * </PageHeader>
  */
 export function PageHeader({ icon, title, subtitle, color, colorLight, children }: PageHeaderProps) {
-  // Auto-derive a lighter shade if not provided (darken ~20%  use as gradient end)
-  const iconBg = `linear-gradient(135deg,${color},${colorLight ?? color + 'cc'})`;
-  const iconShadow = `0 3px 12px ${color}40`;
+  // Dirombak 2026-09-25: header putih solid di atas latar netral, garis
+  // bawah tipis, ikon garis di ubin berwarna lembut. Dulu: blok gradien
+  // berbayang + emoji + judul berwarna modul + garis bawah 3px - ramai
+  // untuk elemen yang muncul di setiap halaman. Warna modul tetap dipakai
+  // (ikon & aksen tipis) supaya identitas modul tidak hilang.
+  void colorLight;
 
   return (
     <header
       className="sticky top-0 z-50 animate-slide-down anim-d0"
       style={{
-        background: 'rgba(255,255,255,0.95)',
-        borderBottom: `3px solid ${color}`,
-        backdropFilter: 'blur(16px)',
+        background: NETRAL.permukaan,
+        borderBottom: `1px solid ${NETRAL.garis}`,
+        boxShadow: `inset 0 2px 0 ${color}`,
       }}
     >
       <div className="max-w-[1600px] mx-auto px-6 py-3.5 flex items-center justify-between gap-4 flex-wrap">
@@ -42,19 +47,19 @@ export function PageHeader({ icon, title, subtitle, color, colorLight, children 
         <div className="flex items-center gap-3">
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: iconBg, boxShadow: iconShadow }}
+            style={{ background: `${color}14`, color, border: `1px solid ${color}26` }}
           >
-            <span className="text-lg" aria-hidden="true">{icon}</span>
+            <Ikon nama={icon} ukuran={18} />
           </div>
           <div>
             <h1
-              className="text-base font-black tracking-tight leading-tight"
-              style={{ color }}
+              className="text-base font-bold tracking-tight leading-tight"
+              style={{ color: NETRAL.tinta }}
             >
               {title}
             </h1>
             {subtitle && (
-              <p className="text-[10px] text-slate-500 font-medium">{subtitle}</p>
+              <p className="text-[11px] font-medium" style={{ color: NETRAL.tinta2 }}>{subtitle}</p>
             )}
           </div>
         </div>

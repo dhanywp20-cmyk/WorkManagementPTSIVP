@@ -1,5 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { Ikon } from './Ikon';
+import { NETRAL } from '@/lib/desain';
 
 /**
  * Shared MiniPieChart - kartu komposisi (bagian dari keseluruhan).
@@ -22,8 +24,8 @@ import { useState } from 'react';
  */
 
 const MAKS_KATEGORI = 7;
-const WARNA_LAINNYA = '#cbd5e1';
-const PERMUKAAN = '#ffffff';
+const WARNA_LAINNYA = NETRAL.garisKuat;
+const PERMUKAAN = NETRAL.permukaan;
 
 type Item = { label: string; value: number; color: string; lipat?: boolean };
 
@@ -40,9 +42,9 @@ function lipatKeLainnya(items: Item[]): Item[] {
 function Kartu({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl p-2 sm:p-4 flex flex-col gap-1.5 sm:gap-3 min-w-0"
-      style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }}>
+      style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}>
       <p className="flex items-center gap-1.5 text-[10px] sm:text-[12.5px] font-semibold text-slate-700 leading-tight">
-        {icon && <span aria-hidden="true" className="text-[11px] sm:text-[13px] opacity-80">{icon}</span>}
+        {icon && <Ikon nama={icon} ukuran={14} className="text-slate-400" />}
         <span className="truncate">{title}</span>
       </p>
       {children}

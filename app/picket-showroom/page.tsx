@@ -24,6 +24,7 @@ import { ScheduleModal } from './_components/ScheduleModal';
 import { ViewDetailModal } from './_components/ViewDetailModal';
 import { exportToExcel } from './_components/excel-export';
 import { ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 // Main Page
 
@@ -348,13 +349,13 @@ function PiketShowroomPageInner() {
   };
 
   return(
-    <div className="h-screen overflow-hidden flex flex-col relative" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover',backgroundPosition:'center',backgroundAttachment:'fixed'}}>
+    <div className="h-screen overflow-hidden flex flex-col relative" style={{background: 'var(--halaman)',backgroundSize:'cover',backgroundPosition:'center',backgroundAttachment:'fixed'}}>
       <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
       <Toast notif={toast} />
       <div className="absolute inset-0 pointer-events-none" style={{background:'rgba(255,255,255,0.08)'}}/>
       {loading&&rows.length===0&&(
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center" style={{backgroundImage:`url('/IVP_Background.png')`,backgroundSize:'cover'}}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
           <div className="absolute inset-0" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(2px)'}}/>
           <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl" style={{background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
             <svg aria-hidden="true" focusable="false" className="w-16 h-16 animate-spin" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="26" stroke="#f1f5f9" strokeWidth="6"/><path d="M32 6 A26 26 0 0 1 58 32" stroke="#dc2626" strokeWidth="6" strokeLinecap="round"/></svg>
@@ -436,7 +437,7 @@ function PiketShowroomPageInner() {
                   <button onClick={()=>setShowCalendar(true)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border"
                     style={{background:'rgba(37,99,235,0.06)',borderColor:'rgba(37,99,235,0.25)',color:'#2563eb'}}>
-                    📅 Show Calendar
+                    <IkonTeks nama="📅" />Show Calendar
                   </button>
                   {(search||filterDay||filterTamu||filterKebutuhan||filterInstansi||filterDivision||filterKegiatan)&&(
                     <button onClick={()=>{setSearch('');setFilterDay('');setFilterTamu(false);setFilterKebutuhan(null);setFilterInstansi(null);setFilterDivision(null);setFilterKegiatan(null);}}
@@ -460,7 +461,7 @@ function PiketShowroomPageInner() {
                 </select>
                 <button onClick={()=>setFilterTamu(f=>!f)} className="px-3 py-2 rounded-xl text-xs font-semibold border"
                   style={filterTamu?{background:'rgba(16,185,129,0.12)',borderColor:'rgba(16,185,129,0.4)',color:'#059669'}:{background:'transparent',borderColor:'rgba(0,0,0,0.1)',color:'#64748b'}}>
-                  🏢 Ada Tamu
+                  <IkonTeks nama="🏢" />Ada Tamu
                 </button>
               </div>
               {(filterInstansi||filterKebutuhan||filterDivision||filterKegiatan)&&(
@@ -493,7 +494,7 @@ function PiketShowroomPageInner() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-black" style={{color:todayDc?.accent||'#dc2626'}}>📍 Hari ini: {todayName}</span>
+                      <span className="text-xs font-black" style={{color:todayDc?.accent||'#dc2626'}}><IkonTeks nama="📍" />Hari ini: {todayName}</span>
                       <span className="text-[10px] text-slate-500 font-medium">{now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>
                       {todayInView&&todayPIC&&<span className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style={{background:todayDc?.accent||'#dc2626'}}>PIC: {todayPIC}</span>}
                       {!todayInView&&<span className="text-[10px] text-slate-400 italic">Jadwal hari ini tidak tampil di view ini</span>}
@@ -530,7 +531,7 @@ function PiketShowroomPageInner() {
                       </div>
                       <div className="flex-1 min-w-0 pt-0.5">
                         {isHoliday?(
-                          <span className="text-[11px] font-black px-2 py-0.5 rounded-full text-white" style={{background:'#dc2626'}}>🎌 LIBUR</span>
+                          <span className="text-[11px] font-black px-2 py-0.5 rounded-full text-white" style={{background:'#dc2626'}}><IkonTeks nama="🎌" />LIBUR</span>
                         ):pics.length===0?(
                           <span className="text-xs text-gray-400 italic">Belum ada PIC</span>
                         ):(
@@ -605,9 +606,9 @@ function PiketShowroomPageInner() {
                                   <span className="text-base font-black leading-tight" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').getDate()}</span>
                                   <span className="text-[9px] font-bold" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
                                   <span className="text-xs font-bold mt-0.5" style={{color:dc.accent}}>{row.day_of_week}</span>
-                                  {todayRow&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md text-white mt-0.5 w-fit" style={{background:dc.accent,boxShadow:`0 2px 6px ${dc.accent}50`}}>📍 HARI INI</span>}
+                                  {todayRow&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md text-white mt-0.5 w-fit" style={{background:dc.accent,boxShadow:`0 2px 6px ${dc.accent}50`}}><IkonTeks nama="📍" />HARI INI</span>}
                                   {countdownBadge&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 w-fit" style={{background:`${countdownBadge.color}15`,color:countdownBadge.color,border:`1px solid ${countdownBadge.color}40`}}>{countdownBadge.label}</span>}
-                                  {isHoliday&&<span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white mt-0.5 w-fit" style={{background:'#dc2626',letterSpacing:'0.03em'}}>🎌 LIBUR</span>}
+                                  {isHoliday&&<span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white mt-0.5 w-fit" style={{background:'#dc2626',letterSpacing:'0.03em'}}><IkonTeks nama="🎌" />LIBUR</span>}
                                 </div>
                               </td>
                               {/* PIC — tambah keterangan tim */}

@@ -4,6 +4,7 @@ import { CATEGORY_CONFIG, PRODUCT_TYPES } from './shared';
 import { MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { SalesPicker, type SalesPickerUser } from '@/components/shared/SalesPicker';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export interface JadwalRequest {
   project_name: string;
@@ -132,7 +133,7 @@ export function RequestJadwalModal({
           style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
         >
           <div>
-            <h2 className="text-xl font-bold text-white">📩 Request Jadwal</h2>
+            <h2 className="text-xl font-bold text-white"><IkonTeks nama="📩" />Request Jadwal</h2>
             <p className="text-blue-200/80 text-xs mt-1">
               Permintaan akan dikirim ke Admin untuk disetujui &amp; di-assign ke Team PTS
             </p>
@@ -175,7 +176,7 @@ export function RequestJadwalModal({
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
                 style={{ background: 'rgba(59,130,246,0.6)' }}
               >
-                ⏳ Menunggu Approval
+                <IkonTeks nama="⏳" />Menunggu Approval
               </span>
             </div>
           </div>
@@ -317,7 +318,7 @@ export function RequestJadwalModal({
                         : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }
                     }
                   >
-                    <span className="text-xl">{c.icon}</span>
+                    <span className="text-xl"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                     <span className="text-sm font-bold leading-tight flex-1">{cat}</span>
                     {sel && (
                       <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

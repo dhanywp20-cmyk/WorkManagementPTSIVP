@@ -13,6 +13,8 @@ import { useKelompokPTS, labelKelompokPTS, teamTypeDariLabelPTS } from '@/lib/ke
 import { ConfirmDialog, type ConfirmState, Username, ModalPortal } from '@/components/shared';
 
 import { propagateUserRename, pesanSebar, sendWelcomeWA } from './modal-bersama';
+import { Ikon } from '@/components/shared/Ikon';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Minor (docs/UX-WORKFLOW-AUDIT.md): kolom Role dulu menampilkan enum
@@ -288,7 +290,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-rose-500 bg-rose-500' : 'border-slate-300 bg-white'}`}>
                   {checked && <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </div>
-                <span className="text-lg">{m.icon}</span>
+                <span className="text-lg"><Ikon nama={m.icon} ukuran={18} /></span>
                 <span className="font-semibold text-sm">{m.label}</span>
               </button>
             );
@@ -360,7 +362,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   {editingUser ? (
                     <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-bold text-slate-800">✏️ Edit: {editingUser.full_name}</h3>
+                        <h3 className="font-bold text-slate-800"><IkonTeks nama="✏" />Edit: {editingUser.full_name}</h3>
                         <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                       </div>
                       <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
@@ -442,7 +444,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                       <div className="flex gap-3 pt-2">
                         <button onClick={handleSaveEdit} disabled={saving} className="flex-1 bg-gradient-to-r from-rose-600 to-rose-700 text-white py-2.5 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                           {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                          💾 Simpan Perubahan
+                          <IkonTeks nama="💾" />Simpan Perubahan
                         </button>
                         <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all">Batal</button>
                       </div>
@@ -578,7 +580,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
               <button onClick={handleAddUser} disabled={saving}
                 className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                 {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                ➕ Tambah Akun
+                <IkonTeks nama="➕" />Tambah Akun
               </button>
             </div>
           )}
@@ -813,7 +815,7 @@ export function AccountSettingsInline() {
                 <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-rose-500 bg-rose-500' : 'border-slate-300 bg-white'}`}>
                   {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </div>
-                <span>{m.icon}</span>
+                <span><Ikon nama={m.icon} ukuran={14} /></span>
                 <span className="font-semibold truncate">{m.label}</span>
               </button>
             );
@@ -844,15 +846,15 @@ export function AccountSettingsInline() {
       <div className="flex border-b border-slate-100 px-5 pt-3 flex-shrink-0 bg-slate-50/60">
         <button onClick={() => { setActiveTab('list'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'list' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          👥 Daftar Akun ({users.length})
+          <IkonTeks nama="👥" />Daftar Akun ({users.length})
         </button>
         <button onClick={() => { setActiveTab('add'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'add' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          ➕ Tambah Akun
+          <IkonTeks nama="➕" />Tambah Akun
         </button>
         <button onClick={() => { setActiveTab('pending'); setApprovingUser(null); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'pending' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          🕐 Pending {pendingUsers.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-black rounded-full">{pendingUsers.length}</span>}
+          <IkonTeks nama="🕐" />Pending {pendingUsers.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-black rounded-full">{pendingUsers.length}</span>}
         </button>
       </div>
 
@@ -871,7 +873,7 @@ export function AccountSettingsInline() {
             ) : editingUser ? (
               <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-slate-800">✏️ Edit: {editingUser.full_name}</h3>
+                  <h3 className="font-bold text-slate-800"><IkonTeks nama="✏" />Edit: {editingUser.full_name}</h3>
                   <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                 </div>
                 <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
@@ -938,7 +940,7 @@ export function AccountSettingsInline() {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="f-dashboard-components-modal-akun-29" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">📱 No. Telepon / WA</label>
+                    <label htmlFor="f-dashboard-components-modal-akun-29" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="📱" />No. Telepon / WA</label>
                     <input id="f-dashboard-components-modal-akun-29" value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
                   </div>
                   {/* AKSES — dulu tombol di kolom tabel tersendiri. Dipindah ke sini
@@ -946,7 +948,7 @@ export function AccountSettingsInline() {
                       bukan berubah seketika begitu tersenggol di daftar. */}
                   {editingUser.role === 'team' && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🔑 Akses Platform</label>
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="🔑" />Akses Platform</label>
                       <div className="flex gap-2">
                         {([
                           { v: 'guest' as const, icon: '🔒', label: 'Guest',       desc: 'Hanya data miliknya sendiri' },
@@ -958,7 +960,7 @@ export function AccountSettingsInline() {
                                 ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
                                 : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                             }`}>
-                            <span className="block text-sm font-bold">{o.icon} {o.label}</span>
+                            <span className="block text-sm font-bold"><Ikon nama={o.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {o.label}</span>
                             <span className="block text-[11px] mt-0.5 opacity-80">{o.desc}</span>
                           </button>
                         ))}
@@ -978,7 +980,7 @@ export function AccountSettingsInline() {
                       pekerjaan ke Manager karena namanya memang ditawarkan. */}
                   {editingUser.role === 'team' && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🎯 Penerima Tugas</label>
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="🎯" />Penerima Tugas</label>
                       <div className="flex gap-2">
                         {([
                           { v: true,  icon: '🛠️', label: 'Bisa ditugaskan',   desc: 'Muncul di dropdown assign' },
@@ -990,7 +992,7 @@ export function AccountSettingsInline() {
                                 ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
                                 : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                             }`}>
-                            <span className="block text-sm font-bold">{o.icon} {o.label}</span>
+                            <span className="block text-sm font-bold"><Ikon nama={o.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {o.label}</span>
                             <span className="block text-[11px] mt-0.5 opacity-80">{o.desc}</span>
                           </button>
                         ))}
@@ -1012,7 +1014,7 @@ export function AccountSettingsInline() {
                       seluruh ringkasan Piket Showroom tampil kosong. */}
                   {editingUser.role !== 'team' && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🏪 Piket Showroom — Catatan Tamu</label>
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="🏪" />Piket Showroom — Catatan Tamu</label>
                       <div className="flex gap-2">
                         {([
                           { v: 'lingkup' as const, icon: '🔒', label: 'Sesuai divisi', desc: 'Hanya catatan atas namanya / divisinya' },
@@ -1025,7 +1027,7 @@ export function AccountSettingsInline() {
                               className={`flex-1 text-left px-3 py-2 rounded-lg border-2 transition-all ${
                                 aktif ? 'bg-teal-50 border-teal-400 text-teal-800' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                               }`}>
-                              <span className="block text-sm font-bold">{o.icon} {o.label}</span>
+                              <span className="block text-sm font-bold"><Ikon nama={o.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {o.label}</span>
                               <span className="block text-[11px] mt-0.5 opacity-80">{o.desc}</span>
                             </button>
                           );
@@ -1044,7 +1046,7 @@ export function AccountSettingsInline() {
                 <div className="flex gap-3 pt-1">
                   <button onClick={handleSaveEdit} disabled={saving} className="flex-1 bg-gradient-to-r from-rose-600 to-rose-700 text-white py-2.5 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                     {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                    💾 Simpan Perubahan
+                    <IkonTeks nama="💾" />Simpan Perubahan
                   </button>
                   <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all">Batal</button>
                 </div>
@@ -1162,7 +1164,7 @@ export function AccountSettingsInline() {
                 </select>
               </div>
               <div>
-                <label htmlFor="f-dashboard-components-modal-akun-38" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">📱 No. Telepon / WA</label>
+                <label htmlFor="f-dashboard-components-modal-akun-38" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="📱" />No. Telepon / WA</label>
                 <input id="f-dashboard-components-modal-akun-38" value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
               </div>
               <div className="formulir:col-span-3">
@@ -1172,7 +1174,7 @@ export function AccountSettingsInline() {
             <button onClick={handleAddUser} disabled={saving}
               className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              ➕ Tambah Akun
+              <IkonTeks nama="➕" />Tambah Akun
             </button>
           </div>
         )}
@@ -1184,7 +1186,7 @@ export function AccountSettingsInline() {
             ) : approvingUser ? (
               <div className="space-y-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-slate-800">✅ Review Pendaftaran: {approvingUser.full_name}</h3>
+                  <h3 className="font-bold text-slate-800"><IkonTeks nama="✅" />Review Pendaftaran: {approvingUser.full_name}</h3>
                   <button aria-label="Tutup" onClick={() => { setApprovingUser(null); setApproveMenus(DEFAULT_MENU_KEYS); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm bg-white p-3 rounded-lg border border-slate-200">
@@ -1211,7 +1213,7 @@ export function AccountSettingsInline() {
                           <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? 'border-amber-500 bg-amber-500' : 'border-slate-300 bg-white'}`}>
                             {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                           </div>
-                          <span>{m.icon}</span><span className="font-semibold truncate">{m.label}</span>
+                          <span><Ikon nama={m.icon} ukuran={14} /></span><span className="font-semibold truncate">{m.label}</span>
                         </button>
                       );
                     })}
@@ -1221,11 +1223,11 @@ export function AccountSettingsInline() {
                   <button onClick={handleApproveUser} disabled={saving}
                     className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-2.5 rounded-lg font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 hover:from-emerald-700 hover:to-emerald-800 transition-all">
                     {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                    ✅ Setujui Akun
+                    <IkonTeks nama="✅" />Setujui Akun
                   </button>
                   <button onClick={() => handleRejectUser(approvingUser.id, approvingUser.full_name)}
                     className="px-5 py-2.5 rounded-lg border border-red-200 text-red-600 font-semibold text-sm hover:bg-red-50 transition-all">
-                    ❌ Tolak
+                    <IkonTeks nama="❌" />Tolak
                   </button>
                 </div>
               </div>

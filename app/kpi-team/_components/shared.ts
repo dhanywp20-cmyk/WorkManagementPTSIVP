@@ -5,6 +5,7 @@ import React from 'react';
 import * as XLSX from 'xlsx-js-style';
 
 import type { RekapLCTahunan } from '@/lib/kpi-lc-tahunan';
+import { WARNA_STATUS_TICKET } from '@/lib/desain';
 
 /**
  * Tipe, konstanta, dan penolong KPI Team yang dipakai bersama halaman, popup rincian, dan ekspor Excel.
@@ -141,12 +142,7 @@ export function warnaTim(teamType: string | null | undefined): string {
   return WARNA_CADANGAN[jumlah % WARNA_CADANGAN.length];
 }
 
-export const STATUS_COLORS: Record<string, string> = {
-  'Solved': '#10b981', 'Pending': '#3b82f6', 'Overdue': '#ef4444',
-  'Waiting Approval': '#f59e0b', 'Cancelled': '#6b7280',
-  'Process Repair': '#f97316', 'Warranty': '#8b5cf6',
-  'Out Of Warranty': '#ec4899', 'Submit RMA': '#06b6d4',
-};
+export const STATUS_COLORS: Record<string, string> = WARNA_STATUS_TICKET;
 
 export const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 

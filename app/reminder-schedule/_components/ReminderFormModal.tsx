@@ -10,6 +10,7 @@ import {
 import { FormField, SectionHeader, MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import { useKelompokPTSDitugaskan } from '@/lib/kelompok';
+import { Ikon } from '@/components/shared/Ikon';
 
 export type ReminderForm = Omit<Reminder, 'id' | 'created_at' | 'created_by' | 'wa_sent_h1'>;
 export type BulkTarget = 'none' | 'ivp' | 'mvi' | 'ump';
@@ -165,7 +166,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                     style={sel
                       ? { borderColor: c.color, background: c.bg, color: c.color }
                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
-                    <span className="text-base leading-none flex-shrink-0">{c.icon}</span>
+                    <span className="text-base leading-none flex-shrink-0"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                     <span className="text-[11px] font-bold leading-tight flex-1 min-w-0">{cat}</span>
                     {sel && <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.5} d="M5 13l4 4L19 7" /></svg>}
                   </button>
@@ -252,7 +253,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 className={inputCls} style={inputStyle}>
                 <option value="">-- Pilih Anggota Team --</option>
                 {canAssignSelf && selfUser && (
-                  <option value={selfUser.username}>🙋 Saya kerjakan sendiri ({selfUser.full_name})</option>
+                  <option value={selfUser.username}>Saya kerjakan sendiri ({selfUser.full_name})</option>
                 )}
                 {/* Route ke Supervisor — tersedia saat MEMBUAT maupun menyunting,
                     sama seperti form ticket Troubleshooting.
