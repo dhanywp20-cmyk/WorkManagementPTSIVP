@@ -8,6 +8,7 @@ import {
   timelineInfo, formatDate, timelineBreakdown,
   projectHealth, locationHealth, scheduleProgress,
 } from './shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 /**
  * Tampilan detail progres 1 proyek - MURNI display, tanpa aksi tulis.
@@ -114,7 +115,7 @@ export function ProjectDetailView({ detail, maxKolomLokasi = 2 }: {
           </div>
 
           <span className="text-[11px] font-semibold" style={{ color: PALETTE.inkSoft }}>
-            🗓️ <span style={fontMono}>{project.start_date ? formatDate(project.start_date) : '—'}</span>
+            <Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /> <span style={fontMono}>{project.start_date ? formatDate(project.start_date) : '—'}</span>
             <span className="mx-1.5" style={{ color: PALETTE.borderStrong }}>→</span>
             <span style={fontMono}>{project.target_date ? formatDate(project.target_date) : '—'}</span>
             {tl.daysElapsed !== null && (

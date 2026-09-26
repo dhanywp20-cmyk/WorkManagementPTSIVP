@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { useKelompok } from '@/lib/kelompok';
 import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
+import { Ikon } from '@/components/shared/Ikon';
 
 /**
  * Ruang kosong di sebelah Piket Showroom + Learning Center (lg:grid-cols-3
@@ -49,7 +50,7 @@ function HeaderTabBtn({ label, icon, active, onClick, badge }: {
       style={active
         ? { background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }
         : { background: 'rgba(0,0,0,0.05)', color: '#64748b' }}>
-      <span className="select-none">{icon}</span>
+      <span className="select-none"><Ikon nama={icon} ukuran={14} /></span>
       <span className="hidden sm:inline">{label}</span>
       {badge !== undefined && badge > 0 && (
         <span className="min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[9px] font-black px-1"

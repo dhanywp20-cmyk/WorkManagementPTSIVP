@@ -1,5 +1,7 @@
 'use client';
 
+import { Ikon } from './Ikon';
+
 interface LoadingSpinnerProps {
   message?: string;
   color?: string;
@@ -25,10 +27,12 @@ interface EmptyStateProps {
 export function EmptyState({ icon = '📭', title, description, action }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-2">
-      <span className="text-5xl" aria-hidden="true">{icon}</span>
-      <p className="font-semibold text-gray-600 text-sm mt-1">{title}</p>
+      <span className="w-14 h-14 rounded-2xl flex items-center justify-center bg-slate-100 text-slate-400">
+        <Ikon nama={icon} ukuran={26} tebal={1.75} />
+      </span>
+      <p className="font-semibold text-slate-700 text-sm mt-1">{title}</p>
       {description && (
-        <p className="text-xs text-gray-400 text-center max-w-xs leading-relaxed">{description}</p>
+        <p className="text-xs text-slate-500 text-center max-w-xs leading-relaxed">{description}</p>
       )}
       {action && (
         <button type="button" onClick={action.onClick}
@@ -95,7 +99,7 @@ export function ErrorState({ message = 'Gagal memuat data', onRetry }: ErrorStat
     // role="alert": kegagalan memuat harus terdengar begitu terjadi, bukan
     // menunggu pengguna kebetulan menyusuri halaman sampai menemukannya.
     <div role="alert" className="flex flex-col items-center justify-center py-16 gap-2">
-      <span className="text-5xl" aria-hidden="true">⚠️</span>
+      <span className="text-5xl" aria-hidden="true"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
       <p className="font-semibold text-gray-700 text-sm mt-1">{message}</p>
       <p className="text-xs text-gray-400">Periksa koneksi internet dan coba lagi</p>
       {onRetry && (

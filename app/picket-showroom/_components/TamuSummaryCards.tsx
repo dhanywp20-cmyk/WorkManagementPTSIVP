@@ -1,5 +1,6 @@
 'use client';
 import { PiketRow, KegiatanEntry, MONTH_NAMES } from './shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMonth,onYearChange,onMonthChange}:{
   allRows:PiketRow[];kegiatanList:KegiatanEntry[];
@@ -80,7 +81,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
       {/* Header */}
       <div className="px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap" style={{background:'#f8fafc',borderBottom:'1px solid rgba(15,23,42,0.08)'}}>
         <div className="flex items-center gap-2">
-          <span className="text-base">📊</span>
+          <span className="text-base"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
           <div>
             <p className="text-xs font-black leading-none" style={{color:accentColor}}>Ringkasan Aktivitas</p>
             <p className="text-[9px] text-slate-500 mt-0.5">{periodLabel}</p>
@@ -116,7 +117,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
         {highlights.map((s,i)=>(
           <div key={i} className="flex-[2] min-w-[130px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
             <div className="flex items-center gap-1 mb-0.5">
-              <span className="text-[11px]">{s.icon}</span>
+              <span className="text-[11px]"><Ikon nama={s.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">{s.label}</span>
             </div>
             <span className="text-sm font-black leading-tight" style={{color:s.color}}>{s.val}</span>

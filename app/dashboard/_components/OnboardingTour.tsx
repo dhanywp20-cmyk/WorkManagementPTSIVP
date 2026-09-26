@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { User } from './shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 // Types
 
@@ -189,7 +190,7 @@ function FlowViz({ flow }: { flow: FlowChip[] }) {
               fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 20,
               ...chipStyle(chip.state),
             }}>
-              <span style={{ fontSize: 12 }}>{chip.icon}</span>
+              <span style={{ fontSize: 12 }}><Ikon nama={chip.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
               {chip.label}
             </span>
             {i < flow.length - 1 && (
@@ -414,7 +415,7 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 22, background: `${s.color}18`, border: `1px solid ${s.color}20`,
               }}>
-                {s.icon}
+                <Ikon nama={s.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" />
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: `${s.color}99`, marginBottom: 3 }}>

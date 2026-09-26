@@ -49,3 +49,5 @@ export { PwaBootstrap } from './PwaBootstrap';
 export { ChipVersi } from './ChipVersi';
 // Bilah kaki platform (hak cipta - kontak bantuan - identitas build).
 export { FooterPlatform } from './FooterPlatform';
+export { Ikon, IkonTeks, ikonUntuk } from './Ikon';
+export { FilterLipat } from './FilterLipat';

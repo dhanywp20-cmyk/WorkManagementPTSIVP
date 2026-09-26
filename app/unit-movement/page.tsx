@@ -11,6 +11,8 @@ import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { ViewModal } from './_components/ViewModal';
 import { AddEditModal } from './_components/AddEditModal';
+import { Ikon } from '@/components/shared/Ikon';
+import { Toast } from '@/components/shared/Toast';
 
 // Main Page
 
@@ -237,20 +239,20 @@ function UnitMovementPageInner() {
   // Loading / Not Authenticated screen
 
   if (!appReady) return (
-    <div className="min-h-screen flex items-center justify-center" style={{backgroundImage:'url(/IVP_Background.png)',backgroundSize:'cover'}}>
+    <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
       <div className="flex flex-col items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xl" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>🚚</div>
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xl" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}><Ikon nama="🚚" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <div className="w-10 h-10 rounded-full" style={{border:'3px solid rgba(245,158,11,0.25)',borderTopColor:'#f59e0b',animation:'spin 0.8s linear infinite'}}/>
-        <p className="text-white/80 text-sm font-semibold tracking-wide">Memuat Unit Movement Log...</p>
+        <p className="text-slate-600 text-sm font-semibold tracking-wide">Memuat Unit Movement Log...</p>
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   if (!isLoggedIn) return (
-    <div className="min-h-screen flex items-center justify-center" style={{backgroundImage:'url(/IVP_Background.png)',backgroundSize:'cover'}}>
+    <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
       <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full mx-4">
-        <div className="text-4xl mb-3">🔒</div>
+        <div className="text-4xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <h2 className="font-black text-gray-800 text-lg">Sesi Tidak Ditemukan</h2>
         <p className="text-gray-500 text-sm mt-2 mb-5">Silakan login terlebih dahulu melalui halaman utama.</p>
         <button onClick={()=>{ const t=window.top!==window?window.top:window; if(t) t.location.href='/dashboard'; }}
@@ -263,7 +265,7 @@ function UnitMovementPageInner() {
   );
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-cover bg-center bg-fixed" style={{backgroundImage:'url(/IVP_Background.png)'}}>
+    <div className="h-screen overflow-hidden flex flex-col bg-cover bg-center bg-fixed" style={{background: 'var(--halaman)'}}>
 
       {viewLog&&<ViewModal log={viewLog} onClose={()=>setViewLog(null)}/>}
       {editLog!==undefined&&<AddEditModal log={editLog} currentUser={currentUser!} teamMembers={teamMembers}
@@ -275,7 +277,7 @@ function UnitMovementPageInner() {
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1100] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{background:'#fee2e2'}}>🗑️</div>
+            <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{background:'#fee2e2'}}><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
             <h3 className="font-bold text-gray-900">Hapus Log?</h3>
             <p className="text-sm text-gray-500">Data <strong>{deleteConfirm.project_name}</strong> akan dihapus permanen.</p>
             <div className="flex gap-3">
@@ -288,12 +290,7 @@ function UnitMovementPageInner() {
       </ModalPortal>
       )}
 
-      {notif&&(
-        <div className="fixed top-4 right-4 z-50 px-4 py-3 rounded-xl text-sm font-semibold shadow-xl flex items-center gap-2"
-          style={{background:notif.type==='success'?'#d1fae5':'#fee2e2',color:notif.type==='success'?'#065f46':'#991b1b',border:`1px solid ${notif.type==='success'?'#6ee7b7':'#fca5a5'}`}}>
-          {notif.type==='success'?'✅':'❌'} {notif.msg}
-        </div>
-      )}
+      <Toast notif={notif} />
 
       {/* Header */}
       <PageHeader icon="🚚" title="Unit Movement Log" subtitle="PTS IVP — Equipment Tracking" color="#d97706" colorLight="#b45309">
@@ -322,7 +319,7 @@ function UnitMovementPageInner() {
         {openLoans.length > 0 && (
           <div className="rounded-2xl overflow-hidden animate-slide-up" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(239,68,68,0.3)',boxShadow:'0 4px 16px rgba(239,68,68,0.12)'}}>
             <div className="flex items-center gap-3 px-5 py-3" style={{background:'rgba(239,68,68,0.07)',borderBottom:'1px solid rgba(239,68,68,0.15)'}}>
-              <span className="text-base select-none animate-pulse">⚠️</span>
+              <span className="text-base select-none animate-pulse"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <span className="font-bold text-sm text-red-700 flex-1">
                 Open Loan — {openLoans.length} barang belum dikembalikan (lewat tanggal)
               </span>
@@ -384,7 +381,7 @@ function UnitMovementPageInner() {
                               {bolehEditLog(loan) && <EditIconBtn onClick={()=>setEditLog(loan)} />}
                               <button onClick={()=>handleMarkReturned(loan)} title="Tandai barang sudah kembali"
                                 className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white transition-all hover:opacity-90"
-                                style={{background:'linear-gradient(135deg,#10b981,#059669)'}}>✅</button>
+                                style={{background:'linear-gradient(135deg,#10b981,#059669)'}}><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></button>
                             </ActionGroup>
                           </td>
                         )}
@@ -419,7 +416,7 @@ function UnitMovementPageInner() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <input className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white transition-all w-52"
-                placeholder="🔍 Project / Type / SN / Pihak Luar..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
+                placeholder="Project / Type / SN / Pihak Luar..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
               <select aria-label="Semua Status" className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={filterStatus} onChange={e=>setFilterStatus(e.target.value as any)}>
                 <option value="All">Semua Status</option><option value="Masuk">Masuk</option><option value="Keluar">Keluar</option>
@@ -524,7 +521,7 @@ function UnitMovementPageInner() {
                 ) : filteredLogs.length===0 ? (
                   <tr><td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-2">
-                      <span className="text-4xl">📦</span>
+                      <span className="text-4xl"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       <p className="font-semibold text-gray-600 text-sm">Belum ada data movement log</p>
                       <p className="text-xs text-gray-400">Coba ubah filter atau tambahkan log baru</p>
                     </div>

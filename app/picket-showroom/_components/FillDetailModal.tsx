@@ -2,13 +2,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useDivisiSales } from '@/lib/merek';
-import { ModalPortal } from '@/components/shared';
+import { ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import {
   PiketRow, KegiatanEntry, JenisKegiatan, UserRow, ProdukLain,
   DAY_COLOR, JENIS_KEGIATAN_LIST, KEGIATAN_COLORS,
   KEBUTUHAN_LIST, PRODUK_LIST, TEAM_LABEL,
 } from './shared';
 import { useKelompokPTS, namaKelompokPTS, labelKelompokPTS } from '@/lib/kelompok';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 interface KFEntry {
   id?:string; jenis_kegiatan:JenisKegiatan; jam_mulai:string; jam_selesai:string; produk:string[];
@@ -32,9 +33,10 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
   // isian tanpa peringatan. dirty ditandai true oleh SEMUA fungsi yang
   // mengubah entries setelah pemuatan awal (bukan oleh useEffect load).
   const [dirty,setDirty]=useState(false);
+  const [confirmState,setConfirmState]=useState<ConfirmState|null>(null);
   const requestClose=()=>{
     if(!dirty){onClose();return;}
-    if(window.confirm('Ada isian yang belum disimpan. Yakin mau menutup tanpa menyimpan?'))onClose();
+    setConfirmState({message:'Ada isian yang belum disimpan.',description:'Yakin mau menutup tanpa menyimpan?',danger:true,confirmLabel:'Tutup',onConfirm:onClose});
   };
   const dc=DAY_COLOR[row.day_of_week];
   const notify=(type:'success'|'error',msg:string)=>{setToast({type,msg});setTimeout(()=>setToast(null),3500);};
@@ -155,7 +157,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
         <div className="px-6 py-5 rounded-t-2xl flex-shrink-0 relative" style={{background:dc.grad}}>
           <div>
             <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Hari Piket</p>
-            <h2 className="text-lg font-bold text-white">✍️ Detail Piket — {row.day_of_week}</h2>
+            <h2 className="text-lg font-bold text-white"><IkonTeks nama="✍" />Detail Piket — {row.day_of_week}</h2>
             <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Tanggal · PIC</p>
             <p className="text-white/70 text-xs">{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · {[row.pic_ivp_name,row.pic_ump_name,row.pic_mvi_name].filter(Boolean).join(' / ')||'Belum ada PIC'}</p>
           </div>
@@ -171,11 +173,11 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                   <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-black text-white" style={{background:dc.grad}}>{idx+1}</div>
                   <span className="text-xs font-bold" style={{color:dc.accent}}>Kegiatan {idx+1}</span>
                 </div>
-                {entries.length>1&&<button onClick={()=>{setDirty(true);setEntries(p=>p.filter((_,i)=>i!==idx));}} className="text-xs font-bold px-2 py-1 rounded-lg text-red-600 hover:bg-red-50" style={{border:'1px solid rgba(220,38,38,0.3)'}}>🗑️ Hapus</button>}
+                {entries.length>1&&<button onClick={()=>{setDirty(true);setEntries(p=>p.filter((_,i)=>i!==idx));}} className="text-xs font-bold px-2 py-1 rounded-lg text-red-600 hover:bg-red-50" style={{border:'1px solid rgba(220,38,38,0.3)'}}><IkonTeks nama="🗑" />Hapus</button>}
               </div>
               <div className="p-4 space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🎯 Jenis Kegiatan</label>
+                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🎯" />Jenis Kegiatan</label>
                   <select aria-label="🎯 Jenis Kegiatan" value={entry.jenis_kegiatan} onChange={e=>upd(idx,{jenis_kegiatan:e.target.value as JenisKegiatan})}
                     className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                     {JENIS_KEGIATAN_LIST.map(j=><option key={j} value={j}>{j}</option>)}
@@ -183,18 +185,18 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🕐 Jam Mulai</label>
+                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🕐" />Jam Mulai</label>
                     <input aria-label="🕐 Jam Mulai" type="time" value={entry.jam_mulai} onChange={e=>upd(idx,{jam_mulai:e.target.value})}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🕐 Jam Selesai</label>
+                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🕐" />Jam Selesai</label>
                     <input aria-label="🕐 Jam Selesai" type="time" value={entry.jam_selesai} onChange={e=>upd(idx,{jam_selesai:e.target.value})}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">📦 Produk</label>
+                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="📦" />Produk</label>
                   <div className="grid grid-cols-2 gap-1.5">
                     {PRODUK_LIST.map(p=>{
                       const chk=entry.produk.includes(p);
@@ -219,7 +221,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                 </div>
                 {/* Produk Lain — barang temporer di luar list + beban daya (watt) */}
                 <div>
-                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">⚡ Produk Lain (di luar list) — beban daya</label>
+                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="⚡" />Produk Lain (di luar list) — beban daya</label>
                   {entry.produk_lain.length===0&&(
                     <p className="text-[11px] text-slate-400 mb-2">Tambah bila ada unit temporer di luar list. Beban dayanya dicatat (Watt); jam hidupnya mengikuti jam mulai/selesai kegiatan ini.</p>
                   )}
@@ -250,18 +252,18 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                 {entry.jenis_kegiatan==='Demo Product'&&(
                   <>
                     <div>
-                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🏢 Tamu Instansi</label>
+                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🏢" />Tamu Instansi</label>
                       <input value={entry.tamu_instansi} onChange={e=>upd(idx,{tamu_instansi:e.target.value})}
                         className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder="Nama instansi / perusahaan tamu..."/>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">👤 Nama Sales</label>
+                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="👤" />Nama Sales</label>
                         <input value={entry.nama_sales} onChange={e=>upd(idx,{nama_sales:e.target.value})}
                           className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder="Nama sales..."/>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🏷️ Division</label>
+                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🏷" />Division</label>
                         <select aria-label="— Pilih Division —" value={entry.sales_division} onChange={e=>upd(idx,{sales_division:e.target.value})}
                           className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                           <option value="">— Pilih Division —</option>
@@ -270,7 +272,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">🎯 Kebutuhan</label>
+                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🎯" />Kebutuhan</label>
                       <div className="grid grid-cols-2 gap-1.5">
                         {KEBUTUHAN_LIST.map(k=>{
                           const chk=entry.kebutuhan.includes(k);
@@ -300,7 +302,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                   <div className="space-y-3">
                     {entry.jenis_kegiatan==='RnD'&&(
                       <div>
-                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">👥 Team yang RnD</label>
+                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="👥" />Team yang RnD</label>
                         <div className="flex items-center gap-2">
                           <select aria-label="— Pilih Team —" value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
                             className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
@@ -329,7 +331,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       </div>
                     )}
                     <div>
-                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">📝 Keterangan</label>
+                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="📝" />Keterangan</label>
                       <textarea value={entry.keterangan} onChange={e=>upd(idx,{keterangan:e.target.value})} rows={3}
                         className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
                         style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder={`Keterangan ${entry.jenis_kegiatan}...`}/>
@@ -353,11 +355,12 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
           <button onClick={handleSave} disabled={saving||loadingE}
             className="flex-1 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-60"
             style={{background:dc.grad,boxShadow:`0 4px 14px ${dc.accent}35`}}>
-            {saving&&<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}💾 Simpan Detail
+            {saving&&<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}<IkonTeks nama="💾" />Simpan Detail
           </button>
         </div>
       </div>
     </div>
+    <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)}/>
   </ModalPortal>
   );
 }

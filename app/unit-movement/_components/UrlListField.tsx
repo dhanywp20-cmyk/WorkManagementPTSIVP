@@ -1,5 +1,6 @@
 'use client';
 import { useState } from 'react';
+import { Ikon } from '@/components/shared/Ikon';
 
 export function UrlListField({ label, icon, value, onChange }: {
   label:string; icon:string; value:string; onChange:(v:string)=>void;
@@ -10,7 +11,7 @@ export function UrlListField({ label, icon, value, onChange }: {
   const remove = (i:number) => onChange(urls.filter((_,idx)=>idx!==i).join(','));
   return (
     <div>
-      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">{icon} {label}</label>
+      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {label}</label>
       <div className="flex gap-2">
         <input type="text"
           className="flex-1 px-3 py-2.5 rounded-xl text-xs outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
@@ -28,7 +29,7 @@ export function UrlListField({ label, icon, value, onChange }: {
         <div className="mt-2 space-y-1.5">
           {urls.map((url,i)=>(
             <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-100">
-              <span className="text-sm">🔗</span>
+              <span className="text-sm"><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <a href={url} target="_blank" rel="noopener noreferrer"
                 className="text-xs font-semibold text-blue-600 flex-1 truncate hover:underline">{url}</a>
               <button aria-label="Tutup" type="button" onClick={()=>remove(i)} className="text-red-400 hover:text-red-600 font-bold text-xs flex-shrink-0">✕</button>

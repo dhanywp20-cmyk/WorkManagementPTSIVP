@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { Reminder, formatDate } from './shared';
 import { ModalPortal } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function RescheduleModal({
   reminder,
@@ -43,7 +44,7 @@ export function RescheduleModal({
         <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#d97706,#b45309)' }}>
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-lg font-bold text-white">📅 Re-Schedule Jadwal</h3>
+              <h3 className="text-lg font-bold text-white"><IkonTeks nama="📅" />Re-Schedule Jadwal</h3>
               <p className="text-amber-200/80 text-xs mt-0.5 truncate max-w-[260px]">{reminder.project_name || (reminder as any).title || '—'}</p>
             </div>
             <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">✕</button>
@@ -52,7 +53,7 @@ export function RescheduleModal({
         <div className="p-6 space-y-4">
           {/* Current date info */}
           <div className="rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-            <span className="text-xl">📌</span>
+            <span className="text-xl"><Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div>
               <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Jadwal Sekarang</p>
               <p className="text-sm font-bold text-gray-800">{formatDate(reminder.due_date)} · {reminder.due_time}</p>
@@ -61,20 +62,20 @@ export function RescheduleModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Tanggal Baru *</label>
-              <input aria-label="Tanggal Baru" type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
+              <label htmlFor="f-reminder-schedule-components-reschedulemodal-1" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Tanggal Baru *</label>
+              <input id="f-reminder-schedule-components-reschedulemodal-1" type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
                 className={inputCls} style={inputStyle} />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Waktu Baru</label>
-              <input aria-label="Waktu Baru" type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
+              <label htmlFor="f-reminder-schedule-components-reschedulemodal-2" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Waktu Baru</label>
+              <input id="f-reminder-schedule-components-reschedulemodal-2" type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
                 className={inputCls} style={inputStyle} />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Alasan Re-Schedule</label>
-            <textarea value={reason} onChange={e => setReason(e.target.value)} rows={3}
+            <label htmlFor="f-reminder-schedule-components-reschedulemodal-3" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Alasan Re-Schedule</label>
+            <textarea id="f-reminder-schedule-components-reschedulemodal-3" value={reason} onChange={e => setReason(e.target.value)} rows={3}
               className={`${inputCls} resize-none`} style={inputStyle}
               placeholder="Contoh: Permintaan klien untuk mengundur jadwal..." />
           </div>
@@ -90,7 +91,7 @@ export function RescheduleModal({
               className="flex-1 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg,#d97706,#b45309)', boxShadow: '0 4px 14px rgba(217,119,6,0.35)' }}>
               {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              📅 Simpan Re-Schedule
+              <IkonTeks nama="📅" />Simpan Re-Schedule
             </button>
           </div>
         </div>

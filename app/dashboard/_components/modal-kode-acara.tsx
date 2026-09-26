@@ -7,6 +7,7 @@ import { getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import type { User } from './shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Pengaturan pendaftaran lewat Kode Acara.
@@ -268,7 +269,7 @@ export function KodeAcaraInline() {
                 </button>
                 <button type="button" onClick={() => { setForm({ ...form, kode: acakKode() }); setLihatKode(true); }}
                   className="px-3 py-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all whitespace-nowrap">
-                  🎲 Acak
+                  <IkonTeks nama="🎲" />Acak
                 </button>
               </div>
             </div>
@@ -345,7 +346,7 @@ export function KodeAcaraInline() {
                       {gambarQr && (
                         <a href={gambarQr} download={`qr-daftar-${awal.kode.trim()}.png`}
                           className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-all whitespace-nowrap">
-                          ⬇ Unduh QR
+                          <IkonTeks nama="⬇" />Unduh QR
                         </a>
                       )}
                     </div>
@@ -392,7 +393,7 @@ export function KodeAcaraInline() {
         */}
         <div className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col lg:max-h-[calc(90vh-160px)]">
           <div className="flex items-center gap-3 p-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
-            <span className="text-2xl">🎓</span>
+            <span className="text-2xl"><Ikon nama="🎓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-slate-800">
                 {daftar.length} akun terdaftar lewat kode acara
@@ -451,7 +452,7 @@ export function KodeAcaraInline() {
                             title="Hapus akun ini"
                             className="text-red-500 hover:text-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                           >
-                            🗑️
+                            <Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" />
                           </button>
                         </td>
                       </tr>

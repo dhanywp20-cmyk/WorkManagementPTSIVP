@@ -5,6 +5,7 @@ import { type WidgetProps, WidgetCard, EmptyState, Loading, QuickActionChip } fr
 import { isAdminRole, isTeamMember, hasMenu } from '../widgets/permissions';
 import { useWorkQueue, type ActionItem, type Urgency } from './useWorkQueue';
 import type { User } from '../shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 const URGENCY_DOT: Record<Urgency, string> = { urgent: '#dc2626', pending: '#ea580c', upcoming: '#2563eb' };
 const URGENCY_EMOJI: Record<Urgency, string> = { urgent: '🔴', pending: '🟠', upcoming: '🔵' };
@@ -19,7 +20,7 @@ function ActionRow({ item, onClick, showUrgencyDot = true }: {
         <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: URGENCY_DOT[item.urgency] }}
           aria-label={item.urgency} title={item.urgency} />
       )}
-      <span className="text-sm flex-shrink-0 leading-tight" aria-hidden="true">{item.icon}</span>
+      <span className="text-sm flex-shrink-0 leading-tight" aria-hidden="true"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-semibold text-slate-800 truncate leading-snug">{item.title}</div>
         <div className="text-[11px] text-slate-500 truncate">{item.subtitle}</div>
@@ -83,7 +84,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
             menambah state manajemen baru hanya untuk retry satu widget.
           */}
           <div className="flex flex-col items-center justify-center gap-2 text-center py-3">
-            <span className="text-2xl">⚠️</span>
+            <span className="text-2xl"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <p className="text-sm font-semibold text-rose-600">Gagal memuat daftar tugas.</p>
             <button onClick={() => window.location.reload()}
               className="mt-1 text-xs font-bold px-3 py-1.5 rounded-lg text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100">
@@ -115,7 +116,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
         <div className="lg:col-span-12">
           <WidgetCard title="My Action" icon="🎯" accent="#16a34a">
             <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
-              <span className="text-lg">🎉</span> Tidak ada tugas aktif yang butuh tindakan saat ini.
+              <span className="text-lg"><Ikon nama="🎉" ukuran="1em" className="inline-block align-[-0.12em]" /></span> Tidak ada tugas aktif yang butuh tindakan saat ini.
             </div>
             <TeamActionChips user={user} openMenu={openMenu} openUrl={openUrl} />
           </WidgetCard>
@@ -130,7 +131,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
     */
     return (
       <div className="lg:col-span-12 flex items-center gap-2.5 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-black/5 px-4 py-3">
-        <span className="text-lg flex-shrink-0">🎉</span>
+        <span className="text-lg flex-shrink-0"><Ikon nama="🎉" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="text-sm font-semibold text-emerald-700">Tidak ada tugas aktif yang butuh tindakan saat ini.</span>
       </div>
     );

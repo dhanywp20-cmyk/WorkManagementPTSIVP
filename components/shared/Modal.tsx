@@ -2,6 +2,7 @@
 import React, { useEffect, useId, useRef } from 'react';
 import { ModalPortal } from './ModalPortal';
 import { Z } from '@/lib/z-index';
+import { Ikon } from '@/components/shared/Ikon';
 
 /**
  * Modal - satu kerangka untuk seluruh popup platform.
@@ -232,7 +233,7 @@ export function Modal({
         >
           {/* ── Header ── */}
           <div className="flex items-start gap-3 px-5 py-4 border-b border-slate-100 flex-shrink-0">
-            {ikon && <div className="flex-shrink-0 mt-0.5">{ikon}</div>}
+            {ikon && <div className="flex-shrink-0 mt-0.5"><Ikon nama={ikon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>}
             <div className="flex-1 min-w-0">
               <h2 id={idJudul} className="text-sm font-bold text-slate-800 leading-snug">{judul}</h2>
               {keterangan && (

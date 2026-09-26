@@ -13,6 +13,7 @@ import { markAllNotifsRead } from '@/lib/notifications';
 import { useNotifSoundAlarm } from '@/lib/notif-sound';
 import { pushDidukung, statusIzinNotif, sudahBerlanggananPush, aktifkanPushNotif, matikanPushNotif } from '@/lib/push-client';
 import { IconTicket, IconBriefcase, IconCalendar, IconStar, IconBell, IconSpeaker } from './notif-icons';
+import { Ikon } from '@/components/shared/Ikon';
 
 // Notification Bell Component
 
@@ -92,7 +93,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
           <div className="max-h-72 overflow-y-auto">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 gap-2">
-                <span className="text-3xl opacity-40">✅</span>
+                <span className="text-3xl opacity-40"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-xs text-slate-400 font-medium">Tidak ada notifikasi</p>
               </div>
             ) : (

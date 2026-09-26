@@ -2,6 +2,7 @@
 import { ModalPortal, AdminEditFields } from '@/components/shared';
 import type { Ticket, TeamMember } from './shared';
 import { bolehReroute, TICKET_ADMIN_FIELDS } from './shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Modal "Edit Detail & Re-route" (admin) - dipindah dari
@@ -34,7 +35,7 @@ export function AdminEditModal({
           style={{ animation: 'scale-in 0.25s ease-out' }}>
           <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
             <div className="min-w-0">
-              <h3 className="text-lg font-bold text-white">🛠️ Edit Detail &amp; Re-route</h3>
+              <h3 className="text-lg font-bold text-white"><IkonTeks nama="🛠" />Edit Detail &amp; Re-route</h3>
               <p className="text-indigo-100/90 text-xs mt-0.5 truncate">{adminEditTicket.project_name}</p>
             </div>
             <button aria-label="Tutup" onClick={onClose} disabled={adminEditSaving}
@@ -44,13 +45,13 @@ export function AdminEditModal({
           <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
             {/* ── Re-route ── */}
             <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)' }}>
-              <p className="text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-2">🔀 Alihkan Pekerjaan</p>
+              <p className="text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-2"><IkonTeks nama="🔀" />Alihkan Pekerjaan</p>
               {bolehReroute(adminEditTicket) ? (
                 <>
                   <select aria-label="— Biarkan seperti sekarang —" value={adminRerouteTo} onChange={e => setAdminRerouteTo(e.target.value)}
                     className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-amber-200">
                     <option value="">— Biarkan seperti sekarang —</option>
-                    <option value="SELF">🙋 Saya kerjakan sendiri</option>
+                    <option value="SELF">Saya kerjakan sendiri</option>
                     {supervisorMembers.length > 0 && (
                       <optgroup label="🎯 Route ke Supervisor">
                         {supervisorMembers.map(m => <option key={`ar-sup-${m.id}`} value={`SUP::${m.id}::${m.name}`}>{m.name} (Supervisor)</option>)}
@@ -77,7 +78,7 @@ export function AdminEditModal({
 
             {/* ── Edit detail ── */}
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">✏️ Detail Ticket</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2"><IkonTeks nama="✏" />Detail Ticket</p>
               <AdminEditFields fields={TICKET_ADMIN_FIELDS} value={adminEditForm} disabled={adminEditSaving}
                 onChange={(k, v) => setAdminEditForm(prev => ({ ...prev, [k]: v }))} />
             </div>

@@ -2,6 +2,8 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { Reminder, Status } from './shared';
 import { STATUS_CONFIG, formatDate } from './shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { FilterLipat } from '@/components/shared/FilterLipat';
 
 /**
  * Header "Schedule List" (Select/Refresh/Export) + baris search/filter +
@@ -92,11 +94,11 @@ export function FilterBar({
 
       {/* ── Search / Filter bar — tepat di bawah TICKET LIST ── */}
       <div className="px-3 py-2 sm:px-5 sm:py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-2">
+        <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-2" aktif={[searchSales, searchProduct, searchTeamHandler, filterStatus, filterCategory, searchDivisionSales]}>
           <div>
             <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Location</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">🔍</span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
                 placeholder="Search project / lokasi..." />
@@ -105,16 +107,16 @@ export function FilterBar({
           <div>
             <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales Name</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👤</span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Search sales..." value={searchSales} onChange={e => setSearchSales(e.target.value)}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
                 placeholder="Search sales..." />
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">📦 Product</label>
+            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="📦" />Product</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">📦</span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Cari product..." value={searchProduct} onChange={e => { setSearchProduct(e.target.value); setProductFilter(null); }}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
                 placeholder="Cari product..." />
@@ -123,7 +125,7 @@ export function FilterBar({
           <div>
             <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">👷</span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Search handler..." value={searchTeamHandler} onChange={e => setSearchTeamHandler(e.target.value)}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-purple-300 transition-all"
                 placeholder="Search handler..." />
@@ -132,7 +134,7 @@ export function FilterBar({
           <div>
             <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">🏷️</span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value as Status | 'all')}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer transition-all">
                 <option value="all">All Status</option>
@@ -144,7 +146,7 @@ export function FilterBar({
           <div>
             <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]">📅</span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <select aria-label="All Years" value={filterYear} onChange={e => setFilterYear(e.target.value)}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer transition-all">
                 <option value="all">All Years</option>
@@ -153,7 +155,7 @@ export function FilterBar({
               <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none">▼</span>
             </div>
           </div>
-        </div>
+        </FilterLipat>
       </div>
 
       {/* Bulk delete bar — admin only, selectMode only */}
@@ -175,16 +177,16 @@ export function FilterBar({
       {(filterCategory !== 'all' || filterStatus !== 'all' || searchSales || searchDivisionSales || searchTeamHandler || searchProject || selectedCalDay || productFilter || searchProduct) && (
         <div className="px-3 py-1.5 sm:px-5 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
-          {filterCategory !== 'all' && <button onClick={() => setFilterCategory('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}>🏷️ {filterCategory} ✕</button>}
+          {filterCategory !== 'all' && <button onClick={() => setFilterCategory('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterCategory} ✕</button>}
           {filterStatus !== 'all' && <button onClick={() => setFilterStatus('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#d97706' }}>Status: {STATUS_CONFIG[filterStatus as Status]?.label} ✕</button>}
-          {searchSales && <button onClick={() => setSearchSales('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}>👤 {searchSales} ✕</button>}
+          {searchSales && <button onClick={() => setSearchSales('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchSales} ✕</button>}
           {searchDivisionSales && <button onClick={() => setSearchDivisionSales('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}>Division: {searchDivisionSales} ✕</button>}
-          {searchTeamHandler && <button onClick={() => setSearchTeamHandler('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}>👷 {searchTeamHandler} ✕</button>}
-          {searchProject && <button onClick={() => setSearchProject('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}>🔍 {searchProject} ✕</button>}
-          {productFilter && <button onClick={() => { setProductFilter(null); setSearchProduct(''); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#6366f1' }}>📦 {productFilter} ✕</button>}
-          {selectedCalDay && <button onClick={() => setSelectedCalDay(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0891b2' }}>📅 {formatDate(selectedCalDay)} ✕</button>}
+          {searchTeamHandler && <button onClick={() => setSearchTeamHandler('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchTeamHandler} ✕</button>}
+          {searchProject && <button onClick={() => setSearchProject('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchProject} ✕</button>}
+          {productFilter && <button onClick={() => { setProductFilter(null); setSearchProduct(''); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#6366f1' }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {productFilter} ✕</button>}
+          {selectedCalDay && <button onClick={() => setSelectedCalDay(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0891b2' }}><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatDate(selectedCalDay)} ✕</button>}
           <button onClick={() => { setFilterCategory('all'); setFilterStatus('all'); setSearchSales(''); setSearchDivisionSales(''); setSearchTeamHandler(''); setSearchProject(''); setSelectedCalDay(null); setProductFilter(null); setSearchProduct(''); }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}>🗑️ Reset Semua</button>
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}><IkonTeks nama="🗑" />Reset Semua</button>
         </div>
       )}
     </>

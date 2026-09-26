@@ -6,6 +6,7 @@ import { InfoLine } from './DonutCards';
 import { cetakTicket } from './cetak-ticket';
 import type { Ticket, User } from './shared';
 import { formatDateTime, statusColors, ringkasPenanganan, bolehReroute, adalahPending } from './shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /** Bentuk state form "Update Status" di page.tsx - dioper ke sini apa adanya. */
 export type NewActivityForm = {
@@ -75,7 +76,7 @@ export function TicketDetailPopup({
                   Teks putih polos di atas merah jauh lebih terbaca, dan
                   ruangnya cukup untuk menyebut keterangan pelimpahan. */}
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[10px] font-bold text-white/90">
-                <span>🎫 Tim: {ringkasPenanganan(selectedTicket).teamHandler}</span>
+                <span><IkonTeks nama="🎫" />Tim: {ringkasPenanganan(selectedTicket).teamHandler}</span>
                 <span>Status: {ringkasPenanganan(selectedTicket).statusLengkap}</span>
                 {selectedTicket.services_status && <span>Services: {selectedTicket.services_status}</span>}
               </div>
@@ -84,14 +85,14 @@ export function TicketDetailPopup({
               {selectedTicket.address && (
                 <>
                   <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
-                  <p className="text-white/75 text-xs flex items-center gap-1">📍 {selectedTicket.address}</p>
+                  <p className="text-white/75 text-xs flex items-center gap-1"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {selectedTicket.address}</p>
                 </>
               )}
               {selectedTicket.status === "Onsite" && (
                 <button onClick={() => { onClose(); setShowUpdateForm(false); router.push('/reminder-schedule'); }}
                   className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold text-white"
                   style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.92)' }}>
-                  🗓️ Lihat Jadwal Reminder
+                  <IkonTeks nama="🗓" />Lihat Jadwal Reminder
                 </button>
               )}
               <button aria-label="Tutup" onClick={() => { onClose(); setShowUpdateForm(false); }}
@@ -102,14 +103,14 @@ export function TicketDetailPopup({
               {/* Supervisor: ticket di-route ke kamu → wajib assign lanjut ke tim */}
               {selectedTicket.routing_status === "supervisor_assign" && selectedTicket.assigned_supervisor_id === currentUser?.id && (
                 <div className="mx-4 mt-3 rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(245,158,11,0.1)", border: "1.5px solid rgba(245,158,11,0.4)" }}>
-                  <span className="text-2xl">🎯</span>
+                  <span className="text-2xl"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-amber-800">Ticket ini menunggu kamu assign ke tim</p>
                     <p className="text-[11px] text-amber-700">Sudah diapprove Admin — pilih anggota tim atau kerjakan sendiri.</p>
                   </div>
                   <button onClick={() => { setSupAssignTicket(selectedTicket); setSupAssignTo(""); }}
                     className="flex-shrink-0 text-white px-3 py-2 rounded-lg text-xs font-bold" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
-                    🎯 Assign ke Tim
+                    <IkonTeks nama="🎯" />Assign ke Tim
                   </button>
                 </div>
               )}
@@ -119,7 +120,7 @@ export function TicketDetailPopup({
                   tanpa pemberitahuan ke yang menangani. */}
               {canManageTickets && (
                 <div className="mx-4 mt-3 rounded-xl p-3 flex items-center gap-3" style={{ background: 'rgba(99,102,241,0.08)', border: '1.5px solid rgba(99,102,241,0.25)' }}>
-                  <span className="text-2xl">🛠️</span>
+                  <span className="text-2xl"><Ikon nama="🛠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-indigo-800">Koreksi data ticket</p>
                     <p className="text-[11px] text-indigo-700">
@@ -130,7 +131,7 @@ export function TicketDetailPopup({
                   </div>
                   <button onClick={() => bukaAdminEdit(selectedTicket)}
                     className="flex-shrink-0 text-white px-3 py-2 rounded-lg text-xs font-bold" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
-                    🛠️ Edit &amp; Re-route
+                    <IkonTeks nama="🛠" />Edit &amp; Re-route
                   </button>
                 </div>
               )}
@@ -230,7 +231,7 @@ export function TicketDetailPopup({
                 if (!w) return null;
                 return (
                   <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">🛡️ Status Garansi Project</p>
+                    <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2"><IkonTeks nama="🛡" />Status Garansi Project</p>
                     <div className="rounded-xl p-3 flex flex-wrap items-center gap-3"
                       style={w.isIn
                         ? { background: "rgba(14,165,233,0.08)", border: "1.5px solid rgba(14,165,233,0.3)" }
@@ -260,14 +261,14 @@ export function TicketDetailPopup({
               {/* Foto awal */}
               {selectedTicket.photo_url && (
                 <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1.5">📸 Foto Awal</p>
+                  <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-1.5"><IkonTeks nama="📸" />Foto Awal</p>
                   <img src={selectedTicket.photo_url} alt="foto" loading="lazy" decoding="async" className="w-full max-h-36 object-cover rounded-xl border cursor-pointer hover:opacity-90" onClick={() => window.open(selectedTicket.photo_url!, "_blank")} />
                 </div>
               )}
 
               {/* Activity log compact */}
               <div className="px-4 py-3">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2">📝 Activity Log ({selectedTicket.activity_logs?.length || 0})</p>
+                <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-2"><IkonTeks nama="📝" />Activity Log ({selectedTicket.activity_logs?.length || 0})</p>
                 <div className="space-y-2">
                   {selectedTicket.activity_logs && selectedTicket.activity_logs.length > 0
                     ? selectedTicket.activity_logs.map(log => (
@@ -282,10 +283,10 @@ export function TicketDetailPopup({
                             <span className="text-[9px] text-gray-400">{formatDateTime(log.created_at)}</span>
                           </div>
                         </div>
-                        {log.action_taken && <p className="text-[10px] text-blue-700 font-semibold">🔧 {log.action_taken}</p>}
+                        {log.action_taken && <p className="text-[10px] text-blue-700 font-semibold"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {log.action_taken}</p>}
                         <p className="text-xs text-gray-600">{log.notes}</p>
                         {log.photo_url && <img src={log.photo_url} alt="log" loading="lazy" decoding="async" className="mt-1.5 max-h-24 rounded-lg border cursor-pointer" onClick={() => window.open(log.photo_url!, "_blank")} />}
-                        {log.file_url && <a href={log.file_url} download className="inline-block mt-1 text-[10px] font-bold text-blue-600 hover:underline">📄 {log.file_name || "Download"}</a>}
+                        {log.file_url && <a href={log.file_url} download className="inline-block mt-1 text-[10px] font-bold text-blue-600 hover:underline"><Ikon nama="📄" ukuran="1em" className="inline-block align-[-0.12em]" /> {log.file_name || "Download"}</a>}
                       </div>
                     ))
                     : <p className="text-xs text-gray-400 text-center py-3">Belum ada aktivitas</p>
@@ -296,16 +297,16 @@ export function TicketDetailPopup({
             </div>
             {/* Footer actions — outside overflow, always visible */}
             <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-2 bg-gray-50/50 flex-shrink-0">
-                <button onClick={() => cetakTicket(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}>📄 PDF</button>
+                <button onClick={() => cetakTicket(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}><IkonTeks nama="📄" />PDF</button>
                 {selectedTicket.status === "Solved" && bolehUpdateTicket(selectedTicket) && currentUserTeamType !== "Team Services" && (
-                  <button onClick={() => { setReopenTargetTicket(selectedTicket); setReopenAssignee(selectedTicket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>🔓 Re-open</button>
+                  <button onClick={() => { setReopenTargetTicket(selectedTicket); setReopenAssignee(selectedTicket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}><IkonTeks nama="🔓" />Re-open</button>
                 )}
                 {/* C2: dulu jalan buntu - services_status "Solved" tidak bisa dibuka siapa
                     pun. Team Services (membetulkan salah klik sendiri) atau Admin/
                     Superadmin (pengawasan) sekarang bisa. */}
                 {selectedTicket.services_status === "Solved" && bolehUpdateTicket(selectedTicket) &&
                   (currentUserTeamType === "Team Services" || currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
-                  <button onClick={() => setReopenServicesTarget(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}>🔓 Re-open Services</button>
+                  <button onClick={() => setReopenServicesTarget(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}><IkonTeks nama="🔓" />Re-open Services</button>
                 )}
                 {bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
                   <button onClick={() => setShowUpdateForm(!showUpdateForm)}
@@ -315,7 +316,7 @@ export function TicketDetailPopup({
                   </button>
                 )}
                 {bolehUpdateTicket(selectedTicket) && currentUserTeamType === "Team Services" && selectedTicket.services_status === "Waiting Approval" && (
-                  <button onClick={() => setShowServicesApprovalModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}>🔧 Konfirmasi</button>
+                  <button onClick={() => setShowServicesApprovalModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}><IkonTeks nama="🔧" />Konfirmasi</button>
                 )}
                 <button onClick={() => { onClose(); setShowUpdateForm(false); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-gray-200 text-gray-600 bg-white">✕ Close</button>
               </div>
@@ -338,8 +339,8 @@ export function TicketDetailPopup({
               <div className="overflow-y-auto p-3 space-y-3" style={{ maxHeight: 'calc(94vh - 70px)' }}>
                 {/* SN Unit */}
                 <div>
-                  <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">🔢 SN Unit</label>
-                  <input type="text" value={newActivity.sn_unit} onChange={e => setNewActivity({ ...newActivity, sn_unit: e.target.value })}
+                  <label htmlFor="f-ticketing-components-ticketdetailpopup-1" className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400"><IkonTeks nama="🔢" />SN Unit</label>
+                  <input id="f-ticketing-components-ticketdetailpopup-1" type="text" value={newActivity.sn_unit} onChange={e => setNewActivity({ ...newActivity, sn_unit: e.target.value })}
                     placeholder="Update SN Unit..." className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40"
                     style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                 </div>
@@ -385,9 +386,9 @@ export function TicketDetailPopup({
                               <button disabled={disabled}
                                 onClick={() => setNewActivity({ ...newActivity, new_status: step, action_taken: "", notes: "", onsite_use_schedule: false })}
                                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border-2 font-semibold text-xs transition-all ${isSelected ? st.sel : disabled ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed' : st.unsel}`}>
-                                <span>{st.icon}</span>
+                                <span><Ikon nama={st.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                                 <span className="flex-1 text-left">{step}</span>
-                                {disabled && <span className="text-[9px]">🔒</span>}
+                                {disabled && <span className="text-[9px]"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
                                 {isSelected && <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
                               </button>
                               {/* Onsite schedule */}
@@ -417,7 +418,7 @@ export function TicketDetailPopup({
                                         <span className="text-[9px] text-gray-500">WIB</span>
                                       </div>
                                       <div className="flex items-center gap-1.5 p-1.5 rounded-lg" style={{ background: 'rgba(124,58,237,0.08)', border: '1px solid rgba(124,58,237,0.2)' }}>
-                                        <span className="text-xs">🗓️</span>
+                                        <span className="text-xs"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                                         <p className="text-[9px] text-purple-700 font-semibold flex-1">Otomatis buat jadwal Troubleshooting di Reminder Schedule</p>
                                         <button onClick={() => { onClose(); setShowUpdateForm(false); router.push('/reminder-schedule'); }}
                                             className="text-[9px] font-bold px-1.5 py-0.5 rounded text-purple-700 hover:text-purple-900"
@@ -439,17 +440,17 @@ export function TicketDetailPopup({
                 {!["Call","Onsite","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart"].includes(newActivity.new_status) && (
                   <>
                     <div>
-                      <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">🔧 Action Taken</label>
-                      <textarea value={newActivity.action_taken} onChange={e => setNewActivity({ ...newActivity, action_taken: e.target.value })}
+                      <label htmlFor="f-ticketing-components-ticketdetailpopup-2" className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400"><IkonTeks nama="🔧" />Action Taken</label>
+                      <textarea id="f-ticketing-components-ticketdetailpopup-2" value={newActivity.action_taken} onChange={e => setNewActivity({ ...newActivity, action_taken: e.target.value })}
                         placeholder="Cek kabel HDMI, restart sistem..." rows={2}
                         className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
                         style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                     </div>
                     <div>
-                      <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">
-                        📝 Notes {newActivity.new_status === "In Progress" ? <span className="text-gray-300 normal-case">(opsional)</span> : "*"}
+                      <label htmlFor="f-ticketing-components-ticketdetailpopup-3" className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">
+                        <IkonTeks nama="📝" />Notes {newActivity.new_status === "In Progress" ? <span className="text-gray-300 normal-case">(opsional)</span> : "*"}
                       </label>
-                      <textarea value={newActivity.notes} onChange={e => setNewActivity({ ...newActivity, notes: e.target.value })}
+                      <textarea id="f-ticketing-components-ticketdetailpopup-3" value={newActivity.notes} onChange={e => setNewActivity({ ...newActivity, notes: e.target.value })}
                         placeholder={newActivity.new_status === "Pending Action" ? "Kendala apa? (mis. menunggu konfirmasi user, akses lokasi belum tersedia)" : "Detail penanganan..."} rows={3}
                         className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
                         style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
@@ -457,7 +458,7 @@ export function TicketDetailPopup({
                     {/* Pending Action: perpanjang deadline overdue (kendala bisa dari sisi user) */}
                     {newActivity.new_status === "Pending Action" && (
                       <div className="rounded-lg p-2.5" style={{ background: 'rgba(234,88,12,0.06)', border: '1px solid rgba(234,88,12,0.25)' }}>
-                        <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-orange-700">⏱️ Perpanjang Overdue</label>
+                        <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-orange-700"><IkonTeks nama="⏱" />Perpanjang Overdue</label>
                         <div className="flex items-center gap-2">
                           <input type="number" min={0} value={newActivity.extend_days}
                             onChange={e => setNewActivity({ ...newActivity, extend_days: e.target.value })}
@@ -478,7 +479,7 @@ export function TicketDetailPopup({
                       <input type="checkbox" id="assign-svc-r" checked={newActivity.assign_to_services}
                         onChange={e => setNewActivity({ ...newActivity, assign_to_services: e.target.checked, services_assignee: "" })}
                         className="w-3.5 h-3.5 accent-red-600" />
-                      <label htmlFor="assign-svc-r" className="text-[10px] font-bold text-red-700">🔧 Teruskan ke Team Services</label>
+                      <label htmlFor="assign-svc-r" className="text-[10px] font-bold text-red-700"><IkonTeks nama="🔧" />Teruskan ke Team Services</label>
                     </div>
                     {newActivity.assign_to_services && (
                       <p className="text-[10px] text-red-500 mt-1 font-medium">
@@ -490,8 +491,8 @@ export function TicketDetailPopup({
 
                 {/* Photo */}
                 <div>
-                  <label className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400">📷 Foto Bukti</label>
-                  <input type="file" accept="image/jpeg,image/jpg,image/png"
+                  <label htmlFor="f-ticketing-components-ticketdetailpopup-4" className="block text-[9px] font-bold mb-1 tracking-widest uppercase text-gray-400"><IkonTeks nama="📷" />Foto Bukti</label>
+                  <input id="f-ticketing-components-ticketdetailpopup-4" type="file" accept="image/jpeg,image/jpg,image/png"
                     onChange={e => setNewActivity({ ...newActivity, photo: e.target.files?.[0] || null })}
                     className="w-full border rounded-lg px-2.5 py-1.5 text-xs bg-white file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[10px] file:font-semibold file:bg-red-50 file:text-red-700"
                     style={{ borderColor: "rgba(0,0,0,0.12)" }} />

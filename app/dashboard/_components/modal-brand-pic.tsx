@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 import { DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB } from './shared';
 import { ModalPortal } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // BrandPicSettingModal
 
@@ -62,7 +63,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
         </select>
-        {mappings[key] && <span className="text-[10px] text-teal-600 font-bold flex-shrink-0">✅</span>}
+        {mappings[key] && <span className="text-[10px] text-teal-600 font-bold flex-shrink-0"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
       </div>
     );
   };
@@ -73,7 +74,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-full flex flex-col border border-slate-200">
         <div className="bg-gradient-to-r from-amber-600 to-amber-500 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-lg">⚙️</div>
+            <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-lg"><Ikon nama="⚙" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
             <div><h2 className="text-base font-bold text-white">Setting PIC Brand</h2><p className="text-white/70 text-xs">Mapping brand ke PIC penanggung jawab (Request Design Project)</p></div>
           </div>
           <button aria-label="Tutup" onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">✕</button>
@@ -83,13 +84,13 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
           {loading ? <div className="flex justify-center py-10"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin"/></div> : (
             <>
               <div>
-                <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3">🖥️ Brand Display</p>
+                <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3"><IkonTeks nama="🖥" />Brand Display</p>
                 <div className="bg-amber-50/50 rounded-xl border border-amber-200 px-4 py-1">
                   {DISPLAY_BRANDS_DB.map(b=><Row key={b} type="display" brand={b}/>)}
                 </div>
               </div>
               <div>
-                <p className="text-sm font-bold text-violet-700 uppercase tracking-widest mb-3">🔌 Brand Middleware</p>
+                <p className="text-sm font-bold text-violet-700 uppercase tracking-widest mb-3"><IkonTeks nama="🔌" />Brand Middleware</p>
                 <div className="bg-violet-50/50 rounded-xl border border-violet-200 px-4 py-1">
                   {MIDDLEWARE_BRANDS_DB.map(b=><Row key={b} type="middleware" brand={b}/>)}
                 </div>
@@ -165,7 +166,7 @@ export function BrandPicSettingContent() {
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
         </select>
-        {mappings[key] && <span className="text-[10px] text-amber-600 font-bold flex-shrink-0">✅</span>}
+        {mappings[key] && <span className="text-[10px] text-amber-600 font-bold flex-shrink-0"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
       </div>
     );
   };
@@ -187,13 +188,13 @@ export function BrandPicSettingContent() {
           <>
             <div className="grid grid-cols-2 gap-5">
               <div>
-                <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3">🖥️ Brand Display</p>
+                <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3"><IkonTeks nama="🖥" />Brand Display</p>
                 <div className="bg-amber-50/50 rounded-xl border border-amber-200 px-4 py-1">
                   {DISPLAY_BRANDS_DB.map(b=><Row key={b} type="display" brand={b}/>)}
                 </div>
               </div>
               <div>
-                <p className="text-sm font-bold text-violet-700 uppercase tracking-widest mb-3">🔌 Brand Middleware</p>
+                <p className="text-sm font-bold text-violet-700 uppercase tracking-widest mb-3"><IkonTeks nama="🔌" />Brand Middleware</p>
                 <div className="bg-violet-50/50 rounded-xl border border-violet-200 px-4 py-1">
                   {MIDDLEWARE_BRANDS_DB.map(b=><Row key={b} type="middleware" brand={b}/>)}
                 </div>

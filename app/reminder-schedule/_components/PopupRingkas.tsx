@@ -16,6 +16,7 @@ import { ModalPortal } from '@/components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { Reminder, formatDate } from './shared';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function KonfirmasiApproveInternal({
   internalApproveTarget, internalApproveSaving, setInternalApproveTarget, handleInternalApprove,
@@ -33,7 +34,7 @@ export function KonfirmasiApproveInternal({
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
           <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
-            <h3 className="text-lg font-bold text-white">✅ Approve Request?</h3>
+            <h3 className="text-lg font-bold text-white"><IkonTeks nama="✅" />Approve Request?</h3>
             <p className="text-amber-100/90 text-xs mt-0.5">Teruskan ke Admin/Manager untuk di-assign</p>
           </div>
           <div className="p-6 space-y-3">
@@ -70,7 +71,7 @@ export function KonfirmasiApproveInternal({
                 className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                 style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
                 {internalApproveSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                ✅ Ya, Approve &amp; Teruskan
+                <IkonTeks nama="✅" />Ya, Approve &amp; Teruskan
               </button>
             </div>
           </div>
@@ -99,7 +100,7 @@ export function ModalHapus({
         <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6"
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.5)' }}>
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-3xl">🗑️</span>
+            <span className="text-3xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div>
               <h3 className="text-lg font-bold text-gray-800">Hapus Reminder</h3>
               <p className="text-xs font-medium text-gray-500">{deleteTarget.project_name}</p>
@@ -108,13 +109,13 @@ export function ModalHapus({
           </div>
           <div className="rounded-xl p-3 mb-4 text-xs"
             style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.2)', color: '#b91c1c' }}>
-            ⚠️ <strong>Tindakan ini tidak dapat dibatalkan.</strong> Reminder ini akan dihapus permanen dari database.
+            <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong>Tindakan ini tidak dapat dibatalkan.</strong> Reminder ini akan dihapus permanen dari database.
           </div>
           <div className="mb-4">
-            <label className="block text-sm font-bold mb-1 text-gray-700">
+            <label htmlFor="f-reminder-schedule-components-popupringkas-1" className="block text-sm font-bold mb-1 text-gray-700">
               Ketik <span className="font-mono bg-red-100 text-red-700 px-1.5 py-0.5 rounded">HAPUS</span> untuk konfirmasi
             </label>
-            <input
+            <input id="f-reminder-schedule-components-popupringkas-1"
               type="text"
               value={deleteConfirmText}
               onChange={e => setDeleteConfirmText(e.target.value)}
@@ -128,7 +129,7 @@ export function ModalHapus({
               onClick={handleDelete}
               disabled={deleteConfirmText !== 'HAPUS'}
               className="bg-gradient-to-r from-red-600 to-red-800 text-white py-2.5 rounded-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:from-red-700 hover:to-red-900">
-              🗑️ Hapus Permanen
+              <IkonTeks nama="🗑" />Hapus Permanen
             </button>
             <button
               onClick={() => { setShowDeleteModal(false); setDeleteTarget(null); setDeleteConfirmText(''); }}
@@ -160,7 +161,7 @@ export function PopupNotifikasi({
           <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <span className="text-3xl animate-bounce">🔔</span>
+                <span className="text-3xl animate-bounce"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <h3 className="text-lg font-bold text-white">Reminder Kamu</h3>
                   <p className="text-sm text-white/90">{myReminders.length} reminder aktif yang diassign ke kamu</p>
@@ -181,7 +182,7 @@ export function PopupNotifikasi({
                       <PriorityBadge priority={r.priority} />
                     </div>
                     <p className="font-bold text-sm text-gray-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
-                    {r.address && <p className="text-xs text-gray-500 mt-0.5">📍 {r.address}</p>}
+                    {r.address && <p className="text-xs text-gray-500 mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</p>}
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <StatusBadge status={r.status} />
@@ -222,7 +223,7 @@ export function PopupLonceng({
           <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <span className="text-3xl">🔔</span>
+                <span className="text-3xl"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <h3 className="text-lg font-bold text-white">Perlu Tindakan Kamu</h3>
                   {/* Dipecah per alasan: "5 aktif" tidak memberi tahu apakah
@@ -248,7 +249,7 @@ export function PopupLonceng({
           <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
             {myActiveReminders.length === 0 ? (
               <div className="text-center py-10 text-gray-500">
-                <div className="text-5xl mb-3">✅</div>
+                <div className="text-5xl mb-3"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 <p className="font-semibold">Tidak ada reminder aktif</p>
               </div>
             ) : perluAksiSaya.map(({ r, alasan, warna }) => (
@@ -267,7 +268,7 @@ export function PopupLonceng({
                       <CategoryBadge category={r.category} />
                     </div>
                     <p className="font-bold text-sm text-gray-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
-                    {r.address && <p className="text-xs text-gray-500 mt-0.5">📍 {r.address}</p>}
+                    {r.address && <p className="text-xs text-gray-500 mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</p>}
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <StatusBadge status={r.status} />

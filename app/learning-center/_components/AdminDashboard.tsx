@@ -5,6 +5,7 @@ import { TeamSwitch, matchesTeamFilter, TEAM_FILTER_CONFIG, type TeamFilter } fr
 import { useKelompokCabang } from '@/lib/kelompok';
 import { supabase, User, fmtDate, ScoreBadge, SearchInput } from './shared';
 import { StatCardGrid, ModalPortal, DonutChart } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -276,7 +277,7 @@ export function AdminDashboard({ user }: { user: User }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📊 Dashboard</h1>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="📊" />Dashboard</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Selamat datang, {user.full_name}</p>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari aktivitas..." />
@@ -313,7 +314,7 @@ export function AdminDashboard({ user }: { user: User }) {
             ];
             return (
               <div>
-                <SectionHeader>🥧 Analytics Overview</SectionHeader>
+                <SectionHeader><IkonTeks nama="🥧" />Analytics Overview</SectionHeader>
                 <div className="grid grid-cols-2 gap-3">
                   {miniCards.map(c => (
                     <div key={c.title} className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5 flex flex-col items-center gap-3">
@@ -341,11 +342,11 @@ export function AdminDashboard({ user }: { user: User }) {
                 <div className="flex items-center gap-3 flex-wrap min-w-0">
                   <span className="text-xs font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap"
                     title="Diurutkan dari skor rata-rata tertinggi. Jika skor sama, rata-rata waktu pengerjaan tercepat menang.">
-                    🏆 Top Performers
+                    <IkonTeks nama="🏆" />Top Performers
                   </span>
                   {nationalAvg !== null && (
                     <span className="text-[11px] text-slate-500 whitespace-nowrap">
-                      🌏 Nasional: <span className="font-bold text-slate-800">{nationalAvg.toFixed(1)}</span>
+                      <IkonTeks nama="🌏" />Nasional: <span className="font-bold text-slate-800">{nationalAvg.toFixed(1)}</span>
                       {activeTeam === 'Sales' && performerDivisionFilter && (() => {
                         const d = divisionStats.find(d => d.name === performerDivisionFilter);
                         if (!d) return null;
@@ -369,7 +370,7 @@ export function AdminDashboard({ user }: { user: User }) {
                     disabled={activeTeam !== 'Sales'}
                     aria-hidden={activeTeam !== 'Sales'}
                     className={`text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600 ${activeTeam === 'Sales' && divisionStats.length > 0 ? '' : 'invisible pointer-events-none'}`}>
-                    <option value="">🏢 Semua Divisi</option>
+                    <option value="">Semua Divisi</option>
                     {divisionStats.filter(d => d.source === 'division').map(d => <option key={d.name} value={d.name}>{d.name}</option>)}
                   </select>
                   <SearchInput value={searchPerformer} onChange={setSearchPerformer} placeholder="Cari nama..." />
@@ -405,9 +406,9 @@ export function AdminDashboard({ user }: { user: User }) {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors text-sm">{u.name}</span>
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold">👁</span>
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold"><Ikon nama="👁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                           {u.consistency !== null && u.consistency > 40 && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">⚡ Inkonsisten</span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><IkonTeks nama="⚡" />Inkonsisten</span>
                           )}
                         </div>
                       </td>
@@ -431,10 +432,10 @@ export function AdminDashboard({ user }: { user: User }) {
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1 flex-wrap">
                           {u.tabSw > 0 && (
-                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⚠️ {u.tabSw}×</span>
+                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.tabSw}×</span>
                           )}
                           {u.fastCount > 0 && (
-                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full">🚨 {u.fastCount}×</span>
+                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full"><Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.fastCount}×</span>
                           )}
                           {u.tabSw === 0 && u.fastCount === 0 && <span className="text-xs text-slate-300">—</span>}
                         </div>
@@ -452,15 +453,15 @@ export function AdminDashboard({ user }: { user: User }) {
               {/* Legend — inside card as footer */}
               <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
                 <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⚠️ N×</span>
+                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚠" />N×</span>
                   Pindah tab
                 </span>
                 <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                  <span className="inline-flex items-center gap-0.5 font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full">🚨 N×</span>
+                  <span className="inline-flex items-center gap-0.5 font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="🚨" />N×</span>
                   Submit &lt;5det/soal
                 </span>
                 <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⚡ Inkonsisten</span>
+                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚡" />Inkonsisten</span>
                   Nilai selisih &gt;40pt
                 </span>
               </div>
@@ -494,7 +495,7 @@ export function AdminDashboard({ user }: { user: User }) {
 
           return (
             <section>
-              <SectionHeader>📈 Statistik Per Sesi Quiz</SectionHeader>
+              <SectionHeader><IkonTeks nama="📈" />Statistik Per Sesi Quiz</SectionHeader>
               <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-5">
                 {/*
                   Tanpa StatCardGrid Total Sesi/Peserta/Rata-rata/Pass Rate di
@@ -580,7 +581,7 @@ export function AdminDashboard({ user }: { user: User }) {
         {/* ── Per Divisi / Jabatan Ranking ── */}
         {divisionStats.length > 0 && (
           <section>
-            <SectionHeader>🏢 Ranking Per Divisi / Jabatan</SectionHeader>
+            <SectionHeader><IkonTeks nama="🏢" />Ranking Per Divisi / Jabatan</SectionHeader>
             <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
               <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
                 <thead className="border-b border-slate-200 bg-slate-50">
@@ -652,7 +653,7 @@ export function AdminDashboard({ user }: { user: User }) {
 
         {/* ── Recent Activity ── */}
         <section>
-          <SectionHeader>🕐 Aktivitas Terbaru</SectionHeader>
+          <SectionHeader><IkonTeks nama="🕐" />Aktivitas Terbaru</SectionHeader>
           <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm" style={{ background: 'rgba(255,255,255,0.90)' }}>
             <div className="divide-y divide-slate-100">
               {filteredRecent.length === 0 && (
@@ -676,12 +677,12 @@ export function AdminDashboard({ user }: { user: User }) {
                     <ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} />
                     {isFast && (
                       <span className="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full flex-shrink-0">
-                        🚨 {Math.round(ts)}s
+                        <Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.round(ts)}s
                       </span>
                     )}
                     {(a.tab_switches ?? 0) > 0 && (
                       <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-shrink-0">
-                        ⚠️ {a.tab_switches}× tab
+                        <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.tab_switches}× tab
                       </span>
                     )}
                     <span className="text-xs text-slate-400 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
@@ -769,9 +770,9 @@ export function AdminDashboard({ user }: { user: User }) {
                               <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
                                 {a.passed ? 'LULUS' : 'TIDAK LULUS'}
                               </span>
-                              {a.time_taken_sec != null && <span className="text-xs text-slate-400">⏱ {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>}
-                              {tabSw > 0 && <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">⚠️ {tabSw}× tab</span>}
-                              {isFast && <span className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">🚨 Submit terlalu cepat</span>}
+                              {a.time_taken_sec != null && <span className="text-xs text-slate-400"><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>}
+                              {tabSw > 0 && <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {tabSw}× tab</span>}
+                              {isFast && <span className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full"><IkonTeks nama="🚨" />Submit terlalu cepat</span>}
                             </div>
                           </div>
                           <div className="text-right flex-shrink-0 space-y-0.5">

@@ -4,6 +4,8 @@ import { Ico } from './Ico';
 import type { Ticket, TeamMember, User } from './shared';
 //  Nilai (bukan tipe) - dipakai label & nilai opsi penyaring tahun.
 import { TAHUN_TERBARU, RENTANG_BULAN_TIKET } from './shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { FilterLipat } from '@/components/shared/FilterLipat';
 
 /**
  * Header "Ticket List" (Select/Refresh/Export) + baris search/filter +
@@ -100,7 +102,7 @@ export function FilterBar({
 
       {/* Integrated search filters row - like the image */}
       <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3">
+        <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3" aktif={[searchSalesName, searchProduct, handlerFilter, filterStatus, salesDivisionFilter]}>
           <div>
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Location</label>
             <div className="relative">
@@ -167,16 +169,16 @@ export function FilterBar({
                 className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
                 <option value="All">All Status</option>
-                <option value="Waiting Approval">⏳ Waiting Approval</option>
-                <option value="Pending">🟡 Pending</option>
-                <option value="Call">📞 Call</option>
-                <option value="Onsite">🚗 Onsite</option>
-                <option value="In Progress">🔵 In Progress</option>
-                <option value="Solved">✅ Solved</option>
+                <option value="Waiting Approval">Waiting Approval</option>
+                <option value="Pending">Pending</option>
+                <option value="Call">Call</option>
+                <option value="Onsite">Onsite</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Solved">Solved</option>
                 {(currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
                   <>
-                    <option value="Overdue">🚨 Overdue</option>
-                    <option value="Solved Overdue">⚠️ Solved Overdue</option>
+                    <option value="Overdue">Overdue</option>
+                    <option value="Solved Overdue">Solved Overdue</option>
                   </>
                 )}
               </select>
@@ -202,7 +204,7 @@ export function FilterBar({
               <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
             </div>
           </div>
-        </div>
+        </FilterLipat>
       </div>
 
       {/* Bulk delete bar — admin only, selectMode only */}
@@ -235,16 +237,16 @@ export function FilterBar({
             <button onClick={() => setSalesDivisionFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#ec4899" }}>Division: {salesDivisionFilter} ✕</button>
           )}
           {productFilter && (
-            <button onClick={() => { setProductFilter(null); setSearchProduct(""); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#6366f1" }}>📦 {productFilter} ✕</button>
+            <button onClick={() => { setProductFilter(null); setSearchProduct(""); }} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#6366f1" }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {productFilter} ✕</button>
           )}
           {searchProject && (
-            <button onClick={() => setSearchProject("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#475569" }}>🔍 {searchProject} ✕</button>
+            <button onClick={() => setSearchProject("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#475569" }}><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchProject} ✕</button>
           )}
           {searchSalesName && (
-            <button onClick={() => setSearchSalesName("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#475569" }}>👤 {searchSalesName} ✕</button>
+            <button onClick={() => setSearchSalesName("")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#475569" }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchSalesName} ✕</button>
           )}
           <button onClick={() => { setFilterStatus("All"); setHandlerFilter(null); setSalesDivisionFilter(null); setProductFilter(null); setSearchProduct(""); setSearchProject(""); setSearchSalesName(""); }}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: "rgba(220,38,38,0.12)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.25)" }}>🗑️ Reset Semua</button>
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: "rgba(220,38,38,0.12)", color: "#dc2626", border: "1px solid rgba(220,38,38,0.25)" }}><IkonTeks nama="🗑" />Reset Semua</button>
         </div>
       )}
     </>

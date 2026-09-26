@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ListEmptyState } from '@/components/shared';
 import { supabase, User, fmtDate, SearchInput, BtnView, GradingStatusBadge } from './shared';
 import { UserAnswerReview } from './TeamPage';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function HistoryPage({ user }: { user: User }) {
   const [history, setHistory] = useState<any[]>([]);
@@ -37,7 +38,7 @@ export function HistoryPage({ user }: { user: User }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">🕐 Riwayat Quiz</h1>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="🕐" />Riwayat Quiz</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Semua quiz yang pernah kamu ikuti</p>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari sesi atau materi..." />
@@ -69,12 +70,12 @@ export function HistoryPage({ user }: { user: User }) {
                 <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
                 <div className="flex gap-3 mt-1.5 text-xs text-slate-400">
                   {a.grading_status === 'pending_review' ? (
-                    <span>📝 {a.total_questions} soal essay dikirim</span>
+                    <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_questions} soal essay dikirim</span>
                   ) : (
-                    <span>✅ {a.total_correct}/{a.total_questions} benar</span>
+                    <span><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_correct}/{a.total_questions} benar</span>
                   )}
-                  <span>🎯 Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
-                  {a.time_taken_sec && <span>⏱️ {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
+                  <span><IkonTeks nama="🎯" />Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
+                  {a.time_taken_sec && <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
                 </div>
               </div>
               <div className="text-right flex-shrink-0 flex items-center gap-3">

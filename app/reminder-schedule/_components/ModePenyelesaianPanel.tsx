@@ -1,5 +1,6 @@
 'use client';
 import { InstallerPicker } from './InstallerPicker';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Panel "Mode Penyelesaian" (muncul saat klik Completed) — dipindah dari
@@ -62,7 +63,7 @@ export function ModePenyelesaianPanel({
     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 overflow-hidden flex flex-col"
       style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', height: '100%' }}>
       <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
-        <h3 className="text-white font-bold text-base">📍 {modeEditSaja ? 'Detail Pelaksanaan' : 'Mode Penyelesaian'}</h3>
+        <h3 className="text-white font-bold text-base"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {modeEditSaja ? 'Detail Pelaksanaan' : 'Mode Penyelesaian'}</h3>
         <p className="text-emerald-100 text-[11px] mt-0.5">
           {modeEditSaja ? 'Status tetap Completed — hanya detailnya yang disimpan' : 'Lengkapi data sebelum status jadi Completed'}
         </p>
@@ -85,8 +86,8 @@ export function ModePenyelesaianPanel({
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-gray-600 mb-2">📅 Tanggal BAST <span className="text-red-500">*</span></label>
-          <input aria-label="Tanggal BAST" type="date" value={bastDate} onChange={e => setBastDate(e.target.value)}
+          <label htmlFor="f-reminder-schedule-components-modepenyelesaianpanel-1" className="block text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="📅" />Tanggal BAST <span className="text-red-500">*</span></label>
+          <input id="f-reminder-schedule-components-modepenyelesaianpanel-1" type="date" value={bastDate} onChange={e => setBastDate(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white" />
           {bastDate && (
             <p className="text-[10px] text-gray-400 mt-1">Tranche T1 bayar {new Date(bastDate).getFullYear()+1} · T2 bayar {new Date(bastDate).getFullYear()+2} · T3 bayar {new Date(bastDate).getFullYear()+3}</p>
@@ -95,7 +96,7 @@ export function ModePenyelesaianPanel({
 
         {/* 1. Display Type — wajib pilih LED / LCD / Mix */}
         <div>
-          <p className="text-xs font-bold text-gray-600 mb-2">🖥️ Tipe Display <span className="text-red-500">*</span> <span className="font-normal text-gray-400">(Mix = LED + LCD)</span></p>
+          <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🖥" />Tipe Display <span className="text-red-500">*</span> <span className="font-normal text-gray-400">(Mix = LED + LCD)</span></p>
           <div className="grid grid-cols-3 gap-2">
             {([
               { value: 'led', label: 'LED' },
@@ -112,7 +113,7 @@ export function ModePenyelesaianPanel({
 
         {/* 2. Controller Automation — Yes/No + brand */}
         <div>
-          <p className="text-xs font-bold text-gray-600 mb-2">🎛️ Controller Automation <span className="text-red-500">*</span></p>
+          <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🎛" />Controller Automation <span className="text-red-500">*</span></p>
           <div className="grid grid-cols-2 gap-2">
             {([{ v: false, l: 'Tidak' }, { v: true, l: 'Ya' }] as { v: boolean; l: string }[]).map(opt => (
               <button key={opt.l} type="button"
@@ -140,7 +141,7 @@ export function ModePenyelesaianPanel({
 
         {/* 3. Middleware — Yes/No */}
         <div>
-          <p className="text-xs font-bold text-gray-600 mb-2">🔌 Middleware / System / Matrix <span className="text-red-500">*</span></p>
+          <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🔌" />Middleware / System / Matrix <span className="text-red-500">*</span></p>
           <div className="grid grid-cols-2 gap-2">
             {([{ v: false, l: 'Tidak' }, { v: true, l: 'Ya' }] as { v: boolean; l: string }[]).map(opt => (
               <button key={opt.l} type="button" onClick={() => setRequiresMiddleware(opt.v)}
@@ -153,7 +154,7 @@ export function ModePenyelesaianPanel({
 
         {modePenyelesaian === 'remote' && (
           <div className="space-y-3 p-4 rounded-xl" style={{ background: 'rgba(59,130,246,0.06)', border: '1.5px solid rgba(59,130,246,0.25)' }}>
-            <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">🔧 Data PTS Daerah</p>
+            <p className="text-xs font-bold text-blue-700 uppercase tracking-wide"><IkonTeks nama="🔧" />Data PTS Daerah</p>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">PTS Daerah <span className="text-red-500">*</span></label>
               <InstallerPicker
@@ -168,8 +169,8 @@ export function ModePenyelesaianPanel({
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 mb-1">Daerah / Kota <span className="text-red-500">*</span></label>
-              <input value={installerDaerah} onChange={e => setInstallerDaerah(e.target.value)}
+              <label htmlFor="f-reminder-schedule-components-modepenyelesaianpanel-2" className="block text-xs font-semibold text-gray-600 mb-1">Daerah / Kota <span className="text-red-500">*</span></label>
+              <input id="f-reminder-schedule-components-modepenyelesaianpanel-2" value={installerDaerah} onChange={e => setInstallerDaerah(e.target.value)}
                 placeholder="Contoh: Surabaya, Bandung, Medan..."
                 className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
             </div>

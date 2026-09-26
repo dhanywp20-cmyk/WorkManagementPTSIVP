@@ -18,7 +18,7 @@
  * Jadi selama baris pengaturannya belum ada - atau gagal dibaca - platform
  * tampil tepat seperti sebelumnya, bukan kosong atau berubah sendiri.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { supabase } from './supabase';
 // Interface, nilai bawaan & kunci penyimpanan dipindah ke berkas terpisah
 // TANPA impor React - lihat catatan di lib/merek-bawaan.ts kenapa itu perlu.
@@ -186,6 +186,16 @@ export function angkaTembus(nilai: string, bawaan: number): number {
 }
 
 /** Gradasi panel kiri halaman login, sesuai warna & kepekatan yang diatur. */
+/**
+ * Latar layar dashboard sesuai pengaturan merek: bidang netral (bawaan) atau
+ * gambar unggahan admin. Satu fungsi untuk semua titik yang memasangnya.
+ */
+export function latarDasbor(m: Merek): CSSProperties {
+  return m.latarDasbor === 'gambar'
+    ? { backgroundImage: `url(${m.gambarLatarDasbor})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : { background: 'var(--halaman)' };
+}
+
 export function gradasiPanelLogin(m: Merek): string {
   const a = angkaTembus(m.tembusLogin, 0.84);
   // Ujung kedua dibuat sedikit lebih pekat, seperti aslinya - gradasi yang

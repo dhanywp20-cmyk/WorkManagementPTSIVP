@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { bersihkanPenandaSupervisor } from '@/lib/admin-edit';
+import { Ikon } from '@/components/shared/Ikon';
 
 /**
  * components/shared/AuditTrailPanel.tsx - riwayat perubahan sebuah record.
@@ -228,7 +229,7 @@ export function AuditTrailPanel({
   if (!memuat && semua.length === 0) {
     return (
       <div className="px-4 py-10 text-center">
-        <p className="text-3xl mb-2">🕘</p>
+        <p className="text-3xl mb-2"><Ikon nama="🕘" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
         <p className="text-xs font-semibold text-slate-500">Belum ada riwayat</p>
         <p className="text-[11px] text-slate-400 mt-1">
           Perubahan pada data ini akan tercatat di sini.
@@ -248,13 +249,13 @@ export function AuditTrailPanel({
           onClick={() => setTerbuka(o => !o)}
           aria-expanded={terbuka}
           className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-black/[0.03]">
-          <span className="text-sm">🕘</span>
+          <span className="text-sm"><Ikon nama="🕘" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
           <span className="text-xs font-bold uppercase tracking-wide text-slate-600 flex-1">{judul}</span>
           <span className="text-[10px] font-bold text-slate-400 tabular-nums">
             {memuat ? '…' : semua.length}
           </span>
           <span className="text-slate-400 text-xs transition-transform"
-            style={{ transform: terbuka ? 'rotate(90deg)' : 'none' }}>▶</span>
+            style={{ transform: terbuka ? 'rotate(90deg)' : 'none' }}><Ikon nama="▶" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         </button>
       )}
 

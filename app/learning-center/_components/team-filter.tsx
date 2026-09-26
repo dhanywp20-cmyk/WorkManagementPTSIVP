@@ -11,6 +11,7 @@
  */
 
 import { useKelompokCabang, namaKelompokCabang } from '@/lib/kelompok';
+import { Ikon } from '@/components/shared/Ikon';
 
 export type TeamFilter = 'PTS' | 'PTS Daerah' | 'Sales' | 'Marketing';
 
@@ -73,7 +74,7 @@ export function TeamSwitch({ active, onChange }: { active: TeamFilter; onChange:
               active === t ? cfg.activeClass + ' shadow-sm' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            {cfg.emoji} {cfg.label}
+            <Ikon nama={cfg.emoji} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}
           </button>
         );
       })}

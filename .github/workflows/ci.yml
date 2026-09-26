@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  cek:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Nilai palsu: build & uji tidak menyentuh jaringan Supabase sungguhan.
+      NEXT_PUBLIC_SUPABASE_URL: https://x.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: dummy
+      NEXT_PUBLIC_SUPABASE_SERVICES_URL: https://y.supabase.co
+      NEXT_PUBLIC_SUPABASE_SERVICES_ANON_KEY: dummy
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit -p .
+      - name: Uji
+        run: |
+          for f in cari-reminder kelompok-daily-report kelompok-insentif kpi-lc-tahunan \
+                   lingkup-project peringkat-quiz supervisor-jadi-pic tahapan-installer \
+                   tahun-tahapan-kembar urutan-soal; do
+            echo "::group::uji/$f.ts"; npx --yes tsx@4 "uji/$f.ts"; echo "::endgroup::"
+          done
+      - name: Build
+        run: npm run build

@@ -1089,3 +1089,470 @@ CREATE TRIGGER on_ticket_assigned AFTER INSERT OR UPDATE ON public.tickets FOR E
 CREATE TRIGGER update_tickets_updated_at BEFORE UPDATE ON public.tickets FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER trg_user_credentials_updated BEFORE UPDATE ON public.user_credentials FOR EACH ROW EXECUTE FUNCTION update_user_credentials_timestamp();
 CREATE TRIGGER trg_guard_users_privileged BEFORE INSERT OR UPDATE ON public.users FOR EACH ROW EXECUTE FUNCTION guard_users_privileged_columns();
+
+-- ── Project 360: view ringkasan + RPC Mapping Center ─────────────────────
+-- Cerminan supabase/migrations/014_project_360.sql. Butuh extension pg_trgm.
+--
+-- security_invoker WAJIB di view ini: tanpa itu view berjalan sebagai
+-- pemiliknya dan RLS tabel sumber dilewati - view berubah jadi pintu belakang
+-- kebocoran data lintas divisi.
+
+CREATE OR REPLACE FUNCTION public.norm_nama_project(t text)
+RETURNS text LANGUAGE sql IMMUTABLE PARALLEL SAFE AS
+$$ SELECT lower(btrim(regexp_replace(coalesce(t,''), '\s+', ' ', 'g'))) $$;
+
+CREATE OR REPLACE VIEW public.v_project_summary WITH (security_invoker = true) AS
+SELECT p.id AS project_id, p.code, p.name, p.customer, p.location,
+       p.sales_name, p.sales_division, p.status, p.created_at,
+       COALESCE(s.n,0) AS schedule_count,
+       COALESCE(t.n,0) AS ticket_count,
+       COALESCE(d.n,0) AS design_count,
+       COALESCE(f.n,0) AS review_count,
+       COALESCE(s.n,0) + COALESCE(t.n,0) + COALESCE(d.n,0) + COALESCE(f.n,0) AS total_activity,
+       GREATEST(s.last_at, t.last_at, d.last_at, f.last_at) AS last_activity
+FROM public.projects p
+LEFT JOIN (SELECT l.project_id, count(*) n, max(r.due_date) last_at
+           FROM public.project_source_links l JOIN public.reminders r ON r.id = l.source_record_id
+           WHERE l.source_module='reminders' AND COALESCE(r.is_deleted,false)=false
+           GROUP BY l.project_id) s ON s.project_id = p.id
+LEFT JOIN (SELECT l.project_id, count(*) n, max(t2.date) last_at
+           FROM public.project_source_links l JOIN public.tickets t2 ON t2.id = l.source_record_id
+           WHERE l.source_module='tickets' AND COALESCE(t2.is_deleted,false)=false
+           GROUP BY l.project_id) t ON t.project_id = p.id
+LEFT JOIN (SELECT l.project_id, count(*) n, max(d2.created_at::date) last_at
+           FROM public.project_source_links l JOIN public.project_requests d2 ON d2.id = l.source_record_id
+           WHERE l.source_module='project_requests' AND COALESCE(d2.is_deleted,false)=false
+           GROUP BY l.project_id) d ON d.project_id = p.id
+LEFT JOIN (SELECT l.project_id, count(*) n, max(f2.created_at::date) last_at
+           FROM public.project_source_links l JOIN public.form_reviews f2 ON f2.id = l.source_record_id
+           WHERE l.source_module='form_reviews'
+           GROUP BY l.project_id) f ON f.project_id = p.id;
+
+CREATE OR REPLACE FUNCTION public.saran_project(p_nama text, p_limit int DEFAULT 5)
+RETURNS TABLE (project_id uuid, code text, name text, location text, sales_name text, skor real)
+LANGUAGE sql STABLE AS
+$$
+  SELECT p.id, p.code, p.name, p.location, p.sales_name,
+         similarity(public.norm_nama_project(p.name), public.norm_nama_project(p_nama)) AS skor
+  FROM public.projects p
+  WHERE similarity(public.norm_nama_project(p.name), public.norm_nama_project(p_nama)) > 0.28
+  ORDER BY skor DESC, p.name
+  LIMIT greatest(1, least(p_limit, 20));
+$$;
+
+-- form_reviews sengaja tidak ikut antrean: ia selalu terikat ke satu reminder
+-- lewat reminder_id, jadi mengikuti pemetaan reminder-nya.
+CREATE OR REPLACE FUNCTION public.record_belum_terpeta(p_limit int DEFAULT 200)
+RETURNS TABLE (source_module text, source_record_id uuid, project_name text, info text, tanggal date)
+LANGUAGE sql STABLE AS
+$$
+  (SELECT 'reminders'::text, r.id, r.project_name,
+          concat_ws(' · ', nullif(r.sales_name,''), nullif(r.address,''), nullif(r.category,'')), r.due_date
+   FROM public.reminders r
+   WHERE COALESCE(r.is_deleted,false)=false AND btrim(COALESCE(r.project_name,'')) <> ''
+     AND NOT EXISTS (SELECT 1 FROM public.project_source_links l
+                     WHERE l.source_module='reminders' AND l.source_record_id=r.id))
+  UNION ALL
+  (SELECT 'tickets', t.id, t.project_name,
+          concat_ws(' · ', nullif(t.issue_case,''), nullif(t.assign_name,''), nullif(t.address,'')), t.date
+   FROM public.tickets t
+   WHERE COALESCE(t.is_deleted,false)=false AND btrim(COALESCE(t.project_name,'')) <> ''
+     AND NOT EXISTS (SELECT 1 FROM public.project_source_links l
+                     WHERE l.source_module='tickets' AND l.source_record_id=t.id))
+  UNION ALL
+  (SELECT 'project_requests', d.id, d.project_name,
+          concat_ws(' · ', nullif(d.requester_name,''), nullif(d.sales_name,''), nullif(d.project_location,'')), d.created_at::date
+   FROM public.project_requests d
+   WHERE COALESCE(d.is_deleted,false)=false AND btrim(COALESCE(d.project_name,'')) <> ''
+     AND NOT EXISTS (SELECT 1 FROM public.project_source_links l
+                     WHERE l.source_module='project_requests' AND l.source_record_id=d.id))
+  ORDER BY 5 DESC NULLS LAST
+  LIMIT greatest(1, least(p_limit, 500));
+$$;
+
+CREATE OR REPLACE FUNCTION public.ringkasan_mapping()
+RETURNS TABLE (auto_mapped bigint, manual_mapped bigint, diabaikan bigint, belum_terpeta bigint, total_project bigint)
+LANGUAGE sql STABLE AS
+$$
+  SELECT (SELECT count(*) FROM public.project_source_links WHERE mapping_type='auto'),
+         (SELECT count(*) FROM public.project_source_links WHERE mapping_type='manual'),
+         (SELECT count(*) FROM public.project_source_links WHERE mapping_type='ignored'),
+         (SELECT count(*) FROM public.record_belum_terpeta(500)),
+         (SELECT count(*) FROM public.projects);
+$$;
+
+-- ── Project 360: pemetaan otomatis record -> project (lihat supabase/migrations/015) ──
+-- 1. Pemetaan satu record (inti) ------------------------------------------
+
+create or replace function public.petakan_record_otomatis(
+  p_modul text, p_id uuid, p_nama text,
+  p_sales text default null, p_divisi text default null, p_lokasi text default null
+) returns uuid
+language plpgsql security definer set search_path = public, pg_temp as
+$$
+declare
+  k text := public.norm_nama_project(p_nama);
+  pid uuid;
+  n int;
+begin
+  if k = '' or p_modul not in ('reminders','tickets','project_requests') then return null; end if;
+  if exists (select 1 from public.project_source_links
+             where source_module = p_modul and source_record_id = p_id) then
+    return null;
+  end if;
+
+  -- Dua record baru bernama sama yang masuk bersamaan tidak boleh membuat
+  -- dua project kembar.
+  perform pg_advisory_xact_lock(hashtext('project360:' || k));
+
+  select count(*), (array_agg(id))[1] into n, pid
+  from public.projects
+  where public.norm_nama_project(name) = k and status <> 'archived';
+
+  if n > 1 then return null; end if;
+
+  if n = 0 then
+    insert into public.projects (name, sales_name, sales_division, location, created_by)
+    values (btrim(regexp_replace(p_nama, '\s+', ' ', 'g')),
+            nullif(btrim(coalesce(p_sales,'')), ''), nullif(btrim(coalesce(p_divisi,'')), ''),
+            nullif(btrim(coalesce(p_lokasi,'')), ''), 'sistem (otomatis)')
+    returning id into pid;
+  else
+    -- Lengkapi isian project yang masih kosong dari record ini.
+    update public.projects set
+      sales_name     = coalesce(sales_name, nullif(btrim(coalesce(p_sales,'')), '')),
+      sales_division = coalesce(sales_division, nullif(btrim(coalesce(p_divisi,'')), '')),
+      location       = coalesce(location, nullif(btrim(coalesce(p_lokasi,'')), ''))
+    where id = pid and (sales_name is null or sales_division is null or location is null);
+  end if;
+
+  insert into public.project_source_links
+    (source_module, source_record_id, project_id, mapping_type, confidence, match_reason, mapped_by)
+  values (p_modul, p_id, pid, 'auto', 1,
+          case when n = 0 then 'project dibuat otomatis dari nama' else 'nama project sama persis' end,
+          'sistem')
+  on conflict (source_module, source_record_id) do nothing;
+
+  return pid;
+end;
+$$;
+
+-- Hanya dipanggil dari trigger & backfill (keduanya berjalan sebagai pemilik).
+-- Tanpa ini, siapa pun lewat PostgREST bisa membuat project sembarangan.
+revoke execute on function public.petakan_record_otomatis(text, uuid, text, text, text, text)
+  from public, anon, authenticated;
+
+-- 2. Trigger record baru / nama diubah ------------------------------------
+
+create or replace function public.trg_petakan_project_otomatis()
+returns trigger
+language plpgsql security definer set search_path = public, pg_temp as
+$$
+declare
+  r jsonb := to_jsonb(new);
+begin
+  if coalesce((r->>'is_deleted')::boolean, false) then return null; end if;
+
+  if tg_op = 'UPDATE' then
+    if public.norm_nama_project(old.project_name) = public.norm_nama_project(new.project_name) then
+      return null;
+    end if;
+    -- Nama berubah: hanya pemetaan otomatis yang ikut dihitung ulang.
+    delete from public.project_source_links
+    where source_module = tg_table_name and source_record_id = new.id and mapping_type = 'auto';
+  end if;
+
+  perform public.petakan_record_otomatis(
+    tg_table_name, new.id, new.project_name,
+    r->>'sales_name', r->>'sales_division', coalesce(r->>'address', r->>'project_location'));
+  return null;
+exception when others then
+  -- Pemetaan adalah pelengkap. Kegagalannya TIDAK BOLEH menggagalkan
+  -- pembuatan jadwal/ticket/request - record tetap masuk antrean Mapping Center.
+  raise warning '[project360] pemetaan otomatis % % gagal: %', tg_table_name, new.id, sqlerrm;
+  return null;
+end;
+$$;
+
+drop trigger if exists petakan_project_otomatis on public.reminders;
+create trigger petakan_project_otomatis
+  after insert or update of project_name on public.reminders
+  for each row execute function public.trg_petakan_project_otomatis();
+
+drop trigger if exists petakan_project_otomatis on public.tickets;
+create trigger petakan_project_otomatis
+  after insert or update of project_name on public.tickets
+  for each row execute function public.trg_petakan_project_otomatis();
+
+drop trigger if exists petakan_project_otomatis on public.project_requests;
+create trigger petakan_project_otomatis
+  after insert or update of project_name on public.project_requests
+  for each row execute function public.trg_petakan_project_otomatis();
+
+-- 3. Backfill: semua record yang belum terpeta ----------------------------
+--
+-- Urutan: Request Schedule dulu (paling lengkap isian sales & alamatnya,
+-- jadi project yang dibuat mewarisi datanya), lalu Design, lalu Ticket;
+-- masing-masing dari yang tertua.
+
+create or replace function public.petakan_semua_otomatis()
+returns integer
+language plpgsql security definer set search_path = public, pg_temp as
+$$
+declare
+  rec record;
+  n int := 0;
+begin
+  -- Lewat PostgREST hanya admin; dari SQL editor/migrasi (bukan authenticator) bebas.
+  if session_user = 'authenticator' and public.jwt_claim('user_role') not in ('admin','superadmin') then
+    raise exception 'Hanya admin yang boleh menjalankan pemetaan otomatis massal';
+  end if;
+
+  for rec in
+    select 'reminders'::text m, id, project_name, sales_name, sales_division, address lok, 1 urut, due_date::timestamptz t
+      from public.reminders where coalesce(is_deleted,false) = false and btrim(coalesce(project_name,'')) <> ''
+    union all
+    select 'project_requests', id, project_name, sales_name, sales_division, project_location, 2, created_at
+      from public.project_requests where coalesce(is_deleted,false) = false and btrim(coalesce(project_name,'')) <> ''
+    union all
+    select 'tickets', id, project_name, sales_name, sales_division, address, 3, coalesce(date::timestamptz, created_at)
+      from public.tickets where coalesce(is_deleted,false) = false and btrim(coalesce(project_name,'')) <> ''
+    order by urut, t nulls last
+  loop
+    if public.petakan_record_otomatis(rec.m, rec.id, rec.project_name, rec.sales_name, rec.sales_division, rec.lok) is not null then
+      n := n + 1;
+    end if;
+  end loop;
+  return n;
+end;
+$$;
+
+
+-- ── Project 360: perbaikan audit (lihat supabase/migrations/016). Menimpa v_project_summary di atas. ──
+-- 2 ------------------------------------------------------------------------
+revoke execute on function public.petakan_semua_otomatis() from public, anon, authenticated;
+revoke execute on function public.trg_petakan_project_otomatis() from public, anon, authenticated;
+
+-- 3 ------------------------------------------------------------------------
+alter function public.norm_nama_project(text) set search_path = public, pg_temp;
+alter function public.saran_project(text, int) set search_path = public, pg_temp;
+alter function public.record_belum_terpeta(int) set search_path = public, pg_temp;
+alter function public.ringkasan_mapping() set search_path = public, pg_temp;
+
+-- 4 ------------------------------------------------------------------------
+create or replace view public.v_project_summary with (security_invoker = true) as
+select p.id as project_id, p.code, p.name, p.customer, p.location,
+       p.sales_name, p.sales_division, p.status, p.created_at,
+       coalesce(s.n,0) as schedule_count,
+       coalesce(t.n,0) as ticket_count,
+       coalesce(d.n,0) as design_count,
+       coalesce(f.n,0) as review_count,
+       coalesce(s.n,0) + coalesce(t.n,0) + coalesce(d.n,0) + coalesce(f.n,0) as total_activity,
+       greatest(s.last_at, t.last_at, d.last_at, f.last_at) as last_activity
+from public.projects p
+left join (select l.project_id, count(*) n, max(r.due_date) last_at
+           from public.project_source_links l join public.reminders r on r.id = l.source_record_id
+           where l.source_module='reminders' and coalesce(r.is_deleted,false)=false
+           group by l.project_id) s on s.project_id = p.id
+left join (select l.project_id, count(*) n, max(t2.date) last_at
+           from public.project_source_links l join public.tickets t2 on t2.id = l.source_record_id
+           where l.source_module='tickets' and coalesce(t2.is_deleted,false)=false
+           group by l.project_id) t on t.project_id = p.id
+left join (select l.project_id, count(*) n, max(d2.created_at::date) last_at
+           from public.project_source_links l join public.project_requests d2 on d2.id = l.source_record_id
+           where l.source_module='project_requests' and coalesce(d2.is_deleted,false)=false
+           group by l.project_id) d on d.project_id = p.id
+left join (select x.project_id, count(distinct x.review_id) n, max(x.tgl) last_at from (
+             select l.project_id, f2.id review_id, f2.created_at::date tgl
+             from public.project_source_links l
+             join public.reminders r on r.id = l.source_record_id and coalesce(r.is_deleted,false)=false
+             join public.form_reviews f2 on f2.reminder_id = r.id
+             where l.source_module='reminders' and l.project_id is not null
+             union all
+             select l.project_id, f2.id, f2.created_at::date
+             from public.project_source_links l join public.form_reviews f2 on f2.id = l.source_record_id
+             where l.source_module='form_reviews' and l.project_id is not null
+           ) x group by x.project_id) f on f.project_id = p.id;
+
+-- 5 ------------------------------------------------------------------------
+create or replace function public.trg_bersihkan_project_otomatis_kosong()
+returns trigger
+language plpgsql security definer set search_path = public, pg_temp as
+$$
+begin
+  if old.project_id is null then return null; end if;
+  if tg_op = 'UPDATE' and new.project_id is not distinct from old.project_id then return null; end if;
+  delete from public.projects p
+  where p.id = old.project_id
+    and p.created_by = 'sistem (otomatis)'
+    and not exists (select 1 from public.project_source_links l where l.project_id = p.id);
+  return null;
+end;
+$$;
+revoke execute on function public.trg_bersihkan_project_otomatis_kosong() from public, anon, authenticated;
+
+drop trigger if exists bersihkan_project_otomatis_kosong on public.project_source_links;
+create trigger bersihkan_project_otomatis_kosong
+  after delete or update of project_id on public.project_source_links
+  for each row execute function public.trg_bersihkan_project_otomatis_kosong();
+
+-- 6 ------------------------------------------------------------------------
+-- Pasangan project bernama mirip (kemungkinan beda ketik). SECURITY INVOKER:
+-- hanya project yang boleh dilihat pemanggil yang ikut dibandingkan.
+create or replace function public.kandidat_duplikat_project(p_ambang real default 0.5, p_limit int default 100)
+returns table (a_id uuid, a_code text, a_name text, a_total bigint,
+               b_id uuid, b_code text, b_name text, b_total bigint, skor real)
+language sql stable set search_path = public, pg_temp as
+$$
+  select a.project_id, a.code, a.name, a.total_activity,
+         b.project_id, b.code, b.name, b.total_activity,
+         similarity(public.norm_nama_project(a.name), public.norm_nama_project(b.name))
+  from public.v_project_summary a
+  join public.v_project_summary b
+    on a.project_id < b.project_id
+   and public.norm_nama_project(a.name) % public.norm_nama_project(b.name)
+  where a.status <> 'archived' and b.status <> 'archived'
+    and similarity(public.norm_nama_project(a.name), public.norm_nama_project(b.name)) >= greatest(p_ambang, 0.3)
+  order by 9 desc, a.name
+  limit greatest(1, least(p_limit, 300));
+$$;
+
+-- Gabung atomik: pindah seluruh link lalu hapus project asal, dalam satu
+-- transaksi. SECURITY INVOKER - RLS psl_write/projects_write (admin) berlaku.
+create or replace function public.gabungkan_project(p_asal uuid, p_tujuan uuid, p_oleh text default null)
+returns integer
+language plpgsql set search_path = public, pg_temp as
+$$
+declare n int;
+begin
+  if p_asal = p_tujuan then raise exception 'Project asal dan tujuan sama'; end if;
+  if public.jwt_claim('user_role') not in ('admin','superadmin') and session_user = 'authenticator' then
+    raise exception 'Hanya admin yang boleh menggabungkan project';
+  end if;
+  if not exists (select 1 from public.projects where id = p_tujuan) then
+    raise exception 'Project tujuan tidak ditemukan';
+  end if;
+  update public.project_source_links
+     set project_id = p_tujuan, mapping_type = 'manual', confidence = null,
+         match_reason = 'digabung dari project lain', mapped_by = p_oleh, mapped_at = now()
+   where project_id = p_asal;
+  get diagnostics n = row_count;
+  delete from public.projects where id = p_asal;
+  return n;
+end;
+$$;
+
+-- ── Audit putaran 2: rekap LC server-side, ringkasan_mapping tanpa batas 500, indeks trigram (lihat supabase/migrations/017). ──
+-- 1 ------------------------------------------------------------------------
+create or replace function public.rekap_lc_tahunan(p_user_ids uuid[], p_tahun int)
+returns table (user_id uuid, wajib int, lulus int, gagal int, tidak_ikut int)
+language plpgsql stable security definer set search_path = public, pg_temp as
+$$
+declare
+  v_tim text; v_jab text;
+begin
+  -- Penjaga SELALU aktif kecuali superuser (SQL editor/migrasi) - bukan
+  -- bergantung pada nama role PostgREST.
+  if session_user not in ('postgres', 'supabase_admin') then
+    if public.jwt_claim('sub') = '' then raise exception 'Harus login'; end if;
+    if not public.admin_atau_full_access() then
+      select u.team_type, u.jabatan into v_tim, v_jab from public.users u where u.id = public.jwt_user_id();
+      if v_jab = 'Supervisor' and public.jwt_claim('user_role') = 'team' then
+        p_user_ids := array(select u.id from public.users u where u.id = any(p_user_ids) and u.team_type = v_tim);
+      else
+        p_user_ids := array(select x from unnest(p_user_ids) x where x = public.jwt_user_id());
+      end if;
+    end if;
+  end if;
+
+  return query
+  with s as (
+    select q.id, q.target_user_ids, coalesce(q.allow_retake, false) boleh_ulang,
+      (q.closed_at is not null
+        or (q.close_at is not null and q.close_at < now())
+        or (q.is_active = false and exists (
+              select 1 from public.lc_quiz_attempts a2 where a2.quiz_session_id = q.id and a2.is_submitted))) selesai
+    from public.lc_quiz_sessions q
+    where extract(year from (coalesce(q.open_at, q.scheduled_at, q.created_at) at time zone 'Asia/Jakarta')) = p_tahun
+  ), per as (
+    select x uid, s.selesai, s.boleh_ulang,
+      x = any(coalesce(s.target_user_ids, '{}'::uuid[])) ditargetkan,
+      count(a.id) n,
+      coalesce(bool_or(a.passed), false) ada_lulus,
+      coalesce(bool_or(a.grading_status = 'pending_review'), false) ada_pending
+    from unnest(p_user_ids) x
+    cross join s
+    left join public.lc_quiz_attempts a on a.quiz_session_id = s.id and a.user_id = x and a.is_submitted
+    group by x, s.id, s.selesai, s.boleh_ulang, s.target_user_ids
+  ), status as (
+    select uid,
+      case
+        when n > 0 and ada_lulus then 'lulus'
+        when n > 0 and ada_pending then null
+        when n > 0 and boleh_ulang and not selesai then null
+        when n > 0 then 'gagal'
+        when ditargetkan and selesai then 'tidak_ikut'
+      end st
+    from per
+  )
+  select x,
+    count(st.st)::int,
+    count(*) filter (where st.st = 'lulus')::int,
+    count(*) filter (where st.st = 'gagal')::int,
+    count(*) filter (where st.st = 'tidak_ikut')::int
+  from unnest(p_user_ids) x
+  left join status st on st.uid = x
+  group by x;
+end;
+$$;
+
+-- 2 ------------------------------------------------------------------------
+create or replace function public.ringkasan_mapping()
+returns table (auto_mapped bigint, manual_mapped bigint, diabaikan bigint, belum_terpeta bigint, total_project bigint)
+language sql stable set search_path = public, pg_temp as
+$$
+  select (select count(*) from public.project_source_links where mapping_type='auto'),
+         (select count(*) from public.project_source_links where mapping_type='manual'),
+         (select count(*) from public.project_source_links where mapping_type='ignored'),
+         (select count(*) from public.reminders r
+            where coalesce(r.is_deleted,false)=false and btrim(coalesce(r.project_name,'')) <> ''
+              and not exists (select 1 from public.project_source_links l where l.source_module='reminders' and l.source_record_id=r.id))
+       + (select count(*) from public.tickets t
+            where coalesce(t.is_deleted,false)=false and btrim(coalesce(t.project_name,'')) <> ''
+              and not exists (select 1 from public.project_source_links l where l.source_module='tickets' and l.source_record_id=t.id))
+       + (select count(*) from public.project_requests d
+            where coalesce(d.is_deleted,false)=false and btrim(coalesce(d.project_name,'')) <> ''
+              and not exists (select 1 from public.project_source_links l where l.source_module='project_requests' and l.source_record_id=d.id)),
+         (select count(*) from public.projects);
+$$;
+
+-- 3 ------------------------------------------------------------------------
+create index if not exists projects_norm_name_trgm_idx
+  on public.projects using gin (public.norm_nama_project(name) gin_trgm_ops);
+
+create or replace function public.kandidat_duplikat_project(p_ambang real default 0.5, p_limit int default 100)
+returns table (a_id uuid, a_code text, a_name text, a_total bigint,
+               b_id uuid, b_code text, b_name text, b_total bigint, skor real)
+language sql stable set search_path = public, pg_temp as
+$$
+  with pasangan as (
+    select a.id a_id, a.code a_code, a.name a_name, b.id b_id, b.code b_code, b.name b_name,
+           similarity(public.norm_nama_project(a.name), public.norm_nama_project(b.name)) skor
+    from public.projects a
+    join public.projects b
+      on a.id < b.id
+     and public.norm_nama_project(a.name) % public.norm_nama_project(b.name)
+    where a.status <> 'archived' and b.status <> 'archived'
+  ), tersaring as (
+    select * from pasangan where skor >= greatest(p_ambang, 0.3)
+    order by skor desc, a_name
+    limit greatest(1, least(p_limit, 300))
+  )
+  select t.a_id, t.a_code, t.a_name, coalesce(va.total_activity, 0),
+         t.b_id, t.b_code, t.b_name, coalesce(vb.total_activity, 0), t.skor
+  from tersaring t
+  left join public.v_project_summary va on va.project_id = t.a_id
+  left join public.v_project_summary vb on vb.project_id = t.b_id
+  order by t.skor desc, t.a_name;
+$$;
+

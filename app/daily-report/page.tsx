@@ -28,6 +28,8 @@ import { namaKelompokPTSDitugaskan, useKelompokPTSDitugaskan } from '@/lib/kelom
 import {
   FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal } from '@/components/shared';
 import { MiniPieChart, PageHeader, StatCardGrid, Paginasi, usePaginasi } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { Toast as ToastBersama } from '@/components/shared/Toast';
 
 // Styles
 const inp: React.CSSProperties = {
@@ -87,7 +89,7 @@ function emptyTeamEntry(m: TeamUser): TeamEntry {
 function PW({ children }: { children: React.ReactNode }) {
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      backgroundImage: `url('/IVP_Background.png')`,
+      background: 'var(--halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
 
@@ -112,7 +114,7 @@ function CatPicker({ value, onChange }: { value: string; onChange: (v: string) =
           <button key={cat} type="button" onClick={() => onChange(cat)}
             className="flex items-center gap-2 px-3 py-2.5 rounded-xl border-2 text-left transition-all"
             style={sel ? { borderColor: c.accent, background: c.bg, color: c.color } : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
-            <span className="text-lg">{c.icon}</span>
+            <span className="text-lg"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
             <span className="text-xs font-bold leading-tight flex-1">{cat}</span>
             {sel && <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
           </button>
@@ -161,14 +163,9 @@ function SalesDrop({ value, division, guests, onChange }: { value: string; divis
   );
 }
 
+// Toast bersama (components/shared/Toast) - satu gaya untuk seluruh platform.
 function Toast({ t }: { t: { type: 'success' | 'error'; msg: string } | null }) {
-  if (!t) return null;
-  return (
-    <div className="fixed top-5 right-5 z-[3000] px-5 py-3.5 rounded-xl shadow-2xl text-sm font-bold flex items-center gap-2 text-white"
-      style={{ background: t.type === 'success' ? '#059669' : '#dc2626' }}>
-      {t.type === 'success' ? '✅' : '❌'} {t.msg}
-    </div>
-  );
+  return <ToastBersama notif={t} />;
 }
 
 // MAIN
@@ -655,7 +652,7 @@ export default function DailyReportPage() {
               <div className="px-4 py-3 rounded-xl flex items-center gap-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)' }}>
                 {formLoading
                   ? <><div className="w-4 h-4 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin flex-shrink-0" /><span className="text-xs text-sky-600 font-semibold">Memuat aktivitas otomatis...</span></>
-                  : <><span className="text-base">🔔</span><span className="text-xs text-sky-700 font-semibold">{formReminders.length} reminder &amp; {formTickets.length} ticket ter-insert otomatis dari platform</span><span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.12)', color: '#0ea5e9' }}>Auto-insert</span></>
+                  : <><span className="text-base"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs text-sky-700 font-semibold">{formReminders.length} reminder &amp; {formTickets.length} ticket ter-insert otomatis dari platform</span><span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.12)', color: '#0ea5e9' }}>Auto-insert</span></>
                 }
               </div>
             )}
@@ -663,7 +660,7 @@ export default function DailyReportPage() {
             {/* Manual activities */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">✍️ Aktivitas Manual ({manualActs.length})</span>
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest"><IkonTeks nama="✍" />Aktivitas Manual ({manualActs.length})</span>
               </div>
               <div className="space-y-4">
                 {manualActs.map((m, idx) => (
@@ -675,7 +672,7 @@ export default function DailyReportPage() {
                     <div><label className="block text-xs font-bold mb-1.5 text-slate-400 uppercase tracking-wider">Kategori</label><CatPicker value={m.category} onChange={v => updM(m._key, { category: v })} /></div>
                     <div className="grid grid-cols-2 gap-3">
                       <FormField label="Nama Project *"><input value={m.project_name} onChange={e => updM(m._key, { project_name: e.target.value })} className={inpCls} style={inp} placeholder="Project / kegiatan" /></FormField>
-                      <FormField label="Lokasi"><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">📍</span><input value={m.address} onChange={e => updM(m._key, { address: e.target.value })} className={`${inpCls} pl-9`} style={inp} placeholder="Alamat / Online" /></div></FormField>
+                      <FormField label="Lokasi"><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span><input value={m.address} onChange={e => updM(m._key, { address: e.target.value })} className={`${inpCls} pl-9`} style={inp} placeholder="Alamat / Online" /></div></FormField>
                     </div>
                     <FormField label="Sales"><SalesDrop value={m.sales_name} division={m.sales_division} guests={guestUsers} onChange={(n, d) => updM(m._key, { sales_name: n, sales_division: d })} /></FormField>
                     <div className="grid grid-cols-2 gap-3">
@@ -696,7 +693,7 @@ export default function DailyReportPage() {
             {isAdmin && teamEntries.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">👥 Input Tim (Supervisor)</span>
+                  <span className="text-xs font-bold text-slate-600 uppercase tracking-widest"><IkonTeks nama="👥" />Input Tim (Supervisor)</span>
                 </div>
                 <div className="space-y-4">
                   {teamEntries.map(e => (
@@ -758,7 +755,7 @@ export default function DailyReportPage() {
                 {row.address && (
                   <>
                     <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
-                    <p className="text-xs opacity-80 flex items-center gap-1">📍 {row.address}</p>
+                    <p className="text-xs opacity-80 flex items-center gap-1"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>
                   </>
                 )}
               </div>
@@ -766,8 +763,8 @@ export default function DailyReportPage() {
             {/* Status + jam */}
             <div className="flex items-center gap-2 mt-4">
               <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">{badge.label}</span>
-              {row.jam !== '-' && <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">🕐 {row.jam}</span>}
-              <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">📅 {row.report_date}</span>
+              {row.jam !== '-' && <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20"><Ikon nama="🕐" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.jam}</span>}
+              <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.report_date}</span>
             </div>
             <button aria-label="Tutup" onClick={() => setModalRow(null)}
               className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
@@ -779,7 +776,7 @@ export default function DailyReportPage() {
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kategori</p>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold" style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
-                  {c.icon} {row.category}
+                  <Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {row.category}
                 </span>
               </div>
               {/* Product */}
@@ -830,14 +827,14 @@ export default function DailyReportPage() {
             {/* PIC */}
             {row.raw?.pic_name && (
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)' }}>
-                <span className="text-base">🙋</span>
-                <div><p className="text-xs font-bold text-slate-800">{row.raw.pic_name}</p>{row.raw.pic_phone && <p className="text-[10px] text-slate-400">📱 {row.raw.pic_phone}</p>}</div>
+                <span className="text-base"><Ikon nama="🙋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <div><p className="text-xs font-bold text-slate-800">{row.raw.pic_name}</p>{row.raw.pic_phone && <p className="text-[10px] text-slate-400"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.raw.pic_phone}</p>}</div>
               </div>
             )}
             {/* Link to submitted report */}
             {linkedReport && (
               <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.15)' }}>
-                <span className="text-sm">📋</span>
+                <span className="text-sm"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-xs text-red-600 font-semibold">Sudah di-submit dalam Daily Report {formatDate(linkedReport.report_date)}</p>
                 <button onClick={() => { setModalRow(null); openEditForm(linkedReport); }} className="ml-auto text-[10px] font-bold px-2 py-1 rounded-lg text-white" style={{ background: '#dc2626' }}>Edit</button>
               </div>
@@ -919,7 +916,7 @@ export default function DailyReportPage() {
               onClick={() => setFilterSource(filterSource === s.source ? '' : s.source)}
               className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all hover:scale-[1.03]"
               style={{ background: filterSource === s.source ? s.bg : 'rgba(0,0,0,0.03)', color: filterSource === s.source ? s.color : '#64748b', border: filterSource === s.source ? `1.5px solid ${s.color}40` : '1.5px solid transparent' }}>
-              <span>{s.icon}</span>
+              <span><Ikon nama={s.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
               <span>{s.label}</span>
               <span className="ml-1 font-black text-sm" style={{ color: s.color }}>{s.value}</span>
               {filterSource === s.source && <span className="text-[9px] ml-0.5">✕</span>}
@@ -981,28 +978,28 @@ export default function DailyReportPage() {
                 <button onClick={() => setFilterCategory(null)}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
                   style={{ background: '#7c3aed' }}>
-                  🏷️ {filterCategory} ✕
+                  <Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterCategory} ✕
                 </button>
               )}
               {filterHandler && (
                 <button onClick={() => setFilterHandler(null)}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
                   style={{ background: '#0ea5e9' }}>
-                  👥 {filterHandler} ✕
+                  <Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterHandler} ✕
                 </button>
               )}
               {filterDivision && (
                 <button onClick={() => setFilterDivision(null)}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
                   style={{ background: '#10b981' }}>
-                  👔 {filterDivision} ✕
+                  <Ikon nama="👔" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterDivision} ✕
                 </button>
               )}
               {filterProduct && (
                 <button onClick={() => setFilterProduct(null)}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80"
                   style={{ background: '#f59e0b' }}>
-                  🏷️ {filterProduct} ✕
+                  <Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterProduct} ✕
                 </button>
               )}
             </div>
@@ -1035,9 +1032,9 @@ export default function DailyReportPage() {
             <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', minWidth: '140px' }}>
               <select aria-label="Semua Platform" value={filterSource} onChange={e => setFilterSource(e.target.value)} className="bg-transparent outline-none text-xs text-slate-700 w-full">
                 <option value="">Semua Platform</option>
-                <option value="ticket">🎫 Ticketing</option>
-                <option value="reminder">🔔 Schedule</option>
-                <option value="manual">✍️ Manual</option>
+                <option value="ticket">Ticketing</option>
+                <option value="reminder">Schedule</option>
+                <option value="manual">Manual</option>
               </select>
             </div>
             <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)' }}>
@@ -1088,7 +1085,7 @@ export default function DailyReportPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-slate-800 text-sm leading-tight truncate">{row.project_name}</p>
-                        {row.address && <p className="text-[11px] text-slate-400 mt-0.5 truncate">📍 {row.address}</p>}
+                        {row.address && <p className="text-[11px] text-slate-400 mt-0.5 truncate"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>}
                       </div>
                       <span className="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold"
                         style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>
@@ -1153,7 +1150,7 @@ export default function DailyReportPage() {
                         <td style={{ ...TD, textAlign: 'center' as const, color: '#94a3b8', fontSize: '12px' }}>{hal.mulai + i + 1}</td>
                         <td style={TD}>
                           <p className="font-semibold text-slate-800 text-sm leading-tight truncate" title={row.project_name}>{row.project_name}</p>
-                          {row.address && <p className="text-[11px] text-slate-400 mt-0.5 truncate" title={row.address}>📍 {row.address}</p>}
+                          {row.address && <p className="text-[11px] text-slate-400 mt-0.5 truncate" title={row.address}><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>}
                         </td>
                         <td style={TD}>
                           {row.product

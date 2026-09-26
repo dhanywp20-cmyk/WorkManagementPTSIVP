@@ -102,6 +102,11 @@ dicentang PTS Cabang, bawaannya sebaiknya `false`.
 `lonceng: [...SEMUA_LONCENG]`, jadi mitra daerah menerima lonceng tiket,
 require, jadwal, dan review internal.
 
+**SUDAH BERES (dicek 2026-09-24).** Kode `modal-kelompok.tsx` sudah
+membersihkan awalan dobel dan memberi bawaan `ditugaskan:false` + lonceng
+`jadwal` saja untuk kelompok Cabang. Data produksi kini
+`Team PTS Daerah` / `PTS Daerah`, `ditugaskan:false`, `lonceng:["jadwal"]`.
+
 **Bisa dibereskan admin sekarang tanpa deploy** (Admin Panel → Kelompok:
 matikan "Bisa Ditugaskan", kurangi lonceng). Yang perlu kode hanya bawaannya,
 supaya perusahaan berikutnya tidak jatuh ke lubang yang sama.
@@ -245,6 +250,12 @@ total, menyebut nama domain, tidak bisa diberi gaya, dan `confirm()` memblokir
 seluruh halaman. Menggantinya dengan komponen yang sudah ada bukan pekerjaan
 besar.
 
+**SUDAH DIKERJAKAN (2026-09-24).** Delapan titik awal sudah jadi toast/
+`ConfirmDialog`; dua `confirm()` terakhir yang tersisa (tutup Isi Detail
+Piket dengan isian belum tersimpan, dan Generate Ulang Kunci push di
+Integrations) kini juga `ConfirmDialog`. Tidak ada lagi `alert`/`confirm`/
+`prompt` bawaan di `app/`.
+
 ---
 
 ## 🟡 A6 — Label form tidak terhubung ke input-nya
@@ -260,6 +271,15 @@ sebagian besar ikut beres.
 
 Sejalan dengan ini: 10 berkas punya overlay modal tanpa `role="dialog"`/
 `aria-modal` (paling banyak `kpi-team/page.tsx`, 4 overlay tanpa satu pun).
+
+**SUDAH DIKERJAKAN (2026-09-24).** `FormField` bersama sudah membungkus isian
+di dalam `<label>`. Untuk `<label>` lepas, codemod berbasis AST TypeScript
+menautkan **190** pasangan label → input/select/textarea dengan
+`htmlFor`/`id` (id unik per berkas, awalan `f-`), dan membuang `aria-label`
+berisi teks placeholder yang menimpa label aslinya. Sengaja dilewati: 11
+label di dalam `.map()` (id statis akan dobel antar baris) dan label yang
+bukan untuk input tunggal (grup tombol, picker kustom). Overlay modal:
+seluruhnya sudah ber-`role="dialog"`/`aria-modal` di panel dalamnya.
 
 ---
 
@@ -277,6 +297,12 @@ Yang tersisa cuma risiko ke depan: aturan "siapa yang dianggap admin" harus
 diubah di empat tempat, dan yang terlewat tidak akan memunculkan galat —
 hanya berhenti mengabari seseorang. `penerima-admin.ts` sudah ada untuk ini
 dan tinggal dipakai tiga tempat sisanya.
+
+**SUDAH DIKERJAKAN (2026-09-24).** `lib/notifications.ts`,
+`/api/auth/register` (lewat `SARING_PENERIMA_ADMIN` dengan klien admin
+route-nya), dan approval Ticketing kini memakai `lib/penerima-admin.ts`.
+Penerima di produksi tidak berubah: satu-satunya pemegang Full Access
+ber-role `team`.
 
 ---
 

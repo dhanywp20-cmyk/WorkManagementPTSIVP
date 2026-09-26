@@ -4,6 +4,7 @@ import { CATEGORY_CONFIG, PRODUCT_TYPES } from './shared';
 import { MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { SalesPicker, type SalesPickerUser } from '@/components/shared/SalesPicker';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export interface JadwalRequest {
   project_name: string;
@@ -132,7 +133,7 @@ export function RequestJadwalModal({
           style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
         >
           <div>
-            <h2 className="text-xl font-bold text-white">📩 Request Jadwal</h2>
+            <h2 className="text-xl font-bold text-white"><IkonTeks nama="📩" />Request Jadwal</h2>
             <p className="text-blue-200/80 text-xs mt-1">
               Permintaan akan dikirim ke Admin untuk disetujui &amp; di-assign ke Team PTS
             </p>
@@ -175,7 +176,7 @@ export function RequestJadwalModal({
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
                 style={{ background: 'rgba(59,130,246,0.6)' }}
               >
-                ⏳ Menunggu Approval
+                <IkonTeks nama="⏳" />Menunggu Approval
               </span>
             </div>
           </div>
@@ -248,10 +249,10 @@ export function RequestJadwalModal({
 
           {/* Nama Project */}
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-1" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Nama Project *
             </label>
-            <input
+            <input id="f-reminder-schedule-components-requestjadwalmodal-1"
               value={form.project_name}
               onChange={e => f({ project_name: e.target.value })}
               className={inputCls} style={inputStyle}
@@ -265,7 +266,7 @@ export function RequestJadwalModal({
               Lokasi Project *
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2">📍</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input
                 value={form.address}
                 onChange={e => f({ address: e.target.value })}
@@ -277,10 +278,10 @@ export function RequestJadwalModal({
 
           {/* Deskripsi */}
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-2" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Deskripsi Kebutuhan
             </label>
-            <textarea
+            <textarea id="f-reminder-schedule-components-requestjadwalmodal-2"
               value={form.description}
               onChange={e => f({ description: e.target.value })}
               rows={2}
@@ -317,7 +318,7 @@ export function RequestJadwalModal({
                         : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }
                     }
                   >
-                    <span className="text-xl">{c.icon}</span>
+                    <span className="text-xl"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                     <span className="text-sm font-bold leading-tight flex-1">{cat}</span>
                     {sel && (
                       <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -357,7 +358,7 @@ export function RequestJadwalModal({
               Product / Unit (Opsional)
             </label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2">📦</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input
                 value={form.product}
                 onChange={e => f({ product: e.target.value })}
@@ -370,10 +371,10 @@ export function RequestJadwalModal({
           {/* Tanggal & Waktu */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-3" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Tanggal Usulan *
               </label>
-              <input aria-label="Tanggal Usulan"
+              <input id="f-reminder-schedule-components-requestjadwalmodal-3"
                 type="date"
                 value={form.due_date}
                 onChange={e => f({ due_date: e.target.value })}
@@ -381,10 +382,10 @@ export function RequestJadwalModal({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-4" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Waktu Usulan
               </label>
-              <input aria-label="Waktu Usulan"
+              <input id="f-reminder-schedule-components-requestjadwalmodal-4"
                 type="time"
                 value={form.due_time}
                 onChange={e => f({ due_time: e.target.value })}
@@ -400,7 +401,7 @@ export function RequestJadwalModal({
           {(form.category === 'Konfigurasi' || form.category === 'Konfigurasi & Training') && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(8,145,178,0.07)', border: '1.5px solid rgba(8,145,178,0.3)' }}>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">📊</span>
+                <span className="text-lg"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-sm font-bold" style={{ color: '#0e7490' }}>Usulan Timeline Pengerjaan</p>
               </div>
               <p className="text-xs mb-3" style={{ color: '#0891b2' }}>
@@ -409,18 +410,18 @@ export function RequestJadwalModal({
               </p>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                  <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-5" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                     Mulai Pengerjaan
                   </label>
-                  <input aria-label="Mulai Pengerjaan" type="date" value={form.progress_start_date}
+                  <input id="f-reminder-schedule-components-requestjadwalmodal-5" type="date" value={form.progress_start_date}
                     onChange={e => f({ progress_start_date: e.target.value })}
                     className={inputCls} style={inputStyle} />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                  <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-6" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                     Target Selesai
                   </label>
-                  <input aria-label="Target Selesai" type="date" value={form.progress_target_date}
+                  <input id="f-reminder-schedule-components-requestjadwalmodal-6" type="date" value={form.progress_target_date}
                     min={form.progress_start_date || undefined}
                     onChange={e => f({ progress_target_date: e.target.value })}
                     className={inputCls} style={inputStyle} />
@@ -446,10 +447,10 @@ export function RequestJadwalModal({
           {/* PIC */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-7" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
                 Nama PIC Project
               </label>
-              <input
+              <input id="f-reminder-schedule-components-requestjadwalmodal-7"
                 value={form.pic_name}
                 onChange={e => f({ pic_name: e.target.value })}
                 className={inputCls} style={inputStyle}
@@ -461,7 +462,7 @@ export function RequestJadwalModal({
                 No. Telepon PIC
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2">📱</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input
                   value={form.pic_phone}
                   onChange={e => f({ pic_phone: e.target.value })}
@@ -474,10 +475,10 @@ export function RequestJadwalModal({
 
           {/* Catatan */}
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-8" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
               Catatan Tambahan
             </label>
-            <textarea
+            <textarea id="f-reminder-schedule-components-requestjadwalmodal-8"
               value={form.notes}
               onChange={e => f({ notes: e.target.value })}
               rows={2}
@@ -491,7 +492,7 @@ export function RequestJadwalModal({
             className="rounded-xl p-3 flex items-start gap-3"
             style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}
           >
-            <span className="text-lg flex-shrink-0">ℹ️</span>
+            <span className="text-lg flex-shrink-0"><Ikon nama="ℹ" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div>
               <p className="text-xs font-bold text-amber-700">Alur Approval</p>
               <p className="text-[11px] text-amber-600 leading-relaxed mt-0.5">

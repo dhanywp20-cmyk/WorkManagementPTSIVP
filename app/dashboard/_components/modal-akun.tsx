@@ -13,6 +13,8 @@ import { useKelompokPTS, labelKelompokPTS, teamTypeDariLabelPTS } from '@/lib/ke
 import { ConfirmDialog, type ConfirmState, Username, ModalPortal } from '@/components/shared';
 
 import { propagateUserRename, pesanSebar, sendWelcomeWA } from './modal-bersama';
+import { Ikon } from '@/components/shared/Ikon';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Minor (docs/UX-WORKFLOW-AUDIT.md): kolom Role dulu menampilkan enum
@@ -91,6 +93,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
     'picket-showroom': { label: 'Piket Showroom', icon: '🏪', gradient: 'from-teal-600 to-teal-500' },
     'tech-note': { label: 'Tech Note R&D', icon: '📝', gradient: 'from-pink-600 to-rose-500' },
     'kpi-team': { label: 'KPI Team', icon: '📊', gradient: 'from-sky-600 to-sky-500' },
+    'summary-project': { label: 'Summary Project', icon: '🗂️', gradient: 'from-violet-600 to-indigo-500' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => {
@@ -287,7 +290,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-rose-500 bg-rose-500' : 'border-slate-300 bg-white'}`}>
                   {checked && <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </div>
-                <span className="text-lg">{m.icon}</span>
+                <span className="text-lg"><Ikon nama={m.icon} ukuran={18} /></span>
                 <span className="font-semibold text-sm">{m.label}</span>
               </button>
             );
@@ -348,7 +351,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
           {activeTab === 'list' && (
             <>
               <div className="relative mb-4">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input aria-label="Cari nama, username, atau role..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
                   className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all" />
               </div>
@@ -359,25 +362,25 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   {editingUser ? (
                     <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-bold text-slate-800">✏️ Edit: {editingUser.full_name}</h3>
+                        <h3 className="font-bold text-slate-800"><IkonTeks nama="✏" />Edit: {editingUser.full_name}</h3>
                         <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                       </div>
                       <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
-                          <input aria-label="Full Name" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                          <label htmlFor="f-dashboard-components-modal-akun-1" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
+                          <input id="f-dashboard-components-modal-akun-1" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
-                          <input aria-label="Username" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                          <label htmlFor="f-dashboard-components-modal-akun-2" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
+                          <input id="f-dashboard-components-modal-akun-2" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password Baru</label>
-                          <input type="password" value={editingUser.password ?? ''} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} placeholder="Kosongkan jika tidak diubah" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                          <label htmlFor="f-dashboard-components-modal-akun-3" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password Baru</label>
+                          <input id="f-dashboard-components-modal-akun-3" type="password" value={editingUser.password ?? ''} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} placeholder="Kosongkan jika tidak diubah" className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
-                          <select aria-label="Role" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                          <label htmlFor="f-dashboard-components-modal-akun-4" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
+                          <select id="f-dashboard-components-modal-akun-4" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="superadmin">Superadmin</option>
                             <option value="admin">Admin</option>
                             <option value="team">Team</option>
@@ -385,8 +388,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           </select>
                         </div>
                         <div className="formulir:col-span-2">
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
-                          <select aria-label="-- Pilih Divisi --" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
+                          <label htmlFor="f-dashboard-components-modal-akun-5" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
+                          <select id="f-dashboard-components-modal-akun-5" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="">-- Pilih Divisi --</option>
                             <option value="PTS">PTS</option>
@@ -396,8 +399,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         </div>
                         {editDivisi === 'PTS' && (
                           <div className="formulir:col-span-2">
-                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
-                            <select aria-label="-- Pilih Tipe PTS --" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
+                            <label htmlFor="f-dashboard-components-modal-akun-6" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
+                            <select id="f-dashboard-components-modal-akun-6" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                               <option value="">-- Pilih Tipe PTS --</option>
                               {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
@@ -406,8 +409,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         )}
                         {editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang && (
                           <div className="formulir:col-span-2">
-                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
-                            <input value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
+                            <label htmlFor="f-dashboard-components-modal-akun-7" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
+                            <input id="f-dashboard-components-modal-akun-7" value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
                               placeholder="Contoh: Surabaya, Bandung, Medan..."
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                             <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
@@ -415,10 +418,10 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         )}
                         {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
                           <div className="formulir:col-span-2">
-                            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">
+                            <label htmlFor="f-dashboard-components-modal-akun-8" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">
                               {editDivisi === 'Marketing' ? 'Marketing Division' : 'Sales Division'}
                             </label>
-                            <select aria-label="-- Pilih {editDivisi} Division --" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
+                            <select id="f-dashboard-components-modal-akun-8" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                               <option value="">-- Pilih {editDivisi} Division --</option>
                               {daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
@@ -426,22 +429,22 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           </div>
                         )}
                         <div>
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan / Posisi</label>
-                          <select aria-label="— Pilih Jabatan —" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                          <label htmlFor="f-dashboard-components-modal-akun-9" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan / Posisi</label>
+                          <select id="f-dashboard-components-modal-akun-9" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                             <option value="">— Pilih Jabatan —</option>
                             {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                           </select>
                         </div>
                         <div className="formulir:col-span-2">
-                          <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Nomor Telepon / WhatsApp</label>
-                          <input value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
+                          <label htmlFor="f-dashboard-components-modal-akun-10" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Nomor Telepon / WhatsApp</label>
+                          <input id="f-dashboard-components-modal-akun-10" value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
                         </div>
                       </div>
                       <MenuPermissionSelector selected={editingUser.allowed_menus ?? ALL_MENU_KEYS} target="edit" />
                       <div className="flex gap-3 pt-2">
                         <button onClick={handleSaveEdit} disabled={saving} className="flex-1 bg-gradient-to-r from-rose-600 to-rose-700 text-white py-2.5 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                           {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                          💾 Simpan Perubahan
+                          <IkonTeks nama="💾" />Simpan Perubahan
                         </button>
                         <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all">Batal</button>
                       </div>
@@ -458,18 +461,18 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
                             <p className="text-xs text-slate-500"><Username value={user.username} /></p>
                             {user.phone_number && (
-                              <p className="text-xs text-slate-400 mt-0.5">📞 {user.phone_number}</p>
+                              <p className="text-xs text-slate-400 mt-0.5"><Ikon nama="📞" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</p>
                             )}
                             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                               <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-slate-200 text-slate-600">{labelRole(user.role)}</span>
                               {user.jabatan && (
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">🏷️ {user.jabatan}</span>
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.jabatan}</span>
                               )}
                               {user.team_type && (
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-rose-100 text-rose-600 border border-rose-200">👥 {user.team_type}</span>
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-rose-100 text-rose-600 border border-rose-200"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.team_type}</span>
                               )}
                               {user.sales_division && (
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-violet-100 text-violet-600 border border-violet-200">🏢 {user.sales_division}</span>
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-violet-100 text-violet-600 border border-violet-200"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.sales_division}</span>
                               )}
                             </div>
                           </div>
@@ -493,7 +496,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                       ))}
                       {filteredUsers.length === 0 && (
                         <div className="text-center py-10 text-slate-400 text-sm">
-                          <div className="text-3xl mb-2">🔍</div>
+                          <div className="text-3xl mb-2"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                           Tidak ada akun yang cocok
                         </div>
                       )}
@@ -508,20 +511,20 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
             <div className="space-y-5">
               <div className="grid grid-cols-1 formulir:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Full Name *</label>
-                  <input value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Nama lengkap" />
+                  <label htmlFor="f-dashboard-components-modal-akun-11" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Full Name *</label>
+                  <input id="f-dashboard-components-modal-akun-11" value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Nama lengkap" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Username *</label>
-                  <input value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="username" />
+                  <label htmlFor="f-dashboard-components-modal-akun-12" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Username *</label>
+                  <input id="f-dashboard-components-modal-akun-12" value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="username" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Password *</label>
-                  <input type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Minimal 6 karakter" />
+                  <label htmlFor="f-dashboard-components-modal-akun-13" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Password *</label>
+                  <input id="f-dashboard-components-modal-akun-13" type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Minimal 6 karakter" />
                 </div>
                 <div className="formulir:col-span-2">
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Divisi *</label>
-                  <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
+                  <label htmlFor="f-dashboard-components-modal-akun-14" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Divisi *</label>
+                  <select id="f-dashboard-components-modal-akun-14" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                     <option value="">-- Pilih Divisi --</option>
                     <option value="PTS">PTS</option>
@@ -531,8 +534,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 </div>
                 {newUser.divisi === 'PTS' && (
                   <div className="formulir:col-span-2">
-                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
-                    <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
+                    <label htmlFor="f-dashboard-components-modal-akun-15" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Tipe PTS *</label>
+                    <select id="f-dashboard-components-modal-akun-15" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                       <option value="">-- Pilih Tipe PTS --</option>
                       {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
@@ -541,8 +544,8 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 )}
                 {newUser.divisi === 'PTS' && kelompokPTSList.find(k => k.label === newUser.pts_type)?.cabang && (
                   <div className="formulir:col-span-2">
-                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Alamat Daerah *</label>
-                    <input value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
+                    <label htmlFor="f-dashboard-components-modal-akun-16" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Alamat Daerah *</label>
+                    <input id="f-dashboard-components-modal-akun-16" value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                       placeholder="Contoh: Surabaya, Bandung, Medan..."
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" />
                     <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
@@ -550,10 +553,10 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 )}
                 {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
                   <div className="formulir:col-span-2">
-                    <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">
+                    <label htmlFor="f-dashboard-components-modal-akun-17" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">
                       {newUser.divisi === 'Marketing' ? 'Marketing Division *' : 'Sales Division *'}
                     </label>
-                    <select aria-label="-- Pilih {newUser.divisi} Division --" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
+                    <select id="f-dashboard-components-modal-akun-17" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                       <option value="">-- Pilih {newUser.divisi} Division --</option>
                       {daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
@@ -561,15 +564,15 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                   </div>
                 )}
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
-                  <select aria-label="— Pilih Jabatan —" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
+                  <label htmlFor="f-dashboard-components-modal-akun-18" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
+                  <select id="f-dashboard-components-modal-akun-18" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none bg-white">
                     <option value="">— Pilih Jabatan —</option>
                     {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Nomor Telepon / WhatsApp</label>
-                  <input value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Contoh: 08123456789" />
+                  <label htmlFor="f-dashboard-components-modal-akun-19" className="block text-xs font-bold mb-1 text-slate-600 tracking-widest uppercase">Nomor Telepon / WhatsApp</label>
+                  <input id="f-dashboard-components-modal-akun-19" value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" placeholder="Contoh: 08123456789" />
                 </div>
               </div>
 
@@ -577,7 +580,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
               <button onClick={handleAddUser} disabled={saving}
                 className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                 {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                ➕ Tambah Akun
+                <IkonTeks nama="➕" />Tambah Akun
               </button>
             </div>
           )}
@@ -636,6 +639,7 @@ export function AccountSettingsInline() {
     'learning-center': { label: 'Learning Center', icon: '🎓' },
     'tech-note': { label: 'Tech Note R&D', icon: '📝' },
     'kpi-team': { label: 'KPI Team', icon: '📊' },
+    'summary-project': { label: 'Summary Project', icon: '🗂️' },
   };
 
   const notify = (type: 'success' | 'error', msg: string) => { setNotification({ type, msg }); setTimeout(() => setNotification(null), 3000); };
@@ -811,7 +815,7 @@ export function AccountSettingsInline() {
                 <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-rose-500 bg-rose-500' : 'border-slate-300 bg-white'}`}>
                   {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </div>
-                <span>{m.icon}</span>
+                <span><Ikon nama={m.icon} ukuran={14} /></span>
                 <span className="font-semibold truncate">{m.label}</span>
               </button>
             );
@@ -842,15 +846,15 @@ export function AccountSettingsInline() {
       <div className="flex border-b border-slate-100 px-5 pt-3 flex-shrink-0 bg-slate-50/60">
         <button onClick={() => { setActiveTab('list'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'list' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          👥 Daftar Akun ({users.length})
+          <IkonTeks nama="👥" />Daftar Akun ({users.length})
         </button>
         <button onClick={() => { setActiveTab('add'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'add' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          ➕ Tambah Akun
+          <IkonTeks nama="➕" />Tambah Akun
         </button>
         <button onClick={() => { setActiveTab('pending'); setApprovingUser(null); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'pending' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          🕐 Pending {pendingUsers.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-black rounded-full">{pendingUsers.length}</span>}
+          <IkonTeks nama="🕐" />Pending {pendingUsers.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-black rounded-full">{pendingUsers.length}</span>}
         </button>
       </div>
 
@@ -859,7 +863,7 @@ export function AccountSettingsInline() {
           <>
             {/* Search bar */}
             <div className="relative mb-4">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Cari nama, username, atau role..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
                 className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all" />
             </div>
@@ -869,31 +873,31 @@ export function AccountSettingsInline() {
             ) : editingUser ? (
               <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-bold text-slate-800">✏️ Edit: {editingUser.full_name}</h3>
+                  <h3 className="font-bold text-slate-800"><IkonTeks nama="✏" />Edit: {editingUser.full_name}</h3>
                   <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                 </div>
                 <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
-                    <input aria-label="Full Name" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                    <label htmlFor="f-dashboard-components-modal-akun-20" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name</label>
+                    <input id="f-dashboard-components-modal-akun-20" value={editingUser.full_name} onChange={e => setEditingUser({ ...editingUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
-                    <input aria-label="Username" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                    <label htmlFor="f-dashboard-components-modal-akun-21" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username</label>
+                    <input id="f-dashboard-components-modal-akun-21" value={editingUser.username} onChange={e => setEditingUser({ ...editingUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password</label>
-                    <input aria-label="Password" value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                    <label htmlFor="f-dashboard-components-modal-akun-22" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password</label>
+                    <input id="f-dashboard-components-modal-akun-22" value={editingUser.password} onChange={e => setEditingUser({ ...editingUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
-                    <select aria-label="Role" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                    <label htmlFor="f-dashboard-components-modal-akun-23" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
+                    <select id="f-dashboard-components-modal-akun-23" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                       <option value="superadmin">Superadmin</option><option value="admin">Admin</option><option value="team">Team</option><option value="guest">Guest</option>
                     </select>
                   </div>
                   <div className="formulir:col-span-3">
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
-                    <select aria-label="-- Pilih Divisi --" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
+                    <label htmlFor="f-dashboard-components-modal-akun-24" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi</label>
+                    <select id="f-dashboard-components-modal-akun-24" value={editDivisi} onChange={e => { setEditDivisi(e.target.value); setEditPtsType(''); }}
                       className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                       <option value="">-- Pilih Divisi --</option>
                       <option value="PTS">PTS</option>
@@ -903,8 +907,8 @@ export function AccountSettingsInline() {
                   </div>
                   {editDivisi === 'PTS' && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
-                      <select aria-label="-- Pilih Tipe PTS --" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
+                      <label htmlFor="f-dashboard-components-modal-akun-25" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS</label>
+                      <select id="f-dashboard-components-modal-akun-25" value={editPtsType} onChange={e => setEditPtsType(e.target.value)}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                         <option value="">-- Pilih Tipe PTS --</option>
                         {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
@@ -913,8 +917,8 @@ export function AccountSettingsInline() {
                   )}
                   {editDivisi === 'PTS' && kelompokPTSList.find(k => k.label === editPtsType)?.cabang && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
-                      <input value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
+                      <label htmlFor="f-dashboard-components-modal-akun-26" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
+                      <input id="f-dashboard-components-modal-akun-26" value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
                         placeholder="Contoh: Surabaya, Bandung, Medan..."
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                       <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
@@ -922,29 +926,29 @@ export function AccountSettingsInline() {
                   )}
                   {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
-                      <select aria-label="-- Pilih Divisi Sales --" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
+                      <label htmlFor="f-dashboard-components-modal-akun-27" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division</label>
+                      <select id="f-dashboard-components-modal-akun-27" value={editingUser.sales_division || ''} onChange={e => setEditingUser({ ...editingUser, sales_division: e.target.value })}
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                         <option value="">-- Pilih Divisi Sales --</option>{daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
                       </select>
                     </div>
                   )}
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
-                    <select aria-label="— Pilih Jabatan —" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                    <label htmlFor="f-dashboard-components-modal-akun-28" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
+                    <select id="f-dashboard-components-modal-akun-28" value={editingUser.jabatan || ''} onChange={e => setEditingUser({ ...editingUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                       <option value="">— Pilih Jabatan —</option>{JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">📱 No. Telepon / WA</label>
-                    <input value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
+                    <label htmlFor="f-dashboard-components-modal-akun-29" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="📱" />No. Telepon / WA</label>
+                    <input id="f-dashboard-components-modal-akun-29" value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
                   </div>
                   {/* AKSES — dulu tombol di kolom tabel tersendiri. Dipindah ke sini
                       supaya perubahannya melewati "Simpan Perubahan" seperti field lain,
                       bukan berubah seketika begitu tersenggol di daftar. */}
                   {editingUser.role === 'team' && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🔑 Akses Platform</label>
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="🔑" />Akses Platform</label>
                       <div className="flex gap-2">
                         {([
                           { v: 'guest' as const, icon: '🔒', label: 'Guest',       desc: 'Hanya data miliknya sendiri' },
@@ -956,7 +960,7 @@ export function AccountSettingsInline() {
                                 ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
                                 : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                             }`}>
-                            <span className="block text-sm font-bold">{o.icon} {o.label}</span>
+                            <span className="block text-sm font-bold"><Ikon nama={o.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {o.label}</span>
                             <span className="block text-[11px] mt-0.5 opacity-80">{o.desc}</span>
                           </button>
                         ))}
@@ -976,7 +980,7 @@ export function AccountSettingsInline() {
                       pekerjaan ke Manager karena namanya memang ditawarkan. */}
                   {editingUser.role === 'team' && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🎯 Penerima Tugas</label>
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="🎯" />Penerima Tugas</label>
                       <div className="flex gap-2">
                         {([
                           { v: true,  icon: '🛠️', label: 'Bisa ditugaskan',   desc: 'Muncul di dropdown assign' },
@@ -988,7 +992,7 @@ export function AccountSettingsInline() {
                                 ? 'bg-emerald-50 border-emerald-400 text-emerald-800'
                                 : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                             }`}>
-                            <span className="block text-sm font-bold">{o.icon} {o.label}</span>
+                            <span className="block text-sm font-bold"><Ikon nama={o.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {o.label}</span>
                             <span className="block text-[11px] mt-0.5 opacity-80">{o.desc}</span>
                           </button>
                         ))}
@@ -1010,7 +1014,7 @@ export function AccountSettingsInline() {
                       seluruh ringkasan Piket Showroom tampil kosong. */}
                   {editingUser.role !== 'team' && (
                     <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">🏪 Piket Showroom — Catatan Tamu</label>
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="🏪" />Piket Showroom — Catatan Tamu</label>
                       <div className="flex gap-2">
                         {([
                           { v: 'lingkup' as const, icon: '🔒', label: 'Sesuai divisi', desc: 'Hanya catatan atas namanya / divisinya' },
@@ -1023,7 +1027,7 @@ export function AccountSettingsInline() {
                               className={`flex-1 text-left px-3 py-2 rounded-lg border-2 transition-all ${
                                 aktif ? 'bg-teal-50 border-teal-400 text-teal-800' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                               }`}>
-                              <span className="block text-sm font-bold">{o.icon} {o.label}</span>
+                              <span className="block text-sm font-bold"><Ikon nama={o.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {o.label}</span>
                               <span className="block text-[11px] mt-0.5 opacity-80">{o.desc}</span>
                             </button>
                           );
@@ -1042,7 +1046,7 @@ export function AccountSettingsInline() {
                 <div className="flex gap-3 pt-1">
                   <button onClick={handleSaveEdit} disabled={saving} className="flex-1 bg-gradient-to-r from-rose-600 to-rose-700 text-white py-2.5 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                     {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                    💾 Simpan Perubahan
+                    <IkonTeks nama="💾" />Simpan Perubahan
                   </button>
                   <button onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="px-6 py-2.5 rounded-lg border border-slate-200 text-slate-600 font-semibold hover:bg-slate-50 text-sm transition-all">Batal</button>
                 </div>
@@ -1077,7 +1081,7 @@ export function AccountSettingsInline() {
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
                           <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{labelRole(user.role)}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
-                          <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600">📱 {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
+                          <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
                           <td className="md:sticky md:right-0 px-4 py-2.5" style={{ background: rowBg }}>
                             <div className="flex items-center justify-end gap-1.5">
                               <button onClick={() => {
@@ -1104,20 +1108,20 @@ export function AccountSettingsInline() {
           <div className="space-y-4">
             <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name *</label>
-                <input value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Nama lengkap" />
+                <label htmlFor="f-dashboard-components-modal-akun-30" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name *</label>
+                <input id="f-dashboard-components-modal-akun-30" value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Nama lengkap" />
               </div>
               <div>
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username *</label>
-                <input value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="username" />
+                <label htmlFor="f-dashboard-components-modal-akun-31" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username *</label>
+                <input id="f-dashboard-components-modal-akun-31" value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="username" />
               </div>
               <div>
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password *</label>
-                <input value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="min 6 karakter" />
+                <label htmlFor="f-dashboard-components-modal-akun-32" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password *</label>
+                <input id="f-dashboard-components-modal-akun-32" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="min 6 karakter" />
               </div>
               <div className="formulir:col-span-3">
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi *</label>
-                <select aria-label="-- Pilih Divisi --" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
+                <label htmlFor="f-dashboard-components-modal-akun-33" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi *</label>
+                <select id="f-dashboard-components-modal-akun-33" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                   <option value="">-- Pilih Divisi --</option>
                   <option value="PTS">PTS</option>
@@ -1127,8 +1131,8 @@ export function AccountSettingsInline() {
               </div>
               {newUser.divisi === 'PTS' && (
                 <div className="formulir:col-span-3">
-                  <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS *</label>
-                  <select aria-label="-- Pilih Tipe PTS --" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
+                  <label htmlFor="f-dashboard-components-modal-akun-34" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS *</label>
+                  <select id="f-dashboard-components-modal-akun-34" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                     <option value="">-- Pilih Tipe PTS --</option>
                     {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
@@ -1137,8 +1141,8 @@ export function AccountSettingsInline() {
               )}
               {newUser.divisi === 'PTS' && kelompokPTSList.find(k => k.label === newUser.pts_type)?.cabang && (
                 <div className="formulir:col-span-3">
-                  <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
-                  <input value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
+                  <label htmlFor="f-dashboard-components-modal-akun-35" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
+                  <input id="f-dashboard-components-modal-akun-35" value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                     placeholder="Contoh: Surabaya, Bandung, Medan..."
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                   <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
@@ -1146,22 +1150,22 @@ export function AccountSettingsInline() {
               )}
               {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
                 <div className="formulir:col-span-3">
-                  <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division *</label>
-                  <select aria-label="-- Pilih Sales Division --" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
+                  <label htmlFor="f-dashboard-components-modal-akun-36" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division *</label>
+                  <select id="f-dashboard-components-modal-akun-36" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                     <option value="">-- Pilih Sales Division --</option>{daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
                   </select>
                 </div>
               )}
               <div>
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
-                <select aria-label="— Pilih Jabatan —" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                <label htmlFor="f-dashboard-components-modal-akun-37" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
+                <select id="f-dashboard-components-modal-akun-37" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                   <option value="">— Pilih Jabatan —</option>{JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">📱 No. Telepon / WA</label>
-                <input value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
+                <label htmlFor="f-dashboard-components-modal-akun-38" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="📱" />No. Telepon / WA</label>
+                <input id="f-dashboard-components-modal-akun-38" value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
               </div>
               <div className="formulir:col-span-3">
                 <MenuPermissionSelector selected={newUser.allowed_menus} target="new" />
@@ -1170,7 +1174,7 @@ export function AccountSettingsInline() {
             <button onClick={handleAddUser} disabled={saving}
               className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
               {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-              ➕ Tambah Akun
+              <IkonTeks nama="➕" />Tambah Akun
             </button>
           </div>
         )}
@@ -1182,7 +1186,7 @@ export function AccountSettingsInline() {
             ) : approvingUser ? (
               <div className="space-y-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-slate-800">✅ Review Pendaftaran: {approvingUser.full_name}</h3>
+                  <h3 className="font-bold text-slate-800"><IkonTeks nama="✅" />Review Pendaftaran: {approvingUser.full_name}</h3>
                   <button aria-label="Tutup" onClick={() => { setApprovingUser(null); setApproveMenus(DEFAULT_MENU_KEYS); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm bg-white p-3 rounded-lg border border-slate-200">
@@ -1209,7 +1213,7 @@ export function AccountSettingsInline() {
                           <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? 'border-amber-500 bg-amber-500' : 'border-slate-300 bg-white'}`}>
                             {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                           </div>
-                          <span>{m.icon}</span><span className="font-semibold truncate">{m.label}</span>
+                          <span><Ikon nama={m.icon} ukuran={14} /></span><span className="font-semibold truncate">{m.label}</span>
                         </button>
                       );
                     })}
@@ -1219,17 +1223,17 @@ export function AccountSettingsInline() {
                   <button onClick={handleApproveUser} disabled={saving}
                     className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-2.5 rounded-lg font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 hover:from-emerald-700 hover:to-emerald-800 transition-all">
                     {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                    ✅ Setujui Akun
+                    <IkonTeks nama="✅" />Setujui Akun
                   </button>
                   <button onClick={() => handleRejectUser(approvingUser.id, approvingUser.full_name)}
                     className="px-5 py-2.5 rounded-lg border border-red-200 text-red-600 font-semibold text-sm hover:bg-red-50 transition-all">
-                    ❌ Tolak
+                    <IkonTeks nama="❌" />Tolak
                   </button>
                 </div>
               </div>
             ) : pendingUsers.length === 0 ? (
               <div className="text-center py-10 text-slate-400 text-sm">
-                <div className="text-3xl mb-2">✅</div>
+                <div className="text-3xl mb-2"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 Tidak ada pendaftaran yang menunggu
               </div>
             ) : (
@@ -1259,7 +1263,7 @@ export function AccountSettingsInline() {
                           {user.sales_division?.startsWith('PTS') ? `PTS • ${user.sales_division}` : user.sales_division?.startsWith('Marketing:') ? `Marketing • ${user.sales_division.replace('Marketing:', '')}` : `Sales • ${user.sales_division}`}
                         </span>
                         {user.jabatan && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">{user.jabatan}</span>}
-                        {user.phone_number && <span className="text-[9px] text-slate-500">📱 {user.phone_number}</span>}
+                        {user.phone_number && <span className="text-[9px] text-slate-500"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span>}
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 flex-shrink-0">

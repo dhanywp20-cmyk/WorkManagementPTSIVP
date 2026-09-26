@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ModalPortal } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // Types
 
@@ -164,7 +165,7 @@ export function GradingStatusBadge({ attempt }: { attempt: { grading_status?: st
   if (attempt.grading_status === 'pending_review') {
     return (
       <span className="text-xs font-bold px-2 py-1 rounded-full border bg-amber-100 text-amber-700 border-amber-200">
-        ⏳ Menunggu Penilaian
+        <IkonTeks nama="⏳" />Menunggu Penilaian
       </span>
     );
   }
@@ -473,7 +474,7 @@ export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: (
       <div className="bg-white rounded-2xl shadow-2xl p-7 w-full max-w-sm border border-slate-200">
         <div className="flex flex-col items-center text-center mb-6">
           <div className={`w-14 h-14 ${cfg.iconBg} border rounded-2xl flex items-center justify-center text-2xl mb-4`}>
-            {cfg.icon}
+            <Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" />
           </div>
           {dialog.title && <h3 className="text-base font-bold text-slate-800 mb-2">{dialog.title}</h3>}
           <p className="text-sm text-slate-600 leading-relaxed">{dialog.message}</p>

@@ -5,6 +5,7 @@ import React from 'react';
 import * as XLSX from 'xlsx-js-style';
 
 import { KPIMember, KPISettings, fmt, MONTHS_ID } from './shared';
+import { REKAP_LC_KOSONG } from '@/lib/kpi-lc-tahunan';
 
 /**
  * Ekspor rekap KPI ke Excel. Tidak menyentuh state halaman - seluruh datanya diterima sebagai argumen.
@@ -43,6 +44,9 @@ export function exportKPIExcel(
     const bastPct  = Math.round(bastS * 100);
     const rndPct   = Math.round(rndS * 100);
     const laporanPct = member.piketFilled > 0 ? 100 : 0;
+
+    // Pengali kelulusan LC setahun (lib/kpi-lc-tahunan.ts) - sama dengan layar.
+    const lc = member.lcTahunan ?? REKAP_LC_KOSONG;
 
     const nilaiAkhir =
       BOBOT_TECH * (techPct / 100) +
@@ -137,9 +141,14 @@ export function exportKPIExcel(
       // Row 36: empty
       Array(COL_COUNT).fill(null),
       // Row 37: Total
-      [null, 'TOTAL NILAI', null, ...Array(13).fill(null), '1.00', (nilaiAkhir * 100).toFixed(1) + '%'],
-      // Row 38: empty
-      Array(COL_COUNT).fill(null),
+      [null, 'TOTAL NILAI', null, ...Array(13).fill(null), '1.00', (nilaiAkhir * lc.faktor * 100).toFixed(1) + '%'],
+      // Row 38: potongan prorata Learning Center setahun (baris kosong template dipakai
+      // supaya indeks baris & gaya di bawah tidak bergeser)
+      lc.wajib > 0
+        ? [null, `Faktor Learning Center: lulus ${lc.lulus}/${lc.wajib} sesi` +
+            (lc.gagal ? `, ${lc.gagal} tidak lulus` : '') + (lc.tidakIkut ? `, ${lc.tidakIkut} tidak dikerjakan` : '') +
+            ` → nilai dasar ${(nilaiAkhir * 100).toFixed(1)}% × ${Math.round(lc.faktor * 100)}%`, ...Array(COL_COUNT - 2).fill(null)]
+        : Array(COL_COUNT).fill(null),
       // Row 39: Catatan
       ['Catatan Insiden Penting:', ...Array(COL_COUNT - 1).fill(null)],
       // Row 40: empty

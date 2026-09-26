@@ -1,6 +1,8 @@
 
 'use client';
 import React, { type ReactNode } from 'react';
+import { WARNA_STATUS_TICKET } from '@/lib/desain';
+import { Ikon } from '@/components/shared/Ikon';
 
 /**
  * Tipe, warna, penolong tanggal, dan komponen kecil ringkasan KPI dashboard. Semuanya berdiri sendiri - tidak satu pun menyentuh state DashboardKPI.
@@ -90,11 +92,7 @@ export interface Scope {
 
 // Constants
 
-export const STATUS_COLORS: Record<string, string> = {
-  'Waiting Approval': '#f59e0b', 'Pending': '#3b82f6', 'Solved': '#10b981',
-  'Cancelled': '#6b7280', 'Overdue': '#ef4444', 'Warranty': '#8b5cf6',
-  'Out Of Warranty': '#ec4899', 'Process Repair': '#f97316', 'Submit RMA': '#06b6d4',
-};
+export const STATUS_COLORS: Record<string, string> = WARNA_STATUS_TICKET;
 
 export const CATEGORY_COLORS: Record<string, string> = {
   'Demo Product': '#3b82f6', 'Meeting & Survey': '#8b5cf6', 'Konfigurasi': '#10b981',
@@ -162,7 +160,7 @@ export function StatCard({ icon, label, value, sub, color, sparkline, donut, loa
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-sm">{icon}</span>
+            <span className="text-sm"><Ikon nama={icon} ukuran={14} /></span>
             <span className="text-[11px] font-semibold tracking-wide uppercase truncate" style={{ color:'rgba(0,0,0,0.4)' }}>{label}</span>
           </div>
           {loading ? <div className="h-7 w-16 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.08)' }}/> :
@@ -183,7 +181,7 @@ export function SectionHeader({ icon, title, sub, right }: { icon:string; title:
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-          style={{ background:'rgba(190,18,60,0.1)', border:'1px solid rgba(190,18,60,0.15)' }}>{icon}</div>
+          style={{ background:'rgba(190,18,60,0.1)', border:'1px solid rgba(190,18,60,0.15)' }}><Ikon nama={icon} ukuran={16} /></div>
         <div>
           <h2 className="text-sm font-bold tracking-wide" style={{ color:'rgba(0,0,0,0.75)' }}>{title}</h2>
           {sub && <p className="text-[11px]" style={{ color:'rgba(0,0,0,0.4)' }}>{sub}</p>}
@@ -219,7 +217,7 @@ export function AuditRow({ entry }: { entry: AuditEntry }) {
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl transition-all"
       style={{ background: s.bg, border:`1px solid ${s.border}` }}>
       <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-sm"
-        style={{ background:`${s.dot}18` }}>{entry.icon}</div>
+        style={{ background:`${s.dot}18` }}><Ikon nama={entry.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-xs font-bold truncate" style={{ color:'rgba(0,0,0,0.75)' }}>{entry.action}</span>
@@ -245,7 +243,7 @@ export function ScopeBadge({ scope }: { scope: Scope }) {
   return (
     <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full"
       style={{ background:`${cfg.color}18`, color:cfg.color, border:`1px solid ${cfg.color}30` }}>
-      {cfg.icon} {cfg.label}
+      <Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}
     </span>
   );
 }

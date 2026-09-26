@@ -15,6 +15,7 @@ import { getSession, startSessionWatcher } from '@/lib/auth';
 import DashboardKPI from '@/app/kpi-team/_components/DashboardKPI';
 import { User as DashUser } from '@/app/dashboard/_components/shared';
 import { StatCard } from '@/components/shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 // Types
 
@@ -56,7 +57,7 @@ function Panel({ title, icon, color, borderClr, count, children }: {
       style={{ background: 'rgba(255,255,255,0.97)', border: `1px solid ${borderClr}`, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
       <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
         style={{ background: `${color}10`, borderBottom: `1px solid ${borderClr}` }}>
-        <span className="text-base select-none">{icon}</span>
+        <span className="text-base select-none"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
         <span className="font-bold text-sm flex-1" style={{ color }}>{title}</span>
         {count !== undefined && count > 0 && (
           <span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white" style={{ background: color }}>
@@ -72,7 +73,7 @@ function Panel({ title, icon, color, borderClr, count, children }: {
 function Empty({ emoji, msg }: { emoji: string; msg: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-8 gap-2">
-      <span className="text-3xl select-none">{emoji}</span>
+      <span className="text-3xl select-none"><Ikon nama={emoji} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
       <p className="text-xs font-medium text-gray-400 text-center">{msg}</p>
     </div>
   );
@@ -132,11 +133,11 @@ export function TabBtn({ label, icon, active, onClick, badge }: {
 }) {
   return (
     <button onClick={onClick}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all relative whitespace-nowrap"
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all relative whitespace-nowrap flex-shrink-0"
       style={active
-        ? { background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white', boxShadow: '0 4px 14px rgba(245,158,11,0.35)' }
-        : { background: 'rgba(0,0,0,0.04)', color: '#6b7280' }}>
-      <span className="select-none">{icon}</span>
+        ? { background: '#0f172a', color: 'white' }
+        : { background: '#ffffff', color: '#475569', border: '1px solid #e2e8f0' }}>
+      <Ikon nama={icon} ukuran={15} />
       {label}
       {badge !== undefined && badge > 0 && (
         <span className="ml-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-black px-1"
@@ -380,16 +381,16 @@ export function AnalyticsPlatform({
 
   // Auth screens
   if (auth === 'denied') return (
-    <div className="flex items-center justify-center h-screen" style={{backgroundImage:'url(/IVP_Background.png)',backgroundSize:'cover'}}>
+    <div className="flex items-center justify-center h-screen" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
       <div className="bg-white rounded-2xl p-8 text-center shadow-xl">
-        <div className="text-5xl mb-3">🔒</div>
+        <div className="text-5xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <p className="font-bold text-gray-800">Akses Ditolak</p>
       </div>
     </div>
   );
 
   if (auth === 'checking' || !user) return (
-    <div className="flex items-center justify-center h-screen bg-cover bg-center" style={{backgroundImage:'url(/IVP_Background.png)'}}>
+    <div className="flex items-center justify-center h-screen bg-cover bg-center" style={{background: 'var(--halaman)'}}>
       <div className="flex flex-col items-center gap-4 bg-white/85 backdrop-blur-md rounded-2xl px-10 py-8">
         <div className="w-10 h-10 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" />
         <p className="text-gray-700 font-semibold text-sm">Memuat Analytics Platform...</p>
@@ -400,12 +401,12 @@ export function AnalyticsPlatform({
   // RENDER
   return (
     <div className={embedded ? 'flex flex-col w-full' : 'flex flex-col bg-cover bg-center bg-fixed'}
-      style={embedded ? undefined : { height: '100dvh', backgroundImage: 'url(/IVP_Background.png)' }}>
+      style={embedded ? undefined : { height: '100dvh', background: 'var(--halaman)' }}>
 
       {embedded && controlledTab === undefined && (
         /* Embedded (di dashboard): tab bar ramping di dalam panel putih supaya tab
            non-aktif tetap kontras di atas background transparan. */
-        <div className="flex items-center gap-2 flex-wrap mb-3 p-2 rounded-2xl"
+        <div className="flex items-center gap-2 overflow-x-auto sm:flex-wrap mb-3 p-2 rounded-2xl"
           style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)', boxShadow: '0 2px 12px rgba(0,0,0,0.1)', border: '1px solid rgba(0,0,0,0.06)' }}>
           <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
           <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
@@ -421,7 +422,7 @@ export function AnalyticsPlatform({
       {/* ── HEADER — full width, same style as PageHeader used in other platforms ── */}
       {!embedded && (
       <header className="flex-shrink-0 z-50"
-        style={{background:'rgba(255,255,255,0.95)',backdropFilter:'blur(16px)',borderBottom:'3px solid #f59e0b'}}>
+        style={{background:'#ffffff',borderBottom:'1px solid #e2e8f0',boxShadow:'inset 0 2px 0 #d97706'}}>
         <div className="max-w-[1600px] mx-auto px-6 py-3.5">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <button
@@ -430,25 +431,25 @@ export function AnalyticsPlatform({
               title="Kembali ke Dashboard Analytics"
             >
               <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',boxShadow:'0 3px 12px #f59e0b40'}}>
-                <span className="text-lg">📊</span>
+                style={{background:'#d9770614',color:'#d97706',border:'1px solid #d9770626'}}>
+                <Ikon nama="📊" ukuran={18} />
               </div>
               <div>
-                <h1 className="text-base font-black tracking-tight leading-tight" style={{color:'#d97706'}}>Analytics Platform</h1>
+                <h1 className="text-base font-bold tracking-tight leading-tight" style={{color:'#0f172a'}}>Analytics Platform</h1>
                 <p className="text-[10px] text-slate-500 font-medium">Work Management PTS · {greeting()}, {user.full_name}</p>
               </div>
             </button>
             <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
               {totalAlerts > 0
                 ? <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'#fee2e2',border:'1px solid #fca5a5'}}>
-                    <span className="text-base animate-pulse select-none">⚠️</span>
+                    <span className="text-base animate-pulse select-none"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <div>
                       <p className="text-sm font-black text-red-700">{totalAlerts} item perlu perhatian</p>
                       <p className="text-xs text-red-400">Lihat Command Center</p>
                     </div>
                   </div>
                 : <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'#d1fae5',border:'1px solid #6ee7b7'}}>
-                    <span className="text-base select-none">✅</span>
+                    <span className="text-base select-none"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <p className="text-sm font-bold text-emerald-700">Platform berjalan baik</p>
                   </div>
               }
@@ -458,7 +459,7 @@ export function AnalyticsPlatform({
             </div>
           </div>
           {/* Tab navigation */}
-          <div className="flex gap-2 mt-3 flex-wrap">
+          <div className="flex gap-2 mt-3 overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0 sm:flex-wrap" style={{ scrollbarWidth: "none" }}>
             <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
             <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
             <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
@@ -526,7 +527,7 @@ export function AnalyticsPlatform({
                 {/* Recent Activity */}
                 <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(0,0,0,0.07)'}}>
                   <div className="px-4 py-3 flex items-center gap-2" style={{background:'rgba(0,0,0,0.025)',borderBottom:'1px solid rgba(0,0,0,0.06)'}}>
-                    <span className="text-base select-none">⚡</span>
+                    <span className="text-base select-none"><Ikon nama="⚡" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <span className="font-bold text-gray-700 text-sm">Aktivitas Platform Terbaru</span>
                   </div>
                   {!(stats?.activity?.length)
@@ -558,7 +559,7 @@ export function AnalyticsPlatform({
             <div className="flex flex-wrap items-center gap-2 px-5 py-4 border-b border-gray-100">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">Audit Trail</span>
               <input className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white w-44"
-                placeholder="🔍 User / Target / Aksi..." value={auditSearch}
+                placeholder="User / Target / Aksi..." value={auditSearch}
                 onChange={e => { setAuditSearch(e.target.value); setAuditPage(0); }} />
               <select aria-label="Filter modul" className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={auditModule} onChange={e => { setAuditModule(e.target.value); setAuditPage(0); }}>
@@ -586,7 +587,7 @@ export function AnalyticsPlatform({
               ? <div className="flex justify-center py-16"><div className="w-8 h-8 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" /></div>
               : auditPaged.length === 0
               ? <div className="flex flex-col items-center py-16 gap-2">
-                  <span className="text-4xl">📋</span>
+                  <span className="text-4xl"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <p className="text-sm text-gray-500 font-medium">Belum ada audit log</p>
                   <p className="text-xs text-gray-400">Log muncul setelah ada aksi di platform</p>
                 </div>
@@ -668,7 +669,7 @@ export function AnalyticsPlatform({
           </div>
         )}
 
-        <p className="text-center text-[10px] text-white/40 select-none pb-2">
+        <p className="text-center text-[10px] text-slate-400 select-none pb-2">
           Analytics Platform — IndoVisual PTS · Work Management
         </p>
       </div>{/* end scrollable content */}

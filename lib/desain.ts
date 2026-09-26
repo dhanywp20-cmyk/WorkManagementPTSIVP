@@ -145,3 +145,70 @@ export function gayaWarna(nama: NamaWarna): { background: string; color: string;
   const w = WARNA[nama];
   return { background: w.latar, color: w.teks, border: `1px solid ${w.garis}` };
 }
+
+// Bidang & tinta
+
+/**
+ * Warna BIDANG dan TINTA (ditambahkan 2026-09-25). Pengukuran: 226 kode hex
+ * berbeda di app/ & components/; lima merah berbeda dipakai bergantian untuk
+ * arti yang sama. Status sudah punya WARNA di atas - ini melengkapi sisanya:
+ * latar halaman, permukaan, garis, dan tiga tingkat tinta.
+ *
+ * Cerminnya ada di app/globals.css (--halaman, --tinta, ...) dan kelas
+ * Tailwind (bg-halaman, text-tinta-2, border-garis, ...) - ketiganya HARUS
+ * sama; ubah bersamaan. Nilai di sini hex, bukan var(), karena banyak kode
+ * merangkai alfa seperti `${warna}40`.
+ */
+export const NETRAL = {
+  /** Latar halaman - bidang tenang, bukan foto. */
+  halaman: '#f3f5f8',
+  permukaan: '#ffffff',
+  /** Bidang tenggelam: header tabel, isian nonaktif, trek meter. */
+  permukaanRedam: '#f8fafc',
+  garis: '#e2e8f0',
+  garisKuat: '#cbd5e1',
+  /** Teks utama. */
+  tinta: '#0f172a',
+  /** Teks sekunder: label, keterangan. */
+  tinta2: '#475569',
+  /** Teks samar: sumbu, placeholder, catatan kecil - bukan isi utama. */
+  tinta3: '#94a3b8',
+} as const;
+
+/** Gaya latar halaman untuk pembungkus terluar tiap modul. */
+export const LATAR_HALAMAN: { background: string } = { background: NETRAL.halaman };
+
+/**
+ * Warna SERI untuk chart kategori (identitas, BUKAN status). Urutan tetap,
+ * tidak diputar ulang; kategori ke-9 dilipat ke "Lainnya". Divalidasi dengan
+ * pemeriksa buta warna (CVD ΔE terburuk 9.1, normal-vision 19.6). Tiga rona
+ * terang (#1baf7a, #eda100, #e87ba4) kontrasnya < 3:1 terhadap putih, jadi
+ * chart yang memakainya wajib punya legenda berlabel/angka.
+ */
+export const SERI = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#4a3aa7', '#e34948'] as const;
+
+/** Peta teks status record (Ticket/Reminder/Request) -> WARNA. Kunci huruf kecil. */
+const STATUS_KE_WARNA: Record<string, NamaWarna> = {
+  solved: 'berhasil', done: 'berhasil', selesai: 'berhasil', approved: 'berhasil', paid: 'berhasil', completed: 'berhasil', lulus: 'berhasil',
+  pending: 'info', processed: 'info', 'in progress': 'info', in_progress: 'info', proses: 'info', 'process repair': 'info', open: 'info',
+  'waiting approval': 'awas', waiting: 'awas', menunggu: 'awas', review: 'awas', warranty: 'awas', 'submit rma': 'awas',
+  overdue: 'bahaya', rejected: 'bahaya', ditolak: 'bahaya', blocked: 'bahaya', 'out of warranty': 'bahaya', gagal: 'bahaya',
+  cancelled: 'netral', canceled: 'netral', batal: 'netral', archived: 'netral', draft: 'netral',
+};
+
+/** Nama warna untuk teks status bebas; tak dikenal -> 'netral'. */
+export function warnaUntukStatus(status: string | null | undefined): NamaWarna {
+  return STATUS_KE_WARNA[(status ?? '').trim().toLowerCase()] ?? 'netral';
+}
+
+/**
+ * Warna status TICKET untuk chart & lencana. Dulu disalin identik di tiga
+ * berkas (kpi-team/shared, DashboardKPI, dashboard/kpi-bagian) - kini satu.
+ * Nilainya sengaja tidak diubah supaya chart yang sudah dikenal tim tidak
+ * berganti warna.
+ */
+export const WARNA_STATUS_TICKET: Record<string, string> = {
+  'Waiting Approval': '#f59e0b', 'Pending': '#3b82f6', 'Solved': '#10b981',
+  'Cancelled': '#6b7280', 'Overdue': '#ef4444', 'Warranty': '#8b5cf6',
+  'Out Of Warranty': '#ec4899', 'Process Repair': '#f97316', 'Submit RMA': '#06b6d4',
+};

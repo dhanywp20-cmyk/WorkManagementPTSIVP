@@ -21,10 +21,12 @@ import {
 import GlobalSearch from './_components/GlobalSearch';
 import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashboard';
 import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
-import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/merek';
+import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus, latarDasbor } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
 import { ModalPortal, LogoMerek, ChipVersi, FooterPlatform } from '@/components/shared';
+import { Ikon } from '@/components/shared/Ikon';
 import { useKelompokPTS } from '@/lib/kelompok';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -208,6 +210,12 @@ export default function Dashboard() {
       gradient: 'from-pink-700 via-pink-600 to-rose-500',
       description: 'Platform dokumentasi teknikal & R&D — KPI 10%',
       items: [{ name: 'Tech Note', url: '/tech-note', icon: '📝', internal: true, embed: true }]
+    },
+    {
+      title: 'Summary Project', icon: '🗂️', key: 'summary-project',
+      gradient: 'from-violet-700 via-violet-600 to-indigo-500',
+      description: 'Riwayat Request Schedule, Troubleshooting & Design Project per nama project',
+      items: [{ name: 'Summary Project', url: '/summary-project', icon: '🗂️', internal: true, embed: true }]
     },
     {
       title: 'Request Schedule', icon: '🗓️', key: 'reminder-schedule',
@@ -725,7 +733,7 @@ export default function Dashboard() {
   }, [isFullAccess]);
 
   const INTERNAL_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom', 'kpi-team'];
-  const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'incentive-pts', 'project-progress'];
+  const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'incentive-pts', 'project-progress', 'summary-project'];
   const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
   const LEARNING_KEYS = ['kpi-team', 'learning-center', 'tech-note'];
 
@@ -746,6 +754,7 @@ export default function Dashboard() {
     'incentive-pts': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
     'tech-note': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
     'project-progress': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m4 10V11m4 6v-4M4 19h16a1 1 0 001-1V6a1 1 0 00-1-1H4a1 1 0 00-1 1v12a1 1 0 001 1z" /></svg>,
+    'summary-project': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /></svg>,
     'kpi-team': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
     };
 
@@ -775,7 +784,7 @@ export default function Dashboard() {
         {iframeState === 'error' && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/5 rounded-3xl z-10">
             <div className="flex flex-col items-center gap-3 text-center">
-              <span className="text-4xl">📊</span>
+              <span className="text-4xl"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <p className="text-white/80 font-semibold">Analytics tidak dapat dimuat</p>
               <p className="text-white/50 text-sm">Coba refresh halaman</p>
               <button onClick={() => setIframeState('loading')} className="mt-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all">
@@ -811,7 +820,7 @@ export default function Dashboard() {
           </div>
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-2">
-              <div className="text-4xl">{menu.icon}</div>
+              <div className="text-4xl"><Ikon nama={menu.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
               <h3 className="text-xl font-bold tracking-tight text-white leading-tight">{menu.title}</h3>
             </div>
             <p className="text-white/90 text-sm font-medium line-clamp-2">{menu.description}</p>
@@ -828,7 +837,7 @@ export default function Dashboard() {
                   <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-400 transition-transform group-hover/item:-translate-x-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 )}
                 <span className="flex-1 text-sm tracking-wide text-right">{item.name}</span>
-                <div className="w-10 h-10 bg-white rounded-md shadow-sm flex items-center justify-center text-xl border border-slate-200 group-hover/item:scale-110 transition-transform flex-shrink-0">{item.icon}</div>
+                <div className="w-10 h-10 bg-white rounded-md shadow-sm flex items-center justify-center text-xl border border-slate-200 text-slate-600 group-hover/item:scale-110 transition-transform flex-shrink-0"><Ikon nama={item.icon} ukuran={20} /></div>
               </button>
             ))}
           </div>
@@ -840,7 +849,7 @@ export default function Dashboard() {
   // LOADING
   if (loading) {
     return (
-      <div className="flex items-center justify-center bg-cover bg-center bg-fixed" style={{ backgroundImage: 'url(/IVP_Background.png)', minHeight: '100dvh' }}>
+      <div className="flex items-center justify-center bg-cover bg-center bg-fixed" style={{ background: 'var(--halaman)', minHeight: '100dvh' }}>
         <div className="flex flex-col items-center gap-4 px-10 py-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
           <div className="w-12 h-12 rounded-full border-4 border-t-rose-600 border-rose-200 animate-spin" />
           <p className="text-slate-700 font-semibold">Memuat portal...</p>
@@ -911,8 +920,8 @@ export default function Dashboard() {
             {!showRegister && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Email</label>
-                  <input type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                  <label htmlFor="f-dashboard-page-1" className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Email</label>
+                  <input id="f-dashboard-page-1" type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-none"
                     placeholder="email@perusahaan.com" onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
                 </div>
@@ -983,13 +992,13 @@ export default function Dashboard() {
                       {/* Kolom Kiri */}
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Nama Lengkap *</label>
-                          <input type="text" value={registerForm.full_name} onChange={e => setRegisterForm({ ...registerForm, full_name: e.target.value })}
+                          <label htmlFor="f-dashboard-page-2" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Nama Lengkap *</label>
+                          <input id="f-dashboard-page-2" type="text" value={registerForm.full_name} onChange={e => setRegisterForm({ ...registerForm, full_name: e.target.value })}
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Nama lengkap" />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Email *</label>
-                          <input type="email" value={registerForm.username} onChange={e => setRegisterForm({ ...registerForm, username: e.target.value })}
+                          <label htmlFor="f-dashboard-page-3" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Email *</label>
+                          <input id="f-dashboard-page-3" type="email" value={registerForm.username} onChange={e => setRegisterForm({ ...registerForm, username: e.target.value })}
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="email@perusahaan.com" />
                         </div>
                         <div>
@@ -1028,8 +1037,8 @@ export default function Dashboard() {
                       {/* Kolom Kanan */}
                       <div className="space-y-3">
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Divisi *</label>
-                          <select aria-label="-- Pilih Divisi --" value={registerForm.divisi} onChange={e => setRegisterForm({ ...registerForm, divisi: e.target.value, pts_type: '', sales_division: '' })}
+                          <label htmlFor="f-dashboard-page-4" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Divisi *</label>
+                          <select id="f-dashboard-page-4" value={registerForm.divisi} onChange={e => setRegisterForm({ ...registerForm, divisi: e.target.value, pts_type: '', sales_division: '' })}
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                             <option value="">-- Pilih Divisi --</option>
                             <option value="PTS">PTS</option>
@@ -1039,8 +1048,8 @@ export default function Dashboard() {
                         </div>
                         {registerForm.divisi === 'PTS' && (
                           <div>
-                            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widests uppercase">Tipe PTS *</label>
-                            <select aria-label="-- Pilih Tipe PTS --" value={registerForm.pts_type} onChange={e => setRegisterForm({ ...registerForm, pts_type: e.target.value })}
+                            <label htmlFor="f-dashboard-page-5" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widests uppercase">Tipe PTS *</label>
+                            <select id="f-dashboard-page-5" value={registerForm.pts_type} onChange={e => setRegisterForm({ ...registerForm, pts_type: e.target.value })}
                               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                               <option value="">-- Pilih Tipe PTS --</option>
                               {daftarKelompokPTS.map(k => <option key={k.nama} value={k.label}>{k.label}</option>)}
@@ -1049,10 +1058,10 @@ export default function Dashboard() {
                         )}
                         {(registerForm.divisi === 'Sales' || registerForm.divisi === 'Marketing') && (
                           <div>
-                            <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
+                            <label htmlFor="f-dashboard-page-6" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
                               {registerForm.divisi === 'Marketing' ? 'Marketing Division *' : 'Sales Division *'}
                             </label>
-                            <select aria-label="Sales Division" value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
+                            <select id="f-dashboard-page-6" value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
                               className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                               <option value="">-- Pilih {registerForm.divisi} Division --</option>
                               {daftarDivisi.map(d => <option key={d} value={d}>{d}</option>)}
@@ -1060,16 +1069,16 @@ export default function Dashboard() {
                           </div>
                         )}
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
-                          <select aria-label="— Pilih Jabatan —" value={registerForm.jabatan} onChange={e => setRegisterForm({ ...registerForm, jabatan: e.target.value })}
+                          <label htmlFor="f-dashboard-page-7" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
+                          <select id="f-dashboard-page-7" value={registerForm.jabatan} onChange={e => setRegisterForm({ ...registerForm, jabatan: e.target.value })}
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                             <option value="">— Pilih Jabatan —</option>
                             {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                           </select>
                         </div>
                         <div>
-                          <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">No. HP</label>
-                          <input type="text" value={registerForm.phone_number} onChange={e => setRegisterForm({ ...registerForm, phone_number: e.target.value })}
+                          <label htmlFor="f-dashboard-page-8" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">No. HP</label>
+                          <input id="f-dashboard-page-8" type="text" value={registerForm.phone_number} onChange={e => setRegisterForm({ ...registerForm, phone_number: e.target.value })}
                             className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="08xx..." />
                         </div>
                       </div>
@@ -1078,8 +1087,8 @@ export default function Dashboard() {
                         (mis. peserta Learning Center) yang dibagikan panitia. Kosong
                         = alur normal, tetap menunggu approval admin seperti biasa. */}
                     <div>
-                      <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Kode Acara (opsional)</label>
-                      <input type="text" value={registerForm.event_code} onChange={e => setRegisterForm({ ...registerForm, event_code: e.target.value })}
+                      <label htmlFor="f-dashboard-page-9" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Kode Acara (opsional)</label>
+                      <input id="f-dashboard-page-9" type="text" value={registerForm.event_code} onChange={e => setRegisterForm({ ...registerForm, event_code: e.target.value })}
                         className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Isi hanya jika diberikan admin" />
                     </div>
                     {registerErr && (
@@ -1088,7 +1097,7 @@ export default function Dashboard() {
                     <button onClick={() => { setRegisterErr(''); handleRegister(); }} disabled={registerLoading}
                       className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                       {registerLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                      📝 Daftar Akun
+                      <IkonTeks nama="📝" />Daftar Akun
                     </button>
                     <p className="text-center text-xs text-slate-400">Sudah punya akun? <button onClick={() => pindahForm(false)} className="font-bold hover:underline" style={{ color: merek.warnaUtama }}>Login</button></p>
                   </div>
@@ -1104,7 +1113,7 @@ export default function Dashboard() {
           <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-slate-800">🔐 Reset Password</h3>
+                <h3 className="text-base font-bold text-slate-800"><IkonTeks nama="🔐" />Reset Password</h3>
                 <button aria-label="Tutup" onClick={() => setShowForgot(false)} className="text-slate-400 hover:text-slate-600 font-bold text-lg leading-none">✕</button>
               </div>
               {forgotMsg && (
@@ -1279,7 +1288,7 @@ export default function Dashboard() {
   // VIEW: NO SIDEBAR (main dashboard)
   if (!showSidebar) {
     return (
-      <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, height: '100dvh' }}>
+      <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
         {renderModals()}
         {/* ── Jelajahi Button (always visible while logged-in, before sidebar loads) ── */}
         {currentUser && !tourVisible && (
@@ -1366,7 +1375,7 @@ export default function Dashboard() {
 
   // VIEW: SIDEBAR
   return (
-    <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, height: '100dvh' }}>
+    <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
       {isLoggedIn && <SessionExpiryBanner />}
       {renderModals()}
 
@@ -1489,7 +1498,7 @@ export default function Dashboard() {
                   style={showDashboardPanel
                     ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
                     : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
-                >🏠</button>
+                ><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></button>
                 {visibleMenuItems.map((menu) => (
                   <div key={menu.key}>
                     {menu.items.map((item, itemIndex) => {
@@ -1508,7 +1517,7 @@ export default function Dashboard() {
                           onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; }}
                           onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
                         >
-                          {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
+                          {MENU_ICONS[menu.key] ?? <span><Ikon nama={menu.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>}
                           {/* Antrean request jadwal muncul DI SINI — di menu yang
                               benar-benar memuatnya, bukan di ikon Admin Panel. */}
                           {menu.key === 'reminder-schedule' && isFullAccess && pendingRequests > 0 && (
@@ -1537,7 +1546,7 @@ export default function Dashboard() {
                     onMouseEnter={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.04)'; } }}
                     onMouseLeave={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; } }}
                   >
-                    <span className="w-5 h-5 text-sm flex items-center justify-center flex-shrink-0">🏠</span>
+                    <span className="w-5 h-5 text-sm flex items-center justify-center flex-shrink-0"><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <span className="text-sm font-semibold truncate">Dashboard</span>
                     {showDashboardPanel && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
                   </button>
@@ -1580,7 +1589,7 @@ export default function Dashboard() {
                                   color: isActive ? '#3730a3' : '#64748b',
                                 }}
                               >
-                                {MENU_ICONS[menu.key] ?? <span>{menu.icon}</span>}
+                                {MENU_ICONS[menu.key] ?? <span><Ikon nama={menu.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>}
                               </span>
                               <span className="flex-1 truncate text-sm font-medium">{menu.title}</span>
                               {isActive && (
@@ -1867,7 +1876,7 @@ export default function Dashboard() {
                  Background transparan (IVP bg tembus); hanya card yg opaque.
                  Analytics = launcher full-screen (bukan embed) utk yg berhak. */
               <div className="w-full h-full overflow-hidden relative"
-                style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                style={latarDasbor(merek)}>
                 <PermissionAwareDashboard currentUser={currentUser} openMenu={openMenuByKey} openUrl={handleNotifNavigate}
                   onHubungkanTelegram={() => setShowUserProfile(true)} />
               </div>
@@ -1913,7 +1922,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-slate-400"
-                style={{ backgroundImage: `url(${merek.gambarLatarDasbor})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                style={latarDasbor(merek)}>
                 <div className="text-center bg-white/75 rounded-2xl px-8 py-6 shadow-lg backdrop-blur-md">
                   <div className="text-5xl mb-3">📂</div>
                   <p className="font-semibold text-base text-slate-600">Pilih menu dari sidebar</p>

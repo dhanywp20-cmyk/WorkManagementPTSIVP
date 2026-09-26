@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { daftarSW } from '@/lib/push-client';
 import { statusInstalasiPWA, subscribeInstallPWA, pasangAplikasiPWA } from '@/lib/pwa-install';
+import { Ikon } from '@/components/shared/Ikon';
 
 const KUNCI_DITUTUP = 'wm_install_banner_ditutup';
 
@@ -61,7 +62,7 @@ export function PwaBootstrap() {
       style={{ background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(16px)', border: '1.5px solid rgba(225,29,72,0.25)' }}>
       <div className="flex items-start gap-3 p-4">
         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#e11d48,#be123c)' }}>📲</div>
+          style={{ background: 'linear-gradient(135deg,#e11d48,#be123c)' }}><Ikon nama="📲" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-slate-800 leading-tight">Pasang aplikasi ini di HP</p>
           {modeIOS ? (

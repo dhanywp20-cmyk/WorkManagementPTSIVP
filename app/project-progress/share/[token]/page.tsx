@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ProjectDetailView } from '../../_components/ProjectDetailView';
 import { ProjectDetail, THEME, PALETTE, fontMono, STATUS_CONFIG, formatDatetime } from '../../_components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Halaman share View-Only - PUBLIK, tanpa login.
@@ -40,7 +41,7 @@ export default function SharedProjectPage({ params }: { params: { token: string 
 
   return (
     <div className="min-h-screen relative" style={{
-      backgroundImage: `url('/IVP_Background.png')`,
+      background: 'var(--halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
       fontFamily: 'var(--font-plex-sans)',
     }}>
@@ -66,7 +67,7 @@ export default function SharedProjectPage({ params }: { params: { token: string 
           </div>
           <span className="px-3 py-1.5 rounded-full text-[10px] font-bold flex items-center gap-1.5"
             style={{ background: PALETTE.surfaceSunken, color: PALETTE.inkSoft, border: `1px solid ${PALETTE.border}` }}>
-            👁️ View Only
+            <IkonTeks nama="👁" />View Only
           </span>
         </div>
       </header>
@@ -82,7 +83,7 @@ export default function SharedProjectPage({ params }: { params: { token: string 
 
         {!loading && err && (
           <div className="rounded-md p-12 text-center" style={{ background: PALETTE.surface, border: `1px solid ${PALETTE.border}` }}>
-            <p className="text-4xl mb-3">🔒</p>
+            <p className="text-4xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
             <p className="text-base font-bold" style={{ color: PALETTE.ink }}>{err}</p>
             <p className="mt-1.5 text-xs font-medium" style={{ color: PALETTE.inkFaint }}>
               Hubungi admin untuk mendapatkan link yang masih aktif.

@@ -16,6 +16,7 @@ import { sendWANotif } from '@/lib/wa';
 import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { hasFullAccess } from '@/lib/constants';
 import { appLink } from '@/lib/app-url';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 function Spinner() {
   return (
@@ -51,7 +52,7 @@ function StatusBadge({ status }: { status: TechNote['status'] }) {
       padding:'3px 10px', borderRadius:20, fontSize:11, fontWeight:700,
       color: cfg.color, background: bgMap[status],
       border: `1.5px solid ${cfg.color}40` }}>
-      {cfg.icon} {cfg.label}
+      <Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}
     </span>
   );
 }
@@ -73,7 +74,7 @@ function TechNoteKPISummary({ technotes, currentUser, year }:
     return (
       <div className="rounded-2xl p-4 mb-5 shadow-sm" style={{ background: '#ffffff', border: '1.5px solid #fce7f3', borderLeft: '4px solid #ec4899' }}>
         <div className="text-[11px] font-bold uppercase tracking-wider text-rose-600 mb-3">
-          📝 Ringkasan KPI R&D Tech Note {year} — Semua Tim
+          <IkonTeks nama="📝" />Ringkasan KPI R&D Tech Note {year} — Semua Tim
         </div>
         <div className="grid grid-cols-3 gap-3">
           {[
@@ -100,7 +101,7 @@ function TechNoteKPISummary({ technotes, currentUser, year }:
     <div className="rounded-2xl p-4 mb-5 shadow-sm"
       style={{ background: '#ffffff', border: '1.5px solid #ede9fe', borderLeft: '4px solid #8b5cf6' }}>
       <div className="text-[11px] font-bold uppercase tracking-wider text-violet-600 mb-3">
-        📝 Tech Note R&D {year}
+        <IkonTeks nama="📝" />Tech Note R&D {year}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl p-3 text-center border shadow-sm" style={{ borderColor:'#d1fae5' }}>
@@ -163,9 +164,9 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
             background: isSel ? `${folder.color}15` : 'transparent',
             border: isSel ? `1.5px solid ${folder.color}40` : '1.5px solid transparent' }}>
           {children.length > 0
-            ? <span className="text-[9px] text-slate-400 transition-transform" style={{ transform: isOpen ? 'rotate(90deg)':'none' }}>▶</span>
+            ? <span className="text-[9px] text-slate-400 transition-transform" style={{ transform: isOpen ? 'rotate(90deg)':'none' }}><Ikon nama="▶" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             : <span className="w-3" />}
-          <span className="text-base">{folder.icon}</span>
+          <span className="text-base"><Ikon nama={folder.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
           <span className="flex-1 text-[13px] font-semibold truncate" style={{ color: isSel ? folder.color : '#475569' }}>{folder.name}</span>
           {count > 0 && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ background: folder.color }}>{count}</span>}
         </div>
@@ -200,7 +201,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
         className="flex items-center gap-2 rounded-xl px-2.5 py-2 cursor-pointer transition-all mb-1"
         style={{ background: selected===null ? 'rgba(236,72,153,0.10)':'transparent',
           border: selected===null ? '1.5px solid rgba(236,72,153,0.30)':'1.5px solid transparent' }}>
-        <span className="text-base">🏠</span>
+        <span className="text-base"><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="flex-1 text-[13px] font-semibold" style={{ color: selected===null ? '#db2777':'#475569' }}>Semua Tech Note</span>
         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white bg-rose-500">{technotes.length}</span>
       </div>
@@ -214,7 +215,7 @@ function HistoryTimeline({ history }: { history: TechNoteHistory[] }) {
   if (!history.length) return null;
   return (
     <div className="mt-4">
-      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">📋 Riwayat Approval</div>
+      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3"><IkonTeks nama="📋" />Riwayat Approval</div>
       <div className="space-y-2">
         {history.map((h, i) => {
           const cfg = ACTION_CONFIG[h.action as keyof typeof ACTION_CONFIG] ?? { label: h.action, color:'#6b7280', icon:'📌' };
@@ -222,7 +223,7 @@ function HistoryTimeline({ history }: { history: TechNoteHistory[] }) {
             <div key={h.id ?? i} className="flex gap-3">
               <div className="flex flex-col items-center">
                 <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm shrink-0 border"
-                  style={{ background:`${cfg.color}15`, borderColor:`${cfg.color}40` }}>{cfg.icon}</div>
+                  style={{ background:`${cfg.color}15`, borderColor:`${cfg.color}40` }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
                 {i < history.length-1 && <div className="w-0.5 flex-1 mt-1 mb-1 min-h-[12px] bg-gray-200" />}
               </div>
               <div className="pb-3 flex-1">
@@ -683,14 +684,14 @@ function TechNotePageInner() {
 
   return (
     <div className="flex flex-col h-screen font-sans bg-gray-50"
-      style={{ backgroundImage:"url('/IVP_Background.png')", backgroundSize:'cover', backgroundPosition:'center', backgroundAttachment:'fixed' }}>
+      style={{ background: 'var(--halaman)', backgroundSize:'cover', backgroundPosition:'center', backgroundAttachment:'fixed' }}>
 
       {/* ── Top Nav ── */}
       <header className="shrink-0 sticky top-0 z-30 w-full"
         style={{ background: 'rgba(255,255,255,0.92)', backdropFilter:'blur(16px)', borderBottom:'3px solid #ec4899' }}>
         <div className="flex items-center gap-3 px-6 py-3.5">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl shadow-md"
-            style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}>📝</div>
+            style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
           <div>
             <h1 className="font-black text-[16px] leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-rose-800">Tech Note R&D</h1>
             <p className="text-slate-500 text-[11px]">Dokumentasi teknikal & R&D · KPI 10%</p>
@@ -703,7 +704,7 @@ function TechNotePageInner() {
             <button onClick={()=>{ uploadSnapshotRef.current = uploadForm; setShowUploadModal(true); }}
               className="text-sm font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 text-white hover:opacity-90 hover:scale-105"
               style={{ background:'linear-gradient(135deg,#ec4899,#be185d)', boxShadow:'0 4px 14px rgba(236,72,153,0.35)' }}>
-              ➕ Upload Tech Note
+              <IkonTeks nama="➕" />Upload Tech Note
             </button>
           </div>
         </div>
@@ -728,7 +729,7 @@ function TechNotePageInner() {
               <button onClick={()=>setShowFolderDrawer(true)}
                 className="md:hidden px-3 py-1.5 rounded-xl text-[13px] font-bold border border-gray-200 text-slate-600 flex items-center gap-1.5"
                 style={{ background: 'rgba(255,255,255,0.92)' }}>
-                📁 Folder{selectedFolder && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />}
+                <IkonTeks nama="📁" />Folder{selectedFolder && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />}
               </button>
               {([
                 { id:'all',     label:`Semua (${technotes.length})` },
@@ -751,18 +752,18 @@ function TechNotePageInner() {
                   mengisi barisnya sendiri. */}
               <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-2">
                 <div className="relative flex-1 sm:flex-initial min-w-0">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">🔍</span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Cari judul, produk, tag..." value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari judul, produk, tag..."
                     className="pl-8 pr-3 py-2 text-[13px] rounded-xl outline-none w-full sm:w-52 text-slate-700 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 placeholder-slate-400" style={{ background: 'rgba(255,255,255,0.95)' }} />
                 </div>
                 <select aria-label="Semua Status" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}
                   className="px-3 py-2 text-[13px] rounded-xl outline-none text-slate-700 border border-gray-200 focus:border-rose-400" style={{ background: 'rgba(255,255,255,0.95)' }}>
                   <option value="all">Semua Status</option>
-                  <option value="approved">✅ Approved</option>
+                  <option value="approved">Approved</option>
                   {/* Team user hanya bisa filter approved & pending (note milik sendiri) */}
-                  {(canManage || true) && <option value="pending">⏳ Pending</option>}
-                  <option value="revision">🔄 Perlu Revisi</option>
-                  <option value="rejected">❌ Ditolak</option>
+                  {(canManage || true) && <option value="pending">Pending</option>}
+                  <option value="revision">Perlu Revisi</option>
+                  <option value="rejected">Ditolak</option>
                 </select>
               </div>
             </div>
@@ -792,7 +793,7 @@ function TechNotePageInner() {
                         {folder && (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                             style={{ background:`${folder.color}15`, color:folder.color, border:`1px solid ${folder.color}30` }}>
-                            {folder.icon} {folder.name}
+                            <Ikon nama={folder.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {folder.name}
                           </span>
                         )}
                         <StatusBadge status={tn.status} />
@@ -817,7 +818,7 @@ function TechNotePageInner() {
                             <a href={tn.one_drive_link} target="_blank" rel="noopener noreferrer"
                               onClick={e=>e.stopPropagation()}
                               className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg transition-colors text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100">
-                              ☁️ Drive
+                              <IkonTeks nama="☁" />Drive
                             </a>
                           )}
                         </div>
@@ -847,7 +848,7 @@ function TechNotePageInner() {
                   className={`text-left px-3 py-2.5 rounded-xl border-2 transition-all ${
                     aktif ? 'bg-pink-50 border-pink-400 text-pink-800' : 'bg-white border-gray-200 text-slate-500 hover:border-gray-300'
                   }`}>
-                  <span className="block text-lg leading-none mb-1">{k.icon}</span>
+                  <span className="block text-lg leading-none mb-1"><Ikon nama={k.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                   <span className="block text-sm font-bold">{k.label}</span>
                   <span className="block text-[10px] mt-0.5 opacity-80 leading-tight">{k.desc}</span>
                 </button>
@@ -917,7 +918,7 @@ function TechNotePageInner() {
             onChange={e=>setUploadForm(p=>({...p,tags:e.target.value}))} placeholder="cth: setup, display, newline" />
         </Field>
         <div className="rounded-xl px-4 py-3 text-[12px] font-medium mb-4 bg-amber-50 border border-amber-200 text-amber-700">
-          ⚠️ Tech Note akan masuk ke <b>Approval Queue</b>. Setelah disetujui Admin/Supervisor, otomatis tampil ke semua anggota tim.
+          <IkonTeks nama="⚠" />Tech Note akan masuk ke <b>Approval Queue</b>. Setelah disetujui Admin/Supervisor, otomatis tampil ke semua anggota tim.
         </div>
         <div className="flex gap-3 justify-end">
           <button onClick={closeUploadModal} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200">Batal</button>
@@ -939,10 +940,10 @@ function TechNotePageInner() {
             </div>
             <p className="text-[13px] text-slate-500 leading-relaxed mb-3">{detailNote.description}</p>
             <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[12px] text-slate-400">
-              <span>🏷️ <b className="text-slate-600">Produk:</b> {detailNote.product}</span>
-              <span>👤 <b className="text-slate-600">Author:</b> {detailNote.author_name}</span>
-              <span>📅 <b className="text-slate-600">Submit:</b> {formatDate(detailNote.submitted_at)}</span>
-              {detailNote.reviewed_by_name && <span>✅ <b className="text-slate-600">Reviewed by:</b> {detailNote.reviewed_by_name}</span>}
+              <span><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Produk:</b> {detailNote.product}</span>
+              <span><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Author:</b> {detailNote.author_name}</span>
+              <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Submit:</b> {formatDate(detailNote.submitted_at)}</span>
+              {detailNote.reviewed_by_name && <span><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Reviewed by:</b> {detailNote.reviewed_by_name}</span>}
             </div>
             {(detailNote.tags??[]).length>0 && (
               <div className="flex flex-wrap gap-1 mt-3">
@@ -954,7 +955,7 @@ function TechNotePageInner() {
             {detailNote.one_drive_link && (
               <a href={detailNote.one_drive_link} target="_blank" rel="noopener noreferrer"
                 className="mt-3 inline-flex items-center gap-2 text-[12px] font-bold px-4 py-2 rounded-xl transition-colors text-white bg-blue-600 hover:bg-blue-700">
-                ☁️ Buka di OneDrive →
+                <IkonTeks nama="☁" />Buka di OneDrive →
               </a>
             )}
           </div>
@@ -975,13 +976,13 @@ function TechNotePageInner() {
               {bolehEditNote(detailNote) && (
                 <button onClick={()=>bukaEditNote(detailNote)}
                   className="px-4 py-2 rounded-xl text-sm font-bold transition-colors bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100">
-                  ✏️ Edit Detail
+                  <IkonTeks nama="✏" />Edit Detail
                 </button>
               )}
               {canManage && (
                 <button onClick={()=>hapusNote(detailNote)}
                   className="px-4 py-2 rounded-xl text-sm font-bold transition-colors bg-red-50 text-red-600 border border-red-200 hover:bg-red-100">
-                  🗑️ Hapus
+                  <IkonTeks nama="🗑" />Hapus
                 </button>
               )}
             </div>
@@ -990,11 +991,11 @@ function TechNotePageInner() {
           {canManage && detailNote.status==='pending' && (
             <div className="flex gap-2 mt-4 pt-4 justify-end border-t border-gray-100">
               <button onClick={()=>{setApproveModal(detailNote);setApprovalForm({action:'approved',note:''}); }}
-                className="px-4 py-2 rounded-xl text-white text-sm font-bold transition-colors bg-emerald-500 hover:bg-emerald-600">✅ Approve</button>
+                className="px-4 py-2 rounded-xl text-white text-sm font-bold transition-colors bg-emerald-500 hover:bg-emerald-600"><IkonTeks nama="✅" />Approve</button>
               <button onClick={()=>{setApproveModal(detailNote);setApprovalForm({action:'revision_requested',note:''}); }}
-                className="px-4 py-2 rounded-xl text-white text-sm font-bold transition-colors bg-amber-500 hover:bg-amber-600">🔄 Revisi</button>
+                className="px-4 py-2 rounded-xl text-white text-sm font-bold transition-colors bg-amber-500 hover:bg-amber-600"><IkonTeks nama="🔄" />Revisi</button>
               <button onClick={()=>{setApproveModal(detailNote);setApprovalForm({action:'rejected',note:''}); }}
-                className="px-4 py-2 rounded-xl text-white text-sm font-bold transition-colors bg-slate-500 hover:bg-slate-600">❌ Tolak</button>
+                className="px-4 py-2 rounded-xl text-white text-sm font-bold transition-colors bg-slate-500 hover:bg-slate-600"><IkonTeks nama="❌" />Tolak</button>
             </div>
           )}
         </Modal>
@@ -1010,9 +1011,9 @@ function TechNotePageInner() {
           <Field label="Keputusan *">
             <select className={inputCls} value={approvalForm.action}
               onChange={e=>setApprovalForm(p=>({...p,action:e.target.value}))}>
-              <option value="approved">✅ Approve — Setujui Tech Note</option>
-              <option value="revision_requested">🔄 Minta Revisi — Perlu perbaikan</option>
-              <option value="rejected">❌ Tolak — Tech Note ditolak</option>
+              <option value="approved">Approve — Setujui Tech Note</option>
+              <option value="revision_requested">Minta Revisi — Perlu perbaikan</option>
+              <option value="rejected">Tolak — Tech Note ditolak</option>
             </select>
           </Field>
           <Field label={`Catatan ${approvalForm.action==='approved'?'(opsional)':'*'}`}>
@@ -1022,7 +1023,7 @@ function TechNotePageInner() {
           </Field>
           {approvalForm.action==='approved' && (
             <div className="rounded-xl px-4 py-2.5 text-[12px] font-medium mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700">
-              ✅ Tech Note akan otomatis tampil ke semua anggota tim setelah disetujui.
+              <IkonTeks nama="✅" />Tech Note akan otomatis tampil ke semua anggota tim setelah disetujui.
             </div>
           )}
           <div className="flex gap-3 justify-end">

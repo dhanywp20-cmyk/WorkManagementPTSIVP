@@ -47,6 +47,12 @@ export interface Merek {
   warnaAksen: string;
   /** Gambar latar layar dashboard (setelah login), diisi lewat unggahan. */
   gambarLatarDasbor: string;
+  /**
+   * 'netral' (bawaan sejak 2026-09-25) = bidang abu-abu tenang, data duduk
+   * di atas latar yang tidak bersaing dengannya; 'gambar' = pakai
+   * gambarLatarDasbor. Halaman login tidak terpengaruh.
+   */
+  latarDasbor: string;
 
   // ── Halaman login ──
   //  Punya warna sendiri, sengaja tidak menumpang warna dashboard: panel kiri
@@ -80,6 +86,7 @@ export const MEREK_BAWAAN: Merek = {
   warnaUtama2: '#be123c',
   warnaAksen: '#c8861d',
   gambarLatarDasbor: '/IVP_Background.png',
+  latarDasbor: 'netral',
 
   gambarLatar: '/IVP_Background.png',
   warnaLogin: '#be123c',

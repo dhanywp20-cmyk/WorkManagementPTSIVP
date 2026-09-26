@@ -6,6 +6,18 @@ import { DonutChart } from '@/components/shared';
 import { UserAnswerReview } from './TeamPage';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
 import { isSalesGuest } from '@/lib/constants';
+import { Ikon } from '@/components/shared/Ikon';
+import { IkonTeks } from '@/components/shared/Ikon';
+
+/** 'from-emerald-500/90 to-...' -> hex aksen keluarga warnanya. */
+const AKSEN_KELUARGA: Record<string, string> = {
+  emerald: '#059669', amber: '#d97706', rose: '#e11d48', yellow: '#ca8a04', indigo: '#4f46e5',
+  slate: '#64748b', blue: '#2563eb', violet: '#7c3aed', red: '#dc2626', green: '#16a34a', sky: '#0284c7',
+};
+function aksenDariGradien(kelas: string): string {
+  const m = kelas.match(/from-([a-z]+)-/);
+  return (m && AKSEN_KELUARGA[m[1]]) || '#4f46e5';
+}
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
@@ -125,7 +137,7 @@ export function ScorePage({ user }: { user: User }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(16px)' }}>
         <div>
-          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📊 Dashboard Saya</h1>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">Dashboard Saya</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Analitik performa quiz kamu</p>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari sesi atau materi..." />
@@ -135,13 +147,25 @@ export function ScorePage({ user }: { user: User }) {
 
         {/* ── Summary Cards ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
-          {summaryCards.map(c => (
-            <div key={c.label} className={`bg-gradient-to-br ${c.color} rounded-2xl p-5 text-white shadow-lg`}>
-              <div className="text-3xl mb-2">{c.icon}</div>
-              <div className="text-xl sm:text-3xl font-black">{c.value}</div>
-              <div className="text-white/80 text-sm font-medium mt-1">{c.label}</div>
-            </div>
-          ))}
+          {summaryCards.map(c => {
+            // Kartu putih + pita aksen + ikon garis - sama dengan StatCard di
+            // modul lain. Dulu blok gradien pekat + emoji 3xl: paling ramai
+            // di seluruh platform. Warna aksen diambil dari keluarga gradien lama.
+            const aksen = aksenDariGradien(c.color);
+            return (
+              <div key={c.label} className="relative overflow-hidden rounded-xl bg-white border border-slate-200 px-4 py-3.5 sm:px-5 sm:py-4"
+                style={{ boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }}>
+                <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: aksen }} />
+                <div className="flex items-start justify-between gap-2">
+                  <div className="text-xl sm:text-[28px] font-bold tracking-tight text-slate-900 leading-none">{c.value}</div>
+                  <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${aksen}14`, color: aksen }}>
+                    <Ikon nama={c.icon} ukuran={16} />
+                  </span>
+                </div>
+                <div className="text-[12px] sm:text-[13px] font-semibold text-slate-600 mt-1.5">{c.label}</div>
+              </div>
+            );
+          })}
         </div>
 
         {/* ── Analytics + Leaderboard ── */}
@@ -150,7 +174,7 @@ export function ScorePage({ user }: { user: User }) {
 
             {/* Left: mini pies 2x2 */}
             <div>
-              <SectionHeader>🥧 Analytics Saya</SectionHeader>
+              <SectionHeader><IkonTeks nama="🥧" />Analytics Saya</SectionHeader>
               <div className="grid grid-cols-2 gap-3">
                 {miniPies.map(c => (
                   <div key={c.title} className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center gap-2.5">
@@ -173,7 +197,7 @@ export function ScorePage({ user }: { user: User }) {
                 mengirim nama asli lalu menutupnya dengan blur() saja; itu tetap
                 terbaca utuh di DevTools/Network, jadi bukan proteksi. */}
             <div>
-              <SectionHeader>🏆 Peringkat — {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Semua'}</SectionHeader>
+              <SectionHeader><IkonTeks nama="🏆" />Peringkat — {user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : 'Semua'}</SectionHeader>
               {/*
                 Aturan urutan ditulis eksplisit di UI - bukan cuma di kode.
                 Skor rata-rata yang seri (mis. sama-sama 100) itu WAJAR terjadi
@@ -191,7 +215,7 @@ export function ScorePage({ user }: { user: User }) {
 
               <div className={`grid grid-cols-1 ${pakaiDivisi ? 'sm:grid-cols-2' : ''} gap-3 mb-3`}>
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
-                  <div className="text-xl mb-0.5">🏆</div>
+                  <div className="text-xl mb-0.5"><Ikon nama="🏆" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                   <div className="text-lg sm:text-2xl font-black text-indigo-700">{myRank > 0 ? `#${myRank}` : '—'}</div>
                   <p className="text-xs text-slate-500 mt-1">
                     {rankTotal ? `dari ${rankTotal} peserta ${user.role}` : 'Belum ada data'}
@@ -210,7 +234,7 @@ export function ScorePage({ user }: { user: User }) {
                 */}
                 {pakaiDivisi && (
                 <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
-                  <div className="text-xl mb-0.5">🏢</div>
+                  <div className="text-xl mb-0.5"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                   <div className="text-lg sm:text-2xl font-black text-indigo-700">
                     {peringkat?.divisiRank ? `#${peringkat.divisiRank}` : '—'}
                   </div>
@@ -304,7 +328,7 @@ export function ScorePage({ user }: { user: User }) {
         {/* ── Recent Activity (own, last 5) ── */}
         {attempts.length > 0 && (
           <section>
-            <SectionHeader>🕐 Aktivitas Terbaru Saya</SectionHeader>
+            <SectionHeader><IkonTeks nama="🕐" />Aktivitas Terbaru Saya</SectionHeader>
             <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
               {attempts.slice(0, 5).map((a: any) => {
                 const pending = a.grading_status === 'pending_review';
@@ -331,7 +355,7 @@ export function ScorePage({ user }: { user: User }) {
 
         {/* ── Full Rekap Table ── */}
         <section>
-          <SectionHeader>📋 Rekap Nilai Per Quiz</SectionHeader>
+          <SectionHeader><IkonTeks nama="📋" />Rekap Nilai Per Quiz</SectionHeader>
           <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
             <table className="w-full text-sm table-zebra" style={{ minWidth: '520px' }}>
               <thead className="border-b border-slate-200 bg-slate-50">
@@ -378,7 +402,7 @@ export function ScorePage({ user }: { user: User }) {
                     <td className="px-5 py-3.5 text-center">
                       <button onClick={() => setViewingAttempt(a)}
                         className="px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all">
-                        📋 Review
+                        <IkonTeks nama="📋" />Review
                       </button>
                     </td>
                   </tr>

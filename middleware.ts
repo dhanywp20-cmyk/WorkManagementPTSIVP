@@ -27,6 +27,8 @@ const PUBLIC_PREFIXES = [
   '/project-progress/share/',
   '/api/project-progress/share/',
   '/icons/',
+  // Digital Asset Links: Android memverifikasi aplikasi TWA (tanpa login).
+  '/.well-known/',
 ];
 
 // Exact public paths (pages + API routes that handle their own auth or need no auth)

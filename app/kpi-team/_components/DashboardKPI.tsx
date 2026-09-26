@@ -11,6 +11,9 @@ import { hasFullAccess } from '@/lib/constants';
 import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { User } from '@/app/dashboard/_components/shared';
 import { KPISettings, DEFAULT_KPI_SETTINGS } from '@/app/kpi-team/_components/shared';
+import { WARNA_STATUS_TICKET } from '@/lib/desain';
+import { Ikon } from '@/components/shared/Ikon';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 // Types
 
@@ -128,11 +131,7 @@ interface Scope {
 
 // Constants
 
-const STATUS_COLORS: Record<string, string> = {
-  'Waiting Approval': '#f59e0b', 'Pending': '#3b82f6', 'Solved': '#10b981',
-  'Cancelled': '#6b7280', 'Overdue': '#ef4444', 'Warranty': '#8b5cf6',
-  'Out Of Warranty': '#ec4899', 'Process Repair': '#f97316', 'Submit RMA': '#06b6d4',
-};
+const STATUS_COLORS: Record<string, string> = WARNA_STATUS_TICKET;
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Demo Product': '#3b82f6', 'Meeting & Survey': '#8b5cf6', 'Konfigurasi': '#10b981',
@@ -245,7 +244,7 @@ function StatCard({ icon, label, value, sub, color, sparkline, donut, loading }:
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-sm">{icon}</span>
+            <span className="text-sm"><Ikon nama={icon} ukuran={14} /></span>
             <span className="text-[11px] font-semibold tracking-wide uppercase truncate" style={{ color:'rgba(0,0,0,0.4)' }}>{label}</span>
           </div>
           {loading ? <div className="h-7 w-16 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.08)' }}/> :
@@ -266,7 +265,7 @@ function SectionHeader({ icon, title, sub, right }: { icon:string; title:string;
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0"
-          style={{ background:'rgba(190,18,60,0.1)', border:'1px solid rgba(190,18,60,0.15)' }}>{icon}</div>
+          style={{ background:'rgba(190,18,60,0.1)', border:'1px solid rgba(190,18,60,0.15)' }}><Ikon nama={icon} ukuran={16} /></div>
         <div>
           <h2 className="text-base font-bold tracking-wide" style={{ color:'rgba(0,0,0,0.75)' }}>{title}</h2>
           {sub && <p className="text-sm" style={{ color:'rgba(0,0,0,0.4)' }}>{sub}</p>}
@@ -449,7 +448,7 @@ function RelSeksi({ judul }: { judul: string }) {
                        px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm border border-black/[0.06]"
         style={{ boxShadow: '0 1px 2px rgba(15,23,42,0.06)' }}>{judul}</span>
       <span aria-hidden="true" className="flex-1 h-px"
-        style={{ background: 'linear-gradient(90deg,rgba(255,255,255,0.7),rgba(255,255,255,0))' }}/>
+        style={{ background: 'linear-gradient(90deg,#cbd5e1,rgba(203,213,225,0))' }}/>
     </div>
   );
 }
@@ -461,7 +460,7 @@ function KepalaUbin({ ikon, judul, warna, catatan }: {
   return (
     <div className="flex items-center gap-2 mb-3">
       <span aria-hidden="true" className="w-[26px] h-[26px] rounded-[9px] grid place-items-center text-[13px] flex-shrink-0"
-        style={{ background: `${warna}1a`, color: warna }}>{ikon}</span>
+        style={{ background: `${warna}1a`, color: warna }}><Ikon nama={ikon} ukuran={15} /></span>
       <h3 className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-slate-500 flex-1 truncate">{judul}</h3>
       {catatan && <span className="text-[10px] font-semibold text-slate-400 flex-shrink-0">{catatan}</span>}
     </div>
@@ -534,7 +533,7 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
         style={{ right: -60, top: -90, width: 340, height: 340,
                  background: 'radial-gradient(circle,rgba(129,140,248,0.30),transparent 62%)' }}/>
       <div className="relative flex items-center justify-between gap-3 flex-wrap mb-4">
-        <h2 className="text-[15px] font-black tracking-tight flex items-center gap-2"><span aria-hidden="true">📊</span> Ringkasan Platform</h2>
+        <h2 className="text-[15px] font-black tracking-tight flex items-center gap-2"><span aria-hidden="true"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span> Ringkasan Platform</h2>
         <div className="flex items-center gap-2">
           <span className="text-[10.5px] font-bold px-2.5 py-1 rounded-full"
             style={{ color: '#c7d2fe', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.14)' }}>
@@ -669,7 +668,7 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl transition-all"
       style={{ background: s.bg, border:`1px solid ${s.border}` }}>
       <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-sm"
-        style={{ background:`${s.dot}18` }}>{entry.icon}</div>
+        style={{ background:`${s.dot}18` }}><Ikon nama={entry.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-sm font-bold truncate" style={{ color:'rgba(0,0,0,0.75)' }}>{entry.action}</span>
@@ -696,7 +695,7 @@ function ScopeBadge({ scope }: { scope: Scope }) {
   return (
     <span className="flex items-center gap-1 text-sm font-bold px-2 py-1 rounded-full"
       style={{ background:`${cfg.color}18`, color:cfg.color, border:`1px solid ${cfg.color}30` }}>
-      {cfg.icon} {cfg.label}
+      <Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}
     </span>
   );
 }
@@ -1106,7 +1105,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
   function SectionPill({ icon, children }: { icon: string; children: React.ReactNode }) {
     return (
       <h3 className="text-sm font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-slate-200">
-        <span>{icon}</span>{children}
+        <span><Ikon nama={icon} ukuran={14} /></span>{children}
       </h3>
     );
   }
@@ -1314,7 +1313,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                       ? <TrenBulanan data={kpi.tickets.monthlyTickets}
                           {...(scope.kind!=='admin' ? { viewW: 1400, viewH: 220 } : {})}/>
                       : <div className="flex flex-col items-center gap-2 py-10">
-                          <span className="text-3xl opacity-20" aria-hidden="true">📊</span>
+                          <span className="text-3xl opacity-20" aria-hidden="true"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                           <p className="text-[11px] text-slate-400">Belum ada data ticket tahun ini.</p>
                         </div>}
                 </div>
@@ -1409,7 +1408,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
           {/* Cross-Module and Audit Trail tabs removed — moved to Analytics Platform page */}
           {(tab as string)==='cross_removed'&&(
             <div className="space-y-5">
-              <div className="lg:col-span-12 text-sm font-bold uppercase tracking-widest text-slate-500 mb-1">🔀 Cross-Module Overview — Ticket · Reminder · Learning Center</div>
+              <div className="lg:col-span-12 text-sm font-bold uppercase tracking-widest text-slate-500 mb-1"><IkonTeks nama="🔀" />Cross-Module Overview — Ticket · Reminder · Learning Center</div>
 
               {/* Monthly bar chart: 3 modules side by side */}
               {(() => {
@@ -1429,7 +1428,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 return (
                   <div className={`${UBIN} lg:col-span-12`} style={{ boxShadow: BAYANG_UBIN }}>
                     <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                      <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500">📅 Aktivitas Bulanan {year}</h3>
+                      <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500"><IkonTeks nama="📅" />Aktivitas Bulanan {year}</h3>
                       <div className="flex items-center gap-4 text-sm">
                         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{background:'#ef4444'}}/>Ticket</span>
                         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{background:'#6366f1'}}/>LC Attempt</span>
@@ -1437,7 +1436,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                     </div>
                     {allMembers.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-10">
-                        <span className="text-3xl opacity-20">📊</span>
+                        <span className="text-3xl opacity-20"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                         <p className="text-[10px] text-slate-400">Data KPI Team belum tersedia. Buka menu KPI Team untuk memuat data.</p>
                       </div>
                     ) : (
@@ -1468,7 +1467,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 {/* Tickets */}
                 <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#fee2e2'}}>🎫</div>
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#fee2e2'}}><Ikon nama="🎫" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Ticketing</span>
                   </div>
                   {[
@@ -1486,7 +1485,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 {/* Reminders */}
                 <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}>📅</div>
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Reminder</span>
                   </div>
                   {[
@@ -1504,7 +1503,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
                 {/* Learning Center */}
                 <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}>🎓</div>
+                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}><Ikon nama="🎓" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                     <span className="text-sm font-black uppercase tracking-widest text-slate-500">Learning Center</span>
                   </div>
                   {[
@@ -1525,7 +1524,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               {kpiTeam.members.length > 0 && (
                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                   <div className="px-5 py-3 border-b border-slate-100">
-                    <span className="text-sm font-black uppercase tracking-widest text-slate-500">👥 Ringkasan KPI Tim — {kpiTeam.filterYear}</span>
+                    <span className="text-sm font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="👥" />Ringkasan KPI Tim — {kpiTeam.filterYear}</span>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm" style={{minWidth:560}}>
@@ -1613,7 +1612,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div>
-                <div className="font-bold text-slate-800 text-base">⚙️ Pengaturan KPI</div>
+                <div className="font-bold text-slate-800 text-base"><IkonTeks nama="⚙" />Pengaturan KPI</div>
                 <div className="text-sm text-slate-400 mt-0.5">Atur batas & bobot masing-masing komponen</div>
               </div>
               <button aria-label="Tutup" onClick={()=>setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100">×</button>
@@ -1621,7 +1620,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
             <div className="p-6 space-y-5">
               {/* LC Min Score */}
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1.5 uppercase tracking-wide">🎓 Learning Center — Batas Nilai Minimum</label>
+                <label className="block text-sm font-bold text-slate-600 mb-1.5 uppercase tracking-wide"><IkonTeks nama="🎓" />Learning Center — Batas Nilai Minimum</label>
                 <div className="flex items-center gap-3">
                   <input aria-label="🎓 Learning Center — Batas Nilai Minimum" type="range" min={40} max={85} step={5} value={kpiSettings.lcMinScore}
                     onChange={e=>setKpiSettings(p=>({...p, lcMinScore:Number(e.target.value)}))}
@@ -1632,7 +1631,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               </div>
               {/* RnD Target */}
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1.5 uppercase tracking-wide">📝 R&D Tech Note — Target per Tahun</label>
+                <label className="block text-sm font-bold text-slate-600 mb-1.5 uppercase tracking-wide"><IkonTeks nama="📝" />R&D Tech Note — Target per Tahun</label>
                 <div className="flex items-center gap-3">
                   <input aria-label="📝 R&D Tech Note — Target per Tahun" type="range" min={1} max={8} step={1} value={kpiSettings.rndTarget}
                     onChange={e=>setKpiSettings(p=>({...p, rndTarget:Number(e.target.value)}))}
@@ -1643,7 +1642,7 @@ export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
               </div>
               {/* Bobot section */}
               <div>
-                <label className="block text-sm font-bold text-slate-600 mb-3 uppercase tracking-wide">📊 Bobot Komponen KPI (total harus 100%)</label>
+                <label className="block text-sm font-bold text-slate-600 mb-3 uppercase tracking-wide"><IkonTeks nama="📊" />Bobot Komponen KPI (total harus 100%)</label>
                 <div className="space-y-3">
                   {([
                     {key:'ticketOverdueWeight', label:'🎫 Ticketing', color:'#ef4444'},

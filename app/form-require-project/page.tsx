@@ -29,68 +29,11 @@ import {
 import { appLink } from '@/lib/app-url';
 import { cetakRequest } from './_components/cetak-request';
 import { unduhPaketRequest } from './_components/paket-unduhan';
-
-/**
- * Field ruangan yang boleh diubah lewat form Edit. Ruangan 1 hidup di kolom
- * request langsung (editFormData), ruangan 2+ hidup di JSONB `rooms[]` -
- * bentuk field-nya sama, jadi satu daftar ini dipakai untuk keduanya.
- *
- * Field lain di rooms[] (status, assign_*, approved_*, brand_*, PIC,
- * survey_photos_count) SENGAJA tidak ada di sini: itu diurus alur
- * approve/assign, bukan form Edit, dan tidak boleh tertimpa saat menyimpan.
- */
-const EDIT_ROOM_KEYS = [
-  'room_name', 'kebutuhan', 'kebutuhan_other', 'solution_product', 'solution_other',
-  'layout_signage', 'jaringan_cms', 'jumlah_input', 'jumlah_output',
-  'source', 'source_other',
-  'camera_conference', 'camera_jumlah', 'camera_tracking',
-  'audio_system', 'audio_mixer', 'audio_detail',
-  'wallplate_input', 'wallplate_jumlah', 'tabletop_input', 'tabletop_jumlah',
-  'wireless_presentation', 'wireless_mode', 'wireless_dongle',
-  'controller_automation', 'controller_type',
-  'ukuran_ruangan', 'suggest_tampilan', 'keterangan_lain',
-] as const;
-type EditRoomKey = typeof EDIT_ROOM_KEYS[number];
-type EditRoomFields = Pick<RoomDetail, EditRoomKey>;
-
-/** Field ruangan 2+ yang dicatat ke audit & WA (sama semangatnya dengan REQUEST_FIELDS). */
-const EDIT_ROOM_LABELS: AdminField[] = [
-  { key: 'room_name',        label: 'Nama Ruangan' },
-  { key: 'kebutuhan',        label: 'Kebutuhan' },
-  { key: 'solution_product', label: 'Solution' },
-  { key: 'ukuran_ruangan',   label: 'Ukuran Ruangan' },
-  { key: 'suggest_tampilan', label: 'Saran Tampilan' },
-  { key: 'keterangan_lain',  label: 'Keterangan' },
-];
-
-/** Ambil hanya field yang bisa diedit; yang belum ada di data lama diisi default. */
-const ambilFieldRuangan = (r: Partial<RoomDetail>): EditRoomFields => {
-  const dasar = emptyRoom() as unknown as Record<string, unknown>;
-  const src = r as unknown as Record<string, unknown>;
-  const out: Record<string, unknown> = {};
-  for (const k of EDIT_ROOM_KEYS) out[k] = src[k] ?? dasar[k];
-  return out as unknown as EditRoomFields;
-};
-const namaRuangan = (r: { room_name?: string | null }, nomor: number) => r.room_name?.trim() || `Ruangan ${nomor}`;
-
-type SumberKebutuhan = { kebutuhan?: string[] | null; kebutuhan_other?: string | null };
-/**
- * Kebutuhan sebuah request = gabungan SEMUA ruangannya (Ruangan 1 di kolom
- * request + rooms[]), tanpa duplikat. Satu request dengan Meeting Room dan
- * Command Center dihitung di kedua irisan. Isian "lainnya" digabung ke
- * "Lainnya" supaya teks bebas tidak memecah pie jadi banyak irisan; request
- * yang belum mengisi apa pun masuk "Belum diisi" agar total pie tetap utuh.
- * Dipakai bersama oleh pie chart dan filternya - satu sumber, tidak bisa beda.
- */
-const daftarKebutuhan = (r: SumberKebutuhan & { rooms?: SumberKebutuhan[] | null }): string[] => {
-  const hasil = new Set<string>();
-  for (const rm of [r, ...(r.rooms || [])]) {
-    for (const k of rm.kebutuhan || []) if (k) hasil.add(k);
-    if (rm.kebutuhan_other?.trim()) hasil.add('Lainnya');
-  }
-  if (hasil.size === 0) hasil.add('Belum diisi');
-  return [...hasil];
-};
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { FilterLipat } from '@/components/shared/FilterLipat';
+import { Toast as ToastBersama } from '@/components/shared/Toast';
+import { EDIT_ROOM_LABELS, ambilFieldRuangan, namaRuangan, daftarKebutuhan, type EditRoomFields } from './_components/ruangan';
+import { CheckGroup, RadioGroup } from './_components/InputPilihan';
 
 function FormRequireProject({ currentUser }: { currentUser: User }) {
   const searchParams = useSearchParams();
@@ -636,8 +579,6 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const toggleArr = (arr: string[], val: string): string[] =>
-    arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val];
 
   const formatFileSize = (bytes: number) =>
     bytes < 1024 ? bytes + ' B' : bytes < 1048576 ? (bytes / 1024).toFixed(1) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB';
@@ -783,56 +724,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     .sort((a, b) => b[1] - a[1])
     .map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
 
-  // CheckGroup & RadioGroup for edit modal
-  const CheckGroup = ({ label, options, value, onChange }: { label: string; options: string[]; value: string[]; onChange: (v: string[]) => void }) => (
-    <div className="mb-4">
-      <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">{label}</label>
-      <div className="flex flex-wrap gap-2">
-        {options.map(opt => {
-          const checked = value.includes(opt);
-          return (
-            <button key={opt} type="button" onClick={() => onChange(toggleArr(value, opt))}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${checked ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>
-                {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-              </div>
-              {opt}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-
-  const RadioGroup = ({ label, options, value, onChange }: { label: string; options: string[]; value: string; onChange: (v: string) => void }) => (
-    <div className="mb-4">
-      <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">{label}</label>
-      <div className="flex flex-wrap gap-2">
-        {options.map(opt => (
-          <button key={opt} type="button" onClick={() => onChange(opt)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${value === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${value === opt ? 'border-teal-500' : 'border-gray-400'}`}>
-              {value === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}
-            </div>
-            {opt}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
-  const NotifToast = () => notification ? (
-    <div style={{ zIndex: Z.toast }} className={`fixed top-4 right-4 px-5 py-4 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-3 border-2 max-w-sm animate-scale-in ${
-      notification.type === 'success' ? 'bg-emerald-50 text-emerald-800 border-emerald-400' :
-      notification.type === 'error' ? 'bg-red-50 text-red-800 border-red-400' :
-        'bg-blue-50 text-blue-800 border-blue-400'}`}>
-      <span className="text-xl">{notification.type === 'success' ? '✅' : notification.type === 'error' ? '❌' : 'ℹ️'}</span>
-      <div>
-        <p className="font-bold">{notification.type === 'success' ? 'Berhasil!' : notification.type === 'error' ? 'Gagal!' : 'Info'}</p>
-        <p className="text-xs font-medium mt-0.5 opacity-80">{notification.msg}</p>
-      </div>
-    </div>
-  ) : null;
+  // Toast bersama (components/shared/Toast) - satu gaya untuk seluruh platform.
+  const NotifToast = () => <ToastBersama notif={notification} />;
 
   // HANDLERS
 
@@ -1886,7 +1779,7 @@ Hubungi Admin untuk info lebih lanjut.
   const isFileType = (type: string) => type.startsWith('image/');
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ backgroundImage: 'url(/IVP_Background.png)' }}>
+    <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ background: 'var(--halaman)' }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <NotifToast />
 
@@ -1973,7 +1866,7 @@ Hubungi Admin untuk info lebih lanjut.
               {bellDropdownOpen && (
                 <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in" style={{ zIndex: Z.dropdown }}>
                   <div className="bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-3 flex items-center justify-between">
-                    <p className="text-white text-xs font-bold">🔔 Tiket Aktif ({activeTickets.length})</p>
+                    <p className="text-white text-xs font-bold"><IkonTeks nama="🔔" />Tiket Aktif ({activeTickets.length})</p>
                     <button aria-label="Tutup" onClick={() => setBellDropdownOpen(false)} className="text-white/70 hover:text-white text-xs font-bold">✕</button>
                   </div>
                   <div className="max-h-64 overflow-y-auto divide-y divide-gray-100">
@@ -2082,11 +1975,11 @@ Hubungi Admin untuk info lebih lanjut.
 
           {/* Search + filter grid — labeled like reference */}
           <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3">
+            <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3" aktif={[searchSales, filterHandler, filterStatus, filterMonth]}>
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Lokasi</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🔍</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Search project / lokasi..."
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
@@ -2095,7 +1988,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales / Requester</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">👤</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales / requester..." value={searchSales} onChange={e => setSearchSales(e.target.value)}
                     placeholder="Search sales / requester..."
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
@@ -2104,7 +1997,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">👥</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Handlers" value={filterHandler} onChange={e => setFilterHandler(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Handlers</option>
@@ -2116,15 +2009,15 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🏷️</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Status</option>
-                    <option value="pending">⏳ Pending</option>
-                    <option value="approved">✅ Approved</option>
-                    <option value="in_progress">🔄 In Progress</option>
-                    <option value="completed">🏆 Completed</option>
-                    <option value="rejected">❌ Rejected</option>
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
                   </select>
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
                 </div>
@@ -2132,7 +2025,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">📅</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Years" value={filterYear} onChange={e => setFilterYear(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Years</option>
@@ -2144,7 +2037,7 @@ Hubungi Admin untuk info lebih lanjut.
               <div>
                 <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Bulan</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">🗓️</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Months" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Months</option>
@@ -2164,7 +2057,7 @@ Hubungi Admin untuk info lebih lanjut.
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
                 </div>
               </div>
-            </div>
+            </FilterLipat>
           </div>
 
           {/* Active filter chips — inside table */}
@@ -2215,7 +2108,7 @@ Hubungi Admin untuk info lebih lanjut.
                 setFilterHandler('all'); setFilterDivision('all'); setFilterKebutuhan('all'); setSearchQuery(''); setSearchSales('');
                 try { ['frp_filterStatus','frp_filterYear','frp_filterMonth','frp_filterHandler','frp_filterDivision','frp_filterKebutuhan','frp_searchQuery','frp_searchSales'].forEach(k => sessionStorage.removeItem(k)); } catch {}
               }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}>🗑️ Reset Semua</button>
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}><IkonTeks nama="🗑" />Reset Semua</button>
             </div>
           )}
           {loading ? (
@@ -2270,15 +2163,15 @@ Hubungi Admin untuk info lebih lanjut.
                     title={req.project_name}
                     onClick={() => handleOpenDetail(req)}
                     meta={<>
-                      {req.project_location && <div className="truncate">📍 {req.project_location}</div>}
+                      {req.project_location && <div className="truncate"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {req.project_location}</div>}
                       <div className="truncate">{req.requester_name} · {formatDate(req.created_at)}</div>
                     </>}
                     badges={<>
                       <MobileCardBadge className={`border ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</MobileCardBadge>
-                      {req.routing_status === 'internal_review' && <span className="text-[9px] font-bold text-amber-600 whitespace-nowrap">🔍 Review Internal</span>}
+                      {req.routing_status === 'internal_review' && <span className="text-[9px] font-bold text-amber-600 whitespace-nowrap"><IkonTeks nama="🔍" />Review Internal</span>}
                       {/* Ruangan lain progresnya beda dari yang ditampilkan di sini (badge di
                           atas cuma ruangan pertama) - buka detail utk lihat per-ruangan. */}
-                      {hasDivergentRoomStatus(req) && <span className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya">🏘️ Beda per ruangan</span>}
+                      {hasDivergentRoomStatus(req) && <span className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya"><IkonTeks nama="🏘" />Beda per ruangan</span>}
                     </>}
                     fields={[
                       { label: 'Solution', value: solution || '—', span2: true },
@@ -2391,11 +2284,11 @@ Hubungi Admin untuk info lebih lanjut.
                           <div className="flex flex-col gap-1 items-start">
                             <span className={`px-2 py-0.5 text-xs font-bold border whitespace-nowrap ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</span>
                             {req.routing_status === 'internal_review' ? (
-                              <p className="text-[9px] font-bold text-amber-600">🔍 Menunggu Review Internal</p>
+                              <p className="text-[9px] font-bold text-amber-600"><IkonTeks nama="🔍" />Menunggu Review Internal</p>
                             ) : (
-                              req.status === 'pending' && isPTS && !isTeamPTS && <p className="text-[9px] font-bold text-red-500 animate-pulse">🔔 Perlu Approval</p>
+                              req.status === 'pending' && isPTS && !isTeamPTS && <p className="text-[9px] font-bold text-red-500 animate-pulse"><IkonTeks nama="🔔" />Perlu Approval</p>
                             )}
-                            {hasDivergentRoomStatus(req) && <p className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya">🏘️ Beda per ruangan</p>}
+                            {hasDivergentRoomStatus(req) && <p className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya"><IkonTeks nama="🏘" />Beda per ruangan</p>}
                           </div>
                         </td>
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
@@ -2404,7 +2297,7 @@ Hubungi Admin untuk info lebih lanjut.
                               <div className="text-xs font-semibold text-gray-700">{formatDueDate(req.due_date)}</div>
                               {dueStatus && (
                                 <div className={`text-[10px] font-bold mt-0.5 ${dueStatus.type === 'overdue' ? 'text-red-500' : dueStatus.type === 'urgent' ? 'text-amber-500' : 'text-teal-500'}`}>
-                                  🎯 {dueStatus.label}
+                                  <Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {dueStatus.label}
                                 </div>
                               )}
                             </>
@@ -2415,13 +2308,13 @@ Hubungi Admin untuk info lebih lanjut.
                           {/* IVP guest: badge for external requests linked by admin */}
                           {isIVPGuest && req.ivp_assignee === currentUser.full_name && req.requester_id !== currentUser.id && (
                             <div className="text-[9px] font-bold text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">
-                              🔗 Ext: {req.sales_division}
+                              <IkonTeks nama="🔗" />Ext: {req.sales_division}
                             </div>
                           )}
                           {/* IVP guest: badge for own requests */}
                           {isIVPGuest && req.requester_id === currentUser.id && (
                             <div className="text-[9px] font-bold text-teal-600 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">
-                              📋 Request Saya
+                              <IkonTeks nama="📋" />Request Saya
                             </div>
                           )}
                         </td>
@@ -2458,7 +2351,7 @@ Hubungi Admin untuk info lebih lanjut.
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlay }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
             <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
-              <span className="text-2xl">🗑️</span>
+              <span className="text-2xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div><h3 className="font-bold text-white">Hapus {selectedIds.size} Request?</h3>
               <p className="text-red-100 text-xs mt-0.5">Tindakan ini tidak dapat dibatalkan</p></div>
             </div>
@@ -2473,7 +2366,7 @@ Hubungi Admin untuk info lebih lanjut.
                   else notify('error', 'Gagal: ' + error.message);
                   setBulkDeleting(false);
                 }} className="flex-[2] bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm hover:from-red-700 hover:to-red-800">
-                  🗑️ Ya, Hapus Permanen
+                  <IkonTeks nama="🗑" />Ya, Hapus Permanen
                 </button>
               </div>
             </div>
@@ -2493,7 +2386,7 @@ Hubungi Admin untuk info lebih lanjut.
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
             style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
             <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
-              <h3 className="text-lg font-bold text-white">✅ Approve Request?</h3>
+              <h3 className="text-lg font-bold text-white"><IkonTeks nama="✅" />Approve Request?</h3>
               <p className="text-amber-100/90 text-xs mt-0.5">Teruskan ke Admin/Manager untuk di-assign</p>
             </div>
             <div className="p-6 space-y-3">
@@ -2510,7 +2403,7 @@ Hubungi Admin untuk info lebih lanjut.
               {/* Brand BOTH: dua reviewer, dan approve ini belum tentu yang terakhir. */}
               {internalApproveTarget.internal_sales_id_2 && (
                 <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                  <span className="text-base flex-shrink-0">🤝</span>
+                  <span className="text-base flex-shrink-0"><Ikon nama="🤝" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <p className="text-xs text-indigo-700 leading-relaxed">
                     Request ini <strong>Kedua Brand</strong> — perlu approve dari dua Sales Internal.
                     Kalau yang satunya belum, request menunggu dia dulu sebelum diteruskan ke Admin.
@@ -2526,7 +2419,7 @@ Hubungi Admin untuk info lebih lanjut.
                   className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                   style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
                   {internalApproveSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  ✅ Ya, Approve &amp; Teruskan
+                  <IkonTeks nama="✅" />Ya, Approve &amp; Teruskan
                 </button>
               </div>
             </div>
@@ -2540,12 +2433,12 @@ Hubungi Admin untuk info lebih lanjut.
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full border-2 border-red-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-red-500 to-red-700 px-6 py-4">
-              <h3 className="font-bold text-white text-lg">❌ Tolak Request</h3>
+              <h3 className="font-bold text-white text-lg"><IkonTeks nama="❌" />Tolak Request</h3>
               <p className="text-red-100 text-xs mt-0.5">{rejectModal.req.project_name}</p>
             </div>
             <div className="p-6">
-              <label className="block text-sm font-bold text-gray-700 mb-2">Alasan penolakan <span className="text-red-500">*</span></label>
-              <textarea value={rejectNote} onChange={e => setRejectNote(e.target.value)} rows={3} placeholder="Tuliskan alasan penolakan..."
+              <label htmlFor="f-form-require-project-page-1" className="block text-sm font-bold text-gray-700 mb-2">Alasan penolakan <span className="text-red-500">*</span></label>
+              <textarea id="f-form-require-project-page-1" value={rejectNote} onChange={e => setRejectNote(e.target.value)} rows={3} placeholder="Tuliskan alasan penolakan..."
                 className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-red-400 transition-all outline-none resize-none mb-4" />
               <div className="flex gap-3">
                 <button onClick={() => setRejectModal({ open: false, req: null })} className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-all">Batal</button>
@@ -2720,7 +2613,7 @@ Hubungi Admin untuk info lebih lanjut.
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-gray-800 truncate">{req.project_name}</p>
                         <p className="text-xs text-gray-400 truncate">{req.sales_name}{req.assign_name ? ` · ${req.assign_name}` : ''}</p>
-                        {req.due_date && <p className="text-[10px] text-amber-600 font-semibold mt-0.5">📅 {formatDueDate(req.due_date)}</p>}
+                        {req.due_date && <p className="text-[10px] text-amber-600 font-semibold mt-0.5"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatDueDate(req.due_date)}</p>}
                       </div>
                       <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </button>
@@ -2811,7 +2704,7 @@ Hubungi Admin untuk info lebih lanjut.
                 {selectedRequest?.routing_status === 'supervisor_assign' && selectedRequest?.assigned_supervisor_id === currentUser.id && (
                   <button onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}
                     className="bg-amber-500 hover:bg-amber-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
-                    🎯 Assign ke Tim
+                    <IkonTeks nama="🎯" />Assign ke Tim
                   </button>
                 )}
                 {/* Info untuk PTS yang di-assign: tombol mulai in_progress */}
@@ -2833,7 +2726,7 @@ Hubungi Admin untuk info lebih lanjut.
                 {bisaKelolaRequest && bolehRerouteRequest(selectedRequest) && (
                   <button onClick={() => { setRerouteTarget(selectedRequest); setRerouteTo(''); }}
                     className="bg-indigo-500 hover:bg-indigo-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
-                    🔀 Re-route
+                    <IkonTeks nama="🔀" />Re-route
                   </button>
                 )}
                 {bolehEditRequest(selectedRequest) && selectedRequest.status !== 'rejected' && (
@@ -2879,7 +2772,7 @@ Hubungi Admin untuk info lebih lanjut.
             {/* Warning: non-IVP guest has no sales_division */}
             {isNonIVPGuest && !currentUser.sales_division && (
               <div className="mx-4 my-2 px-4 py-3 rounded-xl flex items-center gap-3 border-2 border-amber-300" style={{ background: 'rgba(254,243,199,0.9)' }}>
-                <span className="text-2xl flex-shrink-0">⚠️</span>
+                <span className="text-2xl flex-shrink-0"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-sm font-bold text-amber-800">Sales Division belum diset di akun kamu!</p>
                   <p className="text-xs text-amber-700 mt-0.5">Hubungi admin untuk set <strong>Sales Division</strong> di profil akunmu. Tanpa ini, request tidak bisa di-link ke IVP Sales internal.</p>
@@ -2890,7 +2783,7 @@ Hubungi Admin untuk info lebih lanjut.
             {/* Rejection reason banner */}
             {selectedRequest.status === 'rejected' && (
               <div className="mx-4 my-2 px-4 py-3 rounded-xl flex items-start gap-3 border-2 border-red-300" style={{ background: 'rgba(254,226,226,0.9)' }}>
-                <span className="text-2xl flex-shrink-0 mt-0.5">❌</span>
+                <span className="text-2xl flex-shrink-0 mt-0.5"><Ikon nama="❌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-red-800">Request ini ditolak</p>
                   {selectedRequest.rejection_reason && (
@@ -2903,7 +2796,7 @@ Hubungi Admin untuk info lebih lanjut.
                       onClick={() => handleResubmit(selectedRequest)}
                       className="mt-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-1.5 rounded-lg transition-all"
                     >
-                      🔄 Submit Ulang Request
+                      <IkonTeks nama="🔄" />Submit Ulang Request
                     </button>
                   )}
                 </div>
@@ -2914,7 +2807,7 @@ Hubungi Admin untuk info lebih lanjut.
             {isIVPGuest && selectedRequest.ivp_assignee === currentUser.full_name && selectedRequest.requester_id !== currentUser.id && (
               <div className="px-5 py-2 flex items-center gap-2 text-xs flex-shrink-0"
                 style={{ background: 'rgba(99,102,241,0.10)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}>
-                <span>🔗</span>
+                <span><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <span className="text-indigo-700 font-semibold">
                   Anda di-assign sebagai <strong>IVP Sales Internal</strong> untuk request dari divisi eksternal
                   <strong> {selectedRequest.sales_division}</strong>. Anda dapat ikut chat dan memantau progress.
@@ -2927,11 +2820,11 @@ Hubungi Admin untuk info lebih lanjut.
             <div className="flex sm:hidden border-b border-gray-200 bg-white flex-shrink-0">
               <button onClick={() => setDetailMobileTab('info')}
                 className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'info' ? 'text-teal-700 border-teal-600' : 'text-gray-400 border-transparent'}`}>
-                📋 Info Project
+                <IkonTeks nama="📋" />Info Project
               </button>
               <button onClick={() => setDetailMobileTab('chat')}
                 className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'chat' ? 'text-teal-700 border-teal-600' : 'text-gray-400 border-transparent'}`}>
-                💬 Chat
+                <IkonTeks nama="💬" />Chat
               </button>
             </div>
             <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
@@ -3075,7 +2968,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Project Info — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm satulayar:col-span-2">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📁</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       Informasi Project
                     </h3>
                     <div className="space-y-4">
@@ -3132,7 +3025,7 @@ Hubungi Admin untuk info lebih lanjut.
                         {detailRoomAssignName && (
                           <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">PTS Handler</label>
-                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">🔧 {detailRoomAssignName}</p>
+                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailRoomAssignName}</p>
                           </div>
                         )}
                         {getCCLabel(selectedRequest) && (
@@ -3144,7 +3037,7 @@ Hubungi Admin untuk info lebih lanjut.
                         {selectedRequest.due_date && (
                           <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Target Selesai</label>
-                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">📅 {formatDueDate(selectedRequest.due_date)}{detailDueStatus ? ` (${detailDueStatus.label})` : ''}</p>
+                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatDueDate(selectedRequest.due_date)}{detailDueStatus ? ` (${detailDueStatus.label})` : ''}</p>
                           </div>
                         )}
                         {detailSc?.label && (
@@ -3160,16 +3053,16 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Kategori & Solution — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">🎯</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       Kategori Kebutuhan & Solution
                     </h3>
                     <div className="space-y-4">
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Kebutuhan</label><ChipDisplay items={[...(dr.kebutuhan||[]), dr.kebutuhan_other]} /></div>
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Solution Product</label><ChipDisplay items={[...(dr.solution_product||[]), dr.solution_other]} /></div>
                       {(dr.brand_display || dr.brand_display_2) && <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {dr.brand_display && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">🖥️ Brand Display</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display}{dr.brand_display_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_pic_name}</span>}</p></div>}
-                        {dr.brand_display_2 && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">🖥️ Brand Display 2</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display_2}{dr.brand_display_2_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_2_pic_name}</span>}</p></div>}
-                        {dr.brand_middleware && <div><label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1">🔌 Brand Middleware</label><p className="text-sm font-semibold text-gray-800 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">{dr.brand_middleware}{dr.brand_middleware_pic_name && <span className="text-[11px] text-violet-600 ml-2">· PIC: {dr.brand_middleware_pic_name}</span>}</p></div>}
+                        {dr.brand_display && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1"><IkonTeks nama="🖥" />Brand Display</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display}{dr.brand_display_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_pic_name}</span>}</p></div>}
+                        {dr.brand_display_2 && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1"><IkonTeks nama="🖥" />Brand Display 2</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display_2}{dr.brand_display_2_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_2_pic_name}</span>}</p></div>}
+                        {dr.brand_middleware && <div><label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1"><IkonTeks nama="🔌" />Brand Middleware</label><p className="text-sm font-semibold text-gray-800 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">{dr.brand_middleware}{dr.brand_middleware_pic_name && <span className="text-[11px] text-violet-600 ml-2">· PIC: {dr.brand_middleware_pic_name}</span>}</p></div>}
                       </div>}
                     </div>
                   </div>
@@ -3193,7 +3086,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Source & Peripheral — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">🔌</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="🔌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       Source & Peripheral
                     </h3>
                     <div className="space-y-4">
@@ -3268,7 +3161,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Ruangan & Keterangan — form style */}
                   <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📐</span>
+                      <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📐" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       Ruangan & Informasi Lainnya
                     </h3>
                     <div className="space-y-3">
@@ -3291,7 +3184,7 @@ Hubungi Admin untuk info lebih lanjut.
                       return (<>
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-                        <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow">📎</span>
+                        <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📎" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                         Dokumen & File Attachment
                         {detailRoomIdx > 0 && <span className="text-[10px] font-bold text-teal-500 normal-case bg-teal-50 px-2 py-0.5 rounded-full">{(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}</span>}
                       </h3>
@@ -3311,7 +3204,7 @@ Hubungi Admin untuk info lebih lanjut.
                               <div className="absolute right-0 top-full mt-1.5 z-20 w-64 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden">
                                 <button onClick={() => { setShowUploadChoice(false); fileInputRef.current?.click(); }}
                                   className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-start gap-2 border-b border-gray-100">
-                                  <span className="text-base leading-none">📷</span>
+                                  <span className="text-base leading-none"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                                   <span>Foto Survey / Require BOQ<br /><span className="font-normal text-gray-400">Foto lokasi, dokumen kebutuhan dari Sales</span></span>
                                 </button>
                                 <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">File PTS - pilih kategori</p>
@@ -3330,7 +3223,7 @@ Hubungi Admin untuk info lebih lanjut.
                                 ].map(({ ref, icon, label, hint }) => (
                                   <button key={label} onClick={() => { setShowUploadChoice(false); ref.current?.click(); }}
                                     className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-teal-50 flex items-start gap-2">
-                                    <span className="text-base leading-none">{icon}</span>
+                                    <span className="text-base leading-none"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                                     <span>{label}<br /><span className="font-normal text-gray-400">{hint}</span></span>
                                   </button>
                                 ))}
@@ -3484,7 +3377,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {isPTS && !isTeamPTS && (
                     <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                       <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                        <span className="w-8 h-8 shrink-0 bg-rose-500 text-white rounded-lg flex items-center justify-center text-xs shadow">⚙️</span>
+                        <span className="w-8 h-8 shrink-0 bg-rose-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="⚙" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                         Admin Controls
                       </h3>
                       <div className="space-y-3">
@@ -3492,7 +3385,7 @@ Hubungi Admin untuk info lebih lanjut.
                           <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Target Selesai</label>
                           {detailDueStatus && (
                             <div className={`mb-2 px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${detailDueStatus.type === 'overdue' ? 'bg-red-100 text-red-600' : detailDueStatus.type === 'urgent' ? 'bg-amber-100 text-amber-600' : 'bg-teal-100 text-teal-600'}`}>
-                              🎯 {detailDueStatus.label}
+                              <Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailDueStatus.label}
                             </div>
                           )}
                           <div className="flex gap-1.5">
@@ -3509,7 +3402,7 @@ Hubungi Admin untuk info lebih lanjut.
                         {detailRoomStatus !== 'pending' && detailRoomStatus !== 'rejected' && (
                           <button onClick={() => setAssignModal({ open: true, req: selectedRequest, roomIdx: detailRoomIdx })}
                             className="w-full bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 py-2 rounded-xl text-sm font-bold transition-all">
-                            👥 Re-assign Tim PTS{detailRoomIdx > 0 ? ` — ${(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}` : ''}
+                            <IkonTeks nama="👥" />Re-assign Tim PTS{detailRoomIdx > 0 ? ` — ${(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}` : ''}
                           </button>
                         )}
                       </div>
@@ -3584,7 +3477,7 @@ Hubungi Admin untuk info lebih lanjut.
               {/* RIGHT: Chat */}
               <div className={`${detailMobileTab === 'chat' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[1.5] overflow-hidden bg-white/95 min-w-0`}>
                 <div className="px-4 py-2.5 border-b border-gray-100 flex-shrink-0 bg-gray-50">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">💬 Discussion Chat</p>
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="💬" />Discussion Chat</p>
                   {/* Room filter tabs for chat */}
                   {(() => {
                     const chatRooms = selectedRequest.rooms || [];
@@ -3626,7 +3519,7 @@ Hubungi Admin untuk info lebih lanjut.
                         });
                     if (filteredMsgs.length === 0) return (
                       <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400">
-                        <div className="text-4xl">💬</div>
+                        <div className="text-4xl"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                         <p className="font-medium text-sm">{chatRoomFilter === 'all' ? 'Belum ada pesan' : `Belum ada pesan untuk ${chatRoomFilter}`}</p>
                       </div>
                     );
@@ -3684,7 +3577,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {selectedRequest.status === 'rejected' ? (
                     <div className="text-center text-xs font-bold text-red-500 bg-red-50 border border-red-200 rounded-xl py-3">Request ditolak. Chat tidak tersedia.{!isPTS && <span className="block mt-1 font-normal text-red-400">Klik &quot;Submit Ulang Request&quot; di atas untuk mengajukan ulang.</span>}</div>
                   ) : selectedRequest.status === 'pending' ? (
-                    <div className="text-center text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-xl py-3">🔒 Chat tersedia setelah di-approve.</div>
+                    <div className="text-center text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-xl py-3"><IkonTeks nama="🔒" />Chat tersedia setelah di-approve.</div>
                   ) : (
                     <div className="flex gap-2">
                       <div className="flex-1 flex items-end gap-2 bg-white/90 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-teal-500 transition-all">
@@ -3720,7 +3613,7 @@ Hubungi Admin untuk info lebih lanjut.
           onClick={e => { if (e.target === e.currentTarget && !rerouteSaving) setRerouteTarget(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
-              <h3 className="text-lg font-bold text-white">🔀 Alihkan Pekerjaan</h3>
+              <h3 className="text-lg font-bold text-white"><IkonTeks nama="🔀" />Alihkan Pekerjaan</h3>
               <p className="text-indigo-100/90 text-xs mt-0.5 truncate">{rerouteTarget.project_name}</p>
             </div>
             <div className="p-6 space-y-4">
@@ -3728,8 +3621,8 @@ Hubungi Admin untuk info lebih lanjut.
                 Sekarang dikerjakan: <strong>{rerouteTarget.assign_name || 'belum di-assign'}</strong>
               </div>
               <div>
-                <label className="block text-[11px] font-bold mb-1 text-slate-600 uppercase tracking-widest">Alihkan ke</label>
-                <select aria-label="— pilih tujuan —" value={rerouteTo} onChange={e => setRerouteTo(e.target.value)}
+                <label htmlFor="f-form-require-project-page-2" className="block text-[11px] font-bold mb-1 text-slate-600 uppercase tracking-widest">Alihkan ke</label>
+                <select id="f-form-require-project-page-2" value={rerouteTo} onChange={e => setRerouteTo(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-200">
                   <option value="">— pilih tujuan —</option>
                   {rosterPTS.filter(u => u.jabatan === 'Supervisor').length > 0 && (
@@ -3776,7 +3669,7 @@ Hubungi Admin untuk info lebih lanjut.
           <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col border-2 border-amber-400 animate-scale-in overflow-hidden">
             <div className="bg-gradient-to-r from-amber-500 to-amber-700 px-6 py-4 flex items-center justify-between flex-shrink-0">
               <div>
-                <h2 className="text-lg font-bold text-white">✏️ Edit Kebutuhan Project</h2>
+                <h2 className="text-lg font-bold text-white"><IkonTeks nama="✏" />Edit Kebutuhan Project</h2>
                 <p className="text-amber-100 text-xs mt-0.5">{selectedRequest.project_name}</p>
               </div>
               <button aria-label="Tutup" onClick={() => setEditFormModal(false)} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg">✕</button>
@@ -3785,18 +3678,18 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📁</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   Informasi Project
                 </h3>
                 <div className="grid grid-cols-1 gap-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Project *</label>
-                    <input value={editFormData.project_name} onChange={e => setEditFormData(p => ({ ...p, project_name: e.target.value }))}
+                    <label htmlFor="f-form-require-project-page-3" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Project *</label>
+                    <input id="f-form-require-project-page-3" value={editFormData.project_name} onChange={e => setEditFormData(p => ({ ...p, project_name: e.target.value }))}
                       placeholder="Nama project..." className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-100 outline-none bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Lokasi Project</label>
-                    <textarea value={editFormData.project_location} onChange={e => setEditFormData(p => ({ ...p, project_location: e.target.value }))}
+                    <label htmlFor="f-form-require-project-page-4" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Lokasi Project</label>
+                    <textarea id="f-form-require-project-page-4" value={editFormData.project_location} onChange={e => setEditFormData(p => ({ ...p, project_location: e.target.value }))}
                       placeholder="Contoh: Gedung Wisma 46 Lt.12, Jl. MH Thamrin No.1, Jakarta Pusat" rows={4}
                       className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 outline-none bg-white resize-none" />
                   </div>
@@ -3818,18 +3711,18 @@ Hubungi Admin untuk info lebih lanjut.
               {/* Target Selesai — semua role termasuk Guest bisa ubah */}
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 shrink-0 bg-teal-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📅</span>
+                  <span className="w-8 h-8 shrink-0 bg-teal-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   Target Selesai
                 </h3>
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Target Selesai</label>
-                  <input aria-label="Target Selesai" type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)}
+                  <label htmlFor="f-form-require-project-page-5" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Target Selesai</label>
+                  <input id="f-form-require-project-page-5" type="date" value={editDueDate} onChange={e => setEditDueDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
                     className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-amber-400 transition-all text-sm bg-white outline-none cursor-pointer"
                     style={{ color: editDueDate ? '#374151' : '#9ca3af' }} />
                   {editDueDate && (
                     <p className="text-xs text-teal-600 font-semibold mt-1.5">
-                      📅 Target: {new Date(editDueDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      <IkonTeks nama="📅" />Target: {new Date(editDueDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                   )}
                 </div>
@@ -3876,8 +3769,8 @@ Hubungi Admin untuk info lebih lanjut.
                   <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🛋️</span>
                   Ruangan {editRoomIdx + 1}
                 </h3>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Ruangan</label>
-                <input value={editCur.room_name} onChange={e => editUpd({ room_name: e.target.value })}
+                <label htmlFor="f-form-require-project-page-6" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Ruangan</label>
+                <input id="f-form-require-project-page-6" value={editCur.room_name} onChange={e => editUpd({ room_name: e.target.value })}
                   placeholder="Nama ruangan / area" className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-amber-400 outline-none bg-white" />
                 {editRoomAktifBaru && selectedRequest.status !== 'pending' && (
                   <p className="text-xs text-amber-700 font-semibold mt-2">Ruangan baru ini akan berstatus Pending dan perlu di-approve admin.</p>
@@ -3886,21 +3779,21 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🎯</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   Kategori Kebutuhan & Solution
                 </h3>
                 <CheckGroup label="Kebutuhan" options={['Signage', 'Immersive', 'Meeting Room', 'Mapping', 'Command Center', 'Hybrid Classroom']}
                   value={editCur.kebutuhan} onChange={v => editUpd({ kebutuhan: v })} />
                 <div className="mb-4">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Kebutuhan</label>
-                  <input value={editCur.kebutuhan_other} onChange={e => editUpd({ kebutuhan_other: e.target.value })}
+                  <label htmlFor="f-form-require-project-page-7" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Kebutuhan</label>
+                  <input id="f-form-require-project-page-7" value={editCur.kebutuhan_other} onChange={e => editUpd({ kebutuhan_other: e.target.value })}
                     placeholder="Tuliskan jika ada..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                 </div>
                 <CheckGroup label="Solution Product" options={['Videowall', 'Signage Display', 'Videotron', 'Projector', 'Kiosk', 'IFP']}
                   value={editCur.solution_product} onChange={v => editUpd({ solution_product: v })} />
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Solution</label>
-                  <input value={editCur.solution_other} onChange={e => editUpd({ solution_other: e.target.value })}
+                  <label htmlFor="f-form-require-project-page-8" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Solution</label>
+                  <input id="f-form-require-project-page-8" value={editCur.solution_other} onChange={e => editUpd({ solution_other: e.target.value })}
                     placeholder="Tuliskan jika ada..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                 </div>
               </div>
@@ -3917,13 +3810,13 @@ Hubungi Admin untuk info lebih lanjut.
                   value={editCur.jaringan_cms} onChange={v => editUpd({ jaringan_cms: v })} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Input</label>
-                    <input value={editCur.jumlah_input} onChange={e => editUpd({ jumlah_input: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-9" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Input</label>
+                    <input id="f-form-require-project-page-9" value={editCur.jumlah_input} onChange={e => editUpd({ jumlah_input: e.target.value })}
                       placeholder="e.g. 4 input" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Output</label>
-                    <input value={editCur.jumlah_output} onChange={e => editUpd({ jumlah_output: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-10" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Output</label>
+                    <input id="f-form-require-project-page-10" value={editCur.jumlah_output} onChange={e => editUpd({ jumlah_output: e.target.value })}
                       placeholder="e.g. 2 output" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                 </div>
@@ -3932,14 +3825,14 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">🔌</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="🔌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   Source & Peripheral
                 </h3>
                 <CheckGroup label="Source" options={['PC / Mini PC', 'Laptop', 'URL Dashboard', 'NVR CCTV', 'Media Player', 'IPTV', 'Set Top Box']}
                   value={editCur.source} onChange={v => editUpd({ source: v })} />
                 <div className="mb-4">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Source</label>
-                  <input value={editCur.source_other} onChange={e => editUpd({ source_other: e.target.value })}
+                  <label htmlFor="f-form-require-project-page-11" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Other Source</label>
+                  <input id="f-form-require-project-page-11" value={editCur.source_other} onChange={e => editUpd({ source_other: e.target.value })}
                     placeholder="Tuliskan jika ada..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                 </div>
 
@@ -3948,8 +3841,8 @@ Hubungi Admin untuk info lebih lanjut.
                 {editCur.camera_conference === 'Yes' && (
                   <div className="ml-4 mb-4 space-y-3 border-l-2 border-amber-200 pl-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Camera</label>
-                      <input value={editCur.camera_jumlah} onChange={e => editUpd({ camera_jumlah: e.target.value })}
+                      <label htmlFor="f-form-require-project-page-12" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Camera</label>
+                      <input id="f-form-require-project-page-12" value={editCur.camera_jumlah} onChange={e => editUpd({ camera_jumlah: e.target.value })}
                         placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                     </div>
                     <CheckGroup label="Camera Tracking" options={['Auto Tracking', 'Manual PTZ', 'Fixed']}
@@ -3962,8 +3855,8 @@ Hubungi Admin untuk info lebih lanjut.
                 {editCur.audio_system === 'Yes' && (
                   <div className="ml-4 mb-4 space-y-3 border-l-2 border-amber-200 pl-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Mixer / DSP</label>
-                      <input value={editCur.audio_mixer} onChange={e => editUpd({ audio_mixer: e.target.value })}
+                      <label htmlFor="f-form-require-project-page-13" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Mixer / DSP</label>
+                      <input id="f-form-require-project-page-13" value={editCur.audio_mixer} onChange={e => editUpd({ audio_mixer: e.target.value })}
                         placeholder="e.g. Yamaha QL1, QSC, etc." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                     </div>
                     <CheckGroup label="Audio Detail" options={['Speaker Ceiling', 'Speaker Line Array', 'Subwoofer', 'Microphone', 'Amplifier']}
@@ -3975,8 +3868,8 @@ Hubungi Admin untuk info lebih lanjut.
                   onChange={v => editUpd({ wallplate_input: v })} />
                 {editCur.wallplate_input === 'Yes' && (
                   <div className="ml-4 mb-4 border-l-2 border-amber-200 pl-4">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Wallplate</label>
-                    <input value={editCur.wallplate_jumlah} onChange={e => editUpd({ wallplate_jumlah: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-14" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Wallplate</label>
+                    <input id="f-form-require-project-page-14" value={editCur.wallplate_jumlah} onChange={e => editUpd({ wallplate_jumlah: e.target.value })}
                       placeholder="e.g. 3 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                 )}
@@ -3985,8 +3878,8 @@ Hubungi Admin untuk info lebih lanjut.
                   onChange={v => editUpd({ tabletop_input: v })} />
                 {editCur.tabletop_input === 'Yes' && (
                   <div className="ml-4 mb-4 border-l-2 border-amber-200 pl-4">
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Tabletop</label>
-                    <input value={editCur.tabletop_jumlah} onChange={e => editUpd({ tabletop_jumlah: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-15" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Tabletop</label>
+                    <input id="f-form-require-project-page-15" value={editCur.tabletop_jumlah} onChange={e => editUpd({ tabletop_jumlah: e.target.value })}
                       placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                 )}
@@ -4014,23 +3907,23 @@ Hubungi Admin untuk info lebih lanjut.
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
                 <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow">📐</span>
+                  <span className="w-8 h-8 shrink-0 bg-amber-500 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📐" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   Ruangan & Informasi Lainnya
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ukuran Ruangan (P × L × T)</label>
-                    <input value={editCur.ukuran_ruangan} onChange={e => editUpd({ ukuran_ruangan: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-16" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ukuran Ruangan (P × L × T)</label>
+                    <input id="f-form-require-project-page-16" value={editCur.ukuran_ruangan} onChange={e => editUpd({ ukuran_ruangan: e.target.value })}
                       placeholder="e.g. 8m × 6m × 3m" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Suggest Tampilan (W × H)</label>
-                    <input value={editCur.suggest_tampilan} onChange={e => editUpd({ suggest_tampilan: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-17" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Suggest Tampilan (W × H)</label>
+                    <input id="f-form-require-project-page-17" value={editCur.suggest_tampilan} onChange={e => editUpd({ suggest_tampilan: e.target.value })}
                       placeholder="e.g. 1920 × 1080 px atau 4K" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none bg-white" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Keterangan Lain</label>
-                    <textarea value={editCur.keterangan_lain} onChange={e => editUpd({ keterangan_lain: e.target.value })}
+                    <label htmlFor="f-form-require-project-page-18" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Keterangan Lain</label>
+                    <textarea id="f-form-require-project-page-18" value={editCur.keterangan_lain} onChange={e => editUpd({ keterangan_lain: e.target.value })}
                       rows={3} placeholder="Tuliskan informasi tambahan..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-amber-400 outline-none resize-none bg-white" />
                   </div>
                 </div>
@@ -4068,11 +3961,11 @@ export default function Page() {
   if (!currentUser) return (
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center"
-      style={{ backgroundImage: `url('/IVP_Background.png')`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.4)' }} />
       <div className="relative z-10 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center"
         style={{ border: '2px solid rgba(13,148,136,0.3)' }}>
-        <div className="text-5xl mb-4">🔐</div>
+        <div className="text-5xl mb-4"><Ikon nama="🔐" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <h2 className="text-xl font-bold text-gray-800 mb-2">Sesi Habis</h2>
         <p className="text-gray-500 text-sm mb-6">Silakan login kembali melalui dashboard.</p>
         <a href="/dashboard" className="bg-gradient-to-r from-teal-600 to-teal-800 text-white px-6 py-3 rounded-xl font-bold hover:from-teal-700 hover:to-teal-900 transition-all shadow-md inline-block">

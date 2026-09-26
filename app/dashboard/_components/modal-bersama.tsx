@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 import { kirimNotifikasi } from '@/lib/notifikasi/router';
 import { appLink } from '@/lib/app-url';
+import { Ikon } from '@/components/shared/Ikon';
 
 /**
  * Sebar perubahan nama/username user ke semua snapshot di tabel terkait, lewat
@@ -112,7 +113,7 @@ export function Kartu({ icon, judul, hitung, children }: {
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
       <div className="px-4 py-3 flex items-center justify-between border-b border-slate-100 bg-slate-50/60">
         <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
-          <span className="text-sm">{icon}</span> {judul}
+          <span className="text-sm"><Ikon nama={icon} ukuran={14} /></span> {judul}
         </p>
         {hitung && (
           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">
@@ -132,7 +133,7 @@ export function Baris({ icon, label, value, children }: {
   return (
     <div className="px-4 py-2.5 flex items-center justify-between gap-4">
       <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 flex-shrink-0">
-        <span className="w-4 text-center text-slate-300">{icon}</span> {label}
+        <span className="w-4 text-center text-slate-300"><Ikon nama={icon} ukuran={14} /></span> {label}
       </span>
       <div className="min-w-0 text-right">
         {children ?? <span className="text-sm font-semibold text-slate-800 truncate">{value || '—'}</span>}
@@ -179,7 +180,7 @@ export function StripInfo({ icon, judul, keterangan, angka, satuan }: {
 }) {
   return (
     <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm mb-4">
-      <div className="text-2xl flex-shrink-0">{icon}</div>
+      <div className="text-2xl flex-shrink-0"><Ikon nama={icon} ukuran={24} /></div>
       <div className="flex-1 min-w-0">
         <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{judul}</p>
         <p className="text-xs text-slate-500 mt-0.5 leading-snug">{keterangan}</p>

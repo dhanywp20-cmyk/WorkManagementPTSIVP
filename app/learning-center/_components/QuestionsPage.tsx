@@ -9,6 +9,7 @@ import {
   generateWithGemini, fileToBase64, MAX_PDF_BYTES, AppDialog, DialogState,
   BtnEdit, BtnDelete, ambilDaftarModel, type ModelAI,
 } from './shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // Folder color palette
 const FOLDER_COLORS = [
@@ -609,7 +610,7 @@ export function QuestionsPage({ user }: { user: User }) {
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
-        <h3 className="font-bold text-slate-800 mb-1 text-base">✏️ Ubah Nama Folder</h3>
+        <h3 className="font-bold text-slate-800 mb-1 text-base"><IkonTeks nama="✏" />Ubah Nama Folder</h3>
         <p className="text-xs text-slate-400 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
         <input
           value={renameFolder?.newName ?? ''}
@@ -663,7 +664,7 @@ export function QuestionsPage({ user }: { user: User }) {
   const generatePanelJSX = (
     <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
       <div className="flex items-start justify-between mb-3">
-        <h3 className="font-bold text-violet-800 flex items-center gap-2">✨ Generate Soal dengan Gemini AI</h3>
+        <h3 className="font-bold text-violet-800 flex items-center gap-2"><IkonTeks nama="✨" />Generate Soal dengan Gemini AI</h3>
         {/* Gemini usage badge */}
         <div className="flex items-center gap-2 text-[11px] font-semibold flex-shrink-0">
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${geminiRemaining <= 5 ? 'bg-rose-50 border-rose-200 text-rose-700' : geminiRemaining <= 15 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
@@ -679,7 +680,7 @@ export function QuestionsPage({ user }: { user: User }) {
       </div>
       {/* Limit info */}
       <div className="flex items-start gap-2 text-xs bg-violet-100/60 border border-violet-200 rounded-xl px-3 py-2 mb-4">
-        <span>ℹ️</span>
+        <span><Ikon nama="ℹ" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="text-violet-700">Gemini 2.5 Flash free tier: <strong>10 req/menit</strong>, ~<strong>50 req/hari</strong>. Jika error limit, tunggu 1 menit atau coba besok.</span>
       </div>
       <div className="flex items-center gap-2 mb-4">
@@ -693,26 +694,26 @@ export function QuestionsPage({ user }: { user: User }) {
       </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="col-span-2">
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+          <label htmlFor="f-learning-center-components-questionspage-1" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Nama Grup / Batch
             <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
           </label>
-          <input value={batchName} onChange={e => setBatchName(e.target.value)}
+          <input id="f-learning-center-components-questionspage-1" value={batchName} onChange={e => setBatchName(e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white"
             placeholder="contoh: Instalasi Dasar, Troubleshooting Level 1, Quiz Minggu ke-3..." />
         </div>
         <div className="col-span-2">
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+          <label htmlFor="f-learning-center-components-questionspage-2" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Topik Khusus
             <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
           </label>
-          <textarea value={genExtraPrompt} onChange={e => setGenExtraPrompt(e.target.value)} rows={2}
+          <textarea id="f-learning-center-components-questionspage-2" value={genExtraPrompt} onChange={e => setGenExtraPrompt(e.target.value)} rows={2}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white resize-none"
             placeholder="contoh: Fokus pada cara pemasangan LED indoor P2.5, atau khusus troubleshooting sinyal HDMI..." />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-          <select aria-label="-- Pilih Materi --" value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
+          <label htmlFor="f-learning-center-components-questionspage-3" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
+          <select id="f-learning-center-components-questionspage-3" value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
             <option value="">-- Pilih Materi --</option>
             {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
@@ -721,13 +722,13 @@ export function QuestionsPage({ user }: { user: User }) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
-          <input aria-label="Jumlah Soal" type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
+          <label htmlFor="f-learning-center-components-questionspage-4" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
+          <input id="f-learning-center-components-questionspage-4" type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white" />
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
-          <select aria-label="Tingkat Kesulitan" value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
+          <label htmlFor="f-learning-center-components-questionspage-5" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
+          <select id="f-learning-center-components-questionspage-5" value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
             <option value="mixed">Mixed (Campuran)</option>
             <option value="easy">Easy — Mudah</option>
@@ -736,10 +737,10 @@ export function QuestionsPage({ user }: { user: User }) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+          <label htmlFor="f-learning-center-components-questionspage-6" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Upload PDF <span className="text-[10px] font-normal text-violet-500 normal-case tracking-normal">(sementara, tidak disimpan)</span>
           </label>
-          <input ref={pdfRef} type="file" accept=".pdf" onChange={e => {
+          <input id="f-learning-center-components-questionspage-6" ref={pdfRef} type="file" accept=".pdf" onChange={e => {
             const f = e.target.files?.[0] ?? null;
             if (f && f.size > MAX_PDF_BYTES) {
               setDialog({
@@ -756,10 +757,10 @@ export function QuestionsPage({ user }: { user: User }) {
           <div className="flex items-center gap-2">
             <button onClick={() => pdfRef.current?.click()}
               className="px-3 py-2 bg-white border border-violet-200 hover:bg-violet-50 text-violet-700 text-xs font-semibold rounded-xl transition-all">
-              📄 Pilih PDF
+              <IkonTeks nama="📄" />Pilih PDF
             </button>
             {pdfFile
-              ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg">✅ {pdfFile.name}</span>
+              ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {pdfFile.name}</span>
               : <span className="text-xs text-slate-400">atau dari teks materi</span>}
             {pdfFile && <button aria-label="Tutup" onClick={() => { setPdfFile(null); if (pdfRef.current) pdfRef.current.value = ''; }} className="text-xs text-rose-500">✕</button>}
           </div>
@@ -869,7 +870,7 @@ export function QuestionsPage({ user }: { user: User }) {
                     onClick={() => simpanHasil(sisi.rows)}
                     className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40"
                     style={{ background: i === 0 ? '#4f46e5' : '#16a34a' }}>
-                    💾 Simpan hasil {i === 0 ? 'Model A' : 'Model B'}
+                    <IkonTeks nama="💾" />Simpan hasil {i === 0 ? 'Model A' : 'Model B'}
                   </button>
                 </div>
               </div>
@@ -921,7 +922,7 @@ export function QuestionsPage({ user }: { user: User }) {
               </span>
               {' · '}
               {newQ.batch_name.trim()
-                ? <span className="font-bold">📌 {newQ.batch_name}</span>
+                ? <span className="font-bold"><Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /> {newQ.batch_name}</span>
                 : <span className="italic">Tanpa Grup</span>}
             </p>
             <p className="text-[11px] text-emerald-700 mt-1 leading-relaxed">
@@ -940,8 +941,8 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-            <select aria-label="-- Pilih Materi --" value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
+            <label htmlFor="f-learning-center-components-questionspage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
+            <select id="f-learning-center-components-questionspage-7" value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
               <option value="">-- Pilih Materi --</option>
               {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
@@ -950,8 +951,8 @@ export function QuestionsPage({ user }: { user: User }) {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pertanyaan *</label>
-            <textarea value={newQ.question} onChange={e => setNewQ(p => ({ ...p, question: e.target.value }))}
+            <label htmlFor="f-learning-center-components-questionspage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pertanyaan *</label>
+            <textarea id="f-learning-center-components-questionspage-8" value={newQ.question} onChange={e => setNewQ(p => ({ ...p, question: e.target.value }))}
               rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
               placeholder="Tulis pertanyaan di sini..." />
           </div>
@@ -973,7 +974,7 @@ export function QuestionsPage({ user }: { user: User }) {
                       className={`text-left px-3 py-2.5 rounded-xl border transition-all ${
                         aktif ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300'
                               : 'bg-white border-slate-200 hover:border-emerald-200'}`}>
-                      <div className="text-sm font-bold text-slate-700">{o.ikon} {o.judul}</div>
+                      <div className="text-sm font-bold text-slate-700"><Ikon nama={o.ikon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {o.judul}</div>
                       <div className="text-[11px] text-slate-500 leading-snug mt-0.5">{o.ket}</div>
                     </button>
                   );
@@ -988,11 +989,11 @@ export function QuestionsPage({ user }: { user: User }) {
               )}
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+              <label htmlFor="f-learning-center-components-questionspage-9" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                 Kunci / Referensi Jawaban
                 <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional — hanya untuk bantu admin menilai, tidak dilihat peserta</span>
               </label>
-              <textarea value={newQ.model_answer} onChange={e => setNewQ(p => ({ ...p, model_answer: e.target.value }))}
+              <textarea id="f-learning-center-components-questionspage-9" value={newQ.model_answer} onChange={e => setNewQ(p => ({ ...p, model_answer: e.target.value }))}
                 rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
                 placeholder="Contoh jawaban ideal / poin-poin kunci penilaian..." />
             </div>
@@ -1010,17 +1011,17 @@ export function QuestionsPage({ user }: { user: User }) {
             </div>
           ))}
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+            <label htmlFor="f-learning-center-components-questionspage-10" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
               Nama Grup / Batch
               <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
             </label>
-            <input value={newQ.batch_name} onChange={e => setNewQ(p => ({ ...p, batch_name: e.target.value }))}
+            <input id="f-learning-center-components-questionspage-10" value={newQ.batch_name} onChange={e => setNewQ(p => ({ ...p, batch_name: e.target.value }))}
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
               placeholder="contoh: Instalasi Dasar, Quiz Minggu 1, Troubleshooting..." />
           </div>
           <div>
-            <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
-            <select aria-label="Tingkat Kesulitan" value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
+            <label htmlFor="f-learning-center-components-questionspage-11" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
+            <select id="f-learning-center-components-questionspage-11" value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
               className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
               <option value="easy">Easy</option>
               <option value="medium">Medium</option>
@@ -1031,7 +1032,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="flex gap-3 mt-5">
           <button onClick={handleAddManual}
             className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all">
-            💾 Simpan Soal
+            <IkonTeks nama="💾" />Simpan Soal
           </button>
           <button onClick={tutupTambahManual}
             className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">
@@ -1053,7 +1054,7 @@ export function QuestionsPage({ user }: { user: User }) {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
                 style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}>
-                🧩
+                <Ikon nama="🧩" ukuran="1em" className="inline-block align-[-0.12em]" />
               </div>
               <div>
                 <h1 className="text-lg font-bold text-slate-800 tracking-tight">Bank Soal</h1>
@@ -1079,7 +1080,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 <svg aria-hidden="true" focusable="false" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
                 </svg>
-                ✨ Generate AI
+                <IkonTeks nama="✨" />Generate AI
               </button>
             </div>
           </div>
@@ -1178,7 +1179,7 @@ export function QuestionsPage({ user }: { user: User }) {
               <div className="flex justify-center py-16">
                 <div className="text-center px-10 py-8 rounded-2xl"
                   style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-                  <div className="text-5xl mb-3">🧩</div>
+                  <div className="text-5xl mb-3"><Ikon nama="🧩" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                   <p className="font-semibold text-slate-700">Belum ada materi</p>
                   <p className="text-sm mt-1 text-slate-500">Tambah materi di tab Materi terlebih dahulu</p>
                 </div>
@@ -1236,7 +1237,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 </>
               )}
             </div>
-            <h1 className="text-lg font-bold text-slate-800 tracking-tight">🧩 Bank Soal</h1>
+            <h1 className="text-lg font-bold text-slate-800 tracking-tight"><IkonTeks nama="🧩" />Bank Soal</h1>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <SearchInput value={search} onChange={setSearch} placeholder="Cari soal..." />
@@ -1441,16 +1442,16 @@ export function QuestionsPage({ user }: { user: User }) {
         <ModalPortal>
           <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
             <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
-              <h3 className="font-bold text-slate-800 mb-4 sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">✏️ Edit Soal</h3>
+              <h3 className="font-bold text-slate-800 mb-4 sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100"><IkonTeks nama="✏" />Edit Soal</h3>
               <div className="space-y-3">
                 <textarea value={editQ.question} onChange={e => setEditQ(p => p && ({ ...p, question: e.target.value }))}
                   rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Pertanyaan" />
                 {editQ.question_type === 'essay' ? (
                   <div>
-                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
+                    <label htmlFor="f-learning-center-components-questionspage-12" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                       Kunci / Referensi Jawaban <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case">Optional</span>
                     </label>
-                    <textarea value={editQ.model_answer ?? ''} onChange={e => setEditQ(p => p && ({ ...p, model_answer: e.target.value }))}
+                    <textarea id="f-learning-center-components-questionspage-12" value={editQ.model_answer ?? ''} onChange={e => setEditQ(p => p && ({ ...p, model_answer: e.target.value }))}
                       rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Contoh jawaban ideal..." />
                   </div>
                 ) : (['a','b','c','d'] as const).map(opt => (
@@ -1484,7 +1485,7 @@ export function QuestionsPage({ user }: { user: User }) {
             <div className="flex justify-center py-16">
               <div className="text-center px-10 py-8 rounded-2xl"
                 style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-                <div className="text-5xl mb-3">🧩</div>
+                <div className="text-5xl mb-3"><Ikon nama="🧩" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 <p className="font-semibold text-slate-700">{search ? 'Tidak ada soal yang cocok' : 'Belum ada soal di folder ini'}</p>
                 {!search && <p className="text-sm mt-1 text-slate-500">Generate soal dengan AI atau tambah soal manual</p>}
               </div>
@@ -1591,7 +1592,7 @@ export function QuestionsPage({ user }: { user: User }) {
                             <div className="flex items-center gap-2.5 flex-wrap">
                               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: bc.dot }} />
                               {batchKey
-                                ? <span className="text-xs font-bold" style={{ color: bc.text }}>📌 {batchKey}</span>
+                                ? <span className="text-xs font-bold" style={{ color: bc.text }}><Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /> {batchKey}</span>
                                 : <span className="text-xs font-semibold text-slate-400 italic">Tanpa Grup</span>
                               }
                               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border" style={{ color: bc.text, borderColor: bc.border }}>
@@ -1712,7 +1713,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                   </div>
                                   <div style={{ flex: 1, padding: '14px 18px' }}>
                                     {q.question_type === 'essay' && (
-                                      <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 mb-1.5">📝 ESSAY</span>
+                                      <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 mb-1.5"><IkonTeks nama="📝" />ESSAY</span>
                                     )}
                                     <p style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', lineHeight: 1.6, marginBottom: 10 }}>{q.question}</p>
                                     {q.question_type === 'essay' ? (

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput, AppDialog, DialogState } from './shared';
 import { ModalPortal } from '@/components/shared';
 import { compressImage } from '@/lib/image-compress';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /*
   Menerjemahkan galat unggah Supabase jadi kalimat yang bisa ditindaklanjuti.
@@ -395,7 +396,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
         <div className="flex h-full flex-col overflow-y-auto" style={{ background: '#f8fafc' }}>
           <div className="sticky top-0 z-10 flex items-center justify-between px-8 py-4 border-b border-slate-200" style={{ background: '#ffffff' }}>
             <div>
-              <h2 className="font-bold text-slate-800">📋 Review Jawaban</h2>
+              <h2 className="font-bold text-slate-800"><IkonTeks nama="📋" />Review Jawaban</h2>
               <p className="text-xs text-slate-500">{session.session_name} · Skor {result.score.toFixed(0)}</p>
             </div>
             <button onClick={() => setShowReview(false)}
@@ -451,7 +452,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
         <div className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-10 max-w-md w-full text-center">
           {result.pendingReview ? (
             <>
-              <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl bg-amber-100">⏳</div>
+              <div className="w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center text-3xl bg-amber-100"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-1">Jawaban Terkirim</h2>
               <p className="text-slate-500 text-sm mb-6">{session.session_name}</p>
               <p className="text-sm text-slate-600 leading-relaxed mb-8">
@@ -479,12 +480,12 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           <div className="flex gap-3 justify-center flex-wrap">
             <button onClick={() => setShowReview(true)}
               className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold rounded-xl shadow-sm transition-all text-sm">
-              📋 Review Jawaban
+              <IkonTeks nama="📋" />Review Jawaban
             </button>
             {!result.passed && session.allow_retake && onRetake && (
               <button onClick={() => onRetake(session)}
                 className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all text-sm">
-                🔄 Coba Lagi
+                <IkonTeks nama="🔄" />Coba Lagi
               </button>
             )}
             <button onClick={onDone}
@@ -728,7 +729,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                     </div>
                   ) : (
                     <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-5 text-center">
-                      <p className="text-3xl mb-1">📷</p>
+                      <p className="text-3xl mb-1"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
                       <p className="text-sm font-semibold text-slate-600">Belum ada foto jawaban</p>
                       <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
                         Gambar jawabanmu di kertas, lalu foto dan unggah di sini.
@@ -881,7 +882,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
 
             {tabSwitches > 0 && (
               <p className="text-[11px] font-semibold text-rose-600">
-                ⚠️ Berpindah tab tercatat: {tabSwitches}x
+                <IkonTeks nama="⚠" />Berpindah tab tercatat: {tabSwitches}x
               </p>
             )}
           </div>
@@ -1062,7 +1063,7 @@ export function MyQuizPage({ user }: { user: User }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📝 My Quiz</h1>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="📝" />My Quiz</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Quiz yang tersedia untuk kamu</p>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari quiz..." />
@@ -1072,7 +1073,7 @@ export function MyQuizPage({ user }: { user: User }) {
           <div className="flex justify-center py-16">
             <div className="text-center px-10 py-8 rounded-2xl"
               style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-              <div className="text-5xl mb-3">🎯</div>
+              <div className="text-5xl mb-3"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <p className="font-semibold text-slate-700">{search ? 'Tidak ada quiz yang cocok' : 'Belum ada quiz aktif'}</p>
               {!search && <p className="text-sm mt-1 text-slate-500">Tunggu admin membuat sesi quiz baru</p>}
             </div>
@@ -1094,7 +1095,7 @@ export function MyQuizPage({ user }: { user: User }) {
             <button disabled
               className="px-5 py-2.5 text-sm font-bold rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed w-full formulir:w-auto"
               title="Quiz ini sudah kamu kerjakan dan tidak bisa diulang">
-              ✅ Selesai
+              <IkonTeks nama="✅" />Selesai
             </button>
           ) : (
             <button onClick={() => handleStart(s)}
@@ -1107,11 +1108,11 @@ export function MyQuizPage({ user }: { user: User }) {
             <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-5 sm:p-6 hover:shadow-md transition-all"
               style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', opacity: alreadyDone ? 0.75 : 1 }}>
               <div className="flex items-start gap-4 sm:gap-5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0">🎯</div>
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-slate-800 text-base sm:text-lg">
                     {s.session_name}
-                    {s.session_type === 'essay' && <span className="ml-2 align-middle text-xs px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700 border border-indigo-200">📝 Essay</span>}
+                    {s.session_type === 'essay' && <span className="ml-2 align-middle text-xs px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700 border border-indigo-200"><IkonTeks nama="📝" />Essay</span>}
                   </h4>
                   <p className="text-sm text-slate-500 mt-1">{s.materi_name}</p>
                 </div>
@@ -1125,9 +1126,9 @@ export function MyQuizPage({ user }: { user: User }) {
               </div>
 
               <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 text-xs text-slate-500">
-                <span>📝 {s.question_count} soal</span>
-                <span>⏱️ {s.timer_minutes ? `${s.timer_minutes} mnt` : 'Tanpa batas waktu'}</span>
-                <span>🎯 Passing: {s.passing_grade}%</span>
+                <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {s.question_count} soal</span>
+                <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {s.timer_minutes ? `${s.timer_minutes} mnt` : 'Tanpa batas waktu'}</span>
+                <span><IkonTeks nama="🎯" />Passing: {s.passing_grade}%</span>
                 <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
               </div>
 
@@ -1140,13 +1141,13 @@ export function MyQuizPage({ user }: { user: User }) {
               {(inProgress || menungguNilai || alreadyDone || tenggat) && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   {inProgress && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Sedang Berlangsung</span>
+                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="⏳" />Sedang Berlangsung</span>
                   )}
                   {menungguNilai && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">⏳ Menunggu Penilaian Admin</span>
+                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="⏳" />Menunggu Penilaian Admin</span>
                   )}
                   {alreadyDone && !menungguNilai && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">✅ Sudah Dikerjakan</span>
+                    <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="✅" />Sudah Dikerjakan</span>
                   )}
                   {tenggat && !alreadyDone && (
                     <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold border ${
@@ -1154,7 +1155,7 @@ export function MyQuizPage({ user }: { user: User }) {
                         ? 'bg-rose-100 text-rose-700 border-rose-200'
                         : 'bg-slate-100 text-slate-600 border-slate-200'
                     }`}>
-                      🔒 {tenggat.teks}
+                      <Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /> {tenggat.teks}
                     </span>
                   )}
                 </div>

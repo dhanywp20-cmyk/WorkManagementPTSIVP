@@ -8,6 +8,7 @@ import {
   addDays, toKey, getDayDate, isToday, getRollingUserIdForDate,
 } from './shared';
 import { useKelompokPTS, labelKelompokPTS } from '@/lib/kelompok';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{weekStart:Date;users:UserRow[];currentUser:any;onClose:()=>void;onSaved:()=>void}) {
   const kelompokPTSList = useKelompokPTS();
@@ -128,7 +129,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
         <div className="px-6 py-5 rounded-t-2xl" style={{background:'linear-gradient(135deg,#dc2626,#991b1b)'}}>
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-white">📋 Atur Jadwal Piket — 2 Minggu</h2>
+              <h2 className="text-lg font-bold text-white"><IkonTeks nama="📋" />Atur Jadwal Piket — 2 Minggu</h2>
               <p className="text-red-200/80 text-xs mt-0.5">{fmtWk(weekStart)} &amp; {fmtWk(week2Start)}</p>
             </div>
             <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">
@@ -146,7 +147,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                 <div/>
                 {[{wk:wk1,ws:weekStart},{wk:wk2,ws:week2Start}].map(({wk,ws})=>(
                   <div key={wk} className="text-center py-1.5 rounded-lg text-[10px] font-bold" style={{background:'rgba(220,38,38,0.07)',color:'#dc2626',border:'1px solid rgba(220,38,38,0.2)'}}>
-                    📅 {fmtWk(ws)}
+                    <Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {fmtWk(ws)}
                   </div>
                 ))}
               </div>
@@ -200,7 +201,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
         <div className="px-5 pb-5 pt-3 flex gap-3 flex-shrink-0">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl font-semibold text-sm" style={{background:'rgba(255,255,255,0.95)',color:'#64748b',border:'1px solid rgba(0,0,0,0.12)'}}>Batal</button>
           <button onClick={handleSave} disabled={saving||loading} className="flex-1 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60" style={{background:'linear-gradient(135deg,#dc2626,#b91c1c)',boxShadow:'0 4px 14px rgba(220,38,38,0.35)'}}>
-            {saving&&<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}💾 Simpan 2 Minggu
+            {saving&&<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}<IkonTeks nama="💾" />Simpan 2 Minggu
           </button>
         </div>
       </div>

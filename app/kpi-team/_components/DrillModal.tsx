@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx-js-style';
 import { MonthBarChart, TrendBadge, ModalPortal } from '@/components/shared';
 
 import { KPIMember, PeriodKey, warnaTim, KPI_COLOR, progressColor } from './shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Popup rincian satu metrik KPI, berikut dua komponen kecil yang hanya dipakai di dalamnya.
@@ -49,7 +50,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
           {/* Ticket Stats */}
           <section>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">🎫 Ticketing</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3"><IkonTeks nama="🎫" />Ticketing</p>
             <div className="grid grid-cols-3 gap-2 mb-3">
               {[
                 { label: 'Ditangani', value: member.ticketsHandled, c: teamColor },
@@ -88,7 +89,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
           {/* Reminder */}
           <section>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">📅 Reminder Schedule</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3"><IkonTeks nama="📅" />Reminder Schedule</p>
             <div>
               <div className="flex justify-between text-[10px] mb-1">
                 <span className="text-slate-500">Done Rate</span>
@@ -104,7 +105,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
           {/* Learning Center */}
           <section>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">📚 Learning Center</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3"><IkonTeks nama="📚" />Learning Center</p>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Quiz Attempts', value: member.lcAttempts,  c: '#6366f1' },
@@ -122,7 +123,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
           {/* Piket */}
           <section>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">🏪 Piket Showroom</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2"><IkonTeks nama="🏪" />Piket Showroom</p>
             <div className="flex items-center gap-3">
               <span className="text-xl sm:text-3xl font-black" style={{ color: '#0d9488' }}>{member.piketFilled}</span>
               <span className="text-[11px] text-slate-500">hari piket pada periode ini</span>
@@ -131,7 +132,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
           {/* Monthly Trend */}
           <section>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">📈 Trend Ticket per Bulan</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3"><IkonTeks nama="📈" />Trend Ticket per Bulan</p>
             <MonthBarChart values={member.monthlyTickets} color={teamColor} />
           </section>
 
@@ -144,7 +145,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
             <button onClick={onViewBreakdown}
               className="w-full py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 flex items-center justify-center gap-1.5"
               style={{ background: `linear-gradient(135deg, ${teamColor}, ${teamColor}cc)` }}>
-              📊 Lihat Breakdown KPI &amp; Yang Perlu Diperbaiki →
+              <IkonTeks nama="📊" />Lihat Breakdown KPI &amp; Yang Perlu Diperbaiki →
             </button>
           )}
 
@@ -165,7 +166,7 @@ export function SummaryCard({ icon, label, value, sub, color, trend, lowerIsBett
       <div className="absolute top-0 right-0 w-16 h-16 rounded-full opacity-[0.08]"
         style={{ background: color, transform: 'translate(30%,-30%)' }} />
       <div className="flex items-center gap-1.5">
-        <span className="text-sm">{icon}</span>
+        <span className="text-sm"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
         <span className="text-[11px] font-bold uppercase tracking-widest truncate" style={{ color: 'rgba(0,0,0,0.38)' }}>{label}</span>
       </div>
       <div className="text-lg sm:text-2xl font-black leading-none tracking-tight" style={{ color }}>{value}</div>

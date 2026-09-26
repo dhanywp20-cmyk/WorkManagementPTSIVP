@@ -27,6 +27,7 @@ import {
 } from './_components/shared';
 import { isAssignablePTSTeam } from '@/lib/teams';
 import { compressImage } from '@/lib/image-compress';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 function ProjectProgressPageInner() {
   const currentUser = useCurrentUser();
@@ -407,7 +408,7 @@ function ProjectProgressPageInner() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      backgroundImage: `url('/IVP_Background.png')`,
+      background: 'var(--halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
@@ -665,7 +666,7 @@ function ProjectProgressPageInner() {
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[1000]"
           onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}>
           <div className="w-full h-full flex flex-col overflow-hidden relative" style={{
-            backgroundImage: `url('/IVP_Background.png')`,
+            background: 'var(--halaman)',
             backgroundSize: 'cover', backgroundPosition: 'center',
           }}>
             <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.10)' }} />
@@ -691,7 +692,7 @@ function ProjectProgressPageInner() {
                 <button onClick={() => exportProjectToExcel(detail)}
                   className="px-3 py-1.5 rounded-md text-[11px] font-bold transition-all"
                   style={{ background: PALETTE.surface, color: PALETTE.inkSoft, border: `1px solid ${PALETTE.borderStrong}` }}>
-                  ⬇ Excel
+                  <IkonTeks nama="⬇" />Excel
                 </button>
                 <button aria-label="Tutup" onClick={closeDetail}
                   className="w-8 h-8 rounded-md font-bold flex items-center justify-center transition-all"
@@ -820,7 +821,7 @@ function ProjectProgressPageInner() {
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
           <div className="rounded-md shadow-2xl w-full max-w-lg overflow-hidden" style={{ background: PALETTE.surface }}>
             <div className="px-6 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${PALETTE.border}` }}>
-              <h3 className="font-bold text-base" style={{ color: PALETTE.ink }}>🔗 Share View-Only</h3>
+              <h3 className="font-bold text-base" style={{ color: PALETTE.ink }}><IkonTeks nama="🔗" />Share View-Only</h3>
               <button aria-label="Tutup" onClick={() => setShareFor(null)} className="font-bold" style={{ color: PALETTE.inkFaint }}>✕</button>
             </div>
             <div className="p-6 flex flex-col gap-4">
@@ -1379,7 +1380,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                 const lt = timelineInfo(loc);
                 return (
                   <p className="text-[10px] font-semibold" style={{ color: lt.color }}>
-                    🗓️ {loc.start_date ? formatDate(loc.start_date) : '—'} → {loc.target_date ? formatDate(loc.target_date) : '—'}
+                    <Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /> {loc.start_date ? formatDate(loc.start_date) : '—'} → {loc.target_date ? formatDate(loc.target_date) : '—'}
                     <span className="ml-1.5 px-1.5 py-0.5 rounded" style={{ background: lt.bg }}>{lt.label}</span>
                   </p>
                 );

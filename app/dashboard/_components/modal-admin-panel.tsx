@@ -14,6 +14,8 @@ import { BrandPicSettingInline } from './modal-brand-pic';
 import { MerekSettingInline } from './modal-merek';
 import { KelompokSettingInline } from './modal-kelompok';
 import { IntegrasiInline } from './modal-integrasi';
+import { Ikon } from '@/components/shared/Ikon';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 // AdminPanelModal (unified: Settings + User Management + PIC Brand)
 
@@ -32,8 +34,8 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
  * Integrations / Security / System SENGAJA belum jadi kelompok sendiri.
  * Master prompt bagian 4 juga bilang: "JANGAN membuat menu kosong hanya
  * untuk terlihat lengkap." Hari ini tidak ada satu pun pengaturan yang
- * pantas masuk ke sana - WhatsApp masih env var Edge Function, bukan
- * sesuatu yang bisa diatur dari sini (menyusul Phase 6). Kelompok itu
+ * pantas masuk ke sana - token WhatsApp kini diatur di Integrations
+ * (rahasia_integrasi). Kelompok itu
  * ditambahkan PERSIS saat isinya ada, bukan lebih dulu.
  */
 const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications'; label: string }[] = [
@@ -156,7 +158,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
                           : { background: 'transparent', border: '1px solid transparent', color: 'rgba(255,255,255,0.55)' }}
                         onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.07)'; }}
                         onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
-                        <span className={isActive ? '' : 'opacity-60'}>{item.icon}</span>
+                        <span className={isActive ? '' : 'opacity-60'}><Ikon nama={item.icon} ukuran={15} /></span>
                         <span className="sm:truncate">{item.label}</span>
                         {isActive && <div className="hidden sm:block ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: item.color }} />}
                       </button>
@@ -175,7 +177,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)' }}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
               style={{ background: activeNav.activeBg, border: `1px solid ${activeNav.activeBorder}`, color: activeNav.activeText }}>
-              {activeNav.icon}
+              <Ikon nama={activeNav.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" />
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-slate-800 text-sm sm:text-base leading-tight">{activeNav.label}</h2>
@@ -397,7 +399,7 @@ export function KpiRosterInline() {
             className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
               filterTeam === 'all' ? 'bg-sky-700 text-white border-sky-700' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
             }`}>
-            🌐 Semua Tim
+            <IkonTeks nama="🌐" />Semua Tim
           </button>
           {teamNames.map(t => {
             const pal = TEAM_PALETTE[t] ?? FALLBACK_PALETTE[teamNames.indexOf(t) % FALLBACK_PALETTE.length];

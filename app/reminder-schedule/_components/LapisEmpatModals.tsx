@@ -3,6 +3,7 @@ import { ModalPortal } from '@/components/shared';
 import { normalkanNama } from '@/lib/kelompok-insentif';
 import type { Reminder } from './shared';
 import { formatDate } from './shared';
+import { Ikon } from '@/components/shared/Ikon';
 
 /**
  * "Lapis 4" - mencari project SEBELUM form dibuka (pola sama seperti Create
@@ -110,7 +111,7 @@ export function PilihTipeReminderModal({
             <button type="button" onClick={onPilihLama}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-cyan-400 hover:bg-cyan-50/50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0">🔍</span>
+                <span className="text-2xl flex-shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">
                     {buatUntukGuest ? 'Project Lama Anda — Satu BAST' : 'Project Lama — Satu BAST'}
@@ -131,7 +132,7 @@ export function PilihTipeReminderModal({
             <button type="button" onClick={onPilihBaru}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0">✏️</span>
+                <span className="text-2xl flex-shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">Project Baru</p>
                   <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
@@ -204,7 +205,7 @@ export function CariProyekLamaModal({
 
           <div className="p-4 flex-1 overflow-y-auto min-h-0">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input type="text" autoFocus value={carianProyek}
                 onChange={e => { setCarianProyek(e.target.value); setPraPilihProyek(null); }}
                 placeholder="Ketik nama project untuk mencari..."
@@ -236,8 +237,8 @@ export function CariProyekLamaModal({
                       </span>
                       <span className="text-xs text-slate-500 flex gap-3 flex-wrap">
                         <span className="font-semibold text-cyan-700">{jumlahJadwal} jadwal tercatat</span>
-                        {r.address && <span>📍 {r.address.slice(0, 50)}{r.address.length > 50 ? '…' : ''}</span>}
-                        {r.sales_name && <span>👤 {r.sales_name}</span>}
+                        {r.address && <span><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.slice(0, 50)}{r.address.length > 50 ? '…' : ''}</span>}
+                        {r.sales_name && <span><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.sales_name}</span>}
                       </span>
                     </button>
                   );

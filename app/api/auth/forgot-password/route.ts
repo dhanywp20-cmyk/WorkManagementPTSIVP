@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { sendWA } from '@/lib/wa';
+import '@/lib/wa-server';
 
 export const dynamic = 'force-dynamic';
 

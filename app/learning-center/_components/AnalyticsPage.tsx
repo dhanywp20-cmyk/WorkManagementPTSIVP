@@ -5,6 +5,7 @@ import { TeamSwitch, matchesTeamFilter, TEAM_FILTER_CONFIG, type TeamFilter } fr
 import { useKelompokCabang } from '@/lib/kelompok';
 import { supabase, SearchInput } from './shared';
 import { ModalPortal, DonutChart } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 
 export function AnalyticsPage() {
@@ -162,7 +163,7 @@ export function AnalyticsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📈 Analytics</h1>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="📈" />Analytics</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Performa team & statistik quiz</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
@@ -253,18 +254,18 @@ export function AnalyticsPage() {
         <section>
           <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
             <h3 className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
-              🏆 Top Performers — {TEAM_FILTER_CONFIG[activeTeam].label}
+              <IkonTeks nama="🏆" />Top Performers — {TEAM_FILTER_CONFIG[activeTeam].label}
             </h3>
             <div className="flex items-center gap-2">
               {nationalAvg !== null && (
                 <span className="text-[11px] font-bold text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
-                  🌏 Rata-rata Nasional (semua divisi): <span className="text-slate-800">{nationalAvg.toFixed(1)}</span>
+                  <IkonTeks nama="🌏" />Rata-rata Nasional (semua divisi): <span className="text-slate-800">{nationalAvg.toFixed(1)}</span>
                 </span>
               )}
               {divisionStats.length > 0 && (
                 <select aria-label="Filter divisi" value={divisionFilter} onChange={e => setDivisionFilter(e.target.value)}
                   className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600">
-                  <option value="">🏢 Semua Divisi</option>
+                  <option value="">Semua Divisi</option>
                   {divisionStats.map(d => <option key={d.div} value={d.div}>{d.div}</option>)}
                 </select>
               )}
@@ -294,7 +295,7 @@ export function AnalyticsPage() {
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors">{u.name}</span>
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold">👁 detail</span>
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold"><IkonTeks nama="👁" />detail</span>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-center text-slate-500 text-xs font-semibold">{u.total}</td>
@@ -318,7 +319,7 @@ export function AnalyticsPage() {
                     <td className="px-5 py-3.5 text-center">
                       {u.flags > 0 ? (
                         <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                          ⚠️ {u.flags}×
+                          <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.flags}×
                         </span>
                       ) : (
                         <span className="text-slate-300 text-sm">—</span>
@@ -341,7 +342,7 @@ export function AnalyticsPage() {
         {/* ── Top Performers — Sales Division ───────────────────────────── */}
         {divisionStats.length > 0 && (
           <section>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">🏢 Top Performers — Sales Division</h3>
+            <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm"><IkonTeks nama="🏢" />Top Performers — Sales Division</h3>
             <p className="text-xs text-slate-400 mb-4 ml-1">Ranking performa per divisi penjualan, diurutkan berdasarkan rata-rata nilai</p>
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
               <table className="w-full text-sm table-zebra">
@@ -367,7 +368,7 @@ export function AnalyticsPage() {
                         <td className="px-5 py-3.5 text-center text-sm font-black text-slate-300">{i + 1}</td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm flex-shrink-0">🏢</div>
+                            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm flex-shrink-0"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                             <div>
                               <p className="font-bold text-slate-800 text-sm">{d.div}</p>
                               {medal && <p className="text-[10px] text-slate-400">{medal} Top {i + 1}</p>}
@@ -520,11 +521,11 @@ export function AnalyticsPage() {
                                 {a.passed ? 'LULUS' : 'TIDAK LULUS'}
                               </span>
                               {a.time_taken_sec != null && (
-                                <span className="text-xs text-slate-400">⏱ {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>
+                                <span className="text-xs text-slate-400"><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>
                               )}
                               {tabSw > 0 && (
                                 <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                  ⚠️ {tabSw}× pindah tab
+                                  <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {tabSw}× pindah tab
                                 </span>
                               )}
                             </div>

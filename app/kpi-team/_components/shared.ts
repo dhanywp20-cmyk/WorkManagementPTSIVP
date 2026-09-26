@@ -4,6 +4,9 @@ import React from 'react';
 
 import * as XLSX from 'xlsx-js-style';
 
+import type { RekapLCTahunan } from '@/lib/kpi-lc-tahunan';
+import { WARNA_STATUS_TICKET } from '@/lib/desain';
+
 /**
  * Tipe, konstanta, dan penolong KPI Team yang dipakai bersama halaman, popup rincian, dan ekspor Excel.
  */
@@ -27,6 +30,8 @@ export interface KPIMember {
   formReviewLowRating: number;
   techNotesApproved: number;
   monthlyTickets: number[];
+  /** Kelulusan sesi Learning Center setahun penuh - pengali KPI akhir. Lihat lib/kpi-lc-tahunan.ts. */
+  lcTahunan?: RekapLCTahunan;
 }
 
 export interface KPISettings {
@@ -60,6 +65,8 @@ export interface KPIPeriodSnapshot {
     formReviewTotal: number; formReviewLowRating: number; techNotesApproved: number;
     tickScore: number; bastScore: number; lcScore: number; rndScore: number;
     finalKPI: number;
+    /** Snapshot sejak 2026-09-24: KPI sebelum dikali faktor LC tahunan. */
+    kpiDasar?: number; faktorLC?: number; lcSesiWajib?: number; lcSesiLulus?: number;
   }[];
   settings_json?: {
     lcMinScore: number; rndTarget: number; ticketOverdueWeight: number;
@@ -77,6 +84,29 @@ export type PeriodKey = 'Minggu Ini' | 'Bulan Ini' | '3 Bulan' | '6 Bulan' | '1 
 export type SortKey = 'name' | 'tickets' | 'solved' | 'solveRate' | 'avgDays' | 'remRate' | 'lcScore' | 'piket';
 
 export type SortDir = 'asc' | 'desc';
+
+/**
+ * Rumus skor KPI halaman KPI Team. Dulu disalin di empat tempat page.tsx
+ * (simpan snapshot, kartu ringkas, popup detail, daftar periode).
+ * Catatan: tabel "Ringkasan KPI Tim" di DashboardKPI.tsx masih punya
+ * salinannya sendiri, tetapi datanya (kpiTeam.members) tidak pernah diisi
+ * sehingga tabel itu tidak pernah tampil.
+ *
+ * finalKPI = KPI dasar (4 komponen berbobot) × faktor LC tahunan
+ * (sesi Learning Center lulus ÷ sesi wajib di tahun itu).
+ */
+export function hitungSkorKPI(m: KPIMember, s: KPISettings) {
+  const lcFailed  = m.lcScores.filter(sc => sc < s.lcMinScore).length;
+  const tickScore = m.ticketsHandled > 0 ? Math.max(0, 1 - m.ticketsOverdue / Math.max(m.ticketsHandled, 1)) : 0;
+  const bastScore = m.formReviewTotal === 0 ? 0 : m.formReviewLowRating === 0 ? 1 : Math.max(0, 1 - m.formReviewLowRating / Math.max(m.formReviewTotal, 1));
+  const lcScore   = m.lcAttempts === 0 ? 0 : Math.max(0, 1 - lcFailed / Math.max(m.lcAttempts, 1));
+  const rndScore  = m.techNotesApproved >= s.rndTarget ? 1 : m.techNotesApproved / Math.max(s.rndTarget, 1);
+  const dasarMentah = (s.ticketOverdueWeight * tickScore + s.bastWeight * bastScore + s.lcWeight * lcScore + s.rndWeight * rndScore) * 100;
+  const faktorLC  = m.lcTahunan?.faktor ?? 1;
+  const kpiDasar  = Math.round(dasarMentah);
+  const finalKPI  = Math.round(dasarMentah * faktorLC);
+  return { lcFailed, tickScore, bastScore, lcScore, rndScore, kpiDasar, faktorLC, finalKPI, potonganLC: kpiDasar - finalKPI };
+}
 
 // Constants
 
@@ -112,12 +142,7 @@ export function warnaTim(teamType: string | null | undefined): string {
   return WARNA_CADANGAN[jumlah % WARNA_CADANGAN.length];
 }
 
-export const STATUS_COLORS: Record<string, string> = {
-  'Solved': '#10b981', 'Pending': '#3b82f6', 'Overdue': '#ef4444',
-  'Waiting Approval': '#f59e0b', 'Cancelled': '#6b7280',
-  'Process Repair': '#f97316', 'Warranty': '#8b5cf6',
-  'Out Of Warranty': '#ec4899', 'Submit RMA': '#06b6d4',
-};
+export const STATUS_COLORS: Record<string, string> = WARNA_STATUS_TICKET;
 
 export const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
 

@@ -7,6 +7,7 @@ import { ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type P
 import { hasFullAccess } from '@/lib/constants';
 import { getSession } from '@/lib/auth';
 import { createNotification } from '@/lib/notifications';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   user: User; onBack: () => void; isAdminView: boolean;
@@ -312,7 +313,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
           style={{ background: '#ffffff' }}>
           <div>
-            <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📋 Review Jawaban — {user.full_name}</h1>
+            <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="📋" />Review Jawaban — {user.full_name}</h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{selectedAttempt.lc_quiz_sessions?.session_name}</p>
           </div>
           <button onClick={() => setSelectedAttempt(null)}
@@ -421,7 +422,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                   return (
                     <div key={q.id} className="rounded-2xl border-2 border-indigo-200 bg-indigo-50 p-5 shadow-sm">
                       <div className="flex items-start gap-3 mb-3">
-                        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white bg-indigo-500">📝</span>
+                        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white bg-indigo-500"><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                         <div className="flex-1">
                           <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1} · Essay · <span className={`${DIFF_COLOR[q.difficulty].split(' ')[1]}`}>{q.difficulty}</span></p>
                           <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
@@ -448,7 +449,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                                 loading="lazy"
                                 className="w-40 h-40 object-cover rounded-lg border border-slate-200 group-hover:border-slate-400 transition-all" />
                               <span className="block text-[11px] font-semibold text-slate-500 group-hover:text-slate-700 mt-1">
-                                🔍 Buka ukuran penuh
+                                <IkonTeks nama="🔍" />Buka ukuran penuh
                               </span>
                             </a>
                           ) : (
@@ -466,13 +467,13 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                             {aiGradingIds.has(q.id) && (
                               <div className="flex items-center gap-2 text-xs font-semibold text-violet-600">
                                 <span className="w-3.5 h-3.5 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin" />
-                                🤖 AI sedang menilai...
+                                <IkonTeks nama="🤖" />AI sedang menilai...
                               </div>
                             )}
                             {aiFeedback[q.id] && (
                               <div className="bg-violet-50 rounded-xl border border-violet-200 p-3">
                                 <div className="flex items-center justify-between gap-2 mb-1">
-                                  <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest">🤖 Saran AI — jawaban peserta vs kunci referensi</p>
+                                  <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest"><IkonTeks nama="🤖" />Saran AI — jawaban peserta vs kunci referensi</p>
                                   {aiScores[q.id] !== undefined && (
                                     <span className="text-[11px] font-black text-violet-700 bg-violet-100 border border-violet-300 rounded-full px-2 py-0.5 whitespace-nowrap">
                                       AI: {aiScores[q.id]}
@@ -485,20 +486,20 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                                 {aiScores[q.id] !== undefined && manualScores[q.id] !== undefined
                                   && manualScores[q.id] !== '' && Number(manualScores[q.id]) !== aiScores[q.id] && (
                                   <p className="text-[11px] font-semibold text-amber-700 mt-1.5">
-                                    ✏️ Dikoreksi admin: {aiScores[q.id]} → {manualScores[q.id]}
+                                    <IkonTeks nama="✏" />Dikoreksi admin: {aiScores[q.id]} → {manualScores[q.id]}
                                   </p>
                                 )}
                               </div>
                             )}
                             {aiError[q.id] && (
-                              <p className="text-xs text-rose-500 italic">⚠️ {aiError[q.id]} — isi nilai manual di bawah.</p>
+                              <p className="text-xs text-rose-500 italic"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {aiError[q.id]} — isi nilai manual di bawah.</p>
                             )}
                             {/* Tanpa keterangan ini, admin melihat kolom nilai kosong tanpa
                                 saran AI dan tidak tahu apakah AI-nya rusak atau memang tidak
                                 ada yang bisa dinilai. */}
                             {!ans?.essay_text?.trim() && !ans?.answer_thumb_url && (
                               <p className="text-xs text-slate-500 italic">
-                                🤖 Penilaian AI dilewati — peserta tidak menuliskan jawaban untuk soal ini. Isi nilai manual bila perlu.
+                                <IkonTeks nama="🤖" />Penilaian AI dilewati — peserta tidak menuliskan jawaban untuk soal ini. Isi nilai manual bila perlu.
                               </p>
                             )}
                             {/* Jawaban bergambar dinilai manusia. AI di sini hanya
@@ -507,7 +508,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                                 ia berikan akan menyesatkan. */}
                             {ans?.answer_thumb_url && (
                               <p className="text-xs text-slate-500 italic">
-                                🖐️ Jawaban berupa gambar — dinilai manual. Buka gambarnya di atas, lalu isi nilai di bawah.
+                                <IkonTeks nama="🖐" />Jawaban berupa gambar — dinilai manual. Buka gambarnya di atas, lalu isi nilai di bawah.
                               </p>
                             )}
                             <div className="flex items-center gap-3">
@@ -520,7 +521,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                                 <button type="button" disabled={aiGradingIds.has(q.id)}
                                   onClick={() => runAiGrading(selectedAttempt.id, q, ans.essay_text.trim())}
                                   className="text-[11px] font-bold text-violet-600 hover:text-violet-800 disabled:opacity-40 transition-colors">
-                                  🔄 {aiFeedback[q.id] || aiError[q.id] ? 'Nilai Ulang dengan AI' : 'Nilai dengan AI'}
+                                  <Ikon nama="🔄" ukuran="1em" className="inline-block align-[-0.12em]" /> {aiFeedback[q.id] || aiError[q.id] ? 'Nilai Ulang dengan AI' : 'Nilai dengan AI'}
                                 </button>
                               )}
                             </div>
@@ -626,7 +627,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
           <div className="flex justify-center py-16">
             <div className="text-center px-10 py-8 rounded-2xl"
               style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-              <div className="text-5xl mb-3">📋</div>
+              <div className="text-5xl mb-3"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <p className="font-semibold text-slate-700">Belum ada quiz yang diselesaikan</p>
               <p className="text-sm mt-1 text-slate-500">Anggota ini belum mengerjakan quiz apapun</p>
             </div>
@@ -642,10 +643,10 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
               <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
               <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
               <div className="flex gap-3 mt-1 text-xs text-slate-400">
-                {a.grading_status === 'pending_review' ? <span>📝 {a.total_questions} soal essay dikirim</span> : <span>✅ {a.total_correct}/{a.total_questions} benar</span>}
-                <span>🎯 Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
-                {a.time_taken_sec && <span>⏱️ {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
-                <span>📅 {a.submitted_at ? fmtDate(a.submitted_at) : ''}</span>
+                {a.grading_status === 'pending_review' ? <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_questions} soal essay dikirim</span> : <span><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_correct}/{a.total_questions} benar</span>}
+                <span><IkonTeks nama="🎯" />Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
+                {a.time_taken_sec && <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
+                <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.submitted_at ? fmtDate(a.submitted_at) : ''}</span>
               </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
@@ -694,7 +695,7 @@ export function TeamPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div>
-          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">👥 Team</h1>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="👥" />Team</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Daftar anggota team & partisipasi quiz</p>
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari anggota..." />
@@ -749,7 +750,7 @@ export function TeamPage() {
                     </td>
                     <td className="px-5 py-3.5 text-center font-bold text-slate-700">
                       {ua.length}
-                      {pendingCount > 0 && <span className="ml-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">⏳ {pendingCount}</span>}
+                      {pendingCount > 0 && <span className="ml-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /> {pendingCount}</span>}
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       {avg !== null ? <span className={`font-bold ${avg >= 70 ? 'text-emerald-600' : 'text-rose-600'}`}>{avg.toFixed(1)}</span> : <span className="text-slate-300">—</span>}

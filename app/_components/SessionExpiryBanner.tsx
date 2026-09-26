@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { SESSION_DURATION_MS } from '@/lib/constants';
 import { ModalPortal } from '@/components/shared';
+import { IkonTeks } from '@/components/shared/Ikon';
 
 const WARN_BEFORE_MS  = 5 * 60 * 1000;
 const CHECK_INTERVAL_MS = 30_000;
@@ -57,7 +58,7 @@ export default function SessionExpiryBanner() {
           style={{ pointerEvents: 'all' }}
         />
         <div className="fixed top-0 left-0 right-0 z-[2450] bg-red-600 text-white px-4 py-3 flex items-center justify-center gap-3 text-sm font-semibold shadow-lg">
-          <span>⏰ Sesi Anda telah berakhir. Silakan login ulang.</span>
+          <span><IkonTeks nama="⏰" />Sesi Anda telah berakhir. Silakan login ulang.</span>
           <button
             onClick={() => {
               sessionStorage.removeItem('ivp_login_time');
@@ -76,10 +77,10 @@ export default function SessionExpiryBanner() {
   return (
     <div className="fixed top-0 left-0 right-0 z-[2450] bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-3 text-sm font-semibold shadow-lg">
       {extended ? (
-        <span>✅ Sesi berhasil diperpanjang!</span>
+        <span><IkonTeks nama="✅" />Sesi berhasil diperpanjang!</span>
       ) : (
         <>
-          <span>⚠️ Sesi Anda akan berakhir dalam <strong>{minutesLeft} menit</strong></span>
+          <span><IkonTeks nama="⚠" />Sesi Anda akan berakhir dalam <strong>{minutesLeft} menit</strong></span>
           <button onClick={handleExtend} className="bg-white text-amber-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-amber-50 transition-all">
             Perpanjang Sesi
           </button>

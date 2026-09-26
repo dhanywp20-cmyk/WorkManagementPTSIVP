@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "id.ptsivp.workmanagement",
+      "sha256_cert_fingerprints": ["99:F7:48:BC:10:57:14:06:B9:77:66:B3:F1:D1:FF:34:45:7C:9A:8A:2C:BF:27:A9:9C:E5:A1:B4:73:C2:7B:18"]
+    }
+  }
+]

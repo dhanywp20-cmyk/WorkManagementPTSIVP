@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase, User, QuizSession, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge } from './shared';
 import { UserAnswerReview } from './TeamPage';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }: {
   currentUser: User;
@@ -124,7 +125,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
         style={{ background: '#ffffff' }}>
         <div className="min-w-0">
-          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight">📋 Laporan</h1>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="📋" />Laporan</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Hasil quiz per sesi</p>
           {/* Lebar 320px sebelumnya dipatok tanpa pengecualian — lebih lebar
               daripada layar ponsel 360px setelah dikurangi padding, jadi
@@ -206,7 +207,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                       <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
                       <td className="px-5 py-3.5 text-center">
                         {a.grading_status === 'pending_review'
-                          ? <span className="text-xs text-amber-500 font-bold">⏳ —</span>
+                          ? <span className="text-xs text-amber-500 font-bold"><IkonTeks nama="⏳" />—</span>
                           : <ScoreBadge score={a.score} passing={session?.passing_grade ?? 70} />}
                       </td>
                       <td className="px-5 py-3.5 text-center">
@@ -226,12 +227,12 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                             <div className="flex items-center justify-center gap-1 flex-wrap">
                               {isFast && (
                                 <span className="text-[11px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                  🚨 {Math.round(ts)}s
+                                  <Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.round(ts)}s
                                 </span>
                               )}
                               {tabSw > 0 && (
                                 <span className="text-[11px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
-                                  ⚠️ {tabSw}× tab
+                                  <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {tabSw}× tab
                                 </span>
                               )}
                             </div>
@@ -250,7 +251,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                           return a.grading_status === 'pending_review' ? (
                             <button onClick={() => setViewingUser({ user: peserta, attemptId: a.id })}
                               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold rounded-lg border border-amber-300 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all">
-                              ⏳ Nilai Sekarang
+                              <IkonTeks nama="⏳" />Nilai Sekarang
                             </button>
                           ) : (
                             <BtnView onClick={() => setViewingUser({ user: peserta, attemptId: a.id })}>Jawaban</BtnView>
@@ -292,7 +293,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
           <div className="flex justify-center py-16">
             <div className="text-center px-10 py-8 rounded-2xl max-w-md"
               style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-              <div className="text-5xl mb-3">⚠️</div>
+              <div className="text-5xl mb-3"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <p className="font-semibold text-rose-700">Gagal memuat hasil</p>
               <p className="text-sm mt-1 text-slate-500 break-words">{loadErr}</p>
             </div>
@@ -303,7 +304,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
           <div className="flex justify-center py-16">
             <div className="text-center px-10 py-8 rounded-2xl"
               style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-              <div className="text-5xl mb-3">📋</div>
+              <div className="text-5xl mb-3"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <p className="font-semibold text-slate-700">Belum ada peserta yang submit</p>
               <p className="text-sm mt-1 text-slate-500">Peserta belum mengerjakan quiz ini</p>
             </div>
