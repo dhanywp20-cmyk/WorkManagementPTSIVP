@@ -408,7 +408,7 @@ function ProjectProgressPageInner() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      background: 'var(--halaman)',
+      background: 'var(--latar-halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
@@ -666,7 +666,7 @@ function ProjectProgressPageInner() {
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[1000]"
           onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}>
           <div className="w-full h-full flex flex-col overflow-hidden relative" style={{
-            background: 'var(--halaman)',
+            background: 'var(--latar-halaman)',
             backgroundSize: 'cover', backgroundPosition: 'center',
           }}>
             <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.10)' }} />

@@ -381,7 +381,7 @@ export function AnalyticsPlatform({
 
   // Auth screens
   if (auth === 'denied') return (
-    <div className="flex items-center justify-center h-screen" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
+    <div className="flex items-center justify-center h-screen" style={{background: 'var(--latar-halaman)',backgroundSize:'cover'}}>
       <div className="bg-white rounded-2xl p-8 text-center shadow-xl">
         <div className="text-5xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <p className="font-bold text-gray-800">Akses Ditolak</p>
@@ -390,7 +390,7 @@ export function AnalyticsPlatform({
   );
 
   if (auth === 'checking' || !user) return (
-    <div className="flex items-center justify-center h-screen bg-cover bg-center" style={{background: 'var(--halaman)'}}>
+    <div className="flex items-center justify-center h-screen bg-cover bg-center" style={{background: 'var(--latar-halaman)'}}>
       <div className="flex flex-col items-center gap-4 bg-white/85 backdrop-blur-md rounded-2xl px-10 py-8">
         <div className="w-10 h-10 rounded-full border-4 border-t-amber-500 border-amber-200 animate-spin" />
         <p className="text-gray-700 font-semibold text-sm">Memuat Analytics Platform...</p>
@@ -401,7 +401,7 @@ export function AnalyticsPlatform({
   // RENDER
   return (
     <div className={embedded ? 'flex flex-col w-full' : 'flex flex-col bg-cover bg-center bg-fixed'}
-      style={embedded ? undefined : { height: '100dvh', background: 'var(--halaman)' }}>
+      style={embedded ? undefined : { height: '100dvh', background: 'var(--latar-halaman)' }}>
 
       {embedded && controlledTab === undefined && (
         /* Embedded (di dashboard): tab bar ramping di dalam panel putih supaya tab

@@ -503,7 +503,7 @@ function FormReviewPageInner() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      background: 'var(--halaman)',
+      background: 'var(--latar-halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />

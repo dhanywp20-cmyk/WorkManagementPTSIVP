@@ -499,14 +499,14 @@ export default function KPITeamPage() {
 
   if (!isLoggedIn || !appReady) return (
     <div className="flex items-center justify-center min-h-screen"
-      style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+      style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <div className="w-8 h-8 border-[3px] rounded-full animate-spin" style={{ borderColor: 'rgba(2,132,199,0.2)', borderTopColor: '#0284c7' }} />
     </div>
   );
 
   if (scopeReady && scope.kind === 'none') return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-3"
-      style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+      style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <div className="flex flex-col items-center gap-3 px-8 py-6 rounded-2xl"
         style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.14)' }}>
         <span className="text-5xl"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -527,7 +527,7 @@ export default function KPITeamPage() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col"
-      style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+      style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <PageHeader icon="📊" title="KPI Team" subtitle="PTS IVP — Key Performance Indicators"
         color={KPI_COLOR} colorLight="#0369a1">
         {scope.kind === 'team' && (

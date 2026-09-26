@@ -239,7 +239,7 @@ function UnitMovementPageInner() {
   // Loading / Not Authenticated screen
 
   if (!appReady) return (
-    <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
+    <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--latar-halaman)',backgroundSize:'cover'}}>
       <div className="flex flex-col items-center gap-4">
         <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shadow-xl" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}><Ikon nama="🚚" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <div className="w-10 h-10 rounded-full" style={{border:'3px solid rgba(245,158,11,0.25)',borderTopColor:'#f59e0b',animation:'spin 0.8s linear infinite'}}/>
@@ -250,7 +250,7 @@ function UnitMovementPageInner() {
   );
 
   if (!isLoggedIn) return (
-    <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
+    <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--latar-halaman)',backgroundSize:'cover'}}>
       <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full mx-4">
         <div className="text-4xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <h2 className="font-black text-gray-800 text-lg">Sesi Tidak Ditemukan</h2>
@@ -265,7 +265,7 @@ function UnitMovementPageInner() {
   );
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-cover bg-center bg-fixed" style={{background: 'var(--halaman)'}}>
+    <div className="h-screen overflow-hidden flex flex-col bg-cover bg-center bg-fixed" style={{background: 'var(--latar-halaman)'}}>
 
       {viewLog&&<ViewModal log={viewLog} onClose={()=>setViewLog(null)}/>}
       {editLog!==undefined&&<AddEditModal log={editLog} currentUser={currentUser!} teamMembers={teamMembers}

@@ -77,6 +77,12 @@ if (typeof document !== 'undefined') {
   queueMicrotask(() => tulisWarnaKeCSS());
 }
 let divisiSekarang: string[] = bacaSimpanan<string[]>(SIMPAN_DIVISI) ?? DIVISI_BAWAAN;
+// Halaman modul yang dibuka langsung (tab baru, aplikasi Android) belum punya
+// salinan merek di sessionStorage - muat sekali per tab. Yang sudah punya
+// (dibuka dari dashboard di tab yang sama) tidak menambah query sama sekali.
+if (typeof window !== 'undefined' && bacaSimpanan(SIMPAN_MEREK) === null) {
+  queueMicrotask(() => { void muatMerek(); });
+}
 
 /** Merek yang sedang berlaku. Selalu lengkap - field yang tidak diatur diisi bawaan. */
 export function merek(): Merek { return merekSekarang; }
@@ -356,6 +362,15 @@ export function tulisWarnaKeCSS(m: Merek = merekSekarang): void {
   akar.style.setProperty('--merek-utama-2', m.warnaUtama2);
   akar.style.setProperty('--merek-aksen', m.warnaAksen);
   akar.style.setProperty('--merek-utama-tembus', warnaTembus(m.warnaUtama, 0.1));
+  // Latar SEMUA halaman modul (bukan hanya layar dashboard) mengikuti pilihan
+  // "Latar Dashboard" di pengaturan merek. Gambar di-cache browser 1 tahun,
+  // jadi tiap perangkat cukup mengunduhnya sekali.
+  if (m.latarDasbor === 'gambar' && m.gambarLatarDasbor) {
+    akar.style.setProperty('--latar-halaman',
+      `var(--halaman) url("${m.gambarLatarDasbor.replace(/"/g, '%22')}") center / cover no-repeat fixed`);
+  } else {
+    akar.style.removeProperty('--latar-halaman');
+  }
 }
 
 // Jembatan React

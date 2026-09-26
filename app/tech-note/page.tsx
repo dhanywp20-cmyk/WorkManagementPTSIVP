@@ -684,7 +684,7 @@ function TechNotePageInner() {
 
   return (
     <div className="flex flex-col h-screen font-sans bg-gray-50"
-      style={{ background: 'var(--halaman)', backgroundSize:'cover', backgroundPosition:'center', backgroundAttachment:'fixed' }}>
+      style={{ background: 'var(--latar-halaman)', backgroundSize:'cover', backgroundPosition:'center', backgroundAttachment:'fixed' }}>
 
       {/* ── Top Nav ── */}
       <header className="shrink-0 sticky top-0 z-30 w-full"

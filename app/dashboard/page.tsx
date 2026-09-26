@@ -849,7 +849,7 @@ export default function Dashboard() {
   // LOADING
   if (loading) {
     return (
-      <div className="flex items-center justify-center bg-cover bg-center bg-fixed" style={{ background: 'var(--halaman)', minHeight: '100dvh' }}>
+      <div className="flex items-center justify-center bg-cover bg-center bg-fixed" style={{ background: 'var(--latar-halaman)', minHeight: '100dvh' }}>
         <div className="flex flex-col items-center gap-4 px-10 py-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
           <div className="w-12 h-12 rounded-full border-4 border-t-rose-600 border-rose-200 animate-spin" />
           <p className="text-slate-700 font-semibold">Memuat portal...</p>

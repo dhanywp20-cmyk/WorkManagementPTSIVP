@@ -29,6 +29,8 @@
 
   /* Warna semantik - cermin WARNA di lib/desain.ts (ubah bersamaan). */
   --halaman:         #f3f5f8;
+  /* Latar halaman modul: warna netral, atau gambar merek (lib/merek.ts). */
+  --latar-halaman:   var(--halaman);
   --permukaan:       #ffffff;
   --permukaan-redam: #f8fafc;
   --garis:           #e2e8f0;

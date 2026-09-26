@@ -978,7 +978,7 @@ export default function IncentivePTSPage() {
   const hal = usePaginasi(filteredProjects);
 
   if (!appReady) return (
-    <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="flex flex-col items-center gap-3 bg-white/90 rounded-2xl px-8 py-6 shadow-xl">
         <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#f43f5e' }} />
         <p className="text-slate-500 text-sm font-semibold">Memuat Incentive PTS...</p>
@@ -1012,7 +1012,7 @@ export default function IncentivePTSPage() {
   const thCls = 'px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200';
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+    <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
       <Toast notif={toast} />
 
