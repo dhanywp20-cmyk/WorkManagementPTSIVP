@@ -1,0 +1,76 @@
+name: Android APK
+
+# APK = Trusted Web Activity yang membuka web produksi. Web baru TIDAK butuh
+# APK baru; rilis APK hanya saat android/ berubah (naikkan version.properties).
+on:
+  push:
+    branches: [main]
+    paths: ['android/**', '.github/workflows/android.yml']
+  pull_request:
+    paths: ['android/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Siapkan kunci rilis
+        id: kunci
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/rilis.jks"
+            echo "ada=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Secret ANDROID_KEYSTORE_BASE64 belum diisi - hanya build debug, APK tidak dipublikasikan."
+            echo "ada=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build APK rilis
+        if: steps.kunci.outputs.ada == '1'
+        env:
+          KEYSTORE_PATH: ${{ runner.temp }}/rilis.jks
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: gradle -p android assembleRelease --no-daemon
+
+      - name: Build APK debug (tanpa kunci)
+        if: steps.kunci.outputs.ada != '1'
+        run: gradle -p android assembleDebug --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: android/app/build/outputs/apk/**/*.apk
+
+      # Satu nama berkas tetap -> yang tersedia di Profil selalu versi terbaru.
+      - name: Publikasikan ke public/android
+        if: steps.kunci.outputs.ada == '1' && github.event_name != 'pull_request'
+        run: |
+          set -e
+          VC=$(grep '^versionCode=' android/version.properties | cut -d= -f2)
+          VN=$(grep '^versionName=' android/version.properties | cut -d= -f2)
+          mkdir -p public/android
+          cp android/app/build/outputs/apk/release/app-release.apk public/android/work-management.apk
+          UKURAN=$(stat -c%s public/android/work-management.apk)
+          printf '{"versionName":"%s","versionCode":%s,"ukuran":%s,"dirilis":"%s"}\n' \
+            "$VN" "$VC" "$UKURAN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > public/android/versi.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/android
+          if git diff --cached --quiet; then echo "Tidak ada perubahan"; exit 0; fi
+          git commit -m "APK Android v$VN ($VC) [skip ci]"
+          git push

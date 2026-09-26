@@ -1,0 +1,51 @@
+plugins { id 'com.android.application' }
+
+def versi = new Properties()
+file('../version.properties').withInputStream { versi.load(it) }
+
+// URL web yang dibuka aplikasi. Satu tempat - ikut dipakai assetlinks.
+def HOST = 'work-management-ptsivp.vercel.app'
+
+android {
+    namespace 'id.ptsivp.workmanagement'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'id.ptsivp.workmanagement'
+        minSdk 21
+        targetSdk 34
+        versionCode versi.getProperty('versionCode').toInteger()
+        versionName versi.getProperty('versionName')
+        manifestPlaceholders = [host: HOST, startUrl: "https://${HOST}/dashboard"]
+        resValue 'string', 'asset_statements',
+            "[{\"relation\":[\"delegate_permission/common.handle_all_urls\"],\"target\":{\"namespace\":\"web\",\"site\":\"https://${HOST}\"}}]"
+    }
+
+    // Kunci rilis dari secret CI (ANDROID_KEYSTORE_BASE64 / _PASSWORD) - tidak
+    // pernah disimpan di repo. Tanpa kunci, hanya build debug yang bisa dibuat.
+    def jalurKunci = System.getenv('KEYSTORE_PATH')
+    signingConfigs {
+        if (jalurKunci) {
+            rilis {
+                storeFile file(jalurKunci)
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias 'ptsivp'
+                keyPassword System.getenv('KEYSTORE_PASSWORD')
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (jalurKunci) signingConfig signingConfigs.rilis
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}

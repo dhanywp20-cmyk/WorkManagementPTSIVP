@@ -12,6 +12,7 @@ import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { statusInstalasiPWA, subscribeInstallPWA, pasangAplikasiPWA, type StatusInstallPWA } from '@/lib/pwa-install';
 import { useMerek } from '@/lib/merek';
 import { InstallGuideModal } from './InstallGuideModal';
+import { UnduhApk } from './UnduhApk';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // UserProfileModal
@@ -606,6 +607,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       </button>
                     </>
                   )}
+                  <UnduhApk />
                 </div>
               </Kartu>
 
