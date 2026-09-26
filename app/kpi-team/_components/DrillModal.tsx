@@ -2,7 +2,6 @@
 
 import React from 'react';
 
-import * as XLSX from 'xlsx-js-style';
 
 import { MonthBarChart, TrendBadge, ModalPortal } from '@/components/shared';
 

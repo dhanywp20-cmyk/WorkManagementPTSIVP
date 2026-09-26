@@ -17,8 +17,6 @@ import {
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
-import { exportSummaryIncentive } from './_components/exportPengajuan';
-import { exportInsentifSaya } from './_components/exportInsentifSaya';
 import { setAksesIncentive, setBrandScopeIncentive } from '@/lib/incentive-akses-api';
 import {
   bisaKonfigPenuh, bisaInputNominal, tingkatAkses,
@@ -692,7 +690,7 @@ export default function IncentivePTSPage() {
         yang masih perlu disiapkan Admin di tab Project.
       */
       const projectsAktif = projects.filter(p => tranches.some(t => t.project_id === p.id));
-      await exportSummaryIncentive({
+      await (await import('./_components/exportPengajuan')).exportSummaryIncentive({
         projects: projectsAktif, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[],
         supportsMap, managerName, managerUserId, year: summaryExportYear,
       });
@@ -715,7 +713,7 @@ export default function IncentivePTSPage() {
     setExportingSaya(true);
     try {
       const projectById = new Map(projects.map(p => [p.id, p]));
-      await exportInsentifSaya({
+      await (await import('./_components/exportInsentifSaya')).exportInsentifSaya({
         splits: mySplitsInYear,
         trancheById,
         projectById,
@@ -742,7 +740,7 @@ export default function IncentivePTSPage() {
       const { managerUserId, managerName, supportsMap } = await siapkanDataExport();
       const idsBatch = [...new Set(tranches.filter(t => t.payment_year === tahunAktif).map(t => t.project_id))];
       const projectsBatch = projects.filter(p => idsBatch.includes(p.id));
-      await exportSummaryIncentive({
+      await (await import('./_components/exportPengajuan')).exportSummaryIncentive({
         projects: projectsBatch, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[],
         supportsMap, managerName, managerUserId, projectIds: idsBatch, batchYearLabel: tahunAktif,
       });

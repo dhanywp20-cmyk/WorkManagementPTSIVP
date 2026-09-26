@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import * as XLSX from 'xlsx-js-style';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, ListEmptyState } from '@/components/shared';
@@ -13,7 +12,6 @@ import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { hitungSkorKPI, KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
 import { bacaPicPiket } from '@/app/picket-showroom/_components/shared';
 import { ambilRekapLCTahunan, REKAP_LC_KOSONG } from '@/lib/kpi-lc-tahunan';
-import { exportKPIExcel } from './_components/ekspor-kpi';
 import { DrillModal, ProgressBar } from './_components/DrillModal';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
@@ -560,7 +558,7 @@ export default function KPITeamPage() {
               </svg>
               Pengaturan KPI
             </button>
-            <button onClick={() => exportKPIExcel(sortedMembers, period, kpiSettings, `${kpiYear}`)}
+            <button onClick={async () => { const { exportKPIExcel } = await import('./_components/ekspor-kpi'); exportKPIExcel(sortedMembers, period, kpiSettings, `${kpiYear}`); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
               style={{ background: KPI_COLOR, borderColor: KPI_COLOR, color: '#fff', boxShadow: `0 2px 8px ${KPI_COLOR}40` }}>
               <IkonTeks nama="⬇" />Export KPI Excel
