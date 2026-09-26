@@ -51,20 +51,22 @@ jobs:
         if: steps.kunci.outputs.ada != '1'
         run: gradle -p android assembleDebug --no-daemon
 
-      # Build manual tanpa kunci: salinan APK debug ke branch apk-uji supaya
-      # bisa diambil lewat git (mis. untuk dicoba langsung di HP).
-      - name: Salin APK uji ke branch apk-uji
+      # Build manual tanpa kunci: salinan APK debug ke TAG apk-uji supaya bisa
+      # diambil lewat git. Tag, bukan branch - Vercel mem-build setiap branch
+      # (gagal & membuang jatah build), tapi tidak mem-build tag.
+      - name: Salin APK uji ke tag apk-uji
         if: steps.kunci.outputs.ada != '1' && github.event_name == 'workflow_dispatch'
         run: |
           set -e
           cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/work-management-debug.apk"
           cd "$RUNNER_TEMP" && rm -rf uji && mkdir uji && cd uji
-          git init -q -b apk-uji
+          git init -q -b uji
           cp ../work-management-debug.apk .
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add . && git commit -qm "APK uji (debug) dari ${GITHUB_SHA::7}"
-          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" apk-uji
+          git tag -f apk-uji
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" refs/tags/apk-uji
 
       - uses: actions/upload-artifact@v4
         with:
