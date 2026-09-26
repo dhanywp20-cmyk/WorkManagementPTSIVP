@@ -1,6 +1,6 @@
 name: Android APK
 
-# APK = Trusted Web Activity yang membuka web produksi. Web baru TIDAK butuh
+# APK native (WebView + FCM) yang membuka web produksi. Web baru TIDAK butuh
 # APK baru; rilis APK hanya saat android/ berubah (naikkan version.properties).
 on:
   push:

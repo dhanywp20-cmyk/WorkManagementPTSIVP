@@ -1,9 +1,14 @@
 plugins { id 'com.android.application' }
 
+// Firebase (notifikasi) aktif bila android/app/google-services.json ada.
+// Tanpa berkas itu aplikasi tetap bisa dibangun & dipakai, hanya tanpa push.
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}
+
 def versi = new Properties()
 file('../version.properties').withInputStream { versi.load(it) }
 
-// URL web yang dibuka aplikasi. Satu tempat - ikut dipakai assetlinks.
 def HOST = 'work-management-ptsivp.vercel.app'
 
 android {
@@ -12,14 +17,13 @@ android {
 
     defaultConfig {
         applicationId 'id.ptsivp.workmanagement'
-        minSdk 21
+        minSdk 26
         targetSdk 34
         versionCode versi.getProperty('versionCode').toInteger()
         versionName versi.getProperty('versionName')
-        manifestPlaceholders = [host: HOST, startUrl: "https://${HOST}/dashboard"]
-        resValue 'string', 'asset_statements',
-            "[{\"relation\":[\"delegate_permission/common.handle_all_urls\"],\"target\":{\"namespace\":\"web\",\"site\":\"https://${HOST}\"}}]"
+        buildConfigField 'String', 'APP_HOST', "\"${HOST}\""
     }
+    buildFeatures { buildConfig true }
 
     // Kunci rilis dari secret CI (ANDROID_KEYSTORE_BASE64 / _PASSWORD) - tidak
     // pernah disimpan di repo. Tanpa kunci, hanya build debug yang bisa dibuat.
@@ -47,5 +51,6 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+    implementation 'androidx.core:core:1.13.1'
+    implementation 'com.google.firebase:firebase-messaging:24.1.0'
 }

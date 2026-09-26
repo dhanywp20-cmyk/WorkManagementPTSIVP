@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Tema" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@color/utama</item>
+        <item name="android:navigationBarColor">@color/putih</item>
+        <item name="android:windowBackground">@color/putih</item>
+    </style>
+</resources>
