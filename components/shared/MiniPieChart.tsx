@@ -144,7 +144,7 @@ export function MiniPieChart({
     <Kartu title={title} icon={icon}>
       {/* flex-wrap: di kartu sempit legenda turun ke bawah donat, bukan
           menyusut sampai hilang (terukur dulu 0px pada kartu 78-108px). */}
-      <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-5">
         <svg role="img" aria-label={`${title}: ${ringkasan}`} width="120" height="120" viewBox="0 0 120 120"
           className="flex-shrink-0 w-[64px] h-[64px] sm:w-[116px] sm:h-[116px]">
           {slices.map(s => s.penuh ? (
