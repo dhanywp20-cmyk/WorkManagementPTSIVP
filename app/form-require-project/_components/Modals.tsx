@@ -11,7 +11,7 @@ import {
   PIE_COLORS,
 } from './shared';
 import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
-import { isAssignablePTSTeam, bolehDitugaskan } from '@/lib/teams';
+import { isAssignablePTSTeam, bolehDitugaskanOleh, adalahAdminMurni } from '@/lib/teams';
 import { tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import { appLink } from '@/lib/app-url';
@@ -66,11 +66,13 @@ export function AssignPTSModal({
   useEffect(() => {
     // Fetch Team PTS (hanya team assignable = IVP/MVI, UMP dikecualikan - lib/teams.ts)
     supabase.from('users')
-      .select('id, full_name, role, team_type, phone_number, sales_division, bisa_ditugaskan')
+      .select('id, full_name, role, team_type, phone_number, sales_division, jabatan, bisa_ditugaskan')
       .in('role', ['team_pts', 'team'])
       .then(({ data }: { data: User[] | null }) => {
         if (!data) return;
-        const anggota = data.filter(bolehDitugaskan);
+        // Manager hanya ditawarkan bila penugasnya Admin murni.
+        const penugasAdmin = adalahAdminMurni(currentUser);
+        const anggota = data.filter(u => bolehDitugaskanOleh(u, penugasAdmin));
         setTeamMembers(anggota);
         // Pra-pilih handler yang sudah tercatat, kalau orangnya memang ketemu.
         // Dicocokkan lewat uuid dulu; nama hanya cadangan untuk baris lama.
@@ -87,7 +89,7 @@ export function AssignPTSModal({
         .eq('jabatan', 'Supervisor')
         .then(({ data }: { data: { id: string; full_name: string; team_type?: string; phone_number?: string }[] | null }) => { if (data) setSupervisors(data.filter(s => isAssignablePTSTeam(s.team_type))); });
     }
-  }, [allowSupervisorRoute, req, roomIdx]);
+  }, [allowSupervisorRoute, req, roomIdx, currentUser]);
 
   // Orang yang akan dicatat sebagai handler. 'SELF' berarti yang membuka popup
   // ini mengerjakannya sendiri - jalan keluar saat timnya penuh.

@@ -12,6 +12,8 @@ export interface User {
   sales_division?: string;
   phone_number?: string;
   allowed_menus?: string[];
+  jabatan?: string | null;
+  bisa_ditugaskan?: boolean | null;
 }
 
 export interface ProjectRequest {

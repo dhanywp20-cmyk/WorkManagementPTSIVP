@@ -11,7 +11,7 @@ import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { penerimaAdmin, penerimaAdminBernomor } from "@/lib/penerima-admin";
 import { logAudit } from "@/lib/audit";
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan } from "@/lib/admin-edit";
-import { isAssignablePTSTeam, bolehDitugaskan } from "@/lib/teams";
+import { isAssignablePTSTeam, bolehDitugaskanOleh, adalahAdminMurni } from "@/lib/teams";
 import { hasFullAccess } from "@/lib/constants";
 import { idDariNama, kutipNilai, tanpaIdentitas, cobaIdentitas } from "@/lib/identitas";
 import { resolveBrandInternals, type Brand } from "@/lib/brand-routing";
@@ -440,6 +440,9 @@ function TicketingSystemInner() {
           team_type: u.team_type || "Team PTS IVP",
           phone_number: u.phone_number,
           jabatan: u.jabatan,
+          // Wajib ikut dipetakan - tanpa ini bolehDitugaskan selalu melihat
+          // undefined (= boleh) dan toggle Admin Panel tidak berlaku di sini.
+          bisa_ditugaskan: u.bisa_ditugaskan,
         }));
       }
       const activeUser = userOverride !== undefined ? userOverride : currentUser;
@@ -2349,8 +2352,10 @@ function TicketingSystemInner() {
   //  Dulu `m.jabatan !== "Manager"` dipaku di sini. Diganti toggle per akun
 //  (lihat bolehDitugaskan di lib/teams.ts): perusahaan lain bisa saja
 //  Manager-nya memang ikut mengerjakan, dan itu harus bisa diatur dari
-//  Admin Panel tanpa menyunting kode.
-  const teamPTSMembers = useMemo(() => teamMembers.filter(bolehDitugaskan), [teamMembers]);
+//  Admin Panel tanpa menyunting kode. Manager hanya ditawarkan ke Admin
+//  murni - lihat bolehDitugaskanOleh.
+  const penugasAdmin = adalahAdminMurni(currentUser);
+  const teamPTSMembers = useMemo(() => teamMembers.filter((m) => bolehDitugaskanOleh(m, penugasAdmin)), [teamMembers, penugasAdmin]);
   const teamServicesMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team Services" && m.jabatan !== "Manager"), [teamMembers]);
   // Supervisor PTS - utk opsi "Route ke Supervisor" saat approve (tahap supervisor_assign).
   const supervisorMembers = useMemo(() => teamMembers.filter((m) => isAssignablePTSTeam(m.team_type) && m.jabatan === "Supervisor"), [teamMembers]);

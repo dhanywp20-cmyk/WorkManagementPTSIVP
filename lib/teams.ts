@@ -64,3 +64,29 @@ export function bolehDitugaskan(u: {
   if (!isAssignablePTSTeam(u.team_type)) return false;
   return u.bisa_ditugaskan !== false;
 }
+
+/**
+ * Boleh DITAWARKAN ke penugas ini? - bolehDitugaskan ditambah aturan Manager.
+ *
+ * Manager hanya boleh ditugaskan oleh Admin (role admin/superadmin murni).
+ * Team, Supervisor, dan bawahan lain tidak boleh meng-assign pekerjaan ke
+ * atasannya - nama Manager tidak ditawarkan sama sekali di dropdown mereka.
+ * Untuk Admin, Manager tetap muncul walau toggle bisa_ditugaskan-nya mati:
+ * toggle itu dipakai untuk menyembunyikan Manager dari bawahan, bukan dari
+ * Admin. Anggota non-Manager tetap mengikuti bolehDitugaskan apa adanya.
+ *
+ * Manager yang ingin mengerjakan sendiri memakai opsi "Saya kerjakan
+ * sendiri" di masing-masing form, bukan lewat daftar ini.
+ */
+export function bolehDitugaskanOleh(
+  u: { team_type?: string | null; bisa_ditugaskan?: boolean | null; jabatan?: string | null },
+  penugasAdmin: boolean,
+): boolean {
+  if (u.jabatan === 'Manager') return penugasAdmin && isAssignablePTSTeam(u.team_type);
+  return bolehDitugaskan(u);
+}
+
+/** Admin murni (bukan Full Access) - penentu siapa yang boleh assign ke Manager. */
+export function adalahAdminMurni(u: { role?: string | null } | null | undefined): boolean {
+  return ['admin', 'superadmin'].includes((u?.role ?? '').toLowerCase());
+}
