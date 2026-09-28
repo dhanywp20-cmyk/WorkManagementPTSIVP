@@ -128,6 +128,7 @@ export interface TeamMember {
   role: string;
   team_type: string;
   jabatan?: string | null;
+  bisa_ditugaskan?: boolean | null;
 }
 
 /**

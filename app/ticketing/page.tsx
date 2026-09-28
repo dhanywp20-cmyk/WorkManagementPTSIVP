@@ -11,7 +11,7 @@ import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
 import { penerimaAdmin, penerimaAdminBernomor } from "@/lib/penerima-admin";
 import { logAudit } from "@/lib/audit";
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan } from "@/lib/admin-edit";
-import { isAssignablePTSTeam, bolehDitugaskan } from "@/lib/teams";
+import { isAssignablePTSTeam, bolehDitugaskanOleh, adalahAdminMurni } from "@/lib/teams";
 import { hasFullAccess } from "@/lib/constants";
 import { idDariNama, kutipNilai, tanpaIdentitas, cobaIdentitas } from "@/lib/identitas";
 import { resolveBrandInternals, type Brand } from "@/lib/brand-routing";
@@ -440,6 +440,9 @@ function TicketingSystemInner() {
           team_type: u.team_type || "Team PTS IVP",
           phone_number: u.phone_number,
           jabatan: u.jabatan,
+          // Wajib ikut dipetakan - tanpa ini bolehDitugaskan selalu melihat
+          // undefined (= boleh) dan toggle Admin Panel tidak berlaku di sini.
+          bisa_ditugaskan: u.bisa_ditugaskan,
         }));
       }
       const activeUser = userOverride !== undefined ? userOverride : currentUser;
@@ -2257,12 +2260,20 @@ function TicketingSystemInner() {
     const solved = tickets.filter((t) => t.status === "Solved").length;
     const overdue = tickets.filter((t) => isTicketOverdue(t) && t.status !== "Solved").length;
     const solvedOverdue = tickets.filter((t) => isTicketOverdue(t) && t.status === "Solved").length;
+    /*
+      Irisan donut harus saling lepas. Kartu statistik boleh tumpang-tindih
+      (Solved sudah termasuk Solved Overdue; Pending/In Progress sudah termasuk
+      yang Overdue), tapi di donut itu membuat tiket terhitung dua kali -
+      totalnya pernah tampil 104 padahal tiketnya 94.
+    */
+    const pendingTepat = tickets.filter((t) => adalahPending(t.status) && !isTicketOverdue(t)).length;
+    const processingTepat = tickets.filter((t) => t.status === "In Progress" && !isTicketOverdue(t)).length;
     return {
       total, pending, processing, solved, overdue, solvedOverdue,
       statusData: [
-        { name: "Pending", value: pending, color: "#FCD34D" },
-        { name: "In Progress", value: processing, color: "#60A5FA" },
-        { name: "Solved", value: solved, color: "#34D399" },
+        { name: "Pending", value: pendingTepat, color: "#FCD34D" },
+        { name: "In Progress", value: processingTepat, color: "#60A5FA" },
+        { name: "Solved", value: solved - solvedOverdue, color: "#34D399" },
         ...(overdue > 0 ? [{ name: "Overdue", value: overdue, color: "#EF4444" }] : []),
         ...(solvedOverdue > 0 ? [{ name: "Solved (Overdue)", value: solvedOverdue, color: "#9333ea" }] : []),
       ].filter((d) => d.value > 0),
@@ -2341,8 +2352,10 @@ function TicketingSystemInner() {
   //  Dulu `m.jabatan !== "Manager"` dipaku di sini. Diganti toggle per akun
 //  (lihat bolehDitugaskan di lib/teams.ts): perusahaan lain bisa saja
 //  Manager-nya memang ikut mengerjakan, dan itu harus bisa diatur dari
-//  Admin Panel tanpa menyunting kode.
-  const teamPTSMembers = useMemo(() => teamMembers.filter(bolehDitugaskan), [teamMembers]);
+//  Admin Panel tanpa menyunting kode. Manager hanya ditawarkan ke Admin
+//  murni - lihat bolehDitugaskanOleh.
+  const penugasAdmin = adalahAdminMurni(currentUser);
+  const teamPTSMembers = useMemo(() => teamMembers.filter((m) => bolehDitugaskanOleh(m, penugasAdmin)), [teamMembers, penugasAdmin]);
   const teamServicesMembers = useMemo(() => teamMembers.filter((m) => m.team_type === "Team Services" && m.jabatan !== "Manager"), [teamMembers]);
   // Supervisor PTS - utk opsi "Route ke Supervisor" saat approve (tahap supervisor_assign).
   const supervisorMembers = useMemo(() => teamMembers.filter((m) => isAssignablePTSTeam(m.team_type) && m.jabatan === "Supervisor"), [teamMembers]);

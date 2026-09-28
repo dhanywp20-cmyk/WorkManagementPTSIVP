@@ -281,11 +281,11 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                   Admin Panel ikut muncul tanpa perlu deploy - sebelumnya
                   anggotanya tidak pernah bisa dipilih sama sekali.
 
-                  Manager dikecualikan di semua grup - bukan anggota tim
-                  biasa yang di-assign tugas.
+                  Manager hanya muncul bila penugasnya Admin - teamUsers yang
+                  diterima di sini sudah disaring bolehDitugaskanOleh di page.tsx.
                 */}
                 {kelompokDitugaskan.map(k => {
-                  const anggota = teamUsers.filter(u => u.team_type === k.nama && u.jabatan !== 'Manager');
+                  const anggota = teamUsers.filter(u => u.team_type === k.nama);
                   if (anggota.length === 0) return null;
                   return (
                     <optgroup key={k.nama} label={k.label}>
@@ -300,7 +300,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 <span className="text-2xl"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-sm font-bold text-cyan-700">
-                    {teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget]).length} anggota
+                    {teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget] && u.jabatan !== 'Manager').length} anggota
                   </p>
                   <p className="text-xs text-cyan-600">
                     Akan membuat reminder untuk seluruh Tim {BULK_LABEL[bulkTarget]}
@@ -676,7 +676,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               suffix={(() => {
                 if (editingReminder) return undefined;
                 const dateCount = new Set([formData.due_date, ...extraDates].filter(Boolean)).size || 1;
-                const targetCount = bulkTarget !== 'none' ? teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget]).length : 1;
+                const targetCount = bulkTarget !== 'none' ? teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget] && u.jabatan !== 'Manager').length : 1;
                 const total = dateCount * targetCount;
                 return total > 1
                   ? `${total} Reminder (${dateCount} hari${targetCount > 1 ? ` × ${targetCount} orang` : ''})`

@@ -114,7 +114,8 @@ export function ApproveAssignModal({
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                 <option value="">-- Pilih Anggota Team PTS --</option>
                 <option value="SELF_MANAGER">Saya (Manager) kerjakan sendiri — Supervisor &amp; tim penuh</option>
-                {teamUsers.filter(u => u.jabatan !== 'Manager').map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
+                {/* Sudah disaring bolehDitugaskanOleh di page.tsx - Manager hanya untuk Admin. */}
+                {teamUsers.map(u => <option key={u.id} value={u.username}>{u.full_name}</option>)}
               </select>
             </div>
 

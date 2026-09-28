@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { hitungReviewMenggantung } from '@/lib/form-review-gate';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin, hasFullAccess } from '@/lib/constants';
-import { isAssignablePTSTeam, bolehDitugaskan } from '@/lib/teams';
+import { isAssignablePTSTeam, bolehDitugaskanOleh } from '@/lib/teams';
 import { namaKelompokCabang } from '@/lib/kelompok';
 import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { normalkanNama } from '@/lib/kelompok-insentif';
@@ -487,7 +487,10 @@ function ReminderSchedulePageInner() {
   const fetchTeamUsers = async () => {
     const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, telegram_chat_id, bisa_ditugaskan').order('full_name');
     // Hanya team assignable (IVP/MVI - UMP dikecualikan, lihat lib/teams.ts). Ubah di satu tempat itu utk tambah/kurangi team.
-    if (data) setTeamUsers(data.filter((u: TeamUser) => bolehDitugaskan(u) && u.role !== 'admin' && u.role !== 'superadmin'));
+    // Manager IKUT dimuat (bolehDitugaskanOleh(u, true)) - dibutuhkan untuk
+    // lookup WA saat Admin meng-assign Manager. Siapa yang DITAWARKAN di
+    // dropdown disaring terpisah lewat teamUsersDitawarkan di bawah.
+    if (data) setTeamUsers(data.filter((u: TeamUser) => bolehDitugaskanOleh(u, true) && u.role !== 'admin' && u.role !== 'superadmin'));
   };
 
   const fetchGuestUsers = async () => {
@@ -824,7 +827,8 @@ function ReminderSchedulePageInner() {
     if (bulkTarget !== 'none') {
       const teamTypeMap: Record<string, string> = { ivp: 'Team PTS IVP', mvi: 'Team PTS MVI', ump: 'Team PTS UMP' };
       const bulkLabelMap: Record<string, string> = { ivp: 'PTS IVP', mvi: 'PTS MVI', ump: 'PTS UMP' };
-      const targets = teamUsers.filter(u => u.team_type === teamTypeMap[bulkTarget]);
+      // Assign massal "Semua PTS ..." tidak pernah menyertakan Manager.
+      const targets = teamUsers.filter(u => u.team_type === teamTypeMap[bulkTarget] && u.jabatan !== 'Manager');
       if (targets.length === 0) { notify('error', 'Tidak ada anggota team yang ditemukan!'); return; }
       setSaving(true);
       const payloads = targets.flatMap(u => allDates.map(d => ({
@@ -1963,6 +1967,9 @@ function ReminderSchedulePageInner() {
   })();
 
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
+  // Yang ditawarkan di dropdown assign: Manager hanya untuk Admin murni -
+  // Team/Supervisor/bawahan tidak boleh meng-assign ke Manager.
+  const teamUsersDitawarkan = teamUsers.filter(u => bolehDitugaskanOleh(u, isAdmin));
   // Manager PTS (mis. Dhany, role 'team') berhak approve & assign di tahap
   // admin_review - sama seperti admin. Terdeteksi dari salah satu:
   //   1. Toggle "Full Access" aktif (lib/constants.ts hasFullAccess) - cara
@@ -2994,7 +3001,7 @@ jangan lupa peralatan & Semangat💪🏼
             setApproveTarget2={setApproveTarget2}
             approveSaving={approveSaving}
             handleApproveAssign={handleApproveAssign}
-            teamUsers={teamUsers}
+            teamUsers={teamUsersDitawarkan}
             onClose={() => { setApproveTarget(null); setApproveBatchSiblings([]); setApproveAssignTo(''); }}
             onBatal={() => { setApproveTarget(null); setApproveBatchSiblings([]); setApproveAssignTo(''); setApproveDate(''); setApproveTime(''); }}
           />
@@ -3007,7 +3014,7 @@ jangan lupa peralatan & Semangat💪🏼
             supervisorAssignBatchSiblings={supervisorAssignBatchSiblings}
             supervisorAssignTo={supervisorAssignTo}
             setSupervisorAssignTo={setSupervisorAssignTo}
-            teamUsers={teamUsers}
+            teamUsers={teamUsersDitawarkan}
             currentUser={currentUser}
             supervisorAssignSaving={supervisorAssignSaving}
             handleSupervisorAssignConfirm={handleSupervisorAssignConfirm}
@@ -3099,7 +3106,7 @@ jangan lupa peralatan & Semangat💪🏼
           formData={formData as ReminderForm}
           setFormData={setFormData as (data: ReminderForm) => void}
           saving={saving}
-          teamUsers={teamUsers}
+          teamUsers={teamUsersDitawarkan}
           guestUsers={guestUsers}
           bulkTarget={bulkTarget}
           onBulkTargetChange={setBulkTarget}

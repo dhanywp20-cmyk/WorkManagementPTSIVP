@@ -66,7 +66,12 @@ export function useNotifSoundAlarm() {
 
   const playIfAllowed = useCallback(() => {
     if (muted || !audioRef.current) return;
-    try { audioRef.current.currentTime = 0; void audioRef.current.play(); } catch { /* abaikan - jangan sampai galat audio memutus alur notifikasi */ }
+    /*
+      play() mengembalikan Promise - penolakannya (NotAllowedError saat user
+      belum berinteraksi dengan halaman) TIDAK tertangkap try/catch, jadi
+      harus ditangkap lewat .catch() supaya tidak jadi uncaught exception.
+    */
+    try { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => { /* autoplay ditolak - abaikan */ }); } catch { /* abaikan - jangan sampai galat audio memutus alur notifikasi */ }
   }, [muted]);
 
   return { muted, toggleMuted, playIfAllowed };

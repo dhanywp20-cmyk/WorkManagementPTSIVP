@@ -12,6 +12,7 @@ import { resolveBrandInternals, type Brand } from '@/lib/brand-routing';
 import { compressImage } from '@/lib/image-compress';
 import { MiniPieChart, LoadingScreen, ViewIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ConfirmDialog, SalesPicker, MobileListCard, MobileCardBadge, type ConfirmState, ListEmptyState, AuditTrailPanel, FlowSteps, StatCard, ModalPortal, Paginasi, usePaginasi } from '@/components/shared';
 import { hasFullAccess } from '@/lib/constants';
+import { bolehDitugaskanOleh } from '@/lib/teams';
 import { bandingkan, ringkasPerubahan, pesanWAPerubahan, type AdminField, type Perubahan } from '@/lib/admin-edit';
 import { penerimaAdminBernomor } from '@/lib/penerima-admin';
 import {
@@ -3633,9 +3634,9 @@ Hubungi Admin untuk info lebih lanjut.
                     </optgroup>
                   )}
                   <optgroup label="👥 Anggota Tim">
-                    {/* Dulu `u.jabatan !== 'Manager'` dipaku di sini juga. Diganti toggle
-                        per akun - lihat bolehDitugaskan di lib/teams.ts. */}
-                    {rosterPTS.filter(u => u.jabatan !== 'Supervisor' && u.bisa_ditugaskan !== false).map(u => (
+                    {/* Toggle per akun + aturan Manager (hanya Admin murni yang boleh
+                        meng-assign Manager) - lihat bolehDitugaskanOleh di lib/teams.ts. */}
+                    {rosterPTS.filter(u => u.jabatan !== 'Supervisor' && bolehDitugaskanOleh(u, isAdmin || isSuperAdmin)).map(u => (
                       <option key={u.id} value={u.id}>{u.full_name}</option>
                     ))}
                   </optgroup>
