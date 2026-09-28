@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
 import { hasFullAccess } from '@/lib/constants';
@@ -25,8 +25,22 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
+    /*
+      Area modul adalah iframe - klik di dalamnya tidak memicu mousedown di
+      dokumen induk, jadi panel tetap terbuka. Klik ke iframe memindahkan
+      fokus keluar dari window induk (blur), itu yang ditangkap di sini.
+      Escape juga ditangani supaya panel bisa ditutup dari keyboard.
+    */
+    const tutup = () => setOpen(false);
+    const saatEscape = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    window.addEventListener('blur', tutup);
+    document.addEventListener('keydown', saatEscape);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+      window.removeEventListener('blur', tutup);
+      document.removeEventListener('keydown', saatEscape);
+    };
   }, []);
 
   const formatTime = (ts: string) => {
@@ -126,7 +140,16 @@ interface NotificationBarProps {
   onNavigate: (internalUrl: string, title: string, refId?: string) => void;
 }
 
-export function NotificationBar({ currentUser, onNavigate }: NotificationBarProps) {
+export function NotificationBar({ currentUser: userProp, onNavigate }: NotificationBarProps) {
+  /*
+    Distabilkan berdasar ISI - dashboard memanggil setCurrentUser() dua kali
+    saat load (sesi tersimpan, lalu baris segar dari tabel users). Tanpa ini
+    fetchAll berganti identitas, sehingga semua query badge dan 5 channel
+    realtime di bawah dibongkar-pasang ulang tanpa ada data yang berubah.
+  */
+  const userKey = JSON.stringify(userProp);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const currentUser = useMemo(() => userProp, [userKey]);
   const [ticketNotifs, setTicketNotifs]   = useState<NotificationItem[]>([]);
   const [requireNotifs, setRequireNotifs] = useState<NotificationItem[]>([]);
   const [reminderNotifs, setReminderNotifs] = useState<NotificationItem[]>([]);

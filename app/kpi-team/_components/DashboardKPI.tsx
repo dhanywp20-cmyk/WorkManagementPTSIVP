@@ -4,7 +4,7 @@ import { MiniSpark, DonutChart } from '@/components/shared';
 //  Monitoring) - satu-satunya cara memastikan keduanya benar-benar senada,
 //  bukan "mirip" karena angkanya kebetulan disalin.
 import { UBIN, BAYANG_UBIN, RelAksen } from '@/app/dashboard/_components/widgets/primitives';
-import React, { useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { hasFullAccess } from '@/lib/constants';
@@ -704,7 +704,17 @@ function ScopeBadge({ scope }: { scope: Scope }) {
 
 interface DashboardKPIProps { currentUser: User; }
 
-export default function DashboardKPI({ currentUser }: DashboardKPIProps) {
+export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProps) {
+  /*
+    Identitas objek currentUser distabilkan berdasar ISINYA. Dashboard memanggil
+    setCurrentUser() dua kali saat load (sesi tersimpan, lalu baris segar dari
+    tabel users) - isinya sama tapi objeknya baru, sehingga efek resolve-scope
+    jalan ulang, scope jadi objek baru, dan fetchKPI/fetchAudit (~30 query,
+    termasuk seluruh tabel tickets & reminders) terulang tiap buka dashboard.
+  */
+  const userKey = JSON.stringify(userProp);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const currentUser = useMemo(() => userProp, [userKey]);
   const [scope, setScope]           = useState<Scope>({ kind: 'none' });
   const [scopeReady, setScopeReady] = useState(false);
   const [kpi, setKpi]               = useState<KPIData | null>(null);

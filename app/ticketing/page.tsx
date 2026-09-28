@@ -2257,12 +2257,20 @@ function TicketingSystemInner() {
     const solved = tickets.filter((t) => t.status === "Solved").length;
     const overdue = tickets.filter((t) => isTicketOverdue(t) && t.status !== "Solved").length;
     const solvedOverdue = tickets.filter((t) => isTicketOverdue(t) && t.status === "Solved").length;
+    /*
+      Irisan donut harus saling lepas. Kartu statistik boleh tumpang-tindih
+      (Solved sudah termasuk Solved Overdue; Pending/In Progress sudah termasuk
+      yang Overdue), tapi di donut itu membuat tiket terhitung dua kali -
+      totalnya pernah tampil 104 padahal tiketnya 94.
+    */
+    const pendingTepat = tickets.filter((t) => adalahPending(t.status) && !isTicketOverdue(t)).length;
+    const processingTepat = tickets.filter((t) => t.status === "In Progress" && !isTicketOverdue(t)).length;
     return {
       total, pending, processing, solved, overdue, solvedOverdue,
       statusData: [
-        { name: "Pending", value: pending, color: "#FCD34D" },
-        { name: "In Progress", value: processing, color: "#60A5FA" },
-        { name: "Solved", value: solved, color: "#34D399" },
+        { name: "Pending", value: pendingTepat, color: "#FCD34D" },
+        { name: "In Progress", value: processingTepat, color: "#60A5FA" },
+        { name: "Solved", value: solved - solvedOverdue, color: "#34D399" },
         ...(overdue > 0 ? [{ name: "Overdue", value: overdue, color: "#EF4444" }] : []),
         ...(solvedOverdue > 0 ? [{ name: "Solved (Overdue)", value: solvedOverdue, color: "#9333ea" }] : []),
       ].filter((d) => d.value > 0),
