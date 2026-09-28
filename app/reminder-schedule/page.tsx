@@ -2899,7 +2899,7 @@ jangan lupa peralatan & Semangat💪🏼
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      background: 'var(--halaman)',
+      background: 'var(--latar-halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.08)' }} />

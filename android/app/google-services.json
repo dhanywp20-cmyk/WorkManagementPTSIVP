@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "978640362908",
+    "project_id": "work-management-pts-ivp",
+    "storage_bucket": "work-management-pts-ivp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:978640362908:android:1ca28417fddf4a79917c59",
+        "android_client_info": {
+          "package_name": "id.ptsivp.workmanagement"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB6WIt_RAA0V3xgYvFq6UuqB_MHz8vS5dc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1779,7 +1779,7 @@ Hubungi Admin untuk info lebih lanjut.
   const isFileType = (type: string) => type.startsWith('image/');
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ background: 'var(--halaman)' }}>
+    <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ background: 'var(--latar-halaman)' }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <NotifToast />
 
@@ -3961,7 +3961,7 @@ export default function Page() {
   if (!currentUser) return (
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center"
-      style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.4)' }} />
       <div className="relative z-10 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center"
         style={{ border: '2px solid rgba(13,148,136,0.3)' }}>

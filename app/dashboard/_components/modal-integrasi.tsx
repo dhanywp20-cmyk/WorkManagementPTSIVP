@@ -1103,6 +1103,23 @@ export function IntegrasiInline() {
                     <PesanKotak pesan={pushPesan} />
                   </div>
                 </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+                  <div className="px-4 py-3 border-b border-slate-100">
+                    <h3 className="text-sm font-bold text-slate-700">Aplikasi Android (Firebase)</h3>
+                    <p className="text-[11.5px] text-slate-400 mt-0.5">
+                      Notifikasi + bunyi di aplikasi Android walau aplikasinya ditutup. Terpisah dari push browser di atas.
+                    </p>
+                  </div>
+                  <div className="p-3">
+                    <BlokToken
+                      judul="Service account JSON" kunci="push.fcm_service_account" status={rahasia['push.fcm_service_account']}
+                      onSimpan={n => simpanRahasia('push.fcm_service_account', n)}
+                      onHapus={() => hapusRahasia('push.fcm_service_account')}
+                      petunjuk={<>Firebase Console → Project settings → Service accounts → <b>Generate new private key</b>.
+                        Tempel seluruh isi berkas JSON-nya.</>} />
+                  </div>
+                </div>
               </div>
 
               <div className="rounded-xl border border-slate-200 p-3.5" style={{ background: '#f8fafc' }}>

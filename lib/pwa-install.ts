@@ -15,8 +15,14 @@ let promptEvent: any = null;
 let statusTerpasang = false;
 const pendengar = new Set<() => void>();
 
+/** Dibuka di aplikasi Android native (android/) - user agent-nya ditandai. */
+export function diAplikasiAndroid(): boolean {
+  return typeof navigator !== 'undefined' && navigator.userAgent.includes('WorkManagementAndroid');
+}
+
 function cekTerpasang(): boolean {
   if (typeof window === 'undefined') return false;
+  if (diAplikasiAndroid()) return true;
   if (window.matchMedia?.('(display-mode: standalone)').matches) return true;
   // iOS Safari lama belum punya display-mode media query - pakai properti khususnya.
   return !!(window.navigator as any).standalone;

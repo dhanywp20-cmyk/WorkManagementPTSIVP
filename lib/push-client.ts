@@ -25,7 +25,9 @@ export async function daftarSW(): Promise<ServiceWorkerRegistration | null> {
 }
 
 export function pushDidukung(): boolean {
+  // Di aplikasi Android notifikasinya native (FCM), bukan web push.
   return typeof window !== 'undefined'
+    && !navigator.userAgent.includes('WorkManagementAndroid')
     && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
 

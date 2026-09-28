@@ -17,8 +17,6 @@ import {
   formatRupiah, formatPct,
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
-import { exportSummaryIncentive } from './_components/exportPengajuan';
-import { exportInsentifSaya } from './_components/exportInsentifSaya';
 import { setAksesIncentive, setBrandScopeIncentive } from '@/lib/incentive-akses-api';
 import {
   bisaKonfigPenuh, bisaInputNominal, tingkatAkses,
@@ -692,7 +690,7 @@ export default function IncentivePTSPage() {
         yang masih perlu disiapkan Admin di tab Project.
       */
       const projectsAktif = projects.filter(p => tranches.some(t => t.project_id === p.id));
-      await exportSummaryIncentive({
+      await (await import('./_components/exportPengajuan')).exportSummaryIncentive({
         projects: projectsAktif, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[],
         supportsMap, managerName, managerUserId, year: summaryExportYear,
       });
@@ -715,7 +713,7 @@ export default function IncentivePTSPage() {
     setExportingSaya(true);
     try {
       const projectById = new Map(projects.map(p => [p.id, p]));
-      await exportInsentifSaya({
+      await (await import('./_components/exportInsentifSaya')).exportInsentifSaya({
         splits: mySplitsInYear,
         trancheById,
         projectById,
@@ -742,7 +740,7 @@ export default function IncentivePTSPage() {
       const { managerUserId, managerName, supportsMap } = await siapkanDataExport();
       const idsBatch = [...new Set(tranches.filter(t => t.payment_year === tahunAktif).map(t => t.project_id))];
       const projectsBatch = projects.filter(p => idsBatch.includes(p.id));
-      await exportSummaryIncentive({
+      await (await import('./_components/exportPengajuan')).exportSummaryIncentive({
         projects: projectsBatch, allUsers: allUsers as { id?: string; full_name?: string; jabatan?: string; atasan_id?: string | null }[],
         supportsMap, managerName, managerUserId, projectIds: idsBatch, batchYearLabel: tahunAktif,
       });
@@ -978,7 +976,7 @@ export default function IncentivePTSPage() {
   const hal = usePaginasi(filteredProjects);
 
   if (!appReady) return (
-    <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+    <div className="flex items-center justify-center" style={{ minHeight: '100vh', background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="flex flex-col items-center gap-3 bg-white/90 rounded-2xl px-8 py-6 shadow-xl">
         <div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: 'rgba(99,102,241,0.2)', borderTopColor: '#f43f5e' }} />
         <p className="text-slate-500 text-sm font-semibold">Memuat Incentive PTS...</p>
@@ -1012,7 +1010,7 @@ export default function IncentivePTSPage() {
   const thCls = 'px-3 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider border border-gray-200';
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+    <div className="h-screen overflow-hidden flex flex-col" style={{ fontFamily: "'Inter', sans-serif", background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
 
       <Toast notif={toast} />
 

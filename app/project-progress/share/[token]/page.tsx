@@ -41,7 +41,7 @@ export default function SharedProjectPage({ params }: { params: { token: string 
 
   return (
     <div className="min-h-screen relative" style={{
-      background: 'var(--halaman)',
+      background: 'var(--latar-halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
       fontFamily: 'var(--font-plex-sans)',
     }}>

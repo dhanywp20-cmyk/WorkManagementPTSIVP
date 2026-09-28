@@ -46,6 +46,9 @@ export const KUNCI_RAHASIA = [
   */
   'push.vapid_public_key',
   'push.vapid_private_key',
+  // Service account JSON Firebase (Project settings -> Service accounts) untuk
+  // push ke aplikasi Android. Satu baris JSON utuh, rahasia.
+  'push.fcm_service_account',
 ] as const;
 
 export type KunciRahasia = typeof KUNCI_RAHASIA[number];
@@ -66,6 +69,14 @@ export type KunciRahasia = typeof KUNCI_RAHASIA[number];
  * bukan milik satu komponen React yang kebetulan memakainya.
  */
 export function galatBentukRahasia(kunci: KunciRahasia, nilai: string): string | null {
+  if (kunci === 'push.fcm_service_account') {
+    try {
+      const j = JSON.parse(nilai);
+      if (j?.type === 'service_account' && j.project_id && j.client_email && j.private_key) return null;
+    } catch { /* jatuh ke pesan di bawah */ }
+    return 'Bukan service account JSON Firebase. Unduh dari Firebase Console -> Project settings -> '
+      + 'Service accounts -> Generate new private key, lalu tempel SELURUH isi berkasnya.';
+  }
   if (kunci === 'telegram.bot_token') {
     if (/^\d+:[A-Za-z0-9_-]{30,45}$/.test(nilai)) return null;
     if (!nilai.includes(':')) {

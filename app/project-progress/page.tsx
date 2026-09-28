@@ -12,6 +12,7 @@ import {
   ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup,
   Paginasi, usePaginasi,
   MobileListCard, MobileCardBadge, MiniPieChart, AuditTrailPanel, ModalPortal } from '@/components/shared';
+import { KartuPeringkat } from '@/components/shared/KartuPeringkat';
 import { ProjectDetailView, SectionLabel } from './_components/ProjectDetailView';
 import { exportProjectToExcel } from './_components/excel-export';
 import {
@@ -105,7 +106,9 @@ function ProjectProgressPageInner() {
     // status/start_date/target_date ditambahkan (bukan cuma progress) supaya
     // Project Health bisa dihitung di listing tanpa query terpisah per proyek.
     const lQuery = supabase.from('progress_locations').select('project_id,progress,status,start_date,target_date');
-    const iQuery = supabase.from('progress_issues').select('project_id');
+    // Hanya isu yang belum selesai - kartu "Isu Terbuka" dulu ikut menghitung
+    // isu resolved/closed.
+    const iQuery = supabase.from('progress_issues').select('project_id').not('status', 'in', '(resolved,closed)');
 
     const [pRes, lRes, iRes] = await Promise.all([
       allowedIds ? pQuery.in('id', allowedIds) : pQuery,
@@ -390,6 +393,28 @@ function ProjectProgressPageInner() {
     return vals.length ? Math.round(vals.reduce((s, v) => s + v, 0) / vals.length) : 0;
   }, [projects, locCount]);
 
+  /** Kartu Progres: komposisi Selesai/Berjalan/Belum mulai + peringkat yang berjalan. */
+  const ringkasProgres = useMemo(() => {
+    const semua = projectProgressBreakdown(projects, locCount, Infinity);
+    const selesai = semua.filter(r => r.value >= 100).length;
+    const berjalan = semua.filter(r => r.value > 0).map(r => ({ label: r.label, value: r.value, teks: `${r.value}%` }));
+    const belum = semua.filter(r => r.value <= 0).map(r => r.label);
+    return {
+      segmen: [
+        { label: 'Selesai', value: selesai, color: '#10b981' },
+        { label: 'Berjalan', value: berjalan.length - selesai, color: '#0891b2' },
+        { label: 'Belum mulai', value: belum.length, color: '#cbd5e1' },
+      ],
+      berjalan, belum,
+    };
+  }, [projects, locCount]);
+
+  /** Kartu Isu: total isu belum selesai + peringkat project terbanyak. */
+  const ringkasIsu = useMemo(() => {
+    const baris = projectIssueBreakdown(projects, locCount, Infinity).map(r => ({ label: r.label, value: r.value }));
+    return { baris, total: baris.reduce((s, r) => s + r.value, 0) };
+  }, [projects, locCount]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return projects.filter(p => {
@@ -408,7 +433,7 @@ function ProjectProgressPageInner() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col relative" style={{
-      background: 'var(--halaman)',
+      background: 'var(--latar-halaman)',
       backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed',
     }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
@@ -447,11 +472,18 @@ function ProjectProgressPageInner() {
                   title="Distribusi Status Project" icon="📁" />
                 {/* Nilai = persentase, jadi total slice tidak bermakna → pusat
                     diisi rata-rata seluruh project. */}
-                <MiniPieChart data={projectProgressBreakdown(projects, locCount)}
-                  title="Progres per Project" icon="📊"
-                  centerValue={`${overallAvg}%`} centerLabel="RATA-RATA" valueSuffix="%" />
-                <MiniPieChart data={projectIssueBreakdown(projects, locCount)}
-                  title="Isu Terbuka per Project" icon="⚠️" />
+                <KartuPeringkat title="Progres per Project" icon="📊"
+                  angka={`${overallAvg}%`} ketAngka="rata-rata progres"
+                  segmen={ringkasProgres.segmen}
+                  baris={ringkasProgres.berjalan} maks={100} warnaBatang="#0891b2"
+                  lipatan={ringkasProgres.belum.length ? { teks: `${ringkasProgres.belum.length} project belum mulai`, rincian: ringkasProgres.belum.join(', ') } : undefined}
+                  kosong="Belum ada project yang berjalan"
+                  onPilih={setSearch} />
+                <KartuPeringkat title="Isu Terbuka per Project" icon="⚠️"
+                  angka={ringkasIsu.total} ketAngka={ringkasIsu.total ? `isu terbuka di ${ringkasIsu.baris.length} project` : 'isu terbuka'}
+                  baris={ringkasIsu.baris} warnaBatang="#d97706"
+                  kosong="Tidak ada isu terbuka - semua lancar."
+                  onPilih={setSearch} />
               </div>
             )}
 
@@ -666,7 +698,7 @@ function ProjectProgressPageInner() {
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 z-[1000]"
           onClick={e => { if (e.target === e.currentTarget) closeDetail(); }}>
           <div className="w-full h-full flex flex-col overflow-hidden relative" style={{
-            background: 'var(--halaman)',
+            background: 'var(--latar-halaman)',
             backgroundSize: 'cover', backgroundPosition: 'center',
           }}>
             <div className="absolute inset-0 pointer-events-none" style={{ background: 'rgba(255,255,255,0.10)' }} />

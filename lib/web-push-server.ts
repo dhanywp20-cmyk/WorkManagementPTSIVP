@@ -12,6 +12,7 @@
 import webpush from 'web-push';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { bacaRahasia } from '@/lib/rahasia-server';
+import { kirimFcmKeUser } from '@/lib/fcm-server';
 
 export interface PushPayload {
   title: string;
@@ -48,6 +49,8 @@ async function pastikanVapidTerpasang(): Promise<boolean> {
  * menumpuk baris yang percuma dikirimi selamanya.
  */
 export async function kirimPushKeUser(userIds: string[], payload: PushPayload): Promise<void> {
+  // Aplikasi Android (FCM) berjalan paralel dan tidak bergantung pada VAPID.
+  const fcm = kirimFcmKeUser(userIds, payload);
   try {
     if (!userIds.length) return;
     const siap = await pastikanVapidTerpasang();
@@ -86,5 +89,7 @@ export async function kirimPushKeUser(userIds: string[], payload: PushPayload): 
     }
   } catch {
     /* jangan pernah melempar - lihat catatan di kepala fungsi */
+  } finally {
+    await fcm;
   }
 }

@@ -349,13 +349,13 @@ function PiketShowroomPageInner() {
   };
 
   return(
-    <div className="h-screen overflow-hidden flex flex-col relative" style={{background: 'var(--halaman)',backgroundSize:'cover',backgroundPosition:'center',backgroundAttachment:'fixed'}}>
+    <div className="h-screen overflow-hidden flex flex-col relative" style={{background: 'var(--latar-halaman)',backgroundSize:'cover',backgroundPosition:'center',backgroundAttachment:'fixed'}}>
       <ConfirmDialog state={confirmState} onCancel={()=>setConfirmState(null)} />
       <Toast notif={toast} />
       <div className="absolute inset-0 pointer-events-none" style={{background:'rgba(255,255,255,0.08)'}}/>
       {loading&&rows.length===0&&(
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center" style={{background: 'var(--halaman)',backgroundSize:'cover'}}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center" style={{background: 'var(--latar-halaman)',backgroundSize:'cover'}}>
           <div className="absolute inset-0" style={{background:'rgba(255,255,255,0.15)',backdropFilter:'blur(2px)'}}/>
           <div className="relative flex flex-col items-center gap-4 px-10 py-8 rounded-3xl" style={{background:'rgba(255,255,255,0.92)',backdropFilter:'blur(20px)',boxShadow:'0 8px 40px rgba(0,0,0,0.18)'}}>
             <svg aria-hidden="true" focusable="false" className="w-16 h-16 animate-spin" viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="26" stroke="#f1f5f9" strokeWidth="6"/><path d="M32 6 A26 26 0 0 1 58 32" stroke="#dc2626" strokeWidth="6" strokeLinecap="round"/></svg>

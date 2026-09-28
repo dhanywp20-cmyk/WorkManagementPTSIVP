@@ -41,7 +41,7 @@ export default function LearningCenterPage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center"
-        style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="text-center px-10 py-8 rounded-3xl"
           style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
           <div className="mb-3 animate-pulse text-indigo-500 flex justify-center"><Ikon nama="🎓" ukuran={36} tebal={1.75} /></div>
@@ -54,7 +54,7 @@ export default function LearningCenterPage() {
   if (!currentUser) {
     return (
       <div className="flex h-screen items-center justify-center"
-        style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="text-center px-10 py-8 rounded-3xl"
           style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
           <div className="text-4xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
@@ -126,7 +126,7 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
     <div
       className="flex flex-col h-screen overflow-hidden font-sans"
       style={{
-        background: 'var(--halaman)',
+        background: 'var(--latar-halaman)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',

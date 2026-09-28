@@ -16,7 +16,7 @@ export function LoadingScreen({
     // terlihat berputar. aria-busy memberi tahu bahwa isinya belum final.
     <div role="status" aria-live="polite" aria-busy="true"
       className="fixed inset-0 flex items-center justify-center z-[1000]"
-      style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="relative z-10 flex flex-col items-center gap-3 px-10 py-8 rounded-2xl"
         style={{ background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}>
         <svg className="w-12 h-12 animate-spin" viewBox="0 0 50 50" fill="none" aria-hidden="true" focusable="false">

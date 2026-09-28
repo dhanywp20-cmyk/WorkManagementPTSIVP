@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import * as XLSX from 'xlsx-js-style';
 import { supabase } from '@/lib/supabase';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, ListEmptyState } from '@/components/shared';
@@ -13,7 +12,6 @@ import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { hitungSkorKPI, KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
 import { bacaPicPiket } from '@/app/picket-showroom/_components/shared';
 import { ambilRekapLCTahunan, REKAP_LC_KOSONG } from '@/lib/kpi-lc-tahunan';
-import { exportKPIExcel } from './_components/ekspor-kpi';
 import { DrillModal, ProgressBar } from './_components/DrillModal';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
@@ -499,14 +497,14 @@ export default function KPITeamPage() {
 
   if (!isLoggedIn || !appReady) return (
     <div className="flex items-center justify-center min-h-screen"
-      style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+      style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <div className="w-8 h-8 border-[3px] rounded-full animate-spin" style={{ borderColor: 'rgba(2,132,199,0.2)', borderTopColor: '#0284c7' }} />
     </div>
   );
 
   if (scopeReady && scope.kind === 'none') return (
     <div className="flex flex-col items-center justify-center min-h-screen gap-3"
-      style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+      style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <div className="flex flex-col items-center gap-3 px-8 py-6 rounded-2xl"
         style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.14)' }}>
         <span className="text-5xl"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -527,7 +525,7 @@ export default function KPITeamPage() {
 
   return (
     <div className="h-screen overflow-hidden flex flex-col"
-      style={{ background: 'var(--halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+      style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       <PageHeader icon="📊" title="KPI Team" subtitle="PTS IVP — Key Performance Indicators"
         color={KPI_COLOR} colorLight="#0369a1">
         {scope.kind === 'team' && (
@@ -560,7 +558,7 @@ export default function KPITeamPage() {
               </svg>
               Pengaturan KPI
             </button>
-            <button onClick={() => exportKPIExcel(sortedMembers, period, kpiSettings, `${kpiYear}`)}
+            <button onClick={async () => { const { exportKPIExcel } = await import('./_components/ekspor-kpi'); exportKPIExcel(sortedMembers, period, kpiSettings, `${kpiYear}`); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
               style={{ background: KPI_COLOR, borderColor: KPI_COLOR, color: '#fff', boxShadow: `0 2px 8px ${KPI_COLOR}40` }}>
               <IkonTeks nama="⬇" />Export KPI Excel
