@@ -46,8 +46,18 @@ export interface WidgetDef {
  * kecil satu per satu, tapi berdampingan terbaca seperti dua aplikasi yang
  * ditempel jadi satu - itulah keluhan "tidak senada".
  */
-export const UBIN = 'relative overflow-hidden rounded-[18px] bg-white border border-black/[0.07] p-4 flex flex-col min-w-0';
-export const BAYANG_UBIN = '0 1px 2px rgba(15,23,42,0.04), 0 10px 26px -18px rgba(15,23,42,0.30)';
+export const UBIN = 'relative overflow-hidden rounded-2xl bg-white border border-slate-200/80 p-5 flex flex-col min-w-0';
+export const BAYANG_UBIN = '0 1px 2px rgba(15,23,42,0.04), 0 2px 12px rgba(15,23,42,0.04)';
+
+/**
+ * Satu warna aksen untuk seluruh beranda - tautan "Lihat →", tombol utama,
+ * tab aktif, dan seri grafik tunggal. Warna modul tidak lagi dipakai sebagai
+ * hiasan kartu; warna hanya membawa ARTI (status baik/buruk) di dalam data.
+ */
+export const AKSEN_UTAMA = '#1d4ed8';
+
+/** Label kepala ubin: kecil, kapital, abu-abu - identitas kartu lewat teks, bukan warna. */
+export const LABEL_UBIN = 'text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500';
 
 /**
  * Rel aksen setebal 3px di tepi atas ubin - penanda IDENTITAS modul, bukan
@@ -59,8 +69,14 @@ export const BAYANG_UBIN = '0 1px 2px rgba(15,23,42,0.04), 0 10px 26px -18px rgb
  * memberi tiap ubin permukaan, bayangan, atau radius yang berbeda-beda -
  * cara lama yang justru membuat satu layar terlihat seperti dua aplikasi.
  */
-export function RelAksen({ warna }: { warna: string }) {
-  return <span aria-hidden="true" className="absolute left-0 right-0 top-0 h-[3px]" style={{ background: warna }} />;
+/*
+  Dinonaktifkan pada gaya beranda "firm": rel berwarna berbeda di tiap ubin
+  membuat satu layar terbaca seperti pelangi. Identitas ubin kini dibawa
+  label kepalanya. Komponen dipertahankan supaya pemanggil lama tetap
+  terkompilasi; cukup hapus pemanggilnya bila sudah tidak diperlukan.
+*/
+export function RelAksen(_props: { warna: string }) {
+  return null;
 }
 
 export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabel }: {
@@ -69,16 +85,15 @@ export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabe
 }) {
   return (
     <div className={`${UBIN} h-full`} style={{ boxShadow: BAYANG_UBIN }}>
-      <RelAksen warna={accent} />
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-[26px] h-[26px] rounded-[9px] flex items-center justify-center text-[13px] flex-shrink-0"
-          style={{ background: `${accent}1a`, color: accent }}><Ikon nama={icon} ukuran={16} /></div>
-        <h3 className="font-extrabold text-slate-900 text-[12.5px] tracking-[-0.01em] truncate flex-1">{title}</h3>
+      {/* icon & accent tetap diterima (kontrak widget lama) tapi tidak lagi
+          dilukis sebagai chip berwarna - lihat LABEL_UBIN. */}
+      <div className="flex items-center gap-2 mb-4" data-ikon={icon} data-aksen={accent}>
+        <h3 className={`${LABEL_UBIN} truncate flex-1`}>{title}</h3>
         {onSeeAll && (
           <button onClick={onSeeAll}
-            className="text-[11px] font-semibold px-2 py-1 rounded-lg transition-all hover:scale-[1.03] flex-shrink-0"
-            style={{ background: `${accent}14`, color: accent }}>
-            {seeAllLabel ?? 'Lihat semua'} →
+            className="text-[12px] font-semibold flex-shrink-0 hover:underline underline-offset-2"
+            style={{ color: AKSEN_UTAMA }}>
+            {seeAllLabel ?? 'Lihat'} →
           </button>
         )}
       </div>
@@ -94,11 +109,24 @@ export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabe
  * karena tinggi minimum itulah yang membuat ubin kosong ikut setinggi ubin
  * berisi dan menyisakan rongga di kisi.
  */
-export function EmptyState({ text }: { text: string }) {
+export function EmptyState({ text, judul, aksi }: {
+  text: string;
+  /** Kalimat utama tebal di atas keterangan - seperti "Belum ada Pipeline". */
+  judul?: string;
+  /** Tombol ajakan opsional di bawah keterangan. */
+  aksi?: { label: string; onClick: () => void };
+}) {
   return (
-    <div className="flex items-center justify-center min-h-[44px] rounded-xl px-3 py-3 text-[11px] text-slate-400 text-center"
-      style={{ border: '1px dashed rgba(15,23,42,0.10)', background: 'rgba(15,23,42,0.015)' }}>
-      {text}
+    <div className="flex flex-col items-center justify-center flex-1 h-full min-h-[96px] px-4 py-5 text-center">
+      {judul && <p className="text-[13px] font-bold text-slate-700">{judul}</p>}
+      <p className={`text-[12px] text-slate-500 leading-relaxed max-w-[28ch] ${judul ? 'mt-1' : ''}`}>{text}</p>
+      {aksi && (
+        <button type="button" onClick={aksi.onClick}
+          className="mt-3 text-[12px] font-bold text-white px-3.5 py-2 rounded-lg hover:brightness-110"
+          style={{ background: AKSEN_UTAMA }}>
+          {aksi.label}
+        </button>
+      )}
     </div>
   );
 }
@@ -106,7 +134,7 @@ export function EmptyState({ text }: { text: string }) {
 export function Loading() {
   return (
     <div className="flex items-center justify-center h-full min-h-[80px]">
-      <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.25)', borderTopColor: '#e2a84b' }} />
+      <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(29,78,216,0.18)', borderTopColor: AKSEN_UTAMA }} />
     </div>
   );
 }
@@ -122,10 +150,12 @@ export function QuickActionChip({ label, icon, warna, onClick }: {
   label: string; icon: string; warna: string; onClick: () => void;
 }) {
   return (
+    /*  Netral, bukan blok warna penuh: enam tombol berwarna berbeda di satu
+        baris adalah sumber "ramai" terbesar di beranda. Warna modul tinggal
+        di ikon kecilnya saja. */
     <button onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white font-bold text-[11px] whitespace-nowrap transition-all hover:brightness-110 hover:scale-[1.03]"
-      style={{ background: warna, boxShadow: `0 2px 8px ${warna}4d` }}>
-      <span aria-hidden="true" className="text-xs leading-none"><Ikon nama={icon} ukuran={13} /></span>
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 font-semibold text-[12px] whitespace-nowrap transition-colors hover:bg-slate-50 hover:border-slate-300">
+      <span aria-hidden="true" className="text-xs leading-none" style={{ color: warna }}><Ikon nama={icon} ukuran={14} /></span>
       <span>{label}</span>
     </button>
   );

@@ -8,14 +8,13 @@ import type { User } from '../shared';
 import { Ikon } from '@/components/shared/Ikon';
 
 const URGENCY_DOT: Record<Urgency, string> = { urgent: '#dc2626', pending: '#ea580c', upcoming: '#2563eb' };
-const URGENCY_EMOJI: Record<Urgency, string> = { urgent: '🔴', pending: '🟠', upcoming: '🔵' };
 
 function ActionRow({ item, onClick, showUrgencyDot = true }: {
   item: ActionItem; onClick: () => void; showUrgencyDot?: boolean;
 }) {
   return (
     <button onClick={onClick}
-      className="flex items-start gap-2.5 py-2 px-1.5 w-full text-left rounded-lg hover:bg-slate-50 transition-colors border-b border-black/[0.05] last:border-0">
+      className="flex items-start gap-2.5 py-2.5 px-1.5 w-full text-left rounded-lg hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
       {showUrgencyDot && (
         <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: URGENCY_DOT[item.urgency] }}
           aria-label={item.urgency} title={item.urgency} />
@@ -148,12 +147,12 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
         <div className="lg:col-span-6 h-full">
         <WidgetCard title="My Action" icon="🎯" accent="#dc2626">
           {myAction.length === 0 ? (
-            <EmptyState text="Tidak ada item mendesak - lihat Hari Ini & Mendatang di samping." />
+            <EmptyState judul="Tidak ada yang mendesak" text="Lihat Hari Ini & Mendatang di samping untuk jadwal berikutnya." />
           ) : (
             <>
-              <div className="flex items-center gap-3 mb-2 text-[10px] font-semibold text-slate-400">
-                <span>{URGENCY_EMOJI.urgent} Urgent/terlambat</span>
-                <span>{URGENCY_EMOJI.pending} Perlu tindakan</span>
+              <div className="flex items-center gap-4 mb-2 text-[11px] font-medium text-slate-500">
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: URGENCY_DOT.urgent }} />Urgent/terlambat</span>
+                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: URGENCY_DOT.pending }} />Perlu tindakan</span>
               </div>
               {myAction.map(item => (
                 <ActionRow key={item.id} item={item} onClick={() => openMenu(item.menuKey)} />
@@ -168,7 +167,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
      <div className="lg:col-span-3 h-full">
         <WidgetCard title="Hari Ini" icon="📅" accent="#0891b2">
           {today.length === 0 ? (
-            <EmptyState text="Tidak ada jadwal untuk hari ini." />
+            <EmptyState judul="Hari ini kosong" text="Tidak ada jadwal yang jatuh hari ini." />
           ) : today.map(item => (
             <ActionRow key={item.id} item={item} onClick={() => openMenu(item.menuKey)} showUrgencyDot={false} />
           ))}
@@ -192,7 +191,8 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
       <div className="lg:col-span-3 lg:row-span-2 h-full">
         <WidgetCard title="Mendatang" icon="🔜" accent="#7c3aed">
           {upcoming.length === 0 ? (
-            <EmptyState text="Tidak ada jadwal dalam waktu dekat." />
+            <EmptyState judul="Belum ada jadwal" text="Jadwal dalam 5 hari ke depan akan muncul di sini."
+              aksi={hasMenu(user, 'reminder-schedule') ? { label: 'Buka Jadwal', onClick: () => openMenu('reminder-schedule') } : undefined} />
           ) : upcoming.map(item => (
             <ActionRow key={item.id} item={item} onClick={() => openMenu(item.menuKey)} showUrgencyDot={false} />
           ))}

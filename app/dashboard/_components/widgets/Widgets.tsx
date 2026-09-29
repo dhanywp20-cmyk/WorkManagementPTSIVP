@@ -33,7 +33,7 @@ import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWid
 // pemakai lama (PermissionAwareDashboard.tsx) tidak perlu ganti sumber impor.
 import {
   type WidgetProps, type WidgetSize, type WidgetDef,
-  WidgetCard, EmptyState, Loading,
+  WidgetCard, EmptyState, Loading, AKSEN_UTAMA,
 } from './primitives';
 export type { WidgetProps, WidgetSize, WidgetDef };
 export { WidgetCard, EmptyState, Loading };
@@ -295,7 +295,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           <div>
             <StatPills items={[
               //  'Total', bukan 'Total Team' - judul widget sudah menyebut Team.
-              { label: 'Total', value: total, color: '#0891b2' },
+              { label: 'Total', value: total, color: '#0f172a' },
               { label: 'Sudah', value: sudah, color: '#16a34a' },
               { label: 'Belum', value: belum, color: belum > 0 ? '#ea580c' : '#94a3b8' },
             ]} />
@@ -438,7 +438,7 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           <p className="text-[11px] text-slate-500 leading-snug px-2">Training, quiz online &amp; materi pengembangan tim.</p>
           <button onClick={() => openMenu('learning-center')}
             className="mt-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.03]"
-            style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>Buka Learning →</button>
+            style={{ background: AKSEN_UTAMA }}>Buka Learning →</button>
         </div>
       ) : loading ? <Loading /> : (
         <div className="flex flex-col gap-2.5 h-full">
@@ -456,7 +456,7 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           </div>
           <button onClick={() => openMenu('learning-center')}
             className="mt-auto px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.02] self-start"
-            style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>Buka Learning →</button>
+            style={{ background: AKSEN_UTAMA }}>Buka Learning →</button>
         </div>
       )}
     </WidgetCard>

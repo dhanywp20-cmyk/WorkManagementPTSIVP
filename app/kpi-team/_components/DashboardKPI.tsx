@@ -444,11 +444,11 @@ function RelSeksi({ judul }: { judul: string }) {
         di tempat lain. Warna teks apa pun akan salah di sebagian gambar; yang
         benar adalah membawa latarnya sendiri.
       */}
-      <span className="text-[10.5px] font-black uppercase tracking-[0.16em] text-slate-700 flex-shrink-0
-                       px-2.5 py-1 rounded-full bg-white/90 backdrop-blur-sm border border-black/[0.06]"
-        style={{ boxShadow: '0 1px 2px rgba(15,23,42,0.06)' }}>{judul}</span>
-      <span aria-hidden="true" className="flex-1 h-px"
-        style={{ background: 'linear-gradient(90deg,#cbd5e1,rgba(203,213,225,0))' }}/>
+      {/* Beranda kini berlatar netral (lihat PermissionAwareDashboard), jadi
+          judul seksi cukup teks polos - keping putih tadinya hanya penolong
+          keterbacaan di atas foto. */}
+      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 flex-shrink-0">{judul}</span>
+      <span aria-hidden="true" className="flex-1 h-px bg-slate-200"/>
     </div>
   );
 }
@@ -458,10 +458,8 @@ function KepalaUbin({ ikon, judul, warna, catatan }: {
   ikon: string; judul: string; warna: string; catatan?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 mb-3">
-      <span aria-hidden="true" className="w-[26px] h-[26px] rounded-[9px] grid place-items-center text-[13px] flex-shrink-0"
-        style={{ background: `${warna}1a`, color: warna }}><Ikon nama={ikon} ukuran={15} /></span>
-      <h3 className="text-[11px] font-extrabold uppercase tracking-[0.06em] text-slate-500 flex-1 truncate">{judul}</h3>
+    <div className="flex items-center gap-2 mb-4" data-ikon={ikon} data-warna={warna}>
+      <h3 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 flex-1 truncate">{judul}</h3>
       {catatan && <span className="text-[10px] font-semibold text-slate-400 flex-shrink-0">{catatan}</span>}
     </div>
   );
@@ -494,10 +492,10 @@ function PitaItem({ label, angka, satuan, garis, children }: {
   label: string; angka: React.ReactNode; satuan?: string; garis?: boolean; children?: React.ReactNode;
 }) {
   return (
-    <div className={`min-w-0 ${garis ? 'lg:pl-5 lg:border-l lg:border-white/[0.12]' : ''}`}>
-      <p className="text-[9.5px] font-black uppercase tracking-[0.11em] truncate" style={{ color: 'rgba(199,210,254,0.85)' }}>{label}</p>
-      <p className="text-[26px] sm:text-[28px] font-black leading-none mt-1 tabular-nums" style={{ letterSpacing: '-0.035em' }}>
-        {angka}{satuan && <span className="text-[13px] font-bold ml-1" style={{ color: 'rgba(199,210,254,0.75)' }}>{satuan}</span>}
+    <div className={`min-w-0 ${garis ? 'lg:pl-5 lg:border-l lg:border-slate-200' : ''}`}>
+      <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] truncate text-slate-500">{label}</p>
+      <p className="text-[26px] sm:text-[28px] font-extrabold leading-none mt-1.5 tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>
+        {angka}{satuan && <span className="text-[13px] font-semibold ml-1 text-slate-400">{satuan}</span>}
       </p>
       <div className="flex items-center gap-2 mt-2 h-[20px]">{children}</div>
     </div>
@@ -506,14 +504,14 @@ function PitaItem({ label, angka, satuan, garis, children }: {
 
 function MeterGelap({ pct, warna }: { pct: number; warna: string }) {
   return (
-    <div className="h-1.5 rounded-full overflow-hidden w-full max-w-[92px]" style={{ background: 'rgba(255,255,255,0.16)' }}>
+    <div className="h-1.5 rounded-full overflow-hidden w-full max-w-[92px] bg-slate-100">
       <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: warna }}/>
     </div>
   );
 }
 
 function LabelPita({ children }: { children: React.ReactNode }) {
-  return <span className="text-[10px] font-bold whitespace-nowrap" style={{ color: 'rgba(199,210,254,0.72)' }}>{children}</span>;
+  return <span className="text-[11px] font-medium whitespace-nowrap text-slate-500">{children}</span>;
 }
 
 function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: boolean; catatan: string }) {
@@ -524,23 +522,20 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
   const beda  = tLalu === null ? null : tIni - tLalu;
   const rTot  = kpi?.reminders.total ?? 0;
   const pTot  = kpi?.piket.weekTotal ?? 0;
-  const kosong = <span className="inline-block h-6 w-12 rounded bg-white/10 animate-pulse"/>;
+  const kosong = <span className="inline-block h-6 w-12 rounded bg-slate-100 animate-pulse"/>;
   return (
-    <div className="lg:col-span-12 relative overflow-hidden rounded-[20px] px-5 py-4 md:px-6 md:py-5 text-white"
-      style={{ background: 'linear-gradient(118deg,#141a3a 0%,#231a56 46%,#3b1d52 100%)',
-               boxShadow: '0 18px 40px -24px rgba(20,26,58,0.85)' }}>
-      <span aria-hidden="true" className="absolute pointer-events-none rounded-full"
-        style={{ right: -60, top: -90, width: 340, height: 340,
-                 background: 'radial-gradient(circle,rgba(129,140,248,0.30),transparent 62%)' }}/>
+    /*  Kartu putih seperti ubin lain, bukan lagi bidang gelap bergradasi:
+        satu permukaan gelap di tengah deret kartu putih memecah kesatuan
+        halaman. Jangkar visualnya kini datang dari ukuran angka & posisinya
+        di puncak, bukan dari warna latar. */
+    <div className={`${UBIN} lg:col-span-12`} style={{ boxShadow: BAYANG_UBIN }}>
       <div className="relative flex items-center justify-between gap-3 flex-wrap mb-4">
-        <h2 className="text-[15px] font-black tracking-tight flex items-center gap-2"><span aria-hidden="true"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span> Ringkasan Platform</h2>
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Ringkasan Platform</h2>
         <div className="flex items-center gap-2">
-          <span className="text-[10.5px] font-bold px-2.5 py-1 rounded-full"
-            style={{ color: '#c7d2fe', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.14)' }}>
+          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-slate-600">
             {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
           </span>
-          <span className="text-[10.5px] font-bold px-2.5 py-1 rounded-full"
-            style={{ color: '#c7d2fe', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.14)' }}>
+          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-slate-600">
             {catatan}
           </span>
         </div>
@@ -548,12 +543,11 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
       <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-4">
         <PitaItem label="Tiket bulan ini" angka={loading ? kosong : tIni}>
           {!loading && beda !== null && (
-            <span title={`Bulan lalu ${tLalu} tiket`} className="text-[10px] font-black px-1.5 py-0.5 rounded-full whitespace-nowrap"
-              style={{ background: 'rgba(255,255,255,0.12)', color: '#c7d2fe' }}>
+            <span title={`Bulan lalu ${tLalu} tiket`} className="text-[10.5px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap bg-slate-100 text-slate-600">
               {beda > 0 ? '▲' : beda < 0 ? '▼' : '='} {Math.abs(beda)}
             </span>
           )}
-          {!loading && <Percik nilai={deret} warna="#a5b4fc" lebar={76} tinggi={20}/>}
+          {!loading && <Percik nilai={deret} warna="#1d4ed8" lebar={76} tinggi={20}/>}
         </PitaItem>
 
         {/*  Pindah ke sini dari kartu "Ringkasan Performa" milik Team
@@ -569,7 +563,7 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
 
         <PitaItem label="Reminder overdue" garis angka={loading ? kosong : (kpi?.reminders.overdueCount ?? 0)}>
           {!loading && <>
-            <MeterGelap pct={rTot ? ((kpi?.reminders.overdueCount ?? 0) / rTot) * 100 : 0} warna="#fda4af"/>
+            <MeterGelap pct={rTot ? ((kpi?.reminders.overdueCount ?? 0) / rTot) * 100 : 0} warna="#dc2626"/>
             <LabelPita>dari {rTot}</LabelPita>
           </>}
         </PitaItem>
@@ -577,14 +571,14 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
         <PitaItem label="Piket minggu ini" garis satuan={pTot ? `/${pTot}` : undefined}
           angka={loading ? kosong : (kpi?.piket.weekFilled ?? 0)}>
           {!loading && <>
-            <MeterGelap pct={pTot ? ((kpi?.piket.weekFilled ?? 0) / pTot) * 100 : 0} warna="#6ee7b7"/>
+            <MeterGelap pct={pTot ? ((kpi?.piket.weekFilled ?? 0) / pTot) * 100 : 0} warna="#16a34a"/>
             <LabelPita>{pTot ? Math.round(((kpi?.piket.weekFilled ?? 0) / pTot) * 100) : 0}%</LabelPita>
           </>}
         </PitaItem>
 
         <PitaItem label="LC avg skor" garis angka={loading ? kosong : (kpi?.learning.avgScore ?? 0)}>
           {!loading && <>
-            <MeterGelap pct={kpi?.learning.avgScore ?? 0} warna="#6ee7b7"/>
+            <MeterGelap pct={kpi?.learning.avgScore ?? 0} warna="#16a34a"/>
             <LabelPita>{kpi?.learning.totalParticipants ?? 0} peserta</LabelPita>
           </>}
         </PitaItem>
