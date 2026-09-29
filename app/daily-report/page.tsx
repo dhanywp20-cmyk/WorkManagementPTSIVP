@@ -1079,9 +1079,11 @@ export default function DailyReportPage() {
                 const c = CATEGORY_CONFIG[row.category] ?? CATEGORY_CONFIG['Internal'];
                 const badge = row.source === 'manual' ? SB.manual : sb(row.status);
                 return (
-                  <button key={row.id} onClick={() => setModalRow(row)}
-                    className="w-full text-left rounded-2xl p-3.5 flex flex-col gap-2 transition-all active:scale-[0.99]"
+                  <div key={row.id}
+                    className="rounded-2xl p-3.5 flex flex-col gap-2"
                     style={{ background: 'rgba(255,255,255,0.9)', border: '1px solid rgba(0,0,0,0.07)' }}>
+                    <button type="button" onClick={() => setModalRow(row)}
+                      className="w-full text-left flex flex-col gap-2 transition-all active:scale-[0.99]">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-slate-800 text-sm leading-tight truncate">{row.project_name}</p>
@@ -1109,7 +1111,29 @@ export default function DailyReportPage() {
                         {row.jam !== '-' ? ` · ${row.jam}` : ''}
                       </span>
                     </div>
-                  </button>
+                    </button>
+
+                    {/*  Tombol aksi yang sama dengan kolom ACTION tabel desktop.
+                        Sebelumnya kartu HP HANYA bisa di-tap untuk membuka
+                        detail: Edit cuma ada setelah masuk modal, jadi dari HP
+                        terlihat seperti tidak ada sama sekali. Dibungkus <span>
+                        (bukan <button>) karena kartunya sendiri sudah sebuah
+                        tombol - tombol di dalam tombol bukan HTML yang sah. */}
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <button type="button" aria-label="Lihat detail" onClick={() => setModalRow(row)}
+                        className="inline-flex items-center justify-center w-[40px] h-[40px] rounded-xl border border-gray-200 bg-white text-gray-500 active:bg-gray-100">
+                        <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                      </button>
+                      {row.report_id && (
+                        <button type="button" aria-label="Edit report"
+                          onClick={() => { const r = reports.find(x => x.id === row.report_id); if (r) openEditForm(r); }}
+                          className="inline-flex items-center justify-center w-[40px] h-[40px] rounded-xl text-white active:opacity-90"
+                          style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
+                          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 );
               })}
             </div>
