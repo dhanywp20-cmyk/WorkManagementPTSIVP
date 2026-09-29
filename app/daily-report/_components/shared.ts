@@ -338,6 +338,34 @@ export async function saveReport(
   return error ? { ok: false, error: error.message } : { ok: true };
 }
 
+/**
+ * Hapus SATU aktivitas manual dari sebuah daily report.
+ *
+ * Dilakukan dengan UPDATE (menulis ulang manual_activities tanpa baris itu),
+ * BUKAN DELETE barisnya: satu daily_reports memuat seluruh laporan hari itu -
+ * aktivitas manual, reminder, dan ticket sekaligus. Menghapus barisnya berarti
+ * ikut membuang yang tidak diminta. Lagipula tabel ini memang tidak punya
+ * policy DELETE; yang ada policy UPDATE "pemilik atau admin", yang persis
+ * aturan yang dikehendaki - jadi izinnya ditegakkan basis data, bukan layar.
+ *
+ * Laporan yang kehilangan aktivitas terakhirnya tetap tersimpan sebagai baris
+ * kosong. Baris tanpa aktivitas tidak memunculkan apa pun di daftar, jadi
+ * hasilnya sama di mata pemakai, tanpa menghapus data apa pun.
+ */
+export async function hapusAktivitasManual(
+  reportId: string, sisa: ManualActivity[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data, error } = await supabase.from('daily_reports')
+    .update({ manual_activities: sisa, updated_at: new Date().toISOString() })
+    .eq('id', reportId)
+    .select('id');
+  if (error) return { ok: false, error: error.message };
+  //  RLS yang menolak menjawab 0 baris TANPA galat - diperiksa, bukan
+  //  dianggap berhasil begitu saja.
+  if (!data || data.length === 0) return { ok: false, error: 'Tidak berwenang menghapus laporan ini.' };
+  return { ok: true };
+}
+
 export async function saveTeamEntries(
   entries: Omit<DailyReportTeamEntry, 'id' | 'created_at'>[],
   reportDate: string,

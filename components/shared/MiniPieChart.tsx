@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Ikon } from './Ikon';
 import { NETRAL } from '@/lib/desain';
 
@@ -26,13 +26,14 @@ import { NETRAL } from '@/lib/desain';
 const PERMUKAAN = NETRAL.permukaan;
 
 /**
- * Batas tinggi legenda. Kategori ke-8 dan seterusnya TIDAK dilipat ke
- * "Lainnya" lagi - keputusan pemilik platform: semua nilai harus bisa
- * dilihat. Yang tidak muat dijangkau dengan menggulir daftarnya, dan
- * jumlahnya disebut di bawah kartu supaya ketahuan ada yang di bawah lipatan
- * layar (gulir yang tidak terlihat sama saja dengan tersembunyi).
+ * Legenda SELALU dibatasi tingginya dan digulir - bukan hanya ketika
+ * kategorinya banyak. Tanpa batas tetap, tinggi kartu ikut jumlah datanya:
+ * satu kartu memanjang, kartu di sebelahnya pendek, dan barisnya jadi tidak
+ * rata. Kategori ke-8 dan seterusnya juga TIDAK dilipat ke "Lainnya" lagi -
+ * keputusan pemilik platform: semua nilai harus bisa dilihat, yang tidak
+ * muat dijangkau dengan menggulir.
  */
-const MAKS_TINGGI_LEGENDA = 7;
+const KELAS_LEGENDA = 'overflow-y-auto pr-1.5 -mr-1 max-h-[132px] sm:max-h-[150px] overscroll-contain rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300';
 
 type Item = { label: string; value: number; color: string; lipat?: boolean };
 
@@ -67,6 +68,18 @@ export function MiniPieChart({
   valueSuffix?: string;
 }) {
   const [hov, setHov] = useState<number | null>(null);
+  const legendaRef = useRef<HTMLUListElement | null>(null);
+  const [dapatDigulir, setDapatDigulir] = useState(false);
+  useEffect(() => {
+    const el = legendaRef.current;
+    if (!el) { setDapatDigulir(false); return; }
+    const ukur = () => setDapatDigulir(el.scrollHeight > el.clientHeight + 2);
+    ukur();
+    const ro = new ResizeObserver(ukur);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [data]);
+
   const semua: Item[] = data.map(d => ({ label: d.label ?? d.name ?? '', value: d.value, color: d.color }));
   const total = semua.reduce((s, d) => s + d.value, 0);
 
@@ -135,7 +148,7 @@ export function MiniPieChart({
     : { angka: `${centerValue ?? total}`, ket: (centerLabel ?? 'Total').toLowerCase() };
 
   const klik = (s: { label: string; lipat?: boolean }) => { if (bisaKlik && !s.lipat) onSliceClick!(s.label); };
-  const dapatDigulir = slices.length > MAKS_TINGGI_LEGENDA;
+
   const ringkasan = slices.map(s => `${s.label} ${s.value} (${persen(s.value)}%)`).join(', ');
 
   return (
@@ -166,9 +179,9 @@ export function MiniPieChart({
           </text>
         </svg>
 
-        <ul tabIndex={dapatDigulir ? 0 : -1}
+        <ul ref={legendaRef} tabIndex={dapatDigulir ? 0 : -1}
           aria-label={dapatDigulir ? `${slices.length} kategori - gulir untuk melihat semua` : undefined}
-          className={`flex flex-col gap-px sm:gap-0.5 w-full sm:w-auto sm:flex-1 sm:basis-[160px] sm:min-w-[160px] sm:max-w-[240px]${dapatDigulir ? ' overflow-y-auto pr-1.5 -mr-1 max-h-[132px] sm:max-h-[150px] overscroll-contain rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300' : ''}`}>
+          className={`flex flex-col gap-px sm:gap-0.5 w-full sm:w-auto sm:flex-1 sm:basis-[160px] sm:min-w-[160px] sm:max-w-[240px] ${KELAS_LEGENDA}`}>
           {slices.map(s => {
             const aktif = activeFilter === s.label;
             return (

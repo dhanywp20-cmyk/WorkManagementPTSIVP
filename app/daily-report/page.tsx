@@ -19,14 +19,14 @@ import {
   type ReminderActivity, type TicketActivity,
   type ManualActivity, type TeamEntry,
   type DailyReport,
-} from './_components/shared';
+  hapusAktivitasManual } from './_components/shared';
 
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { namaKelompokPTSDitugaskan, useKelompokPTSDitugaskan } from '@/lib/kelompok';
 
 import {
-  FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal } from '@/components/shared';
+  FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { MiniPieChart, PageHeader, StatCardGrid, Paginasi, usePaginasi } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Toast as ToastBersama } from '@/components/shared/Toast';
@@ -222,6 +222,37 @@ export default function DailyReportPage() {
 
   const [toast, setToast]             = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const notify = (type: 'success' | 'error', msg: string) => { setToast({ type, msg }); setTimeout(() => setToast(null), 3500); };
+  const [confirmState, setConfirmState] = useState<ConfirmState | null>(null);
+
+  /**
+   * Boleh hapus = PEMILIK laporan atau Admin/Full Access - aturan yang sama
+   * dengan policy dr_ubah di basis data, jadi tombolnya tidak pernah
+   * menjanjikan sesuatu yang nanti ditolak server.
+   */
+  const bolehHapus = (row: any): boolean => {
+    if (!row.report_id || row.manual_index === undefined || !currentUser) return false;
+    const r = reports.find(x => x.id === row.report_id);
+    if (!r) return false;
+    return isAdmin || r.user_id === currentUser.id;
+  };
+
+  const mintaHapus = (row: any) => {
+    const r = reports.find(x => x.id === row.report_id);
+    if (!r || row.manual_index === undefined) return;
+    setConfirmState({
+      message: 'Hapus aktivitas ini dari Daily Report?',
+      description: `"${row.project_name}" (${row.report_date}) akan dihapus dari laporan. Aktivitas lain di laporan yang sama tidak terpengaruh.`,
+      danger: true,
+      confirmLabel: 'Hapus',
+      onConfirm: async () => {
+        const sisa = r.manual_activities.filter((_, i) => i !== row.manual_index);
+        const hasil = await hapusAktivitasManual(r.id, sisa);
+        if (!hasil.ok) { notify('error', hasil.error); return; }
+        notify('success', 'Aktivitas dihapus.');
+        await loadReports();
+      },
+    });
+  };
 
   // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
   // (lihat lib/constants.ts hasFullAccess).
@@ -337,6 +368,7 @@ export default function DailyReportPage() {
     status: string;
     jam: string;
     report_id?: string;
+    manual_index?: number;
     raw?: any;
   }
 
@@ -420,6 +452,7 @@ export default function DailyReportPage() {
         rows.push({
           id: `man_${r.id}_${idx}`,
           source: 'manual',
+          manual_index: idx,
           report_date: r.report_date,
           project_name: m.project_name || '-',
           address: m.address || '',
@@ -1132,6 +1165,12 @@ export default function DailyReportPage() {
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                         </button>
                       )}
+                      {bolehHapus(row) && (
+                        <button type="button" aria-label="Hapus aktivitas" onClick={() => mintaHapus(row)}
+                          className="inline-flex items-center justify-center w-[40px] h-[40px] rounded-xl border border-red-200 bg-white text-red-500 active:bg-red-50">
+                          <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -1239,6 +1278,12 @@ export default function DailyReportPage() {
                                 <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                               </button>
                             )}
+                            {bolehHapus(row) && (
+                              <button aria-label="Hapus Aktivitas" onClick={() => mintaHapus(row)}
+                                className="p-1.5 rounded-lg border border-red-200 bg-white text-red-500 hover:bg-red-50 transition-all" title="Hapus Aktivitas">
+                                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -1269,6 +1314,7 @@ export default function DailyReportPage() {
           tipenya stabil antar render, bukan identitas FormModal. */}
       {FormModal()}
       {DetailModal()}
+      <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <Toast t={toast} />
     </PW>
   );
