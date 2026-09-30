@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Ikon } from './Ikon';
 import { NETRAL } from '@/lib/desain';
 
@@ -23,21 +23,19 @@ import { NETRAL } from '@/lib/desain';
  * Props tidak berubah (kompatibel dengan seluruh pemanggil).
  */
 
-const MAKS_KATEGORI = 7;
-const WARNA_LAINNYA = NETRAL.garisKuat;
 const PERMUKAAN = NETRAL.permukaan;
 
-type Item = { label: string; value: number; color: string; lipat?: boolean };
+/**
+ * Legenda SELALU dibatasi tingginya dan digulir - bukan hanya ketika
+ * kategorinya banyak. Tanpa batas tetap, tinggi kartu ikut jumlah datanya:
+ * satu kartu memanjang, kartu di sebelahnya pendek, dan barisnya jadi tidak
+ * rata. Kategori ke-8 dan seterusnya juga TIDAK dilipat ke "Lainnya" lagi -
+ * keputusan pemilik platform: semua nilai harus bisa dilihat, yang tidak
+ * muat dijangkau dengan menggulir.
+ */
+const KELAS_LEGENDA = 'overflow-y-auto pr-1.5 -mr-1 max-h-[88px] sm:max-h-[124px] overscroll-contain rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300';
 
-function lipatKeLainnya(items: Item[]): Item[] {
-  if (items.length <= MAKS_KATEGORI) return items;
-  // Pertahankan 6 terbesar dalam URUTAN ASLINYA - warna mengikuti entitas,
-  // bukan peringkat, jadi urutan & warna yang sudah dikenal tidak bergeser.
-  const teratas = new Set([...items].sort((a, b) => b.value - a.value).slice(0, MAKS_KATEGORI - 1).map(i => i.label));
-  const tetap = items.filter(i => teratas.has(i.label));
-  const sisa = items.filter(i => !teratas.has(i.label));
-  return [...tetap, { label: `Lainnya (${sisa.length})`, value: sisa.reduce((s, i) => s + i.value, 0), color: WARNA_LAINNYA, lipat: true }];
-}
+type Item = { label: string; value: number; color: string; lipat?: boolean };
 
 function Kartu({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
@@ -70,6 +68,18 @@ export function MiniPieChart({
   valueSuffix?: string;
 }) {
   const [hov, setHov] = useState<number | null>(null);
+  const legendaRef = useRef<HTMLUListElement | null>(null);
+  const [dapatDigulir, setDapatDigulir] = useState(false);
+  useEffect(() => {
+    const el = legendaRef.current;
+    if (!el) { setDapatDigulir(false); return; }
+    const ukur = () => setDapatDigulir(el.scrollHeight > el.clientHeight + 2);
+    ukur();
+    const ro = new ResizeObserver(ukur);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [data]);
+
   const semua: Item[] = data.map(d => ({ label: d.label ?? d.name ?? '', value: d.value, color: d.color }));
   const total = semua.reduce((s, d) => s + d.value, 0);
 
@@ -114,7 +124,7 @@ export function MiniPieChart({
   }
 
   // ── Mode donat: komposisi ──
-  const items = lipatKeLainnya(semua);
+  const items = semua;
   const cx = 60, cy = 60, r = 52, ir = 38;
   let sudut = -Math.PI / 2;
   const slices = items.map((d, i) => {
@@ -138,13 +148,18 @@ export function MiniPieChart({
     : { angka: `${centerValue ?? total}`, ket: (centerLabel ?? 'Total').toLowerCase() };
 
   const klik = (s: { label: string; lipat?: boolean }) => { if (bisaKlik && !s.lipat) onSliceClick!(s.label); };
+
   const ringkasan = slices.map(s => `${s.label} ${s.value} (${persen(s.value)}%)`).join(', ');
 
   return (
     <Kartu title={title} icon={icon}>
       {/* flex-wrap: di kartu sempit legenda turun ke bawah donat, bukan
           menyusut sampai hilang (terukur dulu 0px pada kartu 78-108px). */}
-      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-5">
+      {/*  Di HP legenda turun ke BAWAH donat dengan lebar penuh, bukan
+           berdampingan: kartu selebar ~170px hanya menyisakan ~90px untuk
+           nama, dan setiap label jadi "Konfi..." - daftar yang tidak bisa
+           dibaca sama saja dengan tidak ditampilkan. */}
+      <div className="flex flex-col sm:flex-row items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-5">
         <svg role="img" aria-label={`${title}: ${ringkasan}`} width="120" height="120" viewBox="0 0 120 120"
           className="flex-shrink-0 w-[64px] h-[64px] sm:w-[116px] sm:h-[116px]">
           {slices.map(s => s.penuh ? (
@@ -164,7 +179,9 @@ export function MiniPieChart({
           </text>
         </svg>
 
-        <ul className="flex flex-col gap-px sm:gap-0.5 flex-1 basis-[92px] min-w-[92px] sm:basis-[160px] sm:min-w-[160px] max-w-[240px]">
+        <ul ref={legendaRef} tabIndex={dapatDigulir ? 0 : -1}
+          aria-label={dapatDigulir ? `${slices.length} kategori - gulir untuk melihat semua` : undefined}
+          className={`flex flex-col gap-px sm:gap-0.5 w-full sm:w-auto sm:flex-1 sm:basis-[160px] sm:min-w-[160px] sm:max-w-[240px] ${KELAS_LEGENDA}`}>
           {slices.map(s => {
             const aktif = activeFilter === s.label;
             return (
@@ -176,7 +193,8 @@ export function MiniPieChart({
                   className={`w-full grid grid-cols-[8px_1fr_auto_auto] items-center gap-1.5 sm:gap-2 rounded-md px-1 sm:px-1.5 py-0.5 sm:py-1 text-left transition-colors ${bisaKlik && !s.lipat ? 'cursor-pointer hover:bg-slate-50' : 'cursor-default'} ${aktif ? 'bg-slate-100' : ''}`}
                   style={{ opacity: redup(s.i) ? 0.55 : 1 }}>
                   <span className="w-2 h-2 rounded-full" style={{ background: s.color }} aria-hidden="true" />
-                  <span className={`text-[9.5px] sm:text-[11px] truncate ${aktif ? 'font-semibold text-slate-900' : 'font-medium text-slate-600'}`}>{s.label}</span>
+                  <span title={`${s.label}: ${s.value}${valueSuffix ?? ''} (${persen(s.value)}%)`}
+                    className={`text-[9.5px] sm:text-[11px] truncate ${aktif ? 'font-semibold text-slate-900' : 'font-medium text-slate-600'}`}>{s.label}</span>
                   <span className="text-[9.5px] sm:text-[11px] font-semibold text-slate-800 tabular-nums text-right">{s.value}{valueSuffix ?? ''}</span>
                   <span className="text-[9px] sm:text-[10px] text-slate-400 tabular-nums text-right w-7 sm:w-8">{persen(s.value)}%</span>
                 </button>
@@ -185,6 +203,11 @@ export function MiniPieChart({
           })}
         </ul>
       </div>
+      {dapatDigulir && (
+        <p className="text-[9px] sm:text-[10px] text-slate-400 text-center sm:text-left truncate">
+          {slices.length} kategori · gulir daftar
+        </p>
+      )}
     </Kartu>
   );
 }
