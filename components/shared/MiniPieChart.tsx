@@ -33,7 +33,7 @@ const PERMUKAAN = NETRAL.permukaan;
  * keputusan pemilik platform: semua nilai harus bisa dilihat, yang tidak
  * muat dijangkau dengan menggulir.
  */
-const KELAS_LEGENDA = 'overflow-y-auto pr-1.5 -mr-1 max-h-[132px] sm:max-h-[150px] overscroll-contain rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300';
+const KELAS_LEGENDA = 'overflow-y-auto pr-1.5 -mr-1 max-h-[88px] sm:max-h-[124px] overscroll-contain rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300';
 
 type Item = { label: string; value: number; color: string; lipat?: boolean };
 
@@ -204,8 +204,8 @@ export function MiniPieChart({
         </ul>
       </div>
       {dapatDigulir && (
-        <p className="text-[9px] sm:text-[10px] text-slate-400 text-center sm:text-left">
-          {slices.length} kategori · gulir daftar untuk melihat semua
+        <p className="text-[9px] sm:text-[10px] text-slate-400 text-center sm:text-left truncate">
+          {slices.length} kategori · gulir daftar
         </p>
       )}
     </Kartu>
