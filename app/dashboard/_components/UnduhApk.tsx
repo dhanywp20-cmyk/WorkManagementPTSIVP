@@ -1,41 +1,50 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Ikon } from '@/components/shared/Ikon';
+import { ambilRilisTerbaru, formatUkuran, kodeVersiAplikasi, URL_UNDUH_APK, type RilisAndroid } from '@/lib/rilis-android';
 
 /**
- * Tombol unduh APK Android di Profil. Berkasnya satu nama tetap
- * (public/android/work-management.apk) yang ditimpa CI tiap rilis, jadi yang
- * tampil selalu versi terbaru; versi.json ditulis CI bersamaan.
- * Belum ada rilis (versi.json tidak ada) -> tidak tampil apa pun.
+ * Tombol unduh APK Android di Profil - selalu rilis TERBARU yang diunggah
+ * admin (Admin Panel -> Aplikasi Android). Belum ada rilis -> tidak tampil.
  */
-type Versi = { versionName: string; versionCode: number; ukuran: number; dirilis: string };
-
 export function UnduhApk() {
-  const [versi, setVersi] = useState<Versi | null>(null);
+  const [rilis, setRilis] = useState<RilisAndroid | null>(null);
+  const [kodeTerpasang, setKodeTerpasang] = useState<number | null>(null);
 
   useEffect(() => {
     let hidup = true;
-    fetch('/android/versi.json', { cache: 'no-store' })
-      .then(r => (r.ok ? r.json() : null))
-      .then(j => { if (hidup && j?.versionName) setVersi(j as Versi); })
-      .catch(() => { /* belum ada rilis */ });
+    setKodeTerpasang(kodeVersiAplikasi());
+    ambilRilisTerbaru().then(r => { if (hidup) setRilis(r); });
     return () => { hidup = false; };
   }, []);
 
-  if (!versi) return null;
-  const mb = (versi.ukuran / 1024 / 1024).toFixed(1);
-  const tanggal = new Date(versi.dirilis).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+  if (!rilis) return null;
+  const sudahTerbaru = kodeTerpasang !== null && kodeTerpasang >= rilis.kode_versi;
 
   return (
-    <a href={`/android/work-management.apk?v=${versi.versionCode}`} download="work-management.apk"
-      className="flex items-center gap-3 w-full p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all">
-      <span className="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
-        <Ikon nama="⬇" ukuran={18} />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-bold text-slate-700">Unduh APK Android</span>
-        <span className="block text-[11px] text-slate-400">v{versi.versionName} · {mb} MB · {tanggal}</span>
-      </span>
-    </a>
+    <div className="space-y-2.5 pt-1">
+      {sudahTerbaru ? (
+        <p className="text-[11px] text-slate-500">Aplikasi Android di HP ini sudah versi terbaru (v{rilis.versi}).</p>
+      ) : (
+        <>
+          <a href={URL_UNDUH_APK}
+            className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold transition-all flex items-center justify-center gap-2">
+            <Ikon nama="⬇" ukuran={16} />
+            <span className="text-center leading-tight">{kodeTerpasang !== null ? 'Update' : 'Unduh'} Aplikasi (.apk) · v{rilis.versi} ({formatUkuran(rilis.ukuran)})</span>
+          </a>
+          <ol className="text-[11px] text-slate-500 leading-relaxed list-decimal pl-4 space-y-0.5">
+            <li>Unduh berkas .apk di atas dari HP Android.</li>
+            <li>Buka berkasnya, izinkan <strong>Instal aplikasi tidak dikenal</strong> bila diminta.</li>
+            <li>Pasang, lalu masuk dengan akun yang sama. Izinkan notifikasi agar pemberitahuan berbunyi.</li>
+          </ol>
+          {rilis.catatan && (
+            <details className="text-[11px] text-slate-500">
+              <summary className="cursor-pointer font-semibold text-slate-600">Yang baru di v{rilis.versi}</summary>
+              <p className="mt-1 whitespace-pre-line">{rilis.catatan}</p>
+            </details>
+          )}
+        </>
+      )}
+    </div>
   );
 }

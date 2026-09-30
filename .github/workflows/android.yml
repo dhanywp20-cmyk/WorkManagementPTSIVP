@@ -73,21 +73,6 @@ jobs:
           name: apk
           path: android/app/build/outputs/apk/**/*.apk
 
-      # Satu nama berkas tetap -> yang tersedia di Profil selalu versi terbaru.
-      - name: Publikasikan ke public/android
-        if: steps.kunci.outputs.ada == '1' && github.event_name != 'pull_request'
-        run: |
-          set -e
-          VC=$(grep '^versionCode=' android/version.properties | cut -d= -f2)
-          VN=$(grep '^versionName=' android/version.properties | cut -d= -f2)
-          mkdir -p public/android
-          cp android/app/build/outputs/apk/release/app-release.apk public/android/work-management.apk
-          UKURAN=$(stat -c%s public/android/work-management.apk)
-          printf '{"versionName":"%s","versionCode":%s,"ukuran":%s,"dirilis":"%s"}\n' \
-            "$VN" "$VC" "$UKURAN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > public/android/versi.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/android
-          if git diff --cached --quiet; then echo "Tidak ada perubahan"; exit 0; fi
-          git commit -m "APK Android v$VN ($VC) [skip ci]"
-          git push
+      # Rilis ke pengguna TIDAK lagi dari CI: unduh artefak "apk" di atas (atau
+      # build di laptop), lalu unggah di Admin Panel -> Aplikasi Android.
+      # Berkasnya masuk Supabase Storage dan langsung tampil di Profil.
