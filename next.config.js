@@ -22,6 +22,11 @@ const DIBANGUN = new Date().toLocaleString('id-ID', {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Jangan umumkan teknologi server (X-Powered-By: Next.js).
+  poweredByHeader: false,
+  // Source map produksi TIDAK dikirim ke peramban (bawaan Next, ditegaskan):
+  // tanpa itu kode asli tidak bisa direkonstruksi dari bundel yang diminifikasi.
+  productionBrowserSourceMaps: false,
   env: {
     NEXT_PUBLIC_VERSI_APP: version,
     NEXT_PUBLIC_KOMIT_APP: KOMIT,
@@ -36,6 +41,8 @@ const nextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          // Platform internal: jangan diindeks mesin pencari.
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           // Paksa HTTPS (Vercel selalu HTTPS). Reversible — tanpa preload.
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
