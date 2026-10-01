@@ -242,7 +242,7 @@ export function Modal({
             </div>
             <button
               type="button" onClick={onTutup} aria-label="Tutup"
-              className="w-8 h-8 rounded-kecil flex items-center justify-center flex-shrink-0 text-slate-400 hover:text-rose-600 transition-all"
+              className="w-8 h-8 rounded-kecil flex items-center justify-center flex-shrink-0 text-slate-500 hover:text-rose-600 transition-all"
               style={{ background: 'rgba(0,0,0,0.05)' }}
             >
               <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

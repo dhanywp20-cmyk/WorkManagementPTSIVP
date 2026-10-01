@@ -87,7 +87,7 @@ export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabe
     <div className={`${UBIN} h-full`} style={{ boxShadow: BAYANG_UBIN }}>
       {/* icon & accent tetap diterima (kontrak widget lama) tapi tidak lagi
           dilukis sebagai chip berwarna - lihat LABEL_UBIN. */}
-      <div className="flex items-center gap-2 mb-4" data-ikon={icon} data-aksen={accent}>
+      <div className="flex items-center gap-2 mb-4">
         <h3 className={`${LABEL_UBIN} truncate flex-1`}>{title}</h3>
         {onSeeAll && (
           <button onClick={onSeeAll}

@@ -74,7 +74,7 @@ function Empty({ emoji, msg }: { emoji: string; msg: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-8 gap-2">
       <span className="text-3xl select-none"><Ikon nama={emoji} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-      <p className="text-xs font-medium text-gray-400 text-center">{msg}</p>
+      <p className="text-xs font-medium text-gray-500 text-center">{msg}</p>
     </div>
   );
 }
@@ -89,7 +89,7 @@ function Row({ dot, title, sub, badge, badgeBg, badgeColor, badgeBorder }: {
       <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ background: dot }} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-800 truncate">{title}</p>
-        <p className="text-xs text-gray-400 truncate mt-0.5">{sub}</p>
+        <p className="text-xs text-gray-500 truncate mt-0.5">{sub}</p>
       </div>
       {badge && (
         <span className="text-[10px] font-black px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0 mt-0.5"
@@ -431,7 +431,7 @@ export function AnalyticsPlatform({
               title="Kembali ke Dashboard Analytics"
             >
               <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{background:'#d9770614',color:'#d97706',border:'1px solid #d9770626'}}>
+                style={{background:'#d9770614',color:'#b45309',border:'1px solid #d9770626'}}>
                 <Ikon nama="📊" ukuran={18} />
               </div>
               <div>
@@ -445,7 +445,7 @@ export function AnalyticsPlatform({
                     <span className="text-base animate-pulse select-none"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <div>
                       <p className="text-sm font-black text-red-700">{totalAlerts} item perlu perhatian</p>
-                      <p className="text-xs text-red-400">Lihat Command Center</p>
+                      <p className="text-xs text-red-600">Lihat Command Center</p>
                     </div>
                   </div>
                 : <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'#d1fae5',border:'1px solid #6ee7b7'}}>
@@ -537,9 +537,9 @@ export function AnalyticsPlatform({
                           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{background:a.dot}} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-800 truncate">{a.label}</p>
-                            <p className="text-xs text-gray-400 truncate">{a.sub}</p>
+                            <p className="text-xs text-gray-500 truncate">{a.sub}</p>
                           </div>
-                          <span className="text-[10px] text-gray-300 flex-shrink-0 tabular-nums">{rel(a.time)}</span>
+                          <span className="text-[10px] text-gray-500 flex-shrink-0 tabular-nums">{rel(a.time)}</span>
                         </div>
                       ))
                   }
@@ -575,7 +575,7 @@ export function AnalyticsPlatform({
                 Refresh
               </button>
               <div className="ml-auto flex items-center gap-2">
-                <span className="text-[10px] text-gray-400">{auditFiltered.length} log</span>
+                <span className="text-[10px] text-gray-500">{auditFiltered.length} log</span>
                 {/* Source legend */}
                 <span className="text-[10px] px-1.5 py-0.5 rounded" style={{background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}}>audit_trail</span>
                 <span className="text-[10px] px-1.5 py-0.5 rounded" style={{background:'#dbeafe',color:'#1e40af',border:'1px solid #93c5fd'}}>activity_logs</span>
@@ -589,14 +589,14 @@ export function AnalyticsPlatform({
               ? <div className="flex flex-col items-center py-16 gap-2">
                   <span className="text-4xl"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <p className="text-sm text-gray-500 font-medium">Belum ada audit log</p>
-                  <p className="text-xs text-gray-400">Log muncul setelah ada aksi di platform</p>
+                  <p className="text-xs text-gray-500">Log muncul setelah ada aksi di platform</p>
                 </div>
               : <div className="overflow-x-auto">
                   <table className="w-full text-sm" style={{minWidth:750}}>
                     <thead>
                       <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
                         {['Waktu','User','Aksi','Modul','Target','Perubahan','Catatan','Sumber'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap">{h}</th>
+                          <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -630,13 +630,13 @@ export function AnalyticsPlatform({
                               {(a.old_value || a.new_value)
                                 ? <div className="flex items-center gap-1 flex-wrap">
                                     {a.old_value && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 line-through">{a.old_value}</span>}
-                                    {a.old_value && a.new_value && <span className="text-[10px] text-gray-300">→</span>}
+                                    {a.old_value && a.new_value && <span className="text-[10px] text-gray-400">→</span>}
                                     {a.new_value && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-50 text-green-700 border border-green-100">{a.new_value}</span>}
                                   </div>
-                                : <span className="text-[10px] text-gray-300">—</span>}
+                                : <span className="text-[10px] text-gray-400">—</span>}
                             </td>
                             <td className="px-4 py-2.5 max-w-[160px]">
-                              <span className="text-[11px] text-gray-400 truncate block" title={a.notes ?? ''}>{a.notes || '—'}</span>
+                              <span className="text-[11px] text-gray-500 truncate block" title={a.notes ?? ''}>{a.notes || '—'}</span>
                             </td>
                             <td className="px-4 py-2.5">
                               <span className="text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap"
@@ -659,7 +659,7 @@ export function AnalyticsPlatform({
               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
                 <button onClick={() => setAuditPage(p => Math.max(0, p-1))} disabled={auditPage === 0}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40">← Prev</button>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-500">
                   Hal {auditPage+1} dari {auditTotalPages} · {auditFiltered.length} log
                 </span>
                 <button onClick={() => setAuditPage(p => Math.min(auditTotalPages-1, p+1))} disabled={auditPage >= auditTotalPages-1}
@@ -669,7 +669,7 @@ export function AnalyticsPlatform({
           </div>
         )}
 
-        <p className="text-center text-[10px] text-slate-400 select-none pb-2">
+        <p className="text-center text-[10px] text-slate-500 select-none pb-2">
           Analytics Platform — IndoVisual PTS · Work Management
         </p>
       </div>{/* end scrollable content */}

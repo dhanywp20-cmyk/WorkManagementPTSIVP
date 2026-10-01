@@ -63,7 +63,7 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
       </div>
 
       <div className="grid grid-cols-7 gap-0.5 mb-0.5">
-        {WEEKDAYS.map(w => <div key={w} className="text-center text-[8px] font-bold text-slate-400 uppercase">{w[0]}</div>)}
+        {WEEKDAYS.map(w => <div key={w} className="text-center text-[8px] font-bold text-slate-500 uppercase">{w[0]}</div>)}
       </div>
 
       <div className="grid grid-cols-7 gap-0.5">
@@ -98,7 +98,7 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
                 title={`Hapus tanggal ${fmtChip(d)}`} aria-label={`Hapus tanggal ${fmtChip(d)}`}><span aria-hidden="true">✕</span></button>
             </div>
           ))}
-          <span className="text-[10px] text-slate-400 ml-1">{dates.length} hari dipilih</span>
+          <span className="text-[10px] text-slate-500 ml-1">{dates.length} hari dipilih</span>
         </div>
       )}
     </div>

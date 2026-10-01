@@ -177,7 +177,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
               </div>
               <div className="p-4 space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🎯" />Jenis Kegiatan</label>
+                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🎯" />Jenis Kegiatan</label>
                   <select aria-label="🎯 Jenis Kegiatan" value={entry.jenis_kegiatan} onChange={e=>upd(idx,{jenis_kegiatan:e.target.value as JenisKegiatan})}
                     className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                     {JENIS_KEGIATAN_LIST.map(j=><option key={j} value={j}>{j}</option>)}
@@ -185,18 +185,18 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🕐" />Jam Mulai</label>
+                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🕐" />Jam Mulai</label>
                     <input aria-label="🕐 Jam Mulai" type="time" value={entry.jam_mulai} onChange={e=>upd(idx,{jam_mulai:e.target.value})}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🕐" />Jam Selesai</label>
+                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🕐" />Jam Selesai</label>
                     <input aria-label="🕐 Jam Selesai" type="time" value={entry.jam_selesai} onChange={e=>upd(idx,{jam_selesai:e.target.value})}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="📦" />Produk</label>
+                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="📦" />Produk</label>
                   <div className="grid grid-cols-2 gap-1.5">
                     {PRODUK_LIST.map(p=>{
                       const chk=entry.produk.includes(p);
@@ -221,9 +221,9 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                 </div>
                 {/* Produk Lain — barang temporer di luar list + beban daya (watt) */}
                 <div>
-                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="⚡" />Produk Lain (di luar list) — beban daya</label>
+                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="⚡" />Produk Lain (di luar list) — beban daya</label>
                   {entry.produk_lain.length===0&&(
-                    <p className="text-[11px] text-slate-400 mb-2">Tambah bila ada unit temporer di luar list. Beban dayanya dicatat (Watt); jam hidupnya mengikuti jam mulai/selesai kegiatan ini.</p>
+                    <p className="text-[11px] text-slate-500 mb-2">Tambah bila ada unit temporer di luar list. Beban dayanya dicatat (Watt); jam hidupnya mengikuti jam mulai/selesai kegiatan ini.</p>
                   )}
                   <div className="space-y-2">
                     {entry.produk_lain.map((pl,j)=>(
@@ -233,7 +233,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                         <div className="relative w-28 flex-shrink-0">
                           <input type="number" min={0} value={pl.watt||''} onChange={e=>updProdukLain(idx,j,{watt:Number(e.target.value)||0})} placeholder="Watt"
                             className="w-full rounded-xl pl-3 pr-8 py-2 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">W</span>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-500">W</span>
                         </div>
                         <button aria-label="Tutup" type="button" onClick={()=>rmProdukLain(idx,j)} className="w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 flex items-center justify-center flex-shrink-0" style={{border:'1px solid rgba(220,38,38,0.25)'}}>✕</button>
                       </div>
@@ -252,18 +252,18 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                 {entry.jenis_kegiatan==='Demo Product'&&(
                   <>
                     <div>
-                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🏢" />Tamu Instansi</label>
+                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🏢" />Tamu Instansi</label>
                       <input value={entry.tamu_instansi} onChange={e=>upd(idx,{tamu_instansi:e.target.value})}
                         className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder="Nama instansi / perusahaan tamu..."/>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="👤" />Nama Sales</label>
+                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="👤" />Nama Sales</label>
                         <input value={entry.nama_sales} onChange={e=>upd(idx,{nama_sales:e.target.value})}
                           className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder="Nama sales..."/>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🏷" />Division</label>
+                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🏷" />Division</label>
                         <select aria-label="— Pilih Division —" value={entry.sales_division} onChange={e=>upd(idx,{sales_division:e.target.value})}
                           className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                           <option value="">— Pilih Division —</option>
@@ -272,7 +272,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="🎯" />Kebutuhan</label>
+                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🎯" />Kebutuhan</label>
                       <div className="grid grid-cols-2 gap-1.5">
                         {KEBUTUHAN_LIST.map(k=>{
                           const chk=entry.kebutuhan.includes(k);
@@ -302,7 +302,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                   <div className="space-y-3">
                     {entry.jenis_kegiatan==='RnD'&&(
                       <div>
-                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="👥" />Team yang RnD</label>
+                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="👥" />Team yang RnD</label>
                         <div className="flex items-center gap-2">
                           <select aria-label="— Pilih Team —" value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
                             className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
@@ -331,7 +331,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       </div>
                     )}
                     <div>
-                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400"><IkonTeks nama="📝" />Keterangan</label>
+                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="📝" />Keterangan</label>
                       <textarea value={entry.keterangan} onChange={e=>upd(idx,{keterangan:e.target.value})} rows={3}
                         className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
                         style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder={`Keterangan ${entry.jenis_kegiatan}...`}/>

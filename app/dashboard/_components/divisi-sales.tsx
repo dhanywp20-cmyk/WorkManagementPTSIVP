@@ -64,14 +64,14 @@ export function DivisiSalesInline() {
     else beritahu('ok', `${rapikanDivisi(divisi).length} divisi tersimpan.`);
   };
 
-  if (!siap) return <div className="p-4 text-sm text-slate-400">Memuat daftar divisi…</div>;
+  if (!siap) return <div className="p-4 text-sm text-slate-500">Memuat daftar divisi…</div>;
 
   return (
     <div className="rounded-2xl border border-slate-200 overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
         <div>
           <h3 className="font-bold text-slate-800 text-sm">
-            Divisi Sales <span className="text-slate-400 font-semibold">· {divisi.length}</span>
+            Divisi Sales <span className="text-slate-500 font-semibold">· {divisi.length}</span>
           </h3>
           <p className="text-slate-500 text-xs mt-0.5">
             Dipakai semua dropdown divisi: Ticketing, Request Schedule, Request Design Project, Piket Showroom, dan pendaftaran akun.
@@ -107,7 +107,7 @@ export function DivisiSalesInline() {
             return (
               <span key={d} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
                 {d}
-                {jumlah > 0 && <span className="text-[10px] font-bold text-slate-400">{jumlah} akun</span>}
+                {jumlah > 0 && <span className="text-[10px] font-bold text-slate-500">{jumlah} akun</span>}
                 <button type="button" onClick={() => hapus(d)}
                   title={jumlah > 0 ? `Masih dipakai ${jumlah} akun` : `Hapus ${d}`}
                   aria-label={jumlah > 0 ? `${d} masih dipakai ${jumlah} akun` : `Hapus ${d}`}
@@ -123,7 +123,7 @@ export function DivisiSalesInline() {
         </div>
 
         <div className="flex items-center justify-end gap-2">
-          <p className="text-[11px] text-slate-400 mr-auto">Divisi yang masih dipakai akun tidak bisa dihapus.</p>
+          <p className="text-[11px] text-slate-500 mr-auto">Divisi yang masih dipakai akun tidak bisa dihapus.</p>
           <button type="button" onClick={simpan} disabled={menyimpan || divisi.length === 0}
             className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 hover:opacity-90"
             style={{ background: 'linear-gradient(135deg,#0f766e,#115e59)' }}>

@@ -97,4 +97,7 @@ jobs:
             exit 0
           fi
           APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
-          node scripts/terbitkan-apk.mjs "$APK" "$(printf '%s' "$PESAN" | head -1)"
+          # Commit merge PR berbaris pertama "Merge pull request #N from ..." -
+          # tidak berguna sebagai catatan rilis; judul PR ada di badan commit.
+          CATATAN=$(printf '%s\n' "$PESAN" | grep -v '^Merge pull request' | grep -v '^Co-Authored-By\|^Claude-Session' | sed '/^[[:space:]]*$/d' | head -5)
+          node scripts/terbitkan-apk.mjs "$APK" "$CATATAN"

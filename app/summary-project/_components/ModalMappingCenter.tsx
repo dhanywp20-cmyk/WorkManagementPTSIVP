@@ -11,7 +11,7 @@ import { PanelDuplikat } from './PanelDuplikat';
 import { IkonTeks } from '@/components/shared/Ikon';
 
 const MODUL_LABEL: Record<ModulTerpeta, { label: string; color: string }> = {
-  reminders: { label: '🗓️ Schedule', color: '#0891b2' },
+  reminders: { label: '🗓️ Schedule', color: '#0e7490' },
   tickets: { label: '🎫 Ticket', color: '#dc2626' },
   project_requests: { label: '🏗️ Design', color: '#7c3aed' },
 };
@@ -114,7 +114,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
       className="w-full text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/60 disabled:opacity-50 flex items-center justify-between gap-2">
       <span className="min-w-0">
         <span className="block text-sm font-bold text-gray-800 truncate">{p.name}</span>
-        <span className="block text-[11px] text-gray-400 truncate">{p.code}{p.location ? ` · ${p.location}` : ''}{p.sales_name ? ` · ${p.sales_name}` : ''}</span>
+        <span className="block text-[11px] text-gray-500 truncate">{p.code}{p.location ? ` · ${p.location}` : ''}{p.sales_name ? ` · ${p.sales_name}` : ''}</span>
       </span>
       {p.skor > 0 && <span className="text-[10px] font-bold text-indigo-600 flex-shrink-0">{Math.round(p.skor * 100)}%</span>}
     </button>
@@ -134,7 +134,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
               ['Total project', statistik.total_project, '#0891b2'],
             ] as const).map(([label, nilai, warna]) => (
               <div key={label} className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">{label}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{label}</p>
                 <p className="text-lg font-black" style={{ color: warna }}>{nilai}</p>
               </div>
             ))}
@@ -166,11 +166,11 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
             </div>
             <div className="border border-gray-100 rounded-xl divide-y divide-gray-100 max-h-[55vh] overflow-y-auto">
               {memuat ? (
-                <p className="py-8 text-center text-xs text-gray-400">Memuat antrean...</p>
+                <p className="py-8 text-center text-xs text-gray-500">Memuat antrean...</p>
               ) : galat ? (
                 <p className="py-8 text-center text-xs text-red-500">Gagal memuat antrean: {galat}</p>
               ) : antreanTampil.length === 0 ? (
-                <p className="py-8 text-center text-xs text-gray-400">{antrean.length ? 'Tidak ada nama yang cocok.' : '🎉 Semua record sudah terpeta.'}</p>
+                <p className="py-8 text-center text-xs text-gray-500">{antrean.length ? 'Tidak ada nama yang cocok.' : '🎉 Semua record sudah terpeta.'}</p>
               ) : antreanTampil.map(g => (
                 <button key={g.kunci} type="button" onClick={() => pilihGrup(g)}
                   className={`w-full text-left px-3 py-2.5 hover:bg-indigo-50/60 flex items-center justify-between gap-2 ${aktif?.kunci === g.kunci ? 'bg-indigo-50' : ''}`}>
@@ -184,13 +184,13 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
           {/* Keputusan */}
           <div className="min-w-0">
             {!aktif ? (
-              <div className="h-full min-h-[200px] rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-xs text-gray-400 text-center p-6">
+              <div className="h-full min-h-[200px] rounded-xl border border-dashed border-gray-200 flex items-center justify-center text-xs text-gray-500 text-center p-6">
                 Pilih satu nama di antrean untuk memutuskan project-nya.
               </div>
             ) : (
               <div className="space-y-3">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Record ({terpilih.size}/{aktif.records.length} dicentang)</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Record ({terpilih.size}/{aktif.records.length} dicentang)</p>
                   <div className="border border-gray-100 rounded-xl divide-y divide-gray-100 max-h-44 overflow-y-auto">
                     {aktif.records.map(r => {
                       const k = `${r.source_module}:${r.source_record_id}`;
@@ -214,10 +214,10 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
                 </div>
 
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Saran project</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Saran project</p>
                   <div className="space-y-1.5">
                     {saran.length ? saran.map(p => <KartuProject key={p.project_id} p={p} />)
-                      : <p className="text-[11px] text-gray-400">Tidak ada project yang namanya mirip.</p>}
+                      : <p className="text-[11px] text-gray-500">Tidak ada project yang namanya mirip.</p>}
                   </div>
                 </div>
 
@@ -232,7 +232,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
 
                 <div className="rounded-xl border border-gray-100 p-3 space-y-2">
                   <label className="block">
-                    <span className="block text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Atau buat project baru</span>
+                    <span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Atau buat project baru</span>
                     <input value={namaBaru} onChange={e => setNamaBaru(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
                   </label>

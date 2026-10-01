@@ -325,7 +325,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
           <div className="p-4 flex-1 overflow-y-auto min-h-0">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input
                 type="text"
                 autoFocus
@@ -335,7 +335,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 border border-slate-200"
               />
               {reminderSearching && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">mencari...</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">mencari...</span>
               )}
             </div>
 
@@ -469,7 +469,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           {isExternalGuest && (
             <div>
               <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
-                Brand * <span className="normal-case text-slate-400 font-medium tracking-normal">(Sales Internal yang di-CC)</span>
+                Brand * <span className="normal-case text-slate-500 font-medium tracking-normal">(Sales Internal yang di-CC)</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {BRAND_OPTIONS.map(opt => {
@@ -518,7 +518,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 Cari Project (Request Schedule &amp; Ticket)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input
                   type="text"
                   value={reminderQuery}
@@ -528,7 +528,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
                 />
                 {reminderSearching && (
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">mencari...</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">mencari...</span>
                 )}
               </div>
 
@@ -607,7 +607,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   </div>
                   <button aria-label="Tutup" type="button"
                     onClick={() => { setSelectedReminder(null); set({ project_name: '' }); }}
-                    className="text-xs text-red-400 hover:text-red-600 font-bold flex-shrink-0">✕</button>
+                    className="text-xs text-red-600 hover:text-red-700 font-bold flex-shrink-0">✕</button>
                 </div>
               )}
             </div>
@@ -628,7 +628,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Project Name *
                 {projectType === 'existing' && selectedReminder && (
-                  <span className="ml-2 text-red-400 font-semibold normal-case text-[10px]"><IkonTeks nama="🔒" />dari reminder</span>
+                  <span className="ml-2 text-red-600 font-semibold normal-case text-[10px]"><IkonTeks nama="🔒" />dari reminder</span>
                 )}
               </label>
               <div className="relative">
@@ -695,7 +695,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             </div>
             <div>
               <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
-                SN Unit <span className="text-gray-400 normal-case font-normal text-[10px]">(opsional)</span>
+                SN Unit <span className="text-gray-500 normal-case font-normal text-[10px]">(opsional)</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="🔢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -711,15 +711,15 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           <div>
             <div>
               <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
-                <IkonTeks nama="📅" />Date <span className="text-gray-400 normal-case font-normal text-[10px]">(hari ini)</span>
+                <IkonTeks nama="📅" />Date <span className="text-gray-500 normal-case font-normal text-[10px]">(hari ini)</span>
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input type="text"
                   value={new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                   disabled
                   aria-label="Tanggal ticket (otomatis hari ini)"
-                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-400 cursor-not-allowed"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-500 cursor-not-allowed"
                   style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.08)" }} />
               </div>
             </div>
@@ -743,7 +743,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             </div>
             <div className="flex justify-between items-center mt-1.5 px-1">
               <span className="text-xs text-gray-500">Maksimal 4 kata</span>
-              <span className={`text-xs font-bold ${form.issue_case.trim().split(/\s+/).filter(Boolean).length >= 4 ? "text-red-500" : "text-gray-400"}`}>
+              <span className={`text-xs font-bold ${form.issue_case.trim().split(/\s+/).filter(Boolean).length >= 4 ? "text-red-500" : "text-gray-500"}`}>
                 {form.issue_case.trim().split(/\s+/).filter(Boolean).length}/4 kata
               </span>
             </div>
@@ -776,7 +776,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <span className="text-sm font-bold tracking-wide text-slate-700">SBU (Sales External)</span>
               </div>
               <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
-                SBU <span className="normal-case text-gray-400 font-medium tracking-normal">(opsional — atas nama Sales External)</span>
+                SBU <span className="normal-case text-gray-500 font-medium tracking-normal">(opsional — atas nama Sales External)</span>
               </label>
               <SalesPicker
                 value={form.sales_name}
@@ -834,7 +834,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                     </optgroup>
                   )}
                 </select>
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs">▾</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none text-xs">▾</span>
               </div>
             </div>
           )}
@@ -861,7 +861,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           </div>
           <div>
             <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
-              Upload Foto <span className="text-gray-400 font-normal">(Optional)</span>
+              Upload Foto <span className="text-gray-500 font-normal">(Optional)</span>
             </label>
             <p className="text-xs text-gray-500 mb-3">Foto pendukung kondisi awal / bukti masalah</p>
             <input type="file" accept="image/*" aria-label="Foto pendukung ticket" onChange={e => set({ photo: e.target.files?.[0] || null })}
@@ -872,8 +872,8 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <div className="flex items-center gap-2 p-2 bg-white rounded-lg border" style={{ borderColor: "rgba(220,38,38,0.2)" }}>
                   <span className="text-red-600">✓</span>
                   <span className="text-sm font-semibold text-gray-700 flex-1 truncate">{form.photo.name}</span>
-                  <span className="text-xs text-gray-400">({(form.photo.size / 1024).toFixed(1)} KB)</span>
-                  <button aria-label="Tutup" type="button" onClick={() => set({ photo: null })} className="text-red-400 hover:text-red-600 font-bold text-xs ml-1">✕</button>
+                  <span className="text-xs text-gray-500">({(form.photo.size / 1024).toFixed(1)} KB)</span>
+                  <button aria-label="Tutup" type="button" onClick={() => set({ photo: null })} className="text-red-600 hover:text-red-700 font-bold text-xs ml-1">✕</button>
                 </div>
                 <img src={URL.createObjectURL(form.photo)} alt="Preview"
                   className="w-full max-h-48 object-cover rounded-lg border-2 shadow-sm"

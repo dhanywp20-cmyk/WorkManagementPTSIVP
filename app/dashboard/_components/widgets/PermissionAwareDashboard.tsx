@@ -142,15 +142,15 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   flush();
 
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const firstName = (currentUser.full_name ?? '').split(' ')[0];
+  const firstName = (currentUser.full_name ?? '').trim().split(' ')[0] || currentUser.username || '';
   const showAnalyticsTabs = visible.some(w => w.id === 'analytics');
 
   return (
-    /*  Bidang netral SENDIRI, menutupi latar dasbor (foto merek) di belakangnya.
-        Beranda berisi angka & grafik - foto di belakang kartu menurunkan
-        kontras dan membuat layar terasa ramai. Setelan "Latar Dashboard" di
-        Admin Panel tetap berlaku untuk layar lain. */
-    <div className="w-full h-full overflow-y-auto" style={{ background: '#f1f5f9' }}>
+    /*  Latar mengikuti setelan Admin Panel -> Merek -> "Latar Dashboard"
+        (bawaan: Netral). Dulu beranda dipaksa netral di sini, sehingga
+        pilihan "Gambar" diam-diam tidak berlaku di beranda saja. Ubin
+        berlatar putih pekat, jadi teks tetap terbaca di atas foto. */
+    <div className="w-full h-full overflow-y-auto">
       {/* ── Header sambutan ──────────────────────────────────────────────────
           Dulu sambutan ini ikut terkurung di dalam kolom max-w-[1600px] yang
           sama dengan isi, jadi ia melayang di atas latar tanpa batas yang
@@ -162,7 +162,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         style={{ background: 'rgba(255,255,255,0.96)', borderBottom: '1px solid #e2e8f0', backdropFilter: 'blur(16px)' }}>
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-2.5 md:py-3.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-0">
-            <h1 className="text-base md:text-xl font-extrabold tracking-tight leading-tight text-slate-900">Halo, {firstName}</h1>
+            <h1 className="text-base md:text-xl font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `Halo, ${firstName}` : 'Halo'}</h1>
             <p className="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
           {/*

@@ -60,6 +60,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
     <div ref={ref} className="relative flex-shrink-0">
       <button
         onClick={() => setOpen(o => !o)}
+        aria-label={`${label}: ${count} notifikasi`} title={label}
         className="relative flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
         style={{
           background: count > 0 ? bgColor : 'rgba(255,255,255,0.55)',
@@ -67,15 +68,17 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
           boxShadow: count > 0 ? `0 2px 12px ${borderColor}55` : 'none',
         }}
       >
-        <Icon className="w-4 h-4 flex-shrink-0" style={{ color: count > 0 ? color : '#94a3b8' }} />
-        <span className="text-xs font-bold hidden sm:block" style={{ color: count > 0 ? color : '#64748b' }}>{label}</span>
+        <Icon className="w-4 h-4 flex-shrink-0" style={{ color: count > 0 ? color : '#64748b' }} />
+        {/* Label hanya di layar lebar: di 1280px dengan sidebar terbuka, lima
+            chip berlabel mendorong deretan header keluar layar. */}
+        <span className="text-xs font-bold hidden 2xl:block" style={{ color: count > 0 ? color : '#64748b' }}>{label}</span>
         {count > 0 && (
           <span className="flex items-center justify-center rounded-full text-white font-black text-[10px] min-w-[18px] h-[18px] px-1 animate-pulse"
             style={{ background: dotColor, boxShadow: `0 0 6px ${dotColor}88` }}>
             {count > 99 ? '99+' : count}
           </span>
         )}
-        {count === 0 && <span className="text-[10px] font-semibold text-slate-400">0</span>}
+        {count === 0 && <span className="text-[10px] font-semibold text-slate-500">0</span>}
       </button>
 
       {open && (
@@ -108,7 +111,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 gap-2">
                 <span className="text-3xl opacity-40"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                <p className="text-xs text-slate-400 font-medium">Tidak ada notifikasi</p>
+                <p className="text-xs text-slate-500 font-medium">Tidak ada notifikasi</p>
               </div>
             ) : (
               items.map((item) => (
@@ -118,14 +121,14 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
                     <p className="text-sm font-semibold text-slate-800 truncate leading-tight">{item.title}</p>
                     <p className="text-[11px] text-slate-500 truncate mt-0.5">{item.subtitle}</p>
                   </div>
-                  <span className="text-[10px] text-slate-400 flex-shrink-0 mt-0.5">{formatTime(item.time)}</span>
+                  <span className="text-[10px] text-slate-500 flex-shrink-0 mt-0.5">{formatTime(item.time)}</span>
                 </button>
               ))
             )}
           </div>
           {items.length > 0 && (
             <div className="px-4 py-2.5 border-t border-slate-100">
-              <p className="text-[10px] text-center text-slate-400 font-medium">Klik item untuk membuka</p>
+              <p className="text-[10px] text-center text-slate-500 font-medium">Klik item untuk membuka</p>
             </div>
           )}
         </div>

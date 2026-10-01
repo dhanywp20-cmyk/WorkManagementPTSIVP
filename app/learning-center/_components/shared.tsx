@@ -151,7 +151,7 @@ export const fmtDateTime = (d: string) =>
   new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
 export function ScoreBadge({ score, passing }: { score: number | null; passing: number }) {
-  if (score === null) return <span className="text-slate-400 text-xs">—</span>;
+  if (score === null) return <span className="text-slate-500 text-xs">—</span>;
   const pass = score >= passing;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${pass ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
@@ -184,7 +184,7 @@ export function GradingStatusBadge({ attempt }: { attempt: { grading_status?: st
 export function SearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
     <div className="relative w-full sm:w-auto">
-      <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
       <input
@@ -564,7 +564,7 @@ export function BtnEdit({ onClick, children, disabled }: { onClick?: () => void;
   const hasText = !!children;
   return (
     <button aria-label={hasText ? undefined : 'Edit'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Edit'}
-      className={`${hasText ? textBase : iconOnlyBase} text-emerald-600 bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-200`}>
+      className={`${hasText ? textBase : iconOnlyBase} text-emerald-700 bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-200`}>
       <IcoEdit size={hasText ? 12 : 13} />{hasText && children}
     </button>
   );

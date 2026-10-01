@@ -71,7 +71,7 @@ function StyleA() {
           <div className="flex items-center gap-2 mb-4">
             <span className="text-lg"><Ikon nama={selected.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
             <h3 className="font-bold text-slate-800">{selected.name}</h3>
-            <span className="text-xs text-slate-400 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">{selected.items} item</span>
+            <span className="text-xs text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">{selected.items} item</span>
           </div>
 
           {/* Subfolders */}
@@ -84,7 +84,7 @@ function StyleA() {
                     <path d="M2 7.5C2 6.67 2.67 6 3.5 6H9l2 2h9.5c.83 0 1.5.67 1.5 1.5v9c0 .83-.67 1.5-1.5 1.5h-17C2.67 20 2 19.33 2 18.5v-11z" fill={openSub === s ? '#FCD34D' : '#FBBF24'} stroke="#D97706" strokeWidth="0.8" />
                   </svg>
                   <span className="text-xs font-semibold text-slate-700 truncate">{s}</span>
-                  <svg aria-hidden="true" focusable="false" className={`w-3 h-3 ml-auto text-slate-400 transition-transform flex-shrink-0 ${openSub === s ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
+                  <svg aria-hidden="true" focusable="false" className={`w-3 h-3 ml-auto text-slate-500 transition-transform flex-shrink-0 ${openSub === s ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
                 </button>
               ))}
             </div>
@@ -105,7 +105,7 @@ function StyleA() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-slate-800 truncate">{m.name}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">{m.hasAI && <AIBadge />}<span className="text-[10px] text-slate-400">{m.date}</span></div>
+                      <div className="flex items-center gap-1.5 mt-0.5">{m.hasAI && <AIBadge />}<span className="text-[10px] text-slate-500">{m.date}</span></div>
                     </div>
                     <a href="#" className="text-xs text-blue-600 bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg font-semibold hover:bg-blue-100 transition-all flex-shrink-0">Buka</a>
                   </div>
@@ -123,7 +123,7 @@ function StyleA() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-slate-800 truncate">{m.name}</p>
-                    <div className="flex items-center gap-1.5 mt-0.5">{m.hasAI && <AIBadge />}<span className="text-[10px] text-slate-400">{m.date}</span></div>
+                    <div className="flex items-center gap-1.5 mt-0.5">{m.hasAI && <AIBadge />}<span className="text-[10px] text-slate-500">{m.date}</span></div>
                   </div>
                   <a href="#" className="text-xs text-blue-600 bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg font-semibold hover:bg-blue-100 transition-all flex-shrink-0">Buka</a>
                 </div>
@@ -149,8 +149,8 @@ function StyleB() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
-            <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <span className="text-xs text-slate-400">Cari materi...</span>
+            <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <span className="text-xs text-slate-500">Cari materi...</span>
           </div>
           <button className="px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-md" style={{ background: 'linear-gradient(135deg,#3b82f6,#6366f1)' }}>+ Tambah Materi</button>
         </div>
@@ -231,19 +231,19 @@ function StyleC() {
             <h2 className="text-base font-bold text-slate-800 flex items-center gap-2"><span><Ikon nama="📚" ukuran="1em" className="inline-block align-[-0.12em]" /></span> Materi Training</h2>
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 mt-1">
-              <button onClick={() => setBreadcrumb([])} className={`text-xs font-semibold transition-all ${breadcrumb.length === 0 ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'}`}>Beranda</button>
+              <button onClick={() => setBreadcrumb([])} className={`text-xs font-semibold transition-all ${breadcrumb.length === 0 ? 'text-blue-600' : 'text-slate-500 hover:text-blue-500'}`}>Beranda</button>
               {breadcrumb.map((crumb, i) => (
                 <span key={crumb} className="flex items-center gap-1.5">
                   <span className="text-slate-300 text-xs">›</span>
-                  <button onClick={() => setBreadcrumb(breadcrumb.slice(0, i + 1))} className={`text-xs font-semibold transition-all ${i === breadcrumb.length - 1 ? 'text-blue-600' : 'text-slate-400 hover:text-blue-500'}`}>{crumb}</button>
+                  <button onClick={() => setBreadcrumb(breadcrumb.slice(0, i + 1))} className={`text-xs font-semibold transition-all ${i === breadcrumb.length - 1 ? 'text-blue-600' : 'text-slate-500 hover:text-blue-500'}`}>{crumb}</button>
                 </span>
               ))}
             </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5">
-              <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <span className="text-xs text-slate-400">Cari materi...</span>
+              <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <span className="text-xs text-slate-500">Cari materi...</span>
             </div>
             <button className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ background: 'linear-gradient(135deg,#3b82f6,#6366f1)' }}>+ Tambah</button>
           </div>
@@ -269,7 +269,7 @@ function StyleC() {
                 <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${f.color} flex items-center justify-center text-xl shadow-md flex-shrink-0`}><Ikon nama={f.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-800 group-hover:text-blue-700 transition-all">{f.name}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{f.items} materi tersedia</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{f.items} materi tersedia</p>
                   {f.sub.length > 0 && <p className="text-[10px] text-slate-300 mt-0.5">{f.sub.length} subfolder</p>}
                 </div>
                 <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-slate-300 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
@@ -281,7 +281,7 @@ function StyleC() {
           <div>
             {currentFolder && currentFolder.sub.length > 0 && (
               <div className="mb-5">
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"><IkonTeks nama="📁" />Subfolder</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2"><IkonTeks nama="📁" />Subfolder</p>
                 <div className="grid grid-cols-3 gap-2">
                   {currentFolder.sub.map(s => (
                     <button key={s} onClick={() => setBreadcrumb(b => [...b, s])}
@@ -295,7 +295,7 @@ function StyleC() {
                 </div>
               </div>
             )}
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2"><IkonTeks nama="📄" />Materi</p>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2"><IkonTeks nama="📄" />Materi</p>
             <div className="space-y-2">
               {MOCK_MATERIALS.map(m => (
                 <div key={m.id} className="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 bg-white hover:border-blue-200 hover:shadow-sm transition-all">
@@ -305,9 +305,9 @@ function StyleC() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-800">{m.name}</p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-slate-400">{m.folder}</span>
+                      <span className="text-[10px] text-slate-500">{m.folder}</span>
                       {m.hasAI && <AIBadge />}
-                      <span className="text-[10px] text-slate-400">{m.date}</span>
+                      <span className="text-[10px] text-slate-500">{m.date}</span>
                     </div>
                   </div>
                   <a href="#" className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg font-bold hover:bg-blue-100 transition-all flex-shrink-0">
@@ -338,8 +338,8 @@ function StyleD() {
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-3 py-1.5 shadow-sm">
-            <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            <span className="text-xs text-slate-400">Cari materi...</span>
+            <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <span className="text-xs text-slate-500">Cari materi...</span>
           </div>
           <button className="px-3 py-1.5 rounded-lg text-xs font-bold text-white shadow-md" style={{ background: 'linear-gradient(135deg,#0ea5e9,#6366f1)' }}>+ Tambah</button>
         </div>
@@ -381,7 +381,7 @@ function StyleD() {
               <span className="text-lg"><Ikon nama={selected.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
               <div>
                 <h3 className="font-bold text-slate-800 text-sm">{selected.name}{openSub ? ` › ${openSub}` : ''}</h3>
-                <p className="text-[10px] text-slate-400">{selected.items} materi tersedia</p>
+                <p className="text-[10px] text-slate-500">{selected.items} materi tersedia</p>
               </div>
             </div>
 
@@ -474,7 +474,7 @@ export default function MateriStylePreview() {
 
         {/* Footer */}
         <div className="mt-6 text-center">
-          <p className="text-slate-500 text-xs">Balas dengan <strong className="text-slate-400">A, B, C, atau D</strong> untuk menerapkan style pilihan ke halaman Materi Training yang sebenarnya</p>
+          <p className="text-slate-500 text-xs">Balas dengan <strong className="text-slate-500">A, B, C, atau D</strong> untuk menerapkan style pilihan ke halaman Materi Training yang sebenarnya</p>
         </div>
       </div>
     </div>

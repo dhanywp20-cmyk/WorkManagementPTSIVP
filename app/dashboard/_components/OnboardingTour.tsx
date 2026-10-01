@@ -87,7 +87,7 @@ const ALL_STEPS: TourStep[] = [
     id: 'form-bast', menuKey: 'form-bast', icon: '⭐',
     title: 'Form Review Demo & BAST',
     desc: 'Penilaian kualitas Demo Produk dan serah terima. Rating di bawah 3★ mengurangi KPI.',
-    color: '#d97706', accentBg: 'linear-gradient(135deg,#fffbeb,#fef3c7)',
+    color: '#b45309', accentBg: 'linear-gradient(135deg,#fffbeb,#fef3c7)',
     flow: [
       { icon: '⭐', label: 'Isi Review', state: 'normal' },
       { icon: '⭐⭐', label: 'Beri Rating', state: 'active' },
@@ -123,7 +123,7 @@ const ALL_STEPS: TourStep[] = [
     id: 'daily-report', menuKey: 'daily-report', icon: '📈',
     title: 'Daily Report',
     desc: 'Catatan aktivitas harian & performa tim. Laporan terakumulasi otomatis setiap hari.',
-    color: '#059669', accentBg: 'linear-gradient(135deg,#f0fdf4,#dcfce7)',
+    color: '#047857', accentBg: 'linear-gradient(135deg,#f0fdf4,#dcfce7)',
     flow: [
       { icon: '📈', label: 'Tambah Laporan', state: 'normal' },
       { icon: '✏️', label: 'Isi Aktivitas', state: 'active' },
@@ -135,7 +135,7 @@ const ALL_STEPS: TourStep[] = [
     id: 'unit-movement', menuKey: 'unit-movement', icon: '🚚',
     title: 'Unit Movement Log',
     desc: 'Tracking keluar-masuk unit demo & peralatan. Semua gerakan tercatat untuk akuntabilitas inventori.',
-    color: '#d97706', accentBg: 'linear-gradient(135deg,#fffbeb,#fef3c7)',
+    color: '#b45309', accentBg: 'linear-gradient(135deg,#fffbeb,#fef3c7)',
     flow: [
       { icon: '🚚', label: 'Catat Keluar', state: 'normal' },
       { icon: '📝', label: 'Isi Detail', state: 'active' },
@@ -179,7 +179,7 @@ function chipStyle(state: FlowChip['state']): React.CSSProperties {
 function FlowViz({ flow }: { flow: FlowChip[] }) {
   return (
     <div style={{ padding: '10px 12px', background: 'rgba(0,0,0,0.03)', borderRadius: 10, marginTop: 8 }}>
-      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#94a3b8', textTransform: 'uppercase', marginBottom: 8 }}>
+      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>
         Alur penggunaan
       </p>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>

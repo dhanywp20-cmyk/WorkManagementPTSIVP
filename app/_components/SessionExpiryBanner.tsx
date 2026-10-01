@@ -81,7 +81,7 @@ export default function SessionExpiryBanner() {
       ) : (
         <>
           <span><IkonTeks nama="⚠" />Sesi Anda akan berakhir dalam <strong>{minutesLeft} menit</strong></span>
-          <button onClick={handleExtend} className="bg-white text-amber-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-amber-50 transition-all">
+          <button onClick={handleExtend} className="bg-white text-amber-700 px-3 py-1 rounded-lg text-xs font-bold hover:bg-amber-50 transition-all">
             Perpanjang Sesi
           </button>
         </>

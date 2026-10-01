@@ -73,7 +73,7 @@ export function LingkupManagerInline() {
     else beritahu('ok', 'Lingkup tersimpan.');
   };
 
-  if (!siap) return <div className="p-4 text-sm text-slate-400">Memuat…</div>;
+  if (!siap) return <div className="p-4 text-sm text-slate-500">Memuat…</div>;
 
   return (
     <div className="rounded-2xl border border-slate-200 overflow-hidden">
@@ -95,7 +95,7 @@ export function LingkupManagerInline() {
         )}
 
         {kandidat.length === 0 ? (
-          <p className="text-sm text-slate-400 py-4">
+          <p className="text-sm text-slate-500 py-4">
             Belum ada akun Manager atau ber-Full Access. Lingkup hanya berlaku untuk akun yang jangkauannya
             memang lintas kelompok.
           </p>
@@ -103,7 +103,7 @@ export function LingkupManagerInline() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-[10px] font-bold tracking-widest uppercase text-slate-400 border-b border-slate-100">
+                <tr className="text-[10px] font-bold tracking-widest uppercase text-slate-500 border-b border-slate-100">
                   <th className="text-left px-3 py-2.5">Akun</th>
                   {group.map(g => <th key={g.nama} className="text-center px-3 py-2.5 whitespace-nowrap">{g.label}</th>)}
                   <th className="text-left px-3 py-2.5">Berlaku</th>
@@ -117,9 +117,9 @@ export function LingkupManagerInline() {
                     <tr key={u.id} className="border-b border-slate-50 last:border-0">
                       <td className="px-3 py-2.5">
                         <p className="font-bold text-slate-800">{u.full_name}</p>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[11px] text-slate-500">
                           {u.jabatan ?? '—'}
-                          {(u.access_level ?? '') === 'full' && <span className="ml-1.5 font-bold text-emerald-600">Full Access</span>}
+                          {(u.access_level ?? '') === 'full' && <span className="ml-1.5 font-bold text-emerald-700">Full Access</span>}
                         </p>
                       </td>
                       {group.map(g => (
@@ -151,7 +151,7 @@ export function LingkupManagerInline() {
         )}
 
         <div className="flex items-center justify-end gap-2">
-          <p className="text-[11px] text-slate-400 mr-auto">
+          <p className="text-[11px] text-slate-500 mr-auto">
             Daftar kelompoknya diatur di Admin Panel → Kelompok &amp; Notifikasi.
           </p>
           <button type="button" onClick={simpan} disabled={menyimpan}

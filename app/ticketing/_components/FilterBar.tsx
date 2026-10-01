@@ -104,9 +104,9 @@ export function FilterBar({
       <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
         <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3" aktif={[searchSalesName, searchProduct, handlerFilter, filterStatus, salesDivisionFilter]}>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Location</label>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Location</label>
             <div className="relative">
-              <Ico name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Ico name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input aria-label="Search project / lokasi..."
                 type="text"
                 value={searchProject}
@@ -117,9 +117,9 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales Name</label>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales Name</label>
             <div className="relative">
-              <Ico name="user" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Ico name="user" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input aria-label="Search sales name..."
                 type="text"
                 value={searchSalesName}
@@ -130,9 +130,9 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Product</label>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Product</label>
             <div className="relative">
-              <Ico name="package" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Ico name="package" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input aria-label="Cari product..."
                 type="text"
                 value={searchProduct}
@@ -143,9 +143,9 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
             <div className="relative">
-              <Ico name="users" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Ico name="users" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <select aria-label="All Handlers"
                 value={handlerFilter || ""}
                 onChange={(e) => setHandlerFilter(e.target.value || null)}
@@ -156,13 +156,13 @@ export function FilterBar({
                   <option key={m.id} value={m.name}>{m.name}</option>
                 ))}
               </select>
-              <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
             <div className="relative">
-              <Ico name="tag" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Ico name="tag" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <select aria-label="All Status"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -182,13 +182,13 @@ export function FilterBar({
                   </>
                 )}
               </select>
-              <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
             <div className="relative">
-              <Ico name="calendar" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <Ico name="calendar" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <select aria-label="All Years"
                 value={filterYear}
                 onChange={(e) => setFilterYear(e.target.value)}
@@ -201,7 +201,7 @@ export function FilterBar({
                 <option value={TAHUN_TERBARU}>{RENTANG_BULAN_TIKET} Bulan Terakhir</option>
                 {availableYears.map((year) => (<option key={year} value={year}>{year}</option>))}
               </select>
-              <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+              <Ico name="chevron" className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
             </div>
           </div>
         </FilterLipat>

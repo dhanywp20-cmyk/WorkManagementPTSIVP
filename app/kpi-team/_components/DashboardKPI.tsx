@@ -358,7 +358,7 @@ function KartuModul({ ikon, judul, warna, catatan, angka, satuan, percik, kaki, 
       <div className="flex items-end justify-between gap-2">
         <div className="flex items-baseline gap-1.5 min-w-0">
           <span className="text-[38px] font-black leading-[0.92] text-slate-900 tabular-nums" style={{ letterSpacing: '-0.035em' }}>{angka}</span>
-          <span className="text-[11px] font-bold text-slate-400 truncate">{satuan}</span>
+          <span className="text-[11px] font-bold text-slate-500 truncate">{satuan}</span>
         </div>
         {percik && percik.length > 1 && <Percik nilai={percik} warna={warna} lebar={88} tinggi={32}/>}
       </div>
@@ -444,10 +444,10 @@ function RelSeksi({ judul }: { judul: string }) {
         di tempat lain. Warna teks apa pun akan salah di sebagian gambar; yang
         benar adalah membawa latarnya sendiri.
       */}
-      {/* Beranda kini berlatar netral (lihat PermissionAwareDashboard), jadi
-          judul seksi cukup teks polos - keping putih tadinya hanya penolong
-          keterbacaan di atas foto. */}
-      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 flex-shrink-0">{judul}</span>
+      {/* Keping putih tipis tetap dipakai: latar beranda bisa berupa foto
+          (setelan "Latar Dashboard" = Gambar), dan teks polos di atas foto
+          tidak terbaca. Di latar netral keping ini nyaris tak terlihat. */}
+      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 flex-shrink-0 px-2.5 py-1 rounded-full bg-white/85 backdrop-blur-sm">{judul}</span>
       <span aria-hidden="true" className="flex-1 h-px bg-slate-200"/>
     </div>
   );
@@ -458,9 +458,9 @@ function KepalaUbin({ ikon, judul, warna, catatan }: {
   ikon: string; judul: string; warna: string; catatan?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center gap-2 mb-4" data-ikon={ikon} data-warna={warna}>
+    <div className="flex items-center gap-2 mb-4">
       <h3 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 flex-1 truncate">{judul}</h3>
-      {catatan && <span className="text-[10px] font-semibold text-slate-400 flex-shrink-0">{catatan}</span>}
+      {catatan && <span className="text-[10px] font-semibold text-slate-500 flex-shrink-0">{catatan}</span>}
     </div>
   );
 }
@@ -469,7 +469,7 @@ function KepalaUbin({ ikon, judul, warna, catatan }: {
 function KakiUbin({ kiri, kanan, warna }: { kiri: React.ReactNode; kanan: React.ReactNode; warna?: string }) {
   return (
     <div className="flex justify-between items-center mt-2.5 pt-2.5" style={{ borderTop: '1px dashed rgba(15,23,42,0.10)' }}>
-      <span className="text-[10px] font-bold text-slate-400">{kiri}</span>
+      <span className="text-[10px] font-bold text-slate-500">{kiri}</span>
       <span className="text-[11.5px] font-black" style={{ color: warna ?? '#475569' }}>{kanan}</span>
     </div>
   );
@@ -495,7 +495,7 @@ function PitaItem({ label, angka, satuan, garis, children }: {
     <div className={`min-w-0 ${garis ? 'lg:pl-5 lg:border-l lg:border-slate-200' : ''}`}>
       <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] truncate text-slate-500">{label}</p>
       <p className="text-[26px] sm:text-[28px] font-extrabold leading-none mt-1.5 tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>
-        {angka}{satuan && <span className="text-[13px] font-semibold ml-1 text-slate-400">{satuan}</span>}
+        {angka}{satuan && <span className="text-[13px] font-semibold ml-1 text-slate-500">{satuan}</span>}
       </p>
       <div className="flex items-center gap-2 mt-2 h-[20px]">{children}</div>
     </div>
@@ -682,7 +682,7 @@ function AuditRow({ entry }: { entry: AuditEntry }) {
 function ScopeBadge({ scope }: { scope: Scope }) {
   const cfg = {
     admin:     { label: 'Semua Data',         color: '#be123c', icon: '👑' },
-    pts_sup:   { label: scope.ptsTeamType ?? 'PTS Supervisor', color: '#0891b2', icon: '🏪' },
+    pts_sup:   { label: scope.ptsTeamType ?? 'PTS Supervisor', color: '#0e7490', icon: '🏪' },
     team:      { label: 'Team Member',        color: '#7c3aed', icon: '👤' },
     none:      { label: '-',                  color: '#6b7280', icon: '—'  },
   }[scope.kind];
@@ -1209,12 +1209,12 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                         {team:'MVI', person:kpi?.piket.todayMvi},
                       ].map(p=>(
                         <div key={p.team} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-[10px] bg-slate-50 border border-black/[0.05]">
-                          <span className="text-[10px] font-black tracking-[0.08em] flex-shrink-0" style={{color:'#0891b2'}}>{p.team}</span>
+                          <span className="text-[10px] font-black tracking-[0.08em] flex-shrink-0" style={{color:'#0e7490'}}>{p.team}</span>
                           {loading
                             ? <span className="inline-block h-2.5 w-16 rounded bg-slate-100 animate-pulse"/>
                             : p.person
                               ? <span className="text-[11px] font-bold text-slate-600 truncate">{p.person}</span>
-                              : <span className="text-[11px] font-semibold text-slate-300 italic truncate">Belum diisi</span>}
+                              : <span className="text-[11px] font-semibold text-slate-500 italic truncate">Belum diisi</span>}
                         </div>
                       ))}
                     </div>
@@ -1275,7 +1275,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                         <KakiUbin kiri="Rata-rata beban" warna={AKSEN}
                           kanan={`${(kpi.tickets.open/Math.max(kpi.tickets.byHandler.length,1)).toFixed(1).replace('.',',')} tiket/orang`}/>
                       </div>
-                    </> : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
+                    </> : <p className="text-sm text-center py-6 text-slate-500">Tidak ada data</p>}
                 </div>
 
                 {/* DIVISI */}
@@ -1285,7 +1285,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byDivision.length
                       ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))}/>
-                      : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data</p>}
+                      : <p className="text-sm text-center py-6 text-slate-500">Tidak ada data</p>}
                 </div>
 
                 {/*
@@ -1299,7 +1299,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                   {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
                     kpi?.tickets.byProduct?.length
                       ? <HBarChart lebarLabel="10rem" data={kpi.tickets.byProduct.map(p=>({label:p.product,value:p.count}))}/>
-                      : <p className="text-sm text-center py-6 text-slate-400">Tidak ada data produk</p>}
+                      : <p className="text-sm text-center py-6 text-slate-500">Tidak ada data produk</p>}
                 </div>
               </div>
 
@@ -1318,7 +1318,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                           {...(scope.kind!=='admin' ? { viewW: 1400, viewH: 220 } : {})}/>
                       : <div className="flex flex-col items-center gap-2 py-10">
                           <span className="text-3xl opacity-20" aria-hidden="true"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                          <p className="text-[11px] text-slate-400">Belum ada data ticket tahun ini.</p>
+                          <p className="text-[11px] text-slate-500">Belum ada data ticket tahun ini.</p>
                         </div>}
                 </div>
 
@@ -1334,7 +1334,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                         {label:'Avg skor', value:kpi?.learning.avgScore??0,          w:BAIK},
                       ].map(s=>(
                         <div key={s.label}>
-                          <p className="text-[9.5px] font-black uppercase tracking-[0.07em] text-slate-400 truncate">{s.label}</p>
+                          <p className="text-[9.5px] font-black uppercase tracking-[0.07em] text-slate-500 truncate">{s.label}</p>
                           {loading
                             ? <div className="h-6 w-10 rounded bg-slate-100 animate-pulse mt-1"/>
                             : <p className="text-[24px] font-black leading-none mt-1 tabular-nums" style={{color:s.w,letterSpacing:'-0.03em'}}>{s.value}</p>}
@@ -1378,7 +1378,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-[38px] font-black leading-[0.92] text-slate-900 tabular-nums" style={{letterSpacing:'-0.035em'}}>
                         {loading?'—':(kpi?.users.total??0)}</span>
-                      <span className="text-[11px] font-bold text-slate-400">akun terdaftar</span>
+                      <span className="text-[11px] font-bold text-slate-500">akun terdaftar</span>
                     </div>
                     {!loading&&kpi&&(()=>{
                       const WARNA = ['#4f46e5','#7c3aed','#d97706','#94a3b8','#0891b2','#e11d48'];
@@ -1441,7 +1441,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                     {allMembers.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-10">
                         <span className="text-3xl opacity-20"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                        <p className="text-[10px] text-slate-400">Data KPI Team belum tersedia. Buka menu KPI Team untuk memuat data.</p>
+                        <p className="text-[10px] text-slate-500">Data KPI Team belum tersedia. Buka menu KPI Team untuk memuat data.</p>
                       </div>
                     ) : (
                       <div className="flex items-end gap-1.5" style={{height:160}}>
@@ -1456,7 +1456,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                                 <div className="w-[42%] rounded-t transition-all duration-700" title={`LC: ${l}`}
                                   style={{height:hL||2, background:'#6366f1', opacity:l?0.85:0.12}}/>
                               </div>
-                              <span className="text-[10px] text-slate-400">{m}</span>
+                              <span className="text-[10px] text-slate-500">{m}</span>
                             </div>
                           );
                         })}
@@ -1535,7 +1535,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                       <thead>
                         <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
                           {['Nama','Tim','Ticket','LC','BAST','Skor KPI'].map(h=>(
-                            <th key={h} className="px-3 py-2 text-left text-sm font-bold uppercase tracking-widest text-slate-400">{h}</th>
+                            <th key={h} className="px-3 py-2 text-left text-sm font-bold uppercase tracking-widest text-slate-500">{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -1553,10 +1553,10 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                           return (
                             <tr key={m.id} style={{borderBottom:'1px solid #f1f5f9'}} className="hover:bg-slate-50/50">
                               <td className="px-3 py-2 font-semibold text-slate-700">{m.name.split(' ').slice(0,2).join(' ')}</td>
-                              <td className="px-3 py-2 text-slate-400 text-sm">{m.team_type.replace('Team PTS ','')}</td>
-                              <td className="px-3 py-2"><span className="font-bold text-red-500">{m.ticketsHandled}</span><span className="text-slate-400 ml-1">({m.ticketsOverdue} overdue)</span></td>
-                              <td className="px-3 py-2"><span className="font-bold text-indigo-500">{m.lcAttempts}</span><span className="text-slate-400 ml-1">avg {m.lcAvgScore}</span></td>
-                              <td className="px-3 py-2"><span className="font-bold text-amber-500">{m.formReviewLowRating}</span><span className="text-slate-400 ml-1">low-rating</span></td>
+                              <td className="px-3 py-2 text-slate-500 text-sm">{m.team_type.replace('Team PTS ','')}</td>
+                              <td className="px-3 py-2"><span className="font-bold text-red-500">{m.ticketsHandled}</span><span className="text-slate-500 ml-1">({m.ticketsOverdue} overdue)</span></td>
+                              <td className="px-3 py-2"><span className="font-bold text-indigo-600">{m.lcAttempts}</span><span className="text-slate-500 ml-1">avg {m.lcAvgScore}</span></td>
+                              <td className="px-3 py-2"><span className="font-bold text-amber-700">{m.formReviewLowRating}</span><span className="text-slate-500 ml-1">low-rating</span></td>
                               <td className="px-3 py-2"><span className="text-sm font-black" style={{color:c}}>{noData?'—':`${final}%`}</span></td>
                             </tr>
                           );
@@ -1575,7 +1575,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
               {/* Search + filter */}
               <div className="flex flex-wrap items-center gap-2">
                 <div className="relative flex-1 min-w-[180px]">
-                  <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                   </svg>
                   <input aria-label="Cari actor, aksi, target..." value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
@@ -1588,7 +1588,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                     {f==='all'?'SEMUA':f.toUpperCase()}
                   </button>
                 ))}
-                <span className="text-sm ml-auto tracking-widest text-slate-400">{filteredAudit.length} ENTRI</span>
+                <span className="text-sm ml-auto tracking-widest text-slate-500">{filteredAudit.length} ENTRI</span>
               </div>
               {/* List */}
               <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1"
@@ -1598,7 +1598,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                       <div key={i} className="h-12 rounded-lg animate-pulse bg-slate-100"/>
                     ))
                   : filteredAudit.length===0
-                    ? <div className="text-center py-12 text-sm tracking-widest text-slate-300">TIDAK ADA DATA</div>
+                    ? <div className="text-center py-12 text-sm tracking-widest text-slate-500">TIDAK ADA DATA</div>
                     : filteredAudit.map((entry:AuditEntry,idx:number)=>(
                         <div key={entry.id??idx}><AuditRow entry={entry}/></div>
                       ))}
@@ -1617,9 +1617,9 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div>
                 <div className="font-bold text-slate-800 text-base"><IkonTeks nama="⚙" />Pengaturan KPI</div>
-                <div className="text-sm text-slate-400 mt-0.5">Atur batas & bobot masing-masing komponen</div>
+                <div className="text-sm text-slate-500 mt-0.5">Atur batas & bobot masing-masing komponen</div>
               </div>
-              <button aria-label="Tutup" onClick={()=>setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100">×</button>
+              <button aria-label="Tutup" onClick={()=>setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100">×</button>
             </div>
             <div className="p-6 space-y-5">
               {/* LC Min Score */}
@@ -1631,7 +1631,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                     className="flex-1 accent-violet-600"/>
                   <span className="text-lg font-black text-violet-600 w-12 text-right">&lt;{kpiSettings.lcMinScore}</span>
                 </div>
-                <div className="text-sm text-slate-400 mt-1">Nilai di bawah ini dianggap tidak lulus KPI LC</div>
+                <div className="text-sm text-slate-500 mt-1">Nilai di bawah ini dianggap tidak lulus KPI LC</div>
               </div>
               {/* RnD Target */}
               <div>
@@ -1642,7 +1642,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                     className="flex-1 accent-pink-600"/>
                   <span className="text-lg font-black text-pink-600 w-12 text-right">{kpiSettings.rndTarget}x</span>
                 </div>
-                <div className="text-sm text-slate-400 mt-1">Minimal Tech Note approved per tahun untuk nilai penuh</div>
+                <div className="text-sm text-slate-500 mt-1">Minimal Tech Note approved per tahun untuk nilai penuh</div>
               </div>
               {/* Bobot section */}
               <div>
@@ -1667,7 +1667,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                 </div>
                 <div className="mt-3 flex items-center justify-between">
                   <span className="text-sm text-slate-500">Total bobot sekarang:</span>
-                  <span className={`text-sm font-black ${Math.round((kpiSettings.ticketOverdueWeight+kpiSettings.bastWeight+kpiSettings.lcWeight+kpiSettings.rndWeight)*100)===100?'text-emerald-600':'text-red-500'}`}>
+                  <span className={`text-sm font-black ${Math.round((kpiSettings.ticketOverdueWeight+kpiSettings.bastWeight+kpiSettings.lcWeight+kpiSettings.rndWeight)*100)===100?'text-emerald-700':'text-red-500'}`}>
                     {Math.round((kpiSettings.ticketOverdueWeight+kpiSettings.bastWeight+kpiSettings.lcWeight+kpiSettings.rndWeight)*100)}%
                     {Math.round((kpiSettings.ticketOverdueWeight+kpiSettings.bastWeight+kpiSettings.lcWeight+kpiSettings.rndWeight)*100)===100?' ✓':' ⚠ harus 100%'}
                   </span>

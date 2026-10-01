@@ -134,8 +134,8 @@ function SalesDrop({ value, division, guests, onChange }: { value: string; divis
       <div className="w-full rounded-xl px-4 py-3 text-sm flex items-center justify-between cursor-pointer"
         style={{ ...inp, borderColor: open ? 'rgba(220,38,38,0.5)' : 'rgba(0,0,0,0.12)' }}
         onClick={() => { setOpen(o => !o); if (!open) setQ(''); }}>
-        {value ? <span className="font-semibold text-slate-800">{value}{division && <span className="font-normal text-red-400"> · {division}</span>}</span> : <span className="text-slate-400">-- Pilih Sales --</span>}
-        <svg aria-hidden="true" focusable="false" className={`w-4 h-4 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+        {value ? <span className="font-semibold text-slate-800">{value}{division && <span className="font-normal text-red-600"> · {division}</span>}</span> : <span className="text-slate-500">-- Pilih Sales --</span>}
+        <svg aria-hidden="true" focusable="false" className={`w-4 h-4 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
       </div>
       {open && (
         <>
@@ -145,12 +145,12 @@ function SalesDrop({ value, division, guests, onChange }: { value: string; divis
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={{ background: 'rgba(220,38,38,0.04)', border: '1px solid rgba(220,38,38,0.15)', color: '#1e293b' }} />
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: '180px' }}>
-              <div className="px-4 py-2.5 text-sm cursor-pointer hover:bg-red-50 text-slate-400 italic" onClick={() => { onChange('', ''); setOpen(false); }}>-- Kosongkan --</div>
+              <div className="px-4 py-2.5 text-sm cursor-pointer hover:bg-red-50 text-slate-500 italic" onClick={() => { onChange('', ''); setOpen(false); }}>-- Kosongkan --</div>
               {fil.map(u => (
                 <div key={u.id} className="px-4 py-2.5 cursor-pointer flex items-center justify-between"
                   style={{ background: value === u.full_name ? 'rgba(220,38,38,0.07)' : undefined, borderLeft: value === u.full_name ? '3px solid #dc2626' : '3px solid transparent' }}
                   onClick={() => { onChange(u.full_name, u.sales_division ?? ''); setOpen(false); setQ(''); }}>
-                  <div><p className="text-sm font-semibold text-slate-800">{u.full_name}</p><p className="text-xs text-red-400">{u.sales_division}</p></div>
+                  <div><p className="text-sm font-semibold text-slate-800">{u.full_name}</p><p className="text-xs text-red-600">{u.sales_division}</p></div>
                   {value === u.full_name && <span className="text-red-500 text-xs">✓</span>}
                 </div>
               ))}
@@ -649,11 +649,11 @@ export default function DailyReportPage() {
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div>
               <h2 className="text-base font-bold text-slate-800">{editingId ? '✏️ Edit Report' : '📋 Buat Daily Report'}</h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-500 mt-0.5">
                 {formLoading ? 'Memuat aktivitas...' : autoCount > 0 ? `${formReminders.length} reminder + ${formTickets.length} ticket ter-insert otomatis` : 'Isi form di bawah'}
               </p>
             </div>
-            <button aria-label="Tutup" onClick={() => { setFormOpen(false); setEditingId(null); }} className="p-2 rounded-xl hover:bg-gray-100 transition-all text-slate-400">
+            <button aria-label="Tutup" onClick={() => { setFormOpen(false); setEditingId(null); }} className="p-2 rounded-xl hover:bg-gray-100 transition-all text-slate-500">
               <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
@@ -676,7 +676,7 @@ export default function DailyReportPage() {
             {targetUser && (
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.15)' }}>
                 <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold" style={{ background: avc(targetUser.full_name) }}>{ini(targetUser.full_name)}</div>
-                <div><p className="text-sm font-bold text-slate-800">{targetUser.full_name}</p><p className="text-xs text-slate-400">{targetUser.team_type} · {targetUser.sales_division || '-'}</p></div>
+                <div><p className="text-sm font-bold text-slate-800">{targetUser.full_name}</p><p className="text-xs text-slate-500">{targetUser.team_type} · {targetUser.sales_division || '-'}</p></div>
               </div>
             )}
 
@@ -684,7 +684,7 @@ export default function DailyReportPage() {
             {(formReminders.length > 0 || formTickets.length > 0 || formLoading) && (
               <div className="px-4 py-3 rounded-xl flex items-center gap-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)' }}>
                 {formLoading
-                  ? <><div className="w-4 h-4 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin flex-shrink-0" /><span className="text-xs text-sky-600 font-semibold">Memuat aktivitas otomatis...</span></>
+                  ? <><div className="w-4 h-4 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin flex-shrink-0" /><span className="text-xs text-sky-700 font-semibold">Memuat aktivitas otomatis...</span></>
                   : <><span className="text-base"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs text-sky-700 font-semibold">{formReminders.length} reminder &amp; {formTickets.length} ticket ter-insert otomatis dari platform</span><span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.12)', color: '#0ea5e9' }}>Auto-insert</span></>
                 }
               </div>
@@ -700,9 +700,9 @@ export default function DailyReportPage() {
                   <div key={m._key} className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
                     <div className="flex items-center justify-between">
                       <SectionHeaderSmall icon="📌" title={`Aktivitas #${idx + 1}`} />
-                      {manualActs.length > 1 && <button onClick={() => setManualActs(p => p.filter(x => x._key !== m._key))} className="text-xs text-red-400 hover:text-red-600">Hapus</button>}
+                      {manualActs.length > 1 && <button onClick={() => setManualActs(p => p.filter(x => x._key !== m._key))} className="text-xs text-red-600 hover:text-red-700">Hapus</button>}
                     </div>
-                    <div><label className="block text-xs font-bold mb-1.5 text-slate-400 uppercase tracking-wider">Kategori</label><CatPicker value={m.category} onChange={v => updM(m._key, { category: v })} /></div>
+                    <div><label className="block text-xs font-bold mb-1.5 text-slate-500 uppercase tracking-wider">Kategori</label><CatPicker value={m.category} onChange={v => updM(m._key, { category: v })} /></div>
                     <div className="grid grid-cols-2 gap-3">
                       <FormField label="Nama Project *"><input value={m.project_name} onChange={e => updM(m._key, { project_name: e.target.value })} className={inpCls} style={inp} placeholder="Project / kegiatan" /></FormField>
                       <FormField label="Lokasi"><div className="relative"><span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span><input value={m.address} onChange={e => updM(m._key, { address: e.target.value })} className={`${inpCls} pl-9`} style={inp} placeholder="Alamat / Online" /></div></FormField>
@@ -807,7 +807,7 @@ export default function DailyReportPage() {
             <div className="grid grid-cols-2 gap-4">
               {/* Kategori */}
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Kategori</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Kategori</p>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold" style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
                   <Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {row.category}
                 </span>
@@ -815,24 +815,24 @@ export default function DailyReportPage() {
               {/* Product */}
               {row.product && (
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Product</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Product</p>
                   <span className="text-xs font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2.5 py-1.5 rounded-lg inline-block">{row.product}</span>
                 </div>
               )}
               {/* Handler */}
               <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Handler</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Handler</p>
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
-                  <div><p className="text-xs font-bold text-slate-800">{row.handler_name}</p>{row.handler_username && <p className="text-[10px] text-slate-400"><Username value={row.handler_username} /></p>}</div>
+                  <div><p className="text-xs font-bold text-slate-800">{row.handler_name}</p>{row.handler_username && <p className="text-[10px] text-slate-500"><Username value={row.handler_username} /></p>}</div>
                 </div>
               </div>
               {/* Sales */}
               {row.sales_name && (
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sales</p>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Sales</p>
                   <p className="text-xs font-bold text-slate-800">{row.sales_name}</p>
-                  {row.sales_division && <p className="text-[10px] text-slate-400">{row.sales_division}</p>}
+                  {row.sales_division && <p className="text-[10px] text-slate-500">{row.sales_division}</p>}
                 </div>
               )}
             </div>
@@ -853,7 +853,7 @@ export default function DailyReportPage() {
             {/* Manual detail */}
             {row.source === 'manual' && row.raw?.description && (
               <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider mb-1">Deskripsi</p>
+                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-1">Deskripsi</p>
                 <p className="text-xs text-slate-700">{row.raw.description}</p>
               </div>
             )}
@@ -861,7 +861,7 @@ export default function DailyReportPage() {
             {row.raw?.pic_name && (
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)' }}>
                 <span className="text-base"><Ikon nama="🙋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                <div><p className="text-xs font-bold text-slate-800">{row.raw.pic_name}</p>{row.raw.pic_phone && <p className="text-[10px] text-slate-400"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.raw.pic_phone}</p>}</div>
+                <div><p className="text-xs font-bold text-slate-800">{row.raw.pic_name}</p>{row.raw.pic_phone && <p className="text-[10px] text-slate-500"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.raw.pic_phone}</p>}</div>
               </div>
             )}
             {/* Link to submitted report */}
@@ -875,7 +875,7 @@ export default function DailyReportPage() {
             {/* Source badge */}
             <div className="flex items-center justify-between pt-1">
               <span className="text-[10px] font-bold px-2.5 py-1.5 rounded-full"
-                style={row.source === 'reminder' ? { background: 'rgba(16,185,129,0.1)', color: '#059669' } : row.source === 'ticket' ? { background: 'rgba(251,113,133,0.1)', color: '#be185d' } : { background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>
+                style={row.source === 'reminder' ? { background: 'rgba(16,185,129,0.1)', color: '#047857' } : row.source === 'ticket' ? { background: 'rgba(251,113,133,0.1)', color: '#be185d' } : { background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>
                 {row.source === 'reminder' ? '🔔 Reminder Schedule' : row.source === 'ticket' ? '🎫 Ticket Troubleshooting' : '✍️ Aktivitas Manual'}
               </span>
               {!linkedReport && row.source !== 'manual' && (
@@ -939,10 +939,10 @@ export default function DailyReportPage() {
 
         {/* ── Source breakdown strip ── */}
         <div className="rounded-2xl px-5 py-3.5 flex items-center gap-6 flex-wrap" style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-          <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Sumber Data</span>
+          <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Sumber Data</span>
           {([
             { label: 'Ticketing', value: stats.fromTicket,   icon: '🎫', bg: 'rgba(251,113,133,0.12)', color: '#be185d',  source: 'ticket' },
-            { label: 'Schedule',  value: stats.fromReminder, icon: '🔔', bg: 'rgba(16,185,129,0.1)',   color: '#059669',  source: 'reminder' },
+            { label: 'Schedule',  value: stats.fromReminder, icon: '🔔', bg: 'rgba(16,185,129,0.1)',   color: '#047857',  source: 'reminder' },
             { label: 'Manual',    value: stats.fromManual,   icon: '✍️', bg: 'rgba(245,158,11,0.1)',   color: '#b45309',  source: 'manual' },
           ] as const).map(s => (
             <button key={s.source}
@@ -956,7 +956,7 @@ export default function DailyReportPage() {
             </button>
           ))}
           {filterSource && (
-            <span className="text-[10px] text-slate-400 italic ml-auto">Klik badge untuk reset filter</span>
+            <span className="text-[10px] text-slate-500 italic ml-auto">Klik badge untuk reset filter</span>
           )}
         </div>
 
@@ -1041,12 +1041,12 @@ export default function DailyReportPage() {
           {/* Search + filter bar identik reminder-schedule */}
           <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-gray-100">
             <div className="flex items-center gap-2 rounded-xl px-3 py-2 flex-1 min-w-[180px]" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)' }}>
-              <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
               <input aria-label="Cari project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)} placeholder="Cari project / lokasi..." className="bg-transparent outline-none text-xs text-slate-700 placeholder-slate-400 w-full" />
             </div>
             {isAdmin && (
               <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', minWidth: '150px' }}>
-                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                 <select value={filterUser} onChange={e => setFilterUser(e.target.value)} aria-label="Saring per team handler" className="bg-transparent outline-none text-xs text-slate-700 w-full">
                   <option value="">Team Handler</option>
                   {teamUsers.map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
@@ -1071,7 +1071,7 @@ export default function DailyReportPage() {
               </select>
             </div>
             <div className="flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)' }}>
-              <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} aria-label="Saring per tanggal" className="bg-transparent outline-none text-xs text-slate-700" />
             </div>
             {(filterDate || filterUser || filterStatus || filterSource || searchProject) && (
@@ -1081,7 +1081,7 @@ export default function DailyReportPage() {
 
           {/* Table */}
           {liveLoading && filteredRows.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-slate-400 gap-3">
+            <div className="flex items-center justify-center py-16 text-slate-500 gap-3">
               <div className="w-5 h-5 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
               <span className="text-sm">Memuat aktivitas dari semua platform...</span>
             </div>
@@ -1120,7 +1120,7 @@ export default function DailyReportPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-slate-800 text-sm leading-tight truncate">{row.project_name}</p>
-                        {row.address && <p className="text-[11px] text-slate-400 mt-0.5 truncate"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>}
+                        {row.address && <p className="text-[11px] text-slate-500 mt-0.5 truncate"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>}
                       </div>
                       <span className="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold"
                         style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>
@@ -1139,7 +1139,7 @@ export default function DailyReportPage() {
                         <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
                         <span className="text-xs font-semibold text-slate-700 truncate">{row.handler_name || '—'}</span>
                       </div>
-                      <span className="text-[11px] text-slate-400 flex-shrink-0">
+                      <span className="text-[11px] text-slate-500 flex-shrink-0">
                         {row.report_date ? new Date(row.report_date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : '—'}
                         {row.jam !== '-' ? ` · ${row.jam}` : ''}
                       </span>
@@ -1213,26 +1213,26 @@ export default function DailyReportPage() {
                         <td style={{ ...TD, textAlign: 'center' as const, color: '#94a3b8', fontSize: '12px' }}>{hal.mulai + i + 1}</td>
                         <td style={TD}>
                           <p className="font-semibold text-slate-800 text-sm leading-tight truncate" title={row.project_name}>{row.project_name}</p>
-                          {row.address && <p className="text-[11px] text-slate-400 mt-0.5 truncate" title={row.address}><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>}
+                          {row.address && <p className="text-[11px] text-slate-500 mt-0.5 truncate" title={row.address}><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>}
                         </td>
                         <td style={TD}>
                           {row.product
                             ? <span className="text-xs font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-1 rounded-lg">{row.product}</span>
-                            : <span className="text-slate-300 text-xs">—</span>}
+                            : <span className="text-slate-400 text-xs">—</span>}
                         </td>
                         <td style={TD}>
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold"
                             style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
                             {row.kegiatan_icon} {row.source === 'ticket' ? 'Troubleshooting' : row.category}
                           </span>
-                          {row.source === 'ticket' && <p className="text-[10px] text-slate-400 mt-0.5">{row.kegiatan_label}</p>}
+                          {row.source === 'ticket' && <p className="text-[10px] text-slate-500 mt-0.5">{row.kegiatan_label}</p>}
                           <p className="mt-1">
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
                               style={
                                 row.source === 'ticket'
                                   ? { background: 'rgba(251,113,133,0.12)', color: '#be185d' }
                                   : row.source === 'reminder'
-                                  ? { background: 'rgba(16,185,129,0.1)', color: '#059669' }
+                                  ? { background: 'rgba(16,185,129,0.1)', color: '#047857' }
                                   : { background: 'rgba(245,158,11,0.1)', color: '#b45309' }
                               }>
                               {row.source === 'ticket' ? '🎫 Ticketing' : row.source === 'reminder' ? '🔔 Schedule' : '✍️ Manual'}
@@ -1241,8 +1241,8 @@ export default function DailyReportPage() {
                         </td>
                         <td style={TD}>
                           {row.sales_name
-                            ? <div><p className="text-xs font-semibold text-slate-700">{row.sales_name}</p>{row.sales_division && <p className="text-[10px] text-slate-400">{row.sales_division}</p>}</div>
-                            : <span className="text-slate-300">—</span>}
+                            ? <div><p className="text-xs font-semibold text-slate-700">{row.sales_name}</p>{row.sales_division && <p className="text-[10px] text-slate-500">{row.sales_division}</p>}</div>
+                            : <span className="text-slate-400">—</span>}
                         </td>
                         <td style={TD}>
                           <div className="flex items-center gap-2">
@@ -1260,10 +1260,10 @@ export default function DailyReportPage() {
                         <td style={TD}>
                           <div className="rounded-xl text-center px-2.5 py-2 inline-flex flex-col items-center" style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.15)', minWidth: '64px' }}>
                             <span className="text-base font-black text-red-600 leading-none">{row.report_date?.split('-')[2] ?? '—'}</span>
-                            <span className="text-[9px] font-bold text-red-400 uppercase">
+                            <span className="text-[9px] font-bold text-red-600 uppercase">
                               {row.report_date ? new Date(row.report_date + 'T00:00:00').toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }).toUpperCase() : '—'}
                             </span>
-                            {row.jam !== '-' && <span className="text-[9px] text-slate-400 mt-0.5">{row.jam}</span>}
+                            {row.jam !== '-' && <span className="text-[9px] text-slate-500 mt-0.5">{row.jam}</span>}
                           </div>
                         </td>
                         <td style={{ ...TD, textAlign: 'center' as const }} onClick={e => e.stopPropagation()}>

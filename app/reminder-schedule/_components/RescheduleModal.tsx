@@ -62,19 +62,19 @@ export function RescheduleModal({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="f-reminder-schedule-components-reschedulemodal-1" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Tanggal Baru *</label>
+              <label htmlFor="f-reminder-schedule-components-reschedulemodal-1" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Tanggal Baru *</label>
               <input id="f-reminder-schedule-components-reschedulemodal-1" type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
                 className={inputCls} style={inputStyle} />
             </div>
             <div>
-              <label htmlFor="f-reminder-schedule-components-reschedulemodal-2" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Waktu Baru</label>
+              <label htmlFor="f-reminder-schedule-components-reschedulemodal-2" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Waktu Baru</label>
               <input id="f-reminder-schedule-components-reschedulemodal-2" type="time" value={newTime} onChange={e => setNewTime(e.target.value)}
                 className={inputCls} style={inputStyle} />
             </div>
           </div>
 
           <div>
-            <label htmlFor="f-reminder-schedule-components-reschedulemodal-3" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Alasan Re-Schedule</label>
+            <label htmlFor="f-reminder-schedule-components-reschedulemodal-3" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Alasan Re-Schedule</label>
             <textarea id="f-reminder-schedule-components-reschedulemodal-3" value={reason} onChange={e => setReason(e.target.value)} rows={3}
               className={`${inputCls} resize-none`} style={inputStyle}
               placeholder="Contoh: Permintaan klien untuk mengundur jadwal..." />

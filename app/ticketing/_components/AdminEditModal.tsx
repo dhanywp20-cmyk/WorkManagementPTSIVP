@@ -83,7 +83,7 @@ export function AdminEditModal({
                 onChange={(k, v) => setAdminEditForm(prev => ({ ...prev, [k]: v }))} />
             </div>
 
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-slate-500">
               Setiap perubahan tercatat di Audit Trail lengkap dengan nilai sebelum dan sesudahnya,
               dan diberitahukan ke yang menangani lewat WA.
             </p>

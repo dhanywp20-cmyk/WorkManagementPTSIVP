@@ -28,7 +28,7 @@ export function StarRating({ value, onChange, disabled }: { value: number; onCha
           <span aria-hidden="true" style={{ color: star <= (hovered || value) ? '#f59e0b' : '#d1d5db' }}>★</span>
         </button>
       ))}
-      {value > 0 && <span className="ml-1 text-sm font-bold text-amber-600">{value}/5</span>}
+      {value > 0 && <span className="ml-1 text-sm font-bold text-amber-700">{value}/5</span>}
     </div>
   );
 }

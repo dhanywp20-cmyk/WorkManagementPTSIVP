@@ -42,7 +42,7 @@ function Kartu({ title, icon, children }: { title: string; icon: string; childre
     <div className="rounded-xl p-2 sm:p-4 flex flex-col gap-1.5 sm:gap-3 min-w-0"
       style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}>
       <p className="flex items-center gap-1.5 text-[10px] sm:text-[12.5px] font-semibold text-slate-700 leading-tight">
-        {icon && <Ikon nama={icon} ukuran={14} className="text-slate-400" />}
+        {icon && <Ikon nama={icon} ukuran={14} className="text-slate-500" />}
         <span className="truncate">{title}</span>
       </p>
       {children}
@@ -86,7 +86,7 @@ export function MiniPieChart({
   if (total === 0) {
     return (
       <Kartu title={title} icon={icon}>
-        <p className="text-slate-400 text-[11px] sm:text-xs text-center py-3 sm:py-6">Belum ada data</p>
+        <p className="text-slate-500 text-[11px] sm:text-xs text-center py-3 sm:py-6">Belum ada data</p>
       </Kartu>
     );
   }
@@ -100,7 +100,7 @@ export function MiniPieChart({
         {centerValue !== undefined && (
           <div className="flex items-baseline gap-1.5">
             <span className="text-lg sm:text-2xl font-bold text-slate-900 leading-none">{centerValue}</span>
-            <span className="text-[9px] sm:text-[10px] font-medium text-slate-400 uppercase tracking-wide">{(centerLabel ?? '').toLowerCase()}</span>
+            <span className="text-[9px] sm:text-[10px] font-medium text-slate-500 uppercase tracking-wide">{(centerLabel ?? '').toLowerCase()}</span>
           </div>
         )}
         <ul className="flex flex-col gap-1.5 sm:gap-2">
@@ -196,7 +196,7 @@ export function MiniPieChart({
                   <span title={`${s.label}: ${s.value}${valueSuffix ?? ''} (${persen(s.value)}%)`}
                     className={`text-[9.5px] sm:text-[11px] truncate ${aktif ? 'font-semibold text-slate-900' : 'font-medium text-slate-600'}`}>{s.label}</span>
                   <span className="text-[9.5px] sm:text-[11px] font-semibold text-slate-800 tabular-nums text-right">{s.value}{valueSuffix ?? ''}</span>
-                  <span className="text-[9px] sm:text-[10px] text-slate-400 tabular-nums text-right w-7 sm:w-8">{persen(s.value)}%</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 tabular-nums text-right w-7 sm:w-8">{persen(s.value)}%</span>
                 </button>
               </li>
             );
@@ -204,7 +204,7 @@ export function MiniPieChart({
         </ul>
       </div>
       {dapatDigulir && (
-        <p className="text-[9px] sm:text-[10px] text-slate-400 text-center sm:text-left truncate">
+        <p className="text-[9px] sm:text-[10px] text-slate-500 text-center sm:text-left truncate">
           {slices.length} kategori · gulir daftar
         </p>
       )}

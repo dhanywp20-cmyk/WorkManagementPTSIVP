@@ -417,7 +417,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                       {notAnswered ? '—' : isCorrect ? '✓' : '✗'}
                     </span>
                     <div className="flex-1">
-                      <p className="text-xs font-bold text-slate-400 mb-1">Soal {idx+1}</p>
+                      <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1}</p>
                       <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
                     </div>
                   </div>
@@ -434,7 +434,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                         <div key={opt} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs ${cls}`}>
                           <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
                           <span className="flex-1">{optVal}</span>
-                          {isCorrectOpt && <span className="text-emerald-600">✓</span>}
+                          {isCorrectOpt && <span className="text-emerald-700">✓</span>}
                           {isUserChoice && !isCorrectOpt && <span className="text-rose-600">←</span>}
                         </div>
                       );
@@ -471,8 +471,8 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-800 mb-1">{result.passed ? 'Selamat, Lulus!' : 'Belum Lulus'}</h2>
           <p className="text-slate-500 text-sm mb-8">{session.session_name}</p>
-          <div className={`text-5xl sm:text-7xl font-black mb-1 ${result.passed ? 'text-emerald-500' : 'text-rose-500'}`}>{result.score.toFixed(0)}</div>
-          <p className="text-slate-400 text-sm mb-2">dari 100 poin</p>
+          <div className={`text-5xl sm:text-7xl font-black mb-1 ${result.passed ? 'text-emerald-700' : 'text-rose-500'}`}>{result.score.toFixed(0)}</div>
+          <p className="text-slate-500 text-sm mb-2">dari 100 poin</p>
           <div className="flex justify-center gap-4 text-xs text-slate-500 mb-8">
             <span className="bg-slate-100 px-3 py-1.5 rounded-lg font-semibold">✓ {result.correct}/{questions.length} benar</span>
             <span className="bg-slate-100 px-3 py-1.5 rounded-lg font-semibold">Passing: {session.passing_grade}%</span>
@@ -501,7 +501,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   }
 
   if (questions.length === 0) {
-    return <div className="flex items-center justify-center h-full text-slate-400" style={{ background: '#f8fafc' }}>Memuat soal...</div>;
+    return <div className="flex items-center justify-center h-full text-slate-500" style={{ background: '#f8fafc' }}>Memuat soal...</div>;
   }
 
   const q = questions[current];
@@ -629,7 +629,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                   style={{ color: WARNA_WAKTU[tingkatWaktu], letterSpacing: '-0.02em' }}>
                   {fmtTimer(timeLeft)}
                 </div>
-                <span className="block text-[8.5px] sm:text-[9.5px] font-bold uppercase mt-1 text-slate-400"
+                <span className="block text-[8.5px] sm:text-[9.5px] font-bold uppercase mt-1 text-slate-500"
                   style={{ letterSpacing: '0.16em' }}>
                   {KET_WAKTU[tingkatWaktu]}
                 </span>
@@ -721,7 +721,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                           className="w-24 h-24 object-cover rounded-lg border border-emerald-200 flex-shrink-0" />
                         <div className="min-w-0">
                           <p className="text-sm font-bold text-emerald-700">✓ Foto jawaban tersimpan</p>
-                          <p className="text-[11px] text-emerald-600 leading-relaxed mt-0.5">
+                          <p className="text-[11px] text-emerald-700 leading-relaxed mt-0.5">
                             Boleh diganti selama quiz belum dikumpulkan.
                           </p>
                         </div>
@@ -751,7 +751,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                         if (f) void handleUploadGambar(q.id, f);
                       }} />
                   </label>
-                  <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+                  <p className="text-[11px] text-slate-500 text-center leading-relaxed">
                     Foto dikecilkan otomatis di perangkatmu sebelum dikirim, jadi hemat kuota.
                   </p>
                 </div>
@@ -1093,7 +1093,7 @@ export function MyQuizPage({ user }: { user: User }) {
           */
           const tombol = alreadyDone ? (
             <button disabled
-              className="px-5 py-2.5 text-sm font-bold rounded-xl bg-slate-200 text-slate-400 cursor-not-allowed w-full formulir:w-auto"
+              className="px-5 py-2.5 text-sm font-bold rounded-xl bg-slate-200 text-slate-500 cursor-not-allowed w-full formulir:w-auto"
               title="Quiz ini sudah kamu kerjakan dan tidak bisa diulang">
               <IkonTeks nama="✅" />Selesai
             </button>

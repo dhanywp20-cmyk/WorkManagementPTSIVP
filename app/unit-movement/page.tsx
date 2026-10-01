@@ -329,14 +329,14 @@ function UnitMovementPageInner() {
               <table className="w-full text-sm" style={{minWidth:700}}>
                 <thead>
                   <tr style={{background:'#fef2f2',borderBottom:'1px solid #fecaca'}}>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Project</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Nama PTS</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Type Barang</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Serial Number</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Tgl Keluar</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Jatuh Tempo</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-400">Kondisi</th>
-                    {isAdmin && <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest text-red-400">Aksi</th>}
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Project</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Nama PTS</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Type Barang</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Serial Number</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Tgl Keluar</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Jatuh Tempo</th>
+                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Kondisi</th>
+                    {isAdmin && <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest text-red-600">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -372,7 +372,7 @@ function UnitMovementPageInner() {
                                   : {background:'#fee2e2',color:'#991b1b'}}>
                                 {loan.kondisi_barang==='Baik'?'✅':loan.kondisi_barang==='Perlu Service'?'⚠️':'❌'} {loan.kondisi_barang}
                               </span>
-                            : <span className="text-[10px] text-gray-300">—</span>}
+                            : <span className="text-[10px] text-gray-400">—</span>}
                         </td>
                         {isAdmin && (
                           <td className="px-4 py-2.5 text-center">
@@ -497,15 +497,15 @@ function UnitMovementPageInner() {
             <table className="w-full text-sm tabel-kartu" style={{minWidth:1100}}>
               <thead>
                 <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 w-10">No</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap w-24">Tanggal</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 w-32">Nama Penerima</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 w-32">Nama Pengirim</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 w-36">Project</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap w-24">Status</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400 whitespace-nowrap w-28">Event</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400" style={{minWidth:300}}>Type &amp; SN</th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-gray-400 w-36">Action</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 w-10">No</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap w-24">Tanggal</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 w-32">Nama Penerima</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 w-32">Nama Pengirim</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 w-36">Project</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap w-24">Status</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap w-28">Event</th>
+                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500" style={{minWidth:300}}>Type &amp; SN</th>
+                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-gray-500 w-36">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -515,7 +515,7 @@ function UnitMovementPageInner() {
                   <tr><td colSpan={9} className="py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-8 h-8 rounded-full animate-spin" style={{border:'3px solid #fde68a',borderTopColor:'#f59e0b'}}/>
-                      <span className="text-gray-400 text-sm">Memuat data...</span>
+                      <span className="text-gray-500 text-sm">Memuat data...</span>
                     </div>
                   </td></tr>
                 ) : filteredLogs.length===0 ? (
@@ -523,7 +523,7 @@ function UnitMovementPageInner() {
                     <div className="flex flex-col items-center gap-2">
                       <span className="text-4xl"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       <p className="font-semibold text-gray-600 text-sm">Belum ada data movement log</p>
-                      <p className="text-xs text-gray-400">Coba ubah filter atau tambahkan log baru</p>
+                      <p className="text-xs text-gray-500">Coba ubah filter atau tambahkan log baru</p>
                     </div>
                   </td></tr>
                 ) : hal.potongan.map((log,idx)=>{
@@ -531,7 +531,7 @@ function UnitMovementPageInner() {
                   const typeLines = splitTypeLines(log.type_barang);
                   return (
                     <tr key={log.id} className="stagger-item" style={{ '--aksen-baris': '#fbbf24', '--bg-baris-sorot': '#fffbeb' } as CSSProperties}>
-                      <td className="px-3 py-3 text-xs font-bold text-gray-400">{hal.mulai + idx + 1}</td>
+                      <td className="px-3 py-3 text-xs font-bold text-gray-500">{hal.mulai + idx + 1}</td>
                       <td className="px-3 py-3 text-xs text-gray-600 whitespace-nowrap">{fmtDate(log.tanggal)}</td>
                       <td className="px-3 py-3">
                         {isMasuk
@@ -565,9 +565,9 @@ function UnitMovementPageInner() {
                               <p key={li} className="text-xs text-gray-800 leading-snug">{line}</p>
                             ))}
                           </div>
-                        ) : <span className="text-xs text-gray-400">-</span>}
+                        ) : <span className="text-xs text-gray-500">-</span>}
                         {log.serial_number&&(
-                          <p className="text-[10px] text-gray-400 font-mono mt-1">SN: {log.serial_number}</p>
+                          <p className="text-[10px] text-gray-500 font-mono mt-1">SN: {log.serial_number}</p>
                         )}
                       </td>
                       {/* Action */}
@@ -586,8 +586,8 @@ function UnitMovementPageInner() {
           </div>
 
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100" style={{background:'rgba(255,255,255,0.97)'}}>
-            <span className="text-[10px] text-gray-400">{filteredLogs.length} log ditemukan</span>
-            <span className="text-[10px] text-gray-400">dari {logs.length} log keseluruhan</span>
+            <span className="text-[10px] text-gray-500">{filteredLogs.length} log ditemukan</span>
+            <span className="text-[10px] text-gray-500">dari {logs.length} log keseluruhan</span>
           </div>
           <Paginasi {...hal} satuan="log" />
         </div>

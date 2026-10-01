@@ -23,7 +23,7 @@ function Spinner() {
     <div className="flex items-center justify-center py-24">
       <div className="flex flex-col items-center gap-3">
         <div className="w-9 h-9 rounded-full border-[3px] border-gray-200 border-t-rose-500 animate-spin" />
-        <span className="text-gray-400 text-xs font-medium tracking-wide">Memuat...</span>
+        <span className="text-gray-500 text-xs font-medium tracking-wide">Memuat...</span>
       </div>
     </div>
   );
@@ -78,8 +78,8 @@ function TechNoteKPISummary({ technotes, currentUser, year }:
         </div>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label:'Total Approved', value: totalApproved, color:'#059669', bg:'#ffffff', border:'#d1fae5' },
-            { label:'Pending Review', value: totalPending,  color:'#d97706', bg:'#ffffff', border:'#fef3c7' },
+            { label:'Total Approved', value: totalApproved, color:'#047857', bg:'#ffffff', border:'#d1fae5' },
+            { label:'Pending Review', value: totalPending,  color:'#b45309', bg:'#ffffff', border:'#fef3c7' },
             { label:'Total Submissions', value: technotes.length, color:'#7c3aed', bg:'#ffffff', border:'#ede9fe' },
           ].map(c => (
             <div key={c.label} className="rounded-xl p-3 text-center border shadow-sm"
@@ -105,11 +105,11 @@ function TechNoteKPISummary({ technotes, currentUser, year }:
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl p-3 text-center border shadow-sm" style={{ borderColor:'#d1fae5' }}>
-          <div className="text-lg sm:text-2xl font-black text-emerald-600">{approvedCount}</div>
+          <div className="text-lg sm:text-2xl font-black text-emerald-700">{approvedCount}</div>
           <div className="text-[11px] text-slate-500 font-medium mt-0.5">Approved (Semua Tim)</div>
         </div>
         <div className="rounded-xl p-3 text-center border shadow-sm" style={{ borderColor:'#fef3c7' }}>
-          <div className="text-lg sm:text-2xl font-black text-amber-600">{myPendingCount}</div>
+          <div className="text-lg sm:text-2xl font-black text-amber-700">{myPendingCount}</div>
           <div className="text-[11px] text-slate-500 font-medium mt-0.5">Milik Saya — Pending</div>
         </div>
       </div>
@@ -164,7 +164,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
             background: isSel ? `${folder.color}15` : 'transparent',
             border: isSel ? `1.5px solid ${folder.color}40` : '1.5px solid transparent' }}>
           {children.length > 0
-            ? <span className="text-[9px] text-slate-400 transition-transform" style={{ transform: isOpen ? 'rotate(90deg)':'none' }}><Ikon nama="▶" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+            ? <span className="text-[9px] text-slate-500 transition-transform" style={{ transform: isOpen ? 'rotate(90deg)':'none' }}><Ikon nama="▶" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             : <span className="w-3" />}
           <span className="text-base"><Ikon nama={folder.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
           <span className="flex-1 text-[13px] font-semibold truncate" style={{ color: isSel ? folder.color : '#475569' }}>{folder.name}</span>
@@ -186,14 +186,14 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
         transition-transform duration-200`}
       style={{ background: '#f8fafc' }}>
       <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Folder</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Folder</span>
         <div className="flex items-center gap-1.5">
           {canManage && (
             <button onClick={onAdd} className="text-[11px] font-bold px-2 py-0.5 rounded-lg transition-colors text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100">
               + Folder
             </button>
           )}
-          <button onClick={onCloseMobile} aria-label="Tutup daftar folder" className="md:hidden w-6 h-6 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100">✕</button>
+          <button onClick={onCloseMobile} aria-label="Tutup daftar folder" className="md:hidden w-6 h-6 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100">✕</button>
         </div>
       </div>
       {/* All */}
@@ -215,7 +215,7 @@ function HistoryTimeline({ history }: { history: TechNoteHistory[] }) {
   if (!history.length) return null;
   return (
     <div className="mt-4">
-      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3"><IkonTeks nama="📋" />Riwayat Approval</div>
+      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-3"><IkonTeks nama="📋" />Riwayat Approval</div>
       <div className="space-y-2">
         {history.map((h, i) => {
           const cfg = ACTION_CONFIG[h.action as keyof typeof ACTION_CONFIG] ?? { label: h.action, color:'#6b7280', icon:'📌' };
@@ -228,7 +228,7 @@ function HistoryTimeline({ history }: { history: TechNoteHistory[] }) {
               </div>
               <div className="pb-3 flex-1">
                 <div className="text-[12px] font-bold capitalize" style={{ color: cfg.color }}>{cfg.label}</div>
-                <div className="text-[11px] text-slate-400">oleh <b className="text-slate-600">{h.performed_by_name}</b> · {formatDate(h.created_at)}</div>
+                <div className="text-[11px] text-slate-500">oleh <b className="text-slate-600">{h.performed_by_name}</b> · {formatDate(h.created_at)}</div>
                 {h.note && <div className="mt-1.5 text-[12px] text-slate-600 rounded-lg px-3 py-2 border-l-2 bg-gray-50" style={{ borderColor: cfg.color }}>{h.note}</div>}
               </div>
             </div>
@@ -252,7 +252,7 @@ function Modal({ open, onClose, title, width=560, children }:{
         background:'#fff', boxShadow:'0 24px 64px rgba(0,0,0,0.18)' }}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h3 className="text-[15px] font-bold text-slate-800">{title}</h3>
-          <button aria-label="Tutup" onClick={onClose} className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 text-lg transition-colors bg-gray-100 hover:bg-gray-200">×</button>
+          <button aria-label="Tutup" onClick={onClose} className="w-7 h-7 rounded-lg text-slate-500 hover:text-slate-700 text-lg transition-colors bg-gray-100 hover:bg-gray-200">×</button>
         </div>
         <div className="p-6">{children}</div>
       </div>
@@ -752,7 +752,7 @@ function TechNotePageInner() {
                   mengisi barisnya sendiri. */}
               <div className="w-full sm:w-auto sm:ml-auto flex items-center gap-2">
                 <div className="relative flex-1 sm:flex-initial min-w-0">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Cari judul, produk, tag..." value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari judul, produk, tag..."
                     className="pl-8 pr-3 py-2 text-[13px] rounded-xl outline-none w-full sm:w-52 text-slate-700 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 placeholder-slate-400" style={{ background: 'rgba(255,255,255,0.95)' }} />
                 </div>
@@ -799,7 +799,7 @@ function TechNotePageInner() {
                         <StatusBadge status={tn.status} />
                       </div>
                       <h4 className="font-bold text-[14px] text-slate-800 leading-snug mb-1.5 group-hover:text-rose-600 transition-colors">{tn.title}</h4>
-                      <p className="text-[12px] text-slate-400 mb-3 line-clamp-2">{tn.description}</p>
+                      <p className="text-[12px] text-slate-500 mb-3 line-clamp-2">{tn.description}</p>
                       {(tn.tags??[]).length>0 && (
                         <div className="flex flex-wrap gap-1 mb-3">
                           {(tn.tags??[]).slice(0,3).map(tag=>(
@@ -813,7 +813,7 @@ function TechNotePageInner() {
                           <span className="text-[11px] text-slate-500 font-medium truncate max-w-[100px]">{tn.author_name}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-400">{formatDateShort(tn.submitted_at)}</span>
+                          <span className="text-[10px] text-slate-500">{formatDateShort(tn.submitted_at)}</span>
                           {tn.one_drive_link && (
                             <a href={tn.one_drive_link} target="_blank" rel="noopener noreferrer"
                               onClick={e=>e.stopPropagation()}
@@ -855,7 +855,7 @@ function TechNotePageInner() {
               );
             })}
           </div>
-          <p className="text-[11px] text-slate-400 mt-1.5">
+          <p className="text-[11px] text-slate-500 mt-1.5">
             Emoji folder mengikuti kategori yang dipilih — tidak diketik sendiri, supaya
             folder sejenis selalu berikon sama.
           </p>
@@ -939,7 +939,7 @@ function TechNotePageInner() {
               <StatusBadge status={detailNote.status} />
             </div>
             <p className="text-[13px] text-slate-500 leading-relaxed mb-3">{detailNote.description}</p>
-            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[12px] text-slate-400">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[12px] text-slate-500">
               <span><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Produk:</b> {detailNote.product}</span>
               <span><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Author:</b> {detailNote.author_name}</span>
               <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> <b className="text-slate-600">Submit:</b> {formatDate(detailNote.submitted_at)}</span>
@@ -1006,7 +1006,7 @@ function TechNotePageInner() {
         <Modal open={!!approveModal} onClose={()=>setApproveModal(null)} title="📋 Keputusan Approval" width={460}>
           <p className="text-[13px] text-slate-500 mb-4">
             Tech Note: <b className="text-slate-800">"{approveModal.title}"</b><br/>
-            <span className="text-[11px] text-slate-400">oleh {approveModal.author_name} · {formatDateShort(approveModal.submitted_at)}</span>
+            <span className="text-[11px] text-slate-500">oleh {approveModal.author_name} · {formatDateShort(approveModal.submitted_at)}</span>
           </p>
           <Field label="Keputusan *">
             <select className={inputCls} value={approvalForm.action}

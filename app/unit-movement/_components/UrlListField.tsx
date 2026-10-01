@@ -11,7 +11,7 @@ export function UrlListField({ label, icon, value, onChange }: {
   const remove = (i:number) => onChange(urls.filter((_,idx)=>idx!==i).join(','));
   return (
     <div>
-      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {label}</label>
+      <label className="block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {label}</label>
       <div className="flex gap-2">
         <input type="text"
           className="flex-1 px-3 py-2.5 rounded-xl text-xs outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
@@ -24,7 +24,7 @@ export function UrlListField({ label, icon, value, onChange }: {
           + Tambah
         </button>
       </div>
-      <p className="text-[10px] text-gray-400 mt-1">Enter atau klik Tambah untuk menyimpan link</p>
+      <p className="text-[10px] text-gray-500 mt-1">Enter atau klik Tambah untuk menyimpan link</p>
       {urls.length>0&&(
         <div className="mt-2 space-y-1.5">
           {urls.map((url,i)=>(
@@ -32,7 +32,7 @@ export function UrlListField({ label, icon, value, onChange }: {
               <span className="text-sm"><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <a href={url} target="_blank" rel="noopener noreferrer"
                 className="text-xs font-semibold text-blue-600 flex-1 truncate hover:underline">{url}</a>
-              <button aria-label="Tutup" type="button" onClick={()=>remove(i)} className="text-red-400 hover:text-red-600 font-bold text-xs flex-shrink-0">✕</button>
+              <button aria-label="Tutup" type="button" onClick={()=>remove(i)} className="text-red-600 hover:text-red-700 font-bold text-xs flex-shrink-0">✕</button>
             </div>
           ))}
         </div>

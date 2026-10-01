@@ -38,7 +38,7 @@ export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selec
       <div className="p-3">
         <div className="grid grid-cols-7 mb-1.5">
           {['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map((d,i) => (
-            <div key={i} className="text-center text-[10px] font-bold py-1" style={{ color: '#94a3b8' }}>{d}</div>
+            <div key={i} className="text-center text-[10px] font-bold py-1" style={{ color: '#64748b' }}>{d}</div>
           ))}
         </div>
 

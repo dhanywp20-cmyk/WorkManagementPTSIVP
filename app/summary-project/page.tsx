@@ -27,7 +27,7 @@ const KOLOM_JUMLAH: Record<AktivitasTipe, keyof RingkasanProject> = {
 };
 
 function Jumlah({ n, tipe }: { n: number; tipe: AktivitasTipe }) {
-  if (!n) return <span className="text-[11px] text-gray-300">—</span>;
+  if (!n) return <span className="text-[11px] text-gray-400">—</span>;
   return (
     <span className="inline-flex min-w-[28px] justify-center px-1.5 py-0.5 rounded text-[11px] font-bold tabular-nums"
       style={{ background: TIPE_CFG[tipe].bg, color: TIPE_CFG[tipe].color }}>{n}</span>
@@ -250,18 +250,18 @@ export default function SummaryProjectPage() {
                             </td>
                             <td className="px-3 py-3 align-middle">
                               <p className="text-xs font-bold text-gray-800 leading-snug break-words">{p.name}</p>
-                              {p.customer && <p className="text-[10px] text-gray-400 font-semibold mt-0.5 truncate">{p.customer}</p>}
+                              {p.customer && <p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">{p.customer}</p>}
                             </td>
                             <td className="px-3 py-3 align-middle">
-                              <p className="text-[11px] text-gray-600 line-clamp-2" title={p.location ?? undefined}>{p.location || <span className="text-gray-300">—</span>}</p>
+                              <p className="text-[11px] text-gray-600 line-clamp-2" title={p.location ?? undefined}>{p.location || <span className="text-gray-400">—</span>}</p>
                             </td>
                             <td className="px-3 py-3 align-middle">
                               {p.sales_name ? (
                                 <>
                                   <p className="text-[11px] font-semibold text-gray-700 truncate">{p.sales_name}</p>
-                                  {p.sales_division && <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wide">{p.sales_division}</p>}
+                                  {p.sales_division && <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wide">{p.sales_division}</p>}
                                 </>
-                              ) : <span className="text-[11px] text-gray-300">—</span>}
+                              ) : <span className="text-[11px] text-gray-400">—</span>}
                             </td>
                             <td className="px-1 py-3 align-middle text-center"><Jumlah n={p.schedule_count} tipe="schedule" /></td>
                             <td className="px-1 py-3 align-middle text-center"><Jumlah n={p.ticket_count} tipe="ticket" /></td>

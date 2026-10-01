@@ -80,6 +80,10 @@ html {
 
    Nilai yang ditulis dalam px — mis. text-[10px] — memang tidak ikut mengecil.
    Itu disengaja: yang seperti itu sudah kecil sejak awal. */
+/* Lantai ukuran teks di SEMUA layar: 7-9.5px (~270 pemakaian) di bawah batas
+   baca nyaman bahkan di desktop. Ponsel menaikkannya lagi di blok bawah. */
+.text-\[7px\], .text-\[8px\], .text-\[8\.5px\], .text-\[9px\], .text-\[9\.5px\] { font-size: 10px !important; }
+
 @media (max-width: 640px) {
   html { font-size: 87.5%; }
 
@@ -97,7 +101,7 @@ html {
   select, textarea {
     font-size: 16px !important;
   }
-  .text-\[7px\], .text-\[8px\], .text-\[9px\] { font-size: 10.5px !important; }
+  .text-\[7px\], .text-\[8px\], .text-\[8\.5px\], .text-\[9px\], .text-\[9\.5px\] { font-size: 10.5px !important; }
   .text-\[10px\] { font-size: 11px !important; }
 }
 

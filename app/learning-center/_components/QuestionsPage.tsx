@@ -611,7 +611,7 @@ export function QuestionsPage({ user }: { user: User }) {
     <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
         <h3 className="font-bold text-slate-800 mb-1 text-base"><IkonTeks nama="✏" />Ubah Nama Folder</h3>
-        <p className="text-xs text-slate-400 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
+        <p className="text-xs text-slate-500 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
         <input
           value={renameFolder?.newName ?? ''}
           onChange={e => setRenameFolder(p => p && ({ ...p, newName: e.target.value }))}
@@ -670,11 +670,11 @@ export function QuestionsPage({ user }: { user: User }) {
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${geminiRemaining <= 5 ? 'bg-rose-50 border-rose-200 text-rose-700' : geminiRemaining <= 15 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
             <span>{geminiRemaining <= 5 ? '⚠️' : geminiRemaining <= 15 ? '🟡' : '🟢'}</span>
             <span>Hari ini: <strong>{geminiUsage.count}</strong> kali</span>
-            <span className="text-slate-300">|</span>
+            <span className="text-slate-400">|</span>
             <span>Sisa ~<strong>{geminiRemaining}</strong></span>
           </div>
           {geminiLastUsedStr && (
-            <span className="text-slate-400 text-[10px]">Terakhir: {geminiLastUsedStr}</span>
+            <span className="text-slate-500 text-[10px]">Terakhir: {geminiLastUsedStr}</span>
           )}
         </div>
       </div>
@@ -696,7 +696,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="col-span-2">
           <label htmlFor="f-learning-center-components-questionspage-1" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Nama Grup / Batch
-            <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
+            <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
           </label>
           <input id="f-learning-center-components-questionspage-1" value={batchName} onChange={e => setBatchName(e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white"
@@ -705,7 +705,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="col-span-2">
           <label htmlFor="f-learning-center-components-questionspage-2" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Topik Khusus
-            <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
+            <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
           </label>
           <textarea id="f-learning-center-components-questionspage-2" value={genExtraPrompt} onChange={e => setGenExtraPrompt(e.target.value)} rows={2}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white resize-none"
@@ -761,7 +761,7 @@ export function QuestionsPage({ user }: { user: User }) {
             </button>
             {pdfFile
               ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {pdfFile.name}</span>
-              : <span className="text-xs text-slate-400">atau dari teks materi</span>}
+              : <span className="text-xs text-slate-500">atau dari teks materi</span>}
             {pdfFile && <button aria-label="Tutup" onClick={() => { setPdfFile(null); if (pdfRef.current) pdfRef.current.value = ''; }} className="text-xs text-rose-500">✕</button>}
           </div>
         </div>
@@ -783,7 +783,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 className={`flex-1 px-3 py-2 text-left transition-all ${
                   modeBanding === o.v ? 'bg-violet-600 text-white' : 'bg-white text-slate-600 hover:bg-violet-50'}`}>
                 <div className="text-xs font-bold">{o.judul}</div>
-                <div className={`text-[10px] ${modeBanding === o.v ? 'text-violet-100' : 'text-slate-400'}`}>{o.ket}</div>
+                <div className={`text-[10px] ${modeBanding === o.v ? 'text-violet-100' : 'text-slate-500'}`}>{o.ket}</div>
               </button>
             ))}
           </div>
@@ -904,7 +904,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <h3 className="font-bold text-slate-800 mb-1 text-base sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">
           {modeGrup ? '➕ Tambah Soal ke Grup' : '➕ Tambah Soal Manual'}
         </h3>
-        <p className="text-xs text-slate-400 mb-3">
+        <p className="text-xs text-slate-500 mb-3">
           {newQ.question_type === 'essay' ? 'Isi pertanyaan essay dan (opsional) kunci jawaban referensi untuk membantu penilaian manual nanti.' : 'Isi semua field, klik tombol "✓ Benar" untuk menandai jawaban yang benar.'}
         </p>
         {/*
@@ -991,7 +991,7 @@ export function QuestionsPage({ user }: { user: User }) {
             <div>
               <label htmlFor="f-learning-center-components-questionspage-9" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                 Kunci / Referensi Jawaban
-                <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional — hanya untuk bantu admin menilai, tidak dilihat peserta</span>
+                <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">Optional — hanya untuk bantu admin menilai, tidak dilihat peserta</span>
               </label>
               <textarea id="f-learning-center-components-questionspage-9" value={newQ.model_answer} onChange={e => setNewQ(p => ({ ...p, model_answer: e.target.value }))}
                 rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
@@ -1013,7 +1013,7 @@ export function QuestionsPage({ user }: { user: User }) {
           <div>
             <label htmlFor="f-learning-center-components-questionspage-10" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
               Nama Grup / Batch
-              <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
+              <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
             </label>
             <input id="f-learning-center-components-questionspage-10" value={newQ.batch_name} onChange={e => setNewQ(p => ({ ...p, batch_name: e.target.value }))}
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
@@ -1120,7 +1120,7 @@ export function QuestionsPage({ user }: { user: User }) {
                       </svg>
                     </div>
                     <p className="text-sm font-bold text-slate-800 truncate">Tanpa Folder</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {questions.filter(q => rootMaterials.map(m => m.id).includes(q.material_id)).length} soal
                     </p>
                     <div className="flex justify-end mt-2">
@@ -1150,7 +1150,7 @@ export function QuestionsPage({ user }: { user: User }) {
                         </svg>
                       </div>
                       <p className="text-sm font-bold text-slate-800 truncate pr-6">{fKey}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal</p>
                     </button>
                     {/* Folder action buttons */}
                     <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
@@ -1212,7 +1212,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="flex items-center justify-between px-6 py-4 gap-4">
           <div className="min-w-0">
             {/* Breadcrumb */}
-            <div className="flex items-center gap-1 text-xs text-slate-400 mb-1 flex-wrap">
+            <div className="flex items-center gap-1 text-xs text-slate-500 mb-1 flex-wrap">
               <span className="font-medium">Bank Soal</span>
               <svg aria-hidden="true" focusable="false" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -1334,7 +1334,7 @@ export function QuestionsPage({ user }: { user: User }) {
                         </svg>
                       </div>
                       <p className="text-sm font-bold text-slate-800 truncate pr-6">{sfKey}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{sfNode.materials.length} materi · {sfQCount} soal</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{sfNode.materials.length} materi · {sfQCount} soal</p>
                       <div className="flex justify-end mt-1.5">
                         <svg aria-hidden="true" focusable="false" width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -1395,7 +1395,7 @@ export function QuestionsPage({ user }: { user: User }) {
                       </svg>
                     </div>
                     <p className="text-sm font-bold text-slate-800">Langsung</p>
-                    <p className="text-xs text-slate-400 mt-0.5">{currentFolderNode.materials.length} materi</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{currentFolderNode.materials.length} materi</p>
                     <div className="flex justify-end mt-1.5">
                       <svg aria-hidden="true" focusable="false" width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -1411,7 +1411,7 @@ export function QuestionsPage({ user }: { user: User }) {
         {/* Material filter chips */}
         {viewMaterials.length > 0 && (
           <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-1">Filter:</span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">Filter:</span>
             <button
               onClick={() => setSelectedMat('')}
               className="px-3 py-1 rounded-lg text-xs font-semibold border transition-all"
@@ -1449,7 +1449,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 {editQ.question_type === 'essay' ? (
                   <div>
                     <label htmlFor="f-learning-center-components-questionspage-12" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                      Kunci / Referensi Jawaban <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case">Optional</span>
+                      Kunci / Referensi Jawaban <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case">Optional</span>
                     </label>
                     <textarea id="f-learning-center-components-questionspage-12" value={editQ.model_answer ?? ''} onChange={e => setEditQ(p => p && ({ ...p, model_answer: e.target.value }))}
                       rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Contoh jawaban ideal..." />
@@ -1593,7 +1593,7 @@ export function QuestionsPage({ user }: { user: User }) {
                               <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: bc.dot }} />
                               {batchKey
                                 ? <span className="text-xs font-bold" style={{ color: bc.text }}><Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /> {batchKey}</span>
-                                : <span className="text-xs font-semibold text-slate-400 italic">Tanpa Grup</span>
+                                : <span className="text-xs font-semibold text-slate-500 italic">Tanpa Grup</span>
                               }
                               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border" style={{ color: bc.text, borderColor: bc.border }}>
                                 {batchQs.length} soal
@@ -1695,7 +1695,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                         <button type="button" aria-label={`Naikkan soal ${idx + 1}`}
                                           title="Naikkan" disabled={idx === 0}
                                           onClick={() => geserSoal(expandKey, batchQs, idx, -1)}
-                                          className="w-6 h-5 rounded flex items-center justify-center text-slate-400 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
+                                          className="w-6 h-5 rounded flex items-center justify-center text-slate-500 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
                                           <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
                                           </svg>
@@ -1703,7 +1703,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                         <button type="button" aria-label={`Turunkan soal ${idx + 1}`}
                                           title="Turunkan" disabled={idx === batchQs.length - 1}
                                           onClick={() => geserSoal(expandKey, batchQs, idx, 1)}
-                                          className="w-6 h-5 rounded flex items-center justify-center text-slate-400 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
+                                          className="w-6 h-5 rounded flex items-center justify-center text-slate-500 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
                                           <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
                                           </svg>
@@ -1722,7 +1722,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                           <span className="font-bold">Kunci referensi: </span>{q.model_answer}
                                         </div>
                                       ) : (
-                                        <p className="text-xs text-slate-400 italic mb-2.5">Tidak ada kunci referensi — dinilai manual sepenuhnya oleh admin.</p>
+                                        <p className="text-xs text-slate-500 italic mb-2.5">Tidak ada kunci referensi — dinilai manual sepenuhnya oleh admin.</p>
                                       )
                                     ) : (
                                     <div className="grid grid-cols-2 gap-1.5 mb-2.5">

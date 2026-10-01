@@ -237,7 +237,7 @@ export function AuditRow({ entry }: { entry: AuditEntry }) {
 export function ScopeBadge({ scope }: { scope: Scope }) {
   const cfg = {
     admin:     { label: 'Semua Data',         color: '#be123c', icon: '👑' },
-    pts_sup:   { label: scope.ptsTeamType ?? 'PTS Supervisor', color: '#0891b2', icon: '🏪' },
+    pts_sup:   { label: scope.ptsTeamType ?? 'PTS Supervisor', color: '#0e7490', icon: '🏪' },
     none:      { label: '-',                  color: '#6b7280', icon: '—'  },
   }[scope.kind];
   return (

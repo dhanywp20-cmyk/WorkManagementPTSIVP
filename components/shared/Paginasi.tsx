@@ -106,7 +106,7 @@ export function Paginasi({
   return (
     <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-t border-gray-200 flex-wrap gap-2"
       style={{ background: 'rgba(255,255,255,0.97)' }}>
-      <span className="text-xs text-gray-400">
+      <span className="text-xs text-gray-500">
         {total > 0 ? `${mulai + 1}–${akhir}` : '0'} dari {total} {satuan}
       </span>
 
@@ -138,7 +138,7 @@ export function Paginasi({
         </div>
       )}
 
-      <span className="text-xs text-gray-400">Hal. {halaman}/{totalHalaman}</span>
+      <span className="text-xs text-gray-500">Hal. {halaman}/{totalHalaman}</span>
     </div>
   );
 }

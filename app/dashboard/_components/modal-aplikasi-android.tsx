@@ -54,7 +54,7 @@ function Kartu({ judul, children, aksi }: { judul: string; children: React.React
 
 const Baris = ({ label, children }: { label: string; children: React.ReactNode }) => (
   <div className="flex items-center justify-between gap-3 py-2 border-b border-slate-100 last:border-0 text-sm">
-    <span className="text-[11px] font-bold tracking-wider uppercase text-slate-400">{label}</span>
+    <span className="text-[11px] font-bold tracking-wider uppercase text-slate-500">{label}</span>
     <span className="font-semibold text-slate-800 text-right min-w-0 truncate">{children}</span>
   </div>
 );
@@ -131,7 +131,7 @@ export function AplikasiAndroidInline() {
           </a>
         )}>
           {riwayat === null ? (
-            <p className="text-sm text-slate-400">Memuat...</p>
+            <p className="text-sm text-slate-500">Memuat...</p>
           ) : !terbaru ? (
             <p className="text-sm text-slate-500">Belum ada APK yang diunggah. Unggah versi pertama di bawah.</p>
           ) : (
@@ -159,7 +159,7 @@ export function AplikasiAndroidInline() {
               <input ref={inputRef} type="file" accept=".apk,application/vnd.android.package-archive" disabled={sibuk}
                 onChange={e => pilihBerkas(e.target.files?.[0] ?? null)}
                 className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-700 hover:file:bg-slate-200" />
-              {berkas && <span className="block mt-1 text-[11px] text-slate-400 truncate">{berkas.name} · {formatUkuran(berkas.size)}</span>}
+              {berkas && <span className="block mt-1 text-[11px] text-slate-500 truncate">{berkas.name} · {formatUkuran(berkas.size)}</span>}
             </label>
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
@@ -173,7 +173,7 @@ export function AplikasiAndroidInline() {
                   className={kelasInput} />
               </label>
             </div>
-            <p className="text-[11px] text-slate-400 -mt-1">
+            <p className="text-[11px] text-slate-500 -mt-1">
               Kode versi = <code>versionCode</code> di <code>android/version.properties</code>; harus lebih dari {kodeTerakhir}.
             </p>
             <label className="block">
@@ -183,7 +183,7 @@ export function AplikasiAndroidInline() {
             </label>
             <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
               <input type="checkbox" checked={wajib} onChange={e => setWajib(e.target.checked)} disabled={sibuk}
-                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500" />
+                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500" />
               <span><strong>Wajib</strong> <span className="text-slate-500">- pengguna aplikasi versi lama tidak bisa lanjut sebelum update</span></span>
             </label>
 
@@ -209,12 +209,12 @@ export function AplikasiAndroidInline() {
       <div className="space-y-4 min-w-0">
         <Kartu judul="Langkah merilis">
           <ol className="space-y-3 text-sm text-slate-600 list-decimal pl-5 leading-relaxed">
-            <li>Naikkan <code>versionCode</code> & <code>versionName</code> di <code>android/version.properties</code>.</li>
-            <li>Build di laptop: Android Studio → <em>Build → Generate Signed APK</em>, atau terminal <code className="break-all">cd android &amp;&amp; ./gradlew assembleRelease</code>. Hasilnya di <code className="break-all">android/app/build/outputs/apk/release/</code>.</li>
-            <li>Unggah berkas itu di sini dengan versi & kode yang sama, tulis yang berubah, lalu <strong>Unggah & terbitkan</strong>.</li>
+            <li>Naikkan <code>versionCode</code> & <code>versionName</code> di <code>android/version.properties</code>, lalu merge ke <code>main</code>.</li>
+            <li><strong>Otomatis:</strong> GitHub Actions membangun APK rilis dan langsung menerbitkannya di sini - tidak perlu Android Studio maupun laptop.</li>
+            <li><strong>Manual</strong> (bila perlu): unduh artefak <em>apk</em> dari GitHub Actions, atau build di laptop dengan <code className="break-all">cd android &amp;&amp; ./gradlew assembleRelease</code>, lalu unggah lewat formulir di samping.</li>
             <li>Tombol unduh di Profil semua pengguna langsung berganti ke versi ini. Aplikasi versi lama menampilkan ajakan update (paksa bila <strong>Wajib</strong>).</li>
           </ol>
-          <p className="mt-3 text-[11px] text-slate-400 leading-relaxed">
+          <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
             Perubahan tampilan/fitur web tidak butuh APK baru - aplikasi memuat web terbaru dari server. APK baru hanya untuk perubahan di folder <code>android/</code>.
             Hanya 2 berkas APK terakhir yang disimpan agar kuota Storage tetap hemat.
           </p>
@@ -227,12 +227,12 @@ export function AplikasiAndroidInline() {
                 <li key={r.id} className="py-2 flex items-center justify-between gap-3 text-sm">
                   <span className="min-w-0">
                     <span className="font-semibold text-slate-800">v{r.versi}</span>
-                    <span className="text-slate-400"> · kode {r.kode_versi}{r.wajib ? ' · wajib' : ''}</span>
-                    <span className="block text-[11px] text-slate-400">{formatTanggal(r.diunggah_pada)} · {formatUkuran(r.ukuran)}</span>
+                    <span className="text-slate-500"> · kode {r.kode_versi}{r.wajib ? ' · wajib' : ''}</span>
+                    <span className="block text-[11px] text-slate-500">{formatTanggal(r.diunggah_pada)} · {formatUkuran(r.ukuran)}</span>
                   </span>
                   {r.tersedia
                     ? <a href={`${URL_UNDUH_APK}?kode=${r.kode_versi}`} className="text-xs font-bold text-emerald-700 hover:underline flex-shrink-0">Unduh</a>
-                    : <span className="text-[11px] text-slate-300 flex-shrink-0">berkas dihapus</span>}
+                    : <span className="text-[11px] text-slate-500 flex-shrink-0">berkas dihapus</span>}
                 </li>
               ))}
             </ul>

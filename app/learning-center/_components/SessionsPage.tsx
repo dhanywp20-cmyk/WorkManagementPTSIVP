@@ -391,7 +391,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                   {t === 'abcd' ? '🔤 Pilihan Ganda (ABCD)' : '📝 Essay'}
                 </button>
               ))}
-              <span className="text-[11px] text-slate-400 ml-1">Sesi essay hanya bisa berisi soal essay, tidak dicampur ABCD.</span>
+              <span className="text-[11px] text-slate-500 ml-1">Sesi essay hanya bisa berisi soal essay, tidak dicampur ABCD.</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
@@ -429,7 +429,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                   <div>
                     <label htmlFor="f-learning-center-components-sessionspage-3" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                       Grup / Batch Soal
-                      <span className="ml-1.5 text-[10px] font-normal text-slate-400 normal-case tracking-normal">Optional</span>
+                      <span className="ml-1.5 text-[10px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
                     </label>
                     <select id="f-learning-center-components-sessionspage-3"
                       value={form.batch_filter}
@@ -472,18 +472,18 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 <label htmlFor="f-learning-center-components-sessionspage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="⏰" />Waktu Dibuka</label>
                 <input id="f-learning-center-components-sessionspage-7" type="datetime-local" value={form.open_at} onChange={e => setForm(p => ({ ...p, open_at: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
-                <p className="text-[10px] text-slate-400 mt-1">Kosongkan = langsung aktif sekarang</p>
+                <p className="text-[10px] text-slate-500 mt-1">Kosongkan = langsung aktif sekarang</p>
               </div>
               <div>
                 <label htmlFor="f-learning-center-components-sessionspage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔒" />Waktu Ditutup</label>
                 <input id="f-learning-center-components-sessionspage-8" type="datetime-local" value={form.close_at} onChange={e => setForm(p => ({ ...p, close_at: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
-                <p className="text-[10px] text-slate-400 mt-1">Kosongkan = tidak ada batas waktu</p>
+                <p className="text-[10px] text-slate-500 mt-1">Kosongkan = tidak ada batas waktu</p>
               </div>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={form.allow_retake} onChange={e => setForm(p => ({ ...p, allow_retake: e.target.checked }))}
-                    className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-400" />
+                    className="w-4 h-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-400" />
                   <span className="text-sm font-medium text-slate-700">Boleh Retake</span>
                 </label>
                 {/* Mengacak urutan TAMPIL saja - penilaian tetap per question_id
@@ -492,7 +492,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                   <input type="checkbox" checked={form.acak_soal} onChange={e => setForm(p => ({ ...p, acak_soal: e.target.checked }))}
                     className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400" />
                   <span className="text-sm font-medium text-slate-700"><IkonTeks nama="🔀" />Acak Urutan Soal</span>
-                  <span className="text-[10px] text-slate-400">(beda tiap peserta)</span>
+                  <span className="text-[10px] text-slate-500">(beda tiap peserta)</span>
                 </label>
               </div>
               <div className="col-span-2">
@@ -528,9 +528,9 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
 
                 {form.target_mode === 'role' && (
                   <div>
-                    <p className="text-xs text-slate-400 mb-2">Pilih role yang akan menerima quiz ini:</p>
+                    <p className="text-xs text-slate-500 mb-2">Pilih role yang akan menerima quiz ini:</p>
                     <div className="border border-slate-200 rounded-xl p-3 space-y-1">
-                      {uniqueRoles.length === 0 && <p className="text-xs text-slate-400 text-center py-3">Tidak ada role ditemukan</p>}
+                      {uniqueRoles.length === 0 && <p className="text-xs text-slate-500 text-center py-3">Tidak ada role ditemukan</p>}
                       {uniqueRoles.map(role => {
                         const checked = form.target_roles.includes(role);
                         const count = teamUsers.filter(u => (u.role ?? '').toLowerCase() === role).length;
@@ -541,7 +541,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                             <span className="text-sm font-semibold text-slate-800 flex-1">
                               {roleLabel[role] ?? `📌 ${role.charAt(0).toUpperCase() + role.slice(1)}`}
                             </span>
-                            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
+                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
                           </label>
                         );
                       })}
@@ -556,13 +556,13 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
 
                 {form.target_mode === 'division' && (
                   <div>
-                    <p className="text-xs text-slate-400 mb-2">Pilih Sales Division yang akan menerima quiz ini:</p>
+                    <p className="text-xs text-slate-500 mb-2">Pilih Sales Division yang akan menerima quiz ini:</p>
                     <input aria-label="Cari divisi..." value={cariDivisi} onChange={e => setCariDivisi(e.target.value)}
                       placeholder="Cari divisi..."
                       className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
                     <div className="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
                       {uniqueDivisions.length === 0 && (
-                        <p className="text-xs text-slate-400 text-center py-3">Tidak ada sales division ditemukan. Pastikan field <code>sales_division</code> diisi di data user.</p>
+                        <p className="text-xs text-slate-500 text-center py-3">Tidak ada sales division ditemukan. Pastikan field <code>sales_division</code> diisi di data user.</p>
                       )}
                       {uniqueDivisions
                         // Divisi terpilih tetap tampil walau tidak cocok kata kunci,
@@ -576,14 +576,14 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                         return (
                           <label key={div} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${checked ? 'bg-orange-50 border border-orange-200' : 'hover:bg-slate-50 border border-transparent'}`}>
                             <input type="checkbox" checked={checked} onChange={() => toggleTargetDivision(div)}
-                              className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 flex-shrink-0" />
+                              className="w-4 h-4 rounded border-slate-300 text-orange-700 focus:ring-orange-400 flex-shrink-0" />
                             <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 text-xs font-bold flex-shrink-0">
                               <Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" />
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold text-slate-800">{div}</p>
                             </div>
-                            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
+                            <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
                           </label>
                         );
                       })}
@@ -598,12 +598,12 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
 
                 {form.target_mode === 'user' && (
                   <div>
-                    <p className="text-xs text-slate-400 mb-2">Pilih anggota secara individual:</p>
+                    <p className="text-xs text-slate-500 mb-2">Pilih anggota secara individual:</p>
                     <input aria-label="Cari nama, role, atau jabatan..." value={cariAnggota} onChange={e => setCariAnggota(e.target.value)}
                       placeholder="Cari nama, role, atau jabatan..."
                       className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                     <div className="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
-                      {teamUsers.length === 0 && <p className="text-xs text-slate-400 text-center py-4">Tidak ada user ditemukan</p>}
+                      {teamUsers.length === 0 && <p className="text-xs text-slate-500 text-center py-4">Tidak ada user ditemukan</p>}
                       {(() => {
                         const q = cariAnggota.trim().toLowerCase();
                         // Yang SUDAH dicentang selalu ikut tampil walau tidak cocok
@@ -616,7 +616,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                               `${u.full_name ?? ''} ${u.role ?? ''} ${u.jabatan ?? ''}`.toLowerCase().includes(q))
                           : teamUsers;
                         if (tampil.length === 0) {
-                          return <p className="text-xs text-slate-400 text-center py-4">Tidak ada yang cocok dengan &quot;{cariAnggota}&quot;</p>;
+                          return <p className="text-xs text-slate-500 text-center py-4">Tidak ada yang cocok dengan &quot;{cariAnggota}&quot;</p>;
                         }
                         return tampil.map(u => {
                         const checked = form.target_user_ids.includes(u.id);
@@ -629,7 +629,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>
-                              <p className="text-[10px] text-slate-400">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
+                              <p className="text-[10px] text-slate-500">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
                             </div>
                           </label>
                         );
@@ -708,7 +708,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                     </div>
                     {(s.open_at || s.close_at) && (
                       <div className="flex flex-wrap gap-3 mt-1.5 text-xs">
-                        {s.open_at && <span className="text-amber-600 font-semibold"><IkonTeks nama="⏰" />Buka: {fmtDT(s.open_at)}</span>}
+                        {s.open_at && <span className="text-amber-700 font-semibold"><IkonTeks nama="⏰" />Buka: {fmtDT(s.open_at)}</span>}
                         {s.close_at && <span className="text-rose-600 font-semibold"><IkonTeks nama="🔒" />Tutup: {fmtDT(s.close_at)}</span>}
                       </div>
                     )}
@@ -752,7 +752,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                       {targetNames === null ? (
                         <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="🌐" />Semua Team</span>
                       ) : targetNames.length === 0 ? (
-                        <span className="text-xs text-slate-400 italic">—</span>
+                        <span className="text-xs text-slate-500 italic">—</span>
                       ) : (() => {
                         // Try to detect if this was a division-targeted session
                         const divMatches = [...new Set(
@@ -764,17 +764,17 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                         if (allFromDivisions) {
                           return (
                             <div className="flex flex-wrap gap-1 items-center">
-                              <span className="text-xs text-orange-500 font-semibold mr-1"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                              <span className="text-xs text-orange-700 font-semibold mr-1"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                               {divMatches.map((d, i) => (
                                 <span key={i} className="text-xs bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full font-semibold">{d}</span>
                               ))}
-                              <span className="text-xs text-slate-400 font-semibold">· {targetNames.length} user</span>
+                              <span className="text-xs text-slate-500 font-semibold">· {targetNames.length} user</span>
                             </div>
                           );
                         }
                         return (
                           <div className="flex flex-wrap gap-1 items-center">
-                            <span className="text-xs text-slate-400 font-semibold mr-1"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                            <span className="text-xs text-slate-500 font-semibold mr-1"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                             {targetNames.slice(0, 4).map((n, i) => (
                               <span key={i} className="text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-full font-semibold">{n}</span>
                             ))}
@@ -844,7 +844,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 <div className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">Soal dari: <span className="font-semibold text-emerald-700">{reassignSource.session_name}</span></div>
               </div>
               <button aria-label="Tutup" onClick={() => setShowReassign(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-white/80 text-lg leading-none">×</button>
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-white/80 text-lg leading-none">×</button>
             </div>
 
             {/* Info materi — read-only */}
@@ -852,7 +852,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
               <span className="text-sm"><Ikon nama="📚" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-700 truncate">{reassignSource.materi_name}</p>
-                <p className="text-[11px] text-slate-400">{reassignSource.question_count} soal · soal yang sama dipakai ulang</p>
+                <p className="text-[11px] text-slate-500">{reassignSource.question_count} soal · soal yang sama dipakai ulang</p>
               </div>
               <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 flex-shrink-0">Reuse ♻️</span>
             </div>
@@ -885,7 +885,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={reassignForm.allow_retake}
                       onChange={e => setReassignForm(p => ({ ...p, allow_retake: e.target.checked }))}
-                      className="w-4 h-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-400" />
+                      className="w-4 h-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-400" />
                     <span className="text-sm font-medium text-slate-700">Retake</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -939,7 +939,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
 
                 {reassignForm.target_mode === 'role' && (
                   <div className="border border-slate-200 rounded-xl p-3 space-y-1 max-h-44 overflow-y-auto">
-                    {uniqueRoles.length === 0 && <p className="text-xs text-slate-400 text-center py-3">Tidak ada role ditemukan</p>}
+                    {uniqueRoles.length === 0 && <p className="text-xs text-slate-500 text-center py-3">Tidak ada role ditemukan</p>}
                     {uniqueRoles.map(role => {
                       const checked = reassignForm.target_roles.includes(role);
                       const count = teamUsers.filter(u => (u.role ?? '').toLowerCase() === role).length;
@@ -949,7 +949,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                             onChange={() => setReassignForm(p => ({ ...p, target_roles: p.target_roles.includes(role) ? p.target_roles.filter(r => r !== role) : [...p.target_roles, role] }))}
                             className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0" />
                           <span className="text-sm font-semibold text-slate-800 flex-1">{roleLabel[role] ?? `📌 ${role}`}</span>
-                          <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
+                          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
                         </label>
                       );
                     })}
@@ -962,7 +962,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                     placeholder="Cari divisi..."
                     className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
                   <div className="border border-slate-200 rounded-xl p-3 space-y-1 max-h-44 overflow-y-auto">
-                    {uniqueDivisions.length === 0 && <p className="text-xs text-slate-400 text-center py-3">Tidak ada sales division ditemukan</p>}
+                    {uniqueDivisions.length === 0 && <p className="text-xs text-slate-500 text-center py-3">Tidak ada sales division ditemukan</p>}
                     {uniqueDivisions
                       // Divisi terpilih tetap tampil walau tidak cocok kata kunci -
                       // alasan yang sama dengan daftar anggota di bawah.
@@ -976,9 +976,9 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                         <label key={div} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-orange-50 border border-orange-200' : 'hover:bg-slate-50 border border-transparent'}`}>
                           <input type="checkbox" checked={checked}
                             onChange={() => setReassignForm(p => ({ ...p, target_divisions: p.target_divisions.includes(div) ? p.target_divisions.filter(d => d !== div) : [...p.target_divisions, div] }))}
-                            className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 flex-shrink-0" />
+                            className="w-4 h-4 rounded border-slate-300 text-orange-700 focus:ring-orange-400 flex-shrink-0" />
                           <span className="text-sm font-semibold text-slate-800 flex-1"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {div}</span>
-                          <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
+                          <span className="text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-semibold">{count} user</span>
                         </label>
                       );
                     })}
@@ -992,7 +992,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                     placeholder="Cari nama, role, atau jabatan..."
                     className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                   <div className="border border-slate-200 rounded-xl p-3 max-h-48 overflow-y-auto space-y-1">
-                    {teamUsers.length === 0 && <p className="text-xs text-slate-400 text-center py-4">Tidak ada user ditemukan</p>}
+                    {teamUsers.length === 0 && <p className="text-xs text-slate-500 text-center py-4">Tidak ada user ditemukan</p>}
                     {(() => {
                       const q = cariAnggotaUlang.trim().toLowerCase();
                       // Yang SUDAH dicentang selalu ikut tampil walau tidak cocok
@@ -1005,7 +1005,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                             `${u.full_name ?? ''} ${u.role ?? ''} ${u.jabatan ?? ''}`.toLowerCase().includes(q))
                         : teamUsers;
                       if (tampil.length === 0) {
-                        return <p className="text-xs text-slate-400 text-center py-4">Tidak ada yang cocok dengan &quot;{cariAnggotaUlang}&quot;</p>;
+                        return <p className="text-xs text-slate-500 text-center py-4">Tidak ada yang cocok dengan &quot;{cariAnggotaUlang}&quot;</p>;
                       }
                       return tampil.map(u => {
                       const checked = reassignForm.target_user_ids.includes(u.id);
@@ -1019,7 +1019,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>
-                            <p className="text-[10px] text-slate-400">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
+                            <p className="text-[10px] text-slate-500">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
                           </div>
                         </label>
                       );

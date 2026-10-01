@@ -37,7 +37,7 @@ export function InlineSpinner({ accentColor = '#dc2626', label = 'Memuat data...
     <div role="status" aria-live="polite" aria-busy="true" className="flex justify-center py-16">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 rounded-full animate-spin" aria-hidden="true" style={{ border: '3px solid #fde68a', borderTopColor: accentColor }} />
-        <span className="text-gray-400 text-sm">{label}</span>
+        <span className="text-gray-500 text-sm">{label}</span>
       </div>
     </div>
   );

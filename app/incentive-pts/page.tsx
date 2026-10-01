@@ -1021,13 +1021,13 @@ export default function IncentivePTSPage() {
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0"><Ikon nama="💰" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
           <div className="flex-1 min-w-0">
             <h1 className="text-base font-bold text-gray-800">Incentive PTS</h1>
-            <p className="text-[11px] text-gray-400">IndoVisual Professional Tools</p>
+            <p className="text-[11px] text-gray-500">IndoVisual Professional Tools</p>
           </div>
           <div className="hidden sm:flex items-center gap-4 text-right">
-            <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total Pool</p><p className="text-sm font-black text-emerald-600">{formatRupiah(totalPool)}</p></div>
-            <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Projects</p><p className="text-sm font-black text-rose-600">{projects.length}</p></div>
-            <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Pending Nominal</p><p className="text-sm font-black text-amber-600">{pendingNominal}</p></div>
-            <div><p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Pending Tranche</p><p className="text-sm font-black text-rose-600">{pendingTranche}</p></div>
+            <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Total Pool</p><p className="text-sm font-black text-emerald-700">{formatRupiah(totalPool)}</p></div>
+            <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Projects</p><p className="text-sm font-black text-rose-600">{projects.length}</p></div>
+            <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pending Nominal</p><p className="text-sm font-black text-amber-700">{pendingNominal}</p></div>
+            <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pending Tranche</p><p className="text-sm font-black text-rose-600">{pendingTranche}</p></div>
           </div>
         </div>
       </header>
@@ -1067,7 +1067,7 @@ export default function IncentivePTSPage() {
             <div className="mb-4 rounded-xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-purple-50 p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-black text-gray-700 flex items-center gap-1.5"><IkonTeks nama="💰" />Insentif Saya
-                  <span className="text-[10px] font-semibold text-gray-400">
+                  <span className="text-[10px] font-semibold text-gray-500">
                     {filterBastYear == null ? '· semua tahun BAST' : `· tahun BAST ${filterBastYear}`}
                   </span>
                 </h3>
@@ -1079,23 +1079,23 @@ export default function IncentivePTSPage() {
                 )}
               </div>
               {mySplitsInYear.length === 0 ? (
-                <p className="text-xs text-gray-400">Belum ada bagian insentif tercatat untuk kamu di periode ini.</p>
+                <p className="text-xs text-gray-500">Belum ada bagian insentif tercatat untuk kamu di periode ini.</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div>
-                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Total</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Total</p>
                     <p className="text-lg font-black text-gray-700">{formatRupiah(myTotalInsentif)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Sudah Cair</p>
-                    <p className="text-lg font-black text-emerald-600">{formatRupiah(myPaidInsentif)}</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Sudah Cair</p>
+                    <p className="text-lg font-black text-emerald-700">{formatRupiah(myPaidInsentif)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Belum Cair</p>
-                    <p className="text-lg font-black text-amber-600">{formatRupiah(myPendingInsentif)}</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Belum Cair</p>
+                    <p className="text-lg font-black text-amber-700">{formatRupiah(myPendingInsentif)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Jumlah Project</p>
+                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Jumlah Project</p>
                     <p className="text-lg font-black text-rose-600">{myProjectCount}</p>
                   </div>
                 </div>
@@ -1134,7 +1134,7 @@ export default function IncentivePTSPage() {
                       {bastYearsProjects.map(y => <option key={y} value={y}>Tahun {y}</option>)}
                     </select>
                     <button onClick={handleExportSummary} disabled={exporting}
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
                       {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Summary
                     </button>
                   </>)}
@@ -1246,11 +1246,11 @@ export default function IncentivePTSPage() {
                   </div>
                 );
               })()}
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-gray-500">
                 <span className="font-bold text-gray-600">{filteredProjects.length}</span> project
                 {bisaInput(currentUser) && (<>
-                  &nbsp;·&nbsp;<span className="font-bold text-emerald-600">{filteredProjects.filter(p => (p.incentive_value||0)>0).length}</span> ada nominal ·&nbsp;
-                  <span className="font-bold text-amber-600">{filteredProjects.filter(p => !(p.incentive_value||0)).length}</span> belum isi nominal
+                  &nbsp;·&nbsp;<span className="font-bold text-emerald-700">{filteredProjects.filter(p => (p.incentive_value||0)>0).length}</span> ada nominal ·&nbsp;
+                  <span className="font-bold text-amber-700">{filteredProjects.filter(p => !(p.incentive_value||0)).length}</span> belum isi nominal
                 </>)}
                 {/*
                   Total nominal utk SEMUA role - dijumlah dari filteredProjects
@@ -1258,7 +1258,7 @@ export default function IncentivePTSPage() {
                   BUKAN dari totalPool (total seluruh platform).
                 */}
                 &nbsp;·&nbsp;Total:&nbsp;
-                <span className="font-bold text-emerald-600">
+                <span className="font-bold text-emerald-700">
                   {formatRupiah(filteredProjects.filter(p => (p.incentive_value || 0) > 0).reduce((s, p) => s + (p.incentive_value || 0), 0))}
                 </span>
               </p>
@@ -1266,7 +1266,7 @@ export default function IncentivePTSPage() {
             {/* ── MOBILE: kartu ringkas (nama + total incentive, tap utk detail) ── */}
             <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
               {filteredProjects.length === 0 ? (
-                <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada project incentive.</div>
+                <div className="px-4 py-10 text-center text-sm text-gray-500">Belum ada project incentive.</div>
               ) : hal.potongan.map((p) => {
                 const hasNominal = (p.incentive_value || 0) > 0;
                 const handlerSplit = calcHandlerSplit(skema, p);
@@ -1300,8 +1300,8 @@ export default function IncentivePTSPage() {
                         ORANG LAIN.
                       */}
                       {hasNominal
-                        ? <span className="text-sm font-black text-emerald-600 whitespace-nowrap">{formatRupiah(p.incentive_value || 0)}</span>
-                        : <span className="text-[10px] font-bold text-amber-600 whitespace-nowrap"><IkonTeks nama="⏳" />Belum nominal</span>}
+                        ? <span className="text-sm font-black text-emerald-700 whitespace-nowrap">{formatRupiah(p.incentive_value || 0)}</span>
+                        : <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap"><IkonTeks nama="⏳" />Belum nominal</span>}
                     </>}
                     fields={[
                       { label: 'Mode', value: p.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : p.mode_penyelesaian === 'remote' ? '💻 Remote' : '—' },
@@ -1330,7 +1330,7 @@ export default function IncentivePTSPage() {
                         <button aria-label={`Hapus tahapan ${p.project_name}`}
                           onClick={() => { setHapusTahapan(p); setKetikHapusTahapan(''); }}
                           title="Hapus tahapan pencairan (nominal terbuka lagi)"
-                          className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-amber-200 text-amber-600 hover:bg-amber-50">
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-lg border bg-white border-amber-200 text-amber-700 hover:bg-amber-50">
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a4 4 0 110 8h-1m-9-8l4-4m-4 4l4 4" /></svg>
                         </button>
                       )}
@@ -1374,7 +1374,7 @@ export default function IncentivePTSPage() {
                     <tr><td colSpan={bisaInput(currentUser) ? 10 : 9} className="px-4 py-16 text-center border border-gray-200">
                       <p className="text-4xl mb-3"><Ikon nama="📭" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
                       <p className="text-gray-500 font-medium">Belum ada project incentive</p>
-                      <p className="text-gray-400 text-xs mt-1">Data muncul dari Reminder Schedule kategori Konfigurasi / Training yang sudah Completed</p>
+                      <p className="text-gray-500 text-xs mt-1">Data muncul dari Reminder Schedule kategori Konfigurasi / Training yang sudah Completed</p>
                     </td></tr>
                   ) : hal.potongan.map((p, idx) => {
                     const rowBg = idx % 2 === 0 ? 'bg-white' : 'bg-rose-50/30';
@@ -1387,15 +1387,15 @@ export default function IncentivePTSPage() {
                     const handlerSplit = calcHandlerSplit(skema, p);
                     return (
                       <tr key={p.id} className="group" style={{ '--aksen-baris': '#fb7185', '--bg-baris-sorot': '#fff1f2' } as CSSProperties}>
-                        <td className={`${cellCls} text-xs text-gray-400 text-center`}>{hal.mulai + idx + 1}</td>
+                        <td className={`${cellCls} text-xs text-gray-500 text-center`}>{hal.mulai + idx + 1}</td>
                         <td className={`${cellCls} max-w-[210px]`}>
                           <p className="font-semibold text-gray-800 leading-snug truncate max-w-[195px]" title={p.project_name}>{p.project_name}</p>
                           {p.product && <p className="text-[11px] text-rose-500 mt-0.5 truncate max-w-[195px]" title={p.product}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.product}</p>}
-                          {p.address && <p className="text-[11px] text-gray-400 mt-0.5 truncate max-w-[195px]" title={p.address}><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.address}</p>}
+                          {p.address && <p className="text-[11px] text-gray-500 mt-0.5 truncate max-w-[195px]" title={p.address}><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.address}</p>}
                         </td>
                         <td className={cellCls}>
                           <p className="text-sm font-medium text-gray-700">{p.assign_name || '—'}</p>
-                          {p.pic_type === 'manager_pic' && <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-0.5 inline-block">Manager PIC</span>}
+                          {p.pic_type === 'manager_pic' && <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-0.5 inline-block">Manager PIC</span>}
                           {/*
                             Lencana brand. Dua petugas Finance memakai daftar
                             yang sudah tersaring, jadi lencana ini bukan sekadar
@@ -1458,29 +1458,29 @@ export default function IncentivePTSPage() {
                             <div>
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200"><IkonTeks nama="💻" />Remote</span>
                               {p.installer_name && <p className="text-[10px] text-blue-600 mt-0.5 truncate max-w-[90px]"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.installer_name}</p>}
-                              {p.installer_daerah && <p className="text-[10px] text-gray-400 truncate max-w-[90px]"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.installer_daerah}</p>}
+                              {p.installer_daerah && <p className="text-[10px] text-gray-500 truncate max-w-[90px]"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.installer_daerah}</p>}
                             </div>
                           )}
-                          {!p.mode_penyelesaian && <span className="text-xs text-gray-300">—</span>}
+                          {!p.mode_penyelesaian && <span className="text-xs text-gray-400">—</span>}
                         </td>
                         <td className={cellCls}>
                           {p.bast_date
                             ? <p className="text-xs font-semibold text-gray-700">{new Date(p.bast_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
-                            : <span className="text-xs text-amber-500 italic">Belum diisi</span>}
+                            : <span className="text-xs text-amber-700 italic">Belum diisi</span>}
                         </td>
                         <td className={`${cellCls} text-right`}>
                           {hasNominal
-                            ? <p className="text-sm font-black text-emerald-600">{formatRupiah(p.incentive_value || 0)}</p>
-                            : <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><IkonTeks nama="⏳" />Belum</span>}
+                            ? <p className="text-sm font-black text-emerald-700">{formatRupiah(p.incentive_value || 0)}</p>
+                            : <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><IkonTeks nama="⏳" />Belum</span>}
                         </td>
                         {bisaInput(currentUser) && (
                           <td className={`${cellCls} text-right`}>
                             {handlerSplit ? (
                               <div>
                                 <p className="text-sm font-black text-rose-700">{formatRupiah(handlerSplit.amt)}</p>
-                                <p className="text-[10px] text-gray-400">{handlerSplit.pct.toFixed(0)}% pool</p>
+                                <p className="text-[10px] text-gray-500">{handlerSplit.pct.toFixed(0)}% pool</p>
                               </div>
-                            ) : <span className="text-xs text-gray-300">—</span>}
+                            ) : <span className="text-xs text-gray-400">—</span>}
                           </td>
                         )}
                         <td className={`${cellCls} text-center`}>
@@ -1491,7 +1491,7 @@ export default function IncentivePTSPage() {
                                 return <span key={t.id} title={`T${t.tranche_number} ${st.label}`} className="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center" style={{ background: st.bg, color: st.color }}>{t.tranche_number}</span>;
                               })}
                             </div>
-                          ) : <span className="text-xs text-gray-300">—</span>}
+                          ) : <span className="text-xs text-gray-400">—</span>}
                         </td>
                         <td className={`${cellCls} text-center`} onClick={e => e.stopPropagation()}>
                           <div className="flex gap-1 justify-center">
@@ -1525,7 +1525,7 @@ export default function IncentivePTSPage() {
                               <button aria-label={`Hapus tahapan ${p.project_name}`}
                                 onClick={() => { setHapusTahapan(p); setKetikHapusTahapan(''); }}
                                 title="Hapus tahapan pencairan (nominal terbuka lagi)"
-                                className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-amber-200 text-amber-600 hover:bg-amber-50 hover:border-amber-400 hover:shadow-sm">
+                                className="inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all bg-white border-amber-200 text-amber-700 hover:bg-amber-50 hover:border-amber-400 hover:shadow-sm">
                                 <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a4 4 0 110 8h-1m-9-8l4-4m-4 4l4 4" /></svg>
                               </button>
                               )}
@@ -1638,7 +1638,7 @@ export default function IncentivePTSPage() {
                 */}
                 <button onClick={handleExportBatch} disabled={exporting}
                   title={`Export project pada batch Tahun Bayar ${tahunAktif} (mengikuti dropdown Tahun Bayar di atas) - BUKAN tahun BAST proyeknya`}
-                  className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
+                  className="px-3 py-2 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-50 flex items-center gap-1.5">
                   {exporting ? <div className="w-3 h-3 border-2 border-emerald-400/30 border-t-emerald-500 rounded-full animate-spin" /> : '📊'} Export Batch Tahun Bayar {tahunAktif}
                 </button>
               </div>
@@ -1666,7 +1666,7 @@ export default function IncentivePTSPage() {
                         <tr key={t.id} className={`hover:bg-rose-50/60 transition-colors ${rowBg}`}>
                           <td className="px-3 py-2.5 border border-gray-200">
                             <p className="font-bold text-gray-800">{t.project?.project_name || '—'}</p>
-                            <p className="text-[10px] text-gray-400">{t.project?.category}</p>
+                            <p className="text-[10px] text-gray-500">{t.project?.category}</p>
                           </td>
                           <td className="px-3 py-2.5 border border-gray-200 text-sm text-gray-700">{t.project?.assign_name || '—'}</td>
                           <td className="px-3 py-2.5 border border-gray-200"><span className="px-2 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-600">T{t.tranche_number}</span></td>
@@ -1709,7 +1709,7 @@ export default function IncentivePTSPage() {
                             {t.status === 'processed' && bisaKonfig(currentUser) && (
                               <button onClick={() => konfirmasiMarkPaid(t.id, t.project?.project_name || '—', t.tranche_number)}
                                 disabled={markingPaid === t.id}
-                                className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 border border-emerald-200 transition-all disabled:opacity-50">
+                                className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-emerald-700 hover:bg-emerald-50 border border-emerald-200 transition-all disabled:opacity-50">
                                 {markingPaid === t.id ? '⏳...' : '✅ Tandai Paid'}
                               </button>
                             )}
@@ -1729,7 +1729,7 @@ export default function IncentivePTSPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.05))' }}>
               <h2 className="font-bold text-gray-800"><IkonTeks nama="🕐" />Late Ticket Queue</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Ticket Troubleshooting yang masuk setelah cutoff project induk — dilampirkan ke tranche berikutnya yang belum dibayar.</p>
+              <p className="text-xs text-gray-500 mt-0.5">Ticket Troubleshooting yang masuk setelah cutoff project induk — dilampirkan ke tranche berikutnya yang belum dibayar.</p>
             </div>
             {lateTickets.length === 0
               ? (
@@ -1744,7 +1744,7 @@ export default function IncentivePTSPage() {
                     <div key={lt.id} className="px-5 py-3 flex items-center justify-between hover:bg-amber-50/40 transition-colors">
                       <div>
                         <p className="text-sm font-semibold text-gray-800">Tranche {lt.attached_tranche_number}</p>
-                        <p className="text-xs text-gray-400">{new Date(lt.attached_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}{lt.note ? ` · ${lt.note}` : ''}</p>
+                        <p className="text-xs text-gray-500">{new Date(lt.attached_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}{lt.note ? ` · ${lt.note}` : ''}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-bold text-amber-700">{formatRupiah(lt.ticket_value || 0)}</span>
@@ -1830,7 +1830,7 @@ export default function IncentivePTSPage() {
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-700">
                           {u.full_name as string}
-                          {diriSendiri && <span className="ml-1.5 text-[10px] font-bold text-indigo-500">(Anda)</span>}
+                          {diriSendiri && <span className="ml-1.5 text-[10px] font-bold text-indigo-600">(Anda)</span>}
                         </p>
                         <p className="text-xs text-gray-500">
                           {u.username as string} · {u.role as string}
@@ -1894,7 +1894,7 @@ export default function IncentivePTSPage() {
                                 onClick={() => handleSetAkses(u.id as string, t)}
                                 title={terkunci ? 'Tidak bisa menurunkan akses Anda sendiri.' : JELAS_AKSES[t]}
                                 className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border-2 transition-all ${terkunci
-                                  ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                                  ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
                                   : aktif ? '' : 'border-gray-200 bg-white text-gray-500 hover:border-indigo-300'}`}
                                 style={aktif && !terkunci
                                   ? { borderColor: warna.garis, background: warna.latar, color: warna.teks }
@@ -1945,12 +1945,12 @@ export default function IncentivePTSPage() {
                 <div className="flex items-center justify-between gap-3 mb-1.5">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Tanggal BAST</p>
                   {nominalProject.bast_date
-                    ? <span className="flex-shrink-0 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">Auto ✓</span>
+                    ? <span className="flex-shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">Auto ✓</span>
                     : <span className="flex-shrink-0 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">Perlu diisi</span>}
                 </div>
                 <input aria-label="Perlu diisi" type="date" value={nominalBast} onChange={e => setNominalBast(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-rose-400" />
-                <p className="text-[11px] text-gray-400 mt-1.5">
+                <p className="text-[11px] text-gray-500 mt-1.5">
                   {nominalBast
                     ? <>Tahapan akan jatuh di {new Date(nominalBast).getFullYear() + 1} · {new Date(nominalBast).getFullYear() + 2} · {new Date(nominalBast).getFullYear() + 3}</>
                     : 'Biasanya terisi sendiri saat Handler klik Completed. Isi di sini kalau kosong — tanpa BAST, tahapan pencairan tidak bisa dibuat.'}
@@ -1963,7 +1963,7 @@ export default function IncentivePTSPage() {
                   <span className={`text-xs font-bold px-2 py-0.5 rounded ${nominalProject.mode_penyelesaian === 'onsite' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
                     {nominalProject.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : '💻 Remote'}
                   </span>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-500">
                     {/*
                       Dulu ditulis literal ('100%'/'85%'/'60%'/'51%'), lepas dari skema
                       yang sedang berlaku - begitu Scheme Setting diubah, angka di sini
@@ -1986,7 +1986,7 @@ export default function IncentivePTSPage() {
               <div>
                 <label className="block text-xs font-bold mb-1.5 text-gray-500 uppercase tracking-widest">Nilai Incentive (Rp) *</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 font-medium">Rp</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rp</span>
                   <input type="number" min={0} value={nominalValue} onChange={e => setNominalValue(e.target.value)}
                     className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-rose-400"
                     placeholder="Contoh: 15000000" autoFocus />
@@ -2035,7 +2035,7 @@ export default function IncentivePTSPage() {
               <div className={`grid ${bisaInput(currentUser) ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
                 {bisaInput(currentUser) && (
                   <div className="rounded-xl p-3 text-center bg-emerald-50 border border-emerald-100">
-                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Total Pool</p>
+                    <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Total Pool</p>
                     <p className="text-base font-black text-emerald-700">{formatRupiah(detailProject.incentive_value || 0)}</p>
                   </div>
                 )}
@@ -2084,7 +2084,7 @@ export default function IncentivePTSPage() {
                 //  Skema dimuat async di loadAll() - kalau popup ini sempat terbuka
                 //  sebelum itu selesai (mis. refresh cepat), skema masih null.
                 //  Tanpa penjagaan ini seluruh popup detail proyek crash.
-                if (!skema) return <p className="text-sm text-gray-400">Memuat skema insentif...</p>;
+                if (!skema) return <p className="text-sm text-gray-500">Memuat skema insentif...</p>;
                 const pool = detailProject.incentive_value || 0;
                 const effectiveMode = detailProject.mode_penyelesaian || 'onsite';
                 const effectivePool = pool > 0 ? pool : 1_000_000;
@@ -2129,13 +2129,13 @@ export default function IncentivePTSPage() {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-bold text-gray-700">{privileged ? '💰 Pembagian Incentive' : '💰 Bagian Saya'}</h3>
                       <div className="flex items-center gap-1.5">
-                        {privileged && <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{schemeLabel} · {modeLabel}</span>}
-                        {isEstimate && <span className="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Estimasi</span>}
+                        {privileged && <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{schemeLabel} · {modeLabel}</span>}
+                        {isEstimate && <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Estimasi</span>}
                       </div>
                     </div>
                     {!privileged && visibleSplits.length === 0 && (
                       <div className="rounded-xl px-4 py-6 text-center bg-gray-50 border border-gray-100">
-                        <p className="text-sm text-gray-400">Kamu tidak tercatat mendapat bagian di project ini.</p>
+                        <p className="text-sm text-gray-500">Kamu tidak tercatat mendapat bagian di project ini.</p>
                       </div>
                     )}
                     <div className="space-y-1.5">
@@ -2150,7 +2150,7 @@ export default function IncentivePTSPage() {
                               <div>
                                 <p className="text-sm font-semibold text-gray-800">{s.user_name || '—'}</p>
                                 {isInstaller && detailProject.installer_daerah && (
-                                  <p className="text-[10px] text-gray-400"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailProject.installer_daerah}</p>
+                                  <p className="text-[10px] text-gray-500"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailProject.installer_daerah}</p>
                                 )}
                               </div>
                             </div>
@@ -2158,14 +2158,14 @@ export default function IncentivePTSPage() {
                               <p className="text-sm font-black text-gray-800">
                                 {pool > 0 ? formatRupiah(s.amount) : '—'}
                               </p>
-                              <p className="text-[10px] text-gray-400">{formatPct(s.percentage)}</p>
+                              <p className="text-[10px] text-gray-500">{formatPct(s.percentage)}</p>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                     {isEstimate && (
-                      <p className="text-[10px] text-amber-500 mt-1.5 italic">
+                      <p className="text-[10px] text-amber-700 mt-1.5 italic">
                         {!pool
                           ? '* Belum ada nominal — angka Rp akan muncul setelah input nominal.'
                           : '* Mode belum diset (estimasi Onsite) — akan update setelah Handler klik Completed di Reminder Schedule.'}
@@ -2178,7 +2178,7 @@ export default function IncentivePTSPage() {
               <div>
                 <h3 className="text-sm font-bold text-gray-700 mb-2"><IkonTeks nama="📅" />Tranches</h3>
                 {detailTranches.length === 0
-                  ? <p className="text-xs text-gray-400 italic">Belum ada tranche.</p>
+                  ? <p className="text-xs text-gray-500 italic">Belum ada tranche.</p>
                   : detailTranches.map(t => {
                     const st = TRANCHE_STATUS[t.status] || TRANCHE_STATUS.pending;
                     const amt = (detailProject.incentive_value || 0) * (t.percentage / 100);
@@ -2187,14 +2187,14 @@ export default function IncentivePTSPage() {
                         <div className="flex items-center gap-3">
                           <span className="text-sm font-black text-gray-700">T{t.tranche_number}</span>
                           <span className="text-sm text-gray-600">{t.percentage}%{bisaInput(currentUser) ? ` · ${formatRupiah(Math.round(amt))}` : ''}</span>
-                          <span className="text-xs text-gray-400">Tahun {t.payment_year}</span>
+                          <span className="text-xs text-gray-500">Tahun {t.payment_year}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: st.bg, color: st.color }}><Ikon nama={st.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {st.label}</span>
                           {t.status === 'processed' && bisaKonfig(currentUser) && (
                             <button onClick={() => konfirmasiMarkPaid(t.id, detailProject.project_name || '—', t.tranche_number)}
                               disabled={markingPaid === t.id}
-                              className="px-2 py-1 rounded text-[10px] font-bold text-emerald-600 hover:bg-emerald-50 border border-emerald-200 disabled:opacity-50">
+                              className="px-2 py-1 rounded text-[10px] font-bold text-emerald-700 hover:bg-emerald-50 border border-emerald-200 disabled:opacity-50">
                               {markingPaid === t.id ? '⏳...' : 'Tandai Paid'}
                             </button>
                           )}
@@ -2211,7 +2211,7 @@ export default function IncentivePTSPage() {
                   const myNm = (currentUser?.full_name || '').toLowerCase().trim();
                   const visDb = bisaInput(currentUser) ? detailSplits : detailSplits.filter(s => (s.user_id && s.user_id === currentUser?.id) || (!!myNm && (s.user_name || '').toLowerCase().trim() === myNm));
                   return visDb.length === 0
-                  ? <p className="text-xs text-gray-400 italic">{bisaInput(currentUser) ? 'Belum ada split. Proses batch untuk generate.' : 'Belum ada bagian tercatat untukmu.'}</p>
+                  ? <p className="text-xs text-gray-500 italic">{bisaInput(currentUser) ? 'Belum ada split. Proses batch untuk generate.' : 'Belum ada bagian tercatat untukmu.'}</p>
                   : visDb.map(s => {
                     const rl = ROLE_LABELS[s.role] || { label: s.role, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)' };
                     return (
@@ -2222,7 +2222,7 @@ export default function IncentivePTSPage() {
                         </div>
                         <div className="text-right">
                           <span className="text-sm font-bold text-gray-800">{formatRupiah(s.amount || 0)}</span>
-                          <span className="text-xs text-gray-400 ml-2">({formatPct(s.percentage)})</span>
+                          <span className="text-xs text-gray-500 ml-2">({formatPct(s.percentage)})</span>
                         </div>
                       </div>
                     );
@@ -2249,13 +2249,13 @@ export default function IncentivePTSPage() {
                       <div key={th.tahunKe} className="rounded-xl border border-gray-100 overflow-hidden">
                         <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 flex-wrap">
                           <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">Tahun {th.tahunKe}</span>
-                          <span className="text-[10px] text-gray-400">{rentang}</span>
+                          <span className="text-[10px] text-gray-500">{rentang}</span>
                         </div>
                         {th.orang.length === 0 ? (
                           //  Bukan sekadar "kosong": tanpa Support di tahun itu, porsinya
                           //  jatuh ke PIC menurut skema "tanpa support" - dan itu perlu
                           //  terbaca supaya angkanya tidak terlihat seperti salah hitung.
-                          <p className="text-[11px] text-gray-400 italic px-3 py-2">
+                          <p className="text-[11px] text-gray-500 italic px-3 py-2">
                             Belum ada Troubleshooting yang selesai di tahun ini — porsi Support tahun ini diserap PIC.
                           </p>
                         ) : th.orang.map(s => (
@@ -2282,7 +2282,7 @@ export default function IncentivePTSPage() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4"><IkonTeks nama="⚡" />Generate Tranche</h3>
             <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{generateProject.project_name}</strong></p>
-            <p className="text-sm text-gray-500 mb-4">BAST: <strong>{generateProject.bast_date}</strong> · Pool: <strong className="text-emerald-600">{formatRupiah(generateProject.incentive_value || 0)}</strong></p>
+            <p className="text-sm text-gray-500 mb-4">BAST: <strong>{generateProject.bast_date}</strong> · Pool: <strong className="text-emerald-700">{formatRupiah(generateProject.incentive_value || 0)}</strong></p>
             {/*
               Pratinjau memisahkan porsi Tim PTS dan porsi Installer, karena
               keduanya memang dibayar dengan cara berbeda: Tim PTS dipecah
@@ -2292,14 +2292,14 @@ export default function IncentivePTSPage() {
               Installer sudah dipotong lebih dulu dari pool Tim PTS.
             */}
             {(() => {
-              if (!skema) return <p className="text-sm text-gray-400 mb-6">Memuat skema insentif...</p>;
+              if (!skema) return <p className="text-sm text-gray-500 mb-6">Memuat skema insentif...</p>;
               //  Pratinjau ini jalan begitu modal dibuka, sebelum tombol Generate
               //  ditekan - kalau proyeknya belum punya BAST, generateTranches()
               //  di bawah menghitung tanggal dari nilai yang tidak valid dan
               //  crash. handleGenerateTranches() sudah menolak kasus ini saat
               //  submit; pratinjau perlu penjagaan yang sama karena jalan lebih
               //  dulu.
-              if (!generateProject.bast_date) return <p className="text-sm text-amber-600 mb-6"><IkonTeks nama="⚠" />BAST belum diisi — isi lewat tombol 💲 Input Nominal pada proyek ini sebelum generate tranche.</p>;
+              if (!generateProject.bast_date) return <p className="text-sm text-amber-700 mb-6"><IkonTeks nama="⚠" />BAST belum diisi — isi lewat tombol 💲 Input Nominal pada proyek ini sebelum generate tranche.</p>;
               const pool = generateProject.incentive_value || 0;
               //  Lewat petaPorsiBerlaku, bukan persenInstaller: saat tabel Porsi
               //  Remote diatur sendiri, porsi Installer diambil dari baris di
@@ -2324,7 +2324,7 @@ export default function IncentivePTSPage() {
                         </div>
                         {installerDiSini && (
                           <div className="flex justify-between items-baseline gap-2 flex-wrap mt-1 pt-1 border-t border-gray-100">
-                            <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">+ PTS Daerah — lunas sekali</span>
+                            <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">+ PTS Daerah — lunas sekali</span>
                             <span className="text-sm text-amber-700 font-bold">{pctInst}% · {formatRupiah(Math.round(pool * pctInst / 100))}</span>
                           </div>
                         )}
@@ -2372,7 +2372,7 @@ export default function IncentivePTSPage() {
                 {bulkGenerateConfirm.map(p => (
                   <li key={p.id} className="text-sm text-slate-700 truncate" title={p.project_name}>
                     • {p.project_name}
-                    <span className="ml-1 text-[11px] font-bold text-emerald-600">
+                    <span className="ml-1 text-[11px] font-bold text-emerald-700">
                       {formatRupiah(p.incentive_value || 0)}
                     </span>
                   </li>
@@ -2468,7 +2468,7 @@ export default function IncentivePTSPage() {
               const cnt = tranches.filter(t => t.payment_year === batchYear && t.status === 'pending').length;
               return cnt > 0
                 ? <p className="text-sm font-bold text-rose-600 mb-3"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {cnt} tranche siap diproses</p>
-                : <p className="text-sm font-bold text-amber-600 mb-3"><IkonTeks nama="⚠" />Tidak ada tranche pending untuk tahun {batchYear}. Pastikan tranche sudah di-generate terlebih dahulu.</p>;
+                : <p className="text-sm font-bold text-amber-700 mb-3"><IkonTeks nama="⚠" />Tidak ada tranche pending untuk tahun {batchYear}. Pastikan tranche sudah di-generate terlebih dahulu.</p>;
             })()}
             {/*
               Dulu tertulis "tidak bisa di-undo". Sekarang bisa - ada tombol
@@ -2521,7 +2521,7 @@ export default function IncentivePTSPage() {
                 </div>
                 <div className="flex justify-between px-3 py-2">
                   <span className="text-gray-600">Dilewati (sudah Paid)</span>
-                  <strong className={paid ? 'text-emerald-700' : 'text-gray-400'}>{paid} tahapan</strong>
+                  <strong className={paid ? 'text-emerald-700' : 'text-gray-500'}>{paid} tahapan</strong>
                 </div>
               </div>
               <p className="text-[11px] text-gray-500 leading-relaxed mb-3">
@@ -2688,7 +2688,7 @@ export default function IncentivePTSPage() {
                   <li key={p.id} className="text-sm text-slate-700 truncate" title={p.project_name}>
                     • {p.project_name}
                     {(p.incentive_value || 0) > 0 && (
-                      <span className="ml-1 text-[11px] font-bold text-emerald-600">
+                      <span className="ml-1 text-[11px] font-bold text-emerald-700">
                         {formatRupiah(p.incentive_value || 0)}
                       </span>
                     )}

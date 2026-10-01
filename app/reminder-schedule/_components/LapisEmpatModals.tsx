@@ -205,7 +205,7 @@ export function CariProyekLamaModal({
 
           <div className="p-4 flex-1 overflow-y-auto min-h-0">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input type="text" autoFocus value={carianProyek}
                 onChange={e => { setCarianProyek(e.target.value); setPraPilihProyek(null); }}
                 placeholder="Ketik nama project untuk mencari..."

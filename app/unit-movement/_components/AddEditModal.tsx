@@ -35,7 +35,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
   const set = (k:string,v:string) => setForm(p=>({...p,[k]:v}));
   const isMasuk = form.status_barang==='Masuk';
   const inp = "w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100";
-  const lbl = "block text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-1.5";
+  const lbl = "block text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1.5";
 
   const handleSave = async () => {
     if (!form.tanggal||!form.nama_pts||!form.project_name) { setError('Tanggal, Nama PTS, dan Project wajib diisi!'); return; }
@@ -79,7 +79,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
             <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>{isEdit?'✏️':'➕'}</span>
             <h2 className="font-bold text-gray-900">{isEdit?'Edit Movement Log':'Tambah Movement Log'}</h2>
           </div>
-          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100 transition-colors">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors">✕</button>
         </div>
         <div className="p-6 space-y-4">
           {error&&<div className="px-4 py-3 rounded-xl text-sm font-semibold text-red-700 bg-red-50 border border-red-200">{error}</div>}
@@ -100,7 +100,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
           </div>
 
           <div className="p-4 rounded-xl space-y-3" style={{background:'#fffbeb',border:'1px solid #fde68a'}}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700">
               {isMasuk?'📥 PTS = Penerima — Pengirim adalah Pihak Luar':'📤 PTS = Pengirim — Penerima adalah Pihak Luar'}
             </p>
             <div><label htmlFor="f-unit-movement-components-addeditmodal-2" className={lbl}>{isMasuk?'👤 Nama PTS (Penerima)':'👤 Nama PTS (Pengirim)'}</label>
@@ -153,7 +153,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
               <input id="f-unit-movement-components-addeditmodal-8" type="date" className={inp} value={form.expected_return_date}
                 onChange={e=>set('expected_return_date',e.target.value)}
                 min={form.tanggal}/>
-              <p className="text-[10px] text-amber-600 mt-1 font-medium">
+              <p className="text-[10px] text-amber-700 mt-1 font-medium">
                 <IkonTeks nama="ℹ" />Isi untuk memantau barang yang belum kembali (Open Loan alert)
               </p>
             </div>

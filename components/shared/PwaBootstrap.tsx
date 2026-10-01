@@ -90,7 +90,7 @@ export function PwaBootstrap() {
           </div>
         </div>
         <button aria-label="Tutup" onClick={tutup}
-          className="text-slate-300 hover:text-slate-500 text-sm flex-shrink-0 -mt-0.5">✕</button>
+          className="text-slate-400 hover:text-slate-500 text-sm flex-shrink-0 -mt-0.5">✕</button>
       </div>
     </div>
   );

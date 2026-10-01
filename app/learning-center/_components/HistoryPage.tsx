@@ -68,7 +68,7 @@ export function HistoryPage({ user }: { user: User }) {
               <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
                 <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
-                <div className="flex gap-3 mt-1.5 text-xs text-slate-400">
+                <div className="flex gap-3 mt-1.5 text-xs text-slate-500">
                   {a.grading_status === 'pending_review' ? (
                     <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_questions} soal essay dikirim</span>
                   ) : (
@@ -81,7 +81,7 @@ export function HistoryPage({ user }: { user: User }) {
               <div className="text-right flex-shrink-0 flex items-center gap-3">
                 <div>
                   <GradingStatusBadge attempt={a} />
-                  <p className="text-xs text-slate-400 mt-1.5">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
+                  <p className="text-xs text-slate-500 mt-1.5">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
                 </div>
                 <BtnView onClick={() => setViewingAttempt(a)}>Lihat Jawaban</BtnView>
               </div>

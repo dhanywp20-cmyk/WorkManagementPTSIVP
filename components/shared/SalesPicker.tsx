@@ -57,11 +57,11 @@ export function SalesPicker({
       >
         <span className="flex-1 truncate min-w-0">
           {value
-            ? <><span className="font-semibold text-slate-800">{value}</span>{selected?.sales_division && <span className="text-slate-400"> · {selected.sales_division}</span>}</>
-            : <span className="text-slate-400">{placeholder}</span>
+            ? <><span className="font-semibold text-slate-800">{value}</span>{selected?.sales_division && <span className="text-slate-500"> · {selected.sales_division}</span>}</>
+            : <span className="text-slate-500">{placeholder}</span>
           }
         </span>
-        <svg aria-hidden="true" focusable="false" className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg aria-hidden="true" focusable="false" className={`w-4 h-4 text-slate-500 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -90,7 +90,7 @@ export function SalesPicker({
                   role="option"
                   aria-selected={false}
                   tabIndex={0}
-                  className="px-3 py-2 text-sm cursor-pointer text-slate-400 italic hover:bg-slate-50 border-b border-slate-100"
+                  className="px-3 py-2 text-sm cursor-pointer text-slate-500 italic hover:bg-slate-50 border-b border-slate-100"
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onChange('', '', null); setOpen(false); setQ(''); } }}
                   onClick={() => { onChange('', '', null); setOpen(false); setQ(''); }}
                 >
@@ -98,7 +98,7 @@ export function SalesPicker({
                 </div>
               )}
               {!filtered.length && (
-                <div className="px-3 py-4 text-center text-sm text-slate-400">Tidak ditemukan</div>
+                <div className="px-3 py-4 text-center text-sm text-slate-500">Tidak ditemukan</div>
               )}
               {filtered.map(u => (
                 <div
@@ -115,7 +115,7 @@ export function SalesPicker({
                 >
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>
-                    {u.sales_division && <p className="text-xs text-slate-400">{u.sales_division}</p>}
+                    {u.sales_division && <p className="text-xs text-slate-500">{u.sales_division}</p>}
                   </div>
                   {value === u.full_name && <span aria-hidden="true" className="text-blue-500 text-xs flex-shrink-0">✓</span>}
                 </div>

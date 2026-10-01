@@ -145,7 +145,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           {/* Category picker */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Kategori *</label>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Kategori *</label>
             {/*
               Kartu kategori dikecilkan dan dijadikan tiga kolom.
 
@@ -177,7 +177,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           {/* Tipe Produk — WAJIB, untuk routing ke supervisor (LED→Wahyu, LCD/MW→Yoga) */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Tipe Produk *</label>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Tipe Produk *</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {PRODUCT_TYPES.map(pt => {
                 const sel = formData.product_type === pt;
@@ -208,7 +208,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             berarti "belum tahu" - ia berarti proyeknya tidak akan terlihat.
           */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Brand * <span className="normal-case text-slate-500 font-medium tracking-normal">(menentukan Finance mana yang boleh melihat nominalnya)</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -229,7 +229,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           {/* Assign To — single or bulk */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Assign To *</label>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Assign To *</label>
             {!editingReminder && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {([
@@ -302,7 +302,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                   <p className="text-sm font-bold text-cyan-700">
                     {teamUsers.filter(u => u.team_type === BULK_TEAM_TYPE[bulkTarget] && u.jabatan !== 'Manager').length} anggota
                   </p>
-                  <p className="text-xs text-cyan-600">
+                  <p className="text-xs text-cyan-700">
                     Akan membuat reminder untuk seluruh Tim {BULK_LABEL[bulkTarget]}
                   </p>
                 </div>
@@ -330,7 +330,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 <span className="text-lg"><Ikon nama="🛡" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-sm font-bold text-sky-700">Masa Garansi (Warranty)</p>
               </div>
-              <p className="text-xs text-sky-600 mb-3">Tanggal BAST (field Tanggal di atas) akan digunakan sebagai titik mulai garansi. Pilih durasi warranty project ini.</p>
+              <p className="text-xs text-sky-700 mb-3">Tanggal BAST (field Tanggal di atas) akan digunakan sebagai titik mulai garansi. Pilih durasi warranty project ini.</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {([null, 1, 2, 3] as const).map(val => {
                   const isSelected = formData.warranty_years === val;
@@ -376,7 +376,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 <span className="text-lg"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-sm font-bold text-cyan-700">Timeline Project Progress</p>
               </div>
-              <p className="text-xs text-cyan-600 mb-3">
+              <p className="text-xs text-cyan-700 mb-3">
                 Kategori ini otomatis membuat draft lokasi di <strong>Project Progress</strong>.
                 Tentukan rentang pengerjaannya di sini. Boleh dikosongkan — jadwalnya bisa diisi menyusul di Project Progress.
               </p>
@@ -522,9 +522,9 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                     >
                       {formData.sales_name
                         ? <span className="font-semibold text-slate-800">{formData.sales_name} <span className={`font-normal ${isTrigger ? 'text-violet-500' : 'text-slate-500'}`}>{formData.sales_division ? `· ${formData.sales_division}` : ''}</span></span>
-                        : <span className="text-slate-400">-- Pilih Sales --</span>
+                        : <span className="text-slate-500">-- Pilih Sales --</span>
                       }
-                      <svg aria-hidden="true" focusable="false" className={`w-4 h-4 flex-shrink-0 transition-transform ${guestDropdownOpen ? 'rotate-180' : ''} ${isTrigger ? 'text-violet-400' : 'text-slate-400'}`}
+                      <svg aria-hidden="true" focusable="false" className={`w-4 h-4 flex-shrink-0 transition-transform ${guestDropdownOpen ? 'rotate-180' : ''} ${isTrigger ? 'text-violet-400' : 'text-slate-500'}`}
                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
@@ -546,7 +546,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                           </div>
                         </div>
                         <div className="overflow-y-auto" style={{ maxHeight: '180px' }}>
-                          <div className="px-4 py-2.5 text-sm cursor-pointer hover:bg-violet-50 text-slate-400 italic"
+                          <div className="px-4 py-2.5 text-sm cursor-pointer hover:bg-violet-50 text-slate-500 italic"
                             onClick={() => { fd({ sales_name: '', sales_division: '' }); setGuestDropdownOpen(false); setGuestSearch(''); }}>
                             -- Pilih Sales --
                           </div>
@@ -581,7 +581,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                             u.username.toLowerCase().includes(guestSearch.toLowerCase()) ||
                             (u.sales_division ?? '').toLowerCase().includes(guestSearch.toLowerCase())
                           ).length === 0 && (
-                            <div className="px-4 py-4 text-center text-xs text-gray-400">Tidak ada sales ditemukan</div>
+                            <div className="px-4 py-4 text-center text-xs text-gray-500">Tidak ada sales ditemukan</div>
                           )}
                         </div>
                       </div>
@@ -631,7 +631,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
               <span className="text-green-500 text-lg"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div>
                 <p className="text-sm font-bold text-green-700">WA Otomatis H-1</p>
-                <p className="text-xs text-green-600 mt-0.5">
+                <p className="text-xs text-green-700 mt-0.5">
                   {bulkTarget !== 'none'
                     ? <span>Pesan pengingat otomatis dikirim ke seluruh anggota Tim <strong>{BULK_LABEL[bulkTarget]}</strong> sehari sebelum jadwal.</span>
                     : <span>Pesan pengingat akan otomatis dikirim via WA ke <strong>{formData.assigned_to}</strong> sehari sebelum jadwal.</span>

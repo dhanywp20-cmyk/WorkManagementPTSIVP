@@ -12,7 +12,7 @@ export function LoadingSpinner({ message = 'Memuat data...', color = '#6366f1' }
     <div role="status" aria-live="polite" aria-busy="true" className="flex flex-col items-center justify-center py-16 gap-3">
       <div className="w-8 h-8 rounded-full animate-spin" aria-hidden="true"
         style={{ border: '3px solid #e2e8f0', borderTopColor: color }} />
-      <span className="text-gray-400 text-sm">{message}</span>
+      <span className="text-gray-500 text-sm">{message}</span>
     </div>
   );
 }
@@ -27,7 +27,7 @@ interface EmptyStateProps {
 export function EmptyState({ icon = '📭', title, description, action }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-2">
-      <span className="w-14 h-14 rounded-2xl flex items-center justify-center bg-slate-100 text-slate-400">
+      <span className="w-14 h-14 rounded-2xl flex items-center justify-center bg-slate-100 text-slate-500">
         <Ikon nama={icon} ukuran={26} tebal={1.75} />
       </span>
       <p className="font-semibold text-slate-700 text-sm mt-1">{title}</p>
@@ -101,7 +101,7 @@ export function ErrorState({ message = 'Gagal memuat data', onRetry }: ErrorStat
     <div role="alert" className="flex flex-col items-center justify-center py-16 gap-2">
       <span className="text-5xl" aria-hidden="true"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
       <p className="font-semibold text-gray-700 text-sm mt-1">{message}</p>
-      <p className="text-xs text-gray-400">Periksa koneksi internet dan coba lagi</p>
+      <p className="text-xs text-gray-500">Periksa koneksi internet dan coba lagi</p>
       {onRetry && (
         <button type="button" onClick={onRetry}
           className="mt-3 px-5 py-2 text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl border border-rose-200 transition-all">

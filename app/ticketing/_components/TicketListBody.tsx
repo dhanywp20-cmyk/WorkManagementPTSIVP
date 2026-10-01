@@ -171,7 +171,7 @@ export function TicketListBody({
         })}
         {/* Mobile pagination */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
-          <span className="text-xs text-gray-400">{filteredTickets.length} tiket</span>
+          <span className="text-xs text-gray-500">{filteredTickets.length} tiket</span>
           {totalPages > 1 && (
             <div className="flex items-center gap-2">
               <button onClick={() => setCurrentPage(p => Math.max(1, p-1))} disabled={currentPage===1}
@@ -246,7 +246,7 @@ export function TicketListBody({
                       ? <input type="checkbox" checked={selectedIds.has(ticket.id)}
                           onChange={() => toggleSelectId(ticket.id)}
                           className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
-                      : <span className="text-[11px] font-bold text-gray-400">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</span>}
+                      : <span className="text-[11px] font-bold text-gray-500">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</span>}
                   </td>
                   <td className="px-3 py-3 align-middle">
                     <div className="flex items-start gap-1">
@@ -260,14 +260,14 @@ export function TicketListBody({
                       </div>
                     )}
 
-                    <div className="text-[10px] text-gray-400 mt-1">{ticket.created_at ? formatDateTime(ticket.created_at) : "-"}</div>
+                    <div className="text-[10px] text-gray-500 mt-1">{ticket.created_at ? formatDateTime(ticket.created_at) : "-"}</div>
                     {isActiveOverdue && <div className="text-xs text-red-600 font-bold mt-0.5"><IkonTeks nama="⏰" />OVERDUE</div>}
                   </td>
                   {/* Warranty cell */}
                   <td className="px-3 py-3 align-middle">
                     {(() => {
                       const w = getWarrantyInfo(ticket.project_name);
-                      if (!w) return <span className="text-gray-300 text-xs">—</span>;
+                      if (!w) return <span className="text-gray-400 text-xs">—</span>;
                       return (
                         <div>
                           <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold"
@@ -276,7 +276,7 @@ export function TicketListBody({
                               : { background: "rgba(239,68,68,0.12)", color: "#dc2626" }}>
                             {w.isIn ? "🛡️" : "⚠️"} {w.isIn ? "In" : "Out"}
                           </span>
-                          <div className="text-[9px] text-gray-400 mt-0.5 leading-tight">
+                          <div className="text-[9px] text-gray-500 mt-0.5 leading-tight">
                             {w.wy}Y · s/d {w.expiryStr}
                           </div>
                           <div className="text-[9px] font-semibold mt-0.5"
@@ -390,7 +390,7 @@ export function TicketListBody({
           </tbody>
         </table>
         <div className="flex items-center justify-between px-5 py-3 border-t border-gray-200 flex-wrap gap-2" style={{ background: "rgba(255,255,255,0.97)" }}>
-          <span className="text-xs text-gray-400">{filteredTickets.length} ticket{filteredTickets.length !== 1 ? "s" : ""} ditemukan</span>
+          <span className="text-xs text-gray-500">{filteredTickets.length} ticket{filteredTickets.length !== 1 ? "s" : ""} ditemukan</span>
           {totalPages > 1 && (
             <div className="flex items-center gap-1.5">
               <button aria-label="Awal" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}
@@ -419,7 +419,7 @@ export function TicketListBody({
                 className="px-2 py-1 rounded-lg text-xs font-bold border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-all" title="Last page">»</button>
             </div>
           )}
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-500">
             {filteredTickets.length > 0 ? `${(currentPage - 1) * ITEMS_PER_PAGE + 1}–${Math.min(currentPage * ITEMS_PER_PAGE, filteredTickets.length)}` : "0"} of {tickets.length}
           </span>
         </div>

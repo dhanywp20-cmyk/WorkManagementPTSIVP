@@ -153,11 +153,11 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{background:'rgba(148,163,184,0.18)',opacity:0.75}}/>
-            <span className="text-[10px] text-gray-400 font-medium">Proyeksi rolling (belum dikonfirmasi)</span>
+            <span className="text-[10px] text-gray-500 font-medium">Proyeksi rolling (belum dikonfirmasi)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full" style={{background:'#dc2626'}}/>
-            <span className="text-[10px] text-gray-400 font-medium">Hari libur</span>
+            <span className="text-[10px] text-gray-500 font-medium">Hari libur</span>
           </div>
         </div>
       </div>

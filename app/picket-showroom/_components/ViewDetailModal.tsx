@@ -49,7 +49,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
 
           {/* PIC Section */}
           <div>
-            <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3"><IkonTeks nama="👥" />Petugas Piket (PIC)</p>
+            <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-3"><IkonTeks nama="👥" />Petugas Piket (PIC)</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               {picList.length>0?picList.map(([name,team])=>{
                 const tc=TEAM_LABEL[team]??DEFAULT_TEAM_COLOR;
@@ -65,7 +65,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                   </div>
                 );
               }):(
-                <div className="md:col-span-3 py-4 text-center text-gray-400 text-sm">Belum ada PIC ditetapkan</div>
+                <div className="md:col-span-3 py-4 text-center text-gray-500 text-sm">Belum ada PIC ditetapkan</div>
               )}
             </div>
           </div>
@@ -79,7 +79,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
             </div>
           ):(
             <div className="space-y-4">
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest"><IkonTeks nama="📌" />Daftar Kegiatan</p>
+              <p className="text-xs font-black text-slate-500 uppercase tracking-widest"><IkonTeks nama="📌" />Daftar Kegiatan</p>
               {kgs.map((kg,i)=>{
                 const kColor=KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent;
                 return(
@@ -98,11 +98,11 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                       {kg.jam_mulai&&(
                         <div className="col-span-2 grid grid-cols-2 gap-6">
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><IkonTeks nama="⏰" />Jam Mulai</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="⏰" />Jam Mulai</p>
                             <p className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><IkonTeks nama="⏱" />Jam Selesai</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="⏱" />Jam Selesai</p>
                             <p className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</p>
                           </div>
                         </div>
@@ -111,7 +111,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                       {/* Produk */}
                       {kg.produk&&kg.produk.length>0&&(
                         <div className="col-span-2">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><IkonTeks nama="📦" />Produk yang Digunakan</p>
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2"><IkonTeks nama="📦" />Produk yang Digunakan</p>
                           <div className="flex flex-wrap gap-2">
                             {kg.produk.map(p=>(
                               <span key={p} className="text-xs font-bold px-3 py-1.5 rounded-full"
@@ -124,7 +124,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                       {/* Produk Lain — beban daya unit di luar list */}
                       {kg.produk_lain&&kg.produk_lain.length>0&&(
                         <div className="col-span-2">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><IkonTeks nama="⚡" />Produk Lain (di luar list) — beban daya</p>
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2"><IkonTeks nama="⚡" />Produk Lain (di luar list) — beban daya</p>
                           <div className="space-y-1">
                             {kg.produk_lain.map((pl,j)=>(
                               <div key={j} className="flex items-center justify-between rounded-lg px-3 py-1.5" style={{background:'rgba(0,0,0,0.03)',border:'1px solid rgba(0,0,0,0.06)'}}>
@@ -142,13 +142,13 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                         <>
                           {kg.tamu_instansi&&(
                             <div>
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><IkonTeks nama="🏢" />Tamu Instansi</p>
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="🏢" />Tamu Instansi</p>
                               <p className="text-sm font-bold text-slate-700">{kg.tamu_instansi}</p>
                             </div>
                           )}
                           {kg.nama_sales&&(
                             <div>
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><IkonTeks nama="👤" />Nama Sales</p>
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="👤" />Nama Sales</p>
                               <div>
                                 <p className="text-sm font-bold text-slate-700">{kg.nama_sales}</p>
                                 {kg.sales_division&&<p className="text-[11px] text-purple-600 font-bold mt-0.5">{kg.sales_division}</p>}
@@ -157,7 +157,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                           )}
                           {kg.kebutuhan&&kg.kebutuhan.length>0&&(
                             <div className="col-span-2">
-                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2"><IkonTeks nama="🎯" />Kebutuhan Tamu</p>
+                              <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2"><IkonTeks nama="🎯" />Kebutuhan Tamu</p>
                               <div className="flex flex-wrap gap-2">
                                 {kg.kebutuhan.map(k=>(
                                   <span key={k} className="text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-700">• {k}</span>
@@ -171,7 +171,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                       {/* RnD fields */}
                       {kg.jenis_kegiatan==='RnD'&&(kg as any).team_rnd&&(
                         <div className="col-span-2">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><IkonTeks nama="👥" />Team yang RnD</p>
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="👥" />Team yang RnD</p>
                           <p className="text-sm font-bold text-slate-700">{(kg as any).team_rnd}</p>
                         </div>
                       )}
@@ -179,7 +179,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                       {/* Keterangan */}
                       {kg.keterangan&&(
                         <div className="col-span-2">
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5"><IkonTeks nama="📝" />Keterangan</p>
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5"><IkonTeks nama="📝" />Keterangan</p>
                           <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">{kg.keterangan}</p>
                         </div>
                       )}
@@ -203,7 +203,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                       <div>
                         <p className="font-bold">Terakhir diubah oleh</p>
                         <p className="text-slate-500">{lastEdited.edited_by_name}</p>
-                        {lastEdited.updated_at&&<p className="text-[10px] text-slate-400">{new Date(lastEdited.updated_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>}
+                        {lastEdited.updated_at&&<p className="text-[10px] text-slate-500">{new Date(lastEdited.updated_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</p>}
                       </div>
                     </div>
                   ):null;

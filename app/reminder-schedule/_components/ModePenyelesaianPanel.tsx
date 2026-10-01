@@ -90,13 +90,13 @@ export function ModePenyelesaianPanel({
           <input id="f-reminder-schedule-components-modepenyelesaianpanel-1" type="date" value={bastDate} onChange={e => setBastDate(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white" />
           {bastDate && (
-            <p className="text-[10px] text-gray-400 mt-1">Tranche T1 bayar {new Date(bastDate).getFullYear()+1} · T2 bayar {new Date(bastDate).getFullYear()+2} · T3 bayar {new Date(bastDate).getFullYear()+3}</p>
+            <p className="text-[10px] text-gray-500 mt-1">Tranche T1 bayar {new Date(bastDate).getFullYear()+1} · T2 bayar {new Date(bastDate).getFullYear()+2} · T3 bayar {new Date(bastDate).getFullYear()+3}</p>
           )}
         </div>
 
         {/* 1. Display Type — wajib pilih LED / LCD / Mix */}
         <div>
-          <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🖥" />Tipe Display <span className="text-red-500">*</span> <span className="font-normal text-gray-400">(Mix = LED + LCD)</span></p>
+          <p className="text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="🖥" />Tipe Display <span className="text-red-500">*</span> <span className="font-normal text-gray-500">(Mix = LED + LCD)</span></p>
           <div className="grid grid-cols-3 gap-2">
             {([
               { value: 'led', label: 'LED' },

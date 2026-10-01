@@ -39,12 +39,12 @@ export function KonfirmasiApproveInternal({
           </div>
           <div className="p-6 space-y-3">
             <div className="rounded-xl p-3 space-y-1.5 text-sm" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
-              <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Project</span><span className="font-bold text-slate-800 text-right">{internalApproveTarget.project_name}</span></div>
-              <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Sales</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.sales_name}{internalApproveTarget.sales_division ? ` · ${internalApproveTarget.sales_division}` : ''}</span></div>
-              <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Kategori</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.category}</span></div>
-              {internalApproveTarget.product && <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Product</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.product}</span></div>}
-              <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Lokasi</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.address || '-'}</span></div>
-              <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Tanggal</span><span className="font-semibold text-slate-700 text-right">{formatDate(internalApproveTarget.due_date)}{internalApproveTarget.due_time ? ` · ${internalApproveTarget.due_time}` : ''}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Project</span><span className="font-bold text-slate-800 text-right">{internalApproveTarget.project_name}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Sales</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.sales_name}{internalApproveTarget.sales_division ? ` · ${internalApproveTarget.sales_division}` : ''}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Kategori</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.category}</span></div>
+              {internalApproveTarget.product && <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Product</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.product}</span></div>}
+              <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Lokasi</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.address || '-'}</span></div>
+              <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Tanggal</span><span className="font-semibold text-slate-700 text-right">{formatDate(internalApproveTarget.due_date)}{internalApproveTarget.due_time ? ` · ${internalApproveTarget.due_time}` : ''}</span></div>
               {/* Usulan timeline dari Sales — ditampilkan supaya Sales Internal
                   tahu rentang yang diajukan sebelum meneruskan ke Admin.
                   Tidak bisa disunting di sini: penetapannya milik Admin saat
@@ -53,7 +53,7 @@ export function KonfirmasiApproveInternal({
                 const t = internalApproveTarget as { progress_start_date?: string | null; progress_target_date?: string | null };
                 return (
                   <div className="flex justify-between gap-3">
-                    <span className="text-slate-400 text-xs">Timeline Pengerjaan</span>
+                    <span className="text-slate-500 text-xs">Timeline Pengerjaan</span>
                     <span className="font-semibold text-right" style={{ color: t.progress_start_date || t.progress_target_date ? '#0e7490' : '#94a3b8' }}>
                       {t.progress_start_date || t.progress_target_date
                         ? `${t.progress_start_date ? formatDate(t.progress_start_date) : '—'} → ${t.progress_target_date ? formatDate(t.progress_target_date) : '—'}`
@@ -104,7 +104,7 @@ export function ModalHapus({
             <div>
               <h3 className="text-lg font-bold text-gray-800">Hapus Reminder</h3>
               <p className="text-xs font-medium text-gray-500">{deleteTarget.project_name}</p>
-              <p className="text-xs text-gray-400">{deleteTarget.category}</p>
+              <p className="text-xs text-gray-500">{deleteTarget.category}</p>
             </div>
           </div>
           <div className="rounded-xl p-3 mb-4 text-xs"

@@ -26,7 +26,7 @@ export function FormField({ label, children }: { label: string; children: React.
   // yang sudah diharapkan orang dari sebuah label.
   return (
     <label className="block">
-      <span className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>{label}</span>
+      <span className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>{label}</span>
       {children}
     </label>
   );
@@ -45,7 +45,7 @@ export function SectionHeader({ icon, title }: { icon: string; title: string }) 
 
 export function SectionHeaderSmall({ icon, title }: { icon: string; title: string }) {
   return (
-    <p className="text-[10px] font-bold tracking-widest uppercase flex items-center gap-1.5" style={{ color: '#94a3b8' }}>
+    <p className="text-[10px] font-bold tracking-widest uppercase flex items-center gap-1.5" style={{ color: '#64748b' }}>
       <Ikon nama={icon} ukuran={12} />{title}
     </p>
   );
@@ -55,7 +55,7 @@ export function InfoRow({ icon, label, value }: { icon: string; label: string; v
   if (!value) return null;
   return (
     <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-      <Ikon nama={icon} ukuran={16} className="text-slate-400" />
+      <Ikon nama={icon} ukuran={16} className="text-slate-500" />
       <div className="min-w-0">
         <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#64748b' }}>{label}</p>
         <p className="text-sm font-semibold text-slate-800 break-words">{value}</p>

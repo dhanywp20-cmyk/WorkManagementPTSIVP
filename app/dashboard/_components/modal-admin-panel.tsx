@@ -202,7 +202,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
               </p>
             </div>
             <button aria-label="Tutup" onClick={onClose}
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all text-slate-400 hover:text-slate-700"
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all text-slate-500 hover:text-slate-700"
               style={{ background: 'rgba(0,0,0,0.05)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; (e.currentTarget as HTMLButtonElement).style.color = '#dc2626'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.color = ''; }}
@@ -348,16 +348,16 @@ export function KpiRosterInline() {
                 </div>
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold truncate ${enabled ? 'text-slate-800' : 'text-slate-400'}`}>
+                  <p className={`text-sm font-semibold truncate ${enabled ? 'text-slate-800' : 'text-slate-500'}`}>
                     {u.full_name}
                   </p>
-                  <p className="text-xs text-slate-400 truncate">{u.jabatan ?? '—'}</p>
+                  <p className="text-xs text-slate-500 truncate">{u.jabatan ?? '—'}</p>
                 </div>
                 {/* Status badge */}
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
                   enabled
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-slate-100 text-slate-400 border-slate-200'
+                    : 'bg-slate-100 text-slate-500 border-slate-200'
                 }`}>
                   {enabled ? '✅ KPI Aktif' : '⏸ Nonaktif'}
                 </span>
@@ -449,7 +449,7 @@ export function KpiRosterInline() {
               );
             })}
             {filtered.length === 0 && (
-              <div className="text-center py-12 text-slate-400 text-sm">Tidak ada anggota ditemukan.</div>
+              <div className="text-center py-12 text-slate-500 text-sm">Tidak ada anggota ditemukan.</div>
             )}
           </>
         )}
