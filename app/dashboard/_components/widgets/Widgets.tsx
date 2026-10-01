@@ -53,6 +53,25 @@ const todayStr = () => new Date().toISOString().split('T')[0];
  * identitasnya, angkanya sendiri tetap tinta gelap supaya terbaca sebagai
  * bilangan, bukan sebagai status.
  */
+/** Cincin progres "sudah / total" - warna ikut ambang (>=80 hijau, >=50 kuning, sisanya oranye). */
+function CincinProgres({ pct, sudah, total }: { pct: number; sudah: number; total: number }) {
+  const r = 34, k = 2 * Math.PI * r;
+  const warna = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#ea580c';
+  return (
+    <div className="relative w-[88px] h-[88px] flex-shrink-0" role="img" aria-label={`${sudah} dari ${total} sudah isi daily report (${pct}%)`}>
+      <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90" aria-hidden="true">
+        <circle cx="40" cy="40" r={r} fill="none" stroke="#e2e8f0" strokeWidth="8" />
+        {pct > 0 && <circle cx="40" cy="40" r={r} fill="none" stroke={warna} strokeWidth="8" strokeLinecap="round"
+          strokeDasharray={`${(Math.max(0, Math.min(100, pct)) / 100) * k} ${k}`} className="transition-[stroke-dasharray] duration-700" />}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+        <span className="text-xl font-extrabold text-slate-900 tabular-nums">{pct}%</span>
+        <span className="text-[10px] font-semibold text-slate-500 mt-1 tabular-nums">{sudah}/{total}</span>
+      </div>
+    </div>
+  );
+}
+
 function StatPills({ items }: { items: { label: string; value: number; color: string }[] }) {
   return (
     <div className="grid grid-cols-3 gap-3 mb-3">
@@ -142,7 +161,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
     return () => { alive = false; };
   }, []);
 
-  if (loading) return <WidgetCard title="Team Monitoring Hari Ini" icon="🧭" accent="#0891b2"><Loading /></WidgetCard>;
+  if (loading) return <WidgetCard title="Daily Report Tim" icon="🧭" accent="#0891b2"><Loading /></WidgetCard>;
 
   const total = rows.length;
   const sudah = rows.filter(r => r.reported).length;
@@ -277,8 +296,8 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   );
 
   return (
-    <WidgetCard title="Team Monitoring Hari Ini" icon="🧭" accent="#0891b2"
-      onSeeAll={() => openMenu('daily-report')} seeAllLabel="Daily Report">
+    <WidgetCard title="Daily Report Tim" icon="🧭" accent="#0891b2"
+      onSeeAll={() => openMenu('daily-report')} seeAllLabel="Buka">
       {total === 0 ? (
         <EmptyState text="Belum ada anggota Team PTS terdaftar." />
       ) : (
@@ -290,24 +309,21 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
         // dan pembaca yang melihat angka sama di dua tempat berbeda justru jadi
         // ragu mana yang benar. Kolom angkanya diperlebar 190px -> 220px karena
         // labelnya sekarang di atas angka, bukan di bawahnya.
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-x-6 gap-y-3">
-          {/* Kiri: ringkasan angka + progress */}
-          <div>
-            <StatPills items={[
-              //  'Total', bukan 'Total Team' - judul widget sudah menyebut Team.
-              { label: 'Total', value: total, color: '#0f172a' },
-              { label: 'Sudah', value: sudah, color: '#16a34a' },
-              { label: 'Belum', value: belum, color: belum > 0 ? '#ea580c' : '#94a3b8' },
-            ]} />
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : '#ea580c' }} />
-              </div>
-              <span className="text-[11px] font-bold text-slate-600">{pct}% update</span>
-            </div>
+        /*  Satu kolom: kartu ini kini berdiri di samping Agenda (4 dari 12
+            kolom), bukan selebar halaman. Cincin progres menggantikan tiga
+            angka + batang tipis - satu bentuk yang langsung terbaca
+            "berapa dari berapa". */
+        <div className="flex flex-col gap-4 h-full">
+          <div className="flex items-center gap-4">
+            <CincinProgres pct={pct} sudah={sudah} total={total} />
+            <dl className="grid gap-1.5 text-[12px] flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2"><dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full bg-green-600" />Sudah isi</dt><dd className="font-bold text-slate-900 tabular-nums">{sudah}</dd></div>
+              <div className="flex items-center justify-between gap-2"><dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full" style={{ background: '#ea580c' }} />Belum isi</dt><dd className="font-bold text-slate-900 tabular-nums">{belum}</dd></div>
+              <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-100"><dt className="text-slate-600">Total tim</dt><dd className="font-bold text-slate-900 tabular-nums">{total}</dd></div>
+            </dl>
           </div>
           {/* Kanan: yang belum daily report, dikelompokkan per atasan */}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1 min-h-0 flex flex-col">
             {belumList.length === 0 ? (
               <div className="text-xs font-semibold text-green-700 flex items-center h-full min-h-[60px]"><IkonTeks nama="🎉" />Semua tim sudah update Daily Report hari ini!</div>
             ) : (
@@ -320,7 +336,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
                   renderKelompok) - bukan tersusun sejajar seolah setara
                   cuma karena kebetulan sama-sama muat di baris yang sama.
                 */}
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2.5 max-h-[240px] overflow-y-auto overscroll-contain pr-1">
                   {kelompok.akar.map(g => renderKelompok(g, 0))}
                 </div>
               </>

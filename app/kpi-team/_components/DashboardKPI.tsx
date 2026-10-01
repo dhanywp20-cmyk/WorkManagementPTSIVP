@@ -488,25 +488,42 @@ function KakiUbin({ kiri, kanan, warna }: { kiri: React.ReactNode; kanan: React.
  * hanya tiket yang memakai percikan dan selisih "vs bulan lalu"; empat
  * lainnya memakai meter rasio yang benar-benar bisa dihitung dari datanya.
  */
-function PitaItem({ label, angka, satuan, garis, children }: {
-  label: string; angka: React.ReactNode; satuan?: string; garis?: boolean; children?: React.ReactNode;
+function PitaItem({ label, angka, satuan, ikon, warna, visual, children }: {
+  label: string; angka: React.ReactNode; satuan?: string; ikon: string; warna: string;
+  /** Visual kecil di kanan (percikan / cincin) - opsional. */
+  visual?: React.ReactNode; children?: React.ReactNode;
 }) {
   return (
-    <div className={`min-w-0 ${garis ? 'lg:pl-5 lg:border-l lg:border-slate-200' : ''}`}>
-      <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] truncate text-slate-500">{label}</p>
-      <p className="text-[26px] sm:text-[28px] font-extrabold leading-none mt-1.5 tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>
-        {angka}{satuan && <span className="text-[13px] font-semibold ml-1 text-slate-500">{satuan}</span>}
-      </p>
-      <div className="flex items-center gap-2 mt-2 h-[20px]">{children}</div>
+    /*  Tiap angka kini ubin sendiri (dulu enam kolom bergaris dalam satu
+        kartu - terbaca seperti tabel). Ikon berwarna lembut memberi
+        identitas cepat; angka tetap tinta gelap supaya kontrasnya aman. */
+    <div className={`${UBIN} !p-4 !flex-row !items-center gap-3 text-left`} style={{ boxShadow: BAYANG_UBIN }}>
+      <div className="min-w-0 flex-1">
+        <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500 truncate">
+          <span className="w-6 h-6 rounded-lg grid place-items-center flex-shrink-0" style={{ background: `${warna}14`, color: warna }}>
+            <Ikon nama={ikon} ukuran={13} />
+          </span>
+          <span className="truncate">{label}</span>
+        </p>
+        <p className="text-[26px] sm:text-[28px] font-extrabold leading-none mt-2.5 tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>
+          {angka}{satuan && <span className="text-[13px] font-semibold ml-1 text-slate-500">{satuan}</span>}
+        </p>
+        <div className="flex items-center gap-2 mt-2 min-h-[18px]">{children}</div>
+      </div>
+      {visual && <div className="flex-shrink-0">{visual}</div>}
     </div>
   );
 }
 
-function MeterGelap({ pct, warna }: { pct: number; warna: string }) {
+/** Cincin rasio kecil untuk ubin ringkasan. */
+function CincinMini({ pct, warna }: { pct: number; warna: string }) {
+  const r = 20, k = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct));
   return (
-    <div className="h-1.5 rounded-full overflow-hidden w-full max-w-[92px] bg-slate-100">
-      <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, pct))}%`, background: warna }}/>
-    </div>
+    <svg viewBox="0 0 48 48" className="w-14 h-14 -rotate-90" aria-hidden="true">
+      <circle cx="24" cy="24" r={r} fill="none" stroke="#e2e8f0" strokeWidth="6" />
+      {p > 0 && <circle cx="24" cy="24" r={r} fill="none" stroke={warna} strokeWidth="6" strokeLinecap="round"
+        strokeDasharray={`${(p / 100) * k} ${k}`} className="transition-[stroke-dasharray] duration-700" />}
+    </svg>
   );
 }
 
@@ -522,68 +539,59 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
   const beda  = tLalu === null ? null : tIni - tLalu;
   const rTot  = kpi?.reminders.total ?? 0;
   const pTot  = kpi?.piket.weekTotal ?? 0;
+  const open  = kpi?.tickets.open ?? 0;
+  const solvedHariIni = kpi?.tickets.resolvedToday ?? 0;
   const kosong = <span className="inline-block h-6 w-12 rounded bg-slate-100 animate-pulse"/>;
+  const pctPiket = pTot ? Math.round(((kpi?.piket.weekFilled ?? 0) / pTot) * 100) : 0;
   return (
-    /*  Kartu putih seperti ubin lain, bukan lagi bidang gelap bergradasi:
-        satu permukaan gelap di tengah deret kartu putih memecah kesatuan
-        halaman. Jangkar visualnya kini datang dari ukuran angka & posisinya
-        di puncak, bukan dari warna latar. */
-    <div className={`${UBIN} lg:col-span-12`} style={{ boxShadow: BAYANG_UBIN }}>
-      <div className="relative flex items-center justify-between gap-3 flex-wrap mb-4">
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">Ringkasan Platform</h2>
+    <section className="lg:col-span-12" aria-label="Ringkasan Platform">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+        <RelSeksi judul="Ringkasan Platform"/>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-slate-600">
+          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/90 border border-slate-200 text-slate-600">
             {new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
           </span>
-          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-slate-50 border border-slate-200 text-slate-600">
+          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/90 border border-slate-200 text-slate-600">
             {catatan}
           </span>
         </div>
       </div>
-      <div className="relative grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-4">
-        <PitaItem label="Tiket bulan ini" angka={loading ? kosong : tIni}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
+        <PitaItem label="Tiket bulan ini" ikon="🎫" warna="#1d4ed8" angka={loading ? kosong : tIni}
+          visual={!loading && <Percik nilai={deret} warna="#1d4ed8" lebar={96} tinggi={40}/>}>
           {!loading && beda !== null && (
-            <span title={`Bulan lalu ${tLalu} tiket`} className="text-[10.5px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap bg-slate-100 text-slate-600">
-              {beda > 0 ? '▲' : beda < 0 ? '▼' : '='} {Math.abs(beda)}
+            <span title={`Bulan lalu ${tLalu} tiket`} className={`text-[11px] font-bold px-1.5 py-0.5 rounded-md whitespace-nowrap ${beda > 0 ? 'bg-rose-50 text-rose-700' : beda < 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+              {beda > 0 ? '▲' : beda < 0 ? '▼' : '='} {Math.abs(beda)} vs bulan lalu
             </span>
           )}
-          {!loading && <Percik nilai={deret} warna="#1d4ed8" lebar={76} tinggi={20}/>}
         </PitaItem>
 
-        {/*  Pindah ke sini dari kartu "Ringkasan Performa" milik Team
-             Monitoring, yang dulu mencetak lima angka yang sama persis
-             dengan pita ini di layar yang sama. */}
-        <PitaItem label="Solved hari ini" garis angka={loading ? kosong : (kpi?.tickets.resolvedToday ?? 0)}>
-          {!loading && <LabelPita>dari {kpi?.tickets.open ?? 0} tiket terbuka</LabelPita>}
+        <PitaItem label="Solved hari ini" ikon="✅" warna="#047857" angka={loading ? kosong : solvedHariIni}
+          visual={!loading && <CincinMini pct={open + solvedHariIni ? (solvedHariIni / (open + solvedHariIni)) * 100 : 0} warna="#047857"/>}>
+          {!loading && <LabelPita>{open} tiket masih terbuka</LabelPita>}
         </PitaItem>
 
-        <PitaItem label="Avg resolusi" satuan="hari" garis angka={loading ? kosong : (kpi?.tickets.avgResolutionDays ?? 0)}>
+        <PitaItem label="Avg resolusi" ikon="⏱" warna="#6d28d9" satuan="hari" angka={loading ? kosong : (kpi?.tickets.avgResolutionDays ?? 0)}>
           {!loading && <LabelPita>{kpi?.tickets.solved ?? 0} total selesai</LabelPita>}
         </PitaItem>
 
-        <PitaItem label="Reminder overdue" garis angka={loading ? kosong : (kpi?.reminders.overdueCount ?? 0)}>
-          {!loading && <>
-            <MeterGelap pct={rTot ? ((kpi?.reminders.overdueCount ?? 0) / rTot) * 100 : 0} warna="#dc2626"/>
-            <LabelPita>dari {rTot}</LabelPita>
-          </>}
+        <PitaItem label="Reminder overdue" ikon="⏰" warna="#dc2626" angka={loading ? kosong : (kpi?.reminders.overdueCount ?? 0)}
+          visual={!loading && <CincinMini pct={rTot ? ((kpi?.reminders.overdueCount ?? 0) / rTot) * 100 : 0} warna="#dc2626"/>}>
+          {!loading && <LabelPita>dari {rTot} reminder</LabelPita>}
         </PitaItem>
 
-        <PitaItem label="Piket minggu ini" garis satuan={pTot ? `/${pTot}` : undefined}
-          angka={loading ? kosong : (kpi?.piket.weekFilled ?? 0)}>
-          {!loading && <>
-            <MeterGelap pct={pTot ? ((kpi?.piket.weekFilled ?? 0) / pTot) * 100 : 0} warna="#16a34a"/>
-            <LabelPita>{pTot ? Math.round(((kpi?.piket.weekFilled ?? 0) / pTot) * 100) : 0}%</LabelPita>
-          </>}
+        <PitaItem label="Piket minggu ini" ikon="🏪" warna="#0f766e" satuan={pTot ? `/${pTot}` : undefined}
+          angka={loading ? kosong : (kpi?.piket.weekFilled ?? 0)}
+          visual={!loading && <CincinMini pct={pctPiket} warna="#0f766e"/>}>
+          {!loading && <LabelPita>{pctPiket}% terisi</LabelPita>}
         </PitaItem>
 
-        <PitaItem label="LC avg skor" garis angka={loading ? kosong : (kpi?.learning.avgScore ?? 0)}>
-          {!loading && <>
-            <MeterGelap pct={kpi?.learning.avgScore ?? 0} warna="#16a34a"/>
-            <LabelPita>{kpi?.learning.totalParticipants ?? 0} peserta</LabelPita>
-          </>}
+        <PitaItem label="LC avg skor" ikon="🎓" warna="#4338ca" angka={loading ? kosong : (kpi?.learning.avgScore ?? 0)}
+          visual={!loading && <CincinMini pct={kpi?.learning.avgScore ?? 0} warna="#4338ca"/>}>
+          {!loading && <LabelPita>{kpi?.learning.totalParticipants ?? 0} peserta</LabelPita>}
         </PitaItem>
       </div>
-    </div>
+    </section>
   );
 }
 

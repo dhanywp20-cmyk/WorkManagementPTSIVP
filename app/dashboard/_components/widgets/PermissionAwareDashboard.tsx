@@ -144,6 +144,8 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const firstName = (currentUser.full_name ?? '').trim().split(' ')[0] || currentUser.username || '';
   const showAnalyticsTabs = visible.some(w => w.id === 'analytics');
+  /** Agenda berbagi baris dengan Daily Report Tim bila kartu itu tampil. */
+  const adaTeam = visible.some(w => w.id === 'team-monitoring');
 
   return (
     /*  Latar mengikuti setelan Admin Panel -> Merek -> "Latar Dashboard"
@@ -244,8 +246,8 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
             */
             <div key={`full-${block.widget.id}-${i}`}
               className={
-                block.widget.id === 'work-queue' ? 'lg:contents'
-                : block.widget.id === 'team-monitoring' ? 'lg:col-span-9'
+                block.widget.id === 'work-queue' ? (adaTeam ? 'lg:col-span-7 xl:col-span-8' : 'lg:col-span-12')
+                : block.widget.id === 'team-monitoring' ? 'lg:col-span-5 xl:col-span-4'
                 : 'lg:col-span-12'
               }>
               {/*

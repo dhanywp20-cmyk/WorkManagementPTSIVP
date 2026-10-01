@@ -9,8 +9,8 @@ import { Ikon } from '@/components/shared/Ikon';
 
 const URGENCY_DOT: Record<Urgency, string> = { urgent: '#dc2626', pending: '#ea580c', upcoming: '#2563eb' };
 
-function ActionRow({ item, onClick, showUrgencyDot = true }: {
-  item: ActionItem; onClick: () => void; showUrgencyDot?: boolean;
+function ActionRow({ item, onClick, showUrgencyDot = true, tanggal }: {
+  item: ActionItem; onClick: () => void; showUrgencyDot?: boolean; tanggal?: string;
 }) {
   return (
     <button onClick={onClick}
@@ -24,6 +24,7 @@ function ActionRow({ item, onClick, showUrgencyDot = true }: {
         <div className="text-[13px] font-semibold text-slate-800 truncate leading-snug">{item.title}</div>
         <div className="text-[11px] text-slate-500 truncate">{item.subtitle}</div>
       </div>
+      {tanggal && <span className="text-[11px] font-semibold text-slate-600 flex-shrink-0 mt-0.5 tabular-nums">{tanggal}</span>}
     </button>
   );
 }
@@ -49,7 +50,7 @@ function TeamActionChips({ user, openMenu, openUrl }: {
   const aksi = AKSI_TEAM.filter(a => hasMenu(user, a.key)).slice(0, 6);
   if (aksi.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
+    <div className="flex gap-2 mt-auto pt-3 border-t border-slate-100 overflow-x-auto -mx-1 px-1 pb-0.5 [scrollbar-width:none]">
       {aksi.map(a => (
         <QuickActionChip key={a.key} label={a.label} icon={a.icon} warna={a.warna} onClick={() => a.run(openMenu, openUrl)} />
       ))}
@@ -57,36 +58,46 @@ function TeamActionChips({ user, openMenu, openUrl }: {
   );
 }
 
+type TabAgenda = 'aksi' | 'hari' | 'nanti';
+
+/** "2026-10-06" -> "Sen, 6 Okt". */
+function tglPendek(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+/**
+ * Agenda - SATU kartu bertab menggantikan tiga ubin terpisah (My Action,
+ * Hari Ini, Mendatang). Tiga ubin dulu membuat beranda kaku: kolom
+ * Mendatang membentang dua baris walau sering kosong, dan item yang sama
+ * (mis. "Daily Report belum diisi") tercetak di My Action DAN Hari Ini.
+ * Kini satu daftar, tab memilih sudut pandangnya, jumlah tiap tab tetap
+ * terlihat sehingga tidak ada yang tersembunyi.
+ */
 const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) => {
   const { loading, error, myAction, today, upcoming } = useWorkQueue(user);
   const isTeamSide = isTeamMember(user) || isAdminRole(user);
+  const idAksi = new Set(myAction.map(i => i.id));
+  //  Hari Ini tanpa item yang sudah ada di Perlu tindakan - tidak dicetak dua kali.
+  const hariIni = today.filter(i => !idAksi.has(i.id));
+  const tabAwal: TabAgenda = myAction.length ? 'aksi' : hariIni.length ? 'hari' : upcoming.length ? 'nanti' : 'aksi';
+  const [tab, setTab] = React.useState<TabAgenda | null>(null);
+  const aktif = tab ?? tabAwal;
 
   if (loading) {
-    return (
-      <div className="grid grid-cols-1 gap-3 lg:contents">
-        <div className="lg:col-span-12"><WidgetCard title="My Action" icon="🎯" accent="#dc2626"><Loading /></WidgetCard></div>
-      </div>
-    );
+    return <div className="h-full"><WidgetCard title="Agenda Saya" icon="🎯" accent="#1d4ed8"><Loading /></WidgetCard></div>;
   }
 
   if (error) {
-    //  lg:col-span-12: tanpa ini elemen jatuh ke auto-placement grid 12 kolom
-    //  milik dashboard (lihat catatan di kosongSemua di bawah - akar masalah
-    //  yang sama, cuma belum sempat ketahuan di state ini).
     return (
-      <div className="lg:col-span-12">
-        <WidgetCard title="My Action" icon="🎯" accent="#dc2626">
-          {/*
-            BEDA dari empty state "bersih, tidak ada tugas" di bawah - ini
-            gagal MEMUAT, bukan berhasil memuat lalu memang kosong. Tombol
-            Coba Lagi memuat ulang halaman - cara paling sederhana yang tidak
-            menambah state manajemen baru hanya untuk retry satu widget.
-          */}
+      <div className="h-full">
+        <WidgetCard title="Agenda Saya" icon="🎯" accent="#dc2626">
           <div className="flex flex-col items-center justify-center gap-2 text-center py-3">
             <span className="text-2xl"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-            <p className="text-sm font-semibold text-rose-600">Gagal memuat daftar tugas.</p>
+            <p className="text-sm font-semibold text-rose-700">Gagal memuat daftar tugas.</p>
             <button onClick={() => window.location.reload()}
-              className="mt-1 text-xs font-bold px-3 py-1.5 rounded-lg text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100">
+              className="mt-1 text-xs font-bold px-3 py-1.5 rounded-lg text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100">
               Coba lagi
             </button>
           </div>
@@ -95,109 +106,65 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
     );
   }
 
-  const kosongSemua = myAction.length === 0 && today.length === 0 && upcoming.length === 0;
+  const kosongSemua = myAction.length === 0 && hariIni.length === 0 && upcoming.length === 0;
 
-  if (kosongSemua) {
-    //  BUG YANG DIPERBAIKI: kedua cabang di bawah dulu me-return elemen
-    //  TELANJANG - tanpa lg:col-span-12 - ke induk yang sejak bento sudah
-    //  jadi `grid lg:grid-cols-12`. Anak grid tanpa span eksplisit auto-
-    //  placement ke SATU kolom dari dua belas, jadi kartunya menyempit
-    //  sampai kalimat "Tidak ada tugas aktif..." terpaksa membungkus
-    //  satu-dua kata per baris - persis yang dilaporkan akun Guest.
-    //  Tiga state lain di komponen ini (loading, error, isi penuh) sudah
-    //  benar; dua cabang inilah yang luput saat kisinya diubah.
-
-    //  Role Team tetap dapat kartu My Action (bukan bilah tipis generik) -
-    //  chip Quick Action-nya butuh "frame" itu untuk ditaruh di bawahnya,
-    //  sesuai permintaan letaknya di dalam kartu My Action.
-    if (isTeamSide) {
-      return (
-        <div className="lg:col-span-12">
-          <WidgetCard title="My Action" icon="🎯" accent="#16a34a">
-            <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold">
-              <span className="text-lg"><Ikon nama="🎉" ukuran="1em" className="inline-block align-[-0.12em]" /></span> Tidak ada tugas aktif yang butuh tindakan saat ini.
-            </div>
-            <TeamActionChips user={user} openMenu={openMenu} openUrl={openUrl} />
-          </WidgetCard>
-        </div>
-      );
-    }
-    /*
-      Sales/Guest: bilah TIPIS, bukan WidgetCard penuh (header ikon+judul+
-      padding besar) - satu kalimat tidak butuh bobot visual sebesar kartu
-      berisi daftar, dan Quick Action mereka toh ada di kartu Analytics Saya,
-      bukan di sini.
-    */
+  //  Sales/Guest tanpa tugas: bilah tipis - Quick Action mereka ada di kartu
+  //  Analytics Saya, jadi kartu penuh hanya akan berisi satu kalimat.
+  if (kosongSemua && !isTeamSide) {
     return (
-      <div className="lg:col-span-12 flex items-center gap-2.5 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-black/5 px-4 py-3">
-        <span className="text-lg flex-shrink-0"><Ikon nama="🎉" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+      <div className="h-full flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 px-4 py-3">
+        <span className="text-lg flex-shrink-0 text-emerald-700"><Ikon nama="🎉" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="text-sm font-semibold text-emerald-700">Tidak ada tugas aktif yang butuh tindakan saat ini.</span>
       </div>
     );
   }
 
+  const TAB: { k: TabAgenda; label: string; pendek: string; n: number; warna: string; items: ActionItem[] }[] = [
+    { k: 'aksi', label: 'Perlu tindakan', pendek: 'Tindakan', n: myAction.length, warna: '#dc2626', items: myAction },
+    { k: 'hari', label: 'Hari ini', pendek: 'Hari ini', n: hariIni.length, warna: '#0e7490', items: hariIni },
+    { k: 'nanti', label: 'Mendatang', pendek: 'Nanti', n: upcoming.length, warna: '#6d28d9', items: upcoming },
+  ];
+  const sekarang = TAB.find(t => t.k === aktif)!;
+
   return (
-    /*  lg:contents - pembungkus ini LARUT di layar lebar, jadi ketiga ubin di
-        bawah langsung jadi anggota kisi bento 12 kolom milik dashboard (lihat
-        PermissionAwareDashboard). Tanpa itu ia jadi kisi di dalam kisi:
-        jaraknya ikut gap sendiri dan tepinya tidak pernah berbaris dengan ubin
-        Analytics di bawahnya. Di layar sempit tetap satu kolom bertumpuk. */
-    <div className="grid grid-cols-1 gap-3 lg:contents">
-        {/* MY ACTION - ubin utama, 6 dari 12 kolom */}
-        <div className="lg:col-span-6 h-full">
-        <WidgetCard title="My Action" icon="🎯" accent="#dc2626">
-          {myAction.length === 0 ? (
-            <EmptyState judul="Tidak ada yang mendesak" text="Lihat Hari Ini & Mendatang di samping untuk jadwal berikutnya." />
-          ) : (
-            <>
-              <div className="flex items-center gap-4 mb-2 text-[11px] font-medium text-slate-500">
-                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: URGENCY_DOT.urgent }} />Urgent/terlambat</span>
-                <span className="inline-flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: URGENCY_DOT.pending }} />Perlu tindakan</span>
-              </div>
-              {myAction.map(item => (
-                <ActionRow key={item.id} item={item} onClick={() => openMenu(item.menuKey)} />
+    <div className="h-full">
+      <WidgetCard title="Agenda Saya" icon="🎯" accent="#1d4ed8">
+        {kosongSemua ? (
+          <div className="flex items-center gap-2 text-emerald-700 text-sm font-semibold py-2">
+            <Ikon nama="🎉" ukuran="1.1em" /> Tidak ada tugas aktif yang butuh tindakan saat ini.
+          </div>
+        ) : (
+          <>
+            {/* Tab bersegmen - jumlah tiap sudut pandang selalu terlihat. */}
+            <div role="tablist" aria-label="Agenda" className="flex gap-1 p-1 rounded-xl bg-slate-100 mb-3">
+              {TAB.map(t => {
+                const on = t.k === aktif;
+                return (
+                  <button key={t.k} type="button" role="tab" aria-selected={on} onClick={() => setTab(t.k)}
+                    className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[12px] font-semibold transition-colors ${on ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+                    <span className="truncate sm:hidden">{t.pendek}</span>
+                    <span className="truncate hidden sm:inline">{t.label}</span>
+                    <span className="min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0"
+                      style={t.n > 0 ? { background: t.warna, color: '#fff' } : { background: '#e2e8f0', color: '#475569' }}>{t.n}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div role="tabpanel" className="flex-1 min-h-[88px] sm:min-h-[132px] max-h-[300px] overflow-y-auto overscroll-contain -mx-1.5 px-1.5">
+              {sekarang.items.length === 0 ? (
+                <EmptyState
+                  judul={aktif === 'aksi' ? 'Tidak ada yang mendesak' : aktif === 'hari' ? 'Hari ini kosong' : 'Belum ada jadwal'}
+                  text={aktif === 'nanti' ? 'Jadwal 5 hari ke depan akan muncul di sini.' : 'Cek tab lain untuk agenda berikutnya.'}
+                  aksi={aktif === 'nanti' && hasMenu(user, 'reminder-schedule') ? { label: 'Buka Jadwal', onClick: () => openMenu('reminder-schedule') } : undefined} />
+              ) : sekarang.items.map(item => (
+                <ActionRow key={item.id} item={item} onClick={() => openMenu(item.menuKey)} showUrgencyDot={aktif === 'aksi'}
+                  tanggal={aktif === 'nanti' ? tglPendek(item.date) : undefined} />
               ))}
-            </>
-          )}
-          {isTeamSide && <TeamActionChips user={user} openMenu={openMenu} openUrl={openUrl} />}
-        </WidgetCard>
-      </div>
-
-      {/* TODAY */}
-     <div className="lg:col-span-3 h-full">
-        <WidgetCard title="Hari Ini" icon="📅" accent="#0891b2">
-          {today.length === 0 ? (
-            <EmptyState judul="Hari ini kosong" text="Tidak ada jadwal yang jatuh hari ini." />
-          ) : today.map(item => (
-            <ActionRow key={item.id} item={item} onClick={() => openMenu(item.menuKey)} showUrgencyDot={false} />
-          ))}
-        </WidgetCard>
-        </div>
-      {/*
-        MENDATANG - lg:row-span-2, BUKAN cuma lg:col-span-3 seperti Hari Ini
-        di sebelahnya. Diminta eksplisit: kolom ini membentang tinggi dari
-        atas (sejajar My Action/Hari Ini) sampai ke bawah tepi Team Monitoring
-        di baris berikutnya, bukan cuma setinggi barisnya sendiri.
-
-        Ini berhasil murni lewat auto-placement CSS Grid, tanpa
-        grid-template-areas manual: Mendatang memesan kolom 10-12 di KEDUA
-        baris (baris ini via urutan wajar, baris berikutnya via row-span).
-        Team Monitoring (widget FULL berikutnya dalam urutan priority, lihat
-        PermissionAwareDashboard) diperkecil ke lg:col-span-9 supaya auto-
-        placement menaruhnya di kolom 1-9 baris berikutnya - otomatis
-        menghindari kolom 10-12 yang sudah dipesan Mendatang, tanpa perlu
-        koordinat baris/kolom ditulis manual di kedua sisi.
-      */}
-      <div className="lg:col-span-3 lg:row-span-2 h-full">
-        <WidgetCard title="Mendatang" icon="🔜" accent="#7c3aed">
-          {upcoming.length === 0 ? (
-            <EmptyState judul="Belum ada jadwal" text="Jadwal dalam 5 hari ke depan akan muncul di sini."
-              aksi={hasMenu(user, 'reminder-schedule') ? { label: 'Buka Jadwal', onClick: () => openMenu('reminder-schedule') } : undefined} />
-          ) : upcoming.map(item => (
-            <ActionRow key={item.id} item={item} onClick={() => openMenu(item.menuKey)} showUrgencyDot={false} />
-          ))}
-        </WidgetCard>
-      </div>
+            </div>
+          </>
+        )}
+        {isTeamSide && <TeamActionChips user={user} openMenu={openMenu} openUrl={openUrl} />}
+      </WidgetCard>
     </div>
   );
 };
