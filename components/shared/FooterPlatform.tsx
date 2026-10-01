@@ -31,7 +31,6 @@ export function FooterPlatform() {
         <p className="text-[11px] text-slate-500 font-medium truncate min-w-0">
           © {tahun} {merek.namaPerusahaan}
           {merek.kredit && <span className="text-slate-500"> · {merek.kredit}</span>}
-          <span className="hidden md:inline text-slate-500"> · Hak cipta dilindungi undang-undang</span>
         </p>
         <div className="flex items-center gap-3 flex-shrink-0">
           {/*  Disembunyikan di layar sempit, BUKAN dikecilkan: di ponsel kaki
