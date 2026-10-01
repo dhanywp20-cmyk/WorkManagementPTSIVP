@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendWA } from '@/lib/wa';
 import '@/lib/wa-server';
+import { kirimPushKeUser } from '@/lib/web-push-server';
+import { bacaRahasia } from '@/lib/rahasia-server';
+import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,11 +31,16 @@ function berwenang(request: NextRequest): boolean {
   return false;
 }
 
+/*
+  Tanggal WIB, bukan UTC. Cron ini berjalan 23:00 UTC = 06:00 WIB; dengan
+  tanggal UTC, "hari ini" di pesan pagi sebenarnya kemarin - tenggat hari ini
+  terbaca "besok" dan yang kemarin belum dihitung terlambat.
+*/
 function tanggalISO(offsetHari: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetHari);
-  return d.toISOString().slice(0, 10);
+  return new Date(Date.now() + 7 * 3600_000 + offsetHari * 86_400_000).toISOString().slice(0, 10);
 }
+/** 0 = Minggu ... 6 = Sabtu, untuk tanggal ISO. */
+const hariDari = (iso: string) => new Date(iso + 'T00:00:00Z').getUTCDay();
 
 function labelTanggal(iso: string): string {
   const hariIni = tanggalISO(0);
@@ -48,7 +56,10 @@ function labelTanggal(iso: string): string {
   return new Date(iso + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
-interface Item { label: string; tanggal: string; terlambat: boolean }
+/** ringan = pengingat rutin (DR belum diisi, tiket aktif): cukup push +
+ *  Telegram. WA hanya untuk tenggat sungguhan & blok atasan - nomor gateway
+ *  pernah ditandai spam, jangan kirim WA harian ke semua orang. */
+interface Item { label: string; tanggal: string; terlambat: boolean; ringan?: boolean }
 
 async function jalankan() {
   const supabase = createClient(
@@ -88,7 +99,7 @@ async function jalankan() {
     target_date: string; progress: number | null;
   }[]) {
     const item: Item = {
-      label: `📊 ${l.name} — progres ${l.progress ?? 0}%`,
+      label: `📊 ${l.name} - progres ${l.progress ?? 0}%`,
       tanggal: l.target_date,
       terlambat: l.target_date < hariIni,
     };
@@ -149,27 +160,127 @@ async function jalankan() {
     }
   }
 
-  if (perOrang.size === 0) {
+  /* ── Tambahan briefing pagi ───────────────────────────────────────────
+     1. Daily Report hari kerja sebelumnya yang belum diisi (Team PTS).
+     2. Tiket aktif yang sedang dipegang.
+     3. Untuk atasan: anggota langsungnya yang belum mengisi Daily Report.
+     4. Senin: insight mingguan untuk Admin & Manager.  */
+  const { data: semuaUser } = await supabase
+    .from('users')
+    .select('id, full_name, phone_number, team_type, jabatan, role, atasan_id, access_level, telegram_chat_id');
+  type U = { id: string; full_name: string | null; phone_number: string | null; team_type: string | null;
+    jabatan: string | null; role: string | null; atasan_id: string | null; access_level: string | null; telegram_chat_id: string | null };
+  const daftarUser = ((semuaUser ?? []) as U[]).filter(u => u.full_name);
+  const timPTS = daftarUser.filter(u => (u.team_type ?? '').startsWith('Team PTS'));
+  const adalahAdmin = (u: U) => ['admin', 'superadmin'].includes((u.role ?? '').toLowerCase()) || u.access_level === 'full';
+  const adalahManager = (u: U) => /manager/i.test(u.jabatan ?? '');
+
+  //  Hari kerja sebelumnya: mundur melewati Sabtu, Minggu, dan hari libur piket.
+  const { data: libur } = await supabase.from('picket_holidays').select('date').gte('date', tanggalISO(-10));
+  const setLibur = new Set(((libur ?? []) as { date: string }[]).map(l => l.date));
+  let kemarin = tanggalISO(-1);
+  for (let n = 1; n <= 5 && (hariDari(kemarin) === 0 || hariDari(kemarin) === 6 || setLibur.has(kemarin)); n++) kemarin = tanggalISO(-1 - n);
+
+  const { data: drKemarin } = await supabase.from('daily_reports').select('user_id').eq('report_date', kemarin);
+  const sudahDR = new Set(((drKemarin ?? []) as { user_id: string }[]).map(r => r.user_id));
+  const belumDR = timPTS.filter(u => !sudahDR.has(u.id));
+  const labelKemarin = new Date(kemarin + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+  for (const u of belumDR) {
+    catat(u.full_name, { label: `📝 Daily Report ${labelKemarin} belum diisi`, tanggal: kemarin, terlambat: true, ringan: true });
+  }
+
+  const { data: tiketAktif } = await supabase
+    .from('tickets')
+    .select('project_name, status, assign_name')
+    .not('status', 'in', '("Solved","Rejected")')
+    .not('is_deleted', 'is', true)
+    .not('assign_name', 'is', null);
+  const tiketPer = new Map<string, { project: string; status: string }[]>();
+  for (const t of (tiketAktif ?? []) as { project_name: string | null; status: string; assign_name: string }[]) {
+    const arr = tiketPer.get(t.assign_name) ?? [];
+    arr.push({ project: t.project_name ?? '-', status: t.status });
+    tiketPer.set(t.assign_name, arr);
+  }
+  for (const [nama, ts] of tiketPer) {
+    const overdue = ts.filter(t => t.status === 'Overdue').length;
+    catat(nama, {
+      label: `🎫 ${ts.length} tiket aktif${overdue ? ` (${overdue} overdue)` : ''}: ${ts.slice(0, 3).map(t => t.project).join(', ')}${ts.length > 3 ? ', ...' : ''}`,
+      tanggal: hariIni,
+      terlambat: overdue > 0,
+      ringan: true,
+    });
+  }
+
+  //  Blok tambahan per penerima (teks bebas di bawah daftar tenggat).
+  const blok = new Map<string, string[]>();
+  const tambahBlok = (nama: string, teks: string) => { const a = blok.get(nama) ?? []; a.push(teks); blok.set(nama, a); };
+
+  for (const atasan of daftarUser) {
+    const bawahanBelum = belumDR.filter(b => b.atasan_id === atasan.id);
+    if (bawahanBelum.length) {
+      tambahBlok(atasan.full_name!, `*Tim Anda:* ${bawahanBelum.length} anggota belum mengisi Daily Report ${labelKemarin}: ${bawahanBelum.map(b => b.full_name).join(', ')}.`);
+    }
+  }
+
+  if (hariDari(hariIni) === 1) {
+    const sejak = tanggalISO(-7);
+    const [{ data: tDibuat }, { data: tSelesai }, { data: rLewat }, { data: drMinggu }] = await Promise.all([
+      supabase.from('tickets').select('id').gte('created_at', sejak).not('is_deleted', 'is', true),
+      supabase.from('tickets').select('id').eq('status', 'Solved').gte('updated_at', sejak),
+      supabase.from('reminders').select('id').lt('due_date', hariIni).not('status', 'in', '("done","cancelled")').not('is_deleted', 'is', true),
+      supabase.from('daily_reports').select('user_id, report_date').gte('report_date', sejak).lt('report_date', hariIni),
+    ]);
+    //  Hari kerja dalam 7 hari terakhir, untuk tingkat pengisian Daily Report.
+    const hariKerja: string[] = [];
+    for (let n = 7; n >= 1; n--) { const d = tanggalISO(-n); if (hariDari(d) !== 0 && hariDari(d) !== 6 && !setLibur.has(d)) hariKerja.push(d); }
+    const setHK = new Set(hariKerja);
+    const isiPer = new Map<string, number>();
+    for (const r of (drMinggu ?? []) as { user_id: string; report_date: string }[]) {
+      if (setHK.has(r.report_date)) isiPer.set(r.user_id, (isiPer.get(r.user_id) ?? 0) + 1);
+    }
+    const target = timPTS.length * hariKerja.length;
+    const terisi = timPTS.reduce((n, u) => n + Math.min(isiPer.get(u.id) ?? 0, hariKerja.length), 0);
+    const palingKurang = timPTS
+      .map(u => ({ nama: u.full_name!, kurang: hariKerja.length - Math.min(isiPer.get(u.id) ?? 0, hariKerja.length) }))
+      .filter(x => x.kurang > 0).sort((a, b) => b.kurang - a.kurang).slice(0, 3);
+    const insight =
+      `*Insight mingguan (7 hari terakhir)*\n` +
+      `• Tiket baru: ${(tDibuat ?? []).length} · Solved: ${(tSelesai ?? []).length}\n` +
+      `• Jadwal lewat tenggat & belum selesai: ${(rLewat ?? []).length}\n` +
+      `• Pengisian Daily Report: ${target ? Math.round((terisi / target) * 100) : 0}% (${terisi}/${target})` +
+      (palingKurang.length ? `\n• Paling banyak belum isi: ${palingKurang.map(p => `${p.nama} (${p.kurang} hari)`).join(', ')}` : '');
+    for (const u of daftarUser.filter(u => adalahAdmin(u) || adalahManager(u))) tambahBlok(u.full_name!, insight);
+  }
+
+  const penerima = new Set([...perOrang.keys(), ...blok.keys()]);
+  if (penerima.size === 0) {
     return { penerima: 0, terkirim: 0, gagal: 0, catatan: 'tidak ada tenggat dalam jangkauan' };
   }
 
-  // Nomor WA, diambil sekali untuk semua penerima
-  const { data: users } = await supabase
-    .from('users')
-    .select('full_name, phone_number')
-    .in('full_name', [...perOrang.keys()]);
+  const perNama = new Map(daftarUser.map(u => [u.full_name!, u]));
 
-  const nomor = new Map(
-    ((users ?? []) as { full_name: string; phone_number: string | null }[])
-      .filter(u => u.phone_number)
-      .map(u => [u.full_name, u.phone_number as string]),
-  );
+  /*  Telegram langsung ke Bot API. lib/telegram-pribadi.ts memanggil
+      '/api/notifikasi/telegram' (alamat relatif) yang hanya jalan di
+      peramban - dari cron ini ia selalu gagal diam-diam. Teks polos, tanpa
+      parse_mode (lihat alasannya di route Telegram). */
+  const [tokenTg, pengaturan] = await Promise.all([bacaRahasia('telegram.bot_token'), bacaPengaturan()]);
+  const kirimTg = async (chatId: string, teks: string) => {
+    if (!tokenTg || !pengaturan.aktif.telegram) return false;
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${tokenTg}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text: teks.replace(/[*_]/g, '') }),
+      });
+      return !!(await r.json().catch(() => ({})))?.ok;
+    } catch { return false; }
+  };
+  let telegram = 0;
+  let terkirim = 0, gagal = 0, tanpaNomor = 0, push = 0;
 
-  let terkirim = 0, gagal = 0, tanpaNomor = 0;
-
-  for (const [nama, items] of perOrang) {
-    const wa = nomor.get(nama);
-    if (!wa) { tanpaNomor++; continue; }
+  for (const nama of penerima) {
+    const u = perNama.get(nama);
+    const items = perOrang.get(nama) ?? [];
+    const tambahan = blok.get(nama) ?? [];
 
     // Terlambat lebih dulu, lalu urut tanggal - yang paling mendesak dibaca
     // pertama, karena pesan panjang sering hanya terbaca beberapa baris awal.
@@ -177,18 +288,36 @@ async function jalankan() {
       (a.terlambat === b.terlambat ? 0 : a.terlambat ? -1 : 1) || a.tanggal.localeCompare(b.tanggal));
 
     const jumlahTerlambat = items.filter(i => i.terlambat).length;
+    const tglJudul = new Date(hariIni + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
     const pesan =
-      `*Ringkasan Tenggat — ${new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}*\n` +
-      `Halo ${nama}, ada ${items.length} hal yang perlu perhatian` +
-      (jumlahTerlambat ? ` — *${jumlahTerlambat} sudah lewat tenggat*` : '') + `:\n\n` +
-      items.map(i => `${i.terlambat ? '🔴' : '•'} ${i.label}\n   _${labelTanggal(i.tanggal)}_`).join('\n') +
-      `\n\nBuka Work Management untuk memperbarui progres.`;
+      `*Briefing Pagi - ${tglJudul}*\n` +
+      (items.length
+        ? `Halo ${nama}, ada ${items.length} hal yang perlu perhatian` +
+          (jumlahTerlambat ? ` - *${jumlahTerlambat} sudah lewat tenggat*` : '') + `:\n\n` +
+          items.map(i => `${i.terlambat ? '🔴' : '•'} ${i.label}\n   _${labelTanggal(i.tanggal)}_`).join('\n')
+        : `Halo ${nama}.`) +
+      (tambahan.length ? `\n\n${tambahan.join('\n\n')}` : '') +
+      `\n\nBuka Work Management untuk menindaklanjuti.`;
 
+    //  Push ke aplikasi/HP: ringkas, pesan lengkap tetap lewat WA/Telegram.
+    if (u) {
+      const ringkas = items.length
+        ? `${items.length} hal perlu perhatian${jumlahTerlambat ? `, ${jumlahTerlambat} lewat tenggat` : ''}: ${items[0].label}`
+        : (tambahan[0] ?? '').replace(/\*/g, '').slice(0, 140);
+      try { await kirimPushKeUser([u.id], { title: 'Briefing pagi', body: ringkas, url: '/dashboard' }); push++; } catch { /* push opsional */ }
+    }
+
+    if (u?.telegram_chat_id && await kirimTg(u.telegram_chat_id, pesan)) telegram++;
+
+    const wa = u?.phone_number;
+    if (!wa) { tanpaNomor++; continue; }
+    //  WA hanya bila ada tenggat sungguhan / blok atasan (lihat Item.ringan).
+    if (!(items.some(i => !i.ringan) || tambahan.length > 0)) continue;
     const hasil = await sendWA(wa, pesan, 'digest_wa', 'system.digest');
     if (hasil.ok) terkirim++; else gagal++;
   }
 
-  return { penerima: perOrang.size, terkirim, gagal, tanpaNomor };
+  return { penerima: penerima.size, terkirim, gagal, tanpaNomor, push, telegram, drAcuan: kemarin };
 }
 
 export async function GET(request: NextRequest) {

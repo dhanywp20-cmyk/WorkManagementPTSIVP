@@ -20,7 +20,8 @@ import {
 } from './_components/Modals';
 import GlobalSearch from './_components/GlobalSearch';
 import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashboard';
-import OnboardingTour, { JelajahiButton } from './_components/OnboardingTour';
+import OnboardingTour from './_components/OnboardingTour';
+import { AsistenPlatform } from './_components/AsistenPlatform';
 import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus, latarDasbor } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
 import { ModalPortal, LogoMerek, ChipVersi, FooterPlatform } from '@/components/shared';
@@ -678,6 +679,11 @@ export default function Dashboard() {
   // isAdmin TETAP admin/superadmin murni - khusus tombol Admin Panel (kelola
   // akun, bukan sekadar lihat data). Lihat lib/constants.ts hasFullAccess.
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
+  /** Modul yang sedang dibuka, untuk panduan kontekstual Asisten (lib/panduan.ts). */
+  const modulAktif = showTicketing && !showDashboardPanel
+    ? (internalUrl.split('?')[0].replace(/^\/+/, '').split('/')[0] || 'dashboard')
+    : 'dashboard';
+  const asistenAtasan = isAdmin || /supervisor|manager/i.test(currentUser?.jabatan ?? '');
   // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
   // (mis. Manager PTS) - dipakai untuk hal yang BUKAN kelola akun: lihat
   // badge pending, akses KPI penuh, dst.
@@ -1292,7 +1298,7 @@ export default function Dashboard() {
         {renderModals()}
         {/* ── Jelajahi Button (always visible while logged-in, before sidebar loads) ── */}
         {currentUser && !tourVisible && (
-          <JelajahiButton onClick={() => setShowTour(true)} />
+          <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} onMulaiTur={() => setShowTour(true)} />
         )}
         {renderHeader()}
 
@@ -1391,7 +1397,7 @@ export default function Dashboard() {
             onVisibleChange={setTourVisible}
           />
           {!tourVisible && (
-            <JelajahiButton onClick={() => setShowTour(true)} />
+            <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} onMulaiTur={() => setShowTour(true)} />
           )}
         </>
       )}
