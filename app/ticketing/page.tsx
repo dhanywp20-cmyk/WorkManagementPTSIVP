@@ -1744,28 +1744,29 @@ function TicketingSystemInner() {
    */
   const tutupJadwalTicket = async (t: Ticket, jadi: 'done' | 'cancelled') => {
     try {
-      //  Satu perintah saja: UPDATE ... RETURNING. Menghitung dulu lalu
-      //  mengubah membuat dua kebenaran yang bisa berbeda di antaranya.
-      const { data: terubah, error } = await supabase.from('reminders')
-        .update({ status: jadi })
-        .eq('ticket_id', t.id)
-        .eq('category', 'Troubleshooting')
-        .neq('status', jadi)
-        .select('id');
+      //  Lewat RPC, bukan UPDATE langsung: RLS reminders (rm_update) hanya
+      //  mengizinkan PEMILIK barisnya, sehingga reminder yang dibuat Admin
+      //  lalu dikerjakan handler lain tidak tersentuh - 0 baris berubah TANPA
+      //  galat, dan layar mengira berhasil. RPC menurunkan izinnya dari
+      //  ticket-nya (lihat migrasi 021).
+      const { data: jumlah, error } = await supabase.rpc('tutup_jadwal_ticket', {
+        p_ticket_id: t.id,
+        p_status: jadi,
+      });
 
-      //  Tidak ada jadwal terkait yang perlu disentuh - itu keadaan normal
-      //  (ticket yang tidak pernah lewat status Onsite), bukan kegagalan.
-      if (!error && (!terubah || terubah.length === 0)) return;
-
-      //  RLS yang menolak menjawab 0 baris TANPA galat, jadi hasilnya
-      //  diperiksa - bukan dianggap berhasil begitu saja.
       if (error) {
         notify('error', 'Ticket tersimpan, tapi jadwal di Reminder Schedule gagal ditutup. Mohon tutup manual.');
         return;
       }
+
+      //  Tidak ada jadwal terkait yang perlu disentuh - itu keadaan normal
+      //  (ticket yang tidak pernah lewat status Onsite), bukan kegagalan.
+      const n = Number(jumlah ?? 0);
+      if (n === 0) return;
+
       notify('success', jadi === 'done'
-        ? `Jadwal di Reminder Schedule ikut ditutup (${terubah!.length}).`
-        : `Jadwal di Reminder Schedule ikut dibatalkan (${terubah!.length}).`);
+        ? `Jadwal di Reminder Schedule ikut ditutup (${n}).`
+        : `Jadwal di Reminder Schedule ikut dibatalkan (${n}).`);
     } catch {
       /* Ticketnya sendiri sudah tersimpan - kegagalan menutup jadwal tidak
          boleh membatalkannya. */

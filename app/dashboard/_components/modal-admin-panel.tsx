@@ -14,13 +14,14 @@ import { BrandPicSettingInline } from './modal-brand-pic';
 import { MerekSettingInline } from './modal-merek';
 import { KelompokSettingInline } from './modal-kelompok';
 import { IntegrasiInline } from './modal-integrasi';
+import { AplikasiAndroidInline } from './modal-aplikasi-android';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
 
 // AdminPanelModal (unified: Settings + User Management + PIC Brand)
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
-  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara'>(initialTab);
+  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'android'>(initialTab);
 
   /**
  * Kelompok navigasi - MENGIKUTI CARA ADMIN BERPIKIR, bukan urutan fitur
@@ -44,7 +45,7 @@ const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications'; label: s
   { key: 'notifications', label: 'Notifikasi' },
 ];
 
-const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
+const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'android'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
     {
       key: 'settings',
       group: 'organization',
@@ -100,6 +101,13 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
       label: 'Integrations',
       icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
       color: '#0e7490', activeBg: 'rgba(8,145,178,0.1)', activeBorder: 'rgba(8,145,178,0.4)', activeText: '#0e7490',
+    },
+    {
+      key: 'android',
+      group: 'notifications',
+      label: 'Aplikasi Android',
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
+      color: '#047857', activeBg: 'rgba(16,185,129,0.1)', activeBorder: 'rgba(16,185,129,0.4)', activeText: '#047857',
     },
   ];
 
@@ -190,6 +198,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
                 {activeSection === 'merek' && 'Logo, nama, warna header & tampilan halaman login'}
                 {activeSection === 'kelompok' && 'Daftar kelompok kerja & lonceng yang boleh dilihat masing-masing'}
                 {activeSection === 'integrasi' && 'Kanal notifikasi (In-App, WhatsApp, Telegram) & event mana lewat kanal mana'}
+                {activeSection === 'android' && 'Unggah APK baru - langsung tampil di Profil untuk diunduh'}
               </p>
             </div>
             <button aria-label="Tutup" onClick={onClose}
@@ -226,6 +235,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             {activeSection === 'integrasi' && (
               <div className="p-4"><IntegrasiInline /></div>
             )}
+            {activeSection === 'android' && <AplikasiAndroidInline />}
           </div>
         </div>
       </div>

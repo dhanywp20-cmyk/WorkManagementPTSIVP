@@ -2,12 +2,20 @@ name: Android APK
 
 # APK native (WebView + FCM) yang membuka web produksi. Web baru TIDAK butuh
 # APK baru; rilis APK hanya saat android/ berubah (naikkan version.properties).
+#
+# Alur rilis (bisa dijalankan dari sesi cloud yang tidak punya Android SDK):
+#   1. naikkan versionCode & versionName di android/version.properties
+#   2. merge ke main
+#   3. job ini membangun APK rilis bertanda tangan lalu MENERBITKANNYA sendiri
+#      ke Admin Panel -> Aplikasi Android (scripts/terbitkan-apk.mjs); pengguna
+#      aplikasi langsung mendapat ajakan update.
+# Push tanpa kenaikan versionCode tidak menerbitkan apa pun.
 on:
   push:
     branches: [main]
-    paths: ['android/**', '.github/workflows/android.yml']
+    paths: ['android/**', '.github/workflows/android.yml', 'scripts/terbitkan-apk.mjs']
   pull_request:
-    paths: ['android/**', '.github/workflows/android.yml']
+    paths: ['android/**', '.github/workflows/android.yml', 'scripts/terbitkan-apk.mjs']
   workflow_dispatch:
 
 permissions:
@@ -73,21 +81,20 @@ jobs:
           name: apk
           path: android/app/build/outputs/apk/**/*.apk
 
-      # Satu nama berkas tetap -> yang tersedia di Profil selalu versi terbaru.
-      - name: Publikasikan ke public/android
-        if: steps.kunci.outputs.ada == '1' && github.event_name != 'pull_request'
+      # Terbitkan ke Admin Panel -> Aplikasi Android, hanya dari main dan hanya
+      # APK rilis (bertanda tangan kunci tetap - APK debug ditandatangani kunci
+      # acak per build, jadi tidak bisa dipasang menimpa versi sebelumnya).
+      # Unggah manual lewat Admin Panel tetap bisa dipakai kapan saja.
+      - name: Terbitkan ke Admin Panel
+        if: steps.kunci.outputs.ada == '1' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PESAN: ${{ github.event.head_commit.message }}
         run: |
-          set -e
-          VC=$(grep '^versionCode=' android/version.properties | cut -d= -f2)
-          VN=$(grep '^versionName=' android/version.properties | cut -d= -f2)
-          mkdir -p public/android
-          cp android/app/build/outputs/apk/release/app-release.apk public/android/work-management.apk
-          UKURAN=$(stat -c%s public/android/work-management.apk)
-          printf '{"versionName":"%s","versionCode":%s,"ukuran":%s,"dirilis":"%s"}\n' \
-            "$VN" "$VC" "$UKURAN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > public/android/versi.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/android
-          if git diff --cached --quiet; then echo "Tidak ada perubahan"; exit 0; fi
-          git commit -m "APK Android v$VN ($VC) [skip ci]"
-          git push
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Secret SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY belum diisi - APK tidak diterbitkan otomatis. Unggah artefak 'apk' lewat Admin Panel."
+            exit 0
+          fi
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          node scripts/terbitkan-apk.mjs "$APK" "$(printf '%s' "$PESAN" | head -1)"

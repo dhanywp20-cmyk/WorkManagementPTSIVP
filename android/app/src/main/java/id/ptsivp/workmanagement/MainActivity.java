@@ -76,7 +76,8 @@ public class MainActivity extends Activity {
         s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
         s.setAllowFileAccess(false);
-        s.setUserAgentString(s.getUserAgentString() + " WorkManagementAndroid/" + BuildConfig.VERSION_NAME);
+        // "(kode)" dibaca web (lib/rilis-android.ts) untuk ajakan update.
+        s.setUserAgentString(s.getUserAgentString() + " WorkManagementAndroid/" + BuildConfig.VERSION_NAME + " (" + BuildConfig.VERSION_CODE + ")");
 
         CookieManager cm = CookieManager.getInstance();
         cm.setAcceptCookie(true);

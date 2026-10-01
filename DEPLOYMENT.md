@@ -107,3 +107,36 @@ mempengaruhi company lain.
   hardcoded di database function (lihat detail di `sql/full-schema/README.md` bagian
   "Kenapa ada placeholder"). Ini bukan bug yang saya buat — ini ditemukan saat introspeksi
   skema, dan sebaiknya dirotate karena sempat bisa dibaca lewat source function di database.
+
+## Rilis APK Android
+
+APK dibangun dan **diterbitkan otomatis** oleh GitHub Actions
+(`.github/workflows/android.yml` + `scripts/terbitkan-apk.mjs`). Sesi cloud
+yang tidak punya Android SDK cukup mengubah kode lalu menaikkan versi.
+
+1. Naikkan `versionCode` (wajib bertambah) dan `versionName` di
+   `android/version.properties`.
+2. Merge ke `main`.
+3. Workflow membangun APK rilis bertanda tangan, mengunggahnya ke bucket
+   privat `aplikasi-android`, dan mencatatnya di `rilis_android`. Rilis itu
+   langsung tampil di Profil, dan aplikasi yang terpasang menampilkan ajakan
+   update.
+
+Push ke `main` tanpa kenaikan `versionCode` tidak menerbitkan apa pun.
+Unggah manual lewat Admin Panel → Aplikasi Android tetap bisa dipakai.
+
+### Secret GitHub (sekali saja)
+
+| Secret | Isi |
+|---|---|
+| `ANDROID_KEYSTORE_BASE64` | Keystore rilis (alias `ptsivp`), di-encode base64 |
+| `ANDROID_KEYSTORE_PASSWORD` | Password keystore & key |
+| `SUPABASE_URL` | URL project Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (untuk menerbitkan rilis) |
+
+Tanpa dua secret keystore, CI hanya membuat APK **debug** yang ditandatangani
+kunci acak per build. APK itu tidak bisa dipasang menimpa versi sebelumnya,
+jadi jangan dibagikan ke pengguna.
+
+**Simpan salinan keystore & password di tempat aman.** Kalau hilang, semua
+pengguna harus uninstall aplikasi untuk memasang versi berikutnya.
