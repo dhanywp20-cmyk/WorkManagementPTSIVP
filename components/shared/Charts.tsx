@@ -95,7 +95,7 @@ export function MonthBarChart({
       </div>
       <div className="flex gap-[2px] mt-1">
         {values.map((_, i) => (
-          <span key={i} className={`flex-1 text-center text-[9px] leading-none ${i === sorot ? 'font-bold text-slate-700' : 'text-slate-400'}`}>{teks[i] ?? ''}</span>
+          <span key={i} className={`flex-1 text-center text-[9px] leading-none ${i === sorot ? 'font-bold text-slate-700' : 'text-slate-500'}`}>{teks[i] ?? ''}</span>
         ))}
       </div>
     </div>
@@ -126,7 +126,7 @@ export function DonutChart({
     return (
       <div style={{ width: size, height: size }}
         className="flex items-center justify-center flex-shrink-0">
-        <span className="text-[10px] text-slate-300 font-bold">—</span>
+        <span className="text-[10px] text-slate-400 font-bold">—</span>
       </div>
     );
   }
@@ -172,7 +172,7 @@ export function TrendBadge({
 }) {
   const abs = Math.abs(delta);
   if (abs < 0.05) {
-    return <span className="text-[10px] text-slate-400 font-medium">— 0{suffix}</span>;
+    return <span className="text-[10px] text-slate-500 font-medium">— 0{suffix}</span>;
   }
   const bagus = lowerIsBetter ? delta < 0 : delta > 0;
   const panah = delta > 0 ? '▲' : '▼';

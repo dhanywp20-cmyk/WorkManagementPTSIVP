@@ -147,7 +147,7 @@ export const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Ok
 
 export const MN     = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
 
-export const KPI_COLOR = '#0284c7';
+export const KPI_COLOR = '#0369a1'; // sky-700: teks putih di atasnya lolos AA (sky-600 hanya 4.1:1)
 
 // Helpers
 

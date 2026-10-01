@@ -132,8 +132,8 @@ export function Baris({ icon, label, value, children }: {
 }) {
   return (
     <div className="px-4 py-2.5 flex items-center justify-between gap-4">
-      <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2 flex-shrink-0">
-        <span className="w-4 text-center text-slate-300"><Ikon nama={icon} ukuran={14} /></span> {label}
+      <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 flex-shrink-0">
+        <span className="w-4 text-center text-slate-400"><Ikon nama={icon} ukuran={14} /></span> {label}
       </span>
       <div className="min-w-0 text-right">
         {children ?? <span className="text-sm font-semibold text-slate-800 truncate">{value || '—'}</span>}
@@ -151,14 +151,14 @@ export function Kelompok({ label, kosong, orang, warna }: {
     <div>
       <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: warna }}>{label}</p>
       {orang.length === 0 ? (
-        <p className="text-xs text-slate-300 italic">{kosong}</p>
+        <p className="text-xs text-slate-500 italic">{kosong}</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {orang.map((o, i) => (
             <span key={`${o.full_name}-${i}`}
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 border border-slate-200 text-slate-700">
               {o.full_name}
-              {o.jabatan && <span className="text-slate-400 font-normal">· {o.jabatan}</span>}
+              {o.jabatan && <span className="text-slate-500 font-normal">· {o.jabatan}</span>}
             </span>
           ))}
         </div>
@@ -188,7 +188,7 @@ export function StripInfo({ icon, judul, keterangan, angka, satuan }: {
       {angka !== undefined && (
         <div className="text-right flex-shrink-0 pl-2">
           <p className="text-xl font-black text-slate-800 leading-none">{angka}</p>
-          {satuan && <p className="text-[10px] text-slate-400 mt-1">{satuan}</p>}
+          {satuan && <p className="text-[10px] text-slate-500 mt-1">{satuan}</p>}
         </div>
       )}
     </div>

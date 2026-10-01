@@ -185,19 +185,19 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filtered.length === 0 && (
-                    <tr><td colSpan={9} className="text-center py-10 text-slate-400">Tidak ada peserta yang cocok</td></tr>
+                    <tr><td colSpan={9} className="text-center py-10 text-slate-500">Tidak ada peserta yang cocok</td></tr>
                   )}
                   {filtered.map((a: any) => {
                     const pr = peringkatPerAttempt.get(a.id) ?? 0;
                     return (
                     <tr key={a.id} className="stagger-item hover:bg-slate-50 transition-colors">
                       <td className="px-5 py-3.5 text-center">
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mx-auto ${pr === 1 ? 'bg-amber-400 text-white' : pr === 2 ? 'bg-slate-400 text-white' : pr === 3 ? 'bg-orange-400 text-white' : 'text-slate-400'}`}>
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-black mx-auto ${pr === 1 ? 'bg-amber-400 text-white' : pr === 2 ? 'bg-slate-400 text-white' : pr === 3 ? 'bg-orange-400 text-white' : 'text-slate-500'}`}>
                           {pr <= 3 ? ['🥇','🥈','🥉'][pr - 1] : pr}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 font-semibold text-slate-800">
-                        {a.users?.full_name ?? <span className="text-slate-400 italic font-normal">(nama tidak termuat)</span>}
+                        {a.users?.full_name ?? <span className="text-slate-500 italic font-normal">(nama tidak termuat)</span>}
                         {a.users?.sales_division && (
                           <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 align-middle">
                             {a.users.sales_division}
@@ -207,7 +207,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                       <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
                       <td className="px-5 py-3.5 text-center">
                         {a.grading_status === 'pending_review'
-                          ? <span className="text-xs text-amber-500 font-bold"><IkonTeks nama="⏳" />—</span>
+                          ? <span className="text-xs text-amber-700 font-bold"><IkonTeks nama="⏳" />—</span>
                           : <ScoreBadge score={a.score} passing={session?.passing_grade ?? 70} />}
                       </td>
                       <td className="px-5 py-3.5 text-center">
@@ -222,7 +222,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                           const tq = a.total_questions ?? 0;
                           const ts = a.time_taken_sec ?? Infinity;
                           const isFast = tq >= 5 && ts < tq * 5;
-                          if (!tabSw && !isFast) return <span className="text-slate-300 text-sm">—</span>;
+                          if (!tabSw && !isFast) return <span className="text-slate-400 text-sm">—</span>;
                           return (
                             <div className="flex items-center justify-center gap-1 flex-wrap">
                               {isFast && (
@@ -231,7 +231,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                                 </span>
                               )}
                               {tabSw > 0 && (
-                                <span className="text-[11px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                                <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full whitespace-nowrap">
                                   <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {tabSw}× tab
                                 </span>
                               )}
@@ -240,7 +240,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                         })()}
                       </td>
                       <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.time_taken_sec ? `${Math.floor(a.time_taken_sec/60)}m ${a.time_taken_sec%60}s` : '—'}</td>
-                      <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
+                      <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
                       <td className="px-5 py-3.5 text-center">
                         {/* Tombol TIDAK bergantung pada data user berhasil termuat:
                             penilaian hanya butuh user_id (UserAnswerReview mencari
@@ -282,7 +282,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
           <div className="flex justify-center py-16">
             <div className="flex flex-col items-center gap-3">
               <div className="w-8 h-8 rounded-full border-[3px] border-slate-200 border-t-blue-500 animate-spin" />
-              <span className="text-xs text-slate-400 font-medium">Memuat hasil...</span>
+              <span className="text-xs text-slate-500 font-medium">Memuat hasil...</span>
             </div>
           </div>
         )}

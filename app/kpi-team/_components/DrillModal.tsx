@@ -49,7 +49,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
           {/* Ticket Stats */}
           <section>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3"><IkonTeks nama="🎫" />Ticketing</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3"><IkonTeks nama="🎫" />Ticketing</p>
             <div className="grid grid-cols-3 gap-2 mb-3">
               {[
                 { label: 'Ditangani', value: member.ticketsHandled, c: teamColor },
@@ -59,7 +59,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
                 <div key={s.label} className="flex flex-col items-center p-2.5 rounded-xl"
                   style={{ background: `${s.c}12` }}>
                   <span className="text-lg sm:text-2xl font-black leading-none" style={{ color: s.c }}>{s.value}</span>
-                  <span className="text-[10px] text-slate-400 mt-0.5 text-center leading-tight">{s.label}</span>
+                  <span className="text-[10px] text-slate-500 mt-0.5 text-center leading-tight">{s.label}</span>
                 </div>
               ))}
             </div>
@@ -72,13 +72,13 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
                 <ProgressBar value={member.ticketsSolved} max={member.ticketsHandled} showPct={false} h={7} />
               </div>
               <div className="flex justify-between text-[10px]">
-                <span className="text-slate-400">Rata-rata resolusi</span>
+                <span className="text-slate-500">Rata-rata resolusi</span>
                 <span className="font-semibold text-slate-600">
                   {member.avgResolutionDays === 0 ? '—' : `${member.avgResolutionDays} hari`}
                 </span>
               </div>
               <div className="flex justify-between text-[10px]">
-                <span className="text-slate-400">Avg first response</span>
+                <span className="text-slate-500">Avg first response</span>
                 <span className="font-semibold text-slate-600">
                   {member.ticketAvgResponseHours === 0 ? '—' : `${member.ticketAvgResponseHours} jam`}
                 </span>
@@ -88,7 +88,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
           {/* Reminder */}
           <section>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3"><IkonTeks nama="📅" />Reminder Schedule</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3"><IkonTeks nama="📅" />Reminder Schedule</p>
             <div>
               <div className="flex justify-between text-[10px] mb-1">
                 <span className="text-slate-500">Done Rate</span>
@@ -96,7 +96,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
               </div>
               <ProgressBar value={member.remindersDone} max={member.remindersAssigned} showPct={false} h={7} />
               <div className="flex justify-between text-[10px] mt-1.5">
-                <span className="text-slate-400">Diselesaikan</span>
+                <span className="text-slate-500">Diselesaikan</span>
                 <span className="font-semibold text-slate-600">{member.remindersDone} / {member.remindersAssigned}</span>
               </div>
             </div>
@@ -104,7 +104,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
           {/* Learning Center */}
           <section>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3"><IkonTeks nama="📚" />Learning Center</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3"><IkonTeks nama="📚" />Learning Center</p>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Quiz Attempts', value: member.lcAttempts,  c: '#6366f1' },
@@ -114,7 +114,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
                 <div key={s.label} className="flex flex-col items-center p-2.5 rounded-xl"
                   style={{ background: `${s.c}12` }}>
                   <span className="text-lg sm:text-2xl font-black leading-none" style={{ color: s.c }}>{s.value}</span>
-                  <span className="text-[10px] text-slate-400 mt-0.5 text-center leading-tight">{s.label}</span>
+                  <span className="text-[10px] text-slate-500 mt-0.5 text-center leading-tight">{s.label}</span>
                 </div>
               ))}
             </div>
@@ -122,7 +122,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
           {/* Piket */}
           <section>
-            <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2"><IkonTeks nama="🏪" />Piket Showroom</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2"><IkonTeks nama="🏪" />Piket Showroom</p>
             <div className="flex items-center gap-3">
               <span className="text-xl sm:text-3xl font-black" style={{ color: '#0d9488' }}>{member.piketFilled}</span>
               <span className="text-[11px] text-slate-500">hari piket pada periode ini</span>
@@ -131,7 +131,7 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
           {/* Monthly Trend */}
           <section>
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3"><IkonTeks nama="📈" />Trend Ticket per Bulan</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-3"><IkonTeks nama="📈" />Trend Ticket per Bulan</p>
             <MonthBarChart values={member.monthlyTickets} color={teamColor} />
           </section>
 
@@ -166,11 +166,11 @@ export function SummaryCard({ icon, label, value, sub, color, trend, lowerIsBett
         style={{ background: color, transform: 'translate(30%,-30%)' }} />
       <div className="flex items-center gap-1.5">
         <span className="text-sm"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-        <span className="text-[11px] font-bold uppercase tracking-widest truncate" style={{ color: 'rgba(0,0,0,0.38)' }}>{label}</span>
+        <span className="text-[11px] font-bold uppercase tracking-widest truncate" style={{ color: 'rgba(0,0,0,0.56)' }}>{label}</span>
       </div>
       <div className="text-lg sm:text-2xl font-black leading-none tracking-tight" style={{ color }}>{value}</div>
       <div className="flex items-center justify-between gap-1 min-h-[14px]">
-        {sub && <span className="text-[10px] text-slate-400 truncate">{sub}</span>}
+        {sub && <span className="text-[10px] text-slate-500 truncate">{sub}</span>}
         {trend !== undefined && <TrendBadge delta={trend} lowerIsBetter={lowerIsBetter} />}
       </div>
     </div>

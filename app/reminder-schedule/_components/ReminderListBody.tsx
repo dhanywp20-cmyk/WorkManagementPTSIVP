@@ -189,7 +189,7 @@ export function ReminderListBody({
                       : `${uniqueAssignNames.join(', ')} (${uniqueAssignNames.length} orang)`,
                   },
                   {
-                    label: 'Catatan', span2: true, valueClass: 'text-gray-400',
+                    label: 'Catatan', span2: true, valueClass: 'text-gray-500',
                     value: r.notes && r.notes.length > 60 ? r.notes.substring(0, 60) + '…' : r.notes,
                     hide: !r.notes || r.notes.includes('[REQUEST SALES]'),
                   },
@@ -228,8 +228,8 @@ export function ReminderListBody({
                         : 'Sudah masuk Incentive PTS — klik untuk memastikan ulang'}
                       className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 border ${
                         diluarIncentive(r)
-                          ? 'bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border-amber-300'
-                          : 'bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border-emerald-200'}`}>
+                          ? 'bg-amber-50 hover:bg-amber-500 text-amber-700 hover:text-white border-amber-300'
+                          : 'bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white border-emerald-200'}`}>
                       {syncing === r.id
                         ? <div className="w-3.5 h-3.5 border-2 border-emerald-400/30 border-t-emerald-600 rounded-full animate-spin" />
                         : <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
@@ -243,7 +243,7 @@ export function ReminderListBody({
             );
           })}
           <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-white/90">
-            <span className="text-xs text-gray-400">{groupedReminders.length} event · {filteredReminders.length} jadwal</span>
+            <span className="text-xs text-gray-500">{groupedReminders.length} event · {filteredReminders.length} jadwal</span>
           </div>
           <Paginasi {...hal} satuan="event" />
         </div>
@@ -331,8 +331,8 @@ export function ReminderListBody({
                     {/* Project */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="font-bold text-gray-800 text-xs leading-tight break-words">{(r.project_name || '').trim() || (r.title || '').trim() || '—'}</div>
-                      {r.address && <div className="text-[10px] text-gray-400 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.split(',')[0]}</div>}
-                      <div className="text-[10px] text-gray-400 mt-0.5">{formatDatetime(r.created_at).split(',')[0]}</div>
+                      {r.address && <div className="text-[10px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.split(',')[0]}</div>}
+                      <div className="text-[10px] text-gray-500 mt-0.5">{formatDatetime(r.created_at).split(',')[0]}</div>
                     </td>
                     {/* Product */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
@@ -343,7 +343,7 @@ export function ReminderListBody({
                           style={{ background: productFilter === r.product ? '#6366f1' : '#eef2ff', color: productFilter === r.product ? 'white' : '#4338ca' }}>
                           {r.product}
                         </button>
-                      ) : <span className="text-gray-300 text-xs">—</span>}
+                      ) : <span className="text-gray-400 text-xs">—</span>}
                       {/* Tipe Produk (LED / LCD·Middleware / LED & LCD) — dipilih Sales saat
                           request, dipakai utk routing tim tapi sebelumnya tidak pernah
                           ditampilkan di mana pun (list maupun detail). */}
@@ -413,7 +413,7 @@ export function ReminderListBody({
                       </div>
                       {uniqueAssignNames.length === 1
                         ? <span className="text-[10px] font-bold text-gray-800 block mt-0.5 truncate">{uniqueAssignNames[0]}</span>
-                        : <span className="text-[9px] text-gray-400 mt-0.5 block">{uniqueAssignNames.length} orang</span>
+                        : <span className="text-[9px] text-gray-500 mt-0.5 block">{uniqueAssignNames.length} orang</span>
                       }
                     </td>
                     {/* Status */}
@@ -425,7 +425,7 @@ export function ReminderListBody({
                         if (entries.length === 1) {
                           return <>
                             <StatusBadge status={group[0].status} />
-                            {group[0].wa_sent_h1 && <p className="text-[9px] font-bold text-green-600 mt-0.5"><IkonTeks nama="✅" />WA H-1</p>}
+                            {group[0].wa_sent_h1 && <p className="text-[9px] font-bold text-green-700 mt-0.5"><IkonTeks nama="✅" />WA H-1</p>}
                           </>;
                         }
                         return (
@@ -459,7 +459,7 @@ export function ReminderListBody({
                           <span className="text-[8px] font-bold uppercase leading-tight" style={{ color: '#6366f1' }}>
                             {fmtShort(uniqueDates[0])}–{fmtShort(uniqueDates[uniqueDates.length - 1])}
                           </span>
-                          {r.due_time && <span className="text-[8px] text-gray-400 leading-tight">{r.due_time}</span>}
+                          {r.due_time && <span className="text-[8px] text-gray-500 leading-tight">{r.due_time}</span>}
                         </div>
                       ) : (
                         <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center"
@@ -473,7 +473,7 @@ export function ReminderListBody({
                           <span className="text-[8px] font-bold uppercase leading-tight" style={{ color: today ? '#dc2626' : '#6366f1' }}>
                             {new Date(r.due_date + 'T00:00:00').toLocaleDateString('id-ID', { month: 'short', year: '2-digit' })}
                           </span>
-                          {r.due_time && <span className="text-[8px] text-gray-400 leading-tight">{r.due_time}</span>}
+                          {r.due_time && <span className="text-[8px] text-gray-500 leading-tight">{r.due_time}</span>}
                         </div>
                       )}
                     </td>
@@ -521,8 +521,8 @@ export function ReminderListBody({
                               : 'Sudah masuk Incentive PTS — klik untuk memastikan ulang'}
                             className={`w-8 h-8 shrink-0 rounded-lg flex items-center justify-center transition-all disabled:opacity-50 border ${
                               diluarIncentive(group[0])
-                                ? 'bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border-amber-300'
-                                : 'bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border-emerald-200'}`}>
+                                ? 'bg-amber-50 hover:bg-amber-500 text-amber-700 hover:text-white border-amber-300'
+                                : 'bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white border-emerald-200'}`}>
                             {syncing === group[0].id
                               ? <div className="w-3.5 h-3.5 border-2 border-emerald-400/30 border-t-emerald-600 rounded-full animate-spin" />
                               : <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>}
@@ -544,8 +544,8 @@ export function ReminderListBody({
               karena yang tampil cuma satu halaman. Rentang yang sebenarnya
               ditampilkan Paginasi di bawahnya. */}
           <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
-            <span className="text-[10px] text-gray-400">{groupedReminders.length} event ({filteredReminders.length} jadwal)</span>
-            <span className="text-[10px] text-gray-400">dari {reminders.length} jadwal keseluruhan</span>
+            <span className="text-[10px] text-gray-500">{groupedReminders.length} event ({filteredReminders.length} jadwal)</span>
+            <span className="text-[10px] text-gray-500">dari {reminders.length} jadwal keseluruhan</span>
           </div>
           <Paginasi {...hal} satuan="event" />
         </div>{/* end hidden md:block */}

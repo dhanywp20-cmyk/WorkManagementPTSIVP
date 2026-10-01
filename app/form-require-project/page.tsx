@@ -617,7 +617,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       {canInternalApproveProject(req) && (
         <>
           <button aria-label="Approve & Teruskan ke Admin" onClick={() => setInternalApproveTarget(req)} title="Approve & Teruskan ke Admin"
-            className="w-8 h-8 shrink-0 bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
+            className="w-8 h-8 shrink-0 bg-amber-50 hover:bg-amber-500 text-amber-700 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>
           <button aria-label="Tolak" onClick={() => handleReject(req)} title="Tolak"
@@ -629,7 +629,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       {bisaKelolaRequest && req.status === 'pending' && req.routing_status !== 'internal_review' && (
         <>
           <button aria-label="Approve" onClick={() => handleApprove(req)} title="Approve"
-            className="w-8 h-8 shrink-0 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
+            className="w-8 h-8 shrink-0 bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>
           <button aria-label="Tolak" onClick={() => handleReject(req)} title="Tolak"
@@ -1879,7 +1879,7 @@ Hubungi Admin untuk info lebih lanjut.
                           <span className={`mt-0.5 text-[10px] font-bold px-1.5 py-0.5 whitespace-nowrap ${sc.color} ${sc.bg}`}>{sc.label}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-bold text-gray-800 truncate">{req.project_name}</p>
-                            <p className="text-[10px] text-gray-400 truncate">{req.sales_name} · {req.assign_name || 'Unassigned'}</p>
+                            <p className="text-[10px] text-gray-500 truncate">{req.sales_name} · {req.assign_name || 'Unassigned'}</p>
                           </div>
                         </button>
                       );
@@ -1978,39 +1978,39 @@ Hubungi Admin untuk info lebih lanjut.
           <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
             <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3" aktif={[searchSales, filterHandler, filterStatus, filterMonth]}>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Lokasi</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Lokasi</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     placeholder="Search project / lokasi..."
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales / Requester</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales / Requester</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales / requester..." value={searchSales} onChange={e => setSearchSales(e.target.value)}
                     placeholder="Search sales / requester..."
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Handlers" value={filterHandler} onChange={e => setFilterHandler(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Handlers</option>
                     {ptsMembersList.map(m => <option key={m} value={m}>{m}</option>)}
                   </select>
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none">▼</span>
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Status</option>
@@ -2020,25 +2020,25 @@ Hubungi Admin untuk info lebih lanjut.
                     <option value="completed">Completed</option>
                     <option value="rejected">Rejected</option>
                   </select>
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none">▼</span>
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Years" value={filterYear} onChange={e => setFilterYear(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Years</option>
                     {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
                   </select>
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none">▼</span>
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Bulan</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Bulan</label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="All Months" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                     <option value="all">All Months</option>
@@ -2055,7 +2055,7 @@ Hubungi Admin untuk info lebih lanjut.
                     <option value="11">November</option>
                     <option value="12">Desember</option>
                   </select>
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">▼</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs pointer-events-none">▼</span>
                 </div>
               </div>
             </FilterLipat>
@@ -2153,7 +2153,7 @@ Hubungi Admin untuk info lebih lanjut.
             {/* ── MOBILE: kartu (pola Ticket Troubleshooting) ── */}
             <div className="md:hidden bg-gray-50/70 p-1.5 space-y-1.5">
               {filteredRequests.length === 0 && (
-                <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada request.</div>
+                <div className="px-4 py-10 text-center text-sm text-gray-500">Belum ada request.</div>
               )}
               {hal.potongan.map((req) => {
                 const sc = statusConfig[req.status] || statusConfig.pending;
@@ -2169,7 +2169,7 @@ Hubungi Admin untuk info lebih lanjut.
                     </>}
                     badges={<>
                       <MobileCardBadge className={`border ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</MobileCardBadge>
-                      {req.routing_status === 'internal_review' && <span className="text-[9px] font-bold text-amber-600 whitespace-nowrap"><IkonTeks nama="🔍" />Review Internal</span>}
+                      {req.routing_status === 'internal_review' && <span className="text-[9px] font-bold text-amber-700 whitespace-nowrap"><IkonTeks nama="🔍" />Review Internal</span>}
                       {/* Ruangan lain progresnya beda dari yang ditampilkan di sini (badge di
                           atas cuma ruangan pertama) - buka detail utk lihat per-ruangan. */}
                       {hasDivergentRoomStatus(req) && <span className="text-[9px] font-bold text-orange-600 whitespace-nowrap" title="Progres tiap ruangan berbeda - buka detail untuk melihatnya"><IkonTeks nama="🏘" />Beda per ruangan</span>}
@@ -2259,16 +2259,16 @@ Hubungi Admin untuk info lebih lanjut.
                                 <div className="text-xs text-gray-500 leading-tight mt-0.5 line-clamp-2 break-words" title={req.project_location}>{req.project_location}</div>
                               )}
                               {unread > 0 && <span className="text-[9px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">+{unread} pesan</span>}
-                              <div className="text-xs text-gray-400 mt-0.5">{new Date(req.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</div>                             
+                              <div className="text-xs text-gray-500 mt-0.5">{new Date(req.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</div>                             
                             </div>
                           </div>
                         </td>
                         <td className="px-3 py-3 border-r border-gray-200 align-middle max-w-0">
-                          <div className="text-sm text-gray-700 leading-tight truncate" title={Array.isArray(req.solution_product) ? req.solution_product.join(', ') : req.solution_product}>{Array.isArray(req.solution_product) ? req.solution_product.join(', ') : (req.solution_product || <span className="text-gray-300">—</span>)}</div>
-                          {req.room_name && <div className="text-xs text-teal-600 font-medium mt-0.5 truncate">🛋️ {req.room_name}</div>}
+                          <div className="text-sm text-gray-700 leading-tight truncate" title={Array.isArray(req.solution_product) ? req.solution_product.join(', ') : req.solution_product}>{Array.isArray(req.solution_product) ? req.solution_product.join(', ') : (req.solution_product || <span className="text-gray-400">—</span>)}</div>
+                          {req.room_name && <div className="text-xs text-teal-700 font-medium mt-0.5 truncate">🛋️ {req.room_name}</div>}
                         </td>
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
-                          <div className="text-sm font-semibold text-gray-700 leading-tight">{req.sales_name || <span className="text-gray-300">—</span>}</div>
+                          <div className="text-sm font-semibold text-gray-700 leading-tight">{req.sales_name || <span className="text-gray-400">—</span>}</div>
                           {req.sales_division && <div className="text-xs text-purple-600 font-semibold mt-0.5">{req.sales_division}</div>}
                         </td>
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
@@ -2279,13 +2279,13 @@ Hubungi Admin untuk info lebih lanjut.
                               </div>
                               <div className="text-xs font-semibold text-gray-700 leading-tight">{req.assign_name}</div>
                             </div>
-                          ) : <span className="text-gray-300 text-xs">—</span>}
+                          ) : <span className="text-gray-400 text-xs">—</span>}
                         </td>
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
                           <div className="flex flex-col gap-1 items-start">
                             <span className={`px-2 py-0.5 text-xs font-bold border whitespace-nowrap ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</span>
                             {req.routing_status === 'internal_review' ? (
-                              <p className="text-[9px] font-bold text-amber-600"><IkonTeks nama="🔍" />Menunggu Review Internal</p>
+                              <p className="text-[9px] font-bold text-amber-700"><IkonTeks nama="🔍" />Menunggu Review Internal</p>
                             ) : (
                               req.status === 'pending' && isPTS && !isTeamPTS && <p className="text-[9px] font-bold text-red-500 animate-pulse"><IkonTeks nama="🔔" />Perlu Approval</p>
                             )}
@@ -2297,12 +2297,12 @@ Hubungi Admin untuk info lebih lanjut.
                             <>
                               <div className="text-xs font-semibold text-gray-700">{formatDueDate(req.due_date)}</div>
                               {dueStatus && (
-                                <div className={`text-[10px] font-bold mt-0.5 ${dueStatus.type === 'overdue' ? 'text-red-500' : dueStatus.type === 'urgent' ? 'text-amber-500' : 'text-teal-500'}`}>
+                                <div className={`text-[10px] font-bold mt-0.5 ${dueStatus.type === 'overdue' ? 'text-red-500' : dueStatus.type === 'urgent' ? 'text-amber-700' : 'text-teal-500'}`}>
                                   <Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {dueStatus.label}
                                 </div>
                               )}
                             </>
-                          ) : <span className="text-gray-300 text-xs">—</span>}
+                          ) : <span className="text-gray-400 text-xs">—</span>}
                         </td>
                         <td className="px-3 py-3 border-r border-gray-100 align-middle">
                           <div className="text-[11px] font-semibold text-gray-800 leading-tight">{req.requester_name}</div>
@@ -2314,7 +2314,7 @@ Hubungi Admin untuk info lebih lanjut.
                           )}
                           {/* IVP guest: badge for own requests */}
                           {isIVPGuest && req.requester_id === currentUser.id && (
-                            <div className="text-[9px] font-bold text-teal-600 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">
+                            <div className="text-[9px] font-bold text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">
                               <IkonTeks nama="📋" />Request Saya
                             </div>
                           )}
@@ -2336,8 +2336,8 @@ Hubungi Admin untuk info lebih lanjut.
                 </tbody>
               </table>
               <div className="flex items-center justify-between px-5 py-3 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
-                <span className="text-xs text-gray-400">{filteredRequests.length} request ditemukan</span>
-                <span className="text-xs text-gray-400">dari {requests.length} request keseluruhan</span>
+                <span className="text-xs text-gray-500">{filteredRequests.length} request ditemukan</span>
+                <span className="text-xs text-gray-500">dari {requests.length} request keseluruhan</span>
               </div>
               <Paginasi {...hal} satuan="request" />
             </div>
@@ -2392,13 +2392,13 @@ Hubungi Admin untuk info lebih lanjut.
             </div>
             <div className="p-6 space-y-3">
               <div className="rounded-xl p-3 space-y-1.5 text-sm" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
-                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Project</span><span className="font-bold text-slate-800 text-right">{internalApproveTarget.project_name}</span></div>
-                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Ruangan</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.room_name || '-'}</span></div>
-                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Sales</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.sales_name}{internalApproveTarget.sales_division ? ` · ${internalApproveTarget.sales_division}` : ''}</span></div>
-                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Requester</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.requester_name}</span></div>
-                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Lokasi</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.project_location || '-'}</span></div>
-                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Kebutuhan</span><span className="font-semibold text-slate-700 text-right">{(internalApproveTarget.kebutuhan ?? []).join(', ') || '-'}</span></div>
-                <div className="flex justify-between gap-3"><span className="text-slate-400 text-xs">Diajukan</span><span className="font-semibold text-slate-700 text-right">{formatDate(internalApproveTarget.created_at)}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Project</span><span className="font-bold text-slate-800 text-right">{internalApproveTarget.project_name}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Ruangan</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.room_name || '-'}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Sales</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.sales_name}{internalApproveTarget.sales_division ? ` · ${internalApproveTarget.sales_division}` : ''}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Requester</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.requester_name}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Lokasi</span><span className="font-semibold text-slate-700 text-right">{internalApproveTarget.project_location || '-'}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Kebutuhan</span><span className="font-semibold text-slate-700 text-right">{(internalApproveTarget.kebutuhan ?? []).join(', ') || '-'}</span></div>
+                <div className="flex justify-between gap-3"><span className="text-slate-500 text-xs">Diajukan</span><span className="font-semibold text-slate-700 text-right">{formatDate(internalApproveTarget.created_at)}</span></div>
               </div>
 
               {/* Brand BOTH: dua reviewer, dan approve ini belum tentu yang terakhir. */}
@@ -2530,11 +2530,11 @@ Hubungi Admin untuk info lebih lanjut.
                 <div className="flex-1 min-w-0">
                   <h3 className="font-bold text-gray-900 text-base">Hapus Ticket</h3>
                   <p className="text-sm text-gray-500 mt-0.5 font-medium truncate">{deleteModal.req.project_name}</p>
-                  <p className="text-xs text-gray-400 truncate">{deleteModal.req.requester_name}</p>
+                  <p className="text-xs text-gray-500 truncate">{deleteModal.req.requester_name}</p>
                 </div>
               </div>
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2.5 mb-5">
-                <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 <p className="text-xs font-semibold text-amber-700">Tindakan ini tidak dapat dibatalkan. Ticket beserta seluruh activity log dan overdue setting akan dihapus permanen dari database.</p>
               </div>
               <div className="mb-4">
@@ -2613,10 +2613,10 @@ Hubungi Admin untuk info lebih lanjut.
                       <span className={`mt-0.5 text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap ${sc.color} ${sc.bg} ${sc.border}`}>{sc.label}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-gray-800 truncate">{req.project_name}</p>
-                        <p className="text-xs text-gray-400 truncate">{req.sales_name}{req.assign_name ? ` · ${req.assign_name}` : ''}</p>
-                        {req.due_date && <p className="text-[10px] text-amber-600 font-semibold mt-0.5"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatDueDate(req.due_date)}</p>}
+                        <p className="text-xs text-gray-500 truncate">{req.sales_name}{req.assign_name ? ` · ${req.assign_name}` : ''}</p>
+                        {req.due_date && <p className="text-[10px] text-amber-700 font-semibold mt-0.5"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatDueDate(req.due_date)}</p>}
                       </div>
-                      <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-gray-300 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </button>
                   );
                 })}
@@ -2820,11 +2820,11 @@ Hubungi Admin untuk info lebih lanjut.
             {/* Mobile: tab switcher to toggle between Info and Chat panels */}
             <div className="flex sm:hidden border-b border-gray-200 bg-white flex-shrink-0">
               <button onClick={() => setDetailMobileTab('info')}
-                className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'info' ? 'text-teal-700 border-teal-600' : 'text-gray-400 border-transparent'}`}>
+                className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'info' ? 'text-teal-700 border-teal-600' : 'text-gray-500 border-transparent'}`}>
                 <IkonTeks nama="📋" />Info Project
               </button>
               <button onClick={() => setDetailMobileTab('chat')}
-                className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'chat' ? 'text-teal-700 border-teal-600' : 'text-gray-400 border-transparent'}`}>
+                className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'chat' ? 'text-teal-700 border-teal-600' : 'text-gray-500 border-transparent'}`}>
                 <IkonTeks nama="💬" />Chat
               </button>
             </div>
@@ -2845,7 +2845,7 @@ Hubungi Admin untuk info lebih lanjut.
                     <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm px-5 pt-4 pb-3 border-b border-gray-200 shadow-sm">
                       <div className="flex items-center bg-teal-50 border border-teal-200 rounded-2xl px-2 py-1.5 gap-1 overflow-x-auto">
                         <button aria-label="Sebelumnya" type="button" onClick={() => setDetailRoomIdx(i => Math.max(0, i-1))} disabled={detailRoomIdx === 0}
-                          className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-100 disabled:opacity-30 transition-all flex-shrink-0">
+                          className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 transition-all flex-shrink-0">
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
                         </button>
                         {Array.from({length: totalDetailRooms}).map((_, i) => {
@@ -2867,10 +2867,10 @@ Hubungi Admin untuk info lebih lanjut.
                           );
                         })}
                         <button aria-label="Berikutnya" type="button" onClick={() => setDetailRoomIdx(i => Math.min(totalDetailRooms-1, i+1))} disabled={detailRoomIdx === totalDetailRooms-1}
-                          className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-100 disabled:opacity-30 transition-all flex-shrink-0">
+                          className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 transition-all flex-shrink-0">
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
                         </button>
-                        <span className="text-[10px] text-teal-600 font-bold ml-auto mr-1">{detailRoomIdx+1}/{totalDetailRooms}</span>
+                        <span className="text-[10px] text-teal-700 font-bold ml-auto mr-1">{detailRoomIdx+1}/{totalDetailRooms}</span>
                       </div>
                     </div>
                   );
@@ -2950,7 +2950,7 @@ Hubungi Admin untuk info lebih lanjut.
                     // sepanjang ini di ponsel jadi scroll yang sangat panjang.
                     const ChipDisplay = ({ items }: { items: (string | undefined)[] }) => {
                       const filtered = items.filter(Boolean) as string[];
-                      if (!filtered.length) return <span className="text-sm text-gray-400 italic">—</span>;
+                      if (!filtered.length) return <span className="text-sm text-gray-500 italic">—</span>;
                       return <div className="flex flex-wrap gap-1.5 sm:gap-2">{filtered.map(item => (
                         <span key={item} className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border-2 border-teal-500 bg-teal-50 text-teal-700 text-xs sm:text-sm font-medium">
                           <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 border-teal-500 bg-teal-500 flex items-center justify-center flex-shrink-0"><svg aria-hidden="true" focusable="false" className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg></div>
@@ -3061,8 +3061,8 @@ Hubungi Admin untuk info lebih lanjut.
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Kebutuhan</label><ChipDisplay items={[...(dr.kebutuhan||[]), dr.kebutuhan_other]} /></div>
                       <div><label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Solution Product</label><ChipDisplay items={[...(dr.solution_product||[]), dr.solution_other]} /></div>
                       {(dr.brand_display || dr.brand_display_2) && <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {dr.brand_display && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1"><IkonTeks nama="🖥" />Brand Display</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display}{dr.brand_display_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_pic_name}</span>}</p></div>}
-                        {dr.brand_display_2 && <div><label className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1"><IkonTeks nama="🖥" />Brand Display 2</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display_2}{dr.brand_display_2_pic_name && <span className="text-[11px] text-amber-600 ml-2">· PIC: {dr.brand_display_2_pic_name}</span>}</p></div>}
+                        {dr.brand_display && <div><label className="block text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1"><IkonTeks nama="🖥" />Brand Display</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display}{dr.brand_display_pic_name && <span className="text-[11px] text-amber-700 ml-2">· PIC: {dr.brand_display_pic_name}</span>}</p></div>}
+                        {dr.brand_display_2 && <div><label className="block text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1"><IkonTeks nama="🖥" />Brand Display 2</label><p className="text-sm font-semibold text-gray-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">{dr.brand_display_2}{dr.brand_display_2_pic_name && <span className="text-[11px] text-amber-700 ml-2">· PIC: {dr.brand_display_2_pic_name}</span>}</p></div>}
                         {dr.brand_middleware && <div><label className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1"><IkonTeks nama="🔌" />Brand Middleware</label><p className="text-sm font-semibold text-gray-800 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">{dr.brand_middleware}{dr.brand_middleware_pic_name && <span className="text-[11px] text-violet-600 ml-2">· PIC: {dr.brand_middleware_pic_name}</span>}</p></div>}
                       </div>}
                     </div>
@@ -3206,9 +3206,9 @@ Hubungi Admin untuk info lebih lanjut.
                                 <button onClick={() => { setShowUploadChoice(false); fileInputRef.current?.click(); }}
                                   className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-start gap-2 border-b border-gray-100">
                                   <span className="text-base leading-none"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                                  <span>Foto Survey / Require BOQ<br /><span className="font-normal text-gray-400">Foto lokasi, dokumen kebutuhan dari Sales</span></span>
+                                  <span>Foto Survey / Require BOQ<br /><span className="font-normal text-gray-500">Foto lokasi, dokumen kebutuhan dari Sales</span></span>
                                 </button>
-                                <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-gray-400 uppercase tracking-widest">File PTS - pilih kategori</p>
+                                <p className="px-3.5 pt-2 pb-1 text-[10px] font-bold text-gray-500 uppercase tracking-widest">File PTS - pilih kategori</p>
                                 {/*
                                   Tiga pilihan eksplisit, BUKAN tebak dari ekstensi file - PDF
                                   bisa berarti SLD atau Design 3D (sldFileRef & design3dFileRef
@@ -3225,7 +3225,7 @@ Hubungi Admin untuk info lebih lanjut.
                                   <button key={label} onClick={() => { setShowUploadChoice(false); ref.current?.click(); }}
                                     className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-teal-50 flex items-start gap-2">
                                     <span className="text-base leading-none"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-                                    <span>{label}<br /><span className="font-normal text-gray-400">{hint}</span></span>
+                                    <span>{label}<br /><span className="font-normal text-gray-500">{hint}</span></span>
                                   </button>
                                 ))}
                               </div>
@@ -3245,7 +3245,7 @@ Hubungi Admin untuk info lebih lanjut.
 
                     {isPTS && detailRoomStatus !== 'pending' && detailRoomStatus !== 'rejected' && (
                       <div className="flex flex-wrap gap-2 mb-4 pb-4 border-b border-gray-100">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest self-center">Upload Dokumen:</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest self-center">Upload Dokumen:</p>
                         {[
                           { cat: 'sld' as const, ref: sldFileRef, label: '📐 SLD (PDF)', cls: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100' },
                           { cat: 'boq' as const, ref: boqFileRef, label: '📊 BOQ (Excel)', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' },
@@ -3271,7 +3271,7 @@ Hubungi Admin untuk info lebih lanjut.
 
                     {/* File grid */}
                     {(activeAttachTab === 'all' ? roomAttachments : roomAttachments.filter(a => a.attachment_category === activeAttachTab)).length === 0 ? (
-                      <div className="text-center py-8 text-gray-400">
+                      <div className="text-center py-8 text-gray-500">
                         <div className="text-3xl mb-2">📂</div>
                         <p className="text-xs font-medium">Belum ada file diupload {detailRoomIdx > 0 ? `untuk ${(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}` : ''}</p>
                       </div>
@@ -3308,13 +3308,13 @@ Hubungi Admin untuk info lebih lanjut.
                                       {latest.revision_version ? `Rev ${latest.revision_version}` : 'Latest'} ★
                                     </span>
                                   </div>
-                                  <p className="text-[10px] text-gray-400 mt-0.5">{formatFileSize(latest.file_size)} · {new Date(latest.uploaded_at).toLocaleDateString('id-ID')}</p>
+                                  <p className="text-[10px] text-gray-500 mt-0.5">{formatFileSize(latest.file_size)} · {new Date(latest.uploaded_at).toLocaleDateString('id-ID')}</p>
                                 </div>
                                 <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-teal-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                               </a>
                               {bisaKelolaRequest && (
                                 <button onClick={() => handleDeleteAttachment(latest)} title="Hapus file"
-                                  className="flex-shrink-0 mr-2 w-7 h-7 rounded-lg flex items-center justify-center text-red-400 hover:text-red-600 hover:bg-red-50 transition-all">
+                                  className="flex-shrink-0 mr-2 w-7 h-7 rounded-lg flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50 transition-all">
                                   <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                 </button>
                               )}
@@ -3329,9 +3329,9 @@ Hubungi Admin untuk info lebih lanjut.
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-[10px] font-semibold text-gray-500 truncate">{displayFileName(att.file_name)}</p>
-                                    <p className="text-[9px] text-gray-400">{att.revision_version ? `Rev ${att.revision_version}` : ''} · {new Date(att.uploaded_at).toLocaleDateString('id-ID')}</p>
+                                    <p className="text-[9px] text-gray-500">{att.revision_version ? `Rev ${att.revision_version}` : ''} · {new Date(att.uploaded_at).toLocaleDateString('id-ID')}</p>
                                   </div>
-                                  <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-gray-300 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                  <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                                 </a>
                                 {bisaKelolaRequest && (
                                   <button onClick={() => handleDeleteAttachment(att)} title="Hapus file"
@@ -3355,7 +3355,7 @@ Hubungi Admin untuk info lebih lanjut.
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="text-[10px] font-bold text-gray-700 truncate group-hover:text-teal-700">{displayFileName(att.file_name)}</p>
-                                    <p className="text-[9px] text-gray-400">{formatFileSize(att.file_size)}</p>
+                                    <p className="text-[9px] text-gray-500">{formatFileSize(att.file_size)}</p>
                                   </div>
                                 </a>
                                 {bisaKelolaRequest && (
@@ -3385,7 +3385,7 @@ Hubungi Admin untuk info lebih lanjut.
                         <div>
                           <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Target Selesai</label>
                           {detailDueStatus && (
-                            <div className={`mb-2 px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${detailDueStatus.type === 'overdue' ? 'bg-red-100 text-red-600' : detailDueStatus.type === 'urgent' ? 'bg-amber-100 text-amber-600' : 'bg-teal-100 text-teal-600'}`}>
+                            <div className={`mb-2 px-2.5 py-1.5 rounded-lg text-[10px] font-bold ${detailDueStatus.type === 'overdue' ? 'bg-red-100 text-red-600' : detailDueStatus.type === 'urgent' ? 'bg-amber-100 text-amber-700' : 'bg-teal-100 text-teal-700'}`}>
                               <Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailDueStatus.label}
                             </div>
                           )}
@@ -3482,7 +3482,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {/* Room filter tabs for chat */}
                   {(() => {
                     const chatRooms = selectedRequest.rooms || [];
-                    if (chatRooms.length === 0) return <p className="text-[10px] text-gray-400">{messages.filter(m => m.sender_role !== 'system').length} pesan</p>;
+                    if (chatRooms.length === 0) return <p className="text-[10px] text-gray-500">{messages.filter(m => m.sender_role !== 'system').length} pesan</p>;
                     const roomLabels = [
                       { key: 'all', label: '📋 Semua' },
                       { key: selectedRequest.room_name?.trim() || 'Ruangan 1', label: selectedRequest.room_name?.trim() || 'Ruangan 1' },
@@ -3519,7 +3519,7 @@ Hubungi Admin untuk info lebih lanjut.
                           return chatRoomFilter === firstRoomLabel;
                         });
                     if (filteredMsgs.length === 0) return (
-                      <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-400">
+                      <div className="flex flex-col items-center justify-center h-full gap-3 text-gray-500">
                         <div className="text-4xl"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                         <p className="font-medium text-sm">{chatRoomFilter === 'all' ? 'Belum ada pesan' : `Belum ada pesan untuk ${chatRoomFilter}`}</p>
                       </div>
@@ -3538,7 +3538,7 @@ Hubungi Admin untuk info lebih lanjut.
                       return (
                         <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                           <div className={`max-w-[75%] flex flex-col gap-1 ${isMe ? 'items-end' : 'items-start'}`}>
-                            <p className="text-[10px] text-gray-400 font-medium px-1 flex items-center gap-1 flex-wrap">
+                            <p className="text-[10px] text-gray-500 font-medium px-1 flex items-center gap-1 flex-wrap">
                               {isMe ? 'Saya' : (
                                 <>
                                   {msg.sender_role === 'guest' ? '👤' : msg.sender_role === 'team_pts' || msg.sender_role === 'team' ? '👷' : msg.sender_role === 'admin' || msg.sender_role === 'superadmin' ? '⚙️' : '💬'}
@@ -3576,9 +3576,9 @@ Hubungi Admin untuk info lebih lanjut.
                     </div>
                   )}
                   {selectedRequest.status === 'rejected' ? (
-                    <div className="text-center text-xs font-bold text-red-500 bg-red-50 border border-red-200 rounded-xl py-3">Request ditolak. Chat tidak tersedia.{!isPTS && <span className="block mt-1 font-normal text-red-400">Klik &quot;Submit Ulang Request&quot; di atas untuk mengajukan ulang.</span>}</div>
+                    <div className="text-center text-xs font-bold text-red-500 bg-red-50 border border-red-200 rounded-xl py-3">Request ditolak. Chat tidak tersedia.{!isPTS && <span className="block mt-1 font-normal text-red-600">Klik &quot;Submit Ulang Request&quot; di atas untuk mengajukan ulang.</span>}</div>
                   ) : selectedRequest.status === 'pending' ? (
-                    <div className="text-center text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 rounded-xl py-3"><IkonTeks nama="🔒" />Chat tersedia setelah di-approve.</div>
+                    <div className="text-center text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl py-3"><IkonTeks nama="🔒" />Chat tersedia setelah di-approve.</div>
                   ) : (
                     <div className="flex gap-2">
                       <div className="flex-1 flex items-end gap-2 bg-white/90 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-teal-500 transition-all">
@@ -3586,7 +3586,7 @@ Hubungi Admin untuk info lebih lanjut.
                           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                           placeholder="Ketik pesan... (Enter kirim)" rows={1}
                           className="flex-1 bg-transparent text-sm text-gray-800 outline-none resize-none max-h-24 placeholder-gray-400" />
-                        <button onClick={() => chatFileRef.current?.click()} className="text-gray-400 hover:text-teal-600 transition-colors flex-shrink-0">
+                        <button onClick={() => chatFileRef.current?.click()} className="text-gray-500 hover:text-teal-600 transition-colors flex-shrink-0">
                           {uploadingFile ? <div className="w-4 h-4 border-2 border-gray-300 border-t-teal-500 rounded-full animate-spin" /> : <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>}
                         </button>
                         <input ref={chatFileRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx"
@@ -3641,7 +3641,7 @@ Hubungi Admin untuk info lebih lanjut.
                     ))}
                   </optgroup>
                 </select>
-                <p className="text-[11px] text-slate-400 mt-1.5">
+                <p className="text-[11px] text-slate-500 mt-1.5">
                   Kalau dialihkan ke Supervisor, request kembali ke tahap penugasan — Supervisor
                   itu yang menentukan siapa yang mengerjakan. Tujuannya langsung dikabari lewat WA.
                 </p>
@@ -3722,7 +3722,7 @@ Hubungi Admin untuk info lebih lanjut.
                     className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-amber-400 transition-all text-sm bg-white outline-none cursor-pointer"
                     style={{ color: editDueDate ? '#374151' : '#9ca3af' }} />
                   {editDueDate && (
-                    <p className="text-xs text-teal-600 font-semibold mt-1.5">
+                    <p className="text-xs text-teal-700 font-semibold mt-1.5">
                       <IkonTeks nama="📅" />Target: {new Date(editDueDate + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
                   )}
@@ -3758,7 +3758,7 @@ Hubungi Admin untuk info lebih lanjut.
                   <span className="text-[10px] text-amber-700 font-bold ml-auto mr-1 flex-shrink-0">{editRoomIdx + 1}/{1 + editRooms.length}</span>
                   {editRoomAktifBaru && (
                     <button aria-label="Hapus ruangan baru" title="Hapus ruangan baru ini" type="button" onClick={handleEditRemoveNewRoom}
-                      className="flex-shrink-0 p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all">
+                      className="flex-shrink-0 p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all">
                       <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                   )}

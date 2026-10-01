@@ -17,9 +17,9 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
           <div className="flex items-center gap-3">
             <span className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Log</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mb-0.5">Log</p>
               <h2 className="font-bold text-gray-900 text-base">Detail Movement Log</h2>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mt-1 mb-0.5">Tanggal</p>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-gray-500 mt-1 mb-0.5">Tanggal</p>
               <p className="text-xs text-gray-600">{fmtDate(log.tanggal,true)}</p>
             </div>
           </div>
@@ -42,28 +42,28 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
             ].filter(r=>r.value).map(r=>(
               <div key={r.label} className="flex gap-3 px-4 py-3 rounded-xl" style={{background:'#f8fafc',border:'1px solid #e2e8f0'}}>
                 <span className="text-base flex-shrink-0"><Ikon nama={r.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-                <div><p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{r.label}</p>
+                <div><p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">{r.label}</p>
                 <p className="text-sm font-semibold text-gray-800 mt-0.5 whitespace-pre-line">{r.value}</p></div>
               </div>
             ))}
             {typeLines.length>0&&(
               <div className="flex gap-3 px-4 py-3 rounded-xl" style={{background:'#f8fafc',border:'1px solid #e2e8f0'}}>
                 <span className="text-base flex-shrink-0"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                <div><p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Type Barang</p>
+                <div><p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Type Barang</p>
                 <div className="mt-0.5 space-y-0.5">{typeLines.map((l,i)=><p key={i} className="text-sm font-semibold text-gray-800">{l}</p>)}</div></div>
               </div>
             )}
             {log.serial_number&&(
               <div className="flex gap-3 px-4 py-3 rounded-xl" style={{background:'#f8fafc',border:'1px solid #e2e8f0'}}>
                 <span className="text-base flex-shrink-0"><Ikon nama="🔢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                <div><p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Serial Number</p>
+                <div><p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Serial Number</p>
                 <p className="text-sm font-semibold text-gray-800 font-mono mt-0.5">{log.serial_number}</p></div>
               </div>
             )}
           </div>
           {suratUrls.length>0&&(
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2"><IkonTeks nama="📄" />Foto Surat Jalan</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2"><IkonTeks nama="📄" />Foto Surat Jalan</p>
               <div className="flex flex-wrap gap-2">
                 {suratUrls.map((url,i)=>(
                   <a key={i} href={url} target="_blank" rel="noopener noreferrer"
@@ -75,7 +75,7 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
           )}
           {barangUrls.length>0&&(
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-2"><IkonTeks nama="🖼" />Foto Barang</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2"><IkonTeks nama="🖼" />Foto Barang</p>
               <div className="flex flex-wrap gap-2">
                 {barangUrls.map((url,i)=>(
                   <a key={i} href={url} target="_blank" rel="noopener noreferrer"

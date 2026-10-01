@@ -102,12 +102,12 @@ export function FlowSteps({
                   {s.label}
                 </p>
                 {s.pelaku && (
-                  <p className="text-[8px] text-center leading-tight text-slate-400 px-0.5 w-full break-words">
+                  <p className="text-[8px] text-center leading-tight text-slate-500 px-0.5 w-full break-words">
                     {s.pelaku}
                   </p>
                 )}
                 {s.waktu && (
-                  <p className="text-[9px] text-center leading-tight text-slate-400 tabular-nums">
+                  <p className="text-[9px] text-center leading-tight text-slate-500 tabular-nums">
                     {s.waktu}
                   </p>
                 )}

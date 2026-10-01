@@ -420,17 +420,17 @@ function PiketShowroomPageInner() {
                   <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{displayRows.length}</span>
                   {/* Week nav — 2 minggu */}
                   <div className="flex items-center gap-1">
-                    <button onClick={()=>setWeekStart(d=>addDays(d,-28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹‹</button>
-                    <button aria-label="Sebelumnya" onClick={()=>setWeekStart(d=>addDays(d,-14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹</button>
+                    <button onClick={()=>setWeekStart(d=>addDays(d,-28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹‹</button>
+                    <button aria-label="Sebelumnya" onClick={()=>setWeekStart(d=>addDays(d,-14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">‹</button>
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{background:'rgba(220,38,38,0.07)',border:'1px solid rgba(220,38,38,0.2)'}}>
                       <div className="flex flex-col">
                         <span className="text-[11px] font-bold text-red-700 leading-tight">{wLabel}</span>
-                        <span className="text-[10px] text-red-400 leading-tight">{wLabel2}</span>
+                        <span className="text-[10px] text-red-600 leading-tight">{wLabel2}</span>
                       </div>
                       {!isCurrWeek&&<button onClick={()=>setWeekStart(getMonday(new Date()))} className="text-[9px] font-bold px-2 py-1 rounded-lg text-white flex-shrink-0" style={{background:'#dc2626'}}>Ini</button>}
                     </div>
-                    <button aria-label="Berikutnya" onClick={()=>setWeekStart(d=>addDays(d,14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">›</button>
-                    <button onClick={()=>setWeekStart(d=>addDays(d,28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-400 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">››</button>
+                    <button aria-label="Berikutnya" onClick={()=>setWeekStart(d=>addDays(d,14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">›</button>
+                    <button onClick={()=>setWeekStart(d=>addDays(d,28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">››</button>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -449,7 +449,7 @@ function PiketShowroomPageInner() {
               </div>
               <div className="flex flex-wrap gap-2 items-center">
                 <div className="relative flex-1 min-w-[160px]">
-                  <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                  <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                   <input aria-label="Cari nama, instansi, kegiatan..." value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari nama, instansi, kegiatan..."
                     className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none" style={{background:'rgba(248,250,252,0.9)',border:'1px solid rgba(0,0,0,0.1)'}}/>
                 </div>
@@ -460,15 +460,15 @@ function PiketShowroomPageInner() {
                   <option value="">Semua Kegiatan</option>{JENIS_KEGIATAN_LIST.map(j=><option key={j} value={j}>{j}</option>)}
                 </select>
                 <button onClick={()=>setFilterTamu(f=>!f)} className="px-3 py-2 rounded-xl text-xs font-semibold border"
-                  style={filterTamu?{background:'rgba(16,185,129,0.12)',borderColor:'rgba(16,185,129,0.4)',color:'#059669'}:{background:'transparent',borderColor:'rgba(0,0,0,0.1)',color:'#64748b'}}>
+                  style={filterTamu?{background:'rgba(16,185,129,0.12)',borderColor:'rgba(16,185,129,0.4)',color:'#047857'}:{background:'transparent',borderColor:'rgba(0,0,0,0.1)',color:'#64748b'}}>
                   <IkonTeks nama="🏢" />Ada Tamu
                 </button>
               </div>
               {(filterInstansi||filterKebutuhan||filterDivision||filterKegiatan)&&(
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {filterInstansi&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.35)'}}><span className="text-[10px] font-bold text-sky-600"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterInstansi}</span><button aria-label="Tutup" onClick={()=>setFilterInstansi(null)} className="text-sky-400 text-[10px] ml-1">✕</button></div>)}
+                  {filterInstansi&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.35)'}}><span className="text-[10px] font-bold text-sky-700"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterInstansi}</span><button aria-label="Tutup" onClick={()=>setFilterInstansi(null)} className="text-sky-400 text-[10px] ml-1">✕</button></div>)}
                   {filterKebutuhan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(124,58,237,0.1)',border:'1px solid rgba(124,58,237,0.35)'}}><span className="text-[10px] font-bold text-violet-600"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterKebutuhan}</span><button aria-label="Tutup" onClick={()=>setFilterKebutuhan(null)} className="text-violet-400 text-[10px] ml-1">✕</button></div>)}
-                  {filterDivision&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.35)'}}><span className="text-[10px] font-bold text-amber-600"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterDivision}</span><button aria-label="Tutup" onClick={()=>setFilterDivision(null)} className="text-amber-400 text-[10px] ml-1">✕</button></div>)}
+                  {filterDivision&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.35)'}}><span className="text-[10px] font-bold text-amber-700"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterDivision}</span><button aria-label="Tutup" onClick={()=>setFilterDivision(null)} className="text-amber-400 text-[10px] ml-1">✕</button></div>)}
                   {filterKegiatan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:`${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}18`,border:`1px solid ${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}50`}}><span className="text-[10px] font-bold" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterKegiatan}</span><button aria-label="Tutup" onClick={()=>setFilterKegiatan(null)} className="text-[10px] ml-1" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}>✕</button></div>)}
                 </div>
               )}
@@ -497,7 +497,7 @@ function PiketShowroomPageInner() {
                       <span className="text-xs font-black" style={{color:todayDc?.accent||'#dc2626'}}><IkonTeks nama="📍" />Hari ini: {todayName}</span>
                       <span className="text-[10px] text-slate-500 font-medium">{now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>
                       {todayInView&&todayPIC&&<span className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style={{background:todayDc?.accent||'#dc2626'}}>PIC: {todayPIC}</span>}
-                      {!todayInView&&<span className="text-[10px] text-slate-400 italic">Jadwal hari ini tidak tampil di view ini</span>}
+                      {!todayInView&&<span className="text-[10px] text-slate-500 italic">Jadwal hari ini tidak tampil di view ini</span>}
                     </div>
                   </div>
                 </div>
@@ -512,7 +512,7 @@ function PiketShowroomPageInner() {
               {/* ── MOBILE: list PIC per hari (kalender penuh hanya di web/desktop) ── */}
               <div className="md:hidden divide-y divide-gray-100">
                 {displayRows.length===0?(
-                  <div className="px-4 py-10 text-center text-sm text-gray-400">Belum ada jadwal.</div>
+                  <div className="px-4 py-10 text-center text-sm text-gray-500">Belum ada jadwal.</div>
                 ):displayRows.map((row)=>{
                   const dc=DAY_COLOR[row.day_of_week];
                   const todayRow=row.day_date===toKey(new Date());
@@ -535,14 +535,14 @@ function PiketShowroomPageInner() {
                         {isHoliday?(
                           <span className="text-[11px] font-black px-2 py-0.5 rounded-full text-white" style={{background:'#dc2626'}}><IkonTeks nama="🎌" />LIBUR</span>
                         ):pics.length===0?(
-                          <span className="text-xs text-gray-400 italic">Belum ada PIC</span>
+                          <span className="text-xs text-gray-500 italic">Belum ada PIC</span>
                         ):(
                           <div className="space-y-1">
                             {pics.map(p=>(
                               <div key={p.team} className="flex items-center gap-1.5">
                                 <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0" style={{background:TEAM_LABEL[p.team]?.dot??'#64748b'}}>{p.name!.charAt(0).toUpperCase()}</div>
                                 <span className="text-[13px] font-semibold text-slate-800 truncate">{p.name}</span>
-                                <span className="text-[9px] text-slate-400 flex-shrink-0">{p.team.replace('PTS ','')}</span>
+                                <span className="text-[9px] text-slate-500 flex-shrink-0">{p.team.replace('PTS ','')}</span>
                               </div>
                             ))}
                           </div>
@@ -618,13 +618,13 @@ function PiketShowroomPageInner() {
                       const isHoliday=holidays.includes(row.day_date);
                       const rowKg=kegiatanList.filter(k=>k.piket_id===row.id);
                       const kgToShow=rowKg.length>0?rowKg:[null];
-                      const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#d97706'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
+                      const countdownBadge=todayRow?null:diffDays===1?{label:'BESOK',color:'#b45309'}:diffDays>1&&diffDays<=9?{label:`${diffDays} hr lagi`,color:'#64748b'}:null;
                       return kgToShow.map((kg,kgIdx)=>(
                         <tr key={`${row.id}-${kgIdx}`} className="stagger-item transition-all duration-150"
                           style={{borderBottom:kgIdx===kgToShow.length-1?(todayRow?'2px solid #16a34a60':isHoliday?'2px solid #fca5a580':'2px solid #cbd5e1'):'1px solid #e2e8f0',background:isHoliday?'rgba(254,226,226,0.45)':todayRow?'rgba(22,163,74,0.10)':isVirtual?'rgba(148,163,184,0.04)':idx%2===0?'rgba(255,255,255,1)':'rgba(219,234,254,0.38)'}}>
                           {kgIdx===0&&(
                             <>
-                              <td className="px-3 py-3 text-gray-400 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>{idx+1}</td>
+                              <td className="px-3 py-3 text-gray-500 text-xs align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>{idx+1}</td>
                               <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>
                                 <div className="flex flex-col" style={{borderLeft:`3px solid ${dc.accent}`,paddingLeft:'6px'}}>
                                   <span className="text-base font-black leading-tight" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').getDate()}</span>
@@ -648,7 +648,7 @@ function PiketShowroomPageInner() {
                                   */}
                                   {(()=>{
                                     const picBaris=bacaPicPiket(row);
-                                    if(!picBaris) return <span className="text-gray-300 text-xs">—</span>;
+                                    if(!picBaris) return <span className="text-gray-400 text-xs">—</span>;
                                     const team=labelKelompokPTS(picBaris.team_type)||picBaris.team_type;
                                     const tc=TEAM_LABEL[team]??DEFAULT_TEAM_COLOR;
                                     return(
@@ -699,16 +699,16 @@ function PiketShowroomPageInner() {
                                   </div>
                                 )}
                               </div>
-                            ):<span className="text-gray-300 text-xs">—</span>}
+                            ):<span className="text-gray-400 text-xs">—</span>}
                           </td>
                           {/* Jam */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.jam_mulai?(
                               <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1"><span className="text-[9px] font-bold text-slate-400 w-10 flex-shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
-                                <div className="flex items-center gap-1"><span className="text-[9px] font-bold text-slate-400 w-10 flex-shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[9px] font-bold text-slate-500 w-10 flex-shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[9px] font-bold text-slate-500 w-10 flex-shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
                               </div>
-                            ):<span className="text-gray-300 text-xs">—</span>}
+                            ):<span className="text-gray-400 text-xs">—</span>}
                           </td>
                           {/* Produk */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
@@ -716,19 +716,19 @@ function PiketShowroomPageInner() {
                               <div className="flex flex-col gap-0.5">
                                 {kg.produk.map(p=><span key={p} className="text-[12px] font-semibold" style={{color:dc.accent}}>{p}</span>)}
                               </div>
-                            ):<span className="text-gray-300 text-xs">—</span>}
+                            ):<span className="text-gray-400 text-xs">—</span>}
                           </td>
                           {/* Tamu */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
-                            {kg?.tamu_instansi?(<button onClick={()=>setFilterInstansi(filterInstansi===kg.tamu_instansi?null:kg.tamu_instansi!)} className="flex items-center gap-1 hover:opacity-80 text-left"><span><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-semibold text-slate-700 underline decoration-dotted">{kg.tamu_instansi}</span></button>):<span className="text-gray-300 text-xs">—</span>}
+                            {kg?.tamu_instansi?(<button onClick={()=>setFilterInstansi(filterInstansi===kg.tamu_instansi?null:kg.tamu_instansi!)} className="flex items-center gap-1 hover:opacity-80 text-left"><span><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-semibold text-slate-700 underline decoration-dotted">{kg.tamu_instansi}</span></button>):<span className="text-gray-400 text-xs">—</span>}
                           </td>
                           {/* Sales */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
-                            {kg?.nama_sales?(<div className="flex flex-col gap-0.5"><span className="text-[12px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[11px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>):<span className="text-gray-300 text-xs">—</span>}
+                            {kg?.nama_sales?(<div className="flex flex-col gap-0.5"><span className="text-[12px] font-bold text-slate-800">{kg.nama_sales}</span>{kg.sales_division&&<span className="text-[11px] text-purple-500 font-semibold">{kg.sales_division}</span>}</div>):<span className="text-gray-400 text-xs">—</span>}
                           </td>
                           {/* Keterangan */}
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
-                            {kg?.keterangan?<span className="text-[13px] text-slate-600 leading-snug">{kg.keterangan}</span>:<span className="text-gray-300 text-xs">—</span>}
+                            {kg?.keterangan?<span className="text-[13px] text-slate-600 leading-snug">{kg.keterangan}</span>:<span className="text-gray-400 text-xs">—</span>}
                           </td>
                           {/* Edit By — diambil dari piket_tamu_detail (kg terakhir) */}
                           {kgIdx===0&&(
@@ -741,9 +741,9 @@ function PiketShowroomPageInner() {
                                 return lastEdited
                                   ?<div className="flex flex-col gap-0.5">
                                     <div className="flex items-center gap-1"><span className="text-[9px]"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-[10px] font-semibold text-slate-600 leading-tight">{lastEdited.edited_by_name}</span></div>
-                                    {lastEdited.updated_at&&<span className="text-[8px] text-slate-400 leading-tight">{new Date(lastEdited.updated_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span>}
+                                    {lastEdited.updated_at&&<span className="text-[8px] text-slate-500 leading-tight">{new Date(lastEdited.updated_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span>}
                                   </div>
-                                  :<span className="text-gray-300 text-xs">—</span>;
+                                  :<span className="text-gray-400 text-xs">—</span>;
                               })()}
                             </td>
                           )}
@@ -775,8 +775,8 @@ function PiketShowroomPageInner() {
                   </tbody>
                 </table>
                 <div className="flex items-center justify-between px-5 py-2.5" style={{borderTop:'1px solid #e5e7eb'}}>
-                  <span className="text-[10px] text-gray-400">{displayRows.length} hari kerja ditampilkan</span>
-                  <span className="text-[10px] text-gray-400">{rows.length} total · {kegiatanList.filter(k=>displayRows.some(r=>r.id===k.piket_id)).length} kegiatan</span>
+                  <span className="text-[10px] text-gray-500">{displayRows.length} hari kerja ditampilkan</span>
+                  <span className="text-[10px] text-gray-500">{rows.length} total · {kegiatanList.filter(k=>displayRows.some(r=>r.id===k.piket_id)).length} kegiatan</span>
                 </div>
               </div>
               </>

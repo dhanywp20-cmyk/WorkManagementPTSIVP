@@ -2,6 +2,8 @@
   "name": "team-ticketing-system",
   "version": "1.0.0",
   "private": true,
+  "license": "UNLICENSED",
+  "author": "DWP / IndoVisual Professional Tools",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

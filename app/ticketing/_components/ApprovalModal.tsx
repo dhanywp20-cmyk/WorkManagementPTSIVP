@@ -110,7 +110,7 @@ export function ApprovalModal({
                             );
                           })}
                         </div>
-                        <p className="text-[10px] text-gray-400 mt-1 mb-2">Atau pilih anggota lain:</p>
+                        <p className="text-[10px] text-gray-500 mt-1 mb-2">Atau pilih anggota lain:</p>
                       </div>
                     );
                   })()}

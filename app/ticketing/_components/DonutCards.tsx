@@ -113,7 +113,7 @@ export function HandlerDonutCard({
         </div>
       </div>
       {total === 0 ? (
-        <p className="text-gray-400 text-sm text-center py-4">Belum ada data handler</p>
+        <p className="text-gray-500 text-sm text-center py-4">Belum ada data handler</p>
       ) : (
         <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3">
           {/*  Ukuran donat MENGECIL di layar sempit - sama seperti MiniPieChart

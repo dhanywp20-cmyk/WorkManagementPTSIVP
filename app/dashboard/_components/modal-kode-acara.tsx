@@ -175,7 +175,7 @@ export function KodeAcaraInline() {
     });
   };
 
-  if (muat) return <div className="p-6 text-sm text-slate-400">Memuat pengaturan…</div>;
+  if (muat) return <div className="p-6 text-sm text-slate-500">Memuat pengaturan…</div>;
   if (!form) {
     return (
       <div className="p-6">
@@ -273,7 +273,7 @@ export function KodeAcaraInline() {
                 </button>
               </div>
             </div>
-            <p className="text-[11px] text-slate-400 mt-1.5">
+            <p className="text-[11px] text-slate-500 mt-1.5">
               Minimal 6 karakter. Tombol Acak menghindari 0/O dan 1/I/L — pasangan yang paling sering tertukar saat kode
               dibacakan lalu diketik ulang di ponsel.
             </p>
@@ -282,7 +282,7 @@ export function KodeAcaraInline() {
           {/* Berlaku sampai */}
           <div>
             <label htmlFor="kode-acara-sampai" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">
-              Berlaku Sampai <span className="text-slate-400 normal-case tracking-normal font-medium">(opsional)</span>
+              Berlaku Sampai <span className="text-slate-500 normal-case tracking-normal font-medium">(opsional)</span>
             </label>
             <div className="flex flex-col formulir:flex-row gap-2">
               <input
@@ -302,7 +302,7 @@ export function KodeAcaraInline() {
                 </button>
               )}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1.5">
+            <p className="text-[11px] text-slate-500 mt-1.5">
               Lewat waktu ini kode ditolak walau saklarnya masih menyala. Kosong = berlaku sampai kamu mematikannya
               sendiri — yang gampang terlupa setelah acara bubar.
             </p>
@@ -316,7 +316,7 @@ export function KodeAcaraInline() {
               Link &amp; QR Code Pendaftaran
             </label>
             {!awal?.kode?.trim() ? (
-              <p className="text-sm text-slate-400">Isi dan simpan Kode Acara dulu untuk membuat link pendaftarannya.</p>
+              <p className="text-sm text-slate-500">Isi dan simpan Kode Acara dulu untuk membuat link pendaftarannya.</p>
             ) : (
               <div className="flex flex-col sm:flex-row items-start gap-4">
                 {gambarQr ? (
@@ -324,7 +324,7 @@ export function KodeAcaraInline() {
                   <img src={gambarQr} alt="QR Code pendaftaran" width={128} height={128}
                     className="w-32 h-32 rounded-lg border border-slate-200 flex-shrink-0" />
                 ) : (
-                  <div className="w-32 h-32 rounded-lg border border-slate-200 flex items-center justify-center text-[11px] text-slate-400 flex-shrink-0">
+                  <div className="w-32 h-32 rounded-lg border border-slate-200 flex items-center justify-center text-[11px] text-slate-500 flex-shrink-0">
                     Membuat QR…
                   </div>
                 )}
@@ -409,7 +409,7 @@ export function KodeAcaraInline() {
                 ulang seluruh URL Admin Panel. */}
             <button type="button" onClick={() => ambil()} disabled={muat} title="Muat ulang daftar pendaftar"
               aria-label="Muat ulang daftar pendaftar"
-              className="w-8 h-8 flex-shrink-0 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              className="w-8 h-8 flex-shrink-0 rounded-lg flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
               <svg aria-hidden="true" focusable="false" className={`w-4 h-4 ${muat ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
@@ -417,7 +417,7 @@ export function KodeAcaraInline() {
           </div>
 
           {daftar.length === 0 ? (
-            <p className="p-4 text-sm text-slate-400">Belum ada yang mendaftar lewat kode acara.</p>
+            <p className="p-4 text-sm text-slate-500">Belum ada yang mendaftar lewat kode acara.</p>
           ) : (
             <>
               {/* Daftar namanya sendiri - bergulir sendiri, lepas dari form
@@ -438,10 +438,10 @@ export function KodeAcaraInline() {
                       <tr key={a.id} className="hover:bg-slate-50">
                         <td className="px-3 py-2 font-semibold text-slate-800">
                           {a.full_name || '—'}
-                          {a.username && <span className="block font-normal text-slate-400 truncate">{a.username}</span>}
+                          {a.username && <span className="block font-normal text-slate-500 truncate">{a.username}</span>}
                         </td>
                         <td className="px-3 py-2 text-slate-600">
-                          {a.sales_division || a.team_type || <span className="text-slate-300">—</span>}
+                          {a.sales_division || a.team_type || <span className="text-slate-400">—</span>}
                         </td>
                         <td className="px-3 py-2 text-slate-500 whitespace-nowrap tabular-nums">{tglSingkat(a.created_at)}</td>
                         <td className="px-3 py-2 text-right">

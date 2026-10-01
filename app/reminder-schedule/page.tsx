@@ -3235,7 +3235,7 @@ jangan lupa peralatan & Semangat💪🏼
                 <IkonTeks nama="📩" />Request Jadwal
               </button>
               {pendingReviewCount > 0 && (
-                <span className="text-[11px] font-semibold text-amber-600 flex items-center gap-1">
+                <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-1">
                   <IkonTeks nama="⚠" />Selesaikan {pendingReviewCount} form review dulu
                 </span>
               )}

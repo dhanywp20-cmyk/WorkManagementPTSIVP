@@ -55,7 +55,7 @@ export function MerekSettingInline() {
     beritahu('ok', 'Berhasil diunggah. Lihat pratinjaunya, lalu tekan Simpan.');
   };
 
-  if (!siap) return <div className="p-6 text-sm text-slate-400">Memuat pengaturan…</div>;
+  if (!siap) return <div className="p-6 text-sm text-slate-500">Memuat pengaturan…</div>;
 
   const tombolSimpan = (
     <button type="button" onClick={simpan} disabled={menyimpan || mengunggah !== null}
@@ -88,7 +88,7 @@ export function MerekSettingInline() {
             <div className="min-w-0">
               <div className="flex items-center gap-2.5">
                 <h1 className="text-xl font-bold text-slate-800 tracking-tight leading-tight truncate">{form.namaPlatform || MEREK_BAWAAN.namaPlatform}</h1>
-                <span className="text-slate-300 font-light">|</span>
+                <span className="text-slate-400 font-light">|</span>
                 <span className="text-sm font-bold tracking-wide whitespace-nowrap" style={{ color: form.warnaAksen }}>{form.namaPortal}</span>
               </div>
               <p className="text-slate-500 text-xs font-medium mt-0.5 truncate">{form.namaPerusahaan}</p>
@@ -127,7 +127,7 @@ export function MerekSettingInline() {
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-slate-400 mt-1">Latar netral membuat angka & grafik lebih mudah dibaca. Halaman login tetap memakai fotonya sendiri.</p>
+            <p className="text-[11px] text-slate-500 mt-1">Latar netral membuat angka & grafik lebih mudah dibaca. Halaman login tetap memakai fotonya sendiri.</p>
           </div>
 
           <Unggah label="Gambar Latar Dashboard" jenis="latarDasbor" nilai={form.gambarLatarDasbor} sedang={mengunggah === 'latarDasbor'}
@@ -193,7 +193,7 @@ export function MerekSettingInline() {
       </section>
 
       <div className="flex flex-wrap gap-2 justify-end items-center">
-        <p className="text-[11px] text-slate-400 mr-auto">Dikosongkan = kembali ke nilai bawaan.</p>
+        <p className="text-[11px] text-slate-500 mr-auto">Dikosongkan = kembali ke nilai bawaan.</p>
         <button type="button" onClick={() => setForm(MEREK_BAWAAN)}
           className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">
           Kembalikan semua ke bawaan
@@ -201,7 +201,7 @@ export function MerekSettingInline() {
         {tombolSimpan}
       </div>
 
-      <p className="text-[11px] text-slate-400 leading-relaxed">
+      <p className="text-[11px] text-slate-500 leading-relaxed">
         Tersimpan di database, bukan di kode - berlaku untuk semua orang tanpa deploy ulang.
         Halaman yang sedang terbuka di perangkat lain ikut berubah setelah dimuat ulang.
       </p>
@@ -221,7 +221,7 @@ function Kepala({ judul, catatan }: { judul: string; catatan: string }) {
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <span className="block text-[10px] font-bold tracking-widest uppercase text-slate-400">{children}</span>;
+  return <span className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">{children}</span>;
 }
 
 function KotakLogo({ url, a, b, tembus, sisi }: { url: string; a?: string; b?: string; tembus?: boolean; sisi: number }) {
@@ -258,7 +258,7 @@ function Unggah({ label, jenis, nilai, sedang, keterangan, onBerkas, onHapus }: 
           {nilai
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={nilai} alt="" className="w-full h-full object-contain" />
-            : <span className="text-[10px] text-slate-300 font-bold">kosong</span>}
+            : <span className="text-[10px] text-slate-500 font-bold">kosong</span>}
         </div>
         <div className="flex flex-wrap gap-2">
           <input ref={input} type="file" accept="image/*" className="hidden" aria-label={`Unggah ${label}`}
@@ -269,13 +269,13 @@ function Unggah({ label, jenis, nilai, sedang, keterangan, onBerkas, onHapus }: 
           </button>
           {nilai && !bawaan && (
             <button type="button" onClick={onHapus} disabled={sedang}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-rose-600 transition-all disabled:opacity-50">
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:text-rose-600 transition-all disabled:opacity-50">
               Kembalikan ke bawaan
             </button>
           )}
         </div>
       </div>
-      <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">{keterangan}</p>
+      <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">{keterangan}</p>
     </div>
   );
 }
@@ -317,7 +317,7 @@ function Geser({ label, nilai, bawaan, catatan, onChange }: {
       <input type="range" min={0} max={1} step={0.02} value={angka} aria-label={label}
         onChange={e => onChange(e.target.value)}
         className="mt-2.5 w-full accent-slate-700 cursor-pointer" />
-      <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">{catatan}</p>
+      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{catatan}</p>
     </div>
   );
 }

@@ -409,7 +409,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
             ))}
           </div>
           {loadingDetail ? (
-            <div className="text-center py-10 text-slate-400">Memuat detail jawaban...</div>
+            <div className="text-center py-10 text-slate-500">Memuat detail jawaban...</div>
           ) : (
             <div className="space-y-4">
               {questions.map((q, idx) => {
@@ -430,7 +430,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                       </div>
                       <div className="ml-2 sm:ml-10 space-y-3">
                         <div className="bg-white rounded-xl border border-slate-200 p-3">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Jawaban Peserta</p>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Jawaban Peserta</p>
                           {ans?.answer_thumb_url ? (
                             /*
                               Yang dimuat daftar ini PRATINJAU-nya, bukan gambar
@@ -453,12 +453,12 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                               </span>
                             </a>
                           ) : (
-                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{ans?.essay_text?.trim() || <span className="italic text-slate-400">Tidak dijawab</span>}</p>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{ans?.essay_text?.trim() || <span className="italic text-slate-500">Tidak dijawab</span>}</p>
                           )}
                         </div>
                         {q.model_answer && (
                           <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-3">
-                            <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest mb-1">Kunci Referensi (untuk admin)</p>
+                            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1">Kunci Referensi (untuk admin)</p>
                             <p className="text-sm text-emerald-800 whitespace-pre-wrap leading-relaxed">{q.model_answer}</p>
                           </div>
                         )}
@@ -569,13 +569,13 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                           <div key={opt} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs transition-all ${style}`}>
                             <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
                             <span className="flex-1">{optVal}</span>
-                            {isCorrectOpt && <span className="text-emerald-600 font-bold">✓ Benar</span>}
+                            {isCorrectOpt && <span className="text-emerald-700 font-bold">✓ Benar</span>}
                             {isUserChoice && !isCorrectOpt && <span className="text-rose-600 font-bold">← Pilihan</span>}
                           </div>
                         );
                       })}
                     </div>
-                    {notAnswered && <p className="ml-2 sm:ml-10 mt-2 text-xs text-slate-400 italic">Tidak dijawab</p>}
+                    {notAnswered && <p className="ml-2 sm:ml-10 mt-2 text-xs text-slate-500 italic">Tidak dijawab</p>}
                   </div>
                 );
               })}
@@ -642,7 +642,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
             <div className="flex-1 min-w-0">
               <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
               <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
-              <div className="flex gap-3 mt-1 text-xs text-slate-400">
+              <div className="flex gap-3 mt-1 text-xs text-slate-500">
                 {a.grading_status === 'pending_review' ? <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_questions} soal essay dikirim</span> : <span><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_correct}/{a.total_questions} benar</span>}
                 <span><IkonTeks nama="🎯" />Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
                 {a.time_taken_sec && <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
@@ -741,7 +741,7 @@ export function TeamPage() {
                         </div>
                         <div>
                           <p className="font-semibold text-slate-800">{u.full_name}</p>
-                          <p className="text-[10px] text-slate-400">{u.username}</p>
+                          <p className="text-[10px] text-slate-500">{u.username}</p>
                         </div>
                       </div>
                     </td>
@@ -750,13 +750,13 @@ export function TeamPage() {
                     </td>
                     <td className="px-5 py-3.5 text-center font-bold text-slate-700">
                       {ua.length}
-                      {pendingCount > 0 && <span className="ml-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /> {pendingCount}</span>}
+                      {pendingCount > 0 && <span className="ml-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /> {pendingCount}</span>}
                     </td>
                     <td className="px-5 py-3.5 text-center">
-                      {avg !== null ? <span className={`font-bold ${avg >= 70 ? 'text-emerald-600' : 'text-rose-600'}`}>{avg.toFixed(1)}</span> : <span className="text-slate-300">—</span>}
+                      {avg !== null ? <span className={`font-bold ${avg >= 70 ? 'text-emerald-700' : 'text-rose-600'}`}>{avg.toFixed(1)}</span> : <span className="text-slate-400">—</span>}
                     </td>
                     <td className="px-5 py-3.5 text-center">
-                      {gradedUa.length ? <span className="text-xs font-bold text-indigo-600">{Math.round(passed/gradedUa.length*100)}%</span> : <span className="text-slate-300">—</span>}
+                      {gradedUa.length ? <span className="text-xs font-bold text-indigo-600">{Math.round(passed/gradedUa.length*100)}%</span> : <span className="text-slate-400">—</span>}
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       {ua.length > 0 && (

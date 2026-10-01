@@ -33,7 +33,7 @@ import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWid
 // pemakai lama (PermissionAwareDashboard.tsx) tidak perlu ganti sumber impor.
 import {
   type WidgetProps, type WidgetSize, type WidgetDef,
-  WidgetCard, EmptyState, Loading,
+  WidgetCard, EmptyState, Loading, AKSEN_UTAMA,
 } from './primitives';
 export type { WidgetProps, WidgetSize, WidgetDef };
 export { WidgetCard, EmptyState, Loading };
@@ -53,6 +53,25 @@ const todayStr = () => new Date().toISOString().split('T')[0];
  * identitasnya, angkanya sendiri tetap tinta gelap supaya terbaca sebagai
  * bilangan, bukan sebagai status.
  */
+/** Cincin progres "sudah / total" - warna ikut ambang (>=80 hijau, >=50 kuning, sisanya oranye). */
+function CincinProgres({ pct, sudah, total }: { pct: number; sudah: number; total: number }) {
+  const r = 34, k = 2 * Math.PI * r;
+  const warna = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#ea580c';
+  return (
+    <div className="relative w-[88px] h-[88px] flex-shrink-0" role="img" aria-label={`${sudah} dari ${total} sudah isi daily report (${pct}%)`}>
+      <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90" aria-hidden="true">
+        <circle cx="40" cy="40" r={r} fill="none" stroke="#e2e8f0" strokeWidth="8" />
+        {pct > 0 && <circle cx="40" cy="40" r={r} fill="none" stroke={warna} strokeWidth="8" strokeLinecap="round"
+          strokeDasharray={`${(Math.max(0, Math.min(100, pct)) / 100) * k} ${k}`} className="transition-[stroke-dasharray] duration-700" />}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
+        <span className="text-xl font-extrabold text-slate-900 tabular-nums">{pct}%</span>
+        <span className="text-[10px] font-semibold text-slate-500 mt-1 tabular-nums">{sudah}/{total}</span>
+      </div>
+    </div>
+  );
+}
+
 function StatPills({ items }: { items: { label: string; value: number; color: string }[] }) {
   return (
     <div className="grid grid-cols-3 gap-3 mb-3">
@@ -60,7 +79,7 @@ function StatPills({ items }: { items: { label: string; value: number; color: st
         <div key={i} className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span aria-hidden="true" className="w-2 h-2 rounded-[3px] flex-shrink-0" style={{ background: s.color }} />
-            <span className="text-[9.5px] font-black uppercase tracking-[0.07em] text-slate-400 truncate">{s.label}</span>
+            <span className="text-[9.5px] font-black uppercase tracking-[0.07em] text-slate-500 truncate">{s.label}</span>
           </div>
           <div className="text-[26px] font-black leading-none mt-1 tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>{s.value}</div>
         </div>
@@ -75,7 +94,7 @@ function MiniRow({ title, sub, tone }: { title: string; sub: string; tone?: stri
       <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: tone ?? '#94a3b8' }} />
       <div className="min-w-0 flex-1">
         <div className="text-xs font-semibold text-slate-700 truncate">{title}</div>
-        <div className="text-[10px] text-slate-400 truncate">{sub}</div>
+        <div className="text-[10px] text-slate-500 truncate">{sub}</div>
       </div>
     </div>
   );
@@ -142,7 +161,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
     return () => { alive = false; };
   }, []);
 
-  if (loading) return <WidgetCard title="Team Monitoring Hari Ini" icon="🧭" accent="#0891b2"><Loading /></WidgetCard>;
+  if (loading) return <WidgetCard title="Daily Report Tim" icon="🧭" accent="#0891b2"><Loading /></WidgetCard>;
 
   const total = rows.length;
   const sudah = rows.filter(r => r.reported).length;
@@ -233,12 +252,12 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
             title="Belum daily report" />
         )}
         {/* Judul kelompok naik dari text-[10px]: keluhannya nama terlalu kecil, dan judul induknya harus tetap lebih tegas dari nama anggotanya. */}
-        <span className={`text-[11px] font-bold truncate max-w-[170px] ${g.ketuaBelumLapor ? 'text-amber-600' : 'text-slate-500'}`}>{g.nama}</span>
+        <span className={`text-[11px] font-bold truncate max-w-[170px] ${g.ketuaBelumLapor ? 'text-amber-700' : 'text-slate-500'}`}>{g.nama}</span>
         {g.jabatan && (
-          <span className="text-[10px] font-semibold text-slate-400 flex-shrink-0">{g.jabatan}</span>
+          <span className="text-[10px] font-semibold text-slate-500 flex-shrink-0">{g.jabatan}</span>
         )}
         {g.anggota.length > 0 && (
-          <span className="text-[10px] font-bold text-slate-300 flex-shrink-0">{g.anggota.length}</span>
+          <span className="text-[10px] font-bold text-slate-500 flex-shrink-0">{g.anggota.length}</span>
         )}
       </div>
       {/*
@@ -277,8 +296,8 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
   );
 
   return (
-    <WidgetCard title="Team Monitoring Hari Ini" icon="🧭" accent="#0891b2"
-      onSeeAll={() => openMenu('daily-report')} seeAllLabel="Daily Report">
+    <WidgetCard title="Daily Report Tim" icon="🧭" accent="#0891b2"
+      onSeeAll={() => openMenu('daily-report')} seeAllLabel="Buka">
       {total === 0 ? (
         <EmptyState text="Belum ada anggota Team PTS terdaftar." />
       ) : (
@@ -290,29 +309,26 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
         // dan pembaca yang melihat angka sama di dua tempat berbeda justru jadi
         // ragu mana yang benar. Kolom angkanya diperlebar 190px -> 220px karena
         // labelnya sekarang di atas angka, bukan di bawahnya.
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-x-6 gap-y-3">
-          {/* Kiri: ringkasan angka + progress */}
-          <div>
-            <StatPills items={[
-              //  'Total', bukan 'Total Team' - judul widget sudah menyebut Team.
-              { label: 'Total', value: total, color: '#0891b2' },
-              { label: 'Sudah', value: sudah, color: '#16a34a' },
-              { label: 'Belum', value: belum, color: belum > 0 ? '#ea580c' : '#94a3b8' },
-            ]} />
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct >= 80 ? '#16a34a' : pct >= 50 ? '#f59e0b' : '#ea580c' }} />
-              </div>
-              <span className="text-[11px] font-bold text-slate-600">{pct}% update</span>
-            </div>
+        /*  Satu kolom: kartu ini kini berdiri di samping Agenda (4 dari 12
+            kolom), bukan selebar halaman. Cincin progres menggantikan tiga
+            angka + batang tipis - satu bentuk yang langsung terbaca
+            "berapa dari berapa". */
+        <div className="flex flex-col gap-4 h-full">
+          <div className="flex items-center gap-4">
+            <CincinProgres pct={pct} sudah={sudah} total={total} />
+            <dl className="grid gap-1.5 text-[12px] flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2"><dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full bg-green-600" />Sudah isi</dt><dd className="font-bold text-slate-900 tabular-nums">{sudah}</dd></div>
+              <div className="flex items-center justify-between gap-2"><dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full" style={{ background: '#ea580c' }} />Belum isi</dt><dd className="font-bold text-slate-900 tabular-nums">{belum}</dd></div>
+              <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-100"><dt className="text-slate-600">Total tim</dt><dd className="font-bold text-slate-900 tabular-nums">{total}</dd></div>
+            </dl>
           </div>
           {/* Kanan: yang belum daily report, dikelompokkan per atasan */}
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1 min-h-0 flex flex-col">
             {belumList.length === 0 ? (
-              <div className="text-xs font-semibold text-green-600 flex items-center h-full min-h-[60px]"><IkonTeks nama="🎉" />Semua tim sudah update Daily Report hari ini!</div>
+              <div className="text-xs font-semibold text-green-700 flex items-center h-full min-h-[60px]"><IkonTeks nama="🎉" />Semua tim sudah update Daily Report hari ini!</div>
             ) : (
               <>
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
                 {/*
                   Ditumpuk vertikal (bukan flex-wrap berdampingan) supaya
                   hierarkinya jelas: Manager selalu di atas, Supervisor
@@ -320,7 +336,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
                   renderKelompok) - bukan tersusun sejajar seolah setara
                   cuma karena kebetulan sama-sama muat di baris yang sama.
                 */}
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-2.5 max-h-[240px] overflow-y-auto overscroll-contain pr-1">
                   {kelompok.akar.map(g => renderKelompok(g, 0))}
                 </div>
               </>
@@ -372,7 +388,7 @@ function BarisRiwayatQuiz({ r, onClick }: { r: RiwayatQuizRingkas; onClick: () =
       {/*  Lencana panah, bukan sekadar chevron tipis - diminta eksplisit
           sebagai penanda "klik untuk buka popup", bukan hiasan yang gampang
           terlewat matanya di kartu sepadat ini. */}
-      <span aria-hidden="true" className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 bg-indigo-100 text-indigo-500">→</span>
+      <span aria-hidden="true" className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 bg-indigo-100 text-indigo-600">→</span>
     </button>
   );
 }
@@ -438,7 +454,7 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           <p className="text-[11px] text-slate-500 leading-snug px-2">Training, quiz online &amp; materi pengembangan tim.</p>
           <button onClick={() => openMenu('learning-center')}
             className="mt-1 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.03]"
-            style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>Buka Learning →</button>
+            style={{ background: AKSEN_UTAMA }}>Buka Learning →</button>
         </div>
       ) : loading ? <Loading /> : (
         <div className="flex flex-col gap-2.5 h-full">
@@ -456,7 +472,7 @@ const LearningWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           </div>
           <button onClick={() => openMenu('learning-center')}
             className="mt-auto px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.02] self-start"
-            style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>Buka Learning →</button>
+            style={{ background: AKSEN_UTAMA }}>Buka Learning →</button>
         </div>
       )}
     </WidgetCard>
@@ -521,7 +537,7 @@ const RiwayatQuizWidget: React.FC<WidgetProps> = ({ user }) => {
 // WIDGET: Piket Showroom - siapa PIC piket hari ini + minggu ini.
 // Muncul utk SEMUA role (info penting bersama: Sales/Marketing perlu tahu PIC).
 // Nama PIC dihitung dgn getRollingNameForDate - SAMA persis dgn halaman Piket.
-interface PicketDay { day: string; dateKey: string; name: string; isToday: boolean; team: string; }
+interface PicketDay { day: string; dateKey: string; name: string; isToday: boolean; team: string; libur: boolean; }
 
 const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   const [loading, setLoading] = useState(true);
@@ -545,7 +561,7 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
         const list: PicketDay[] = DAYS_OF_WEEK.map((day) => {
           const date = getDayDate(monday, day);
           const name = getRollingNameForDate(date, allRows, holidays);
-          return { day, dateKey: toKey(date), name, isToday: toKey(date) === todayKey, team: name ? (teamByName[name] ?? '') : '' };
+          return { day, dateKey: toKey(date), name, isToday: toKey(date) === todayKey, team: name ? (teamByName[name] ?? '') : '', libur: holidays.includes(toKey(date)) };
         });
         if (alive) setDays(list);
       } catch { /* silent */ }
@@ -560,23 +576,27 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   return (
     <WidgetCard title="Piket Showroom" icon="🏪" accent="#0d9488" onSeeAll={() => openMenu('picket-showroom')}>
       <div className="rounded-xl p-3 mb-3 text-center" style={{ background: 'rgba(13,148,136,0.1)' }}>
-        <div className="text-[10px] font-bold text-teal-600 uppercase tracking-wide">PIC Piket Hari Ini</div>
+        <div className="text-[10px] font-bold text-teal-700 uppercase tracking-wide">PIC Piket Hari Ini</div>
         {today && today.name ? (
           <>
             <div className="text-base font-black text-slate-800 mt-0.5">{today.name}</div>
             {today.team && <div className="text-[10px] text-slate-500">{today.team.replace('Team ', '')}</div>}
           </>
         ) : (
-          <div className="text-xs font-semibold text-slate-400 mt-1">Tidak ada piket (libur / akhir pekan)</div>
+          /*  Tiga keadaan berbeda, bukan satu kalimat "libur / akhir pekan"
+              untuk semuanya: hari kerja yang belum dijadwalkan bukan libur. */
+          <div className="text-xs font-semibold text-slate-600 mt-1">
+            {!today ? 'Akhir pekan - tidak ada piket' : today.libur ? 'Hari libur - tidak ada piket' : 'Belum ada PIC terjadwal'}
+          </div>
         )}
       </div>
       <div>
         {days.map(d => (
           <div key={d.day} className="flex items-center gap-2 py-1.5 px-1 border-b border-slate-100 last:border-0"
             style={d.isToday ? { background: 'rgba(13,148,136,0.06)', borderRadius: 8 } : undefined}>
-            <span className="text-[11px] font-bold w-12 flex-shrink-0" style={{ color: d.isToday ? '#0d9488' : '#94a3b8' }}>{d.day}</span>
-            <span className="text-xs font-semibold text-slate-700 truncate flex-1">{d.name || <span className="text-slate-300">— kosong</span>}</span>
-            {d.isToday && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: '#0d9488', color: 'white' }}>Hari ini</span>}
+            <span className="text-[11px] font-bold w-12 flex-shrink-0" style={{ color: d.isToday ? '#0f766e' : '#64748b' }}>{d.day}</span>
+            <span className="text-xs font-semibold text-slate-700 truncate flex-1">{d.name || <span className="text-slate-500 font-normal">{d.libur ? 'Libur' : '—'}</span>}</span>
+            {d.isToday && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: '#0f766e', color: 'white' }}>Hari ini</span>}
           </div>
         ))}
       </div>

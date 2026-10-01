@@ -32,7 +32,7 @@ export function RejectReasonModal({
           </div>
           <div className="p-6 space-y-4">
             <div>
-              <label htmlFor="f-reminder-schedule-components-rejectreasonmodal-1" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Alasan Penolakan *</label>
+              <label htmlFor="f-reminder-schedule-components-rejectreasonmodal-1" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Alasan Penolakan *</label>
               <textarea id="f-reminder-schedule-components-rejectreasonmodal-1" value={reason} onChange={e => setReason(e.target.value)}
                 rows={3} placeholder="Tuliskan alasan penolakan..."
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all resize-none focus:ring-2 focus:ring-red-500/40"

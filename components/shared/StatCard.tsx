@@ -58,7 +58,7 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
       </div>
       <div>
         <p className="text-[11px] sm:text-[13px] font-bold leading-tight" style={{ color: active ? accent : '#1e293b' }}>{label}</p>
-        {sub && <p className="text-[9px] sm:text-[10px] font-medium leading-tight text-slate-500">{sub}</p>}
+        {sub && <p className="text-[9px] sm:text-[10px] font-medium leading-tight text-slate-600">{sub}</p>}
       </div>
     </>
   );

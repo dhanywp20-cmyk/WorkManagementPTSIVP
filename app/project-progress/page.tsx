@@ -402,7 +402,7 @@ function ProjectProgressPageInner() {
     return {
       segmen: [
         { label: 'Selesai', value: selesai, color: '#10b981' },
-        { label: 'Berjalan', value: berjalan.length - selesai, color: '#0891b2' },
+        { label: 'Berjalan', value: berjalan.length - selesai, color: '#0e7490' },
         { label: 'Belum mulai', value: belum.length, color: '#cbd5e1' },
       ],
       berjalan, belum,
@@ -610,7 +610,7 @@ function ProjectProgressPageInner() {
                                     title="Dibuat otomatis dari Reminder Schedule">AUTO</span>
                                 )}
                               </p>
-                              <p className="text-[10px] text-gray-400 font-semibold mt-0.5" style={fontMono}>{formatDatetime(p.updated_at)}</p>
+                              <p className="text-[10px] text-gray-500 font-semibold mt-0.5" style={fontMono}>{formatDatetime(p.updated_at)}</p>
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
                               <span className="text-[11px] font-semibold text-gray-600">{p.client || '—'}</span>
@@ -620,10 +620,10 @@ function ProjectProgressPageInner() {
                                 <>
                                   <p className="text-[11px] font-semibold text-gray-700 truncate">{p.sales_name}</p>
                                   {p.sales_division && (
-                                    <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wide">{p.sales_division}</p>
+                                    <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wide">{p.sales_division}</p>
                                   )}
                                 </>
-                              ) : <span className="text-[11px] text-gray-300">—</span>}
+                              ) : <span className="text-[11px] text-gray-400">—</span>}
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
                               {/* Gaya highlight, bukan pil - sudut tegas & tanpa garis tepi. */}
@@ -641,12 +641,12 @@ function ProjectProgressPageInner() {
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
                               {(() => {
                                 const t = timelineInfo(p);
-                                if (t.state === 'no_date') return <span className="text-[10px] text-gray-300 font-semibold">—</span>;
+                                if (t.state === 'no_date') return <span className="text-[10px] text-gray-400 font-semibold">—</span>;
                                 return (
                                   <div className="flex flex-col gap-0.5">
                                     <span className="px-2 py-0.5 rounded-full text-[10px] font-bold self-start whitespace-nowrap"
                                       style={{ background: t.bg, color: t.color }}>{t.label}</span>
-                                    <span className="text-[9px] text-gray-400 font-semibold" style={fontMono}>
+                                    <span className="text-[9px] text-gray-500 font-semibold" style={fontMono}>
                                       {p.target_date ? `Target ${formatDate(p.target_date)}` : 'Tanpa target'}
                                     </span>
                                   </div>
@@ -656,7 +656,7 @@ function ProjectProgressPageInner() {
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
                               <span className="text-[11px] font-semibold text-gray-600">{agg.total} lokasi</span>
                               {agg.issues > 0 && (
-                                <span className="block text-[10px] font-bold text-amber-600">{agg.issues} isu</span>
+                                <span className="block text-[10px] font-bold text-amber-700">{agg.issues} isu</span>
                               )}
                             </td>
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
@@ -799,7 +799,7 @@ function ProjectProgressPageInner() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-[10px] text-gray-400 font-medium">
+                <p className="mt-1 text-[10px] text-gray-500 font-medium">
                   Hanya Sales ini yang dapat melihat proyek tersebut. Dikosongkan = hanya admin &amp; team.
                 </p>
               </Field>
@@ -1394,13 +1394,13 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
               {isFull && (
                 <div className="grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Mulai</span>
+                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wide">Mulai</span>
                     <input type="date" value={loc.start_date ?? ''}
                       onChange={e => patchLoc(loc.id, { start_date: e.target.value || null })}
                       className={inputSm} />
                   </label>
                   <label className="flex flex-col gap-1">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wide">Target</span>
+                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-wide">Target</span>
                     <input type="date" value={loc.target_date ?? ''}
                       min={loc.start_date ?? undefined}
                       onChange={e => patchLoc(loc.id, { target_date: e.target.value || null })}
@@ -1436,12 +1436,12 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                     <span key={b.state} className="flex items-center gap-1 text-[10px] font-bold"
                       style={{ color: b.count > 0 ? b.color : '#cbd5e1' }}>
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: b.count > 0 ? b.color : '#e2e8f0' }} />
-                      {b.label} {b.percent}% <span className="font-semibold text-gray-400">({b.count})</span>
+                      {b.label} {b.percent}% <span className="font-semibold text-gray-500">({b.count})</span>
                     </span>
                   ))}
                 </div>
                 {loc.components.length === 0 && (
-                  <p className="text-[10px] text-gray-400 font-semibold">
+                  <p className="text-[10px] text-gray-500 font-semibold">
                     Belum ada komponen — progres 0%.
                   </p>
                 )}
@@ -1486,7 +1486,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
                               className="w-6 h-6 rounded object-cover border border-gray-200" />
                           </a>
                           <button aria-label="Tutup" onClick={() => patchComp(loc.id, c.id, { photo_url: null, photo_thumb_url: null })}
-                            title="Hapus foto" className="text-gray-300 hover:text-rose-500 text-[10px] font-bold">✕</button>
+                            title="Hapus foto" className="text-gray-400 hover:text-rose-500 text-[10px] font-bold">✕</button>
                         </span>
                       ) : (
                         <label title="Tambah foto evidence (opsional)"
@@ -1504,7 +1504,7 @@ function DetailEditor({ detail, teamUsers, salesUsers, mode, editableIds, curren
 
                       {isFull && (
                         <button aria-label="Tutup" onClick={() => removeComp(loc.id, c.id)}
-                          className="text-gray-300 hover:text-rose-500 font-bold px-1 flex-shrink-0">✕</button>
+                          className="text-gray-400 hover:text-rose-500 font-bold px-1 flex-shrink-0">✕</button>
                       )}
                     </div>
 

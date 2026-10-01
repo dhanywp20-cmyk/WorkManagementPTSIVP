@@ -351,7 +351,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
           {activeTab === 'list' && (
             <>
               <div className="relative mb-4">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input aria-label="Cari nama, username, atau role..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
                   className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all" />
               </div>
@@ -363,7 +363,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                     <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-bold text-slate-800"><IkonTeks nama="✏" />Edit: {editingUser.full_name}</h3>
-                        <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                        <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="text-slate-500 hover:text-slate-600 font-bold">✕</button>
                       </div>
                       <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                         <div>
@@ -413,7 +413,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             <input id="f-dashboard-components-modal-akun-7" value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
                               placeholder="Contoh: Surabaya, Bandung, Medan..."
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
-                            <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
+                            <p className="text-[10px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                           </div>
                         )}
                         {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
@@ -461,7 +461,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
                             <p className="text-xs text-slate-500"><Username value={user.username} /></p>
                             {user.phone_number && (
-                              <p className="text-xs text-slate-400 mt-0.5"><Ikon nama="📞" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</p>
+                              <p className="text-xs text-slate-500 mt-0.5"><Ikon nama="📞" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</p>
                             )}
                             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                               <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-slate-200 text-slate-600">{labelRole(user.role)}</span>
@@ -495,7 +495,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                         </div>
                       ))}
                       {filteredUsers.length === 0 && (
-                        <div className="text-center py-10 text-slate-400 text-sm">
+                        <div className="text-center py-10 text-slate-500 text-sm">
                           <div className="text-3xl mb-2"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                           Tidak ada akun yang cocok
                         </div>
@@ -548,7 +548,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                     <input id="f-dashboard-components-modal-akun-16" value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                       placeholder="Contoh: Surabaya, Bandung, Medan..."
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" />
-                    <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
+                    <p className="text-[10px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                   </div>
                 )}
                 {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
@@ -863,7 +863,7 @@ export function AccountSettingsInline() {
           <>
             {/* Search bar */}
             <div className="relative mb-4">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Cari nama, username, atau role..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
                 className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all" />
             </div>
@@ -874,7 +874,7 @@ export function AccountSettingsInline() {
               <div className="space-y-4 p-4 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-bold text-slate-800"><IkonTeks nama="✏" />Edit: {editingUser.full_name}</h3>
-                  <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                  <button aria-label="Tutup" onClick={() => { setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }} className="text-slate-500 hover:text-slate-600 font-bold">✕</button>
                 </div>
                 <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                   <div>
@@ -921,7 +921,7 @@ export function AccountSettingsInline() {
                       <input id="f-dashboard-components-modal-akun-26" value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
                         placeholder="Contoh: Surabaya, Bandung, Medan..."
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
-                      <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
+                      <p className="text-[10px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                     </div>
                   )}
                   {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
@@ -965,7 +965,7 @@ export function AccountSettingsInline() {
                           </button>
                         ))}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1.5">
+                      <p className="text-[11px] text-slate-500 mt-1.5">
                         Full Access memberi akses setara admin pada modul <strong>data</strong> (Ticketing,
                         Request Schedule, Piket Showroom, KPI Team, dll) — termasuk edit detail &amp; re-route.
                         Hak kelola akun tetap hanya admin/superadmin.
@@ -997,7 +997,7 @@ export function AccountSettingsInline() {
                           </button>
                         ))}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1.5">
+                      <p className="text-[11px] text-slate-500 mt-1.5">
                         Menentukan apakah namanya ditawarkan saat assign pekerjaan di <strong>Ticketing,
                         Reminder Schedule, dan Request Design</strong>. Matikan untuk akun yang perannya
                         menyetujui &amp; mengarahkan — ia tetap bisa approve, re-route, dan melihat semuanya.
@@ -1033,7 +1033,7 @@ export function AccountSettingsInline() {
                           );
                         })}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1.5">
+                      <p className="text-[11px] text-slate-500 mt-1.5">
                         Mengatur apa yang <strong>dilihat</strong> saja. Mengisi &amp; menyunting kegiatan piket tetap
                         hanya Tim PTS — akun non-PTS tidak mendapat tombol Edit.
                       </p>
@@ -1067,7 +1067,7 @@ export function AccountSettingsInline() {
                   </thead>
                   <tbody>
                     {filteredUsers.length === 0 ? (
-                      <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">Tidak ada akun ditemukan</td></tr>
+                      <tr><td colSpan={6} className="text-center py-10 text-slate-500 text-sm">Tidak ada akun ditemukan</td></tr>
                     ) : filteredUsers.map((user, idx) => {
                       const divisi = (user.role === 'superadmin' || user.role === 'admin')
                         ? 'Admin / Superadmin'
@@ -1081,7 +1081,7 @@ export function AccountSettingsInline() {
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
                           <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{labelRole(user.role)}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
-                          <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-600"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span> : <span className="text-slate-300">—</span>}</td>
+                          <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span> : <span className="text-slate-400">—</span>}</td>
                           <td className="md:sticky md:right-0 px-4 py-2.5" style={{ background: rowBg }}>
                             <div className="flex items-center justify-end gap-1.5">
                               <button onClick={() => {
@@ -1145,7 +1145,7 @@ export function AccountSettingsInline() {
                   <input id="f-dashboard-components-modal-akun-35" value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                     placeholder="Contoh: Surabaya, Bandung, Medan..."
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
-                  <p className="text-[10px] text-slate-400 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
+                  <p className="text-[10px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                 </div>
               )}
               {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
@@ -1187,7 +1187,7 @@ export function AccountSettingsInline() {
               <div className="space-y-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-800"><IkonTeks nama="✅" />Review Pendaftaran: {approvingUser.full_name}</h3>
-                  <button aria-label="Tutup" onClick={() => { setApprovingUser(null); setApproveMenus(DEFAULT_MENU_KEYS); }} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+                  <button aria-label="Tutup" onClick={() => { setApprovingUser(null); setApproveMenus(DEFAULT_MENU_KEYS); }} className="text-slate-500 hover:text-slate-600 font-bold">✕</button>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm bg-white p-3 rounded-lg border border-slate-200">
                   <div><span className="text-xs text-slate-500 uppercase font-bold">Nama</span><p className="font-semibold text-slate-800">{approvingUser.full_name}</p></div>
@@ -1209,7 +1209,7 @@ export function AccountSettingsInline() {
                       const m = menuLabels[key]; const checked = approveMenus.includes(key);
                       return (
                         <button key={key} type="button" onClick={() => setApproveMenus(prev => checked ? prev.filter(k => k !== key) : [...prev, key])}
-                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all text-left text-xs ${checked ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                          className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all text-left text-xs ${checked ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
                           <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? 'border-amber-500 bg-amber-500' : 'border-slate-300 bg-white'}`}>
                             {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                           </div>
@@ -1232,7 +1232,7 @@ export function AccountSettingsInline() {
                 </div>
               </div>
             ) : pendingUsers.length === 0 ? (
-              <div className="text-center py-10 text-slate-400 text-sm">
+              <div className="text-center py-10 text-slate-500 text-sm">
                 <div className="text-3xl mb-2"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 Tidak ada pendaftaran yang menunggu
               </div>

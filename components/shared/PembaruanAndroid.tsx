@@ -38,7 +38,7 @@ export function PembaruanAndroid() {
   const isi = (
     <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 w-full max-w-sm">
       <div className="flex items-start gap-3">
-        <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+        <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
           <Ikon nama="📲" ukuran={20} />
         </span>
         <div className="min-w-0 flex-1">

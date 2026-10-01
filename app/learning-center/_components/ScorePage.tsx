@@ -181,7 +181,7 @@ export function ScorePage({ user }: { user: User }) {
                     <DonutChart segments={c.segments} size={68} strokeWidth={9} label={c.label} />
                     <div className="text-center">
                       <p className="text-xs font-bold text-slate-700">{c.title}</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">{c.sub}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{c.sub}</p>
                     </div>
                   </div>
                 ))}
@@ -206,7 +206,7 @@ export function ScorePage({ user }: { user: User }) {
                 cenderung menyimpulkan urutannya acak/bug, padahal tie-break
                 waktu pengerjaan-nya memang sedang bekerja seperti seharusnya.
               */}
-              <p className="text-[11px] text-slate-400 mb-3 -mt-2 leading-relaxed">
+              <p className="text-[11px] text-slate-500 mb-3 -mt-2 leading-relaxed">
                 Urutan: <b className="text-slate-500">skor rata-rata</b> tertinggi dulu → kalau seri,{' '}
                 <b className="text-slate-500">waktu pengerjaan</b> tercepat menang → kalau keduanya sama persis,
                 peringkatnya <b className="text-slate-500">kembar</b> (nomor yang sama, bukan diacak).
@@ -271,7 +271,7 @@ export function ScorePage({ user }: { user: User }) {
                              jadi ia tidak boleh terbaca seolah menempel di bawah baris atasnya. */
                           r.disisipkan ? 'border-t-2 border-dashed border-indigo-300' : ''
                         }`}>
-                        <td className={`px-3 py-3 text-center font-black text-sm ${r.aku ? 'text-indigo-600' : 'text-slate-300'}`}>
+                        <td className={`px-3 py-3 text-center font-black text-sm ${r.aku ? 'text-indigo-600' : 'text-slate-500'}`}>
                           {r.belumDinilai ? '—' : r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : r.rank}
                         </td>
                         <td className="px-3 py-3">
@@ -285,7 +285,7 @@ export function ScorePage({ user }: { user: User }) {
                                 )}
                               </>
                             ) : (
-                              <span className="font-semibold text-sm text-slate-400 select-none" style={{ filter: 'blur(4px)', userSelect: 'none' }}>
+                              <span className="font-semibold text-sm text-slate-500 select-none" style={{ filter: 'blur(4px)', userSelect: 'none' }}>
                                 {r.nama}
                               </span>
                             )}
@@ -299,7 +299,7 @@ export function ScorePage({ user }: { user: User }) {
                               peringkatnya beda, tanpa apa pun di layar yang
                               menjelaskan. Itu bentuk paling murni dari "kelihatan
                               seperti bug" padahal urutannya benar. */}
-                          <span className={`text-xs font-bold ${r.avg >= 80 ? 'text-emerald-600' : r.avg >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>
+                          <span className={`text-xs font-bold ${r.avg >= 80 ? 'text-emerald-700' : r.avg >= 60 ? 'text-amber-700' : 'text-rose-600'}`}>
                             {r.avg.toFixed(1)}
                           </span>
                         </td>
@@ -309,14 +309,14 @@ export function ScorePage({ user }: { user: User }) {
                             : `${Math.floor(r.avgWaktu / 60)}m ${String(r.avgWaktu % 60).padStart(2, '0')}s`}
                         </td>
                         <td className="px-3 py-3 text-center">
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${r.lulus > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${r.lulus > 0 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
                             {r.lulus}
                           </span>
                         </td>
                       </tr>
                     ))}
                     {papan.length === 0 && (
-                      <tr><td colSpan={5} className="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>
+                      <tr><td colSpan={5} className="text-center py-8 text-slate-500 text-sm">Belum ada data</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -342,10 +342,10 @@ export function ScorePage({ user }: { user: User }) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-slate-800 truncate">{a.lc_quiz_sessions?.session_name ?? '—'}</p>
-                      <p className="text-xs text-slate-400 truncate">{a.lc_quiz_sessions?.materi_name ?? ''}</p>
+                      <p className="text-xs text-slate-500 truncate">{a.lc_quiz_sessions?.materi_name ?? ''}</p>
                     </div>
                     <GradingStatusBadge attempt={a} />
-                    <span className="text-xs text-slate-400 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
+                    <span className="text-xs text-slate-500 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
                   </div>
                 );
               })}
@@ -374,7 +374,7 @@ export function ScorePage({ user }: { user: User }) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="text-center py-10 text-slate-400">
+                  <tr><td colSpan={7} className="text-center py-10 text-slate-500">
                     {search ? 'Tidak ada hasil' : 'Belum ada quiz yang diselesaikan'}
                   </td></tr>
                 )}
@@ -386,19 +386,19 @@ export function ScorePage({ user }: { user: User }) {
                     <td className="px-5 py-3.5 text-center whitespace-nowrap">
                       {ps
                         ? <span className="inline-flex items-baseline gap-1">
-                            <span className={`text-sm font-black ${ps.rank === 1 ? 'text-amber-500' : ps.rank <= 3 ? 'text-slate-600' : 'text-slate-700'}`}>
+                            <span className={`text-sm font-black ${ps.rank === 1 ? 'text-amber-700' : ps.rank <= 3 ? 'text-slate-600' : 'text-slate-700'}`}>
                               {ps.rank <= 3 ? ['🥇','🥈','🥉'][ps.rank - 1] : `#${ps.rank}`}
                             </span>
-                            <span className="text-[10px] text-slate-400">dari {ps.total}</span>
+                            <span className="text-[10px] text-slate-500">dari {ps.total}</span>
                           </span>
-                        : <span className="text-slate-300 text-xs">—</span>}
+                        : <span className="text-slate-400 text-xs">—</span>}
                     </td>
                     <td className="px-5 py-3.5 text-center"><ScoreBadge score={a.score} passing={a.lc_quiz_sessions?.passing_grade ?? 70} /></td>
                     <td className="px-5 py-3.5 text-center text-slate-600">{a.total_correct}/{a.total_questions}</td>
                     <td className="px-5 py-3.5 text-center">
                       <GradingStatusBadge attempt={a} />
                     </td>
-                    <td className="px-5 py-3.5 text-center text-slate-400 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
+                    <td className="px-5 py-3.5 text-center text-slate-500 text-xs">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</td>
                     <td className="px-5 py-3.5 text-center">
                       <button onClick={() => setViewingAttempt(a)}
                         className="px-2 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-all">

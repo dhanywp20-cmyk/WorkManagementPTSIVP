@@ -30,7 +30,7 @@ export function FooterPlatform() {
       <div className="px-3 md:px-6 py-1.5 flex items-center justify-between gap-3">
         <p className="text-[11px] text-slate-500 font-medium truncate min-w-0">
           © {tahun} {merek.namaPerusahaan}
-          {merek.kredit && <span className="text-slate-400"> · {merek.kredit}</span>}
+          {merek.kredit && <span className="text-slate-500"> · {merek.kredit}</span>}
         </p>
         <div className="flex items-center gap-3 flex-shrink-0">
           {/*  Disembunyikan di layar sempit, BUKAN dikecilkan: di ponsel kaki

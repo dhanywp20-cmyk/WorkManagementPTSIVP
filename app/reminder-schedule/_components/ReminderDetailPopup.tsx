@@ -294,7 +294,7 @@ export function ReminderDetailPopup({
                         Form Review ✓
                       </span>
                     ) : (
-                      <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#d97706', border: '1px solid rgba(245,158,11,0.4)' }}>
+                      <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(245,158,11,0.15)', color: '#b45309', border: '1px solid rgba(245,158,11,0.4)' }}>
                         <IkonTeks nama="⏳" />Setelah Completed
                       </span>
                     )}
@@ -346,11 +346,11 @@ export function ReminderDetailPopup({
                   {ada ? (
                     <p className="text-sm font-semibold text-slate-700">
                       {t.progress_start_date ? formatDate(t.progress_start_date) : '—'}
-                      <span className="mx-1.5 text-slate-300">→</span>
+                      <span className="mx-1.5 text-slate-400">→</span>
                       {t.progress_target_date ? formatDate(t.progress_target_date) : '—'}
                     </p>
                   ) : (
-                    <p className="text-sm text-slate-400 italic">Belum ditetapkan</p>
+                    <p className="text-sm text-slate-500 italic">Belum ditetapkan</p>
                   )}
                 </div>
               </div>
@@ -366,7 +366,7 @@ export function ReminderDetailPopup({
                 <span className="text-xl"><Ikon nama="🛡" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">Masa Garansi</p>
-                  <p className="text-sm text-slate-400 italic">Tidak dikonfigurasi</p>
+                  <p className="text-sm text-slate-500 italic">Tidak dikonfigurasi</p>
                 </div>
               </div>
             );
@@ -397,19 +397,19 @@ export function ReminderDetailPopup({
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-2 text-xs">
                   <div>
-                    <p className="text-slate-400 mb-0.5">BAST / Mulai</p>
+                    <p className="text-slate-500 mb-0.5">BAST / Mulai</p>
                     <p className="font-semibold text-slate-700">{bastStr}</p>
                   </div>
                   <div>
-                    <p className="text-slate-400 mb-0.5">Garansi Berakhir</p>
+                    <p className="text-slate-500 mb-0.5">Garansi Berakhir</p>
                     <p className="font-semibold" style={{ color: isInWarranty ? '#0369a1' : '#dc2626' }}>{expiryStr}</p>
                   </div>
                   <div>
-                    <p className="text-slate-400 mb-0.5">Durasi</p>
+                    <p className="text-slate-500 mb-0.5">Durasi</p>
                     <p className="font-semibold text-slate-700">{wy} Tahun</p>
                   </div>
                   <div>
-                    <p className="text-slate-400 mb-0.5">{isInWarranty ? 'Sisa Hari' : 'Sudah Lewat'}</p>
+                    <p className="text-slate-500 mb-0.5">{isInWarranty ? 'Sisa Hari' : 'Sudah Lewat'}</p>
                     <p className="font-bold" style={{ color: isInWarranty ? '#0369a1' : '#dc2626' }}>
                       {isInWarranty ? `${diffDays} hari` : `${Math.abs(diffDays)} hari`}
                     </p>
@@ -449,18 +449,18 @@ export function ReminderDetailPopup({
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   {detailReminder.bast_date && (
                     <div>
-                      <p className="text-slate-400 mb-0.5"><IkonTeks nama="📅" />Tanggal BAST</p>
+                      <p className="text-slate-500 mb-0.5"><IkonTeks nama="📅" />Tanggal BAST</p>
                       <p className="font-semibold text-slate-700">{formatDate(detailReminder.bast_date)}</p>
                     </div>
                   )}
                   {detailReminder.display_type && (
                     <div>
-                      <p className="text-slate-400 mb-0.5"><IkonTeks nama="🖥" />Tipe Display</p>
+                      <p className="text-slate-500 mb-0.5"><IkonTeks nama="🖥" />Tipe Display</p>
                       <p className="font-semibold text-slate-700">{displayLabel[detailReminder.display_type] ?? detailReminder.display_type}</p>
                     </div>
                   )}
                   <div>
-                    <p className="text-slate-400 mb-0.5"><IkonTeks nama="🎛" />Controller Automation</p>
+                    <p className="text-slate-500 mb-0.5"><IkonTeks nama="🎛" />Controller Automation</p>
                     <p className="font-semibold text-slate-700">
                       {detailReminder.requires_controller_automation
                         ? (brandLabel[detailReminder.controller_automation_brand ?? ''] ?? 'Ya')
@@ -468,18 +468,18 @@ export function ReminderDetailPopup({
                     </p>
                   </div>
                   <div>
-                    <p className="text-slate-400 mb-0.5"><IkonTeks nama="🔌" />Middleware / System / Matrix</p>
+                    <p className="text-slate-500 mb-0.5"><IkonTeks nama="🔌" />Middleware / System / Matrix</p>
                     <p className="font-semibold text-slate-700">{detailReminder.requires_middleware ? 'Ya' : 'Tidak'}</p>
                   </div>
                   {!isOnsite && detailReminder.installer_name && (
                     <div>
-                      <p className="text-slate-400 mb-0.5"><IkonTeks nama="🔧" />PTS Daerah</p>
+                      <p className="text-slate-500 mb-0.5"><IkonTeks nama="🔧" />PTS Daerah</p>
                       <p className="font-semibold text-slate-700">{detailReminder.installer_name}</p>
                     </div>
                   )}
                   {!isOnsite && detailReminder.installer_daerah && (
                     <div>
-                      <p className="text-slate-400 mb-0.5"><IkonTeks nama="📍" />Daerah</p>
+                      <p className="text-slate-500 mb-0.5"><IkonTeks nama="📍" />Daerah</p>
                       <p className="font-semibold text-slate-700">{detailReminder.installer_daerah}</p>
                     </div>
                   )}
@@ -539,7 +539,7 @@ export function ReminderDetailPopup({
                 <span className="text-lg"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-xs font-bold text-emerald-700">Jadwal Selesai</p>
-                  <p className="text-[10px] text-emerald-600">Status completed tidak dapat diubah kembali.</p>
+                  <p className="text-[10px] text-emerald-700">Status completed tidak dapat diubah kembali.</p>
                 </div>
               </div>
             ) : (
@@ -574,8 +574,8 @@ export function ReminderDetailPopup({
             {/* Photo upload - opsional untuk status Completed */}
             {detailReminder.status !== 'done' && (pendingStatus ?? detailReminder.status) === 'done' && !showModeModal && (
               <div className="rounded-xl p-3 mb-3" style={{ background: 'rgba(16,185,129,0.07)', border: '1.5px solid rgba(16,185,129,0.3)' }}>
-                <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#059669' }}>
-                  <IkonTeks nama="📸" />Foto Bukti Selesai <span className="text-gray-400 font-normal normal-case">(opsional)</span>
+                <p className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: '#047857' }}>
+                  <IkonTeks nama="📸" />Foto Bukti Selesai <span className="text-gray-500 font-normal normal-case">(opsional)</span>
                 </p>
                 <input
                   ref={statusPhotoRef}
@@ -609,7 +609,7 @@ export function ReminderDetailPopup({
                     style={{ borderColor: 'rgba(16,185,129,0.5)' }}>
                     <span className="text-2xl"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <span className="text-xs font-bold text-emerald-700">Klik untuk upload foto</span>
-                    <span className="text-[10px] text-gray-400">JPG, PNG, WEBP — maks. 10MB</span>
+                    <span className="text-[10px] text-gray-500">JPG, PNG, WEBP — maks. 10MB</span>
                   </button>
                 )}
               </div>
@@ -645,7 +645,7 @@ export function ReminderDetailPopup({
             <div className="rounded-2xl overflow-hidden" style={{ border: '1.5px solid rgba(16,185,129,0.35)', background: 'rgba(16,185,129,0.05)' }}>
               <div className="px-4 py-2.5 flex items-center gap-2" style={{ background: 'rgba(16,185,129,0.12)', borderBottom: '1px solid rgba(16,185,129,0.2)' }}>
                 <span className="text-base"><Ikon nama="📸" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#059669' }}>Foto Bukti Selesai</p>
+                <p className="text-[10px] font-bold tracking-widest uppercase" style={{ color: '#047857' }}>Foto Bukti Selesai</p>
               </div>
               <div className="p-3">
                 <img
@@ -681,7 +681,7 @@ export function ReminderDetailPopup({
           style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '100%' }}>
           <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
             <h3 className="text-white font-bold text-base"><IkonTeks nama="🕘" />Riwayat Perubahan</h3>
-            <p className="text-slate-300 text-[11px] mt-0.5 truncate">{detailReminder.project_name}</p>
+            <p className="text-slate-500 text-[11px] mt-0.5 truncate">{detailReminder.project_name}</p>
             <button aria-label="Tutup" onClick={() => setShowRiwayat(false)}
               className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
           </div>

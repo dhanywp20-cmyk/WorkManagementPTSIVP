@@ -298,7 +298,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                 {loadingData ? (
                   <div className="flex justify-center py-8"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin" /></div>
                 ) : Object.keys(atasanByDiv).length === 0 ? (
-                  <div className="text-center py-10 text-slate-400">
+                  <div className="text-center py-10 text-slate-500">
                     <p className="text-3xl mb-2">👨‍💼</p>
                     <p className="font-semibold">Belum ada mapping atasan</p>
                   </div>
@@ -337,12 +337,12 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                             <span className="font-bold text-amber-800 text-sm">{division}</span>
                             <div className="ml-auto flex items-center gap-2">
                               <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full border border-slate-200"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {divUsers.length} user</span>
-                              <span className="text-[10px] text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200">{maps.length} atasan</span>
+                              <span className="text-[10px] text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200">{maps.length} atasan</span>
                             </div>
                           </div>
                           {divUsers.length > 0 && (
                             <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
-                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Bawahan di Divisi Ini</p>
+                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Bawahan di Divisi Ini</p>
                               <div className="flex flex-wrap gap-1.5">
                                 {divUsers.map(u => {
                                   const cfg = u.jabatan ? JABATAN_CONFIG[u.jabatan as JabatanType] : null;
@@ -360,7 +360,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                         </span>
                                       )}
                                       {u.sales_division && u.sales_division !== division && (
-                                        <span className="text-[9px] text-slate-400 bg-slate-100 px-1 py-0.5 rounded">{u.sales_division}</span>
+                                        <span className="text-[9px] text-slate-500 bg-slate-100 px-1 py-0.5 rounded">{u.sales_division}</span>
                                       )}
                                     </div>
                                   );
@@ -384,14 +384,14 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                       {jabatanBadge(sup)}
                                     </div>
                                     <div className="flex items-center gap-2 mt-0.5">
-                                      <p className="text-[10px] text-slate-400"><Username value={sup?.username} /></p>
+                                      <p className="text-[10px] text-slate-500"><Username value={sup?.username} /></p>
                                       {sup?.phone_number
-                                        ? <span className="text-[10px] text-emerald-600"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(sup.phone_number)}</span>
-                                        : <span className="text-[10px] text-rose-400"><IkonTeks nama="⚠" />No WA</span>}
+                                        ? <span className="text-[10px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(sup.phone_number)}</span>
+                                        : <span className="text-[10px] text-rose-600"><IkonTeks nama="⚠" />No WA</span>}
                                     </div>
                                   </div>
                                   <button aria-label="Tutup" onClick={() => handleDeleteAtasan(m.id)}
-                                    className="p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all flex-shrink-0">
+                                    className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all flex-shrink-0">
                                     <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                   </button>
                                 </div>
@@ -462,7 +462,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                 {loadingData ? (
                   <div className="flex justify-center py-8"><div className="w-6 h-6 rounded-full border-2 border-t-violet-500 border-violet-200 animate-spin" /></div>
                 ) : Object.keys(ivpByDiv).length === 0 ? (
-                  <div className="text-center py-10 text-slate-400"><p className="text-3xl mb-2"><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></p><p className="font-semibold">Belum ada mapping IVP</p></div>
+                  <div className="text-center py-10 text-slate-500"><p className="text-3xl mb-2"><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></p><p className="font-semibold">Belum ada mapping IVP</p></div>
                 ) : (
                   <div className="space-y-3">
                     {Object.entries(ivpByDiv).sort(([a], [b]) => a.localeCompare(b)).map(([division, maps]) => (
@@ -483,14 +483,14 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border" style={(m.brand_type ?? '') === 'IVP' ? { background: '#dbeafe', color: '#1e40af', borderColor: '#93c5fd' } : { background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>{(m.brand_type ?? 'MVI') === 'IVP' ? 'IVP · Global' : 'MVI · House'}</span>
                                   </p>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <p className="text-[10px] text-slate-400"><Username value={ivp?.username} /></p>
+                                    <p className="text-[10px] text-slate-500"><Username value={ivp?.username} /></p>
                                     {ivp?.phone_number
-                                      ? <span className="text-[10px] text-emerald-600"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(ivp.phone_number)}</span>
-                                      : <span className="text-[10px] text-rose-400"><IkonTeks nama="⚠" />No WA</span>}
+                                      ? <span className="text-[10px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(ivp.phone_number)}</span>
+                                      : <span className="text-[10px] text-rose-600"><IkonTeks nama="⚠" />No WA</span>}
                                   </div>
                                 </div>
                                 <button aria-label="Tutup" onClick={() => handleDeleteIvp(m.id)}
-                                  className="p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all flex-shrink-0">
+                                  className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all flex-shrink-0">
                                   <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                               </div>
@@ -512,11 +512,11 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
               <div className="w-56 border-r border-slate-200 flex flex-col flex-shrink-0">
                 <div className="px-4 py-2.5 bg-teal-50 border-b border-teal-100">
                   <p className="text-[10px] font-bold text-teal-700 uppercase tracking-widest">Pilih User</p>
-                  <p className="text-[9px] text-teal-600 mt-0.5">Centang siapa yang di-CC saat user ini buat aktivitas</p>
+                  <p className="text-[9px] text-teal-700 mt-0.5">Centang siapa yang di-CC saat user ini buat aktivitas</p>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   {ccEligibleUsers.length === 0 ? (
-                    <div className="p-4 text-center text-slate-400 text-xs py-10">
+                    <div className="p-4 text-center text-slate-500 text-xs py-10">
                       <p className="text-3xl mb-2">🙅</p>
                       <p>Belum ada user dengan jabatan ter-set</p>
                       <p className="mt-1 text-[9px]">Set jabatan di Account Settings</p>
@@ -533,7 +533,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                           {cfg && <span className="text-xs"><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>}
                           <p className={`text-sm font-bold truncate ${isSelected ? 'text-teal-700' : 'text-slate-700'}`}>{u.full_name}</p>
                         </div>
-                        <p className="text-[9px] text-slate-400 truncate">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
+                        <p className="text-[9px] text-slate-500 truncate">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
                         {myMaps > 0 && <span className="mt-1 inline-block bg-teal-100 text-teal-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full">{myMaps} CC ter-set</span>}
                       </button>
                     );
@@ -544,7 +544,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
               {/* Right: checklist */}
               <div className="flex-1 flex flex-col overflow-hidden min-h-0">
                 {!selectedCCUserId ? (
-                  <div className="flex flex-col items-center justify-center h-full text-slate-400 py-12">
+                  <div className="flex flex-col items-center justify-center h-full text-slate-500 py-12">
                     <p className="text-5xl mb-3">👈</p>
                     <p className="text-sm font-medium">Pilih user di sebelah kiri</p>
                     <p className="text-xs mt-1">Lalu centang siapa yang di-CC saat user ini membuat ticket/form</p>
@@ -555,7 +555,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs font-bold text-teal-800">CC untuk: {selectedUserObj?.full_name}</p>
-                          <p className="text-[10px] text-teal-600">{selectedJabatan} · {selectedUserObj?.sales_division}</p>
+                          <p className="text-[10px] text-teal-700">{selectedJabatan} · {selectedUserObj?.sales_division}</p>
                         </div>
                         <button
                           onClick={() => { const s = new Set(autoSuggested); setCcChecked(s); }}
@@ -567,7 +567,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                       {selectedJabatan && JABATAN_CC_RULES[selectedJabatan as JabatanType] && (
                         <div className="mt-2 p-2 rounded-lg text-[10px]" style={{ background: 'rgba(13,148,136,0.06)', border: '1px solid rgba(13,148,136,0.15)' }}>
                           <span className="font-bold text-teal-700">Rules jabatan {selectedJabatan}:</span>
-                          <span className="text-teal-600 ml-1">
+                          <span className="text-teal-700 ml-1">
                             otomatis CC ke {JABATAN_CC_RULES[selectedJabatan as JabatanType].length > 0
                               ? JABATAN_CC_RULES[selectedJabatan as JabatanType].join(', ')
                               : '(tidak ada — level tertinggi)'}
@@ -578,7 +578,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
                     <div className="flex-1 overflow-y-auto p-4">
                       {potentialCCTargets.length === 0 ? (
-                        <div className="text-center py-8 text-slate-400">
+                        <div className="text-center py-8 text-slate-500">
                           <p className="text-3xl mb-2"><Ikon nama="🏆" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
                           <p className="font-semibold text-sm">Tidak ada user dengan jabatan lebih tinggi</p>
                           <p className="text-xs mt-1">Ini adalah jabatan tertinggi yang tersedia</p>
@@ -606,10 +606,10 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                     <p className="font-bold text-sm" style={{ color: cfg?.color ?? '#374151' }}>{u.full_name}</p>
                                     {isAutoSuggested && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><IkonTeks nama="⭐" />Disarankan</span>}
                                   </div>
-                                  <p className="text-[10px] text-slate-400">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
+                                  <p className="text-[10px] text-slate-500">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
                                   {u.phone_number
-                                    ? <p className="text-[10px] text-emerald-600"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(u.phone_number)}</p>
-                                    : <p className="text-[10px] text-rose-400"><IkonTeks nama="⚠" />No WA — tidak akan di-CC</p>}
+                                    ? <p className="text-[10px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(u.phone_number)}</p>
+                                    : <p className="text-[10px] text-rose-600"><IkonTeks nama="⚠" />No WA — tidak akan di-CC</p>}
                                 </div>
                               </button>
                             );
@@ -1014,7 +1014,7 @@ export function UserManagementInline() {
                 <div className="p-5 space-y-4">
                   <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200">
                     <p className="text-xs font-bold text-emerald-800 mb-1"><IkonTeks nama="🏛" />Struktur Organisasi — satu tempat untuk semua divisi</p>
-                    <p className="text-[11px] text-emerald-600 leading-relaxed">Atur atasan langsung setiap orang (Sales, Marketing, PTS) dalam satu pohon Direktur → Staff. Satu atasan bisa membawahi banyak orang. Klik nama untuk mengubah atasannya.</p>
+                    <p className="text-[11px] text-emerald-700 leading-relaxed">Atur atasan langsung setiap orang (Sales, Marketing, PTS) dalam satu pohon Direktur → Staff. Satu atasan bisa membawahi banyak orang. Klik nama untuk mengubah atasannya.</p>
                   </div>
 
                   {/* Peringatan: akun yang tidak muncul di pohon mana pun. */}
@@ -1047,13 +1047,13 @@ export function UserManagementInline() {
                       </button>
                     ))}
                     <div className="relative flex-1 min-w-[160px]">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                       <input aria-label="Cari nama / username..." type="text" value={orgSearch} onChange={e => setOrgSearch(e.target.value)} placeholder="Cari nama / username..."
                         className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 text-[10px] text-slate-400 flex-wrap">
+                  <div className="flex items-center gap-3 text-[10px] text-slate-500 flex-wrap">
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#185FA5' }} /> Sales</span>
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#D4537E' }} /> Marketing</span>
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#1D9E75' }} /> PTS</span>
@@ -1062,7 +1062,7 @@ export function UserManagementInline() {
 
                   <div className="rounded-xl border border-slate-200 bg-white p-2">
                     {flat.length === 0 ? (
-                      <div className="text-center py-10 text-slate-400 text-sm">
+                      <div className="text-center py-10 text-slate-500 text-sm">
                         <p className="text-2xl mb-1"><Ikon nama="🏛" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
                         Tidak ada hasil. Coba ubah filter atau jalankan migration <code className="text-[10px]">atasan_id</code>.
                       </div>
@@ -1074,15 +1074,15 @@ export function UserManagementInline() {
                         <div key={u.id}>
                           <div className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                             style={{ marginLeft: depth * 18 }} onClick={() => setOrgSelectedId(isSel ? '' : u.id)}>
-                            {depth > 0 && <span className="text-slate-300 text-xs flex-shrink-0">└</span>}
+                            {depth > 0 && <span className="text-slate-400 text-xs flex-shrink-0">└</span>}
                             <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: gs.bg, color: gs.color }}>
                               {u.full_name?.charAt(0)?.toUpperCase() || 'U'}
                             </div>
                             <span className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</span>
                             {jabatanBadge(u)}
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: gs.bg, color: gs.color }}>{grp}</span>
-                            {directCount > 0 && <span className="text-[10px] text-slate-400 flex-shrink-0">· {directCount} bawahan</span>}
-                            <span className="ml-auto text-slate-300 text-xs flex-shrink-0">{isSel ? '▲' : '▼'}</span>
+                            {directCount > 0 && <span className="text-[10px] text-slate-500 flex-shrink-0">· {directCount} bawahan</span>}
+                            <span className="ml-auto text-slate-400 text-xs flex-shrink-0">{isSel ? '▲' : '▼'}</span>
                           </div>
                           {isSel && (
                             <div style={{ marginLeft: depth * 18 + 30 }} className="my-1 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
@@ -1094,7 +1094,7 @@ export function UserManagementInline() {
                                   <option key={c.id} value={c.id}>{c.full_name}{c.jabatan ? ` · ${c.jabatan}` : ''} ({orgGroupOf(c)})</option>
                                 ))}
                               </select>
-                              <p className="text-[10px] text-emerald-500 mt-1.5">Daftar berisi SEMUA user lintas divisi · otomatis tervalidasi anti-loop.</p>
+                              <p className="text-[10px] text-emerald-700 mt-1.5">Daftar berisi SEMUA user lintas divisi · otomatis tervalidasi anti-loop.</p>
                             </div>
                           )}
                         </div>
@@ -1109,7 +1109,7 @@ export function UserManagementInline() {
             {(activeTab === 'atasan' || activeTab === 'ivp') && (
               <div className="px-5 pt-4 flex-shrink-0">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     placeholder={activeTab === 'ivp' ? 'Cari nama sales (IVP / MVI)...' : 'Cari divisi...'}
                     className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
@@ -1161,7 +1161,7 @@ export function UserManagementInline() {
                                 <p className="font-semibold text-slate-800 text-xs truncate">{u?.full_name ?? '—'}</p>
                                 <div className="mt-0.5">{jabatanBadge(u as User)}</div>
                               </div>
-                              <button aria-label="Hapus" onClick={() => handleDeleteAtasan(m.id)} className="text-red-400 hover:text-red-600 flex-shrink-0 p-1 rounded hover:bg-red-50 transition-all" title="Hapus">
+                              <button aria-label="Hapus" onClick={() => handleDeleteAtasan(m.id)} className="text-red-600 hover:text-red-700 flex-shrink-0 p-1 rounded hover:bg-red-50 transition-all" title="Hapus">
                                 <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                               </button>
                             </div>
@@ -1235,8 +1235,8 @@ export function UserManagementInline() {
                       {/* Phone number row */}
                       <div className="px-3 py-1 bg-violet-50/60 border-b border-violet-100">
                         {user?.phone_number
-                          ? <p className="text-[10px] text-emerald-600"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</p>
-                          : <p className="text-[10px] text-rose-400"><IkonTeks nama="⚠" />No WA</p>}
+                          ? <p className="text-[10px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</p>
+                          : <p className="text-[10px] text-rose-600"><IkonTeks nama="⚠" />No WA</p>}
                       </div>
                       {/* Division chips */}
                       <div className="px-3 py-2 flex flex-wrap gap-1.5 bg-white">
@@ -1287,19 +1287,19 @@ export function UserManagementInline() {
                   </div>
                   <button onClick={handleAddProdSup} disabled={saving} className="mt-3 px-5 py-2 bg-rose-600 text-white rounded-lg text-sm font-bold hover:bg-rose-700 disabled:opacity-50 transition-all">{saving ? '...' : '💾 Simpan Routing'}</button>
                   <div className="mt-4 space-y-2">
-                    {prodTeamMaps.length === 0 ? <p className="text-[11px] text-slate-400">Belum ada routing tipe produk.</p> : prodTeamMaps.map(m => (
+                    {prodTeamMaps.length === 0 ? <p className="text-[11px] text-slate-500">Belum ada routing tipe produk.</p> : prodTeamMaps.map(m => (
                       <div key={m.id} className="bg-white border border-rose-200 rounded-lg px-3 py-2">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-xs flex-wrap">
                             <span className="font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded">{m.product_type}</span>
-                            <span className="text-slate-400">→</span>
+                            <span className="text-slate-500">→</span>
                             {m.team_types.map(tt => <span key={tt} className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{tt.replace('Team PTS ', '')}</span>)}
                           </div>
                           <button aria-label="Hapus" onClick={() => handleDeleteProdSup(m.id)} className="text-rose-300 hover:text-red-500 transition-colors" title="Hapus">
                             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                           </button>
                         </div>
-                        <div className="mt-1 text-[10px] text-slate-400">
+                        <div className="mt-1 text-[10px] text-slate-500">
                           Supervisor saat ini: {m.team_types.map(tt => getSupervisorsForTeam(tt)).join(' · ')}
                         </div>
                       </div>
@@ -1325,7 +1325,7 @@ export function UserManagementInline() {
                   <p className="text-xs font-bold text-sky-700 mb-1"><IkonTeks nama="🏷" />Sales Internal / External</p>
                   <p className="text-[11px] text-slate-500 mb-3">Tandai akun Guest mana yang Sales Internal (pemilik akun, approve request dari Sales External) — dipakai pipeline, bukan tebakan dari divisi.</p>
                   <div className="relative mb-3">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                     <input aria-label="Cari nama sales..." value={internalSearch} onChange={e => setInternalSearch(e.target.value)} placeholder="Cari nama sales..."
                       className="w-full pl-9 pr-3 py-2 border border-sky-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-sky-200 bg-white" />
                   </div>
@@ -1340,7 +1340,7 @@ export function UserManagementInline() {
                       <div key={u.id} className="flex items-center justify-between bg-white border border-sky-100 rounded-lg px-3 py-2">
                         <div className="min-w-0">
                           <p className="text-xs font-semibold text-slate-700 truncate">{u.full_name}</p>
-                          <p className="text-[10px] text-slate-400">{u.sales_division || '—'}</p>
+                          <p className="text-[10px] text-slate-500">{u.sales_division || '—'}</p>
                         </div>
                         <button onClick={() => handleToggleInternalSales(u.id, !!u.is_internal_sales)} disabled={savingInternal === u.id}
                           className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex-shrink-0"
@@ -1363,7 +1363,7 @@ export function UserManagementInline() {
               <div className="flex-1 min-h-0 flex flex-col p-5 gap-4">
                 {/* Search user */}
                 <div className="relative flex-shrink-0">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Cari nama user..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama user..."
                     className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
                 </div>
@@ -1430,7 +1430,7 @@ export function UserManagementInline() {
                         </button>
                       </>
                     ) : (
-                      <div className="flex-1 min-h-0 flex items-center justify-center rounded-xl border border-dashed border-slate-200 text-slate-400 text-sm">
+                      <div className="flex-1 min-h-0 flex items-center justify-center rounded-xl border border-dashed border-slate-200 text-slate-500 text-sm">
                         ← Pilih user untuk setting CC
                       </div>
                     )}

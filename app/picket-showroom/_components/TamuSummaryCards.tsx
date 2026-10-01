@@ -50,7 +50,8 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
   // Jam pakai per produk - 6 kategori tetap, All Product distribusi ke semua
   const PRODUK_KATEGORI=['Videowall','LED','IFP','Audio System','Lighting','Kiosk'] as const;
   const PRODUK_ICONS:Record<string,string>={Videowall:'🖥️',LED:'💡',IFP:'📺','Audio System':'🔊',Lighting:'🎬',Kiosk:'🏧'};
-  const PRODUK_COLORS:Record<string,string>={Videowall:'#dc2626',LED:'#d97706',IFP:'#2563eb','Audio System':'#7c3aed',Lighting:'#059669',Kiosk:'#0891b2'};
+  // Tone 700: dipakai sebagai warna TEKS angka, jadi harus lolos kontras AA di latar putih.
+  const PRODUK_COLORS:Record<string,string>={Videowall:'#b91c1c',LED:'#b45309',IFP:'#1d4ed8','Audio System':'#6d28d9',Lighting:'#047857',Kiosk:'#0e7490'};
   const jamPerProduk:Record<string,number>={Videowall:0,LED:0,IFP:0,'Audio System':0,Lighting:0,Kiosk:0};
   activeKg.forEach(k=>{
     if(!k.jam_mulai||!k.jam_selesai||!k.produk?.length)return;
@@ -63,18 +64,18 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
       :k.produk.filter((p):p is typeof PRODUK_KATEGORI[number]=>PRODUK_KATEGORI.includes(p as any));
     targets.forEach(p=>{jamPerProduk[p]=(jamPerProduk[p]||0)+durasi;});
   });
-  const fmtJam=(j:number)=>j===0?'0 hrs':j%1===0?`${j} hrs`:`${j.toFixed(1)} hrs`;
+  const fmtJam=(j:number)=>j%1===0?`${j} jam`:`${j.toFixed(1)} jam`;
 
   const highlights=[
-    {label:'Top Divisi',          val:topDivisi,    hint:`${topDivisiCount}x kegiatan`,   icon:'🏷️', color:'#0891b2'},
-    {label:'Top Produk',          val:topProduk,    hint:'paling sering demo',            icon:'🥇', color:'#059669'},
+    {label:'Top Divisi',          val:topDivisi,    hint:`${topDivisiCount}x kegiatan`,   icon:'🏷️', color:'#0e7490'},
+    {label:'Top Produk',          val:topProduk,    hint:'paling sering demo',            icon:'🥇', color:'#047857'},
     {label:'Kebutuhan Terbanyak', val:topKebutuhan, hint:`${topKebutuhanCount}x diminta`, icon:'🎯', color:'#7c3aed'},
   ];
 
   const periodLabel=selectedMonth!==null
     ?`${MONTH_NAMES[selectedMonth-1]} ${selectedYear}`
     :`Tahun ${selectedYear}`;
-  const accentColor=selectedMonth!==null?'#7c3aed':'#059669';
+  const accentColor=selectedMonth!==null?'#7c3aed':'#047857';
 
   return(
     <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.97)',border:`1px solid ${accentColor}20`,boxShadow:`0 4px 20px ${accentColor}15`}}>
@@ -99,13 +100,13 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
           <div className="flex items-center gap-0.5 rounded-xl p-1 flex-wrap" style={{background:'rgba(15,23,42,0.05)'}}>
             <button onClick={()=>onMonthChange(null)}
               className="px-2 py-1 rounded-lg text-[10px] font-bold transition-all"
-              style={selectedMonth===null?{background:accentColor,color:'white'}:{color:'#64748b'}}>
+              style={selectedMonth===null?{background:accentColor,color:'white'}:{color:'#475569'}}>
               Semua
             </button>
             {MONTH_NAMES.map((mn,i)=>(
               <button key={i} onClick={()=>onMonthChange(i+1)}
                 className="px-2 py-1 rounded-lg text-[10px] font-bold transition-all"
-                style={selectedMonth===i+1?{background:accentColor,color:'white'}:{color:'#64748b'}}>
+                style={selectedMonth===i+1?{background:accentColor,color:'white'}:{color:'#475569'}}>
                 {mn}
               </button>
             ))}
@@ -115,26 +116,28 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
       {/* Single stats row */}
       <div className="flex divide-x divide-slate-100 overflow-x-auto">
         {highlights.map((s,i)=>(
-          <div key={i} className="flex-[2] min-w-[130px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
+          <div key={i} className="flex-[2] min-w-[168px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
             <div className="flex items-center gap-1 mb-0.5">
               <span className="text-[11px]"><Ikon nama={s.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none">{s.label}</span>
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider leading-none whitespace-nowrap">{s.label}</span>
             </div>
             <span className="text-sm font-black leading-tight" style={{color:s.color}}>{s.val}</span>
-            <span className="text-[8px] text-slate-300 leading-none">{s.hint}</span>
+            <span className="text-[8px] text-slate-500 leading-none">{s.hint}</span>
           </div>
         ))}
         <div className="flex-shrink-0 px-1 py-3 flex items-center">
         
         </div>
         {PRODUK_KATEGORI.map(p=>(
-          <div key={p} className="flex-1 min-w-[64px] px-2 py-3 flex flex-col gap-0.5 flex-shrink-0">
-            <div className="flex items-center gap-1 mb-0.5">
-              <span className="text-[11px]">{PRODUK_ICONS[p]}</span>
-              <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest leading-none truncate">{p}</span>
+          <div key={p} className="flex-1 min-w-[104px] px-2.5 py-3 flex flex-col gap-0.5 flex-shrink-0">
+            {/* Nama produk utuh (dulu terpotong "VIDEOW..." / "AUDIO S...") dan
+                ikon garis yang sama dengan kolom di kirinya, bukan emoji. */}
+            <div className="flex items-center gap-1 mb-0.5 text-slate-500">
+              <Ikon nama={PRODUK_ICONS[p]} ukuran={12} className="flex-shrink-0" />
+              <span className="text-[9px] font-bold uppercase tracking-normal leading-none whitespace-nowrap" title={p}>{p === 'Audio System' ? 'Audio' : p}</span>
             </div>
             <span className="text-sm font-black leading-tight" style={{color:PRODUK_COLORS[p]}}>{fmtJam(jamPerProduk[p]||0)}</span>
-            <span className="text-[8px] text-slate-300 leading-none">jam pakai</span>
+            <span className="text-[9px] text-slate-500 leading-none">waktu pakai</span>
           </div>
         ))}
       </div>

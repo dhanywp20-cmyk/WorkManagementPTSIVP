@@ -390,17 +390,17 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
               <Kartu icon="✈️" judul="Notifikasi Telegram">
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Status</span>
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Status</span>
                     {userData.telegram_chat_id ? (
-                      <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold text-sm">
+                      <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-sm">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Terhubung
                       </span>
                     ) : autoHubung === 'menunggu' ? (
-                      <span className="inline-flex items-center gap-1.5 text-sky-600 font-bold text-sm">
+                      <span className="inline-flex items-center gap-1.5 text-sky-700 font-bold text-sm">
                         <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" /> Menunggu konfirmasi…
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 text-amber-600 font-bold text-sm">
+                      <span className="inline-flex items-center gap-1.5 text-amber-700 font-bold text-sm">
                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Belum Terhubung
                       </span>
                     )}
@@ -408,7 +408,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
 
                   {userData.telegram_chat_id ? (
                     <>
-                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
                         Notifikasi assign & jadwal akan ikut masuk ke Telegram, berdampingan dengan WhatsApp.
                       </p>
                       <button onClick={putuskanTelegram} disabled={menghubungkan}
@@ -417,7 +417,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       </button>
                     </>
                   ) : telegramBot.status === 'galat' ? (
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
                       Belum bisa dipakai - {telegramBot.alasan}
                     </p>
                   ) : (
@@ -432,7 +432,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                         {telegramBot.status === 'memuat' ? 'Memuat…' : autoHubung === 'menunggu' ? 'Menunggu konfirmasi…' : '➤ Buka Bot & Kirim Start'}
                       </button>
                       {autoHubung === 'menunggu' && (
-                        <p className="text-[11px] text-sky-600 leading-relaxed">
+                        <p className="text-[11px] text-sky-700 leading-relaxed">
                           <IkonTeks nama="⏳" />Mengecek otomatis tiap beberapa detik, maks. 5 menit setelah Anda menekan Start di Telegram.
                         </p>
                       )}
@@ -470,7 +470,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className={userData.phone_number ? 'text-slate-800 font-semibold text-sm' : 'text-slate-300 text-sm'}>
+                        <span className={userData.phone_number ? 'text-slate-800 font-semibold text-sm' : 'text-slate-500 text-sm'}>
                           {userData.phone_number || 'Belum diisi'}
                         </span>
                         <button onClick={() => setEditPhone(true)}
@@ -505,7 +505,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                   <Baris icon="⭐" label="Jabatan"       value={userData.jabatan || '—'} />
                   <Baris icon="📅" label="Bergabung Sejak" value={bergabung} />
                   <Baris icon="🔑" label="Status Akun">
-                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold text-sm">
+                    <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-sm">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Aktif
                     </span>
                   </Baris>
@@ -523,8 +523,8 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
               <Kartu icon="🛡️" judul="Keamanan & Sandi">
                 <div className="p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-400">Sesi Saat Ini</span>
-                    <span className="inline-flex items-center gap-1.5 text-emerald-600 font-bold text-sm">
+                    <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Sesi Saat Ini</span>
+                    <span className="inline-flex items-center gap-1.5 text-emerald-700 font-bold text-sm">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Online &amp; Terotentikasi
                     </span>
                   </div>
@@ -578,7 +578,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
               <Kartu icon="📲" judul="Aplikasi di HP">
                 <div className="p-4 space-y-3">
                   {statusInstall === 'terpasang' ? (
-                    <p className="text-sm font-semibold text-emerald-600 flex items-center gap-1.5">
+                    <p className="text-sm font-semibold text-emerald-700 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Sudah terpasang di perangkat ini.
                     </p>
                   ) : statusInstall === 'siap' ? (
@@ -617,7 +617,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                     {userData.role}
                   </span>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1.5">Level Akses</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">Level Akses</p>
                     <span className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-bold border ${
                       (userData as { access_level?: string }).access_level === 'full'
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -643,7 +643,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       yang terlihat, 128px sisanya tersembunyi begitu saja. */}
                   <div className="flex flex-wrap gap-1.5">
                     {menuTersaring.length === 0 ? (
-                      <p className="text-xs text-slate-400 py-2">Tidak ada modul yang cocok.</p>
+                      <p className="text-xs text-slate-500 py-2">Tidak ada modul yang cocok.</p>
                     ) : menuTersaring.map(k => {
                       const cfg = ALL_MENU_LABELS[k];
                       return (
@@ -654,7 +654,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       );
                     })}
                   </div>
-                  <p className="text-[10px] text-slate-400 leading-relaxed pt-1">
+                  <p className="text-[10px] text-slate-500 leading-relaxed pt-1">
                     Daftar ini ditentukan admin lewat Admin Panel. Untuk menambah akses modul,
                     hubungi admin.
                   </p>

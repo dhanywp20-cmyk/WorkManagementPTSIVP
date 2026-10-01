@@ -56,8 +56,8 @@ function MaterialCard({
       <div className="flex-1 min-w-0">
         <h4 className={`font-semibold text-slate-800 group-hover:text-blue-700 transition-colors ${compact ? 'text-xs' : 'text-sm'} truncate`}>{m.materi_name}</h4>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-          <span className="text-[10px] text-slate-400">{fmtDate(m.created_at)}</span>
-          {m.file_url && <span className="text-[10px] text-slate-300">• ada link</span>}
+          <span className="text-[10px] text-slate-500">{fmtDate(m.created_at)}</span>
+          {m.file_url && <span className="text-[10px] text-slate-400">• ada link</span>}
         </div>
       </div>
       <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -130,8 +130,8 @@ function FolderTreeView({
                 </div>
                 <p className="text-[11px] font-bold text-slate-800 leading-snug line-clamp-2">{child.name}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-[9px] text-slate-400 font-medium">{totalInside} item</span>
-                  <svg aria-hidden="true" focusable="false" className={`w-3 h-3 text-slate-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <span className="text-[9px] text-slate-500 font-medium">{totalInside} item</span>
+                  <svg aria-hidden="true" focusable="false" className={`w-3 h-3 text-slate-500 transition-transform ${isOpen ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -385,12 +385,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       <div className="flex items-center gap-3 sm:gap-5 px-4 sm:px-6 py-2 border-b border-slate-100 text-xs flex-shrink-0 flex-wrap"
         style={{ background: 'rgba(248,250,252,0.8)' }}>
         <span className="text-slate-500"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong className="text-slate-700">{materials.length}</strong> materi</span>
-        <span className="text-slate-300">|</span>
+        <span className="text-slate-400">|</span>
         <span className="text-slate-500"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong className="text-slate-700">{rootFolderKeys.length}</strong> folder</span>
         {panelOpen && panelCol && (
           <>
-            <span className="text-slate-300">|</span>
-            <span className="text-slate-400">Folder: <strong style={{ color: panelCol.icon }}>{selectedFolderNode!.name}</strong></span>
+            <span className="text-slate-400">|</span>
+            <span className="text-slate-500">Folder: <strong style={{ color: panelCol.icon }}>{selectedFolderNode!.name}</strong></span>
           </>
         )}
       </div>
@@ -469,7 +469,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                                   </div>
                                   <p className="text-sm font-bold text-slate-800 leading-snug mb-1.5 line-clamp-2 pr-6">{child.name}</p>
                                   <div className="flex items-center justify-between">
-                                    <span className="text-[10px] font-medium text-slate-400">{totalInside} materi</span>
+                                    <span className="text-[10px] font-medium text-slate-500">{totalInside} materi</span>
                                     <div className="flex items-center gap-1">
                                       {isAdmin && (
                                         <button
@@ -478,7 +478,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                                           style={{ background: col.light, border: `1px solid ${col.icon}44`, color: col.icon }}
                                           title={`Tambah ke "${child.name}"`}>+</button>
                                       )}
-                                      <svg aria-hidden="true" focusable="false" className={`w-3 h-3 transition-all ${isSelected ? 'rotate-90' : 'text-slate-300'}`}
+                                      <svg aria-hidden="true" focusable="false" className={`w-3 h-3 transition-all ${isSelected ? 'rotate-90' : 'text-slate-400'}`}
                                         style={isSelected ? { color: col.icon } : {}}
                                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
@@ -635,7 +635,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
               </div>
               <div>
                 <label htmlFor="f-learning-center-components-materipage-2" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                  Folder Path <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+                  Folder Path <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">(opsional)</span>
                 </label>
                 <input id="f-learning-center-components-materipage-2"
                   value={form.folder_path}
@@ -647,12 +647,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                   {existingPaths.map(p => <option key={p} value={p} />)}
                 </datalist>
                 {form.folder_path && (
-                  <p className="text-xs text-slate-400 mt-1">Akan disimpan di: <strong className="text-slate-600">{form.folder_path}</strong></p>
+                  <p className="text-xs text-slate-500 mt-1">Akan disimpan di: <strong className="text-slate-600">{form.folder_path}</strong></p>
                 )}
               </div>
               <div>
                 <label htmlFor="f-learning-center-components-materipage-3" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                  Link OneDrive <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+                  Link OneDrive <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">(opsional)</span>
                 </label>
                 <input id="f-learning-center-components-materipage-3" value={form.file_url} onChange={e => setForm(p => ({ ...p, file_url: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
@@ -660,12 +660,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
               </div>
               <div>
                 <label htmlFor="f-learning-center-components-materipage-4" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                  Konten Teks untuk AI <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+                  Konten Teks untuk AI <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">(opsional)</span>
                 </label>
                 <textarea id="f-learning-center-components-materipage-4" value={form.content_text} onChange={e => setForm(p => ({ ...p, content_text: e.target.value }))}
                   rows={3} placeholder="Paste ringkasan atau poin-poin materi..."
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 resize-none" />
-                <p className="text-xs text-slate-400 mt-1">{form.content_text.length} karakter</p>
+                <p className="text-xs text-slate-500 mt-1">{form.content_text.length} karakter</p>
               </div>
             </div>
             <div className="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
@@ -695,7 +695,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                 className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition-all text-xl font-light">×</button>
             </div>
             <div className="p-6">
-              <p className="text-xs text-slate-400 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
+              <p className="text-xs text-slate-500 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
               <label htmlFor="f-learning-center-components-materipage-5" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Folder Baru</label>
               <input id="f-learning-center-components-materipage-5"
                 value={renameFolder.newName}
@@ -705,7 +705,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                 autoFocus
                 placeholder="Nama folder baru..."
               />
-              <p className="text-xs text-slate-400 mb-4">Sebelumnya: <strong className="text-slate-600">{renameFolder.oldName}</strong></p>
+              <p className="text-xs text-slate-500 mb-4">Sebelumnya: <strong className="text-slate-600">{renameFolder.oldName}</strong></p>
               <div className="flex gap-3">
                 <button onClick={handleRenameFolder} disabled={renameFolderSaving}
                   className="flex-1 py-2.5 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-all hover:opacity-90"
@@ -751,7 +751,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
               </div>
               <div>
                 <label htmlFor="f-learning-center-components-materipage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                  Folder Path <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+                  Folder Path <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">(opsional)</span>
                 </label>
                 <input id="f-learning-center-components-materipage-7"
                   value={editMaterial.folder_path ?? ''}
@@ -765,7 +765,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
               </div>
               <div>
                 <label htmlFor="f-learning-center-components-materipage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                  Link OneDrive <span className="ml-1 text-[10px] font-normal text-slate-400 normal-case tracking-normal">(opsional)</span>
+                  Link OneDrive <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">(opsional)</span>
                 </label>
                 <input id="f-learning-center-components-materipage-8"
                   value={editMaterial.file_url ?? ''}

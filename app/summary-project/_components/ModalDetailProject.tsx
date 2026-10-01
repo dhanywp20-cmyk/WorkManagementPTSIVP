@@ -106,7 +106,7 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
 
   return (
     <Modal buka onTutup={onTutup} ukuran="xl" ikon="🗂️"
-      judul={<span><span className="text-indigo-500 font-black mr-2">{project.code}</span>{project.name}</span>}
+      judul={<span><span className="text-indigo-600 font-black mr-2">{project.code}</span>{project.name}</span>}
       keterangan={[project.customer, project.location, project.sales_name && `Sales: ${project.sales_name}`].filter(Boolean).join(' · ') || undefined}>
       <div className="space-y-4">
         {/* Ringkasan + aksi admin */}
@@ -133,15 +133,15 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
         {mode === 'edit' && (
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
             <div className="grid sm:grid-cols-2 gap-3">
-              <label className="block sm:col-span-2"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Nama Project</span>
+              <label className="block sm:col-span-2"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Nama Project</span>
                 <input className={INPUT} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></label>
-              <label className="block"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Customer</span>
+              <label className="block"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Customer</span>
                 <input className={INPUT} value={form.customer} onChange={e => setForm(f => ({ ...f, customer: e.target.value }))} /></label>
-              <label className="block"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Sales</span>
+              <label className="block"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Sales</span>
                 <input className={INPUT} value={form.sales_name} onChange={e => setForm(f => ({ ...f, sales_name: e.target.value }))} /></label>
-              <label className="block sm:col-span-2"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Lokasi</span>
+              <label className="block sm:col-span-2"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Lokasi</span>
                 <input className={INPUT} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} /></label>
-              <label className="block"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-400 mb-1">Status</span>
+              <label className="block"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Status</span>
                 <select className={INPUT} value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as RingkasanProject['status'] }))}>
                   {Object.entries(STATUS_PROJECT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select></label>
@@ -174,9 +174,9 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
 
         {/* Linimasa */}
         {!detail ? (
-          <p className="py-10 text-center text-sm text-gray-400">Memuat riwayat...</p>
+          <p className="py-10 text-center text-sm text-gray-500">Memuat riwayat...</p>
         ) : linimasa.length === 0 ? (
-          <p className="py-10 text-center text-sm text-gray-400">Belum ada aktivitas tercatat untuk project ini.</p>
+          <p className="py-10 text-center text-sm text-gray-500">Belum ada aktivitas tercatat untuk project ini.</p>
         ) : (
           <div className="relative pl-5">
             <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-gray-200" aria-hidden="true" />
@@ -189,7 +189,7 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
                       style={{ background: cfg.color }} aria-hidden="true" />
                     <p className="text-[10px] font-black tracking-wider" style={{ color: cfg.color }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}</p>
                     <p className="text-sm font-bold text-gray-800 mt-0.5">{a.judul}</p>
-                    <p className="text-[11px] text-gray-400 mt-0.5">{fmtTgl(a.tanggal)} · {a.meta}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{fmtTgl(a.tanggal)} · {a.meta}</p>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                       {a.status && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
@@ -201,7 +201,7 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
                       {isAdmin && a.linkId && (
                         <>
                           <button type="button" onClick={() => setPindahId(pindahId === a.linkId ? null : a.linkId!)}
-                            className="text-[11px] font-bold text-indigo-500 hover:underline">Pindah project</button>
+                            className="text-[11px] font-bold text-indigo-600 hover:underline">Pindah project</button>
                           <button type="button"
                             onClick={() => setConfirmState({
                               message: 'Lepas record ini dari project?',
@@ -209,7 +209,7 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
                               danger: true, confirmLabel: 'Lepas',
                               onConfirm: () => jalankan(() => lepasLink(a.linkId!), 'Record dilepas dari project.'),
                             })}
-                            className="text-[11px] font-bold text-gray-400 hover:text-red-500 hover:underline">Lepas</button>
+                            className="text-[11px] font-bold text-gray-500 hover:text-red-500 hover:underline">Lepas</button>
                         </>
                       )}
                     </div>

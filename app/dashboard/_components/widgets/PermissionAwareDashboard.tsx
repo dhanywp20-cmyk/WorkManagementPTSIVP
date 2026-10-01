@@ -18,6 +18,7 @@ import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { useKelompok } from '@/lib/kelompok';
 import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { Ikon } from '@/components/shared/Ikon';
+import { AKSEN_UTAMA } from './primitives';
 
 /**
  * Ruang kosong di sebelah Piket Showroom + Learning Center (lg:grid-cols-3
@@ -48,8 +49,8 @@ function HeaderTabBtn({ label, icon, active, onClick, badge }: {
     <button type="button" onClick={onClick}
       className="flex items-center gap-1 text-[10px] md:text-[11px] font-bold px-2 py-1 md:px-2.5 md:py-1.5 rounded-full transition-all flex-shrink-0"
       style={active
-        ? { background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }
-        : { background: 'rgba(0,0,0,0.05)', color: '#64748b' }}>
+        ? { background: AKSEN_UTAMA, color: 'white', border: `1px solid ${AKSEN_UTAMA}` }
+        : { background: 'white', color: '#475569', border: '1px solid #e2e8f0' }}>
       <span className="select-none"><Ikon nama={icon} ukuran={14} /></span>
       <span className="hidden sm:inline">{label}</span>
       {badge !== undefined && badge > 0 && (
@@ -141,10 +142,16 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   flush();
 
   const today = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const firstName = (currentUser.full_name ?? '').split(' ')[0];
+  const firstName = (currentUser.full_name ?? '').trim().split(' ')[0] || currentUser.username || '';
   const showAnalyticsTabs = visible.some(w => w.id === 'analytics');
+  /** Agenda berbagi baris dengan Daily Report Tim bila kartu itu tampil. */
+  const adaTeam = visible.some(w => w.id === 'team-monitoring');
 
   return (
+    /*  Latar mengikuti setelan Admin Panel -> Merek -> "Latar Dashboard"
+        (bawaan: Netral). Dulu beranda dipaksa netral di sini, sehingga
+        pilihan "Gambar" diam-diam tidak berlaku di beranda saja. Ubin
+        berlatar putih pekat, jadi teks tetap terbaca di atas foto. */
     <div className="w-full h-full overflow-y-auto">
       {/* ── Header sambutan ──────────────────────────────────────────────────
           Dulu sambutan ini ikut terkurung di dalam kolom max-w-[1600px] yang
@@ -154,10 +161,10 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
           menempel di atas seperti PageHeader di modul lain; hanya isinya yang
           tetap dibatasi lebarnya supaya sejajar dengan widget di bawahnya. */}
       <header className="sticky top-0 z-40"
-        style={{ background: 'rgba(255,255,255,0.95)', borderBottom: '3px solid #b91c1c', backdropFilter: 'blur(16px)' }}>
+        style={{ background: 'rgba(255,255,255,0.96)', borderBottom: '1px solid #e2e8f0', backdropFilter: 'blur(16px)' }}>
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-2.5 md:py-3.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-0">
-            <h1 className="text-base md:text-xl font-black tracking-tight leading-tight text-slate-800">Halo, {firstName} 👋</h1>
+            <h1 className="text-base md:text-xl font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `Halo, ${firstName}` : 'Halo'}</h1>
             <p className="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
           {/*
@@ -193,7 +200,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         kisi, yang justru membuat jaraknya tidak pernah sama.
       */}
       <div className="max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6
-                      grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-start">
+                      grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-stretch">
 
         {ajakTelegram && !tutupAjakan && (
           <div className="lg:col-span-12 rounded-xl flex items-center gap-3 md:gap-4 px-4 py-3.5 flex-wrap"
@@ -239,8 +246,8 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
             */
             <div key={`full-${block.widget.id}-${i}`}
               className={
-                block.widget.id === 'work-queue' ? 'lg:contents'
-                : block.widget.id === 'team-monitoring' ? 'lg:col-span-9'
+                block.widget.id === 'work-queue' ? (adaTeam ? 'lg:col-span-7 xl:col-span-8' : 'lg:col-span-12')
+                : block.widget.id === 'team-monitoring' ? 'lg:col-span-5 xl:col-span-4'
                 : 'lg:col-span-12'
               }>
               {/*

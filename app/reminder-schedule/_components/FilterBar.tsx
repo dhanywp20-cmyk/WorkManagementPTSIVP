@@ -96,63 +96,63 @@ export function FilterBar({
       <div className="px-3 py-2 sm:px-5 sm:py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
         <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-2" aktif={[searchSales, searchProduct, searchTeamHandler, filterStatus, filterCategory, searchDivisionSales]}>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Location</label>
+            <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Location</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
                 placeholder="Search project / lokasi..." />
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales Name</label>
+            <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales Name</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Search sales..." value={searchSales} onChange={e => setSearchSales(e.target.value)}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
                 placeholder="Search sales..." />
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="📦" />Product</label>
+            <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="📦" />Product</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Cari product..." value={searchProduct} onChange={e => { setSearchProduct(e.target.value); setProductFilter(null); }}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 transition-all"
                 placeholder="Cari product..." />
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
+            <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Search handler..." value={searchTeamHandler} onChange={e => setSearchTeamHandler(e.target.value)}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-purple-300 transition-all"
                 placeholder="Search handler..." />
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
+            <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value as Status | 'all')}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer transition-all">
                 <option value="all">All Status</option>
                 {(Object.keys(STATUS_CONFIG) as Status[]).map(s => <option key={s} value={s}>{STATUS_CONFIG[s].label}</option>)}
               </select>
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none">▼</span>
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none">▼</span>
             </div>
           </div>
           <div>
-            <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
+            <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
             <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <select aria-label="All Years" value={filterYear} onChange={e => setFilterYear(e.target.value)}
                 className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer transition-all">
                 <option value="all">All Years</option>
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none">▼</span>
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none">▼</span>
             </div>
           </div>
         </FilterLipat>

@@ -308,7 +308,7 @@ export function AssignPTSModal({
           {allowSupervisorRoute && supervisors.length > 0 && (
             <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.3)' }}>
               <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="🎯" />Route ke Supervisor (Rekomendasi)</p>
-              <p className="text-[11px] text-amber-600 mb-3">
+              <p className="text-[11px] text-amber-700 mb-3">
                 Supervisor yang dipilih akan di-WA untuk meng-assign ke anggota timnya, atau mengerjakan sendiri.
               </p>
               <select aria-label="-- Pilih Supervisor --" value={selectedSupervisorId}
@@ -329,11 +329,11 @@ export function AssignPTSModal({
 
           {/* Assign ke Tim PTS */}
           <div>
-            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
               {allowSupervisorRoute && supervisors.length > 0 ? 'Atau Assign Langsung Manual' : 'Assign ke Team PTS *'}
             </label>
             {teamMembers.length === 0 ? (
-              <div className="text-center py-6 text-gray-400 text-sm rounded-xl" style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)' }}>
+              <div className="text-center py-6 text-gray-500 text-sm rounded-xl" style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)' }}>
                 <div className="text-3xl mb-1"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 <p className="text-xs">Tidak ada Team PTS tersedia</p>
               </div>
@@ -462,7 +462,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
           placeholder="Nama ruangan / area..."
           className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm font-medium bg-white outline-none focus:border-teal-400" />
         <button aria-label="Tutup" type="button" onClick={onRemove}
-          className="p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all flex-shrink-0">
+          className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all flex-shrink-0">
           <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
@@ -489,7 +489,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
           yang seharusnya menangani tidak pernah tahu. */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 pt-2 border-t border-gray-100">
         <div>
-          <label htmlFor="f-form-require-project-components-modals-1" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display <span className="text-gray-400 font-normal">(opsional)</span></label>
+          <label htmlFor="f-form-require-project-components-modals-1" className="block text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display <span className="text-gray-500 font-normal">(opsional)</span></label>
           <select id="f-form-require-project-components-modals-1" value={room.brand_display} onChange={e => {
             const brand = e.target.value;
             const pic = getBrandPic('display', brand);
@@ -499,10 +499,10 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
           {room.brand_display && room.brand_display_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {room.brand_display_pic_name}</p>}
-          {room.brand_display && !room.brand_display_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-set admin</p>}
+          {room.brand_display && !room.brand_display_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-set admin</p>}
         </div>
         <div>
-          <label htmlFor="f-form-require-project-components-modals-2" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display 2 <span className="text-gray-400 normal-case font-normal">(opsional)</span></label>
+          <label htmlFor="f-form-require-project-components-modals-2" className="block text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display 2 <span className="text-gray-500 normal-case font-normal">(opsional)</span></label>
           <select id="f-form-require-project-components-modals-2" value={room.brand_display_2 ?? ''} onChange={e => {
             const brand = e.target.value;
             const pic = getBrandPic('display', brand);
@@ -512,10 +512,10 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
           {room.brand_display_2 && room.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1"><IkonTeks nama="👤" />PIC: {room.brand_display_2_pic_name}</p>}
-          {room.brand_display_2 && !room.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-mapping</p>}
+          {room.brand_display_2 && !room.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-mapping</p>}
         </div>
         <div>
-          <label htmlFor="f-form-require-project-components-modals-3" className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔌" />Brand Middleware <span className="text-gray-400 font-normal">(opsional)</span></label>
+          <label htmlFor="f-form-require-project-components-modals-3" className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔌" />Brand Middleware <span className="text-gray-500 font-normal">(opsional)</span></label>
           <select id="f-form-require-project-components-modals-3" value={room.brand_middleware} onChange={e => {
             const brand = e.target.value;
             const pic = getBrandPic('middleware', brand);
@@ -525,7 +525,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             {MIDDLEWARE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
           </select>
           {room.brand_middleware && room.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-violet-700 font-semibold bg-violet-50 border border-violet-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {room.brand_middleware_pic_name}</p>}
-          {room.brand_middleware && !room.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-set admin</p>}
+          {room.brand_middleware && !room.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-set admin</p>}
         </div>
       </div>
 
@@ -545,7 +545,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
       <div className="mb-4 pt-2 border-t border-gray-100">
         <Chips label="Source" opts={['PC / Mini PC','Laptop','URL Dashboard','NVR CCTV','Media Player','IPTV','Set Top Box']} value={room.source} field="source" />
         <div className="flex gap-3 mb-3">
-          {room.source.includes('Laptop') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-6" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">Qty Laptop</label><input id="f-form-require-project-components-modals-6" type="number" min="1" value={room.source_laptop_qty} onChange={e=>onUpdate({source_laptop_qty:e.target.value})} placeholder="1" className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm bg-amber-50 outline-none focus:border-amber-400"/></div>}
+          {room.source.includes('Laptop') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-6" className="block text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1">Qty Laptop</label><input id="f-form-require-project-components-modals-6" type="number" min="1" value={room.source_laptop_qty} onChange={e=>onUpdate({source_laptop_qty:e.target.value})} placeholder="1" className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm bg-amber-50 outline-none focus:border-amber-400"/></div>}
           {room.source.includes('PC / Mini PC') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-7" className="block text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Qty PC</label><input id="f-form-require-project-components-modals-7" type="number" min="1" value={room.source_pc_qty} onChange={e=>onUpdate({source_pc_qty:e.target.value})} placeholder="1" className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm bg-blue-50 outline-none focus:border-blue-400"/></div>}
         </div>
         <input value={room.source_other} onChange={e=>onUpdate({source_other:e.target.value})} placeholder="Other source..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/>
@@ -643,7 +643,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
               id={`room-photo-${room.id}`}
               onChange={e => { const files = Array.from(e.target.files||[]); if(files.length) onAddPhotos(files); e.target.value=''; }}/>
             {previews.length === 0 ? (
-              <label htmlFor={`room-photo-${room.id}`} className="w-full border-2 border-dashed border-gray-300 rounded-xl py-4 flex flex-col items-center justify-center text-gray-400 hover:border-teal-400 hover:text-teal-500 transition-all cursor-pointer">
+              <label htmlFor={`room-photo-${room.id}`} className="w-full border-2 border-dashed border-gray-300 rounded-xl py-4 flex flex-col items-center justify-center text-gray-500 hover:border-teal-400 hover:text-teal-500 transition-all cursor-pointer">
                 <span className="text-2xl mb-1"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <span className="text-xs font-medium">Klik upload foto</span>
                 <span className="text-[11px] opacity-70">Max 10 foto</span>
@@ -658,10 +658,10 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
                     </div>
                   ))}
                   {photos.length < 10 && (
-                    <label htmlFor={`room-photo-${room.id}`} className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-teal-400 cursor-pointer"><span className="text-xl">+</span></label>
+                    <label htmlFor={`room-photo-${room.id}`} className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 hover:border-teal-400 cursor-pointer"><span className="text-xl">+</span></label>
                   )}
                 </div>
-                <p className="text-[11px] text-gray-400">{photos.length}/10 foto</p>
+                <p className="text-[11px] text-gray-500">{photos.length}/10 foto</p>
               </div>
             )}
           </div>
@@ -672,7 +672,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
               onChange={e => { const f = e.target.files?.[0]; if (f && onSetBoq) onSetBoq(f); e.target.value=''; }} />
             {!boqFile ? (
               <button type="button" onClick={() => boqRef.current?.click()}
-                className="w-full border-2 border-dashed border-emerald-300 rounded-xl py-4 flex flex-col items-center justify-center text-emerald-500 hover:border-emerald-500 hover:bg-emerald-50 transition-all cursor-pointer">
+                className="w-full border-2 border-dashed border-emerald-300 rounded-xl py-4 flex flex-col items-center justify-center text-emerald-700 hover:border-emerald-500 hover:bg-emerald-50 transition-all cursor-pointer">
                 <span className="text-2xl mb-1"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <span className="text-xs font-medium">Klik upload BOQ</span>
                 <span className="text-[11px] opacity-70">.xlsx / .xls / .csv</span>
@@ -683,12 +683,12 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
                   <span className="text-xl"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-bold text-emerald-800 truncate">{boqFile.name}</p>
-                    <p className="text-[11px] text-emerald-600">{(boqFile.size/1024).toFixed(1)} KB</p>
+                    <p className="text-[11px] text-emerald-700">{(boqFile.size/1024).toFixed(1)} KB</p>
                   </div>
-                  <button aria-label="Tutup" type="button" onClick={() => onSetBoq && onSetBoq(null)} className="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
+                  <button aria-label="Tutup" type="button" onClick={() => onSetBoq && onSetBoq(null)} className="text-red-600 hover:text-red-700 font-bold text-sm">✕</button>
                 </div>
                 <button type="button" onClick={() => boqRef.current?.click()}
-                  className="mt-1.5 w-full text-xs text-emerald-600 hover:text-emerald-800 font-bold py-1 transition-all"><IkonTeks nama="🔄" />Ganti File</button>
+                  className="mt-1.5 w-full text-xs text-emerald-700 hover:text-emerald-800 font-bold py-1 transition-all"><IkonTeks nama="🔄" />Ganti File</button>
               </div>
             )}
           </div>
@@ -702,7 +702,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             id={`room-photo-ng-${room.id}`}
             onChange={e => { const files = Array.from(e.target.files||[]); if(files.length) onAddPhotos(files); e.target.value=''; }}/>
           {previews.length === 0 ? (
-            <label htmlFor={`room-photo-ng-${room.id}`} className="w-full border-2 border-dashed border-gray-300 rounded-xl py-4 flex flex-col items-center justify-center text-gray-400 hover:border-teal-400 hover:text-teal-500 transition-all cursor-pointer">
+            <label htmlFor={`room-photo-ng-${room.id}`} className="w-full border-2 border-dashed border-gray-300 rounded-xl py-4 flex flex-col items-center justify-center text-gray-500 hover:border-teal-400 hover:text-teal-500 transition-all cursor-pointer">
               <span className="text-2xl mb-1"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-medium">Klik upload foto</span>
               <span className="text-[11px] opacity-70">Max 10 foto</span>
             </label>
@@ -716,10 +716,10 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
                   </div>
                 ))}
                 {photos.length < 10 && (
-                  <label htmlFor={`room-photo-ng-${room.id}`} className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-teal-400 cursor-pointer"><span className="text-xl">+</span></label>
+                  <label htmlFor={`room-photo-ng-${room.id}`} className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 hover:border-teal-400 cursor-pointer"><span className="text-xl">+</span></label>
                 )}
               </div>
-              <p className="text-[11px] text-gray-400">{photos.length}/10 foto</p>
+              <p className="text-[11px] text-gray-500">{photos.length}/10 foto</p>
             </div>
           )}
         </div>
@@ -907,7 +907,7 @@ export function NewFormModal({
               {isInternalSalesGuest && (
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">
-                    SBU <span className="normal-case text-gray-400 font-medium tracking-normal">(opsional — atas nama Sales External)</span>
+                    SBU <span className="normal-case text-gray-500 font-medium tracking-normal">(opsional — atas nama Sales External)</span>
                   </label>
                   <SalesPicker
                     value={form.sales_name}
@@ -917,14 +917,14 @@ export function NewFormModal({
                     triggerClassName="border-2 border-gray-200 rounded-xl px-3 py-2.5 bg-white cursor-pointer hover:border-teal-400 transition-all"
                   />
                   {form.sales_name && (
-                    <p className="text-[11px] text-teal-600 mt-1">Request diatasnamakan <strong>{form.sales_name}</strong>{form.sales_division ? ` · ${form.sales_division}` : ''}.</p>
+                    <p className="text-[11px] text-teal-700 mt-1">Request diatasnamakan <strong>{form.sales_name}</strong>{form.sales_division ? ` · ${form.sales_division}` : ''}.</p>
                   )}
                 </div>
               )}
               {/* Marketing Brand — WAJIB utk Sales External. Menentukan Sales Internal (House/Global) yg review/approve. */}
               {currentUser?.role === 'guest' && !isInternalSalesGuest && (
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Marketing Brand * <span className="normal-case text-gray-400 font-medium tracking-normal">(Sales Internal yang handle)</span></label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Marketing Brand * <span className="normal-case text-gray-500 font-medium tracking-normal">(Sales Internal yang handle)</span></label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     {BRAND_OPTIONS.map(opt => {
                       const sel = form.brand === opt.value;
@@ -958,7 +958,7 @@ export function NewFormModal({
             {/* Tab bar */}
             <div className="flex items-center bg-teal-50 border-b border-teal-200 px-2 py-1.5 gap-1 overflow-x-auto">
               <button aria-label="Sebelumnya" type="button" onClick={goLeft} disabled={activeRoomIdx === 0}
-                className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0">
+                className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0">
                 <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
               </button>
               {Array.from({length: totalRooms}).map((_, i) => {
@@ -972,7 +972,7 @@ export function NewFormModal({
                 );
               })}
               <button aria-label="Berikutnya" type="button" onClick={goRight} disabled={activeRoomIdx === totalRooms - 1}
-                className="p-1.5 rounded-lg text-teal-600 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0">
+                className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0">
                 <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
               </button>
               <button type="button" onClick={addAndGoToRoom}
@@ -982,10 +982,10 @@ export function NewFormModal({
               {/* Pendorong ini hanya dipakai saat barisnya memang muat. Di ponsel
                   ia mendorong penghitung ruangan keluar dari bagian yang terlihat. */}
               <div className="hidden sm:block flex-1"/>
-              <span className="text-[10px] text-teal-600 font-bold mr-1">{activeRoomIdx+1}/{totalRooms}</span>
+              <span className="text-[10px] text-teal-700 font-bold mr-1">{activeRoomIdx+1}/{totalRooms}</span>
               {activeRoomIdx > 0 && (
                 <button aria-label="Tutup" type="button" onClick={() => { setRooms(p => p.filter((_,i)=>i!==activeRoomIdx-1)); setActiveRoomIdx(a=>Math.max(0,a-1)); }}
-                  className="flex-shrink-0 p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 hover:text-red-600 transition-all">
+                  className="flex-shrink-0 p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all">
                   <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               )}
@@ -1045,7 +1045,7 @@ export function NewFormModal({
                 {/* Brand Display 1 & 2 + Middleware — kembar dari RoomSection di atas. */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 pt-2 border-t border-gray-100">
                   <div>
-                    <label htmlFor="f-form-require-project-components-modals-19" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <label htmlFor="f-form-require-project-components-modals-19" className="block text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display <span className="text-gray-500 font-normal">(opsional)</span></label>
                     <select id="f-form-require-project-components-modals-19" value={form.brand_display||''} onChange={e => {
                       const brand = e.target.value;
                       const pic = brandPicMappings.find(m => m.brand_type==='display' && m.brand_name===brand);
@@ -1055,10 +1055,10 @@ export function NewFormModal({
                       {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                     {form.brand_display && form.brand_display_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {form.brand_display_pic_name}</p>}
-                    {form.brand_display && !form.brand_display_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-set admin</p>}
+                    {form.brand_display && !form.brand_display_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-set admin</p>}
                   </div>
                 <div>
-                  <label htmlFor="f-form-require-project-components-modals-20" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display 2 <span className="text-gray-400 normal-case font-normal">(opsional)</span></label>
+                  <label htmlFor="f-form-require-project-components-modals-20" className="block text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1.5"><IkonTeks nama="🖥" />Brand Display 2 <span className="text-gray-500 normal-case font-normal">(opsional)</span></label>
                   <select id="f-form-require-project-components-modals-20" value={form.brand_display_2||''} onChange={e => {
                     const brand = e.target.value;
                     const pic = brandPicMappings.find(m => m.brand_type==='display' && m.brand_name===brand);
@@ -1068,10 +1068,10 @@ export function NewFormModal({
                     {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
                   {form.brand_display_2 && form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1"><IkonTeks nama="👤" />PIC: {form.brand_display_2_pic_name}</p>}
-                  {form.brand_display_2 && !form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-mapping</p>}
+                  {form.brand_display_2 && !form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-mapping</p>}
                 </div>
                   <div>
-                    <label htmlFor="f-form-require-project-components-modals-21" className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔌" />Brand Middleware <span className="text-gray-400 font-normal">(opsional)</span></label>
+                    <label htmlFor="f-form-require-project-components-modals-21" className="block text-[10px] font-bold text-violet-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔌" />Brand Middleware <span className="text-gray-500 font-normal">(opsional)</span></label>
                     <select id="f-form-require-project-components-modals-21" value={form.brand_middleware||''} onChange={e => {
                       const brand = e.target.value;
                       const pic = brandPicMappings.find(m => m.brand_type==='middleware' && m.brand_name===brand);
@@ -1081,7 +1081,7 @@ export function NewFormModal({
                       {MIDDLEWARE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
                     </select>
                     {form.brand_middleware && form.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-violet-700 font-semibold bg-violet-50 border border-violet-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {form.brand_middleware_pic_name}</p>}
-                    {form.brand_middleware && !form.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-gray-400 italic">PIC belum di-set admin</p>}
+                    {form.brand_middleware && !form.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-set admin</p>}
                   </div>
                 </div>
 
@@ -1137,7 +1137,7 @@ export function NewFormModal({
                     </div>
                   </div>
                   <div className="flex gap-3 mb-3">
-                    {form.source.includes('Laptop') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-24" className="block text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">Qty Laptop</label><input id="f-form-require-project-components-modals-24" type="number" min="1" value={(form as any).source_laptop_qty||''} onChange={e=>setForm(prev=>({...prev, source_laptop_qty:e.target.value} as any))} placeholder="1" className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm bg-amber-50 outline-none focus:border-amber-400"/></div>}
+                    {form.source.includes('Laptop') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-24" className="block text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1">Qty Laptop</label><input id="f-form-require-project-components-modals-24" type="number" min="1" value={(form as any).source_laptop_qty||''} onChange={e=>setForm(prev=>({...prev, source_laptop_qty:e.target.value} as any))} placeholder="1" className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm bg-amber-50 outline-none focus:border-amber-400"/></div>}
                     {form.source.includes('PC / Mini PC') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-25" className="block text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Qty PC</label><input id="f-form-require-project-components-modals-25" type="number" min="1" value={(form as any).source_pc_qty||''} onChange={e=>setForm(prev=>({...prev, source_pc_qty:e.target.value} as any))} placeholder="1" className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm bg-blue-50 outline-none focus:border-blue-400"/></div>}
                   </div>
                   <input value={form.source_other} onChange={e => setForm(prev => ({ ...prev, source_other: e.target.value }))}
@@ -1324,7 +1324,7 @@ export function NewFormModal({
                       <input id="f-form-require-project-components-modals-33" ref={surveyPhotoRef} type="file" accept="image/*" multiple className="hidden"
                         onChange={e => { const files = Array.from(e.target.files||[]); if(!files.length) return; const c=[...surveyPhotos,...files].slice(0,10); setSurveyPhotos(c); setSurveyPhotosPreviews(c.map(f=>URL.createObjectURL(f))); e.target.value=''; }} />
                       {surveyPhotosPreviews.length === 0 ? (
-                        <label onClick={() => surveyPhotoRef.current?.click()} className="w-full border-2 border-dashed border-gray-300 rounded-xl py-4 flex flex-col items-center justify-center text-gray-400 hover:border-teal-400 hover:text-teal-500 transition-all cursor-pointer">
+                        <label onClick={() => surveyPhotoRef.current?.click()} className="w-full border-2 border-dashed border-gray-300 rounded-xl py-4 flex flex-col items-center justify-center text-gray-500 hover:border-teal-400 hover:text-teal-500 transition-all cursor-pointer">
                           <span className="text-2xl mb-1"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-medium">Klik upload foto</span><span className="text-[11px] opacity-70">Max 10 foto</span>
                         </label>
                       ) : (
@@ -1336,9 +1336,9 @@ export function NewFormModal({
                                 <button aria-label="Tutup" type="button" onClick={() => { const n=surveyPhotos.filter((_,j)=>j!==i); setSurveyPhotos(n); setSurveyPhotosPreviews(n.map(f=>URL.createObjectURL(f))); }} className="absolute top-0.5 right-0.5 bg-red-500 text-white w-4 h-4 rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
                               </div>
                             ))}
-                            {surveyPhotos.length < 10 && <button type="button" onClick={() => surveyPhotoRef.current?.click()} className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 hover:border-teal-400 cursor-pointer"><span className="text-xl">+</span></button>}
+                            {surveyPhotos.length < 10 && <button type="button" onClick={() => surveyPhotoRef.current?.click()} className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 hover:border-teal-400 cursor-pointer"><span className="text-xl">+</span></button>}
                           </div>
-                          <p className="text-[11px] text-gray-400">{surveyPhotos.length}/10 foto</p>
+                          <p className="text-[11px] text-gray-500">{surveyPhotos.length}/10 foto</p>
                         </div>
                       )}
                     </div>
@@ -1348,17 +1348,17 @@ export function NewFormModal({
                         onChange={e => { const f=e.target.files?.[0]; if(f) setBoqFormFile(f); e.target.value=''; }} />
                       {!boqFormFile ? (
                         <button type="button" onClick={() => boqRoom1Ref.current?.click()}
-                          className="w-full border-2 border-dashed border-emerald-300 rounded-xl py-4 flex flex-col items-center justify-center text-emerald-500 hover:border-emerald-500 hover:bg-emerald-50 transition-all cursor-pointer">
+                          className="w-full border-2 border-dashed border-emerald-300 rounded-xl py-4 flex flex-col items-center justify-center text-emerald-700 hover:border-emerald-500 hover:bg-emerald-50 transition-all cursor-pointer">
                           <span className="text-2xl mb-1"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs font-medium">Klik upload BOQ</span><span className="text-[11px] opacity-70">.xlsx / .xls / .csv</span>
                         </button>
                       ) : (
                         <div>
                           <div className="border-2 border-emerald-300 bg-emerald-50 rounded-xl p-3 flex items-center gap-3">
                             <span className="text-xl"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                            <div className="flex-1 min-w-0"><p className="text-xs font-bold text-emerald-800 truncate">{boqFormFile.name}</p><p className="text-[11px] text-emerald-600">{(boqFormFile.size/1024).toFixed(1)} KB</p></div>
-                            <button aria-label="Tutup" type="button" onClick={() => setBoqFormFile(null)} className="text-red-400 hover:text-red-600 font-bold text-sm">✕</button>
+                            <div className="flex-1 min-w-0"><p className="text-xs font-bold text-emerald-800 truncate">{boqFormFile.name}</p><p className="text-[11px] text-emerald-700">{(boqFormFile.size/1024).toFixed(1)} KB</p></div>
+                            <button aria-label="Tutup" type="button" onClick={() => setBoqFormFile(null)} className="text-red-600 hover:text-red-700 font-bold text-sm">✕</button>
                           </div>
-                          <button type="button" onClick={() => boqRoom1Ref.current?.click()} className="mt-1.5 w-full text-xs text-emerald-600 hover:text-emerald-800 font-bold py-1 transition-all"><IkonTeks nama="🔄" />Ganti File</button>
+                          <button type="button" onClick={() => boqRoom1Ref.current?.click()} className="mt-1.5 w-full text-xs text-emerald-700 hover:text-emerald-800 font-bold py-1 transition-all"><IkonTeks nama="🔄" />Ganti File</button>
                         </div>
                       )}
                     </div>

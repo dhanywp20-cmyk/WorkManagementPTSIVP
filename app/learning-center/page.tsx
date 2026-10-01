@@ -44,7 +44,7 @@ export default function LearningCenterPage() {
         style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="text-center px-10 py-8 rounded-3xl"
           style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)', boxShadow: '0 8px 40px rgba(0,0,0,0.18)' }}>
-          <div className="mb-3 animate-pulse text-indigo-500 flex justify-center"><Ikon nama="🎓" ukuran={36} tebal={1.75} /></div>
+          <div className="mb-3 animate-pulse text-indigo-600 flex justify-center"><Ikon nama="🎓" ukuran={36} tebal={1.75} /></div>
           <p className="text-slate-500 font-medium">Memuat Learning Center...</p>
         </div>
       </div>
@@ -117,7 +117,7 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
     <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 110px)' }}>
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 rounded-full border-[3px] border-slate-200 border-t-blue-500 animate-spin" />
-        <span className="text-xs text-slate-400 font-medium tracking-wide">Memuat...</span>
+        <span className="text-xs text-slate-500 font-medium tracking-wide">Memuat...</span>
       </div>
     </div>
   );
@@ -215,7 +215,7 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
             </button>
           ))}
           <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
-            className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-200 text-base flex-shrink-0">
+            className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-200 text-base flex-shrink-0">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -260,7 +260,7 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
             </button>
           ))}
           <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
-            className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-200 flex-shrink-0">
+            className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-200 flex-shrink-0">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>

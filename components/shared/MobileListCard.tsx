@@ -72,7 +72,7 @@ export function MobileListCard({
             {titlePrefix}
             <p className="font-bold text-[13px] text-gray-800 leading-tight break-words">{title}</p>
           </div>
-          {meta && <div className="text-[10.5px] text-gray-400 mt-0.5 space-y-0">{meta}</div>}
+          {meta && <div className="text-[10.5px] text-gray-500 mt-0.5 space-y-0">{meta}</div>}
         </div>
         {badges && <div className="flex flex-col items-end gap-1 shrink-0">{badges}</div>}
       </div>
@@ -81,7 +81,7 @@ export function MobileListCard({
         <div className="grid grid-cols-2 gap-x-2.5 gap-y-1 mt-1.5 px-2 py-1.5 rounded-lg bg-gray-50/80 text-[11.5px]">
           {visibleFields.map((f, i) => (
             <div key={i} className={`truncate ${f.span2 ? 'col-span-2' : ''}`}>
-              <span className="text-gray-400">{f.label}: </span>
+              <span className="text-gray-500">{f.label}: </span>
               <span className={f.valueClass ?? 'text-gray-700 font-medium'}>{f.value}</span>
             </div>
           ))}

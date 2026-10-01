@@ -321,7 +321,7 @@ export function AdminDashboard({ user }: { user: User }) {
                       <DonutChart segments={c.segments} size={72} strokeWidth={10} label={c.label} />
                       <div className="text-center">
                         <p className="text-xs font-bold text-slate-700">{c.title}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5 leading-relaxed">{c.sub}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{c.sub}</p>
                       </div>
                     </div>
                   ))}
@@ -352,7 +352,7 @@ export function AdminDashboard({ user }: { user: User }) {
                         if (!d) return null;
                         const gap = d.avg - nationalAvg;
                         return (
-                          <span className={`ml-1.5 font-bold ${gap >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          <span className={`ml-1.5 font-bold ${gap >= 0 ? 'text-emerald-700' : 'text-rose-600'}`}>
                             · {performerDivisionFilter} {d.avg.toFixed(1)} ({gap >= 0 ? '▲' : '▼'}{Math.abs(gap).toFixed(1)})
                           </span>
                         );
@@ -402,7 +402,7 @@ export function AdminDashboard({ user }: { user: User }) {
                     <tr key={u.uid}
                       className="stagger-item hover:bg-indigo-50/60 cursor-pointer transition-colors group"
                       onClick={() => setSelectedUser({ uid: u.uid, name: u.name })}>
-                      <td className="px-4 py-3 text-center text-sm font-black text-slate-300">{i + 1}</td>
+                      <td className="px-4 py-3 text-center text-sm font-black text-slate-500">{i + 1}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors text-sm">{u.name}</span>
@@ -437,13 +437,13 @@ export function AdminDashboard({ user }: { user: User }) {
                           {u.fastCount > 0 && (
                             <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full"><Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.fastCount}×</span>
                           )}
-                          {u.tabSw === 0 && u.fastCount === 0 && <span className="text-xs text-slate-300">—</span>}
+                          {u.tabSw === 0 && u.fastCount === 0 && <span className="text-xs text-slate-400">—</span>}
                         </div>
                       </td>
                     </tr>
                   ))}
                   {filteredPerformers.length === 0 && (
-                    <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-sm">
+                    <tr><td colSpan={6} className="text-center py-10 text-slate-500 text-sm">
                       {loadingAnalytics ? 'Memuat data...' : searchPerformer ? 'Tidak ada hasil' : `Belum ada data untuk ${TEAM_FILTER_CONFIG[activeTeam].label}`}
                     </td></tr>
                   )}
@@ -452,16 +452,16 @@ export function AdminDashboard({ user }: { user: User }) {
               </div>{/* tutup overflow-x-auto pembungkus tabel */}
               {/* Legend — inside card as footer */}
               <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
-                <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚠" />N×</span>
+                <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚠" />N×</span>
                   Pindah tab
                 </span>
-                <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
                   <span className="inline-flex items-center gap-0.5 font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="🚨" />N×</span>
                   Submit &lt;5det/soal
                 </span>
-                <span className="flex items-center gap-1.5 text-[10px] text-slate-400">
-                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚡" />Inkonsisten</span>
+                <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                  <span className="inline-flex items-center gap-0.5 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚡" />Inkonsisten</span>
                   Nilai selisih &gt;40pt
                 </span>
               </div>
@@ -512,7 +512,7 @@ export function AdminDashboard({ user }: { user: User }) {
                       segments={[{ value: totalPassed, color: '#10b981' }, { value: totalFailed, color: '#f43f5e' }]}
                       label={totalPeserta > 0 ? `${Math.round(totalPassed / totalPeserta * 100)}%` : '-'}
                     />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lulus vs Gagal</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lulus vs Gagal</span>
                     <div className="flex gap-3">
                       <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{totalPassed} lulus</span>
                       <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-rose-400" />{totalFailed} gagal</span>
@@ -527,11 +527,11 @@ export function AdminDashboard({ user }: { user: User }) {
                       ]}
                       label={avgScore.toFixed(0)}
                     />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sebaran Nilai</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Sebaran Nilai</span>
                     <div className="flex gap-3">
-                      <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />≥80: {scoreGood}</span>
-                      <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />60–79: {scoreMid}</span>
-                      <span className="flex items-center gap-1 text-[10px] text-slate-400"><span className="w-1.5 h-1.5 rounded-full bg-red-400" />&lt;60: {scoreLow}</span>
+                      <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />≥80: {scoreGood}</span>
+                      <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />60–79: {scoreMid}</span>
+                      <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-red-400" />&lt;60: {scoreLow}</span>
                     </div>
                   </div>
                   {avgMin !== null && (
@@ -543,7 +543,7 @@ export function AdminDashboard({ user }: { user: User }) {
                         ]}
                         label={`${Math.round(avgMin)}m`}
                       />
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Rata-rata Waktu</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rata-rata Waktu</span>
                     </div>
                   )}
                 </div>
@@ -552,11 +552,11 @@ export function AdminDashboard({ user }: { user: User }) {
                   <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
                     <thead className="border-b border-slate-200">
                       <tr>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Sesi</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Peserta</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Avg</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Lulus</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Waktu</th>
+                        <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sesi</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">Peserta</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">Avg</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
+                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">Waktu</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -564,14 +564,14 @@ export function AdminDashboard({ user }: { user: User }) {
                         <tr key={s.id}>
                           <td className="px-3 py-2 font-semibold text-slate-700 truncate max-w-[240px]">{s.name}</td>
                           <td className="px-3 py-2 text-center text-slate-500">{s.total}</td>
-                          <td className={`px-3 py-2 text-center font-bold ${s.avg >= 80 ? 'text-emerald-600' : s.avg >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>{s.avg.toFixed(1)}</td>
+                          <td className={`px-3 py-2 text-center font-bold ${s.avg >= 80 ? 'text-emerald-700' : s.avg >= 60 ? 'text-amber-700' : 'text-rose-600'}`}>{s.avg.toFixed(1)}</td>
                           <td className="px-3 py-2 text-center text-slate-500">{s.passed}/{s.total}</td>
                           <td className="px-3 py-2 text-center text-slate-500">{s.avgMin !== null ? `${s.avgMin.toFixed(0)} mnt` : '-'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  <p className="text-[10px] text-slate-400 pt-2">Diurutkan dari nilai rata-rata terendah</p>
+                  <p className="text-[10px] text-slate-500 pt-2">Diurutkan dari nilai rata-rata terendah</p>
                 </div>
               </div>
             </section>
@@ -597,7 +597,7 @@ export function AdminDashboard({ user }: { user: User }) {
                 <tbody className="divide-y divide-slate-100">
                   {divisionStats.map((d, i) => (
                     <tr key={d.name} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3.5 text-center text-sm font-black text-slate-300">{i + 1}</td>
+                      <td className="px-5 py-3.5 text-center text-sm font-black text-slate-500">{i + 1}</td>
                       <td className="px-5 py-3.5">
                         <div>
                           <div className="flex items-center gap-2">
@@ -610,7 +610,7 @@ export function AdminDashboard({ user }: { user: User }) {
                             )}
                           </div>
                           {d.source === 'division' && d.jabatan && (
-                            <p className="text-[10px] text-slate-400 mt-0.5 truncate max-w-[220px]">{d.jabatan}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5 truncate max-w-[220px]">{d.jabatan}</p>
                           )}
                         </div>
                       </td>
@@ -621,7 +621,7 @@ export function AdminDashboard({ user }: { user: User }) {
                             <div className="h-1.5 rounded-full"
                               style={{ width: `${d.avg}%`, background: d.avg >= 80 ? '#10b981' : d.avg >= 60 ? '#f59e0b' : '#f43f5e' }} />
                           </div>
-                          <span className={`text-xs font-bold w-8 text-right ${d.avg >= 80 ? 'text-emerald-600' : d.avg >= 60 ? 'text-amber-600' : 'text-rose-600'}`}>
+                          <span className={`text-xs font-bold w-8 text-right ${d.avg >= 80 ? 'text-emerald-700' : d.avg >= 60 ? 'text-amber-700' : 'text-rose-600'}`}>
                             {d.avg.toFixed(0)}
                           </span>
                         </div>
@@ -634,7 +634,7 @@ export function AdminDashboard({ user }: { user: User }) {
                               {gap >= 0 ? '▲' : '▼'} {Math.abs(gap).toFixed(1)}
                             </span>
                           );
-                        })() : <span className="text-slate-300 text-xs">—</span>}
+                        })() : <span className="text-slate-400 text-xs">—</span>}
                       </td>
                       <td className="px-5 py-3.5 text-center">
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${
@@ -657,7 +657,7 @@ export function AdminDashboard({ user }: { user: User }) {
           <div className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm" style={{ background: 'rgba(255,255,255,0.90)' }}>
             <div className="divide-y divide-slate-100">
               {filteredRecent.length === 0 && (
-                <div className="text-center text-slate-400 py-10 text-sm">
+                <div className="text-center text-slate-500 py-10 text-sm">
                   {search ? 'Tidak ada hasil yang cocok' : 'Belum ada aktivitas quiz'}
                 </div>
               )}
@@ -681,11 +681,11 @@ export function AdminDashboard({ user }: { user: User }) {
                       </span>
                     )}
                     {(a.tab_switches ?? 0) > 0 && (
-                      <span className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-shrink-0">
+                      <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full flex-shrink-0">
                         <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.tab_switches}× tab
                       </span>
                     )}
-                    <span className="text-xs text-slate-400 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
+                    <span className="text-xs text-slate-500 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
                   </div>
                 );
               })}
@@ -706,16 +706,16 @@ export function AdminDashboard({ user }: { user: User }) {
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
               <div>
                 <h2 className="font-bold text-slate-800 text-lg leading-tight">{selectedUser.name}</h2>
-                <p className="text-xs text-slate-400 mt-0.5">Riwayat semua quiz yang diselesaikan</p>
+                <p className="text-xs text-slate-500 mt-0.5">Riwayat semua quiz yang diselesaikan</p>
               </div>
               <button aria-label="Tutup" onClick={() => setSelectedUser(null)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 transition-all text-lg font-bold">✕</button>
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all text-lg font-bold">✕</button>
             </div>
             <div className="overflow-y-auto flex-1 p-6 space-y-5">
               {loadingUser ? (
                 <div className="py-16 text-center">
                   <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3" />
-                  <p className="text-slate-400 text-sm">Memuat data...</p>
+                  <p className="text-slate-500 text-sm">Memuat data...</p>
                 </div>
               ) : (
                 <>
@@ -727,16 +727,16 @@ export function AdminDashboard({ user }: { user: User }) {
                         value: userAttempts.length
                           ? (userAttempts.reduce((s, a) => s + (a.score ?? 0), 0) / userAttempts.length).toFixed(1) : '—',
                         color: (() => {
-                          if (!userAttempts.length) return 'text-slate-400';
+                          if (!userAttempts.length) return 'text-slate-500';
                           const avg = userAttempts.reduce((s, a) => s + (a.score ?? 0), 0) / userAttempts.length;
-                          return avg >= 80 ? 'text-emerald-600' : avg >= 70 ? 'text-amber-600' : 'text-rose-600';
+                          return avg >= 80 ? 'text-emerald-700' : avg >= 70 ? 'text-amber-700' : 'text-rose-600';
                         })(),
                       },
-                      { label: 'Lulus', value: userAttempts.filter(a => a.passed).length, color: 'text-emerald-600' },
+                      { label: 'Lulus', value: userAttempts.filter(a => a.passed).length, color: 'text-emerald-700' },
                       {
                         label: 'Pindah Tab',
                         value: userAttempts.reduce((s, a) => s + (a.tab_switches ?? 0), 0),
-                        color: userAttempts.reduce((s, a) => s + (a.tab_switches ?? 0), 0) > 0 ? 'text-amber-600' : 'text-slate-400',
+                        color: userAttempts.reduce((s, a) => s + (a.tab_switches ?? 0), 0) > 0 ? 'text-amber-700' : 'text-slate-500',
                       },
                     ].map(c => (
                       <div key={c.label} className="bg-slate-50 rounded-xl border border-slate-200 p-3 text-center">
@@ -746,7 +746,7 @@ export function AdminDashboard({ user }: { user: User }) {
                     ))}
                   </div>
                   <div className="space-y-3">
-                    {userAttempts.length === 0 && <p className="text-center text-slate-400 py-8 text-sm">Belum ada quiz yang diselesaikan</p>}
+                    {userAttempts.length === 0 && <p className="text-center text-slate-500 py-8 text-sm">Belum ada quiz yang diselesaikan</p>}
                     {userAttempts.map(a => {
                       const score   = a.score ?? 0;
                       const passing = a.lc_quiz_sessions?.passing_grade ?? 70;
@@ -765,20 +765,20 @@ export function AdminDashboard({ user }: { user: User }) {
                           />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-bold text-slate-800 truncate">{a.lc_quiz_sessions?.session_name ?? '—'}</p>
-                            <p className="text-xs text-slate-400 truncate">{a.lc_quiz_sessions?.materi_name ?? ''}</p>
+                            <p className="text-xs text-slate-500 truncate">{a.lc_quiz_sessions?.materi_name ?? ''}</p>
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                               <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${a.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
                                 {a.passed ? 'LULUS' : 'TIDAK LULUS'}
                               </span>
-                              {a.time_taken_sec != null && <span className="text-xs text-slate-400"><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>}
+                              {a.time_taken_sec != null && <span className="text-xs text-slate-500"><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec / 60)}m {a.time_taken_sec % 60}s</span>}
                               {tabSw > 0 && <span className="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {tabSw}× tab</span>}
                               {isFast && <span className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full"><IkonTeks nama="🚨" />Submit terlalu cepat</span>}
                             </div>
                           </div>
                           <div className="text-right flex-shrink-0 space-y-0.5">
                             <p className="text-xs font-semibold text-slate-600">{a.total_correct ?? '?'}/{a.total_questions ?? '?'} benar</p>
-                            <p className="text-[10px] text-slate-400">KKM {passing}</p>
-                            {a.submitted_at && <p className="text-[10px] text-slate-300">{new Date(a.submitted_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}
+                            <p className="text-[10px] text-slate-500">KKM {passing}</p>
+                            {a.submitted_at && <p className="text-[10px] text-slate-500">{new Date(a.submitted_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}
                           </div>
                         </div>
                       );

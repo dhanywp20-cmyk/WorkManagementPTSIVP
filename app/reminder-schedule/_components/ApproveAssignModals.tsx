@@ -87,7 +87,7 @@ export function ApproveAssignModal({
             {approveSupervisors.length > 0 && (
               <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.3)' }}>
                 <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="🎯" />Route ke Supervisor (Rekomendasi)</p>
-                <p className="text-[11px] text-amber-600 mb-3">
+                <p className="text-[11px] text-amber-700 mb-3">
                   Tipe produk <strong>{approveTarget.product_type || '-'}</strong> → Tim{' '}
                   <strong>{Array.from(new Set(approveSupervisors.map(s => s.team_type))).join(' & ')}</strong>.
                   Supervisor <strong>{approveSupervisors.map(s => s.full_name).join(', ')}</strong> akan di-WA untuk assign ke anggota tim atau kerjakan sendiri.
@@ -104,7 +104,7 @@ export function ApproveAssignModal({
             {/* Assign to Team — manual/fallback (dipakai jika tipe produk belum ter-mapping,
                 atau admin ingin assign langsung tanpa lewat Supervisor) */}
             <div>
-              <label htmlFor="f-reminder-schedule-components-approveassignmodals-1" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+              <label htmlFor="f-reminder-schedule-components-approveassignmodals-1" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
                 {approveSupervisors.length > 0 ? 'Atau Assign Langsung Manual' : 'Assign ke Team PTS *'}
               </label>
               <select id="f-reminder-schedule-components-approveassignmodals-1"
@@ -122,7 +122,7 @@ export function ApproveAssignModal({
             {/* Konfirmasi / ubah tanggal */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="f-reminder-schedule-components-approveassignmodals-2" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                <label htmlFor="f-reminder-schedule-components-approveassignmodals-2" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
                   Tanggal (opsional ubah)
                 </label>
                 <input id="f-reminder-schedule-components-approveassignmodals-2" type="date"
@@ -132,7 +132,7 @@ export function ApproveAssignModal({
                   style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
               </div>
               <div>
-                <label htmlFor="f-reminder-schedule-components-approveassignmodals-3" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                <label htmlFor="f-reminder-schedule-components-approveassignmodals-3" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
                   Waktu (opsional ubah)
                 </label>
                 <input id="f-reminder-schedule-components-approveassignmodals-3" type="time"
@@ -151,14 +151,14 @@ export function ApproveAssignModal({
                 <p className="text-xs font-bold mb-2" style={{ color: '#0e7490' }}>
                   <IkonTeks nama="📊" />Timeline Project Progress
                 </p>
-                <p className="text-[11px] mb-2.5" style={{ color: '#0891b2' }}>
+                <p className="text-[11px] mb-2.5" style={{ color: '#0e7490' }}>
                   {approveStart || approveTarget2
                     ? 'Diusulkan Sales — ubah bila perlu.'
                     : 'Sales tidak mengusulkan timeline. Isi di sini, atau lengkapi menyusul di Project Progress.'}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="f-reminder-schedule-components-approveassignmodals-4" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                    <label htmlFor="f-reminder-schedule-components-approveassignmodals-4" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                       Mulai Pengerjaan
                     </label>
                     <input id="f-reminder-schedule-components-approveassignmodals-4" type="date" value={approveStart}
@@ -167,7 +167,7 @@ export function ApproveAssignModal({
                       style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
                   </div>
                   <div>
-                    <label htmlFor="f-reminder-schedule-components-approveassignmodals-5" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#94a3b8' }}>
+                    <label htmlFor="f-reminder-schedule-components-approveassignmodals-5" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                       Target Selesai
                     </label>
                     <input id="f-reminder-schedule-components-approveassignmodals-5" type="date" value={approveTarget2} min={approveStart || undefined}
@@ -264,7 +264,7 @@ export function SupervisorAssignModal({
             )}
 
             <div>
-              <label htmlFor="f-reminder-schedule-components-approveassignmodals-6" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#94a3b8' }}>Assign ke *</label>
+              <label htmlFor="f-reminder-schedule-components-approveassignmodals-6" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Assign ke *</label>
               <select id="f-reminder-schedule-components-approveassignmodals-6" value={supervisorAssignTo} onChange={e => setSupervisorAssignTo(e.target.value)}
                 className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-amber-500/40"
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>

@@ -200,7 +200,7 @@ export function SchemeTab({ olehNama, notify }: {
                   className={inputKecil} />
                 <button type="button" aria-label={`Hapus kategori ${k || i + 1}`}
                   onClick={() => ubah({ kategoriProyek: sk.kategoriProyek.filter((_, j) => j !== i) })}
-                  className="text-rose-400 hover:text-rose-600 text-lg leading-none px-1">×</button>
+                  className="text-rose-600 hover:text-rose-700 text-lg leading-none px-1">×</button>
               </div>
             ))}
             <button type="button"
@@ -262,7 +262,7 @@ export function SchemeTab({ olehNama, notify }: {
                 bagi rata
               </label>
               <button type="button" onClick={() => hapusPeran(i)} aria-label={`Hapus peran ${p.label}`}
-                className="col-span-1 text-rose-400 hover:text-rose-600 text-lg leading-none">×</button>
+                className="col-span-1 text-rose-600 hover:text-rose-700 text-lg leading-none">×</button>
             </div>
           ))}
           <p className="text-[11px] text-gray-500 pt-1">
@@ -481,7 +481,7 @@ export function SchemeTab({ olehNama, notify }: {
                     ))}
                     {!hasil.length && <p className="px-3 py-3 text-xs text-gray-500 italic">Belum ada porsi.</p>}
                   </div>
-                  <p className={`px-3 py-1.5 text-xs font-bold ${pas ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
+                  <p className={`px-3 py-1.5 text-xs font-bold ${pas ? 'text-emerald-700 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
                     Total {totalPct.toFixed(2).replace(/\.00$/, '')}%
                   </p>
                   <p className="px-3 py-2 text-[10px] text-gray-500 leading-relaxed border-t border-gray-50">{ket}</p>
@@ -690,7 +690,7 @@ export function SchemeTab({ olehNama, notify }: {
               <span className="col-span-1 text-[11px] text-gray-500">thn</span>
               <button type="button" onClick={() => ubah({ tranche: sk.tranche.filter((_, j) => j !== i) })}
                 aria-label={`Hapus tahap ${t.nomor}`}
-                className="col-span-1 text-rose-400 hover:text-rose-600 text-lg leading-none">×</button>
+                className="col-span-1 text-rose-600 hover:text-rose-700 text-lg leading-none">×</button>
             </div>
           ))}
           <p className="text-[11px] text-gray-500 pt-1">Kolom kedua = persen, kolom ketiga = dicairkan pada tahun BAST + N.</p>
@@ -730,7 +730,7 @@ export function SchemeTab({ olehNama, notify }: {
                   ))}
                   {!hasil.length && <p className="px-3 py-3 text-xs text-gray-500 italic">Belum ada porsi.</p>}
                 </div>
-                <p className={`px-3 py-2 text-xs font-bold ${pas ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
+                <p className={`px-3 py-2 text-xs font-bold ${pas ? 'text-emerald-700 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
                   Total {totalPct.toFixed(2).replace(/\.00$/, '')}% · {rp(total)}
                 </p>
               </div>

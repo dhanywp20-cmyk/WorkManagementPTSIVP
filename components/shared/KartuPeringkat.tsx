@@ -50,7 +50,7 @@ export function KartuPeringkat({
     <div className="rounded-xl p-2.5 sm:p-4 flex flex-col gap-2.5 sm:gap-3 min-w-0"
       style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}>
       <p className="flex items-center gap-1.5 text-[10px] sm:text-[12.5px] font-semibold text-slate-700 leading-tight">
-        <Ikon nama={icon} ukuran={14} className="text-slate-400" />
+        <Ikon nama={icon} ukuran={14} className="text-slate-500" />
         <span className="truncate">{title}</span>
       </p>
 
@@ -81,7 +81,7 @@ export function KartuPeringkat({
       )}
 
       {tampil.length === 0 ? (
-        <p className="text-[11px] sm:text-xs text-slate-400 py-2">{kosong ?? 'Belum ada data'}</p>
+        <p className="text-[11px] sm:text-xs text-slate-500 py-2">{kosong ?? 'Belum ada data'}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {tampil.map(b => (
@@ -104,7 +104,7 @@ export function KartuPeringkat({
       )}
 
       {(lebih > 0 || lipatan) && (
-        <p className="text-[10px] sm:text-[11px] text-slate-400" title={lipatan?.rincian}>
+        <p className="text-[10px] sm:text-[11px] text-slate-500" title={lipatan?.rincian}>
           {lebih > 0 && <>+{lebih} lainnya{lipatan ? ' · ' : ''}</>}
           {lipatan?.teks}
         </p>

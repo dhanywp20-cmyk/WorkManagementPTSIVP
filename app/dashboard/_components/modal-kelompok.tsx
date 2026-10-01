@@ -177,7 +177,7 @@ export function KelompokSettingInline() {
       : 'Tersimpan. Lonceng ikut berubah tanpa perlu deploy.');
   };
 
-  if (!siap) return <div className="p-6 text-sm text-slate-400">Memuat pengaturan…</div>;
+  if (!siap) return <div className="p-6 text-sm text-slate-500">Memuat pengaturan…</div>;
 
   return (
     <div className="h-full overflow-y-auto p-4 sm:p-6 space-y-5">
@@ -201,7 +201,7 @@ export function KelompokSettingInline() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-[10px] font-bold tracking-widest uppercase text-slate-400 border-b border-slate-100">
+              <tr className="text-[10px] font-bold tracking-widest uppercase text-slate-500 border-b border-slate-100">
                 <th className="text-left px-4 py-2.5">Kelompok</th>
                 <th className="text-left px-3 py-2.5">Jenis</th>
                 <th className="text-center px-3 py-2.5" title="Ikut dropdown assign di Ticketing, Request Schedule, Request Design Project">Bisa&nbsp;Ditugaskan</th>
@@ -223,7 +223,7 @@ export function KelompokSettingInline() {
                   <tr key={k.nama || '(sales)'} className="border-b border-slate-50 last:border-0">
                     <td className="px-4 py-2.5">
                       <p className="font-bold text-slate-800">{k.label}</p>
-                      <p className="text-[11px] text-slate-400 font-mono">
+                      <p className="text-[11px] text-slate-500 font-mono">
                         {k.nama || '(tanpa team_type)'}
                         {jumlah > 0 && <span className="ml-1.5 font-sans font-bold">· {jumlah} akun</span>}
                       </p>
@@ -275,7 +275,7 @@ export function KelompokSettingInline() {
                     <td className="px-3 py-2.5 text-right">
                       {!bawaan && (
                         <button type="button" onClick={() => hapus(k)}
-                          className="text-[11px] font-bold text-slate-400 hover:text-rose-600 transition-all">
+                          className="text-[11px] font-bold text-slate-500 hover:text-rose-600 transition-all">
                           Hapus
                         </button>
                       )}
@@ -289,7 +289,7 @@ export function KelompokSettingInline() {
 
         <div className="p-4 border-t border-slate-100 space-y-3">
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-400">Tambah Kelompok PTS</label>
+            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500">Tambah Kelompok PTS</label>
             <div className="flex gap-2">
               <input value={namaBaru} onChange={e => setNamaBaru(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); tambah(); } }}
@@ -306,7 +306,7 @@ export function KelompokSettingInline() {
                 Akan disimpan sebagai: <span className="font-mono">{namaKelompokDari(namaBaru)}</span>
               </p>
             )}
-            <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+            <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
               Namanya harus sama persis dengan isi kolom <span className="font-mono">team_type</span> di akun —
               itulah yang dicocokkan seluruh platform. Awalan &quot;Team PTS &quot; ditambahkan otomatis
               (awalan yang sudah kamu ketik tidak akan dobel).
@@ -314,7 +314,7 @@ export function KelompokSettingInline() {
           </div>
 
           <div className="flex items-center justify-end gap-2">
-            <p className="text-[11px] text-slate-400 mr-auto">Kelompok yang masih dipakai akun tidak bisa dihapus.</p>
+            <p className="text-[11px] text-slate-500 mr-auto">Kelompok yang masih dipakai akun tidak bisa dihapus.</p>
             <button type="button" onClick={() => setDaftar(KELOMPOK_BAWAAN)}
               className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">
               Kembalikan ke bawaan
@@ -328,7 +328,7 @@ export function KelompokSettingInline() {
         </div>
       </div>
 
-      <p className="text-[11px] text-slate-400 leading-relaxed">
+      <p className="text-[11px] text-slate-500 leading-relaxed">
         Kelompok yang tidak bisa ditugaskan tetap punya loncengnya sendiri — Team PTS UMP misalnya, yang
         pekerjaannya di Piket Showroom, hanya perlu lonceng Reminder. Siapa yang membawahi kelompok mana
         diatur terpisah di User Management → Lingkup Manager.

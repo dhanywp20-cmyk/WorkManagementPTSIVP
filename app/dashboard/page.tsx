@@ -832,9 +832,9 @@ export default function Dashboard() {
               <button key={itemIndex} onClick={e => { e.stopPropagation(); handleMenuClick(item, menu.title); }}
                 className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 text-slate-800 px-5 py-4 rounded-md font-semibold shadow-sm hover:shadow-md transition-all text-right flex items-center justify-end gap-4 group/item">
                 {item.external && !item.embed ? (
-                  <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                 ) : (
-                  <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-400 transition-transform group-hover/item:-translate-x-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-500 transition-transform group-hover/item:-translate-x-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                 )}
                 <span className="flex-1 text-sm tracking-wide text-right">{item.name}</span>
                 <div className="w-10 h-10 bg-white rounded-md shadow-sm flex items-center justify-center text-xl border border-slate-200 text-slate-600 group-hover/item:scale-110 transition-transform flex-shrink-0"><Ikon nama={item.icon} ukuran={20} /></div>
@@ -911,7 +911,7 @@ export default function Dashboard() {
               {/* Logo kecil — hanya mobile (di desktop logo ada di panel kiri) */}
               <div className="flex lg:hidden items-center gap-2.5 mb-6">
                 <LogoMerek ukuran="lg" />
-                <span className="text-lg font-bold text-slate-800">{merek.namaPlatform} <span className="text-slate-400 font-normal">· {merek.namaPortal}</span></span>
+                <span className="text-lg font-bold text-slate-800">{merek.namaPlatform} <span className="text-slate-500 font-normal">· {merek.namaPortal}</span></span>
               </div>
               <h2 className="text-xl sm:text-3xl font-bold text-slate-800 tracking-tight">{showRegister ? 'Buat Akun Baru' : 'Selamat Datang'}</h2>
               <p className="text-slate-500 text-sm mt-1.5">{showRegister ? 'Lengkapi data untuk mendaftar. Akun akan diverifikasi admin.' : 'Masuk ke akun Anda untuk melanjutkan'}</p>
@@ -933,7 +933,7 @@ export default function Dashboard() {
                       placeholder="Enter your password" onKeyDown={(e) => { if (e.key === 'Enter') { setLoginErr(''); handleLogin(); } }} />
                     <button type="button" onClick={() => setShowLoginPwd(v => !v)} tabIndex={-1}
                       aria-label={showLoginPwd ? 'Sembunyikan password' : 'Tampilkan password'}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 transition-colors">
                       {showLoginPwd ? (
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
                       ) : (
@@ -965,9 +965,9 @@ export default function Dashboard() {
                     <>🔐 Sign In to Portal</>
                   )}
                 </button>
-                <p className="text-center text-xs text-slate-400 pt-1">
+                <p className="text-center text-xs text-slate-500 pt-1">
                   Belum punya akun? <button onClick={() => pindahForm(true)} className="text-indigo-600 font-bold hover:underline">Daftar di sini</button>
-                  <span className="mx-2 text-slate-300">|</span>
+                  <span className="mx-2 text-slate-400">|</span>
                   <button onClick={() => { setShowForgot(true); setForgotStep('request'); setForgotMsg(null); }} className="font-bold hover:underline" style={{ color: merek.warnaUtama }}>Lupa Password?</button>
                 </p>
               </div>
@@ -1008,7 +1008,7 @@ export default function Dashboard() {
                               className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="min. 8 karakter, ada kapital & angka" />
                             <button type="button" onClick={() => setShowRegPwd(v => !v)} tabIndex={-1}
                               aria-label={showRegPwd ? 'Sembunyikan password' : 'Tampilkan password'}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 transition-colors">
                               {showRegPwd ? (
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
                               ) : (
@@ -1024,7 +1024,7 @@ export default function Dashboard() {
                               className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="ulangi password" />
                             <button type="button" onClick={() => setShowRegConfirmPwd(v => !v)} tabIndex={-1}
                               aria-label={showRegConfirmPwd ? 'Sembunyikan password' : 'Tampilkan password'}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors">
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 transition-colors">
                               {showRegConfirmPwd ? (
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
                               ) : (
@@ -1099,7 +1099,7 @@ export default function Dashboard() {
                       {registerLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                       <IkonTeks nama="📝" />Daftar Akun
                     </button>
-                    <p className="text-center text-xs text-slate-400">Sudah punya akun? <button onClick={() => pindahForm(false)} className="font-bold hover:underline" style={{ color: merek.warnaUtama }}>Login</button></p>
+                    <p className="text-center text-xs text-slate-500">Sudah punya akun? <button onClick={() => pindahForm(false)} className="font-bold hover:underline" style={{ color: merek.warnaUtama }}>Login</button></p>
                   </div>
                 )}
               </div>
@@ -1114,7 +1114,7 @@ export default function Dashboard() {
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-800"><IkonTeks nama="🔐" />Reset Password</h3>
-                <button aria-label="Tutup" onClick={() => setShowForgot(false)} className="text-slate-400 hover:text-slate-600 font-bold text-lg leading-none">✕</button>
+                <button aria-label="Tutup" onClick={() => setShowForgot(false)} className="text-slate-500 hover:text-slate-600 font-bold text-lg leading-none">✕</button>
               </div>
               {forgotMsg && (
                 <div className={`px-3 py-2 rounded-lg text-xs font-semibold ${forgotMsg.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
@@ -1153,7 +1153,7 @@ export default function Dashboard() {
                     </button>
                   </div>
                   <button onClick={handleForgotRequest} disabled={forgotLoading}
-                    className="w-full text-xs text-slate-400 hover:text-rose-500 transition-all">
+                    className="w-full text-xs text-slate-500 hover:text-rose-500 transition-all">
                     Kirim ulang OTP
                   </button>
                 </div>
@@ -1182,7 +1182,7 @@ export default function Dashboard() {
                   <span className="hidden sm:inline">{merek.namaPlatform}</span>
                   <span className="sm:hidden">{merek.namaPlatformSingkat}</span>
                 </h1>
-                <span className="hidden sm:inline text-slate-300 font-light">|</span>
+                <span className="hidden sm:inline text-slate-400 font-light">|</span>
                 <span className="hidden sm:inline text-xs md:text-sm font-bold tracking-wide" style={{ color: merek.warnaAksen }}>{merek.namaPortal}</span>
               </div>
               <p className="text-slate-500 text-[10px] md:text-xs font-medium mt-0.5 hidden sm:block">{merek.namaPerusahaan}</p>
@@ -1230,7 +1230,7 @@ export default function Dashboard() {
                 </div>
                 <div className="leading-tight">
                   <p className="text-xs font-bold text-slate-800">{currentUser?.full_name}</p>
-                  <p className="text-[9px] font-bold tracking-widest uppercase text-amber-600">{currentUser?.role}</p>
+                  <p className="text-[9px] font-bold tracking-widest uppercase text-amber-700">{currentUser?.role}</p>
                 </div>
               </div>
             )}
@@ -1447,7 +1447,7 @@ export default function Dashboard() {
           */}
           {!sidebarCollapsed && (
             <div className="flex items-center justify-between gap-2 flex-shrink-0 pl-3.5 pr-2 pt-2.5 pb-1">
-              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 truncate">Menu</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 truncate">Menu</span>
               <button aria-label="Ciutkan menu samping" aria-expanded={!sidebarCollapsed}
                 onClick={() => setSidebarCollapsed(true)}
                 className="w-7 h-7 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
@@ -1556,7 +1556,7 @@ export default function Dashboard() {
                 {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Learning</span>
+                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.56)' }}>Learning</span>
                       <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
                     </div>
                     <div className="space-y-0.5">
@@ -1608,7 +1608,7 @@ export default function Dashboard() {
                 {visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key)).length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Project</span>
+                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.56)' }}>Project</span>
                       <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
                     </div>
                     <div className="space-y-0.5">
@@ -1660,7 +1660,7 @@ export default function Dashboard() {
                 {visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)).length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.38)' }}>Internal Daily</span>
+                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.56)' }}>Internal Daily</span>
                       <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
                     </div>
                     <div className="space-y-0.5">
@@ -1703,7 +1703,7 @@ export default function Dashboard() {
                                 </span>
                               )}
                               {item.external && !item.embed && (
-                                <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                 </svg>
                               )}
@@ -1825,9 +1825,9 @@ export default function Dashboard() {
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
-                  style={{ color: '#94a3b8', border: '1px solid transparent' }}
+                  style={{ color: '#64748b', border: '1px solid transparent' }}
                   onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#b91c1c'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.15)'; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
                 >
                   <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -1921,12 +1921,12 @@ export default function Dashboard() {
                 />
               </div>
             ) : (
-              <div className="flex items-center justify-center h-full text-slate-400"
+              <div className="flex items-center justify-center h-full text-slate-500"
                 style={latarDasbor(merek)}>
                 <div className="text-center bg-white/75 rounded-2xl px-8 py-6 shadow-lg backdrop-blur-md">
                   <div className="text-5xl mb-3">📂</div>
                   <p className="font-semibold text-base text-slate-600">Pilih menu dari sidebar</p>
-                  <p className="text-sm mt-1 text-slate-400">Klik salah satu menu di sebelah kiri untuk memulai</p>
+                  <p className="text-sm mt-1 text-slate-500">Klik salah satu menu di sebelah kiri untuk memulai</p>
                 </div>
               </div>
             )}

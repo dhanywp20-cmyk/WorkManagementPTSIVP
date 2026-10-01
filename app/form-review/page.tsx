@@ -530,7 +530,7 @@ function FormReviewPageInner() {
                 <div>
                   <h3 className="text-lg font-bold text-gray-800">Hapus Review</h3>
                   <p className="text-xs font-medium text-gray-500">{deleteTarget.project_name}</p>
-                  <p className="text-xs text-gray-400">{deleteTarget.review_category}</p>
+                  <p className="text-xs text-gray-500">{deleteTarget.review_category}</p>
                 </div>
               </div>
               <div className="rounded-xl p-3 mb-4 text-xs"
@@ -590,12 +590,12 @@ function FormReviewPageInner() {
                 <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)' }}>
                   <p className="text-[10px] font-bold tracking-widest uppercase text-violet-600">Informasi Project</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    <div><span className="text-gray-400">Project:</span> <span className="font-semibold text-gray-700">{editingReview.project_name}</span></div>
-                    <div><span className="text-gray-400">Lokasi:</span> <span className="font-semibold text-gray-700">{editingReview.address}</span></div>
-                    <div><span className="text-gray-400">Sales:</span> <span className="font-semibold text-gray-700">{editingReview.sales_name}</span></div>
-                    <div><span className="text-gray-400">Divisi:</span> <span className="font-semibold text-gray-700">{editingReview.sales_division}</span></div>
-                    <div><span className="text-gray-400">Handler:</span> <span className="font-semibold text-gray-700">{editingReview.assign_name}</span></div>
-                    <div><span className="text-gray-400">Kategori:</span> <span className="font-semibold text-gray-700">{editingReview.reminder_category}</span></div>
+                    <div><span className="text-gray-500">Project:</span> <span className="font-semibold text-gray-700">{editingReview.project_name}</span></div>
+                    <div><span className="text-gray-500">Lokasi:</span> <span className="font-semibold text-gray-700">{editingReview.address}</span></div>
+                    <div><span className="text-gray-500">Sales:</span> <span className="font-semibold text-gray-700">{editingReview.sales_name}</span></div>
+                    <div><span className="text-gray-500">Divisi:</span> <span className="font-semibold text-gray-700">{editingReview.sales_division}</span></div>
+                    <div><span className="text-gray-500">Handler:</span> <span className="font-semibold text-gray-700">{editingReview.assign_name}</span></div>
+                    <div><span className="text-gray-500">Kategori:</span> <span className="font-semibold text-gray-700">{editingReview.reminder_category}</span></div>
                   </div>
                 </div>
 
@@ -747,7 +747,7 @@ function FormReviewPageInner() {
                     { icon: '🔄', label: 'Update', value: detailReview.updated_at ? formatDatetime(detailReview.updated_at) : null },
                   ].filter(x => x.value).map((item, i) => (
                     <div key={i} className="rounded-xl px-4 py-3" style={{ background: 'rgba(248,250,252,0.9)', border: '1px solid rgba(0,0,0,0.07)' }}>
-                      <p className="text-[9px] font-bold tracking-widest uppercase text-gray-400"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {item.label}</p>
+                      <p className="text-[9px] font-bold tracking-widest uppercase text-gray-500"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {item.label}</p>
                       <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{item.value}</p>
                     </div>
                   ))}
@@ -760,21 +760,21 @@ function FormReviewPageInner() {
 
                     {detailReview.product_demo ? (
                       <div>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Product yang Di-Demo</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Product yang Di-Demo</p>
                         <p className="text-sm text-gray-700 whitespace-pre-wrap bg-white/60 rounded-lg px-3 py-2 border border-violet-100">{detailReview.product_demo}</p>
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-400 italic px-2">Product belum diisi</p>
+                      <p className="text-xs text-gray-500 italic px-2">Product belum diisi</p>
                     )}
 
                     <div>
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Grade Product Knowledge</p>
+                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Grade Product Knowledge</p>
                       {detailReview.grade_product_knowledge ? (
                         <>
                           <StarRating value={detailReview.grade_product_knowledge} disabled />
                           {detailReview.catatan_grade_product_knowledge && (
                             <div className="mt-2 bg-white/60 rounded-lg px-3 py-2 border border-violet-100">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Catatan</p>
+                              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Catatan</p>
                               <p className="text-xs text-gray-600 italic">{detailReview.catatan_grade_product_knowledge}</p>
                             </div>
                           )}
@@ -792,20 +792,20 @@ function FormReviewPageInner() {
                 {/* BAST review detail */}
                 {detailReview.review_category === 'BAST' && (
                   <div className="rounded-xl p-4 space-y-4" style={{ background: 'rgba(14,165,233,0.04)', border: '1.5px solid rgba(14,165,233,0.15)' }}>
-                    <p className="text-[10px] font-bold tracking-widest uppercase text-sky-600"><IkonTeks nama="📌" />Review BAST (Training)</p>
+                    <p className="text-[10px] font-bold tracking-widest uppercase text-sky-700"><IkonTeks nama="📌" />Review BAST (Training)</p>
 
                     {detailReview.product_bast ? (
                       <div>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Product yang Di-Training</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Product yang Di-Training</p>
                         <p className="text-sm text-gray-700 whitespace-pre-wrap bg-white/60 rounded-lg px-3 py-2 border border-sky-100">{detailReview.product_bast}</p>
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-400 italic px-2">Product belum diisi</p>
+                      <p className="text-xs text-gray-500 italic px-2">Product belum diisi</p>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Grade Training Customer</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Grade Training Customer</p>
                         {detailReview.grade_training_customer ? (
                           <>
                             <StarRating value={detailReview.grade_training_customer} disabled />
@@ -821,7 +821,7 @@ function FormReviewPageInner() {
                         )}
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Grade Product Knowledge</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Grade Product Knowledge</p>
                         {detailReview.grade_product_knowledge_bast ? (
                           <>
                             <StarRating value={detailReview.grade_product_knowledge_bast} disabled />
@@ -843,7 +843,7 @@ function FormReviewPageInner() {
                 {/* Foto Dokumentasi */}
                 {detailReview.foto_dokumentasi_url ? (
                   <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
-                    <p className="text-[10px] font-bold tracking-widest uppercase text-gray-400 px-4 pt-3 pb-2"><IkonTeks nama="📸" />Foto Dokumentasi</p>
+                    <p className="text-[10px] font-bold tracking-widest uppercase text-gray-500 px-4 pt-3 pb-2"><IkonTeks nama="📸" />Foto Dokumentasi</p>
                     <img
                       src={detailReview.foto_dokumentasi_url}
                       alt="Foto Dokumentasi"
@@ -861,8 +861,8 @@ function FormReviewPageInner() {
                   </div>
                 ) : (
                   <div className="rounded-xl px-4 py-3 flex items-center gap-2" style={{ background: 'rgba(0,0,0,0.03)', border: '1px dashed rgba(0,0,0,0.15)' }}>
-                    <span className="text-gray-300 text-xl"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                    <p className="text-xs text-gray-400">Belum ada foto dokumentasi</p>
+                    <span className="text-gray-400 text-xl"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                    <p className="text-xs text-gray-500">Belum ada foto dokumentasi</p>
                   </div>
                 )}
 
@@ -1143,43 +1143,43 @@ function FormReviewPageInner() {
             {/* Filter Bar — sama persis dengan Reminder Schedule */}
             <div className="px-3 py-2 sm:px-5 sm:py-3 flex flex-wrap gap-1.5 sm:gap-3 items-end border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="🔍" />Search Project / Lokasi</label>
+                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="🔍" />Search Project / Lokasi</label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search project / lokasi..." style={{ minWidth: 180 }} />
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="👤" />Sales Name</label>
+                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="👤" />Sales Name</label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales..." value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search sales..." />
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
+                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search handler..." value={searchHandler} onChange={e => setSearchHandler(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Search handler..." />
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-0.5 sm:mb-1">Kategori</label>
+                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Kategori</label>
                 <div className="relative">
-                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-[11px]"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="Semua Kategori" value={filterReviewCat} onChange={e => setFilterReviewCat(e.target.value as any)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
                     <option value="all">Semua Kategori</option>
                     <option value="Demo Product">Demo Product</option>
                     <option value="BAST">BAST</option>
                   </select>
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none">▼</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none">▼</span>
                 </div>
               </div>
             </div>
@@ -1340,13 +1340,13 @@ function FormReviewPageInner() {
                             {selectMode && isAdmin
                               ? <input type="checkbox" checked={selectedIds.has(r.id)}
                                   onChange={() => toggleSelectId(r.id)} className="w-4 h-4 rounded accent-violet-600 cursor-pointer" />
-                              : <span className="text-[11px] font-bold text-gray-400">{hal.mulai + idx + 1}</span>}
+                              : <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>}
                           </td>
                           {/* Project */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle">
                             <div className="text-xs font-bold text-gray-800 leading-tight break-words">{r.project_name || '—'}</div>
-                            {r.address && <div className="text-[10px] text-gray-400 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</div>}
-                            <div className="text-[10px] text-gray-400 mt-0.5">{r.created_at ? formatDatetime(r.created_at) : '—'}</div>
+                            {r.address && <div className="text-[10px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</div>}
+                            <div className="text-[10px] text-gray-500 mt-0.5">{r.created_at ? formatDatetime(r.created_at) : '—'}</div>
                           </td>
                           {/* Kategori */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle">
@@ -1376,14 +1376,14 @@ function FormReviewPageInner() {
                           {/* Grade 1 */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle">
                             {isDemo
-                              ? (r.grade_product_knowledge ? <StarRating value={r.grade_product_knowledge} disabled /> : <span className="text-gray-300 text-xs">—</span>)
-                              : (r.grade_training_customer ? <StarRating value={r.grade_training_customer} disabled /> : <span className="text-gray-300 text-xs">—</span>)
+                              ? (r.grade_product_knowledge ? <StarRating value={r.grade_product_knowledge} disabled /> : <span className="text-gray-400 text-xs">—</span>)
+                              : (r.grade_training_customer ? <StarRating value={r.grade_training_customer} disabled /> : <span className="text-gray-400 text-xs">—</span>)
                             }
                           </td>
                           {/* Grade 2 (BAST only) */}
                           {!isDemo && (
                             <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                              {r.grade_product_knowledge_bast ? <StarRating value={r.grade_product_knowledge_bast} disabled /> : <span className="text-gray-300 text-xs">—</span>}
+                              {r.grade_product_knowledge_bast ? <StarRating value={r.grade_product_knowledge_bast} disabled /> : <span className="text-gray-400 text-xs">—</span>}
                             </td>
                           )}
                           {/* Status */}
@@ -1413,8 +1413,8 @@ function FormReviewPageInner() {
                   </tbody>
                 </table>
                 <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
-                  <span className="text-[10px] text-gray-400">{tableReviews.length} review ditemukan ({switchTab})</span>
-                  <span className="text-[10px] text-gray-400">dari {reviews.length} review keseluruhan</span>
+                  <span className="text-[10px] text-gray-500">{tableReviews.length} review ditemukan ({switchTab})</span>
+                  <span className="text-[10px] text-gray-500">dari {reviews.length} review keseluruhan</span>
                 </div>
                 <Paginasi {...hal} satuan="review" />
               </div>

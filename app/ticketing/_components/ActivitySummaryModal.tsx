@@ -85,16 +85,16 @@ export function ActivitySummaryModal({
             </div>
 
             <div className="flex flex-wrap gap-2 mb-5 p-3 rounded-xl text-xs" style={{ background: "rgba(0,0,0,0.03)", border: "1px solid rgba(0,0,0,0.08)" }}>
-              <span className="flex items-center gap-1"><span className="text-gray-500"><IkonTeks nama="👤" />Handler:</span><span className="font-bold">{summaryTicket.assign_name || "-"}</span></span><span className="text-gray-300">|</span>
-              <span className="flex items-center gap-1"><span className="text-gray-500"><IkonTeks nama="📅" />Dibuat:</span><span className="font-bold">{summaryTicket.created_at ? formatDateTime(summaryTicket.created_at) : "-"}</span></span><span className="text-gray-300">|</span>
+              <span className="flex items-center gap-1"><span className="text-gray-500"><IkonTeks nama="👤" />Handler:</span><span className="font-bold">{summaryTicket.assign_name || "-"}</span></span><span className="text-gray-400">|</span>
+              <span className="flex items-center gap-1"><span className="text-gray-500"><IkonTeks nama="📅" />Dibuat:</span><span className="font-bold">{summaryTicket.created_at ? formatDateTime(summaryTicket.created_at) : "-"}</span></span><span className="text-gray-400">|</span>
               <span className={`px-2 py-0.5 rounded-full font-bold border ${statusColors[summaryTicket.status]}`}>{summaryTicket.status}</span>
-              {summaryTicket.services_status && (<><span className="text-gray-300">|</span><span className={`px-2 py-0.5 rounded-full font-bold border ${statusColors[summaryTicket.services_status]}`}>Svc: {summaryTicket.services_status}</span></>)}
+              {summaryTicket.services_status && (<><span className="text-gray-400">|</span><span className={`px-2 py-0.5 rounded-full font-bold border ${statusColors[summaryTicket.services_status]}`}>Svc: {summaryTicket.services_status}</span></>)}
               {/* Warranty badge */}
               {(() => {
                 const w = getWarrantyInfo(summaryTicket.project_name);
                 if (!w) return null;
                 return (<>
-                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-400">|</span>
                   <span className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px]"
                     style={w.isIn
                       ? { background: "rgba(14,165,233,0.15)", color: "#0369a1", border: "1px solid rgba(14,165,233,0.3)" }
@@ -105,7 +105,7 @@ export function ActivitySummaryModal({
                 </>);
               })()}
             </div>
-            {!summaryTicket.activity_logs || summaryTicket.activity_logs.length === 0 ? (<div className="text-center py-10 text-gray-400"><div className="text-5xl mb-3"><Ikon nama="📭" ukuran="1em" className="inline-block align-[-0.12em]" /></div><p className="font-semibold">Belum ada activity yang tercatat</p></div>) : (
+            {!summaryTicket.activity_logs || summaryTicket.activity_logs.length === 0 ? (<div className="text-center py-10 text-gray-500"><div className="text-5xl mb-3"><Ikon nama="📭" ukuran="1em" className="inline-block align-[-0.12em]" /></div><p className="font-semibold">Belum ada activity yang tercatat</p></div>) : (
               <div className="relative">
                 <div className="flex items-center gap-3 mb-1"><div className="flex flex-col items-center"><div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center text-white text-base shadow-md"><Ikon nama="🎫" ukuran="1em" className="inline-block align-[-0.12em]" /></div></div><div className="flex-1 rounded-xl px-4 py-2" style={{ background: "rgba(59,130,246,0.1)", border: "2px solid rgba(59,130,246,0.3)" }}><p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Ticket Dibuat</p><p className="text-sm font-semibold text-gray-800">{summaryTicket.project_name}</p><p className="text-xs text-gray-500">{summaryTicket.created_at ? formatDateTime(summaryTicket.created_at) : "-"}</p></div></div>
                 {[...summaryTicket.activity_logs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).map((log, idx, arr) => {

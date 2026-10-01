@@ -2,12 +2,20 @@ name: Android APK
 
 # APK native (WebView + FCM) yang membuka web produksi. Web baru TIDAK butuh
 # APK baru; rilis APK hanya saat android/ berubah (naikkan version.properties).
+#
+# Alur rilis (bisa dijalankan dari sesi cloud yang tidak punya Android SDK):
+#   1. naikkan versionCode & versionName di android/version.properties
+#   2. merge ke main
+#   3. job ini membangun APK rilis bertanda tangan lalu MENERBITKANNYA sendiri
+#      ke Admin Panel -> Aplikasi Android (scripts/terbitkan-apk.mjs); pengguna
+#      aplikasi langsung mendapat ajakan update.
+# Push tanpa kenaikan versionCode tidak menerbitkan apa pun.
 on:
   push:
     branches: [main]
-    paths: ['android/**', '.github/workflows/android.yml']
+    paths: ['android/**', '.github/workflows/android.yml', 'scripts/terbitkan-apk.mjs']
   pull_request:
-    paths: ['android/**', '.github/workflows/android.yml']
+    paths: ['android/**', '.github/workflows/android.yml', 'scripts/terbitkan-apk.mjs']
   workflow_dispatch:
 
 permissions:
@@ -73,6 +81,23 @@ jobs:
           name: apk
           path: android/app/build/outputs/apk/**/*.apk
 
-      # Rilis ke pengguna TIDAK lagi dari CI: unduh artefak "apk" di atas (atau
-      # build di laptop), lalu unggah di Admin Panel -> Aplikasi Android.
-      # Berkasnya masuk Supabase Storage dan langsung tampil di Profil.
+      # Terbitkan ke Admin Panel -> Aplikasi Android, hanya dari main dan hanya
+      # APK rilis (bertanda tangan kunci tetap - APK debug ditandatangani kunci
+      # acak per build, jadi tidak bisa dipasang menimpa versi sebelumnya).
+      # Unggah manual lewat Admin Panel tetap bisa dipakai kapan saja.
+      - name: Terbitkan ke Admin Panel
+        if: steps.kunci.outputs.ada == '1' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          PESAN: ${{ github.event.head_commit.message }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "::warning::Secret SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY belum diisi - APK tidak diterbitkan otomatis. Unggah artefak 'apk' lewat Admin Panel."
+            exit 0
+          fi
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          # Commit merge PR berbaris pertama "Merge pull request #N from ..." -
+          # tidak berguna sebagai catatan rilis; judul PR ada di badan commit.
+          CATATAN=$(printf '%s\n' "$PESAN" | grep -v '^Merge pull request' | grep -v '^Co-Authored-By\|^Claude-Session' | sed '/^[[:space:]]*$/d' | head -5)
+          node scripts/terbitkan-apk.mjs "$APK" "$CATATAN"
