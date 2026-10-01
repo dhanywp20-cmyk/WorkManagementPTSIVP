@@ -1235,6 +1235,23 @@ export function IntegrasiInline() {
                 </div>
               </div>
 
+              <div className="rounded-xl border border-sky-200 overflow-hidden" style={{ background: 'rgba(14,165,233,0.04)' }}>
+                <div className="px-4 py-3 border-b border-sky-100">
+                  <h3 className="text-sm font-bold text-sky-800">Asisten AI (Tanya Platform & draf Daily Report)</h3>
+                  <p className="text-[11.5px] text-slate-600 mt-0.5">
+                    Dipakai seluruh tim setiap hari. Batas per orang: 20 pertanyaan/jam, 80/hari.
+                  </p>
+                </div>
+                <div className="p-3">
+                  <BlokToken
+                    judul="Token AI Asisten" kunci="ai.gemini_token_asisten" status={rahasia['ai.gemini_token_asisten']}
+                    onSimpan={n => simpanRahasia('ai.gemini_token_asisten', n)}
+                    onHapus={() => hapusRahasia('ai.gemini_token_asisten')}
+                    petunjuk={<>Kosongkan untuk memakai Token AI pembuat soal. Disarankan kunci dari <b>proyek Google
+                      terpisah</b> supaya jatah pembuat soal & penilai tidak ikut habis.</>} />
+                </div>
+              </div>
+
               <div className="rounded-xl border border-violet-200 overflow-hidden" style={{ background: 'rgba(139,92,246,0.04)' }}>
                 <div className="px-4 py-3 border-b border-violet-100">
                   <h3 className="text-sm font-bold text-violet-700">Penilai Jawaban Essay</h3>

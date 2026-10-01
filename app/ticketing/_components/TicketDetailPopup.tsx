@@ -7,6 +7,7 @@ import { cetakTicket } from './cetak-ticket';
 import type { Ticket, User } from './shared';
 import { formatDateTime, statusColors, ringkasPenanganan, bolehReroute, adalahPending } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { SolusiSerupa } from './SolusiSerupa';
 
 /** Bentuk state form "Update Status" di page.tsx - dioper ke sini apa adanya. */
 export type NewActivityForm = {
@@ -224,6 +225,11 @@ export function TicketDetailPopup({
                   </div>
                 </div>
               </div>
+
+              {selectedTicket.status !== "Solved" && selectedTicket.status !== "Rejected" && (
+                <SolusiSerupa ticketId={selectedTicket.id}
+                  teks={[selectedTicket.issue_case, selectedTicket.product, selectedTicket.description].filter(Boolean).join(' ')} />
+              )}
 
               {/* Warranty Info */}
               {(() => {

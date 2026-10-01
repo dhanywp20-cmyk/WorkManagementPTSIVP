@@ -210,6 +210,9 @@ export default function DailyReportPage() {
   const [formDate, setFormDate]       = useState(todayISO());
   const [formUserId, setFormUserId]   = useState('');
   const [reminderNotes, setReminderNotes] = useState('');
+  /** Draf ringkasan AI: sedang menyusun / pesan gagal. */
+  const [menyusun, setMenyusun] = useState(false);
+  const [galatSusun, setGalatSusun] = useState('');
   const [formReminders, setFormReminders] = useState<ReminderActivity[]>([]);
   const [formTickets, setFormTickets]     = useState<TicketActivity[]>([]);
   const [manualActs, setManualActs]       = useState<ManualActivity[]>([]);
@@ -637,6 +640,23 @@ export default function DailyReportPage() {
 
   if (!appReady) return <LoadingScreen />;
 
+  const susunDenganAI = async () => {
+    setMenyusun(true); setGalatSusun('');
+    try {
+      const r = await fetch('/api/asisten/draf-daily-report', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tanggal: formDate, jadwal: formReminders, tiket: formTickets, manual: manualActs }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.ok) throw new Error(j.alasan ?? 'Gagal menyusun draf.');
+      setReminderNotes(prev => (prev.trim() ? `${prev.trim()}\n\n${j.draf}` : j.draf));
+    } catch (e) {
+      setGalatSusun((e as Error).message);
+    } finally {
+      setMenyusun(false);
+    }
+  };
+
   const FormModal = () => {
     if (!formOpen) return null;
     const targetUser = isAdmin ? teamUsers.find(u => u.id === formUserId) : currentUser;
@@ -720,6 +740,25 @@ export default function DailyReportPage() {
                   + Tambah Aktivitas Manual
                 </button>
               </div>
+            </div>
+
+            {/* Ringkasan hari ini - boleh disusun AI dari aktivitas di atas */}
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest"><IkonTeks nama="📝" />Ringkasan hari ini</span>
+                <button type="button" onClick={susunDenganAI} disabled={menyusun || formLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white disabled:opacity-60"
+                  style={{ background: '#1d4ed8' }}>
+                  {menyusun ? <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" /> : <Ikon nama="✨" ukuran={14} />}
+                  {menyusun ? 'Menyusun...' : 'Susun dengan AI'}
+                </button>
+              </div>
+              <textarea value={reminderNotes} onChange={e => setReminderNotes(e.target.value)} rows={4}
+                className={`${inpCls} resize-y`} style={inp}
+                placeholder="Ringkasan pekerjaan, hasil, dan kendala hari ini. Klik 'Susun dengan AI' untuk membuat draf dari aktivitas di atas." />
+              {galatSusun
+                ? <p className="text-xs font-semibold text-rose-700 mt-1">{galatSusun}</p>
+                : <p className="text-[11px] text-slate-500 mt-1">Draf AI hanya merangkum aktivitas di atas. Periksa dan ubah bila perlu sebelum menyimpan.</p>}
             </div>
 
             {/* Team Entries (admin) */}
@@ -836,6 +875,16 @@ export default function DailyReportPage() {
                 </div>
               )}
             </div>
+            {/* Ringkasan hari dari laporan induknya (bila diisi) */}
+            {(() => {
+              const ringkas = reports.find(r => r.id === row.report_id)?.reminder_notes?.trim();
+              return ringkas ? (
+                <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-100">
+                  <p className="text-[10px] font-bold text-blue-800 uppercase tracking-wider mb-1">Ringkasan hari ini</p>
+                  <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed">{ringkas}</p>
+                </div>
+              ) : null;
+            })()}
             {/* Ticket detail */}
             {row.source === 'ticket' && row.raw?.action_taken && (
               <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(251,113,133,0.05)', border: '1px solid rgba(251,113,133,0.2)' }}>

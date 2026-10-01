@@ -36,6 +36,12 @@ export const KUNCI_RAHASIA = [
   */
   'ai.gemini_token_koreksi',
   /*
+    Token Asisten AI (panel Tanya Platform + draf Daily Report). Opsional:
+    kosong = memakai ai.gemini_token. Dipisah supaya obrolan harian seluruh
+    tim tidak menghabiskan jatah pembuat soal Learning Center.
+  */
+  'ai.gemini_token_asisten',
+  /*
     Pasangan kunci VAPID untuk push notification asli (bunyi + notifikasi
     sistem walau app/tab tertutup). Berbeda dari kunci lain di atas: kedua
     nilai ini di-GENERATE oleh server sendiri (lihat /api/push/setup, tombol
