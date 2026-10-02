@@ -92,13 +92,20 @@ export const PANDUAN: Panduan[] = [
   {
     kunci: 'project-progress',
     judul: 'Project Progress',
-    guna: 'Memantau progres instalasi per project dan per lokasi, termasuk target selesai.',
+    guna: 'Checklist pekerjaan instalasi per proyek dan per lokasi: siapa mengerjakan apa, kapan, dan apa kendalanya.',
     langkah: [
-      'Pilih project, lalu buka lokasinya.',
-      'Perbarui persentase progres, status, dan catatan setiap ada kemajuan di lapangan.',
-      'Isi tanggal mulai dan target agar keterlambatan bisa terlihat.',
+      'Admin membuat proyek (client, Sales, jadwal). Proyek kategori Konfigurasi dari Request Schedule dibuat otomatis.',
+      'Admin menambah checklist per lokasi/ruangan: isinya diimpor dari teks/Markdown atau Excel, atau disalin dari checklist lain; lalu assign satu atau beberapa orang.',
+      'Yang di-assign membuka checklist-nya, mencentang item yang selesai, menandai kendala (dengan catatan), dan mengunggah foto bukti.',
+      'Untuk tim lapangan tanpa akun: buka checklist, klik "Link untuk tim", aktifkan, salin, kirim ke grup. Mereka mencentang dari HP tanpa login.',
+      'Untuk client/atasan: di halaman proyek, "Link proyek" memberi tampilan hanya-baca seluruh lokasi.',
     ],
-    tips: ['Lokasi yang mendekati atau melewati target masuk ke ringkasan pagi PIC-nya.'],
+    tips: [
+      'Setiap centang dan kendala tercatat dengan nama dan jamnya di panel Riwayat pengerjaan.',
+      'Kartu "Ada kendala" dan "Terlambat" di ringkasan menyaring proyek yang perlu ditangani lebih dulu.',
+      'Checklist yang target-nya dekat/lewat atau berkendala masuk Agenda Beranda dan ringkasan pagi orang yang di-assign.',
+      'Hanya admin yang bisa membuat dan menghapus proyek/checklist; Team melihat semua proyek, Sales melihat proyeknya sendiri.',
+    ],
   },
   {
     kunci: 'daily-report',
@@ -186,23 +193,6 @@ export const PANDUAN: Panduan[] = [
       'Catat setiap unit yang keluar atau masuk beserta tujuan, penanggung jawab, dan lampirannya.',
     ],
     tips: ['Catat di hari yang sama agar posisi unit selalu akurat.'],
-  },
-  {
-    kunci: 'checklist',
-    judul: 'Checklist Tools',
-    guna: 'Mengimpor checklist pekerjaan dan membagikan link ke tim untuk dicentang tanpa login. Akses menu diberikan Admin per akun.',
-    langkah: [
-      'Klik "Impor checklist", lalu tempel teks/Markdown (mis. ekspor dokumen checklist) atau unggah Excel dengan kolom Bagian, Kelompok, Item, Catatan.',
-      'Periksa pratinjau: ganti judul dan hapus centang bagian yang tidak perlu, lalu simpan.',
-      'Buka checklist, klik "Bagikan link", aktifkan, lalu salin link ke grup tim.',
-      'Tim membuka link di HP, mengisi nama sekali, lalu mencentang item. Nama dan jam setiap centang tercatat di Riwayat centang.',
-      'Untuk ruangan atau proyek berikutnya, pakai Duplikat: isi tersalin dan semua centang dikosongkan.',
-    ],
-    tips: [
-      'Teks: "## Judul" = bagian, baris tebal atau "### Judul" = kelompok, "- [ ] teks" = item, "- [x]" = sudah selesai.',
-      'Ekspor Excel bisa diimpor balik, termasuk kolom Status "Selesai".',
-      '"Buat link baru" memutus link lama untuk selamanya; Matikan hanya menonaktifkan sementara.',
-    ],
   },
 ];
 

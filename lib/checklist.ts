@@ -1,9 +1,10 @@
 /**
- * lib/checklist.ts - tipe, pembaca impor, dan hitungan progres Checklist Tools.
+ * lib/checklist.ts - tipe, pembaca impor, dan hitungan progres Project
+ * Progress berbasis checklist (Proyek -> Checklist per lokasi -> Bagian -> Item).
  *
- * Berkas ini MURNI (tanpa supabase, tanpa DOM) supaya bisa dipakai di tiga
- * tempat sekaligus: halaman admin (pratinjau impor), route server (validasi
- * ulang isi impor), dan halaman link share.
+ * Berkas ini MURNI (tanpa supabase, tanpa DOM) supaya bisa dipakai di semua
+ * sisi: halaman Project Progress (pratinjau impor), route server (validasi
+ * ulang isi impor & hak akses), halaman link share, dan antrean kerja Beranda.
  *
  * DUA JALAN IMPOR, satu bentuk hasil (DraftChecklist):
  *
@@ -38,17 +39,56 @@ export interface DraftChecklist {
   bagian: DraftBagian[];
 }
 
-export type SumberChecklist = 'teks' | 'excel' | 'duplikat';
+export type SumberChecklist = 'teks' | 'excel' | 'duplikat' | 'kosong' | 'reminder' | 'migrasi';
+/** 'admin' = dari dalam aplikasi (login), 'link' = dari link share tanpa login. */
 export type LewatCentang = 'admin' | 'link';
+export type StatusProyek = 'in_progress' | 'done' | 'blocked';
+export type AsalData = 'manual' | 'auto_reminder' | 'migrasi';
+
+export const STATUS_PROYEK: Record<StatusProyek, { label: string; warna: string; tint: string }> = {
+  in_progress: { label: 'Berjalan', warna: '#1d4ed8', tint: '#eff6ff' },
+  done: { label: 'Selesai', warna: '#15803d', tint: '#f0fdf4' },
+  blocked: { label: 'Tertahan', warna: '#b91c1c', tint: '#fef2f2' },
+};
+
+export interface ChecklistProyek {
+  id: string;
+  nama: string;
+  client: string | null;
+  deskripsi: string;
+  sales_name: string | null;
+  sales_division: string | null;
+  status: StatusProyek;
+  start_date: string | null;
+  target_date: string | null;
+  origin: AsalData;
+  share_aktif: boolean;
+  /** Hanya dikirim ke admin. Halaman share tidak pernah menerimanya. */
+  share_token?: string | null;
+  dibuat_oleh_nama: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChecklistAnggota {
+  daftar_id: string;
+  user_id: string;
+  nama: string;
+}
 
 export interface ChecklistDaftar {
   id: string;
+  proyek_id: string;
   judul: string;
   keterangan: string;
   sumber: SumberChecklist;
   share_aktif: boolean;
-  /** Hanya dikirim ke admin. Halaman share tidak pernah menerimanya. */
+  /** Hanya dikirim ke admin & anggota. Halaman share tidak pernah menerimanya. */
   share_token?: string | null;
+  start_date: string | null;
+  target_date: string | null;
+  urutan: number;
+  origin: AsalData;
   dibuat_oleh_nama: string | null;
   created_at: string;
   updated_at: string;
@@ -74,29 +114,73 @@ export interface ChecklistItem {
   selesai_oleh: string | null;
   selesai_pada: string | null;
   selesai_lewat: LewatCentang | null;
+  /** Ditandai bermasalah - pengganti status Stuck & Isu di Project Progress lama. */
+  kendala: boolean;
+  kendala_catatan: string;
+  kendala_oleh: string | null;
+  kendala_pada: string | null;
+  foto_url: string | null;
+  foto_thumb_url: string | null;
 }
+
+export type AksiRiwayat = 'centang' | 'batal' | 'kendala' | 'kendala_selesai';
 
 export interface ChecklistRiwayat {
   id: number;
   item_id: string | null;
   teks_item: string;
-  aksi: 'centang' | 'batal';
+  aksi: AksiRiwayat;
   nama: string;
   lewat: LewatCentang;
   created_at: string;
 }
 
+/** Hak pengguna terhadap SATU checklist - dihitung server, dipakai UI. */
+export interface HakChecklist {
+  /** Admin: ubah info, anggota, hapus checklist. */
+  admin: boolean;
+  /** Admin atau anggota: centang, kendala, ubah/tambah item, impor, link share. */
+  edit: boolean;
+}
+
 export interface ChecklistDetail {
+  proyek: Pick<ChecklistProyek, 'id' | 'nama' | 'client' | 'sales_name' | 'sales_division' | 'status'>;
   daftar: ChecklistDaftar;
+  anggota: ChecklistAnggota[];
   bagian: ChecklistBagian[];
   items: ChecklistItem[];
   riwayat?: ChecklistRiwayat[];
+  hak?: HakChecklist;
 }
 
-/** Ringkasan untuk daftar di halaman admin. */
-export interface ChecklistRingkas extends ChecklistDaftar {
+/** Angka ringkas satu checklist - untuk kartu di detail proyek & daftar proyek. */
+export interface StatChecklist {
   total: number;
   selesai: number;
+  kendala: number;
+}
+
+export interface ChecklistRingkas extends ChecklistDaftar {
+  anggota: ChecklistAnggota[];
+  stat: StatChecklist;
+  /** Pengguna ini anggota checklist tersebut. */
+  saya: boolean;
+}
+
+export interface ProyekRingkas extends ChecklistProyek {
+  jumlah_checklist: number;
+  stat: StatChecklist;
+  /** Target terdekat yang belum selesai di antara checklist-nya. */
+  target_terdekat: string | null;
+  /** Pengguna ini anggota minimal satu checklist di proyek ini. */
+  saya: boolean;
+}
+
+export interface ProyekDetail {
+  proyek: ChecklistProyek;
+  checklist: ChecklistRingkas[];
+  /** Admin: ubah/hapus proyek, buat checklist, link proyek. */
+  admin: boolean;
 }
 
 // Batas teknis (bukan aturan bisnis): menjaga satu impor tidak membengkak
@@ -111,7 +195,50 @@ export const BATAS = {
   nama: 60,
 } as const;
 
-// ── Progres ────────────────────────────────────────────────────────────────
+// ── Progres & jadwal ───────────────────────────────────────────────────────
+
+/** Tanggal hari ini YYYY-MM-DD, zona waktu perangkat (bukan UTC). */
+export function hariIni(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function selisihHari(a: string, b: string): number {
+  const [ay, am, ad] = a.split('-').map(Number);
+  const [by, bm, bd] = b.split('-').map(Number);
+  return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86400000);
+}
+
+export type KeadaanJadwal = 'selesai' | 'terlambat' | 'dekat' | 'aman' | 'tanpa';
+
+/**
+ * Keadaan jadwal terhadap target. 'dekat' = target <= 3 hari lagi - ambang
+ * yang sama dengan antrean kerja Beranda di Project Progress lama.
+ */
+export function keadaanJadwal(target: string | null, tuntas: boolean, hari = hariIni()): { keadaan: KeadaanJadwal; label: string } {
+  if (tuntas) return { keadaan: 'selesai', label: 'Selesai' };
+  if (!target) return { keadaan: 'tanpa', label: 'Tanpa target' };
+  const n = selisihHari(hari, target.slice(0, 10));
+  if (n < 0) return { keadaan: 'terlambat', label: `Terlambat ${-n} hari` };
+  if (n === 0) return { keadaan: 'dekat', label: 'Target hari ini' };
+  if (n <= 3) return { keadaan: 'dekat', label: `Target ${n} hari lagi` };
+  return { keadaan: 'aman', label: `Target ${n} hari lagi` };
+}
+
+export function formatTanggal(t: string | null | undefined): string {
+  if (!t) return '-';
+  const d = new Date(t.length === 10 ? `${t}T00:00:00` : t);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+export function statDari(items: { selesai: boolean; kendala: boolean }[]): StatChecklist {
+  return {
+    total: items.length,
+    selesai: items.filter(i => i.selesai).length,
+    kendala: items.filter(i => i.kendala && !i.selesai).length,
+  };
+}
 
 export interface Progres { selesai: number; total: number; persen: number }
 
@@ -386,30 +513,6 @@ export function validasiNama(v: unknown): string | null {
   const nama = sel(v).replace(/\s+/g, ' ');
   if (nama.length < 2 || nama.length > BATAS.nama) return null;
   return nama;
-}
-
-// ── Hak akses ──────────────────────────────────────────────────────────────
-
-/** Kunci menu di allowed_menus (Admin Panel → akun → Menu Access). */
-export const MENU_CHECKLIST = 'checklist-tools';
-
-/**
- * Boleh mengelola checklist (impor, ubah, hapus, buat link share)?
- * Admin/superadmin dan akun Team ber-Full Access selalu boleh - sama dengan
- * menu lain. Selebihnya harus diberi menu Checklist Tools di Admin Panel.
- *
- * allowed_menus kosong (akun lama) TIDAK dianggap boleh: sidebar memang
- * menampilkan semua menu untuk akun seperti itu, tapi kelola checklist
- * termasuk membuat link publik - harus diberikan dengan sengaja.
- */
-export function bolehKelolaChecklist(u: {
-  role?: string | null; access_level?: string | null; allowed_menus?: string[] | null;
-} | null | undefined): boolean {
-  if (!u) return false;
-  const role = (u.role ?? '').toLowerCase();
-  if (role === 'admin' || role === 'superadmin') return true;
-  if ((role === 'team' || role === 'team_pts') && u.access_level === 'full') return true;
-  return Array.isArray(u.allowed_menus) && u.allowed_menus.includes(MENU_CHECKLIST);
 }
 
 // ── Lain-lain ──────────────────────────────────────────────────────────────

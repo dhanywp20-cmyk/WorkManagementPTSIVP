@@ -1,128 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { KOLOM_ITEM, NO_STORE, galat, tokenSah } from '@/lib/checklist-server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * Progres berubah terus, dan link ini sering dibuka ulang oleh orang yang sama.
- * Tanpa header ini, browser bisa menyajikan salinan lama - proyek terlihat
- * masih kosong padahal lokasinya sudah ditambahkan.
- */
-const NO_STORE = {
-  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-  'Pragma': 'no-cache',
-} as const;
-
-/**
- * GET /api/project-progress/share/<token>
+ * GET /api/project-progress/share/<token> - PUBLIK, link View-Only satu
+ * proyek (semua checklist lokasinya). Dipakai /project-progress/share/<token>.
  *
- * Endpoint PUBLIK (tanpa session) untuk link share View-Only. Dipakai halaman
- * /project-progress/share/<token>.
+ * Token Project Progress lama ikut disalin ke checklist_proyek oleh migrasi
+ * 025, jadi link yang sudah tersebar sebelum pergantian tetap terbuka.
  *
- * Keamanan:
- *  - Memakai service_role di server, sehingga tabel progress_* TIDAK perlu
- *    dibuka ke anon key yang ikut ter-bundle di browser.
- *  - Token dicari dengan .eq() persis; token salah  404, tidak bocor apa pun.
- *  - share_enabled = false  404 juga, jadi link bisa dimatikan tanpa perlu
- *    mengganti token.
- *  - Hanya READ. Tidak ada jalur tulis di sini.
- *  - Kolom yang dikembalikan dipilih eksplisit; share_token tidak ikut keluar.
+ * Keamanan: service_role di server, hanya BACA, kolom dipilih eksplisit -
+ * share_token proyek maupun checklist tidak pernah ikut keluar.
  */
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { token: string } },
-) {
+export async function GET(_request: NextRequest, { params }: { params: { token: string } }) {
   const token = (params.token ?? '').trim();
-  // Token dibuat 32 hex char (lihat newShareToken). Tolak lebih awal supaya
-  // string aneh tidak sampai ke query.
-  if (!token || !/^[a-f0-9]{16,64}$/i.test(token)) {
-    return NextResponse.json({ error: 'Link tidak valid.' }, { status: 404, headers: NO_STORE });
+  if (!tokenSah(token)) return galat('Link tidak valid.', 404);
+  const db = getAdminClient();
+
+  const { data: proyek, error } = await db.from('checklist_proyek')
+    .select('id,nama,client,deskripsi,sales_name,sales_division,status,start_date,target_date,share_aktif,updated_at')
+    .eq('share_token', token).maybeSingle();
+  if (error || !proyek || !proyek.share_aktif) return galat('Link tidak ditemukan atau sudah dinonaktifkan.', 404);
+
+  const { data: daftar, error: dErr } = await db.from('checklist_daftar')
+    .select('id,proyek_id,judul,keterangan,start_date,target_date,urutan,updated_at')
+    .eq('proyek_id', proyek.id).order('urutan').order('created_at');
+  if (dErr) return galat(dErr.message, 500);
+  const ids = (daftar ?? []).map((d: { id: string }) => d.id);
+
+  let bagian: unknown[] = [];
+  let items: unknown[] = [];
+  if (ids.length) {
+    const [bRes, iRes] = await Promise.all([
+      db.from('checklist_bagian').select('id,daftar_id,judul,catatan,urutan').in('daftar_id', ids).order('urutan'),
+      db.from('checklist_item').select(KOLOM_ITEM).in('daftar_id', ids).order('urutan').limit(5000),
+    ]);
+    // Kegagalan query JANGAN ditelan jadi array kosong - halaman publik akan
+    // tampak "proyek kosong" padahal datanya ada.
+    if (bRes.error || iRes.error) return galat(bRes.error?.message ?? iRes.error?.message ?? 'Gagal memuat.', 500);
+    bagian = bRes.data ?? [];
+    items = iRes.data ?? [];
   }
 
-  const supabase = getAdminClient();
-
-  // PENTING: daftar kolom di bawah SENGAJA eksplisit, bukan '*', supaya
-  // share_token & created_by tidak pernah bocor ke halaman publik.
-  // Konsekuensinya: setiap kali menambah kolom baru yang perlu tampil di share,
-  // kolom itu WAJIB ditambahkan di sini juga - kalau tidak, datanya hilang
-  // diam-diam tanpa error (persis yang terjadi pada start_date/target_date).
-  const { data: project, error: pErr } = await supabase
-    .from('progress_projects')
-    .select('id,name,client,description,status,share_enabled,start_date,target_date,created_at,updated_at')
-    .eq('share_token', token)
-    .maybeSingle();
-
-  if (pErr || !project || !project.share_enabled) {
-    return NextResponse.json({ error: 'Link tidak ditemukan atau sudah dinonaktifkan.' }, { status: 404, headers: NO_STORE });
-  }
-
-  const [locRes, issueRes] = await Promise.all([
-    supabase.from('progress_locations')
-      .select('id,project_id,name,pic,status,progress,note,note_flag,start_date,target_date,sort_order,created_at')
-      .eq('project_id', project.id).order('sort_order'),
-    supabase.from('progress_issues')
-      .select('id,project_id,location_label,issue,severity,note,sort_order,created_at')
-      .eq('project_id', project.id).order('sort_order'),
-  ]);
-
-  // Kegagalan query JANGAN ditelan jadi array kosong - halaman publik akan
-  // tampak "proyek kosong" padahal datanya ada, dan penyebabnya tak terlihat.
-  if (locRes.error || issueRes.error) {
-    return NextResponse.json(
-      { error: 'Gagal memuat data proyek.', detail: locRes.error?.message ?? issueRes.error?.message },
-      { status: 500, headers: NO_STORE },
-    );
-  }
-
-  const locations = locRes.data ?? [];
-  const locationIds = locations.map((l: { id: string }) => l.id);
-
-  // Komponen hanya diambil bila ada lokasi - .in() dengan array kosong
-  // menghasilkan query yang tidak perlu.
-  let componentsData: unknown[] = [];
-  if (locationIds.length > 0) {
-    const { data, error } = await supabase
-      .from('progress_components')
-      .select('id,location_id,label,state,photo_url,photo_thumb_url,sort_order,created_at')
-      .in('location_id', locationIds)
-      .order('sort_order');
-    if (error) {
-      return NextResponse.json(
-        { error: 'Gagal memuat komponen.', detail: error.message },
-        { status: 500, headers: NO_STORE },
-      );
-    }
-    componentsData = data ?? [];
-  }
-
-  // Riwayat status/state se-proyek - dipakai ProjectDetailView untuk
-  // menggambar alur mendatar "kapan status berubah". Diambil di server
-  // (service_role) persis seperti data lain di atas, supaya halaman publik
-  // tetap tidak pernah menyentuh supabase langsung.
-  const idsRiwayat = [project.id, ...locationIds, ...componentsData.map((c) => (c as { id: string }).id)];
-  let auditTrail: unknown[] = [];
-  if (idsRiwayat.length > 0) {
-    const { data, error } = await supabase
-      .from('audit_trail')
-      .select('id, target_id, user_name, action, target_name, old_value, new_value, notes, created_at')
-      .in('target_id', idsRiwayat).eq('module', 'project-progress')
-      .order('created_at', { ascending: false }).limit(500);
-    // Riwayat gagal dimuat bukan alasan menolak seluruh halaman - proyeknya
-    // tetap tampil, hanya alur mendatarnya kosong.
-    if (!error) auditTrail = data ?? [];
-  }
-
-  return NextResponse.json({
-    // share_token & created_by sengaja tidak dikirim ke halaman publik.
-    project: {
-      ...project,
-      share_token: null,
-      created_by: null,
-    },
-    locations,
-    components: componentsData,
-    issues: issueRes.data ?? [],
-    auditTrail,
-  }, { headers: NO_STORE });
+  return NextResponse.json({ proyek, daftar: daftar ?? [], bagian, items }, { headers: NO_STORE });
 }

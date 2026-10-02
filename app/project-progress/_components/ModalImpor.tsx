@@ -32,8 +32,10 @@ const CONTOH_TEKS = `# Checklist Instalasi Ruang Meeting
  * "Progress" dari dokumen asal) sebelum disimpan. Tidak ada item yang perlu
  * diketik satu per satu.
  */
-export function ModalImpor({ buka, onTutup, onSimpan }: {
+export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan ${n} item` }: {
   buka: boolean;
+  /** Teks tombol simpan di pratinjau, mis. "Pakai 98 item" saat membuat checklist. */
+  labelSimpan?: (jumlahItem: number) => string;
   onTutup: () => void;
   onSimpan: (draft: DraftChecklist, sumber: Jenis) => Promise<void>;
 }) {
@@ -103,7 +105,6 @@ export function ModalImpor({ buka, onTutup, onSimpan }: {
 
   const simpan = async () => {
     if (!draft) return;
-    if (!draft.judul.trim()) { setGalat('Judul checklist wajib diisi.'); return; }
     if (jumlahItem === 0) { setGalat('Pilih minimal satu bagian yang berisi item.'); return; }
     setMenyimpan(true);
     setGalat('');
@@ -124,7 +125,7 @@ export function ModalImpor({ buka, onTutup, onSimpan }: {
 
   return (
     <Modal buka={buka} onTutup={tutup} ukuran="xl" tutupDiLuar={false} ikon="📥"
-      judul={draft ? 'Pratinjau impor' : 'Impor checklist'}
+      judul={draft ? 'Pratinjau impor' : 'Impor isi checklist'}
       keterangan={draft
         ? 'Periksa hasil bacaan. Bagian yang tidak dicentang tidak ikut disimpan.'
         : 'Tempel teks/Markdown (mis. ekspor dokumen checklist) atau unggah file Excel. Tidak perlu mengetik item satu per satu.'}
@@ -132,7 +133,7 @@ export function ModalImpor({ buka, onTutup, onSimpan }: {
         <>
           <TombolModal onClick={() => { setDraft(null); setGalat(''); }} disabled={menyimpan}>Kembali</TombolModal>
           <TombolModal jenis="utama" onClick={simpan} disabled={menyimpan || jumlahItem === 0}>
-            {menyimpan ? 'Menyimpan…' : `Simpan ${jumlahItem} item`}
+            {menyimpan ? 'Menyimpan…' : labelSimpan(jumlahItem)}
           </TombolModal>
         </>
       ) : (
@@ -223,14 +224,6 @@ export function ModalImpor({ buka, onTutup, onSimpan }: {
       {draft && (
         <div className="space-y-4">
           <div className="grid gap-3">
-            <label className="block">
-              <span className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>Judul checklist</span>
-              <input value={draft.judul} maxLength={BATAS.judul}
-                onChange={e => setDraft({ ...draft, judul: e.target.value })}
-                placeholder="mis. Instalasi AV - Smart Meeting Room BPKP"
-                className="mt-1 w-full rounded-xl px-3 py-2 text-[13.5px] outline-none focus:ring-2"
-                style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta }} />
-            </label>
             {draft.keterangan && (
               <label className="block">
                 <span className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>Keterangan (dari teks sebelum bagian pertama)</span>

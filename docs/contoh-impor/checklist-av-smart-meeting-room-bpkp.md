@@ -1,6 +1,6 @@
 # Checklist Instalasi & Konfigurasi AV – Smart Meeting Room BPKP
 
-Ekspor dokumen checklist 2 Okt 2026. Impor lewat Checklist Tools → Impor checklist → Teks / Markdown → Buka file .md.
+Ekspor dokumen checklist 2 Okt 2026. Impor lewat Project Progress → buka proyek → Checklist lokasi → Isi awal: Impor → Teks / Markdown → Buka file .md.
 
 ## 1. Info proyek & daftar perangkat
 

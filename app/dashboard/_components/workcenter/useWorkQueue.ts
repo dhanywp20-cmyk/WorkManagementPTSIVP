@@ -12,20 +12,61 @@
  * aslinya, bukan aturan baru:
  *   - reminders.assigned_to === username         (reminder-schedule/page.tsx)
  *   - tickets.assign_name === full_name           (ticketing/page.tsx)
- *   - progress_locations: isPicOfLocation()        (project-progress/shared.ts)
- *   - progress_projects: isSalesOfLocation() via sales_name (RLS pp_select
- *     memakai jwt_full_name() = sales_name, BUKAN kolom sales_user_id -
- *     lihat sql/full-schema/04_rls.sql)
+ *   - checklist_anggota.user_id === user.id        (Project Progress: yang di-assign)
+ *   - checklist_proyek.sales_name === full_name     (Sales proyek; RLS cp_select
+ *     memakai jwt_full_name() - lihat supabase/migrations/025_project_checklist.sql)
  */
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '../shared';
 import { isAdminRole, isTeamMember } from '../widgets/permissions';
-import {
-  isPicOfLocation, isSalesOfLocation, timelineInfo, todayStr,
-  type ProgressLocation, type ProgressProject,
-} from '@/app/project-progress/_components/shared';
+import { hariIni as todayStr, keadaanJadwal, statDari } from '@/lib/checklist';
+
+interface TugasChecklist {
+  id: string;
+  judul: string;
+  target_date: string | null;
+  proyek: string;
+  total: number;
+  selesai: number;
+  kendala: number;
+}
+
+/**
+ * Checklist Project Progress yang di-assign ke user ini dan perlu perhatian:
+ * targetnya dekat/lewat, atau ada item berkendala. Dibaca dengan token user
+ * (RLS 025), jadi hanya checklist miliknya yang bisa kembali.
+ */
+async function tugasChecklist(userId: string, batasTarget: string): Promise<{ data: TugasChecklist[] }> {
+  const { data: ang, error } = await supabase.from('checklist_anggota').select('daftar_id').eq('user_id', userId).limit(200);
+  if (error) throw error;
+  const ids = ((ang ?? []) as { daftar_id: string }[]).map(a => a.daftar_id);
+  if (!ids.length) return { data: [] };
+  const [{ data: daftar, error: dErr }, { data: items, error: iErr }] = await Promise.all([
+    supabase.from('checklist_daftar').select('id, judul, target_date, proyek_id').in('id', ids),
+    supabase.from('checklist_item').select('daftar_id, selesai, kendala').in('daftar_id', ids).limit(5000),
+  ]);
+  if (dErr) throw dErr;
+  if (iErr) throw iErr;
+  const proyekIds = Array.from(new Set(((daftar ?? []) as { proyek_id: string }[]).map(d => d.proyek_id)));
+  const { data: proyek } = proyekIds.length
+    ? await supabase.from('checklist_proyek').select('id, nama, status').in('id', proyekIds)
+    : { data: [] };
+  const petaProyek = new Map(((proyek ?? []) as { id: string; nama: string; status: string }[]).map(p => [p.id, p]));
+  const semuaItem = (items ?? []) as { daftar_id: string; selesai: boolean; kendala: boolean }[];
+
+  return {
+    data: ((daftar ?? []) as { id: string; judul: string; target_date: string | null; proyek_id: string }[])
+      .filter(d => petaProyek.get(d.proyek_id)?.status !== 'done')
+      .map(d => ({
+        id: d.id, judul: d.judul, target_date: d.target_date,
+        proyek: petaProyek.get(d.proyek_id)?.nama ?? '',
+        ...statDari(semuaItem.filter(i => i.daftar_id === d.id)),
+      }))
+      .filter(t => t.kendala > 0 || (t.target_date !== null && t.target_date <= batasTarget && !(t.total > 0 && t.selesai === t.total))),
+  };
+}
 
 export type Urgency = 'urgent' | 'pending' | 'upcoming';
 
@@ -93,9 +134,8 @@ export function useWorkQueue(user: User): WorkQueueResult {
               .eq('assign_name', user.full_name).neq('status', 'Solved')
               .order('date', { ascending: true }).limit(20),
             supabase.from('daily_reports').select('id').eq('user_id', user.id).eq('report_date', today).limit(1),
-            supabase.from('progress_locations')
-              .select('id, name, pic, status, target_date, sales_name, start_date, origin, source_reminder_id, note, note_flag, progress, sort_order, project_id, created_at, sales_division')
-              .neq('status', 'done').limit(150),
+            // Gagal membaca checklist tidak boleh mengosongkan seluruh antrean kerja.
+            tugasChecklist(user.id, addDays(today, 3)).catch(() => ({ data: [] as TugasChecklist[] })),
           ]);
 
           for (const r of (rem ?? []) as { id: string; project_name: string; due_date: string }[]) {
@@ -127,14 +167,16 @@ export function useWorkQueue(user: User): WorkQueueResult {
             });
           }
 
-          for (const l of (locs ?? []) as ProgressLocation[]) {
-            if (!isPicOfLocation(l, user.full_name)) continue;
-            const info = timelineInfo(l, today);
-            if (info.state !== 'overdue' && info.state !== 'due_soon') continue;
+          for (const t of locs ?? []) {
+            const tuntas = t.total > 0 && t.selesai === t.total;
+            const j = keadaanJadwal(t.target_date, tuntas, today);
+            const terlambat = j.keadaan === 'terlambat';
             list.push({
-              id: `loc-${l.id}`, urgency: info.state === 'overdue' ? 'urgent' : 'pending',
-              icon: '📍', title: l.name, subtitle: info.label,
-              menuKey: 'project-progress', isToday: false, date: l.target_date,
+              id: `cl-${t.id}`, urgency: terlambat || t.kendala > 0 ? 'urgent' : 'pending',
+              icon: t.kendala > 0 ? '⚠' : '📍', title: `${t.judul}${t.proyek ? ` · ${t.proyek}` : ''}`,
+              subtitle: [t.kendala > 0 ? `${t.kendala} item berkendala` : null, j.keadaan !== 'aman' && j.keadaan !== 'tanpa' ? j.label : null,
+                `${t.selesai}/${t.total} selesai`].filter(Boolean).join(' · '),
+              menuKey: 'project-progress', isToday: j.label === 'Target hari ini', date: t.target_date,
             });
           }
         } else {
@@ -148,9 +190,9 @@ export function useWorkQueue(user: User): WorkQueueResult {
               .select('id, project_name, issue_case, status, date, created_by, sales_name')
               .or(`created_by.eq.${user.username},sales_name.eq.${user.full_name}`)
               .neq('status', 'Solved').order('date', { ascending: true }).limit(20),
-            supabase.from('progress_projects')
-              .select('id, name, status, target_date, sales_name, start_date, origin, source_reminder_id, share_token, share_enabled, created_by, created_at, updated_at, client, description, sales_division')
-              .neq('status', 'done').limit(80),
+            supabase.from('checklist_proyek')
+              .select('id, nama, status, target_date, sales_name')
+              .eq('sales_name', user.full_name).neq('status', 'done').limit(80),
           ]);
 
           for (const r of (rem ?? []) as { id: string; project_name: string; due_date: string | null; status: string; rejection_reason: string | null }[]) {
@@ -182,14 +224,13 @@ export function useWorkQueue(user: User): WorkQueueResult {
             });
           }
 
-          for (const p of (projs ?? []) as ProgressProject[]) {
-            if (!isSalesOfLocation(p, user.full_name)) continue;
-            const info = timelineInfo(p, today);
-            if (info.state !== 'overdue' && info.state !== 'due_soon') continue;
+          for (const p of (projs ?? []) as { id: string; nama: string; target_date: string | null }[]) {
+            const j = keadaanJadwal(p.target_date, false, today);
+            if (j.keadaan !== 'terlambat' && j.keadaan !== 'dekat') continue;
             list.push({
-              id: `proj-${p.id}`, urgency: info.state === 'overdue' ? 'urgent' : 'pending',
-              icon: '📊', title: p.name, subtitle: info.label,
-              menuKey: 'project-progress', isToday: false, date: p.target_date,
+              id: `proj-${p.id}`, urgency: j.keadaan === 'terlambat' ? 'urgent' : 'pending',
+              icon: '📊', title: p.nama, subtitle: j.label,
+              menuKey: 'project-progress', isToday: j.label === 'Target hari ini', date: p.target_date,
             });
           }
         }

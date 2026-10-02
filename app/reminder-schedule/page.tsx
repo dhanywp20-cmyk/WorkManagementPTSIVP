@@ -353,7 +353,7 @@ function ReminderSchedulePageInner() {
       full_name: currentUser?.full_name,
     });
     if (hasil.created > 0) {
-      notify('success', `${hasil.created} draft dibuat di Project Progress. Item komponen diisi menyusul di sana.`);
+      notify('success', `${hasil.created} checklist lokasi dibuat di Project Progress. Isi checklist diimpor atau disalin menyusul di sana.`);
     }
     if (hasil.errors.length > 0) {
       console.warn('[project-progress-sync]', hasil.errors);

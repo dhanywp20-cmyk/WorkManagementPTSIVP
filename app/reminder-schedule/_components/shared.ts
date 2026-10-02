@@ -48,7 +48,7 @@ export interface Reminder {
   product?: string;
   updated_at?: string;
   warranty_years?: 1 | 2 | 3 | null;
-  /** Timeline pengerjaan  disalin ke progress_locations. Hanya kategori Konfigurasi. */
+  /** Timeline pengerjaan - disalin ke checklist lokasi Project Progress. Hanya kategori Konfigurasi. */
   progress_start_date?: string;
   progress_target_date?: string;
   mode_penyelesaian?: 'onsite' | 'remote' | null;

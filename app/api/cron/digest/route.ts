@@ -87,26 +87,41 @@ async function jalankan() {
   // Lokasi Project Progress yang targetnya mendekat / lewat
   //  Yang sudah selesai dilewati: mengingatkan target pada pekerjaan yang
   //  sudah rampung hanya membuat kiriman ini terasa tidak akurat.
+  //  (Project Progress berbasis checklist: satu checklist = satu lokasi.)
   const { data: lokasi } = await supabase
-    .from('progress_locations')
-    .select('name, pic, sales_name, target_date, status, progress')
+    .from('checklist_daftar')
+    .select('id, judul, target_date, proyek_id')
     .not('target_date', 'is', null)
-    .lte('target_date', batas)
-    .neq('status', 'done');
+    .lte('target_date', batas);
+  const daftarLokasi = (lokasi ?? []) as { id: string; judul: string; target_date: string; proyek_id: string }[];
+  const idLokasi = daftarLokasi.map(l => l.id);
+  const [{ data: itemLokasi }, { data: anggotaLokasi }, { data: proyekLokasi }] = idLokasi.length
+    ? await Promise.all([
+        supabase.from('checklist_item').select('daftar_id, selesai, kendala').in('daftar_id', idLokasi).limit(20000),
+        supabase.from('checklist_anggota').select('daftar_id, nama').in('daftar_id', idLokasi),
+        supabase.from('checklist_proyek').select('id, nama, sales_name, status')
+          .in('id', Array.from(new Set(daftarLokasi.map(l => l.proyek_id)))),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }];
+  const petaProyekLokasi = new Map(((proyekLokasi ?? []) as { id: string; nama: string; sales_name: string | null; status: string }[]).map(p => [p.id, p]));
 
-  for (const l of (lokasi ?? []) as {
-    name: string; pic: string | null; sales_name: string | null;
-    target_date: string; progress: number | null;
-  }[]) {
+  for (const l of daftarLokasi) {
+    const p = petaProyekLokasi.get(l.proyek_id);
+    if (!p || p.status === 'done') continue;
+    const it = ((itemLokasi ?? []) as { daftar_id: string; selesai: boolean; kendala: boolean }[]).filter(i => i.daftar_id === l.id);
+    const selesai = it.filter(i => i.selesai).length;
+    if (it.length > 0 && selesai === it.length) continue;
+    const kendala = it.filter(i => i.kendala && !i.selesai).length;
     const item: Item = {
-      label: `📊 ${l.name} - progres ${l.progress ?? 0}%`,
+      label: `📊 ${p.nama} · ${l.judul} - ${selesai}/${it.length} item${kendala ? `, ${kendala} kendala` : ''}`,
       tanggal: l.target_date,
       terlambat: l.target_date < hariIni,
     };
-    catat(l.pic, item);
-    // Sales ikut diberi tahu hanya bila ia bukan PIC-nya sendiri, supaya
+    const anggota = ((anggotaLokasi ?? []) as { daftar_id: string; nama: string }[]).filter(a => a.daftar_id === l.id).map(a => a.nama);
+    for (const n of anggota) catat(n, item);
+    // Sales ikut diberi tahu hanya bila ia bukan anggotanya sendiri, supaya
     // tidak menerima baris yang sama dua kali.
-    if (l.sales_name && l.sales_name !== l.pic) catat(l.sales_name, item);
+    if (p.sales_name && !anggota.includes(p.sales_name)) catat(p.sales_name, item);
   }
 
   // Reminder yang jatuh tempo dan belum selesai

@@ -103,7 +103,6 @@ export const ALL_MENU_KEYS = [
   'ticket-troubleshooting',
   'incentive-pts',
   'project-progress',
-  'checklist-tools',
   'daily-report',
   'database-pts',
   'unit-movement',
@@ -123,11 +122,8 @@ export const ALL_MENU_KEYS = [
  * (termasuk Troubleshooting & Design Project) per nama project - admin yang
  * memutuskan siapa yang perlu melihat rekapan itu, bukan diberikan otomatis
  * ke semua akun baru.
- *
- * 'checklist-tools' opt-in: pemegang menu ini bisa mengimpor, mengubah, dan
- * menghapus checklist serta membuat link share publik - diberikan per akun.
  */
-export const RESTRICTED_MENU_KEYS = ['project-progress', 'summary-project', 'checklist-tools'];
+export const RESTRICTED_MENU_KEYS = ['project-progress', 'summary-project'];
 
 /**
  * Default allowed_menus untuk user BARU. Sengaja dipisah dari ALL_MENU_KEYS:
@@ -174,7 +170,6 @@ export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = 
   'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
   'incentive-pts':          { label: 'Incentive Team PTS IVP', icon: '💰' },
   'project-progress':       { label: 'Project Progress', icon: '📊' },
-  'checklist-tools':        { label: 'Checklist Tools', icon: '✅' },
   'daily-report':           { label: 'Daily Report', icon: '📈' },
   'database-pts':           { label: 'Database PTS', icon: '💼' },
   'unit-movement':          { label: 'Unit Movement Log', icon: '🚚' },

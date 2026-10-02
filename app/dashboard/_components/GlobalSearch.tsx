@@ -413,20 +413,20 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
     } catch (e) { console.error('[search] units:', e); }
 
     // 7. Project Progress
-    //  RLS di progress_* sudah menegakkan isolasi Sales di level basis data,
+    //  RLS di checklist_proyek (migrasi 025) menegakkan isolasi Sales di level basis data,
     //  jadi query ini otomatis hanya mengembalikan proyek yang memang haknya -
     //  tanpa perlu penyaringan tambahan di sini. Batas untuk sales biasa tetap
     //  dipasang sebagai lapis kedua, kalau-kalau RLS dimatikan sewaktu-waktu.
     if (bolehModul('project-progress')) try {
-      let qpp = supabase.from('progress_projects')
-        .select('id, name, client, status, sales_name')
-        .or(`name.ilike.%${q}%,client.ilike.%${q}%,sales_name.ilike.%${q}%`)
+      let qpp = supabase.from('checklist_proyek')
+        .select('id, nama, client, status, sales_name')
+        .or(`nama.ilike.%${q}%,client.ilike.%${q}%,sales_name.ilike.%${q}%`)
         .order('created_at', { ascending: false }).limit(10);
       if (!tanpaBatas) qpp = batasiLingkup(lingkup, qpp, ['sales_name']);
       const { data } = await qpp;
       (data ?? []).forEach((p: any) => res.push({
         id: `progress-${p.id}`, type: 'progress', icon: '📊',
-        title: p.name ?? '-',
+        title: p.nama ?? '-',
         sub: p.client ?? 'Tanpa client',
         meta: p.sales_name ?? '-',
         badge: p.status,
