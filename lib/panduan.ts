@@ -18,8 +18,6 @@ export interface Panduan {
   guna: string;
   langkah: string[];
   tips: string[];
-  /** Menu khusus admin/superadmin - tidak ditawarkan ke peran lain. */
-  khususAdmin?: boolean;
 }
 
 export const PANDUAN: Panduan[] = [
@@ -192,8 +190,7 @@ export const PANDUAN: Panduan[] = [
   {
     kunci: 'checklist',
     judul: 'Checklist Tools',
-    guna: 'Khusus admin: mengimpor checklist pekerjaan dan membagikan link ke tim untuk dicentang tanpa login.',
-    khususAdmin: true,
+    guna: 'Mengimpor checklist pekerjaan dan membagikan link ke tim untuk dicentang tanpa login. Akses menu diberikan Admin per akun.',
     langkah: [
       'Klik "Impor checklist", lalu tempel teks/Markdown (mis. ekspor dokumen checklist) atau unggah Excel dengan kolom Bagian, Kelompok, Item, Catatan.',
       'Periksa pratinjau: ganti judul dan hapus centang bagian yang tidak perlu, lalu simpan.',

@@ -270,7 +270,7 @@ export function DetailChecklist({ id, onKembali, onShare, onDuplikat, beritahu, 
                   <b>{r.nama}</b> {r.aksi === 'centang' ? 'mencentang' : 'membatalkan'} <span style={{ color: NETRAL.tinta2 }}>{r.teks_item}</span>
                 </p>
                 <p className="text-[10.5px] mt-0.5" style={{ color: TEMA.samar }}>
-                  {formatWaktu(r.created_at)} · {r.lewat === 'link' ? 'via link' : 'admin'}
+                  {formatWaktu(r.created_at)} · {r.lewat === 'link' ? 'via link' : 'di aplikasi'}
                 </p>
               </div>
             ))}

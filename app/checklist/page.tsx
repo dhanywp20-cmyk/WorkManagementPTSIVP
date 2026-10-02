@@ -10,7 +10,7 @@ import {
 } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import {
-  BATAS, formatWaktu, progresDari,
+  BATAS, bolehKelolaChecklist, formatWaktu, progresDari,
   type ChecklistDaftar, type ChecklistRingkas, type DraftChecklist,
 } from '@/lib/checklist';
 import { ModalImpor } from './_components/ModalImpor';
@@ -28,13 +28,13 @@ async function panggil<T = unknown>(url: string, init?: RequestInit): Promise<T>
 type Saring = 'semua' | 'berjalan' | 'selesai' | 'link';
 
 /**
- * Checklist Tools - KHUSUS ADMIN.
+ * Checklist Tools - untuk admin dan akun yang diberi menu ini di Admin Panel.
  *
- * Admin mengimpor checklist pekerjaan (tempel teks/Markdown atau Excel) tanpa
- * mengetik item satu per satu, lalu membagikan link ke tim lain yang cukup
- * mencentang dari HP tanpa login. Penjaga sesungguhnya ada di server
- * (lib/checklist-server.ts penjagaAdmin); pemeriksaan di halaman ini hanya
- * supaya non-admin melihat penjelasan, bukan layar rusak.
+ * Pengelola mengimpor checklist pekerjaan (tempel teks/Markdown atau Excel)
+ * tanpa mengetik item satu per satu, lalu membagikan link ke tim lain yang
+ * cukup mencentang dari HP tanpa login. Penjaga sesungguhnya ada di server
+ * (lib/checklist-server.ts penjagaAkses); pemeriksaan di halaman ini hanya
+ * supaya akun tanpa akses melihat penjelasan, bukan layar rusak.
  */
 export default function ChecklistToolsPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -70,7 +70,7 @@ export default function ChecklistToolsPage() {
     return startSessionWatcher();
   }, []);
 
-  const admin = ['admin', 'superadmin'].includes((user?.role ?? '').toLowerCase());
+  const admin = bolehKelolaChecklist(user);
 
   const muat = useCallback(async () => {
     try {
@@ -181,8 +181,8 @@ export default function ChecklistToolsPage() {
 
       <main className="max-w-[1500px] mx-auto px-3 sm:px-6 py-5 space-y-4">
         {siap && !admin && (
-          <EmptyState icon="🔒" title="Khusus admin"
-            description="Checklist Tools hanya untuk admin. Minta link checklist dari admin untuk mencentang pekerjaan Anda." />
+          <EmptyState icon="🔒" title="Belum punya akses"
+            description="Akun Anda belum diberi menu Checklist Tools. Minta Admin mengaktifkannya di Admin Panel, atau minta link checklist untuk mencentang pekerjaan." />
         )}
 
         {admin && dipilihId && (

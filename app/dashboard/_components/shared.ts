@@ -103,6 +103,7 @@ export const ALL_MENU_KEYS = [
   'ticket-troubleshooting',
   'incentive-pts',
   'project-progress',
+  'checklist-tools',
   'daily-report',
   'database-pts',
   'unit-movement',
@@ -122,18 +123,11 @@ export const ALL_MENU_KEYS = [
  * (termasuk Troubleshooting & Design Project) per nama project - admin yang
  * memutuskan siapa yang perlu melihat rekapan itu, bukan diberikan otomatis
  * ke semua akun baru.
- */
-export const RESTRICTED_MENU_KEYS = ['project-progress', 'summary-project'];
-
-/**
- * Menu yang HANYA tampil untuk role admin/superadmin - termasuk tidak untuk
- * akun Team dengan toggle Full Access. Sengaja tidak masuk ALL_MENU_KEYS,
- * jadi juga tidak bisa dicentang untuk akun lain di Admin Panel.
  *
- * 'checklist-tools': admin mengimpor & mengelola checklist; tim lain cukup
- * menerima link share untuk mencentang (lihat /checklist/share/<token>).
+ * 'checklist-tools' opt-in: pemegang menu ini bisa mengimpor, mengubah, dan
+ * menghapus checklist serta membuat link share publik - diberikan per akun.
  */
-export const ADMIN_ONLY_MENU_KEYS = ['checklist-tools'];
+export const RESTRICTED_MENU_KEYS = ['project-progress', 'summary-project', 'checklist-tools'];
 
 /**
  * Default allowed_menus untuk user BARU. Sengaja dipisah dari ALL_MENU_KEYS:
@@ -180,6 +174,7 @@ export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = 
   'ticket-troubleshooting': { label: 'Ticket Troubleshooting', icon: '🎫' },
   'incentive-pts':          { label: 'Incentive Team PTS IVP', icon: '💰' },
   'project-progress':       { label: 'Project Progress', icon: '📊' },
+  'checklist-tools':        { label: 'Checklist Tools', icon: '✅' },
   'daily-report':           { label: 'Daily Report', icon: '📈' },
   'database-pts':           { label: 'Database PTS', icon: '💼' },
   'unit-movement':          { label: 'Unit Movement Log', icon: '🚚' },

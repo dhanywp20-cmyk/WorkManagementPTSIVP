@@ -2,8 +2,8 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from './supabase-admin';
-import { getSessionUser, isAdminRole, type SessionUser } from './server-auth';
-import type { ChecklistDetail, DraftChecklist, LewatCentang, SumberChecklist } from './checklist';
+import { getSessionUser, type SessionUser } from './server-auth';
+import { bolehKelolaChecklist, type ChecklistDetail, type DraftChecklist, type LewatCentang, type SumberChecklist } from './checklist';
 
 /**
  * lib/checklist-server.ts - bagian server Checklist Tools. JANGAN diimpor dari
@@ -11,7 +11,8 @@ import type { ChecklistDetail, DraftChecklist, LewatCentang, SumberChecklist } f
  *
  * Tabel checklist_* terkunci dari anon & authenticated (lihat migrasi
  * 024_checklist_tools.sql), jadi SEMUA akses lewat sini:
- *   - admin  -> penjagaAdmin() memeriksa sesi + role admin/superadmin
+ *   - pengelola -> penjagaAkses() memeriksa sesi + hak menu Checklist Tools
+ *                  (admin, Full Access, atau diberi menu di Admin Panel)
  *   - tim    -> share_token yang aktif, hanya baca + centang
  */
 
@@ -24,12 +25,19 @@ export function galat(pesan: string, status = 400) {
   return NextResponse.json({ error: pesan }, { status, headers: NO_STORE });
 }
 
-export async function penjagaAdmin(request: NextRequest):
-  Promise<{ galat: NextResponse } | { admin: SessionUser; db: ReturnType<typeof getAdminClient> }> {
-  const admin = await getSessionUser(request);
-  if (!admin) return { galat: galat('Sesi tidak valid. Login ulang.', 401) };
-  if (!isAdminRole(admin.role)) return { galat: galat('Checklist Tools khusus admin.', 403) };
-  return { admin, db: getAdminClient() };
+export async function penjagaAkses(request: NextRequest):
+  Promise<{ galat: NextResponse } | { pengguna: SessionUser; db: ReturnType<typeof getAdminClient> }> {
+  const pengguna = await getSessionUser(request);
+  if (!pengguna) return { galat: galat('Sesi tidak valid. Login ulang.', 401) };
+  const db = getAdminClient();
+  // Hak menu dibaca langsung dari DB setiap permintaan, bukan dari sesi di
+  // browser: menu yang dicabut admin langsung berlaku tanpa menunggu logout.
+  const { data: akun } = await db.from('users')
+    .select('role, access_level, allowed_menus').eq('id', pengguna.id).maybeSingle();
+  if (!bolehKelolaChecklist(akun)) {
+    return { galat: galat('Akun Anda belum diberi akses menu Checklist Tools. Minta Admin mengaktifkannya.', 403) };
+  }
+  return { pengguna, db };
 }
 
 /** 32 hex char, sama dengan token share Project Progress. */

@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, galat, muatDetail, penjagaAdmin, simpanDraft } from '@/lib/checklist-server';
+import { NO_STORE, galat, muatDetail, penjagaAkses, simpanDraft } from '@/lib/checklist-server';
 import { BATAS, validasiDraft, type DraftChecklist } from '@/lib/checklist';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * /api/checklist - khusus admin.
+ * /api/checklist - pemegang menu Checklist Tools (lihat bolehKelolaChecklist).
  *   GET  -> semua checklist + jumlah item selesai/total
  *   POST -> { mode:'impor', sumber:'teks'|'excel', draft }   checklist baru dari impor
  *           { mode:'duplikat', sumberId, judul }             salinan bersih (centang dikosongkan)
  */
 export async function GET(request: NextRequest) {
-  const jaga = await penjagaAdmin(request);
+  const jaga = await penjagaAkses(request);
   if ('galat' in jaga) return jaga.galat;
   const { db } = jaga;
 
@@ -43,9 +43,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const jaga = await penjagaAdmin(request);
+  const jaga = await penjagaAkses(request);
   if ('galat' in jaga) return jaga.galat;
-  const { db, admin } = jaga;
+  const { db, pengguna } = jaga;
 
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return galat('Permintaan tidak terbaca.'); }
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       const sumber = body.sumber === 'excel' ? 'excel' : 'teks';
       const hasil = validasiDraft(body.draft);
       if ('galat' in hasil) return galat(hasil.galat);
-      const id = await simpanDraft(db, hasil.draft, sumber, admin);
+      const id = await simpanDraft(db, hasil.draft, sumber, pengguna);
       return NextResponse.json({ id }, { headers: NO_STORE });
     }
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
       };
       const hasil = validasiDraft(draft);
       if ('galat' in hasil) return galat(hasil.galat);
-      const id = await simpanDraft(db, hasil.draft, 'duplikat', admin);
+      const id = await simpanDraft(db, hasil.draft, 'duplikat', pengguna);
       return NextResponse.json({ id }, { headers: NO_STORE });
     }
 

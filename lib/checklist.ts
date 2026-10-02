@@ -388,6 +388,30 @@ export function validasiNama(v: unknown): string | null {
   return nama;
 }
 
+// ── Hak akses ──────────────────────────────────────────────────────────────
+
+/** Kunci menu di allowed_menus (Admin Panel → akun → Menu Access). */
+export const MENU_CHECKLIST = 'checklist-tools';
+
+/**
+ * Boleh mengelola checklist (impor, ubah, hapus, buat link share)?
+ * Admin/superadmin dan akun Team ber-Full Access selalu boleh - sama dengan
+ * menu lain. Selebihnya harus diberi menu Checklist Tools di Admin Panel.
+ *
+ * allowed_menus kosong (akun lama) TIDAK dianggap boleh: sidebar memang
+ * menampilkan semua menu untuk akun seperti itu, tapi kelola checklist
+ * termasuk membuat link publik - harus diberikan dengan sengaja.
+ */
+export function bolehKelolaChecklist(u: {
+  role?: string | null; access_level?: string | null; allowed_menus?: string[] | null;
+} | null | undefined): boolean {
+  if (!u) return false;
+  const role = (u.role ?? '').toLowerCase();
+  if (role === 'admin' || role === 'superadmin') return true;
+  if ((role === 'team' || role === 'team_pts') && u.access_level === 'full') return true;
+  return Array.isArray(u.allowed_menus) && u.allowed_menus.includes(MENU_CHECKLIST);
+}
+
 // ── Lain-lain ──────────────────────────────────────────────────────────────
 
 /** URL absolut halaman share - aman dipanggil hanya di browser. */

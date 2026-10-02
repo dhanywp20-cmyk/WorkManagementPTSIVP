@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, galat, muatDetail, penjagaAdmin, setCentang, tokenBaru } from '@/lib/checklist-server';
+import { NO_STORE, galat, muatDetail, penjagaAkses, setCentang, tokenBaru } from '@/lib/checklist-server';
 import { BATAS } from '@/lib/checklist';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * /api/checklist/<id> - khusus admin.
+ * /api/checklist/<id> - pemegang menu Checklist Tools (lihat bolehKelolaChecklist).
  *   GET    -> detail (bagian, item, 50 riwayat centang terakhir)
  *   PATCH  -> { aksi, ... } lihat cabang di bawah
  *   DELETE -> hapus checklist beserta bagian, item, dan riwayatnya
  */
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
-  const jaga = await penjagaAdmin(request);
+  const jaga = await penjagaAkses(request);
   if ('galat' in jaga) return jaga.galat;
   try {
     const detail = await muatDetail(jaga.db, params.id, false);
@@ -28,9 +28,9 @@ function teks(v: unknown, batas: number): string {
 }
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
-  const jaga = await penjagaAdmin(request);
+  const jaga = await penjagaAkses(request);
   if ('galat' in jaga) return jaga.galat;
-  const { db, admin } = jaga;
+  const { db, pengguna } = jaga;
   const id = params.id;
 
   let body: Record<string, unknown>;
@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     case 'centang': {
       const hasil = await setCentang(db, id, String(body.itemId ?? ''), body.selesai === true,
-        admin.full_name || admin.username, 'admin');
+        pengguna.full_name || pengguna.username, 'admin');
       if ('galat' in hasil) return galat(hasil.galat, hasil.status);
       return NextResponse.json(hasil, { headers: NO_STORE });
     }
@@ -136,7 +136,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
-  const jaga = await penjagaAdmin(request);
+  const jaga = await penjagaAkses(request);
   if ('galat' in jaga) return jaga.galat;
   const { error } = await jaga.db.from('checklist_daftar').delete().eq('id', params.id);
   if (error) return galat(error.message, 500);

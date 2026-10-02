@@ -8,7 +8,7 @@ import { isAdmin as checkIsAdmin, hasFullAccess, SESSION_DURATION_MS } from '@/l
 import {
   User, MenuItem, NotificationItem,
   JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
-  ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE, ADMIN_ONLY_MENU_KEYS,
+  ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE,
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
 } from './_components/shared';
@@ -305,16 +305,11 @@ export default function Dashboard() {
         tetap kehilangan menu yang tidak tercentang di allowed_menus-nya, dan
         satu-satunya cara membukanya jadi mencentang menu satu per satu.
       */
-      // Menu khusus admin disaring di depan: Full Access membuka semua menu
-      // lain, tapi tidak yang ini (lihat ADMIN_ONLY_MENU_KEYS).
-      const menuBoleh = ['admin', 'superadmin'].includes((currentUser.role ?? '').toLowerCase())
-        ? allMenuItems
-        : allMenuItems.filter(m => !ADMIN_ONLY_MENU_KEYS.includes(m.key));
       if (!allowed || hasFullAccess(currentUser)) {
-        setVisibleMenuItems(menuBoleh);
+        setVisibleMenuItems(allMenuItems);
       } else {
         // Always use allMenuItems order (code order), not allowed_menus DB order
-        setVisibleMenuItems(menuBoleh.filter(m => allowed.includes(m.key)));
+        setVisibleMenuItems(allMenuItems.filter(m => allowed.includes(m.key)));
       }
       setMenuLoading(false);
     }, 400);
@@ -1310,7 +1305,7 @@ export default function Dashboard() {
         {renderModals()}
         {/* ── Jelajahi Button (always visible while logged-in, before sidebar loads) ── */}
         {currentUser && !tourVisible && (
-          <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} admin={isAdmin} onMulaiTur={() => setShowTour(true)} />
+          <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} onMulaiTur={() => setShowTour(true)} />
         )}
         {renderHeader()}
 
@@ -1409,7 +1404,7 @@ export default function Dashboard() {
             onVisibleChange={setTourVisible}
           />
           {!tourVisible && (
-            <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} admin={isAdmin} onMulaiTur={() => setShowTour(true)} />
+            <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} onMulaiTur={() => setShowTour(true)} />
           )}
         </>
       )}
