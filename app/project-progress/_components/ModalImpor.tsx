@@ -1,10 +1,11 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { FileSpreadsheet, FileText, Download, Upload } from 'lucide-react';
+import { FileSpreadsheet, FileText, Download, Loader2, Sparkles, Upload, X } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { loadXLSX } from '@/lib/xlsx-loader';
+import { compressImage } from '@/lib/image-compress';
 import {
   bacaBaris, bacaTeks, hitungItemDraft, BATAS, CONTOH_TEMPLATE,
   type DraftChecklist,
@@ -12,6 +13,27 @@ import {
 import { TEMA, fontAngka } from './tampilan';
 
 type Jenis = 'teks' | 'excel';
+type Tab = Jenis | 'ai';
+
+// Batas body permintaan Vercel ~4,5 MB; sisakan ruang untuk kerangka multipart.
+const BATAS_AI_BYTE = 4 * 1024 * 1024;
+
+function ukuran(n: number): string {
+  return n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
+}
+
+/** Excel / CSV daftar perangkat -> teks CSV per sheet, supaya bisa dibaca AI. */
+function excelKeTeks(f: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    loadXLSX(async XLSX => {
+      try {
+        const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+        resolve((wb.SheetNames as string[]).slice(0, 5)
+          .map(n => `[${f.name} - sheet ${n}]\n${XLSX.utils.sheet_to_csv(wb.Sheets[n])}`).join('\n\n'));
+      } catch (e) { reject(e); }
+    }, () => reject(new Error('Gagal memuat pembaca Excel.')));
+  });
+}
 
 const CONTOH_TEKS = `# Checklist Instalasi Ruang Meeting
 
@@ -39,7 +61,7 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
   onTutup: () => void;
   onSimpan: (draft: DraftChecklist, sumber: Jenis) => Promise<void>;
 }) {
-  const [jenis, setJenis] = useState<Jenis>('teks');
+  const [jenis, setJenis] = useState<Tab>('teks');
   const [teks, setTeks] = useState('');
   const [draft, setDraft] = useState<DraftChecklist | null>(null);
   const [ikut, setIkut] = useState<boolean[]>([]);
@@ -48,11 +70,17 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
   const [memuatExcel, setMemuatExcel] = useState(false);
   const fileTeks = useRef<HTMLInputElement>(null);
   const fileExcel = useRef<HTMLInputElement>(null);
+  const fileAi = useRef<HTMLInputElement>(null);
+  const [aiBerkas, setAiBerkas] = useState<File[]>([]);
+  const [aiInstruksi, setAiInstruksi] = useState('');
+  const [aiSibuk, setAiSibuk] = useState(false);
+  const [aiHasil, setAiHasil] = useState(0);
 
   const reset = () => {
     setDraft(null); setIkut([]); setGalat(''); setTeks(''); setJenis('teks'); setMenyimpan(false);
+    setAiBerkas([]); setAiInstruksi(''); setAiSibuk(false); setAiHasil(0);
   };
-  const tutup = () => { if (menyimpan) return; reset(); onTutup(); };
+  const tutup = () => { if (menyimpan || aiSibuk) return; reset(); onTutup(); };
 
   const keDraft = (d: DraftChecklist, judulCadangan: string) => {
     if (!d.bagian.length || hitungItemDraft(d) === 0) {
@@ -92,6 +120,52 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
     }, () => { setMemuatExcel(false); setGalat('Gagal memuat pembaca Excel. Periksa koneksi internet.'); });
   };
 
+  /**
+   * Susun checklist dengan AI platform dari wiring diagram, foto/layout rak,
+   * dan daftar perangkat. Gambar dikompres dulu; Excel/CSV/teks diubah jadi
+   * teks di peramban. Hasilnya masuk ke kotak teks untuk DIPERIKSA - belum
+   * ada yang tersimpan.
+   */
+  const susunDenganAI = async () => {
+    if (!aiBerkas.length || aiSibuk) return;
+    setAiSibuk(true);
+    setGalat('');
+    try {
+      const form = new FormData();
+      let total = 0;
+      for (const f of aiBerkas) {
+        const nama = f.name.toLowerCase();
+        if (f.type.startsWith('image/')) {
+          const kecil = await compressImage(f, { maxDim: 2000, quality: 0.82 });
+          total += kecil.size;
+          form.append('berkas', kecil, f.name);
+        } else if (f.type === 'application/pdf' || nama.endsWith('.pdf')) {
+          total += f.size;
+          form.append('berkas', new File([f], f.name, { type: 'application/pdf' }));
+        } else if (/\.(xlsx|xls|csv)$/.test(nama)) {
+          form.append('lampiran', await excelKeTeks(f));
+        } else {
+          form.append('lampiran', `[${f.name}]\n${(await f.text()).slice(0, 30_000)}`);
+        }
+      }
+      if (total > BATAS_AI_BYTE) {
+        throw new Error(`Total berkas ${ukuran(total)} melebihi 4 MB. Kecilkan PDF (ekspor ulang / screenshot) atau kirim sebagian dulu.`);
+      }
+      if (aiInstruksi.trim()) form.append('instruksi', aiInstruksi.trim());
+
+      const res = await fetch('/api/project-progress/ai-checklist', { method: 'POST', body: form, cache: 'no-store', credentials: 'include' });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || `AI gagal (${res.status}).`);
+      setTeks(String(json.markdown ?? ''));
+      setAiHasil(aiBerkas.length);
+      setJenis('teks');
+    } catch (e) {
+      setGalat(e instanceof Error ? e.message : 'AI gagal menyusun checklist.');
+    } finally {
+      setAiSibuk(false);
+    }
+  };
+
   const unduhTemplate = () => loadXLSX(XLSX => {
     const ws = XLSX.utils.aoa_to_sheet(CONTOH_TEMPLATE);
     ws['!cols'] = [{ wch: 22 }, { wch: 16 }, { wch: 50 }, { wch: 32 }, { wch: 10 }];
@@ -109,7 +183,7 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
     setMenyimpan(true);
     setGalat('');
     try {
-      await onSimpan({ ...draft, bagian: terpilih }, jenis);
+      await onSimpan({ ...draft, bagian: terpilih }, jenis === 'excel' ? 'excel' : 'teks');
       reset();
     } catch (e) {
       setGalat(e instanceof Error ? e.message : 'Gagal menyimpan.');
@@ -128,7 +202,7 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
       judul={draft ? 'Pratinjau impor' : 'Impor isi checklist'}
       keterangan={draft
         ? 'Periksa hasil bacaan. Bagian yang tidak dicentang tidak ikut disimpan.'
-        : 'Tempel teks/Markdown (mis. ekspor dokumen checklist) atau unggah file Excel. Tidak perlu mengetik item satu per satu.'}
+        : 'Tempel teks/Markdown, unggah Excel, atau biarkan AI menyusunnya dari wiring diagram & foto rak. Tidak perlu mengetik item satu per satu.'}
       footer={draft ? (
         <>
           <TombolModal onClick={() => { setDraft(null); setGalat(''); }} disabled={menyimpan}>Kembali</TombolModal>
@@ -138,9 +212,14 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
         </>
       ) : (
         <>
-          <TombolModal onClick={tutup}>Batal</TombolModal>
+          <TombolModal onClick={tutup} disabled={aiSibuk}>Batal</TombolModal>
           {jenis === 'teks' && (
             <TombolModal jenis="utama" onClick={bacaDariTeks} disabled={!teks.trim()}>Baca isi</TombolModal>
+          )}
+          {jenis === 'ai' && (
+            <TombolModal jenis="utama" onClick={susunDenganAI} disabled={aiSibuk || !aiBerkas.length}>
+              {aiSibuk ? 'AI sedang membaca…' : 'Susun dengan AI'}
+            </TombolModal>
           )}
         </>
       )}>
@@ -152,8 +231,16 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
 
       {!draft && (
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => { setJenis('teks'); setGalat(''); }}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button type="button" onClick={() => { setJenis('ai'); setGalat(''); }} disabled={aiSibuk}
+              className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left" style={tabGaya(jenis === 'ai')}>
+              <Sparkles size={18} />
+              <span>
+                <span className="block text-[13px] font-bold">AI dari diagram</span>
+                <span className="block text-[11px] opacity-80">Wiring diagram, foto rak, daftar perangkat</span>
+              </span>
+            </button>
+            <button type="button" onClick={() => { setJenis('teks'); setGalat(''); }} disabled={aiSibuk}
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left" style={tabGaya(jenis === 'teks')}>
               <FileText size={18} />
               <span>
@@ -161,7 +248,7 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
                 <span className="block text-[11px] opacity-80">Tempel atau buka file .md / .txt</span>
               </span>
             </button>
-            <button type="button" onClick={() => { setJenis('excel'); setGalat(''); }}
+            <button type="button" onClick={() => { setJenis('excel'); setGalat(''); }} disabled={aiSibuk}
               className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left" style={tabGaya(jenis === 'excel')}>
               <FileSpreadsheet size={18} />
               <span>
@@ -170,6 +257,66 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
               </span>
             </button>
           </div>
+
+          {jenis === 'ai' && (
+            <div className="space-y-3">
+              <button type="button" onClick={() => fileAi.current?.click()} disabled={aiSibuk}
+                className="w-full rounded-xl px-4 py-6 flex flex-col items-center gap-2 text-center disabled:opacity-60"
+                style={{ border: `2px dashed ${TEMA.garisTint}`, background: TEMA.tint, color: TEMA.warnaTua }}>
+                <Upload size={24} />
+                <span className="text-[13.5px] font-bold">Pilih berkas</span>
+                <span className="text-[11.5px]" style={{ color: NETRAL.tinta2 }}>
+                  Wiring diagram (PDF / gambar), foto atau layout rak, daftar perangkat (Excel / CSV). Total maks 4 MB.
+                </span>
+              </button>
+              <input ref={fileAi} type="file" multiple className="hidden"
+                accept=".pdf,application/pdf,image/png,image/jpeg,image/webp,.xlsx,.xls,.csv,.txt,.md"
+                onChange={e => {
+                  const baru = Array.from(e.target.files ?? []);
+                  setAiBerkas(prev => [...prev, ...baru].slice(0, 6));
+                  e.target.value = '';
+                }} />
+              {aiBerkas.length > 0 && (
+                <ul className="rounded-xl divide-y" style={{ border: `1px solid ${NETRAL.garis}`, borderColor: NETRAL.garis }}>
+                  {aiBerkas.map((f, i) => (
+                    <li key={`${f.name}-${i}`} className="flex items-center gap-2 px-3 py-2">
+                      <FileText size={15} style={{ color: TEMA.samar }} />
+                      <span className="flex-1 min-w-0 text-[12.5px] font-semibold truncate" style={{ color: NETRAL.tinta }}>{f.name}</span>
+                      <span className="text-[11px]" style={{ ...fontAngka, color: TEMA.samar }}>{ukuran(f.size)}</span>
+                      <button type="button" onClick={() => setAiBerkas(prev => prev.filter((_, k) => k !== i))} disabled={aiSibuk}
+                        aria-label={`Lepas ${f.name}`} className="p-1 rounded-md hover:bg-slate-100" style={{ color: TEMA.samar }}>
+                        <X size={14} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <label className="block">
+                <span className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>Instruksi tambahan (opsional)</span>
+                <textarea value={aiInstruksi} onChange={e => setAiInstruksi(e.target.value)} rows={2} maxLength={2000} disabled={aiSibuk}
+                  placeholder="mis. Ruangan BPKP Padang; fokus instalasi & konfigurasi; switcher meja pakai Aten"
+                  className="mt-1 w-full rounded-xl px-3 py-2 text-[13px] outline-none focus:ring-2"
+                  style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta, background: NETRAL.permukaan }} />
+              </label>
+              {aiSibuk ? (
+                <p className="flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: TEMA.warnaTua }}>
+                  <Loader2 size={15} className="animate-spin" /> AI sedang membaca dokumen - biasanya 20-40 detik. Jangan tutup jendela ini.
+                </p>
+              ) : (
+                <p className="text-[11.5px] leading-relaxed" style={{ color: TEMA.samar }}>
+                  AI menyusun checklist per produk (pasang, kabel, setting, tes). Hasilnya muncul di kotak teks untuk Anda periksa
+                  dan ubah dulu - belum ada yang tersimpan. Berkas tidak disimpan di server.
+                </p>
+              )}
+            </div>
+          )}
+
+          {jenis === 'teks' && aiHasil > 0 && (
+            <p className="px-3 py-2 rounded-lg text-[12.5px] font-semibold flex items-center gap-2"
+              style={{ background: TEMA.tint, color: TEMA.warnaTua, border: `1px solid ${TEMA.garisTint}` }}>
+              <Sparkles size={14} /> Disusun AI dari {aiHasil} berkas. Periksa & ubah bila perlu, lalu klik Baca isi.
+            </p>
+          )}
 
           {jenis === 'teks' && (
             <div className="space-y-2">
