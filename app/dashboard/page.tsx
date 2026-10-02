@@ -8,7 +8,7 @@ import { isAdmin as checkIsAdmin, hasFullAccess, SESSION_DURATION_MS } from '@/l
 import {
   User, MenuItem, NotificationItem,
   JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
-  ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE,
+  ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE_BADGE, ADMIN_ONLY_MENU_KEYS,
   NotifBellProps, AdminPanelModalProps,
   DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB,
 } from './_components/shared';
@@ -279,6 +279,12 @@ export default function Dashboard() {
       items: [{ name: 'Project Progress', url: '/project-progress', icon: '📊', internal: true, embed: true }]
     },
     {
+      title: 'Checklist Tools', icon: '✅', key: 'checklist-tools',
+      gradient: 'from-blue-700 via-blue-600 to-sky-500',
+      description: 'Impor checklist pekerjaan, bagikan link untuk dicentang tim',
+      items: [{ name: 'Checklist Tools', url: '/checklist', icon: '✅', internal: true, embed: true }]
+    },
+    {
       title: 'KPI Team', icon: '📊', key: 'kpi-team',
       gradient: 'from-sky-700 via-sky-600 to-blue-500',
       description: 'Key Performance Indicators & analytics tim PTS',
@@ -299,11 +305,16 @@ export default function Dashboard() {
         tetap kehilangan menu yang tidak tercentang di allowed_menus-nya, dan
         satu-satunya cara membukanya jadi mencentang menu satu per satu.
       */
+      // Menu khusus admin disaring di depan: Full Access membuka semua menu
+      // lain, tapi tidak yang ini (lihat ADMIN_ONLY_MENU_KEYS).
+      const menuBoleh = ['admin', 'superadmin'].includes((currentUser.role ?? '').toLowerCase())
+        ? allMenuItems
+        : allMenuItems.filter(m => !ADMIN_ONLY_MENU_KEYS.includes(m.key));
       if (!allowed || hasFullAccess(currentUser)) {
-        setVisibleMenuItems(allMenuItems);
+        setVisibleMenuItems(menuBoleh);
       } else {
         // Always use allMenuItems order (code order), not allowed_menus DB order
-        setVisibleMenuItems(allMenuItems.filter(m => allowed.includes(m.key)));
+        setVisibleMenuItems(menuBoleh.filter(m => allowed.includes(m.key)));
       }
       setMenuLoading(false);
     }, 400);
@@ -739,7 +750,7 @@ export default function Dashboard() {
   }, [isFullAccess]);
 
   const INTERNAL_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'picket-showroom', 'kpi-team'];
-  const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'incentive-pts', 'project-progress', 'summary-project'];
+  const PROJECT_KEYS = ['reminder-schedule', 'request-design-project', 'form-bast', 'ticket-troubleshooting', 'incentive-pts', 'project-progress', 'checklist-tools', 'summary-project'];
   const INTERNAL_DAILY_KEYS = ['picket-showroom', 'daily-report', 'database-pts', 'unit-movement'];
   const LEARNING_KEYS = ['kpi-team', 'learning-center', 'tech-note'];
 
@@ -760,6 +771,7 @@ export default function Dashboard() {
     'incentive-pts': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
     'tech-note': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
     'project-progress': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m4 10V11m4 6v-4M4 19h16a1 1 0 001-1V6a1 1 0 00-1-1H4a1 1 0 00-1 1v12a1 1 0 001 1z" /></svg>,
+    'checklist-tools': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
     'summary-project': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" /></svg>,
     'kpi-team': <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>,
     };
@@ -1298,7 +1310,7 @@ export default function Dashboard() {
         {renderModals()}
         {/* ── Jelajahi Button (always visible while logged-in, before sidebar loads) ── */}
         {currentUser && !tourVisible && (
-          <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} onMulaiTur={() => setShowTour(true)} />
+          <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} admin={isAdmin} onMulaiTur={() => setShowTour(true)} />
         )}
         {renderHeader()}
 
@@ -1397,7 +1409,7 @@ export default function Dashboard() {
             onVisibleChange={setTourVisible}
           />
           {!tourVisible && (
-            <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} onMulaiTur={() => setShowTour(true)} />
+            <AsistenPlatform modul={modulAktif} atasan={asistenAtasan} admin={isAdmin} onMulaiTur={() => setShowTour(true)} />
           )}
         </>
       )}

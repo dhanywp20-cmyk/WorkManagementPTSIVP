@@ -126,6 +126,16 @@ export const ALL_MENU_KEYS = [
 export const RESTRICTED_MENU_KEYS = ['project-progress', 'summary-project'];
 
 /**
+ * Menu yang HANYA tampil untuk role admin/superadmin - termasuk tidak untuk
+ * akun Team dengan toggle Full Access. Sengaja tidak masuk ALL_MENU_KEYS,
+ * jadi juga tidak bisa dicentang untuk akun lain di Admin Panel.
+ *
+ * 'checklist-tools': admin mengimpor & mengelola checklist; tim lain cukup
+ * menerima link share untuk mencentang (lihat /checklist/share/<token>).
+ */
+export const ADMIN_ONLY_MENU_KEYS = ['checklist-tools'];
+
+/**
  * Default allowed_menus untuk user BARU. Sengaja dipisah dari ALL_MENU_KEYS:
  * ALL_MENU_KEYS = daftar lengkap untuk selector di Admin Panel,
  * DEFAULT_MENU_KEYS = yang benar-benar dicentang saat user dibuat.

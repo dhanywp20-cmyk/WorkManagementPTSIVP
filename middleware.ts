@@ -26,6 +26,10 @@ const PUBLIC_PREFIXES = [
   '/_next/', '/favicon', '/IVP_Background',
   '/project-progress/share/',
   '/api/project-progress/share/',
+  // Checklist Tools: link yang dibagikan admin ke tim untuk dicentang tanpa
+  // login. Route-nya memeriksa token sendiri dan hanya bisa mencentang item.
+  '/checklist/share/',
+  '/api/checklist/share/',
   '/icons/',
 ];
 

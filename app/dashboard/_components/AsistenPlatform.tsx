@@ -67,11 +67,13 @@ function KartuPanduan({ p }: { p: Panduan }) {
   );
 }
 
-export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
+export function AsistenPlatform({ modul, atasan, admin = false, onMulaiTur }: {
   /** Kunci modul yang sedang dibuka (lib/panduan.ts), mis. 'ticketing'. */
   modul: string;
   /** Supervisor/Manager/Admin - menambah saran pertanyaan tentang tim. */
   atasan: boolean;
+  /** Admin/superadmin - panduan menu khusus admin ikut ditawarkan. */
+  admin?: boolean;
   onMulaiTur: () => void;
 }) {
   const [melebar, setMelebar] = useState(true);
@@ -246,7 +248,7 @@ export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">Menu lain</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {PANDUAN.filter(p => p.kunci !== panduanAktif.kunci).map(p => (
+                    {PANDUAN.filter(p => p.kunci !== panduanAktif.kunci && (admin || !p.khususAdmin)).map(p => (
                       <button key={p.kunci} type="button" onClick={() => setModulPanduan(p.kunci)}
                         className="text-[12px] font-medium px-2.5 py-1 rounded-full border border-slate-200 text-slate-700 hover:bg-slate-50">{p.judul}</button>
                     ))}

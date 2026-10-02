@@ -18,6 +18,8 @@ export interface Panduan {
   guna: string;
   langkah: string[];
   tips: string[];
+  /** Menu khusus admin/superadmin - tidak ditawarkan ke peran lain. */
+  khususAdmin?: boolean;
 }
 
 export const PANDUAN: Panduan[] = [
@@ -186,6 +188,24 @@ export const PANDUAN: Panduan[] = [
       'Catat setiap unit yang keluar atau masuk beserta tujuan, penanggung jawab, dan lampirannya.',
     ],
     tips: ['Catat di hari yang sama agar posisi unit selalu akurat.'],
+  },
+  {
+    kunci: 'checklist',
+    judul: 'Checklist Tools',
+    guna: 'Khusus admin: mengimpor checklist pekerjaan dan membagikan link ke tim untuk dicentang tanpa login.',
+    khususAdmin: true,
+    langkah: [
+      'Klik "Impor checklist", lalu tempel teks/Markdown (mis. ekspor dokumen checklist) atau unggah Excel dengan kolom Bagian, Kelompok, Item, Catatan.',
+      'Periksa pratinjau: ganti judul dan hapus centang bagian yang tidak perlu, lalu simpan.',
+      'Buka checklist, klik "Bagikan link", aktifkan, lalu salin link ke grup tim.',
+      'Tim membuka link di HP, mengisi nama sekali, lalu mencentang item. Nama dan jam setiap centang tercatat di Riwayat centang.',
+      'Untuk ruangan atau proyek berikutnya, pakai Duplikat: isi tersalin dan semua centang dikosongkan.',
+    ],
+    tips: [
+      'Teks: "## Judul" = bagian, baris tebal atau "### Judul" = kelompok, "- [ ] teks" = item, "- [x]" = sudah selesai.',
+      'Ekspor Excel bisa diimpor balik, termasuk kolom Status "Selesai".',
+      '"Buat link baru" memutus link lama untuk selamanya; Matikan hanya menonaktifkan sementara.',
+    ],
   },
 ];
 
