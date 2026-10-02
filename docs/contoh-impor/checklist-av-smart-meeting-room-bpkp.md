@@ -1,95 +1,116 @@
 # Checklist AV - Smart Meeting Room BPKP
 
+Satu bagian = satu produk: pasang, kabel, setting, tes. Jaringan 192.168.1.x, gateway .1, laptop teknisi .250.
+
 ## 1. Persiapan
 
 - [ ] Wiring diagram & layout rak dicetak
-- [ ] Semua perangkat lengkap sesuai daftar
-- [ ] Kabel & konektor lengkap
-- [ ] Jalur kabel siap (wall, meja, operator ke rak)
-- [ ] Listrik rak siap, lewat 2 UPS
-- [ ] Alat kerja & laptop teknisi siap
-- [ ] Firmware & software perangkat siap
+- [ ] Perangkat, kabel & konektor lengkap
+- [ ] Jalur kabel & listrik siap
+- [ ] Alat, laptop & firmware siap
 
-## 2. Instalasi Rak
+## 2. Rak, Jaringan & UPS
 
-Urutan atas ke bawah: Router, Switch, Extender, Scaler + Cue, Matrix, DSP, Receiver mic, Amplifier, UPS.
+Urutan rak atas ke bawah: Router, Switch, Extender, Scaler + Cue, Matrix, DSP, Receiver mic, Amplifier, UPS.
 
-- [ ] Rak berdiri kokoh, roda terkunci
-- [ ] Semua perangkat terpasang sesuai urutan
-- [ ] UPS & amplifier pakai rail penahan
-- [ ] Ventilasi cukup
-- [ ] Kabel daya & sinyal dipisah, rapi
+- [ ] Rak berdiri kokoh, perangkat sesuai urutan
+- [ ] Router & switch terpasang
+- [ ] 2 UPS terpasang, semua daya lewat UPS
+- [ ] Semua kabel dilabel & dites
+- [ ] Semua perangkat online (11/11)
+- [ ] Tes cabut listrik: rak tetap hidup
 
-## 3. Instalasi Ruangan
+## 3. Interactive Display / IFP (.97)
 
-**Dinding**
+- [ ] Terpasang di dinding
+- [ ] Kabel HDBaseT dari matrix & RS232 ke Cue
+- [ ] IP, input & kontrol diset
+- [ ] Tes tampil & dikontrol dari tablet
 
-- [ ] IFP terpasang
+## 4. Display Signage x3 (.94 / .95 / .96)
+
 - [ ] 3 signage terpasang sejajar
-- [ ] Kamera terpasang menghadap meja
+- [ ] Kabel HDBaseT dari scaler
+- [ ] IP & input diset
+- [ ] Tes tampil & ON/OFF dari tablet
+
+## 5. Matrix (.93) & Scaler (.91)
+
+- [ ] Terpasang di rak
+- [ ] Input & output tersambung sesuai diagram
+- [ ] IP, routing & resolusi diset
+- [ ] Tes semua sumber ke semua display
+
+## 6. Kamera Aver (.90)
+
+- [ ] Terpasang menghadap meja
+- [ ] Kabel LAN & USB tersambung
+- [ ] IP & preset posisi diset
+- [ ] Tes terbaca di PC & preset dari tablet
+
+## 7. Audio: DSP (.88), Amplifier & Speaker
+
+- [ ] DSP & 2 amplifier terpasang di rak
 - [ ] 8 speaker plafon terpasang
-- [ ] Sensor okupansi terpasang
-- [ ] Keypad lampu terpasang
-- [ ] Roll banner terpasang
+- [ ] Kabel audio & speaker sesuai pin
+- [ ] DSP: routing, gain mic & AEC diset
+- [ ] Tes suara jernih, tanpa feedback & echo
 
-**Meja Operator**
+## 8. Mic Chairman, Delegate & Clip-on
 
-- [ ] PC operator, soundcard & WPS terpasang
-- [ ] Wallplate & extender terpasang
-- [ ] Tablet controller operator siap
+- [ ] Receiver terpasang di rak
+- [ ] Kanal frekuensi & pairing semua mic
+- [ ] Tes semua mic terdengar
 
-**Meja Meeting**
+## 9. Meja Meeting: Tabletop & Switcher Aten
 
-- [ ] 5 tabletop box & 2 switcher Aten terpasang
-- [ ] Monitor sentuh 27" pimpinan terpasang
-- [ ] Mic chairman & delegate siap
-- [ ] Tablet controller pimpinan siap
+- [ ] 5 tabletop box & 2 switcher terpasang
+- [ ] Kabel HDMI ke switcher & extender
+- [ ] RS232 switcher ke Cue
+- [ ] Tes 7 input tampil & pindah dari tablet
 
-## 4. Kabel
+## 10. Operator: PC, Soundcard, Wallplate & Monitor Pimpinan
 
-- [ ] Semua kabel ditarik & dilabel di kedua ujung
-- [ ] Semua jalur LAN / HDBaseT dites
-- [ ] Video: sumber ke matrix, scaler, display
-- [ ] Audio: mic & sumber ke DSP, amplifier, speaker
-- [ ] Kontrol: IFP, switcher Aten, receiver mic ke Cue (RS232)
-- [ ] Semua perangkat IP masuk switch
+- [ ] PC, soundcard & wallplate terpasang
+- [ ] Monitor sentuh 27" pimpinan tersambung
+- [ ] Audio & kamera diset di Zoom / Teams
+- [ ] Tes rapat online
 
-## 5. Konfigurasi
+## 11. WPS Wireless Presentation (.92)
 
-| Perangkat | IP |
-| --- | --- |
-| DSP | .88 |
-| Lampu (Lutron) | .89 |
-| Kamera | .90 |
-| Scaler | .91 |
-| WPS | .92 |
-| Matrix | .93 |
-| Display Kiri / Tengah / Kanan | .94 / .95 / .96 |
-| IFP | .97 |
-| Cue | .127 |
+- [ ] Terpasang & tersambung ke matrix
+- [ ] IP & pairing dongle diset
+- [ ] Tes tampil dari laptop
 
-Jaringan 192.168.1.x, gateway .1, laptop teknisi .250.
+## 12. Lampu: Lutron & DALI (.89)
 
-- [ ] IP semua perangkat sesuai tabel, 11/11 online
-- [ ] DSP: routing, gain mic, AEC
-- [ ] Matrix & scaler: routing & resolusi
-- [ ] Display & IFP: input & kontrol aktif
-- [ ] Kamera: preset posisi
-- [ ] WPS: pairing dongle
-- [ ] Lampu: scene & keypad
-- [ ] Cue: driver, tampilan tablet, ON/OFF ruangan
-- [ ] Sensor okupansi: auto-OFF saat kosong
-- [ ] Mic: kanal frekuensi & pairing
-- [ ] PC: audio & kamera di Zoom / Teams
+- [ ] Interface Lutron & DALI terpasang
+- [ ] Keypad terpasang dekat pintu
+- [ ] Scene & keypad diprogram
+- [ ] Tes scene dari tablet & keypad
 
-## 6. Uji Coba
+## 13. Sensor Occupancy
 
-- [ ] Semua sumber tampil di display
-- [ ] Semua mic jernih, tanpa feedback
-- [ ] Rapat online tanpa echo
-- [ ] Tablet: ON/OFF, pindah sumber, volume, lampu, kamera, roll banner
-- [ ] Listrik dicabut, rak tetap hidup lewat UPS
+- [ ] Terpasang di plafon, menjangkau area meja
+- [ ] Kabel ke Cue
+- [ ] DIP switch sensitivitas & waktu tunda diset
+- [ ] Tes LED nyala saat ada gerakan
+- [ ] Tes ruangan kosong otomatis OFF
 
-## 7. Serah Terima
+## 14. Roll Banner
+
+- [ ] Terpasang
+- [ ] Daya lewat Cue Relay
+- [ ] Tes naik / turun dari tablet
+
+## 15. Kontrol Cue (.127) & Tablet
+
+- [ ] Cue & Relay terpasang di rak
+- [ ] Tablet pimpinan & operator terhubung Wi-Fi
+- [ ] Driver semua perangkat terdaftar
+- [ ] Tampilan tablet & ON/OFF ruangan dibuat
+- [ ] Tes semua fungsi dari kedua tablet
+
+## 16. Serah Terima
 
 - [ ] Training penggunaan ke user
