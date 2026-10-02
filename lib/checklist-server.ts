@@ -3,11 +3,13 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from './supabase-admin';
 import { getSessionUser } from './server-auth';
+import { bacaRahasia } from './rahasia-server';
+import { bacaPengaturan } from './notifikasi/pengaturan';
 import {
-  statDari,
-  type ChecklistAnggota, type ChecklistDetail, type ChecklistProyek, type ChecklistRingkas,
-  type DraftChecklist, type HakChecklist, type LewatCentang, type ProyekDetail, type ProyekRingkas,
-  type SumberChecklist,
+  BATAS, formatTanggal,
+  type ChecklistAnggota, type ChecklistDetail, type ChecklistItem, type ChecklistProyek, type ChecklistRingkas,
+  type ChecklistRiwayat, type DraftChecklist, type HakChecklist, type LewatCentang, type PerubahanItem,
+  type ProyekDetail, type ProyekRingkas, type StatChecklist, type SumberChecklist,
 } from './checklist';
 
 /**
@@ -103,23 +105,37 @@ async function semuaBaris<T>(buat: (dari: number, sampai: number) => PromiseLike
 }
 
 type BarisDaftar = Omit<ChecklistRingkas, 'anggota' | 'stat' | 'saya'>;
-type BarisItemStat = { daftar_id: string; selesai: boolean; kendala: boolean };
+type BarisStat = StatChecklist & { daftar_id: string };
+
+const STAT_KOSONG: StatChecklist = { total: 0, selesai: 0, kendala: 0 };
+
+function jumlahkan(list: StatChecklist[]): StatChecklist {
+  return list.reduce((a, s) => ({ total: a.total + s.total, selesai: a.selesai + s.selesai, kendala: a.kendala + s.kendala }), STAT_KOSONG);
+}
+
+/**
+ * Angka total/selesai/kendala per checklist dari view checklist_stat_daftar
+ * (migrasi 026) - satu baris per checklist, bukan seluruh baris item.
+ */
+export async function statPerDaftar(db: Db, ids?: string[]): Promise<Map<string, StatChecklist>> {
+  if (ids && !ids.length) return new Map();
+  const rows = await semuaBaris<BarisStat>((a, b) => {
+    let q = db.from('checklist_stat_daftar').select('daftar_id,total,selesai,kendala');
+    if (ids) q = q.in('daftar_id', ids);
+    return q.order('daftar_id').range(a, b);
+  });
+  return new Map(rows.map(r => [r.daftar_id, { total: r.total, selesai: r.selesai, kendala: r.kendala }]));
+}
 
 /** Daftar proyek yang boleh dilihat akun ini, lengkap dengan angka ringkasnya. */
 export async function muatDaftarProyek(db: Db, akun: Akun): Promise<ProyekRingkas[]> {
-  const [proyek, daftar, anggota, items] = await Promise.all([
+  const [proyek, daftar, anggota, stat] = await Promise.all([
     semuaBaris<ChecklistProyek>((a, b) => db.from('checklist_proyek').select(KOLOM_PROYEK).order('updated_at', { ascending: false }).range(a, b)),
     semuaBaris<BarisDaftar>((a, b) => db.from('checklist_daftar').select('id,proyek_id,target_date').order('id').range(a, b)),
     semuaBaris<ChecklistAnggota>((a, b) => db.from('checklist_anggota').select('daftar_id,user_id,nama').order('daftar_id').range(a, b)),
-    semuaBaris<BarisItemStat>((a, b) => db.from('checklist_item').select('daftar_id,selesai,kendala').order('id').range(a, b)),
+    statPerDaftar(db),
   ]);
 
-  const itemPerDaftar = new Map<string, BarisItemStat[]>();
-  for (const it of items) {
-    const arr = itemPerDaftar.get(it.daftar_id) ?? [];
-    arr.push(it);
-    itemPerDaftar.set(it.daftar_id, arr);
-  }
   const daftarSaya = new Set(anggota.filter(x => x.user_id === akun.id).map(x => x.daftar_id));
   const lihatSemua = akunLihatSemua(akun);
   const admin = akunAdmin(akun);
@@ -128,16 +144,15 @@ export async function muatDaftarProyek(db: Db, akun: Akun): Promise<ProyekRingka
     const milik = daftar.filter(d => d.proyek_id === p.id);
     const saya = milik.some(d => daftarSaya.has(d.id));
     if (!lihatSemua && !saya && !samaNama(p.sales_name, akun.nama)) return [];
-    const semuaItem = milik.flatMap(d => itemPerDaftar.get(d.id) ?? []);
     const terbuka = milik.filter(d => {
-      const st = statDari(itemPerDaftar.get(d.id) ?? []);
+      const st = stat.get(d.id) ?? STAT_KOSONG;
       return d.target_date && !(st.total > 0 && st.selesai === st.total);
     }).map(d => d.target_date as string).sort();
     return [{
       ...p,
       share_token: admin ? p.share_token : null,
       jumlah_checklist: milik.length,
-      stat: statDari(semuaItem),
+      stat: jumlahkan(milik.map(d => stat.get(d.id) ?? STAT_KOSONG)),
       target_terdekat: terbuka[0] ?? null,
       saya,
     }];
@@ -160,10 +175,10 @@ export async function muatProyek(db: Db, akun: Akun, proyekId: string): Promise<
   const daftar = (dRows ?? []) as BarisDaftar[];
   const ids = daftar.map(d => d.id);
 
-  const [anggota, items] = ids.length ? await Promise.all([
+  const [anggota, stat] = ids.length ? await Promise.all([
     semuaBaris<ChecklistAnggota>((a, b) => db.from('checklist_anggota').select('daftar_id,user_id,nama').in('daftar_id', ids).order('nama').range(a, b)),
-    semuaBaris<BarisItemStat>((a, b) => db.from('checklist_item').select('daftar_id,selesai,kendala').in('daftar_id', ids).order('id').range(a, b)),
-  ]) : [[], []] as [ChecklistAnggota[], BarisItemStat[]];
+    statPerDaftar(db, ids),
+  ]) : [[], new Map()] as [ChecklistAnggota[], Map<string, StatChecklist>];
 
   const admin = akunAdmin(akun);
   const lihatSemua = akunLihatSemua(akun) || samaNama(proyek.sales_name, akun.nama);
@@ -174,7 +189,7 @@ export async function muatProyek(db: Db, akun: Akun, proyekId: string): Promise<
       ...d,
       share_token: admin || saya ? d.share_token ?? null : null,
       anggota: ang,
-      stat: statDari(items.filter(i => i.daftar_id === d.id)),
+      stat: stat.get(d.id) ?? STAT_KOSONG,
       saya,
     };
   });
@@ -292,8 +307,13 @@ export async function tambahIsi(db: Db, daftarId: string, draft: DraftChecklist,
   return items.length;
 }
 
-/** Ganti seluruh anggota checklist. Nama diambil dari akun, bukan dari klien. */
-export async function aturAnggota(db: Db, daftarId: string, userIds: string[]): Promise<ChecklistAnggota[]> {
+/**
+ * Ganti seluruh anggota checklist. Nama diambil dari akun, bukan dari klien.
+ * `baru` = yang sebelumnya bukan anggota - hanya mereka yang dikabari.
+ */
+export async function aturAnggota(db: Db, daftarId: string, userIds: string[]): Promise<{ anggota: ChecklistAnggota[]; baru: string[] }> {
+  const { data: lama } = await db.from('checklist_anggota').select('user_id').eq('daftar_id', daftarId);
+  const sudah = new Set(((lama ?? []) as { user_id: string }[]).map(x => x.user_id));
   const unik = Array.from(new Set(userIds.filter(x => typeof x === 'string' && x))).slice(0, 50);
   const { data: users, error } = unik.length
     ? await db.from('users').select('id,full_name,username').in('id', unik)
@@ -308,7 +328,59 @@ export async function aturAnggota(db: Db, daftarId: string, userIds: string[]): 
     const { error: insErr } = await db.from('checklist_anggota').insert(baris);
     if (insErr) throw new Error(insErr.message);
   }
-  return baris;
+  return { anggota: baris, baru: baris.map(b => b.user_id).filter(id => !sudah.has(id)) };
+}
+
+/**
+ * Kabari anggota yang baru di-assign lewat Telegram pribadi (chat id yang
+ * dihubungkan di profil). Langsung ke Bot API dari server, pola yang sama
+ * dengan digest pagi. Tunduk pada saklar induk Telegram di Admin Panel;
+ * orang yang belum menghubungkan Telegram dilewati tanpa dianggap gagal.
+ * TIDAK PERNAH melempar - assign tetap sah walau pesan gagal.
+ */
+export async function kabariAnggotaBaru(db: Db, daftarId: string, userIds: string[], opsi: { baseUrl: string; oleh: string }):
+  Promise<{ terkirim: number; tanpaTelegram: number }> {
+  const hasil = { terkirim: 0, tanpaTelegram: 0 };
+  if (!userIds.length) return hasil;
+  try {
+    const [token, pengaturan] = await Promise.all([bacaRahasia('telegram.bot_token'), bacaPengaturan()]);
+    if (!token || !pengaturan.aktif.telegram) return hasil;
+
+    const [{ data: users }, { data: d }, stat] = await Promise.all([
+      db.from('users').select('id,full_name,telegram_chat_id').in('id', userIds),
+      db.from('checklist_daftar').select('judul,start_date,target_date,proyek_id').eq('id', daftarId).single(),
+      statPerDaftar(db, [daftarId]),
+    ]);
+    if (!d) return hasil;
+    const { data: p } = await db.from('checklist_proyek').select('nama,client').eq('id', d.proyek_id).single();
+    const st = stat.get(daftarId) ?? STAT_KOSONG;
+    const jadwal = d.start_date || d.target_date ? `${formatTanggal(d.start_date)} - ${formatTanggal(d.target_date)}` : 'belum dijadwalkan';
+
+    for (const u of (users ?? []) as { id: string; full_name: string | null; telegram_chat_id: string | null }[]) {
+      if (!u.telegram_chat_id) { hasil.tanpaTelegram++; continue; }
+      // Teks polos tanpa parse_mode: nama proyek bebas teks, karakter Markdown
+      // di dalamnya bisa membuat Telegram menolak seluruh pesan.
+      const pesan = [
+        `Halo ${u.full_name ?? ''}, Anda di-assign ke checklist Project Progress.`,
+        '',
+        `Proyek : ${p?.nama ?? '-'}${p?.client ? ` (${p.client})` : ''}`,
+        `Lokasi : ${d.judul}`,
+        `Jadwal : ${jadwal}`,
+        `Isi    : ${st.total} item${st.selesai ? `, ${st.selesai} sudah selesai` : ''}`,
+        `Oleh   : ${opsi.oleh}`,
+        '',
+        `Buka: ${opsi.baseUrl}/dashboard (menu Project Progress)`,
+      ].join('\n');
+      try {
+        const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: u.telegram_chat_id, text: pesan }),
+        });
+        if ((await r.json().catch(() => ({})))?.ok) hasil.terkirim++;
+      } catch { /* satu penerima gagal tidak menghentikan yang lain */ }
+    }
+  } catch { /* pemberitahuan pelengkap - jangan gagalkan assign */ }
+  return hasil;
 }
 
 /**
@@ -319,7 +391,7 @@ export async function aturAnggota(db: Db, daftarId: string, userIds: string[]): 
 export async function buatChecklist(db: Db, proyekId: string, data: {
   judul: string; keterangan: string; start_date: string | null; target_date: string | null;
   sumber: SumberChecklist; anggota: string[]; origin?: 'manual' | 'auto_reminder'; source_reminder_id?: string | null;
-}, draft: DraftChecklist | null, oleh: Akun): Promise<string> {
+}, draft: DraftChecklist | null, oleh: Akun, kabari?: { baseUrl: string }): Promise<string> {
   const { data: akhir } = await db.from('checklist_daftar').select('urutan')
     .eq('proyek_id', proyekId).order('urutan', { ascending: false }).limit(1).maybeSingle();
   const { data: d, error } = await db.from('checklist_daftar').insert({
@@ -329,77 +401,101 @@ export async function buatChecklist(db: Db, proyekId: string, data: {
     dibuat_oleh: oleh.id || null, dibuat_oleh_nama: oleh.nama,
   }).select('id').single();
   if (error || !d) throw new Error(error?.message ?? 'Gagal membuat checklist.');
+  let baru: string[] = [];
   try {
-    await aturAnggota(db, d.id, data.anggota);
+    baru = (await aturAnggota(db, d.id, data.anggota)).baru;
     if (draft && draft.bagian.length) await tambahIsi(db, d.id, draft, oleh.nama);
     await sentuh(db, d.id, proyekId);
-    return d.id as string;
   } catch (e) {
     await db.from('checklist_daftar').delete().eq('id', d.id);
     throw e;
   }
+  // Sesudah isinya lengkap, supaya pesan menyebut jumlah item yang benar.
+  if (kabari) await kabariAnggotaBaru(db, d.id, baru, { baseUrl: kabari.baseUrl, oleh: oleh.nama });
+  return d.id as string;
 }
 
-async function catatRiwayat(db: Db, daftarId: string, itemId: string, teks: string,
-  aksi: 'centang' | 'batal' | 'kendala' | 'kendala_selesai', nama: string, lewat: LewatCentang) {
-  await db.from('checklist_riwayat').insert({ daftar_id: daftarId, item_id: itemId, teks_item: teks, aksi, nama, lewat });
+const RIWAYAT_KOLOM = 'id,item_id,teks_item,aksi,nama,lewat,created_at';
+
+/**
+ * Waktu pengerjaan dari perangkat. Dipakai supaya "kapan dikerjakan" tetap
+ * benar walau Simpan baru ditekan belakangan; ditolak (pakai waktu server)
+ * bila tidak masuk akal - di masa depan atau lebih dari 14 hari lalu.
+ */
+function waktuSah(v: unknown, sekarang: number): string {
+  const t = typeof v === 'string' ? Date.parse(v) : NaN;
+  if (Number.isNaN(t) || t > sekarang + 5 * 60_000 || t < sekarang - 14 * 86_400_000) return new Date(sekarang).toISOString();
+  return new Date(t).toISOString();
 }
 
 /**
- * Centang / batal satu item. `selesai` adalah NILAI TUJUAN, bukan "balik":
- * dua orang yang mencentang item yang sama hampir bersamaan tidak saling
- * membatalkan. Item yang diselesaikan otomatis lepas dari kendalanya.
+ * Simpan sekumpulan perubahan centang/kendala dari SATU kali tekan Simpan.
+ * Satu baca, satu tulis item (upsert), satu tulis riwayat - berapa pun
+ * jumlah perubahannya. `selesai` & `kendala` adalah NILAI TUJUAN, bukan
+ * "balik": dua orang yang menyimpan item yang sama tidak saling membatalkan.
  */
-export async function setCentang(
-  db: Db, daftarId: string, itemId: string, selesai: boolean, nama: string, lewat: LewatCentang,
-): Promise<{ galat: string; status: number } | { item: unknown }> {
-  const { data: item } = await db.from('checklist_item').select('id,teks,selesai,kendala')
-    .eq('id', itemId).eq('daftar_id', daftarId).maybeSingle();
-  if (!item) return { galat: 'Item tidak ditemukan. Muat ulang halaman.', status: 404 };
+export async function simpanPerubahan(
+  db: Db, daftarId: string, masuk: unknown, nama: string, lewat: LewatCentang,
+): Promise<{ galat: string; status: number } | { items: ChecklistItem[]; riwayat: ChecklistRiwayat[] }> {
+  if (!Array.isArray(masuk) || masuk.length === 0) return { galat: 'Tidak ada perubahan untuk disimpan.', status: 400 };
+  if (masuk.length > BATAS.perubahan) return { galat: `Maksimal ${BATAS.perubahan} perubahan per simpan.`, status: 400 };
 
-  const sekarang = new Date().toISOString();
-  const { data: baru, error } = await db.from('checklist_item').update(selesai
-    ? { selesai: true, selesai_oleh: nama, selesai_pada: sekarang, selesai_lewat: lewat, kendala: false }
-    : { selesai: false, selesai_oleh: null, selesai_pada: null, selesai_lewat: null })
-    .eq('id', itemId).select(KOLOM_ITEM).single();
-  if (error) return { galat: error.message, status: 500 };
-
-  if (item.selesai !== selesai) {
-    await Promise.all([
-      catatRiwayat(db, daftarId, itemId, item.teks, selesai ? 'centang' : 'batal', nama, lewat),
-      selesai && item.kendala ? catatRiwayat(db, daftarId, itemId, item.teks, 'kendala_selesai', nama, lewat) : Promise.resolve(),
-      sentuh(db, daftarId),
-    ]);
+  const perubahan = new Map<string, PerubahanItem>();
+  for (const m of masuk as PerubahanItem[]) {
+    if (m && typeof m.itemId === 'string') perubahan.set(m.itemId, m);
   }
-  return { item: baru };
-}
+  const ids = Array.from(perubahan.keys());
+  const { data: rows, error } = await db.from('checklist_item').select('*').eq('daftar_id', daftarId).in('id', ids);
+  if (error) return { galat: error.message, status: 500 };
+  const asal = (rows ?? []) as (ChecklistItem & Record<string, unknown>)[];
+  if (asal.length !== ids.length) return { galat: 'Sebagian item sudah tidak ada. Muat ulang checklist.', status: 409 };
 
-/** Tandai / lepas kendala. Menandai kendala membatalkan centang selesai. */
-export async function setKendala(
-  db: Db, daftarId: string, itemId: string, kendala: boolean, catatan: string, nama: string, lewat: LewatCentang,
-): Promise<{ galat: string; status: number } | { item: unknown }> {
-  const { data: item } = await db.from('checklist_item').select('id,teks,kendala')
-    .eq('id', itemId).eq('daftar_id', daftarId).maybeSingle();
-  if (!item) return { galat: 'Item tidak ditemukan. Muat ulang halaman.', status: 404 };
+  const sekarang = Date.now();
+  const tulis: Record<string, unknown>[] = [];
+  const riwayat: Record<string, unknown>[] = [];
+  for (const it of asal) {
+    const m = perubahan.get(it.id)!;
+    const waktu = waktuSah(m.waktu, sekarang);
+    const baru: Record<string, unknown> = { ...it };
+    let berubah = false;
 
-  const sekarang = new Date().toISOString();
-  const { data: baru, error } = await db.from('checklist_item').update(kendala
-    ? {
-        kendala: true, kendala_catatan: catatan, kendala_oleh: nama, kendala_pada: sekarang,
-        selesai: false, selesai_oleh: null, selesai_pada: null, selesai_lewat: null,
+    if (typeof m.kendala === 'boolean') {
+      const catatan = String(m.catatan ?? '').replace(/\r/g, '').trim().slice(0, BATAS.catatan);
+      if (m.kendala) {
+        if (!catatan) return { galat: `Kendala "${it.teks}" belum diberi keterangan.`, status: 400 };
+        Object.assign(baru, { kendala: true, kendala_catatan: catatan, kendala_oleh: nama, kendala_pada: waktu,
+          selesai: false, selesai_oleh: null, selesai_pada: null, selesai_lewat: null });
+        riwayat.push({ daftar_id: daftarId, item_id: it.id, teks_item: it.teks, aksi: 'kendala', nama, lewat, created_at: waktu });
+        berubah = true;
+      } else if (it.kendala) {
+        baru.kendala = false;
+        riwayat.push({ daftar_id: daftarId, item_id: it.id, teks_item: it.teks, aksi: 'kendala_selesai', nama, lewat, created_at: waktu });
+        berubah = true;
       }
-    : { kendala: false })
-    .eq('id', itemId).select(KOLOM_ITEM).single();
-  if (error) return { galat: error.message, status: 500 };
+    }
 
-  // Catatan kendala yang diperbarui juga dicatat: siapa menambah keterangan, kapan.
-  if (item.kendala !== kendala || kendala) {
-    await Promise.all([
-      catatRiwayat(db, daftarId, itemId, item.teks, kendala ? 'kendala' : 'kendala_selesai', nama, lewat),
-      sentuh(db, daftarId),
-    ]);
+    if (typeof m.selesai === 'boolean' && m.selesai !== baru.selesai) {
+      if (m.selesai) {
+        if (baru.kendala) riwayat.push({ daftar_id: daftarId, item_id: it.id, teks_item: it.teks, aksi: 'kendala_selesai', nama, lewat, created_at: waktu });
+        Object.assign(baru, { selesai: true, selesai_oleh: nama, selesai_pada: waktu, selesai_lewat: lewat, kendala: false });
+      } else {
+        Object.assign(baru, { selesai: false, selesai_oleh: null, selesai_pada: null, selesai_lewat: null });
+      }
+      riwayat.push({ daftar_id: daftarId, item_id: it.id, teks_item: it.teks, aksi: m.selesai ? 'centang' : 'batal', nama, lewat, created_at: waktu });
+      berubah = true;
+    }
+    if (berubah) tulis.push(baru);
   }
-  return { item: baru };
+
+  if (!tulis.length) return { items: [], riwayat: [] };
+  const { data: hasil, error: uErr } = await db.from('checklist_item').upsert(tulis, { onConflict: 'id' }).select(KOLOM_ITEM);
+  if (uErr) return { galat: uErr.message, status: 500 };
+  const { data: rw } = await db.from('checklist_riwayat').insert(riwayat).select(RIWAYAT_KOLOM);
+  await sentuh(db, daftarId);
+  return {
+    items: (hasil ?? []) as ChecklistItem[],
+    riwayat: ((rw ?? []) as ChecklistRiwayat[]).sort((a, b) => b.created_at.localeCompare(a.created_at)),
+  };
 }
 
 const BUCKET = 'project-files';

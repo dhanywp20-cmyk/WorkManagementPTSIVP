@@ -121,6 +121,8 @@ export interface ChecklistItem {
   kendala_pada: string | null;
   foto_url: string | null;
   foto_thumb_url: string | null;
+  /** Hanya di peramban: ada perubahan yang belum disimpan pada item ini. */
+  tertunda?: boolean;
 }
 
 export type AksiRiwayat = 'centang' | 'batal' | 'kendala' | 'kendala_selesai';
@@ -193,7 +195,26 @@ export const BATAS = {
   catatan: 5000,
   keterangan: 5000,
   nama: 60,
+  /** Perubahan (centang/kendala) per satu kali Simpan. */
+  perubahan: 500,
 } as const;
+
+/**
+ * Satu perubahan yang menunggu tombol Simpan. Centang & kendala TIDAK dikirim
+ * per klik - dikumpulkan di peramban lalu dikirim sekali, supaya satu sesi
+ * kerja di lapangan = satu permintaan ke server (hemat kuota Vercel &
+ * egress Supabase paket gratis).
+ */
+export interface PerubahanItem {
+  itemId: string;
+  /** Nilai tujuan centang. Tidak ada = centang tidak berubah. */
+  selesai?: boolean;
+  /** Nilai tujuan kendala. Tidak ada = kendala tidak berubah. */
+  kendala?: boolean;
+  catatan?: string;
+  /** Kapan perubahan dibuat di perangkat (ISO) - dicatat sebagai waktu pengerjaan. */
+  waktu?: string;
+}
 
 // ── Progres & jadwal ───────────────────────────────────────────────────────
 

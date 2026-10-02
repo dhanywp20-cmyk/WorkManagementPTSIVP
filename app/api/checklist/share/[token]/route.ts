@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { NO_STORE, cariChecklistShare, galat, muatChecklist, setCentang, setKendala } from '@/lib/checklist-server';
-import { BATAS, validasiNama } from '@/lib/checklist';
+import { NO_STORE, cariChecklistShare, galat, muatChecklist, simpanPerubahan } from '@/lib/checklist-server';
+import { validasiNama } from '@/lib/checklist';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,8 +11,9 @@ export const revalidate = 0;
  * satu lokasi.
  *
  *   GET  -> isi checklist (tanpa token, anggota, riwayat)
- *   POST -> { aksi: 'centang', itemId, selesai, nama }
- *           { aksi: 'kendala', itemId, kendala, catatan, nama }
+ *   POST -> { aksi: 'simpan', perubahan: [{ itemId, selesai?, kendala?, catatan?, waktu? }], nama }
+ *           Semua centang & kendala satu sesi dikirim sekali saat tombol
+ *           Simpan ditekan - bukan per klik (hemat kuota paket gratis).
  *
  * Keamanan:
  *  - service_role di server; anon key tidak bisa menulis tabel checklist_*.
@@ -22,9 +23,9 @@ export const revalidate = 0;
  *  - tiap perubahan dicatat dengan nama pengirim (checklist_riwayat).
  */
 
-// Batas wajar perubahan per checklist per menit. Satu tim yang bekerja cepat
-// tidak mendekatinya; skrip yang mengirim permintaan beruntun tertahan.
-const BATAS_PER_MENIT = 120;
+// Jeda minimum antar-simpan per checklist. Satu simpan berisi banyak
+// perubahan, jadi tim yang bekerja normal tidak pernah tertahan.
+const JEDA_SIMPAN_MS = 3_000;
 const TIDAK_ADA = 'Link tidak ditemukan atau sudah dinonaktifkan.';
 
 export async function GET(_request: NextRequest, { params }: { params: { token: string } }) {
@@ -50,22 +51,14 @@ export async function POST(request: NextRequest, { params }: { params: { token: 
   const nama = validasiNama(body.nama);
   if (!nama) return galat('Isi nama Anda (2-60 karakter) sebelum mengubah checklist.');
 
-  const semenitLalu = new Date(Date.now() - 60_000).toISOString();
-  const { count } = await db.from('checklist_riwayat').select('id', { count: 'exact', head: true })
-    .eq('daftar_id', id).gte('created_at', semenitLalu);
-  if ((count ?? 0) >= BATAS_PER_MENIT) return galat('Terlalu banyak perubahan dalam satu menit. Coba lagi sebentar.', 429);
+  // Dihitung dari waktu simpan terakhir di server (updated_at checklist),
+  // bukan dari riwayat - waktu riwayat mengikuti jam pengerjaan di perangkat.
+  const { data: d } = await db.from('checklist_daftar').select('updated_at').eq('id', id).single();
+  const terakhir = d?.updated_at ? Date.parse(d.updated_at) : 0;
+  if (Date.now() - terakhir < JEDA_SIMPAN_MS) return galat('Terlalu cepat. Tunggu beberapa detik lalu simpan lagi.', 429);
 
-  const itemId = String(body.itemId ?? '');
-  if (body.aksi === 'kendala') {
-    const kendala = body.kendala === true;
-    const catatan = String(body.catatan ?? '').replace(/\r/g, '').trim().slice(0, BATAS.catatan);
-    if (kendala && !catatan) return galat('Tulis kendalanya supaya admin tahu apa yang menghambat.');
-    const hasil = await setKendala(db, id, itemId, kendala, catatan, nama, 'link');
-    if ('galat' in hasil) return galat(hasil.galat, hasil.status);
-    return NextResponse.json(hasil, { headers: NO_STORE });
-  }
-
-  const hasil = await setCentang(db, id, itemId, body.selesai === true, nama, 'link');
+  if (body.aksi !== 'simpan') return galat('Aksi tidak dikenal. Muat ulang halaman.');
+  const hasil = await simpanPerubahan(db, id, body.perubahan, nama, 'link');
   if ('galat' in hasil) return galat(hasil.galat, hasil.status);
   return NextResponse.json(hasil, { headers: NO_STORE });
 }

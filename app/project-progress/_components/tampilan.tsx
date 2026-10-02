@@ -165,7 +165,8 @@ export function BarisItem({ item, sedang, aksi }: { item: ChecklistItem; sedang:
   const latar = item.selesai ? TEMA.selesaiTint : item.kendala ? TEMA.kendalaTint : 'transparent';
 
   return (
-    <div className="group flex items-start gap-3 px-3 sm:px-4 py-2.5 transition-colors" style={{ background: latar }}>
+    <div className="group flex items-start gap-3 px-3 sm:px-4 py-2.5 transition-colors"
+      style={{ background: latar, boxShadow: item.tertunda ? `inset 3px 0 0 ${TEMA.warna}` : undefined }}>
       <button type="button" onClick={() => aksi.onToggle?.(item)} disabled={sedang || !bisaCentang}
         aria-pressed={item.selesai} aria-label={item.selesai ? `Batalkan centang: ${item.teks}` : `Centang: ${item.teks}`}
         className="mt-0.5 w-6 h-6 sm:w-5 sm:h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-default"
@@ -185,6 +186,9 @@ export function BarisItem({ item, sedang, aksi }: { item: ChecklistItem; sedang:
           textDecoration: item.selesai ? 'line-through' : 'none',
           textDecorationColor: TEMA.samar,
         }}>{item.teks}</p>
+        {item.tertunda && (
+          <p className="text-[10.5px] font-bold uppercase tracking-wide mt-0.5" style={{ color: TEMA.warna }}>Belum disimpan</p>
+        )}
         {item.catatan && (
           <p className="text-[12px] mt-0.5 whitespace-pre-line" style={{ color: TEMA.samar }}>{item.catatan}</p>
         )}

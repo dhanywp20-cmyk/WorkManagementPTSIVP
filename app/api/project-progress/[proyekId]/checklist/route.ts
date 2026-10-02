@@ -44,7 +44,7 @@ export async function POST(request: NextRequest, { params }: { params: { proyekI
     if (!asal) return galat('Checklist sumber tidak ditemukan.', 404);
     draft = {
       judul,
-      keterangan: '',
+      keterangan: asal.daftar.keterangan,
       bagian: asal.bagian.map(b => ({
         judul: b.judul,
         catatan: b.catatan,
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest, { params }: { params: { proyekI
       judul,
       keterangan: teks(body.keterangan, BATAS.keterangan) || draft?.keterangan || '',
       start_date, target_date, sumber, anggota: daftarId(body.anggota),
-    }, draft, akun);
+    }, draft, akun, { baseUrl: request.nextUrl.origin });
     return NextResponse.json({ id }, { headers: NO_STORE });
   } catch (e) {
     return galat(e instanceof Error ? e.message : 'Gagal membuat checklist.', 500);

@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
         keterangan: `Dibuat otomatis dari Request Schedule (${r.category}). Isi checklist diimpor atau disalin menyusul.`,
         start_date: r.progress_start_date, target_date: r.progress_target_date,
         sumber: 'reminder', anggota, origin: 'auto_reminder', source_reminder_id: r.id,
-      }, null, akun);
+      }, null, akun, { baseUrl: request.nextUrl.origin });
       out.created++;
     } catch (e) {
       const pesan = e instanceof Error ? e.message : String(e);

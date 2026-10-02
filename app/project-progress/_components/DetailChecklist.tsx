@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowLeft, CalendarDays, Download, Link2, Pencil, Plus, RefreshCw, Trash2, Upload, Users,
+  ArrowLeft, CalendarDays, Copy, Download, Link2, Pencil, Plus, RefreshCw, Trash2, Upload, Users,
 } from 'lucide-react';
 import { ConfirmDialog, Modal, TombolModal, type ConfirmState } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { loadXLSX } from '@/lib/xlsx-loader';
 import {
   BATAS, KOLOM_TEMPLATE, formatTanggal, formatWaktu, keadaanJadwal, statDari,
-  type ChecklistBagian, type ChecklistDetail, type ChecklistItem, type DraftChecklist,
+  type ChecklistAnggota, type ChecklistBagian, type ChecklistDetail, type ChecklistItem, type ChecklistRiwayat,
+  type DraftChecklist,
 } from '@/lib/checklist';
 import {
   BarProgres, CatatanTeks, KepingKendala, ModalKendala, PanelBagian, TEMA, fontAngka,
@@ -18,6 +19,8 @@ import {
 import { ModalImpor } from './ModalImpor';
 import { ModalShare } from './ModalShare';
 import { PilihAnggota, type CalonAnggota } from './PilihAnggota';
+import { ModalSalinChecklist, type ProyekPilihan } from './FormProyek';
+import { BilahSimpan, useTertunda } from './tertunda';
 import { panggil, pesanGalat } from './api';
 
 type FormItem = { mode: 'tambah' | 'ubah'; bagianId: string; item?: ChecklistItem; teks: string; kelompok: string; catatan: string };
@@ -36,13 +39,18 @@ const kecil = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px]
  *   edit  -> anggota yang di-assign: centang, kendala, foto, item, impor, link tim
  *   lain  -> hanya lihat
  */
-export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggota }: {
+export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggota, namaSaya, daftarProyek, onBukaChecklist }: {
   id: string;
   onKembali: () => void;
   beritahu: (type: 'success' | 'error', msg: string) => void;
-  /** Dipanggil sesudah ada perubahan supaya angka di daftar ikut segar. */
+  /** Menandai daftar proyek perlu dimuat ulang (dimuat saat kembali ke daftar, bukan sekarang). */
   onBerubah: () => void;
   calonAnggota: CalonAnggota[];
+  /** Nama yang tampil pada centang yang belum disimpan. */
+  namaSaya: string;
+  /** Tujuan "Salin ke lokasi lain". */
+  daftarProyek: ProyekPilihan[];
+  onBukaChecklist: (id: string, proyekId: string) => void;
 }) {
   const [detail, setDetail] = useState<ChecklistDetail | null>(null);
   const [galat, setGalat] = useState('');
@@ -58,6 +66,8 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
   const [shareBuka, setShareBuka] = useState(false);
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const [menyimpan, setMenyimpan] = useState(false);
+  const [menyimpanCentang, setMenyimpanCentang] = useState(false);
+  const [salinBuka, setSalinBuka] = useState(false);
 
   const muat = useCallback(async () => {
     try {
@@ -78,34 +88,43 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
 
   const gantiItem = (baru: ChecklistItem) => setDetail(d => d && { ...d, items: d.items.map(i => (i.id === baru.id ? baru : i)) });
 
-  const peta = useMemo(() => (detail ? itemPerBagian(detail.bagian, detail.items) : new Map<string, ChecklistItem[]>()), [detail]);
-  const stat = detail ? statDari(detail.items) : null;
   const hak = detail?.hak ?? { admin: false, edit: false };
+  // Centang & kendala ditampung sampai tombol Simpan ditekan - lihat tertunda.tsx.
+  const t = useTertunda(detail?.items, namaSaya, 'admin');
+  const itemsTampil = useMemo(() => (detail ? detail.items.map(t.tampil) : []), [detail, t.tampil]);
+  const peta = useMemo(() => (detail ? itemPerBagian(detail.bagian, itemsTampil) : new Map<string, ChecklistItem[]>()), [detail, itemsTampil]);
+  const stat = detail ? statDari(itemsTampil) : null;
 
-  const toggle = async (item: ChecklistItem) => {
-    if (sedangId) return;
-    setSedangId(item.id);
+  const toggle = (item: ChecklistItem) => t.toggle(item);
+
+  const simpanKendala = async (item: ChecklistItem, kendala: boolean, catatan: string) => {
+    t.aturKendala(item, kendala, catatan);
+  };
+
+  /** Kirim semua centang & kendala yang tertunda dalam SATU permintaan. */
+  const simpanCentang = async () => {
+    if (!t.jumlah || menyimpanCentang) return;
+    setMenyimpanCentang(true);
     try {
-      const { item: baru } = await ubah({ aksi: 'centang', itemId: item.id, selesai: !item.selesai }) as { item: ChecklistItem };
-      gantiItem(baru);
-      muat(); // riwayat ikut segar
+      const hasil = await ubah({ aksi: 'simpan', perubahan: t.daftar }) as { items: ChecklistItem[]; riwayat: ChecklistRiwayat[] };
+      const baru = new Map(hasil.items.map(i => [i.id, i]));
+      setDetail(d => d && {
+        ...d,
+        items: d.items.map(i => baru.get(i.id) ?? i),
+        riwayat: [...hasil.riwayat, ...(d.riwayat ?? [])].slice(0, 80),
+      });
+      t.reset();
+      beritahu('success', `${hasil.items.length} item tersimpan.`);
     } catch (e) {
-      beritahu('error', pesanGalat(e, 'Gagal mencentang.'));
+      beritahu('error', pesanGalat(e, 'Gagal menyimpan. Perubahan Anda masih ada - coba Simpan lagi.'));
     } finally {
-      setSedangId(null);
+      setMenyimpanCentang(false);
     }
   };
 
-  const simpanKendala = async (item: ChecklistItem, kendala: boolean, catatan: string) => {
-    try {
-      const { item: baru } = await ubah({ aksi: 'kendala', itemId: item.id, kendala, catatan }) as { item: ChecklistItem };
-      gantiItem(baru);
-      muat();
-      beritahu('success', kendala ? 'Kendala dicatat.' : 'Kendala ditandai selesai.');
-    } catch (e) {
-      beritahu('error', pesanGalat(e, 'Gagal menyimpan kendala.'));
-      throw e;
-    }
+  const kembali = () => {
+    if (t.jumlah && !window.confirm(`${t.jumlah} perubahan belum disimpan dan akan hilang. Tetap kembali?`)) return;
+    onKembali();
   };
 
   const unggahFoto = async (item: ChecklistItem, file: File) => {
@@ -121,9 +140,14 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
     }
   };
 
-  const jalankan = async (body: Record<string, unknown>, sukses: string, tutup: () => void) => {
+  /**
+   * Jalankan satu aksi ubah lalu terapkan hasilnya ke layar TANPA memuat
+   * ulang seluruh checklist (hemat egress). `terapkan` menerima jawaban server.
+   */
+  const jalankan = async (body: Record<string, unknown>, sukses: string, tutup: () => void,
+    terapkan: (hasil: Record<string, unknown>) => void) => {
     setMenyimpan(true);
-    try { await ubah(body); tutup(); await muat(); beritahu('success', sukses); }
+    try { const hasil = await ubah(body); terapkan(hasil); tutup(); beritahu('success', sukses); }
     catch (e) { beritahu('error', pesanGalat(e, 'Gagal menyimpan.')); }
     finally { setMenyimpan(false); }
   };
@@ -134,7 +158,11 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
     confirmLabel: 'Hapus', danger: true,
     onConfirm: async () => {
       setKonfirmasi(null);
-      try { await ubah({ aksi: 'hapusItem', itemId: item.id }); await muat(); beritahu('success', 'Item dihapus.'); }
+      try {
+        await ubah({ aksi: 'hapusItem', itemId: item.id });
+        setDetail(d => d && { ...d, items: d.items.filter(i => i.id !== item.id) });
+        beritahu('success', 'Item dihapus.');
+      }
       catch (e) { beritahu('error', pesanGalat(e, 'Gagal menghapus.')); }
     },
   });
@@ -235,7 +263,7 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
       {/* Kepala */}
       <div className="rounded-xl p-4 space-y-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
         <div className="flex items-start gap-3 flex-wrap">
-          <button onClick={onKembali} aria-label="Kembali ke proyek"
+          <button onClick={kembali} aria-label="Kembali ke proyek"
             className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
             style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
             <ArrowLeft size={16} />
@@ -269,6 +297,12 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
             <button onClick={ekspor} className={kecil} style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
               <Download size={14} /> Ekspor Excel
             </button>
+            {hak.admin && (
+              <button onClick={() => setSalinBuka(true)} className={kecil} style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}
+                title="Salin checklist ini ke lokasi lain - centang dikosongkan, tinggal edit yang perlu">
+                <Copy size={14} /> Salin ke lokasi lain
+              </button>
+            )}
             {hak.admin && (
               <>
                 <button onClick={() => setFormInfo({ judul: daftar.judul, keterangan: daftar.keterangan, start_date: daftar.start_date ?? '', target_date: daftar.target_date ?? '' })}
@@ -408,7 +442,11 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
             formItem.mode === 'tambah'
               ? { aksi: 'tambahItem', bagianId: formItem.bagianId, teks: formItem.teks, kelompok: formItem.kelompok, catatan: formItem.catatan }
               : { aksi: 'ubahItem', itemId: formItem.item!.id, teks: formItem.teks, kelompok: formItem.kelompok, catatan: formItem.catatan },
-            formItem.mode === 'tambah' ? 'Item ditambahkan.' : 'Item diperbarui.', () => setFormItem(null))}>
+            formItem.mode === 'tambah' ? 'Item ditambahkan.' : 'Item diperbarui.', () => setFormItem(null),
+            h => {
+              const it = h.item as ChecklistItem;
+              setDetail(d => d && { ...d, items: formItem.mode === 'tambah' ? [...d.items, it] : d.items.map(i => (i.id === it.id ? it : i)) });
+            })}>
             {menyimpan ? 'Menyimpan…' : 'Simpan'}
           </TombolModal>
         </>}>
@@ -437,7 +475,13 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
             formBagian.bagian
               ? { aksi: 'ubahBagian', bagianId: formBagian.bagian.id, judul: formBagian.judul, catatan: formBagian.catatan }
               : { aksi: 'tambahBagian', judul: formBagian.judul },
-            formBagian.bagian ? 'Bagian diperbarui.' : 'Bagian ditambahkan.', () => setFormBagian(null))}>
+            formBagian.bagian ? 'Bagian diperbarui.' : 'Bagian ditambahkan.', () => setFormBagian(null),
+            h => setDetail(d => d && {
+              ...d,
+              bagian: formBagian.bagian
+                ? d.bagian.map(b => (b.id === formBagian.bagian!.id ? { ...b, judul: formBagian.judul.trim(), catatan: formBagian.catatan } : b))
+                : [...d.bagian, h.bagian as ChecklistBagian],
+            }))}>
             {menyimpan ? 'Menyimpan…' : 'Simpan'}
           </TombolModal>
         </>}>
@@ -461,7 +505,11 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
         footer={<>
           <TombolModal onClick={() => setFormInfo(null)} disabled={menyimpan}>Batal</TombolModal>
           <TombolModal jenis="utama" disabled={menyimpan || !formInfo?.judul.trim()}
-            onClick={() => formInfo && jalankan({ aksi: 'ubahInfo', ...formInfo }, 'Info checklist diperbarui.', () => setFormInfo(null))}>
+            onClick={() => formInfo && jalankan({ aksi: 'ubahInfo', ...formInfo }, 'Info checklist diperbarui.', () => setFormInfo(null),
+              () => setDetail(d => d && { ...d, daftar: {
+                ...d.daftar, judul: formInfo.judul.trim(), keterangan: formInfo.keterangan,
+                start_date: formInfo.start_date || null, target_date: formInfo.target_date || null,
+              } }))}>
             {menyimpan ? 'Menyimpan…' : 'Simpan'}
           </TombolModal>
         </>}>
@@ -489,7 +537,15 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
         footer={<>
           <TombolModal onClick={() => setFormAnggota(null)} disabled={menyimpan}>Batal</TombolModal>
           <TombolModal jenis="utama" disabled={menyimpan}
-            onClick={() => formAnggota && jalankan({ aksi: 'anggota', anggota: formAnggota }, 'Anggota diperbarui.', () => setFormAnggota(null))}>
+            onClick={() => formAnggota && jalankan({ aksi: 'anggota', anggota: formAnggota }, 'Anggota diperbarui.', () => setFormAnggota(null),
+              h => {
+                setDetail(d => d && { ...d, anggota: h.anggota as ChecklistAnggota[] });
+                const kabar = h.kabar as { terkirim: number; tanpaTelegram: number } | undefined;
+                if (kabar && (kabar.terkirim || kabar.tanpaTelegram)) {
+                  beritahu('success', `Anggota diperbarui. Telegram terkirim ke ${kabar.terkirim} orang`
+                    + (kabar.tanpaTelegram ? `; ${kabar.tanpaTelegram} belum menghubungkan Telegram.` : '.'));
+                }
+              })}>
             {menyimpan ? 'Menyimpan…' : 'Simpan'}
           </TombolModal>
         </>}>
@@ -497,6 +553,10 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
       </Modal>
 
       <ModalKendala item={kendalaUntuk} onTutup={() => setKendalaUntuk(null)} onSimpan={simpanKendala} />
+      <BilahSimpan jumlah={t.jumlah} sibuk={menyimpanCentang} onSimpan={simpanCentang} onBatal={t.reset} />
+      <ModalSalinChecklist buka={salinBuka} onTutup={() => setSalinBuka(false)} calonAnggota={calonAnggota} daftarProyek={daftarProyek}
+        sumber={{ id: daftar.id, judul: daftar.judul, proyekId: daftar.proyek_id, anggota: detail.anggota.map(a => a.user_id), jumlahItem: stat.total }}
+        onDibuat={(baruId, proyekId) => { setSalinBuka(false); onBerubah(); beritahu('success', 'Checklist disalin. Silakan edit yang perlu.'); onBukaChecklist(baruId, proyekId); }} />
       <ModalImpor buka={imporBuka} onTutup={() => setImporBuka(false)} onSimpan={imporIsi}
         labelSimpan={n => `Tambahkan ${n} item`} />
       <ModalShare beritahu={beritahu} onUbah={ubahShare} onTutup={() => setShareBuka(false)}

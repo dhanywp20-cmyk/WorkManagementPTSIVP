@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link2, Plus, Search } from 'lucide-react';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -48,6 +48,13 @@ export default function ProjectProgressPage() {
   const [salesUsers, setSalesUsers] = useState<SalesPickerUser[]>([]);
   const [calonAnggota, setCalonAnggota] = useState<CalonAnggota[]>([]);
   const [toast, setToast] = useState<Notif | null>(null);
+  /**
+   * Daftar proyek TIDAK dimuat ulang setiap ada perubahan di dalam proyek /
+   * checklist - cukup ditandai, lalu dimuat sekali saat kembali ke daftar.
+   * Menghemat permintaan & egress (Vercel/Supabase paket gratis).
+   */
+  const perluMuat = useRef(false);
+  const tandaiBerubah = useCallback(() => { perluMuat.current = true; }, []);
 
   const beritahu = useCallback((type: 'success' | 'error', msg: string) => {
     setToast({ type, msg });
@@ -66,6 +73,7 @@ export default function ProjectProgressPage() {
   }, []);
 
   const muat = useCallback(async () => {
+    perluMuat.current = false;
     try {
       const r = await panggil<{ proyek: ProyekRingkas[]; admin: boolean }>('/api/project-progress');
       setProyek(r.proyek);
@@ -125,7 +133,7 @@ export default function ProjectProgressPage() {
   const buatProyek = async (f: IsianProyek) => {
     const { id } = await panggil<{ id: string }>('/api/project-progress', { method: 'POST', body: JSON.stringify(f) });
     setBaruBuka(false);
-    await muat();
+    tandaiBerubah();
     setProyekId(id);
     beritahu('success', 'Proyek dibuat. Tambahkan checklist untuk tiap lokasi.');
   };
@@ -147,14 +155,17 @@ export default function ProjectProgressPage() {
 
       <main className="max-w-[1500px] mx-auto px-3 sm:px-6 py-5 space-y-4">
         {checklistId && (
-          <DetailChecklist id={checklistId} beritahu={beritahu} onBerubah={muat} calonAnggota={calonAnggota}
+          <DetailChecklist key={checklistId} id={checklistId} beritahu={beritahu} onBerubah={tandaiBerubah} calonAnggota={calonAnggota}
+            namaSaya={user?.full_name || user?.username || ''}
+            daftarProyek={proyek.map(p => ({ id: p.id, nama: p.nama, client: p.client }))}
+            onBukaChecklist={(id, pid) => { setProyekId(pid); setChecklistId(id); }}
             onKembali={() => setChecklistId(null)} />
         )}
 
         {!checklistId && proyekId && (
-          <DetailProyek proyekId={proyekId} beritahu={beritahu} onBerubah={muat}
+          <DetailProyek proyekId={proyekId} beritahu={beritahu} onBerubah={tandaiBerubah}
             salesUsers={salesUsers} calonAnggota={calonAnggota}
-            onKembali={() => { setProyekId(null); muat(); }} onBukaChecklist={setChecklistId} />
+            onKembali={() => { setProyekId(null); if (perluMuat.current) muat(); }} onBukaChecklist={setChecklistId} />
         )}
 
         {!checklistId && !proyekId && (

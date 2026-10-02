@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  KOLOM_ITEM, NO_STORE, ambilAkun, aturAnggota, galat, hakAtas, muatChecklist, sentuh,
-  setCentang, setKendala, tambahIsi, tokenBaru,
+  KOLOM_ITEM, NO_STORE, ambilAkun, aturAnggota, galat, hakAtas, kabariAnggotaBaru, muatChecklist, sentuh,
+  simpanPerubahan, tambahIsi, tokenBaru,
 } from '@/lib/checklist-server';
 import { daftarId, tanggal, teks } from '@/lib/checklist-isian';
 import { BATAS, validasiDraft } from '@/lib/checklist';
@@ -12,7 +12,8 @@ export const revalidate = 0;
 /**
  * /api/project-progress/checklist/<id> - satu checklist lokasi.
  *   GET    -> isi lengkap + hak akun ini + riwayat
- *   PATCH  -> { aksi, ... } - lihat cabang di bawah
+ *   PATCH  -> { aksi, ... } - lihat cabang di bawah. Centang & kendala
+ *             dikirim berkelompok lewat aksi 'simpan', bukan per klik.
  *   DELETE -> admin: hapus checklist
  *
  * Admin: semua aksi. Anggota (yang di-assign): semua kecuali ubah info
@@ -69,9 +70,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
     case 'anggota': {
       try {
-        const anggota = await aturAnggota(db, id, daftarId(body.anggota));
+        const { anggota, baru } = await aturAnggota(db, id, daftarId(body.anggota));
         await sentuh(db, id, akses.proyekId);
-        return ok({ anggota });
+        // Yang baru di-assign dikabari lewat Telegram pribadinya.
+        const kabar = await kabariAnggotaBaru(db, id, baru, { baseUrl: request.nextUrl.origin, oleh: akun.nama });
+        return ok({ anggota, kabar });
       } catch (e) {
         return galat(e instanceof Error ? e.message : 'Gagal menyimpan anggota.', 500);
       }
@@ -93,17 +96,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return ok({ share_aktif: true, share_token });
     }
 
-    case 'centang': {
-      const hasil = await setCentang(db, id, String(body.itemId ?? ''), body.selesai === true, akun.nama, 'admin');
-      if ('galat' in hasil) return galat(hasil.galat, hasil.status);
-      return ok(hasil);
-    }
-
-    case 'kendala': {
-      const kendala = body.kendala === true;
-      const catatan = teks(body.catatan, BATAS.catatan);
-      if (kendala && !catatan) return galat('Tulis kendalanya supaya yang lain tahu apa yang menghambat.');
-      const hasil = await setKendala(db, id, String(body.itemId ?? ''), kendala, catatan, akun.nama, 'admin');
+    case 'simpan': {
+      // Semua centang & kendala satu sesi kerja dalam SATU permintaan.
+      const hasil = await simpanPerubahan(db, id, body.perubahan, akun.nama, 'admin');
       if ('galat' in hasil) return galat(hasil.galat, hasil.status);
       return ok(hasil);
     }

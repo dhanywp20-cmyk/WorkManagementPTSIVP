@@ -265,3 +265,111 @@ export function ModalChecklistBaru({ proyekId, buka, calonAnggota, onTutup, onDi
     </>
   );
 }
+
+export interface ProyekPilihan { id: string; nama: string; client: string | null }
+
+/**
+ * Salin satu checklist ke lokasi lain (proyek yang sama atau proyek lain):
+ * bagian, item, kelompok, catatan, dan keterangan ikut; semua centang,
+ * kendala, foto, dan link dikosongkan. Sesudahnya langsung dibuka supaya
+ * tinggal mengedit yang berbeda - tanpa impor ulang.
+ */
+export function ModalSalinChecklist({ buka, sumber, daftarProyek, calonAnggota, onTutup, onDibuat }: {
+  buka: boolean;
+  sumber: { id: string; judul: string; proyekId: string; anggota: string[]; jumlahItem: number };
+  daftarProyek: ProyekPilihan[];
+  calonAnggota: CalonAnggota[];
+  onTutup: () => void;
+  onDibuat: (id: string, proyekId: string) => void;
+}) {
+  const [judul, setJudul] = useState('');
+  const [tujuan, setTujuan] = useState('');
+  const [cari, setCari] = useState('');
+  const [mulai, setMulai] = useState('');
+  const [target, setTarget] = useState('');
+  const [anggota, setAnggota] = useState<string[]>([]);
+  const [sibuk, setSibuk] = useState(false);
+  const [galat, setGalat] = useState('');
+
+  useEffect(() => {
+    if (!buka) return;
+    setJudul(''); setTujuan(sumber.proyekId); setCari(''); setMulai(''); setTarget('');
+    setAnggota(sumber.anggota); setGalat(''); setSibuk(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buka]);
+
+  const pilihan = useMemo(() => {
+    const q = cari.trim().toLowerCase();
+    const semua = daftarProyek.some(p => p.id === sumber.proyekId)
+      ? daftarProyek : [{ id: sumber.proyekId, nama: 'Proyek ini', client: null }, ...daftarProyek];
+    return semua.filter(p => !q || p.nama.toLowerCase().includes(q) || (p.client ?? '').toLowerCase().includes(q));
+  }, [daftarProyek, cari, sumber.proyekId]);
+
+  const salin = async () => {
+    if (!judul.trim() || !tujuan) return;
+    setSibuk(true);
+    setGalat('');
+    try {
+      const { id } = await panggil<{ id: string }>(`/api/project-progress/${tujuan}/checklist`, {
+        method: 'POST',
+        body: JSON.stringify({ judul, start_date: mulai || null, target_date: target || null, anggota, isi: 'salin', salinDari: sumber.id }),
+      });
+      onDibuat(id, tujuan);
+    } catch (e) {
+      setGalat(e instanceof Error ? e.message : 'Gagal menyalin.');
+    } finally {
+      setSibuk(false);
+    }
+  };
+
+  return (
+    <Modal buka={buka} onTutup={() => !sibuk && onTutup()} ukuran="lg" tutupDiLuar={false} ikon="📋"
+      judul="Salin ke lokasi lain"
+      keterangan={`"${sumber.judul}" (${sumber.jumlahItem} item) disalin lengkap dengan bagian & catatannya. Centang, kendala, dan foto dikosongkan.`}
+      footer={<>
+        <TombolModal onClick={onTutup} disabled={sibuk}>Batal</TombolModal>
+        <TombolModal jenis="utama" onClick={salin} disabled={sibuk || !judul.trim() || !tujuan}>{sibuk ? 'Menyalin…' : 'Salin & buka'}</TombolModal>
+      </>}>
+      {galat && <p role="alert" className="mb-3 px-3 py-2 rounded-lg text-[12.5px] font-semibold" style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>{galat}</p>}
+      <div className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="block sm:col-span-3"><Label t="Nama lokasi / ruangan baru" />
+            <input value={judul} onChange={e => setJudul(e.target.value)} maxLength={BATAS.judul} autoFocus
+              placeholder="mis. Ruang Rapat - BPKP Padang" className={isian} style={gayaIsian} /></label>
+          <label className="block"><Label t="Mulai" />
+            <input type="date" value={mulai} onChange={e => setMulai(e.target.value)} className={isian} style={gayaIsian} /></label>
+          <label className="block"><Label t="Target selesai" />
+            <input type="date" value={target} onChange={e => setTarget(e.target.value)} className={isian} style={gayaIsian} /></label>
+        </div>
+
+        <div>
+          <Label t="Masuk ke proyek" />
+          <div className="mt-1 relative">
+            <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: TEMA.samar }} />
+            <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari proyek atau client…" aria-label="Cari proyek tujuan"
+              className="w-full rounded-lg pl-9 pr-3 py-2 text-[13px] outline-none focus:ring-2" style={gayaIsian} />
+          </div>
+          <div className="mt-2 max-h-44 overflow-y-auto rounded-lg divide-y" style={{ border: `1px solid ${NETRAL.garis}`, borderColor: NETRAL.garis }}>
+            {pilihan.length === 0 && <p className="px-3 py-3 text-[12px]" style={{ color: TEMA.samar }}>Tidak ada proyek yang cocok.</p>}
+            {pilihan.map(p => (
+              <label key={p.id} className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-slate-50">
+                <input type="radio" name="proyek-tujuan" checked={tujuan === p.id} onChange={() => setTujuan(p.id)} className="w-4 h-4 accent-blue-600" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[13px] font-semibold truncate" style={{ color: NETRAL.tinta }}>
+                    {p.nama}{p.id === sumber.proyekId ? ' (proyek ini)' : ''}
+                  </span>
+                  {p.client && <span className="block text-[11px] truncate" style={{ color: TEMA.samar }}>{p.client}</span>}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label t="Di-assign ke" />
+          <div className="mt-1"><PilihAnggota calon={calonAnggota} terpilih={anggota} onUbah={setAnggota} /></div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
