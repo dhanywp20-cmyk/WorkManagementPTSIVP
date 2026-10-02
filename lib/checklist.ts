@@ -298,7 +298,9 @@ function rapikanCatatan(baris: string[]): string {
   return hasil.join('\n');
 }
 
-const RE_ITEM = /^\s*(?:[-*+]|\d+[.)])\s+\[( |x|X)\]\s+(.+)$/;
+// Isi kurung boleh spasi berapa pun ([ ], [  ], [x], [ x ]) - teks yang
+// diketik/ditempel ulang sering berubah spasinya.
+const RE_ITEM = /^\s*(?:[-*+]|\d+[.)])\s+\[\s*([xX]?)\s*\]\s+(.+)$/;
 const RE_BULLET_ANAK = /^\s{2,}(?:[-*+]|\d+[.)])\s+(.+)$/;
 
 export function bacaTeks(sumber: string): DraftChecklist {
