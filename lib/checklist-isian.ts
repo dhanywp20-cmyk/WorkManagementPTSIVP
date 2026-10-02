@@ -29,14 +29,29 @@ export function daftarId(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && /^[0-9a-f-]{36}$/i.test(x)) : [];
 }
 
-/** Isian proyek dari form. Galat berupa kalimat yang bisa ditampilkan apa adanya. */
-export function isianProyek(b: Record<string, unknown>) {
+export interface IsianProyek {
+  nama: string;
+  client: string | null;
+  deskripsi: string;
+  sales_name: string | null;
+  status: StatusProyek;
+  start_date: string | null;
+  target_date: string | null;
+}
+
+/**
+ * Isian proyek dari form. Galat berupa kalimat yang bisa ditampilkan apa
+ * adanya. Tipe hasilnya ditulis eksplisit: tanpa itu TypeScript melebur dua
+ * cabang jadi satu bentuk berproperti opsional, dan `'galat' in hasil` tidak
+ * lagi menyempitkan tipenya.
+ */
+export function isianProyek(b: Record<string, unknown>): { galat: string } | { isian: IsianProyek } {
   const nama = teks(b.nama, BATAS.judul);
-  if (!nama) return { galat: 'Nama proyek wajib diisi.' } as const;
+  if (!nama) return { galat: 'Nama proyek wajib diisi.' };
   const start_date = tanggal(b.start_date);
   const target_date = tanggal(b.target_date);
   if (start_date && target_date && target_date < start_date) {
-    return { galat: 'Tanggal target tidak boleh sebelum tanggal mulai.' } as const;
+    return { galat: 'Tanggal target tidak boleh sebelum tanggal mulai.' };
   }
   return {
     isian: {
@@ -47,5 +62,5 @@ export function isianProyek(b: Record<string, unknown>) {
       status: statusProyek(b.status),
       start_date, target_date,
     },
-  } as const;
+  };
 }
