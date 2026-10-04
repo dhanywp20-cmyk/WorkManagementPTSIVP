@@ -179,6 +179,21 @@ export const PANDUAN: Panduan[] = [
     tips: ['Bintang di bawah 3 mengurangi nilai KPI BAST & Demo.'],
   },
   {
+    kunci: 'tools-kerja',
+    judul: 'Tools Kerja',
+    guna: 'Kalkulator & desain untuk engineer AV: LED videotron, desain 3D ruang, ukuran layar, proyektor, bandwidth sinyal, audio, daya.',
+    langkah: [
+      'Pilih alat di kolom kiri (di HP: deretan di atas).',
+      'LED Videotron: isi pitch, ukuran cabinet, dan ukuran target - hasil cabinet, resolusi, daya, MCB, berat, port, dan controller muncul langsung.',
+      'Desain 3D: atur ukuran ruang, tambah display/meja/kursi/speaker, geser di lantai; analisis memberi tahu apakah layar cukup besar.',
+      'Klik "Salin hasil" untuk menempel ringkasan ke WA/penawaran, atau "Unduh PNG" untuk lampiran Request Design.',
+    ],
+    tips: [
+      'Angka daya/berat LED adalah nilai umum - ganti dengan datasheet produk untuk penawaran resmi.',
+      'Desain 3D tersimpan di perangkat ini; unduh PNG untuk dibagikan.',
+    ],
+  },
+  {
     kunci: 'unit-movement',
     judul: 'Unit Movement Log',
     guna: 'Mencatat perpindahan unit/peralatan (keluar, kembali, pindah lokasi).',
