@@ -26,6 +26,7 @@ export type BentukMeja = 'rapat' | 'bulat' | 'kelas';
 export type Finish = 'walnut' | 'oak' | 'putih';
 export type TipeKursi = 'kantor' | 'kelas';
 export type TipeKamera = 'ptz' | 'ptz-ai' | 'xbar';
+export type PasangProyektor = 'plafon' | 'meja';
 
 export type ModelVW = '55BDL2105X' | '49BDL2105X';
 export type Pasang = 'dinding' | 'standfloor';
@@ -45,6 +46,8 @@ export interface Benda {
   /** Kursi: kantor (beroda) / kelas (empat kaki) */ tipeKursi?: TipeKursi;
   /** Kamera: PTZ, PTZ AI (auto-tracking), atau camera soundbar */ tipeKamera?: TipeKamera;
   /** Display lift (paperless): layar sedang naik dari meja */ naik?: boolean;
+  /** Proyektor: gantung plafon (bawaan) atau portabel di meja */ pasangProyektor?: PasangProyektor;
+  /** Proyektor: throw ratio lensa (jarak lempar : lebar gambar), bawaan 1,5 */ throwRatio?: number;
   /** Display: konten di layar ('pola' = pola uji bawaan; 'gambar' = unggahan, tidak disimpan) */ konten?: 'pola' | 'gambar' | 'mati';
   /** Model GLB impor: kunci ke cache objek di memori (tidak disimpan ke perangkat) */ modelKunci?: string;
 }
@@ -121,6 +124,8 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'vw49', label: 'Videowall 49"', ket: 'Philips 49BDL2105X · 2×2', jenis: 'videowall', atur: { vw: '49BDL2105X', kol: 2, bar: 2 } },
       { kunci: 'led', label: 'LED Videotron', ket: 'Pitch & cabinet bebas', jenis: 'led' },
       { kunci: 'layar', label: 'Layar proyektor', ket: '100" / 120" / 200" · 16:9 / 4:3', jenis: 'layar' },
+      { kunci: 'proj', label: 'Proyektor plafon', ket: 'Bracket gantung · sinar ke layar', jenis: 'proyektor', atur: { pasangProyektor: 'plafon' } },
+      { kunci: 'proj-m', label: 'Proyektor portabel', ket: 'Diletakkan di meja · sinar ke layar', jenis: 'proyektor', atur: { pasangProyektor: 'meja' } },
       { kunci: 'ifp-d', label: 'Interactive display', ket: '65" / 75" / 86" · dinding', jenis: 'ifp', atur: { pasang: 'dinding' } },
       { kunci: 'ifp-s', label: 'Interactive standfloor', ket: '65" / 75" / 86" · troli', jenis: 'ifp', atur: { pasang: 'standfloor' } },
       { kunci: 'tv', label: 'TV / Display', ket: 'Diagonal bebas', jenis: 'tv' },
@@ -133,7 +138,6 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'spk', label: 'Speaker dinding', ket: 'Kabinet + bracket dinding', jenis: 'speaker' },
       { kunci: 'spk-p', label: 'Speaker plafon', ket: 'In-ceiling, gril bulat', jenis: 'speaker-plafon' },
       { kunci: 'tp', label: 'Touch panel', ket: 'Kontrol di meja', jenis: 'touchpanel' },
-      { kunci: 'proj', label: 'Proyektor', ket: 'Gantung plafon', jenis: 'proyektor' },
       { kunci: 'rak', label: 'Rack server', ket: '12U - 42U', jenis: 'rak' },
     ],
   },
@@ -215,7 +219,9 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       return { ...dasar, nama: 'Kamera PTZ', z: 0.15, w: 0.17, h: 0.19, d: 0.17, elev: 0.4, tipeKamera: 'ptz', ...atur };
     }
     case 'lift': return { ...dasar, nama: 'Paperless display lift', z: k.l * 0.55, w: 0.55, h: 0.3, d: 0.22, elev: 0.75, naik: true, ...atur };
-    case 'proyektor': return { ...dasar, z: 4, w: 0.45, h: 0.16, d: 0.4, elev: k.t - 0.55, rot: 180, ...atur };
+    case 'proyektor': return (atur.pasangProyektor ?? 'plafon') === 'meja'
+      ? { ...dasar, nama: 'Proyektor portabel', z: k.l * 0.6, w: 0.3, h: 0.09, d: 0.23, elev: 0.75, rot: 180, pasangProyektor: 'meja', throwRatio: 1.5, ...atur }
+      : { ...dasar, nama: 'Proyektor plafon', z: Math.min(4, k.l * 0.65), w: 0.44, h: 0.14, d: 0.36, elev: Math.max(0.5, k.t - 0.5), rot: 180, pasangProyektor: 'plafon', throwRatio: 1.6, ...atur };
     case 'rak': { const b = jadi({ ...dasar, x: k.x0 + k.p - 0.45, z: 0.45, w: 0.6, h: 0, d: 0.8, elev: 0, rakU: 20, ...atur } as Benda); return { ...b, nama: `Rack ${b.rakU}U` }; }
     case 'model': return { ...dasar, w: 1, h: 1, d: 1, elev: 0, ...atur };
   }
@@ -282,7 +288,135 @@ export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[
 /** Tanda tangan bentuk: berubah = model perlu dibangun ulang (posisi, rotasi, ketinggian tidak termasuk). */
 export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
-    b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik].join('|');
+    b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor].join('|');
+
+// ── Salin ke ruang sebelah ─────────────────────────────────────────────────
+
+const bulat2 = (v: number) => Math.round(v * 100) / 100;
+
+/**
+ * Salinan benda di ruang `tujuan` (id baru). Bila ukuran kedua ruang sama,
+ * posisinya identik. Bila berbeda: benda yang menempel dinding (celah <= 25 cm)
+ * tetap menempel dinding yang sama, perangkat plafon tetap tergantung dari
+ * plafon, dan sisanya bergeser bersama titik tengah ruang - susunan meja &
+ * kursi tidak ikut menyusut/merenggang.
+ */
+export function salinKeRuang(b: Benda, asal: Kotak, tujuan: Kotak): Benda {
+  const r = (b.rot * Math.PI) / 180;
+  //  Setengah jejak benda searah sumbu dunia (memperhitungkan rotasi).
+  const ex = (Math.abs(Math.cos(r)) * b.w + Math.abs(Math.sin(r)) * b.d) / 2;
+  const ez = (Math.abs(Math.sin(r)) * b.w + Math.abs(Math.cos(r)) * b.d) / 2;
+  const TEMPEL = 0.25;
+  const peta = (v: number, a0: number, aP: number, t0: number, tP: number, e: number) => {
+    const rel = v - a0, celahA = rel - e, celahB = aP - rel - e;
+    const baru = celahA <= TEMPEL && celahA <= celahB ? t0 + rel
+      : celahB <= TEMPEL ? t0 + tP - (aP - rel)
+        : t0 + tP / 2 + (rel - aP / 2);
+    const m = Math.max(0.01, Math.min(e, tP / 2 - 0.01));
+    return bulat2(Math.min(t0 + tP - m, Math.max(t0 + m, baru)));
+  };
+  const diPlafon = b.jenis === 'speaker-plafon' || (b.jenis === 'proyektor' && b.pasangProyektor !== 'meja') || b.elev + b.h >= asal.t - 0.05;
+  const elev = diPlafon ? tujuan.t - (asal.t - b.elev) : Math.min(b.elev, tujuan.t - b.h);
+  return {
+    ...b, id: idBaru(),
+    x: peta(b.x, asal.x0, asal.p, tujuan.x0, tujuan.p, ex),
+    z: peta(b.z, 0, asal.l, 0, tujuan.l, ez),
+    elev: bulat2(Math.max(0, elev)),
+  };
+}
+
+// ── Proyektor: lensa, sinar ke layar, jarak lempar ─────────────────────────
+
+export type Titik = [number, number, number];
+
+/** Titik lokal benda (alas y = 0, +z = arah hadap) ke koordinat dunia. */
+export function keDunia(b: Benda, [lx, ly, lz]: Titik): Titik {
+  const r = (b.rot * Math.PI) / 180, c = Math.cos(r), s = Math.sin(r);
+  return [b.x + lx * c + lz * s, b.elev + ly, b.z - lx * s + lz * c];
+}
+
+/** Ujung kaca lensa proyektor (lokal) - lensa di samping kanan muka, seperti produk umumnya. */
+export const lensaProyektor = (b: Benda): Titik => [b.w * 0.22, b.h * 0.5, b.d / 2 + 0.035];
+
+export const throwRatioDari = (b: Benda) => Math.max(0.1, b.throwRatio ?? 1.5);
+
+export interface Sinar {
+  /** Lensa (dunia). */ asal: Titik;
+  /** Pojok gambar (dunia): kiri-bawah, kanan-bawah, kanan-atas, kiri-atas. */ sudut: [Titik, Titik, Titik, Titik];
+  /** Layar sasaran; null = gambar jatuh di dinding. */ layar: Benda | null;
+  /** Jarak lempar lensa ke bidang gambar (m). */ jarak: number;
+  lebar: number; tinggi: number;
+  /** Throw ratio agar gambar tepat selebar layar sasaran. */ trPas: number | null;
+}
+
+/**
+ * Sinar satu proyektor. Sasaran = layar proyektor terdekat di ruang yang sama
+ * yang berada di depan lensa (maks 50° dari arah hadap) dan menghadap balik
+ * ke proyektor. Lebar gambar = jarak lempar / throw ratio, berpusat di tengah
+ * layar (lens shift) - jadi gambar terlihat melebihi atau kurang dari layar
+ * bila jaraknya tidak pas. Tanpa layar, gambar jatuh di dinding yang dituju.
+ */
+export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
+  const asal = keDunia(p, lensaProyektor(p));
+  const r = (p.rot * Math.PI) / 180;
+  const maju = [Math.sin(r), Math.cos(r)];
+  const ri = ruangDari(ruang, p.x);
+  const tr = throwRatioDari(p);
+  let sasaran: { l: Benda; jarak: number; pusat: Titik } | null = null;
+  for (const l of semua) {
+    if (l.jenis !== 'layar' || ruangDari(ruang, l.x) !== ri) continue;
+    const rl = (l.rot * Math.PI) / 180;
+    const pusat = keDunia(l, [0, l.h / 2, l.d / 2]);
+    const dx = asal[0] - pusat[0], dz = asal[2] - pusat[2];
+    const tegak = dx * Math.sin(rl) + dz * Math.cos(rl);
+    if (tegak < 0.3) continue;
+    const cos = (-dx * maju[0] - dz * maju[1]) / Math.max(1e-6, Math.hypot(dx, dz));
+    if (cos < Math.cos((50 * Math.PI) / 180)) continue;
+    if (!sasaran || tegak < sasaran.jarak) sasaran = { l, jarak: tegak, pusat };
+  }
+  const persegi = (pusat: Titik, kanan: Titik, lebar: number, tinggi: number): Sinar['sudut'] => {
+    const t = (u: number, v: number): Titik => [pusat[0] + kanan[0] * u, pusat[1] + v, pusat[2] + kanan[2] * u];
+    return [t(-lebar / 2, -tinggi / 2), t(lebar / 2, -tinggi / 2), t(lebar / 2, tinggi / 2), t(-lebar / 2, tinggi / 2)];
+  };
+  if (sasaran) {
+    const { l, jarak } = sasaran;
+    const rl = (l.rot * Math.PI) / 180;
+    const lebar = jarak / tr, tinggi = lebar * (l.h / Math.max(0.01, l.w));
+    //  Sedikit di depan kain layar supaya tidak berkedip (z-fighting).
+    const pusat: Titik = [sasaran.pusat[0] + Math.sin(rl) * 0.004, sasaran.pusat[1], sasaran.pusat[2] + Math.cos(rl) * 0.004];
+    return { asal, sudut: persegi(pusat, [Math.cos(rl), 0, -Math.sin(rl)], lebar, tinggi), layar: l, jarak, lebar, tinggi, trPas: jarak / Math.max(0.01, l.w) };
+  }
+  const k = daftarRuang(ruang)[ri] ?? daftarRuang(ruang)[0];
+  const ke = (v: number, a: number, lo: number, hi: number) => (a > 1e-6 ? (hi - v) / a : a < -1e-6 ? (lo - v) / a : Infinity);
+  const jarak = Math.min(15, Math.max(0.3, Math.min(ke(asal[0], maju[0], k.x0, k.x0 + k.p), ke(asal[2], maju[1], 0, k.l)) - 0.005));
+  const lebar = jarak / tr, tinggi = (lebar * 9) / 16;
+  //  Proyektor meja memancar sedikit ke atas, gantung plafon (terbalik) ke bawah.
+  const geserV = (p.pasangProyektor === 'meja' ? 1 : -1) * tinggi * 0.45;
+  const pusat: Titik = [asal[0] + maju[0] * jarak, asal[1] + geserV, asal[2] + maju[1] * jarak];
+  return { asal, sudut: persegi(pusat, [Math.cos(r), 0, -Math.sin(r)], lebar, tinggi), layar: null, jarak, lebar, tinggi, trPas: null };
+}
+
+/** Layar proyektor terdekat di ruang yang sama (tanpa syarat arah). */
+export function layarTerdekat(p: Benda, semua: Benda[], ruang: Ruang): Benda | null {
+  const ri = ruangDari(ruang, p.x);
+  return semua.filter(l => l.jenis === 'layar' && ruangDari(ruang, l.x) === ri)
+    .reduce<Benda | null>((m, l) => (!m || Math.hypot(l.x - p.x, l.z - p.z) < Math.hypot(m.x - p.x, m.z - p.z) ? l : m), null);
+}
+
+/**
+ * Pindahkan proyektor ke jarak lempar ideal (throw ratio x lebar layar) di
+ * garis tengah layar, menghadap layar. Ketinggian tidak diubah.
+ */
+export function proyektorKeLayar(p: Benda, l: Benda, k: Kotak): Benda {
+  const rl = (l.rot * Math.PI) / 180;
+  const jarak = throwRatioDari(p) * l.w;
+  const pusat = keDunia(l, [0, l.h / 2, l.d / 2]);
+  const rot = (((l.rot + 180) % 360) + 360) % 360;
+  //  Titik benda = posisi lensa yang diinginkan - offset lensa pada rotasi ini.
+  const [ox, , oz] = keDunia({ ...p, rot, x: 0, z: 0, elev: 0 }, lensaProyektor(p));
+  const x = pusat[0] + Math.sin(rl) * jarak - ox, z = pusat[2] + Math.cos(rl) * jarak - oz;
+  return { ...p, rot, x: bulat2(Math.min(k.x0 + k.p - 0.1, Math.max(k.x0 + 0.1, x))), z: bulat2(Math.min(k.l - 0.1, Math.max(0.1, z))) };
+}
 
 // ── Tekstur kanvas ──────────────────────────────────────────────────────────
 
@@ -867,10 +1001,64 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'proyektor': {
-      g.add(kotak(THREE, b.w, b.h, b.d, mat(THREE, 0xf3f4f6, { roughness: 0.5 }), 0, b.h / 2, 0));
-      const lensa = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.06, 24), mat(THREE, 0x111827, { metalness: 0.8, roughness: 0.2 }));
-      lensa.rotation.x = Math.PI / 2; lensa.position.set(b.w * 0.25, b.h / 2, b.d / 2 + 0.03); g.add(lensa);
-      g.add(batang(THREE, 0.04, 0.04, mat(THREE, 0x9ca3af, { metalness: 0.8, roughness: 0.3 }), 0, 0, 'tiang', 0, true));
+      //  Badan cangkang plastik membulat (tampak atas) bertepi bevel lebar,
+      //  muka gelap berisi lensa menyamping + gril ventilasi, panel tombol di
+      //  atas. Plafon: bracket laba-laba + pipa ke plafon + pelat plafon.
+      //  Meja: empat kaki karet.
+      const meja = b.pasangProyektor === 'meja';
+      const putih = mat(THREE, 0xf1f2f4, { roughness: 0.42, metalness: 0.05 });
+      const abu = mat(THREE, 0x2f343b, { roughness: 0.45, metalness: 0.3 });
+      const hitamKilap = mat(THREE, 0x0a0b0d, { roughness: 0.15, metalness: 0.4 });
+      const kaca = new THREE.MeshPhysicalMaterial({ color: 0x1b2a44, metalness: 0.1, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.04, emissive: 0xc7d6ff, emissiveIntensity: 0.35 });
+      const kaki = meja ? Math.min(0.012, b.h * 0.12) : 0;
+      const tb = b.h - kaki;
+      g.add(papan(THREE, b.w, b.d, tb, Math.min(b.w, b.d) * 0.16, putih, Math.min(0.02, tb * 0.28)).translateY(kaki));
+      const zMuka = b.d / 2;
+      g.add(blok(THREE, b.w * 0.84, tb * 0.62, 0.004, Math.min(0.012, tb * 0.2), abu, 0.0015).translateY(kaki + tb * 0.19).translateZ(zMuka + 0.001));
+      //  Gril ventilasi di sisi kiri muka.
+      const gril = new THREE.MeshStandardMaterial({ map: teksturGril(THREE, '#3a3f47', 'rgba(0,0,0,0.9)', 5), roughness: 0.6, metalness: 0.3 });
+      g.add(blok(THREE, b.w * 0.34, tb * 0.44, 0.003, Math.min(0.008, tb * 0.12), gril, 0.001).translateX(-b.w * 0.2).translateY(kaki + tb * 0.28).translateZ(zMuka + 0.004));
+      //  Lensa: laras menonjol, cincin fokus, kaca bercahaya.
+      const [lx, ly] = lensaProyektor(b);
+      const rL = Math.min(0.05, tb * 0.36);
+      const laras = new THREE.Mesh(new THREE.CylinderGeometry(rL, rL * 1.08, 0.03, 32), hitamKilap);
+      laras.rotation.x = Math.PI / 2; laras.position.set(lx, ly, zMuka + 0.015); g.add(laras);
+      for (const [dz, rr] of [[0.006, 1.14], [0.024, 1.02]] as const) {
+        const cincin = new THREE.Mesh(new THREE.TorusGeometry(rL * rr, Math.max(0.002, rL * 0.08), 8, 36), abu);
+        cincin.position.set(lx, ly, zMuka + dz); g.add(cincin);
+      }
+      const kubah = new THREE.Mesh(new THREE.SphereGeometry(rL * 0.82, 28, 12, 0, Math.PI * 2, 0, Math.PI / 2), kaca);
+      kubah.rotation.x = Math.PI / 2; kubah.scale.set(1, 0.45, 1); kubah.position.set(lx, ly, zMuka + 0.03); g.add(kubah);
+      //  Celah ventilasi samping.
+      for (const sx of [-1, 1]) {
+        for (let i = 0; i < 5; i++) {
+          g.add(kotak(THREE, 0.003, tb * 0.07, b.d * 0.34, hitamKilap, sx * (b.w / 2 + 0.0005), kaki + tb * (0.3 + i * 0.1), -b.d * 0.05));
+        }
+      }
+      //  Panel tombol & lampu daya di atas.
+      g.add(papan(THREE, b.w * 0.26, b.d * 0.2, 0.003, 0.01, abu, 0.001).translateX(-b.w * 0.24).translateY(b.h - 0.0005).translateZ(b.d * 0.18));
+      const lampu = new THREE.Mesh(new THREE.SphereGeometry(0.004, 10, 8), mat(THREE, 0x60a5fa, { emissive: 0x60a5fa, emissiveIntensity: 1.4 }));
+      lampu.position.set(-b.w * 0.33, b.h + 0.002, b.d * 0.18); g.add(lampu);
+      if (meja) {
+        const karet = mat(THREE, 0x15171b, { roughness: 0.8 });
+        for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+          g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.015, kaki, 16), karet).translateX(sx * (b.w / 2 - 0.045)).translateY(kaki / 2).translateZ(sz * (b.d / 2 - 0.04)));
+        }
+      } else {
+        const besi = mat(THREE, 0x25282e, { metalness: 0.75, roughness: 0.35 });
+        const hub = new THREE.Vector3(0, b.h + 0.022, 0);
+        g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.016, 24), besi).translateY(b.h + 0.016));
+        for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+          const ujung = new THREE.Vector3(sx * b.w * 0.3, b.h + 0.004, sz * b.d * 0.28);
+          g.add(tiangAntara(THREE, hub, ujung, 0.006, besi));
+          g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.006, 12), besi).translateX(ujung.x).translateY(b.h + 0.003).translateZ(ujung.z));
+        }
+        //  Sendi miring di atas hub, pipa sampai plafon, pelat plafon.
+        g.add(new THREE.Mesh(new THREE.SphereGeometry(0.026, 16, 12), besi).translateY(b.h + 0.04));
+        g.add(batang(THREE, 0.04, 0.04, besi, 0, 0, 'tiang', 0, true));
+        const geoPelat = new THREE.CylinderGeometry(0.08, 0.08, 0.012, 32); geoPelat.translate(0, -0.006, 0);
+        const pelat = new THREE.Mesh(geoPelat, besi); pelat.userData.peran = 'plafon'; g.add(pelat);
+      }
       break;
     }
     case 'mic': {
@@ -980,6 +1168,9 @@ export function sesuaikanTinggi(g: T.Object3D, b: Benda, plafon: number) {
     } else if (peran === 'tiang') {
       const panjang = plafon - b.elev - b.h;
       o.position.y = b.h; o.scale.y = Math.max(0.001, panjang); o.visible = panjang > 0.02;
+    } else if (peran === 'plafon') {
+      //  Pelat yang menempel di plafon (bracket proyektor).
+      o.position.y = plafon - b.elev; o.visible = plafon - b.elev - b.h > 0.02;
     }
   }
 }

@@ -1,17 +1,19 @@
 'use client';
+import type { ReactNode } from 'react';
 import { Angka, Pilih, Segmen, f } from '../ui';
 import { Ikon } from '@/components/shared/Ikon';
 import {
-  type Benda, type ModelVW, type BentukMeja, type Finish, type TipeKursi, type TipeKamera, DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, terapkanUkuran, bendaBaru,
+  type Benda, type ModelVW, type BentukMeja, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, terapkanUkuran, bendaBaru,
 } from './model';
 
 /**
  * Panel "Atur benda" - melayang di atas tampilan 3D supaya perubahan langsung
  * terlihat tanpa menutup apa pun.
  */
-export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup }: {
+export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra }: {
   b: Benda; plafon: number; batas: { x: number; z: number };
   onUbah: (b: Benda) => void; onGambar: () => void; onTutup: () => void;
+  /** Isi tambahan khusus jenis (mis. info jarak lempar proyektor). */ ekstra?: ReactNode;
 }) {
   const set = (x: Partial<Benda>) => onUbah({ ...b, ...x });
   const setUkuran = (x: Partial<Benda>) => onUbah(terapkanUkuran({ ...b, ...x }));
@@ -143,6 +145,20 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup }: {
             <p className="text-[12px] text-slate-600">Letakkan di atas meja: "Dari lantai" = tinggi meja (umumnya 0,75 m).</p>
           </>
         )}
+
+        {b.jenis === 'proyektor' && (
+          <>
+            <Segmen label="Pemasangan" nilai={b.pasangProyektor ?? 'plafon'} onUbah={(v: PasangProyektor) => {
+              const baru = bendaBaru('proyektor', kosong, { pasangProyektor: v });
+              const namaBawaan = ['Proyektor', 'Proyektor plafon', 'Proyektor portabel'].includes(b.nama);
+              onUbah({ ...b, pasangProyektor: v, w: baru.w, h: baru.h, d: baru.d, elev: baru.elev, nama: namaBawaan ? baru.nama : b.nama });
+            }} opsi={[{ v: 'plafon', l: 'Gantung plafon' }, { v: 'meja', l: 'Portabel di meja' }]} />
+            <Angka label="Throw ratio lensa" nilai={b.throwRatio ?? 1.5} satuan=": 1" step={0.01}
+              onUbah={v => v >= 0.2 && v <= 10 && set({ throwRatio: Math.round(v * 100) / 100 })}
+              bantuan="Jarak lempar ÷ lebar gambar (lihat datasheet; lensa zoom = rentang)." />
+          </>
+        )}
+        {ekstra}
 
         {!['videowall', 'layar', 'ifp', 'tv', 'rak', 'mic', 'lift'].includes(b.jenis) && (
           <div className="grid grid-cols-3 gap-2">
