@@ -21,6 +21,8 @@ export interface MasukanLED {
   /** Hz */ refresh: 60 | 120 | 144 | 240;
   /** bit */ bit: 8 | 10 | 12;
   /** V */ tegangan: number;
+  /** Piksel per unit bila diketahui (dari datasheet); default ukuran/pitch. */
+  pxX?: number; pxY?: number;
 }
 
 export interface HasilLED {
@@ -56,8 +58,8 @@ export function hitungLED(m: MasukanLED): HasilLED {
   const baris = Math.max(1, Math.round(m.baris));
   const lebarM = (kolom * m.cabLebar) / 1000;
   const tinggiM = (baris * m.cabTinggi) / 1000;
-  const pxCabX = Math.round(m.cabLebar / m.pitch);
-  const pxCabY = Math.round(m.cabTinggi / m.pitch);
+  const pxCabX = m.pxX ?? Math.round(m.cabLebar / m.pitch);
+  const pxCabY = m.pxY ?? Math.round(m.cabTinggi / m.pitch);
   const resX = pxCabX * kolom;
   const resY = pxCabY * baris;
   const g = fpb(resX, resY) || 1;
@@ -82,31 +84,86 @@ export function hitungLED(m: MasukanLED): HasilLED {
   };
 }
 
-/** Kolom/baris terdekat untuk ukuran target (m). */
-export function cabinetUntukUkuran(lebarM: number, tinggiM: number, cabLebar: number, cabTinggi: number) {
+export type Pembulatan = 'round' | 'floor' | 'ceil';
+
+/** Kolom/baris untuk ukuran target (m): terdekat, tidak melebihi, atau minimal menutup target. */
+export function cabinetUntukUkuran(lebarM: number, tinggiM: number, cabLebar: number, cabTinggi: number, bulat: Pembulatan = 'round') {
+  //  Buang galat floating point agar 8,0000001 tidak di-ceil jadi 9.
+  const fn = (x: number) => Math.max(1, Math[bulat](Math.round(x * 1e6) / 1e6));
   return {
-    kolom: Math.max(1, Math.round((lebarM * 1000) / cabLebar)),
-    baris: Math.max(1, Math.round((tinggiM * 1000) / cabTinggi)),
+    kolom: fn((lebarM * 1000) / cabLebar),
+    baris: fn((tinggiM * 1000) / cabTinggi),
   };
 }
 
-export interface Controller { nama: string; maksPx: number; port: number; maksLebar: number; maksTinggi: number }
+// ── Referensi modul LED & hardware Novastar (dari LED Calculator v1 - DWP) ──
 
-/** Acuan Novastar (kapasitas umum dari datasheet; selalu cek versi terbaru). */
-export const CONTROLLER_NOVASTAR: Controller[] = [
-  { nama: 'MCTRL300', maksPx: 1_300_000, port: 2, maksLebar: 3840, maksTinggi: 1920 },
-  { nama: 'VX400', maksPx: 2_600_000, port: 4, maksLebar: 10240, maksTinggi: 8192 },
-  { nama: 'MCTRL660 Pro', maksPx: 2_300_000, port: 6, maksLebar: 3840, maksTinggi: 1920 },
-  { nama: 'VX600', maksPx: 3_900_000, port: 6, maksLebar: 10240, maksTinggi: 8192 },
-  { nama: 'VX1000', maksPx: 6_500_000, port: 10, maksLebar: 10240, maksTinggi: 8192 },
-  { nama: 'VX16s', maksPx: 10_400_000, port: 16, maksLebar: 10240, maksTinggi: 8192 },
-  { nama: 'MCTRL4K', maksPx: 8_800_000, port: 16, maksLebar: 7680, maksTinggi: 7680 },
+export interface ModulLED {
+  kode: string; /** mm */ pitch: number;
+  /** mm */ w: number; /** mm */ h: number; pxW: number; pxH: number;
+  tipe: 'Indoor' | 'Indoor/Outdoor' | 'Outdoor'; guna: string;
+}
+
+/**
+ * Modul umum per pitch. Piksel/modul ditulis eksplisit (bukan ukuran/pitch)
+ * karena pitch dagang dibulatkan, mis. "P1.86" = 320/172 mm.
+ */
+export const MODUL_LED: ModulLED[] = [
+  { kode: 'P1.25', pitch: 1.25, w: 320, h: 160, pxW: 256, pxH: 128, tipe: 'Indoor', guna: 'Control room, studio broadcast, fine pitch indoor' },
+  { kode: 'P1.53', pitch: 1.53, w: 320, h: 160, pxW: 208, pxH: 104, tipe: 'Indoor', guna: 'Ruang rapat, indoor high-end' },
+  { kode: 'P1.86', pitch: 1.86, w: 320, h: 160, pxW: 172, pxH: 86, tipe: 'Indoor', guna: 'Display korporat, ruang meeting' },
+  { kode: 'P2', pitch: 2, w: 320, h: 160, pxW: 160, pxH: 80, tipe: 'Indoor', guna: 'Retail indoor, showroom, lobi kantor' },
+  { kode: 'P2.5', pitch: 2.5, w: 320, h: 160, pxW: 128, pxH: 64, tipe: 'Indoor', guna: 'Indoor / semi-outdoor, event' },
+  { kode: 'P3', pitch: 3, w: 192, h: 192, pxW: 64, pxH: 64, tipe: 'Indoor', guna: 'Auditorium, panggung, arena indoor' },
+  { kode: 'P3.84', pitch: 3.84, w: 307, h: 154, pxW: 80, pxH: 40, tipe: 'Indoor/Outdoor', guna: 'Rental event, konser, pameran' },
+  { kode: 'P4', pitch: 4, w: 320, h: 160, pxW: 80, pxH: 40, tipe: 'Outdoor', guna: 'Outdoor jarak menengah (min 4 m)' },
+  { kode: 'P5', pitch: 5, w: 320, h: 160, pxW: 64, pxH: 32, tipe: 'Outdoor', guna: 'Outdoor jarak menengah (min 5 m)' },
+  { kode: 'P6', pitch: 6, w: 192, h: 192, pxW: 32, pxH: 32, tipe: 'Outdoor', guna: 'Billboard outdoor (min 6 m)' },
+  { kode: 'P8', pitch: 8, w: 256, h: 128, pxW: 32, pxH: 16, tipe: 'Outdoor', guna: 'Outdoor format besar (min 8 m)' },
+  { kode: 'P10', pitch: 10, w: 320, h: 160, pxW: 32, pxH: 16, tipe: 'Outdoor', guna: 'Billboard outdoor besar (min 10 m)' },
 ];
 
-export function saranController(resX: number, resY: number, portLAN: number, daftar = CONTROLLER_NOVASTAR): Controller[] {
-  return daftar
-    .filter(c => c.maksPx >= resX * resY && c.port >= portLAN && c.maksLebar >= resX && c.maksTinggi >= resY)
-    .sort((a, b) => a.maksPx - b.maksPx);
+export interface Hardware { nama: string; maksPx: number; port: number; ket: string; senderBawaan: boolean }
+
+/** Sending card (perlu video processor / sumber terpisah). */
+export const SENDING_CARD: Hardware[] = [
+  { nama: 'MCTRL300', maksPx: 1_300_000, port: 2, senderBawaan: true, ket: 'Entry-level; 2x Gigabit LAN' },
+  { nama: 'MCTRL600', maksPx: 2_300_000, port: 4, senderBawaan: true, ket: 'Entry-level enhanced; 4x Gigabit LAN' },
+  { nama: 'MCTRL660', maksPx: 2_300_000, port: 4, senderBawaan: true, ket: 'Mid-range; 4x Gigabit LAN' },
+  { nama: 'MCTRL660 PRO', maksPx: 2_300_000, port: 6, senderBawaan: true, ket: 'Mid-range+; 6x LAN + fiber optic' },
+  { nama: 'MCTRL4K', maksPx: 8_800_000, port: 16, senderBawaan: true, ket: 'Input 4K; 16x LAN + fiber' },
+];
+
+/** Video processor; senderBawaan = all-in-one (tidak perlu sending card). */
+export const VIDEO_PROCESSOR: Hardware[] = [
+  { nama: 'VX400', maksPx: 2_600_000, port: 4, senderBawaan: true, ket: 'All-in-one compact; layar kecil-menengah' },
+  { nama: 'VX600', maksPx: 3_900_000, port: 6, senderBawaan: true, ket: 'All-in-one compact; 4K; single screen' },
+  { nama: 'VX1000', maksPx: 6_500_000, port: 10, senderBawaan: true, ket: 'Mid-high all-in-one; input 4K' },
+  { nama: 'NovaPro UHD Jr', maksPx: 10_400_000, port: 16, senderBawaan: true, ket: 'All-in-one; input 4K; layar besar' },
+  { nama: 'V1260', maksPx: 7_680_000, port: 0, senderBawaan: false, ket: 'VP saja - perlu sending card terpisah' },
+];
+
+export interface SaranHardware {
+  /** All-in-one terkecil yang cukup, beserta jumlah unit per screen. */
+  vp: { hw: Hardware; qty: number } | null;
+  /** Sending card terkecil yang cukup bila memakai VP tanpa sender bawaan. */
+  kartu: { hw: Hardware; qty: number };
+}
+
+/**
+ * Pilih hardware terkecil yang mampu (piksel & port). Bila tidak ada satu
+ * unit yang cukup, ambil yang terbesar dan hitung jumlah unitnya.
+ */
+export function saranHardware(totalPx: number, portLAN: number): SaranHardware {
+  const pilih = (daftar: Hardware[]) => {
+    const urut = [...daftar].sort((a, b) => a.maksPx - b.maksPx);
+    const cukup = urut.find(h => h.maksPx >= totalPx && h.port >= portLAN);
+    if (cukup) return { hw: cukup, qty: 1 };
+    const besar = urut[urut.length - 1];
+    return { hw: besar, qty: Math.max(Math.ceil(totalPx / besar.maksPx), Math.ceil(portLAN / besar.port)) };
+  };
+  const aio = VIDEO_PROCESSOR.filter(v => v.senderBawaan);
+  return { vp: aio.length ? pilih(aio) : null, kartu: pilih(SENDING_CARD) };
 }
 
 /** Kecerahan yang disarankan (nits) per lingkungan. */

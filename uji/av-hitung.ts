@@ -4,7 +4,7 @@
  * Jalankan: npx tsx uji/av-hitung.ts
  */
 import {
-  hitungLED, cabinetUntukUkuran, saranController, layarDariJarak, ukuranDariDiagonal,
+  hitungLED, cabinetUntukUkuran, saranHardware, MODUL_LED, layarDariJarak, ukuranDariDiagonal,
   jarakLempar, lumenDibutuhkan, bandwidthGbps, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
 } from '../lib/av-hitung';
 
@@ -29,12 +29,24 @@ console.log('\n1. LED Videotron');
   cek('jarak minimum 2.5 m, ideal 7.5 m', h.jarakMinM === 2.5 && h.jarakIdealM === 7.5);
   const h120 = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 120, bit: 8, tegangan: 220 });
   cek('120 Hz menggandakan kebutuhan port', h120.portLAN === 6, String(h120.portLAN));
-  const s = saranController(h.resX, h.resY, h.portLAN);
-  cek('controller tersaran memenuhi kapasitas', s.length > 0 && s.every(c => c.maksPx >= h.totalPx && c.port >= h.portLAN));
+  const s = saranHardware(h.totalPx, h.portLAN);
+  cek('1.92 MP/3 port -> MCTRL600 & VX400', s.kartu.hw.nama === 'MCTRL600' && s.kartu.qty === 1 && s.vp?.hw.nama === 'VX400', `${s.kartu.hw.nama} ${s.vp?.hw.nama}`);
+  const besar = saranHardware(20_000_000, 31);
+  cek('20 MP melebihi 1 unit -> 2x UHD Jr / 3x MCTRL4K', besar.vp?.hw.nama === 'NovaPro UHD Jr' && besar.vp.qty === 2 && besar.kartu.qty === 3, `${besar.vp?.qty} ${besar.kartu.qty}`);
 }
 {
   const c = cabinetUntukUkuran(5.2, 2.9, 500, 500);
   cek('target 5.2 x 2.9 m -> 10 x 6 cabinet', c.kolom === 10 && c.baris === 6, `${c.kolom}x${c.baris}`);
+}
+
+{
+  //  Excel DWP: 10 x 5 m, P3 (modul 192 mm, 64 px) -> 52 x 26 modul, 3328 x 1664 px.
+  const m = MODUL_LED.find(x => x.kode === 'P3')!;
+  const c = cabinetUntukUkuran(10, 5, m.w, m.h);
+  const h = hitungLED({ pitch: m.pitch, cabLebar: m.w, cabTinggi: m.h, kolom: c.kolom, baris: c.baris, pxX: m.pxW, pxY: m.pxH, dayaMaksCab: 20, faktorRata: 0.33, beratCab: 0.5, refresh: 60, bit: 8, tegangan: 220 });
+  cek('P3 10x5 m -> 52x26 modul, 3328x1664 px', c.kolom === 52 && c.baris === 26 && h.resX === 3328 && h.resY === 1664, `${c.kolom}x${c.baris} ${h.resX}x${h.resY}`);
+  const p186 = MODUL_LED.find(x => x.kode === 'P1.86')!;
+  cek('px/modul eksplisit dipakai (P1.86 = 172 px)', hitungLED({ pitch: p186.pitch, cabLebar: 320, cabTinggi: 160, kolom: 1, baris: 1, pxX: p186.pxW, pxY: p186.pxH, dayaMaksCab: 1, faktorRata: 1, beratCab: 1, refresh: 60, bit: 8, tegangan: 220 }).resX === 172);
 }
 
 console.log('\n2. Layar & jarak pandang');

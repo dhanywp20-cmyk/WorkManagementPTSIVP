@@ -181,10 +181,11 @@ export const PANDUAN: Panduan[] = [
   {
     kunci: 'tools-team',
     judul: 'Tools Team',
-    guna: 'Kalkulator & desain untuk engineer AV: LED videotron, desain 3D ruang, ukuran layar, proyektor, bandwidth sinyal, audio, daya.',
+    guna: 'Kalkulator & desain untuk engineer AV: LED videotron dan desain 3D ruang.',
     langkah: [
       'Pilih alat di kolom kiri (di HP: deretan di atas).',
-      'LED Videotron: isi pitch, ukuran cabinet, dan ukuran target - hasil cabinet, resolusi, daya, MCB, berat, port, dan controller muncul langsung.',
+      'LED Videotron: pilih modul referensi (atau cabinet), isi ukuran target dan jumlah screen - hasil modul, resolusi, daya, MCB, berat, port, serta sending card / video processor Novastar muncul langsung.',
+      'Isi Informasi project agar nama project, customer, dan pembuat ikut di hasil salin/cetak.',
       'Desain 3D: atur ukuran ruang, tambah display/meja/kursi/speaker, geser di lantai; analisis memberi tahu apakah layar cukup besar.',
       'Klik "Salin hasil" untuk menempel ringkasan ke WA/penawaran, atau "Unduh PNG" untuk lampiran Request Design.',
     ],

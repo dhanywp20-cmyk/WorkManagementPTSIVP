@@ -6,7 +6,6 @@ import { PageHeader } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { Ikon } from '@/components/shared/Ikon';
 import { KalkulatorLED } from './_components/KalkulatorLED';
-import { KalkulatorLayar, KalkulatorProyektor, KalkulatorSinyal, KalkulatorAudio, KalkulatorDaya } from './_components/Kalkulator';
 
 //  three.js (~600 KB) hanya diunduh saat alat Desain 3D dibuka.
 const Desain3D = dynamic(() => import('./_components/Desain3D'), {
@@ -15,13 +14,8 @@ const Desain3D = dynamic(() => import('./_components/Desain3D'), {
 });
 
 const ALAT = [
-  { k: 'led', judul: 'LED Videotron', ket: 'Cabinet, resolusi, daya, berat, controller', ikon: '📺', C: KalkulatorLED },
+  { k: 'led', judul: 'LED Videotron', ket: 'Modul/cabinet, resolusi, daya, sending card & VP', ikon: '📺', C: KalkulatorLED },
   { k: '3d', judul: 'Desain 3D Ruang', ket: 'Tata letak ruang AV + analisis jarak pandang', ikon: '🧊', C: Desain3D },
-  { k: 'layar', judul: 'Ukuran Layar', ket: 'Aturan 4-6-8: layar vs jarak penonton', ikon: '📐', C: KalkulatorLayar },
-  { k: 'proyektor', judul: 'Proyektor', ket: 'Jarak lempar & kebutuhan lumen', ikon: '📽', C: KalkulatorProyektor },
-  { k: 'sinyal', judul: 'Bandwidth Sinyal', ket: 'Gbps vs HDMI / HDBaseT / SDI', ikon: '〰', C: KalkulatorSinyal },
-  { k: 'audio', judul: 'Audio', ket: 'Speaker plafon & SPL terhadap jarak', ikon: '🔊', C: KalkulatorAudio },
-  { k: 'daya', judul: 'Daya & Panas', ket: 'Beban, MCB, UPS, BTU', ikon: '⚡', C: KalkulatorDaya },
 ] as const;
 
 function ToolsKerjaInner() {
