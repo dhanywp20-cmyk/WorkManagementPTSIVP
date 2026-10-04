@@ -29,6 +29,8 @@ console.log('\n1. LED Videotron');
   cek('jarak minimum 2.5 m, ideal 7.5 m', h.jarakMinM === 2.5 && h.jarakIdealM === 7.5);
   const h120 = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 120, bit: 8, tegangan: 220 });
   cek('120 Hz menggandakan kebutuhan port', h120.portLAN === 6, String(h120.portLAN));
+  const hPf = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 60, bit: 8, tegangan: 220, faktorDaya: 0.95 });
+  cek('PF 0,95: arus ~34,4 A, MCB tetap 50 A', dekat(hPf.arusMaksA, 34.45) && hPf.mcbSaranA === 50, `${hPf.arusMaksA} ${hPf.mcbSaranA}`);
   const h10 = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 60, bit: 10, tegangan: 220 });
   cek('10-bit: kapasitas port separuh 8-bit (327.680 px) -> 6 port', h10.pxPerPort === 327_680 && h10.portLAN === 6, `${h10.pxPerPort} ${h10.portLAN}`);
   cek('12-bit sama dengan 10-bit', pxPerPortPada(60, 12) === 327_680);

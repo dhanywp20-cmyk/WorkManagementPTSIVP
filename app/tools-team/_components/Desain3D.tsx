@@ -26,6 +26,11 @@ import { getSession } from '@/lib/auth';
  */
 
 const KUNCI_SIMPAN = 'wm_desain3d';
+
+interface DesainTim {
+  id: string; nama: string; jumlah_benda: number; dibuat_oleh_nama: string; diubah_oleh_nama: string;
+  updated_at: string; ruang: Ruang | null; bolehUbah: boolean;
+}
 const RUANG_AWAL: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
 const R2_AWAL = { aktif: true, p: 6, l: 6, t: 3, lantai: 'karpet' as const, pintu: true };
 
@@ -63,6 +68,11 @@ export default function Desain3D() {
   const [jenisPandang, setJenisPandang] = useState<JenisPandang>('analitis');
   const [namaDesain, setNamaDesain] = useState('Ruang Meeting');
   const [tersimpan, setTersimpan] = useState<{ nama: string; ruang: Ruang; benda: Benda[] }[]>([]);
+  /** Desain tim di server (/api/tools-team/desain) & desain server yang sedang dibuka. */
+  const [daftarTim, setDaftarTim] = useState<DesainTim[] | null>(null);
+  const [desainAktif, setDesainAktif] = useState<{ id: string; bolehUbah: boolean } | null>(null);
+  const [statusSimpan, setStatusSimpan] = useState<{ teks: string; nada: 'ok' | 'galat' | 'info' } | null>(null);
+  const [sibukSimpan, setSibukSimpan] = useState(false);
   const [siap, setSiap] = useState(false);
   const [galat, setGalat] = useState('');
   const wadahRef = useRef<HTMLDivElement>(null);
@@ -629,10 +639,70 @@ export default function Desain3D() {
     setTersimpan(daftar);
     try { localStorage.setItem(KUNCI_SIMPAN, JSON.stringify(daftar)); } catch { /* abaikan */ }
   };
-  const simpan = () => {
-    // Gambar layar & model impor hanya ada di memori - disimpan sebagai pola uji / kotak.
-    const bersih = benda.map(b => ({ ...b, konten: b.konten === 'gambar' ? 'pola' as const : b.konten }));
-    tulisSimpanan([{ nama: namaDesain || 'Tanpa nama', ruang, benda: bersih }, ...tersimpan.filter(t => t.nama !== namaDesain)].slice(0, 12));
+  // Gambar layar & model impor hanya ada di memori - disimpan sebagai pola uji / kotak.
+  const bendaBersih = (bs: Benda[]) => bs.map(b => ({ ...b, konten: b.konten === 'gambar' ? 'pola' as const : b.konten }));
+
+  // ── Desain tim di server ──
+  const API_DESAIN = '/api/tools-team/desain';
+  const muatDaftarTim = async () => {
+    try {
+      const r = await fetch(API_DESAIN, { credentials: 'include', cache: 'no-store' });
+      const j = await r.json().catch(() => null);
+      if (r.ok && j?.ok) setDaftarTim(j.daftar as DesainTim[]);
+      else { setDaftarTim([]); setStatusSimpan({ teks: j?.alasan ?? 'Daftar desain tim tidak bisa dimuat.', nada: 'galat' }); }
+    } catch { setDaftarTim([]); setStatusSimpan({ teks: 'Tidak terhubung ke server.', nada: 'galat' }); }
+  };
+  useEffect(() => { if (modal === 'simpan') void muatDaftarTim(); }, [modal]);
+
+  /** Simpan ke server. Desain milik orang lain (atau `baru`) disimpan sebagai salinan. */
+  const simpanServer = async (baru: boolean, sumber?: { nama: string; ruang: Ruang; benda: Benda[] }) => {
+    const nama = (sumber?.nama ?? namaDesain).trim() || 'Tanpa nama';
+    const timpa = !sumber && !baru && desainAktif?.bolehUbah ? desainAktif.id : undefined;
+    setSibukSimpan(true); setStatusSimpan(null);
+    try {
+      const r = await fetch(API_DESAIN, {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: timpa, nama, data: { ruang: sumber?.ruang ?? ruang, benda: bendaBersih(sumber?.benda ?? benda) } }),
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok || !j?.ok) { setStatusSimpan({ teks: j?.alasan ?? 'Gagal menyimpan.', nada: 'galat' }); return false; }
+      if (!sumber) {
+        setDesainAktif({ id: j.desain.id, bolehUbah: true });
+        const salinan = !timpa && !!desainAktif && !baru;
+        setStatusSimpan({ teks: timpa ? 'Perubahan tersimpan.' : salinan ? 'Desain milik orang lain - disimpan sebagai salinan Anda.' : 'Tersimpan di server.', nada: 'ok' });
+      }
+      void muatDaftarTim();
+      return true;
+    } catch { setStatusSimpan({ teks: 'Tidak terhubung ke server.', nada: 'galat' }); return false; } finally { setSibukSimpan(false); }
+  };
+
+  const bukaTim = async (id: string) => {
+    setSibukSimpan(true); setStatusSimpan(null);
+    try {
+      const r = await fetch(`${API_DESAIN}?id=${encodeURIComponent(id)}`, { credentials: 'include', cache: 'no-store' });
+      const j = await r.json().catch(() => null);
+      if (!r.ok || !j?.ok) { setStatusSimpan({ teks: j?.alasan ?? 'Desain tidak bisa dibuka.', nada: 'galat' }); return; }
+      const d = j.desain as { id: string; nama: string; data: { ruang: Ruang; benda: Benda[] }; bolehUbah: boolean };
+      setRuang({ ...RUANG_AWAL, ...d.data.ruang }); setBenda(d.data.benda); setNamaDesain(d.nama);
+      setDesainAktif({ id: d.id, bolehUbah: d.bolehUbah }); setPilih(null); setModal(null);
+    } catch { setStatusSimpan({ teks: 'Tidak terhubung ke server.', nada: 'galat' }); } finally { setSibukSimpan(false); }
+  };
+
+  const hapusTim = async (d: DesainTim) => {
+    if (!window.confirm(`Hapus desain "${d.nama}" dari server? Seluruh tim tidak bisa membukanya lagi.`)) return;
+    const r = await fetch(`${API_DESAIN}?id=${encodeURIComponent(d.id)}`, { method: 'DELETE', credentials: 'include' }).catch(() => null);
+    const j = await r?.json().catch(() => null);
+    if (!r?.ok || !j?.ok) { setStatusSimpan({ teks: j?.alasan ?? 'Gagal menghapus.', nada: 'galat' }); return; }
+    if (desainAktif?.id === d.id) setDesainAktif(null);
+    void muatDaftarTim();
+  };
+
+  /** Pindahkan desain lama yang hanya ada di perangkat ini ke server. */
+  const unggahLokal = async (t: { nama: string; ruang: Ruang; benda: Benda[] }) => {
+    if (await simpanServer(true, t)) {
+      tulisSimpanan(tersimpan.filter(x => x.nama !== t.nama));
+      setStatusSimpan({ teks: `"${t.nama}" sekarang tersimpan di server.`, nada: 'ok' });
+    }
   };
 
   const ringkasan = () => [
@@ -834,28 +904,74 @@ export default function Desain3D() {
         })}
       </Modal>
 
-      {/* ── Modal: Simpan / buka ── */}
-      <Modal buka={modal === 'simpan'} onTutup={() => setModal(null)} judul="Simpan desain" ukuran="md" ikon={<Ikon nama="💾" ukuran={18} />}
-        keterangan="Disimpan di perangkat ini. Untuk dibagikan: unduh PNG (presentasi) atau GLB (SketchUp/Blender/three.js editor), lalu lampirkan di Request Design Project.">
-        <div className="flex gap-2">
+      {/* ── Modal: Simpan / buka (server, dibagikan ke tim) ── */}
+      <Modal buka={modal === 'simpan'} onTutup={() => setModal(null)} judul="Simpan & buka desain" ukuran="md" ikon={<Ikon nama="💾" ukuran={18} />}
+        keterangan="Desain tersimpan di server dan bisa dibuka seluruh tim. Gambar unggahan di layar & model GLB impor tidak ikut tersimpan.">
+        <div className="flex gap-2 flex-wrap">
           <input value={namaDesain} onChange={e => setNamaDesain(e.target.value)} placeholder="Nama desain" aria-label="Nama desain"
-            className="flex-1 min-w-0 rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm" />
-          <button type="button" onClick={simpan} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-700 hover:bg-blue-800">Simpan</button>
+            className="flex-1 min-w-[160px] rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm" />
+          <button type="button" disabled={sibukSimpan} onClick={() => void simpanServer(false)}
+            className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-50">
+            {desainAktif?.bolehUbah ? 'Simpan perubahan' : 'Simpan'}
+          </button>
+          {desainAktif && (
+            <button type="button" disabled={sibukSimpan} onClick={() => void simpanServer(true)}
+              className="px-3 py-2 rounded-xl text-sm font-bold text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100 disabled:opacity-50">Simpan sebagai baru</button>
+          )}
         </div>
-        {tersimpan.length > 0 && (
-          <ul className="mt-3 divide-y divide-slate-100">
-            {tersimpan.map(t => (
-              <li key={t.nama} className="flex items-center justify-between gap-2 py-2 text-[13px]">
-                <button type="button" onClick={() => { setRuang({ ...RUANG_AWAL, ...t.ruang }); setBenda(t.benda); setNamaDesain(t.nama); setPilih(null); setModal(null); }}
-                  className="text-blue-700 font-semibold hover:underline truncate text-left">{t.nama}</button>
-                <span className="flex items-center gap-2 flex-shrink-0 text-slate-600">
-                  {t.ruang.p}×{t.ruang.l} m{t.ruang.r2?.aktif ? ' + 1 ruang' : ''} · {t.benda.length} benda
-                  <button type="button" aria-label={`Hapus ${t.nama}`} onClick={() => tulisSimpanan(tersimpan.filter(x => x.nama !== t.nama))}
-                    className="w-7 h-7 grid place-items-center rounded-md text-slate-500 hover:text-rose-700 hover:bg-rose-50"><Ikon nama="🗑" ukuran={14} /></button>
+        {desainAktif && !desainAktif.bolehUbah && (
+          <p className="mt-2 text-[12px] text-slate-600">Desain ini milik anggota lain. Menyimpan akan membuat salinan atas nama Anda.</p>
+        )}
+        {statusSimpan && (
+          <p className={`mt-2 text-[12.5px] font-semibold ${statusSimpan.nada === 'galat' ? 'text-rose-700' : statusSimpan.nada === 'ok' ? 'text-emerald-700' : 'text-slate-600'}`}>{statusSimpan.teks}</p>
+        )}
+
+        <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-600">Desain tim</p>
+        {daftarTim === null ? (
+          <p className="mt-2 text-[12.5px] text-slate-500">Memuat...</p>
+        ) : daftarTim.length === 0 ? (
+          <p className="mt-2 text-[12.5px] text-slate-500">Belum ada desain tersimpan di server.</p>
+        ) : (
+          <ul className="mt-1 divide-y divide-slate-100">
+            {daftarTim.map(d => (
+              <li key={d.id} className="flex items-center justify-between gap-2 py-2 text-[13px]">
+                <span className="min-w-0">
+                  <button type="button" disabled={sibukSimpan} onClick={() => void bukaTim(d.id)}
+                    className="block text-blue-700 font-semibold hover:underline truncate text-left max-w-full">
+                    {d.nama}{desainAktif?.id === d.id && <span className="ml-1.5 text-[11px] font-bold text-emerald-700">· terbuka</span>}
+                  </button>
+                  <span className="block text-[11.5px] text-slate-500 truncate">
+                    {d.ruang ? `${d.ruang.p}×${d.ruang.l} m${d.ruang.r2?.aktif ? ' + 1 ruang' : ''} · ` : ''}{d.jumlah_benda} benda · {d.dibuat_oleh_nama || '—'}
+                    {' · '}{new Date(d.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
                 </span>
+                {d.bolehUbah && (
+                  <button type="button" aria-label={`Hapus ${d.nama}`} onClick={() => void hapusTim(d)}
+                    className="w-7 h-7 flex-shrink-0 grid place-items-center rounded-md text-slate-500 hover:text-rose-700 hover:bg-rose-50"><Ikon nama="🗑" ukuran={14} /></button>
+                )}
               </li>
             ))}
           </ul>
+        )}
+
+        {tersimpan.length > 0 && (
+          <>
+            <p className="mt-4 text-[11px] font-bold uppercase tracking-wider text-slate-600">Di perangkat ini (belum di server)</p>
+            <ul className="mt-1 divide-y divide-slate-100">
+              {tersimpan.map(t => (
+                <li key={t.nama} className="flex items-center justify-between gap-2 py-2 text-[13px]">
+                  <button type="button" onClick={() => { setRuang({ ...RUANG_AWAL, ...t.ruang }); setBenda(t.benda); setNamaDesain(t.nama); setDesainAktif(null); setPilih(null); setModal(null); }}
+                    className="text-blue-700 font-semibold hover:underline truncate text-left">{t.nama}</button>
+                  <span className="flex items-center gap-2 flex-shrink-0 text-slate-600">
+                    <button type="button" disabled={sibukSimpan} onClick={() => void unggahLokal(t)}
+                      className="text-[12px] font-bold text-blue-800 px-2 py-1 rounded-md bg-blue-50 hover:bg-blue-100 disabled:opacity-50">Unggah ke server</button>
+                    <button type="button" aria-label={`Hapus ${t.nama}`} onClick={() => tulisSimpanan(tersimpan.filter(x => x.nama !== t.nama))}
+                      className="w-7 h-7 grid place-items-center rounded-md text-slate-500 hover:text-rose-700 hover:bg-rose-50"><Ikon nama="🗑" ukuran={14} /></button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </Modal>
     </div>

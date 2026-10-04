@@ -1,40 +1,83 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { MODUL_LED, SENDING_CARD, VIDEO_PROCESSOR, type ModulLED, type Hardware } from '@/lib/av-hitung';
+import { bersihkanReferensiLED, type RefLED } from '@/lib/tools-team';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
 
 /**
  * Tabel referensi Kalkulator LED (setara sheet "REF Module LED" & "REF
- * Hardware" di LED Calculator v1 - DWP). Bawaan dari lib/av-hitung.ts; ubahan
- * engineer disimpan di perangkat ini supaya simulasi memakai modul & hardware
- * yang benar-benar ditawarkan.
+ * Hardware" di LED Calculator v1 - DWP).
+ *
+ * Tiga lapis, yang paling atas menang:
+ *   1. lokal   - ubahan di perangkat ini yang belum disimpan untuk tim (draf)
+ *   2. tim     - referensi bersama di server (/api/tools-team/referensi-led),
+ *                hanya Admin/Full Access yang boleh menyimpannya
+ *   3. bawaan  - lib/av-hitung.ts
+ * Pengguna biasa tetap bisa menyesuaikan tabel untuk simulasinya sendiri
+ * (lapis lokal), seperti sebelum referensi bersama ada.
  */
 
-export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[] }
-
+export type { RefLED };
 const KUNCI = 'wm_led_referensi';
 const BAWAAN: RefLED = { modul: MODUL_LED, kartu: SENDING_CARD, vp: VIDEO_PROCESSOR };
 
-function valid(r: unknown): r is RefLED {
-  const x = r as RefLED;
-  return !!x && Array.isArray(x.modul) && Array.isArray(x.kartu) && Array.isArray(x.vp) && x.modul.length > 0;
-}
-
 export function useReferensiLED() {
-  const [data, setData] = useState<RefLED>(BAWAAN);
+  const [lokal, setLokal] = useState<RefLED | null>(null);
+  const [tim, setTim] = useState<RefLED | null>(null);
+  const [infoTim, setInfoTim] = useState<{ oleh: string | null; pada: string | null }>({ oleh: null, pada: null });
+  const [bolehSimpanTim, setBolehSimpanTim] = useState(false);
+  const [sibuk, setSibuk] = useState(false);
+  const [pesan, setPesan] = useState('');
+
   useEffect(() => {
-    try { const s = localStorage.getItem(KUNCI); if (s) { const j = JSON.parse(s); if (valid(j)) setData(j); } } catch { /* abaikan */ }
+    try { const s = localStorage.getItem(KUNCI); if (s) { const j = bersihkanReferensiLED(JSON.parse(s)); if (j) setLokal(j); } } catch { /* abaikan */ }
+    let hidup = true;
+    fetch('/api/tools-team/referensi-led', { credentials: 'include', cache: 'no-store' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(j => {
+        if (!hidup || !j?.ok) return;
+        setTim(j.referensi ?? null); setBolehSimpanTim(!!j.bolehUbah); setInfoTim({ oleh: j.oleh ?? null, pada: j.diubahPada ?? null });
+      })
+      .catch(() => { /* luring: lapis lokal / bawaan tetap jalan */ });
+    return () => { hidup = false; };
   }, []);
-  const ubah = (r: RefLED) => {
-    setData(r);
-    try { localStorage.setItem(KUNCI, JSON.stringify(r)); } catch { /* abaikan */ }
+
+  const data = lokal ?? tim ?? BAWAAN;
+  const sumber: 'lokal' | 'tim' | 'bawaan' = lokal ? 'lokal' : tim ? 'tim' : 'bawaan';
+  const tulisLokal = (r: RefLED | null) => {
+    setLokal(r);
+    try { if (r) localStorage.setItem(KUNCI, JSON.stringify(r)); else localStorage.removeItem(KUNCI); } catch { /* abaikan */ }
   };
-  const reset = () => {
-    setData(BAWAAN);
-    try { localStorage.removeItem(KUNCI); } catch { /* abaikan */ }
+  const ubah = (r: RefLED) => { tulisLokal(r); setPesan(''); };
+  /** Buang draf lokal - kembali ke referensi tim (atau bawaan bila belum ada). */
+  const reset = () => { tulisLokal(null); setPesan(''); };
+
+  const panggil = async (metode: 'PUT' | 'DELETE', body?: unknown) => {
+    setSibuk(true); setPesan('');
+    try {
+      const r = await fetch('/api/tools-team/referensi-led', {
+        method: metode, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok || !j?.ok) { setPesan(j?.alasan ?? 'Gagal menyimpan ke server.'); return false; }
+      return true;
+    } catch { setPesan('Tidak terhubung ke server.'); return false; } finally { setSibuk(false); }
   };
-  return { data, ubah, reset, diubah: JSON.stringify(data) !== JSON.stringify(BAWAAN) };
+  const simpanUntukTim = async () => {
+    if (!lokal) return;
+    if (await panggil('PUT', { referensi: lokal })) {
+      setTim(lokal); tulisLokal(null); setInfoTim({ oleh: 'Anda', pada: new Date().toISOString() }); setPesan('Tersimpan untuk seluruh tim.');
+    }
+  };
+  const resetTim = async () => {
+    if (await panggil('DELETE')) { setTim(null); tulisLokal(null); setInfoTim({ oleh: null, pada: null }); setPesan('Referensi tim dikembalikan ke tabel bawaan.'); }
+  };
+
+  return {
+    data, ubah, reset, sumber, infoTim, bolehSimpanTim, simpanUntukTim, resetTim, sibuk, pesan,
+    diubah: JSON.stringify(data) !== JSON.stringify(BAWAAN),
+  };
 }
 
 const sel = 'rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
@@ -110,7 +153,12 @@ function TabelHardware({ judul, data, onUbah, tampilSender }: { judul: string; d
   );
 }
 
-export function EditorReferensiLED({ data: r, ubah, reset, diubah, buka, onTutup }: ReturnType<typeof useReferensiLED> & { buka: boolean; onTutup: () => void }) {
+export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoTim, bolehSimpanTim, simpanUntukTim, resetTim, sibuk, pesan, buka, onTutup }: ReturnType<typeof useReferensiLED> & { buka: boolean; onTutup: () => void }) {
+  const tglTim = infoTim.pada ? new Date(infoTim.pada).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  const keteranganSumber = sumber === 'lokal'
+    ? (bolehSimpanTim ? 'Ada perubahan di perangkat ini yang belum disimpan untuk tim.' : 'Perubahan Anda hanya berlaku di perangkat ini. Referensi tim diatur Admin / Full Access.')
+    : sumber === 'tim' ? `Memakai referensi tim${infoTim.oleh ? ` (disimpan ${infoTim.oleh}${tglTim ? `, ${tglTim}` : ''})` : ''}.`
+      : 'Memakai tabel bawaan.';
   const setModul = (i: number, p: Partial<ModulLED>) => ubah({
     ...r,
     modul: r.modul.map((m, j) => {
@@ -127,14 +175,29 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, buka, onTutup
   return (
     <Modal buka={buka} onTutup={onTutup} ukuran="penuh" ikon={<Ikon nama="⚙" ukuran={18} />}
       judul={<>Referensi modul & hardware {diubah && <span className="ml-2 align-middle text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">diubah</span>}</>}
-      keterangan="Isi sesuai datasheet produk yang ditawarkan. Pilihan pitch dan hardware di kalkulator langsung memakai tabel ini. Tersimpan di perangkat ini."
+      keterangan={`Isi sesuai datasheet produk yang ditawarkan. Pilihan pitch dan hardware di kalkulator langsung memakai tabel ini. ${keteranganSumber}`}
       footer={
-        <div className="flex items-center justify-between gap-2 w-full">
-          {diubah ? (
-            <button type="button" onClick={() => { if (window.confirm('Kembalikan semua tabel ke nilai bawaan?')) reset(); }}
-              className="text-[12.5px] font-semibold text-blue-700 hover:underline">Kembalikan ke tabel bawaan</button>
-          ) : <span />}
-          <button type="button" onClick={onTutup} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-700 hover:bg-blue-800">Selesai</button>
+        <div className="flex items-center justify-between gap-2 w-full flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
+            {sumber === 'lokal' && (
+              <button type="button" onClick={() => { if (window.confirm('Buang perubahan di perangkat ini?')) reset(); }}
+                className="text-[12.5px] font-semibold text-blue-700 hover:underline">Buang perubahan lokal</button>
+            )}
+            {sumber === 'tim' && bolehSimpanTim && diubah && (
+              <button type="button" disabled={sibuk} onClick={() => { if (window.confirm('Kembalikan referensi SELURUH TIM ke tabel bawaan?')) void resetTim(); }}
+                className="text-[12.5px] font-semibold text-rose-700 hover:underline disabled:opacity-50">Kembalikan tim ke tabel bawaan</button>
+            )}
+            {pesan && <span className="text-[12px] text-slate-600">{pesan}</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            {sumber === 'lokal' && bolehSimpanTim && (
+              <button type="button" disabled={sibuk} onClick={() => void simpanUntukTim()}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100 disabled:opacity-50">
+                {sibuk ? 'Menyimpan...' : 'Simpan untuk seluruh tim'}
+              </button>
+            )}
+            <button type="button" onClick={onTutup} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-700 hover:bg-blue-800">Selesai</button>
+          </div>
         </div>
       }>
       <div className="space-y-5">

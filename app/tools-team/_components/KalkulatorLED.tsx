@@ -107,6 +107,7 @@ export function KalkulatorLED() {
   const [refresh, setRefresh] = useState<60 | 120 | 144 | 240>(60);
   const [bit, setBit] = useState<8 | 10 | 12>(8);
   const [tegangan, setTegangan] = useState(220);
+  const [faktorDaya, setFaktorDaya] = useState(0.95);
 
   //  Satuan aktif: modul dari tabel referensi, atau cabinet bebas.
   const modul = daftarModul.find(m => m.kode === modulKode) ?? daftarModul[0];
@@ -124,8 +125,8 @@ export function KalkulatorLED() {
 
   const h = useMemo(() => hitungLED({
     pitch: u.pitch, cabLebar: u.w, cabTinggi: u.h, kolom, baris, pxX: px.x, pxY: px.y, dayaMaksCab: dayaUnitEf,
-    faktorRata: faktorRata / 100, beratCab: beratUnitEf, refresh, bit, tegangan,
-  }), [u.pitch, u.w, u.h, kolom, baris, px.x, px.y, dayaUnitEf, faktorRata, beratUnitEf, refresh, bit, tegangan]);
+    faktorRata: faktorRata / 100, beratCab: beratUnitEf, refresh, bit, tegangan, faktorDaya,
+  }), [u.pitch, u.w, u.h, kolom, baris, px.x, px.y, dayaUnitEf, faktorRata, beratUnitEf, refresh, bit, tegangan, faktorDaya]);
   const hw = saranHardware(h.totalPx, h.portLAN, daftarKartu, daftarVP);
   const vpSaja = daftarVP.filter(v => !(v.senderBawaan && v.port > 0));
   //  Mode manual: VP pilihan; sending card hanya dibutuhkan bila VP tidak all-in-one.
@@ -159,7 +160,7 @@ export function KalkulatorLED() {
     `Ukuran: ${f(h.lebarM)} × ${f(h.tinggiM)} m (${f(h.luasM2)} m², diagonal ${f(h.diagonalInci, 0)}")${n > 1 ? `, total ${f(h.luasM2 * n)} m²` : ''}`,
     `Resolusi: ${h.resX} × ${h.resY} px (${f(h.totalPx / 1e6, 2)} MP), rasio ${h.rasioTerdekat}`,
     `Jarak pandang: min ${f(h.jarakMinM, 1)} m, ideal ±${f(h.jarakIdealM, 1)} m`,
-    `Daya/screen: maks ${f(h.dayaMaksW / 1000)} kW, rata-rata ${f(h.dayaRataW / 1000)} kW; arus maks ${f(h.arusMaksA, 1)} A @${tegangan}V, MCB ${h.mcbSaranA} A`,
+    `Daya/screen: maks ${f(h.dayaMaksW / 1000)} kW, rata-rata ${f(h.dayaRataW / 1000)} kW; arus maks ${f(h.arusMaksA, 1)} A @${tegangan}V PF ${f(faktorDaya)}, MCB ${h.mcbSaranA} A`,
     `Panas ±${f(h.panasBTU, 0)} BTU/jam; berat ±${f(h.beratKg, 0)} kg/screen`,
     `Data: ${h.portLAN} port LAN (${refresh} Hz, ${bit}-bit)`,
     modeHw === 'manual' ? `Hardware: ${teksHw || '-'} /screen` : hw.vp && `All-in-one: ${hw.vp.qty}× ${hw.vp.hw.nama}/screen`,
@@ -212,7 +213,7 @@ export function KalkulatorLED() {
           kiri: [
             satu('Daya maksimum', kali(`${f(h.dayaMaksW / 1000)} kW`), true),
             satu('Daya rata-rata', kali(`${f(h.dayaRataW / 1000)} kW (${faktorRata}% dari maks)`)),
-            satu(`Arus maks @${tegangan} V`, kali(`${f(h.arusMaksA, 1)} A · MCB ${h.mcbSaranA} A`)),
+            satu(`Arus maks @${tegangan} V · PF ${f(faktorDaya)}`, kali(`${f(h.arusMaksA, 1)} A · MCB ${h.mcbSaranA} A`)),
           ],
           kanan: [
             satu('Panas', kali(`±${f(h.panasBTU, 0)} BTU/jam`)),
@@ -322,6 +323,7 @@ export function KalkulatorLED() {
                 <Angka label={`Berat/${namaUnit}`} nilai={beratUnitEf} onUbah={setBeratUnit} satuan="kg" />
                 <Angka label="Rata-rata pemakaian" nilai={faktorRata} onUbah={v => setFaktorRata(Math.min(100, Math.max(5, v)))} satuan="%" />
                 <Angka label="Tegangan" nilai={tegangan} onUbah={v => v > 0 && setTegangan(v)} satuan="V" />
+                <Angka label="Faktor daya (PF)" nilai={faktorDaya} step={0.01} onUbah={v => v >= 0.5 && v <= 1 && setFaktorDaya(v)} />
                 <Pilih label="Refresh" nilai={refresh} onUbah={setRefresh} opsi={[60, 120, 144, 240].map(v => ({ v: v as 60, l: `${v} Hz` }))} />
                 <Pilih label="Bit depth" nilai={bit} onUbah={setBit} opsi={[8, 10, 12].map(v => ({ v: v as 8, l: `${v}-bit` }))} />
               </div>
@@ -437,7 +439,7 @@ export function KalkulatorLED() {
             <li>Kolom = lebar target ÷ lebar {namaUnit}; baris = tinggi target ÷ tinggi {namaUnit}, dibulatkan sesuai pilihan (terdekat / ke bawah / ke atas).</li>
             <li>Resolusi = kolom × pixel/{namaUnit} (W), baris × pixel/{namaUnit} (H). Pixel/modul diambil dari tabel referensi; bisa diganti sesuai datasheet.</li>
             <li>Jarak pandang minimum (m) ≈ pitch (mm); nyaman ≈ 3 × pitch. Estimasi.</li>
-            <li>Daya bawaan = {PER_M2[lingkungan].daya} W/m² maks ({lingkungan}); rata-rata = {faktorRata}% dari maks. Arus = W ÷ {tegangan} V; MCB ≥ 1,25 × arus maks.</li>
+            <li>Daya bawaan = {PER_M2[lingkungan].daya} W/m² maks ({lingkungan}); rata-rata = {faktorRata}% dari maks. Arus = W ÷ ({tegangan} V × PF {f(faktorDaya)}); MCB ≥ 1,25 × arus maks.</li>
             <li>Panas = daya rata-rata × 3,412 BTU/jam; 1 PK AC ≈ 9.000 BTU/jam.</li>
             <li>Port LAN = total pixel ÷ (655.360 × 60/refresh × 8/bit).</li>
             <li>Hardware dipilih yang terkecil dengan kapasitas pixel & port cukup; bila tidak ada, jumlah unit dihitung dari yang terbesar.</li>

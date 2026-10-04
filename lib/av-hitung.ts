@@ -21,6 +21,7 @@ export interface MasukanLED {
   /** Hz */ refresh: 60 | 120 | 144 | 240;
   /** bit */ bit: 8 | 10 | 12;
   /** V */ tegangan: number;
+  /** Faktor daya power supply (0,5..1); bawaan 1. PSU LED umumnya >= 0,95. */ faktorDaya?: number;
   /** Piksel per unit bila diketahui (dari datasheet); default ukuran/pitch. */
   pxX?: number; pxY?: number;
 }
@@ -89,7 +90,9 @@ export function hitungLED(m: MasukanLED): HasilLED {
   const jumlahCab = kolom * baris;
   const dayaMaksW = jumlahCab * m.dayaMaksCab;
   const dayaRataW = dayaMaksW * m.faktorRata;
-  const arusMaksA = dayaMaksW / Math.max(1, m.tegangan);
+  //  Arus = daya nyata / (tegangan x faktor daya): PF < 1 menaikkan arus & MCB.
+  const pf = Math.min(1, Math.max(0.5, m.faktorDaya ?? 1));
+  const arusMaksA = dayaMaksW / (Math.max(1, m.tegangan) * pf);
   //  MCB: arus maksimum + cadangan 25% (beban kontinu), dibulatkan ke rating standar.
   const mcbSaranA = MCB_STANDAR.find(r => r >= arusMaksA * 1.25) ?? Math.ceil((arusMaksA * 1.25) / 10) * 10;
   const pxPerPort = pxPerPortPada(m.refresh, m.bit);
