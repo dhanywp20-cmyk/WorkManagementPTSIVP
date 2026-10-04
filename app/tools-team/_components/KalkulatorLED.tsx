@@ -6,6 +6,7 @@ import {
 } from '@/lib/av-hitung';
 import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f, kelasInput } from './ui';
 import { useReferensiLED, EditorReferensiLED } from './ReferensiLED';
+import { Ikon } from '@/components/shared/Ikon';
 
 const PITCH = [0.9, 1.2, 1.25, 1.5, 1.56, 1.86, 1.9, 2, 2.5, 2.6, 2.9, 3.91, 4.81, 5, 6.67, 8, 10];
 const CABINET: { v: string; l: string; w: number; h: number }[] = [
@@ -31,6 +32,15 @@ function Teks({ label, nilai, onUbah, tipe = 'text' }: { label: string; nilai: s
       <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">{label}</span>
       <input type={tipe} value={nilai} onChange={e => onUbah(e.target.value)} className={kelasInput} />
     </label>
+  );
+}
+
+function TombolRef({ onKlik, diubah }: { onKlik: () => void; diubah: boolean }) {
+  return (
+    <button type="button" onClick={onKlik} title="Referensi modul & hardware"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 print:hidden">
+      <Ikon nama="⚙" ukuran={14} /> Referensi{diubah && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" aria-label="diubah" />}
+    </button>
   );
 }
 
@@ -67,6 +77,7 @@ export function KalkulatorLED() {
   const refLED = useReferensiLED();
   const { modul: daftarModul, kartu: daftarKartu, vp: daftarVP } = refLED.data;
   const [modeHw, setModeHw] = useState<'otomatis' | 'manual'>('otomatis');
+  const [bukaRef, setBukaRef] = useState(false);
   const [vpPilih, setVpPilih] = useState('');
   const [kartuPilih, setKartuPilih] = useState('');
   const [project, setProject] = useState('');
@@ -172,7 +183,7 @@ export function KalkulatorLED() {
           </div>
         </Kartu>
 
-        <Kartu judul="Spesifikasi">
+        <Kartu judul="Spesifikasi" aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
           <div className="space-y-3">
             <Segmen label="Satuan" nilai={satuan} onUbah={v => { setSatuan(v); resetUnit(); }}
               opsi={[{ v: 'modul', l: 'Modul (referensi)' }, { v: 'cabinet', l: 'Cabinet' }]} />
@@ -320,7 +331,7 @@ export function KalkulatorLED() {
           )}
         </Kartu>
 
-        <Kartu judul="Hardware Novastar (per screen)">
+        <Kartu judul="Hardware Novastar (per screen)" aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
           <div className="space-y-3">
             <Segmen label="Pemilihan" nilai={modeHw} onUbah={setModeHw}
               opsi={[{ v: 'otomatis', l: 'Otomatis (terkecil yang cukup)' }, { v: 'manual', l: 'Pilih model' }]} />
@@ -354,7 +365,6 @@ export function KalkulatorLED() {
           <Catatan>Kecerahan disarankan: {KECERAHAN[lingkungan]}. Kapasitas sesuai tabel referensi (60 Hz 8-bit ≈ 650 rb px/port); cek datasheet dan NovaLCT sebelum penawaran.</Catatan>
         </Kartu>
 
-        <EditorReferensiLED {...refLED} />
 
         <details className="rounded-2xl bg-white border border-slate-200 p-4 sm:p-5">
           <summary className="text-[13px] font-bold text-slate-800 cursor-pointer">Rumus & asumsi</summary>
@@ -369,6 +379,7 @@ export function KalkulatorLED() {
           </ul>
         </details>
       </div>
+      <EditorReferensiLED {...refLED} buka={bukaRef} onTutup={() => setBukaRef(false)} />
     </div>
   );
 }

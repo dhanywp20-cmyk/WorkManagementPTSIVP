@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { MODUL_LED, SENDING_CARD, VIDEO_PROCESSOR, type ModulLED, type Hardware } from '@/lib/av-hitung';
 import { Ikon } from '@/components/shared/Ikon';
+import { Modal } from '@/components/shared/Modal';
 
 /**
  * Tabel referensi Kalkulator LED (setara sheet "REF Module LED" & "REF
@@ -109,7 +110,7 @@ function TabelHardware({ judul, data, onUbah, tampilSender }: { judul: string; d
   );
 }
 
-export function EditorReferensiLED({ data: r, ubah, reset, diubah }: ReturnType<typeof useReferensiLED>) {
+export function EditorReferensiLED({ data: r, ubah, reset, diubah, buka, onTutup }: ReturnType<typeof useReferensiLED> & { buka: boolean; onTutup: () => void }) {
   const setModul = (i: number, p: Partial<ModulLED>) => ubah({
     ...r,
     modul: r.modul.map((m, j) => {
@@ -124,15 +125,19 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah }: ReturnType<
     }),
   });
   return (
-    <details className="rounded-2xl bg-white border border-slate-200 p-4 sm:p-5">
-      <summary className="text-[13px] font-bold text-slate-800 cursor-pointer">
-        Tabel referensi modul & hardware {diubah && <span className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">diubah</span>}
-      </summary>
-      <p className="text-[12px] text-slate-600 mt-2">
-        Isi sesuai datasheet produk yang ditawarkan. Pilihan pitch dan hardware di kalkulator langsung memakai tabel ini. Tersimpan di perangkat ini.
-      </p>
-
-      <div className="mt-4 space-y-5">
+    <Modal buka={buka} onTutup={onTutup} ukuran="penuh" ikon={<Ikon nama="⚙" ukuran={18} />}
+      judul={<>Referensi modul & hardware {diubah && <span className="ml-2 align-middle text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">diubah</span>}</>}
+      keterangan="Isi sesuai datasheet produk yang ditawarkan. Pilihan pitch dan hardware di kalkulator langsung memakai tabel ini. Tersimpan di perangkat ini."
+      footer={
+        <div className="flex items-center justify-between gap-2 w-full">
+          {diubah ? (
+            <button type="button" onClick={() => { if (window.confirm('Kembalikan semua tabel ke nilai bawaan?')) reset(); }}
+              className="text-[12.5px] font-semibold text-blue-700 hover:underline">Kembalikan ke tabel bawaan</button>
+          ) : <span />}
+          <button type="button" onClick={onTutup} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-700 hover:bg-blue-800">Selesai</button>
+        </div>
+      }>
+      <div className="space-y-5">
         <div>
           <p className="text-[12.5px] font-bold text-slate-800 mb-1.5">Modul LED</p>
           <div className="relative overflow-x-auto rounded-xl border border-slate-200">
@@ -171,12 +176,7 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah }: ReturnType<
         <TabelHardware judul="Sending card" data={r.kartu} onUbah={kartu => ubah({ ...r, kartu })} tampilSender={false} />
         <TabelHardware judul="Video processor" data={r.vp} onUbah={vp => ubah({ ...r, vp })} tampilSender />
         <p className="text-[11.5px] text-slate-500">Video processor dengan &quot;Sender bawaan&quot; dan port LAN &gt; 0 dianggap all-in-one. Port 0 = perlu sending card terpisah.</p>
-
-        {diubah && (
-          <button type="button" onClick={() => { if (window.confirm('Kembalikan semua tabel ke nilai bawaan?')) reset(); }}
-            className="text-[12px] font-semibold text-blue-700 hover:underline">Kembalikan ke tabel bawaan</button>
-        )}
       </div>
-    </details>
+    </Modal>
   );
 }
