@@ -200,7 +200,16 @@ export default function Desain3D() {
         putar();
         setSiap(true);
         bersihkan = () => {
-          jalan = false; ro.disconnect(); gizmo.dispose(); orbit.dispose(); pmrem.dispose();
+          jalan = false; ro.disconnect();
+          //  BUKAN gizmo.dispose(): di three r169 TransformControls tidak lagi
+          //  turunan Object3D, tapi dispose()-nya masih memanggil this.traverse
+          //  -> TypeError saat komponen dibongkar, dan React menjatuhkan seluruh
+          //  halaman ("Application error") setiap kali pengguna pindah dari
+          //  Desain 3D ke alat lain. Cukup lepas event-nya; geometri helper
+          //  gizmo ikut dibersihkan scene.traverse di bawah (helper ada di scene).
+          try { gizmo.detach(); (gizmo as unknown as { disconnect?: () => void }).disconnect?.(); } catch { /* lanjut bersihkan */ }
+          try { orbit.dispose(); } catch { /* lanjut bersihkan */ }
+          pmrem.dispose();
           //  renderer.dispose() TIDAK melepas geometri, material, dan tekstur di
           //  dalam scene. Tanpa ini memori GPU bertambah tiap kali pengguna
           //  pindah alat (LED <-> 3D) karena komponen dibongkar-pasang.
@@ -384,7 +393,11 @@ export default function Desain3D() {
       kotakRuang.forEach((k, i) => {
         label(`${f(k.p)} m`, new THREE.Vector3(k.x0 + k.p / 2, 0.05, k.l + 0.25));
         label(`${f(k.l)} m`, new THREE.Vector3(k.x0 + k.p + (i === kotakRuang.length - 1 ? 0.3 : -0.3), 0.05, k.l / 2));
-        if (kotakRuang.length > 1) label(`Ruang ${i + 1}`, new THREE.Vector3(k.x0 + k.p / 2, k.t + 0.25, k.l / 2), 'abu');
+        //  Di lantai pojok depan-kiri, bukan di tengah setinggi plafon: dari
+        //  sudut kamera mana pun posisi itu jatuh tepat di atas display yang
+        //  menempel di dinding, sehingga label "Ruang N" menutupi label ukuran
+        //  display. Pojok depan-kiri jauh dari display & label ukuran ruang.
+        if (kotakRuang.length > 1) label(`Ruang ${i + 1}`, new THREE.Vector3(k.x0 + Math.min(0.7, k.p / 4), 0.05, k.l - Math.min(0.45, k.l / 4)), 'abu');
       });
     }
   }, [analisis, ukur, kerucut, siap, kotakRuang]);
@@ -405,8 +418,14 @@ export default function Desain3D() {
       m.orbit.target.copy(target);
     } else {
       m.orbit.target.copy(c);
-      if (tampilan === 'atas') m.kamera.position.set(batas.x / 2, Math.max(batas.x, batas.z) * 1.35, batas.z / 2 + 0.01);
-      else {
+      if (tampilan === 'atas') {
+        //  Jarak dihitung dari sudut lensa & rasio kanvas supaya denah
+        //  memenuhi kanvas (margin 12%) - bukan tinggi tetap yang membuat
+        //  denah kecil di tengah kanvas lebar.
+        const tanSetengah = Math.tan(((m.kamera.fov * Math.PI) / 180) / 2);
+        const jarak = (Math.max(batas.z / 2, batas.x / (2 * Math.max(0.3, m.kamera.aspect))) * 1.12) / tanSetengah;
+        m.kamera.position.set(batas.x / 2, c.y + jarak, batas.z / 2 + 0.01);
+      } else {
         //  Mundur sebanding ukuran gabungan ruang, dari depan-kanan atas.
         const arah = new m.THREE.Vector3(0.2, 0.75, 0.95).normalize();
         m.kamera.position.copy(c).addScaledVector(arah, Math.max(batas.x, batas.z) * 0.85 + 3);
