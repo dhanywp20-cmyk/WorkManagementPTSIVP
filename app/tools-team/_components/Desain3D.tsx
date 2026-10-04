@@ -10,6 +10,8 @@ import {
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturPolaUji,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
+import { bukaCetak, esc } from './cetak';
+import { getSession } from '@/lib/auth';
 
 /**
  * Desain 3D Ruang AV - dibangun di atas three.js (threejs.org) + add-on resminya:
@@ -286,12 +288,25 @@ export default function Desain3D() {
     const m = mesin.current; if (!m || !siap) return;
     const { THREE, grupBenda, cache } = m;
     const ada = new Set(benda.map(b => b.id));
-    for (const [id, c] of cache) if (!ada.has(id)) { grupBenda.remove(c.obj); cache.delete(id); }
+    //  Model lama dibuang BESERTA geometri & materialnya - tanpa ini memori GPU
+    //  bertambah tiap kali ukuran/bentuk benda diubah (model dibangun ulang).
+    //  Gambar unggahan tidak ikut dilepas: ia dipakai ulang model berikutnya.
+    const unggahan = new Set(gambarLayar.current.values());
+    const buang = (o: T.Object3D) => o.traverse(x => {
+      const mesh = x as T.Mesh;
+      mesh.geometry?.dispose();
+      const mats = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
+      for (const mt of mats) {
+        for (const v of Object.values(mt)) if (v instanceof THREE.Texture && !unggahan.has(v)) v.dispose();
+        mt.dispose();
+      }
+    });
+    for (const [id, c] of cache) if (!ada.has(id)) { grupBenda.remove(c.obj); buang(c.obj); cache.delete(id); }
     for (const b of benda) {
       const tanda = `${tandaBentuk(b)}|${versiGambar}`;
       let c = cache.get(b.id);
       if (!c || c.tanda !== tanda) {
-        if (c) grupBenda.remove(c.obj);
+        if (c) { grupBenda.remove(c.obj); buang(c.obj); }
         const obj = buatModel(b, {
           THREE,
           layar: x => (x.konten === 'mati' ? null : x.konten === 'gambar' ? gambarLayar.current.get(x.id) ?? null : teksturPolaUji(THREE, x.nama, x.w / Math.max(0.01, x.h))),
@@ -306,7 +321,7 @@ export default function Desain3D() {
       sesuaikanTinggi(c.obj, b, plafonDi(b.x));
     }
     // Sorotan benda terpilih (kotak batas tipis).
-    grupBenda.children.filter(o => o.userData.sorot).forEach(o => grupBenda.remove(o));
+    grupBenda.children.filter(o => o.userData.sorot).forEach(o => { grupBenda.remove(o); buang(o); });
     const terpilih = pilih ? cache.get(pilih)?.obj : null;
     if (terpilih) {
       const s = new THREE.BoxHelper(terpilih, 0x2563eb); s.userData.sorot = true; grupBenda.add(s);
@@ -440,6 +455,12 @@ export default function Desain3D() {
 
   const tambah = (it: ItemKatalog) => {
     const k = kotakRuang[Number(targetRuang)] ?? kotakRuang[0];
+    if (it.set) {
+      //  Preset (mis. set ruang kelas): banyak benda sekaligus, tidak ada yang dipilih.
+      const daftar = it.set(k);
+      setBenda(bs => [...bs, ...daftar]); setPilih(null); setModal(null);
+      return;
+    }
     const b = bendaBaru(it.jenis, k, it.atur);
     setBenda(bs => [...bs, b]); setPilih(b.id); setModal(null);
   };
@@ -448,7 +469,7 @@ export default function Desain3D() {
   const tempel = (sisi: Sisi) => {
     if (!terpilih) return;
     const k: Kotak = kotakRuang[ruangDari(ruang, terpilih.x)] ?? kotakRuang[0];
-    const tebal = terpilih.d / 2 + (['videowall', 'tv', 'ifp', 'speaker'].includes(terpilih.jenis) ? 0.06 : 0.02);
+    const tebal = terpilih.d / 2 + (['videowall', 'tv', 'ifp'].includes(terpilih.jenis) ? 0.06 : 0.02);
     const xi = Math.min(k.x0 + k.p - terpilih.w / 2, Math.max(k.x0 + terpilih.w / 2, terpilih.x));
     const zi = Math.min(k.l - terpilih.w / 2, Math.max(terpilih.w / 2, terpilih.z));
     const pos: Record<Sisi, Partial<Benda>> = {
@@ -533,6 +554,77 @@ export default function Desain3D() {
     }, () => setGalat('Ekspor GLB gagal.'), { binary: true });
   };
 
+  /**
+   * Render satu gambar dari kanvas (2x resolusi) tanpa gizmo & kotak sorotan.
+   * `atas` = denah dari atas; kamera dikembalikan seperti semula sesudahnya.
+   */
+  const tangkapGambar = (atas: boolean): string => {
+    const m = mesin.current; if (!m) return '';
+    const posLama = m.kamera.position.clone(), targetLama = m.orbit.target.clone(), rasioLama = m.renderer.getPixelRatio();
+    const sorot = m.grupBenda.children.filter(o => o.userData.sorot);
+    m.gizmo.detach(); sorot.forEach(o => { o.visible = false; });
+    if (atas) {
+      const tanSetengah = Math.tan(((m.kamera.fov * Math.PI) / 180) / 2);
+      const jarak = (Math.max(batas.z / 2, batas.x / (2 * Math.max(0.3, m.kamera.aspect))) * 1.12) / tanSetengah;
+      m.orbit.target.set(batas.x / 2, 0.8, batas.z / 2);
+      m.kamera.position.set(batas.x / 2, 0.8 + jarak, batas.z / 2 + 0.01);
+      m.kamera.lookAt(m.orbit.target);
+    }
+    m.renderer.setPixelRatio(Math.min(3, rasioLama * 2));
+    m.renderer.render(m.scene, m.kamera);
+    const url = m.renderer.domElement.toDataURL('image/jpeg', 0.9);
+    m.renderer.setPixelRatio(rasioLama);
+    m.kamera.position.copy(posLama); m.orbit.target.copy(targetLama); m.orbit.update();
+    sorot.forEach(o => { o.visible = true; });
+    if (pilih) { const o = m.cache.get(pilih)?.obj; if (o) m.gizmo.attach(o); }
+    return url;
+  };
+
+  /** Lembar cetak A4 (pola Request Design Project), bukan tangkapan tampilan web. */
+  const cetak = () => {
+    const perspektif = tangkapGambar(false), denah = tangkapGambar(true);
+    const fm = (n: number, d = 2) => f(n, d);
+    //  Daftar perangkat: dikelompokkan per kategori, benda bernama sama dijumlah.
+    const kategori = (j: Benda['jenis']) =>
+      DISPLAY.includes(j) ? 'Display' : j === 'kamera' || j === 'lift' ? 'Kamera & konferensi'
+        : ['speaker', 'speaker-plafon', 'mic', 'touchpanel', 'proyektor', 'rak'].includes(j) ? 'Audio & kontrol'
+          : j === 'meja' || j === 'kursi' ? 'Furnitur' : 'Lainnya';
+    const urutKat = ['Display', 'Kamera & konferensi', 'Audio & kontrol', 'Furnitur', 'Lainnya'];
+    const grup = new Map<string, { kat: string; nama: string; ukuran: string; jumlah: number }>();
+    for (const b of benda) {
+      const nama = b.nama.replace(/\s+\d+\.\d+$/, '');   // "Meja kelas 2.3" -> "Meja kelas"
+      const kunci = `${kategori(b.jenis)}|${nama}|${fm(b.w)}x${fm(b.d)}`;
+      const ada = grup.get(kunci);
+      if (ada) ada.jumlah++;
+      else grup.set(kunci, { kat: kategori(b.jenis), nama, ukuran: `${fm(b.w)} × ${fm(b.h)} × ${fm(b.d)} m`, jumlah: 1 });
+    }
+    const baris = [...grup.values()].sort((a, b) => urutKat.indexOf(a.kat) - urutKat.indexOf(b.kat) || a.nama.localeCompare(b.nama));
+    const label = { detail: 'Detail (4×)', analitis: 'Analitis (6×)', umum: 'Umum (8×)' }[jenisPandang];
+    const gambar = (src: string, ket: string) => (src ? `<figure><img src="${src}" alt="${esc(ket)}"/><figcaption>${esc(ket)}</figcaption></figure>` : '');
+    bukaCetak({
+      judul: 'Desain 3D Ruang AV',
+      subjudul: namaDesain || 'Tanpa nama',
+      kepala: [['Dibuat oleh', getSession<{ full_name?: string }>()?.full_name ?? '']],
+      seksi: [
+        { judul: 'Ruangan', jenis: 'tabel', kepala: ['Ruang', 'Panjang', 'Lebar', 'Plafon', 'Luas'], rataKanan: [1, 2, 3, 4],
+          isi: kotakRuang.map((k, i) => [`Ruang ${i + 1}`, `${fm(k.p)} m`, `${fm(k.l)} m`, `${fm(k.t)} m`, `${fm(k.p * k.l)} m²`]) },
+        { judul: 'Tampilan desain', jenis: 'html',
+          html: `<div class="gambar dua">${gambar(perspektif, 'Perspektif')}${gambar(denah, 'Denah dari atas')}</div>` },
+        { judul: `Daftar perangkat & furnitur (${benda.length} item)`, jenis: 'tabel', kepala: ['Kategori', 'Item', 'Ukuran (L × T × P)', 'Jumlah'], rataKanan: [3],
+          isi: baris.map(r => [r.kat, r.nama, r.ukuran, String(r.jumlah)]) },
+        ...(analisis.length ? [{
+          judul: `Analisis jarak pandang · konten ${label}`, jenis: 'tabel' as const,
+          kepala: ['Display', ...(duaRuang ? ['Ruang'] : []), 'Ukuran gambar', 'Penonton terjauh', 'Tinggi minimal', 'Sudut maks', 'Status'],
+          rataKanan: duaRuang ? [3, 4, 5] : [2, 3, 4],
+          isi: analisis.map(a => [a.d.nama, ...(duaRuang ? [`Ruang ${a.ri + 1}`] : []), `${fm(a.d.w)} × ${fm(a.d.h)} m`,
+            a.jumlah ? `${fm(a.terjauh, 1)} m` : '—', `${fm(a.tinggiPerlu)} m`, `${fm(a.sudutMaks, 0)}°`, a.jumlah ? (a.cukup ? 'Cukup' : 'Kurang') : 'Tanpa penonton']),
+        }] : []),
+      ],
+      catatan: 'Aturan 4-6-8: jarak penonton terjauh maksimal 4, 6, atau 8 kali tinggi gambar untuk konten detail, analitis, atau umum. Ukuran produk mengikuti katalog bawaan; sesuaikan dengan datasheet sebelum penawaran.',
+      tandaTangan: [{ label: 'Dibuat oleh', nama: getSession<{ full_name?: string }>()?.full_name ?? '' }, { label: 'Disetujui' }],
+    });
+  };
+
   const tulisSimpanan = (daftar: typeof tersimpan) => {
     setTersimpan(daftar);
     try { localStorage.setItem(KUNCI_SIMPAN, JSON.stringify(daftar)); } catch { /* abaikan */ }
@@ -569,7 +661,7 @@ export default function Desain3D() {
             <Segmen nilai={tampilan} onUbah={setTampilan} opsi={[{ v: '3d', l: '3D' }, { v: 'atas', l: 'Atas' }, { v: 'kursi', l: 'Dari kursi' }]} />
             <button type="button" onClick={unduhPNG} className={tombol}><Ikon nama="📷" ukuran={14} /> PNG</button>
             <button type="button" onClick={unduhGLB} className={tombol}><Ikon nama="🧊" ukuran={14} /> GLB</button>
-            <TombolSalin teks={ringkasan} />
+            <TombolSalin teks={ringkasan} onCetak={cetak} />
           </div>
         </div>
 

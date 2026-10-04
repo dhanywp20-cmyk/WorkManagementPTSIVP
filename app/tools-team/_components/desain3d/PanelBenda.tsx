@@ -2,7 +2,7 @@
 import { Angka, Pilih, Segmen, f } from '../ui';
 import { Ikon } from '@/components/shared/Ikon';
 import {
-  type Benda, type ModelVW, DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, terapkanUkuran, bendaBaru,
+  type Benda, type ModelVW, type BentukMeja, type Finish, type TipeKursi, type TipeKamera, DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, terapkanUkuran, bendaBaru,
 } from './model';
 
 /**
@@ -16,6 +16,8 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup }: {
   const set = (x: Partial<Benda>) => onUbah({ ...b, ...x });
   const setUkuran = (x: Partial<Benda>) => onUbah(terapkanUkuran({ ...b, ...x }));
   const label = 'block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1';
+  /** Kotak semu untuk mengambil ukuran bawaan varian dari bendaBaru (posisi tidak dipakai). */
+  const kosong = { x0: 0, p: 0, l: 0, t: plafon };
 
   return (
     <div className="absolute top-2 right-2 bottom-2 z-10 w-[310px] max-w-[calc(100%-16px)] flex flex-col rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-xl">
@@ -107,11 +109,46 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup }: {
           }} opsi={[{ v: 'gooseneck', l: 'Gooseneck' }, { v: 'boundary', l: 'Boundary' }]} />
         )}
 
-        {!['videowall', 'layar', 'ifp', 'tv', 'rak', 'mic'].includes(b.jenis) && (
+        {b.jenis === 'meja' && (
+          <>
+            <Segmen label="Bentuk meja" nilai={b.bentukMeja ?? 'rapat'} onUbah={(v: BentukMeja) => {
+              const baru = bendaBaru('meja', kosong, { bentukMeja: v });
+              onUbah({ ...b, bentukMeja: v, w: baru.w, d: baru.d, finish: baru.finish, nama: b.nama.startsWith('Meja') ? baru.nama : b.nama });
+            }} opsi={[{ v: 'rapat', l: 'Rapat' }, { v: 'bulat', l: 'Bundar' }, { v: 'kelas', l: 'Kelas' }]} />
+            <Segmen label="Permukaan" nilai={b.finish ?? (b.bentukMeja === 'kelas' ? 'oak' : 'walnut')} onUbah={(v: Finish) => set({ finish: v })}
+              opsi={[{ v: 'walnut', l: 'Walnut' }, { v: 'oak', l: 'Oak' }, { v: 'putih', l: 'Putih' }]} />
+            {b.bentukMeja === 'bulat' && <p className="text-[12px] text-slate-600">Lebar = Panjang untuk bundar; beda nilai = oval.</p>}
+          </>
+        )}
+
+        {b.jenis === 'kursi' && (
+          <Segmen label="Tipe kursi" nilai={b.tipeKursi ?? 'kantor'} onUbah={(v: TipeKursi) => {
+            const baru = bendaBaru('kursi', kosong, { tipeKursi: v });
+            onUbah({ ...b, tipeKursi: v, w: baru.w, h: baru.h, d: baru.d, nama: b.nama.startsWith('Kursi') ? baru.nama : b.nama });
+          }} opsi={[{ v: 'kantor', l: 'Kantor (beroda)' }, { v: 'kelas', l: 'Kelas' }]} />
+        )}
+
+        {b.jenis === 'kamera' && (
+          <Segmen label="Tipe kamera" nilai={b.tipeKamera ?? 'ptz'} onUbah={(v: TipeKamera) => {
+            const baru = bendaBaru('kamera', kosong, { tipeKamera: v });
+            const namaBawaan = ['Kamera', 'Kamera PTZ', 'Kamera PTZ AI', 'Camera soundbar'].includes(b.nama);
+            onUbah({ ...b, tipeKamera: v, w: baru.w, h: baru.h, d: baru.d, nama: namaBawaan ? baru.nama : b.nama });
+          }} opsi={[{ v: 'ptz', l: 'PTZ' }, { v: 'ptz-ai', l: 'PTZ AI' }, { v: 'xbar', l: 'Soundbar' }]} />
+        )}
+
+        {b.jenis === 'lift' && (
+          <>
+            <Segmen label="Layar" nilai={b.naik === false ? 'turun' : 'naik'} onUbah={v => set({ naik: v === 'naik' })}
+              opsi={[{ v: 'naik', l: 'Naik' }, { v: 'turun', l: 'Turun (rata meja)' }]} />
+            <p className="text-[12px] text-slate-600">Letakkan di atas meja: "Dari lantai" = tinggi meja (umumnya 0,75 m).</p>
+          </>
+        )}
+
+        {!['videowall', 'layar', 'ifp', 'tv', 'rak', 'mic', 'lift'].includes(b.jenis) && (
           <div className="grid grid-cols-3 gap-2">
             <Angka label="Lebar" nilai={Math.round(b.w * 100) / 100} satuan="m" onUbah={v => v > 0 && set({ w: v })} />
             <Angka label="Tinggi" nilai={Math.round(b.h * 100) / 100} satuan="m" onUbah={v => v > 0 && set({ h: v })} />
-            <Angka label="Tebal" nilai={Math.round(b.d * 100) / 100} satuan="m" onUbah={v => v > 0 && set({ d: v })} />
+            <Angka label={b.jenis === 'meja' ? 'Panjang' : 'Tebal'} nilai={Math.round(b.d * 100) / 100} satuan="m" onUbah={v => v > 0 && set({ d: v })} />
           </div>
         )}
 

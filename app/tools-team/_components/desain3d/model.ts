@@ -20,7 +20,12 @@ export type Jenis =
   | 'videowall' | 'led' | 'layar' | 'ifp' | 'tv'
   | 'meja' | 'kursi'
   | 'speaker' | 'speaker-plafon' | 'mic' | 'touchpanel' | 'kamera' | 'proyektor' | 'rak'
-  | 'model';
+  | 'lift' | 'model';
+
+export type BentukMeja = 'rapat' | 'bulat' | 'kelas';
+export type Finish = 'walnut' | 'oak' | 'putih';
+export type TipeKursi = 'kantor' | 'kelas';
+export type TipeKamera = 'ptz' | 'ptz-ai' | 'xbar';
 
 export type ModelVW = '55BDL2105X' | '49BDL2105X';
 export type Pasang = 'dinding' | 'standfloor';
@@ -36,6 +41,10 @@ export interface Benda {
   /** Display: tempel dinding atau standfloor (berkaki/troli) */ pasang?: Pasang;
   /** Rak: tinggi dalam U */ rakU?: number;
   mic?: 'gooseneck' | 'boundary';
+  /** Meja: bentuk & permukaan (bawaan: rapat, walnut; kelas: oak) */ bentukMeja?: BentukMeja; finish?: Finish;
+  /** Kursi: kantor (beroda) / kelas (empat kaki) */ tipeKursi?: TipeKursi;
+  /** Kamera: PTZ, PTZ AI (auto-tracking), atau camera soundbar */ tipeKamera?: TipeKamera;
+  /** Display lift (paperless): layar sedang naik dari meja */ naik?: boolean;
   /** Display: konten di layar ('pola' = pola uji bawaan; 'gambar' = unggahan, tidak disimpan) */ konten?: 'pola' | 'gambar' | 'mati';
   /** Model GLB impor: kunci ke cache objek di memori (tidak disimpan ke perangkat) */ modelKunci?: string;
 }
@@ -93,13 +102,17 @@ export const LABEL: Record<Jenis, string> = {
   videowall: 'Videowall', led: 'LED Videotron', layar: 'Layar proyektor', ifp: 'Interactive display', tv: 'TV / Display',
   meja: 'Meja', kursi: 'Kursi',
   speaker: 'Speaker dinding', 'speaker-plafon': 'Speaker plafon', mic: 'Mic', touchpanel: 'Touch panel',
-  kamera: 'Kamera PTZ', proyektor: 'Proyektor', rak: 'Rack server', model: 'Model 3D (GLB)',
+  kamera: 'Kamera', proyektor: 'Proyektor', rak: 'Rack server', lift: 'Display lift', model: 'Model 3D (GLB)',
 };
 export const DISPLAY: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv'];
 /** Benda yang bisa ditempel ke dinding (sisi belakang menyentuh dinding). */
 export const BISA_TEMPEL: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv', 'speaker', 'kamera', 'rak', 'meja', 'model'];
 
-export interface ItemKatalog { kunci: string; label: string; ket: string; jenis: Jenis; atur?: Partial<Benda> }
+export interface ItemKatalog {
+  kunci: string; label: string; ket: string; jenis: Jenis; atur?: Partial<Benda>;
+  /** Preset beberapa benda sekaligus (mis. set ruang kelas) - menggantikan satu benda `jenis`. */
+  set?: (k: Kotak) => Benda[];
+}
 
 export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
   {
@@ -117,18 +130,29 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
     grup: 'Audio & kontrol', item: [
       { kunci: 'mic-g', label: 'Mic gooseneck', ket: 'Di meja', jenis: 'mic', atur: { mic: 'gooseneck' } },
       { kunci: 'mic-b', label: 'Mic boundary', ket: 'Di meja', jenis: 'mic', atur: { mic: 'boundary' } },
-      { kunci: 'spk', label: 'Speaker dinding', ket: 'Bracket dinding', jenis: 'speaker' },
-      { kunci: 'spk-p', label: 'Speaker plafon', ket: 'In-ceiling', jenis: 'speaker-plafon' },
+      { kunci: 'spk', label: 'Speaker dinding', ket: 'Kabinet + bracket dinding', jenis: 'speaker' },
+      { kunci: 'spk-p', label: 'Speaker plafon', ket: 'In-ceiling, gril bulat', jenis: 'speaker-plafon' },
       { kunci: 'tp', label: 'Touch panel', ket: 'Kontrol di meja', jenis: 'touchpanel' },
-      { kunci: 'kam', label: 'Kamera PTZ', ket: 'Konferensi', jenis: 'kamera' },
       { kunci: 'proj', label: 'Proyektor', ket: 'Gantung plafon', jenis: 'proyektor' },
       { kunci: 'rak', label: 'Rack server', ket: '12U - 42U', jenis: 'rak' },
     ],
   },
   {
+    grup: 'Kamera & konferensi', item: [
+      { kunci: 'kam', label: 'Kamera PTZ', ket: 'Pan-tilt-zoom, di dinding/rak', jenis: 'kamera', atur: { tipeKamera: 'ptz' } },
+      { kunci: 'kam-ai', label: 'Kamera PTZ AI', ket: 'Auto-tracking, bar sensor', jenis: 'kamera', atur: { tipeKamera: 'ptz-ai' } },
+      { kunci: 'xbar', label: 'Camera soundbar', ket: 'Video bar: kamera + speaker + mic', jenis: 'kamera', atur: { tipeKamera: 'xbar' } },
+      { kunci: 'lift', label: 'Paperless display lift', ket: 'Layar naik dari meja + mic', jenis: 'lift' },
+    ],
+  },
+  {
     grup: 'Furnitur', item: [
-      { kunci: 'meja', label: 'Meja', ket: 'Meja rapat', jenis: 'meja' },
-      { kunci: 'kursi', label: 'Kursi', ket: 'Posisi penonton', jenis: 'kursi' },
+      { kunci: 'meja', label: 'Meja rapat', ket: 'Sudut membulat, kaki panel', jenis: 'meja', atur: { bentukMeja: 'rapat' } },
+      { kunci: 'meja-bulat', label: 'Meja bundar', ket: 'Meeting room kecil, kaki tunggal', jenis: 'meja', atur: { bentukMeja: 'bulat' } },
+      { kunci: 'meja-kelas', label: 'Meja kelas', ket: 'Meja siswa 2 orang', jenis: 'meja', atur: { bentukMeja: 'kelas' } },
+      { kunci: 'set-kelas', label: 'Set ruang kelas', ket: 'Deret meja & kursi siswa + meja pengajar', jenis: 'meja', set: k => setRuangKelas(k) },
+      { kunci: 'kursi', label: 'Kursi kantor', ket: 'Beroda, sandaran melengkung', jenis: 'kursi', atur: { tipeKursi: 'kantor' } },
+      { kunci: 'kursi-kelas', label: 'Kursi kelas', ket: 'Empat kaki, cangkang plastik', jenis: 'kursi', atur: { tipeKursi: 'kelas' } },
     ],
   },
 ];
@@ -169,15 +193,28 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       return { ...b, nama: `Interactive ${b.diag}"${stand ? ' standfloor' : ''}` };
     }
     case 'tv': { const b = jadi({ ...dasar, z: 0.05, w: 0, h: 0, d: 0.06, elev: 1.0, diag: 65, pasang: 'dinding', konten: 'pola', ...atur } as Benda); return b; }
-    case 'meja': return { ...dasar, z: k.l * 0.55, w: 1.2, h: 0.75, d: 3.6, elev: 0, ...atur };
-    case 'kursi': return { ...dasar, z: k.l * 0.8, w: 0.55, h: 1.0, d: 0.55, elev: 0, rot: 180, ...atur };
-    case 'speaker': return { ...dasar, x: k.x0 + 0.4, z: 0.15, w: 0.26, h: 0.42, d: 0.26, elev: 2.0, ...atur };
+    case 'meja': {
+      const bentuk = atur.bentukMeja ?? 'rapat';
+      if (bentuk === 'bulat') return { ...dasar, nama: 'Meja bundar', z: k.l * 0.55, w: 1.2, h: 0.75, d: 1.2, elev: 0, bentukMeja: 'bulat', finish: 'walnut', ...atur };
+      if (bentuk === 'kelas') return { ...dasar, nama: 'Meja kelas', z: k.l * 0.5, w: 1.2, h: 0.75, d: 0.5, elev: 0, bentukMeja: 'kelas', finish: 'oak', ...atur };
+      return { ...dasar, nama: 'Meja rapat', z: k.l * 0.55, w: 1.2, h: 0.75, d: 3.6, elev: 0, bentukMeja: 'rapat', finish: 'walnut', ...atur };
+    }
+    case 'kursi': return (atur.tipeKursi ?? 'kantor') === 'kelas'
+      ? { ...dasar, nama: 'Kursi kelas', z: k.l * 0.8, w: 0.47, h: 0.82, d: 0.5, elev: 0, rot: 180, tipeKursi: 'kelas', ...atur }
+      : { ...dasar, nama: 'Kursi', z: k.l * 0.8, w: 0.58, h: 1.02, d: 0.58, elev: 0, rot: 180, tipeKursi: 'kantor', ...atur };
+    case 'speaker': return { ...dasar, x: k.x0 + 0.4, z: 0.17, w: 0.21, h: 0.32, d: 0.2, elev: 2.0, ...atur };
     case 'speaker-plafon': return { ...dasar, w: 0.24, h: 0.06, d: 0.24, elev: k.t - 0.06, ...atur };
     case 'mic': return (atur.mic ?? 'gooseneck') === 'boundary'
       ? { ...dasar, z: k.l * 0.55, w: 0.09, h: 0.025, d: 0.09, elev: 0.75, mic: 'boundary', nama: 'Mic boundary', ...atur }
       : { ...dasar, z: k.l * 0.55, w: 0.12, h: 0.42, d: 0.12, elev: 0.75, mic: 'gooseneck', nama: 'Mic gooseneck', ...atur };
     case 'touchpanel': return { ...dasar, z: k.l * 0.4, w: 0.26, h: 0.16, d: 0.17, elev: 0.75, rot: 180, ...atur };
-    case 'kamera': return { ...dasar, z: 0.15, w: 0.18, h: 0.2, d: 0.18, elev: 0.4, ...atur };
+    case 'kamera': {
+      const tipe = atur.tipeKamera ?? 'ptz';
+      if (tipe === 'xbar') return { ...dasar, nama: 'Camera soundbar', z: 0.12, w: 0.9, h: 0.1, d: 0.09, elev: 0.62, tipeKamera: 'xbar', ...atur };
+      if (tipe === 'ptz-ai') return { ...dasar, nama: 'Kamera PTZ AI', z: 0.12, w: 0.28, h: 0.15, d: 0.09, elev: 0.4, tipeKamera: 'ptz-ai', ...atur };
+      return { ...dasar, nama: 'Kamera PTZ', z: 0.15, w: 0.17, h: 0.19, d: 0.17, elev: 0.4, tipeKamera: 'ptz', ...atur };
+    }
+    case 'lift': return { ...dasar, nama: 'Paperless display lift', z: k.l * 0.55, w: 0.55, h: 0.3, d: 0.22, elev: 0.75, naik: true, ...atur };
     case 'proyektor': return { ...dasar, z: 4, w: 0.45, h: 0.16, d: 0.4, elev: k.t - 0.55, rot: 180, ...atur };
     case 'rak': { const b = jadi({ ...dasar, x: k.x0 + k.p - 0.45, z: 0.45, w: 0.6, h: 0, d: 0.8, elev: 0, rakU: 20, ...atur } as Benda); return { ...b, nama: `Rack ${b.rakU}U` }; }
     case 'model': return { ...dasar, w: 1, h: 1, d: 1, elev: 0, ...atur };
@@ -202,6 +239,33 @@ export function contohAwal(r: Ruang): Benda[] {
     bendaBaru('rak', k)];
 }
 
+/**
+ * Set ruang kelas: deret meja siswa (2 orang/meja) menghadap dinding depan
+ * (tempat display), kursi di belakang tiap meja, dan meja pengajar di depan
+ * kiri. Jumlah kolom/baris menyesuaikan ukuran ruang (maks 4 x 6 meja).
+ */
+export function setRuangKelas(k: Kotak): Benda[] {
+  const lebar = 1.2, celah = 0.4, jarakBaris = 1.15;
+  const kolom = Math.max(1, Math.min(4, Math.floor((k.p - 0.8 + celah) / (lebar + celah))));
+  const zMulai = Math.min(2.4, Math.max(1.6, k.l * 0.3));
+  const baris = Math.max(1, Math.min(6, Math.floor((k.l - zMulai - 0.7) / jarakBaris) + 1));
+  const total = kolom * lebar + (kolom - 1) * celah;
+  const hasil: Benda[] = [];
+  for (let r = 0; r < baris; r++) {
+    for (let c = 0; c < kolom; c++) {
+      const x = k.x0 + k.p / 2 - total / 2 + lebar / 2 + c * (lebar + celah);
+      const z = zMulai + r * jarakBaris;
+      hasil.push({ ...bendaBaru('meja', k, { bentukMeja: 'kelas' }), x, z, nama: `Meja kelas ${r + 1}.${c + 1}` });
+      for (const sx of [-0.3, 0.3]) hasil.push({ ...bendaBaru('kursi', k, { tipeKursi: 'kelas' }), x: x + sx, z: z + 0.45, rot: 180 });
+    }
+  }
+  hasil.push({
+    ...bendaBaru('meja', k, { bentukMeja: 'rapat', finish: 'oak' }),
+    x: k.x0 + Math.min(1.3, k.p * 0.22), z: Math.max(0.9, zMulai - 0.95), w: 1.4, d: 0.7, nama: 'Meja pengajar',
+  });
+  return hasil;
+}
+
 /** Titik penonton: kursi, dan kursi bayangan di sekeliling meja yang belum berkursi. */
 export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[] {
   const kursi = b.filter(x => x.jenis === 'kursi');
@@ -217,7 +281,8 @@ export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[
 
 /** Tanda tangan bentuk: berubah = model perlu dibangun ulang (posisi, rotasi, ketinggian tidak termasuk). */
 export const tandaBentuk = (b: Benda) =>
-  [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci].join('|');
+  [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
+    b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik].join('|');
 
 // ── Tekstur kanvas ──────────────────────────────────────────────────────────
 
@@ -311,6 +376,213 @@ function mat(THREE: typeof T, warna: number, opsi: Partial<T.MeshStandardMateria
 
 function kotak(THREE: typeof T, w: number, h: number, d: number, m: T.Material, x = 0, y = 0, z = 0) {
   const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); return o;
+}
+
+// ── Bentuk halus: sudut membulat & tepi bevel (bukan kotak tajam) ──────────
+
+/** Persegi panjang bersudut membulat di bidang XY, berpusat di (0, 0). */
+function persegiBulat(THREE: typeof T, w: number, h: number, r: number): T.Shape {
+  const a = Math.max(0.001, w / 2), b = Math.max(0.001, h / 2);
+  const R = Math.max(0.0005, Math.min(r, a - 0.0002, b - 0.0002));
+  const s = new THREE.Shape();
+  s.moveTo(-a + R, -b);
+  s.lineTo(a - R, -b); s.absarc(a - R, -b + R, R, -Math.PI / 2, 0, false);
+  s.lineTo(a, b - R); s.absarc(a - R, b - R, R, 0, Math.PI / 2, false);
+  s.lineTo(-a + R, b); s.absarc(-a + R, b - R, R, Math.PI / 2, Math.PI, false);
+  s.lineTo(-a, -b + R); s.absarc(-a + R, -b + R, R, Math.PI, Math.PI * 1.5, false);
+  return s;
+}
+
+/** Bevel yang muat: tidak lebih dari separuh ukuran terkecil. */
+const bevelAman = (bevel: number, ...ukuran: number[]) => Math.max(0, Math.min(bevel, ...ukuran.map(u => u / 2 - 0.0006)));
+
+function ekstrusi(THREE: typeof T, bentuk: T.Shape, tebal: number, bv: number, lengkung = 14) {
+  return new THREE.ExtrudeGeometry(bentuk, {
+    depth: Math.max(0.0005, tebal - 2 * bv), bevelEnabled: bv > 0, bevelThickness: bv, bevelSize: bv,
+    bevelSegments: bv > 0 ? 3 : 1, curveSegments: lengkung,
+  });
+}
+
+/** Lempeng mendatar dari bentuk tampak atas (bentuk x -> x, bentuk y -> z); y = 0 .. tebal. */
+function lempeng(THREE: typeof T, bentuk: T.Shape, tebal: number, bv: number, m: T.Material, lengkung = 14) {
+  const geo = ekstrusi(THREE, bentuk, tebal, bv, lengkung);
+  geo.rotateX(Math.PI / 2);
+  geo.translate(0, tebal - bv, 0);
+  return new THREE.Mesh(geo, m);
+}
+
+/** Papan tampak atas bersudut membulat: w (x) x d (z), tebal ke atas dari y = 0. */
+function papan(THREE: typeof T, w: number, d: number, tebal: number, r: number, m: T.Material, bevel = 0.006) {
+  const bv = bevelAman(bevel, tebal, w, d);
+  return lempeng(THREE, persegiBulat(THREE, w - 2 * bv, d - 2 * bv, r - bv), tebal, bv, m);
+}
+
+/** Blok tampak depan bersudut membulat: w (x) x h (y), tebal d berpusat di z = 0, alas y = 0. */
+function blok(THREE: typeof T, w: number, h: number, d: number, r: number, m: T.Material, bevel = 0.004) {
+  const bv = bevelAman(bevel, d, w, h);
+  const geo = ekstrusi(THREE, persegiBulat(THREE, w - 2 * bv, h - 2 * bv, r - bv), d, bv, 12);
+  geo.translate(0, h / 2, -(d - 2 * bv) / 2);
+  return new THREE.Mesh(geo, m);
+}
+
+/** Pipa melalui titik-titik dengan sudut tertekuk membulat (rangka meja, sandaran tangan). */
+function pipa(THREE: typeof T, titik: [number, number, number][], jari: number, tekuk: number, m: T.Material, tutup = false) {
+  const p = titik.map(([x, y, z]) => new THREE.Vector3(x, y, z));
+  const n = p.length;
+  const sudut = (i: number) => {
+    const sblm = p[(i - 1 + n) % n], ini = p[i], ssdh = p[(i + 1) % n];
+    return [
+      ini.clone().add(sblm.clone().sub(ini).setLength(Math.min(tekuk, sblm.distanceTo(ini) / 2))),
+      ini.clone().add(ssdh.clone().sub(ini).setLength(Math.min(tekuk, ssdh.distanceTo(ini) / 2))),
+    ] as const;
+  };
+  const jalur = new THREE.CurvePath<T.Vector3>();
+  if (tutup) {
+    let mulai = sudut(0)[1];
+    for (let i = 1; i <= n; i++) {
+      const [a, b] = sudut(i % n);
+      jalur.add(new THREE.LineCurve3(mulai, a));
+      jalur.add(new THREE.QuadraticBezierCurve3(a, p[i % n], b));
+      mulai = b;
+    }
+  } else {
+    let mulai = p[0];
+    for (let i = 1; i < n - 1; i++) {
+      const [a, b] = sudut(i);
+      jalur.add(new THREE.LineCurve3(mulai, a));
+      jalur.add(new THREE.QuadraticBezierCurve3(a, p[i], b));
+      mulai = b;
+    }
+    jalur.add(new THREE.LineCurve3(mulai, p[n - 1]));
+  }
+  return new THREE.Mesh(new THREE.TubeGeometry(jalur, Math.max(24, n * 14), jari, 10, tutup), m);
+}
+
+/**
+ * Lengkungkan geometri menjadi cekung ke +z: tiap verteks maju sebanding x^2
+ * (busur berjari R). Dipakai sandaran kursi supaya memeluk punggung, bukan
+ * papan datar.
+ */
+function lengkungkan(geo: T.BufferGeometry, R: number) {
+  const pos = geo.attributes.position as T.BufferAttribute;
+  for (let i = 0; i < pos.count; i++) pos.setZ(i, pos.getZ(i) + (pos.getX(i) ** 2) / (2 * R));
+  pos.needsUpdate = true; geo.computeVertexNormals();
+  return geo;
+}
+
+/** Silinder dari titik a ke b (kaki miring, lengan kaki bintang). */
+function tiangAntara(THREE: typeof T, a: T.Vector3, b: T.Vector3, jari: number, m: T.Material, jariUjung = jari) {
+  const arah = b.clone().sub(a);
+  const o = new THREE.Mesh(new THREE.CylinderGeometry(jariUjung, jari, arah.length(), 12), m);
+  o.position.copy(a).add(b).multiplyScalar(0.5);
+  o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), arah.normalize());
+  return o;
+}
+
+/**
+ * Sandaran melengkung: pita busur selebar `lebar`, cekung ke +z (ke arah
+ * yang duduk), tinggi ke atas dari y = 0, bagian tengah pita di z = 0.
+ */
+function sandaran(THREE: typeof T, lebar: number, tinggi: number, tebal: number, R: number, m: T.Material) {
+  const sud = Math.asin(Math.min(0.95, lebar / (2 * R)));
+  const s = new THREE.Shape();
+  s.absarc(0, 0, R, Math.PI / 2 + sud, Math.PI / 2 - sud, true);
+  s.absarc(0, 0, R - tebal, Math.PI / 2 - sud, Math.PI / 2 + sud, false);
+  const bv = bevelAman(0.012, tebal, tinggi);
+  const geo = new THREE.ExtrudeGeometry(s, {
+    depth: Math.max(0.001, tinggi - 2 * bv), bevelEnabled: bv > 0, bevelThickness: bv, bevelSize: bv * 0.6,
+    bevelSegments: 3, curveSegments: 24,
+  });
+  geo.rotateX(-Math.PI / 2);
+  geo.translate(0, bv, R - tebal / 2);
+  return new THREE.Mesh(geo, m);
+}
+
+// ── Tekstur material: kayu, kain, gril, layar lift ─────────────────────────
+
+const WARNA_KAYU: Record<Finish, [string, string, string]> = {
+  walnut: ['#583824', '#6c452b', '#2a170b'],
+  oak: ['#c49a65', '#d5ad79', '#6e4b28'],
+  putih: ['#f3f4f6', '#e9ebef', '#ffffff'],
+};
+
+/**
+ * Serat kayu prosedural yang menyambung mulus (frekuensi gelombang = jumlah
+ * siklus bulat sepanjang ubin), searah sisi panjang meja. Satu ubin = 1,6 m
+ * searah serat x 0,4 m melintang; UV ekstrusi dalam meter.
+ */
+function teksturKayu(THREE: typeof T, fin: Finish, sepanjangZ: boolean): T.Texture {
+  const P = 1024, L = 256;
+  const c = kanvas(sepanjangZ ? L : P, sepanjangZ ? P : L, g => {
+    const [a, b, serat] = WARNA_KAYU[fin];
+    if (sepanjangZ) { g.translate(L, 0); g.rotate(Math.PI / 2); }
+    const gr = g.createLinearGradient(0, 0, 0, L);
+    gr.addColorStop(0, a); gr.addColorStop(0.5, b); gr.addColorStop(1, a);
+    g.fillStyle = gr; g.fillRect(0, 0, P, L);
+    if (fin === 'putih') return;
+    g.strokeStyle = serat;
+    for (let i = 0; i < 90; i++) {
+      const y0 = Math.random() * L, amp = 1.5 + Math.random() * 5, fase = Math.random() * 6.3;
+      const fr = (2 * Math.PI * (1 + Math.floor(Math.random() * 4))) / P;
+      g.globalAlpha = 0.05 + Math.random() * 0.16; g.lineWidth = 0.5 + Math.random() * 1.8;
+      g.beginPath();
+      for (let x = 0; x <= P; x += 8) {
+        const y = y0 + Math.sin(x * fr + fase) * amp + Math.sin(x * fr * 3 + fase) * amp * 0.25;
+        if (x === 0) g.moveTo(x, y); else g.lineTo(x, y);
+      }
+      g.stroke();
+    }
+    g.globalAlpha = 1;
+  });
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(sepanjangZ ? 1 / 0.4 : 1 / 1.6, sepanjangZ ? 1 / 1.6 : 1 / 0.4);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+
+/** Anyaman kain (jok kursi, soundbar). `ubin` = ukuran satu ubin dalam meter. */
+function teksturKain(THREE: typeof T, dasar: string, ubin: number): T.Texture {
+  const c = kanvas(128, 128, g => {
+    g.fillStyle = dasar; g.fillRect(0, 0, 128, 128);
+    for (let y = 0; y < 128; y += 2) { g.fillStyle = (y / 2) % 2 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.07)'; g.fillRect(0, y, 128, 1); }
+    for (let x = 1; x < 128; x += 2) { g.fillStyle = 'rgba(0,0,0,0.05)'; g.fillRect(x, 0, 1, 128); }
+    for (let i = 0; i < 700; i++) { g.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.08)'; g.fillRect(Math.random() * 128, Math.random() * 128, 1, 1); }
+  });
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1 / ubin, 1 / ubin); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Gril logam berlubang (speaker). `ulang` = jumlah ubin pada UV 0..1. */
+function teksturGril(THREE: typeof T, dasar: string, lubang: string, ulang: number): T.Texture {
+  const c = kanvas(128, 128, g => {
+    g.fillStyle = dasar; g.fillRect(0, 0, 128, 128); g.fillStyle = lubang;
+    for (let r = 0; r < 16; r++) {
+      for (let q = 0; q < 16; q++) {
+        const x = q * 8 + (r % 2 ? 4 : 0), y = r * 8 + 4;
+        for (const dx of [-128, 0, 128]) { g.beginPath(); g.arc(x + dx, y, 2.3, 0, Math.PI * 2); g.fill(); }
+      }
+    }
+  });
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(ulang, ulang); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
+}
+
+/** Layar paperless display lift: halaman masuk sistem rapat. */
+function teksturLift(THREE: typeof T): T.Texture {
+  const c = kanvas(512, 300, g => {
+    const gr = g.createLinearGradient(0, 0, 512, 300);
+    gr.addColorStop(0, '#0b2a5b'); gr.addColorStop(1, '#0e6f8f');
+    g.fillStyle = gr; g.fillRect(0, 0, 512, 300);
+    g.fillStyle = '#ffffff'; g.font = 'bold 30px sans-serif'; g.textAlign = 'center';
+    g.fillText('PAPERLESS', 256, 74);
+    g.fillStyle = 'rgba(255,255,255,0.92)'; g.fillRect(166, 108, 180, 26); g.fillRect(166, 146, 180, 26);
+    g.fillStyle = '#38bdf8'; g.fillRect(166, 190, 180, 30);
+    g.fillStyle = '#ffffff'; g.font = '17px sans-serif'; g.fillText('Masuk', 256, 211);
+  });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 
 /**
@@ -412,49 +684,186 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'meja': {
-      const kayu = mat(THREE, 0x8b5a2b, { roughness: 0.45 });
-      g.add(kotak(THREE, b.w, 0.04, b.d, kayu, 0, b.h - 0.02, 0));
-      const kaki = mat(THREE, 0x52525b, { metalness: 0.7, roughness: 0.3 });
-      g.add(kotak(THREE, 0.06, b.h - 0.04, b.d * 0.7, kaki, -b.w / 2 + 0.12, (b.h - 0.04) / 2, 0));
-      g.add(kotak(THREE, 0.06, b.h - 0.04, b.d * 0.7, kaki, b.w / 2 - 0.12, (b.h - 0.04) / 2, 0));
-      g.add(kotak(THREE, 0.18, 0.02, 0.12, mat(THREE, 0x111827), 0, b.h + 0.01, 0)); // kotak colokan meja
+      const bentuk = b.bentukMeja ?? 'rapat';
+      const fin: Finish = b.finish ?? (bentuk === 'kelas' ? 'oak' : 'walnut');
+      const panjangZ = b.d >= b.w;
+      const atas = new THREE.MeshPhysicalMaterial({
+        map: teksturKayu(THREE, fin, panjangZ), roughness: fin === 'putih' ? 0.5 : 0.42,
+        clearcoat: fin === 'putih' ? 0.15 : 0.55, clearcoatRoughness: 0.3,
+      });
+      const logam = mat(THREE, 0x2a2e35, { metalness: 0.75, roughness: 0.3 });
+      if (bentuk === 'bulat') {
+        //  Bundar/oval (w x d) dengan kaki tunggal: piring alas melebar,
+        //  tiang ramping, dudukan atas - satu profil putar (LatheGeometry).
+        const tebal = 0.04, bv = 0.008;
+        const s = new THREE.Shape(); s.absellipse(0, 0, b.w / 2 - bv, b.d / 2 - bv, 0, Math.PI * 2, false, 0);
+        g.add(lempeng(THREE, s, tebal, bv, atas, 64).translateY(b.h - tebal));
+        const r0 = Math.min(b.w, b.d) * 0.3, yAtas = b.h - tebal, rAtas = Math.min(0.2, r0 * 0.8);
+        const profil: [number, number][] = [[0.001, 0], [r0, 0], [r0, 0.012], [r0 * 0.6, 0.03], [0.07, 0.075], [0.042, 0.15],
+          [0.038, yAtas - 0.14], [0.06, yAtas - 0.06], [rAtas, yAtas - 0.02], [rAtas, yAtas], [0.001, yAtas]];
+        g.add(new THREE.Mesh(new THREE.LatheGeometry(profil.map(([x, y]) => new THREE.Vector2(x, y)), 48), logam));
+      } else if (bentuk === 'kelas') {
+        //  Meja siswa: papan laminasi, rangka pipa ditekuk di kedua sisi,
+        //  panel penutup di depan (menghadap papan tulis) & rak buku.
+        const tebal = 0.025;
+        g.add(papan(THREE, b.w, b.d, tebal, 0.035, atas, 0.005).translateY(b.h - tebal));
+        const rangka = mat(THREE, 0x3f454f, { metalness: 0.7, roughness: 0.35 });
+        for (const sx of [-1, 1]) {
+          const x = sx * (b.w / 2 - 0.06);
+          g.add(pipa(THREE, [[x, 0.014, -b.d / 2 + 0.05], [x, 0.014, b.d / 2 - 0.05], [x, b.h - tebal - 0.012, b.d / 2 - 0.07], [x, b.h - tebal - 0.012, -b.d / 2 + 0.07]], 0.013, 0.06, rangka, true));
+        }
+        g.add(blok(THREE, b.w - 0.16, 0.28, 0.012, 0.01, mat(THREE, 0xcbd5e1, { roughness: 0.6 }), 0.003).translateY(b.h - tebal - 0.3).translateZ(-b.d / 2 + 0.06));
+        g.add(papan(THREE, b.w - 0.16, b.d * 0.62, 0.012, 0.01, mat(THREE, 0x94a3b8, { roughness: 0.6 }), 0.003).translateY(b.h - 0.15).translateZ(-b.d * 0.12));
+      } else {
+        //  Meja rapat: papan sudut membulat bertepi bevel + dua kaki panel,
+        //  balok penghubung, dan kotak kabel rata permukaan.
+        const tebal = 0.045;
+        g.add(papan(THREE, b.w, b.d, tebal, Math.min(0.3, Math.min(b.w, b.d) * 0.3), atas, 0.008).translateY(b.h - tebal));
+        const panjang = Math.max(b.w, b.d), lebar = Math.min(b.w, b.d);
+        const jarakKaki = Math.max(0.15, panjang / 2 - Math.min(0.45, panjang * 0.16));
+        const tinggiKaki = b.h - tebal;
+        for (const sisi of [-1, 1]) {
+          const kaki = blok(THREE, lebar * 0.62, tinggiKaki, 0.055, 0.02, logam, 0.006);
+          if (panjangZ) kaki.position.z = sisi * jarakKaki;
+          else { kaki.rotation.y = Math.PI / 2; kaki.position.x = sisi * jarakKaki; }
+          g.add(kaki);
+        }
+        g.add(panjangZ
+          ? kotak(THREE, 0.08, 0.05, jarakKaki * 2, logam, 0, tinggiKaki - 0.08, 0)
+          : kotak(THREE, jarakKaki * 2, 0.05, 0.08, logam, 0, tinggiKaki - 0.08, 0));
+        const kabel = papan(THREE, 0.26, 0.12, 0.006, 0.02, mat(THREE, 0xb8bec7, { metalness: 0.85, roughness: 0.25 }), 0.002);
+        if (panjangZ) kabel.rotation.y = Math.PI / 2;
+        g.add(kabel.translateY(b.h));
+      }
       break;
     }
     case 'kursi': {
-      const jok = mat(THREE, 0x1f2937, { roughness: 0.85 });
-      const besi = mat(THREE, 0x9ca3af, { metalness: 0.8, roughness: 0.3 });
-      g.add(kotak(THREE, b.w, 0.08, b.d * 0.9, jok, 0, 0.47, 0));
-      const sandaran = kotak(THREE, b.w * 0.95, 0.5, 0.06, jok, 0, 0.78, -b.d * 0.42); sandaran.rotation.x = -0.12; g.add(sandaran);
-      g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.38, 12), besi).translateY(0.24));
-      for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * Math.PI * 2;
-        const lengan = kotak(THREE, 0.3, 0.025, 0.04, besi, Math.cos(a) * 0.15, 0.05, Math.sin(a) * 0.15);
-        lengan.rotation.y = -a; g.add(lengan);
+      const krom = mat(THREE, 0xc9ced6, { metalness: 0.95, roughness: 0.18 });
+      if ((b.tipeKursi ?? 'kantor') === 'kelas') {
+        const cangkang = mat(THREE, 0x334155, { roughness: 0.5 });
+        const yDuduk = 0.45;
+        g.add(papan(THREE, b.w * 0.92, b.d * 0.82, 0.03, 0.06, cangkang, 0.01).translateY(yDuduk - 0.03));
+        const s = sandaran(THREE, b.w * 0.9, 0.28, 0.022, 0.55, cangkang);
+        s.position.set(0, yDuduk + 0.09, -b.d * 0.38); s.rotation.x = -0.12; g.add(s);
+        for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+          g.add(tiangAntara(THREE, new THREE.Vector3(sx * (b.w / 2 - 0.02), 0, sz * (b.d / 2 - 0.03)),
+            new THREE.Vector3(sx * (b.w / 2 - 0.07), yDuduk - 0.03, sz * (b.d / 2 - 0.1)), 0.011, krom));
+        }
+        for (const sx of [-1, 1]) {
+          g.add(tiangAntara(THREE, new THREE.Vector3(sx * (b.w / 2 - 0.07), yDuduk - 0.03, -b.d / 2 + 0.1),
+            new THREE.Vector3(sx * b.w * 0.3, yDuduk + 0.13, -b.d * 0.39), 0.009, krom));
+        }
+        break;
       }
-      for (const sx of [-1, 1]) g.add(kotak(THREE, 0.04, 0.03, b.d * 0.55, jok, sx * (b.w / 2 - 0.02), 0.66, -0.02));
+      const kain = new THREE.MeshStandardMaterial({ map: teksturKain(THREE, '#30353d', 0.12), roughness: 0.95 });
+      const plastik = mat(THREE, 0x1b1e23, { roughness: 0.5 });
+      const yDuduk = 0.48;
+      //  Kaki bintang lima beroda + tabung gas.
+      for (let i = 0; i < 5; i++) {
+        const a = (i / 5) * Math.PI * 2 + Math.PI / 10;
+        const ujung = new THREE.Vector3(Math.cos(a) * 0.3, 0.058, Math.sin(a) * 0.3);
+        g.add(tiangAntara(THREE, new THREE.Vector3(0, 0.085, 0), ujung, 0.02, krom, 0.013));
+        const roda = new THREE.Mesh(new THREE.SphereGeometry(0.026, 16, 12), plastik);
+        roda.position.set(ujung.x, 0.026, ujung.z); g.add(roda);
+      }
+      g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.05, 20), krom).translateY(0.085));
+      g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.16, 16), plastik).translateY(0.18));
+      g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.2, 16), krom).translateY(0.32));
+      g.add(kotak(THREE, 0.22, 0.045, 0.24, plastik, 0, yDuduk - 0.06, 0));
+      //  Dudukan empuk (bevel besar = tepi bantalan) & sandaran melengkung.
+      g.add(papan(THREE, b.w * 0.9, b.d * 0.86, 0.085, 0.1, kain, 0.03).translateY(yDuduk - 0.04));
+      //  Sandaran: bantalan kain bersudut membulat (bevel besar = empuk) yang
+      //  dilengkungkan memeluk punggung, cangkang plastik di belakangnya.
+      const tinggiS = Math.max(0.3, b.h - yDuduk - 0.1);
+      const grupS = new THREE.Group();
+      const bantal = blok(THREE, b.w * 0.84, tinggiS, 0.06, 0.11, kain, 0.022);
+      lengkungkan(bantal.geometry, 0.5); grupS.add(bantal);
+      const cangkang = blok(THREE, b.w * 0.8, tinggiS * 0.96, 0.016, 0.1, plastik, 0.005);
+      lengkungkan(cangkang.geometry, 0.5); cangkang.position.set(0, tinggiS * 0.02, -0.036); grupS.add(cangkang);
+      grupS.position.set(0, yDuduk + 0.1, -b.d * 0.4); grupS.rotation.x = -0.14; g.add(grupS);
+      g.add(blok(THREE, 0.07, 0.26, 0.025, 0.02, plastik).translateY(yDuduk - 0.02).translateZ(-b.d * 0.43));
+      for (const sx of [-1, 1]) {
+        const x = sx * (b.w / 2 - 0.035);
+        g.add(pipa(THREE, [[x, yDuduk, -0.12], [x, yDuduk + 0.2, -0.1], [x, yDuduk + 0.2, 0.1]], 0.011, 0.04, plastik));
+        g.add(papan(THREE, 0.06, 0.24, 0.022, 0.025, plastik, 0.008).translateX(x).translateY(yDuduk + 0.205).translateZ(0.0));
+      }
       break;
     }
     case 'speaker': {
-      g.add(kotak(THREE, b.w, b.h, b.d, mat(THREE, 0x111827, { roughness: 0.8 }), 0, b.h / 2, 0));
-      const cone = mat(THREE, 0x374151, { roughness: 0.5 });
-      const woofer = new THREE.Mesh(new THREE.CylinderGeometry(b.w * 0.36, b.w * 0.36, 0.02, 28), cone);
-      woofer.rotation.x = Math.PI / 2; woofer.position.set(0, b.h * 0.33, b.d / 2 + 0.005); g.add(woofer);
-      const tweeter = new THREE.Mesh(new THREE.CylinderGeometry(b.w * 0.13, b.w * 0.13, 0.02, 20), cone);
-      tweeter.rotation.x = Math.PI / 2; tweeter.position.set(0, b.h * 0.78, b.d / 2 + 0.005); g.add(tweeter);
-      g.add(kotak(THREE, 0.05, 0.12, 0.2, mat(THREE, 0x6b7280), 0, b.h / 2, -b.d / 2 - 0.08)); // bracket
+      const badan = mat(THREE, 0x16181c, { roughness: 0.55, metalness: 0.15 });
+      const gril = new THREE.MeshStandardMaterial({ map: teksturGril(THREE, '#3a3e45', 'rgba(5,5,8,0.85)', 1 / 0.05), roughness: 0.65, metalness: 0.35 });
+      const besi = mat(THREE, 0x22252a, { metalness: 0.6, roughness: 0.4 });
+      const dBadan = b.d * 0.82, belakangBadan = b.d / 2 - dBadan;
+      g.add(blok(THREE, b.w, b.h, dBadan, b.w * 0.16, badan, 0.012).translateZ(b.d / 2 - dBadan / 2));
+      g.add(blok(THREE, b.w * 0.9, b.h * 0.93, 0.008, b.w * 0.13, gril, 0.003).translateY(b.h * 0.035).translateZ(b.d / 2 + 0.002));
+      //  Bayangan woofer & tweeter di balik gril (seperti foto produk).
+      const bayang = mat(THREE, 0x1c1e22, { roughness: 0.6, metalness: 0.3 });
+      for (const [fy, fr] of [[0.34, 0.33], [0.78, 0.11]] as const) {
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(b.w * fr, 0.003, 8, 40), bayang);
+        ring.position.set(0, b.h * fy, b.d / 2 + 0.0065); g.add(ring);
+      }
+      //  Bracket: pelat dinding di sisi belakang + lengan ke punggung kabinet.
+      g.add(blok(THREE, 0.07, 0.11, 0.012, 0.012, besi).translateY(b.h / 2 - 0.055).translateZ(-b.d / 2 + 0.006));
+      const panjangLengan = Math.max(0.01, belakangBadan - (-b.d / 2 + 0.012));
+      g.add(kotak(THREE, 0.028, 0.028, panjangLengan, besi, 0, b.h / 2, -b.d / 2 + 0.012 + panjangLengan / 2));
       break;
     }
     case 'speaker-plafon': {
-      g.add(new THREE.Mesh(new THREE.CylinderGeometry(b.w / 2 + 0.015, b.w / 2 + 0.015, 0.012, 32), mat(THREE, 0xf8fafc)).translateY(b.h - 0.006));
-      g.add(new THREE.Mesh(new THREE.CylinderGeometry(b.w / 2, b.w / 2, b.h, 32), mat(THREE, 0xd1d5db, { metalness: 0.4 })).translateY(b.h / 2));
+      const putih = mat(THREE, 0xf4f5f7, { roughness: 0.45 });
+      const gril = new THREE.MeshStandardMaterial({ map: teksturGril(THREE, '#eef0f3', 'rgba(70,75,85,0.55)', b.w / 0.048), roughness: 0.6 });
+      g.add(new THREE.Mesh(new THREE.CylinderGeometry(b.w / 2 - 0.01, b.w / 2 - 0.01, Math.max(0.01, b.h - 0.012), 32), mat(THREE, 0x1f2125)).translateY(0.012 + (b.h - 0.012) / 2));
+      const cincin = new THREE.Mesh(new THREE.TorusGeometry(b.w / 2 + 0.006, 0.008, 10, 48), putih);
+      cincin.rotation.x = Math.PI / 2; cincin.position.y = 0.008; g.add(cincin);
+      const muka = new THREE.Mesh(new THREE.CircleGeometry(b.w / 2, 48), gril);
+      muka.rotation.x = Math.PI / 2; muka.position.y = 0.004; g.add(muka);
       break;
     }
     case 'kamera': {
-      const putih = mat(THREE, 0xf3f4f6, { roughness: 0.4 });
-      g.add(new THREE.Mesh(new THREE.CylinderGeometry(b.w / 2, b.w / 2, b.h * 0.3, 24), putih).translateY(b.h * 0.15));
-      g.add(kotak(THREE, b.w * 0.8, b.h * 0.55, b.d * 0.75, putih, 0, b.h * 0.62, 0));
-      const lensa = new THREE.Mesh(new THREE.CylinderGeometry(b.w * 0.2, b.w * 0.2, 0.04, 24), mat(THREE, 0x0f172a, { metalness: 0.8, roughness: 0.15 }));
-      lensa.rotation.x = Math.PI / 2; lensa.position.set(0, b.h * 0.62, b.d * 0.4); g.add(lensa);
+      const tipe = b.tipeKamera ?? 'ptz';
+      const kaca = new THREE.MeshPhysicalMaterial({ color: 0x0c1730, metalness: 0.2, roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.05 });
+      const hitamKilap = mat(THREE, 0x0a0b0d, { roughness: 0.18, metalness: 0.35 });
+      /** Lensa: cincin hitam mengilap + kubah kaca, menghadap +z. */
+      const lensa = (r: number, x: number, y: number, z: number) => {
+        const l = new THREE.Group();
+        const cincin = new THREE.Mesh(new THREE.CylinderGeometry(r, r * 1.04, 0.012, 32), hitamKilap); cincin.rotation.x = Math.PI / 2; l.add(cincin);
+        const kubah = new THREE.Mesh(new THREE.SphereGeometry(r * 0.78, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), kaca);
+        kubah.rotation.x = Math.PI / 2; kubah.position.z = 0.004; l.add(kubah);
+        l.position.set(x, y, z); return l;
+      };
+      if (tipe === 'xbar') {
+        //  Video bar: batang berlapis kain, modul kamera hitam di tengah.
+        const kain = new THREE.MeshStandardMaterial({ map: teksturKain(THREE, '#4a4e55', 0.05), roughness: 0.95 });
+        g.add(blok(THREE, b.w, b.h, b.d, b.h * 0.42, kain, 0.01));
+        const lebarModul = Math.min(0.16, b.w * 0.2);
+        g.add(blok(THREE, lebarModul, b.h * 0.5, 0.012, b.h * 0.22, hitamKilap, 0.003).translateY(b.h * 0.25).translateZ(b.d / 2 + 0.001));
+        for (const [x, r] of [[-0.03, 0.0075], [0, 0.011], [0.03, 0.0075]] as const) g.add(lensa(r, x * (lebarModul / 0.16), b.h / 2, b.d / 2 + 0.008));
+        const led = new THREE.Mesh(new THREE.SphereGeometry(0.0025, 8, 6), mat(THREE, 0x22c55e, { emissive: 0x22c55e, emissiveIntensity: 1 }));
+        led.position.set(lebarModul * 0.38, b.h * 0.66, b.d / 2 + 0.008); g.add(led);
+      } else if (tipe === 'ptz-ai') {
+        //  PTZ AI: bar sensor di bawah, lengan L, kepala kotak membulat.
+        const badan = mat(THREE, 0x25282d, { roughness: 0.4, metalness: 0.35 });
+        const tAlas = b.h * 0.26, sKepala = Math.min(0.09, b.h * 0.55);
+        g.add(blok(THREE, b.w, tAlas, b.d, tAlas * 0.3, badan, 0.004));
+        g.add(lensa(0.009, 0, tAlas / 2, b.d / 2 + 0.002));
+        for (const fx of [-0.36, -0.18, 0.18, 0.36]) {
+          const titik = new THREE.Mesh(new THREE.CylinderGeometry(0.0025, 0.0025, 0.004, 10), hitamKilap);
+          titik.rotation.x = Math.PI / 2; titik.position.set(fx * b.w, tAlas / 2, b.d / 2 + 0.001); g.add(titik);
+        }
+        g.add(blok(THREE, 0.03, Math.max(0.02, b.h - tAlas - sKepala * 0.5), 0.035, 0.012, badan, 0.004).translateX(sKepala * 0.78).translateY(tAlas));
+        g.add(kotak(THREE, sKepala * 0.5, 0.024, 0.03, badan, sKepala * 0.62, b.h - sKepala * 0.5, 0));
+        g.add(blok(THREE, sKepala, sKepala, sKepala * 0.95, sKepala * 0.22, badan, 0.006).translateY(b.h - sKepala).translateZ(0.005));
+        g.add(lensa(sKepala * 0.32, 0, b.h - sKepala / 2, sKepala * 0.475 + 0.008));
+      } else {
+        //  PTZ: alas kotak (strip depan hitam), garpu, kepala membulat, lensa besar.
+        const abu = mat(THREE, 0x50555d, { metalness: 0.55, roughness: 0.36 });
+        const tAlas = b.h * 0.22, yKepala = tAlas + 0.03 + b.h * 0.08;
+        g.add(blok(THREE, b.w, tAlas, b.d, 0.012, abu, 0.004));
+        g.add(blok(THREE, b.w * 0.9, tAlas * 0.42, 0.004, 0.004, hitamKilap, 0.0015).translateY(tAlas * 0.25).translateZ(b.d / 2 + 0.0015));
+        g.add(new THREE.Mesh(new THREE.CylinderGeometry(b.w * 0.36, b.w * 0.38, 0.014, 32), abu).translateY(tAlas + 0.007));
+        for (const sx of [-1, 1]) g.add(blok(THREE, b.w * 0.13, b.h * 0.56, b.d * 0.5, b.w * 0.05, abu, 0.004).translateX(sx * b.w * 0.36).translateY(tAlas + 0.01));
+        g.add(blok(THREE, b.w * 0.56, b.h * 0.46, b.d * 0.82, b.w * 0.16, abu, 0.008).translateY(yKepala));
+        g.add(lensa(b.w * 0.21, 0, yKepala + b.h * 0.23, b.d * 0.41 + 0.006));
+      }
       break;
     }
     case 'proyektor': {
@@ -483,12 +892,14 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'touchpanel': {
-      const badan = mat(THREE, 0x1f2937, { metalness: 0.4, roughness: 0.4 });
-      g.add(kotak(THREE, b.w * 0.6, 0.025, b.d * 0.7, badan, 0, 0.0125, -b.d * 0.1)); // alas
+      const perak = mat(THREE, 0xc7ccd3, { metalness: 0.85, roughness: 0.28 });
+      const hitam = mat(THREE, 0x0b0d10, { roughness: 0.2, metalness: 0.3 });
+      g.add(blok(THREE, b.w * 0.5, 0.035, b.d * 0.55, 0.012, perak, 0.006).translateZ(-b.d * 0.05));
       const layar = new THREE.Group();
-      layar.add(kotak(THREE, b.w, b.h, 0.012, badan, 0, 0, 0));
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.92, b.h * 0.88), new THREE.MeshBasicMaterial({ map: teksturPanel(THREE), toneMapped: false }));
-      m.position.z = 0.007; layar.add(m);
+      layar.add(blok(THREE, b.w, b.h, 0.014, 0.012, perak, 0.004).translateY(-b.h / 2));
+      layar.add(blok(THREE, b.w * 0.965, b.h * 0.94, 0.004, 0.008, hitam, 0.0015).translateY(-b.h * 0.47).translateZ(0.007));
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(b.w * 0.86, b.h * 0.8), new THREE.MeshBasicMaterial({ map: teksturPanel(THREE), toneMapped: false }));
+      m.position.z = 0.0095; layar.add(m);
       layar.rotation.x = -0.95; layar.position.set(0, b.h * 0.45, 0); g.add(layar);
       break;
     }
@@ -504,6 +915,31 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
         g.add(kotak(THREE, 0.03, 0.012, 0.005, lampu, b.w * 0.33, y, b.d / 2 + 0.016));
       }
       g.add(kotak(THREE, b.w * 0.96, b.h - 0.12, 0.01, new THREE.MeshStandardMaterial({ color: 0x334155, transparent: true, opacity: 0.25, roughness: 0.1 }), 0, b.h / 2, b.d / 2 + 0.03)); // pintu kaca
+      break;
+    }
+    case 'lift': {
+      const hitam = mat(THREE, 0x15171b, { metalness: 0.6, roughness: 0.32 });
+      const hitamKilap = mat(THREE, 0x0a0b0d, { roughness: 0.15, metalness: 0.3 });
+      g.add(papan(THREE, b.w, b.d, 0.008, 0.01, hitam, 0.002));
+      const lebarMon = Math.min(0.36, b.w * 0.66), xMon = -b.w / 2 + lebarMon / 2 + 0.03;
+      g.add(kotak(THREE, lebarMon + 0.01, 0.0015, 0.014, hitamKilap, xMon, 0.0085, -b.d * 0.18));
+      if (b.naik !== false) {
+        const tinggiMon = lebarMon * 0.6;
+        const mon = new THREE.Group();
+        mon.add(blok(THREE, lebarMon, tinggiMon, 0.012, 0.008, hitam, 0.003));
+        const layar = new THREE.Mesh(new THREE.PlaneGeometry(lebarMon * 0.95, tinggiMon * 0.86), new THREE.MeshBasicMaterial({ map: teksturLift(THREE), toneMapped: false }));
+        layar.position.set(0, tinggiMon * 0.53, 0.0065); mon.add(layar);
+        mon.add(blok(THREE, lebarMon + 0.012, 0.03, 0.03, 0.01, hitam, 0.004));
+        mon.position.set(xMon, 0.008, -b.d * 0.18); mon.rotation.x = -0.16; g.add(mon);
+      }
+      const xMic = b.w / 2 - 0.06;
+      g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.016, 0.008, 20), hitam).translateX(xMic).translateY(0.012).translateZ(b.d * 0.15));
+      const kurva = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(xMic, 0.012, b.d * 0.15), new THREE.Vector3(xMic, b.h * 0.6, b.d * 0.12), new THREE.Vector3(xMic, b.h * 0.88, b.d * 0.02),
+      ]);
+      g.add(new THREE.Mesh(new THREE.TubeGeometry(kurva, 24, 0.005, 8, false), hitam));
+      const kepala = new THREE.Mesh(new THREE.SphereGeometry(0.016, 20, 14), hitamKilap);
+      kepala.scale.set(1, 1.5, 1); kepala.position.set(xMic, b.h * 0.92, -b.d * 0.02); g.add(kepala);
       break;
     }
     case 'model': {

@@ -87,7 +87,7 @@ export function Nilai({ label, nilai, satuan, ket, nada }: { label: string; nila
 export const f = (n: number, d = 2) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { maximumFractionDigits: d }) : '-');
 
 /** Tombol salin ringkasan hasil (untuk ditempel ke WA / penawaran). */
-export function TombolSalin({ teks }: { teks: () => string }) {
+export function TombolSalin({ teks, onCetak }: { teks: () => string; /** Lembar cetak tersendiri (lihat cetak.ts), bukan window.print(). */ onCetak?: () => void }) {
   const [ok, setOk] = useState(false);
   return (
     <div className="flex gap-2">
@@ -96,10 +96,12 @@ export function TombolSalin({ teks }: { teks: () => string }) {
       }} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
         <Ikon nama={ok ? '✅' : '📋'} ukuran={14} /> {ok ? 'Tersalin' : 'Salin hasil'}
       </button>
-      <button type="button" onClick={() => window.print()}
-        className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 print:hidden">
-        <Ikon nama="🖨" ukuran={14} /> Cetak
-      </button>
+      {onCetak && (
+        <button type="button" onClick={onCetak}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 print:hidden">
+          <Ikon nama="🖨" ukuran={14} /> Cetak
+        </button>
+      )}
     </div>
   );
 }

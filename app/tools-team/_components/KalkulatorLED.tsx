@@ -7,6 +7,7 @@ import {
 import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f, kelasInput } from './ui';
 import { useReferensiLED, EditorReferensiLED } from './ReferensiLED';
 import { Ikon } from '@/components/shared/Ikon';
+import { bukaCetak, diagramSusunan, type Info } from './cetak';
 
 const PITCH = [0.9, 1.2, 1.25, 1.5, 1.56, 1.86, 1.9, 2, 2.5, 2.6, 2.9, 3.91, 4.81, 5, 6.67, 8, 10];
 const CABINET: { v: string; l: string; w: number; h: number }[] = [
@@ -166,6 +167,70 @@ export function KalkulatorLED() {
     (pembuat || tanggal) && `Dibuat: ${[pembuat, tanggal].filter(Boolean).join(', ')}`,
   ].filter(Boolean).join('\n');
 
+  /** Lembar cetak A4 (pola Request Design Project), bukan tangkapan tampilan web. */
+  const cetak = () => {
+    const satu = (judul: string, nilai: string, sorot = false): Info => ({ label: judul, nilai, sorot });
+    const kali = (v: string) => (n > 1 ? `${v} / screen` : v);
+    const hwBaris: Info[] = modeHw === 'manual'
+      ? [satu('Hardware (pilihan manual)', teksHw ? `${teksHw} / screen` : '—', true)]
+      : [
+        ...(hw.vp ? [satu('Opsi A · All-in-one', `${hw.vp.qty}× ${hw.vp.hw.nama} / screen — ${hw.vp.hw.ket}`, true)] : []),
+        ...(hw.kartu ? [satu('Opsi B · Sending card', `${hw.kartu.qty}× ${hw.kartu.hw.nama} / screen + video processor — ${hw.kartu.hw.ket}`)] : []),
+      ];
+    bukaCetak({
+      judul: 'Kalkulator LED Videotron',
+      subjudul: [project || 'Tanpa nama project', customer].filter(Boolean).join(' — '),
+      kepala: [['Tanggal', tanggal], ['Dibuat oleh', pembuat]],
+      seksi: [
+        { judul: 'Informasi project', jenis: 'info',
+          kiri: [satu('Nama project', project), satu('Customer', customer)],
+          kanan: [satu('Tanggal', tanggal), satu('Dibuat oleh', pembuat)] },
+        { judul: 'Konfigurasi layar', jenis: 'info',
+          kiri: [
+            satu('Pitch / tipe', `${u.kode} · ${lingkungan}`),
+            satu(`Ukuran ${namaUnit}`, `${u.w} × ${u.h} mm · ${px.x} × ${px.y} px`),
+            satu('Kecerahan disarankan', KECERAHAN[lingkungan]),
+          ],
+          kanan: [
+            satu('Susunan', `${kolom} kolom × ${baris} baris`, true),
+            satu(`Jumlah ${namaUnit}`, `${h.jumlahCab} / screen${n > 1 ? ` · ${n} screen identik = ${h.jumlahCab * n}` : ''}`),
+            satu('Selisih dari target', mode === 'ukuran' ? `${selisihW >= 0 ? '+' : ''}${f(selisihW * 100, 0)} cm lebar, ${selisihH >= 0 ? '+' : ''}${f(selisihH * 100, 0)} cm tinggi` : 'Dihitung dari jumlah'),
+          ] },
+        { judul: 'Susunan layar', jenis: 'html', html: diagramSusunan(kolom, baris, h.lebarM, h.tinggiM, namaUnit) },
+        { judul: n > 1 ? 'Hasil per screen' : 'Hasil', jenis: 'info',
+          kiri: [
+            satu('Ukuran', `${f(h.lebarM)} × ${f(h.tinggiM)} m`, true),
+            satu('Luas / diagonal', `${f(h.luasM2)} m² · ${f(h.diagonalInci, 0)}"${n > 1 ? ` (total ${f(h.luasM2 * n)} m²)` : ''}`),
+            satu('Jarak pandang', `minimum ${f(h.jarakMinM, 1)} m · ideal ±${f(h.jarakIdealM, 1)} m`),
+          ],
+          kanan: [
+            satu('Resolusi', `${h.resX} × ${h.resY} px`, true),
+            satu('Total piksel', `${f(h.totalPx / 1e6, 2)} MP${lewat4K ? ' · melebihi 4K, butuh input/processor 4K+' : ''}`),
+            satu('Rasio', `${h.rasioTerdekat} (tepat ${h.rasio})`),
+          ] },
+        { judul: 'Daya & instalasi', jenis: 'info',
+          kiri: [
+            satu('Daya maksimum', kali(`${f(h.dayaMaksW / 1000)} kW`), true),
+            satu('Daya rata-rata', kali(`${f(h.dayaRataW / 1000)} kW (${faktorRata}% dari maks)`)),
+            satu(`Arus maks @${tegangan} V`, kali(`${f(h.arusMaksA, 1)} A · MCB ${h.mcbSaranA} A`)),
+          ],
+          kanan: [
+            satu('Panas', kali(`±${f(h.panasBTU, 0)} BTU/jam`)),
+            satu('Berat', kali(`±${f(h.beratKg, 0)} kg (belum termasuk rangka)`)),
+            satu(`Daya / berat per ${namaUnit}`, `${f(dayaUnitEf, 1)} W · ${f(beratUnitEf, 2)} kg`),
+          ] },
+        { judul: 'Data & hardware', jenis: 'info',
+          kiri: [
+            satu('Port LAN', kali(`${h.portLAN} port`), true),
+            satu('Kapasitas per port', `±${f(h.pxPerPort / 1000, 0)} rb px · ${refresh} Hz, ${bit}-bit`),
+          ],
+          kanan: hwBaris.length ? hwBaris : [satu('Hardware', '—')] },
+      ],
+      catatan: 'Angka daya, berat, dan kapasitas port adalah nilai umum industri. Verifikasi dengan datasheet produk dan NovaLCT sebelum penawaran resmi.',
+      tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
+    });
+  };
+
   // Pratinjau grid (SVG), skala mengikuti rasio sebenarnya.
   const skala = Math.min(320 / h.lebarM, 220 / h.tinggiM);
   const wPx = h.lebarM * skala, hPx = h.tinggiM * skala;
@@ -270,7 +335,7 @@ export function KalkulatorLED() {
       </div>
 
       <div className="space-y-4 min-w-0">
-        <Kartu judul={n > 1 ? 'Hasil per screen' : 'Hasil'} aksi={<TombolSalin teks={ringkasan} />}>
+        <Kartu judul={n > 1 ? 'Hasil per screen' : 'Hasil'} aksi={<TombolSalin teks={ringkasan} onCetak={cetak} />}>
           {(project || customer) && (
             <p className="text-[12.5px] text-slate-600 mb-3">
               <span className="font-semibold text-slate-800">{project || '-'}</span>{customer && ` · ${customer}`}
