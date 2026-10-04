@@ -46,28 +46,27 @@ function ToolsKerjaInner() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--latar-halaman, #f1f5f9)' }}>
       <PageHeader icon="🧮" title="Tools Team" subtitle="Kalkulator & desain untuk engineer Audio Visual" color="#1d4ed8" colorLight="#dbeafe" />
-      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)] items-start">
-        {/* Daftar alat: kolom di desktop, deret geser di HP */}
-        <nav aria-label="Daftar alat" className="lg:sticky lg:top-20 flex lg:flex-col gap-2 overflow-x-auto -mx-3 px-3 lg:mx-0 lg:px-0 pb-1 [scrollbar-width:none] print:hidden">
-          {ALAT.map(a => {
-            const on = a.k === aktif;
-            return (
-              <button key={a.k} type="button" onClick={() => pilih(a.k)} aria-current={on ? 'page' : undefined}
-                className={`flex-shrink-0 lg:w-full text-left flex items-center gap-2.5 px-3 py-2.5 rounded-xl border transition-colors ${on ? 'bg-blue-700 border-blue-700 text-white' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-                <span className={`w-8 h-8 rounded-lg grid place-items-center flex-shrink-0 ${on ? 'bg-white/15' : 'bg-blue-50 text-blue-700'}`}><Ikon nama={a.ikon} ukuran={16} /></span>
-                <span className="min-w-0">
-                  <span className="block text-[13px] font-bold whitespace-nowrap">{a.judul}</span>
-                  <span className={`hidden lg:block text-[11px] leading-snug ${on ? 'text-blue-100' : 'text-slate-500'}`}>{a.ket}</span>
-                </span>
-              </button>
-            );
-          })}
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
+        {/* Pilihan alat: switch di atas, lebar tombol sama. Selalu di atas kartu
+            putih supaya tetap terbaca di atas gambar latar merek. */}
+        <nav aria-label="Daftar alat" className="rounded-2xl bg-white border border-slate-200 shadow-sm p-1.5 print:hidden">
+          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${ALAT.length}, minmax(0, 1fr))` }}>
+            {ALAT.map(a => {
+              const on = a.k === aktif;
+              return (
+                <button key={a.k} type="button" onClick={() => pilih(a.k)} aria-pressed={on}
+                  className={`min-w-0 flex items-center justify-center sm:justify-start gap-2.5 px-2 sm:px-3 py-2.5 rounded-xl transition-colors ${on ? 'bg-blue-700 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100'}`}>
+                  <span className={`hidden sm:grid w-8 h-8 rounded-lg place-items-center flex-shrink-0 ${on ? 'bg-white/15' : 'bg-blue-50 text-blue-700'}`}><Ikon nama={a.ikon} ukuran={16} /></span>
+                  <span className="min-w-0 text-center sm:text-left">
+                    <span className="block text-[13px] font-bold truncate">{a.judul}</span>
+                    <span className={`hidden sm:block text-[11.5px] leading-snug truncate ${on ? 'text-blue-100' : 'text-slate-600'}`}>{a.ket}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </nav>
         <main className="min-w-0">
-          <div className="mb-3">
-            <h1 className="text-lg font-extrabold text-slate-900">{alat.judul}</h1>
-            <p className="text-[12.5px] text-slate-600">{alat.ket}</p>
-          </div>
           <C />
         </main>
       </div>
