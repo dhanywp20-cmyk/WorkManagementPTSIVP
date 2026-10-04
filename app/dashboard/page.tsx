@@ -309,10 +309,7 @@ export default function Dashboard() {
         setVisibleMenuItems(allMenuItems);
       } else {
         // Always use allMenuItems order (code order), not allowed_menus DB order
-        //  Tools Team = alat bantu engineer (tanpa data sensitif): otomatis
-        //  tampil untuk Team PTS; akun lain lewat centang menu seperti biasa.
-        const timPTS = (currentUser.team_type ?? '').startsWith('Team PTS');
-        setVisibleMenuItems(allMenuItems.filter(m => allowed.includes(m.key) || (m.key === 'tools-team' && timPTS)));
+        setVisibleMenuItems(allMenuItems.filter(m => allowed.includes(m.key)));
       }
       setMenuLoading(false);
     }, 400);
