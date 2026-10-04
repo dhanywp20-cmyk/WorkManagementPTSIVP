@@ -29,7 +29,7 @@ jobs:
         run: |
           for f in cari-reminder kelompok-daily-report kelompok-insentif kpi-lc-tahunan \
                    lingkup-project peringkat-quiz supervisor-jadi-pic tahapan-installer \
-                   tahun-tahapan-kembar urutan-soal penugasan-manager av-hitung desain3d; do
+                   tahun-tahapan-kembar urutan-soal penugasan-manager av-hitung desain3d desain-request; do
             echo "::group::uji/$f.ts"; npx --yes tsx@4 "uji/$f.ts"; echo "::endgroup::"
           done
       - name: Build

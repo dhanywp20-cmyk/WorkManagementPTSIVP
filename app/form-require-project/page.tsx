@@ -30,6 +30,8 @@ import {
 import { appLink } from '@/lib/app-url';
 import { cetakRequest } from './_components/cetak-request';
 import { unduhPaketRequest } from './_components/paket-unduhan';
+import { Desain3DTools } from './_components/Desain3DTools';
+import { muatTautanDesain3D, type TautanDesain3D } from './_components/desain-3d-request';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { FilterLipat } from '@/components/shared/FilterLipat';
 import { Toast as ToastBersama } from '@/components/shared/Toast';
@@ -149,6 +151,19 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const activeRequestIdRef = useRef<string | null>(null);
   const [uploadingCategory, setUploadingCategory] = useState<'sld' | 'boq' | 'design3d' | null>(null);
   const [activeAttachTab, setActiveAttachTab] = useState<'all' | 'sld' | 'boq' | 'design3d'>('all');
+  /** Design 3D dari Tools Team (tambahan di samping file PDF) - untuk hitungan tab & ekspor. */
+  const [desain3dTools, setDesain3dTools] = useState<TautanDesain3D[]>([]);
+  const [mintaPilih3D, setMintaPilih3D] = useState(0);
+  //  Dimuat sekali per request yang dibuka (ringkasan saja), supaya cetak/ZIP
+  //  selalu lengkap walau tab lampiran yang terbuka bukan "Semua"/"3D".
+  const idRequestTerpilih = selectedRequest?.id;
+  useEffect(() => {
+    setDesain3dTools([]);
+    if (!idRequestTerpilih) return;
+    let hidup = true;
+    void muatTautanDesain3D(idRequestTerpilih).then(h => { if (hidup && !('galat' in h)) setDesain3dTools(h.tautan); });
+    return () => { hidup = false; };
+  }, [idRequestTerpilih]);
   // Detail modal: active room tab (0 = Ruangan 1/main, 1+ = rooms[idx-1])
   const [detailRoomIdx, setDetailRoomIdx] = useState(0);
   // Mobile: which panel is active on small screens
@@ -2753,6 +2768,7 @@ Hubungi Admin untuk info lebih lanjut.
                       attachments,
                       ccLabel: getCCLabel(selectedRequest),
                       notify,
+                      desain3d: desain3dTools,
                     });
                   } finally {
                     setDownloadingPackage(false);
@@ -2762,7 +2778,7 @@ Hubungi Admin untuk info lebih lanjut.
                   {downloadingPackage ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
                   {downloadingPackage ? 'Menyiapkan...' : 'Download .zip'}
                 </button>
-                <button onClick={() => cetakRequest(selectedRequest, getCCLabel(selectedRequest))}
+                <button onClick={() => cetakRequest(selectedRequest, getCCLabel(selectedRequest), desain3dTools)}
                   className="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/30 flex items-center gap-1.5">
                   <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                   Print
@@ -3228,6 +3244,12 @@ Hubungi Admin untuk info lebih lanjut.
                                     <span>{label}<br /><span className="font-normal text-gray-500">{hint}</span></span>
                                   </button>
                                 ))}
+                                {/* Tambahan: tautkan desain dari Tools Team (bukan unggah file). */}
+                                <button onClick={() => { setShowUploadChoice(false); setActiveAttachTab(t => (t === 'all' || t === 'design3d' ? t : 'design3d')); setMintaPilih3D(n => n + 1); }}
+                                  className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-violet-50 flex items-start gap-2 border-t border-gray-100">
+                                  <span className="text-base leading-none"><Ikon nama="🧊" ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
+                                  <span>Design 3D dari Tools Team<br /><span className="font-normal text-gray-500">Tautkan desain dari Desain 3D Ruang (opsional)</span></span>
+                                </button>
                               </div>
                             </>)}
                           </div>
@@ -3264,7 +3286,7 @@ Hubungi Admin untuk info lebih lanjut.
                       {(['all', 'sld', 'boq', 'design3d'] as const).map(tab => (
                         <button key={tab} onClick={() => setActiveAttachTab(tab)}
                           className={`flex-1 py-2 text-xs font-bold uppercase transition-all ${activeAttachTab === tab ? 'text-white bg-teal-600' : 'text-gray-500 hover:bg-gray-50'}`}>
-                          {tab === 'all' ? `Semua (${roomAttachments.length})` : tab === 'design3d' ? `3D (${roomAttachments.filter(a => a.attachment_category === 'design3d').length})` : `${tab.toUpperCase()} (${roomAttachments.filter(a => a.attachment_category === tab).length})`}
+                          {tab === 'all' ? `Semua (${roomAttachments.length + desain3dTools.filter(t => t.room_idx === detailRoomIdx).length})` : tab === 'design3d' ? `3D (${roomAttachments.filter(a => a.attachment_category === 'design3d').length + desain3dTools.filter(t => t.room_idx === detailRoomIdx).length})` : `${tab.toUpperCase()} (${roomAttachments.filter(a => a.attachment_category === tab).length})`}
                         </button>
                       ))}
                     </div>
@@ -3368,6 +3390,13 @@ Hubungi Admin untuk info lebih lanjut.
                             ))}
                           </div>
                         )}
+                      </div>
+                    )}
+                    {(activeAttachTab === 'all' || activeAttachTab === 'design3d') && (
+                      <div className="mt-3">
+                        <Desain3DTools requestId={selectedRequest.id} roomIdx={detailRoomIdx}
+                          namaRuang={detailRoomIdx === 0 ? (selectedRequest.room_name?.trim() || 'Ruangan 1') : ((selectedRequest.rooms || [])[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`)}
+                          projectName={selectedRequest.project_name} mintaPilih={mintaPilih3D} onMuat={setDesain3dTools} notify={notify} />
                       </div>
                     )}
                       </>);

@@ -1,4 +1,5 @@
 import { statusConfig, type ProjectRequest, type ProjectAttachment } from './shared';
+import { htmlSeksiDesain3D, bytePratinjau, type TautanDesain3D } from './desain-3d-request';
 
 /**
  * Paket unduhan satu Request Design Project: lembar detail plus seluruh
@@ -12,6 +13,8 @@ export interface ArgPaket {
   attachments: ProjectAttachment[];
   ccLabel: string;
   notify: (tipe: 'success' | 'error' | 'info', pesan: string) => void;
+  /** Design 3D dari Tools Team (opsional) - seksi & pratinjau hanya ditambahkan bila ada. */
+  desain3d?: TautanDesain3D[];
 }
 
 const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -112,7 +115,7 @@ const buildZip = (files: { name: string; data: Uint8Array }[]): Blob => {
   return new Blob([result], { type: 'application/zip' });
 };
 
-export async function unduhPaketRequest({ selectedRequest, attachments, ccLabel, notify }: ArgPaket): Promise<void> {
+export async function unduhPaketRequest({ selectedRequest, attachments, ccLabel, notify, desain3d = [] }: ArgPaket): Promise<void> {
   if (!selectedRequest) return;
     notify('info', 'Menyiapkan paket download...');
   try {
@@ -209,6 +212,7 @@ ${(selectedRequest.kebutuhan||[]).includes('Signage') ? `
   ${selectedRequest.keterangan_lain ? `<div class="field" style="grid-column:span 2"><label>Keterangan Lain</label><p style="white-space:pre-wrap">${selectedRequest.keterangan_lain}</p></div>` : ''}
 </div>
 </div>
+${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : selectedRequest.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`)}
 <p style="font-size:10px;color:#94a3b8;text-align:center;margin-top:16px">Request Design Project — IndoVisual Pratama · ${new Date().toLocaleDateString('id-ID')}</p>
 </body></html>`;
     zipFiles.push({ name: `${folderName}/01_Form_Detail_${projectSlug}.html`, data: enc.encode(formHtml) });
@@ -239,6 +243,14 @@ ${(selectedRequest.kebutuhan||[]).includes('Signage') ? `
         }
       } catch { /* skip inaccessible files */ }
     }
+
+    // Design 3D dari Tools Team: pratinjau versi yang ditautkan (ringkasannya ada di form detail).
+    desain3d.forEach((t, i) => {
+      const data = bytePratinjau(t.snapshot?.gambar);
+      if (!data) return;
+      const nama = (t.snapshot?.nama ?? 'Design3D').replace(/[^a-zA-Z0-9]+/g, '_').substring(0, 40);
+      zipFiles.push({ name: `${folderName}/04_Design3D_Tools_${i + 1}_${nama}_v${t.versi}.jpg`, data });
+    });
 
     // General files - download all
     const generalFiles = attachments.filter(a => a.attachment_category === 'general' || !a.attachment_category);

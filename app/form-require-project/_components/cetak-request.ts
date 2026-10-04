@@ -1,4 +1,5 @@
 import { statusConfig, type ProjectRequest } from './shared';
+import { htmlSeksiDesain3D, type TautanDesain3D } from './desain-3d-request';
 
 /**
  * Lembar cetak satu Request Design Project.
@@ -9,7 +10,7 @@ import { statusConfig, type ProjectRequest } from './shared';
 const formatDate = (dt: string) => new Date(dt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-export function cetakRequest(selectedRequest: ProjectRequest, ccLabel: string): void {
+export function cetakRequest(selectedRequest: ProjectRequest, ccLabel: string, desain3d: TautanDesain3D[] = []): void {
   if (!selectedRequest) return;
   const sc = statusConfig[selectedRequest.status] || statusConfig.pending;
   const printDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' } as Intl.DateTimeFormatOptions);
@@ -163,6 +164,8 @@ body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #
     </div>
   </div>
 </div>
+
+${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : selectedRequest.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`)}
 
 <!-- FOOTER -->
 <div class="footer">
