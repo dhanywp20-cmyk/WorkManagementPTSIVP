@@ -4,7 +4,7 @@
  * Jalankan: npx tsx uji/av-hitung.ts
  */
 import {
-  hitungLED, cabinetUntukUkuran, saranHardware, kapasitasHardware, MODUL_LED, VIDEO_PROCESSOR, SENDING_CARD, layarDariJarak, ukuranDariDiagonal,
+  hitungLED, pxPerPortPada, portDibutuhkan, cabinetUntukUkuran, saranHardware, kapasitasHardware, MODUL_LED, VIDEO_PROCESSOR, SENDING_CARD, layarDariJarak, ukuranDariDiagonal,
   jarakLempar, lumenDibutuhkan, bandwidthGbps, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
 } from '../lib/av-hitung';
 
@@ -29,6 +29,13 @@ console.log('\n1. LED Videotron');
   cek('jarak minimum 2.5 m, ideal 7.5 m', h.jarakMinM === 2.5 && h.jarakIdealM === 7.5);
   const h120 = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 120, bit: 8, tegangan: 220 });
   cek('120 Hz menggandakan kebutuhan port', h120.portLAN === 6, String(h120.portLAN));
+  const h10 = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 60, bit: 10, tegangan: 220 });
+  cek('10-bit: kapasitas port separuh 8-bit (327.680 px) -> 6 port', h10.pxPerPort === 327_680 && h10.portLAN === 6, `${h10.pxPerPort} ${h10.portLAN}`);
+  cek('12-bit sama dengan 10-bit', pxPerPortPada(60, 12) === 327_680);
+  //  Cabinet 960x960 P2.5 = 147.456 px -> 4 cabinet/port. 13 cabinet = 4 port,
+  //  padahal total piksel / kapasitas (1,92 MP / 655 rb) cuma memberi 3.
+  cek('port dihitung per cabinet utuh: 13 cabinet besar -> 4 port', portDibutuhkan(13, 384 * 384, 655_360) === 4, String(portDibutuhkan(13, 384 * 384, 655_360)));
+  cek('cabinet melebihi kapasitas 1 port memakai beberapa port', portDibutuhkan(3, 800_000, 655_360) === 6);
   const s = saranHardware(h.totalPx, h.portLAN);
   cek('1.92 MP/3 port -> MCTRL600 & VX400', s.kartu?.hw.nama === 'MCTRL600' && s.kartu.qty === 1 && s.vp?.hw.nama === 'VX400', `${s.kartu?.hw.nama} ${s.vp?.hw.nama}`);
   const besar = saranHardware(20_000_000, 31);

@@ -39,6 +39,29 @@ export interface HasilLED {
 /** Kapasitas 1 port Gigabit (Novastar & sejenis): ~655.360 px pada 60 Hz 8-bit. */
 export const PX_PER_PORT_DASAR = 655_360;
 
+/**
+ * Kapasitas 1 port pada frame rate & kedalaman warna tertentu. Novastar
+ * menyatakan kapasitas port 10/12-bit = SEPARUH 8-bit (data dikirim dua kali
+ * lebar), bukan 8/10 seperti hitungan bit mentah - memakai 8/bit membuat
+ * jumlah port & sending card untuk konten 10-bit terhitung kurang.
+ */
+export function pxPerPortPada(refresh: number, bit: number): number {
+  return Math.floor(PX_PER_PORT_DASAR * (60 / refresh) * (bit > 8 ? 0.5 : 1));
+}
+
+/**
+ * Port LAN yang dibutuhkan. Satu cabinet tidak bisa dibagi ke dua port, jadi
+ * yang dihitung adalah cabinet per port - bukan total piksel / kapasitas,
+ * yang bisa kurang 1 port bila sisa kapasitas tiap port tidak muat satu
+ * cabinet utuh. Cabinet yang lebih besar dari kapasitas satu port memakai
+ * beberapa port sendiri.
+ */
+export function portDibutuhkan(jumlahCab: number, pxPerCab: number, pxPerPort: number): number {
+  if (jumlahCab <= 0 || pxPerCab <= 0) return 0;
+  if (pxPerCab > pxPerPort) return jumlahCab * Math.ceil(pxPerCab / pxPerPort);
+  return Math.ceil(jumlahCab / Math.floor(pxPerPort / pxPerCab));
+}
+
 const MCB_STANDAR = [6, 10, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125, 160, 200, 250];
 
 function fpb(a: number, b: number): number { return b === 0 ? a : fpb(b, a % b); }
@@ -69,7 +92,7 @@ export function hitungLED(m: MasukanLED): HasilLED {
   const arusMaksA = dayaMaksW / Math.max(1, m.tegangan);
   //  MCB: arus maksimum + cadangan 25% (beban kontinu), dibulatkan ke rating standar.
   const mcbSaranA = MCB_STANDAR.find(r => r >= arusMaksA * 1.25) ?? Math.ceil((arusMaksA * 1.25) / 10) * 10;
-  const pxPerPort = Math.floor(PX_PER_PORT_DASAR * (60 / m.refresh) * (8 / m.bit));
+  const pxPerPort = pxPerPortPada(m.refresh, m.bit);
   return {
     lebarM, tinggiM, luasM2: lebarM * tinggiM,
     diagonalInci: (Math.hypot(lebarM, tinggiM) * 1000) / 25.4,
@@ -80,7 +103,7 @@ export function hitungLED(m: MasukanLED): HasilLED {
     jumlahCab, dayaMaksW, dayaRataW, arusMaksA, mcbSaranA,
     panasBTU: dayaRataW * 3.412,
     beratKg: jumlahCab * m.beratCab,
-    pxPerPort, portLAN: Math.ceil((resX * resY) / pxPerPort),
+    pxPerPort, portLAN: portDibutuhkan(jumlahCab, pxCabX * pxCabY, pxPerPort),
   };
 }
 

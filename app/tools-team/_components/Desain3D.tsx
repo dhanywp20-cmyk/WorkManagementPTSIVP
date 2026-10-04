@@ -200,7 +200,22 @@ export default function Desain3D() {
         putar();
         setSiap(true);
         bersihkan = () => {
-          jalan = false; ro.disconnect(); gizmo.dispose(); orbit.dispose(); pmrem.dispose(); renderer.dispose();
+          jalan = false; ro.disconnect(); gizmo.dispose(); orbit.dispose(); pmrem.dispose();
+          //  renderer.dispose() TIDAK melepas geometri, material, dan tekstur di
+          //  dalam scene. Tanpa ini memori GPU bertambah tiap kali pengguna
+          //  pindah alat (LED <-> 3D) karena komponen dibongkar-pasang.
+          scene.traverse(o => {
+            const mesh = o as T.Mesh;
+            mesh.geometry?.dispose();
+            const mats = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
+            for (const mat of mats) {
+              for (const v of Object.values(mat)) if (v instanceof THREE.Texture) v.dispose();
+              mat.dispose();
+            }
+          });
+          gambarLayar.current.forEach(t => t.dispose()); gambarLayar.current.clear();
+          if (scene.environment instanceof THREE.Texture) scene.environment.dispose();
+          renderer.dispose();
           renderer.domElement.remove(); labelRenderer.domElement.remove();
         };
       } catch (e) {
@@ -442,6 +457,8 @@ export default function Desain3D() {
     const url = URL.createObjectURL(file);
     const id = terpilih.id;
     new m.THREE.TextureLoader().load(url, tex => {
+      //  Gambar sudah terunggah ke GPU - URL objeknya tidak dipakai lagi.
+      URL.revokeObjectURL(url);
       tex.colorSpace = m.THREE.SRGBColorSpace;
       gambarLayar.current.get(id)?.dispose();
       gambarLayar.current.set(id, tex);
