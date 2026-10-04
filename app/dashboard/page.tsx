@@ -275,7 +275,7 @@ export default function Dashboard() {
     {
       title: 'Project Progress', icon: '📊', key: 'project-progress',
       gradient: 'from-cyan-700 via-cyan-600 to-teal-500',
-      description: 'Progres instalasi per proyek & per lokasi',
+      description: 'Checklist instalasi per proyek & lokasi, dicentang tim dari lapangan',
       items: [{ name: 'Project Progress', url: '/project-progress', icon: '📊', internal: true, embed: true }]
     },
     {

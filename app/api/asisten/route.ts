@@ -65,7 +65,7 @@ const ALAT = [
   },
   {
     name: 'progres_project',
-    description: 'Progres instalasi lokasi project (persentase, status, target selesai, PIC).',
+    description: 'Progres checklist instalasi per lokasi project: item selesai/total, jumlah kendala beserta isinya, target selesai, anggota yang di-assign.',
     parameters: { type: 'OBJECT', properties: { kata: { type: 'STRING', description: 'nama project / lokasi' }, saya: { type: 'BOOLEAN' } } },
   },
   {
@@ -123,14 +123,47 @@ async function jalankanAlat(nama: string, a: Record<string, unknown>, db: Supaba
       return error ? { galat: error.message } : { rentang: `${dari} s/d ${sampai}`, jumlah: data?.length ?? 0, jadwal: data };
     }
     case 'progres_project': {
-      let q = db.from('progress_locations')
-        .select('name, pic, sales_name, status, progress, start_date, target_date, note')
-        .order('target_date', { ascending: true, nullsFirst: false }).limit(BARIS);
+      // Dibaca dengan token penanya: RLS (migrasi 025) hanya mengembalikan
+      // proyek/checklist yang memang boleh ia lihat.
       const k = bersih(a.kata);
-      if (k) q = q.ilike('name', `%${k}%`);
-      if (a.saya) q = q.or(`pic.eq.${bersih(nm, 80)},sales_name.eq.${bersih(nm, 80)}`);
-      const { data, error } = await q;
-      return error ? { galat: error.message } : { hari_ini: hariIniWIB(), lokasi: data };
+      let qp = db.from('checklist_proyek').select('id, nama, client, sales_name, status, target_date').limit(BARIS);
+      if (k) qp = qp.or(`nama.ilike.%${k}%,client.ilike.%${k}%`);
+      const { data: proyek, error: pErr } = await qp;
+      if (pErr) return { galat: pErr.message };
+      let qd = db.from('checklist_daftar').select('id, proyek_id, judul, start_date, target_date')
+        .order('target_date', { ascending: true, nullsFirst: false }).limit(BARIS);
+      const idProyek = ((proyek ?? []) as { id: string }[]).map(p => p.id);
+      qd = k ? qd.or(`judul.ilike.%${k}%${idProyek.length ? `,proyek_id.in.(${idProyek.join(',')})` : ''}`) : qd;
+      if (a.saya) {
+        const { data: ang } = await db.from('checklist_anggota').select('daftar_id').eq('user_id', u.id);
+        const milik = ((ang ?? []) as { daftar_id: string }[]).map(x => x.daftar_id);
+        if (!milik.length) return { hari_ini: hariIniWIB(), lokasi: [] };
+        qd = qd.in('id', milik);
+      }
+      const { data: daftar, error: dErr } = await qd;
+      if (dErr) return { galat: dErr.message };
+      const ids = ((daftar ?? []) as { id: string }[]).map(d => d.id);
+      const [{ data: items }, { data: ang }, { data: semuaProyek }] = ids.length ? await Promise.all([
+        db.from('checklist_item').select('daftar_id, teks, selesai, kendala, kendala_catatan').in('daftar_id', ids).limit(5000),
+        db.from('checklist_anggota').select('daftar_id, nama').in('daftar_id', ids),
+        db.from('checklist_proyek').select('id, nama, client, sales_name, status')
+          .in('id', Array.from(new Set(((daftar ?? []) as { proyek_id: string }[]).map(d => d.proyek_id)))),
+      ]) : [{ data: [] }, { data: [] }, { data: [] }];
+      const it = (items ?? []) as { daftar_id: string; teks: string; selesai: boolean; kendala: boolean; kendala_catatan: string }[];
+      const pr = new Map(((semuaProyek ?? []) as { id: string; nama: string; client: string | null; sales_name: string | null; status: string }[]).map(p => [p.id, p]));
+      return {
+        hari_ini: hariIniWIB(),
+        lokasi: ((daftar ?? []) as { id: string; proyek_id: string; judul: string; start_date: string | null; target_date: string | null }[]).map(d => {
+          const milik = it.filter(i => i.daftar_id === d.id);
+          return {
+            proyek: pr.get(d.proyek_id)?.nama, client: pr.get(d.proyek_id)?.client, sales: pr.get(d.proyek_id)?.sales_name,
+            status_proyek: pr.get(d.proyek_id)?.status, lokasi: d.judul, mulai: d.start_date, target: d.target_date,
+            selesai: milik.filter(i => i.selesai).length, total: milik.length,
+            kendala: milik.filter(i => i.kendala && !i.selesai).map(i => `${i.teks}: ${i.kendala_catatan}`).slice(0, 10),
+            anggota: ((ang ?? []) as { daftar_id: string; nama: string }[]).filter(x => x.daftar_id === d.id).map(x => x.nama),
+          };
+        }),
+      };
     }
     case 'daily_report_saya': {
       const tgl = tglSah(a.tanggal) ?? hariIniWIB();
