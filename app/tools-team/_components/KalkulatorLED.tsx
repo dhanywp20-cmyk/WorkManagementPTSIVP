@@ -8,6 +8,9 @@ import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f, kelasInput
 import { useReferensiLED, EditorReferensiLED } from './ReferensiLED';
 import { Ikon } from '@/components/shared/Ikon';
 import { bukaCetak, diagramSusunan, type Info } from './cetak';
+import { FolderOpen, Redo2, Save, Undo2 } from 'lucide-react';
+import { useRiwayat } from './riwayat';
+import { FileLED, type FileAktifLED } from './FileLED';
 
 const PITCH = [0.9, 1.2, 1.25, 1.5, 1.56, 1.86, 1.9, 2, 2.5, 2.6, 2.9, 3.91, 4.81, 5, 6.67, 8, 10];
 const CABINET: { v: string; l: string; w: number; h: number }[] = [
@@ -108,6 +111,31 @@ export function KalkulatorLED() {
   const [bit, setBit] = useState<8 | 10 | 12>(8);
   const [tegangan, setTegangan] = useState(220);
   const [faktorDaya, setFaktorDaya] = useState(0.95);
+
+  //  Potret seluruh isian: dasar undo/redo dan simpan/buka hitungan.
+  const isian = useMemo(() => ({
+    modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
+    cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
+    refresh, bit, tegangan, faktorDaya,
+  }), [modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
+    cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
+    refresh, bit, tegangan, faktorDaya]);
+  type Isian = typeof isian;
+  /** Kembalikan isian; kunci yang tidak ada (hitungan versi lama) dibiarkan. */
+  const terapkan = (v: Partial<Isian>) => {
+    const pasang = <K extends keyof Isian>(k: K, setel: (x: Isian[K]) => void) => { if (k in v) setel(v[k] as Isian[K]); };
+    pasang('modeHw', setModeHw); pasang('vpPilih', setVpPilih); pasang('kartuPilih', setKartuPilih);
+    pasang('project', setProject); pasang('customer', setCustomer); pasang('tanggal', setTanggal); pasang('pembuat', setPembuat);
+    pasang('mode', setMode); pasang('satuan', setSatuan); pasang('modulKode', setModulKode); pasang('lingkungan', setLingkungan);
+    pasang('pitch', setPitch); pasang('cabKey', setCabKey); pasang('cabW', setCabW); pasang('cabH', setCabH); pasang('pxIn', setPxIn);
+    pasang('targetW', setTargetW); pasang('targetH', setTargetH); pasang('bulat', setBulat); pasang('screen', setScreen);
+    pasang('kolomIn', setKolomIn); pasang('barisIn', setBarisIn); pasang('dayaUnit', setDayaUnit); pasang('beratUnit', setBeratUnit);
+    pasang('faktorRata', setFaktorRata); pasang('refresh', setRefresh); pasang('bit', setBit); pasang('tegangan', setTegangan);
+    pasang('faktorDaya', setFaktorDaya);
+  };
+  const riwayat = useRiwayat(isian, v => terapkan(v));
+  const [fileMode, setFileMode] = useState<'buka' | 'simpan' | null>(null);
+  const [fileAktif, setFileAktif] = useState<FileAktifLED | null>(null);
 
   //  Satuan aktif: modul dari tabel referensi, atau cabinet bebas.
   const modul = daftarModul.find(m => m.kode === modulKode) ?? daftarModul[0];
@@ -240,7 +268,23 @@ export function KalkulatorLED() {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
       <div className="space-y-4 min-w-0">
-        <Kartu judul="Informasi project">
+        <Kartu judul="Informasi project" aksi={
+          <div className="flex items-center gap-1 print:hidden">
+            <button type="button" onClick={() => setFileMode('buka')} title="Buka hitungan tersimpan"
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"><FolderOpen size={14} /> Buka</button>
+            <button type="button" onClick={() => setFileMode('simpan')} title="Simpan hitungan untuk tim"
+              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"><Save size={14} /> Simpan</button>
+            <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden" role="group" aria-label="Undo dan redo">
+              <button type="button" onClick={riwayat.undo} disabled={!riwayat.bisaUndo} title="Undo (Ctrl+Z)" aria-label="Undo"
+                className="px-2 py-1.5 text-slate-700 hover:bg-slate-50 disabled:text-slate-300 disabled:hover:bg-transparent"><Undo2 size={14} /></button>
+              <button type="button" onClick={riwayat.redo} disabled={!riwayat.bisaRedo} title="Redo (Ctrl+Y)" aria-label="Redo"
+                className="px-2 py-1.5 text-slate-700 hover:bg-slate-50 border-l border-slate-200 disabled:text-slate-300 disabled:hover:bg-transparent"><Redo2 size={14} /></button>
+            </div>
+          </div>
+        }>
+          {fileAktif && (
+            <p className="-mt-1 mb-2 text-[11.5px] text-slate-600 truncate">File: <b className="text-slate-800">{fileAktif.nama}</b>{!fileAktif.bolehUbah && ' · milik anggota lain (simpan = salinan)'}</p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <Teks label="Nama project" nilai={project} onUbah={setProject} />
             <Teks label="Customer" nilai={customer} onUbah={setCustomer} />
@@ -447,6 +491,11 @@ export function KalkulatorLED() {
         </details>
       </div>
       <EditorReferensiLED {...refLED} buka={bukaRef} onTutup={() => setBukaRef(false)} />
+      <FileLED mode={fileMode} onTutup={() => setFileMode(null)} isian={isian}
+        ringkasan={{ project, customer, kode: u.kode, lebarM: h.lebarM, tinggiM: h.tinggiM, resX: h.resX, resY: h.resY, jumlahCab: h.jumlahCab, screen: n }}
+        namaAwal={[project, customer].filter(Boolean).join(' - ') || `LED ${u.kode} ${f(h.lebarM)}×${f(h.tinggiM)} m`}
+        fileAktif={fileAktif} onTersimpan={setFileAktif}
+        onBuka={(data, file) => { terapkan(data as Partial<Isian>); riwayat.mulaiBaru({ ...isian, ...(data as Partial<Isian>) }); setFileAktif(file); }} />
     </div>
   );
 }

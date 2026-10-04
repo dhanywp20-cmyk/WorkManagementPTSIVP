@@ -31,7 +31,7 @@ import { appLink } from '@/lib/app-url';
 import { cetakRequest } from './_components/cetak-request';
 import { unduhPaketRequest } from './_components/paket-unduhan';
 import { Desain3DTools } from './_components/Desain3DTools';
-import { muatTautanDesain3D, type TautanDesain3D } from './_components/desain-3d-request';
+import { muatTautanDesain3D, type TautanDesain3D, type IzinRuang } from './_components/desain-3d-request';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { FilterLipat } from '@/components/shared/FilterLipat';
 import { Toast as ToastBersama } from '@/components/shared/Toast';
@@ -151,19 +151,23 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const activeRequestIdRef = useRef<string | null>(null);
   const [uploadingCategory, setUploadingCategory] = useState<'sld' | 'boq' | 'design3d' | null>(null);
   const [activeAttachTab, setActiveAttachTab] = useState<'all' | 'sld' | 'boq' | 'design3d'>('all');
-  /** Design 3D dari Tools Team (tambahan di samping file PDF) - untuk hitungan tab & ekspor. */
-  const [desain3dTools, setDesain3dTools] = useState<TautanDesain3D[]>([]);
+  /**
+   * Design 3D dari Tools Team (tambahan di samping file PDF). Dimuat SEKALI per
+   * request yang dibuka (ringkasan saja, tanpa gambar) dan dipakai bersama oleh
+   * panel, hitungan tab, cetak, dan ZIP - hemat egress.
+   */
+  const [desain3d, setDesain3d] = useState<{ tautan: TautanDesain3D[]; izin: IzinRuang[]; galat?: string } | null>(null);
+  const desain3dTools = desain3d?.tautan ?? [];
   const [mintaPilih3D, setMintaPilih3D] = useState(0);
-  //  Dimuat sekali per request yang dibuka (ringkasan saja), supaya cetak/ZIP
-  //  selalu lengkap walau tab lampiran yang terbuka bukan "Semua"/"3D".
   const idRequestTerpilih = selectedRequest?.id;
+  const muatDesain3D = useCallback(async (id: string) => {
+    const h = await muatTautanDesain3D(id);
+    setDesain3d(prev => ('galat' in h ? { tautan: prev?.tautan ?? [], izin: prev?.izin ?? [], galat: h.galat } : h));
+  }, []);
   useEffect(() => {
-    setDesain3dTools([]);
-    if (!idRequestTerpilih) return;
-    let hidup = true;
-    void muatTautanDesain3D(idRequestTerpilih).then(h => { if (hidup && !('galat' in h)) setDesain3dTools(h.tautan); });
-    return () => { hidup = false; };
-  }, [idRequestTerpilih]);
+    setDesain3d(null);
+    if (idRequestTerpilih) void muatDesain3D(idRequestTerpilih);
+  }, [idRequestTerpilih, muatDesain3D]);
   // Detail modal: active room tab (0 = Ruangan 1/main, 1+ = rooms[idx-1])
   const [detailRoomIdx, setDetailRoomIdx] = useState(0);
   // Mobile: which panel is active on small screens
@@ -3396,7 +3400,8 @@ Hubungi Admin untuk info lebih lanjut.
                       <div className="mt-3">
                         <Desain3DTools requestId={selectedRequest.id} roomIdx={detailRoomIdx}
                           namaRuang={detailRoomIdx === 0 ? (selectedRequest.room_name?.trim() || 'Ruangan 1') : ((selectedRequest.rooms || [])[detailRoomIdx - 1]?.room_name?.trim() || `Ruangan ${detailRoomIdx + 1}`)}
-                          projectName={selectedRequest.project_name} mintaPilih={mintaPilih3D} onMuat={setDesain3dTools} notify={notify} />
+                          projectName={selectedRequest.project_name} mintaPilih={mintaPilih3D} data={desain3d}
+                          muatUlang={() => muatDesain3D(selectedRequest.id)} notify={notify} />
                       </div>
                     )}
                       </>);

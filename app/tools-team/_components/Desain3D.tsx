@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type * as T from 'three';
 import type { OrbitControls as KontrolOrbit } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Copy, Crosshair, Maximize2, Move, Rotate3d, RotateCcw, RotateCw, Video, ZoomIn, ZoomOut } from 'lucide-react';
+import { Copy, Crosshair, FolderOpen, History, Maximize2, Move, Redo2, Rotate3d, RotateCcw, RotateCw, Undo2, Video, ZoomIn, ZoomOut } from 'lucide-react';
+import { useRiwayat } from './riwayat';
 import { FAKTOR_PANDANG, type JenisPandang } from '@/lib/av-hitung';
 import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f } from './ui';
 import { Ikon } from '@/components/shared/Ikon';
@@ -10,11 +11,12 @@ import { Modal } from '@/components/shared/Modal';
 import {
   type Benda, type Ruang, type Kotak, type ItemKatalog, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturPolaUji,
-  salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, layarTerdekat, proyektorKeLayar, throwRatioDari,
+  salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc } from './cetak';
 import { getSession } from '@/lib/auth';
+import { urlGambarDesain } from '@/lib/tools-team';
 
 /**
  * Desain 3D Ruang AV - dibangun di atas three.js (threejs.org) + add-on resminya:
@@ -119,7 +121,7 @@ export default function Desain3D() {
   const [benda, setBenda] = useState<Benda[]>(() => contohAwal(RUANG_AWAL));
   const [pilih, setPilih] = useState<string | null>(null);
   const [panel, setPanel] = useState(false);
-  const [modal, setModal] = useState<'ruang' | 'tambah' | 'daftar' | 'simpan' | null>(null);
+  const [modal, setModal] = useState<'ruang' | 'tambah' | 'daftar' | 'simpan' | 'buka' | null>(null);
   const [targetRuang, setTargetRuang] = useState<'0' | '1'>('0');
   const [tampilan, setTampilan] = useState<'3d' | 'atas' | 'kursi'>('3d');
   const [modeGizmo, setModeGizmo] = useState<'translate' | 'rotate'>('translate');
@@ -156,6 +158,10 @@ export default function Desain3D() {
   const inputModel = useRef<HTMLInputElement>(null);
   const bendaRef = useRef(benda); bendaRef.current = benda;
   const ruangRef = useRef(ruang); ruangRef.current = ruang;
+
+  //  Undo / redo seluruh desain (ruangan + benda).
+  const potret = useMemo(() => ({ ruang, benda }), [ruang, benda]);
+  const riwayat = useRiwayat(potret, v => { ruangRef.current = v.ruang; setRuang(v.ruang); setBenda(v.benda); });
 
   const kotakRuang = useMemo(() => daftarRuang(ruang), [ruang]);
   const batas = useMemo(() => batasDunia(ruang), [ruang]);
@@ -377,21 +383,47 @@ export default function Desain3D() {
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     const { THREE, grupRuang } = m;
+    //  Lepas geometri, material & tekstur lantai lama (ukuran ruang bisa berubah tiap ketukan).
+    grupRuang.traverse(o => {
+      const mesh = o as T.Mesh; mesh.geometry?.dispose();
+      const mats = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
+      for (const mt of mats) { for (const v of Object.values(mt)) if (v instanceof THREE.Texture) v.dispose(); mt.dispose(); }
+    });
     grupRuang.clear();
     const daftar = daftarRuang(ruang);
     const lantaiDari = (i: number) => (i === 0 ? ruang.lantai : ruang.r2?.lantai ?? 'kayu');
     const bahanDinding = new THREE.MeshStandardMaterial({ color: 0xf5f5f4, roughness: 0.95, side: THREE.FrontSide });
     const garis = new THREE.LineBasicMaterial({ color: 0xa8a29e });
     const pintuDi = daftar.length > 1 && ruang.r2?.pintu ? Math.max(0.6, Math.min(daftar[0].l, daftar[1].l) - 1.0) : null;
+    //  Sekat kaca antar ruang: tembus pandang dari kedua sisi, dengan rangka aluminium.
+    const kaca = daftar.length > 1 && ruang.r2?.sekat === 'kaca';
+    const bahanKaca = new THREE.MeshPhysicalMaterial({
+      color: 0xcfe6f5, roughness: 0.05, metalness: 0, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false,
+    });
+    const bahanRangka = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.7, roughness: 0.35 });
 
-    /** Dinding sepanjang `panjang`, tengah (x,z), opsional lubang pintu (pusat lokal). */
-    const dinding = (panjang: number, tinggi: number, x: number, z: number, rotY: number, lubang: number | null) => {
+    /** Dinding sepanjang `panjang`, tengah (x,z), opsional lubang pintu (pusat lokal); `tembus` = sekat kaca. */
+    const dinding = (panjang: number, tinggi: number, x: number, z: number, rotY: number, lubang: number | null, tembus = false) => {
       const gw = new THREE.Group(); gw.position.set(x, 0, z); gw.rotation.y = rotY;
       const bidang = (x0: number, x1: number, y0: number, y1: number) => {
         if (x1 - x0 < 0.01 || y1 - y0 < 0.01) return;
-        const d = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, y1 - y0), bahanDinding);
-        d.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0); d.receiveShadow = true; gw.add(d);
+        const d = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, y1 - y0), tembus ? bahanKaca : bahanDinding);
+        d.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0); d.receiveShadow = !tembus; gw.add(d);
       };
+      if (tembus) {
+        //  Rangka: tiang tiap ±1,2 m + ambang atas & bawah, supaya kacanya terbaca sebagai kaca.
+        const n = Math.max(1, Math.round(panjang / 1.2));
+        for (let i = 0; i <= n; i++) {
+          const xt = -panjang / 2 + (panjang * i) / n;
+          if (lubang !== null && Math.abs(xt - lubang) < 0.5) continue;   // jangan menghalangi pintu
+          const t = new THREE.Mesh(new THREE.BoxGeometry(0.04, tinggi, 0.05), bahanRangka);
+          t.position.set(xt, tinggi / 2, 0); gw.add(t);
+        }
+        for (const y of [0.02, tinggi - 0.02]) {
+          const a = new THREE.Mesh(new THREE.BoxGeometry(panjang, 0.04, 0.05), bahanRangka);
+          a.position.set(0, y, 0); gw.add(a);
+        }
+      }
       if (lubang === null) bidang(-panjang / 2, panjang / 2, 0, tinggi);
       else {
         const lp = 0.9, tp = Math.min(2.1, tinggi - 0.1);
@@ -413,8 +445,9 @@ export default function Desain3D() {
       dinding(k.p, k.t, k.x0 + k.p / 2, 0, 0, null);                    // depan
       dinding(k.p, k.t, k.x0 + k.p / 2, k.l, Math.PI, null);            // belakang
       //  Kiri (rotY +90°: sumbu lokal x = -z dunia) & kanan (-90°: lokal x = +z dunia).
-      dinding(k.l, k.t, k.x0, k.l / 2, Math.PI / 2, i === 1 && pintuDi !== null ? -(pintuDi - k.l / 2) : null);
-      dinding(k.l, k.t, k.x0 + k.p, k.l / 2, -Math.PI / 2, i === 0 && daftar.length > 1 && pintuDi !== null ? pintuDi - k.l / 2 : null);
+      //  Sekat kaca cukup satu bidang (milik ruang 1) - dua bidang tembus pandang di posisi yang sama akan berkedip.
+      if (!(kaca && i === 1)) dinding(k.l, k.t, k.x0, k.l / 2, Math.PI / 2, i === 1 && pintuDi !== null ? -(pintuDi - k.l / 2) : null);
+      dinding(k.l, k.t, k.x0 + k.p, k.l / 2, -Math.PI / 2, i === 0 && daftar.length > 1 && pintuDi !== null ? pintuDi - k.l / 2 : null, kaca && i === 0);
     });
   }, [ruang, siap]);
 
@@ -679,7 +712,7 @@ export default function Desain3D() {
     const b0 = bendaBaru(it.jenis, k, it.atur);
     //  Proyektor langsung menghadap layar di ruang itu (bila ada) pada jarak lempar idealnya.
     const layar = b0.jenis === 'proyektor' ? layarTerdekat(b0, benda, ruang) : null;
-    const b = layar ? proyektorKeLayar(b0, layar, k) : b0;
+    const b = layar ? proyektorKeLayar(b0, layar, k, ruang) : b0;
     setBenda(bs => [...bs, b]); setPilih(b.id); setModal(null);
   };
 
@@ -870,7 +903,8 @@ export default function Desain3D() {
       subjudul: namaDesain || 'Tanpa nama',
       kepala: [['Dibuat oleh', getSession<{ full_name?: string }>()?.full_name ?? '']],
       seksi: [
-        { judul: 'Ruangan', jenis: 'tabel', kepala: ['Ruang', 'Panjang', 'Lebar', 'Plafon', 'Luas'], rataKanan: [1, 2, 3, 4],
+        { judul: duaRuang ? `Ruangan · sekat ${ruang.r2?.sekat === 'kaca' ? 'kaca' : 'tembok'}${ruang.r2?.pintu ? ' dengan pintu penghubung' : ''}` : 'Ruangan',
+          jenis: 'tabel', kepala: ['Ruang', 'Panjang', 'Lebar', 'Plafon', 'Luas'], rataKanan: [1, 2, 3, 4],
           isi: kotakRuang.map((k, i) => [`Ruang ${i + 1}`, `${fm(k.p)} m`, `${fm(k.l)} m`, `${fm(k.t)} m`, `${fm(k.p * k.l)} m²`]) },
         { judul: 'Tampilan desain', jenis: 'html',
           html: `<div class="gambar dua">${gambar(perspektif, 'Perspektif')}${gambar(denah, 'Denah dari atas')}</div>` },
@@ -916,25 +950,34 @@ export default function Desain3D() {
   useEffect(() => { if (modal === 'simpan') void muatDaftarTim(); }, [modal]);
 
   /**
-   * Pratinjau kecil (480 px, JPEG) untuk daftar & Request Design: dirender dari
-   * sudut kamera sekarang tanpa gizmo/sorotan, lalu diperkecil.
+   * Gambar desain dari sudut kamera sekarang tanpa gizmo/sorotan: pratinjau
+   * kecil (480 px) untuk daftar, dan versi tajam (±1600 px, dirender 2x) untuk
+   * cetak/ZIP Request Design. Kualitas JPEG diturunkan bila melebihi batas.
    */
-  const pratinjauKecil = (): string | null => {
-    const m = mesin.current; if (!m) return null;
+  const pratinjau = (): { kecil: string | null; hd: string | null } => {
+    const m = mesin.current; if (!m) return { kecil: null, hd: null };
+    const rasioLama = m.renderer.getPixelRatio();
+    const sorot = m.grupBenda.children.filter(o => o.userData.sorot);
     try {
-      const sorot = m.grupBenda.children.filter(o => o.userData.sorot);
       m.gizmo.detach(); sorot.forEach(o => { o.visible = false; });
+      m.renderer.setPixelRatio(Math.min(3, Math.max(2, rasioLama * 2)));
       m.renderer.render(m.scene, m.kamera);
       const src = m.renderer.domElement;
-      const w = 480, h = Math.max(1, Math.round((w * src.height) / Math.max(1, src.width)));
-      const c = document.createElement('canvas'); c.width = w; c.height = h;
-      c.getContext('2d')?.drawImage(src, 0, 0, w, h);
+      const jadi = (lebar: number, maks: number) => {
+        const w = Math.min(lebar, src.width), h = Math.max(1, Math.round((w * src.height) / Math.max(1, src.width)));
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        const g = c.getContext('2d'); if (!g) return null;
+        g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, w, h);
+        for (const q of [0.86, 0.74, 0.6, 0.45]) { const u = c.toDataURL('image/jpeg', q); if (u.length <= maks) return u; }
+        return null;
+      };
+      //  Data URL base64 ±1,33x ukuran JPEG; batas di server 80 KB / 560 KB.
+      return { kecil: jadi(400, 78_000), hd: jadi(1400, 550_000) };
+    } catch { return { kecil: null, hd: null }; } finally {
+      m.renderer.setPixelRatio(rasioLama);
       sorot.forEach(o => { o.visible = true; });
       if (pilih) { const o = m.cache.get(pilih)?.obj; if (o) m.gizmo.attach(o); }
-      let url = c.toDataURL('image/jpeg', 0.72);
-      if (url.length > 110_000) url = c.toDataURL('image/jpeg', 0.45);
-      return url.length <= 110_000 ? url : null;
-    } catch { return null; }
+    }
   };
 
   /** Simpan ke server = versi baru. Desain milik orang lain (atau `baru`) disimpan sebagai salinan. */
@@ -948,7 +991,7 @@ export default function Desain3D() {
         body: JSON.stringify({
           id: timpa, versi: timpa ? desainAktif?.versi : undefined, nama,
           data: { ruang: sumber?.ruang ?? ruang, benda: bendaBersih(sumber?.benda ?? benda) },
-          gambar: sumber ? undefined : pratinjauKecil() ?? undefined,
+          ...(sumber ? {} : (({ kecil, hd }) => ({ gambar: kecil ?? undefined, gambar_hd: hd ?? undefined }))(pratinjau())),
         }),
       });
       const j = await r.json().catch(() => null);
@@ -978,7 +1021,9 @@ export default function Desain3D() {
         setStatusSimpan({ teks, nada: 'galat' }); setPesan(teks); return;
       }
       const d = j.desain as { id: string; nama: string; versi: number; versiTerbaru: number; data: { ruang: Ruang; benda: Benda[] }; bolehUbah: boolean };
-      setRuang({ ...RUANG_AWAL, ...d.data.ruang }); setBenda(d.data.benda); setNamaDesain(d.nama);
+      const ruangBaru = { ...RUANG_AWAL, ...d.data.ruang };
+      setRuang(ruangBaru); setBenda(d.data.benda); setNamaDesain(d.nama);
+      riwayat.mulaiBaru({ ruang: ruangBaru, benda: d.data.benda });
       //  Versi lama: menyimpan membuat versi baru dari isi ini (riwayat tidak diubah).
       setDesainAktif({ id: d.id, bolehUbah: d.bolehUbah, versi: d.versiTerbaru });
       setLihatVersi(d.versi !== d.versiTerbaru ? { versi: d.versi, terbaru: d.versiTerbaru } : null);
@@ -1039,26 +1084,36 @@ export default function Desain3D() {
             Belum menghadap layar proyektor di ruang ini - cahaya jatuh di dinding sejauh {f(sn.jarak)} m (gambar {f(sn.lebar)} × {f(sn.tinggi)} m).
           </p>
           {dekat
-            ? <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, dekat, k))}>Arahkan ke {dekat.nama}</button>
+            ? <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, dekat, k, ruang))}>Arahkan ke {dekat.nama}</button>
             : <p className="text-[12px] text-slate-600">Tambahkan Layar proyektor (Tambah → Display) untuk menghitung jarak lempar.</p>}
         </div>
       );
     }
     const selisih = (sn.lebar - lyr.w) / lyr.w;
-    const pas = Math.abs(selisih) <= 0.03;
+    const pasLebar = Math.abs(selisih) <= 0.03;
+    const sv = sn.selisihV ?? 0, sh = sn.selisihH ?? 0;
+    const pasTinggi = Math.abs(sv) <= 0.03, pasSamping = Math.abs(sh) <= 0.05;
+    const cm = (m: number) => `${f(Math.abs(m) * 100, 0)} cm`;
     return (
       <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-2.5 space-y-2">
         <p className="text-[12px] text-slate-700 leading-relaxed">
-          Ke <b>{lyr.nama}</b>: jarak lempar <b>{f(sn.jarak)} m</b>, gambar {f(sn.lebar)} × {f(sn.tinggi)} m.
+          Ke <b>{lyr.nama}</b>: jarak lempar <b>{f(sn.jarak)} m</b>, gambar {f(sn.lebar)} × {f(sn.tinggi)} m, tilt {f(tiltDari(p), 1)}°.
           {' '}Agar pas selebar layar ({f(lyr.w)} m) perlu throw ratio <b>{f(sn.trPas ?? 0)} : 1</b>.
         </p>
-        <p className={`text-[12px] font-semibold ${pas ? 'text-emerald-700' : 'text-amber-700'}`}>
-          {pas ? 'Gambar pas di layar.' : selisih > 0 ? `Gambar melebihi layar ${f(sn.lebar - lyr.w)} m.` : `Gambar kurang ${f(lyr.w - sn.lebar)} m dari lebar layar.`}
-        </p>
-        {!pas && (
+        <ul className="text-[12px] font-semibold space-y-0.5">
+          <li className={pasLebar ? 'text-emerald-700' : 'text-amber-700'}>
+            {pasLebar ? 'Lebar gambar pas.' : selisih > 0 ? `Gambar melebihi lebar layar ${f(sn.lebar - lyr.w)} m.` : `Gambar kurang ${f(lyr.w - sn.lebar)} m dari lebar layar.`}
+          </li>
+          <li className={pasTinggi ? 'text-emerald-700' : 'text-amber-700'}>
+            {pasTinggi ? 'Tinggi gambar pas di tengah layar.' : sv > 0 ? `Gambar ${cm(sv)} terlalu tinggi - tilt ke bawah (menunduk).` : `Gambar ${cm(sv)} terlalu rendah - tilt ke atas.`}
+          </li>
+          {!pasSamping && <li className="text-amber-700">Gambar bergeser {cm(sh)} ke {sh > 0 ? 'kanan' : 'kiri'} - atur pan.</li>}
+        </ul>
+        {!(pasLebar && pasTinggi && pasSamping) && (
           <div className="flex gap-1.5 flex-wrap">
-            <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round((sn.trPas ?? 1.5) * 100) / 100 })}>Pakai throw ratio {f(sn.trPas ?? 0)}</button>
-            <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, lyr, k))}>Geser ke {f(throwRatioDari(p) * lyr.w)} m dari layar</button>
+            {!pasTinggi && <button type="button" className={tombolKecil} onClick={() => gantiBenda(tiltKeLayar(p, lyr, ruang))}>Atur tilt otomatis</button>}
+            {!pasLebar && <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round((sn.trPas ?? 1.5) * 100) / 100 })}>Pakai throw ratio {f(sn.trPas ?? 0)}</button>}
+            <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, lyr, k, ruang))}>Posisikan otomatis ({f(throwRatioDari(p) * lyr.w)} m, pan & tilt)</button>
           </div>
         )}
       </div>
@@ -1081,7 +1136,14 @@ export default function Desain3D() {
             <button type="button" onClick={() => setModal('tambah')} className={tombolUtama}><Ikon nama="➕" ukuran={14} /> Tambah</button>
             <button type="button" onClick={() => setModal('ruang')} className={tombol}><Ikon nama="🏠" ukuran={14} /> Ruangan</button>
             <button type="button" onClick={() => setModal('daftar')} className={tombol}><Ikon nama="📋" ukuran={14} /> Benda ({benda.length})</button>
+            <button type="button" onClick={() => setModal('buka')} className={tombol}><FolderOpen size={14} /> Buka</button>
             <button type="button" onClick={() => setModal('simpan')} className={tombol}><Ikon nama="💾" ukuran={14} /> Simpan</button>
+            <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden" role="group" aria-label="Undo dan redo">
+              <button type="button" onClick={riwayat.undo} disabled={!riwayat.bisaUndo} title="Undo (Ctrl+Z)" aria-label="Undo"
+                className="px-2.5 py-1.5 text-slate-700 hover:bg-slate-50 disabled:text-slate-300 disabled:hover:bg-transparent"><Undo2 size={15} /></button>
+              <button type="button" onClick={riwayat.redo} disabled={!riwayat.bisaRedo} title="Redo (Ctrl+Y)" aria-label="Redo"
+                className="px-2.5 py-1.5 text-slate-700 hover:bg-slate-50 border-l border-slate-200 disabled:text-slate-300 disabled:hover:bg-transparent"><Redo2 size={15} /></button>
+            </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Segmen nilai={tampilan} onUbah={v => pilihSudut(v === 'kursi' ? 'kursi' : v === 'atas' ? 'atas' : 'iso')}
@@ -1298,6 +1360,10 @@ export default function Desain3D() {
               <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
                 <input type="checkbox" className="w-4 h-4" checked={ruang.r2.pintu} onChange={e => setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, pintu: e.target.checked } }))} /> Pintu penghubung
               </label>
+              <div className="mt-2">
+                <Segmen label="Sekat antar ruang" nilai={ruang.r2.sekat ?? 'tembok'} onUbah={v => setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, sekat: v } }))}
+                  opsi={[{ v: 'tembok', l: 'Tembok (tertutup)' }, { v: 'kaca', l: 'Kaca (saling terlihat)' }]} />
+              </div>
             </div>
           )}
           {ruang.r2?.aktif && (
@@ -1355,6 +1421,10 @@ export default function Desain3D() {
         })}
       </Modal>
 
+      {/* ── Modal: Buka desain tersimpan (seluruh tim) + riwayat versi ── */}
+      <ModalBukaDesain buka={modal === 'buka'} onTutup={() => setModal(null)} aktifId={desainAktif?.id ?? null}
+        onBuka={(id, versi) => void bukaTim(id, versi)} />
+
       {/* ── Modal: Simpan / buka (server, dibagikan ke tim) ── */}
       <Modal buka={modal === 'simpan'} onTutup={() => setModal(null)} judul="Simpan & buka desain" ukuran="md" ikon={<Ikon nama="💾" ukuran={18} />}
         keterangan="Desain tersimpan di server dan bisa dibuka seluruh tim. Gambar unggahan di layar & model GLB impor tidak ikut tersimpan.">
@@ -1411,7 +1481,7 @@ export default function Desain3D() {
             <ul className="mt-1 divide-y divide-slate-100">
               {tersimpan.map(t => (
                 <li key={t.nama} className="flex items-center justify-between gap-2 py-2 text-[13px]">
-                  <button type="button" onClick={() => { setRuang({ ...RUANG_AWAL, ...t.ruang }); setBenda(t.benda); setNamaDesain(t.nama); setDesainAktif(null); setPilih(null); setModal(null); }}
+                  <button type="button" onClick={() => { const rb = { ...RUANG_AWAL, ...t.ruang }; setRuang(rb); setBenda(t.benda); riwayat.mulaiBaru({ ruang: rb, benda: t.benda }); setNamaDesain(t.nama); setDesainAktif(null); setPilih(null); setModal(null); }}
                     className="text-blue-700 font-semibold hover:underline truncate text-left">{t.nama}</button>
                   <span className="flex items-center gap-2 flex-shrink-0 text-slate-600">
                     <button type="button" disabled={sibukSimpan} onClick={() => void unggahLokal(t)}
@@ -1426,5 +1496,104 @@ export default function Desain3D() {
         )}
       </Modal>
     </div>
+  );
+}
+
+interface BarisDesain {
+  id: string; nama: string; versi: number; jumlah_benda: number; dibuat_oleh_nama: string; diubah_oleh_nama: string;
+  updated_at: string; ruang: Ruang | null;
+}
+
+/** Pratinjau satu versi: dimuat malas & di-cache peramban; placeholder bila belum ada gambar. */
+export function GambarVersi({ id, versi, className }: { id: string; versi: number; className: string }) {
+  const [gagal, setGagal] = useState(false);
+  if (gagal) return <div className={`${className} rounded-lg bg-slate-100 grid place-items-center flex-shrink-0 text-slate-400`}><Ikon nama="🧊" ukuran={18} /></div>;
+  return <img src={urlGambarDesain(id, versi)} alt="" loading="lazy" decoding="async" onError={() => setGagal(true)}
+    className={`${className} object-cover rounded-lg border border-slate-100 flex-shrink-0 bg-slate-50`} />;
+}
+
+/**
+ * Daftar desain tersimpan seluruh tim untuk dibuka lagi (cari di server),
+ * dengan pratinjau dan riwayat versi - versi lama bisa dibuka; menyimpannya
+ * membuat versi baru, riwayat tidak berubah.
+ */
+function ModalBukaDesain({ buka, onTutup, aktifId, onBuka }: {
+  buka: boolean; onTutup: () => void; aktifId: string | null; onBuka: (id: string, versi?: number) => void;
+}) {
+  const [q, setQ] = useState('');
+  const [daftar, setDaftar] = useState<BarisDesain[] | null>(null);
+  const [galat, setGalat] = useState('');
+  const [riwayatId, setRiwayatId] = useState<string | null>(null);
+  const [versi, setVersi] = useState<{ versi: number; created_at: string; dibuat_oleh_nama: string }[] | null>(null);
+
+  useEffect(() => {
+    if (!buka) return;
+    let hidup = true;
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/tools-team/desain${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`, { credentials: 'include', cache: 'no-store' });
+        const j = await r.json().catch(() => null);
+        if (!hidup) return;
+        if (r.ok && j?.ok) { setDaftar(j.daftar); setGalat(''); } else { setDaftar([]); setGalat(j?.alasan ?? 'Daftar tidak bisa dimuat.'); }
+      } catch { if (hidup) { setDaftar([]); setGalat('Tidak terhubung ke server.'); } }
+    }, q ? 300 : 0);
+    return () => { hidup = false; clearTimeout(t); };
+  }, [buka, q]);
+
+  const lihatRiwayat = async (id: string) => {
+    if (riwayatId === id) { setRiwayatId(null); return; }
+    setRiwayatId(id); setVersi(null);
+    try {
+      const r = await fetch(`/api/tools-team/desain?id=${encodeURIComponent(id)}&riwayat=1`, { credentials: 'include', cache: 'no-store' });
+      const j = await r.json().catch(() => null);
+      setVersi(r.ok && j?.ok ? j.versi : []);
+    } catch { setVersi([]); }
+  };
+  const tgl = (x: string) => new Date(x).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <Modal buka={buka} onTutup={onTutup} judul="Buka desain tersimpan" ukuran="lg" ikon={<Ikon nama="📁" ukuran={18} />}
+      keterangan="Semua desain yang disimpan anggota tim. Versi lama tetap bisa dibuka dari riwayat.">
+      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cari nama desain atau pembuat" aria-label="Cari desain"
+        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm mb-3" />
+      {galat && <p className="text-[12.5px] text-rose-700 mb-2">{galat}</p>}
+      {daftar === null ? <p className="text-sm text-slate-500">Memuat...</p> : daftar.length === 0 ? (
+        <p className="text-sm text-slate-500">{q ? 'Tidak ada desain yang cocok.' : 'Belum ada desain tersimpan. Simpan desain lewat tombol Simpan.'}</p>
+      ) : (
+        <ul className="grid sm:grid-cols-2 gap-2">
+          {daftar.map(d => (
+            <li key={d.id} className={`rounded-xl border p-2 ${aktifId === d.id ? 'border-blue-400 bg-blue-50/40' : 'border-slate-200'}`}>
+              <div className="flex gap-2.5">
+                <GambarVersi id={d.id} versi={d.versi} className="w-24 h-14" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-bold text-slate-900 truncate">{d.nama}{aktifId === d.id && <span className="ml-1 text-[11px] font-bold text-emerald-700">· terbuka</span>}</p>
+                  <p className="text-[11.5px] text-slate-600 truncate">v{d.versi} · {d.ruang ? `${d.ruang.p}×${d.ruang.l} m${d.ruang.r2?.aktif ? ' + 1 ruang' : ''} · ` : ''}{d.jumlah_benda} benda</p>
+                  <p className="text-[11px] text-slate-500 truncate">{d.diubah_oleh_nama || d.dibuat_oleh_nama || '—'} · {tgl(d.updated_at)}</p>
+                </div>
+              </div>
+              <div className="mt-2 flex gap-1.5">
+                <button type="button" onClick={() => onBuka(d.id)} className="flex-1 px-2 py-1.5 rounded-lg text-[12px] font-bold text-white bg-blue-700 hover:bg-blue-800">Buka</button>
+                {d.versi > 1 && (
+                  <button type="button" onClick={() => void lihatRiwayat(d.id)} aria-expanded={riwayatId === d.id}
+                    className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[12px] font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
+                    <History size={13} /> Riwayat ({d.versi})
+                  </button>
+                )}
+              </div>
+              {riwayatId === d.id && (
+                <ul className="mt-2 border-t border-slate-100 pt-1.5 space-y-0.5 max-h-48 overflow-y-auto">
+                  {versi === null ? <li className="text-[12px] text-slate-500">Memuat...</li> : versi.map(v => (
+                    <li key={v.versi} className="flex items-center justify-between gap-2 text-[12px]">
+                      <span className="text-slate-700"><b>v{v.versi}</b> · {v.dibuat_oleh_nama || '—'} · {tgl(v.created_at)}</span>
+                      <button type="button" onClick={() => onBuka(d.id, v.versi)} className="text-blue-700 font-bold hover:underline">Buka</button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Modal>
   );
 }

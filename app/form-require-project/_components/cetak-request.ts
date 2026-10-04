@@ -165,7 +165,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #
   </div>
 </div>
 
-${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : selectedRequest.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`)}
+${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : selectedRequest.rooms?.[i - 1]?.room_name)?.trim() || `Ruangan ${i + 1}`, window.location.origin)}
 
 <!-- FOOTER -->
 <div class="footer">
@@ -182,5 +182,11 @@ ${selectedRequest.assign_name ? `
 
 </div></body></html>`;
   const w = window.open('', '_blank');
-  if (w) { w.document.write(printContent); w.document.close(); setTimeout(() => w.print(), 300); }
+  if (w) {
+    w.document.write(printContent); w.document.close();
+    //  Tunggu gambar Design 3D selesai dimuat sebelum dialog cetak.
+    const gambar = Array.from(w.document.images);
+    Promise.all(gambar.map(g => (g.complete ? Promise.resolve() : new Promise(r => { g.onload = g.onerror = () => r(null); }))))
+      .then(() => setTimeout(() => w.print(), 200));
+  }
 }

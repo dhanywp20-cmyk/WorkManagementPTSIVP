@@ -1,5 +1,5 @@
 import { statusConfig, type ProjectRequest, type ProjectAttachment } from './shared';
-import { htmlSeksiDesain3D, bytePratinjau, type TautanDesain3D } from './desain-3d-request';
+import { htmlSeksiDesain3D, byteGambarHD, type TautanDesain3D } from './desain-3d-request';
 
 /**
  * Paket unduhan satu Request Design Project: lembar detail plus seluruh
@@ -244,13 +244,14 @@ ${htmlSeksiDesain3D(desain3d, i => (i === 0 ? selectedRequest.room_name : select
       } catch { /* skip inaccessible files */ }
     }
 
-    // Design 3D dari Tools Team: pratinjau versi yang ditautkan (ringkasannya ada di form detail).
-    desain3d.forEach((t, i) => {
-      const data = bytePratinjau(t.snapshot?.gambar);
-      if (!data) return;
+    // Design 3D dari Tools Team: gambar HD versi yang ditautkan (ringkasannya ada di form detail).
+    for (let i = 0; i < desain3d.length; i++) {
+      const t = desain3d[i];
+      const data = await byteGambarHD(t);
+      if (!data) continue;
       const nama = (t.snapshot?.nama ?? 'Design3D').replace(/[^a-zA-Z0-9]+/g, '_').substring(0, 40);
       zipFiles.push({ name: `${folderName}/04_Design3D_Tools_${i + 1}_${nama}_v${t.versi}.jpg`, data });
-    });
+    }
 
     // General files - download all
     const generalFiles = attachments.filter(a => a.attachment_category === 'general' || !a.attachment_category);

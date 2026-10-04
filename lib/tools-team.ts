@@ -73,9 +73,21 @@ export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; b
 // ── Versi desain & tautan ke Request Design Project ────────────────────────
 
 /** Gambar pratinjau per versi: data URL JPEG/WebP kecil (bukan file terpisah). */
-export const MAKS_BYTE_GAMBAR = 120_000;
-export function bersihkanGambar(x: unknown): string | null {
-  if (typeof x !== 'string' || x.length > MAKS_BYTE_GAMBAR) return null;
+export const MAKS_BYTE_GAMBAR = 80_000;
+/** Gambar resolusi tinggi (±1400 px) untuk cetak/ZIP Request Design - diambil hanya saat ekspor. */
+export const MAKS_BYTE_GAMBAR_HD = 560_000;
+
+/**
+ * Alamat gambar satu versi desain. Gambar tidak pernah ikut JSON daftar;
+ * dimuat terpisah & di-cache peramban selamanya (versi tidak berubah).
+ */
+export const urlGambarDesain = (id: string, versi: number, hd = false) =>
+  `/api/tools-team/desain/gambar?id=${encodeURIComponent(id)}&v=${versi}${hd ? '&hd=1' : ''}`;
+
+/** Riwayat yang disimpan per desain: versi lebih lama dari ini (dan tidak ditautkan) dihapus. */
+export const SIMPAN_VERSI = 20;
+export function bersihkanGambar(x: unknown, maks = MAKS_BYTE_GAMBAR): string | null {
+  if (typeof x !== 'string' || x.length > maks) return null;
   return /^data:image\/(jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(x) ? x : null;
 }
 
@@ -143,4 +155,34 @@ export function bolehUbahTautan(role: string | null | undefined, status: string)
     return { ok: false, alasan: 'Ruangan sudah Completed - tautan Design 3D terkunci. Ubah status ruangan bila perlu revisi.' };
   }
   return { ok: true };
+}
+
+// ── Kalkulator LED tersimpan (/api/tools-team/led) ─────────────────────────
+
+/** Batas ukuran satu hitungan LED tersimpan (semua isian kalkulator). */
+export const MAKS_BYTE_LED = 20_000;
+
+export interface RingkasanLED {
+  project: string; customer: string; kode: string; lebarM: number; tinggiM: number;
+  resX: number; resY: number; jumlahCab: number; screen: number;
+}
+
+/** Isian kalkulator LED yang sah (objek datar berukuran wajar), atau alasan penolakan. */
+export function periksaIsianLED(x: unknown): { ok: true; data: Record<string, unknown> } | { ok: false; alasan: string } {
+  if (!x || typeof x !== 'object' || Array.isArray(x)) return { ok: false, alasan: 'Isian kalkulator tidak sah.' };
+  const data = x as Record<string, unknown>;
+  if (Object.keys(data).length > 60) return { ok: false, alasan: 'Isian kalkulator tidak sah.' };
+  if (JSON.stringify(data).length > MAKS_BYTE_LED) return { ok: false, alasan: 'Isian kalkulator terlalu besar.' };
+  return { ok: true, data };
+}
+
+/** Ringkasan untuk daftar - hanya field yang dikenal, teks dipotong, angka harus angka. */
+export function bersihkanRingkasanLED(x: unknown): RingkasanLED {
+  const r = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
+  const t = (v: unknown, n: number) => (typeof v === 'string' ? v.slice(0, n) : '');
+  const a = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+  return {
+    project: t(r.project, 120), customer: t(r.customer, 120), kode: t(r.kode, 30),
+    lebarM: a(r.lebarM), tinggiM: a(r.tinggiM), resX: a(r.resX), resY: a(r.resY), jumlahCab: a(r.jumlahCab), screen: a(r.screen) || 1,
+  };
 }

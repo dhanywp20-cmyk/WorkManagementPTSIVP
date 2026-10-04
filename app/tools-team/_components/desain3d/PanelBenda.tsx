@@ -153,6 +153,28 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
               const namaBawaan = ['Proyektor', 'Proyektor plafon', 'Proyektor portabel'].includes(b.nama);
               onUbah({ ...b, pasangProyektor: v, w: baru.w, h: baru.h, d: baru.d, elev: baru.elev, nama: namaBawaan ? baru.nama : b.nama });
             }} opsi={[{ v: 'plafon', l: 'Gantung plafon' }, { v: 'meja', l: 'Portabel di meja' }]} />
+            <div>
+              <span className={label}>Pan & tilt</span>
+              <div className="grid grid-cols-2 gap-2">
+                <Angka label="Pan (kiri-kanan)" nilai={b.rot} satuan="°" step={1}
+                  onUbah={v => set({ rot: ((Math.round(v * 10) / 10 % 360) + 360) % 360 })} />
+                <Angka label="Tilt (naik-turun)" nilai={b.tilt ?? 0} satuan="°" step={0.5} min={-45}
+                  onUbah={v => v >= -45 && v <= 45 && set({ tilt: Math.round(v * 10) / 10 })} />
+              </div>
+              {/*  Tombol geser halus: lebih mudah di HP daripada mengetik derajat. */}
+              <div className="mt-1.5 grid grid-cols-4 gap-1" role="group" aria-label="Geser pan & tilt 1 derajat">
+                {[
+                  { l: '◀ Pan', t: 'Pan ke kiri 1°', ubah: { rot: (((b.rot + 1) % 360) + 360) % 360 } },
+                  { l: 'Pan ▶', t: 'Pan ke kanan 1°', ubah: { rot: (((b.rot - 1) % 360) + 360) % 360 } },
+                  { l: '▲ Tilt', t: 'Tilt naik 1°', ubah: { tilt: Math.min(45, Math.round(((b.tilt ?? 0) + 1) * 10) / 10) } },
+                  { l: 'Tilt ▼', t: 'Tilt turun 1° (menunduk)', ubah: { tilt: Math.max(-45, Math.round(((b.tilt ?? 0) - 1) * 10) / 10) } },
+                ].map(x => (
+                  <button key={x.l} type="button" title={x.t} aria-label={x.t} onClick={() => set(x.ubah)}
+                    className="px-1 py-1.5 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">{x.l}</button>
+                ))}
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1">Tilt negatif = menunduk. Pan memutar proyektor ke kiri/kanan.</p>
+            </div>
             <Angka label="Throw ratio lensa" nilai={b.throwRatio ?? 1.5} satuan=": 1" step={0.01}
               onUbah={v => v >= 0.2 && v <= 10 && set({ throwRatio: Math.round(v * 100) / 100 })}
               bantuan="Jarak lempar ÷ lebar gambar (lihat datasheet; lensa zoom = rentang)." />

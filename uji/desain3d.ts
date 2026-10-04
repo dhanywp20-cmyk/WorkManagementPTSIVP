@@ -5,7 +5,7 @@
  * Jalankan: npx tsx uji/desain3d.ts
  */
 import {
-  type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, keDunia, lensaProyektor, layarTerdekat,
+  type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
 } from '../app/tools-team/_components/desain3d/model';
 
 let lulus = 0, gagal = 0;
@@ -56,7 +56,7 @@ console.log('\n3. Proyektor & layar');
   const ruang: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
   const layar = bendaBaru('layar', R1);                     // 120" 16:9 di dinding depan
   const p0 = bendaBaru('proyektor', R1, { pasangProyektor: 'plafon' });
-  const p = proyektorKeLayar(p0, layar, R1);
+  const p = proyektorKeLayar(p0, layar, R1, ruang);
   const lensa = keDunia(p, lensaProyektor(p));
   cek('menghadap layar (rot 180) & lensa segaris tengah layar', p.rot === 180 && dekat(lensa[0], layar.x), `${p.rot} ${lensa[0]}`);
   const s = sinarProyektor(p, [layar, p], ruang);
@@ -72,6 +72,19 @@ console.log('\n3. Proyektor & layar');
   cek('membelakangi layar: tanpa sasaran, cahaya sampai dinding belakang', balik.layar === null && dekat(balik.jarak, R1.l - lensaBalik[2], 0.01), `${balik.jarak}`);
   const meja = sinarProyektor({ ...bendaBaru('proyektor', R1, { pasangProyektor: 'meja' }), rot: 180 }, [layar], ruang);
   cek('proyektor portabel menghadap layar ikut mengenai layar', meja.layar?.id === layar.id);
+
+  //  Pan & tilt
+  cek('proyektor plafon perlu menunduk agar gambar di tengah layar', (p.tilt ?? 0) < 0 && (p.tilt ?? 0) > -20, `${p.tilt}`);
+  cek('setelah diposisikan: gambar tepat di tengah layar (tinggi & samping)', dekat(s.selisihV ?? 9, 0, 0.01) && dekat(s.selisihH ?? 9, 0, 0.02), `${s.selisihV} ${s.selisihH}`);
+  const datar = sinarProyektor({ ...p, tilt: 0 }, [layar, p], ruang);
+  cek('tanpa tilt gambar terlalu tinggi (keluar atas layar)', (datar.selisihV ?? 0) > 0.05, `${datar.selisihV}`);
+  const lebihTunduk = sinarProyektor({ ...p, tilt: (p.tilt ?? 0) - 5 }, [layar, p], ruang);
+  cek('menunduk lebih jauh: gambar turun di bawah tengah layar', (lebihTunduk.selisihV ?? 0) < -0.05, `${lebihTunduk.selisihV}`);
+  cek('lensa ikut turun & mundur saat badan menunduk 20°', lensaProyektor({ ...p, tilt: -20 })[1] < lensaProyektor({ ...p, tilt: 0 })[1] - 0.05 && lensaProyektor({ ...p, tilt: -20 })[2] < lensaProyektor({ ...p, tilt: 0 })[2]);
+  const pan = sinarProyektor({ ...p, rot: 190 }, [layar, p], ruang);
+  cek('pan 10° ke samping: gambar bergeser menyamping', pan.layar?.id === layar.id && Math.abs(pan.selisihH ?? 0) > 0.3, `${pan.selisihH}`);
+  const tunduk = tiltKeLayar({ ...p, tilt: 10 }, layar, ruang);
+  cek('atur tilt otomatis dari posisi sembarang kembali ke tengah', dekat(sinarProyektor(tunduk, [layar, tunduk], ruang).selisihV ?? 9, 0, 0.01));
 }
 
 console.log('\n4. Proyektor di ruang lain tidak menembak layar ruang 1');
@@ -89,7 +102,7 @@ console.log('\n5. Salin isi ruang: proyektor tetap menembak salinan layarnya');
   const R2: Kotak = { x0: 8, p: 6, l: 6, t: 3 };
   //  Layar di dinding kiri ruang 1 (rot 90), proyektor plafon di jarak idealnya.
   const layar: Benda = { ...bendaBaru('layar', R1), x: 0.05, z: 3, rot: 90 };
-  const proj = proyektorKeLayar(bendaBaru('proyektor', R1, { pasangProyektor: 'plafon' }), layar, R1);
+  const proj = proyektorKeLayar(bendaBaru('proyektor', R1, { pasangProyektor: 'plafon' }), layar, R1, ruang);
   const asli = sinarProyektor(proj, [layar, proj], ruang);
   const [cl, cp] = salinIsi([layar, proj], ruang, R1, R2);
   const salin = sinarProyektor(cp, [cl, cp], ruang);

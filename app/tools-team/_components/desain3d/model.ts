@@ -48,6 +48,7 @@ export interface Benda {
   /** Display lift (paperless): layar sedang naik dari meja */ naik?: boolean;
   /** Proyektor: gantung plafon (bawaan) atau portabel di meja */ pasangProyektor?: PasangProyektor;
   /** Proyektor: throw ratio lensa (jarak lempar : lebar gambar), bawaan 1,5 */ throwRatio?: number;
+  /** Proyektor: tilt (derajat, negatif = menunduk). Pan = rot. */ tilt?: number;
   /** Display: konten di layar ('pola' = pola uji bawaan; 'gambar' = unggahan, tidak disimpan) */ konten?: 'pola' | 'gambar' | 'mati';
   /** Model GLB impor: kunci ke cache objek di memori (tidak disimpan ke perangkat) */ modelKunci?: string;
 }
@@ -55,7 +56,8 @@ export interface Benda {
 export interface Ruang {
   p: number; l: number; t: number; lantai: 'kayu' | 'karpet' | 'keramik';
   /** Ruang ke-2 bersebelahan di sisi kanan (x = p .. p + r2.p). */
-  r2?: { aktif: boolean; p: number; l: number; t: number; lantai: Ruang['lantai']; pintu: boolean } | null;
+  r2?: { aktif: boolean; p: number; l: number; t: number; lantai: Ruang['lantai']; pintu: boolean;
+    /** Sekat antara ruang 1 & 2: tembok (bawaan) atau kaca (saling terlihat). */ sekat?: 'tembok' | 'kaca' } | null;
 }
 
 /** Kotak satu ruang dalam koordinat dunia. */
@@ -288,7 +290,7 @@ export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[
 /** Tanda tangan bentuk: berubah = model perlu dibangun ulang (posisi, rotasi, ketinggian tidak termasuk). */
 export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
-    b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor].join('|');
+    b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt].join('|');
 
 // ── Salin ke ruang sebelah ─────────────────────────────────────────────────
 
@@ -340,65 +342,113 @@ export function keDunia(b: Benda, [lx, ly, lz]: Titik): Titik {
   return [b.x + lx * c + lz * s, b.elev + ly, b.z - lx * s + lz * c];
 }
 
-/** Ujung kaca lensa proyektor (lokal) - lensa di samping kanan muka, seperti produk umumnya. */
-export const lensaProyektor = (b: Benda): Titik => [b.w * 0.22, b.h * 0.5, b.d / 2 + 0.035];
+/** Ujung kaca lensa sebelum tilt (lokal) - lensa di samping kanan muka, seperti produk umumnya. */
+export const lensaDatar = (b: Benda): Titik => [b.w * 0.22, b.h * 0.5, b.d / 2 + 0.035];
+
+/** Engsel tilt (lokal): plafon = sendi bola bracket di atas badan, meja = kaki belakang. */
+export const engselProyektor = (b: Benda): Titik => (b.pasangProyektor === 'meja' ? [0, 0, -b.d / 2 + 0.04] : [0, b.h + 0.04, 0]);
+
+/** Tilt proyektor (derajat, negatif = menunduk), dibatasi ±45°. */
+export const tiltDari = (b: Benda) => Math.max(-45, Math.min(45, b.tilt ?? 0));
+
+/** Putar titik lokal di sekitar engsel sebesar tilt (sama dengan rotation.x = -tilt pada model). */
+function miringkan(b: Benda, [x, y, z]: Titik): Titik {
+  const t = (tiltDari(b) * Math.PI) / 180;
+  if (!t) return [x, y, z];
+  const [, py, pz] = engselProyektor(b);
+  const dy = y - py, dz = z - pz;
+  return [x, py + dy * Math.cos(t) + dz * Math.sin(t), pz - dy * Math.sin(t) + dz * Math.cos(t)];
+}
+
+/** Ujung lensa (lokal) setelah tilt. */
+export const lensaProyektor = (b: Benda): Titik => miringkan(b, lensaDatar(b));
+
+/** Arah sumbu lensa di dunia: pan = rot, tilt = naik/turun. */
+export function arahProyektor(b: Benda): Titik {
+  const r = (b.rot * Math.PI) / 180, t = (tiltDari(b) * Math.PI) / 180;
+  return [Math.sin(r) * Math.cos(t), Math.sin(t), Math.cos(r) * Math.cos(t)];
+}
 
 export const throwRatioDari = (b: Benda) => Math.max(0.1, b.throwRatio ?? 1.5);
+
+/**
+ * Offset vertikal lensa: proyektor memancarkan gambar di atas sumbu lensanya
+ * (meja) atau di bawahnya (gantung plafon, terbalik). 0,5 = tepi gambar tepat
+ * di sumbu lensa (offset 100%, umum pada proyektor tanpa lens shift).
+ */
+export const OFFSET_GAMBAR = 0.5;
 
 export interface Sinar {
   /** Lensa (dunia). */ asal: Titik;
   /** Pojok gambar (dunia): kiri-bawah, kanan-bawah, kanan-atas, kiri-atas. */ sudut: [Titik, Titik, Titik, Titik];
-  /** Layar sasaran; null = gambar jatuh di dinding. */ layar: Benda | null;
-  /** Jarak lempar lensa ke bidang gambar (m). */ jarak: number;
+  /** Layar sasaran; null = gambar jatuh di dinding/lantai/plafon. */ layar: Benda | null;
+  /** Jarak lempar lensa ke bidang gambar sepanjang sumbu lensa (m). */ jarak: number;
   lebar: number; tinggi: number;
   /** Throw ratio agar gambar tepat selebar layar sasaran. */ trPas: number | null;
+  /** Pusat gambar - pusat layar: + = terlalu tinggi / terlalu ke kanan (m). null tanpa layar. */
+  selisihV: number | null; selisihH: number | null;
 }
 
 /**
  * Sinar satu proyektor. Sasaran = layar proyektor terdekat di ruang yang sama
  * yang berada di depan lensa (maks 50° dari arah hadap) dan menghadap balik
- * ke proyektor. Lebar gambar = jarak lempar / throw ratio, berpusat di tengah
- * layar (lens shift) - jadi gambar terlihat melebihi atau kurang dari layar
- * bila jaraknya tidak pas. Tanpa layar, gambar jatuh di dinding yang dituju.
+ * ke proyektor. Gambar jatuh di titik sumbu lensa (pan & tilt) mengenai bidang
+ * layar, digeser offset vertikal; lebar = jarak lempar / throw ratio. Jadi
+ * gambar terlihat melebihi/kurang dari layar bila jaraknya tidak pas, dan
+ * terlalu tinggi/rendah bila tilt-nya tidak pas. Tanpa layar, gambar jatuh di
+ * permukaan ruang yang dituju lensa.
  */
 export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
   const asal = keDunia(p, lensaProyektor(p));
+  const D = arahProyektor(p);
   const r = (p.rot * Math.PI) / 180;
   const maju = [Math.sin(r), Math.cos(r)];
   const ri = ruangDari(ruang, p.x);
   const tr = throwRatioDari(p);
-  let sasaran: { l: Benda; jarak: number; pusat: Titik } | null = null;
-  for (const l of semua) {
-    if (l.jenis !== 'layar' || ruangDari(ruang, l.x) !== ri) continue;
-    const rl = (l.rot * Math.PI) / 180;
-    const pusat = keDunia(l, [0, l.h / 2, l.d / 2]);
-    const dx = asal[0] - pusat[0], dz = asal[2] - pusat[2];
-    const tegak = dx * Math.sin(rl) + dz * Math.cos(rl);
-    if (tegak < 0.3) continue;
-    const cos = (-dx * maju[0] - dz * maju[1]) / Math.max(1e-6, Math.hypot(dx, dz));
-    if (cos < Math.cos((50 * Math.PI) / 180)) continue;
-    if (!sasaran || tegak < sasaran.jarak) sasaran = { l, jarak: tegak, pusat };
-  }
+  const naikTurun = p.pasangProyektor === 'meja' ? 1 : -1;
   const persegi = (pusat: Titik, kanan: Titik, lebar: number, tinggi: number): Sinar['sudut'] => {
     const t = (u: number, v: number): Titik => [pusat[0] + kanan[0] * u, pusat[1] + v, pusat[2] + kanan[2] * u];
     return [t(-lebar / 2, -tinggi / 2), t(lebar / 2, -tinggi / 2), t(lebar / 2, tinggi / 2), t(-lebar / 2, tinggi / 2)];
   };
+
+  let sasaran: { l: Benda; tegak: number; t: number; pusat: Titik } | null = null;
+  for (const l of semua) {
+    if (l.jenis !== 'layar' || ruangDari(ruang, l.x) !== ri) continue;
+    const rl = (l.rot * Math.PI) / 180, n = [Math.sin(rl), 0, Math.cos(rl)];
+    const pusat = keDunia(l, [0, l.h / 2, l.d / 2]);
+    const dx = asal[0] - pusat[0], dz = asal[2] - pusat[2];
+    const tegak = dx * n[0] + dz * n[2];
+    if (tegak < 0.3) continue;
+    const cos = (-dx * maju[0] - dz * maju[1]) / Math.max(1e-6, Math.hypot(dx, dz));
+    if (cos < Math.cos((50 * Math.PI) / 180)) continue;
+    const dn = D[0] * n[0] + D[2] * n[2];
+    if (dn > -0.2) continue;
+    const t = -tegak / dn;
+    if (!sasaran || tegak < sasaran.tegak) sasaran = { l, tegak, t, pusat };
+  }
   if (sasaran) {
-    const { l, jarak } = sasaran;
+    const { l, t, pusat: S } = sasaran;
     const rl = (l.rot * Math.PI) / 180;
-    const lebar = jarak / tr, tinggi = lebar * (l.h / Math.max(0.01, l.w));
+    const lebar = t / tr, tinggi = lebar * (l.h / Math.max(0.01, l.w));
+    const kanan: Titik = [Math.cos(rl), 0, -Math.sin(rl)];
     //  Sedikit di depan kain layar supaya tidak berkedip (z-fighting).
-    const pusat: Titik = [sasaran.pusat[0] + Math.sin(rl) * 0.004, sasaran.pusat[1], sasaran.pusat[2] + Math.cos(rl) * 0.004];
-    return { asal, sudut: persegi(pusat, [Math.cos(rl), 0, -Math.sin(rl)], lebar, tinggi), layar: l, jarak, lebar, tinggi, trPas: jarak / Math.max(0.01, l.w) };
+    const pusat: Titik = [
+      asal[0] + D[0] * t + Math.sin(rl) * 0.004,
+      asal[1] + D[1] * t + naikTurun * tinggi * OFFSET_GAMBAR,
+      asal[2] + D[2] * t + Math.cos(rl) * 0.004,
+    ];
+    const selisihH = (pusat[0] - S[0]) * kanan[0] + (pusat[2] - S[2]) * kanan[2];
+    return {
+      asal, sudut: persegi(pusat, kanan, lebar, tinggi), layar: l, jarak: t, lebar, tinggi,
+      trPas: t / Math.max(0.01, l.w), selisihV: pusat[1] - S[1], selisihH,
+    };
   }
   const k = daftarRuang(ruang)[ri] ?? daftarRuang(ruang)[0];
   const ke = (v: number, a: number, lo: number, hi: number) => (a > 1e-6 ? (hi - v) / a : a < -1e-6 ? (lo - v) / a : Infinity);
-  const jarak = Math.min(15, Math.max(0.3, Math.min(ke(asal[0], maju[0], k.x0, k.x0 + k.p), ke(asal[2], maju[1], 0, k.l)) - 0.005));
+  const jarak = Math.min(15, Math.max(0.3, Math.min(ke(asal[0], D[0], k.x0, k.x0 + k.p), ke(asal[2], D[2], 0, k.l), ke(asal[1], D[1], 0, k.t)) - 0.005));
   const lebar = jarak / tr, tinggi = (lebar * 9) / 16;
-  //  Proyektor meja memancar sedikit ke atas, gantung plafon (terbalik) ke bawah.
-  const geserV = (p.pasangProyektor === 'meja' ? 1 : -1) * tinggi * 0.45;
-  const pusat: Titik = [asal[0] + maju[0] * jarak, asal[1] + geserV, asal[2] + maju[1] * jarak];
-  return { asal, sudut: persegi(pusat, [Math.cos(r), 0, -Math.sin(r)], lebar, tinggi), layar: null, jarak, lebar, tinggi, trPas: null };
+  const pusat: Titik = [asal[0] + D[0] * jarak, asal[1] + D[1] * jarak + naikTurun * tinggi * OFFSET_GAMBAR, asal[2] + D[2] * jarak];
+  return { asal, sudut: persegi(pusat, [Math.cos(r), 0, -Math.sin(r)], lebar, tinggi), layar: null, jarak, lebar, tinggi, trPas: null, selisihV: null, selisihH: null };
 }
 
 /**
@@ -461,18 +511,50 @@ export function layarTerdekat(p: Benda, semua: Benda[], ruang: Ruang): Benda | n
 }
 
 /**
- * Pindahkan proyektor ke jarak lempar ideal (throw ratio x lebar layar) di
- * garis tengah layar, menghadap layar. Ketinggian tidak diubah.
+ * Tilt agar pusat gambar tepat setinggi pusat layar (posisi & pan tidak
+ * diubah). Dicari bertahap (bisection) karena tinggi pusat gambar naik
+ * monoton bersama tilt.
  */
-export function proyektorKeLayar(p: Benda, l: Benda, k: Kotak): Benda {
+export function tiltKeLayar(p: Benda, l: Benda, ruang: Ruang): Benda {
+  let lo = -45, hi = 45;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    const coba = { ...p, tilt: mid };
+    const sv = sinarProyektor(coba, [l, coba], ruang).selisihV;
+    if (sv === null) break;
+    if (sv > 0) hi = mid; else lo = mid;
+  }
+  return { ...p, tilt: Math.round(((lo + hi) / 2) * 10) / 10 };
+}
+
+/**
+ * Pindahkan proyektor ke jarak lempar ideal (throw ratio x lebar layar) di
+ * garis tengah layar, menghadap layar (pan), lalu atur tilt supaya gambar
+ * tepat di tengah layar. Ketinggian pemasangan tidak diubah.
+ */
+export function proyektorKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang): Benda {
   const rl = (l.rot * Math.PI) / 180;
-  const jarak = throwRatioDari(p) * l.w;
-  const pusat = keDunia(l, [0, l.h / 2, l.d / 2]);
+  const n = [Math.sin(rl), Math.cos(rl)];
+  const ideal = throwRatioDari(p) * l.w;
+  const S = keDunia(l, [0, l.h / 2, l.d / 2]);
   const rot = (((l.rot + 180) % 360) + 360) % 360;
-  //  Titik benda = posisi lensa yang diinginkan - offset lensa pada rotasi ini.
-  const [ox, , oz] = keDunia({ ...p, rot, x: 0, z: 0, elev: 0 }, lensaProyektor(p));
-  const x = pusat[0] + Math.sin(rl) * jarak - ox, z = pusat[2] + Math.cos(rl) * jarak - oz;
-  return { ...p, rot, x: bulat2(Math.min(k.x0 + k.p - 0.1, Math.max(k.x0 + 0.1, x))), z: bulat2(Math.min(k.l - 0.1, Math.max(0.1, z))) };
+  const taruh = (q: Benda, jarak: number): Benda => {
+    //  Titik benda = posisi lensa yang diinginkan - offset lensa (dengan tilt q) pada rotasi ini.
+    const [ox, , oz] = keDunia({ ...q, rot, x: 0, z: 0, elev: 0 }, lensaProyektor(q));
+    return { ...q, rot, x: S[0] + n[0] * jarak - ox, z: S[2] + n[1] * jarak - oz };
+  };
+  let q = taruh({ ...p, tilt: 0 }, ideal);
+  let jarakTegak = ideal;
+  for (let i = 0; i < 4; i++) {
+    q = tiltKeLayar(q, l, ruang);
+    const sn = sinarProyektor(q, [l, q], ruang);
+    if (!sn.layar) break;
+    //  Jarak sepanjang sumbu lensa sedikit lebih panjang bila menunduk - koreksi jarak tegaknya.
+    jarakTegak += (ideal - sn.jarak) * Math.cos((tiltDari(q) * Math.PI) / 180);
+    q = taruh(q, jarakTegak);
+  }
+  q = tiltKeLayar(q, l, ruang);
+  return { ...q, x: bulat2(Math.min(k.x0 + k.p - 0.1, Math.max(k.x0 + 0.1, q.x))), z: bulat2(Math.min(k.l - 0.1, Math.max(0.1, q.z))) };
 }
 
 // ── Tekstur kanvas ──────────────────────────────────────────────────────────
@@ -1063,6 +1145,12 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       //  atas. Plafon: bracket laba-laba + pipa ke plafon + pelat plafon.
       //  Meja: empat kaki karet.
       const meja = b.pasangProyektor === 'meja';
+      //  Badan (beserta lensa & kaki) dibangun di grup `badan` yang diputar di
+      //  engselnya untuk tilt; bracket plafon tetap tegak di grup utama.
+      const utama = g;
+      const badan = new THREE.Group();
+      {
+      const g = badan;
       const putih = mat(THREE, 0xf1f2f4, { roughness: 0.42, metalness: 0.05 });
       const abu = mat(THREE, 0x2f343b, { roughness: 0.45, metalness: 0.3 });
       const hitamKilap = mat(THREE, 0x0a0b0d, { roughness: 0.15, metalness: 0.4 });
@@ -1076,7 +1164,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       const gril = new THREE.MeshStandardMaterial({ map: teksturGril(THREE, '#3a3f47', 'rgba(0,0,0,0.9)', 5), roughness: 0.6, metalness: 0.3 });
       g.add(blok(THREE, b.w * 0.34, tb * 0.44, 0.003, Math.min(0.008, tb * 0.12), gril, 0.001).translateX(-b.w * 0.2).translateY(kaki + tb * 0.28).translateZ(zMuka + 0.004));
       //  Lensa: laras menonjol, cincin fokus, kaca bercahaya.
-      const [lx, ly] = lensaProyektor(b);
+      const [lx, ly] = lensaDatar(b);
       const rL = Math.min(0.05, tb * 0.36);
       const laras = new THREE.Mesh(new THREE.CylinderGeometry(rL, rL * 1.08, 0.03, 32), hitamKilap);
       laras.rotation.x = Math.PI / 2; laras.position.set(lx, ly, zMuka + 0.015); g.add(laras);
@@ -1102,6 +1190,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
           g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.015, kaki, 16), karet).translateX(sx * (b.w / 2 - 0.045)).translateY(kaki / 2).translateZ(sz * (b.d / 2 - 0.04)));
         }
       } else {
+        //  Pelat & lengan laba-laba menempel di badan, ikut miring bersamanya.
         const besi = mat(THREE, 0x25282e, { metalness: 0.75, roughness: 0.35 });
         const hub = new THREE.Vector3(0, b.h + 0.022, 0);
         g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.05, 0.016, 24), besi).translateY(b.h + 0.016));
@@ -1110,7 +1199,17 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
           g.add(tiangAntara(THREE, hub, ujung, 0.006, besi));
           g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.006, 12), besi).translateX(ujung.x).translateY(b.h + 0.003).translateZ(ujung.z));
         }
-        //  Sendi miring di atas hub, pipa sampai plafon, pelat plafon.
+      }
+      }
+      const [, ey, ez] = engselProyektor(b);
+      const pivot = new THREE.Group(); pivot.position.set(0, ey, ez);
+      badan.position.set(0, -ey, -ez); pivot.add(badan);
+      pivot.rotation.x = -(tiltDari(b) * Math.PI) / 180;
+      utama.add(pivot);
+      if (!meja) {
+        const g = utama;
+        const besi = mat(THREE, 0x25282e, { metalness: 0.75, roughness: 0.35 });
+        //  Sendi bola (engsel tilt), pipa sampai plafon, pelat plafon - tetap tegak.
         g.add(new THREE.Mesh(new THREE.SphereGeometry(0.026, 16, 12), besi).translateY(b.h + 0.04));
         g.add(batang(THREE, 0.04, 0.04, besi, 0, 0, 'tiang', 0, true));
         const geoPelat = new THREE.CylinderGeometry(0.08, 0.08, 0.012, 32); geoPelat.translate(0, -0.006, 0);

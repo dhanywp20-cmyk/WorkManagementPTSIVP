@@ -1,12 +1,21 @@
 'use client';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from '@/components/shared/Modal';
 import { Ikon } from '@/components/shared/Ikon';
-import { type TautanDesain3D, type IzinRuang, muatTautanDesain3D, tautanKeTools, ukuranRuang } from './desain-3d-request';
+import { urlGambarDesain } from '@/lib/tools-team';
+import { type TautanDesain3D, type IzinRuang, tautanKeTools, ukuranRuang } from './desain-3d-request';
 
 interface DesainTim {
   id: string; nama: string; versi: number; jumlah_benda: number; dibuat_oleh_nama: string; updated_at: string;
-  ruang: { p: number; l: number; t: number; r2?: { aktif: boolean } | null } | null; gambar?: string | null;
+  ruang: { p: number; l: number; t: number; r2?: { aktif: boolean } | null } | null;
+}
+
+/** Pratinjau versi: dimuat malas, di-cache peramban (versi tidak berubah) - hemat egress. */
+function Pratinjau({ id, versi, alt, className }: { id: string; versi: number; alt: string; className: string }) {
+  const [gagal, setGagal] = useState(false);
+  if (gagal) return <div className={`${className} rounded-lg border border-gray-200 bg-violet-50 grid place-items-center flex-shrink-0 text-violet-400`}><Ikon nama="🧊" ukuran={20} /></div>;
+  return <img src={urlGambarDesain(id, versi)} alt={alt} loading="lazy" decoding="async" onError={() => setGagal(true)}
+    className={`${className} object-cover rounded-lg border border-gray-200 flex-shrink-0 bg-gray-50`} />;
 }
 
 const tgl = (s: string) => new Date(s).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -17,27 +26,23 @@ const tgl = (s: string) => new Date(s).toLocaleDateString('id-ID', { day: 'numer
  * tidak menampilkan apa pun bagi yang tidak bisa menautkan dan belum ada isinya.
  *
  * `mintaPilih` dinaikkan halaman induk (menu "Upload File") untuk membuka
- * pemilih tanpa memindahkan state ke page.tsx.
+ * pemilih tanpa memindahkan state ke page.tsx. Data dimuat halaman induk SEKALI
+ * per request (dipakai juga untuk cetak/ZIP); panel hanya meminta muat ulang
+ * setelah menautkan / melepas.
  */
-export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mintaPilih, onMuat, notify }: {
+export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mintaPilih, data, muatUlang, notify }: {
   requestId: string; roomIdx: number; namaRuang: string; projectName: string; mintaPilih: number;
-  onMuat: (semua: TautanDesain3D[]) => void;
+  data: { tautan: TautanDesain3D[]; izin: IzinRuang[]; galat?: string } | null;
+  muatUlang: () => Promise<void>;
   notify: (tipe: 'success' | 'error' | 'info', pesan: string) => void;
 }) {
-  const [semua, setSemua] = useState<TautanDesain3D[] | null>(null);
-  const [izin, setIzin] = useState<IzinRuang[]>([]);
-  const [galat, setGalat] = useState('');
+  const semua = data?.tautan ?? null;
+  const izin = data?.izin ?? [];
+  const galat = data?.galat ?? '';
   const [sibuk, setSibuk] = useState(false);
   const [pilih, setPilih] = useState(false);
   const [buka, setBuka] = useState<string | null>(null);
-
-  const muat = useCallback(async () => {
-    const h = await muatTautanDesain3D(requestId);
-    if ('galat' in h) { setGalat(h.galat); setSemua([]); onMuat([]); return; }
-    setGalat(''); setSemua(h.tautan); setIzin(h.izin); onMuat(h.tautan);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestId]);
-  useEffect(() => { setSemua(null); void muat(); }, [muat]);
+  const muat = muatUlang;
 
   const izinIni = izin[roomIdx];
   const bolehUbah = !!izinIni?.ok;
@@ -94,9 +99,7 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
             return (
               <li key={t.id} className="p-3">
                 <div className="flex gap-3">
-                  {s?.gambar
-                    ? <img src={s.gambar} alt={`Pratinjau ${s.nama}`} className="w-28 h-16 object-cover rounded-lg border border-gray-200 flex-shrink-0 bg-gray-50" />
-                    : <div className="w-28 h-16 rounded-lg border border-gray-200 bg-violet-50 grid place-items-center flex-shrink-0 text-violet-400"><Ikon nama="🧊" ukuran={22} /></div>}
+                  <Pratinjau id={t.desain_id} versi={t.versi} alt={`Pratinjau ${s?.nama ?? 'desain'}`} className="w-28 h-16" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-gray-800 truncate">
                       {s?.nama ?? t.sumber?.nama ?? 'Design 3D'}
@@ -186,7 +189,7 @@ function PemilihDesain({ buka, onTutup, projectName, namaRuang, sudah, sibuk, on
     let hidup = true;
     const t = setTimeout(async () => {
       try {
-        const r = await fetch(`/api/tools-team/desain?gambar=1${q.trim() ? `&q=${encodeURIComponent(q.trim())}` : ''}`, { credentials: 'include', cache: 'no-store' });
+        const r = await fetch(`/api/tools-team/desain${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`, { credentials: 'include', cache: 'no-store' });
         const j = await r.json().catch(() => null);
         if (!hidup) return;
         if (r.ok && j?.ok) { setDaftar(j.daftar as DesainTim[]); setGalat(''); } else { setDaftar([]); setGalat(j?.alasan ?? 'Daftar desain tidak bisa dimuat.'); }
@@ -217,9 +220,7 @@ function PemilihDesain({ buka, onTutup, projectName, namaRuang, sudah, sibuk, on
             const dipakai = sudah.has(d.id);
             return (
               <li key={d.id} className="flex gap-3 items-center rounded-xl border border-gray-200 p-2">
-                {d.gambar
-                  ? <img src={d.gambar} alt="" className="w-20 h-12 object-cover rounded-lg border border-gray-100 flex-shrink-0" />
-                  : <div className="w-20 h-12 rounded-lg bg-violet-50 grid place-items-center flex-shrink-0 text-violet-400"><Ikon nama="🧊" ukuran={18} /></div>}
+                <Pratinjau id={d.id} versi={d.versi} alt="" className="w-20 h-12" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-bold text-gray-800 truncate">
                     {d.nama}

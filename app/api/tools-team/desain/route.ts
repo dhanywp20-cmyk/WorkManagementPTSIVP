@@ -2,10 +2,11 @@
  * /api/tools-team/desain - desain ruang 3D yang dibagikan ke seluruh tim.
  *
  *   GET                 siapa pun yang masuk: daftar desain aktif (tanpa isi
- *                       benda). ?q= cari nama, ?gambar=1 sertakan pratinjau
- *                       versi terbaru (dipakai pemilih di Request Design).
+ *                       benda & tanpa gambar - gambar lewat /gambar yang
+ *                       di-cache peramban). ?q= cari nama.
  *   GET ?id=            satu desain lengkap (versi terbaru).
  *   GET ?id=&versi=N    isi versi N (riwayat, tidak pernah berubah).
+ *   GET ?id=&riwayat=1  daftar versi (tanpa isi) untuk dibuka ulang.
  *   POST {id?, versi?, nama, data, gambar?}
  *                       simpan. Tanpa id = desain baru (v1). Dengan id = versi
  *                       baru; `versi` = versi yang sedang dibuka peramban -
@@ -24,7 +25,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
-import { periksaDesain, ringkasanDesain, bersihkanGambar } from '@/lib/tools-team';
+import { periksaDesain, ringkasanDesain, bersihkanGambar, MAKS_BYTE_GAMBAR_HD, SIMPAN_VERSI } from '@/lib/tools-team';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -49,6 +50,14 @@ export async function GET(req: NextRequest) {
   const semua = await kelolaSemua(db, jaga.user.id);
   const sp = req.nextUrl.searchParams;
   const id = sp.get('id');
+
+  if (id && sp.get('riwayat') === '1') {
+    if (!POLA_ID.test(id)) return gagal('ID tidak sah.');
+    const { data, error } = await db.from(VERSI).select('versi, created_at, dibuat_oleh_nama')
+      .eq('desain_id', id).order('versi', { ascending: false }).limit(100);
+    if (error) return gagal(error.message, 500);
+    return NextResponse.json({ ok: true, versi: data ?? [] });
+  }
 
   if (id) {
     if (!POLA_ID.test(id)) return gagal('ID tidak sah.');
@@ -77,18 +86,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await q;
   if (error) return gagal(error.message, 500);
   const daftar = (data ?? []) as { id: string; versi: number; dibuat_oleh: string | null }[];
-
-  //  Pratinjau hanya bila diminta (pemilih Request Design), dan hanya versi terbaru tiap desain.
-  const gambar = new Map<string, string | null>();
-  if (sp.get('gambar') === '1' && daftar.length) {
-    const { data: v } = await db.from(VERSI).select('desain_id, versi, gambar').in('desain_id', daftar.map(d => d.id));
-    const baris = (v ?? []) as { desain_id: string; versi: number; gambar: string | null }[];
-    for (const d of daftar) gambar.set(d.id, baris.find(x => x.desain_id === d.id && x.versi === d.versi)?.gambar ?? null);
-  }
-  return NextResponse.json({
-    ok: true,
-    daftar: daftar.map(d => ({ ...d, bolehUbah: semua || d.dibuat_oleh === jaga.user.id, ...(gambar.size ? { gambar: gambar.get(d.id) ?? null } : {}) })),
-  });
+  return NextResponse.json({ ok: true, daftar: daftar.map(d => ({ ...d, bolehUbah: semua || d.dibuat_oleh === jaga.user.id })) });
 }
 
 export async function POST(req: NextRequest) {
@@ -102,6 +100,7 @@ export async function POST(req: NextRequest) {
   const cek = periksaDesain(b.data);
   if (!cek.ok) return gagal(cek.alasan);
   const gambar = bersihkanGambar(b.gambar);
+  const gambarHd = bersihkanGambar(b.gambar_hd, MAKS_BYTE_GAMBAR_HD);
 
   const db = getAdminClient();
   const id = typeof b.id === 'string' ? b.id : null;
@@ -130,7 +129,26 @@ export async function POST(req: NextRequest) {
   }
   const hasil = (Array.isArray(data) ? data[0] : data) as { id: string; versi: number; updated_at: string } | null;
   if (!hasil) return gagal('Gagal menyimpan.', 500);
+  //  Gambar cetak resolusi tinggi: ditulis sekali untuk versi ini (gagal = cetak memakai pratinjau kecil).
+  if (gambarHd) await db.rpc('tools_simpan_desain_hd', { p_desain: hasil.id, p_versi: hasil.versi, p_gambar_hd: gambarHd });
+  await pangkasRiwayat(db, hasil.id, hasil.versi);
   return NextResponse.json({ ok: true, desain: { id: hasil.id, nama, versi: hasil.versi, updated_at: hasil.updated_at, bolehUbah: true } });
+}
+
+/**
+ * Hemat ruang basis data (paket gratis): gambar HD hanya disimpan untuk versi
+ * terbaru & versi yang ditautkan ke Request Design; versi yang lebih lama dari
+ * SIMPAN_VERSI terakhir dan tidak ditautkan dihapus. Gagal = diabaikan.
+ */
+async function pangkasRiwayat(db: Db, id: string, versiKini: number) {
+  try {
+    const { data: t } = await db.from('request_desain_ruang').select('versi').eq('desain_id', id);
+    const dipakai = [...new Set(((t ?? []) as { versi: number }[]).map(x => x.versi))];
+    const kecuali = (q: ReturnType<ReturnType<Db['from']>['update']> | ReturnType<ReturnType<Db['from']>['delete']>) =>
+      (dipakai.length ? q.not('versi', 'in', `(${dipakai.join(',')})`) : q);
+    await kecuali(db.from(VERSI).update({ gambar_hd: null }).eq('desain_id', id).lt('versi', versiKini).not('gambar_hd', 'is', null));
+    if (versiKini > SIMPAN_VERSI) await kecuali(db.from(VERSI).delete().eq('desain_id', id).lte('versi', versiKini - SIMPAN_VERSI));
+  } catch { /* pemangkasan bukan bagian penting penyimpanan */ }
 }
 
 export async function DELETE(req: NextRequest) {

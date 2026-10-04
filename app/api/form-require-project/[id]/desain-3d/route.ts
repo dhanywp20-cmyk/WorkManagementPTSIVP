@@ -8,6 +8,8 @@
  *
  *   GET                       tautan semua ruangan (ringkasan + pratinjau versi
  *                             yang ditautkan, bukan data 3D) + izin per ruangan.
+ *                             Gambar tidak ikut: dimuat lewat /api/tools-team/desain/gambar
+ *                             (di-cache peramban, hemat egress).
  *   POST   {desain_id, room_idx}  tautkan VERSI TERBARU desain itu.
  *   PATCH  {tautan_id}        pindahkan tautan ke versi terbaru (eksplisit).
  *   DELETE ?tautan=           lepas tautan. Desain di Tools Team tidak disentuh.
@@ -65,7 +67,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const { user, request } = m;
   const db = getAdminClient();
   const { data, error } = await db.from('request_desain_ruang')
-    .select('id, room_idx, desain_id, versi, dilampirkan_oleh_nama, created_at, updated_at, snapshot:tools_desain_ruang_versi(nama, ringkasan, gambar, created_at, dibuat_oleh_nama), sumber:tools_desain_ruang(nama, versi, diarsipkan_at)')
+    .select('id, room_idx, desain_id, versi, dilampirkan_oleh_nama, created_at, updated_at, snapshot:tools_desain_ruang_versi(nama, ringkasan, created_at, dibuat_oleh_nama), sumber:tools_desain_ruang(nama, versi, diarsipkan_at)')
     .eq('request_id', request.id).order('created_at', { ascending: true });
   if (error) return gagal(error.message, 500);
   const izin = Array.from({ length: jumlahRuang(request) }, (_, i) => bolehUbahTautan(user.role, statusRuangan(request, i)));
