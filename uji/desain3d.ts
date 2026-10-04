@@ -5,7 +5,7 @@
  * Jalankan: npx tsx uji/desain3d.ts
  */
 import {
-  type Benda, type Kotak, type Ruang, bendaBaru, salinKeRuang, salinIsi, sinarProyektor, proyektorKeLayar, keDunia, lensaProyektor, layarTerdekat,
+  type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, keDunia, lensaProyektor, layarTerdekat,
 } from '../app/tools-team/_components/desain3d/model';
 
 let lulus = 0, gagal = 0;
@@ -97,6 +97,26 @@ console.log('\n5. Salin isi ruang: proyektor tetap menembak salinan layarnya');
   cek('jarak lempar & ukuran gambar sama dengan ruang asal', salin.layar?.id === cl.id && dekat(salin.jarak, asli.jarak) && dekat(salin.lebar, asli.lebar), `${salin.jarak} vs ${asli.jarak}`);
   const sendiri = salinKeRuang(proj, R1, R2);
   cek('(tanpa aturan ini jarak lempar akan berubah)', !dekat(sinarProyektor(sendiri, [cl, sendiri], ruang).jarak, asli.jarak));
+}
+
+console.log('\n6. Ukuran ruang diubah: isi ikut menyesuaikan');
+{
+  const lama: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: { aktif: true, p: 6, l: 6, t: 3, lantai: 'karpet', pintu: true } };
+  const isi = contohAwal(lama);
+  const r2Meja = { ...bendaBaru('meja', { x0: 8, p: 6, l: 6, t: 3 }), id: 'r2meja' };
+  const baru: Ruang = { ...lama, p: 10, l: 7 };
+  const hasil = sesuaikanUkuranRuang([...isi, r2Meja], lama, baru);
+  const cari = (j: string) => hasil.find(b => b.jenis === j)!;
+  const asli = (j: string) => isi.find(b => b.jenis === j)!;
+  cek('meja tetap di tengah ruang yang melebar (x 4 -> 5)', dekat(cari('meja').x, 5) && dekat(cari('meja').z, asli('meja').z + 0.5), `${cari('meja').x},${cari('meja').z}`);
+  cek('videowall tetap menempel dinding depan, di tengah', dekat(cari('videowall').z, asli('videowall').z) && dekat(cari('videowall').x, 5));
+  cek('rack tetap berjarak sama dari dinding kanan', dekat(10 - cari('rak').x, 8 - asli('rak').x), `${cari('rak').x}`);
+  const kursi = hasil.filter(b => b.jenis === 'kursi'), kursiAsli = isi.filter(b => b.jenis === 'kursi');
+  cek('kursi ikut bergeser bersama meja (jarak ke meja tetap)', kursi.every((k, i) => dekat(k.x - cari('meja').x, kursiAsli[i].x - asli('meja').x)));
+  cek('isi Ruang 2 ikut bergeser 2 m saat Ruang 1 memanjang', dekat(hasil.find(b => b.id === 'r2meja')!.x, r2Meja.x + 2), `${hasil.find(b => b.id === 'r2meja')!.x}`);
+  cek('id benda tidak berubah', hasil.every((b, i) => b.id === [...isi, r2Meja][i].id));
+  const tetap = sesuaikanUkuranRuang(isi, lama, { ...lama, lantai: 'karpet' });
+  cek('ukuran tidak berubah: tidak ada yang digeser', tetap === isi);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

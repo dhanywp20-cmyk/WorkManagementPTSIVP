@@ -10,7 +10,7 @@ import { Modal } from '@/components/shared/Modal';
 import {
   type Benda, type Ruang, type Kotak, type ItemKatalog, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturPolaUji,
-  salinKeRuang, salinIsi, sinarProyektor, layarTerdekat, proyektorKeLayar, throwRatioDari,
+  salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, layarTerdekat, proyektorKeLayar, throwRatioDari,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc } from './cetak';
@@ -734,6 +734,14 @@ export default function Desain3D() {
     gantiBenda({ ...terpilih, ...p, x: bulat(p.x)!, z: bulat(p.z)!, pasang: terpilih.pasang === 'standfloor' && terpilih.jenis !== 'ifp' ? 'dinding' : terpilih.pasang });
   };
 
+  /** Ubah ukuran ruang: isi ruang ikut menyesuaikan, tidak tertinggal di posisi lama. */
+  const ubahUkuran = (fn: (r: Ruang) => Ruang) => {
+    const lama = ruangRef.current, baru = fn(lama);
+    ruangRef.current = baru;
+    setBenda(bs => sesuaikanUkuranRuang(bs, lama, baru));
+    setRuang(baru);
+  };
+
   const aturRuang2 = (aktif: boolean) => {
     if (aktif) { setRuang(r => ({ ...r, r2: { ...R2_AWAL, ...(r.r2 ?? {}), aktif: true } })); return; }
     const diR2 = benda.filter(b => b.x > ruang.p);
@@ -1202,15 +1210,15 @@ export default function Desain3D() {
 
       {/* ── Modal: Ruangan ── */}
       <Modal buka={modal === 'ruang'} onTutup={() => setModal(null)} judul="Ruangan" ukuran="md" ikon={<Ikon nama="🏠" ukuran={18} />}
-        keterangan="Maksimal 2 ruang bersebelahan. Ruang 2 berada di sisi kanan ruang 1."
+        keterangan="Maksimal 2 ruang bersebelahan. Ruang 2 berada di sisi kanan ruang 1. Saat ukuran diubah, isi ruang ikut menyesuaikan: yang menempel dinding tetap menempel, meja-kursi tetap di tengah."
         footer={<button type="button" onClick={() => setModal(null)} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-700 hover:bg-blue-800">Selesai</button>}>
         <div className="space-y-4">
           <div>
             <p className="text-[12.5px] font-bold text-slate-800 mb-1.5">Ruang 1</p>
             <div className="grid grid-cols-3 gap-2">
-              <Angka label="Panjang" nilai={ruang.p} onUbah={v => v >= 2 && v <= 30 && setRuang(r => ({ ...r, p: v }))} satuan="m" />
-              <Angka label="Lebar" nilai={ruang.l} onUbah={v => v >= 2 && v <= 30 && setRuang(r => ({ ...r, l: v }))} satuan="m" />
-              <Angka label="Plafon" nilai={ruang.t} onUbah={v => v >= 2 && v <= 15 && setRuang(r => ({ ...r, t: v }))} satuan="m" />
+              <Angka label="Panjang" nilai={ruang.p} onUbah={v => v >= 2 && v <= 30 && ubahUkuran(r => ({ ...r, p: v }))} satuan="m" />
+              <Angka label="Lebar" nilai={ruang.l} onUbah={v => v >= 2 && v <= 30 && ubahUkuran(r => ({ ...r, l: v }))} satuan="m" />
+              <Angka label="Plafon" nilai={ruang.t} onUbah={v => v >= 2 && v <= 15 && ubahUkuran(r => ({ ...r, t: v }))} satuan="m" />
             </div>
             <div className="mt-2">
               <Segmen label="Lantai" nilai={ruang.lantai} onUbah={v => setRuang(r => ({ ...r, lantai: v }))}
@@ -1223,9 +1231,9 @@ export default function Desain3D() {
           {ruang.r2?.aktif && (
             <div>
               <div className="grid grid-cols-3 gap-2">
-                <Angka label="Panjang" nilai={ruang.r2.p} onUbah={v => v >= 2 && v <= 30 && setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, p: v } }))} satuan="m" />
-                <Angka label="Lebar" nilai={ruang.r2.l} onUbah={v => v >= 2 && v <= 30 && setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, l: v } }))} satuan="m" />
-                <Angka label="Plafon" nilai={ruang.r2.t} onUbah={v => v >= 2 && v <= 15 && setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, t: v } }))} satuan="m" />
+                <Angka label="Panjang" nilai={ruang.r2.p} onUbah={v => v >= 2 && v <= 30 && ubahUkuran(r => ({ ...r, r2: r.r2 && { ...r.r2, p: v } }))} satuan="m" />
+                <Angka label="Lebar" nilai={ruang.r2.l} onUbah={v => v >= 2 && v <= 30 && ubahUkuran(r => ({ ...r, r2: r.r2 && { ...r.r2, l: v } }))} satuan="m" />
+                <Angka label="Plafon" nilai={ruang.r2.t} onUbah={v => v >= 2 && v <= 15 && ubahUkuran(r => ({ ...r, r2: r.r2 && { ...r.r2, t: v } }))} satuan="m" />
               </div>
               <div className="mt-2">
                 <Segmen label="Lantai" nilai={ruang.r2.lantai} onUbah={v => setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, lantai: v } }))}

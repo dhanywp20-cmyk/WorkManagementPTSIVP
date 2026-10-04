@@ -302,6 +302,11 @@ const bulat2 = (v: number) => Math.round(v * 100) / 100;
  * kursi tidak ikut menyusut/merenggang.
  */
 export function salinKeRuang(b: Benda, asal: Kotak, tujuan: Kotak): Benda {
+  return { ...petakanKeKotak(b, asal, tujuan), id: idBaru() };
+}
+
+/** Posisi benda di kotak `tujuan` (aturan salinKeRuang), id tetap. */
+export function petakanKeKotak(b: Benda, asal: Kotak, tujuan: Kotak): Benda {
   const r = (b.rot * Math.PI) / 180;
   //  Setengah jejak benda searah sumbu dunia (memperhitungkan rotasi).
   const ex = (Math.abs(Math.cos(r)) * b.w + Math.abs(Math.sin(r)) * b.d) / 2;
@@ -318,7 +323,7 @@ export function salinKeRuang(b: Benda, asal: Kotak, tujuan: Kotak): Benda {
   const diPlafon = b.jenis === 'speaker-plafon' || (b.jenis === 'proyektor' && b.pasangProyektor !== 'meja') || b.elev + b.h >= asal.t - 0.05;
   const elev = diPlafon ? tujuan.t - (asal.t - b.elev) : Math.min(b.elev, tujuan.t - b.h);
   return {
-    ...b, id: idBaru(),
+    ...b,
     x: peta(b.x, asal.x0, asal.p, tujuan.x0, tujuan.p, ex),
     z: peta(b.z, 0, asal.l, 0, tujuan.l, ez),
     elev: bulat2(Math.max(0, elev)),
@@ -403,7 +408,12 @@ export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
  * jadi jarak lempar dan ukuran gambar tidak berubah walau ruangnya beda ukuran.
  */
 export function salinIsi(isi: Benda[], ruang: Ruang, asal: Kotak, tujuan: Kotak): Benda[] {
-  const baru = isi.map(b => salinKeRuang(b, asal, tujuan));
+  return petakanIsi(isi, ruang, asal, tujuan).map(b => ({ ...b, id: idBaru() }));
+}
+
+/** Seperti salinIsi, tapi id tetap (dipakai saat ukuran ruang diubah). */
+function petakanIsi(isi: Benda[], ruang: Ruang, asal: Kotak, tujuan: Kotak): Benda[] {
+  const baru = isi.map(b => petakanKeKotak(b, asal, tujuan));
   const indeks = new Map(isi.map((b, i) => [b.id, i]));
   isi.forEach((p, i) => {
     if (p.jenis !== 'proyektor') return;
@@ -421,6 +431,26 @@ export function salinIsi(isi: Benda[], ruang: Ruang, asal: Kotak, tujuan: Kotak)
     };
   });
   return baru;
+}
+
+/**
+ * Ukuran ruang diubah: isi tiap ruang ikut menyesuaikan dengan aturan yang
+ * sama seperti salin ke ruang sebelah - yang menempel dinding tetap menempel,
+ * perangkat plafon tetap di plafon, susunan meja-kursi bergeser bersama titik
+ * tengah ruang (tidak tertinggal di posisi lama), proyektor tetap pada jarak
+ * lemparnya ke layar. Isi Ruang 2 ikut bergeser bila Ruang 1 memanjang/
+ * memendek. Ruang yang ukurannya tidak berubah tidak disentuh.
+ */
+export function sesuaikanUkuranRuang(benda: Benda[], lama: Ruang, baru: Ruang): Benda[] {
+  const kLama = daftarRuang(lama), kBaru = daftarRuang(baru);
+  const hasil = new Map<string, Benda>();
+  kLama.forEach((asal, i) => {
+    const tujuan = kBaru[i];
+    if (!tujuan || (asal.x0 === tujuan.x0 && asal.p === tujuan.p && asal.l === tujuan.l && asal.t === tujuan.t)) return;
+    const isi = benda.filter(b => ruangDari(lama, b.x) === i);
+    petakanIsi(isi, lama, asal, tujuan).forEach(b => hasil.set(b.id, b));
+  });
+  return hasil.size ? benda.map(b => hasil.get(b.id) ?? b) : benda;
 }
 
 /** Layar proyektor terdekat di ruang yang sama (tanpa syarat arah). */
