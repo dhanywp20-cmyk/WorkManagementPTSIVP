@@ -1,5 +1,5 @@
 /**
- * lib/av-hitung.ts - rumus Tools Kerja PTS (Audio Visual). Murni, tanpa
+ * lib/av-hitung.ts - rumus Tools Team PTS (Audio Visual). Murni, tanpa
  * React / jaringan, supaya bisa diuji (uji/av-hitung.ts) dan dipakai ulang.
  *
  * Angka bawaan (daya/berat per m², kapasitas port controller) adalah NILAI

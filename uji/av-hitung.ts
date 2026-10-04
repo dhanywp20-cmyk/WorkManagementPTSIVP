@@ -1,5 +1,5 @@
 /**
- * uji/av-hitung.ts - rumus Tools Kerja PTS (LED, layar, proyektor, sinyal, audio, daya).
+ * uji/av-hitung.ts - rumus Tools Team PTS (LED, layar, proyektor, sinyal, audio, daya).
  *
  * Jalankan: npx tsx uji/av-hitung.ts
  */

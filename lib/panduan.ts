@@ -179,8 +179,8 @@ export const PANDUAN: Panduan[] = [
     tips: ['Bintang di bawah 3 mengurangi nilai KPI BAST & Demo.'],
   },
   {
-    kunci: 'tools-kerja',
-    judul: 'Tools Kerja',
+    kunci: 'tools-team',
+    judul: 'Tools Team',
     guna: 'Kalkulator & desain untuk engineer AV: LED videotron, desain 3D ruang, ukuran layar, proyektor, bandwidth sinyal, audio, daya.',
     langkah: [
       'Pilih alat di kolom kiri (di HP: deretan di atas).',

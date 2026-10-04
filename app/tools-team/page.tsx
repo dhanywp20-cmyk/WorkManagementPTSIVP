@@ -51,7 +51,7 @@ function ToolsKerjaInner() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--latar-halaman, #f1f5f9)' }}>
-      <PageHeader icon="🧮" title="Tools Kerja" subtitle="Kalkulator & desain untuk engineer Audio Visual" color="#1d4ed8" colorLight="#dbeafe" />
+      <PageHeader icon="🧮" title="Tools Team" subtitle="Kalkulator & desain untuk engineer Audio Visual" color="#1d4ed8" colorLight="#dbeafe" />
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 grid gap-4 lg:grid-cols-[230px_minmax(0,1fr)] items-start">
         {/* Daftar alat: kolom di desktop, deret geser di HP */}
         <nav aria-label="Daftar alat" className="lg:sticky lg:top-20 flex lg:flex-col gap-2 overflow-x-auto -mx-3 px-3 lg:mx-0 lg:px-0 pb-1 [scrollbar-width:none] print:hidden">
