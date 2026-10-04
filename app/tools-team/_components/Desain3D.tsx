@@ -10,7 +10,7 @@ import { Modal } from '@/components/shared/Modal';
 import {
   type Benda, type Ruang, type Kotak, type ItemKatalog, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturPolaUji,
-  salinKeRuang, sinarProyektor, layarTerdekat, proyektorKeLayar, throwRatioDari,
+  salinKeRuang, salinIsi, sinarProyektor, layarTerdekat, proyektorKeLayar, throwRatioDari,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc } from './cetak';
@@ -65,21 +65,21 @@ const ARAH_SUDUT: Record<Sudut, [number, number, number]> = {
 
 /**
  * Posisi kamera searah `arah` dari `target` yang memuat seluruh `kotak` di
- * kanvas: ukur bentang kotak pada sumbu kanan & atas layar, lalu mundur
- * sejauh yang dibutuhkan lensa (FOV) & rasio kanvas.
+ * kanvas. Tepat untuk perspektif: tiap pojok kotak harus masuk kerucut
+ * pandang, yaitu jarak >= (kedalaman pojok ke arah kamera) + (simpangan
+ * kanan/atas pojok ÷ tan setengah FOV).
  */
-function posisiPas(m: Mesin, target: T.Vector3, arah: T.Vector3, kotak: T.Box3, longgar = 1.08) {
+function posisiPas(m: Mesin, target: T.Vector3, arah: T.Vector3, kotak: T.Box3, longgar = 1.06) {
   const { THREE, kamera } = m;
   const maju = arah.clone().negate();
   const kanan = new THREE.Vector3().crossVectors(maju, kamera.up).normalize();
   const atas = new THREE.Vector3().crossVectors(kanan, maju).normalize();
-  let w = 0, h = 0, dekat = 0;
+  const tanV = Math.tan((kamera.fov * Math.PI) / 360), tanH = tanV * Math.max(0.3, kamera.aspect);
+  let jarak = 0;
   for (const x of [kotak.min.x, kotak.max.x]) for (const y of [kotak.min.y, kotak.max.y]) for (const z of [kotak.min.z, kotak.max.z]) {
     const v = new THREE.Vector3(x, y, z).sub(target);
-    w = Math.max(w, Math.abs(v.dot(kanan))); h = Math.max(h, Math.abs(v.dot(atas))); dekat = Math.max(dekat, v.dot(arah));
+    jarak = Math.max(jarak, v.dot(arah) + Math.max(Math.abs(v.dot(kanan)) / tanH, Math.abs(v.dot(atas)) / tanV) * longgar);
   }
-  const tan = Math.tan((kamera.fov * Math.PI) / 360);
-  const jarak = Math.max(h / tan, w / (tan * Math.max(0.3, kamera.aspect))) * longgar + dekat;
   return target.clone().addScaledVector(arah, Math.max(1, jarak));
 }
 
@@ -544,7 +544,8 @@ export default function Desain3D() {
       }
     }
     // Sinar proyektor: kerucut cahaya dari lensa ke gambar di layar/dinding,
-    // terang di lensa & memudar ke layar (alpha per verteks, blending aditif).
+    // pekat di lensa & memudar ke layar (alpha per verteks). Warna hangat
+    // (bukan putih aditif) supaya tetap terlihat di depan dinding terang.
     if (sinar) {
       for (const p of benda) {
         if (p.jenis !== 'proyektor') continue;
@@ -555,25 +556,25 @@ export default function Desain3D() {
         for (let i = 0; i < 4; i++) {
           const a = C[i], b = C[(i + 1) % 4];
           posisi.push(O.x, O.y, O.z, a.x, a.y, a.z, b.x, b.y, b.z);
-          warna.push(1, 0.96, 0.84, 0.42, 1, 0.96, 0.84, 0.05, 1, 0.96, 0.84, 0.05);
+          warna.push(1, 0.84, 0.36, 0.55, 1, 0.9, 0.55, 0.12, 1, 0.9, 0.55, 0.12);
         }
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.Float32BufferAttribute(posisi, 3));
         geo.setAttribute('color', new THREE.Float32BufferAttribute(warna, 4));
-        const cahaya = { transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false };
+        const cahaya = { transparent: true, depthWrite: false, toneMapped: false };
         const kerucutSinar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, side: THREE.DoubleSide }));
         kerucutSinar.renderOrder = 2; grupBantu.add(kerucutSinar);
         const tepi: number[] = []; for (const c of C) tepi.push(O.x, O.y, O.z, c.x, c.y, c.z);
         const geoTepi = new THREE.BufferGeometry(); geoTepi.setAttribute('position', new THREE.Float32BufferAttribute(tepi, 3));
-        grupBantu.add(new THREE.LineSegments(geoTepi, new THREE.LineBasicMaterial({ ...cahaya, color: 0xffe9a8, opacity: 0.35 })));
+        grupBantu.add(new THREE.LineSegments(geoTepi, new THREE.LineBasicMaterial({ ...cahaya, color: 0xf59e0b, opacity: 0.6 })));
         const gambar = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints([C[0], C[1], C[2], C[0], C[2], C[3]]),
-          new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfff4d6, opacity: sn.layar ? 0.14 : 0.3, side: THREE.DoubleSide }));
+          new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfff1c2, opacity: sn.layar ? 0.22 : 0.4, side: THREE.DoubleSide }));
         gambar.renderOrder = 2; grupBantu.add(gambar);
-        const kilau = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), new THREE.MeshBasicMaterial({ ...cahaya, color: 0xffffff, opacity: 0.95 }));
+        const kilau = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfffbeb, blending: THREE.AdditiveBlending, opacity: 0.95 }));
         kilau.position.copy(O); grupBantu.add(kilau);
         if (ukur) {
           const tengah = C.reduce((v, c) => v.add(c), new THREE.Vector3()).multiplyScalar(0.25);
-          label(`${p.nama}: lempar ${f(sn.jarak)} m · gambar ${f(sn.lebar)} × ${f(sn.tinggi)} m`, O.clone().lerp(tengah, 0.45), 'abu');
+          label(`${p.nama}: lempar ${f(sn.jarak)} m · gambar ${f(sn.lebar)} × ${f(sn.tinggi)} m`, O.clone().lerp(tengah, 0.3), 'abu');
         }
       }
     }
@@ -596,7 +597,7 @@ export default function Desain3D() {
     const { THREE } = mesin.current!;
     const k = fk === 'semua' ? null : kotakRuang[fk] ?? null;
     const x0 = k ? k.x0 : 0, x1 = k ? k.x0 + k.p : batas.x, z1 = k ? k.l : batas.z, t = k ? k.t : batas.t;
-    return { target: new THREE.Vector3((x0 + x1) / 2, 0.8, z1 / 2), kotak: new THREE.Box3(new THREE.Vector3(x0, 0, 0), new THREE.Vector3(x1, t, z1)) };
+    return { target: new THREE.Vector3((x0 + x1) / 2, Math.min(1.2, t * 0.4), z1 / 2), kotak: new THREE.Box3(new THREE.Vector3(x0, 0, 0), new THREE.Vector3(x1, t, z1)) };
   };
 
   const kameraKe = (sudut: Sudut | 'kursi', fk: 'semua' | 0 | 1 = fokusRuang, langsung = false) => {
@@ -708,7 +709,8 @@ export default function Desain3D() {
     if (!isi.length) { setPesan(`Ruang ${asal + 1} masih kosong.`); return; }
     const lama = benda.filter(b => ruangDari(ruang, b.x) === tujuan);
     if (ganti && lama.length && !window.confirm(`Ganti isi Ruang ${tujuan + 1}? ${lama.length} benda di sana dihapus lalu diganti salinan Ruang ${asal + 1}.`)) return;
-    const baru = isi.map(b => { const c = salinKeRuang(b, kA, kT); salinGambar(b.id, c.id); return c; });
+    const baru = salinIsi(isi, ruang, kA, kT);
+    isi.forEach((b, i) => salinGambar(b.id, baru[i].id));
     setBenda(bs => [...(ganti ? bs.filter(b => ruangDari(ruang, b.x) !== tujuan) : bs), ...baru]);
     setPilih(null);
     setPesan(`${baru.length} benda disalin dari Ruang ${asal + 1} ke Ruang ${tujuan + 1}.`);
@@ -1077,10 +1079,10 @@ export default function Desain3D() {
                 ))}
               </div>
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mt-2 mb-1.5">Menghadap dinding</p>
-              <div className="grid grid-cols-4 gap-1">
+              <div className="grid grid-cols-2 gap-1">
                 {(['depan', 'belakang', 'kiri', 'kanan'] as const).map(v => (
                   <button key={v} type="button" onClick={() => { pilihSudut(v); setMenuSudut(false); }}
-                    className={`${tombolSudut(sudutRef.current === v)} capitalize px-1`}>{v}</button>
+                    className={`${tombolSudut(sudutRef.current === v)} capitalize`}>{v}</button>
                 ))}
               </div>
               {duaRuang && (

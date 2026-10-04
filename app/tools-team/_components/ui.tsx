@@ -19,8 +19,8 @@ export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', ban
           value={teks ?? (Number.isFinite(nilai) ? String(nilai) : '')}
           onChange={e => { setTeks(e.target.value); const v = parseFloat(e.target.value.replace(',', '.')); if (Number.isFinite(v)) onUbah(v); }}
           onBlur={() => setTeks(null)}
-          className={`${kelasInput} ${satuan ? 'pr-12' : ''}`} />
-        {satuan && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 pointer-events-none">{satuan}</span>}
+          className={`${kelasInput} ${satuan ? (satuan.length <= 2 ? 'pr-7' : 'pr-12') : ''}`} />
+        {satuan && <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 pointer-events-none">{satuan}</span>}
       </span>
       {bantuan && <span className="block text-[11px] text-slate-500 mt-1">{bantuan}</span>}
     </label>

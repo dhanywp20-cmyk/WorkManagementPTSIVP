@@ -396,6 +396,33 @@ export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
   return { asal, sudut: persegi(pusat, [Math.cos(r), 0, -Math.sin(r)], lebar, tinggi), layar: null, jarak, lebar, tinggi, trPas: null };
 }
 
+/**
+ * Salin seluruh isi satu ruang ke ruang sebelah. Sama dengan salinKeRuang per
+ * benda, ditambah: proyektor yang sedang menembak layar di ruang asal
+ * diletakkan pada posisi & arah yang sama relatif terhadap salinan layarnya,
+ * jadi jarak lempar dan ukuran gambar tidak berubah walau ruangnya beda ukuran.
+ */
+export function salinIsi(isi: Benda[], ruang: Ruang, asal: Kotak, tujuan: Kotak): Benda[] {
+  const baru = isi.map(b => salinKeRuang(b, asal, tujuan));
+  const indeks = new Map(isi.map((b, i) => [b.id, i]));
+  isi.forEach((p, i) => {
+    if (p.jenis !== 'proyektor') return;
+    const layar = sinarProyektor(p, isi, ruang).layar;
+    const j = layar ? indeks.get(layar.id) : undefined;
+    if (!layar || j === undefined) return;
+    const ke = baru[j];
+    //  Posisi proyektor dalam koordinat lokal layar asal (kebalikan keDunia), lalu ke layar salinan.
+    const r0 = (layar.rot * Math.PI) / 180, dx = p.x - layar.x, dz = p.z - layar.z;
+    const [x, , z] = keDunia(ke, [dx * Math.cos(r0) - dz * Math.sin(r0), 0, dx * Math.sin(r0) + dz * Math.cos(r0)]);
+    baru[i] = {
+      ...baru[i], rot: (((p.rot - layar.rot + ke.rot) % 360) + 360) % 360,
+      x: bulat2(Math.min(tujuan.x0 + tujuan.p - 0.1, Math.max(tujuan.x0 + 0.1, x))),
+      z: bulat2(Math.min(tujuan.l - 0.1, Math.max(0.1, z))),
+    };
+  });
+  return baru;
+}
+
 /** Layar proyektor terdekat di ruang yang sama (tanpa syarat arah). */
 export function layarTerdekat(p: Benda, semua: Benda[], ruang: Ruang): Benda | null {
   const ri = ruangDari(ruang, p.x);

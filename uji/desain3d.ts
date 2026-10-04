@@ -5,7 +5,7 @@
  * Jalankan: npx tsx uji/desain3d.ts
  */
 import {
-  type Benda, type Kotak, type Ruang, bendaBaru, salinKeRuang, sinarProyektor, proyektorKeLayar, keDunia, lensaProyektor, layarTerdekat,
+  type Benda, type Kotak, type Ruang, bendaBaru, salinKeRuang, salinIsi, sinarProyektor, proyektorKeLayar, keDunia, lensaProyektor, layarTerdekat,
 } from '../app/tools-team/_components/desain3d/model';
 
 let lulus = 0, gagal = 0;
@@ -81,6 +81,22 @@ console.log('\n4. Proyektor di ruang lain tidak menembak layar ruang 1');
   const p: Benda = { ...bendaBaru('proyektor', { x0: 8, p: 6, l: 6, t: 3 }), x: 9, rot: 180 };
   cek('tanpa sasaran', sinarProyektor(p, [layar, p], ruang).layar === null);
   cek('layar terdekat hanya di ruang yang sama', layarTerdekat(p, [layar, p], ruang) === null);
+}
+
+console.log('\n5. Salin isi ruang: proyektor tetap menembak salinan layarnya');
+{
+  const ruang: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: { aktif: true, p: 6, l: 6, t: 3, lantai: 'karpet', pintu: true } };
+  const R2: Kotak = { x0: 8, p: 6, l: 6, t: 3 };
+  //  Layar di dinding kiri ruang 1 (rot 90), proyektor plafon di jarak idealnya.
+  const layar: Benda = { ...bendaBaru('layar', R1), x: 0.05, z: 3, rot: 90 };
+  const proj = proyektorKeLayar(bendaBaru('proyektor', R1, { pasangProyektor: 'plafon' }), layar, R1);
+  const asli = sinarProyektor(proj, [layar, proj], ruang);
+  const [cl, cp] = salinIsi([layar, proj], ruang, R1, R2);
+  const salin = sinarProyektor(cp, [cl, cp], ruang);
+  cek('layar salinan tetap di dinding kiri ruang 2', dekat(cl.x, 8.05) && cl.rot === 90, `${cl.x}`);
+  cek('jarak lempar & ukuran gambar sama dengan ruang asal', salin.layar?.id === cl.id && dekat(salin.jarak, asli.jarak) && dekat(salin.lebar, asli.lebar), `${salin.jarak} vs ${asli.jarak}`);
+  const sendiri = salinKeRuang(proj, R1, R2);
+  cek('(tanpa aturan ini jarak lempar akan berubah)', !dekat(sinarProyektor(sendiri, [cl, sendiri], ruang).jarak, asli.jarak));
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
