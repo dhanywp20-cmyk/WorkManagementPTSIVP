@@ -4,7 +4,7 @@
  * Jalankan: npx tsx uji/av-hitung.ts
  */
 import {
-  hitungLED, cabinetUntukUkuran, saranHardware, MODUL_LED, layarDariJarak, ukuranDariDiagonal,
+  hitungLED, cabinetUntukUkuran, saranHardware, kapasitasHardware, MODUL_LED, VIDEO_PROCESSOR, SENDING_CARD, layarDariJarak, ukuranDariDiagonal,
   jarakLempar, lumenDibutuhkan, bandwidthGbps, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
 } from '../lib/av-hitung';
 
@@ -30,9 +30,14 @@ console.log('\n1. LED Videotron');
   const h120 = hitungLED({ pitch: 2.5, cabLebar: 500, cabTinggi: 500, kolom: 8, baris: 6, dayaMaksCab: 150, faktorRata: 0.33, beratCab: 7.5, refresh: 120, bit: 8, tegangan: 220 });
   cek('120 Hz menggandakan kebutuhan port', h120.portLAN === 6, String(h120.portLAN));
   const s = saranHardware(h.totalPx, h.portLAN);
-  cek('1.92 MP/3 port -> MCTRL600 & VX400', s.kartu.hw.nama === 'MCTRL600' && s.kartu.qty === 1 && s.vp?.hw.nama === 'VX400', `${s.kartu.hw.nama} ${s.vp?.hw.nama}`);
+  cek('1.92 MP/3 port -> MCTRL600 & VX400', s.kartu?.hw.nama === 'MCTRL600' && s.kartu.qty === 1 && s.vp?.hw.nama === 'VX400', `${s.kartu?.hw.nama} ${s.vp?.hw.nama}`);
   const besar = saranHardware(20_000_000, 31);
-  cek('20 MP melebihi 1 unit -> 2x UHD Jr / 3x MCTRL4K', besar.vp?.hw.nama === 'NovaPro UHD Jr' && besar.vp.qty === 2 && besar.kartu.qty === 3, `${besar.vp?.qty} ${besar.kartu.qty}`);
+  cek('20 MP melebihi 1 unit -> 2x UHD Jr / 3x MCTRL4K', besar.vp?.hw.nama === 'NovaPro UHD Jr' && besar.vp.qty === 2 && besar.kartu?.qty === 3, `${besar.vp?.qty} ${besar.kartu?.qty}`);
+  const v1260 = VIDEO_PROCESSOR.find(v => v.nama === 'V1260')!;
+  const k = kapasitasHardware(v1260, 9_000_000, 14);
+  cek('V1260 (tanpa port) dihitung dari pixel saja: 9 MP -> 2 unit', k.qty === 2 && k.pembatas === 'pixel' && k.pakaiPort === 0, JSON.stringify(k));
+  const m300 = kapasitasHardware(SENDING_CARD[0], 1_000_000, 3);
+  cek('MCTRL300 1 MP / 3 port -> 2 kartu karena port', m300.qty === 2 && m300.pembatas === 'port');
 }
 {
   const c = cabinetUntukUkuran(5.2, 2.9, 500, 500);

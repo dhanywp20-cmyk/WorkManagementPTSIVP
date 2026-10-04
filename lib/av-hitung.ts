@@ -143,27 +143,49 @@ export const VIDEO_PROCESSOR: Hardware[] = [
   { nama: 'V1260', maksPx: 7_680_000, port: 0, senderBawaan: false, ket: 'VP saja - perlu sending card terpisah' },
 ];
 
+export interface Kapasitas {
+  /** Unit yang dibutuhkan per screen (min 1). */ qty: number;
+  /** Persentase terpakai dari total kapasitas qty unit. */ pakaiPx: number; pakaiPort: number;
+  /** Batas yang menentukan jumlah unit. */ pembatas: 'pixel' | 'port' | null;
+}
+
+/**
+ * Jumlah unit `hw` untuk memuat totalPx & portLAN. Port 0 = VP tanpa output
+ * LAN (perlu sending card), jadi hanya dihitung dari kapasitas pixel.
+ */
+export function kapasitasHardware(hw: Hardware, totalPx: number, portLAN: number): Kapasitas {
+  const qPx = Math.ceil(totalPx / Math.max(1, hw.maksPx));
+  const qPort = hw.port > 0 ? Math.ceil(portLAN / hw.port) : 0;
+  const qty = Math.max(1, qPx, qPort);
+  return {
+    qty,
+    pakaiPx: (totalPx / (hw.maksPx * qty)) * 100,
+    pakaiPort: hw.port > 0 ? (portLAN / (hw.port * qty)) * 100 : 0,
+    pembatas: qty <= 1 ? null : qPort > qPx ? 'port' : 'pixel',
+  };
+}
+
 export interface SaranHardware {
   /** All-in-one terkecil yang cukup, beserta jumlah unit per screen. */
   vp: { hw: Hardware; qty: number } | null;
   /** Sending card terkecil yang cukup bila memakai VP tanpa sender bawaan. */
-  kartu: { hw: Hardware; qty: number };
+  kartu: { hw: Hardware; qty: number } | null;
 }
 
 /**
  * Pilih hardware terkecil yang mampu (piksel & port). Bila tidak ada satu
  * unit yang cukup, ambil yang terbesar dan hitung jumlah unitnya.
  */
-export function saranHardware(totalPx: number, portLAN: number): SaranHardware {
+export function saranHardware(totalPx: number, portLAN: number, kartu = SENDING_CARD, vp = VIDEO_PROCESSOR): SaranHardware {
   const pilih = (daftar: Hardware[]) => {
+    if (!daftar.length) return null;
     const urut = [...daftar].sort((a, b) => a.maksPx - b.maksPx);
     const cukup = urut.find(h => h.maksPx >= totalPx && h.port >= portLAN);
     if (cukup) return { hw: cukup, qty: 1 };
     const besar = urut[urut.length - 1];
-    return { hw: besar, qty: Math.max(Math.ceil(totalPx / besar.maksPx), Math.ceil(portLAN / besar.port)) };
+    return { hw: besar, qty: kapasitasHardware(besar, totalPx, portLAN).qty };
   };
-  const aio = VIDEO_PROCESSOR.filter(v => v.senderBawaan);
-  return { vp: aio.length ? pilih(aio) : null, kartu: pilih(SENDING_CARD) };
+  return { vp: pilih(vp.filter(v => v.senderBawaan && v.port > 0)), kartu: pilih(kartu) };
 }
 
 /** Kecerahan yang disarankan (nits) per lingkungan. */

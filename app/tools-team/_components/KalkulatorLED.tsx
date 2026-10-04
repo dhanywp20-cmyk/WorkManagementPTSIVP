@@ -2,9 +2,10 @@
 import { useMemo, useState } from 'react';
 import { getSession } from '@/lib/auth';
 import {
-  hitungLED, cabinetUntukUkuran, saranHardware, KECERAHAN, MODUL_LED, VIDEO_PROCESSOR, type Pembulatan,
+  hitungLED, cabinetUntukUkuran, saranHardware, kapasitasHardware, KECERAHAN, type Pembulatan, type Hardware,
 } from '@/lib/av-hitung';
 import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f, kelasInput } from './ui';
+import { useReferensiLED, EditorReferensiLED } from './ReferensiLED';
 
 const PITCH = [0.9, 1.2, 1.25, 1.5, 1.56, 1.86, 1.9, 2, 2.5, 2.6, 2.9, 3.91, 4.81, 5, 6.67, 8, 10];
 const CABINET: { v: string; l: string; w: number; h: number }[] = [
@@ -33,7 +34,41 @@ function Teks({ label, nilai, onUbah, tipe = 'text' }: { label: string; nilai: s
   );
 }
 
+/** Bilah pemakaian kapasitas (pixel / port). */
+function Pakai({ label, persen }: { label: string; persen: number }) {
+  const p = Math.min(100, Math.max(0, persen));
+  const warna = persen > 100 ? 'bg-rose-600' : persen > 85 ? 'bg-amber-500' : 'bg-emerald-600';
+  return (
+    <div>
+      <div className="flex justify-between text-[11.5px] text-slate-600"><span>{label}</span><span className="tabular-nums font-semibold text-slate-800">{f(persen, 0)}%</span></div>
+      <div className="h-1.5 rounded-full bg-slate-200 mt-0.5 overflow-hidden"><div className={`h-full rounded-full ${warna}`} style={{ width: `${p}%` }} /></div>
+    </div>
+  );
+}
+
+function KartuHw({ peran, hw, totalPx, portLAN, nada, catatan }: { peran: string; hw: Hardware; totalPx: number; portLAN: number; nada: 'hijau' | 'abu'; catatan?: string }) {
+  const k = kapasitasHardware(hw, totalPx, portLAN);
+  return (
+    <div className={`rounded-xl border p-3 ${nada === 'hijau' ? 'border-emerald-200 bg-emerald-50/60' : 'border-slate-200 bg-slate-50'}`}>
+      <p className={`text-[11px] font-bold uppercase tracking-wider ${nada === 'hijau' ? 'text-emerald-800' : 'text-slate-600'}`}>{peran}</p>
+      <p className="text-lg font-extrabold text-slate-900 mt-0.5">{k.qty > 1 ? `${k.qty}× ` : ''}{hw.nama}</p>
+      <p className="text-[12px] text-slate-600">{f(hw.maksPx / 1e6, 2)} MP · {hw.port > 0 ? `${hw.port} port` : 'tanpa port LAN'}{hw.ket ? ` · ${hw.ket}` : ''}</p>
+      <div className="mt-2 space-y-1.5">
+        <Pakai label="Pemakaian pixel" persen={k.pakaiPx} />
+        {hw.port > 0 && <Pakai label="Pemakaian port" persen={k.pakaiPort} />}
+      </div>
+      {k.pembatas && <p className="text-[12px] text-amber-800 mt-1.5">Butuh {k.qty} unit karena {k.pembatas === 'port' ? 'jumlah port LAN' : 'kapasitas pixel'}.</p>}
+      {catatan && <p className={`text-[12px] mt-1.5 ${nada === 'hijau' ? 'text-emerald-800' : 'text-slate-600'}`}>{catatan}</p>}
+    </div>
+  );
+}
+
 export function KalkulatorLED() {
+  const refLED = useReferensiLED();
+  const { modul: daftarModul, kartu: daftarKartu, vp: daftarVP } = refLED.data;
+  const [modeHw, setModeHw] = useState<'otomatis' | 'manual'>('otomatis');
+  const [vpPilih, setVpPilih] = useState('');
+  const [kartuPilih, setKartuPilih] = useState('');
   const [project, setProject] = useState('');
   const [customer, setCustomer] = useState('');
   const [tanggal, setTanggal] = useState(() => new Date().toISOString().slice(0, 10));
@@ -62,7 +97,7 @@ export function KalkulatorLED() {
   const [tegangan, setTegangan] = useState(220);
 
   //  Satuan aktif: modul dari tabel referensi, atau cabinet bebas.
-  const modul = MODUL_LED.find(m => m.kode === modulKode) ?? MODUL_LED[0];
+  const modul = daftarModul.find(m => m.kode === modulKode) ?? daftarModul[0];
   const u = satuan === 'modul'
     ? { pitch: modul.pitch, w: modul.w, h: modul.h, pxX: modul.pxW, pxY: modul.pxH, kode: modul.kode }
     : { pitch, w: cabW, h: cabH, pxX: Math.round(cabW / pitch), pxY: Math.round(cabH / pitch), kode: `P${pitch}` };
@@ -79,8 +114,15 @@ export function KalkulatorLED() {
     pitch: u.pitch, cabLebar: u.w, cabTinggi: u.h, kolom, baris, pxX: px.x, pxY: px.y, dayaMaksCab: dayaUnitEf,
     faktorRata: faktorRata / 100, beratCab: beratUnitEf, refresh, bit, tegangan,
   }), [u.pitch, u.w, u.h, kolom, baris, px.x, px.y, dayaUnitEf, faktorRata, beratUnitEf, refresh, bit, tegangan]);
-  const hw = saranHardware(h.totalPx, h.portLAN);
-  const vpSaja = VIDEO_PROCESSOR.filter(v => !v.senderBawaan);
+  const hw = saranHardware(h.totalPx, h.portLAN, daftarKartu, daftarVP);
+  const vpSaja = daftarVP.filter(v => !(v.senderBawaan && v.port > 0));
+  //  Mode manual: VP pilihan; sending card hanya dibutuhkan bila VP tidak all-in-one.
+  const vpM = daftarVP.find(v => v.nama === vpPilih) ?? null;
+  const vpAio = !!vpM && vpM.senderBawaan && vpM.port > 0;
+  const kartuM = vpAio ? null : (daftarKartu.find(k => k.nama === kartuPilih) ?? hw.kartu?.hw ?? null);
+  const teksHw = modeHw === 'manual'
+    ? [vpM && `${kapasitasHardware(vpM, h.totalPx, h.portLAN).qty}× ${vpM.nama}`, kartuM && `${kapasitasHardware(kartuM, h.totalPx, h.portLAN).qty}× ${kartuM.nama}`].filter(Boolean).join(' + ')
+    : '';
   const lewat4K = h.resX > 3840 || h.resY > 2160;
   const n = Math.max(1, screen);
   const selisihW = mode === 'ukuran' ? h.lebarM - targetW : 0;
@@ -89,7 +131,7 @@ export function KalkulatorLED() {
   const resetUnit = () => { setPxIn(null); setDayaUnit(null); setBeratUnit(null); };
   const pilihModul = (k: string) => {
     setModulKode(k); resetUnit();
-    const m = MODUL_LED.find(x => x.kode === k);
+    const m = daftarModul.find(x => x.kode === k);
     if (m) setLingkungan(LINGKUNGAN_TIPE[m.tipe]);
   };
   const pilihCab = (v: string) => {
@@ -108,8 +150,8 @@ export function KalkulatorLED() {
     `Daya/screen: maks ${f(h.dayaMaksW / 1000)} kW, rata-rata ${f(h.dayaRataW / 1000)} kW; arus maks ${f(h.arusMaksA, 1)} A @${tegangan}V, MCB ${h.mcbSaranA} A`,
     `Panas ±${f(h.panasBTU, 0)} BTU/jam; berat ±${f(h.beratKg, 0)} kg/screen`,
     `Data: ${h.portLAN} port LAN (${refresh} Hz, ${bit}-bit)`,
-    hw.vp && `All-in-one: ${hw.vp.qty}× ${hw.vp.hw.nama}/screen`,
-    `Atau sending card: ${hw.kartu.qty}× ${hw.kartu.hw.nama}/screen + video processor`,
+    modeHw === 'manual' ? `Hardware: ${teksHw || '-'} /screen` : hw.vp && `All-in-one: ${hw.vp.qty}× ${hw.vp.hw.nama}/screen`,
+    modeHw === 'otomatis' && hw.kartu && `Atau sending card: ${hw.kartu.qty}× ${hw.kartu.hw.nama}/screen + video processor`,
     (pembuat || tanggal) && `Dibuat: ${[pembuat, tanggal].filter(Boolean).join(', ')}`,
   ].filter(Boolean).join('\n');
 
@@ -119,7 +161,7 @@ export function KalkulatorLED() {
   const garisTipis = (k: number) => (k > 60 ? 0 : k > 30 ? 0.3 : 0.8);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
       <div className="space-y-4 min-w-0">
         <Kartu judul="Informasi project">
           <div className="grid grid-cols-2 gap-3">
@@ -137,7 +179,7 @@ export function KalkulatorLED() {
             {satuan === 'modul' ? (
               <>
                 <Pilih label="Pitch LED" nilai={modulKode} onUbah={pilihModul}
-                  opsi={MODUL_LED.map(m => ({ v: m.kode, l: `${m.kode} · ${m.w}×${m.h} mm · ${m.tipe}` }))} />
+                  opsi={daftarModul.map(m => ({ v: m.kode, l: `${m.kode} · ${m.w}×${m.h} mm · ${m.pxW}×${m.pxH} px · ${m.tipe}` }))} />
                 <p className="text-[12px] text-slate-600 -mt-1">{modul.guna}</p>
               </>
             ) : (
@@ -279,27 +321,40 @@ export function KalkulatorLED() {
         </Kartu>
 
         <Kartu judul="Hardware Novastar (per screen)">
-          <div className="grid sm:grid-cols-2 gap-2.5">
-            {hw.vp && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">Opsi A · All-in-one</p>
-                <p className="text-lg font-extrabold text-slate-900 mt-0.5">{hw.vp.qty > 1 ? `${hw.vp.qty}× ` : ''}{hw.vp.hw.nama}</p>
-                <p className="text-[12px] text-slate-600">{f(hw.vp.hw.maksPx / 1e6, 1)} MP · {hw.vp.hw.port} port · {hw.vp.hw.ket}</p>
-                <p className="text-[12px] text-emerald-800 mt-1">Sending sudah terpasang, tidak perlu sending card.</p>
+          <div className="space-y-3">
+            <Segmen label="Pemilihan" nilai={modeHw} onUbah={setModeHw}
+              opsi={[{ v: 'otomatis', l: 'Otomatis (terkecil yang cukup)' }, { v: 'manual', l: 'Pilih model' }]} />
+            {modeHw === 'manual' && (
+              <div className="grid sm:grid-cols-2 gap-3">
+                <Pilih label="Video processor" nilai={vpPilih} onUbah={setVpPilih}
+                  opsi={[{ v: '', l: 'Tanpa VP (sumber langsung)' }, ...daftarVP.map(v => ({ v: v.nama, l: `${v.nama} · ${f(v.maksPx / 1e6, 1)} MP${v.senderBawaan && v.port > 0 ? ` · ${v.port} port` : ' · perlu sending card'}` }))]} />
+                {!vpAio && (
+                  <Pilih label="Sending card" nilai={kartuM?.nama ?? ''} onUbah={setKartuPilih}
+                    opsi={daftarKartu.map(k => ({ v: k.nama, l: `${k.nama} · ${f(k.maksPx / 1e6, 1)} MP · ${k.port} port` }))} />
+                )}
               </div>
             )}
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Opsi B · Sending card</p>
-              <p className="text-lg font-extrabold text-slate-900 mt-0.5">{hw.kartu.qty > 1 ? `${hw.kartu.qty}× ` : ''}{hw.kartu.hw.nama}</p>
-              <p className="text-[12px] text-slate-600">{f(hw.kartu.hw.maksPx / 1e6, 1)} MP · {hw.kartu.hw.port} port · {hw.kartu.hw.ket}</p>
-              <p className="text-[12px] text-slate-600 mt-1">Dengan video processor tanpa sender ({vpSaja.map(v => v.nama).join(', ')}) atau langsung dari sumber.</p>
-            </div>
+            {modeHw === 'otomatis' ? (
+              <div className="grid sm:grid-cols-2 gap-2.5">
+                {hw.vp && <KartuHw peran="Opsi A · All-in-one" hw={hw.vp.hw} totalPx={h.totalPx} portLAN={h.portLAN} nada="hijau" catatan="Sending sudah terpasang, tidak perlu sending card." />}
+                {hw.kartu && <KartuHw peran="Opsi B · Sending card" hw={hw.kartu.hw} totalPx={h.totalPx} portLAN={h.portLAN} nada="abu"
+                  catatan={`Dengan video processor tanpa sender${vpSaja.length ? ` (${vpSaja.map(v => v.nama).join(', ')})` : ''} atau langsung dari sumber.`} />}
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 gap-2.5">
+                {vpM && <KartuHw peran={vpAio ? 'Video processor · all-in-one' : 'Video processor'} hw={vpM} totalPx={h.totalPx} portLAN={h.portLAN} nada={vpAio ? 'hijau' : 'abu'}
+                  catatan={vpAio ? 'Sending sudah terpasang, tidak perlu sending card.' : 'Tanpa output LAN: dipasangkan dengan sending card.'} />}
+                {kartuM && <KartuHw peran="Sending card" hw={kartuM} totalPx={h.totalPx} portLAN={h.portLAN} nada="abu" />}
+              </div>
+            )}
+            {hw.vp && hw.vp.qty > 1 && modeHw === 'otomatis' && (
+              <p className="text-[12.5px] text-amber-800">Melebihi kapasitas satu unit: layar dibagi ke beberapa controller, perlu sinkronisasi/splicer.</p>
+            )}
           </div>
-          {(hw.vp?.qty ?? 1) > 1 && (
-            <p className="mt-2 text-[12.5px] text-amber-800">Melebihi kapasitas satu unit: layar dibagi ke beberapa controller, perlu sinkronisasi/splicer.</p>
-          )}
-          <Catatan>Kecerahan disarankan: {KECERAHAN[lingkungan]}. Kapasitas adalah acuan umum (60 Hz 8-bit ≈ 650 rb px/port); cek datasheet dan NovaLCT sebelum penawaran.</Catatan>
+          <Catatan>Kecerahan disarankan: {KECERAHAN[lingkungan]}. Kapasitas sesuai tabel referensi (60 Hz 8-bit ≈ 650 rb px/port); cek datasheet dan NovaLCT sebelum penawaran.</Catatan>
         </Kartu>
+
+        <EditorReferensiLED {...refLED} />
 
         <details className="rounded-2xl bg-white border border-slate-200 p-4 sm:p-5">
           <summary className="text-[13px] font-bold text-slate-800 cursor-pointer">Rumus & asumsi</summary>

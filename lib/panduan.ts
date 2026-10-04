@@ -186,6 +186,8 @@ export const PANDUAN: Panduan[] = [
       'Pilih alat di kolom kiri (di HP: deretan di atas).',
       'LED Videotron: pilih modul referensi (atau cabinet), isi ukuran target dan jumlah screen - hasil modul, resolusi, daya, MCB, berat, port, serta sending card / video processor Novastar muncul langsung.',
       'Isi Informasi project agar nama project, customer, dan pembuat ikut di hasil salin/cetak.',
+      'Di kartu Hardware pilih "Pilih model" untuk mensimulasikan video processor / sending card tertentu; pemakaian pixel & port dan jumlah unit dihitung otomatis.',
+      'Buka "Tabel referensi modul & hardware" untuk menyesuaikan pitch, ukuran & pixel modul, serta kapasitas hardware sesuai datasheet.',
       'Desain 3D: atur ukuran ruang, tambah display/meja/kursi/speaker, geser di lantai; analisis memberi tahu apakah layar cukup besar.',
       'Klik "Salin hasil" untuk menempel ringkasan ke WA/penawaran, atau "Unduh PNG" untuk lampiran Request Design.',
     ],
