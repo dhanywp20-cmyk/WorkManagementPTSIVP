@@ -69,3 +69,78 @@ export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; b
   if (JSON.stringify(data).length > MAKS_BYTE_DESAIN) return { ok: false, alasan: 'Desain terlalu besar untuk disimpan.' };
   return { ok: true, data, jumlah: d.benda.length };
 }
+
+// ── Versi desain & tautan ke Request Design Project ────────────────────────
+
+/** Gambar pratinjau per versi: data URL JPEG/WebP kecil (bukan file terpisah). */
+export const MAKS_BYTE_GAMBAR = 120_000;
+export function bersihkanGambar(x: unknown): string | null {
+  if (typeof x !== 'string' || x.length > MAKS_BYTE_GAMBAR) return null;
+  return /^data:image\/(jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(x) ? x : null;
+}
+
+export interface RingkasanDesain {
+  ruang: { p: number; l: number; t: number }[];
+  perangkat: { kategori: string; nama: string; jumlah: number }[];
+  jumlah: number;
+}
+
+const URUT_KATEGORI = ['Display', 'Kamera & konferensi', 'Audio & kontrol', 'Furnitur', 'Lainnya'];
+export function kategoriBenda(jenis: string): string {
+  if (['videowall', 'led', 'layar', 'ifp', 'tv', 'proyektor'].includes(jenis)) return 'Display';
+  if (jenis === 'kamera' || jenis === 'lift') return 'Kamera & konferensi';
+  if (['speaker', 'speaker-plafon', 'mic', 'touchpanel', 'rak'].includes(jenis)) return 'Audio & kontrol';
+  if (jenis === 'meja' || jenis === 'kursi') return 'Furnitur';
+  return 'Lainnya';
+}
+
+/**
+ * Ringkasan sebuah desain untuk ditampilkan/dicetak di Request Design tanpa
+ * memuat data 3D: ukuran tiap ruang dan daftar perangkat per kategori (benda
+ * bernama sama dijumlah; "Meja kelas 2.3" dihitung sebagai "Meja kelas").
+ * Hanya data yang memang ada di desain - tidak ada nilai yang dikarang.
+ */
+export function ringkasanDesain(data: { ruang: unknown; benda: unknown[] }): RingkasanDesain {
+  const r = (data.ruang ?? {}) as Record<string, unknown>;
+  const ukur = (x: Record<string, unknown> | undefined) => ({ p: Number(x?.p) || 0, l: Number(x?.l) || 0, t: Number(x?.t) || 0 });
+  const ruang = [ukur(r)];
+  const r2 = r.r2 as Record<string, unknown> | null | undefined;
+  if (r2 && r2.aktif) ruang.push(ukur(r2));
+  const peta = new Map<string, { kategori: string; nama: string; jumlah: number }>();
+  for (const b of data.benda) {
+    const x = b as { jenis?: unknown; nama?: unknown };
+    const jenis = typeof x.jenis === 'string' ? x.jenis : '';
+    const nama = (typeof x.nama === 'string' && x.nama.trim() ? x.nama.trim() : jenis).replace(/\s+\d+\.\d+$/, '').slice(0, 80);
+    const kategori = kategoriBenda(jenis);
+    const kunci = `${kategori}|${nama}`;
+    const ada = peta.get(kunci);
+    if (ada) ada.jumlah++; else peta.set(kunci, { kategori, nama, jumlah: 1 });
+  }
+  const perangkat = [...peta.values()].sort((a, b) =>
+    URUT_KATEGORI.indexOf(a.kategori) - URUT_KATEGORI.indexOf(b.kategori) || a.nama.localeCompare(b.nama));
+  return { ruang, perangkat, jumlah: data.benda.length };
+}
+
+/** Status tahap kerja satu ruangan request (sama dengan getRoomStatus di halaman Request Design). */
+export function statusRuangan(req: { status: string; rooms?: { status?: string }[] | null }, roomIdx: number): string {
+  if (roomIdx === 0) return req.status;
+  return req.rooms?.[roomIdx - 1]?.status ?? req.status;
+}
+
+export const PERAN_PTS = ['admin', 'superadmin', 'team_pts', 'team'];
+
+/**
+ * Siapa yang boleh menautkan / melepas / memperbarui Design 3D di ruangan
+ * request: tim PTS, pada ruangan yang sudah diterima dan belum Completed -
+ * sama dengan aturan unggah SLD/BOQ/Design 3D yang sudah ada, ditambah kunci
+ * saat Completed supaya catatan ruangan yang sudah selesai tidak berubah.
+ * Desain tetap opsional: aturan ini TIDAK pernah dipakai untuk mewajibkannya.
+ */
+export function bolehUbahTautan(role: string | null | undefined, status: string): { ok: true } | { ok: false; alasan: string } {
+  if (!PERAN_PTS.includes((role ?? '').toLowerCase())) return { ok: false, alasan: 'Hanya tim PTS yang bisa menautkan Design 3D.' };
+  if (status === 'pending' || status === 'rejected') return { ok: false, alasan: 'Ruangan ini belum diterima untuk dikerjakan.' };
+  if (status === 'completed') {
+    return { ok: false, alasan: 'Ruangan sudah Completed - tautan Design 3D terkunci. Ubah status ruangan bila perlu revisi.' };
+  }
+  return { ok: true };
+}

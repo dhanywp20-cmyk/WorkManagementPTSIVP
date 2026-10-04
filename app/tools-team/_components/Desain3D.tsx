@@ -10,7 +10,7 @@ import { Modal } from '@/components/shared/Modal';
 import {
   type Benda, type Ruang, type Kotak, type ItemKatalog, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturPolaUji,
-  salinKeRuang, salinIsi, sinarProyektor, layarTerdekat, proyektorKeLayar, throwRatioDari,
+  salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, layarTerdekat, proyektorKeLayar, throwRatioDari,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc } from './cetak';
@@ -32,7 +32,7 @@ import { getSession } from '@/lib/auth';
 const KUNCI_SIMPAN = 'wm_desain3d';
 
 interface DesainTim {
-  id: string; nama: string; jumlah_benda: number; dibuat_oleh_nama: string; diubah_oleh_nama: string;
+  id: string; nama: string; versi: number; jumlah_benda: number; dibuat_oleh_nama: string; diubah_oleh_nama: string;
   updated_at: string; ruang: Ruang | null; bolehUbah: boolean;
 }
 const RUANG_AWAL: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
@@ -139,7 +139,10 @@ export default function Desain3D() {
   const [tersimpan, setTersimpan] = useState<{ nama: string; ruang: Ruang; benda: Benda[] }[]>([]);
   /** Desain tim di server (/api/tools-team/desain) & desain server yang sedang dibuka. */
   const [daftarTim, setDaftarTim] = useState<DesainTim[] | null>(null);
-  const [desainAktif, setDesainAktif] = useState<{ id: string; bolehUbah: boolean } | null>(null);
+  /** versi = versi TERBARU di server saat dibuka (dikirim balik saat menyimpan untuk cek konflik). */
+  const [desainAktif, setDesainAktif] = useState<{ id: string; bolehUbah: boolean; versi: number } | null>(null);
+  /** Sedang melihat versi lama (mis. dibuka dari tautan Request Design). */
+  const [lihatVersi, setLihatVersi] = useState<{ versi: number; terbaru: number } | null>(null);
   const [statusSimpan, setStatusSimpan] = useState<{ teks: string; nada: 'ok' | 'galat' | 'info' } | null>(null);
   const [sibukSimpan, setSibukSimpan] = useState(false);
   const [siap, setSiap] = useState(false);
@@ -734,6 +737,14 @@ export default function Desain3D() {
     gantiBenda({ ...terpilih, ...p, x: bulat(p.x)!, z: bulat(p.z)!, pasang: terpilih.pasang === 'standfloor' && terpilih.jenis !== 'ifp' ? 'dinding' : terpilih.pasang });
   };
 
+  /** Ubah ukuran ruang: isi ruang ikut menyesuaikan, tidak tertinggal di posisi lama. */
+  const ubahUkuran = (fn: (r: Ruang) => Ruang) => {
+    const lama = ruangRef.current, baru = fn(lama);
+    ruangRef.current = baru;
+    setBenda(bs => sesuaikanUkuranRuang(bs, lama, baru));
+    setRuang(baru);
+  };
+
   const aturRuang2 = (aktif: boolean) => {
     if (aktif) { setRuang(r => ({ ...r, r2: { ...R2_AWAL, ...(r.r2 ?? {}), aktif: true } })); return; }
     const diR2 = benda.filter(b => b.x > ruang.p);
@@ -904,7 +915,29 @@ export default function Desain3D() {
   };
   useEffect(() => { if (modal === 'simpan') void muatDaftarTim(); }, [modal]);
 
-  /** Simpan ke server. Desain milik orang lain (atau `baru`) disimpan sebagai salinan. */
+  /**
+   * Pratinjau kecil (480 px, JPEG) untuk daftar & Request Design: dirender dari
+   * sudut kamera sekarang tanpa gizmo/sorotan, lalu diperkecil.
+   */
+  const pratinjauKecil = (): string | null => {
+    const m = mesin.current; if (!m) return null;
+    try {
+      const sorot = m.grupBenda.children.filter(o => o.userData.sorot);
+      m.gizmo.detach(); sorot.forEach(o => { o.visible = false; });
+      m.renderer.render(m.scene, m.kamera);
+      const src = m.renderer.domElement;
+      const w = 480, h = Math.max(1, Math.round((w * src.height) / Math.max(1, src.width)));
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d')?.drawImage(src, 0, 0, w, h);
+      sorot.forEach(o => { o.visible = true; });
+      if (pilih) { const o = m.cache.get(pilih)?.obj; if (o) m.gizmo.attach(o); }
+      let url = c.toDataURL('image/jpeg', 0.72);
+      if (url.length > 110_000) url = c.toDataURL('image/jpeg', 0.45);
+      return url.length <= 110_000 ? url : null;
+    } catch { return null; }
+  };
+
+  /** Simpan ke server = versi baru. Desain milik orang lain (atau `baru`) disimpan sebagai salinan. */
   const simpanServer = async (baru: boolean, sumber?: { nama: string; ruang: Ruang; benda: Benda[] }) => {
     const nama = (sumber?.nama ?? namaDesain).trim() || 'Tanpa nama';
     const timpa = !sumber && !baru && desainAktif?.bolehUbah ? desainAktif.id : undefined;
@@ -912,37 +945,63 @@ export default function Desain3D() {
     try {
       const r = await fetch(API_DESAIN, {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: timpa, nama, data: { ruang: sumber?.ruang ?? ruang, benda: bendaBersih(sumber?.benda ?? benda) } }),
+        body: JSON.stringify({
+          id: timpa, versi: timpa ? desainAktif?.versi : undefined, nama,
+          data: { ruang: sumber?.ruang ?? ruang, benda: bendaBersih(sumber?.benda ?? benda) },
+          gambar: sumber ? undefined : pratinjauKecil() ?? undefined,
+        }),
       });
       const j = await r.json().catch(() => null);
       if (!r.ok || !j?.ok) { setStatusSimpan({ teks: j?.alasan ?? 'Gagal menyimpan.', nada: 'galat' }); return false; }
       if (!sumber) {
-        setDesainAktif({ id: j.desain.id, bolehUbah: true });
+        setDesainAktif({ id: j.desain.id, bolehUbah: true, versi: j.desain.versi });
+        setLihatVersi(null);
         const salinan = !timpa && !!desainAktif && !baru;
-        setStatusSimpan({ teks: timpa ? 'Perubahan tersimpan.' : salinan ? 'Desain milik orang lain - disimpan sebagai salinan Anda.' : 'Tersimpan di server.', nada: 'ok' });
+        setStatusSimpan({
+          teks: timpa ? `Perubahan tersimpan sebagai v${j.desain.versi}.` : salinan ? 'Desain milik orang lain - disimpan sebagai salinan Anda (v1).' : 'Tersimpan di server (v1).',
+          nada: 'ok',
+        });
       }
       void muatDaftarTim();
       return true;
     } catch { setStatusSimpan({ teks: 'Tidak terhubung ke server.', nada: 'galat' }); return false; } finally { setSibukSimpan(false); }
   };
 
-  const bukaTim = async (id: string) => {
+  /** Buka desain tim (versi terbaru, atau `versi` tertentu dari riwayat). */
+  const bukaTim = async (id: string, versi?: number) => {
     setSibukSimpan(true); setStatusSimpan(null);
     try {
-      const r = await fetch(`${API_DESAIN}?id=${encodeURIComponent(id)}`, { credentials: 'include', cache: 'no-store' });
+      const r = await fetch(`${API_DESAIN}?id=${encodeURIComponent(id)}${versi ? `&versi=${versi}` : ''}`, { credentials: 'include', cache: 'no-store' });
       const j = await r.json().catch(() => null);
-      if (!r.ok || !j?.ok) { setStatusSimpan({ teks: j?.alasan ?? 'Desain tidak bisa dibuka.', nada: 'galat' }); return; }
-      const d = j.desain as { id: string; nama: string; data: { ruang: Ruang; benda: Benda[] }; bolehUbah: boolean };
+      if (!r.ok || !j?.ok) {
+        const teks = j?.alasan ?? 'Desain tidak bisa dibuka.';
+        setStatusSimpan({ teks, nada: 'galat' }); setPesan(teks); return;
+      }
+      const d = j.desain as { id: string; nama: string; versi: number; versiTerbaru: number; data: { ruang: Ruang; benda: Benda[] }; bolehUbah: boolean };
       setRuang({ ...RUANG_AWAL, ...d.data.ruang }); setBenda(d.data.benda); setNamaDesain(d.nama);
-      setDesainAktif({ id: d.id, bolehUbah: d.bolehUbah }); setPilih(null); setModal(null);
+      //  Versi lama: menyimpan membuat versi baru dari isi ini (riwayat tidak diubah).
+      setDesainAktif({ id: d.id, bolehUbah: d.bolehUbah, versi: d.versiTerbaru });
+      setLihatVersi(d.versi !== d.versiTerbaru ? { versi: d.versi, terbaru: d.versiTerbaru } : null);
+      setPilih(null); setModal(null);
     } catch { setStatusSimpan({ teks: 'Tidak terhubung ke server.', nada: 'galat' }); } finally { setSibukSimpan(false); }
   };
+
+  //  Dibuka dari Request Design: /tools-team?alat=3d&desain=<id>&versi=<n>
+  useEffect(() => {
+    try {
+      const sp = new URLSearchParams(window.location.search);
+      const id = sp.get('desain');
+      if (id && /^[0-9a-f-]{36}$/i.test(id)) void bukaTim(id, Number(sp.get('versi')) || undefined);
+    } catch { /* abaikan */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const hapusTim = async (d: DesainTim) => {
     if (!window.confirm(`Hapus desain "${d.nama}" dari server? Seluruh tim tidak bisa membukanya lagi.`)) return;
     const r = await fetch(`${API_DESAIN}?id=${encodeURIComponent(d.id)}`, { method: 'DELETE', credentials: 'include' }).catch(() => null);
     const j = await r?.json().catch(() => null);
     if (!r?.ok || !j?.ok) { setStatusSimpan({ teks: j?.alasan ?? 'Gagal menghapus.', nada: 'galat' }); return; }
+    if (j.diarsipkan) setStatusSimpan({ teks: `"${d.nama}" masih ditautkan ke ${j.tautan} Request Design - diarsipkan (tidak tampil di daftar), versinya tetap tersimpan untuk request itu.`, nada: 'info' });
     if (desainAktif?.id === d.id) setDesainAktif(null);
     void muatDaftarTim();
   };
@@ -1043,6 +1102,11 @@ export default function Desain3D() {
               </label>
             ))}
           </div>
+          {lihatVersi && (
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-2 z-20 max-w-[calc(100%-120px)] px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-[12px] font-semibold shadow text-center">
+              Melihat v{lihatVersi.versi} (versi yang ditautkan). Versi terbaru v{lihatVersi.terbaru}. Menyimpan membuat versi baru dari isi ini; riwayat tidak berubah.
+            </div>
+          )}
           {pesan && (
             <div role="status" className="absolute left-1/2 -translate-x-1/2 top-12 z-20 max-w-[calc(100%-32px)] px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-[12px] font-semibold shadow-lg text-center">{pesan}</div>
           )}
@@ -1202,15 +1266,15 @@ export default function Desain3D() {
 
       {/* ── Modal: Ruangan ── */}
       <Modal buka={modal === 'ruang'} onTutup={() => setModal(null)} judul="Ruangan" ukuran="md" ikon={<Ikon nama="🏠" ukuran={18} />}
-        keterangan="Maksimal 2 ruang bersebelahan. Ruang 2 berada di sisi kanan ruang 1."
+        keterangan="Maksimal 2 ruang bersebelahan. Ruang 2 berada di sisi kanan ruang 1. Saat ukuran diubah, isi ruang ikut menyesuaikan: yang menempel dinding tetap menempel, meja-kursi tetap di tengah."
         footer={<button type="button" onClick={() => setModal(null)} className="px-4 py-2 rounded-xl text-sm font-bold text-white bg-blue-700 hover:bg-blue-800">Selesai</button>}>
         <div className="space-y-4">
           <div>
             <p className="text-[12.5px] font-bold text-slate-800 mb-1.5">Ruang 1</p>
             <div className="grid grid-cols-3 gap-2">
-              <Angka label="Panjang" nilai={ruang.p} onUbah={v => v >= 2 && v <= 30 && setRuang(r => ({ ...r, p: v }))} satuan="m" />
-              <Angka label="Lebar" nilai={ruang.l} onUbah={v => v >= 2 && v <= 30 && setRuang(r => ({ ...r, l: v }))} satuan="m" />
-              <Angka label="Plafon" nilai={ruang.t} onUbah={v => v >= 2 && v <= 15 && setRuang(r => ({ ...r, t: v }))} satuan="m" />
+              <Angka label="Panjang" nilai={ruang.p} onUbah={v => v >= 2 && v <= 30 && ubahUkuran(r => ({ ...r, p: v }))} satuan="m" />
+              <Angka label="Lebar" nilai={ruang.l} onUbah={v => v >= 2 && v <= 30 && ubahUkuran(r => ({ ...r, l: v }))} satuan="m" />
+              <Angka label="Plafon" nilai={ruang.t} onUbah={v => v >= 2 && v <= 15 && ubahUkuran(r => ({ ...r, t: v }))} satuan="m" />
             </div>
             <div className="mt-2">
               <Segmen label="Lantai" nilai={ruang.lantai} onUbah={v => setRuang(r => ({ ...r, lantai: v }))}
@@ -1223,9 +1287,9 @@ export default function Desain3D() {
           {ruang.r2?.aktif && (
             <div>
               <div className="grid grid-cols-3 gap-2">
-                <Angka label="Panjang" nilai={ruang.r2.p} onUbah={v => v >= 2 && v <= 30 && setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, p: v } }))} satuan="m" />
-                <Angka label="Lebar" nilai={ruang.r2.l} onUbah={v => v >= 2 && v <= 30 && setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, l: v } }))} satuan="m" />
-                <Angka label="Plafon" nilai={ruang.r2.t} onUbah={v => v >= 2 && v <= 15 && setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, t: v } }))} satuan="m" />
+                <Angka label="Panjang" nilai={ruang.r2.p} onUbah={v => v >= 2 && v <= 30 && ubahUkuran(r => ({ ...r, r2: r.r2 && { ...r.r2, p: v } }))} satuan="m" />
+                <Angka label="Lebar" nilai={ruang.r2.l} onUbah={v => v >= 2 && v <= 30 && ubahUkuran(r => ({ ...r, r2: r.r2 && { ...r.r2, l: v } }))} satuan="m" />
+                <Angka label="Plafon" nilai={ruang.r2.t} onUbah={v => v >= 2 && v <= 15 && ubahUkuran(r => ({ ...r, r2: r.r2 && { ...r.r2, t: v } }))} satuan="m" />
               </div>
               <div className="mt-2">
                 <Segmen label="Lantai" nilai={ruang.r2.lantai} onUbah={v => setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, lantai: v } }))}
@@ -1328,7 +1392,7 @@ export default function Desain3D() {
                     {d.nama}{desainAktif?.id === d.id && <span className="ml-1.5 text-[11px] font-bold text-emerald-700">· terbuka</span>}
                   </button>
                   <span className="block text-[11.5px] text-slate-500 truncate">
-                    {d.ruang ? `${d.ruang.p}×${d.ruang.l} m${d.ruang.r2?.aktif ? ' + 1 ruang' : ''} · ` : ''}{d.jumlah_benda} benda · {d.dibuat_oleh_nama || '—'}
+                    v{d.versi ?? 1} · {d.ruang ? `${d.ruang.p}×${d.ruang.l} m${d.ruang.r2?.aktif ? ' + 1 ruang' : ''} · ` : ''}{d.jumlah_benda} benda · {d.dibuat_oleh_nama || '—'}
                     {' · '}{new Date(d.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </span>
                 </span>
