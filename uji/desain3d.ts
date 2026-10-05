@@ -6,7 +6,9 @@
  */
 import {
   type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
+  pusatkanIsi, jendelaSekat, pintuSekat, PINTU,
 } from '../app/tools-team/_components/desain3d/model';
+import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {
@@ -130,6 +132,85 @@ console.log('\n6. Ukuran ruang diubah: isi ikut menyesuaikan');
   cek('id benda tidak berubah', hasil.every((b, i) => b.id === [...isi, r2Meja][i].id));
   const tetap = sesuaikanUkuranRuang(isi, lama, { ...lama, lantai: 'karpet' });
   cek('ukuran tidak berubah: tidak ada yang digeser', tetap === isi);
+}
+
+console.log('\n7. Pusatkan isi');
+{
+  //  Data lama: desain 8 x 6 m lalu ruangnya dilebarkan jadi 10 x 7 m tanpa
+  //  penyesuaian - semua benda tertinggal di kiri depan.
+  const lama: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+  const isi = contohAwal(lama);
+  const ruang: Ruang = { ...lama, p: 10, l: 7 };
+  const hasil = pusatkanIsi(isi, ruang, 'xz');
+  const cari = (j: string, daftar = hasil) => daftar.find(b => b.jenis === j)!;
+  const meja = cari('meja');
+  cek('meja tepat di tengah kiri-kanan', dekat(meja.x, 5), `${meja.x}`);
+  const kursi = hasil.filter(b => b.jenis === 'kursi');
+  const zMin = Math.min(...kursi.map(k => k.z - k.d / 2), meja.z - meja.d / 2), zMaks = Math.max(...kursi.map(k => k.z + k.d / 2), meja.z + meja.d / 2);
+  cek('susunan meja-kursi tepat di tengah depan-belakang', dekat((zMin + zMaks) / 2, 3.5, 0.02), `${(zMin + zMaks) / 2}`);
+  cek('jarak kursi ke meja tidak berubah', kursi.every((k, i) => dekat(k.x - meja.x, isi.filter(b => b.jenis === 'kursi')[i].x - cari('meja', isi).x)));
+  const vw = cari('videowall');
+  cek('videowall tetap menempel dinding depan, ikut ke tengah', dekat(vw.z, cari('videowall', isi).z) && dekat(vw.x, 5), `${vw.x},${vw.z}`);
+  cek('rack tetap di dalam ruang', hasil.every(b => b.x >= 0 && b.x <= 10 && b.z >= 0 && b.z <= 7));
+  const hanyaX = pusatkanIsi(isi, ruang, 'x');
+  cek('"kiri-kanan saja": maju-mundur tidak berubah', dekat(cari('meja', hanyaX).x, 5) && dekat(cari('meja', hanyaX).z, cari('meja', isi).z));
+  cek('sudah di tengah: tidak ada yang berubah', pusatkanIsi(hasil, ruang, 'xz') === hasil);
+
+  //  Proyektor ikut layarnya (di dinding kiri: tidak bergeser kiri-kanan).
+  const R: Kotak = { x0: 0, p: 8, l: 6, t: 3 };
+  const ruang2: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+  const layar: Benda = { ...bendaBaru('layar', R), x: 0.05, z: 3, rot: 90 };
+  const proj = proyektorKeLayar(bendaBaru('proyektor', R, { pasangProyektor: 'plafon' }), layar, R, ruang2);
+  const m1 = { ...bendaBaru('meja', R), x: 3, z: 2 };
+  const [, p2] = pusatkanIsi([layar, proj, m1], ruang2, 'xz');
+  const s1 = sinarProyektor(proj, [layar, proj], ruang2), s2 = sinarProyektor(p2, [layar, p2], ruang2);
+  cek('proyektor yang menembak layar tetap pada jarak lemparnya', dekat(s1.jarak, s2.jarak) && dekat(p2.x, proj.x), `${s1.jarak} ${s2.jarak}`);
+}
+
+console.log('\n8. Simpan / buka di laptop (.glb)');
+{
+  //  GLB minimal: header 12 byte + chunk JSON (seperti keluaran GLTFExporter).
+  const buatGLB = (json: unknown) => {
+    let teks = JSON.stringify(json);
+    while (teks.length % 4) teks += ' ';
+    const isi = new TextEncoder().encode(teks);
+    const buf = new ArrayBuffer(20 + isi.length);
+    const dv = new DataView(buf);
+    dv.setUint32(0, 0x46546c67, true); dv.setUint32(4, 2, true); dv.setUint32(8, buf.byteLength, true);
+    dv.setUint32(12, isi.length, true); dv.setUint32(16, 0x4e4f534a, true);
+    new Uint8Array(buf, 20).set(isi);
+    return buf;
+  };
+  const ruang: Ruang = { p: 7, l: 5, t: 2.8, lantai: 'karpet', r2: { aktif: true, p: 6, l: 5, t: 2.8, lantai: 'kayu', pintu: true, sekat: 'jendela', jendela: { lebar: 2.4, tinggi: 1.2, ambang: 0.9, geser: 0 } } };
+  const benda = contohAwal(ruang);
+  const gambar = { [benda[0].id]: 'data:image/jpeg;base64,QUJD', palsu: 'javascript:alert(1)' };
+  const glb = buatGLB({ asset: { version: '2.0' }, scenes: [{ nodes: [0] }], nodes: [{ name: 'Desain', extras: { [KUNCI_DESAIN]: dataDesainFile('Ruang Rapat A', ruang, benda, gambar) } }] });
+  const d = bacaDesainGLB(glb);
+  cek('desain terbaca kembali dari .glb', !!d && d.nama === 'Ruang Rapat A' && d.benda.length === benda.length);
+  cek('ruangan lengkap termasuk sekat jendela kaca', d?.ruang.r2?.sekat === 'jendela' && d?.ruang.r2?.jendela?.lebar === 2.4 && d?.ruang.p === 7);
+  cek('gambar layar ikut; data URL berbahaya dibuang', d?.gambar?.[benda[0].id] === 'data:image/jpeg;base64,QUJD' && !('palsu' in (d?.gambar ?? {})));
+  cek('GLB model produk biasa (tanpa data desain) dikenali sebagai bukan desain', bacaDesainGLB(buatGLB({ asset: { version: '2.0' }, nodes: [{ name: 'Kursi' }] })) === null);
+  cek('bukan file GLB: null, tidak error', bacaDesainGLB(new TextEncoder().encode('bukan glb sama sekali').buffer as ArrayBuffer) === null && jsonDariGLB(new ArrayBuffer(4)) === null);
+  const rusak = buatGLB({ nodes: [{ extras: { [KUNCI_DESAIN]: { format: 'pts-desain-3d', versi: 1, nama: 'x', ruang, benda: [{ tanpaJenis: 1 }] } } }] });
+  cek('data benda tidak sah ditolak', bacaDesainGLB(rusak) === null);
+  cek('nama file aman', namaFileDesain('Ruang Rapat / Lt.3') === 'Ruang-Rapat-Lt-3.glb' && namaFileDesain('') === 'desain-av.glb');
+}
+
+console.log('\n9. Sekat tembok + jendela kaca');
+{
+  const dasar: Ruang = { p: 7, l: 5, t: 2.8, lantai: 'karpet', r2: { aktif: true, p: 6, l: 5, t: 2.8, lantai: 'kayu', pintu: false, sekat: 'jendela' } };
+  const j = jendelaSekat(dasar)!;
+  cek('bawaan: 1 jendela 2 x 1,2 m di tengah sekat, 0,9 m dari lantai', dekat(j.z0, 1.5) && dekat(j.z1, 3.5) && dekat(j.y0, 0.9) && dekat(j.y1, 2.1), JSON.stringify(j));
+  cek('sekat tembok / kaca penuh: tidak ada jendela', jendelaSekat({ ...dasar, r2: { ...dasar.r2!, sekat: 'tembok' } }) === null && jendelaSekat({ ...dasar, r2: { ...dasar.r2!, sekat: 'kaca' } }) === null);
+  cek('satu ruang saja: tidak ada jendela', jendelaSekat({ ...dasar, r2: { ...dasar.r2!, aktif: false } }) === null);
+  const besar = jendelaSekat({ ...dasar, r2: { ...dasar.r2!, jendela: { lebar: 30, tinggi: 9, ambang: 0.9, geser: 50 } } })!;
+  cek('ukuran & geser berlebih dijepit di dalam dinding', besar.z0 >= 0.2 - 1e-9 && besar.z1 <= 4.8 + 1e-9 && besar.y1 <= 2.8 - 0.15 + 1e-9, JSON.stringify(besar));
+  const berpintu: Ruang = { ...dasar, r2: { ...dasar.r2!, pintu: true } };
+  const pintu = pintuSekat(berpintu)!;
+  const jp = jendelaSekat(berpintu)!;
+  cek('jendela tidak menabrak pintu sekat', jp.z1 <= pintu - PINTU.lebar / 2 || jp.z0 >= pintu + PINTU.lebar / 2, `pintu ${pintu}, jendela ${jp.z0}-${jp.z1}`);
+  const geser = jendelaSekat({ ...dasar, r2: { ...dasar.r2!, jendela: { lebar: 1, tinggi: 1, ambang: 1, geser: -1 } } })!;
+  cek('geser negatif = ke depan', dekat((geser.z0 + geser.z1) / 2, 1.5), JSON.stringify(geser));
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

@@ -57,7 +57,9 @@ export interface Ruang {
   p: number; l: number; t: number; lantai: 'kayu' | 'karpet' | 'keramik';
   /** Ruang ke-2 bersebelahan di sisi kanan (x = p .. p + r2.p). */
   r2?: { aktif: boolean; p: number; l: number; t: number; lantai: Ruang['lantai']; pintu: boolean;
-    /** Sekat antara ruang 1 & 2: tembok (bawaan) atau kaca (saling terlihat). */ sekat?: 'tembok' | 'kaca' } | null;
+    /** Sekat antara ruang 1 & 2: tembok (bawaan), kaca penuh, atau tembok dengan satu jendela kaca. */ sekat?: 'tembok' | 'kaca' | 'jendela';
+    /** Jendela kaca di sekat (sekat 'jendela'), dalam meter. geser = dari tengah sekat (+ ke belakang). */
+    jendela?: { lebar: number; tinggi: number; ambang: number; geser: number } } | null;
 }
 
 /** Kotak satu ruang dalam koordinat dunia. */
@@ -71,6 +73,43 @@ export function daftarRuang(r: Ruang): Kotak[] {
 /** Indeks ruang (0/1) tempat titik x berada. */
 export function ruangDari(r: Ruang, x: number): number {
   return r.r2?.aktif && x > r.p ? 1 : 0;
+}
+
+/** Lebar & tinggi lubang pintu penghubung, dan posisi pusatnya di sepanjang sekat (z dunia). */
+export const PINTU = { lebar: 0.9, tinggi: 2.1 };
+export function pintuSekat(r: Ruang): number | null {
+  return r.r2?.aktif && r.r2.pintu ? Math.max(0.6, Math.min(r.l, r.r2.l) - 1.0) : null;
+}
+
+export const JENDELA_AWAL = { lebar: 2.0, tinggi: 1.2, ambang: 0.9, geser: 0 };
+
+/**
+ * Jendela kaca di sekat antar ruang (sekat 'jendela'), dalam koordinat dunia:
+ * z0..z1 sepanjang sekat, y0..y1 dari lantai. Ukuran dibatasi supaya tetap
+ * di dalam dinding (sisa >= 20 cm di tiap tepi) dan TIDAK menimpa pintu
+ * penghubung - bila bertabrakan, jendela digeser menjauhi pintu.
+ */
+export function jendelaSekat(r: Ruang): { z0: number; z1: number; y0: number; y1: number } | null {
+  if (!r.r2?.aktif || r.r2.sekat !== 'jendela') return null;
+  const j = { ...JENDELA_AWAL, ...(r.r2.jendela ?? {}) };
+  const L = Math.min(r.l, r.r2.l), T = Math.min(r.t, r.r2.t), tepi = 0.2;
+  const lebar = Math.max(0.3, Math.min(j.lebar, L - 2 * tepi));
+  const y0 = Math.max(0.1, Math.min(j.ambang, T - 0.4));
+  const y1 = Math.max(y0 + 0.2, Math.min(y0 + j.tinggi, T - 0.15));
+  let tengah = L / 2 + j.geser;
+  tengah = Math.min(L - tepi - lebar / 2, Math.max(tepi + lebar / 2, tengah));
+  const pintu = pintuSekat(r);
+  if (pintu !== null) {
+    const p0 = pintu - PINTU.lebar / 2 - 0.15, p1 = pintu + PINTU.lebar / 2 + 0.15;
+    if (tengah + lebar / 2 > p0 && tengah - lebar / 2 < p1) {
+      //  Pindah ke sisi yang lebih lega (depan / belakang pintu).
+      const ruangDepan = p0 - tepi, ruangBelakang = L - tepi - p1;
+      tengah = ruangDepan >= ruangBelakang ? Math.min(tengah, p0 - lebar / 2) : Math.max(tengah, p1 + lebar / 2);
+      tengah = Math.min(L - tepi - lebar / 2, Math.max(tepi + lebar / 2, tengah));
+    }
+  }
+  const b = (v: number) => Math.round(v * 1000) / 1000;
+  return { z0: b(tengah - lebar / 2), z1: b(tengah + lebar / 2), y0: b(y0), y1: b(y1) };
 }
 
 // ── Katalog produk ─────────────────────────────────────────────────────────
@@ -499,6 +538,79 @@ export function sesuaikanUkuranRuang(benda: Benda[], lama: Ruang, baru: Ruang): 
     if (!tujuan || (asal.x0 === tujuan.x0 && asal.p === tujuan.p && asal.l === tujuan.l && asal.t === tujuan.t)) return;
     const isi = benda.filter(b => ruangDari(lama, b.x) === i);
     petakanIsi(isi, lama, asal, tujuan).forEach(b => hasil.set(b.id, b));
+  });
+  return hasil.size ? benda.map(b => hasil.get(b.id) ?? b) : benda;
+}
+
+export type SumbuPusat = 'x' | 'z' | 'xz';
+
+/**
+ * Pusatkan isi tiap ruang (tombol "Pusatkan isi").
+ *
+ * Yang digeser hanya benda yang BEBAS di sumbu itu: benda yang menempel
+ * dinding kiri/kanan (celah <= 25 cm) tidak digeser kiri-kanan, yang menempel
+ * dinding depan/belakang tidak digeser maju-mundur - jadi videowall tetap di
+ * dindingnya tetapi ikut ke tengah sepanjang dinding itu.
+ *
+ * Patokan titik tengah = susunan meja & kursi (yang memang ingin di tengah);
+ * bila ruang tidak punya furnitur bebas, semua benda bebas. Seluruh benda
+ * bebas digeser sejauh yang sama, jadi jarak antar benda tidak berubah.
+ * Proyektor yang menembak layar ikut bergeser bersama layarnya (bukan
+ * sendiri), supaya jarak lempar & arah tidak rusak.
+ */
+export function pusatkanIsi(benda: Benda[], ruang: Ruang, sumbu: SumbuPusat = 'xz'): Benda[] {
+  const TEMPEL = 0.25;
+  const hasil = new Map<string, Benda>();
+  daftarRuang(ruang).forEach((k, ri) => {
+    const isi = benda.filter(b => ruangDari(ruang, b.x) === ri);
+    if (!isi.length) return;
+    const jejak = (b: Benda) => {
+      const r = (b.rot * Math.PI) / 180;
+      return {
+        ex: (Math.abs(Math.cos(r)) * b.w + Math.abs(Math.sin(r)) * b.d) / 2,
+        ez: (Math.abs(Math.sin(r)) * b.w + Math.abs(Math.cos(r)) * b.d) / 2,
+      };
+    };
+    const bebasX = (b: Benda) => { const { ex } = jejak(b); return b.x - k.x0 - ex > TEMPEL && k.x0 + k.p - b.x - ex > TEMPEL; };
+    const bebasZ = (b: Benda) => { const { ez } = jejak(b); return b.z - ez > TEMPEL && k.l - b.z - ez > TEMPEL; };
+    //  Proyektor yang menembak layar mengikuti layarnya.
+    const ikutLayar = new Map<string, Benda>();
+    for (const p of isi) {
+      if (p.jenis !== 'proyektor') continue;
+      const l = sinarProyektor(p, isi, ruang).layar;
+      if (l) ikutLayar.set(p.id, l);
+    }
+    const geser = (axis: 'x' | 'z') => {
+      const bebas = axis === 'x' ? bebasX : bebasZ;
+      const gerak = isi.filter(b => !ikutLayar.has(b.id) && bebas(b));
+      if (!gerak.length) return 0;
+      const furnitur = gerak.filter(b => b.jenis === 'meja' || b.jenis === 'kursi');
+      const patokan = furnitur.length ? furnitur : gerak;
+      let min = Infinity, maks = -Infinity;
+      for (const b of patokan) {
+        const e = axis === 'x' ? jejak(b).ex : jejak(b).ez;
+        min = Math.min(min, b[axis] - e); maks = Math.max(maks, b[axis] + e);
+      }
+      const tengah = axis === 'x' ? k.x0 + k.p / 2 : k.l / 2;
+      return bulat2(tengah - (min + maks) / 2);
+    };
+    const dx = sumbu.includes('x') ? geser('x') : 0;
+    const dz = sumbu.includes('z') ? geser('z') : 0;
+    if (!dx && !dz) return;
+    const pindah = (b: Benda, gx: boolean, gz: boolean): Benda => {
+      const { ex, ez } = jejak(b);
+      const lx = Math.min(ex, k.p / 2 - 0.01), lz = Math.min(ez, k.l / 2 - 0.01);
+      return {
+        ...b,
+        x: gx && dx ? bulat2(Math.min(k.x0 + k.p - lx, Math.max(k.x0 + lx, b.x + dx))) : b.x,
+        z: gz && dz ? bulat2(Math.min(k.l - lz, Math.max(lz, b.z + dz))) : b.z,
+      };
+    };
+    for (const b of isi) {
+      const l = ikutLayar.get(b.id);
+      const baru = l ? pindah(b, bebasX(l), bebasZ(l)) : pindah(b, bebasX(b), bebasZ(b));
+      if (baru.x !== b.x || baru.z !== b.z) hasil.set(b.id, baru);
+    }
   });
   return hasil.size ? benda.map(b => hasil.get(b.id) ?? b) : benda;
 }
