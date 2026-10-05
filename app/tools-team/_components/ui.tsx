@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Ikon } from '@/components/shared/Ikon';
 
 /** Komponen form & hasil bersama untuk semua alat di Tools Team. */
@@ -11,13 +11,21 @@ export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', ban
 }) {
   //  Teks sementara supaya isian kosong / "1." tidak langsung jadi 0 saat diketik.
   const [teks, setTeks] = useState<string | null>(null);
+  //  Nilai berubah dari LUAR isian ini (tombol reset, undo, pilih model lain) -> buang teks
+  //  ketikan supaya isian tidak menampilkan angka basi. Perubahan dari ketikan sendiri dikenali
+  //  lewat `terkirim`; ketikan yang ditolak induk (di luar batas) tidak mengubah `nilai`, jadi tetap.
+  const terkirim = useRef<number | null>(null);
+  useEffect(() => {
+    if (terkirim.current === null || nilai !== terkirim.current) setTeks(null);
+    terkirim.current = null;
+  }, [nilai]);
   return (
     <label className="block min-w-0">
       <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">{label}</span>
       <span className="relative block">
         <input type="number" inputMode="decimal" min={min} step={step}
           value={teks ?? (Number.isFinite(nilai) ? String(nilai) : '')}
-          onChange={e => { setTeks(e.target.value); const v = parseFloat(e.target.value.replace(',', '.')); if (Number.isFinite(v)) onUbah(v); }}
+          onChange={e => { setTeks(e.target.value); const v = parseFloat(e.target.value.replace(',', '.')); if (Number.isFinite(v)) { terkirim.current = v; onUbah(v); } }}
           onBlur={() => setTeks(null)}
           className={`${kelasInput} ${satuan ? (satuan.length <= 2 ? 'pr-7' : 'pr-12') : ''}`} />
         {satuan && <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 pointer-events-none">{satuan}</span>}

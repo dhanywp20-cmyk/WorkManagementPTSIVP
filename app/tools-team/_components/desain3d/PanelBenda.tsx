@@ -21,6 +21,24 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
   /** Kotak semu untuk mengambil ukuran bawaan varian dari bendaBaru (posisi tidak dipakai). */
   const kosong = { x0: 0, p: 0, l: 0, t: plafon };
 
+  //  Ukuran produk dalam mm (satuan datasheet), presisi 1 mm. Semua jenis bisa diubah - ukuran
+  //  bawaan katalog bisa saja tidak persis sama dengan produk yang dipakai.
+  const mm = (m: number) => Math.round(m * 1000);
+  const bundar = b.jenis === 'mic' && b.mic === 'boundary';
+  /** Ukuran bawaan untuk varian yang sedang dipilih (model/inci/U/tipe), atau null bila tidak ada patokan. */
+  const ukuranBawaan = (): { w: number; h: number; d: number } | null => {
+    if (b.jenis === 'model' || b.jenis === 'led') return null;
+    const varian: Partial<Benda> = {};
+    for (const k of ['vw', 'kol', 'bar', 'diag', 'rasio', 'rakU', 'mic', 'bentukMeja', 'tipeKursi', 'tipeKamera', 'pasangProyektor', 'pasang'] as const) {
+      if (b[k] !== undefined) (varian as Record<string, unknown>)[k] = b[k];
+    }
+    const acuan = terapkanUkuran({ ...bendaBaru(b.jenis, kosong, varian), ...varian });
+    return { w: acuan.w, h: acuan.h, d: acuan.d };
+  };
+  const bawaan = ukuranBawaan();
+  const bedaBawaan = !!bawaan && (mm(bawaan.w) !== mm(b.w) || mm(bawaan.h) !== mm(b.h) || mm(bawaan.d) !== mm(b.d));
+  const UKURAN_DARI_PILIHAN = ['videowall', 'layar', 'ifp', 'tv', 'rak'];
+
   return (
     <div className="absolute top-2 right-2 bottom-2 z-10 w-[310px] max-w-[calc(100%-16px)] flex flex-col rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-xl">
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100">
@@ -47,7 +65,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
               const s = VIDEOWALL[b.vw ?? '55BDL2105X']; const n = (b.kol ?? 2) * (b.bar ?? 2);
               return (
                 <p className="text-[12px] text-slate-600 leading-relaxed">
-                  Panel {s.w * 1000} × {s.h * 1000} × {s.d * 1000} mm, bezel {s.bezelMm} mm. Total {f(b.w)} × {f(b.h)} m,
+                  Panel {+(s.w * 1000).toFixed(1)} × {+(s.h * 1000).toFixed(1)} × {+(s.d * 1000).toFixed(1)} mm, bezel {s.bezelMm} mm. Total {f(b.w)} × {f(b.h)} m,
                   {' '}{(b.kol ?? 2) * 1920} × {(b.bar ?? 2) * 1080} px, {n} panel, daya ±{f((n * s.wTipikal) / 1000, 2)} kW (maks {f((n * s.wMaks) / 1000, 2)} kW).
                 </p>
               );
@@ -182,13 +200,29 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         )}
         {ekstra}
 
-        {!['videowall', 'layar', 'ifp', 'tv', 'rak', 'mic', 'lift'].includes(b.jenis) && (
+        <div>
+          <span className={label}>Ukuran produk</span>
           <div className="grid grid-cols-3 gap-2">
-            <Angka label="Lebar" nilai={Math.round(b.w * 100) / 100} satuan="m" onUbah={v => v > 0 && set({ w: v })} />
-            <Angka label="Tinggi" nilai={Math.round(b.h * 100) / 100} satuan="m" onUbah={v => v > 0 && set({ h: v })} />
-            <Angka label={b.jenis === 'meja' ? 'Panjang' : 'Tebal'} nilai={Math.round(b.d * 100) / 100} satuan="m" onUbah={v => v > 0 && set({ d: v })} />
+            <Angka label={bundar ? 'Diameter (mm)' : 'Lebar (mm)'} nilai={mm(b.w)} step={1}
+              onUbah={v => v >= 5 && v <= 30000 && set(bundar ? { w: v / 1000, d: v / 1000 } : { w: v / 1000 })} />
+            <Angka label="Tinggi (mm)" nilai={mm(b.h)} step={1} onUbah={v => v >= 2 && v <= 15000 && set({ h: v / 1000 })} />
+            {!bundar && (
+              <Angka label={b.jenis === 'meja' ? 'Panjang (mm)' : 'Tebal (mm)'} nilai={mm(b.d)} step={1}
+                onUbah={v => v >= 2 && v <= 30000 && set({ d: v / 1000 })} />
+            )}
           </div>
-        )}
+          {bawaan && bedaBawaan && (
+            <button type="button" onClick={() => set(bawaan)}
+              className="mt-1.5 w-full px-2 py-1.5 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">
+              Kembalikan ukuran bawaan ({mm(bawaan.w)} × {mm(bawaan.h)} × {mm(bawaan.d)} mm)
+            </button>
+          )}
+          <p className="text-[11px] text-slate-500 mt-1">
+            {UKURAN_DARI_PILIHAN.includes(b.jenis)
+              ? 'Terisi otomatis dari model/inci/U yang dipilih. Ganti dengan angka datasheet bila berbeda; memilih model/inci/U lagi mengembalikan ukuran bawaannya.'
+              : 'Sesuaikan dengan datasheet / ukuran produk sebenarnya (presisi 1 mm).'}
+          </p>
+        </div>
 
         <div>
           <span className={label}>Posisi</span>
