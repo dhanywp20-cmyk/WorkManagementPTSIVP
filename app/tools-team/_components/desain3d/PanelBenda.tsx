@@ -3,8 +3,22 @@ import type { ReactNode } from 'react';
 import { Angka, Pilih, Segmen, f } from '../ui';
 import { Ikon } from '@/components/shared/Ikon';
 import {
-  type Benda, type ModelVW, type BentukMeja, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, terapkanUkuran, bendaBaru,
+  type Benda, type ModelVW, type BentukMeja, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
+  DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, IFP_DIAG, RASIO_LAYAR, PANEL_VW_AWAL, terapkanUkuran, bendaBaru, spekVideowall, warnaSah,
 } from './model';
+
+/** Warna bawaan per jenis untuk pemilih warna (hanya titik awal pemilih; model tetap memakai bawaannya bila kosong). */
+const WARNA_AWAL: Partial<Record<Benda['jenis'], string>> = {
+  videowall: '#0a0a0a', led: '#1f2937', layar: '#111827', ifp: '#1f2937', tv: '#111111', meja: '#6c452b', kursi: '#30353d',
+  speaker: '#16181c', 'speaker-plafon': '#f4f5f7', mic: '#111827', touchpanel: '#c7ccd3', kamera: '#50555d',
+  proyektor: '#f1f2f4', rak: '#111827', lift: '#15171b',
+};
+/** Apa yang diwarnai, per jenis - supaya jelas bagian mana yang berubah. */
+const BAGIAN_WARNA: Partial<Record<Benda['jenis'], string>> = {
+  videowall: 'bezel & rangka', led: 'rangka cabinet', layar: 'bingkai', ifp: 'bezel', tv: 'bezel', meja: 'permukaan (laminasi polos)',
+  kursi: 'kain / cangkang', speaker: 'kabinet & gril', 'speaker-plafon': 'cincin & gril', mic: 'badan / kain', touchpanel: 'badan',
+  kamera: 'badan', proyektor: 'cangkang', rak: 'kabinet', lift: 'rangka & tutup',
+};
 
 /**
  * Panel "Atur benda" - melayang di atas tampilan 3D supaya perubahan langsung
@@ -16,7 +30,12 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
   /** Isi tambahan khusus jenis (mis. info jarak lempar proyektor). */ ekstra?: ReactNode;
 }) {
   const set = (x: Partial<Benda>) => onUbah({ ...b, ...x });
-  const setUkuran = (x: Partial<Benda>) => onUbah(terapkanUkuran({ ...b, ...x }));
+  const setUkuran = (x: Partial<Benda>) => {
+    const nb = terapkanUkuran({ ...b, ...x });
+    //  Nama bawaan videowall ("Videowall 55" 2×2") ikut model/kolom/baris; nama yang sudah diganti engineer dibiarkan.
+    if (nb.jenis === 'videowall' && /^Videowall \d+" \d+×\d+$/.test(b.nama)) nb.nama = `Videowall ${spekVideowall(nb).inci}" ${nb.kol}×${nb.bar}`;
+    onUbah(nb);
+  };
   const label = 'block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1';
   /** Kotak semu untuk mengambil ukuran bawaan varian dari bendaBaru (posisi tidak dipakai). */
   const kosong = { x0: 0, p: 0, l: 0, t: plafon };
@@ -29,7 +48,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
   const ukuranBawaan = (): { w: number; h: number; d: number } | null => {
     if (b.jenis === 'model' || b.jenis === 'led') return null;
     const varian: Partial<Benda> = {};
-    for (const k of ['vw', 'kol', 'bar', 'diag', 'rasio', 'rakU', 'mic', 'bentukMeja', 'tipeKursi', 'tipeKamera', 'pasangProyektor', 'pasang'] as const) {
+    for (const k of ['vw', 'panel', 'kol', 'bar', 'diag', 'rasio', 'rakU', 'mic', 'bentukMeja', 'tipeKursi', 'tipeKamera', 'pasangProyektor', 'pasang'] as const) {
       if (b[k] !== undefined) (varian as Record<string, unknown>)[k] = b[k];
     }
     const acuan = terapkanUkuran({ ...bendaBaru(b.jenis, kosong, varian), ...varian });
@@ -55,18 +74,50 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
 
         {b.jenis === 'videowall' && (
           <>
-            <Pilih label="Model panel" nilai={b.vw ?? '55BDL2105X'} onUbah={(v: ModelVW) => setUkuran({ vw: v })}
-              opsi={(Object.keys(VIDEOWALL) as ModelVW[]).map(k => ({ v: k, l: `${VIDEOWALL[k].nama} (${VIDEOWALL[k].inci}")` }))} />
+            <Pilih label="Model panel" nilai={b.vw ?? '55BDL2105X'}
+              onUbah={(v: ModelVW) => {
+                if (v !== 'custom') { setUkuran({ vw: v }); return; }
+                //  Custom dimulai dari panel yang sedang dipakai, lalu diisi ulang sesuai datasheet.
+                const sp = spekVideowall(b);
+                setUkuran({ vw: v, panel: b.panel ?? { w: sp.w, h: sp.h, d: sp.d, bezelMm: sp.bezelMm, resX: sp.resX, resY: sp.resY, wTipikal: sp.wTipikal, wMaks: sp.wMaks } });
+              }}
+              opsi={[
+                ...(Object.keys(VIDEOWALL) as Exclude<ModelVW, 'custom'>[]).map(k => ({ v: k as ModelVW, l: `${VIDEOWALL[k].nama} (${VIDEOWALL[k].inci}")` })),
+                { v: 'custom' as ModelVW, l: 'Custom - merek/model lain (isi datasheet)' },
+              ]} />
+            {b.vw === 'custom' && (() => {
+              const pn: PanelVW = { ...PANEL_VW_AWAL, ...(b.panel ?? {}) };
+              const setPanel = (x: Partial<PanelVW>) => setUkuran({ panel: { ...pn, ...x } });
+              return (
+                <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Spesifikasi 1 panel</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Angka label="Lebar (mm)" nilai={Math.round(pn.w * 10000) / 10} step={0.1} onUbah={v => v >= 100 && v <= 3000 && setPanel({ w: v / 1000 })} />
+                    <Angka label="Tinggi (mm)" nilai={Math.round(pn.h * 10000) / 10} step={0.1} onUbah={v => v >= 100 && v <= 3000 && setPanel({ h: v / 1000 })} />
+                    <Angka label="Tebal (mm)" nilai={Math.round(pn.d * 10000) / 10} step={0.1} onUbah={v => v >= 5 && v <= 300 && setPanel({ d: v / 1000 })} />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Angka label="Bezel (mm)" nilai={pn.bezelMm} step={0.1} bantuan="sisi ke sisi" onUbah={v => v >= 0 && v <= 60 && setPanel({ bezelMm: v })} />
+                    <Angka label="Res. X (px)" nilai={pn.resX} step={1} onUbah={v => v >= 100 && v <= 8000 && setPanel({ resX: Math.round(v) })} />
+                    <Angka label="Res. Y (px)" nilai={pn.resY} step={1} onUbah={v => v >= 100 && v <= 8000 && setPanel({ resY: Math.round(v) })} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Angka label="Daya tipikal (W)" nilai={pn.wTipikal} step={1} onUbah={v => v >= 0 && v <= 3000 && setPanel({ wTipikal: v })} />
+                    <Angka label="Daya maks (W)" nilai={pn.wMaks} step={1} onUbah={v => v >= 0 && v <= 3000 && setPanel({ wMaks: v })} />
+                  </div>
+                </div>
+              );
+            })()}
             <div className="grid grid-cols-2 gap-2">
               <Angka label="Kolom" nilai={b.kol ?? 2} step={1} onUbah={v => v >= 1 && v <= 12 && setUkuran({ kol: Math.round(v) })} />
               <Angka label="Baris" nilai={b.bar ?? 2} step={1} onUbah={v => v >= 1 && v <= 8 && setUkuran({ bar: Math.round(v) })} />
             </div>
             {(() => {
-              const s = VIDEOWALL[b.vw ?? '55BDL2105X']; const n = (b.kol ?? 2) * (b.bar ?? 2);
+              const s = spekVideowall(b); const n = (b.kol ?? 2) * (b.bar ?? 2);
               return (
                 <p className="text-[12px] text-slate-600 leading-relaxed">
                   Panel {+(s.w * 1000).toFixed(1)} × {+(s.h * 1000).toFixed(1)} × {+(s.d * 1000).toFixed(1)} mm, bezel {s.bezelMm} mm. Total {f(b.w)} × {f(b.h)} m,
-                  {' '}{(b.kol ?? 2) * 1920} × {(b.bar ?? 2) * 1080} px, {n} panel, daya ±{f((n * s.wTipikal) / 1000, 2)} kW (maks {f((n * s.wMaks) / 1000, 2)} kW).
+                  {' '}{(b.kol ?? 2) * s.resX} × {(b.bar ?? 2) * s.resY} px, {n} panel, daya ±{f((n * s.wTipikal) / 1000, 2)} kW (maks {f((n * s.wMaks) / 1000, 2)} kW).
                 </p>
               );
             })()}
@@ -78,15 +129,17 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
             <Pilih label="Ukuran layar" nilai={LAYAR_DIAG.includes(b.diag ?? 120) ? b.diag ?? 120 : -1}
               onUbah={v => v > 0 && setUkuran({ diag: v })} opsi={[...LAYAR_DIAG.map(d => ({ v: d, l: `${d}"` })), { v: -1, l: 'Custom...' }]} />
             {!LAYAR_DIAG.includes(b.diag ?? 120) && <Angka label="Diagonal" nilai={b.diag ?? 120} satuan="inci" onUbah={v => v >= 40 && v <= 400 && setUkuran({ diag: v })} />}
-            <Segmen label="Rasio" nilai={b.rasio ?? '16:9'} onUbah={v => setUkuran({ rasio: v })} opsi={[{ v: '16:9', l: '16:9' }, { v: '4:3', l: '4:3' }]} />
+            <Segmen label="Rasio" nilai={b.rasio ?? '16:9'} onUbah={(v: RasioLayar) => setUkuran({ rasio: v })} opsi={RASIO_LAYAR.map(r => ({ v: r, l: r }))} />
             <p className="text-[12px] text-slate-600">Area gambar {f(b.w)} × {f(b.h)} m.</p>
           </>
         )}
 
         {b.jenis === 'ifp' && (
           <>
-            <Segmen label="Ukuran" nilai={String(b.diag ?? 75)} onUbah={v => setUkuran({ diag: Number(v) })}
-              opsi={['65', '75', '86'].map(v => ({ v, l: `${v}"` }))} />
+            <Pilih label="Ukuran" nilai={IFP_DIAG.includes(b.diag ?? 75) ? b.diag ?? 75 : -1}
+              onUbah={v => setUkuran({ diag: v > 0 ? v : (b.diag && !IFP_DIAG.includes(b.diag) ? b.diag : 98) })}
+              opsi={[...IFP_DIAG.map(d => ({ v: d, l: `${d}"` })), { v: -1, l: 'Custom...' }]} />
+            {!IFP_DIAG.includes(b.diag ?? 75) && <Angka label="Diagonal" nilai={b.diag ?? 75} satuan="inci" onUbah={v => v >= 32 && v <= 150 && setUkuran({ diag: v })} />}
             <p className="text-[12px] text-slate-600">{f(b.w * 1000, 0)} × {f(b.h * 1000, 0)} mm (ukuran umum kelas ini - sesuaikan datasheet).</p>
           </>
         )}
@@ -117,8 +170,15 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
 
         {b.jenis === 'rak' && (
           <div className="grid grid-cols-2 gap-2">
-            <Pilih label="Tinggi rack" nilai={b.rakU ?? 20} onUbah={v => setUkuran({ rakU: v, nama: `Rack ${v}U` })} opsi={RAK_U.map(u => ({ v: u, l: `${u}U` }))} />
-            <Pilih label="Kedalaman" nilai={b.d} onUbah={v => set({ d: v })} opsi={[0.6, 0.8, 1.0].map(d => ({ v: d, l: `${d * 1000} mm` }))} />
+            <Pilih label="Tinggi rack" nilai={RAK_U.includes(b.rakU ?? 20) ? b.rakU ?? 20 : -1}
+              onUbah={v => { const u = v > 0 ? v : (b.rakU && !RAK_U.includes(b.rakU) ? b.rakU : 15); setUkuran({ rakU: u, nama: b.nama.startsWith('Rack') ? `Rack ${u}U` : b.nama }); }}
+              opsi={[...RAK_U.map(u => ({ v: u, l: `${u}U` })), { v: -1, l: 'Custom...' }]} />
+            <Pilih label="Kedalaman" nilai={[0.6, 0.8, 1.0].includes(b.d) ? b.d : -1} onUbah={v => v > 0 && set({ d: v })}
+              opsi={[...[0.6, 0.8, 1.0].map(d => ({ v: d, l: `${d * 1000} mm` })), ...([0.6, 0.8, 1.0].includes(b.d) ? [] : [{ v: -1, l: `${Math.round(b.d * 1000)} mm (custom)` }])]} />
+            {!RAK_U.includes(b.rakU ?? 20) && (
+              <Angka label="Jumlah U" nilai={b.rakU ?? 20} satuan="U" step={1}
+                onUbah={v => v >= 4 && v <= 60 && setUkuran({ rakU: Math.round(v), nama: b.nama.startsWith('Rack') ? `Rack ${Math.round(v)}U` : b.nama })} />
+            )}
           </div>
         )}
 
@@ -199,6 +259,22 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           </>
         )}
         {ekstra}
+
+        {b.jenis !== 'model' && (
+          <div>
+            <span className={label}>Warna{BAGIAN_WARNA[b.jenis] ? ` · ${BAGIAN_WARNA[b.jenis]}` : ''}</span>
+            <div className="flex items-center gap-2">
+              <input type="color" aria-label="Warna utama" value={warnaSah(b.warna) ?? WARNA_AWAL[b.jenis] ?? '#808080'}
+                onChange={e => set({ warna: e.target.value })}
+                className="h-9 w-12 rounded-lg border border-slate-200 bg-white p-0.5 cursor-pointer" />
+              <span className="text-[12px] font-mono text-slate-700">{warnaSah(b.warna) ?? 'bawaan'}</span>
+              {warnaSah(b.warna) && (
+                <button type="button" onClick={() => set({ warna: undefined })}
+                  className="ml-auto px-2 py-1 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">Warna bawaan</button>
+              )}
+            </div>
+          </div>
+        )}
 
         <div>
           <span className={label}>Ukuran produk</span>

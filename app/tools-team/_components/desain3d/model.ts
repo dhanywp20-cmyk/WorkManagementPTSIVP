@@ -28,7 +28,11 @@ export type TipeKursi = 'kantor' | 'kelas';
 export type TipeKamera = 'ptz' | 'ptz-ai' | 'xbar';
 export type PasangProyektor = 'plafon' | 'meja';
 
-export type ModelVW = '55BDL2105X' | '49BDL2105X';
+export type ModelVW = '55BDL2105X' | '49BDL2105X' | 'custom';
+/** Rasio layar proyektor (lebar:tinggi). */
+export type RasioLayar = '16:9' | '16:10' | '4:3' | '21:9';
+/** Panel videowall custom (merek/model lain): ukuran set & bezel dalam meter/mm. */
+export interface PanelVW { w: number; h: number; d: number; bezelMm: number; resX: number; resY: number; wTipikal: number; wMaks: number }
 export type Pasang = 'dinding' | 'standfloor';
 
 export interface Benda {
@@ -36,9 +40,11 @@ export interface Benda {
   x: number; z: number; /** derajat, 0 = menghadap +z (ke dalam ruangan) */ rot: number;
   /** m */ w: number; h: number; d: number; /** tinggi sisi bawah dari lantai */ elev: number;
   /** TV / IFP / layar: diagonal inci */ diag?: number;
-  /** Layar proyektor */ rasio?: '16:9' | '4:3';
+  /** Layar proyektor */ rasio?: RasioLayar;
   /** LED: pitch mm; ukuran cabinet mm untuk garis cabinet */ pitch?: number; cabW?: number; cabH?: number;
   /** Videowall LCD */ vw?: ModelVW; kol?: number; bar?: number;
+  /** Videowall model 'custom': spesifikasi panel yang diisi sendiri */ panel?: PanelVW;
+  /** Warna utama benda (#rrggbb) - menggantikan warna bawaan badan/kain/rangka/permukaan */ warna?: string;
   /** Display: tempel dinding atau standfloor (berkaki/troli) */ pasang?: Pasang;
   /** Rak: tinggi dalam U */ rakU?: number;
   mic?: 'gooseneck' | 'boundary';
@@ -54,9 +60,13 @@ export interface Benda {
 }
 
 export interface Ruang {
-  p: number; l: number; t: number; lantai: 'kayu' | 'karpet' | 'keramik';
+  p: number; l: number; t: number; lantai: 'kayu' | 'karpet' | 'keramik' | 'polos';
+  /** Warna lantai 'polos' ruang 1 (#rrggbb) */ warnaLantai?: string;
+  /** Warna dinding semua ruang (#rrggbb), bawaan putih tulang */ warnaDinding?: string;
   /** Ruang ke-2 bersebelahan di sisi kanan (x = p .. p + r2.p). */
   r2?: { aktif: boolean; p: number; l: number; t: number; lantai: Ruang['lantai']; pintu: boolean;
+    /** Warna lantai 'polos' ruang 2 */ warnaLantai?: string;
+    /** Pintu penghubung custom (meter): lebar, tinggi, z = pusat pintu dari dinding depan */ pintuUkuran?: { lebar: number; tinggi: number; z?: number };
     /** Sekat antara ruang 1 & 2: tembok (bawaan), kaca penuh, atau tembok dengan satu jendela kaca. */ sekat?: 'tembok' | 'kaca' | 'jendela';
     /** Jendela kaca di sekat (sekat 'jendela'), dalam meter. geser = dari tengah sekat (+ ke belakang). */
     jendela?: { lebar: number; tinggi: number; ambang: number; geser: number } } | null;
@@ -77,8 +87,21 @@ export function ruangDari(r: Ruang, x: number): number {
 
 /** Lebar & tinggi lubang pintu penghubung, dan posisi pusatnya di sepanjang sekat (z dunia). */
 export const PINTU = { lebar: 0.9, tinggi: 2.1 };
+/** Ukuran pintu penghubung (custom bila diisi), dijepit agar muat di sekat. */
+export function ukuranPintu(r: Ruang): { lebar: number; tinggi: number } {
+  const u = r.r2?.pintuUkuran;
+  const L = Math.min(r.l, r.r2?.l ?? r.l), T = Math.min(r.t, r.r2?.t ?? r.t);
+  return {
+    lebar: Math.max(0.5, Math.min(u?.lebar ?? PINTU.lebar, L - 0.4)),
+    tinggi: Math.max(1.5, Math.min(u?.tinggi ?? PINTU.tinggi, T - 0.1)),
+  };
+}
+/** Pusat pintu penghubung di sepanjang sekat (z dunia); bawaan 1 m dari dinding belakang. */
 export function pintuSekat(r: Ruang): number | null {
-  return r.r2?.aktif && r.r2.pintu ? Math.max(0.6, Math.min(r.l, r.r2.l) - 1.0) : null;
+  if (!r.r2?.aktif || !r.r2.pintu) return null;
+  const L = Math.min(r.l, r.r2.l), setengah = ukuranPintu(r).lebar / 2;
+  const z = r.r2.pintuUkuran?.z ?? L - 1.0;
+  return Math.max(setengah + 0.15, Math.min(L - setengah - 0.15, z));
 }
 
 export const JENDELA_AWAL = { lebar: 2.0, tinggi: 1.2, ambang: 0.9, geser: 0 };
@@ -100,7 +123,8 @@ export function jendelaSekat(r: Ruang): { z0: number; z1: number; y0: number; y1
   tengah = Math.min(L - tepi - lebar / 2, Math.max(tepi + lebar / 2, tengah));
   const pintu = pintuSekat(r);
   if (pintu !== null) {
-    const p0 = pintu - PINTU.lebar / 2 - 0.15, p1 = pintu + PINTU.lebar / 2 + 0.15;
+    const lp = ukuranPintu(r).lebar;
+    const p0 = pintu - lp / 2 - 0.15, p1 = pintu + lp / 2 + 0.15;
     if (tengah + lebar / 2 > p0 && tengah - lebar / 2 < p1) {
       //  Pindah ke sisi yang lebih lega (depan / belakang pintu).
       const ruangDepan = p0 - tepi, ruangBelakang = L - tepi - p1;
@@ -118,10 +142,23 @@ export function jendelaSekat(r: Ruang): { z0: number; z1: number; y0: number; y1
  * Videowall LCD Philips X-Line (datasheet: ukuran set W×H×D, bezel
  * 2,3 + 1,2 = 3,5 mm sisi ke sisi, resolusi 1920×1080 per panel).
  */
-export const VIDEOWALL: Record<ModelVW, { nama: string; inci: number; w: number; h: number; d: number; bezelMm: number; wTipikal: number; wMaks: number }> = {
+export const VIDEOWALL: Record<Exclude<ModelVW, 'custom'>, { nama: string; inci: number; w: number; h: number; d: number; bezelMm: number; wTipikal: number; wMaks: number }> = {
   '55BDL2105X': { nama: 'Philips 55BDL2105X', inci: 55, w: 1.2135, h: 0.6843, d: 0.0978, bezelMm: 3.5, wTipikal: 180, wMaks: 340 },
   '49BDL2105X': { nama: 'Philips 49BDL2105X', inci: 49, w: 1.0776, h: 0.6078, d: 0.0933, bezelMm: 3.5, wTipikal: 100, wMaks: 230 },
 };
+
+/** Panel awal untuk model videowall 'custom' (diisi ulang engineer sesuai datasheet). */
+export const PANEL_VW_AWAL: PanelVW = { w: 1.2135, h: 0.6843, d: 0.0978, bezelMm: 3.5, resX: 1920, resY: 1080, wTipikal: 180, wMaks: 340 };
+
+/** Spesifikasi panel videowall benda ini: katalog, atau isian sendiri untuk model 'custom'. */
+export function spekVideowall(b: Pick<Benda, 'vw' | 'panel'>): PanelVW & { nama: string; inci: number } {
+  if (b.vw === 'custom') {
+    const p = { ...PANEL_VW_AWAL, ...(b.panel ?? {}) };
+    return { ...p, nama: 'Panel custom', inci: Math.round(Math.hypot(p.w, p.h) / 0.0254) };
+  }
+  const m = VIDEOWALL[b.vw ?? '55BDL2105X'] ?? VIDEOWALL['55BDL2105X'];
+  return { ...m, resX: 1920, resY: 1080 };
+}
 
 /** Interactive flat panel - ukuran set umum kelas 65/75/86" (cek datasheet merek). */
 export const IFP: Record<number, { w: number; h: number; d: number }> = {
@@ -135,9 +172,17 @@ export const RAK_U = [12, 20, 27, 32, 42];
 export const PITCH_LED = [1.25, 1.53, 1.86, 2, 2.5, 3, 3.84, 4, 5, 6, 8, 10];
 
 export const tinggiRak = (u: number) => u * 0.04445 + 0.16;
+export const IFP_DIAG = [65, 75, 86];
+/** Ukuran set IFP: tabel kelas 65/75/86", selain itu diperkirakan dari diagonal 16:9 + bezel 3 cm. */
+export function ukuranIFP(diag: number): { w: number; h: number; d: number } {
+  if (IFP[diag]) return IFP[diag];
+  const u = ukuranDariDiagonal(diag);
+  return { w: Math.round((u.lebarM + 0.06) * 1000) / 1000, h: Math.round((u.tinggiM + 0.06) * 1000) / 1000, d: 0.09 };
+}
 
-export function ukuranLayar(diag: number, rasio: '16:9' | '4:3') {
-  const [a, b] = rasio === '16:9' ? [16, 9] : [4, 3];
+export const RASIO_LAYAR: RasioLayar[] = ['16:9', '16:10', '4:3', '21:9'];
+export function ukuranLayar(diag: number, rasio: RasioLayar | string) {
+  const [a, b] = (String(rasio).match(/^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/)?.slice(1).map(Number) ?? [16, 9]) as number[];
   const u = ukuranDariDiagonal(diag, a, b);
   return { w: u.lebarM, h: u.tinggiM };
 }
@@ -209,12 +254,12 @@ export const idBaru = () => `b${Date.now().toString(36)}${(nomor++).toString(36)
 export function terapkanUkuran(b: Benda): Benda {
   switch (b.jenis) {
     case 'videowall': {
-      const m = VIDEOWALL[b.vw ?? '55BDL2105X'];
+      const m = spekVideowall(b);
       const kol = Math.max(1, b.kol ?? 2), bar = Math.max(1, b.bar ?? 2);
       return { ...b, kol, bar, w: m.w * kol, h: m.h * bar, d: m.d };
     }
     case 'layar': { const u = ukuranLayar(b.diag ?? 120, b.rasio ?? '16:9'); return { ...b, w: u.w, h: u.h }; }
-    case 'ifp': { const u = IFP[b.diag ?? 75] ?? IFP[75]; return { ...b, ...u }; }
+    case 'ifp': { const u = ukuranIFP(b.diag ?? 75); return { ...b, ...u }; }
     case 'tv': { const u = ukuranDariDiagonal(b.diag ?? 65); return { ...b, w: u.lebarM, h: u.tinggiM }; }
     case 'rak': return { ...b, h: tinggiRak(b.rakU ?? 20) };
     default: return b;
@@ -228,7 +273,7 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
   switch (jenis) {
     case 'videowall': {
       const b = jadi({ ...dasar, w: 0, h: 0, d: 0, elev: 0.8, vw: '55BDL2105X', kol: 2, bar: 2, pasang: 'dinding', konten: 'pola', ...atur } as Benda);
-      return { ...b, nama: `Videowall ${VIDEOWALL[b.vw!].inci}" ${b.kol}×${b.bar}`, z: b.d / 2 + 0.06 };
+      return { ...b, nama: `Videowall ${spekVideowall(b).inci}" ${b.kol}×${b.bar}`, z: b.d / 2 + 0.06 };
     }
     case 'led': return { ...dasar, z: 0.08, w: 4, h: 2.25, d: 0.1, elev: 0.6, pitch: 2.5, cabW: 500, cabH: 500, konten: 'pola', ...atur };
     case 'layar': { const b = jadi({ ...dasar, z: 0.05, w: 0, h: 0, d: 0.03, elev: 0.9, diag: 120, rasio: '16:9', konten: 'pola', ...atur } as Benda); return { ...b, nama: `Layar ${b.diag}" ${b.rasio}` }; }
@@ -329,7 +374,7 @@ export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[
 /** Tanda tangan bentuk: berubah = model perlu dibangun ulang (posisi, rotasi, ketinggian tidak termasuk). */
 export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
-    b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt].join('|');
+    b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt, b.warna, b.panel ? JSON.stringify(b.panel) : ''].join('|');
 
 // ── Salin ke ruang sebelah ─────────────────────────────────────────────────
 
@@ -671,14 +716,23 @@ export function proyektorKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang): Be
 
 // ── Tekstur kanvas ──────────────────────────────────────────────────────────
 
+/** Warna #rrggbb yang sah, atau undefined (nilai rusak/asing diabaikan, kembali ke warna bawaan). */
+export function warnaSah(w: unknown): string | undefined {
+  return typeof w === 'string' && /^#[0-9a-f]{6}$/i.test(w) ? w.toLowerCase() : undefined;
+}
+
 function kanvas(w: number, h: number, gambar: (c: CanvasRenderingContext2D) => void): HTMLCanvasElement {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
   gambar(c.getContext('2d')!); return c;
 }
 
-export function teksturLantai(THREE: typeof T, jenis: Ruang['lantai'], p: number, l: number): T.Texture {
+export function teksturLantai(THREE: typeof T, jenis: Ruang['lantai'], p: number, l: number, warna?: string): T.Texture {
   const c = kanvas(512, 512, g => {
-    if (jenis === 'kayu') {
+    if (jenis === 'polos') {
+      //  Lantai polos berwarna bebas (vinyl, epoxy, karpet warna perusahaan) + bintik halus supaya tidak datar.
+      g.fillStyle = warnaSah(warna) ?? '#9ca3af'; g.fillRect(0, 0, 512, 512);
+      for (let i = 0; i < 5000; i++) { g.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.05)'; g.fillRect(Math.random() * 512, Math.random() * 512, 2, 2); }
+    } else if (jenis === 'kayu') {
       const warna = ['#9a6b43', '#a5754b', '#8f633d', '#ab7c52', '#956840'];
       for (let i = 0; i < 8; i++) {
         g.fillStyle = warna[i % warna.length]; g.fillRect(0, i * 64, 512, 64);
@@ -960,11 +1014,11 @@ function teksturGril(THREE: typeof T, dasar: string, lubang: string, ulang: numb
  * 'kain' = tutup atas yang berkain; 'ikon' = lapisan transparan cincin & ikon yang menyala.
  * Keduanya dipetakan ke lingkaran: pusat tekstur = pusat cakram, sisi kanvas = tepi cakram.
  */
-function teksturMicBoundary(THREE: typeof T, bagian: 'kain' | 'ikon'): T.Texture {
+function teksturMicBoundary(THREE: typeof T, bagian: 'kain' | 'ikon', dasar = '#6d6e72'): T.Texture {
   const U = 512, C = U / 2;
   const c = kanvas(U, U, g => {
     if (bagian === 'kain') {
-      g.fillStyle = '#6d6e72'; g.fillRect(0, 0, U, U);   // gelap sedikit: pencahayaan adegan menerangkan ~1,4x
+      g.fillStyle = dasar; g.fillRect(0, 0, U, U);   // gelap sedikit: pencahayaan adegan menerangkan ~1,4x
       //  Anyaman melingkar: ratusan lingkaran tipis berselang-seling terang/gelap -> pola moire seperti kain asli.
       for (let r = 3; r < C * 1.45; r += 2.1) {
         g.strokeStyle = Math.round(r / 2.1) % 2 ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.16)';
@@ -1047,12 +1101,16 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
     const o = new THREE.Mesh(new THREE.PlaneGeometry(w, h), m); o.position.set(0, y, z); return o;
   };
   const bracket = () => g.add(kotak(THREE, b.w * 0.3, Math.min(0.4, b.h * 0.3), 0.04, mat(THREE, 0x374151), 0, b.h / 2, -b.d / 2 - 0.02));
+  //  Warna utama pilihan engineer (badan/bezel/rangka/kain/permukaan); tanpa pilihan = warna bawaan model.
+  const warnaB = warnaSah(b.warna);
+  const W = (bawaan: number) => (warnaB ? new THREE.Color(warnaB).getHex() : bawaan);
+  const WS = (bawaan: string) => warnaB ?? bawaan;
 
   switch (b.jenis) {
     case 'videowall': {
       const kol = b.kol ?? 2, bar = b.bar ?? 2;
-      const spek = VIDEOWALL[b.vw ?? '55BDL2105X'];
-      g.add(kotak(THREE, b.w, b.h, b.d, mat(THREE, 0x0a0a0a, { roughness: 0.35, metalness: 0.5 }), 0, b.h / 2, 0));
+      const spek = spekVideowall(b);
+      g.add(kotak(THREE, b.w, b.h, b.d, mat(THREE, W(0x0a0a0a), { roughness: 0.35, metalness: 0.5 }), 0, b.h / 2, 0));
       g.add(muka(b.w, b.h, b.d / 2 + 0.001, b.h / 2));
       //  Bezel 3,5 mm sisi ke sisi: tebal garis proporsional terhadap lebar tekstur 1024 px.
       const tebal = Math.max(2, (spek.bezelMm / 1000) * (1024 / b.w));
@@ -1065,7 +1123,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
     }
     case 'tv': case 'ifp': {
       const ifp = b.jenis === 'ifp';
-      const bezel = mat(THREE, ifp ? 0x1f2937 : 0x111111, { roughness: 0.35, metalness: 0.5 });
+      const bezel = mat(THREE, W(ifp ? 0x1f2937 : 0x111111), { roughness: 0.35, metalness: 0.5 });
       g.add(kotak(THREE, b.w, b.h, b.d, bezel, 0, b.h / 2, 0));
       const tepi = ifp ? 0.03 : 0.012;
       g.add(muka(b.w - tepi * 2, b.h - tepi * 2, b.d / 2 + 0.001, b.h / 2));
@@ -1078,7 +1136,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'led': {
-      const rangka = mat(THREE, 0x1f2937, { metalness: 0.6, roughness: 0.4 });
+      const rangka = mat(THREE, W(0x1f2937), { metalness: 0.6, roughness: 0.4 });
       g.add(kotak(THREE, b.w, b.h, b.d, rangka, 0, b.h / 2, 0));
       g.add(muka(b.w, b.h, b.d / 2 + 0.001, b.h / 2));
       const kol = Math.max(1, Math.round((b.w * 1000) / (b.cabW ?? 500)));
@@ -1090,7 +1148,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'layar': {
-      g.add(kotak(THREE, b.w + 0.12, b.h + 0.12, b.d, mat(THREE, 0x111827), 0, b.h / 2, 0));
+      g.add(kotak(THREE, b.w + 0.12, b.h + 0.12, b.d, mat(THREE, W(0x111827)), 0, b.h / 2, 0));
       const tex = bahan.layar(b);
       const m = tex ? new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }) : mat(THREE, 0xf8fafc, { roughness: 0.9 });
       const kain = new THREE.Mesh(new THREE.PlaneGeometry(b.w, b.h), m);
@@ -1103,8 +1161,10 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       const fin: Finish = b.finish ?? (bentuk === 'kelas' ? 'oak' : 'walnut');
       const panjangZ = b.d >= b.w;
       const atas = new THREE.MeshPhysicalMaterial({
-        map: teksturKayu(THREE, fin, panjangZ), roughness: fin === 'putih' ? 0.5 : 0.42,
-        clearcoat: fin === 'putih' ? 0.15 : 0.55, clearcoatRoughness: 0.3,
+        //  Warna custom = laminasi polos: tekstur 'putih' (nyaris rata) dikalikan warna pilihan.
+        map: teksturKayu(THREE, warnaB ? 'putih' : fin, panjangZ), color: warnaB ? new THREE.Color(warnaB) : 0xffffff,
+        roughness: fin === 'putih' || warnaB ? 0.5 : 0.42,
+        clearcoat: fin === 'putih' || warnaB ? 0.15 : 0.55, clearcoatRoughness: 0.3,
       });
       const logam = mat(THREE, 0x2a2e35, { metalness: 0.75, roughness: 0.3 });
       if (bentuk === 'bulat') {
@@ -1155,7 +1215,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
     case 'kursi': {
       const krom = mat(THREE, 0xc9ced6, { metalness: 0.95, roughness: 0.18 });
       if ((b.tipeKursi ?? 'kantor') === 'kelas') {
-        const cangkang = mat(THREE, 0x334155, { roughness: 0.5 });
+        const cangkang = mat(THREE, W(0x334155), { roughness: 0.5 });
         const yDuduk = 0.45;
         g.add(papan(THREE, b.w * 0.92, b.d * 0.82, 0.03, 0.06, cangkang, 0.01).translateY(yDuduk - 0.03));
         const s = sandaran(THREE, b.w * 0.9, 0.28, 0.022, 0.55, cangkang);
@@ -1170,7 +1230,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
         }
         break;
       }
-      const kain = new THREE.MeshStandardMaterial({ map: teksturKain(THREE, '#30353d', 0.12), roughness: 0.95 });
+      const kain = new THREE.MeshStandardMaterial({ map: teksturKain(THREE, WS('#30353d'), 0.12), roughness: 0.95 });
       const plastik = mat(THREE, 0x1b1e23, { roughness: 0.5 });
       const yDuduk = 0.48;
       //  Kaki bintang lima beroda + tabung gas.
@@ -1205,8 +1265,8 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'speaker': {
-      const badan = mat(THREE, 0x16181c, { roughness: 0.55, metalness: 0.15 });
-      const gril = new THREE.MeshStandardMaterial({ map: teksturGril(THREE, '#3a3e45', 'rgba(5,5,8,0.85)', 1 / 0.05), roughness: 0.65, metalness: 0.35 });
+      const badan = mat(THREE, W(0x16181c), { roughness: 0.55, metalness: 0.15 });
+      const gril = new THREE.MeshStandardMaterial({ map: teksturGril(THREE, WS('#3a3e45'), 'rgba(5,5,8,0.85)', 1 / 0.05), roughness: 0.65, metalness: 0.35 });
       const besi = mat(THREE, 0x22252a, { metalness: 0.6, roughness: 0.4 });
       const dBadan = b.d * 0.82, belakangBadan = b.d / 2 - dBadan;
       g.add(blok(THREE, b.w, b.h, dBadan, b.w * 0.16, badan, 0.012).translateZ(b.d / 2 - dBadan / 2));
@@ -1224,8 +1284,8 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'speaker-plafon': {
-      const putih = mat(THREE, 0xf4f5f7, { roughness: 0.45 });
-      const gril = new THREE.MeshStandardMaterial({ map: teksturGril(THREE, '#eef0f3', 'rgba(70,75,85,0.55)', b.w / 0.048), roughness: 0.6 });
+      const putih = mat(THREE, W(0xf4f5f7), { roughness: 0.45 });
+      const gril = new THREE.MeshStandardMaterial({ map: teksturGril(THREE, WS('#eef0f3'), 'rgba(70,75,85,0.55)', b.w / 0.048), roughness: 0.6 });
       g.add(new THREE.Mesh(new THREE.CylinderGeometry(b.w / 2 - 0.01, b.w / 2 - 0.01, Math.max(0.01, b.h - 0.012), 32), mat(THREE, 0x1f2125)).translateY(0.012 + (b.h - 0.012) / 2));
       const cincin = new THREE.Mesh(new THREE.TorusGeometry(b.w / 2 + 0.006, 0.008, 10, 48), putih);
       cincin.rotation.x = Math.PI / 2; cincin.position.y = 0.008; g.add(cincin);
@@ -1247,7 +1307,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       };
       if (tipe === 'xbar') {
         //  Video bar: batang berlapis kain, modul kamera hitam di tengah.
-        const kain = new THREE.MeshStandardMaterial({ map: teksturKain(THREE, '#4a4e55', 0.05), roughness: 0.95 });
+        const kain = new THREE.MeshStandardMaterial({ map: teksturKain(THREE, WS('#4a4e55'), 0.05), roughness: 0.95 });
         g.add(blok(THREE, b.w, b.h, b.d, b.h * 0.42, kain, 0.01));
         const lebarModul = Math.min(0.16, b.w * 0.2);
         g.add(blok(THREE, lebarModul, b.h * 0.5, 0.012, b.h * 0.22, hitamKilap, 0.003).translateY(b.h * 0.25).translateZ(b.d / 2 + 0.001));
@@ -1256,7 +1316,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
         led.position.set(lebarModul * 0.38, b.h * 0.66, b.d / 2 + 0.008); g.add(led);
       } else if (tipe === 'ptz-ai') {
         //  PTZ AI: bar sensor di bawah, lengan L, kepala kotak membulat.
-        const badan = mat(THREE, 0x25282d, { roughness: 0.4, metalness: 0.35 });
+        const badan = mat(THREE, W(0x25282d), { roughness: 0.4, metalness: 0.35 });
         const tAlas = b.h * 0.26, sKepala = Math.min(0.09, b.h * 0.55);
         g.add(blok(THREE, b.w, tAlas, b.d, tAlas * 0.3, badan, 0.004));
         g.add(lensa(0.009, 0, tAlas / 2, b.d / 2 + 0.002));
@@ -1270,7 +1330,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
         g.add(lensa(sKepala * 0.32, 0, b.h - sKepala / 2, sKepala * 0.475 + 0.008));
       } else {
         //  PTZ: alas kotak (strip depan hitam), garpu, kepala membulat, lensa besar.
-        const abu = mat(THREE, 0x50555d, { metalness: 0.55, roughness: 0.36 });
+        const abu = mat(THREE, W(0x50555d), { metalness: 0.55, roughness: 0.36 });
         const tAlas = b.h * 0.22, yKepala = tAlas + 0.03 + b.h * 0.08;
         g.add(blok(THREE, b.w, tAlas, b.d, 0.012, abu, 0.004));
         g.add(blok(THREE, b.w * 0.9, tAlas * 0.42, 0.004, 0.004, hitamKilap, 0.0015).translateY(tAlas * 0.25).translateZ(b.d / 2 + 0.0015));
@@ -1293,7 +1353,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       const badan = new THREE.Group();
       {
       const g = badan;
-      const putih = mat(THREE, 0xf1f2f4, { roughness: 0.42, metalness: 0.05 });
+      const putih = mat(THREE, W(0xf1f2f4), { roughness: 0.42, metalness: 0.05 });
       const abu = mat(THREE, 0x2f343b, { roughness: 0.45, metalness: 0.3 });
       const hitamKilap = mat(THREE, 0x0a0b0d, { roughness: 0.15, metalness: 0.4 });
       const kaca = new THREE.MeshPhysicalMaterial({ color: 0x1b2a44, metalness: 0.1, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.04, emissive: 0xc7d6ff, emissiveIntensity: 0.35 });
@@ -1360,12 +1420,12 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'mic': {
-      const hitam = mat(THREE, 0x111827, { metalness: 0.5, roughness: 0.4 });
+      const hitam = mat(THREE, W(0x111827), { metalness: 0.5, roughness: 0.4 });
       if (b.mic === 'boundary') {
         //  Cakram bundar berkain abu-abu dengan cincin LED hijau + ikon mic di tengah (mic konferensi puck).
         const R = b.w / 2, alas = 0.004;
-        const kain = new THREE.MeshStandardMaterial({ map: teksturMicBoundary(THREE, 'kain'), roughness: 1, metalness: 0 });
-        const sisi = new THREE.MeshStandardMaterial({ color: 0x66676b, roughness: 0.95 });
+        const kain = new THREE.MeshStandardMaterial({ map: teksturMicBoundary(THREE, 'kain', WS('#6d6e72')), roughness: 1, metalness: 0 });
+        const sisi = new THREE.MeshStandardMaterial({ color: W(0x66676b), roughness: 0.95 });
         g.add(new THREE.Mesh(new THREE.CylinderGeometry(R * 0.93, R * 0.93, alas, 48), mat(THREE, 0x2a2d31, { roughness: 0.8 })).translateY(alas / 2));
         g.add(new THREE.Mesh(new THREE.CylinderGeometry(R * 0.97, R, b.h - alas, 64), [sisi, kain, sisi]).translateY(alas + (b.h - alas) / 2));
         const ikon = new THREE.Mesh(new THREE.CircleGeometry(R * 0.97, 48),
@@ -1385,7 +1445,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'touchpanel': {
-      const perak = mat(THREE, 0xc7ccd3, { metalness: 0.85, roughness: 0.28 });
+      const perak = mat(THREE, W(0xc7ccd3), { metalness: 0.85, roughness: 0.28 });
       const hitam = mat(THREE, 0x0b0d10, { roughness: 0.2, metalness: 0.3 });
       g.add(blok(THREE, b.w * 0.5, 0.035, b.d * 0.55, 0.012, perak, 0.006).translateZ(-b.d * 0.05));
       const layar = new THREE.Group();
@@ -1397,7 +1457,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'rak': {
-      const besi = mat(THREE, 0x111827, { metalness: 0.6, roughness: 0.4 });
+      const besi = mat(THREE, W(0x111827), { metalness: 0.6, roughness: 0.4 });
       g.add(kotak(THREE, b.w, b.h, b.d, besi, 0, b.h / 2, 0));
       const unit = mat(THREE, 0x374151, { metalness: 0.5 });
       const lampu = mat(THREE, 0x22c55e, { emissive: 0x22c55e, emissiveIntensity: 0.8 });
@@ -1411,7 +1471,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'lift': {
-      const hitam = mat(THREE, 0x15171b, { metalness: 0.6, roughness: 0.32 });
+      const hitam = mat(THREE, W(0x15171b), { metalness: 0.6, roughness: 0.32 });
       const hitamKilap = mat(THREE, 0x0a0b0d, { roughness: 0.15, metalness: 0.3 });
       g.add(papan(THREE, b.w, b.d, 0.008, 0.01, hitam, 0.002));
       const lebarMon = Math.min(0.36, b.w * 0.66), xMon = -b.w / 2 + lebarMon / 2 + 0.03;

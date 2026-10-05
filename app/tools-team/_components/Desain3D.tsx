@@ -12,7 +12,7 @@ import { Modal } from '@/components/shared/Modal';
 import {
   type Benda, type Ruang, type Kotak, type ItemKatalog, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturPolaUji,
-  salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, PINTU, JENDELA_AWAL, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
+  salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, warnaSah, JENDELA_AWAL, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc } from './cetak';
@@ -137,7 +137,12 @@ export default function Desain3D() {
   const [pesan, setPesan] = useState('');
   const sudutRef = useRef<Sudut | 'kursi'>('iso');
   const kameraSiap = useRef(false);
-  const [jenisPandang, setJenisPandang] = useState<JenisPandang>('analitis');
+  const [jenisPandang, setJenisPandang] = useState<JenisPandang | 'custom'>('analitis');
+  /** Aturan jarak custom: jarak terjauh maksimal = faktor × tinggi gambar. */
+  const [faktorCustom, setFaktorCustom] = useState(5);
+  /** Sudut pandang nyaman dari sumbu layar (derajat), bawaan 45°. */
+  const [sudutNyaman, setSudutNyaman] = useState(45);
+  const faktorPandang = jenisPandang === 'custom' ? faktorCustom : FAKTOR_PANDANG[jenisPandang];
   const [namaDesain, setNamaDesain] = useState('Ruang Meeting');
   const [tersimpan, setTersimpan] = useState<{ nama: string; ruang: Ruang; benda: Benda[] }[]>([]);
   /** Desain tim di server (/api/tools-team/desain) & desain server yang sedang dibuka. */
@@ -395,7 +400,7 @@ export default function Desain3D() {
     grupRuang.clear();
     const daftar = daftarRuang(ruang);
     const lantaiDari = (i: number) => (i === 0 ? ruang.lantai : ruang.r2?.lantai ?? 'kayu');
-    const bahanDinding = new THREE.MeshStandardMaterial({ color: 0xf5f5f4, roughness: 0.95, side: THREE.FrontSide });
+    const bahanDinding = new THREE.MeshStandardMaterial({ color: warnaSah(ruang.warnaDinding) ?? 0xf5f5f4, roughness: 0.95, side: THREE.FrontSide });
     const garis = new THREE.LineBasicMaterial({ color: 0xa8a29e });
     const pintuDi = pintuSekat(ruang);
     //  Sekat antar ruang: 'tembok' (bawaan), 'kaca' = kaca penuh berangka
@@ -478,8 +483,9 @@ export default function Desain3D() {
       const keLokal = (z0: number, z1: number) => (i === 0 ? [z0 - k.l / 2, z1 - k.l / 2] : [-(z1 - k.l / 2), -(z0 - k.l / 2)]);
       const hasil: Lubang[] = [];
       if (pintuDi !== null) {
-        const [x0, x1] = keLokal(pintuDi - PINTU.lebar / 2, pintuDi + PINTU.lebar / 2);
-        hasil.push({ x0, x1, y0: 0, y1: Math.min(PINTU.tinggi, k.t - 0.1), jenis: 'pintu' });
+        const up = ukuranPintu(ruang);
+        const [x0, x1] = keLokal(pintuDi - up.lebar / 2, pintuDi + up.lebar / 2);
+        hasil.push({ x0, x1, y0: 0, y1: Math.min(up.tinggi, k.t - 0.1), jenis: 'pintu' });
       }
       if (jendela) {
         const [x0, x1] = keLokal(jendela.z0, jendela.z1);
@@ -491,7 +497,7 @@ export default function Desain3D() {
     daftar.forEach((k, i) => {
       const jenis = lantaiDari(i);
       const lantai = new THREE.Mesh(new THREE.PlaneGeometry(k.p, k.l),
-        new THREE.MeshStandardMaterial({ map: teksturLantai(THREE, jenis, k.p, k.l), roughness: jenis === 'keramik' ? 0.35 : 0.8 }));
+        new THREE.MeshStandardMaterial({ map: teksturLantai(THREE, jenis, k.p, k.l, i === 0 ? ruang.warnaLantai : ruang.r2?.warnaLantai), roughness: jenis === 'keramik' ? 0.35 : 0.8 }));
       lantai.rotation.x = -Math.PI / 2; lantai.position.set(k.x0 + k.p / 2, 0, k.l / 2); lantai.receiveShadow = true;
       grupRuang.add(lantai);
       dinding(k.p, k.t, k.x0 + k.p / 2, 0, 0);                    // depan
@@ -577,10 +583,10 @@ export default function Desain3D() {
       const terjauh = terjauhP?.jarak ?? 0;
       const terdekat = data.reduce((m, x) => Math.min(m, x.jarak), Infinity);
       const sudutMaks = data.reduce((m, x) => Math.max(m, x.sudut), 0);
-      const tinggiPerlu = terjauh / FAKTOR_PANDANG[jenisPandang];
+      const tinggiPerlu = terjauh / faktorPandang;
       return { d, ri, jumlah: data.length, terjauh, terjauhP, terdekat, sudutMaks, tinggiPerlu, cukup: d.h >= tinggiPerlu };
     });
-  }, [benda, jenisPandang, ruang]);
+  }, [benda, faktorPandang, ruang]);
 
   // ── Alat bantu: label ukuran, garis jarak terjauh, kerucut sudut pandang ──
   useEffect(() => {
@@ -607,14 +613,15 @@ export default function Desain3D() {
       const r = (d.rot * Math.PI) / 180;
       const pusat = new THREE.Vector3(d.x, d.elev + d.h / 2, d.z);
       if (kerucut) {
-        // Kerucut nyaman ±45° di lantai, sejauh penonton terjauh (min 3 m), dipotong di dinding ruangnya.
+        // Kerucut nyaman ±sudutNyaman (bawaan 45°) di lantai, sejauh penonton terjauh (min 3 m), dipotong di dinding ruangnya.
         const k = kotakRuang[a.ri] ?? kotakRuang[0];
         const panjang = Math.max(3, a.terjauh + 0.5);
         const potong = [
           new THREE.Plane(new THREE.Vector3(1, 0, 0), -k.x0), new THREE.Plane(new THREE.Vector3(-1, 0, 0), k.x0 + k.p),
           new THREE.Plane(new THREE.Vector3(0, 0, 1), 0), new THREE.Plane(new THREE.Vector3(0, 0, -1), k.l),
         ];
-        const kipas = new THREE.Mesh(new THREE.CircleGeometry(panjang, 32, Math.PI / 2 - Math.PI / 4, Math.PI / 2),
+        const setengah = (Math.min(85, Math.max(5, sudutNyaman)) * Math.PI) / 180;
+        const kipas = new THREE.Mesh(new THREE.CircleGeometry(panjang, 32, Math.PI / 2 - setengah, setengah * 2),
           new THREE.MeshBasicMaterial({ color: a.cukup ? 0x22c55e : 0xef4444, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false, clippingPlanes: potong }));
         kipas.rotation.x = -Math.PI / 2; kipas.rotation.z = r;
         kipas.position.set(d.x, 0.01, d.z); grupBantu.add(kipas);
@@ -677,7 +684,7 @@ export default function Desain3D() {
         if (kotakRuang.length > 1) label(`Ruang ${i + 1}`, new THREE.Vector3(k.x0 + Math.min(0.7, k.p / 4), 0.05, k.l - Math.min(0.45, k.l / 4)), 'abu');
       });
     }
-  }, [analisis, ukur, kerucut, sinar, siap, kotakRuang, benda, ruang]);
+  }, [analisis, ukur, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman]);
 
   // ── Kamera ──
   /** Titik pusat & kotak batas untuk dipas ke kanvas: semua ruang atau satu ruang. */
@@ -1037,7 +1044,7 @@ export default function Desain3D() {
       else grup.set(kunci, { kat: kategori(b.jenis), nama, ukuran: `${fm(b.w)} × ${fm(b.h)} × ${fm(b.d)} m`, jumlah: 1 });
     }
     const baris = [...grup.values()].sort((a, b) => urutKat.indexOf(a.kat) - urutKat.indexOf(b.kat) || a.nama.localeCompare(b.nama));
-    const label = { detail: 'Detail (4×)', analitis: 'Analitis (6×)', umum: 'Umum (8×)' }[jenisPandang];
+    const label = jenisPandang === 'custom' ? `Custom (${faktorCustom}×)` : { detail: 'Detail (4×)', analitis: 'Analitis (6×)', umum: 'Umum (8×)' }[jenisPandang];
     const proyektor = benda.filter(b => b.jenis === 'proyektor').map(p => ({ p, sn: sinarProyektor(p, benda, ruang) }));
     const gambar = (src: string, ket: string) => (src ? `<figure><img src="${src}" alt="${esc(ket)}"/><figcaption>${esc(ket)}</figcaption></figure>` : '');
     bukaCetak({
@@ -1443,10 +1450,19 @@ export default function Desain3D() {
       </div>
 
       <Kartu judul="Analisis tampilan">
-        <div className="mb-3 max-w-xs">
-          <Pilih label="Jenis konten" nilai={jenisPandang} onUbah={setJenisPandang} opsi={[
-            { v: 'umum', l: 'Umum (video, presentasi)' }, { v: 'analitis', l: 'Analitis (dokumen)' }, { v: 'detail', l: 'Detail (gambar teknik)' },
-          ]} />
+        <div className="mb-3 grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-3xl">
+          <div className="col-span-2">
+            <Pilih label="Jenis konten" nilai={jenisPandang} onUbah={setJenisPandang} opsi={[
+              { v: 'umum', l: 'Umum (video, presentasi) · 8×' }, { v: 'analitis', l: 'Analitis (dokumen) · 6×' }, { v: 'detail', l: 'Detail (gambar teknik) · 4×' },
+              { v: 'custom', l: 'Custom (isi faktor sendiri)' },
+            ]} />
+          </div>
+          {jenisPandang === 'custom' && (
+            <Angka label="Faktor jarak" nilai={faktorCustom} satuan="×" step={0.1} bantuan="jarak terjauh ÷ tinggi gambar"
+              onUbah={v => v >= 1 && v <= 20 && setFaktorCustom(v)} />
+          )}
+          <Angka label="Sudut nyaman" nilai={sudutNyaman} satuan="°" step={1} bantuan="dari sumbu layar"
+            onUbah={v => v >= 5 && v <= 85 && setSudutNyaman(v)} />
         </div>
         {analisis.length === 0 ? <p className="text-sm text-slate-600">Tambahkan display (videowall/LED/layar/interactive) untuk dianalisis.</p>
           : analisis.map(a => (
@@ -1457,7 +1473,7 @@ export default function Desain3D() {
                   <Nilai label="Penonton terjauh" nilai={f(a.terjauh, 1)} satuan="m" />
                   <Nilai label="Tinggi layar perlu" nilai={f(a.tinggiPerlu)} satuan="m"
                     ket={a.cukup ? 'ukuran layar cukup' : `kurang ${f((a.tinggiPerlu - a.d.h) * 100, 0)} cm`} nada={a.cukup ? 'baik' : 'buruk'} />
-                  <Nilai label="Sudut pandang maks" nilai={f(a.sudutMaks, 0)} satuan="°" ket={a.sudutMaks > 45 ? 'ada kursi terlalu menyamping' : 'nyaman (≤45°)'} nada={a.sudutMaks > 45 ? 'awas' : 'baik'} />
+                  <Nilai label="Sudut pandang maks" nilai={f(a.sudutMaks, 0)} satuan="°" ket={a.sudutMaks > sudutNyaman ? 'ada kursi terlalu menyamping' : `nyaman (≤${sudutNyaman}°)`} nada={a.sudutMaks > sudutNyaman ? 'awas' : 'baik'} />
                   {a.d.jenis === 'led' && a.d.pitch
                     ? <Nilai label="Penonton terdekat" nilai={f(a.terdekat, 1)} satuan="m" ket={a.terdekat < a.d.pitch ? `di bawah jarak min P${a.d.pitch} (${a.d.pitch} m)` : 'aman untuk pitch ini'} nada={a.terdekat < a.d.pitch ? 'buruk' : 'baik'} />
                     : <Nilai label="Penonton terdekat" nilai={f(a.terdekat, 1)} satuan="m" />}
@@ -1465,7 +1481,7 @@ export default function Desain3D() {
               )}
             </div>
           ))}
-        <Catatan>Posisi penonton diambil dari kursi (atau sekeliling meja bila belum ada kursi) di ruang yang sama dengan display. Aturan 4-6-8: jarak terjauh maksimal 4/6/8× tinggi gambar untuk konten detail/analitis/umum.</Catatan>
+        <Catatan>Posisi penonton diambil dari kursi (atau sekeliling meja bila belum ada kursi) di ruang yang sama dengan display. Aturan 4-6-8: jarak terjauh maksimal 4/6/8× tinggi gambar untuk konten detail/analitis/umum - atau faktor custom sesuai standar proyek.</Catatan>
       </Kartu>
 
       {/* ── Modal: Tambah benda ── */}
@@ -1517,9 +1533,13 @@ export default function Desain3D() {
             </div>
             <div className="mt-2">
               <Segmen label="Lantai" nilai={ruang.lantai} onUbah={v => setRuang(r => ({ ...r, lantai: v }))}
-                opsi={[{ v: 'kayu', l: 'Kayu' }, { v: 'karpet', l: 'Karpet' }, { v: 'keramik', l: 'Keramik' }]} />
+                opsi={[{ v: 'kayu', l: 'Kayu' }, { v: 'karpet', l: 'Karpet' }, { v: 'keramik', l: 'Keramik' }, { v: 'polos', l: 'Warna' }]} />
+              {ruang.lantai === 'polos' && (
+                <PilihWarna label="Warna lantai" nilai={ruang.warnaLantai} awal="#9ca3af" onUbah={w => setRuang(r => ({ ...r, warnaLantai: w }))} />
+              )}
             </div>
           </div>
+          <PilihWarna label="Warna dinding (semua ruang)" nilai={ruang.warnaDinding} awal="#f5f5f4" onUbah={w => setRuang(r => ({ ...r, warnaDinding: w }))} />
           <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
             <input type="checkbox" className="w-4 h-4" checked={!!ruang.r2?.aktif} onChange={e => aturRuang2(e.target.checked)} /> Ruang ke-2 bersebelahan
           </label>
@@ -1532,11 +1552,26 @@ export default function Desain3D() {
               </div>
               <div className="mt-2">
                 <Segmen label="Lantai" nilai={ruang.r2.lantai} onUbah={v => setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, lantai: v } }))}
-                  opsi={[{ v: 'kayu', l: 'Kayu' }, { v: 'karpet', l: 'Karpet' }, { v: 'keramik', l: 'Keramik' }]} />
+                  opsi={[{ v: 'kayu', l: 'Kayu' }, { v: 'karpet', l: 'Karpet' }, { v: 'keramik', l: 'Keramik' }, { v: 'polos', l: 'Warna' }]} />
+                {ruang.r2.lantai === 'polos' && (
+                  <PilihWarna label="Warna lantai" nilai={ruang.r2.warnaLantai} awal="#9ca3af" onUbah={w => setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, warnaLantai: w } }))} />
+                )}
               </div>
               <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
                 <input type="checkbox" className="w-4 h-4" checked={ruang.r2.pintu} onChange={e => setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, pintu: e.target.checked } }))} /> Pintu penghubung
               </label>
+              {ruang.r2.pintu && (() => {
+                const up = ukuranPintu(ruang), z = pintuSekat(ruang) ?? 0;
+                const setP = (x: Partial<{ lebar: number; tinggi: number; z: number }>) =>
+                  setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, pintuUkuran: { lebar: ukuranPintu(r).lebar, tinggi: ukuranPintu(r).tinggi, z: pintuSekat(r) ?? undefined, ...x } } }));
+                return (
+                  <div className="mt-2 grid grid-cols-3 gap-2">
+                    <Angka label="Lebar pintu" nilai={Math.round(up.lebar * 100) / 100} satuan="m" onUbah={v => v >= 0.5 && v <= 6 && setP({ lebar: v })} />
+                    <Angka label="Tinggi pintu" nilai={Math.round(up.tinggi * 100) / 100} satuan="m" onUbah={v => v >= 1.5 && v <= 5 && setP({ tinggi: v })} />
+                    <Angka label="Dari depan" nilai={Math.round(z * 100) / 100} satuan="m" onUbah={v => v >= 0 && v <= 30 && setP({ z: v })} />
+                  </div>
+                );
+              })()}
               <div className="mt-2">
                 <Segmen label="Sekat antar ruang" nilai={ruang.r2.sekat ?? 'tembok'} onUbah={v => setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, sekat: v } }))}
                   opsi={[{ v: 'tembok', l: 'Tembok' }, { v: 'jendela', l: 'Tembok + jendela kaca' }, { v: 'kaca', l: 'Kaca penuh' }]} />
@@ -1805,5 +1840,24 @@ function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {
         </ul>
       )}
     </Modal>
+  );
+}
+
+/** Pemilih warna dengan tombol kembali ke bawaan; `nilai` kosong = warna bawaan. */
+function PilihWarna({ label, nilai, awal, onUbah }: { label: string; nilai?: string; awal: string; onUbah: (w: string | undefined) => void }) {
+  const sah = warnaSah(nilai);
+  return (
+    <div className="mt-2">
+      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">{label}</span>
+      <div className="flex items-center gap-2">
+        <input type="color" aria-label={label} value={sah ?? awal} onChange={e => onUbah(e.target.value)}
+          className="h-9 w-12 rounded-lg border border-slate-200 bg-white p-0.5 cursor-pointer" />
+        <span className="text-[12px] font-mono text-slate-700">{sah ?? 'bawaan'}</span>
+        {sah && (
+          <button type="button" onClick={() => onUbah(undefined)}
+            className="ml-auto px-2 py-1 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">Bawaan</button>
+        )}
+      </div>
+    </div>
   );
 }

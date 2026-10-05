@@ -6,7 +6,7 @@
  */
 import {
   type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
-  pusatkanIsi, jendelaSekat, pintuSekat, PINTU,
+  pusatkanIsi, jendelaSekat, pintuSekat, PINTU, ukuranPintu, spekVideowall, terapkanUkuran, ukuranLayar, ukuranIFP, warnaSah, tandaBentuk,
 } from '../app/tools-team/_components/desain3d/model';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
 
@@ -211,6 +211,43 @@ console.log('\n9. Sekat tembok + jendela kaca');
   cek('jendela tidak menabrak pintu sekat', jp.z1 <= pintu - PINTU.lebar / 2 || jp.z0 >= pintu + PINTU.lebar / 2, `pintu ${pintu}, jendela ${jp.z0}-${jp.z1}`);
   const geser = jendelaSekat({ ...dasar, r2: { ...dasar.r2!, jendela: { lebar: 1, tinggi: 1, ambang: 1, geser: -1 } } })!;
   cek('geser negatif = ke depan', dekat((geser.z0 + geser.z1) / 2, 1.5), JSON.stringify(geser));
+}
+
+console.log('\n10. Semua bisa custom: videowall, layar, IFP, rack, pintu, warna');
+{
+  const k = { x0: 0, p: 8, l: 6, t: 3 };
+  //  Videowall model custom: ukuran total = panel x kolom/baris, resolusi & inci dari panel isian.
+  const vw = terapkanUkuran({ ...bendaBaru('videowall', k), vw: 'custom', kol: 3, bar: 2,
+    panel: { w: 1.0, h: 0.5, d: 0.08, bezelMm: 1.8, resX: 3840, resY: 2160, wTipikal: 200, wMaks: 400 } });
+  cek('videowall custom: ukuran total = panel x 3 x 2', dekat(vw.w, 3.0) && dekat(vw.h, 1.0) && dekat(vw.d, 0.08), `${vw.w} ${vw.h} ${vw.d}`);
+  const sp = spekVideowall(vw);
+  cek('videowall custom: resolusi & inci dari isian', sp.resX === 3840 && sp.inci === Math.round(Math.hypot(1, 0.5) / 0.0254), `${sp.inci}`);
+  cek('videowall katalog tetap memakai datasheet Philips', dekat(spekVideowall({ vw: '55BDL2105X' }).w, 1.2135) && spekVideowall({}).resX === 1920);
+  //  Rasio layar tambahan.
+  const r169 = ukuranLayar(100, '16:9'), r1610 = ukuranLayar(100, '16:10'), r219 = ukuranLayar(100, '21:9');
+  cek('rasio 16:10 & 21:9 benar', dekat(r1610.w / r1610.h, 1.6, 0.001) && dekat(r219.w / r219.h, 21 / 9, 0.001) && dekat(r169.w / r169.h, 16 / 9, 0.001));
+  cek('rasio rusak jatuh ke 16:9', dekat(ukuranLayar(100, 'abc').w, r169.w));
+  //  IFP diagonal custom.
+  const i98 = ukuranIFP(98);
+  cek('IFP 98" custom diperkirakan dari diagonal (+bezel)', i98.w > 2.2 && i98.w < 2.25 && dekat(i98.h / (i98.w), (1.2448 + 0.06) / (2.1690 + 0.06), 0.02), `${i98.w} x ${i98.h}`);
+  cek('IFP 75" tetap tabel datasheet', dekat(ukuranIFP(75).w, 1.712));
+  //  Pintu penghubung custom.
+  const dua: Ruang = { p: 7, l: 5, t: 2.8, lantai: 'karpet', r2: { aktif: true, p: 6, l: 5, t: 2.8, lantai: 'kayu', pintu: true, sekat: 'jendela',
+    pintuUkuran: { lebar: 1.6, tinggi: 2.4, z: 1.2 } } };
+  const up = ukuranPintu(dua), pz = pintuSekat(dua)!;
+  cek('pintu custom: lebar/tinggi/posisi dipakai', dekat(up.lebar, 1.6) && dekat(up.tinggi, 2.4) && dekat(pz, 1.2), `${up.lebar} ${up.tinggi} ${pz}`);
+  const jd = jendelaSekat(dua)!;
+  cek('jendela menghindari pintu custom yang lebih lebar', jd.z0 >= pz + up.lebar / 2 || jd.z1 <= pz - up.lebar / 2, `pintu ${pz}±${up.lebar / 2}, jendela ${jd.z0}-${jd.z1}`);
+  const lebay: Ruang = { ...dua, r2: { ...dua.r2!, pintuUkuran: { lebar: 20, tinggi: 9, z: 99 } } };
+  const ul = ukuranPintu(lebay), zl = pintuSekat(lebay)!;
+  cek('pintu kebesaran/kelewat ujung dijepit di dalam sekat', ul.lebar <= 5 - 0.4 + 1e-9 && ul.tinggi <= 2.8 - 0.1 + 1e-9 && zl + ul.lebar / 2 <= 5 + 1e-9, `${ul.lebar} ${ul.tinggi} ${zl}`);
+  cek('tanpa pintuUkuran = ukuran & posisi lama', dekat(ukuranPintu({ ...dua, r2: { ...dua.r2!, pintuUkuran: undefined } }).lebar, PINTU.lebar)
+    && dekat(pintuSekat({ ...dua, r2: { ...dua.r2!, pintuUkuran: undefined } })!, 4.0));
+  //  Warna.
+  cek('warna sah hanya #rrggbb', warnaSah('#A1B2C3') === '#a1b2c3' && warnaSah('red') === undefined && warnaSah('#12345') === undefined && warnaSah(7) === undefined);
+  const kursi = bendaBaru('kursi', k);
+  cek('ganti warna / panel memicu bangun ulang model', tandaBentuk(kursi) !== tandaBentuk({ ...kursi, warna: '#ff0000' })
+    && tandaBentuk(vw) !== tandaBentuk({ ...vw, panel: { ...vw.panel!, bezelMm: 3 } }));
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
