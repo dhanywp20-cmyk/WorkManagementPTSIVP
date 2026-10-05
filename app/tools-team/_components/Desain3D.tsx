@@ -117,6 +117,9 @@ function batasDunia(r: Ruang) {
   return { x: k.reduce((m, x) => Math.max(m, x.x0 + x.p), 0), z: k.reduce((m, x) => Math.max(m, x.l), 0), t: k.reduce((m, x) => Math.max(m, x.t), 0) };
 }
 
+/** Sidik isi desain (ruangan + benda + nama) - pembeda "ada perubahan belum disimpan". */
+const ambilKunci = (r: Ruang, b: Benda[], n: string) => JSON.stringify({ r, b, n });
+
 export default function Desain3D() {
   const [ruang, setRuang] = useState<Ruang>(RUANG_AWAL);
   const [benda, setBenda] = useState<Benda[]>(() => contohAwal(RUANG_AWAL));
@@ -139,6 +142,13 @@ export default function Desain3D() {
   const kameraSiap = useRef(false);
   const [jenisPandang, setJenisPandang] = useState<JenisPandang>('analitis');
   const [namaDesain, setNamaDesain] = useState('Ruang Meeting');
+  /**
+   * Dari mana desain di kanvas berasal, untuk penanda "berkas yang sedang dibuka":
+   * baru = belum pernah disimpan; laptop = dibuka dari/disimpan ke .glb; lokal = salinan di perangkat ini.
+   * Desain server dikenali dari `desainAktif`. `dasar` = sidik isi saat terakhir dibuka/disimpan.
+   */
+  const [asal, setAsal] = useState<{ jenis: 'baru' | 'laptop' | 'lokal'; nama?: string }>({ jenis: 'baru' });
+  const [dasar, setDasar] = useState<string | null>(null);
   const [tersimpan, setTersimpan] = useState<{ nama: string; ruang: Ruang; benda: Benda[] }[]>([]);
   /** Desain tim di server (/api/tools-team/desain) & desain server yang sedang dibuka. */
   const [daftarTim, setDaftarTim] = useState<DesainTim[] | null>(null);
@@ -165,6 +175,9 @@ export default function Desain3D() {
   //  Undo / redo seluruh desain (ruangan + benda).
   const potret = useMemo(() => ({ ruang, benda }), [ruang, benda]);
   const riwayat = useRiwayat(potret, v => { ruangRef.current = v.ruang; setRuang(v.ruang); setBenda(v.benda); });
+
+  const kunciKini = useMemo(() => ambilKunci(ruang, benda, namaDesain), [ruang, benda, namaDesain]);
+  const adaPerubahan = dasar !== null && kunciKini !== dasar;
 
   const kotakRuang = useMemo(() => daftarRuang(ruang), [ruang]);
   const batas = useMemo(() => batasDunia(ruang), [ruang]);
@@ -935,6 +948,7 @@ export default function Desain3D() {
       a.download = namaFileDesain(namaDesain); a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       setPesan(`Tersimpan di laptop: ${namaFileDesain(namaDesain)} (${(blob.size / 1048576).toFixed(1)} MB)`);
+      if (!desainAktif) { setAsal({ jenis: 'laptop', nama: namaFileDesain(namaDesain) }); setDasar(ambilKunci(ruangRef.current, bendaRef.current, namaDesain)); }
     }, () => setGalat('Simpan ke laptop gagal.'), { binary: true, maxTextureSize: 1024 });
   };
   const unduhGLB = simpanKeLaptop;
@@ -950,10 +964,12 @@ export default function Desain3D() {
       if (window.confirm('File ini bukan desain dari Tools Team (mis. model produk). Tambahkan sebagai model 3D ke ruangan?')) void imporModel(file);
       return;
     }
+    const namaBerkas = file.name;
     const pasang = (bendaBaru: Benda[]) => {
       const rb = { ...RUANG_AWAL, ...d.ruang };
       ruangRef.current = rb;
       setRuang(rb); setBenda(bendaBaru); setNamaDesain(d.nama);
+      setAsal({ jenis: 'laptop', nama: namaBerkas }); setDasar(ambilKunci(rb, bendaBaru, d.nama));
       riwayat.mulaiBaru({ ruang: rb, benda: bendaBaru });
       setDesainAktif(null); setLihatVersi(null); setPilih(null); setModal(null); setGalat('');
       setPesan(`Dibuka dari laptop: ${d.nama}`);
@@ -1141,6 +1157,7 @@ export default function Desain3D() {
       if (!sumber) {
         setDesainAktif({ id: j.desain.id, bolehUbah: true, versi: j.desain.versi });
         setLihatVersi(null);
+        setAsal({ jenis: 'baru' }); setDasar(ambilKunci(ruang, benda, namaDesain));
         const salinan = !timpa && !!desainAktif && !baru;
         setStatusSimpan({
           teks: timpa ? `Perubahan tersimpan sebagai v${j.desain.versi}.` : salinan ? 'Desain milik orang lain - disimpan sebagai salinan Anda (v1).' : 'Tersimpan di server (v1).',
@@ -1165,6 +1182,7 @@ export default function Desain3D() {
       const d = j.desain as { id: string; nama: string; versi: number; versiTerbaru: number; data: { ruang: Ruang; benda: Benda[] }; bolehUbah: boolean };
       const ruangBaru = { ...RUANG_AWAL, ...d.data.ruang };
       setRuang(ruangBaru); setBenda(d.data.benda); setNamaDesain(d.nama);
+      setAsal({ jenis: 'baru' }); setDasar(ambilKunci(ruangBaru, d.data.benda, d.nama));
       riwayat.mulaiBaru({ ruang: ruangBaru, benda: d.data.benda });
       //  Versi lama: menyimpan membuat versi baru dari isi ini (riwayat tidak diubah).
       setDesainAktif({ id: d.id, bolehUbah: d.bolehUbah, versi: d.versiTerbaru });
@@ -1189,7 +1207,7 @@ export default function Desain3D() {
     const j = await r?.json().catch(() => null);
     if (!r?.ok || !j?.ok) { setStatusSimpan({ teks: j?.alasan ?? 'Gagal menghapus.', nada: 'galat' }); return; }
     if (j.diarsipkan) setStatusSimpan({ teks: `"${d.nama}" masih ditautkan ke ${j.tautan} Request Design - diarsipkan (tidak tampil di daftar), versinya tetap tersimpan untuk request itu.`, nada: 'info' });
-    if (desainAktif?.id === d.id) setDesainAktif(null);
+    if (desainAktif?.id === d.id) { setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'baru' }); setDasar(null); }
     void muatDaftarTim();
   };
 
@@ -1272,6 +1290,34 @@ export default function Desain3D() {
   return (
     <div className="space-y-3">
       <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white">
+        {/* Berkas yang sedang dibuka: nama (bisa diganti langsung) + dari mana asalnya + sudah/belum tersimpan.
+            Dulu kanvas tidak memberi tahu desain mana yang sedang terbuka. */}
+        {(() => {
+          const rinci: { teks: string; nada: 'ok' | 'info' | 'awas' } = desainAktif
+            ? (!desainAktif.bolehUbah
+              ? { teks: 'Desain tim · hanya lihat (Simpan = salinan Anda)', nada: 'info' }
+              : lihatVersi
+                ? { teks: `Melihat v${lihatVersi.versi} · terbaru v${lihatVersi.terbaru}`, nada: 'info' }
+                : { teks: `Tersimpan di server · v${desainAktif.versi}`, nada: 'ok' })
+            : asal.jenis === 'laptop' ? { teks: `Berkas laptop · ${asal.nama ?? '.glb'}`, nada: 'ok' }
+            : asal.jenis === 'lokal' ? { teks: 'Salinan di perangkat ini · belum di server', nada: 'info' }
+            : { teks: 'Desain baru · belum disimpan', nada: 'awas' };
+          const kelas = { ok: 'bg-emerald-50 text-emerald-800 border-emerald-200', info: 'bg-blue-50 text-blue-800 border-blue-200', awas: 'bg-amber-50 text-amber-900 border-amber-200' }[rinci.nada];
+          return (
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50/70 flex-wrap" role="group" aria-label="Berkas yang sedang dibuka">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500"><Ikon nama="🧊" ukuran={14} /> Berkas</span>
+              <input value={namaDesain} onChange={e => setNamaDesain(e.target.value)} maxLength={80} placeholder="Nama desain" aria-label="Nama desain"
+                title="Klik untuk mengganti nama desain"
+                className="min-w-[140px] flex-1 max-w-[340px] rounded-lg border border-transparent hover:border-slate-200 focus:border-blue-400 bg-transparent focus:bg-white px-2 py-1 text-[14px] font-bold text-slate-900 outline-none" />
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11.5px] font-semibold ${kelas}`}>{rinci.teks}</span>
+              {adaPerubahan && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-300 bg-amber-50 text-amber-900 text-[11.5px] font-semibold" title="Isi kanvas berbeda dari yang terakhir dibuka/disimpan">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Ada perubahan belum disimpan
+                </span>
+              )}
+            </div>
+          );
+        })()}
         {/* Bilah alat */}
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
@@ -1682,7 +1728,7 @@ export default function Desain3D() {
             <ul className="mt-1 divide-y divide-slate-100">
               {tersimpan.map(t => (
                 <li key={t.nama} className="flex items-center justify-between gap-2 py-2 text-[13px]">
-                  <button type="button" onClick={() => { const rb = { ...RUANG_AWAL, ...t.ruang }; setRuang(rb); setBenda(t.benda); riwayat.mulaiBaru({ ruang: rb, benda: t.benda }); setNamaDesain(t.nama); setDesainAktif(null); setPilih(null); setModal(null); }}
+                  <button type="button" onClick={() => { const rb = { ...RUANG_AWAL, ...t.ruang }; setRuang(rb); setBenda(t.benda); riwayat.mulaiBaru({ ruang: rb, benda: t.benda }); setNamaDesain(t.nama); setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'lokal', nama: t.nama }); setDasar(ambilKunci(rb, t.benda, t.nama)); setPilih(null); setModal(null); }}
                     className="text-blue-700 font-semibold hover:underline truncate text-left">{t.nama}</button>
                   <span className="flex items-center gap-2 flex-shrink-0 text-slate-600">
                     <button type="button" disabled={sibukSimpan} onClick={() => void unggahLokal(t)}
