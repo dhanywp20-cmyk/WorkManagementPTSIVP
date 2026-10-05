@@ -172,7 +172,9 @@ function FolderTreeView({
 
 // MateriPage
 
-export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) {
+export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; isAdmin: boolean; readOnly?: boolean }) {
+  //  tulis = kontrol tambah/ubah/hapus. Pimpinan (readOnly) melihat tampilan admin tanpa kontrol itu.
+  const tulis = isAdmin && !readOnly;
   const [materials, setMaterials] = useState<Material[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ materi_name: '', file_url: '', folder_path: '', content_text: '' });
@@ -371,7 +373,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
               <IkonTeks nama="📋" />List
             </button>
           </div>
-          {isAdmin && (
+          {tulis && (
             <button onClick={() => openForm()}
               className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold text-white rounded-xl shadow-md hover:scale-[1.03] transition-all whitespace-nowrap"
               style={{ background: 'linear-gradient(135deg,#3b82f6,#6366f1)', boxShadow: '0 4px 12px rgba(99,102,241,0.35)' }}>
@@ -419,7 +421,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                   style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
                   <div className="text-5xl mb-3">{search ? '🔍' : '📭'}</div>
                   <p className="font-semibold text-slate-700">{search ? 'Tidak ada materi yang cocok' : 'Belum ada materi'}</p>
-                  {isAdmin && !search && <p className="text-sm mt-1 text-slate-500">Klik + Tambah Materi untuk mulai</p>}
+                  {tulis && !search && <p className="text-sm mt-1 text-slate-500">Klik + Tambah Materi untuk mulai</p>}
                 </div>
               </div>
             )}
@@ -433,9 +435,9 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                     {tree.materials.length > 0 && (
                       <div className="mb-5">
                         {tree.materials.map(m => (
-                          <MaterialCard key={m.id} material={m} isAdmin={isAdmin}
-                            onDelete={isAdmin ? handleDelete : undefined}
-                            onEdit={isAdmin ? setEditMaterial : undefined} />
+                          <MaterialCard key={m.id} material={m} isAdmin={tulis}
+                            onDelete={tulis ? handleDelete : undefined}
+                            onEdit={tulis ? setEditMaterial : undefined} />
                         ))}
                       </div>
                     )}
@@ -471,7 +473,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                                   <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-medium text-slate-500">{totalInside} materi</span>
                                     <div className="flex items-center gap-1">
-                                      {isAdmin && (
+                                      {tulis && (
                                         <button
                                           onClick={e => { e.stopPropagation(); openForm(child.path); }}
                                           className="w-5 h-5 rounded-md flex items-center justify-center font-bold text-xs border transition-all opacity-0 group-hover:opacity-100"
@@ -487,7 +489,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                                   </div>
                                 </button>
                                 {/* Folder action buttons */}
-                                {isAdmin && (
+                                {tulis && (
                                   <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                                     <button aria-label="Ubah nama folder"
                                       onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: key, newName: key }); }}
@@ -523,9 +525,9 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                       const rootKey = m.folder_path ? m.folder_path.split('/')[0] : null;
                       const col = rootKey ? getFolderColor(rootKey) : null;
                       return (
-                        <MaterialCard key={m.id} material={m} isAdmin={isAdmin}
-                          onDelete={isAdmin ? handleDelete : undefined}
-                          onEdit={isAdmin ? setEditMaterial : undefined}
+                        <MaterialCard key={m.id} material={m} isAdmin={tulis}
+                          onDelete={tulis ? handleDelete : undefined}
+                          onEdit={tulis ? setEditMaterial : undefined}
                           colorHex={col?.icon} />
                       );
                     })}
@@ -574,7 +576,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                     {countMaterials(selectedFolderNode)} materi
                   </p>
                 </div>
-                {isAdmin && (
+                {tulis && (
                   <>
                     <button aria-label="Ubah nama folder" onClick={() => setRenameFolder({ oldName: selectedFolderNode.name, newName: selectedFolderNode.name })}
                       className="w-8 h-8 rounded-xl flex items-center justify-center border-2 transition-all hover:scale-110"
@@ -599,12 +601,12 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
                 <FolderTreeView
                   node={selectedFolderNode}
                   depth={0}
-                  isAdmin={isAdmin}
-                  onDelete={isAdmin ? handleDelete : undefined}
-                  onEdit={isAdmin ? setEditMaterial : undefined}
+                  isAdmin={tulis}
+                  onDelete={tulis ? handleDelete : undefined}
+                  onEdit={tulis ? setEditMaterial : undefined}
                   expandedPaths={rightExpandedPaths}
                   togglePath={toggleRightPath}
-                  onAddToFolder={isAdmin ? openForm : undefined}
+                  onAddToFolder={tulis ? openForm : undefined}
                   gridCols={2}
                   colorHex={panelCol.icon}
                 />
@@ -616,7 +618,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       </div>
 
       {/* ── Modal: Add Materi ── */}
-      {isAdmin && showForm && (
+      {tulis && showForm && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
@@ -684,7 +686,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       )}
 
       {/* ── Modal: Rename Folder ── */}
-      {isAdmin && renameFolder && (
+      {tulis && renameFolder && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
@@ -729,7 +731,7 @@ export function MateriPage({ user, isAdmin }: { user: User; isAdmin: boolean }) 
       )}
 
       {/* ── Modal: Edit Material ── */}
-      {isAdmin && editMaterial && (
+      {tulis && editMaterial && (
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>

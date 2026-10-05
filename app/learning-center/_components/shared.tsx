@@ -563,7 +563,7 @@ export function BtnView({ onClick, children, disabled }: { onClick?: () => void;
 export function BtnEdit({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
   const hasText = !!children;
   return (
-    <button aria-label={hasText ? undefined : 'Edit'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Edit'}
+    <button data-tulis aria-label={hasText ? undefined : 'Edit'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Edit'}
       className={`${hasText ? textBase : iconOnlyBase} text-emerald-700 bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-200`}>
       <IcoEdit size={hasText ? 12 : 13} />{hasText && children}
     </button>
@@ -573,7 +573,7 @@ export function BtnEdit({ onClick, children, disabled }: { onClick?: () => void;
 export function BtnDelete({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
   const hasText = !!children;
   return (
-    <button aria-label={hasText ? undefined : 'Hapus'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Hapus'}
+    <button data-tulis aria-label={hasText ? undefined : 'Hapus'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Hapus'}
       className={`${hasText ? textBase : iconOnlyBase} text-rose-600 bg-white border-slate-200 hover:bg-rose-50 hover:border-rose-200`}>
       <IcoDelete size={hasText ? 12 : 13} />{hasText && children}
     </button>

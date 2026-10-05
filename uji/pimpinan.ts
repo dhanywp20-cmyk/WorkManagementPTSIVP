@@ -4,6 +4,7 @@
  * Jalankan: npx tsx uji/pimpinan.ts
  */
 import { isPimpinan, muatIdPimpinan } from '../lib/pimpinan';
+import { canAccessAnalytics, canSeeTeamMonitoring, hasMenu } from '../app/dashboard/_components/widgets/permissions';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -25,6 +26,14 @@ const klien = (hasil: { data: unknown; error: unknown } | 'lempar') => ({
     }),
   }),
 });
+console.log('\n3. Dashboard pimpinan = seperti TEAM (bukan ringkas Sales)');
+const guest = { id: 'g', username: 'g', full_name: 'G', role: 'guest', allowed_menus: ['learning-center'] } as never;
+const direktur = { id: 'd', username: 'd', full_name: 'D', role: 'guest', team_type: 'Marketing', jabatan: 'Direktur', pimpinan: true, allowed_menus: ['learning-center'] } as never;
+cek('guest biasa: dashboard ringkas (tanpa analytics)', !canAccessAnalytics(guest) && !canSeeTeamMonitoring(guest));
+cek('pimpinan: Analytics penuh seperti team', canAccessAnalytics(direktur));
+cek('pimpinan: Team Monitoring seperti team', canSeeTeamMonitoring(direktur));
+cek('pimpinan tetap tidak punya menu yang tidak dicentang', !hasMenu(direktur, 'incentive-pts') && hasMenu(direktur, 'learning-center'));
+
 (async () => {
   const ada = await muatIdPimpinan(klien({ data: [{ id: 'a' }, { id: 'b' }], error: null }));
   cek('mengumpulkan id pimpinan', ada.size === 2 && ada.has('a') && ada.has('b'));

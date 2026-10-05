@@ -8,6 +8,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef, type ReactNod
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { hasFullAccess } from '@/lib/constants';
+import { isPimpinan } from '@/lib/pimpinan';
 import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { User } from '@/app/dashboard/_components/shared';
 import { KPISettings, DEFAULT_KPI_SETTINGS } from '@/app/kpi-team/_components/shared';
@@ -791,7 +792,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
 
       // Admin/superadmin ATAU akun Team PTS dengan toggle "Full Access" aktif
       // (lihat lib/constants.ts hasFullAccess).
-      if (['admin','superadmin'].includes(role) || hasFullAccess(currentUser)) {
+      if (['admin','superadmin'].includes(role) || hasFullAccess(currentUser) || isPimpinan(currentUser)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
       }
 

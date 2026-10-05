@@ -197,6 +197,19 @@ BEGIN
   END LOOP;
 END $$;
 
+-- Learning Center tampil seperti admin untuk pimpinan (Laporan, Team, Analytics membaca
+-- jawaban & percobaan SEMUA peserta). Kebijakan lca_milik/lcj_milik hanya meloloskan pemilik
+-- atau admin, jadi pimpinan perlu jalur BACA sendiri (permissive, hanya SELECT).
+DO $$
+DECLARE t text;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['lc_quiz_attempts','lc_answers'] LOOP
+    IF to_regclass('public.' || t) IS NULL THEN CONTINUE; END IF;
+    EXECUTE format('DROP POLICY IF EXISTS pimpinan_baca ON public.%I', t);
+    EXECUTE format('CREATE POLICY pimpinan_baca ON public.%I FOR SELECT USING ((SELECT public.pimpinan_lihat_semua()))', t);
+  END LOOP;
+END $$;
+
 -- ── C. TULIS: hanya baca, ditegakkan RESTRICTIVE ──────────────────────────
 -- Kebijakan RESTRICTIVE di-AND-kan dengan semua kebijakan permissive, jadi
 -- pimpinan tetap ditolak walau barisnya "miliknya" (mis. tiket buatan sendiri).
@@ -210,7 +223,8 @@ DECLARE
     'daily_reports','daily_report_team_entries','movement_logs',
     'piket_tamu_detail','piket_schedules','picket_holidays',
     'checklist_proyek','checklist_daftar','checklist_bagian','checklist_item','checklist_anggota',
-    'kpi_manual_values','kpi_period_snapshots','kpi_global_settings'
+    'kpi_manual_values','kpi_period_snapshots','kpi_global_settings',
+    'lc_materials','lc_questions','lc_quiz_sessions','lc_quiz_attempts','lc_answers'
   ];
 BEGIN
   FOREACH t IN ARRAY tabel LOOP

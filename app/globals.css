@@ -482,3 +482,8 @@ html {
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-in-right { animation: none; }
 }
+
+/* Akun pimpinan (lib/pimpinan.ts): tampilan admin TANPA kontrol tulis. Elemen yang menulis ke basis data
+   diberi atribut data-tulis; di dalam wadah [data-hanya-lihat] ia disembunyikan. Penjaga sebenarnya
+   tetap kebijakan RLS (migrasi 034), ini hanya agar tidak menampilkan tombol yang pasti ditolak. */
+[data-hanya-lihat] [data-tulis] { display: none !important; }

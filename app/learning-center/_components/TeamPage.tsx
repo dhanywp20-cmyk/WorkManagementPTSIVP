@@ -5,6 +5,7 @@ import { ListEmptyState } from '@/components/shared';
 import { supabase, User, Question, QuizAttempt, DIFF_COLOR, fmtDate, ScoreBadge, SearchInput, BtnView, GradingStatusBadge, AppDialog, DialogState, gradeEssayWithAI, gradeEssaysBatchWithAI, type SoalDinilai, ambilDaftarModel, type ModelAI } from './shared';
 import { ambilPengaturanPenilai, simpanPengaturanPenilai, PENILAI_BAWAAN, type PengaturanPenilai } from '@/lib/ai-pengaturan';
 import { hasFullAccess } from '@/lib/constants';
+import { isPimpinan } from '@/lib/pimpinan';
 import { getSession } from '@/lib/auth';
 import { createNotification } from '@/lib/notifications';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -51,6 +52,9 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   const [daftarModel, setDaftarModel] = useState<ModelAI[]>([]);
   const [galatModel, setGalatModel] = useState('');
   const bolehAturModel = isAdminView && hasFullAccess(getSession<User>() ?? {});
+  //  Pimpinan (lib/pimpinan.ts) melihat jawaban peserta tetapi TIDAK menilai: tanpa kolom nilai, tombol
+  //  AI, tombol simpan, dan tanpa penilaian otomatis saat dibuka (itu menulis ke lc_answers).
+  const bolehNilai = isAdminView && !isPimpinan(getSession<User>() ?? {});
 
   useEffect(() => {
     // Kalau gagal, penilaian otomatis tetap mati - itu sisi yang aman.
@@ -147,7 +151,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
       Kalaupun dinyalakan, sekarang seluruh essay dinilai dalam SATU panggilan,
       bukan satu per soal.
     */
-    if (isAdminView && penilaiOtomatis) {
+    if (bolehNilai && penilaiOtomatis) {
       const belum = orderedQs
         .filter(q => q.question_type === 'essay')
         .filter(q => scoreMap[q.id] === undefined && !feedbackMap[q.id])
@@ -462,7 +466,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                             <p className="text-sm text-emerald-800 whitespace-pre-wrap leading-relaxed">{q.model_answer}</p>
                           </div>
                         )}
-                        {isAdminView ? (
+                        {bolehNilai ? (
                           <div className="space-y-2">
                             {aiGradingIds.has(q.id) && (
                               <div className="flex items-center gap-2 text-xs font-semibold text-violet-600">
@@ -581,7 +585,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
               })}
               {/* pr-14 pada tombol simpan: memberi jarak dari tombol melayang "Jelajahi
                   Platform" di tepi kanan-bawah, supaya tombol simpan tidak tertutup. */}
-              {isAdminView && questions.some(q => q.question_type === 'essay') && (
+              {bolehNilai && questions.some(q => q.question_type === 'essay') && (
                 <div className="sticky bottom-4 flex justify-end items-center gap-2 pr-14">
                   {/*
                     Satu tombol untuk SELURUH essay peserta ini - satu panggilan
