@@ -622,6 +622,7 @@ export function AccountSettingsInline() {
    * berlaku saat "Simpan Perubahan" ditekan, sama seperti field lainnya.
    */
   const [editAccessLevel, setEditAccessLevel] = useState<'full' | 'guest'>('guest');
+  const [editPimpinanAwal, setEditPimpinanAwal] = useState(false);
   /** Muncul di dropdown penerima tugas? Lihat bolehDitugaskan di lib/teams.ts. */
   const [editBisaDitugaskan, setEditBisaDitugaskan] = useState(true);
 
@@ -660,8 +661,12 @@ export function AccountSettingsInline() {
         notify('error', `Gagal memuat akun: ${err2?.message ?? error.message}`);
       }
     } else if (data) {
-      setPendingUsers(data.filter((u: User) => u.team_type === 'Pending Approval'));
-      setUsers(data.filter((u: User) => u.team_type !== 'Pending Approval'));
+      //  Penanda pimpinan: kueri terpisah & toleran (kolom baru, migrasi 034). Bila gagal = semua bukan pimpinan.
+      const { data: pim } = await supabase.from('users').select('id,pimpinan');
+      const adaPim = new Set<string>(((pim ?? []) as { id: string; pimpinan: boolean | null }[]).filter(p => p.pimpinan === true).map(p => p.id));
+      const gabung = (u: User): User => ({ ...u, pimpinan: adaPim.has(u.id) });
+      setPendingUsers(data.filter((u: User) => u.team_type === 'Pending Approval').map(gabung));
+      setUsers(data.filter((u: User) => u.team_type !== 'Pending Approval').map(gabung));
     }
     setLoadingUsers(false);
   };
@@ -766,7 +771,11 @@ export function AccountSettingsInline() {
       piket_ubah: role === 'team' ? false : editingUser.piket_ubah === true,
       //  Ikut updatePayload biasa: route admin menulisnya dengan service-role,
       //  jadi pembekuan kolom di trigger tidak menghalangi.
-      bisa_ditugaskan: editBisaDitugaskan };
+      bisa_ditugaskan: editBisaDitugaskan,
+      //  Hanya dikirim bila diubah: kolom baru (migrasi 034), dan mengirimnya di setiap simpan akan
+      //  menggagalkan SEMUA penyimpanan akun selama migrasi belum dijalankan. Server memaksa
+      //  atasan_id = null, kpi_enabled = false, bisa_ditugaskan = false untuk pimpinan.
+      ...((editingUser.pimpinan === true) !== editPimpinanAwal ? { pimpinan: role === 'team' ? false : editingUser.pimpinan === true } : {}) };
     const { error } = await adminUpdateUser(editingUser.id, updatePayload);
     if (error) { setSaving(false); notify('error', 'Gagal menyimpan: ' + error.message); return; }
 
@@ -1068,6 +1077,36 @@ export function AccountSettingsInline() {
                       </div>
                     </div>
                   )}
+                  {/* AKUN PIMPINAN (mis. Direktur) — hanya untuk akun non-PTS (dibuat sebagai Marketing). Melihat
+                      SEMUA data di setiap menu tanpa saringan "milik saya", tetapi hanya baca. Dijaga di database
+                      (migrasi 034), bukan hanya menyembunyikan tombol. */}
+                  {editingUser.role !== 'team' && (
+                    <div className="formulir:col-span-3">
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="👔" />Pimpinan</label>
+                      <div className="flex gap-2">
+                        {([
+                          { v: false, icon: '👤', label: 'Akun biasa',   desc: 'Melihat sesuai peran & divisinya' },
+                          { v: true,  icon: '👔', label: 'Pimpinan — lihat semua', desc: 'Semua daftar terlihat, hanya baca (tanpa tambah/ubah/hapus)' },
+                        ]).map(o => {
+                          const aktif = (editingUser.pimpinan === true) === o.v;
+                          return (
+                            <button key={String(o.v)} type="button"
+                              onClick={() => setEditingUser({ ...editingUser, pimpinan: o.v })}
+                              className={`flex-1 text-left px-3 py-2 rounded-lg border-2 transition-all ${
+                                aktif ? 'bg-indigo-50 border-indigo-400 text-indigo-800' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                              }`}>
+                              <span className="block text-sm font-bold"><Ikon nama={o.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {o.label}</span>
+                              <span className="block text-[11px] mt-0.5 opacity-80">{o.desc}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1.5">
+                        Untuk Direktur / atasan tertinggi: buat sebagai <strong>Marketing</strong>, lalu aktifkan ini. Otomatis <strong>tidak di bawah atasan mana pun,
+                        tidak masuk KPI, dan tidak ditawarkan saat assign pekerjaan</strong>. Menu yang tampil tetap diatur lewat daftar menu di bawah.
+                      </p>
+                    </div>
+                  )}
                   <div className="formulir:col-span-3">
                     <MenuPermissionSelector selected={editingUser.allowed_menus ?? ALL_MENU_KEYS} target="edit" />
                   </div>
@@ -1118,7 +1157,7 @@ export function AccountSettingsInline() {
                                 if (user.role === 'team') { d = 'PTS'; p = labelKelompokPTS(user.team_type ?? ''); }
                                 else if (user.team_type === 'Guest') { d = 'Sales'; }
                                 else if (user.team_type === 'Marketing') { d = 'Marketing'; }
-                                setEditDivisi(d); setEditPtsType(p); setEditPtsDaerah(user.pts_daerah ?? ''); setEditOrig({ username: user.username, full_name: user.full_name }); setEditAccessLevel(user.access_level === 'full' ? 'full' : 'guest'); setEditBisaDitugaskan(user.bisa_ditugaskan !== false); setEditingUser(user);
+                                setEditDivisi(d); setEditPtsType(p); setEditPtsDaerah(user.pts_daerah ?? ''); setEditOrig({ username: user.username, full_name: user.full_name }); setEditAccessLevel(user.access_level === 'full' ? 'full' : 'guest'); setEditBisaDitugaskan(user.bisa_ditugaskan !== false); setEditPimpinanAwal(user.pimpinan === true); setEditingUser(user);
                               }} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 transition-all">Edit</button>
                               <button onClick={() => handleDeleteUser(user.id, user.full_name)} className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Hapus</button>
                             </div>

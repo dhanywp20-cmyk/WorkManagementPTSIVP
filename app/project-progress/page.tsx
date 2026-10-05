@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link2, Plus, Search } from 'lucide-react';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import { muatIdPimpinan } from '@/lib/pimpinan';
 import { bolehDitugaskanOleh } from '@/lib/teams';
 import type { User } from '@/app/dashboard/_components/shared';
 import { PageHeader, StatCardGrid, Toast, type Notif, type SalesPickerUser } from '@/components/shared';
@@ -99,7 +100,8 @@ export default function ProjectProgressPage() {
         id: string; full_name: string; role: string; team_type?: string | null; sales_division?: string | null;
         jabatan?: string | null; bisa_ditugaskan?: boolean | null;
       }[];
-      setSalesUsers(rows.filter(u => u.role === 'guest').map(u => ({ id: u.id, full_name: u.full_name, sales_division: u.sales_division ?? null })));
+      const idPim = await muatIdPimpinan(supabase);
+      setSalesUsers(rows.filter(u => u.role === 'guest' && !idPim.has(u.id)).map(u => ({ id: u.id, full_name: u.full_name, sales_division: u.sales_division ?? null })));
       setCalonAnggota(rows.filter(u => bolehDitugaskanOleh(u, true))
         .map(u => ({ id: u.id, full_name: u.full_name, sub: [u.team_type, u.jabatan].filter(Boolean).join(' · ') })));
     })();

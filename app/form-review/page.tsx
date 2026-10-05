@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback, Suspense, type CSSProperties } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { isPimpinan } from '@/lib/pimpinan';
 import { clearSession, getSession } from '@/lib/auth';
 import { sendWANotif } from '@/lib/wa';
 import { createNotification } from '@/lib/notifications';
@@ -102,7 +103,8 @@ function FormReviewPageInner() {
   // secara terpisah, sudah ikut benar sekarang), ATAU akun Team PTS dengan
   // toggle "Full Access" aktif (lihat lib/constants.ts hasFullAccess).
   const isAdmin = hasFullAccess(currentUser);
-  const isGuest = currentUser?.role === 'guest';
+  //  Pimpinan (lib/pimpinan.ts) melihat SEMUA review, hanya baca - bukan "guest yang dinilai".
+  const isGuest = currentUser?.role === 'guest' && !isPimpinan(currentUser);
   const isTeam = currentUser?.role === 'team';
 
   // Sebelumnya cek isGuest saja - artinya SEMUA akun Guest melihat tombol
@@ -110,10 +112,10 @@ function FormReviewPageInner() {
   // baris yang memang jadi tanggung jawabnya: Guest/Sales yang direview, atau
   // Team yang meng-handle - pola sama dengan myActivePendingReviews di atas.
   const bolehEditReview = (r: ReviewForm): boolean =>
-    isAdmin
+    !isPimpinan(currentUser) && (isAdmin
     || (!!currentUser?.username && r.guest_username === currentUser.username)
     || (!!currentUser?.full_name && r.sales_name === currentUser.full_name)
-    || (!!currentUser?.username && r.assigned_to === currentUser.username);
+    || (!!currentUser?.username && r.assigned_to === currentUser.username));
 
   // Init
 
@@ -190,8 +192,8 @@ function FormReviewPageInner() {
 
     let query = supabase.from('form_reviews').select('id,reminder_id,project_name,address,sales_name,sales_division,assign_name,assigned_to,reminder_category,review_category,product_demo,grade_product_knowledge,catatan_grade_product_knowledge,product_bast,grade_training_customer,catatan_grade_training_customer,grade_product_knowledge_bast,catatan_grade_product_knowledge_bast,foto_dokumentasi_url,guest_username,created_at,updated_at').order('created_at', { ascending: false }).limit(500);
 
-    // Guest hanya melihat data milik mereka (OR filter untuk kompatibilitas data lama)
-    if (activeUser?.role === 'guest') {
+    // Guest hanya melihat data milik mereka (OR filter untuk kompatibilitas data lama); pimpinan melihat semua
+    if (activeUser?.role === 'guest' && !isPimpinan(activeUser)) {
       query = query.or(
         `guest_username.eq.${activeUser.username},sales_name.eq.${activeUser.full_name}`
       );
@@ -209,7 +211,7 @@ function FormReviewPageInner() {
       setReviews(data as ReviewForm[]);
 
       // Notif untuk Guest: pending review yang belum diisi
-      if (activeUser?.role === 'guest') {
+      if (activeUser?.role === 'guest' && !isPimpinan(activeUser)) {
         const pending = (data as ReviewForm[]).filter(r => !r.grade_product_knowledge && !r.grade_product_knowledge_bast);
         setMyPendingReviews(pending);
         if (pending.length > 0) setTimeout(() => setShowNotificationPopup(true), 800);
@@ -481,7 +483,7 @@ function FormReviewPageInner() {
   const myActivePendingReviews = reviews.filter(r =>
     currentUser && (
       // Guest: review miliknya yang belum diisi
-      (currentUser.role === 'guest' && (
+      (currentUser.role === 'guest' && !isPimpinan(currentUser) && (
         r.guest_username === currentUser.username ||
         r.sales_name === currentUser.full_name
       )) ||

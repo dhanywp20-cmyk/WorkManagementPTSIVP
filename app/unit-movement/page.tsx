@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, Suspense, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { isPimpinan } from '@/lib/pimpinan';
 import { namaKelompokPTSDitugaskan } from '@/lib/kelompok';
 import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal , Paginasi, usePaginasi } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
@@ -138,7 +139,7 @@ function UnitMovementPageInner() {
   // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
   // (lihat lib/constants.ts hasFullAccess).
   const isAdmin   = hasFullAccess(currentUser);
-  const canAddLog = isAdmin || ['team','team_pts','marketing','guest'].includes(currentUser?.role?.toLowerCase()??'');
+  const canAddLog = !isPimpinan(currentUser) && (isAdmin || ['team','team_pts','marketing','guest'].includes(currentUser?.role?.toLowerCase()??''));
   /*
     Boleh EDIT baris log ini - kebijakan platform: pencatatnya sendiri
     (created_by) boleh membetulkan salah ketik (SN, tanggal, dsb), Admin/

@@ -131,7 +131,11 @@ export async function POST(request: NextRequest) {
     // Token PostgREST - memberi basis data cara mengenali user ini, sehingga
     // policy RLS bisa menyaring berdasarkan identitas alih-alih USING (true).
     // Bernilai null bila SUPABASE_JWT_SECRET belum diset; login tetap berhasil.
-    const response = NextResponse.json({ user, db_token: issueDbToken(user) });
+    //  Penanda akun pimpinan (lib/pimpinan.ts) - kueri terpisah & toleran: bila kolom
+    //  belum ada (migrasi 034 belum dijalankan) hasilnya null = bukan pimpinan.
+    const { data: pim } = await supabase.from('users').select('pimpinan').eq('id', user.id).maybeSingle();
+    const userKeluar = { ...user, pimpinan: pim?.pimpinan === true };
+    const response = NextResponse.json({ user: userKeluar, db_token: issueDbToken(user) });
     response.cookies.set('ivp_session', sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

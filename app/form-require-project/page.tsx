@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, Suspense, type CSSProperties 
 import { Z } from '@/lib/z-index';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { isPimpinan, muatIdPimpinan } from '@/lib/pimpinan';
 import { setSession, clearSession, getSession } from '@/lib/auth';
 import { notifyProjectStatusChange, createNotification } from '@/lib/notifications';
 import { logAudit } from '@/lib/audit';
@@ -226,6 +227,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   const role = currentUser.role?.toLowerCase().trim() ?? '';
   const isPTS = ['admin', 'superadmin', 'team_pts', 'team'].includes(role);
+  //  Akun pimpinan (lib/pimpinan.ts): melihat SEMUA request, hanya baca - bukan Sales yang dibatasi.
+  const pimpinan = isPimpinan(currentUser);
   const isTeamPTS = role === 'team_pts' || role === 'team';
   const isSuperAdmin = role === 'superadmin';
   const isAdmin = role === 'admin';
@@ -256,11 +259,11 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     pendapat.
   */
   const bolehEditRequest = (req: ProjectRequest): boolean =>
-    bisaKelolaRequest
+    !pimpinan && (bisaKelolaRequest
     || req.requester_id === currentUser.id
     || (!!currentUser.full_name && req.sales_name === currentUser.full_name)
     || (!!currentUser.full_name && req.assign_name === currentUser.full_name)
-    || (!!currentUser.full_name && req.ivp_assignee === currentUser.full_name);
+    || (!!currentUser.full_name && req.ivp_assignee === currentUser.full_name));
 
   /**
    * Re-route hanya selama pekerjaannya BELUM jalan. Begitu masuk in_progress,
@@ -271,9 +274,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     !['in_progress', 'completed', 'rejected'].includes(r.status ?? '');
   // Guest IVP = role guest dengan sales_division IVP/MVI (Sales Internal, bisa lihat
   // semua request divisi yang dia handle via division_ivp_mappings)
-  const isIVPGuest = role === 'guest' && (currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI');
+  const isIVPGuest = role === 'guest' && !pimpinan && (currentUser.sales_division === 'IVP' || currentUser.sales_division === 'MVI');
   // Guest non-IVP = role guest bukan IVP (hanya lihat request miliknya)
-  const isNonIVPGuest = role === 'guest' && currentUser.sales_division !== 'IVP';
+  const isNonIVPGuest = role === 'guest' && !pimpinan && currentUser.sales_division !== 'IVP';
   // Bisa ubah status in_progress: hanya PTS yang di-assign ke RUANGAN itu
   // (roomIdx, bukan selalu ruangan pertama - lihat getRoomAssignName).
   const canSetInProgress = (req: ProjectRequest, roomIdx: number) =>
@@ -318,7 +321,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
   const [internalSalesNames, setInternalSalesNames] = useState<Record<string, string>>({});
   useEffect(() => {
     supabase.from('users').select('id, full_name, username, sales_division, is_internal_sales').eq('role', 'guest').then(({ data }: { data: {id:string;full_name:string;username:string;sales_division?:string;is_internal_sales?:boolean}[] | null }) => {
-      if (data) setSalesGuestUsers(data);
+      if (data) muatIdPimpinan(supabase).then(idPim => setSalesGuestUsers(data.filter(u => !idPim.has(u.id))));
     });
     supabase.from('users').select('is_internal_sales').eq('id', currentUser.id).maybeSingle().then(({ data }: { data: { is_internal_sales: boolean | null } | null }) => {
       const internal = !!data?.is_internal_sales;
@@ -361,8 +364,8 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     // yang memuat koma/titik tidak merusak sintaks or() PostgREST.
     const kutip = (n: string) => `"${n.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
     const atasNama = (nama?: string | null) => (nama ? `sales_name.eq.${kutip(nama)}` : '');
-    if (isPTS) {
-      // admin/superadmin: semua request; team PTS: semua request (filter assign di UI)
+    if (isPTS || pimpinan) {
+      // admin/superadmin: semua request; team PTS: semua request (filter assign di UI); pimpinan: semua, hanya baca
     } else if (isIVPGuest) {
       const { data: ivpDivMaps } = await supabase.from('division_ivp_mappings').select('sales_division').eq('ivp_id', currentUser.id);
       const handledDivisions = (ivpDivMaps ?? []).map((m: any) => m.sales_division as string);
@@ -421,7 +424,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       let filtered = data as ProjectRequest[];
       // Brand PIC: tambahkan request yang brand pic-nya = user ini (dari rooms JSONB)
       const selfDiv = currentUser.sales_division;
-      if (!isPTS && !isIVPGuest && currentUser.team_type === 'Marketing') {
+      if (!isPTS && !isIVPGuest && !pimpinan && currentUser.team_type === 'Marketing') {
         // Kolom brand Ruangan 1 ikut diambil, dengan jalur mundur: kolomnya
         // baru ada setelah sql/design-project-brand-display-2.sql dijalankan,
         // dan PostgREST menolak SELURUH query kalau satu kolom tak dikenal.
@@ -1910,12 +1913,14 @@ Hubungi Admin untuk info lebih lanjut.
           );
         })()}
 
+        {!pimpinan && (
         <button onClick={() => setShowNewFormModal(true)}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
           style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow: '0 4px 14px rgba(124,58,237,0.4)' }}>
           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
           Buat Request
         </button>
+        )}
       </PageHeader>
 
       <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
@@ -2165,7 +2170,7 @@ Hubungi Admin untuk info lebih lanjut.
               deskripsiKosong={isIVPGuest
                 ? 'Admin akan menghubungkan request dari sales external ke akun IVP kamu saat ada project baru.'
                 : 'Request project yang diajukan akan muncul di sini.'}
-              aksiKosong={!isPTS ? { label: '+ Buat Request Pertama', onClick: () => setShowNewFormModal(true) } : undefined}
+              aksiKosong={!isPTS && !pimpinan ? { label: '+ Buat Request Pertama', onClick: () => setShowNewFormModal(true) } : undefined}
             />
           ) : (
             <>
