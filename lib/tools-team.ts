@@ -85,7 +85,7 @@ export const urlGambarDesain = (id: string, versi: number, hd = false) =>
   `/api/tools-team/desain/gambar?id=${encodeURIComponent(id)}&v=${versi}${hd ? '&hd=1' : ''}`;
 
 /** Riwayat yang disimpan per desain: versi lebih lama dari ini (dan tidak ditautkan) dihapus. */
-export const SIMPAN_VERSI = 20;
+export const SIMPAN_VERSI = 10;
 export function bersihkanGambar(x: unknown, maks = MAKS_BYTE_GAMBAR): string | null {
   if (typeof x !== 'string' || x.length > maks) return null;
   return /^data:image\/(jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(x) ? x : null;
