@@ -13,15 +13,16 @@ const Desain3D = dynamic(() => import('./_components/Desain3D'), {
   loading: () => <div className="h-[420px] grid place-items-center text-sm text-slate-500">Memuat Desain 3D...</div>,
 });
 
+//  Desain 3D pertama = alat yang tampil saat halaman dibuka.
 const ALAT = [
-  { k: 'led', judul: 'LED Videotron', ket: 'Modul/cabinet, resolusi, daya, sending card & VP', ikon: '📺', C: KalkulatorLED },
   { k: '3d', judul: 'Desain 3D Ruang', ket: 'Tata letak ruang AV + analisis jarak pandang', ikon: '🧊', C: Desain3D },
+  { k: 'led', judul: 'LED Videotron', ket: 'Modul/cabinet, resolusi, daya, sending card & VP', ikon: '📺', C: KalkulatorLED },
 ] as const;
 
 function ToolsKerjaInner() {
   const sp = useSearchParams();
   const [siap, setSiap] = useState(false);
-  const [aktif, setAktif] = useState<string>(() => (ALAT.some(a => a.k === sp.get('alat')) ? sp.get('alat')! : 'led'));
+  const [aktif, setAktif] = useState<string>(() => (ALAT.some(a => a.k === sp.get('alat')) ? sp.get('alat')! : '3d'));
 
   useEffect(() => {
     const u = getSession();
@@ -45,27 +46,20 @@ function ToolsKerjaInner() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--latar-halaman, #f1f5f9)' }}>
-      <PageHeader icon="🧮" title="Tools Team" subtitle="Kalkulator & desain untuk engineer Audio Visual" color="#1d4ed8" colorLight="#dbeafe" />
+      <PageHeader icon="🧮" title="Tools Team" subtitle="Kalkulator & desain untuk engineer Audio Visual" color="#1d4ed8" colorLight="#3b82f6">
+        {/* Pilihan alat di header (pola tombol "Mapping Center" di Summary Project): yang aktif berisi gradien, yang lain putih. */}
+        {ALAT.map(a => {
+          const on = a.k === aktif;
+          return (
+            <button key={a.k} type="button" onClick={() => pilih(a.k)} aria-pressed={on} title={a.ket}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 ${on ? 'text-white hover:opacity-90' : 'bg-white text-blue-700 border border-blue-200 hover:bg-blue-50'}`}
+              style={on ? { background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)', boxShadow: '0 4px 14px rgba(29,78,216,0.35)' } : undefined}>
+              <Ikon nama={a.ikon} ukuran={15} />{a.judul}
+            </button>
+          );
+        })}
+      </PageHeader>
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
-        {/* Pilihan alat: switch di atas, lebar tombol sama. Selalu di atas kartu
-            putih supaya tetap terbaca di atas gambar latar merek. */}
-        <nav aria-label="Daftar alat" className="rounded-2xl bg-white border border-slate-200 shadow-sm p-1.5 print:hidden">
-          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${ALAT.length}, minmax(0, 1fr))` }}>
-            {ALAT.map(a => {
-              const on = a.k === aktif;
-              return (
-                <button key={a.k} type="button" onClick={() => pilih(a.k)} aria-pressed={on}
-                  className={`min-w-0 flex items-center justify-center sm:justify-start gap-2.5 px-2 sm:px-3 py-2.5 rounded-xl transition-colors ${on ? 'bg-blue-700 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-100'}`}>
-                  <span className={`hidden sm:grid w-8 h-8 rounded-lg place-items-center flex-shrink-0 ${on ? 'bg-white/15' : 'bg-blue-50 text-blue-700'}`}><Ikon nama={a.ikon} ukuran={16} /></span>
-                  <span className="min-w-0 text-center sm:text-left">
-                    <span className="block text-[13px] font-bold truncate">{a.judul}</span>
-                    <span className={`hidden sm:block text-[11.5px] leading-snug truncate ${on ? 'text-blue-100' : 'text-slate-600'}`}>{a.ket}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
         <main className="min-w-0">
           <C />
         </main>
