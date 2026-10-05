@@ -175,7 +175,7 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
   {
     grup: 'Audio & kontrol', item: [
       { kunci: 'mic-g', label: 'Mic gooseneck', ket: 'Di meja', jenis: 'mic', atur: { mic: 'gooseneck' } },
-      { kunci: 'mic-b', label: 'Mic boundary', ket: 'Di meja', jenis: 'mic', atur: { mic: 'boundary' } },
+      { kunci: 'mic-b', label: 'Mic boundary', ket: 'Di meja · cakram bundar', jenis: 'mic', atur: { mic: 'boundary' } },
       { kunci: 'spk', label: 'Speaker dinding', ket: 'Kabinet + bracket dinding', jenis: 'speaker' },
       { kunci: 'spk-p', label: 'Speaker plafon', ket: 'In-ceiling, gril bulat', jenis: 'speaker-plafon' },
       { kunci: 'tp', label: 'Touch panel', ket: 'Kontrol di meja', jenis: 'touchpanel' },
@@ -250,7 +250,7 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
     case 'speaker': return { ...dasar, x: k.x0 + 0.4, z: 0.17, w: 0.21, h: 0.32, d: 0.2, elev: 2.0, ...atur };
     case 'speaker-plafon': return { ...dasar, w: 0.24, h: 0.06, d: 0.24, elev: k.t - 0.06, ...atur };
     case 'mic': return (atur.mic ?? 'gooseneck') === 'boundary'
-      ? { ...dasar, z: k.l * 0.55, w: 0.09, h: 0.025, d: 0.09, elev: 0.75, mic: 'boundary', nama: 'Mic boundary', ...atur }
+      ? { ...dasar, z: k.l * 0.55, w: 0.18, h: 0.032, d: 0.18, elev: 0.75, mic: 'boundary', nama: 'Mic boundary', ...atur }
       : { ...dasar, z: k.l * 0.55, w: 0.12, h: 0.42, d: 0.12, elev: 0.75, mic: 'gooseneck', nama: 'Mic gooseneck', ...atur };
     case 'touchpanel': return { ...dasar, z: k.l * 0.4, w: 0.26, h: 0.16, d: 0.17, elev: 0.75, rot: 180, ...atur };
     case 'kamera': {
@@ -955,6 +955,36 @@ function teksturGril(THREE: typeof T, dasar: string, lubang: string, ulang: numb
   return t;
 }
 
+/**
+ * Mic boundary cakram bundar (kain abu-abu berpola konsentris + cincin LED hijau + ikon mic).
+ * 'kain' = tutup atas yang berkain; 'ikon' = lapisan transparan cincin & ikon yang menyala.
+ * Keduanya dipetakan ke lingkaran: pusat tekstur = pusat cakram, sisi kanvas = tepi cakram.
+ */
+function teksturMicBoundary(THREE: typeof T, bagian: 'kain' | 'ikon'): T.Texture {
+  const U = 512, C = U / 2;
+  const c = kanvas(U, U, g => {
+    if (bagian === 'kain') {
+      g.fillStyle = '#6d6e72'; g.fillRect(0, 0, U, U);   // gelap sedikit: pencahayaan adegan menerangkan ~1,4x
+      //  Anyaman melingkar: ratusan lingkaran tipis berselang-seling terang/gelap -> pola moire seperti kain asli.
+      for (let r = 3; r < C * 1.45; r += 2.1) {
+        g.strokeStyle = Math.round(r / 2.1) % 2 ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.16)';
+        g.lineWidth = 1; g.beginPath(); g.arc(C, C, r, 0, Math.PI * 2); g.stroke();
+      }
+      for (let i = 0; i < 1800; i++) { g.fillStyle = Math.random() > 0.5 ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.08)'; g.fillRect(Math.random() * U, Math.random() * U, 1.4, 1.4); }
+      return;
+    }
+    const hijau = '#6bf2b0';
+    g.shadowColor = '#2dff9a'; g.shadowBlur = 16; g.strokeStyle = hijau; g.fillStyle = hijau;
+    g.lineWidth = 13; g.beginPath(); g.arc(C, C, 88, 0, Math.PI * 2); g.stroke();   // cincin LED
+    g.shadowBlur = 8; g.lineWidth = 7; g.lineCap = 'round';
+    const w = 17;                                                       // ikon mic: kapsul + busur + tiang + dasar
+    g.beginPath(); g.moveTo(C - w, C - 22); g.arc(C, C - 22, w, Math.PI, 0); g.lineTo(C + w, C + 4); g.arc(C, C + 4, w, 0, Math.PI); g.closePath(); g.fill();
+    g.beginPath(); g.arc(C, C + 4, w + 13, 0.12 * Math.PI, 0.88 * Math.PI); g.stroke();
+    g.beginPath(); g.moveTo(C, C + 4 + w + 13); g.lineTo(C, C + 52); g.moveTo(C - 17, C + 52); g.lineTo(C + 17, C + 52); g.stroke();
+  });
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+
 /** Layar paperless display lift: halaman masuk sistem rapat. */
 function teksturLift(THREE: typeof T): T.Texture {
   const c = kanvas(512, 300, g => {
@@ -1332,8 +1362,15 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
     case 'mic': {
       const hitam = mat(THREE, 0x111827, { metalness: 0.5, roughness: 0.4 });
       if (b.mic === 'boundary') {
-        g.add(new THREE.Mesh(new THREE.CylinderGeometry(b.w / 2, b.w / 2 + 0.008, b.h, 28), hitam).translateY(b.h / 2));
-        g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.003, 12), mat(THREE, 0x22c55e, { emissive: 0x22c55e, emissiveIntensity: 1 })).translateY(b.h + 0.001).translateZ(b.d * 0.3));
+        //  Cakram bundar berkain abu-abu dengan cincin LED hijau + ikon mic di tengah (mic konferensi puck).
+        const R = b.w / 2, alas = 0.004;
+        const kain = new THREE.MeshStandardMaterial({ map: teksturMicBoundary(THREE, 'kain'), roughness: 1, metalness: 0 });
+        const sisi = new THREE.MeshStandardMaterial({ color: 0x66676b, roughness: 0.95 });
+        g.add(new THREE.Mesh(new THREE.CylinderGeometry(R * 0.93, R * 0.93, alas, 48), mat(THREE, 0x2a2d31, { roughness: 0.8 })).translateY(alas / 2));
+        g.add(new THREE.Mesh(new THREE.CylinderGeometry(R * 0.97, R, b.h - alas, 64), [sisi, kain, sisi]).translateY(alas + (b.h - alas) / 2));
+        const ikon = new THREE.Mesh(new THREE.CircleGeometry(R * 0.97, 48),
+          new THREE.MeshBasicMaterial({ map: teksturMicBoundary(THREE, 'ikon'), transparent: true, toneMapped: false, depthWrite: false }));
+        ikon.rotation.x = -Math.PI / 2; ikon.position.y = b.h + 0.0006; g.add(ikon);
       } else {
         g.add(kotak(THREE, b.w, 0.03, b.d * 0.9, hitam, 0, 0.015, 0)); // dasar + tombol
         g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.004, 12), mat(THREE, 0xef4444, { emissive: 0xef4444, emissiveIntensity: 0.9 })).translateY(0.032).translateZ(b.d * 0.25));
@@ -1389,13 +1426,18 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
         mon.position.set(xMon, 0.008, -b.d * 0.18); mon.rotation.x = -0.16; g.add(mon);
       }
       const xMic = b.w / 2 - 0.06;
-      g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.016, 0.008, 20), hitam).translateX(xMic).translateY(0.012).translateZ(b.d * 0.15));
-      const kurva = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(xMic, 0.012, b.d * 0.15), new THREE.Vector3(xMic, b.h * 0.6, b.d * 0.12), new THREE.Vector3(xMic, b.h * 0.88, b.d * 0.02),
-      ]);
-      g.add(new THREE.Mesh(new THREE.TubeGeometry(kurva, 24, 0.005, 8, false), hitam));
-      const kepala = new THREE.Mesh(new THREE.SphereGeometry(0.016, 20, 14), hitamKilap);
-      kepala.scale.set(1, 1.5, 1); kepala.position.set(xMic, b.h * 0.92, -b.d * 0.02); g.add(kepala);
+      if (b.naik !== false) {
+        g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.016, 0.008, 20), hitam).translateX(xMic).translateY(0.012).translateZ(b.d * 0.15));
+        const kurva = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(xMic, 0.012, b.d * 0.15), new THREE.Vector3(xMic, b.h * 0.6, b.d * 0.12), new THREE.Vector3(xMic, b.h * 0.88, b.d * 0.02),
+        ]);
+        g.add(new THREE.Mesh(new THREE.TubeGeometry(kurva, 24, 0.005, 8, false), hitam));
+        const kepala = new THREE.Mesh(new THREE.SphereGeometry(0.016, 20, 14), hitamKilap);
+        kepala.scale.set(1, 1.5, 1); kepala.position.set(xMic, b.h * 0.92, -b.d * 0.02); g.add(kepala);
+      } else {
+        //  Layar turun = mic gooseneck ikut masuk ke meja (hide); tinggal lubang/tutup rata di tempatnya.
+        g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.0015, 24), hitamKilap).translateX(xMic).translateY(0.0085).translateZ(b.d * 0.15));
+      }
       break;
     }
     case 'model': {
