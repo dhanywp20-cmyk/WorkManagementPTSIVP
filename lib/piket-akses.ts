@@ -21,7 +21,10 @@ export interface PenggunaPiket {
   role?: string | null;
   team_type?: string | null;
   access_level?: string | null;
+  /** 'lingkup' = dibatasi (pilihan eksplisit); kosong / 'semua' = melihat semua (bawaan). */
   piket_akses?: string | null;
+  /** true = akun non-PTS boleh mengisi & menyunting kegiatan (bawaan false = lihat & export saja). */
+  piket_ubah?: boolean | null;
 }
 
 export type LingkupPiket = 'lingkup' | 'semua';
@@ -32,8 +35,8 @@ export const LABEL_PIKET_AKSES: Record<LingkupPiket, string> = {
 };
 
 export const JELAS_PIKET_AKSES: Record<LingkupPiket, string> = {
-  lingkup: 'Hanya catatan tamu atas namanya sendiri / divisinya. Bawaan untuk Sales & Marketing.',
-  semua: 'Melihat seluruh catatan tamu showroom — untuk resepsionis / front desk. Tetap tidak bisa menyunting.',
+  lingkup: 'Dibatasi: hanya catatan atas namanya / divisinya (plus kegiatan internal). Pilih hanya bila akun ini memang tidak boleh melihat kunjungan lain.',
+  semua: 'Bawaan: melihat seluruh catatan tamu showroom dan boleh export Excel.',
 };
 
 function peran(u: PenggunaPiket | null | undefined): string {
@@ -53,25 +56,29 @@ export function adalahPTS(u: PenggunaPiket | null | undefined): boolean {
 /**
  * Boleh melihat SELURUH catatan tamu, tanpa batas divisi.
  *
- * Tim PTS selalu boleh - mereka yang mencatatnya. Selain itu hanya akun yang
- * memang disetel 'semua' dari Kelola Akun (resepsionis / front desk). Yang
- * lain tetap dibatasi hitungLingkupProject() seperti sebelumnya: daftar
- * kunjungan pelanggan divisi tetangga bukan urusan Sales divisi lain.
+ * BAWAAN: semua akun yang punya menu Piket Showroom (keputusan pemilik -
+ * Sales/Marketing melihat semuanya dan hanya dibatasi mengisi/menyunting).
+ * Hanya akun yang di Kelola Akun disetel 'lingkup' yang tetap dibatasi
+ * hitungLingkupProject(). Tim PTS selalu melihat semuanya.
+ *
+ * Aturan yang SAMA dijaga di database (piket_akses_semua(), migrasi 033);
+ * ini hanya cermin untuk layar - bukan penjaga.
  */
 export function bisaLihatSemuaTamu(u: PenggunaPiket | null | undefined): boolean {
   if (adalahPTS(u)) return true;
-  return (u?.piket_akses ?? '') === 'semua';
+  return (u?.piket_akses ?? '') !== 'lingkup';
 }
 
 /**
  * Boleh mengisi & menyunting kegiatan piket.
  *
- * HANYA Tim PTS dan admin. Tombol Edit dulu dirender tanpa syarat - siapa pun
- * yang diberi menu Piket Showroom bisa mengubah catatan hari itu, termasuk
- * akun Sales dan resepsionis yang seharusnya hanya membaca.
+ * Tim PTS dan admin (yang bertugas piket), ATAU akun yang diberi pengaturan
+ * "boleh mengisi" di Kelola Akun (users.piket_ubah). Bawaan akun lain: lihat &
+ * export saja. Penjaga sebenarnya ada di database (piket_boleh_ubah(),
+ * migrasi 032) - tombol di layar hanya cermin.
  */
 export function bisaIsiKegiatan(u: PenggunaPiket | null | undefined): boolean {
-  return adalahPTS(u);
+  return adalahPTS(u) || u?.piket_ubah === true;
 }
 
 /** Nilai yang sah untuk disimpan ke kolom - dipakai route server sebelum menulis. */

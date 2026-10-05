@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
 const ALLOWED_FIELDS = new Set([
   'username', 'full_name', 'role', 'team_type', 'sales_division',
   'jabatan', 'phone_number', 'allowed_menus', 'allow_incentive_input', 'incentive_brand_scope', 'incentive_akses',
-  'atasan_id', 'kpi_enabled', 'is_internal_sales', 'access_level', 'piket_akses',
+  'atasan_id', 'kpi_enabled', 'is_internal_sales', 'access_level', 'piket_akses', 'piket_ubah',
   //  Toggle "boleh ditugaskan pekerjaan" - dibekukan trigger untuk anon, jadi
   //  hanya bisa diubah lewat route ini. Lihat lib/teams.ts bolehDitugaskan().
   'bisa_ditugaskan',

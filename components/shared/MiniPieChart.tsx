@@ -159,9 +159,13 @@ export function MiniPieChart({
            berdampingan: kartu selebar ~170px hanya menyisakan ~90px untuk
            nama, dan setiap label jadi "Konfi..." - daftar yang tidak bisa
            dibaca sama saja dengan tidak ditampilkan. */}
-      <div className="flex flex-col sm:flex-row items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-5">
+      {/*  flex-wrap + min-w-0: di kartu yang kurang lebar untuk donat DAN legenda
+           berdampingan (grid 5 kolom di layar lebar, kartu ±295px), legenda
+           turun ke bawah donat. Sebelumnya legenda dipaksa min 160px dan
+           mendorong kolom persen keluar dari kartu (terpotong "20%" / "83%"). */}
+      <div className="flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-x-4 sm:gap-y-2 min-w-0">
         <svg role="img" aria-label={`${title}: ${ringkasan}`} width="120" height="120" viewBox="0 0 120 120"
-          className="flex-shrink-0 w-[64px] h-[64px] sm:w-[116px] sm:h-[116px]">
+          className="flex-shrink-0 w-[64px] h-[64px] sm:w-[104px] sm:h-[104px] xl:w-[116px] xl:h-[116px]">
           {slices.map(s => s.penuh ? (
             <circle key={s.i} cx={cx} cy={cy} r={(r + ir) / 2} fill="none" stroke={s.color} strokeWidth={r - ir}
               opacity={redup(s.i) ? 0.3 : 1}
@@ -181,7 +185,7 @@ export function MiniPieChart({
 
         <ul ref={legendaRef} tabIndex={dapatDigulir ? 0 : -1}
           aria-label={dapatDigulir ? `${slices.length} kategori - gulir untuk melihat semua` : undefined}
-          className={`flex flex-col gap-px sm:gap-0.5 w-full sm:w-auto sm:flex-1 sm:basis-[160px] sm:min-w-[160px] sm:max-w-[240px] ${KELAS_LEGENDA}`}>
+          className={`flex flex-col gap-px sm:gap-0.5 w-full min-w-0 sm:w-auto sm:flex-1 sm:basis-[150px] sm:min-w-[150px] sm:max-w-full ${KELAS_LEGENDA}`}>
           {slices.map(s => {
             const aktif = activeFilter === s.label;
             return (
@@ -190,13 +194,13 @@ export function MiniPieChart({
                   onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)}
                   onFocus={() => setHov(s.i)} onBlur={() => setHov(null)}
                   onClick={() => klik(s)}
-                  className={`w-full grid grid-cols-[8px_1fr_auto_auto] items-center gap-1.5 sm:gap-2 rounded-md px-1 sm:px-1.5 py-0.5 sm:py-1 text-left transition-colors ${bisaKlik && !s.lipat ? 'cursor-pointer hover:bg-slate-50' : 'cursor-default'} ${aktif ? 'bg-slate-100' : ''}`}
+                  className={`w-full min-w-0 grid grid-cols-[8px_minmax(0,1fr)_auto_auto] items-center gap-1.5 sm:gap-2 rounded-md px-1 sm:px-1.5 py-0.5 sm:py-1 text-left transition-colors ${bisaKlik && !s.lipat ? 'cursor-pointer hover:bg-slate-50' : 'cursor-default'} ${aktif ? 'bg-slate-100' : ''}`}
                   style={{ opacity: redup(s.i) ? 0.55 : 1 }}>
                   <span className="w-2 h-2 rounded-full" style={{ background: s.color }} aria-hidden="true" />
                   <span title={`${s.label}: ${s.value}${valueSuffix ?? ''} (${persen(s.value)}%)`}
                     className={`text-[9.5px] sm:text-[11px] truncate ${aktif ? 'font-semibold text-slate-900' : 'font-medium text-slate-600'}`}>{s.label}</span>
-                  <span className="text-[9.5px] sm:text-[11px] font-semibold text-slate-800 tabular-nums text-right">{s.value}{valueSuffix ?? ''}</span>
-                  <span className="text-[9px] sm:text-[10px] text-slate-500 tabular-nums text-right w-7 sm:w-8">{persen(s.value)}%</span>
+                  <span className="text-[9.5px] sm:text-[11px] font-semibold text-slate-800 tabular-nums text-right whitespace-nowrap">{s.value}{valueSuffix ?? ''}</span>
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 tabular-nums text-right w-8 sm:w-9 whitespace-nowrap">{persen(s.value)}%</span>
                 </button>
               </li>
             );

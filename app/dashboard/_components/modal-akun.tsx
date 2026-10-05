@@ -649,7 +649,7 @@ export function AccountSettingsInline() {
 
   const fetchUsers = async () => {
     setLoadingUsers(true);
-    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,pts_daerah,created_at,access_level,piket_akses,bisa_ditugaskan').order('full_name');
+    const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,divisi,pts_type,pts_daerah,created_at,access_level,piket_akses,piket_ubah,bisa_ditugaskan').order('full_name');
     if (error) {
       // Fallback: try without extended columns (divisi/pts_type may not exist yet)
       const { data: fallback, error: err2 } = await supabase.from('users').select('id,username,full_name,role,team_type,phone_number,sales_division,jabatan,allowed_menus,kpi_enabled,created_at').order('full_name');
@@ -761,7 +761,9 @@ export function AccountSettingsInline() {
       //  jalur tersendiri seperti access_level) karena route admin sudah
       //  memasukkannya ke whitelist dan menulisnya dengan service-role, jadi
       //  trigger pembekuan kolom tidak menghalangi.
-      piket_akses: role === 'team' ? null : (editingUser.piket_akses ?? null),
+      piket_akses: role === 'team' ? null : (editingUser.piket_akses === 'lingkup' ? 'lingkup' : null),
+      //  Hak mengisi/menyunting Piket Showroom. Tim PTS selalu boleh (by role), jadi tidak disimpan.
+      piket_ubah: role === 'team' ? false : editingUser.piket_ubah === true,
       //  Ikut updatePayload biasa: route admin menulisnya dengan service-role,
       //  jadi pembekuan kolom di trigger tidak menghalangi.
       bisa_ditugaskan: editBisaDitugaskan };
@@ -1007,25 +1009,28 @@ export function AccountSettingsInline() {
                     </div>
                   )}
                   {/* PIKET SHOWROOM — hanya untuk akun non-PTS. Tim PTS yang
-                      bertugas piket selalu melihat seluruh catatan, jadi
-                      kontrolnya tidak berarti apa-apa untuk mereka.
+                      bertugas piket selalu melihat seluruh catatan dan boleh
+                      mengisinya, jadi kontrol ini tidak berarti apa-apa untuk
+                      mereka.
 
-                      Ada karena resepsionis / front desk tidak muat di aturan
-                      lingkup Sales: namanya tidak pernah muncul sebagai
-                      nama_sales, sehingga batas itu menyisakan NOL baris dan
-                      seluruh ringkasan Piket Showroom tampil kosong. */}
+                      DUA pengaturan terpisah: apa yang DILIHAT (bawaan semua
+                      catatan; "Sesuai divisi" untuk akun yang harus dibatasi)
+                      dan apa yang BOLEH DILAKUKAN (bawaan lihat & export saja).
+                      Keduanya dijaga di database (migrasi 032 & 033), bukan
+                      hanya disembunyikan tombolnya. */}
                   {editingUser.role !== 'team' && (
-                    <div className="formulir:col-span-3">
-                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="🏪" />Piket Showroom — Catatan Tamu</label>
+                    <div className="formulir:col-span-3 space-y-3">
+                      <div>
+                      <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="🏪" />Piket Showroom — Yang Dilihat</label>
                       <div className="flex gap-2">
                         {([
-                          { v: 'lingkup' as const, icon: '🔒', label: 'Sesuai divisi', desc: 'Hanya catatan atas namanya / divisinya' },
-                          { v: 'semua'   as const, icon: '🏪', label: 'Semua catatan', desc: 'Resepsionis / front desk — tetap tidak bisa menyunting' },
+                          { v: 'semua'   as const, icon: '🏪', label: 'Semua catatan', desc: 'Bawaan — seluruh catatan tamu showroom' },
+                          { v: 'lingkup' as const, icon: '🔒', label: 'Sesuai divisi', desc: 'Dibatasi: hanya atas namanya / divisinya' },
                         ]).map(o => {
-                          const aktif = (editingUser.piket_akses ?? 'lingkup') === o.v;
+                          const aktif = (editingUser.piket_akses === 'lingkup' ? 'lingkup' : 'semua') === o.v;
                           return (
                             <button key={o.v} type="button"
-                              onClick={() => setEditingUser({ ...editingUser, piket_akses: o.v === 'lingkup' ? null : o.v })}
+                              onClick={() => setEditingUser({ ...editingUser, piket_akses: o.v === 'semua' ? null : 'lingkup' })}
                               className={`flex-1 text-left px-3 py-2 rounded-lg border-2 transition-all ${
                                 aktif ? 'bg-teal-50 border-teal-400 text-teal-800' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                               }`}>
@@ -1035,10 +1040,32 @@ export function AccountSettingsInline() {
                           );
                         })}
                       </div>
-                      <p className="text-[11px] text-slate-500 mt-1.5">
-                        Mengatur apa yang <strong>dilihat</strong> saja. Mengisi &amp; menyunting kegiatan piket tetap
-                        hanya Tim PTS — akun non-PTS tidak mendapat tombol Edit.
-                      </p>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="✍" />Piket Showroom — Yang Boleh Dilakukan</label>
+                        <div className="flex gap-2">
+                          {([
+                            { v: false, icon: '👁', label: 'Lihat & export saja', desc: 'Bawaan — tidak bisa mengisi, menyunting, atau menghapus' },
+                            { v: true,  icon: '✍', label: 'Boleh mengisi & menyunting', desc: 'Bisa mengisi / menyunting kegiatan piket' },
+                          ]).map(o => {
+                            const aktif = (editingUser.piket_ubah === true) === o.v;
+                            return (
+                              <button key={String(o.v)} type="button"
+                                onClick={() => setEditingUser({ ...editingUser, piket_ubah: o.v })}
+                                className={`flex-1 text-left px-3 py-2 rounded-lg border-2 transition-all ${
+                                  aktif ? 'bg-teal-50 border-teal-400 text-teal-800' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                                }`}>
+                                <span className="block text-sm font-bold"><Ikon nama={o.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {o.label}</span>
+                                <span className="block text-[11px] mt-0.5 opacity-80">{o.desc}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-1.5">
+                          Export Excel selalu tersedia bagi yang bisa melihat. Mengatur jadwal &amp; hari libur tetap hanya Admin / Full Access.
+                          Pengaturan ini dijaga di database, bukan hanya menyembunyikan tombol.
+                        </p>
+                      </div>
                     </div>
                   )}
                   <div className="formulir:col-span-3">

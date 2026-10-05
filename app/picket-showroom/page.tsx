@@ -78,8 +78,8 @@ function PiketShowroomPageInner() {
       logout/login dulu sebelum halamannya terisi, tanpa ada yang memberitahu.
     */
     if(!u.username) return;
-    supabase.from('users').select('piket_akses,access_level,role,team_type').eq('username',u.username).single()
-      .then(({data}:{data:{piket_akses:string|null;access_level:string|null;role:string|null;team_type:string|null}|null})=>{
+    supabase.from('users').select('piket_akses,piket_ubah,access_level,role,team_type').eq('username',u.username).single()
+      .then(({data}:{data:{piket_akses:string|null;piket_ubah:boolean|null;access_level:string|null;role:string|null;team_type:string|null}|null})=>{
         if(data) setCurrentUser((prev:any)=>prev?{...prev,...data}:prev);
       });
   },[]);
@@ -399,10 +399,12 @@ function PiketShowroomPageInner() {
         </PageHeader>
 
         <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
-          {/* Akun non-PTS yang tidak disetel "Semua catatan": jelaskan apa yang tampil, supaya sedikitnya data tidak terbaca sebagai halaman rusak. */}
-          {currentUser&&!bisaLihatSemuaTamu(currentUser)&&(
+          {/* Keterangan hak akun ini, supaya tidak ada yang bertanya-tanya kenapa tidak ada tombol edit / kenapa datanya terbatas. */}
+          {currentUser&&!bolehIsi&&(
             <p className="text-[12px] text-slate-700 bg-white/90 border border-slate-200 rounded-xl px-3.5 py-2">
-              Yang tampil: jadwal piket, kegiatan internal PTS (RnD, maintenance, shooting), dan kunjungan tamu atas nama atau divisi Anda. Kunjungan pelanggan divisi lain tidak ditampilkan.
+              {bisaLihatSemuaTamu(currentUser)
+                ? 'Akun ini bisa melihat seluruh catatan piket dan export Excel. Mengisi, menyunting, dan menghapus kegiatan hanya untuk Tim PTS.'
+                : 'Akun ini dibatasi: yang tampil jadwal piket, kegiatan internal PTS, dan kunjungan atas nama atau divisi Anda. Export Excel tersedia; mengisi dan menyunting hanya untuk Tim PTS.'}
             </p>
           )}
           <div className="animate-slide-up anim-d80">

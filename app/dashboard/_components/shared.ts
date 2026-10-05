@@ -19,6 +19,8 @@ export interface User {
   access_level?: string;
   /** 'lingkup' | 'semua' - lingkup catatan tamu Piket Showroom. Lihat lib/piket-akses.ts. */
   piket_akses?: string | null;
+  /** true = boleh mengisi & menyunting kegiatan Piket Showroom (bawaan false). Lihat lib/piket-akses.ts. */
+  piket_ubah?: boolean | null;
   /** Chat ID Telegram pribadi, terisi hanya lewat verifikasi - lihat app/api/notifikasi/telegram/route.ts aksi 'hubungkan'. */
   telegram_chat_id?: string | null;
   /**
