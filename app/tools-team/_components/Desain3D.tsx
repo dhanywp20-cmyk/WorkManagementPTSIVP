@@ -898,7 +898,16 @@ export default function Desain3D() {
     const isi = new m.THREE.Group();
     isi.name = namaDesain || 'Desain AV';
     isi.add(m.grupRuang.clone(true), m.grupBenda.clone(true));
-    isi.traverse(o => { if (o.userData.sorot) o.visible = false; });
+    isi.traverse(o => {
+      if (o.userData.sorot) o.visible = false;
+      //  Tekstur tanpa transparansi (kayu, kain, pola layar, lantai) disimpan
+      //  sebagai JPEG, bukan PNG bawaan exporter - file jauh lebih kecil.
+      const mats = (o as T.Mesh).material;
+      for (const mt of Array.isArray(mats) ? mats : mats ? [mats] : []) {
+        if (mt.transparent) continue;
+        for (const v of Object.values(mt)) if (v instanceof m.THREE.Texture) v.userData.mimeType = 'image/jpeg';
+      }
+    });
     const gambar: Record<string, string> = {};
     for (const b of benda) {
       if (b.konten !== 'gambar') continue;
@@ -912,7 +921,7 @@ export default function Desain3D() {
       a.download = namaFileDesain(namaDesain); a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 2000);
       setPesan(`Tersimpan di laptop: ${namaFileDesain(namaDesain)} (${(blob.size / 1048576).toFixed(1)} MB)`);
-    }, () => setGalat('Simpan ke laptop gagal.'), { binary: true, maxTextureSize: 2048 });
+    }, () => setGalat('Simpan ke laptop gagal.'), { binary: true, maxTextureSize: 1024 });
   };
   const unduhGLB = simpanKeLaptop;
 
