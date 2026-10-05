@@ -102,7 +102,8 @@ export function kategoriBenda(jenis: string): string {
   if (['videowall', 'led', 'layar', 'ifp', 'tv', 'proyektor'].includes(jenis)) return 'Display';
   if (jenis === 'kamera' || jenis === 'lift') return 'Kamera & konferensi';
   if (['speaker', 'speaker-plafon', 'mic', 'touchpanel', 'rak'].includes(jenis)) return 'Audio & kontrol';
-  if (jenis === 'meja' || jenis === 'kursi') return 'Furnitur';
+  if (['meja', 'kursi', 'tribun', 'panggung'].includes(jenis)) return 'Furnitur';
+  if (jenis === 'bidang') return 'Display';
   return 'Lainnya';
 }
 
@@ -196,7 +197,7 @@ export const MAKS_BYTE_PRODUK = 6_000;
 
 /** Jenis benda yang boleh dijadikan template ('model' = GLB impor tidak, geometrinya hanya di memori). */
 export const JENIS_PRODUK = ['videowall', 'led', 'layar', 'ifp', 'tv', 'meja', 'kursi', 'speaker', 'speaker-plafon', 'mic',
-  'touchpanel', 'kamera', 'proyektor', 'rak', 'lift'] as const;
+  'touchpanel', 'kamera', 'proyektor', 'rak', 'lift', 'tribun', 'panggung', 'bidang'] as const;
 
 export interface ProdukTim {
   id: string; label: string; ket: string; jenis: (typeof JENIS_PRODUK)[number];
@@ -207,14 +208,15 @@ export interface ProdukTim {
 
 const ENUM_PRODUK: Record<string, readonly string[]> = {
   rasio: ['16:9', '16:10', '4:3', '21:9'], vw: ['55BDL2105X', '49BDL2105X', 'custom'], pasang: ['dinding', 'standfloor'],
-  mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas'], finish: ['walnut', 'oak', 'putih'],
+  mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas', 'dosen', 'podium'], bentukBidang: ['lengkung', 'cembung'], finish: ['walnut', 'oak', 'putih'],
   tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati'],
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
 };
 /** Angka yang boleh ada di template beserta batasnya. */
 const ANGKA_PRODUK: Record<string, [number, number]> = {
   w: [0.001, 40], h: [0.001, 40], d: [0.001, 40], elev: [0, 40], diag: [10, 500], pitch: [0.1, 50], cabW: [50, 3000], cabH: [50, 3000],
-  kol: [1, 30], bar: [1, 30], rakU: [1, 80], throwRatio: [0.1, 10], tilt: [-45, 45], jangkauan: [0.5, 60], sebaran: [10, 180], sebaranV: [4, 180],
+  kol: [1, 30], bar: [1, 30], rakU: [1, 80], throwRatio: [0.1, 10], tilt: [-90, 45], trMin: [0.1, 10], trMax: [0.1, 10],
+  baris: [1, 60], kursiBaris: [1, 80], tinggiAnak: [0.1, 1], jariBidang: [0.2, 50], busur: [10, 360], jangkauan: [0.5, 60], sebaran: [10, 180], sebaranV: [4, 180],
   modul: [1, 24], sudutModul: [0, 15], tiltLA: [-30, 60],
   offsetLensa: [-0.5, 1.5], geserLensaH: [-0.6, 0.6], lumen: [100, 100000],
 };

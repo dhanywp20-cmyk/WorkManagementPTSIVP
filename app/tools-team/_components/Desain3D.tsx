@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type * as T from 'three';
 import type { OrbitControls as KontrolOrbit } from 'three/examples/jsm/controls/OrbitControls.js';
-import { AlignCenterVertical, Copy, CopyPlus, Crosshair, Settings2, Trash2, FolderOpen, HardDriveDownload, HardDriveUpload, History, Maximize2, Move, Redo2, Rotate3d, RotateCcw, RotateCw, Undo2, Video, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlignCenterVertical, LayoutTemplate, Copy, CopyPlus, Crosshair, Settings2, Trash2, FolderOpen, HardDriveDownload, HardDriveUpload, History, Maximize2, Move, Redo2, Rotate3d, RotateCcw, RotateCw, Undo2, Video, ZoomIn, ZoomOut } from 'lucide-react';
 import { bacaDesainGLB, dataDesainFile, namaFileDesain, KUNCI_DESAIN } from './desain3d/file-glb';
 import { useRiwayat } from './riwayat';
 import { FAKTOR_PANDANG, type JenisPandang } from '@/lib/av-hitung';
@@ -15,6 +15,7 @@ import {
   salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, warnaSah, JENDELA_AWAL, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, kecerahanProyektor, tipeSpeakerDari, berkasLineArray, modulLA,
+  arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, templateRuang, KATEGORI_RUANG, type KategoriRuang,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc } from './cetak';
@@ -54,6 +55,7 @@ type Mesin = {
   gizmo: T.Object3D & { attach: (o: T.Object3D) => void; detach: () => void; setMode: (m: 'translate' | 'rotate') => void; showX: boolean; showY: boolean; showZ: boolean; dragging: boolean; dispose: () => void; object?: T.Object3D };
   grupRuang: T.Group; grupBenda: T.Group; grupBantu: T.Group;
   /** Bayangan lembut di dinding/lantai & cahaya layar (lihat efek "Bayangan & cahaya"). */ grupBayang: T.Group;
+  /** Lampu adegan - intensitasnya mengikuti tingkat cahaya ruangan (terang/redup/gelap). */ lampu: { matahari: T.DirectionalLight; langit: T.HemisphereLight };
   CSS2DObject: new (el: HTMLElement) => T.Object3D;
   GLTFExporter: new () => { parse: (o: T.Object3D, ok: (r: ArrayBuffer | object) => void, err: (e: unknown) => void, opsi: object) => void };
   GLTFLoader: new () => { parse: (data: ArrayBuffer, path: string, ok: (g: { scene: T.Group }) => void, err: (e: unknown) => void) => void };
@@ -134,9 +136,9 @@ export default function Desain3D() {
   const [modal, setModal] = useState<'simpan' | 'buka' | null>(null);
   //  Panel kanan (menempel di samping kanvas, tidak menutupi tampilan 3D). Satu panel
   //  pada satu waktu: Tambah / Ruangan / Daftar benda, atau Atur benda terpilih (`panel`).
-  const [sisi, setSisi] = useState<'tambah' | 'ruang' | 'daftar' | null>(null);
+  const [sisi, setSisi] = useState<'kategori' | 'tambah' | 'ruang' | 'daftar' | null>(null);
   const asideRef = useRef<HTMLElement>(null);
-  const bukaSisi = (k: 'tambah' | 'ruang' | 'daftar') => { setPanel(false); setSisi(v => (v === k ? null : k)); };
+  const bukaSisi = (k: 'kategori' | 'tambah' | 'ruang' | 'daftar') => { setPanel(false); setSisi(v => (v === k ? null : k)); };
   const [targetRuang, setTargetRuang] = useState<'0' | '1'>('0');
   const [tampilan, setTampilan] = useState<'3d' | 'atas' | 'kursi'>('3d');
   const [modeGizmo, setModeGizmo] = useState<'translate' | 'rotate'>('translate');
@@ -159,7 +161,7 @@ export default function Desain3D() {
   const setJenisPandang = (v: JenisPandang | 'custom') => setAnalisis({ jenis: v });
   const setFaktorCustom = (v: number) => setAnalisis({ faktor: v });
   const setSudutNyaman = (v: number) => setAnalisis({ sudut: v });
-  /** Tampilkan jangkauan suara semua speaker (yang terpilih selalu tampil). */
+  /** Tampilkan jangkauan suara semua speaker (per speaker: Benda.tampilJangkauan). */
   const [jangkau, setJangkau] = useState(false);
   /** Bayangan lembut display di dinding/lantai + cahaya layar ke lantai. */
   const [bayangan, setBayangan] = useState(true);
@@ -192,6 +194,8 @@ export default function Desain3D() {
   const [galat, setGalat] = useState('');
   const wadahRef = useRef<HTMLDivElement>(null);
   const mesin = useRef<Mesin | null>(null);
+  /** Kamera dipas ke ruangan baru setelah template kategori dipasang. */
+  const pasSetelahTemplate = useRef(false);
   /** Tekstur bayangan & cahaya (dibuat sekali, dipakai ulang tiap pembaruan). */
   const teksturBayang = useRef<{ bayang: T.Texture; cahaya: T.Texture } | null>(null);
   const gambarLayar = useRef(new Map<string, T.Texture>());
@@ -272,7 +276,8 @@ export default function Desain3D() {
         matahari.shadow.camera.top = 16; matahari.shadow.camera.bottom = -16;
         matahari.shadow.bias = -0.0005;
         scene.add(matahari, matahari.target);
-        scene.add(new THREE.HemisphereLight(0xffffff, 0x94a3b8, 0.35));
+        const langit = new THREE.HemisphereLight(0xffffff, 0x94a3b8, 0.35);
+        scene.add(langit);
 
         const kamera = new THREE.PerspectiveCamera(50, 1, 0.05, 200);
         const orbit = new OrbitControls(kamera, renderer.domElement);
@@ -309,7 +314,7 @@ export default function Desain3D() {
 
         mesin.current = {
           THREE, renderer, labelRenderer, scene, kamera, orbit,
-          gizmo: gizmo as unknown as Mesin['gizmo'], grupRuang, grupBenda, grupBantu, grupBayang,
+          gizmo: gizmo as unknown as Mesin['gizmo'], grupRuang, grupBenda, grupBantu, grupBayang, lampu: { matahari, langit },
           CSS2DObject: CSS2DObject as unknown as Mesin['CSS2DObject'],
           GLTFExporter: GLTFExporter as unknown as Mesin['GLTFExporter'],
           GLTFLoader: GLTFLoader as unknown as Mesin['GLTFLoader'],
@@ -709,47 +714,106 @@ export default function Desain3D() {
         }
       }
     }
-    // Sinar proyektor: kerucut cahaya dari lensa ke gambar di layar/dinding,
-    // pekat di lensa & memudar ke layar (alpha per verteks). Warna hangat
-    // (bukan putih aditif) supaya tetap terlihat di depan dinding terang.
+    // Sinar proyektor: grid sinar dari lensa (TR/zoom, lens shift, pan & tilt) ditembakkan (raycast) ke
+    // SEMUA permukaan - dinding, lantai, plafon, layar, bidang lengkung/cembung, furnitur, dan objek
+    // .glb impor. Gambar jatuh tepat mengikuti permukaannya (melipat di sudut, menekuk di lengkungan);
+    // tumpang-tindih antar proyektor (blending) tampil lebih terang karena dijumlahkan (aditif).
     if (sinar) {
-      for (const p of benda) {
-        if (p.jenis !== 'proyektor') continue;
-        const sn = sinarProyektor(p, benda, ruang);
-        const O = new THREE.Vector3(...sn.asal);
-        const C = sn.sudut.map(t => new THREE.Vector3(...t));
-        const posisi: number[] = [], warna: number[] = [];
-        for (let i = 0; i < 4; i++) {
-          const a = C[i], b = C[(i + 1) % 4];
-          posisi.push(O.x, O.y, O.z, a.x, a.y, a.z, b.x, b.y, b.z);
-          warna.push(1, 0.84, 0.36, 0.55, 1, 0.9, 0.55, 0.12, 1, 0.9, 0.55, 0.12);
-        }
-        const geo = new THREE.BufferGeometry();
-        geo.setAttribute('position', new THREE.Float32BufferAttribute(posisi, 3));
-        geo.setAttribute('color', new THREE.Float32BufferAttribute(warna, 4));
+      const daftarProj = benda.filter(p => p.jenis === 'proyektor');
+      if (daftarProj.length) {
+        m.scene.updateMatrixWorld(true);
+        const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
+        (ray.params as { Line?: { threshold: number } }).Line = { threshold: 0.0001 };
+        //  Saat menyeret: grid lebih kasar supaya tetap lancar.
+        const kasar = m.gizmo.dragging;
+        const NX = kasar ? 12 : 24, NY = kasar ? 7 : 14;
         const cahaya = { transparent: true, depthWrite: false, toneMapped: false };
-        const kerucutSinar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, side: THREE.DoubleSide }));
-        kerucutSinar.renderOrder = 2; grupBantu.add(kerucutSinar);
-        const tepi: number[] = []; for (const c of C) tepi.push(O.x, O.y, O.z, c.x, c.y, c.z);
-        const geoTepi = new THREE.BufferGeometry(); geoTepi.setAttribute('position', new THREE.Float32BufferAttribute(tepi, 3));
-        grupBantu.add(new THREE.LineSegments(geoTepi, new THREE.LineBasicMaterial({ ...cahaya, color: 0xf59e0b, opacity: 0.6 })));
-        const gambar = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints([C[0], C[1], C[2], C[0], C[2], C[3]]),
-          new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfff1c2, opacity: sn.layar ? 0.22 : 0.4, side: THREE.DoubleSide }));
-        gambar.renderOrder = 2; grupBantu.add(gambar);
-        const kilau = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfffbeb, blending: THREE.AdditiveBlending, opacity: 0.95 }));
-        kilau.position.copy(O); grupBantu.add(kilau);
-        if (ukur) {
-          const tengah = C.reduce((v, c) => v.add(c), new THREE.Vector3()).multiplyScalar(0.25);
-          label(`${p.nama}: lempar ${f(sn.jarak)} m · gambar ${f(sn.lebar)} × ${f(sn.tinggi)} m`, O.clone().lerp(tengah, 0.3), 'abu');
-        }
+        //  Banyak proyektor (immersive): kerucut & bidang gambar diredam supaya tumpukannya tidak silau,
+        //  label hanya untuk proyektor yang sedang dipilih.
+        const banyak = daftarProj.length > 4, redam = banyak ? 0.35 : 1;
+        daftarProj.forEach((p, idx) => {
+          const sn = sinarProyektor(p, benda, ruang);
+          const O = new THREE.Vector3(...sn.asal);
+          const sendiri = m.cache.get(p.id)?.obj;
+          const sasaran = [...m.grupRuang.children, ...m.grupBenda.children.filter(o => o !== sendiri && !o.userData.sorot)];
+          const r = (p.rot * Math.PI) / 180;
+          const D = new THREE.Vector3(...arahProyektor(p)).normalize();
+          const kanan = new THREE.Vector3(-Math.cos(r), 0, Math.sin(r));
+          const atas = new THREE.Vector3().crossVectors(kanan, D).normalize();
+          const w1 = 1 / throwRatioDari(p), h1 = (w1 * 9) / 16, arahV = p.pasangProyektor === 'meja' ? 1 : -1;
+          const offV = offsetLensaDari(p), gH = geserLensaDari(p);
+          const kena: (T.Vector3 | null)[] = [];
+          const arah = new THREE.Vector3();
+          for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+            const u = i / (NX - 1) - 0.5, v = j / (NY - 1) - 0.5;
+            arah.copy(D).addScaledVector(kanan, (u + gH) * w1).addScaledVector(atas, (v + arahV * offV) * h1).normalize();
+            ray.set(O, arah);
+            const hit = ray.intersectObjects(sasaran, true).find(h => {
+              const o = h.object as T.Mesh;
+              if (!o.isMesh) return false;
+              const mt = (Array.isArray(o.material) ? o.material[0] : o.material) as T.Material & { opacity?: number };
+              return !(mt?.transparent && (mt.opacity ?? 1) < 0.6);    // kaca & bayangan ditembus cahaya
+            });
+            kena.push(hit ? hit.point.clone().addScaledVector(arah, -0.012) : null);
+          }
+          const sel = (i: number, j: number) => kena[j * NX + i];
+          //  Bidang gambar: sel grid yang keempat sudutnya kena & tidak "melompat" (tepi objek ke dinding di belakangnya).
+          const pos: number[] = [];
+          for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
+            const A = sel(i, j), B = sel(i + 1, j), C = sel(i + 1, j + 1), Dd = sel(i, j + 1);
+            if (!A || !B || !C || !Dd) continue;
+            const jarak = (A.distanceTo(O) + C.distanceTo(O)) / 2;
+            const batas = ((jarak * w1) / (NX - 1)) * 6 + 0.05;
+            if (A.distanceTo(B) > batas || B.distanceTo(C) > batas || C.distanceTo(Dd) > batas || Dd.distanceTo(A) > batas) continue;
+            pos.push(A.x, A.y, A.z, B.x, B.y, B.z, C.x, C.y, C.z, A.x, A.y, A.z, C.x, C.y, C.z, Dd.x, Dd.y, Dd.z);
+          }
+          if (pos.length) {
+            const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+            const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfff1c2, opacity: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1), side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+            gambar.renderOrder = 2; grupBantu.add(gambar);
+          }
+          //  Tepi gambar (warna per proyektor) + kerucut cahaya dari lensa ke tepi itu.
+          const tepi: T.Vector3[] = [];
+          for (let i = 0; i < NX; i++) tepi.push(sel(i, 0)!);
+          for (let j = 1; j < NY; j++) tepi.push(sel(NX - 1, j)!);
+          for (let i = NX - 2; i >= 0; i--) tepi.push(sel(i, NY - 1)!);
+          for (let j = NY - 2; j > 0; j--) tepi.push(sel(0, j)!);
+          const warnaTepi = new THREE.Color().setHSL((0.1 + idx * 0.17) % 1, 0.9, 0.55);
+          const garis: number[] = [], kerucut: number[] = [], alfa: number[] = [];
+          for (let i = 0; i < tepi.length; i++) {
+            const A = tepi[i], B = tepi[(i + 1) % tepi.length];
+            if (!A || !B) continue;
+            if (A.distanceTo(B) < Math.max(0.6, A.distanceTo(O) * w1 * 0.4)) garis.push(A.x, A.y, A.z, B.x, B.y, B.z);
+            kerucut.push(O.x, O.y, O.z, A.x, A.y, A.z, B.x, B.y, B.z);
+            alfa.push(1, 0.84, 0.36, 0.45 * redam, 1, 0.9, 0.55, 0.08 * redam, 1, 0.9, 0.55, 0.08 * redam);
+          }
+          if (garis.length) {
+            const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(garis, 3));
+            grupBantu.add(new THREE.LineSegments(g2, new THREE.LineBasicMaterial({ ...cahaya, color: warnaTepi, opacity: 0.95 })));
+          }
+          if (kerucut.length) {
+            const g3 = new THREE.BufferGeometry();
+            g3.setAttribute('position', new THREE.Float32BufferAttribute(kerucut, 3)); g3.setAttribute('color', new THREE.Float32BufferAttribute(alfa, 4));
+            const kerucutSinar = new THREE.Mesh(g3, new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, side: THREE.DoubleSide }));
+            kerucutSinar.renderOrder = 2; grupBantu.add(kerucutSinar);
+          }
+          const kilau = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfffbeb, blending: THREE.AdditiveBlending, opacity: 0.95 }));
+          kilau.position.copy(O); grupBantu.add(kilau);
+          if (ukur && (!banyak || p.id === pilih)) {
+            const tengah = sel(Math.floor(NX / 2), Math.floor(NY / 2));
+            const jarakSumbu = sn.layar ? sn.jarak : tengah ? tengah.distanceTo(O) : sn.jarak;
+            const teks = `${p.nama}: lempar ${f(jarakSumbu)} m · gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`;
+            label(teks, tengah ? O.clone().lerp(tengah, 0.3) : O.clone().addScaledVector(D, 0.5), 'abu');
+          }
+        });
       }
     }
     //  Jangkauan suara speaker (kerucut sebaran H x V), dipotong di dinding, lantai & plafon ruangnya.
-    //  Line array: satu berkas per modul + titik jatuh sumbunya di tinggi telinga. Semua bila
-    //  dicentang; speaker yang sedang dipilih selalu tampil.
+    //  Line array: satu berkas per modul + titik jatuh sumbunya di tinggi telinga. Tampil hanya bila
+    //  dinyalakan: centang "Jangkauan speaker" (semua) atau "Tampilkan jangkauan" di panel Atur speaker itu.
     for (const b of benda) {
       if (!(b.jenis === 'speaker' || b.jenis === 'speaker-plafon')) continue;
-      if (!(jangkau || b.id === pilih)) continue;
+      if (!(jangkau || b.tampilJangkauan)) continue;
       const k = kotakRuang[ruangDari(ruang, b.x)] ?? kotakRuang[0];
       const potong = [
         new THREE.Plane(new THREE.Vector3(1, 0, 0), -k.x0), new THREE.Plane(new THREE.Vector3(-1, 0, 0), k.x0 + k.p),
@@ -823,6 +887,22 @@ export default function Desain3D() {
       });
     }
   }, [analisis, ukur, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, pilih]);
+
+  //  Setelah template dipasang: pas-kan kamera ke ruangan BARU (dipanggil dari efek supaya ukuran ruangnya sudah yang baru).
+  useEffect(() => {
+    if (!pasSetelahTemplate.current || !siap) return;
+    pasSetelahTemplate.current = false;
+    pasKeLayar('semua');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ruang, siap]);
+
+  // ── Tingkat cahaya ruangan ──
+  useEffect(() => {
+    const m = mesin.current; if (!m || !siap) return;
+    const f = { terang: 1, redup: 0.45, gelap: 0.12 }[ruang.cahaya ?? 'terang'];
+    m.lampu.matahari.intensity = 1.6 * f; m.lampu.langit.intensity = 0.35 * f;
+    (m.scene as T.Scene & { environmentIntensity: number }).environmentIntensity = Math.max(0.1, f);
+  }, [ruang.cahaya, siap]);
 
   // ── Bayangan lembut & cahaya layar ──
   //  Lampu arah adegan berada di depan-atas, jadi display yang menempel dinding hanya menjatuhkan
@@ -1037,6 +1117,19 @@ export default function Desain3D() {
     const j = await r?.json().catch(() => null);
     if (!r?.ok || !j?.ok) { setGalatProduk(j?.alasan ?? 'Gagal menghapus.'); return; }
     setProdukTim(v => v && { ...v, daftar: v.daftar.filter(x => x.id !== p.id) });
+  };
+  /** Pasang template kategori ruangan (mengganti isi kanvas; tercatat di undo). */
+  const pasangKategori = (id: KategoriRuang) => {
+    const kat = KATEGORI_RUANG.find(k => k.id === id);
+    if (benda.length && !window.confirm(`Ganti isi kanvas dengan template "${kat?.judul}"? Bisa dikembalikan dengan Undo.`)) return;
+    const t = templateRuang(id);
+    ruangRef.current = t.ruang;
+    setRuang(t.ruang); setBenda(t.benda); setNamaDesain(t.nama);
+    setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'baru' }); setDasar(null); setPilih(null); setFokusRuang('semua');
+    pasSetelahTemplate.current = true;
+    setPesan(id === 'mapping-objek'
+      ? 'Template Mapping objek dipasang. Impor objek lewat Tambah → Impor model .glb, letakkan di atas alas - sinar proyektor langsung jatuh di permukaannya.'
+      : `Template ${kat?.judul} dipasang - atur sesuai kebutuhan.`);
   };
   const tambahSetKelas = () => {
     const k = kotakRuang[Number(targetRuang)] ?? kotakRuang[0];
@@ -1330,9 +1423,9 @@ export default function Desain3D() {
     const fm = (n: number, d = 2) => f(n, d);
     //  Daftar perangkat: dikelompokkan per kategori, benda bernama sama dijumlah.
     const kategori = (j: Benda['jenis']) =>
-      DISPLAY.includes(j) || j === 'proyektor' ? 'Display' : j === 'kamera' || j === 'lift' ? 'Kamera & konferensi'
+      DISPLAY.includes(j) || j === 'proyektor' || j === 'bidang' ? 'Display' : j === 'kamera' || j === 'lift' ? 'Kamera & konferensi'
         : ['speaker', 'speaker-plafon', 'mic', 'touchpanel', 'rak'].includes(j) ? 'Audio & kontrol'
-          : j === 'meja' || j === 'kursi' ? 'Furnitur' : 'Lainnya';
+          : j === 'meja' || j === 'kursi' || j === 'tribun' || j === 'panggung' ? 'Furnitur' : 'Lainnya';
     const urutKat = ['Display', 'Kamera & konferensi', 'Audio & kontrol', 'Furnitur', 'Lainnya'];
     const grup = new Map<string, { kat: string; nama: string; ukuran: string; jumlah: number }>();
     for (const b of benda) {
@@ -1544,6 +1637,8 @@ export default function Desain3D() {
     }
     const selisih = (sn.lebar - lyr.w) / lyr.w;
     const pasLebar = Math.abs(selisih) <= 0.03;
+    const [zMin, zMax] = zoomLensa(p), trPas = sn.trPas ?? 0;
+    const zoomBisa = trPas >= zMin - 0.005 && trPas <= zMax + 0.005;
     const sv = sn.selisihV ?? 0, sh = sn.selisihH ?? 0;
     const pasTinggi = Math.abs(sv) <= 0.03, pasSamping = Math.abs(sh) <= 0.05;
     const cm = (m: number) => `${f(Math.abs(m) * 100, 0)} cm`;
@@ -1553,6 +1648,15 @@ export default function Desain3D() {
           Ke <b>{lyr.nama}</b>: jarak lempar <b>{f(sn.jarak)} m</b>, gambar {f(sn.lebar)} × {f(sn.tinggi)} m, tilt {f(tiltDari(p), 1)}°.
           {' '}Agar pas selebar layar ({f(lyr.w)} m) perlu throw ratio <b>{f(sn.trPas ?? 0)} : 1</b>.
         </p>
+        {!pasLebar && (zoomBisa ? (
+          <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round(trPas * 100) / 100 })}>
+            Zoom pas ke layar (TR {f(trPas, 2)} : 1)
+          </button>
+        ) : (
+          <p className="text-[12px] font-semibold text-amber-700">
+            TR {f(trPas, 2)} di luar rentang zoom lensa ({f(zMin, 2)}–{f(zMax, 2)}): pindahkan lensa ke jarak {f(zMin * lyr.w)}–{f(zMax * lyr.w)} m dari layar, atau ganti lensa.
+          </p>
+        ))}
         {(() => {
           const c = kecerahanProyektor(p, sn.lebar * sn.tinggi);
           return (
@@ -1623,6 +1727,8 @@ export default function Desain3D() {
         {/* Bilah alat */}
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
+            <button type="button" onClick={() => bukaSisi('kategori')} aria-pressed={sisi === 'kategori'} className={sisi === 'kategori' ? tombolAktif : tombol}
+              title="Template ruangan: meeting, auditorium, smart classroom, mapping, immersive"><LayoutTemplate size={14} /> Kategori</button>
             <button type="button" onClick={() => bukaSisi('tambah')} aria-pressed={sisi === 'tambah'} className={`${tombolUtama} ${sisi === 'tambah' ? 'ring-2 ring-offset-1 ring-blue-400' : ''}`}><Ikon nama="➕" ukuran={14} /> Tambah</button>
             <button type="button" onClick={() => bukaSisi('ruang')} aria-pressed={sisi === 'ruang'} className={sisi === 'ruang' ? tombolAktif : tombol}><Ikon nama="🏠" ukuran={14} /> Ruangan</button>
             <button type="button" onClick={() => bukaSisi('daftar')} aria-pressed={sisi === 'daftar'} className={sisi === 'daftar' ? tombolAktif : tombol}><Ikon nama="📋" ukuran={14} /> Benda ({benda.length})</button>
@@ -1899,6 +2005,11 @@ export default function Desain3D() {
                           </div>
                         </div>
                         <PilihWarna label="Warna dinding (semua ruang)" nilai={ruang.warnaDinding} awal="#f5f5f4" onUbah={w => setRuang(r => ({ ...r, warnaDinding: w }))} />
+                        <div>
+                          <Segmen label="Cahaya ruangan" nilai={ruang.cahaya ?? 'terang'} onUbah={v => setRuang(r => ({ ...r, cahaya: v }))}
+                            opsi={[{ v: 'terang', l: 'Terang' }, { v: 'redup', l: 'Redup' }, { v: 'gelap', l: 'Gelap' }]} />
+                          <p className="text-[11px] text-slate-500 mt-1">Gelap = ruang mapping / immersive: cahaya proyektor & layar terlihat jelas.</p>
+                        </div>
                         <div className="rounded-xl border border-slate-200 p-3">
                           <p className="text-[12.5px] font-bold text-slate-800">Pintu & jendela dinding luar</p>
                           <p className="text-[11.5px] text-slate-600 mt-0.5">Posisi = jarak dari ujung kiri dinding ke tengah bukaan, dilihat dari dalam ruang. Pintu/jendela di sekat antar ruang diatur di bagian Ruang 2.</p>
@@ -2015,6 +2126,20 @@ export default function Desain3D() {
                         )}
                       </div>
                     </>
+                  )}
+                  {sisi === 'kategori' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+                      {KATEGORI_RUANG.map(k => (
+                        <button key={k.id} type="button" onClick={() => pasangKategori(k.id)}
+                          className="flex items-start gap-3 text-left rounded-xl border border-slate-200 px-3 py-2.5 hover:border-blue-400 hover:bg-blue-50/60">
+                          <span className="text-2xl leading-none mt-0.5" aria-hidden="true">{k.ikon}</span>
+                          <span className="min-w-0">
+                            <span className="block text-[13px] font-bold text-slate-900">{k.judul}</span>
+                            <span className="block text-[11.5px] text-slate-600 leading-snug">{k.ket}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   )}
                   {sisi === 'daftar' && (
                     <>
@@ -2225,7 +2350,8 @@ export function GambarVersi({ id, versi, className }: { id: string; versi: numbe
  * dengan pratinjau dan riwayat versi - versi lama bisa dibuka; menyimpannya
  * membuat versi baru, riwayat tidak berubah.
  */
-const JUDUL_SISI: Record<'tambah' | 'ruang' | 'daftar', { judul: string; ikon: string; ket?: string }> = {
+const JUDUL_SISI: Record<'kategori' | 'tambah' | 'ruang' | 'daftar', { judul: string; ikon: string; ket?: string }> = {
+  kategori: { judul: 'Kategori ruangan', ikon: '🏛', ket: 'Mulai dari tata letak siap pakai - semua isi tetap bisa diubah. Isi kanvas sekarang diganti (bisa dikembalikan dengan Undo).' },
   tambah: { judul: 'Tambah benda', ikon: '➕', ket: 'Klik produk untuk menambahkannya; panel tetap terbuka supaya bisa menambah beberapa sekaligus.' },
   ruang: { judul: 'Ruangan', ikon: '🏠', ket: 'Maks 2 ruang bersebelahan (Ruang 2 di kanan Ruang 1). Saat ukuran diubah, isi ruang ikut menyesuaikan.' },
   daftar: { judul: 'Daftar benda', ikon: '📋', ket: 'Klik nama benda untuk memilihnya di tampilan 3D.' },

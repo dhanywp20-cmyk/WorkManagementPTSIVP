@@ -7,7 +7,8 @@
 import {
   type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
   pusatkanIsi, jendelaSekat, pintuSekat, PINTU, ukuranPintu, spekVideowall, terapkanUkuran, ukuranLayar, ukuranIFP, warnaSah, tandaBentuk,
-  bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, sebaranSpeaker, sebaranVSpeaker, jangkauanDari, berkasLineArray, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
+  bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, sebaranSpeaker, sebaranVSpeaker, jangkauanDari, berkasLineArray,
+  templateRuang, KATEGORI_RUANG, kursiTribun, ukuranBidang, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
 } from '../app/tools-team/_components/desain3d/model';
 import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
@@ -325,6 +326,40 @@ console.log('\n11. Batch 2: bukaan, set kelas, jangkauan, proyektor, signage, Pr
     && bacaDaftarProduk(null).length === 0);
   //  Analisis tersimpan bersama desain.
   cek('analisis bawaan & tersimpan', analisisDari({ p: 1, l: 1, t: 1, lantai: 'kayu' }).sudut === 45 && analisisDari({ p: 1, l: 1, t: 1, lantai: 'kayu', analisis: { jenis: 'custom', faktor: 3, sudut: 30 } }).faktor === 3);
+}
+
+console.log('\n12. Kategori ruangan, tribun, bidang mapping, zoom, arah proyektor');
+{
+  const k = { x0: 0, p: 16, l: 20, t: 7 };
+  //  Template: semua kategori menghasilkan ruangan & isi, benda di dalam ruangan.
+  for (const kat of KATEGORI_RUANG) {
+    const t = templateRuang(kat.id);
+    const luar = t.benda.filter(b => !(b.x >= -0.01 && b.x <= t.ruang.p + 0.01 && b.z >= -0.01 && b.z <= t.ruang.l + 0.01 && b.elev + b.h <= t.ruang.t + 0.05));
+    cek(`template ${kat.judul}: ${t.benda.length} benda, semua di dalam ruangan`, t.benda.length > 0 && luar.length === 0,
+      luar.map(b => `${b.nama}@${b.x.toFixed(1)},${b.z.toFixed(1)} atas ${(b.elev + b.h).toFixed(2)}`).join('; '));
+  }
+  const imm = templateRuang('immersive');
+  cek('immersive: 8 proyektor dinding + 6 lantai (tilt -90°), ruang gelap', imm.benda.filter(b => b.jenis === 'proyektor').length === 14
+    && imm.benda.filter(b => tiltDari(b) === -90).length === 6 && imm.ruang.cahaya === 'gelap');
+  //  Tribun.
+  const tb = bendaBaru('tribun', k, { baris: 10, kursiBaris: 20, tinggiAnak: 0.3 });
+  cek('tribun 10 x 20: 200 kursi, lebar 20 x 0,55 + 0,6, tinggi (n-1) x 0,3 + 0,95', kursiTribun(tb).length === 200 && dekat(tb.w, 11.6) && dekat(tb.d, 9) && dekat(tb.h, 3.65), `${tb.w} ${tb.d} ${tb.h}`);
+  const ks = kursiTribun({ ...tb, rot: 180, x: 8, z: 15 });
+  cek('kursi tribun menghadap depan: baris belakang lebih jauh dari dinding depan & lebih tinggi', ks[ks.length - 1].z > ks[0].z && ks[ks.length - 1].y > ks[0].y);
+  cek('kursi tribun ikut jadi penonton di analisis', titikPenonton([{ ...tb, x: 8, z: 15 }]).length === 200);
+  //  Bidang mapping.
+  const lk = ukuranBidang({ ...tb, jariBidang: 7, busur: 100 });
+  cek('bidang lengkung R7 100°: tali busur 2R sin50° & kedalaman R(1-cos50°)', dekat(lk.w, 14 * Math.sin(50 * Math.PI / 180), 0.002) && dekat(lk.d, 7 * (1 - Math.cos(50 * Math.PI / 180)), 0.002));
+  const pil = ukuranBidang({ ...tb, jariBidang: 1.2, busur: 360 });
+  cek('pilar 360°: tapak 2R x 2R', dekat(pil.w, 2.4) && dekat(pil.d, 2.4));
+  //  Zoom & arah proyektor.
+  const pj = bendaBaru('proyektor', k);
+  cek('zoom lensa bawaan proyektor plafon 1,39-2,09; tanpa isian = lensa tetap', zoomLensa(pj)[0] === 1.39 && zoomLensa(pj)[1] === 2.09
+    && zoomLensa({ ...pj, trMin: undefined, trMax: undefined, throwRatio: 1.7 })[0] === 1.7);
+  const ke = arahkanKe({ ...pj, x: 5, z: 5, elev: 3.5, h: 0.14 }, [5, 0, 5]);
+  cek('arahkan proyektor tegak ke lantai = tilt -90°, sumbu ke bawah', tiltDari(ke) === -90 && dekat(arahProyektor(ke)[1], -1));
+  const ke2 = arahkanKe({ ...pj, x: 5, z: 5, elev: 2, h: 0.14 }, [5, 2.07, 0]);
+  cek('arahkan ke dinding depan: pan 180°, tilt 0°', dekat(ke2.rot, 180) && dekat(tiltDari(ke2), 0, 0.2), `${ke2.rot} ${ke2.tilt}`);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

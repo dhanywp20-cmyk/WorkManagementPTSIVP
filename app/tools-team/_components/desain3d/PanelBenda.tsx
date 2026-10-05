@@ -7,6 +7,7 @@ import {
   DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, IFP_DIAG, TV_DIAG, RASIO_LAYAR, PANEL_VW_AWAL, terapkanUkuran, bendaBaru, spekVideowall, warnaSah,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, offsetLensaDari, geserLensaDari, lumenDari,
   tipeSpeakerDari, modulLA, sudutModulLA, tiltLADari, berkasLineArray, type TipeSpeaker,
+  zoomLensa, throwRatioDari, barisTribun, kursiTribunPerBaris, ukuranBidang,
 } from './model';
 
 /** Warna bawaan per jenis untuk pemilih warna (hanya titik awal pemilih; model tetap memakai bawaannya bila kosong). */
@@ -40,6 +41,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
     //  Nama bawaan videowall ("Videowall 55" 2×2") ikut model/kolom/baris; nama yang sudah diganti engineer dibiarkan.
     if (nb.jenis === 'videowall' && /^Videowall \d+" \d+×\d+$/.test(b.nama)) nb.nama = `Videowall ${spekVideowall(nb).inci}" ${nb.kol}×${nb.bar}`;
     if (nb.jenis === 'tv' && /^Signage \d+(\.\d+)?"$/.test(b.nama)) nb.nama = `Signage ${nb.diag}"`;
+    if (nb.jenis === 'tribun' && /^Tribun \d+ baris × \d+$/.test(b.nama)) nb.nama = `Tribun ${nb.baris} baris × ${nb.kursiBaris}`;
     onUbah(nb);
   };
   const label = 'block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1';
@@ -54,7 +56,8 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
   const ukuranBawaan = (): { w: number; h: number; d: number } | null => {
     if (b.jenis === 'model' || b.jenis === 'led') return null;
     const varian: Partial<Benda> = {};
-    for (const k of ['vw', 'panel', 'kol', 'bar', 'diag', 'rasio', 'rakU', 'mic', 'bentukMeja', 'tipeKursi', 'tipeKamera', 'pasangProyektor', 'pasang', 'tipeSpeaker', 'modul'] as const) {
+    for (const k of ['vw', 'panel', 'kol', 'bar', 'diag', 'rasio', 'rakU', 'mic', 'bentukMeja', 'tipeKursi', 'tipeKamera', 'pasangProyektor', 'pasang', 'tipeSpeaker', 'modul',
+      'baris', 'kursiBaris', 'tinggiAnak', 'bentukBidang', 'jariBidang', 'busur'] as const) {
       if (b[k] !== undefined) (varian as Record<string, unknown>)[k] = b[k];
     }
     const acuan = terapkanUkuran({ ...bendaBaru(b.jenis, kosong, varian), ...varian });
@@ -62,7 +65,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
   };
   const bawaan = ukuranBawaan();
   const bedaBawaan = !!bawaan && (mm(bawaan.w) !== mm(b.w) || mm(bawaan.h) !== mm(b.h) || mm(bawaan.d) !== mm(b.d));
-  const UKURAN_DARI_PILIHAN = ['videowall', 'layar', 'ifp', 'tv', 'rak'];
+  const UKURAN_DARI_PILIHAN = ['videowall', 'layar', 'ifp', 'tv', 'rak', 'tribun', 'bidang'];
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -205,7 +208,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
             <Segmen label="Bentuk meja" nilai={b.bentukMeja ?? 'rapat'} onUbah={(v: BentukMeja) => {
               const baru = bendaBaru('meja', kosong, { bentukMeja: v });
               onUbah({ ...b, bentukMeja: v, w: baru.w, d: baru.d, finish: baru.finish, nama: b.nama.startsWith('Meja') ? baru.nama : b.nama });
-            }} opsi={[{ v: 'rapat', l: 'Rapat' }, { v: 'bulat', l: 'Bundar' }, { v: 'kelas', l: 'Kelas' }]} />
+            }} opsi={[{ v: 'rapat', l: 'Rapat' }, { v: 'bulat', l: 'Bundar' }, { v: 'kelas', l: 'Kelas' }, { v: 'dosen', l: 'Dosen' }, { v: 'podium', l: 'Podium' }]} />
             <Segmen label="Permukaan" nilai={b.finish ?? (b.bentukMeja === 'kelas' ? 'oak' : 'walnut')} onUbah={(v: Finish) => set({ finish: v })}
               opsi={[{ v: 'walnut', l: 'Walnut' }, { v: 'oak', l: 'Oak' }, { v: 'putih', l: 'Putih' }]} />
             {b.bentukMeja === 'bulat' && <p className="text-[12px] text-slate-600">Lebar = Panjang untuk bundar; beda nilai = oval.</p>}
@@ -276,6 +279,16 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         })()}
         {(b.jenis === 'speaker' || b.jenis === 'speaker-plafon') && (
           <>
+            <label className="flex items-center gap-2 text-[12.5px] font-semibold text-slate-800">
+              <input type="checkbox" className="w-4 h-4" checked={!!b.tampilJangkauan} onChange={e => set({ tampilJangkauan: e.target.checked })} />
+              Tampilkan jangkauan suara speaker ini
+            </label>
+            <p className="text-[11px] text-slate-500 -mt-1">
+              {tipeSpeakerDari(b) === 'linearray' && b.jenis === 'speaker'
+                ? 'Warna = modul: jingga (modul teratas, ke jauh) → hijau → biru (modul terbawah, ke dekat). Bola = titik jatuh sumbu modul di tinggi telinga 1,2 m.'
+                : 'Kerucut jingga = sebaran suara (H × V) sampai jarak jangkauan.'}
+              {' '}Centang "Jangkauan speaker" di kanvas untuk menampilkan semua speaker sekaligus.
+            </p>
             <div className="grid grid-cols-3 gap-2">
               <Angka label="Sebaran H" nilai={sebaranSpeaker(b)} satuan="°" step={1} bantuan="horizontal (datasheet)"
                 onUbah={v => v >= 10 && v <= 180 && set({ sebaran: v })} />
@@ -296,6 +309,31 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           </>
         )}
 
+        {b.jenis === 'tribun' && (
+          <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Tribun</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Angka label="Jumlah baris" nilai={barisTribun(b)} step={1} onUbah={v => v >= 1 && v <= 60 && setUkuran({ baris: Math.round(v) })} />
+              <Angka label="Kursi per baris" nilai={kursiTribunPerBaris(b)} step={1} onUbah={v => v >= 1 && v <= 80 && setUkuran({ kursiBaris: Math.round(v) })} />
+              <Angka label="Tinggi anak tangga" nilai={b.tinggiAnak ?? 0.35} satuan="m" step={0.05} onUbah={v => v >= 0.1 && v <= 1 && setUkuran({ tinggiAnak: v })} />
+            </div>
+            <p className="text-[12px] text-slate-600">{barisTribun(b) * kursiTribunPerBaris(b)} kursi · kedalaman baris {f(b.d / barisTribun(b))} m · baris teratas {f((barisTribun(b) - 1) * (b.tinggiAnak ?? 0.35))} m dari lantai. Kursinya ikut dihitung di Analisis tampilan.</p>
+          </div>
+        )}
+        {b.jenis === 'bidang' && (() => {
+          const u = ukuranBidang(b);
+          return (
+            <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
+              <Segmen label="Bentuk bidang" nilai={b.bentukBidang ?? 'lengkung'} onUbah={v => setUkuran({ bentukBidang: v })}
+                opsi={[{ v: 'lengkung', l: 'Lengkung (cekung)' }, { v: 'cembung', l: 'Cembung' }]} />
+              <div className="grid grid-cols-2 gap-2">
+                <Angka label="Jari-jari" nilai={u.R} satuan="m" step={0.1} onUbah={v => v >= 0.2 && v <= 50 && setUkuran({ jariBidang: v })} />
+                <Angka label="Busur" nilai={u.busur} satuan="°" step={5} bantuan="360° = pilar / silinder" onUbah={v => v >= 10 && v <= 360 && setUkuran({ busur: v })} />
+              </div>
+              <p className="text-[12px] text-slate-600">Panjang permukaan {f(u.R * u.busur * Math.PI / 180)} m × tinggi {f(b.h)} m · tapak {f(u.w)} × {f(u.d)} m. Arahkan proyektor ke bidang ini - sinarnya jatuh mengikuti lengkungan.</p>
+            </div>
+          );
+        })()}
         {b.jenis === 'lift' && (
           <>
             <Segmen label="Layar" nilai={b.naik === false ? 'turun' : 'naik'} onUbah={v => set({ naik: v === 'naik' })}
@@ -316,8 +354,8 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
               <div className="grid grid-cols-2 gap-2">
                 <Angka label="Pan (kiri-kanan)" nilai={b.rot} satuan="°" step={1}
                   onUbah={v => set({ rot: ((Math.round(v * 10) / 10 % 360) + 360) % 360 })} />
-                <Angka label="Tilt (naik-turun)" nilai={b.tilt ?? 0} satuan="°" step={0.5} min={-45}
-                  onUbah={v => v >= -45 && v <= 45 && set({ tilt: Math.round(v * 10) / 10 })} />
+                <Angka label="Tilt (naik-turun)" nilai={b.tilt ?? 0} satuan="°" step={0.5} min={-90}
+                  onUbah={v => v >= -90 && v <= 45 && set({ tilt: Math.round(v * 10) / 10 })} />
               </div>
               {/*  Tombol geser halus: lebih mudah di HP daripada mengetik derajat. */}
               <div className="mt-1.5 grid grid-cols-4 gap-1" role="group" aria-label="Geser pan & tilt 1 derajat">
@@ -325,25 +363,61 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
                   { l: '◀ Pan', t: 'Pan ke kiri 1°', ubah: { rot: (((b.rot + 1) % 360) + 360) % 360 } },
                   { l: 'Pan ▶', t: 'Pan ke kanan 1°', ubah: { rot: (((b.rot - 1) % 360) + 360) % 360 } },
                   { l: '▲ Tilt', t: 'Tilt naik 1°', ubah: { tilt: Math.min(45, Math.round(((b.tilt ?? 0) + 1) * 10) / 10) } },
-                  { l: 'Tilt ▼', t: 'Tilt turun 1° (menunduk)', ubah: { tilt: Math.max(-45, Math.round(((b.tilt ?? 0) - 1) * 10) / 10) } },
+                  { l: 'Tilt ▼', t: 'Tilt turun 1° (menunduk)', ubah: { tilt: Math.max(-90, Math.round(((b.tilt ?? 0) - 1) * 10) / 10) } },
                 ].map(x => (
                   <button key={x.l} type="button" title={x.t} aria-label={x.t} onClick={() => set(x.ubah)}
                     className="px-1 py-1.5 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">{x.l}</button>
                 ))}
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">Tilt negatif = menunduk. Pan memutar proyektor ke kiri/kanan.</p>
+              <p className="text-[11px] text-slate-500 mt-1">Tilt negatif = menunduk; −90° = tegak lurus ke lantai (proyeksi lantai / immersive). Pan memutar proyektor ke kiri/kanan.</p>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <Angka label="Lumen" nilai={lumenDari(b)} satuan="lm" step={100} onUbah={v => v >= 100 && v <= 100000 && set({ lumen: Math.round(v) })} />
-              <Angka label="Offset V" nilai={Math.round(offsetLensaDari(b) * 200)} satuan="%" step={1}
-                onUbah={v => v >= -100 && v <= 300 && set({ offsetLensa: v / 200 })} />
-              <Angka label="Shift H" nilai={Math.round(geserLensaDari(b) * 100)} satuan="%" step={1} min={-60}
-                onUbah={v => v >= -60 && v <= 60 && set({ geserLensaH: v / 100 })} />
+            {(() => {
+              const [zMin, zMax] = zoomLensa(b), tr = throwRatioDari(b), tetap = zMax - zMin < 0.005;
+              const setZoom = (v: number) => set({ throwRatio: Math.round(Math.min(zMax, Math.max(zMin, v)) * 100) / 100 });
+              return (
+                <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Zoom lensa</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Angka label="TR terlebar" nilai={zMin} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && set({ trMin: Math.round(v * 100) / 100, trMax: Math.max(v, b.trMax ?? zMax), throwRatio: Math.max(v, tr) })} />
+                    <Angka label="TR terpanjang" nilai={zMax} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && set({ trMax: Math.round(v * 100) / 100, trMin: Math.min(v, b.trMin ?? zMin), throwRatio: Math.min(v, tr) })} />
+                    <Angka label="TR dipakai" nilai={tr} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && (tetap ? set({ throwRatio: v, trMin: v, trMax: v }) : setZoom(v))} />
+                  </div>
+                  {!tetap && (
+                    <div className="flex items-center gap-2">
+                      <button type="button" onClick={() => setZoom(tr - 0.05)} title="Zoom out - gambar membesar (wide)" aria-label="Zoom out, gambar membesar"
+                        className="h-8 w-9 rounded-lg border border-slate-200 bg-white font-bold text-slate-700 hover:bg-slate-50">−</button>
+                      <input type="range" min={zMin} max={zMax} step={0.01} value={tr} aria-label="Zoom lensa (throw ratio)"
+                        onChange={e => setZoom(Number(e.target.value))} className="flex-1 accent-blue-700" />
+                      <button type="button" onClick={() => setZoom(tr + 0.05)} title="Zoom in - gambar mengecil (tele)" aria-label="Zoom in, gambar mengecil"
+                        className="h-8 w-9 rounded-lg border border-slate-200 bg-white font-bold text-slate-700 hover:bg-slate-50">+</button>
+                    </div>
+                  )}
+                  <p className="text-[11px] text-slate-500">
+                    {tetap ? 'Lensa tetap (tanpa zoom) - isi TR terlebar & terpanjang dari datasheet bila lensanya zoom.'
+                      : `Zoom ${f(zMax / zMin, 2)}× (TR ${f(zMin, 2)} - ${f(zMax, 2)} : 1). − = gambar membesar (wide), + = gambar mengecil (tele).`}
+                  </p>
+                </div>
+              );
+            })()}
+            <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Lens shift</p>
+                {(offsetLensaDari(b) !== 0 || geserLensaDari(b) !== 0) && (
+                  <button type="button" onClick={() => set({ offsetLensa: 0, geserLensaH: 0 })} className="text-[11.5px] font-bold text-blue-700 hover:underline">Ke tengah (0%)</button>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Angka label="Vertikal" nilai={Math.round(offsetLensaDari(b) * 100)} satuan="%" step={1} min={-50}
+                  onUbah={v => v >= -50 && v <= 150 && set({ offsetLensa: v / 100 })} />
+                <Angka label="Horizontal" nilai={Math.round(geserLensaDari(b) * 100)} satuan="%" step={1} min={-60}
+                  onUbah={v => v >= -60 && v <= 60 && set({ geserLensaH: v / 100 })} />
+                <Angka label="Lumen" nilai={lumenDari(b)} satuan="lm" step={100} onUbah={v => v >= 100 && v <= 100000 && set({ lumen: Math.round(v) })} />
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Vertikal = geser pusat gambar dalam % tinggi gambar (relatif proyektor; gantung plafon = terbalik): 0% = tepat di sumbu lensa,
+                50% = tepi gambar sejajar lensa (umum pada proyektor tanpa lens shift). Horizontal = % lebar gambar, + ke kanan.
+              </p>
             </div>
-            <p className="text-[11px] text-slate-500 -mt-1">Offset 100% = tepi gambar sejajar sumbu lensa (umum tanpa lens shift); 0% = gambar di tengah sumbu lensa. Shift H = geser gambar ke kanan(+)/kiri(-) dalam % lebar gambar.</p>
-            <Angka label="Throw ratio lensa" nilai={b.throwRatio ?? 1.5} satuan=": 1" step={0.01}
-              onUbah={v => v >= 0.2 && v <= 10 && set({ throwRatio: Math.round(v * 100) / 100 })}
-              bantuan="Jarak lempar ÷ lebar gambar (lihat datasheet; lensa zoom = rentang)." />
           </>
         )}
         {ekstra}
