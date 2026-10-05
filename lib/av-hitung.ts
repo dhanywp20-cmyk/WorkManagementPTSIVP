@@ -331,3 +331,80 @@ export function hitungDaya(beban: Beban[], tegangan = 220, faktorDaya = 0.9, cad
     pkAC: (totalW * 3.412) / 9000,
   };
 }
+
+// ── Screen connection LED (urutan kabel data, seperti NovaLCT) ─────────────
+
+export type SudutMulai = 'kiri-atas' | 'kanan-atas' | 'kiri-bawah' | 'kanan-bawah';
+export interface OpsiKoneksi {
+  /** Grid receiving card (satu sel = satu receiving card). */ kolom: number; baris: number;
+  pxPerRC: number; pxPerPort: number;
+  /** Receiving card pertama di pojok mana, kabel berjalan mendatar (per baris) atau tegak (per kolom). */
+  mulai: SudutMulai; arah: 'horizontal' | 'vertikal';
+  /** S = ular (bolak-balik), Z = tiap baris/kolom mulai dari sisi yang sama. */ pola: 'S' | 'Z';
+  /** baris = tiap port mengambil baris/kolom utuh (kabel rapi; garis yang melebihi kapasitas port dibagi ke
+   *  beberapa zona sama lebar); penuh = port diisi sampai batas (port paling hemat). */ bagi: 'baris' | 'penuh';
+  /** Persentase kapasitas port yang boleh dipakai (bawaan 100). */ bebanMaks?: number;
+  /** Port per controller / sending card - untuk penomoran "controller-port-RC". 0 = satu controller. */ portPerKartu?: number;
+}
+export interface SelKoneksi { c: number; r: number; port: number; urut: number; kartu: number }
+export interface PortKoneksi { port: number; kartu: number; jumlah: number; px: number; beban: number; mulai: { c: number; r: number } }
+export interface HasilKoneksi {
+  /** Semua receiving card dalam urutan kabel (rantai port 1, lalu port 2, ...). */ sel: SelKoneksi[];
+  port: PortKoneksi[];
+  rcPerPortMaks: number; jumlahPort: number; jumlahKartu: number;
+  /** Peringatan bila satu receiving card melebihi kapasitas satu port. */ galat: string | null;
+}
+
+/**
+ * Urutan kabel data receiving card & pembagian ke port LAN. Kolom c 0.. dari kiri,
+ * baris r 0.. dari atas. Satu receiving card tidak bisa dibagi ke dua port.
+ */
+export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
+  const K = Math.max(1, Math.round(o.kolom)), B = Math.max(1, Math.round(o.baris));
+  const batas = Math.max(1, Math.min(100, o.bebanMaks ?? 100)) / 100;
+  const kapasitas = Math.floor((o.pxPerPort * batas) / Math.max(1, o.pxPerRC));
+  const galat = kapasitas < 1
+    ? `Satu receiving card (${Math.round(o.pxPerRC).toLocaleString('id-ID')} px) melebihi ${Math.round(batas * 100)}% kapasitas satu port (${Math.round(o.pxPerPort).toLocaleString('id-ID')} px) - perkecil area per receiving card atau turunkan refresh/bit.`
+    : null;
+  const cap = Math.max(1, kapasitas);
+  const kiri = o.mulai.startsWith('kiri'), atas = o.mulai.endsWith('atas');
+  //  Garis = baris (horizontal) atau kolom (vertikal), urut dari pojok mulai. Posisi di sepanjang garis
+  //  dihitung dari sisi mulai lalu dipetakan ke kolom/baris sebenarnya.
+  const nGaris = o.arah === 'horizontal' ? B : K, panjang = o.arah === 'horizontal' ? K : B;
+  const awalDiSisiMulai = o.arah === 'horizontal' ? kiri : atas;
+  const selDi = (g: number, pos: number) => {
+    const idxGaris = o.arah === 'horizontal' ? (atas ? g : B - 1 - g) : (kiri ? g : K - 1 - g);
+    const ke = awalDiSisiMulai ? pos : panjang - 1 - pos;
+    return o.arah === 'horizontal' ? { c: ke, r: idxGaris } : { c: idxGaris, r: ke };
+  };
+  //  Zona: baris utuh yang lebih panjang dari kapasitas port -> layar dibagi beberapa zona sama lebar,
+  //  tiap zona dikabel sendiri dari sisi mulai (seperti layar lebar di lapangan).
+  const nZona = o.bagi === 'baris' ? Math.ceil(panjang / cap) : 1;
+  const potongan: { c: number; r: number }[][] = [];
+  for (let z = 0; z < nZona; z++) {
+    const p0 = Math.round((z * panjang) / nZona), p1 = Math.round(((z + 1) * panjang) / nZona);
+    //  Pola S membalik arah tiap garis; Z selalu dari sisi mulai. Baris utuh: tiap port mulai lagi dari
+    //  sisi mulai (kabel dari arah controller), penuh: S bersambung di seluruh layar.
+    const garisPerPort = o.bagi === 'baris' ? Math.max(1, Math.floor(cap / (p1 - p0))) : nGaris;
+    const garis = Array.from({ length: nGaris }, (_, g) => {
+      const maju = o.pola === 'Z' || (g % garisPerPort) % 2 === 0;
+      return Array.from({ length: p1 - p0 }, (_, i) => selDi(g, maju ? p0 + i : p1 - 1 - i));
+    });
+    if (o.bagi === 'baris') {
+      for (let g = 0; g < garis.length; g += garisPerPort) potongan.push(garis.slice(g, g + garisPerPort).flat());
+    } else {
+      const semua = garis.flat();
+      for (let i = 0; i < semua.length; i += cap) potongan.push(semua.slice(i, i + cap));
+    }
+  }
+  const ppk = Math.max(0, Math.round(o.portPerKartu ?? 0));
+  const kartuDari = (port: number) => (ppk > 0 ? Math.ceil(port / ppk) : 1);
+  const sel: SelKoneksi[] = [];
+  const port: PortKoneksi[] = potongan.map((isi, i) => {
+    const p = i + 1;
+    isi.forEach((x, j) => sel.push({ ...x, port: p, urut: j + 1, kartu: kartuDari(p) }));
+    const px = isi.length * o.pxPerRC;
+    return { port: p, kartu: kartuDari(p), jumlah: isi.length, px, beban: (px / Math.max(1, o.pxPerPort)) * 100, mulai: isi[0] };
+  });
+  return { sel, port, rcPerPortMaks: cap, jumlahPort: port.length, jumlahKartu: port.length ? kartuDari(port.length) : 0, galat };
+}

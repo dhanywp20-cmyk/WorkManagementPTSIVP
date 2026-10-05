@@ -11,6 +11,7 @@ import { bukaCetak, diagramSusunan, type Info } from './cetak';
 import { FolderOpen, Redo2, Save, Undo2 } from 'lucide-react';
 import { useRiwayat } from './riwayat';
 import { FileLED, type FileAktifLED } from './FileLED';
+import { KartuKoneksi, KONEKSI_AWAL, bersihkanKoneksi, ringkasanKoneksi, seksiCetakKoneksi, type DataKoneksi, type PengaturanKoneksi } from './KoneksiLED';
 
 const PITCH = [0.9, 1.2, 1.25, 1.5, 1.56, 1.86, 1.9, 2, 2.5, 2.6, 2.9, 3.91, 4.81, 5, 6.67, 8, 10];
 const CABINET: { v: string; l: string; w: number; h: number }[] = [
@@ -111,15 +112,16 @@ export function KalkulatorLED() {
   const [bit, setBit] = useState<8 | 10 | 12>(8);
   const [tegangan, setTegangan] = useState(220);
   const [faktorDaya, setFaktorDaya] = useState(0.95);
+  const [koneksi, setKoneksi] = useState<PengaturanKoneksi>(KONEKSI_AWAL);
 
   //  Potret seluruh isian: dasar undo/redo dan simpan/buka hitungan.
   const isian = useMemo(() => ({
     modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
     cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
-    refresh, bit, tegangan, faktorDaya,
+    refresh, bit, tegangan, faktorDaya, koneksi,
   }), [modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
     cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
-    refresh, bit, tegangan, faktorDaya]);
+    refresh, bit, tegangan, faktorDaya, koneksi]);
   type Isian = typeof isian;
   /** Kembalikan isian; kunci yang tidak ada (hitungan versi lama) dibiarkan. */
   const terapkan = (v: Partial<Isian>) => {
@@ -132,6 +134,8 @@ export function KalkulatorLED() {
     pasang('kolomIn', setKolomIn); pasang('barisIn', setBarisIn); pasang('dayaUnit', setDayaUnit); pasang('beratUnit', setBeratUnit);
     pasang('faktorRata', setFaktorRata); pasang('refresh', setRefresh); pasang('bit', setBit); pasang('tegangan', setTegangan);
     pasang('faktorDaya', setFaktorDaya);
+    //  Hitungan lama belum punya screen connection -> pengaturan bawaan.
+    setKoneksi(bersihkanKoneksi(v.koneksi));
   };
   const riwayat = useRiwayat(isian, v => terapkan(v));
   const [fileMode, setFileMode] = useState<'buka' | 'simpan' | null>(null);
@@ -164,6 +168,12 @@ export function KalkulatorLED() {
   const teksHw = modeHw === 'manual'
     ? [vpM && `${kapasitasHardware(vpM, h.totalPx, h.portLAN).qty}× ${vpM.nama}`, kartuM && `${kapasitasHardware(kartuM, h.totalPx, h.portLAN).qty}× ${kartuM.nama}`].filter(Boolean).join(' + ')
     : '';
+  //  Screen connection: port per controller dari hardware terpilih (manual) atau opsi A/B (otomatis).
+  const hwKoneksi = modeHw === 'manual' ? (vpAio ? vpM : kartuM) : (hw.vp?.hw ?? hw.kartu?.hw ?? null);
+  const dataKoneksi: DataKoneksi = useMemo(() => ({
+    kolom, baris, wUnit: u.w, hUnit: u.h, pxX: px.x, pxY: px.y, satuan, pxPerPort: h.pxPerPort, portIdeal: h.portLAN,
+    ppkHw: hwKoneksi?.port ?? 0, namaHw: hwKoneksi?.nama ?? null,
+  }), [kolom, baris, u.w, u.h, px.x, px.y, satuan, h.pxPerPort, h.portLAN, hwKoneksi?.port, hwKoneksi?.nama]);
   const lewat4K = h.resX > 3840 || h.resY > 2160;
   const n = Math.max(1, screen);
   const selisihW = mode === 'ukuran' ? h.lebarM - targetW : 0;
@@ -193,6 +203,7 @@ export function KalkulatorLED() {
     `Data: ${h.portLAN} port LAN (${refresh} Hz, ${bit}-bit)`,
     modeHw === 'manual' ? `Hardware: ${teksHw || '-'} /screen` : hw.vp && `All-in-one: ${hw.vp.qty}× ${hw.vp.hw.nama}/screen`,
     modeHw === 'otomatis' && hw.kartu && `Atau sending card: ${hw.kartu.qty}× ${hw.kartu.hw.nama}/screen + video processor`,
+    ringkasanKoneksi(dataKoneksi, koneksi),
     (pembuat || tanggal) && `Dibuat: ${[pembuat, tanggal].filter(Boolean).join(', ')}`,
   ].filter(Boolean).join('\n');
 
@@ -254,6 +265,7 @@ export function KalkulatorLED() {
             satu('Kapasitas per port', `±${f(h.pxPerPort / 1000, 0)} rb px · ${refresh} Hz, ${bit}-bit`),
           ],
           kanan: hwBaris.length ? hwBaris : [satu('Hardware', '—')] },
+        ...seksiCetakKoneksi(dataKoneksi, koneksi),
       ],
       catatan: 'Angka daya, berat, dan kapasitas port adalah nilai umum industri. Verifikasi dengan datasheet produk dan NovaLCT sebelum penawaran resmi.',
       tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
@@ -489,6 +501,10 @@ export function KalkulatorLED() {
             <li>Hardware dipilih yang terkecil dengan kapasitas pixel & port cukup; bila tidak ada, jumlah unit dihitung dari yang terbesar.</li>
           </ul>
         </details>
+      </div>
+      <div className="lg:col-span-2 min-w-0">
+        <KartuKoneksi d={dataKoneksi} s={koneksi} onUbah={setKoneksi}
+          namaFile={[project, customer].filter(Boolean).join(' - ') || `LED ${u.kode} ${f(h.lebarM)}x${f(h.tinggiM)} m`} />
       </div>
       <EditorReferensiLED {...refLED} buka={bukaRef} onTutup={() => setBukaRef(false)} />
       <FileLED mode={fileMode} onTutup={() => setFileMode(null)} isian={isian}

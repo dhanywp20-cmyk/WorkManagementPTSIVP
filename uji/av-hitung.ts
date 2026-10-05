@@ -4,6 +4,7 @@
  * Jalankan: npx tsx uji/av-hitung.ts
  */
 import {
+  hitungKoneksi,
   hitungLED, pxPerPortPada, portDibutuhkan, cabinetUntukUkuran, saranHardware, kapasitasHardware, MODUL_LED, VIDEO_PROCESSOR, SENDING_CARD, layarDariJarak, ukuranDariDiagonal,
   jarakLempar, lumenDibutuhkan, bandwidthGbps, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
 } from '../lib/av-hitung';
@@ -103,6 +104,41 @@ console.log('\n6. Daya');
   cek('total 660 W', d.totalW === 660);
   cek('BTU ~ 2252', dekat(d.btu, 2251.9));
   cek('UPS dibulatkan ke 500 VA', d.upsVA % 500 === 0 && d.upsVA >= d.va);
+}
+
+console.log('\nScreen connection (urutan kabel & port)');
+{
+  //  8 x 5 cabinet 500x500 P2.5 (200x200 px = 40.000 px), port 655.360 px -> maks 16 RC per port.
+  const dasar = { kolom: 8, baris: 5, pxPerRC: 40_000, pxPerPort: 655_360, mulai: 'kiri-atas' as const, arah: 'horizontal' as const, pola: 'S' as const, bagi: 'baris' as const };
+  const k = hitungKoneksi(dasar);
+  cek('kapasitas 16 RC/port; baris utuh: 2 baris (16 RC) per port -> 3 port', k.rcPerPortMaks === 16 && k.jumlahPort === 3 && k.port.map(p => p.jumlah).join(',') === '16,16,8');
+  cek('semua 40 receiving card terhubung tepat sekali', k.sel.length === 40 && new Set(k.sel.map(x => `${x.c},${x.r}`)).size === 40);
+  const p1 = k.sel.filter(x => x.port === 1);
+  cek('pola S dari kiri-atas: baris 1 ke kanan, baris 2 kembali ke kiri', p1[0].c === 0 && p1[0].r === 0 && p1[7].c === 7 && p1[8].c === 7 && p1[8].r === 1 && p1[15].c === 0);
+  cek('urutan berkelanjutan: tiap langkah ke sel tetangga', k.sel.every((x, i) => i === 0 || k.sel[i - 1].port !== x.port || Math.abs(k.sel[i - 1].c - x.c) + Math.abs(k.sel[i - 1].r - x.r) === 1));
+  const z = hitungKoneksi({ ...dasar, pola: 'Z' });
+  cek('pola Z: tiap baris mulai dari kiri', z.sel.filter(x => x.urut === 9 && x.port === 1)[0].c === 0);
+  const v = hitungKoneksi({ ...dasar, arah: 'vertikal', mulai: 'kanan-bawah' });
+  cek('vertikal dari kanan-bawah: mulai (7,4) naik ke atas', v.sel[0].c === 7 && v.sel[0].r === 4 && v.sel[1].c === 7 && v.sel[1].r === 3);
+  const penuh = hitungKoneksi({ ...dasar, bagi: 'penuh', bebanMaks: 80 });
+  cek('isi penuh dengan batas beban 80%: 13 RC per port -> 4 port', penuh.rcPerPortMaks === 13 && penuh.jumlahPort === 4 && penuh.port.every(p => p.beban <= 80.0001));
+  const kartu = hitungKoneksi({ ...dasar, kolom: 20, baris: 10, portPerKartu: 4 });
+  cek('penomoran controller: port 5 ada di controller 2', kartu.port.find(p => p.port === 5)?.kartu === 2 && kartu.jumlahKartu === Math.ceil(kartu.jumlahPort / 4));
+  const besar = hitungKoneksi({ ...dasar, pxPerRC: 800_000 });
+  cek('receiving card melebihi kapasitas port -> peringatan', besar.galat !== null && besar.rcPerPortMaks === 1);
+  const lebar = hitungKoneksi({ ...dasar, kolom: 20, baris: 2 });
+  cek('baris 20 > kapasitas 16 -> 2 zona 10 kolom: 4 port x 10 RC, port 3 masuk di kolom 11', lebar.port.map(p => p.jumlah).join(',') === '10,10,10,10'
+    && lebar.port[0].mulai.c === 0 && lebar.port[2].mulai.c === 10 && lebar.port[2].mulai.r === 0);
+  cek('zona: port 1 hanya kolom 1-10', lebar.sel.filter(x => x.port === 1).every(x => x.c < 10));
+  const satuBaris = hitungKoneksi({ ...dasar, kolom: 12 });
+  cek('baris utuh 1 baris/port: semua port masuk dari kiri walau pola S', satuBaris.port.every(p => p.mulai.c === 0));
+  const tigaBaris = hitungKoneksi({ ...dasar, kolom: 5, baris: 6 });
+  cek('3 baris/port pola S: port 2 mulai lagi dari kiri, ular di dalam port', tigaBaris.port.length === 2 && tigaBaris.port[1].mulai.c === 0
+    && tigaBaris.sel.filter(x => x.port === 2)[4].c === 4 && tigaBaris.sel.filter(x => x.port === 2)[5].c === 4 && tigaBaris.sel.filter(x => x.port === 2)[5].r === 4);
+  const lebarPenuh = hitungKoneksi({ ...dasar, kolom: 20, baris: 2, bagi: 'penuh' });
+  cek('isi penuh pada layar lebar: 16, 16, 8 (port paling hemat)', lebarPenuh.port.map(p => p.jumlah).join(',') === '16,16,8');
+  const lebarKanan = hitungKoneksi({ ...dasar, kolom: 20, baris: 2, mulai: 'kanan-atas' });
+  cek('zona dari kanan-atas: port 1 mulai kolom 20, zona kanan dulu', lebarKanan.port[0].mulai.c === 19 && lebarKanan.sel.filter(x => x.port === 1).every(x => x.c >= 10));
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
