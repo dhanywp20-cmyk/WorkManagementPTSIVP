@@ -7,7 +7,7 @@
 import {
   type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
   pusatkanIsi, jendelaSekat, pintuSekat, PINTU, ukuranPintu, spekVideowall, terapkanUkuran, ukuranLayar, ukuranIFP, warnaSah, tandaBentuk,
-  bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, fovKamera, sebaranSpeaker, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
+  bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, sebaranSpeaker, sebaranVSpeaker, jangkauanDari, berkasLineArray, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
 } from '../app/tools-team/_components/desain3d/model';
 import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
@@ -275,7 +275,24 @@ console.log('\n11. Batch 2: bukaan, set kelas, jangkauan, proyektor, signage, Pr
   cek('set kelas otomatis sama seperti sebelumnya (2 kursi/meja + meja pengajar)', setRuangKelas(k).filter(b => b.jenis === 'kursi').length === otomatis.kolom * otomatis.baris * 2
     && setRuangKelas(k).some(b => b.nama === 'Meja pengajar'));
   //  Kamera & speaker.
-  cek('FOV kamera bawaan per tipe & isian sendiri', fovKamera(bendaBaru('kamera', k)) === 70 && fovKamera(bendaBaru('kamera', k, { tipeKamera: 'xbar' })) === 120 && fovKamera({ ...bendaBaru('kamera', k), fov: 95 }) === 95);
+  //  Speaker: tipe & sebaran/jangkauan bawaan.
+  const s6 = bendaBaru('speaker', k, { tipeSpeaker: 'dinding6' }), sk = bendaBaru('speaker', k), sp = bendaBaru('speaker', k, { tipeSpeaker: 'kolom' });
+  cek('speaker dinding 6" & kotak (lama tetap) & portable: ukuran/tinggi bawaan', s6.nama === 'Speaker dinding 6"' && dekat(s6.w, 0.2) && s6.elev === 2
+    && sk.tipeSpeaker === 'kotak' && dekat(sk.w, 0.21) && sp.elev === 0 && dekat(sp.h, 2));
+  cek('sebaran bawaan: dinding 90x90, portable 120x30, line array 100 x 10/modul', sebaranSpeaker(s6) === 90 && sebaranVSpeaker(s6) === 90
+    && sebaranSpeaker(sp) === 120 && sebaranVSpeaker(sp) === 30 && sebaranVSpeaker(bendaBaru('speaker', k, { tipeSpeaker: 'linearray' })) === 10
+    && jangkauanDari(sp) === 25);
+  //  Line array: jumlah modul & berkas per modul.
+  const la = bendaBaru('speaker', k, { tipeSpeaker: 'linearray', modul: 6 });
+  cek('line array 6 modul: tinggi 6 x 0,3 m, nama ikut jumlah modul', dekat(la.h, 1.8) && la.nama === 'Line array 6 modul' && la.modul === 6);
+  const lurus = berkasLineArray({ ...la, elev: 0 });
+  cek('line array lurus di lantai: 6 berkas mendatar, tidak jatuh ke telinga', lurus.length === 6 && lurus.every(x => dekat(x.arah[1], 0) && x.jatuh === null));
+  const flown = { ...la, gantung: true, elev: 4, tiltLA: 4, sudutModul: 3, rot: 0, x: 4, z: 0.5 };
+  const bf = berkasLineArray(flown);
+  cek('line array digantung & menekuk: modul bawah menunduk lebih dalam & jatuh lebih dekat', bf.every(x => x.jarak !== null)
+    && bf.every((x, i) => i === 0 || (x.arah[1] < bf[i - 1].arah[1] && x.jarak! < bf[i - 1].jarak!)), bf.map(x => x.jarak?.toFixed(1)).join(','));
+  const atas = bf[0];
+  cek('berkas modul teratas: tilt 4° -> jatuh sejauh (tinggi - 1,2) / tan 4°', dekat(atas.jarak!, (atas.asal[1] - 1.2) / Math.tan(4 * Math.PI / 180) + (atas.asal[2] - 0.5), 0.05), `${atas.jarak}`);
   const spp = { ...bendaBaru('speaker-plafon', k), elev: 2.94, sebaran: 90 };
   cek('cakupan speaker plafon 90° dari 2,94 m = jari-jari (2,94-1,2)·tan45°', dekat(cakupanSpeakerPlafon(spp), 1.74) && sebaranSpeaker(bendaBaru('speaker', k)) === 90);
   //  Proyektor: offset lensa & lens shift.
@@ -302,6 +319,8 @@ console.log('\n11. Batch 2: bukaan, set kelas, jangkauan, proyektor, signage, Pr
   cek('Produk saya: jenis model GLB / tanpa ukuran / tanpa nama ditolak', !periksaProduk({ label: 'x', jenis: 'model', atur: vwc }).ok
     && !periksaProduk({ label: 'x', jenis: 'tv', atur: { w: 1 } }).ok && !periksaProduk({ label: ' ', jenis: 'tv', atur: vwc }).ok);
   cek('Produk saya: angka di luar batas & enum asing dibuang', !('w' in bersihkanAturProduk({ w: -1 })) && !('vw' in bersihkanAturProduk({ vw: 'X' })) && bersihkanAturProduk({ tipeKamera: 'xbar' }).tipeKamera === 'xbar');
+  const atLA = bersihkanAturProduk({ tipeSpeaker: 'linearray', modul: 8, sudutModul: 3, tiltLA: 5, gantung: true, sebaranV: 10, fov: 70 });
+  cek('Produk saya: line array (modul, sudut, gantung) tersimpan; field lama fov dibuang', atLA.tipeSpeaker === 'linearray' && atLA.modul === 8 && atLA.gantung === true && atLA.sudutModul === 3 && !('fov' in atLA));
   cek('Produk saya: baris rusak di app_settings diabaikan', bacaDaftarProduk({ daftar: [{ id: 'a', label: 'ok', jenis: 'tv', atur: { w: 1, h: 1, d: 0.1 } }, { label: 'tanpa id', jenis: 'tv', atur: { w: 1, h: 1, d: 1 } }, 5] }).length === 1
     && bacaDaftarProduk(null).length === 0);
   //  Analisis tersimpan bersama desain.

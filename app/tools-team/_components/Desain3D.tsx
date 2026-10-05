@@ -14,7 +14,7 @@ import {
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturPolaUji,
   salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, warnaSah, JENDELA_AWAL, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
-  fovKamera, sebaranSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, kecerahanProyektor,
+  sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, kecerahanProyektor, tipeSpeakerDari, berkasLineArray, modulLA,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc } from './cetak';
@@ -159,7 +159,7 @@ export default function Desain3D() {
   const setJenisPandang = (v: JenisPandang | 'custom') => setAnalisis({ jenis: v });
   const setFaktorCustom = (v: number) => setAnalisis({ faktor: v });
   const setSudutNyaman = (v: number) => setAnalisis({ sudut: v });
-  /** Tampilkan area jangkauan semua kamera & speaker (yang terpilih selalu tampil). */
+  /** Tampilkan jangkauan suara semua speaker (yang terpilih selalu tampil). */
   const [jangkau, setJangkau] = useState(false);
   /** Bayangan lembut display di dinding/lantai + cahaya layar ke lantai. */
   const [bayangan, setBayangan] = useState(true);
@@ -744,10 +744,11 @@ export default function Desain3D() {
         }
       }
     }
-    //  Jangkauan kamera (piramida sudut pandang) & speaker (kerucut sebaran), dipotong di dinding,
-    //  lantai & plafon ruangnya. Semua bila dicentang; yang sedang dipilih selalu tampil.
+    //  Jangkauan suara speaker (kerucut sebaran H x V), dipotong di dinding, lantai & plafon ruangnya.
+    //  Line array: satu berkas per modul + titik jatuh sumbunya di tinggi telinga. Semua bila
+    //  dicentang; speaker yang sedang dipilih selalu tampil.
     for (const b of benda) {
-      if (!(b.jenis === 'kamera' || b.jenis === 'speaker' || b.jenis === 'speaker-plafon')) continue;
+      if (!(b.jenis === 'speaker' || b.jenis === 'speaker-plafon')) continue;
       if (!(jangkau || b.id === pilih)) continue;
       const k = kotakRuang[ruangDari(ruang, b.x)] ?? kotakRuang[0];
       const potong = [
@@ -758,31 +759,16 @@ export default function Desain3D() {
       const r = (b.rot * Math.PI) / 180;
       const maju = new THREE.Vector3(Math.sin(r), 0, Math.cos(r)), kanan = new THREE.Vector3(-Math.cos(r), 0, Math.sin(r));
       const isi = (warna: number, opasitas: number) => new THREE.MeshBasicMaterial({ color: warna, transparent: true, opacity: opasitas, side: THREE.DoubleSide, depthWrite: false, clippingPlanes: potong });
-      if (b.jenis === 'kamera') {
-        const fov = Math.min(170, fovKamera(b)), L = jangkauanDari(b);
-        const O = new THREE.Vector3(b.x, b.elev + b.h * 0.6, b.z).addScaledVector(maju, b.d / 2);
-        const hw = L * Math.tan((fov / 2) * Math.PI / 180), hh = hw * 9 / 16;
-        const F = O.clone().addScaledVector(maju, L);
-        const C = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) => F.clone().addScaledVector(kanan, u * hw).add(new THREE.Vector3(0, v * hh, 0)));
-        const titik: T.Vector3[] = [];
-        for (let i = 0; i < 4; i++) titik.push(O, C[i], C[(i + 1) % 4]);
-        const piramida = new THREE.Mesh(new THREE.BufferGeometry().setFromPoints(titik), isi(0x3b82f6, 0.09));
-        piramida.renderOrder = 3; grupBantu.add(piramida);
-        const tepi = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(C.flatMap(c => [O, c])),
-          new THREE.LineBasicMaterial({ color: 0x2563eb, transparent: true, opacity: 0.7, clippingPlanes: potong }));
-        grupBantu.add(tepi);
-        label(`${b.nama}: ${f(fov, 0)}° · ${f(L, 1)} m`, O.clone().addScaledVector(maju, Math.min(1.2, L * 0.25)).add(new THREE.Vector3(0, 0.2, 0)), 'biru');
-      } else if (b.jenis === 'speaker') {
-        const setengah = Math.min(80, sebaranSpeaker(b) / 2) * Math.PI / 180, L = jangkauanDari(b);
-        const O = new THREE.Vector3(b.x, b.elev + b.h / 2, b.z).addScaledVector(maju, b.d / 2);
-        //  Sumbu sedikit menunduk (10°) - speaker dinding diarahkan ke pendengar.
-        const sumbu = maju.clone().multiplyScalar(Math.cos(0.175)).add(new THREE.Vector3(0, -Math.sin(0.175), 0)).normalize();
-        const geo = new THREE.ConeGeometry(L * Math.tan(setengah), L, 40, 1, true); geo.translate(0, -L / 2, 0);
-        const kerucut = new THREE.Mesh(geo, isi(0xf59e0b, 0.08));
-        kerucut.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), sumbu); kerucut.position.copy(O);
-        kerucut.renderOrder = 3; grupBantu.add(kerucut);
-        label(`${b.nama}: ${f(sebaranSpeaker(b), 0)}° · ${f(L, 1)} m`, O.clone().addScaledVector(sumbu, Math.min(1.2, L * 0.25)).add(new THREE.Vector3(0, 0.2, 0)), 'abu');
-      } else {
+      /** Kerucut elips dari O sepanjang `sumbu`: lebar sebaran H (sepanjang kanan) x V (tegak lurus). */
+      const kerucutElips = (O: T.Vector3, sumbu: T.Vector3, H: number, V: number, L: number, warna: number, opasitas: number) => {
+        const rH = L * Math.tan((Math.min(170, H) / 2) * Math.PI / 180), rV = L * Math.tan((Math.min(170, V) / 2) * Math.PI / 180);
+        const geo = new THREE.ConeGeometry(1, L, 48, 1, true); geo.translate(0, -L / 2, 0); geo.scale(rH, 1, rV);
+        const sb = sumbu.clone().normalize(), sy = sb.clone().negate(), sz = new THREE.Vector3().crossVectors(kanan, sy).normalize();
+        const m = new THREE.Mesh(geo, isi(warna, opasitas));
+        m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(kanan, sy, sz)); m.position.copy(O);
+        m.renderOrder = 3; grupBantu.add(m);
+      };
+      if (b.jenis === 'speaker-plafon') {
         const tinggi = b.elev - TINGGI_DENGAR;
         if (tinggi < 0.1) continue;
         const jari = cakupanSpeakerPlafon(b);
@@ -792,7 +778,38 @@ export default function Desain3D() {
         const cakram = new THREE.Mesh(new THREE.CircleGeometry(jari, 48), isi(0xf59e0b, 0.16));
         cakram.rotation.x = -Math.PI / 2; cakram.position.set(b.x, TINGGI_DENGAR, b.z); grupBantu.add(cakram);
         label(`Ø ${f(jari * 2)} m @ ${f(TINGGI_DENGAR)} m`, new THREE.Vector3(b.x, TINGGI_DENGAR + 0.1, b.z), 'abu');
+        continue;
       }
+      const tipe = tipeSpeakerDari(b), H = sebaranSpeaker(b), V = sebaranVSpeaker(b), L = jangkauanDari(b);
+      if (tipe === 'linearray') {
+        //  Tiap modul: berkas sempit (V per modul) ke arah sudutnya, warna bergradasi atas -> bawah,
+        //  garis sumbu + titik jatuh di tinggi telinga = di mana modul itu "mendarat" di penonton.
+        const berkas = berkasLineArray(b), n = berkas.length;
+        const jatuh: number[] = [];
+        berkas.forEach((x, i) => {
+          const O = new THREE.Vector3(...x.asal), sumbu = new THREE.Vector3(...x.arah);
+          const warna = new THREE.Color().setHSL(0.08 + 0.5 * (n > 1 ? i / (n - 1) : 0), 0.85, 0.55).getHex();
+          kerucutElips(O, sumbu, H, V, L, warna, 0.06);
+          const ujung = x.jatuh ? new THREE.Vector3(...x.jatuh) : O.clone().addScaledVector(sumbu, L);
+          grupBantu.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([O, ujung]),
+            new THREE.LineBasicMaterial({ color: warna, transparent: true, opacity: 0.85, clippingPlanes: potong })));
+          if (x.jatuh && x.jarak !== null) {
+            const titik = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 10), new THREE.MeshBasicMaterial({ color: warna, clippingPlanes: potong }));
+            titik.position.copy(ujung); grupBantu.add(titik);
+            jatuh.push(x.jarak);
+          }
+        });
+        const teks = jatuh.length ? ` · menjangkau ${f(Math.min(...jatuh), 1)}–${f(Math.max(...jatuh), 1)} m` : '';
+        label(`${b.nama}: ${modulLA(b)} modul · ${f(H, 0)}° H${teks}`, new THREE.Vector3(b.x, b.elev + b.h + 0.25, b.z), 'abu');
+        continue;
+      }
+      //  Speaker dinding sedikit menunduk (10°) ke pendengar; portable & kotak berdiri lurus ke depan.
+      const tunduk = tipe === 'kolom' ? 0 : 0.175;
+      const tinggiPancar = tipe === 'kolom' ? b.elev + b.h - Math.min(0.85, Math.max(0.3, b.h * 0.36)) / 2 : b.elev + b.h / 2;
+      const O = new THREE.Vector3(b.x, tinggiPancar, b.z).addScaledVector(maju, tipe === 'kolom' ? 0.06 : b.d / 2);
+      const sumbu = maju.clone().multiplyScalar(Math.cos(tunduk)).add(new THREE.Vector3(0, -Math.sin(tunduk), 0)).normalize();
+      kerucutElips(O, sumbu, H, V, L, 0xf59e0b, 0.08);
+      label(`${b.nama}: ${f(H, 0)}° × ${f(V, 0)}° · ${f(L, 1)} m`, O.clone().addScaledVector(sumbu, Math.min(1.2, L * 0.25)).add(new THREE.Vector3(0, 0.2, 0)), 'abu');
     }
     if (ukur) {
       kotakRuang.forEach((k, i) => {
@@ -855,6 +872,12 @@ export default function Desain3D() {
       return new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: bayang, color: 0x000000, transparent: true, opacity: opasitas, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
     };
     for (const d of benda) {
+      //  Speaker berdiri di lantai (portable / line array tidak digantung): bayangan kontak di lantai.
+      if (d.jenis === 'speaker' && d.elev < 0.05 && (tipeSpeakerDari(d) === 'kolom' || (tipeSpeakerDari(d) === 'linearray' && !d.gantung))) {
+        const o = bayangan9(d.w * 0.95, d.d * 0.9, 0.18, 0.5);
+        o.rotation.set(-Math.PI / 2, 0, (d.rot * Math.PI) / 180); o.position.set(d.x, 0.003, d.z); grupBayang.add(o);
+        continue;
+      }
       if (!DISPLAY.includes(d.jenis)) continue;
       const k = kotakRuang[ruangDari(ruang, d.x)] ?? kotakRuang[0];
       const r = (d.rot * Math.PI) / 180, hx = Math.sin(r), hz = Math.cos(r);
@@ -1648,7 +1671,7 @@ export default function Desain3D() {
             <div className="flex gap-1.5 flex-wrap">
               {[{ v: ukur, s: setUkur, l: 'Ukuran' }, { v: kerucut, s: setKerucut, l: 'Sudut pandang' },
                 ...(adaProyektor ? [{ v: sinar, s: setSinar, l: 'Sinar proyektor' }] : []),
-                ...(benda.some(b => b.jenis === 'kamera' || b.jenis === 'speaker' || b.jenis === 'speaker-plafon') ? [{ v: jangkau, s: setJangkau, l: 'Jangkauan kamera & speaker' }] : []),
+                ...(benda.some(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon') ? [{ v: jangkau, s: setJangkau, l: 'Jangkauan speaker' }] : []),
                 { v: bayangan, s: setBayangan, l: 'Bayangan & cahaya' }].map(t => (
                 <label key={t.l} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/90 border border-slate-200 text-[11.5px] font-semibold text-slate-700 shadow-sm">
                   <input type="checkbox" checked={t.v} onChange={e => t.s(e.target.checked)} /> {t.l}

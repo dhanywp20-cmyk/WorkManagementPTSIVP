@@ -27,6 +27,8 @@ export type Finish = 'walnut' | 'oak' | 'putih';
 export type TipeKursi = 'kantor' | 'kelas';
 export type TipeKamera = 'ptz' | 'ptz-ai' | 'xbar';
 export type PasangProyektor = 'plafon' | 'meja';
+/** Speaker: kotak dinding (lama), dinding 6" membulat + bracket putar, portable aktif (kolom + subwoofer), line array. */
+export type TipeSpeaker = 'kotak' | 'dinding6' | 'kolom' | 'linearray';
 
 export type ModelVW = '55BDL2105X' | '49BDL2105X' | 'custom';
 /** Rasio layar proyektor (lebar:tinggi). */
@@ -45,8 +47,11 @@ export interface Benda {
   /** Videowall LCD */ vw?: ModelVW; kol?: number; bar?: number;
   /** Videowall model 'custom': spesifikasi panel yang diisi sendiri */ panel?: PanelVW;
   /** Warna utama benda (#rrggbb) - menggantikan warna bawaan badan/kain/rangka/permukaan */ warna?: string;
-  /** Kamera: sudut pandang horizontal lensa (derajat); kamera & speaker: jangkauan (m) */ fov?: number; jangkauan?: number;
-  /** Speaker: sudut sebaran (derajat, kerucut penuh) */ sebaran?: number;
+  /** Speaker: jangkauan yang digambar (m) */ jangkauan?: number;
+  /** Speaker: sudut sebaran horizontal (derajat, penuh) & vertikal */ sebaran?: number; sebaranV?: number;
+  /** Speaker: bentuk/jenis */ tipeSpeaker?: TipeSpeaker;
+  /** Line array: jumlah modul, sudut antar modul (°), kemiringan modul teratas (°, + = menunduk), digantung (flown) */
+  modul?: number; sudutModul?: number; tiltLA?: number; gantung?: boolean;
   /** Proyektor: offset vertikal lensa (0,5 = tepi gambar di sumbu lensa / offset 100%) */ offsetLensa?: number;
   /** Proyektor: lens shift horizontal (pecahan lebar gambar, + = ke kanan dilihat dari proyektor) */ geserLensaH?: number;
   /** Proyektor: kecerahan (ANSI lumen) */ lumen?: number;
@@ -235,7 +240,7 @@ export function ukuranLayar(diag: number, rasio: RasioLayar | string) {
 export const LABEL: Record<Jenis, string> = {
   videowall: 'Videowall', led: 'LED Videotron', layar: 'Layar proyektor', ifp: 'Interactive display', tv: 'TV / Display',
   meja: 'Meja', kursi: 'Kursi',
-  speaker: 'Speaker dinding', 'speaker-plafon': 'Speaker plafon', mic: 'Mic', touchpanel: 'Touch panel',
+  speaker: 'Speaker', 'speaker-plafon': 'Speaker plafon', mic: 'Mic', touchpanel: 'Touch panel',
   kamera: 'Kamera', proyektor: 'Proyektor', rak: 'Rack server', lift: 'Display lift', model: 'Model 3D (GLB)',
 };
 export const DISPLAY: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv'];
@@ -268,7 +273,10 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
     grup: 'Audio & kontrol', item: [
       { kunci: 'mic-g', label: 'Mic gooseneck', ket: 'Di meja', jenis: 'mic', atur: { mic: 'gooseneck' } },
       { kunci: 'mic-b', label: 'Mic boundary', ket: 'Di meja · cakram bundar', jenis: 'mic', atur: { mic: 'boundary' } },
-      { kunci: 'spk', label: 'Speaker dinding', ket: 'Kabinet + bracket dinding', jenis: 'speaker' },
+      { kunci: 'spk6', label: 'Speaker dinding 6"', ket: 'Kabinet membulat + bracket putar', jenis: 'speaker', atur: { tipeSpeaker: 'dinding6' } },
+      { kunci: 'spk', label: 'Speaker dinding kotak', ket: 'Kabinet + bracket dinding', jenis: 'speaker', atur: { tipeSpeaker: 'kotak' } },
+      { kunci: 'spk-kolom', label: 'Speaker portable aktif', ket: 'Kolom + subwoofer, berdiri di lantai', jenis: 'speaker', atur: { tipeSpeaker: 'kolom' } },
+      { kunci: 'spk-la', label: 'Line array', ket: 'Modul bertumpuk / digantung, jumlah modul bebas', jenis: 'speaker', atur: { tipeSpeaker: 'linearray' } },
       { kunci: 'spk-p', label: 'Speaker plafon', ket: 'In-ceiling, gril bulat', jenis: 'speaker-plafon' },
       { kunci: 'tp', label: 'Touch panel', ket: 'Kontrol di meja', jenis: 'touchpanel' },
       { kunci: 'rak', label: 'Rack server', ket: '12U - 42U', jenis: 'rak' },
@@ -343,7 +351,16 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
     case 'kursi': return (atur.tipeKursi ?? 'kantor') === 'kelas'
       ? { ...dasar, nama: 'Kursi kelas', z: k.l * 0.8, w: 0.47, h: 0.82, d: 0.5, elev: 0, rot: 180, tipeKursi: 'kelas', ...atur }
       : { ...dasar, nama: 'Kursi', z: k.l * 0.8, w: 0.58, h: 1.02, d: 0.58, elev: 0, rot: 180, tipeKursi: 'kantor', ...atur };
-    case 'speaker': return { ...dasar, x: k.x0 + 0.4, z: 0.17, w: 0.21, h: 0.32, d: 0.2, elev: 2.0, ...atur };
+    case 'speaker': {
+      const tipe = atur.tipeSpeaker ?? 'kotak';
+      if (tipe === 'dinding6') return { ...dasar, nama: 'Speaker dinding 6"', x: k.x0 + 0.4, z: 0.15, w: 0.2, h: 0.3, d: 0.24, elev: 2.0, tipeSpeaker: 'dinding6', ...atur };
+      if (tipe === 'kolom') return { ...dasar, nama: 'Speaker portable aktif', x: k.x0 + 0.6, z: 0.6, w: 0.38, h: 2.0, d: 0.45, elev: 0, tipeSpeaker: 'kolom', ...atur };
+      if (tipe === 'linearray') {
+        const n = Math.max(1, Math.min(24, Math.round(atur.modul ?? 2)));
+        return { ...dasar, nama: `Line array ${n} modul`, x: k.x0 + 0.8, z: 0.6, w: 0.7, h: 0.3 * n, d: 0.45, elev: 0, tipeSpeaker: 'linearray', modul: n, sudutModul: 0, tiltLA: 0, ...atur };
+      }
+      return { ...dasar, nama: 'Speaker dinding kotak', x: k.x0 + 0.4, z: 0.17, w: 0.21, h: 0.32, d: 0.2, elev: 2.0, tipeSpeaker: 'kotak', ...atur };
+    }
     case 'speaker-plafon': return { ...dasar, w: 0.24, h: 0.06, d: 0.24, elev: k.t - 0.06, ...atur };
     case 'mic': return (atur.mic ?? 'gooseneck') === 'boundary'
       ? { ...dasar, z: k.l * 0.55, w: 0.18, h: 0.032, d: 0.18, elev: 0.75, mic: 'boundary', nama: 'Mic boundary', ...atur }
@@ -439,7 +456,7 @@ export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[
 /** Tanda tangan bentuk: berubah = model perlu dibangun ulang (posisi, rotasi, ketinggian tidak termasuk). */
 export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
-    b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt, b.warna, b.panel ? JSON.stringify(b.panel) : '', b.diag].join('|');
+    b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt, b.warna, b.panel ? JSON.stringify(b.panel) : '', b.diag, b.tipeSpeaker, b.modul, b.sudutModul, b.tiltLA, b.gantung].join('|');
 
 // ── Salin ke ruang sebelah ─────────────────────────────────────────────────
 
@@ -520,14 +537,48 @@ export function arahProyektor(b: Benda): Titik {
 
 export const throwRatioDari = (b: Benda) => Math.max(0.1, b.throwRatio ?? 1.5);
 
-/** Sudut pandang horizontal kamera (derajat): isian sendiri, atau tipikal per tipe (lensa paling lebar). */
-export const fovKamera = (b: Benda) => Math.min(180, Math.max(5, b.fov ?? ({ ptz: 70, 'ptz-ai': 80, xbar: 120 } as const)[b.tipeKamera ?? 'ptz']));
-/** Sudut sebaran speaker (kerucut penuh, derajat): dinding 90°, plafon 110° bila tidak diisi. */
-export const sebaranSpeaker = (b: Benda) => Math.min(180, Math.max(10, b.sebaran ?? (b.jenis === 'speaker-plafon' ? 110 : 90)));
-/** Jangkauan yang digambar (m): kamera 6 m, speaker 8 m bila tidak diisi. */
-export const jangkauanDari = (b: Benda) => Math.min(40, Math.max(0.5, b.jangkauan ?? (b.jenis === 'kamera' ? 6 : 8)));
-/** Tinggi telinga/mata penonton duduk (m) - acuan cakupan speaker plafon. */
+/** Tinggi telinga/mata penonton duduk (m) - acuan cakupan speaker. */
 export const TINGGI_DENGAR = 1.2;
+export const tipeSpeakerDari = (b: Benda): TipeSpeaker => b.tipeSpeaker ?? 'kotak';
+export const modulLA = (b: Benda) => Math.max(1, Math.min(24, Math.round(b.modul ?? 2)));
+export const sudutModulLA = (b: Benda) => Math.max(0, Math.min(15, b.sudutModul ?? 0));
+export const tiltLADari = (b: Benda) => Math.max(-30, Math.min(60, b.tiltLA ?? 0));
+/** Sudut sebaran horizontal speaker (derajat, penuh) - datasheet; bawaan per tipe bila tidak diisi. */
+export const sebaranSpeaker = (b: Benda) => Math.min(180, Math.max(10, b.sebaran ?? (b.jenis === 'speaker-plafon' ? 110
+  : ({ kotak: 90, dinding6: 90, kolom: 120, linearray: 100 } as const)[tipeSpeakerDari(b)])));
+/** Sudut sebaran vertikal. Line array: per modul (bawaan 10°); lainnya: sama dengan horizontal, kolom 30°. */
+export const sebaranVSpeaker = (b: Benda) => Math.min(180, Math.max(4, b.sebaranV ?? (b.jenis === 'speaker-plafon' ? sebaranSpeaker(b)
+  : ({ kotak: sebaranSpeaker(b), dinding6: sebaranSpeaker(b), kolom: 30, linearray: 10 } as const)[tipeSpeakerDari(b)])));
+/** Jangkauan suara yang digambar (m); bawaan per tipe bila tidak diisi. */
+export const jangkauanDari = (b: Benda) => Math.min(60, Math.max(0.5, b.jangkauan ?? ({ kotak: 8, dinding6: 10, kolom: 25, linearray: 40 } as const)[tipeSpeakerDari(b)]));
+
+/**
+ * Berkas suara tiap modul line array (dunia): titik pancar di muka modul, arah sumbunya
+ * (mengikuti kemiringan atas + sudut antar modul), dan titik jatuh sumbu di tinggi telinga
+ * (null bila sumbu tidak turun ke tinggi itu). Dipakai untuk menggambar jangkauan per modul.
+ */
+export function berkasLineArray(b: Benda): { asal: Titik; arah: Titik; jatuh: Titik | null; jarak: number | null }[] {
+  const n = modulLA(b), hm = b.h / n, r = (b.rot * Math.PI) / 180;
+  const maju: Titik = [Math.sin(r), 0, Math.cos(r)];
+  const hasil: { asal: Titik; arah: Titik; jatuh: Titik | null; jarak: number | null }[] = [];
+  //  Engsel di tepi depan-atas tiap modul (lihat buatModel 'linearray'): y lokal turun, z lokal mundur.
+  let y = b.h, z = b.d / 2;
+  for (let i = 0; i < n; i++) {
+    const a = ((tiltLADari(b) + i * sudutModulLA(b)) * Math.PI) / 180;
+    const yTengah = y - (hm / 2) * Math.cos(a), zTengah = z - (hm / 2) * Math.sin(a);
+    const asal: Titik = [b.x + maju[0] * zTengah, b.elev + yTengah, b.z + maju[2] * zTengah];
+    const arah: Titik = [maju[0] * Math.cos(a), -Math.sin(a), maju[2] * Math.cos(a)];
+    let jatuh: Titik | null = null, jarak: number | null = null;
+    if (arah[1] < -1e-3 && asal[1] > TINGGI_DENGAR) {
+      const t = (asal[1] - TINGGI_DENGAR) / -arah[1];
+      jatuh = [asal[0] + arah[0] * t, TINGGI_DENGAR, asal[2] + arah[2] * t];
+      jarak = Math.hypot(jatuh[0] - b.x, jatuh[2] - b.z);
+    }
+    hasil.push({ asal, arah, jatuh, jarak });
+    y -= hm * Math.cos(a); z -= hm * Math.sin(a);
+  }
+  return hasil;
+}
 /** Jari-jari cakupan speaker plafon di tinggi dengar (m). */
 export const cakupanSpeakerPlafon = (b: Benda) => Math.max(0, b.elev - TINGGI_DENGAR) * Math.tan((sebaranSpeaker(b) / 2) * Math.PI / 180);
 
@@ -1165,6 +1216,129 @@ function batang(THREE: typeof T, w: number, d: number, m: T.Material, x: number,
 function diLantai(o: T.Object3D) { o.userData.peran = 'lantai'; return o; }
 
 /**
+ * Badan meruncing ke belakang: penampang persegi membulat di muka (w x h, z = 0) mengecil
+ * ke belakang (skala, z = -panjang). Tutup belakang ikut; muka dibiarkan terbuka untuk gril.
+ */
+function badanRuncing(THREE: typeof T, w: number, h: number, r: number, panjang: number, skala: number, m: T.Material, yBelakang = 0): T.Mesh {
+  const titik = persegiBulat(THREE, w, h, r).getPoints(8);
+  if (titik.length > 1 && titik[0].distanceTo(titik[titik.length - 1]) < 1e-6) titik.pop();
+  const n = titik.length, pos: number[] = [], idx: number[] = [];
+  for (const t of titik) pos.push(t.x, t.y, 0);
+  for (const t of titik) pos.push(t.x * skala, t.y * skala + yBelakang, -panjang);
+  for (let i = 0; i < n; i++) { const j = (i + 1) % n; idx.push(i, n + i, j, j, n + i, n + j); }
+  const pusat = pos.length / 3; pos.push(0, yBelakang, -panjang);
+  for (let i = 0; i < n; i++) idx.push(pusat, n + (i + 1) % n, n + i);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setIndex(idx); geo.computeVertexNormals();
+  return new THREE.Mesh(geo, m);
+}
+
+/** Muka gril bersudut membulat (ShapeGeometry, UV = meter) menghadap +z. */
+function mukaGril(THREE: typeof T, w: number, h: number, r: number, dasar: string, lubang: string, ulang: number) {
+  const geo = new THREE.ShapeGeometry(persegiBulat(THREE, w, h, r), 10);
+  const t = teksturGril(THREE, dasar, lubang, ulang);
+  return new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: t, roughness: 0.7, metalness: 0.3 }));
+}
+
+/**
+ * Speaker dinding 6": kabinet membulat yang meruncing ke belakang, gril logam penuh di muka
+ * (bayangan woofer & tweeter di baliknya), bracket putar: pelat dinding + lengan + kenop + tali pengaman.
+ */
+function speakerDinding6(THREE: typeof T, g: T.Group, b: Benda, warna: number, warnaGril: string) {
+  const badan = mat(THREE, warna, { roughness: 0.62, metalness: 0.12 });
+  const besi = mat(THREE, 0x1d2025, { metalness: 0.55, roughness: 0.4 });
+  const dBadan = Math.max(0.06, b.d - 0.06), zMuka = b.d / 2, r = Math.min(b.w, b.h) * 0.2;
+  const yT = b.h / 2;
+  const kab = badanRuncing(THREE, b.w, b.h, r, dBadan, 0.72, badan, b.h * 0.04);
+  kab.position.set(0, yT, zMuka - 0.006); g.add(kab);
+  //  Bibir muka sedikit menonjol + gril.
+  const bibir = new THREE.Mesh(new THREE.ShapeGeometry(persegiBulat(THREE, b.w, b.h, r), 10), badan);
+  bibir.position.set(0, yT, zMuka - 0.006); g.add(bibir);
+  const gril = mukaGril(THREE, b.w - 0.012, b.h - 0.012, r * 0.9, warnaGril, 'rgba(4,4,6,0.9)', 1 / 0.045);
+  gril.position.set(0, yT, zMuka); g.add(gril);
+  const bayang = mat(THREE, 0x0f1012, { roughness: 0.6, metalness: 0.3 });
+  for (const [fy, fr] of [[0.36, 0.36], [0.78, 0.1]] as const) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(b.w * fr, 0.0035, 8, 40), bayang);
+    ring.position.set(0, b.h * fy, zMuka + 0.003); g.add(ring);
+  }
+  //  Bracket putar di punggung: pelat dinding tegak, lengan ke kabinet, kenop engsel, tali pengaman.
+  const zDinding = -b.d / 2, zPunggung = zMuka - 0.006 - dBadan, yB = b.h * 0.55;
+  g.add(blok(THREE, 0.075, 0.17, 0.014, 0.012, besi, 0.003).translateY(yB - 0.085).translateZ(zDinding + 0.007));
+  const panjangLengan = Math.max(0.01, zPunggung - (zDinding + 0.014) + 0.01);
+  g.add(kotak(THREE, 0.034, 0.05, panjangLengan, besi, 0, yB, zDinding + 0.014 + panjangLengan / 2));
+  for (const sx of [-1, 1]) {
+    const kenop = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.012, 14), besi);
+    kenop.rotation.z = Math.PI / 2; kenop.position.set(sx * 0.024, yB, zDinding + 0.04); g.add(kenop);
+  }
+  const tali = new THREE.CatmullRomCurve3([
+    new THREE.Vector3(0.02, yB - 0.07, zDinding + 0.016), new THREE.Vector3(0.05, yB - 0.13, zDinding + 0.05),
+    new THREE.Vector3(0.03, yB - 0.06, zPunggung + 0.004),
+  ]);
+  g.add(new THREE.Mesh(new THREE.TubeGeometry(tali, 20, 0.0016, 6, false), mat(THREE, 0xd1d5db, { metalness: 0.8, roughness: 0.3 })));
+}
+
+/**
+ * Speaker portable aktif: subwoofer di lantai, tiang, dan kolom ramping di atasnya
+ * (tinggi total = b.h, lebar/kedalaman subwoofer = b.w x b.d).
+ */
+function speakerKolom(THREE: typeof T, g: T.Group, b: Benda, warna: number, warnaGril: string) {
+  const badan = mat(THREE, warna, { roughness: 0.6, metalness: 0.12 });
+  const besi = mat(THREE, 0x1b1d21, { metalness: 0.65, roughness: 0.35 });
+  const hSub = Math.min(0.6, Math.max(0.25, b.h * 0.27));
+  const hKol = Math.min(0.85, Math.max(0.3, b.h * 0.36));
+  const wKol = Math.min(0.13, Math.max(0.06, b.w * 0.27)), dKol = Math.min(0.14, Math.max(0.07, b.d * 0.28));
+  g.add(blok(THREE, b.w, hSub, b.d, 0.02, badan, 0.008));
+  const gSub = mukaGril(THREE, b.w * 0.9, hSub * 0.86, 0.012, warnaGril, 'rgba(3,3,5,0.9)', 1 / 0.06);
+  gSub.position.set(0, hSub * 0.5, b.d / 2 + 0.002); g.add(gSub);
+  g.add(kotak(THREE, 0.05, 0.016, 0.004, mat(THREE, 0xe5e7eb), b.w * 0.36, hSub * 0.12, b.d / 2 + 0.004)); // logo
+  //  Cangkir tiang + tiang ke kolom.
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.03, 20), besi).translateY(hSub + 0.015));
+  const yKol = b.h - hKol, panjangTiang = Math.max(0.05, yKol - hSub);
+  g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, panjangTiang, 16), besi).translateY(hSub + panjangTiang / 2));
+  g.add(blok(THREE, wKol, hKol, dKol, wKol * 0.25, badan, 0.004).translateY(yKol));
+  const gKol = mukaGril(THREE, wKol * 0.84, hKol * 0.95, wKol * 0.2, warnaGril, 'rgba(3,3,5,0.9)', 1 / 0.04);
+  gKol.position.set(0, yKol + hKol / 2, dKol / 2 + 0.002); g.add(gKol);
+}
+
+/**
+ * Line array: n modul berpenampang trapesium bertumpuk dari atas ke bawah, tiap modul
+ * menunduk (kemiringan atas + i x sudut antar modul) pada engsel di tepi depan-atasnya.
+ * Pelat rigging & pin di kedua sisi; digantung = bumper di atas + dua tali ke plafon.
+ */
+function lineArray(THREE: typeof T, g: T.Group, b: Benda, warna: number, warnaGril: string) {
+  const badan = mat(THREE, warna, { roughness: 0.66, metalness: 0.1 });
+  const plat = mat(THREE, 0x3a3f47, { metalness: 0.75, roughness: 0.35 });
+  const n = modulLA(b), hm = b.h / n, W = b.w, D = b.d;
+  //  Penampang samping trapesium (belakang lebih pendek supaya bisa menekuk), diekstrusi selebar W.
+  const bentuk = new THREE.Shape();
+  bentuk.moveTo(0, 0); bentuk.lineTo(0, -hm); bentuk.lineTo(D, -hm * 0.88); bentuk.lineTo(D, -hm * 0.12); bentuk.lineTo(0, 0);
+  const geoModul = new THREE.ExtrudeGeometry(bentuk, { depth: W, bevelEnabled: false });
+  geoModul.rotateY(Math.PI / 2); geoModul.translate(-W / 2, 0, 0);   // x: -W/2..W/2, z: 0..-D
+  let y = b.h, z = D / 2;
+  for (let i = 0; i < n; i++) {
+    const a = ((tiltLADari(b) + i * sudutModulLA(b)) * Math.PI) / 180;
+    const engsel = new THREE.Group(); engsel.position.set(0, y, z); engsel.rotation.x = a;
+    engsel.add(new THREE.Mesh(geoModul, badan));
+    const gril = mukaGril(THREE, W * 0.9, hm * 0.84, 0.006, warnaGril, 'rgba(2,2,4,0.92)', 1 / 0.08);
+    gril.position.set(0, -hm / 2, 0.002); engsel.add(gril);
+    for (const sx of [-1, 1]) {
+      engsel.add(kotak(THREE, 0.008, hm * 0.8, D * 0.42, plat, sx * (W / 2 + 0.004), -hm / 2, -D * 0.7));
+      for (const fy of [0.2, 0.8]) {
+        const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.03, 10), plat);
+        pin.rotation.z = Math.PI / 2; pin.position.set(sx * (W / 2 + 0.014), -hm * fy, -D * 0.12); engsel.add(pin);
+      }
+      engsel.add(kotak(THREE, 0.004, hm * 0.28, D * 0.22, mat(THREE, 0x070809), sx * (W / 2 + 0.001), -hm * 0.55, -D * 0.4)); // pegangan
+    }
+    g.add(engsel);
+    y -= hm * Math.cos(a); z -= hm * Math.sin(a);
+  }
+  if (b.gantung) {
+    g.add(kotak(THREE, W * 1.08, 0.04, D * 0.95, plat, 0, b.h + 0.02, 0));                         // bumper / frame
+    for (const sx of [-0.35, 0.35]) g.add(batang(THREE, 0.008, 0.008, plat, sx * W, -D * 0.1, 'tiang', 0, true)); // tali ke plafon
+  }
+}
+
+/**
  * Bracket pop-out (videowall & signage): rel dinding atas-bawah berkenop penyetel,
  * rangka tegak di punggung display, dan lengan gunting X di antaranya. Display
  * menempel dinding dengan celah 6 cm (lihat tempel() di Desain3D), jadi bracket
@@ -1410,6 +1584,10 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'speaker': {
+      const tipe = tipeSpeakerDari(b);
+      if (tipe === 'dinding6') { speakerDinding6(THREE, g, b, W(0x17191d), WS('#26292e')); break; }
+      if (tipe === 'kolom') { speakerKolom(THREE, g, b, W(0x16181b), WS('#2a2d33')); break; }
+      if (tipe === 'linearray') { lineArray(THREE, g, b, W(0x141619), WS('#25282d')); break; }
       const badan = mat(THREE, W(0x16181c), { roughness: 0.55, metalness: 0.15 });
       const gril = new THREE.MeshStandardMaterial({ map: teksturGril(THREE, WS('#3a3e45'), 'rgba(5,5,8,0.85)', 1 / 0.05), roughness: 0.65, metalness: 0.35 });
       const besi = mat(THREE, 0x22252a, { metalness: 0.6, roughness: 0.4 });

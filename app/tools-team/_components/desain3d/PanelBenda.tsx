@@ -5,7 +5,8 @@ import { Ikon } from '@/components/shared/Ikon';
 import {
   type Benda, type ModelVW, type BentukMeja, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
   DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, IFP_DIAG, TV_DIAG, RASIO_LAYAR, PANEL_VW_AWAL, terapkanUkuran, bendaBaru, spekVideowall, warnaSah,
-  fovKamera, sebaranSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, offsetLensaDari, geserLensaDari, lumenDari,
+  sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, offsetLensaDari, geserLensaDari, lumenDari,
+  tipeSpeakerDari, modulLA, sudutModulLA, tiltLADari, berkasLineArray, type TipeSpeaker,
 } from './model';
 
 /** Warna bawaan per jenis untuk pemilih warna (hanya titik awal pemilih; model tetap memakai bawaannya bila kosong). */
@@ -53,7 +54,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
   const ukuranBawaan = (): { w: number; h: number; d: number } | null => {
     if (b.jenis === 'model' || b.jenis === 'led') return null;
     const varian: Partial<Benda> = {};
-    for (const k of ['vw', 'panel', 'kol', 'bar', 'diag', 'rasio', 'rakU', 'mic', 'bentukMeja', 'tipeKursi', 'tipeKamera', 'pasangProyektor', 'pasang'] as const) {
+    for (const k of ['vw', 'panel', 'kol', 'bar', 'diag', 'rasio', 'rakU', 'mic', 'bentukMeja', 'tipeKursi', 'tipeKamera', 'pasangProyektor', 'pasang', 'tipeSpeaker', 'modul'] as const) {
       if (b[k] !== undefined) (varian as Record<string, unknown>)[k] = b[k];
     }
     const acuan = terapkanUkuran({ ...bendaBaru(b.jenis, kosong, varian), ...varian });
@@ -225,21 +226,65 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
             onUbah({ ...b, tipeKamera: v, w: baru.w, h: baru.h, d: baru.d, nama: namaBawaan ? baru.nama : b.nama });
           }} opsi={[{ v: 'ptz', l: 'PTZ' }, { v: 'ptz-ai', l: 'PTZ AI' }, { v: 'xbar', l: 'Soundbar' }]} />
         )}
-        {b.jenis === 'kamera' && (
-          <div className="grid grid-cols-2 gap-2">
-            <Angka label="Sudut pandang (H)" nilai={fovKamera(b)} satuan="°" step={1} bantuan="sisi lebar lensa (datasheet)"
-              onUbah={v => v >= 5 && v <= 180 && set({ fov: v })} />
-            <Angka label="Jangkauan" nilai={jangkauanDari(b)} satuan="m" step={0.5} bantuan="panjang area yang digambar"
-              onUbah={v => v >= 0.5 && v <= 40 && set({ jangkauan: v })} />
-          </div>
+        {b.jenis === 'speaker' && (
+          <Segmen label="Tipe speaker" nilai={tipeSpeakerDari(b)} onUbah={(v: TipeSpeaker) => {
+            const baru = bendaBaru('speaker', kosong, { tipeSpeaker: v });
+            const namaBawaan = /^(Speaker( dinding( kotak| 6")?| portable aktif)|Line array \d+ modul)$/.test(b.nama);
+            onUbah({ ...b, tipeSpeaker: v, w: baru.w, h: baru.h, d: baru.d, elev: baru.elev, modul: baru.modul, sudutModul: baru.sudutModul, tiltLA: baru.tiltLA,
+              gantung: v === 'linearray' ? b.gantung : undefined, nama: namaBawaan ? baru.nama : b.nama });
+          }} opsi={[{ v: 'dinding6', l: 'Dinding 6"' }, { v: 'kotak', l: 'Kotak' }, { v: 'kolom', l: 'Portable' }, { v: 'linearray', l: 'Line array' }]} />
         )}
+        {b.jenis === 'speaker' && tipeSpeakerDari(b) === 'linearray' && (() => {
+          const n = modulLA(b), hm = b.h / n;
+          const berkas = berkasLineArray(b).filter(x => x.jarak !== null);
+          const dekat = berkas.length ? Math.min(...berkas.map(x => x.jarak!)) : null, jauh = berkas.length ? Math.max(...berkas.map(x => x.jarak!)) : null;
+          const ubahModul = (v: number) => {
+            const m = Math.max(1, Math.min(24, Math.round(v)));
+            onUbah({ ...b, modul: m, h: hm * m, nama: /^Line array \d+ modul$/.test(b.nama) ? `Line array ${m} modul` : b.nama });
+          };
+          return (
+            <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Line array</p>
+              <div className="flex items-end gap-2">
+                <div className="flex-1"><Angka label="Jumlah modul" nilai={n} step={1} onUbah={v => v >= 1 && v <= 24 && ubahModul(v)} /></div>
+                <button type="button" aria-label="Kurangi modul" onClick={() => ubahModul(n - 1)} disabled={n <= 1}
+                  className="h-9 w-9 rounded-lg border border-slate-200 bg-white font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40">−</button>
+                <button type="button" aria-label="Tambah modul" onClick={() => ubahModul(n + 1)} disabled={n >= 24}
+                  className="h-9 w-9 rounded-lg border border-slate-200 bg-white font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40">+</button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Angka label="Sudut antar modul" nilai={sudutModulLA(b)} satuan="°" step={0.5} bantuan="splay tiap sambungan"
+                  onUbah={v => v >= 0 && v <= 15 && set({ sudutModul: Math.round(v * 10) / 10 })} />
+                <Angka label="Kemiringan atas" nilai={tiltLADari(b)} satuan="°" step={0.5} min={-30} bantuan="+ = menunduk"
+                  onUbah={v => v >= -30 && v <= 60 && set({ tiltLA: Math.round(v * 10) / 10 })} />
+              </div>
+              <label className="flex items-center gap-2 text-[12.5px] text-slate-700">
+                <input type="checkbox" className="w-4 h-4" checked={!!b.gantung}
+                  onChange={e => set(e.target.checked
+                    ? { gantung: true, elev: Math.max(0.5, Math.round((plafon - 0.6 - b.h) * 100) / 100), tiltLA: b.tiltLA ?? 4, sudutModul: b.sudutModul || 2 }
+                    : { gantung: false, elev: 0 })} />
+                Digantung dari plafon (flown)
+              </label>
+              <p className="text-[12px] text-slate-600 leading-relaxed">
+                Tinggi per modul {Math.round(hm * 1000)} mm · total lengkung {f(tiltLADari(b) + (n - 1) * sudutModulLA(b), 1)}°.
+                {dekat !== null && jauh !== null
+                  ? <> Sumbu modul jatuh di tinggi telinga ({f(TINGGI_DENGAR)} m) dari <b>{f(dekat, 1)} m</b> sampai <b>{f(jauh, 1)} m</b>{berkas.length < n ? ` (${n - berkas.length} modul teratas mengarah ke jauh)` : ''}.</>
+                  : <> Sumbu modul belum turun ke tinggi telinga - tambah kemiringan atas / sudut antar modul agar suara menjangkau penonton.</>}
+              </p>
+            </div>
+          );
+        })()}
         {(b.jenis === 'speaker' || b.jenis === 'speaker-plafon') && (
           <>
-            <div className="grid grid-cols-2 gap-2">
-              <Angka label="Sudut sebaran" nilai={sebaranSpeaker(b)} satuan="°" step={1} bantuan="kerucut penuh (datasheet)"
+            <div className="grid grid-cols-3 gap-2">
+              <Angka label="Sebaran H" nilai={sebaranSpeaker(b)} satuan="°" step={1} bantuan="horizontal (datasheet)"
                 onUbah={v => v >= 10 && v <= 180 && set({ sebaran: v })} />
               {b.jenis === 'speaker' && (
-                <Angka label="Jangkauan" nilai={jangkauanDari(b)} satuan="m" step={0.5} onUbah={v => v >= 0.5 && v <= 40 && set({ jangkauan: v })} />
+                <Angka label={tipeSpeakerDari(b) === 'linearray' ? 'Sebaran V/modul' : 'Sebaran V'} nilai={sebaranVSpeaker(b)} satuan="°" step={1} bantuan="vertikal"
+                  onUbah={v => v >= 4 && v <= 180 && set({ sebaranV: v })} />
+              )}
+              {b.jenis === 'speaker' && (
+                <Angka label="Jangkauan" nilai={jangkauanDari(b)} satuan="m" step={0.5} onUbah={v => v >= 0.5 && v <= 60 && set({ jangkauan: v })} />
               )}
             </div>
             {b.jenis === 'speaker-plafon' && (
