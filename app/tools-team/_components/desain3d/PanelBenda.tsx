@@ -21,8 +21,8 @@ const BAGIAN_WARNA: Partial<Record<Benda['jenis'], string>> = {
 };
 
 /**
- * Panel "Atur benda" - melayang di atas tampilan 3D supaya perubahan langsung
- * terlihat tanpa menutup apa pun.
+ * Panel "Atur benda" - mengisi panel kanan di samping tampilan 3D, jadi
+ * perubahan langsung terlihat tanpa menutupi kanvas.
  */
 export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra }: {
   b: Benda; plafon: number; batas: { x: number; z: number };
@@ -59,7 +59,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
   const UKURAN_DARI_PILIHAN = ['videowall', 'layar', 'ifp', 'tv', 'rak'];
 
   return (
-    <div className="absolute top-2 right-2 bottom-2 z-10 w-[310px] max-w-[calc(100%-16px)] flex flex-col rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-xl">
+    <div className="flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100">
         <p className="text-[13px] font-bold text-slate-900 truncate">Atur: {b.nama}</p>
         <button type="button" onClick={onTutup} aria-label="Tutup panel" className="w-8 h-8 grid place-items-center rounded-lg text-slate-600 hover:bg-slate-100">
