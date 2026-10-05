@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { isPimpinan } from '@/lib/pimpinan';
 import { namaKelompokPTS } from '@/lib/kelompok';
 import { bacaPicPiket } from '@/app/picket-showroom/_components/shared';
 import { User } from './shared';
@@ -74,7 +75,8 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
    */
   const isAdmin  = ['admin','superadmin'].includes(currentUser.role?.toLowerCase() ?? '');
   /** Orang dalam PTS: admin, superadmin, dan seluruh role team. */
-  const tanpaBatas = isAdmin || currentUser.role?.toLowerCase() === 'team';
+  //  Pimpinan (lib/pimpinan.ts) mencari di SEMUA data, sama seperti orang dalam PTS.
+  const tanpaBatas = isAdmin || currentUser.role?.toLowerCase() === 'team' || isPimpinan(currentUser);
   //  Kelompok PTS dari lib/kelompok.ts, bukan tiga nama yang ditulis
   //  langsung: Supervisor di kelompok PTS yang ditambahkan admin lewat Admin
   //  Panel dulu tidak dikenali sebagai Supervisor PTS sama sekali, jadi
@@ -82,11 +84,11 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
   const isPTSsup = currentUser.role === 'team' &&
     namaKelompokPTS().includes(currentUser.team_type ?? '') &&
     currentUser.jabatan === 'Supervisor';
-  const isSalesSup = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') &&
+  const isSalesSup = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') && !isPimpinan(currentUser) &&
     ['Supervisor','Manager','Deputy General Manager','General Manager','Direktur'].includes(currentUser.jabatan ?? '');
 
   /** Sales biasa = guest/sales yang BUKAN supervisor. */
-  const isSalesBiasa = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') && !isSalesSup;
+  const isSalesBiasa = ['guest','sales'].includes(currentUser.role?.toLowerCase() ?? '') && !isSalesSup && !isPimpinan(currentUser);
 
   /**
    * Lingkup divisi untuk Sales Internal.
@@ -722,7 +724,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
             {results.length > 0 ? `${results.length} hasil ditemukan` : 'Ketik untuk mulai pencarian'}
           </span>
           <span className="text-[10px] text-slate-500">
-            {isAdmin ? 'Semua data' : isPTSsup ? `Scope: ${currentUser.team_type}` : isSalesSup ? 'Scope: divisi Anda' : 'Data Anda'}
+            {isAdmin || isPimpinan(currentUser) ? 'Semua data' : isPTSsup ? `Scope: ${currentUser.team_type}` : isSalesSup ? 'Scope: divisi Anda' : 'Data Anda'}
           </span>
         </div>
       </div>

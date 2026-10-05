@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSession, setSession } from '@/lib/auth';
 import { hasFullAccess, isSalesGuest } from '@/lib/constants';
+import { isPimpinan } from '@/lib/pimpinan';
 import { User, AdminView, TeamView } from './_components/shared';
 import { AdminDashboard } from './_components/AdminDashboard';
 import { MateriPage } from './_components/MateriPage';
@@ -27,7 +28,8 @@ export default function LearningCenterPage() {
       if (!parsed) { setLoading(false); return; }
       try {
         const { data } = await supabase.from('users').select('id,full_name,username,role,jabatan,sales_division,phone_number,allowed_menus,team_type,access_level').eq('id', parsed.id).single();
-        const user = data ?? parsed;
+        //  Penanda pimpinan tidak ada di select ini - ambil dari sesi (lihat lib/auth.ts setSession).
+        const user = data ? { ...data, pimpinan: (parsed as { pimpinan?: unknown }).pimpinan === true } : parsed;
         setCurrentUser(user);
         if (data) setSession(user); // refresh session dengan data terbaru
       } catch {
@@ -70,7 +72,11 @@ export default function LearningCenterPage() {
 function LearningCenter({ currentUser }: { currentUser: User }) {
   // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
   // (lihat lib/constants.ts hasFullAccess).
-  const isAdmin = hasFullAccess(currentUser);
+  //  Akun pimpinan (lib/pimpinan.ts) melihat Learning Center PERSIS seperti admin (Dashboard, Materi,
+  //  Bank Soal, Sesi Quiz, Team, Laporan, Analytics) tetapi hanya baca: tombol tambah/ubah/hapus/nilai
+  //  disembunyikan (atribut data-tulis + aturan di globals.css), dan basis data menolak tulisannya.
+  const hanyaLihat = isPimpinan(currentUser);
+  const isAdmin = hasFullAccess(currentUser) || hanyaLihat;
   /*
     'Nilai Saya' adalah tab pertama untuk SEMUA peserta - Team maupun
     Guest/Sales. Pertanyaan yang dibawa orang saat membuka Learning Center
@@ -151,13 +157,13 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
           terlihat seperti bug tampilan padahal fotonya memang selalu ada di
           sana, cuma baru kelihatan begitu kontennya tidak penuh satu layar.
         */}
-        <div className="flex-1 overflow-y-auto bg-slate-50">
+        <div className="flex-1 overflow-y-auto bg-slate-50" {...(hanyaLihat ? { 'data-hanya-lihat': '' } : {})}>
           {loading ? <LoadingView /> : (
             <div key={contentKey} className="lc-page-enter">
               {isAdmin ? (
                 <>
                   {adminView === 'dashboard'  && <AdminDashboard user={currentUser} />}
-                  {adminView === 'materi'     && <MateriPage user={currentUser} isAdmin={true} />}
+                  {adminView === 'materi'     && <MateriPage user={currentUser} isAdmin={true} readOnly={hanyaLihat} />}
                   {adminView === 'questions'  && <QuestionsPage user={currentUser} />}
                   {adminView === 'sessions'   && <SessionsPage user={currentUser} onViewResults={viewSessionResults} />}
                   {adminView === 'team'       && <TeamPage />}

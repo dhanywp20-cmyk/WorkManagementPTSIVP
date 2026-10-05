@@ -9,6 +9,7 @@
 
 import type { User } from '../shared';
 import { gayaDashboard } from '@/lib/kelompok';
+import { isPimpinan } from '@/lib/pimpinan';
 
 const ADMIN_ROLES = ['admin', 'superadmin'];
 
@@ -34,6 +35,9 @@ export function hasMenu(u: User, key: string): boolean {
  */
 export function canAccessAnalytics(u: User): boolean {
   if (isAdminRole(u)) return true;
+  //  Akun pimpinan (lib/pimpinan.ts): dashboard SEPERTI TEAM (Analytics, Command Center, Audit Log),
+  //  bukan dashboard ringkas Sales. Hanya baca - penjaganya di basis data.
+  if (isPimpinan(u)) return true;
   //  Kelompok yang di Admin Panel disetel "Tampilan Dashboard: Seperti Sales"
   //  TIDAK mendapat Analytics penuh, walau role-nya 'team'.
   //
@@ -57,6 +61,7 @@ export function canAccessAnalytics(u: User): boolean {
  */
 export function canSeeTeamMonitoring(u: User): boolean {
   if (isAdminRole(u)) return true;
+  if (isPimpinan(u)) return true;
   return (u.role ?? '').toLowerCase() === 'team' && canAccessAnalytics(u);
 }
 

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
+import { isPimpinan } from '@/lib/pimpinan';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { PageHeader, MobileListCard, MobileCardBadge, MiniSpark, ListEmptyState } from '@/components/shared';
 import { notifyKPIAlert } from '@/lib/notifications';
@@ -87,7 +88,7 @@ export default function KPITeamPage() {
       // Admin/superadmin ATAU akun Team PTS dengan toggle "Full Access" aktif
       // (lihat lib/constants.ts hasFullAccess) - lihat seluruh tim, bukan cuma
       // KPI-nya sendiri atau tim satu jenis PTS saja seperti Supervisor.
-      if (['admin', 'superadmin'].includes(role) || hasFullAccess(currentUser)) {
+      if (['admin', 'superadmin'].includes(role) || hasFullAccess(currentUser) || isPimpinan(currentUser)) {
         setScope({ kind: 'admin' }); setScopeReady(true); return;
       }
       if (role === 'team' && PTS_TYPES.includes(currentUser.team_type ?? '') && jabatan === 'Supervisor') {
@@ -534,6 +535,7 @@ export default function KPITeamPage() {
             <IkonTeks nama="👤" />Profil KPI Saya
           </span>
         )}
+        {!isPimpinan(currentUser) && (
         <button onClick={() => { fetchAllData(); fetchKPIMembers(); }}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all"
           style={{ background: 'rgba(255,255,255,0.9)', borderColor: '#e2e8f0', color: '#64748b' }}>
@@ -542,7 +544,8 @@ export default function KPITeamPage() {
           </svg>
           Sync
         </button>
-        {scope.kind !== 'team' && (
+        )}
+        {scope.kind !== 'team' && !isPimpinan(currentUser) && (
           <>
             <button onClick={() => setShowStartKPI(true)}
               disabled={kpiLoading || kpiMembers.length === 0}

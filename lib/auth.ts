@@ -24,7 +24,17 @@ const SS_TIME = 'ivp_login_time';
  */
 export function setSession(userData: object): void {
   const now = Date.now();
-  sessionStorage.setItem(SS_USER, JSON.stringify(userData));
+  let data = userData as Record<string, unknown>;
+  //  Penanda akun pimpinan (lib/pimpinan.ts) hanya dikirim login/session. Halaman yang memuat
+  //  ulang profil dari DB (select kolom tertentu) tidak memuatnya, dan setSession(data) di sini
+  //  akan menghapusnya di tengah sesi. Pertahankan dari sesi yang ada - HANYA untuk user yang sama.
+  if (!('pimpinan' in data)) {
+    try {
+      const lama = JSON.parse(sessionStorage.getItem(SS_USER) ?? 'null') as Record<string, unknown> | null;
+      if (lama && lama.pimpinan === true && lama.id === data.id) data = { ...data, pimpinan: true };
+    } catch { /* sesi lama rusak: abaikan */ }
+  }
+  sessionStorage.setItem(SS_USER, JSON.stringify(data));
   sessionStorage.setItem(SS_TIME, String(now));
 }
 

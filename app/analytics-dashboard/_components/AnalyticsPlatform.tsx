@@ -11,6 +11,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { isPimpinan } from '@/lib/pimpinan';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import DashboardKPI from '@/app/kpi-team/_components/DashboardKPI';
 import { User as DashUser } from '@/app/dashboard/_components/shared';
@@ -190,7 +191,7 @@ export function AnalyticsPlatform({
     if (!u) { const tgt = window.top !== window ? window.top : window; if (tgt) tgt.location.href = '/dashboard'; return; }
     const r = (u.role ?? '').toLowerCase();
     // HANYA Admin & Team. Command Center & Audit Log dilarang utk sales/marketing/guest.
-    const ok = ['admin','superadmin'].includes(r) || r === 'team';
+    const ok = ['admin','superadmin'].includes(r) || r === 'team' || isPimpinan(u);
     setUser(u); setAuth(ok ? 'ok' : 'denied');
     return startSessionWatcher();
   }, [injectedUser]);

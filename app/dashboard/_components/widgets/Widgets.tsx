@@ -23,6 +23,7 @@ import {
 import { AnalyticsPlatform } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { ASSIGNABLE_PTS_TEAMS } from '@/lib/teams';
 import { isSalesGuest } from '@/lib/constants';
+import { isPimpinan } from '@/lib/pimpinan';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
 import { PopupJawabanQuiz } from './PopupJawabanQuiz';
 import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWidget';
@@ -615,7 +616,8 @@ export const WIDGETS: WidgetDef[] = [
     yang berempty-state rapi kalau memang tidak ada tugas aktif untuk role
     itu - lebih jujur daripada widget yang hilang tanpa penjelasan.
   */
-  { id: 'work-queue',     permission: () => true, priority: 0,   size: 'full', Component: WorkQueueSection },
+  //  Pimpinan tidak mengerjakan tugas (tidak ditugaskan) - kartu "tugas aktif"-nya selalu kosong, jadi disembunyikan.
+  { id: 'work-queue',     permission: (u) => !isPimpinan(u), priority: 0,   size: 'full', Component: WorkQueueSection },
   /*
     Analytics Saya (Sales/Marketing) - tema analytics, DATA SENDIRI, 4 kartu
     statistik + Quick Action (Request Schedule/Design Project/Ticket/Form

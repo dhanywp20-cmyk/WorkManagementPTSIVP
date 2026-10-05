@@ -5,6 +5,7 @@ import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { ModalPortal, BARIS_PER_HALAMAN } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase, supabaseServices } from "@/lib/supabase";
+import { isPimpinan } from "@/lib/pimpinan";
 import { setSession, clearSession, getSession } from "@/lib/auth";
 import { adminCreateUser } from "@/lib/admin-users";
 import { notifyTicketAssigned, createNotification } from "@/lib/notifications";
@@ -447,7 +448,8 @@ function TicketingSystemInner() {
       }
       const activeUser = userOverride !== undefined ? userOverride : currentUser;
 
-      if (activeUser?.role === "guest") {
+      //  Pimpinan (lib/pimpinan.ts) melihat SEMUA tiket - tidak masuk cabang "guest dibatasi".
+      if (activeUser?.role === "guest" && !isPimpinan(activeUser)) {
         // Fetch fresh user dari DB termasuk jabatan & full_name
         const { data: freshUser } = await supabase
           .from("users")
@@ -2502,7 +2504,7 @@ function TicketingSystemInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickets, overdueSettings]);
 
-  const canCreateTicket = true;
+  const canCreateTicket = !isPimpinan(currentUser);
   const bolehUpdateTicket = (t: Ticket): boolean => bolehUpdateTicketShared(t, currentUser);
   // canAccessAccountSettings TETAP admin/superadmin murni - khusus modal
   // "Account Management" (buat akun, ganti password, daftar user), bukan

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useRef, Suspense } from 'react';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { isPimpinan, muatIdPimpinan } from '@/lib/pimpinan';
 import { hitungReviewMenggantung } from '@/lib/form-review-gate';
 import { setSession, clearSession, getSession, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin, hasFullAccess } from '@/lib/constants';
@@ -499,7 +500,10 @@ function ReminderSchedulePageInner() {
       .select('id, username, full_name, role, phone_number, sales_division, is_internal_sales')
       .eq('role', 'guest')
       .order('full_name');
-    if (data) setGuestUsers(data as GuestUser[]);
+    if (data) {
+      const idPim = await muatIdPimpinan(supabase);
+      setGuestUsers((data as GuestUser[]).filter(u => !idPim.has(u.id)));
+    }
   };
 
   /**
@@ -543,7 +547,8 @@ function ReminderSchedulePageInner() {
       ada satu pun tempat yang membuat akun dengan role itu), tapi cabangnya
       tetap dibetulkan sekarang, sebelum ada yang memakainya.
     */
-    const perlakukanSebagaiGuest = activeUser?.role === 'guest' || activeUser?.role === 'sales';
+    //  Pimpinan (lib/pimpinan.ts) bukan "akun eksternal": ia melihat SEMUA jadwal, hanya baca.
+    const perlakukanSebagaiGuest = (activeUser?.role === 'guest' || activeUser?.role === 'sales') && !isPimpinan(activeUser);
     if (!activeUser || !perlakukanSebagaiGuest) {
       /*
         H1 (audit): dulu limit(500) TANPA batas tanggal apa pun - begitu total
@@ -571,7 +576,7 @@ function ReminderSchedulePageInner() {
       const roleLc = (activeUser.role ?? '').toLowerCase();
       const isAdminUser = roleLc === 'admin' || roleLc === 'superadmin';
       const isManagerUser = hasFullAccess(activeUser) || (roleLc === 'team' && !!managerUserId && activeUser.id === managerUserId);
-      if (isAdminUser || isManagerUser) return all;
+      if (isAdminUser || isManagerUser || isPimpinan(activeUser)) return all;
       // Anggota tim biasa: HANYA item yg sudah di-assign (ke siapa pun) ATAU yg
       // di-route ke dirinya sbg Supervisor utk di-assign. Item yg masih pending
       // approval / belum di-assign TIDAK boleh muncul di list mereka (catatan spec).
@@ -2005,13 +2010,14 @@ function ReminderSchedulePageInner() {
     harus lewat Supabase/admin" yang dikeluhkan.
   */
   const bolehEditReminder = (r: Reminder): boolean =>
-    isAdmin || isManager
+    !isPimpinan(currentUser) && (isAdmin || isManager
     || (!!currentUser?.username && r.assigned_to === currentUser.username)
     || (!!currentUser?.full_name && r.assign_name === currentUser.full_name)
     || (!!currentUser?.full_name && r.sales_name === currentUser.full_name)
-    || (!!currentUser?.username && r.created_by === currentUser.username);
+    || (!!currentUser?.username && r.created_by === currentUser.username));
   // Boleh approve kalau bagian-nya belum di-approve (reviewer utama vs kedua terpisah).
   const canInternalApprove = (r: Reminder) => {
+    if (isPimpinan(currentUser)) return false;
     if (r.routing_status !== 'internal_review') return false;
     if (currentUser?.id === r.internal_sales_id && !r.internal_approved_at) return true;
     if (currentUser?.id === r.internal_sales_id_2 && !r.internal_approved_at_2) return true;
@@ -2020,7 +2026,7 @@ function ReminderSchedulePageInner() {
   // isAdmin, bukan role === 'admin': superadmin sebelumnya tidak bisa menambah
   // jadwal sama sekali karena tidak ikut disebut di sini.
   const canAddReminder = isAdmin || currentUser?.role === 'team';
-  const isGuest = currentUser?.role === 'guest' || currentUser?.role === 'sales';
+  const isGuest = (currentUser?.role === 'guest' || currentUser?.role === 'sales') && !isPimpinan(currentUser);
 
   // Cek Form Review menggantung (guest/sales)
   // Kriterianya ada di lib/form-review-gate.ts, bukan di sini, karena pintasan

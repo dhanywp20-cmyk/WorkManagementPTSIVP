@@ -372,7 +372,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <SearchInput value={search} onChange={setSearch} placeholder="Cari sesi..." />
-          <button onClick={() => setShowForm(true)}
+          <button data-tulis onClick={() => setShowForm(true)}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
             + Buat Sesi Quiz
           </button>
@@ -797,7 +797,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                         Lihat Hasil
                       </button>
                     )}
-                    <button
+                    <button data-tulis
                       onClick={() => openReassign(s)}
                       title="Assign soal yang sama ke tim / target berbeda"
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 flex items-center gap-1"
@@ -807,7 +807,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                       </svg>
                       Assign Ulang
                     </button>
-                    <button
+                    <button data-tulis
                       onClick={() => handleResend(s)}
                       title="Duplikat & kirim ulang ke peserta yang sama"
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100 flex items-center gap-1"
@@ -817,7 +817,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                       </svg>
                       Kirim Ulang
                     </button>
-                    <button onClick={() => toggleActive(s.id, s.is_active)}
+                    <button data-tulis onClick={() => toggleActive(s.id, s.is_active)}
                       className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${s.is_active ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'}`}>
                       {s.is_active ? 'Nonaktifkan' : 'Aktifkan'}
                     </button>

@@ -1063,7 +1063,7 @@ export function QuestionsPage({ user }: { user: User }) {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowAddManual(true)}
+                data-tulis onClick={() => setShowAddManual(true)}
                 className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
                 style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
               >
@@ -1073,7 +1073,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 Tambah Manual
               </button>
               <button
-                onClick={() => setShowGenerate(true)}
+                data-tulis onClick={() => setShowGenerate(true)}
                 className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
                 style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}
               >
@@ -1153,7 +1153,7 @@ export function QuestionsPage({ user }: { user: User }) {
                       <p className="text-xs text-slate-500 mt-0.5">{subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal</p>
                     </button>
                     {/* Folder action buttons */}
-                    <div className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <div data-tulis className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                       <button aria-label="Ubah nama folder"
                         onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: fKey, newName: fKey }); }}
                         className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-blue-100 bg-white/80 border border-slate-200 hover:border-blue-300"
@@ -1251,7 +1251,7 @@ export function QuestionsPage({ user }: { user: User }) {
               Kembali
             </button>
             <button
-              onClick={() => setShowAddManual(true)}
+              data-tulis onClick={() => setShowAddManual(true)}
               className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
             >
@@ -1261,7 +1261,7 @@ export function QuestionsPage({ user }: { user: User }) {
               Tambah Manual
             </button>
             <button
-              onClick={() => setShowGenerate(true)}
+              data-tulis onClick={() => setShowGenerate(true)}
               className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}
             >
@@ -1342,7 +1342,7 @@ export function QuestionsPage({ user }: { user: User }) {
                       </div>
                     </button>
                     {/* Subfolder action buttons */}
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                    <div data-tulis className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                       <button aria-label="Ubah nama subfolder"
                         onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: sfKey, newName: sfKey }); }}
                         className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-blue-100 bg-white/80 border border-slate-200 hover:border-blue-300"
@@ -1541,7 +1541,7 @@ export function QuestionsPage({ user }: { user: User }) {
                       </span>
                     </div>
                     <button
-                      onClick={() => handleDeleteMatGroup(mat.id, mat.materi_name)}
+                      data-tulis onClick={() => handleDeleteMatGroup(mat.id, mat.materi_name)}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-xl hover:bg-rose-100 transition-all"
                     >
                       <svg aria-hidden="true" focusable="false" width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1615,7 +1615,7 @@ export function QuestionsPage({ user }: { user: User }) {
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <button
                                 type="button"
-                                onClick={e => { e.stopPropagation(); handleDeleteBatch(batchKey); }}
+                                data-tulis onClick={e => { e.stopPropagation(); handleDeleteBatch(batchKey); }}
                                 className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-rose-500 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-all"
                               >
                                 <svg aria-hidden="true" focusable="false" width="9" height="9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1691,7 +1691,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                       itu tombolnya akan selalu gagal saat ditekan.
                                     */}
                                     {kolomUrutanAda && batchQs.length > 1 && (
-                                      <div className="flex flex-col gap-0.5">
+                                      <div data-tulis className="flex flex-col gap-0.5">
                                         <button type="button" aria-label={`Naikkan soal ${idx + 1}`}
                                           title="Naikkan" disabled={idx === 0}
                                           onClick={() => geserSoal(expandKey, batchQs, idx, -1)}
@@ -1744,7 +1744,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                         color: DIFF_TEXT[q.difficulty] ?? '#64748b',
                                         border: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
                                       }}>{DIFF_LABEL[q.difficulty] ?? q.difficulty}</span>
-                                      <div className="flex gap-2">
+                                      <div data-tulis className="flex gap-2">
                                         <BtnEdit onClick={() => setEditQ(q)} />
                                         <BtnDelete onClick={() => handleDelete(q.id)} />
                                       </div>
@@ -1764,7 +1764,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                 ujung yang lain.
                               */}
                               <button type="button"
-                                onClick={() => bukaTambahDiGrup(mat.id, batchKey)}
+                                data-tulis onClick={() => bukaTambahDiGrup(mat.id, batchKey)}
                                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed text-xs font-bold transition-all hover:bg-white"
                                 style={{ borderColor: bc.border, color: bc.text, background: bc.bg }}>
                                 <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">

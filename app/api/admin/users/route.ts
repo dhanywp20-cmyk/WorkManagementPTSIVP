@@ -22,6 +22,8 @@ const ALLOWED_FIELDS = new Set([
   'username', 'full_name', 'role', 'team_type', 'sales_division',
   'jabatan', 'phone_number', 'allowed_menus', 'allow_incentive_input', 'incentive_brand_scope', 'incentive_akses',
   'atasan_id', 'kpi_enabled', 'is_internal_sales', 'access_level', 'piket_akses', 'piket_ubah',
+  //  Akun pimpinan (lihat lib/pimpinan.ts): lihat semua, hanya baca. Dibekukan trigger untuk anon.
+  'pimpinan',
   //  Toggle "boleh ditugaskan pekerjaan" - dibekukan trigger untuk anon, jadi
   //  hanya bisa diubah lewat route ini. Lihat lib/teams.ts bolehDitugaskan().
   'bisa_ditugaskan',
@@ -37,6 +39,14 @@ const ALLOWED_FIELDS = new Set([
 function pick(obj: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const k of Object.keys(obj || {})) if (ALLOWED_FIELDS.has(k)) out[k] = obj[k];
+  //  Pimpinan berada di luar struktur kerja: tidak di bawah atasan mana pun, tidak
+  //  masuk KPI, dan tidak ditawarkan saat menugaskan pekerjaan. Ditegakkan di sini
+  //  (bukan hanya di formulir) supaya tidak bergantung pada urutan klik admin.
+  if (out.pimpinan === true) {
+    out.atasan_id = null;
+    out.kpi_enabled = false;
+    out.bisa_ditugaskan = false;
+  }
   return out;
 }
 

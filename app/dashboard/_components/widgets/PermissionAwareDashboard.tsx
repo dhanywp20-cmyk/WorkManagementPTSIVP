@@ -146,6 +146,8 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
   const showAnalyticsTabs = visible.some(w => w.id === 'analytics');
   /** Agenda berbagi baris dengan Daily Report Tim bila kartu itu tampil. */
   const adaTeam = visible.some(w => w.id === 'team-monitoring');
+  /** Tanpa Agenda (mis. akun pimpinan), Daily Report Tim melebar penuh menggantikan tempatnya. */
+  const adaAgenda = visible.some(w => w.id === 'work-queue');
 
   return (
     /*  Latar mengikuti setelan Admin Panel -> Merek -> "Latar Dashboard"
@@ -247,7 +249,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
             <div key={`full-${block.widget.id}-${i}`}
               className={
                 block.widget.id === 'work-queue' ? (adaTeam ? 'lg:col-span-7 xl:col-span-8' : 'lg:col-span-12')
-                : block.widget.id === 'team-monitoring' ? 'lg:col-span-5 xl:col-span-4'
+                : block.widget.id === 'team-monitoring' ? (adaAgenda ? 'lg:col-span-5 xl:col-span-4' : 'lg:col-span-12')
                 : 'lg:col-span-12'
               }>
               {/*

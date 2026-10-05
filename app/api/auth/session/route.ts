@@ -54,5 +54,7 @@ export async function GET(request: NextRequest) {
 
   // Token diterbitkan ulang tiap kali sesi dipulihkan (refresh halaman),
   // supaya umurnya selalu mengikuti sesi yang masih sah.
-  return NextResponse.json({ user, db_token: issueDbToken(user) });
+  //  Penanda akun pimpinan - kueri terpisah & toleran (lihat catatan di login/route.ts).
+  const { data: pim } = await supabase.from('users').select('pimpinan').eq('id', user.id).maybeSingle();
+  return NextResponse.json({ user: { ...user, pimpinan: pim?.pimpinan === true }, db_token: issueDbToken(user) });
 }

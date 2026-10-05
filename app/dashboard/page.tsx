@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase, setDbToken } from '@/lib/supabase';
 import { setSession, clearSession, getSession, verifySessionFromCookie, startSessionWatcher } from '@/lib/auth';
 import { isAdmin as checkIsAdmin, hasFullAccess, SESSION_DURATION_MS } from '@/lib/constants';
+import { isPimpinan } from '@/lib/pimpinan';
 import {
   User, MenuItem, NotificationItem,
   JABATAN_LIST, JabatanType, JABATAN_CONFIG, JABATAN_CC_RULES,
@@ -487,7 +488,9 @@ export default function Dashboard() {
     if (!isLoggedIn || !currentUser || !showSidebar) return;
     if (autoNavigatedRef.current) return; // already navigated this session
     const role = currentUser.role?.toLowerCase() ?? '';
-    const isSalesGuest = ['guest','sales'].includes(role);
+    //  Pimpinan (lib/pimpinan.ts) berperan guest tetapi mendarat di panel dashboard seperti Team,
+    //  bukan dilempar ke menu pertama seperti Sales.
+    const isSalesGuest = ['guest','sales'].includes(role) && !isPimpinan(currentUser);
     // Full Access diperlakukan seperti admin: mendarat di panel dashboard,
     // bukan dilempar ke menu pertama yang tercentang.
     const isRegularTeam = role === 'team' && !hasFullAccess(currentUser)
@@ -621,7 +624,7 @@ export default function Dashboard() {
     // Untuk sales/guest: navigasikan ke menu pertama yang tersedia
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setIframeTitle('');
     const role = currentUser?.role?.toLowerCase() ?? '';
-    const isAdm = ['admin','superadmin'].includes(role) || hasFullAccess(currentUser) ||
+    const isAdm = ['admin','superadmin'].includes(role) || hasFullAccess(currentUser) || isPimpinan(currentUser) ||
       (role === 'team' && (currentUser?.jabatan === 'Supervisor' || (currentUser?.allowed_menus ?? []).includes('dashboard')));
     if (isAdm) {
       setShowDashboardPanel(true);
@@ -669,8 +672,10 @@ export default function Dashboard() {
         const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').eq('id', parsed.id).single();
         const userData: User = (!error && data) ? data : parsed;
         if (!error && data) {
-          setCurrentUser(data);
-          setSession(data);
+          //  Penanda pimpinan tidak ada di select ini - ambil dari sesi (lihat lib/auth.ts setSession).
+          const segar = { ...data, pimpinan: (parsed as { pimpinan?: unknown }).pimpinan === true };
+          setCurrentUser(segar);
+          setSession(segar);
         }
         // Permission-Aware Dashboard = homepage utk SEMUA role. Semua mendarat di
         // dashboard home saat reload; tidak lagi auto-lompat ke menu pertama.
@@ -704,7 +709,7 @@ export default function Dashboard() {
     && (currentUser?.allowed_menus ?? []).includes('dashboard');
   const hasTeamDashboardAccess = currentUser?.role === 'team'
     && (currentUser?.allowed_menus ?? []).includes('dashboard');
-  const canAccessKPI = isFullAccess || isPTSSupervisor || isSalesSupervisor || hasTeamDashboardAccess;
+  const canAccessKPI = isFullAccess || isPTSSupervisor || isSalesSupervisor || hasTeamDashboardAccess || isPimpinan(currentUser);
 
   useEffect(() => {
     if (!isFullAccess) return;
