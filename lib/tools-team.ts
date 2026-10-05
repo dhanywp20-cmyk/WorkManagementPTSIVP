@@ -186,3 +186,80 @@ export function bersihkanRingkasanLED(x: unknown): RingkasanLED {
     lebarM: a(r.lebarM), tinggiM: a(r.tinggiM), resX: a(r.resX), resY: a(r.resY), jumlahCab: a(r.jumlahCab), screen: a(r.screen) || 1,
   };
 }
+
+// ── Katalog "Produk saya" (template produk bersama tim) ─────────────────────
+
+/** Baris app_settings tempat template produk tim disimpan: { daftar: ProdukTim[] }. */
+export const KUNCI_PRODUK = 'tools_team_produk';
+export const MAKS_PRODUK = 300;
+export const MAKS_BYTE_PRODUK = 6_000;
+
+/** Jenis benda yang boleh dijadikan template ('model' = GLB impor tidak, geometrinya hanya di memori). */
+export const JENIS_PRODUK = ['videowall', 'led', 'layar', 'ifp', 'tv', 'meja', 'kursi', 'speaker', 'speaker-plafon', 'mic',
+  'touchpanel', 'kamera', 'proyektor', 'rak', 'lift'] as const;
+
+export interface ProdukTim {
+  id: string; label: string; ket: string; jenis: (typeof JENIS_PRODUK)[number];
+  /** Properti benda (tanpa id & posisi): ukuran, model, warna, spesifikasi, tinggi pasang. */
+  atur: Record<string, unknown>;
+  oleh: string; olehId: string; dibuat: string;
+}
+
+const ENUM_PRODUK: Record<string, readonly string[]> = {
+  rasio: ['16:9', '16:10', '4:3', '21:9'], vw: ['55BDL2105X', '49BDL2105X', 'custom'], pasang: ['dinding', 'standfloor'],
+  mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas'], finish: ['walnut', 'oak', 'putih'],
+  tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati'],
+};
+/** Angka yang boleh ada di template beserta batasnya. */
+const ANGKA_PRODUK: Record<string, [number, number]> = {
+  w: [0.001, 40], h: [0.001, 40], d: [0.001, 40], elev: [0, 40], diag: [10, 500], pitch: [0.1, 50], cabW: [50, 3000], cabH: [50, 3000],
+  kol: [1, 30], bar: [1, 30], rakU: [1, 80], throwRatio: [0.1, 10], tilt: [-45, 45], fov: [5, 180], jangkauan: [0.5, 40], sebaran: [10, 180],
+  offsetLensa: [-0.5, 1.5], geserLensaH: [-0.6, 0.6], lumen: [100, 100000],
+};
+const ANGKA_PANEL: Record<string, [number, number]> = {
+  w: [0.05, 5], h: [0.05, 5], d: [0.001, 1], bezelMm: [0, 100], resX: [1, 16000], resY: [1, 16000], wTipikal: [0, 5000], wMaks: [0, 5000],
+};
+
+/** Properti benda yang sah untuk template - hanya kunci yang dikenal, angka dalam batas, enum yang dikenal. */
+export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
+  const a = (x && typeof x === 'object' && !Array.isArray(x) ? x : {}) as Record<string, unknown>;
+  const hasil: Record<string, unknown> = {};
+  const angka = (v: unknown, [lo, hi]: [number, number]) => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : undefined);
+  for (const [k, batas] of Object.entries(ANGKA_PRODUK)) { const v = angka(a[k], batas); if (v !== undefined) hasil[k] = v; }
+  for (const [k, sah] of Object.entries(ENUM_PRODUK)) if (typeof a[k] === 'string' && sah.includes(a[k] as string)) hasil[k] = a[k];
+  if (typeof a.nama === 'string' && a.nama.trim()) hasil.nama = a.nama.trim().slice(0, 80);
+  if (typeof a.naik === 'boolean') hasil.naik = a.naik;
+  if (typeof a.warna === 'string' && /^#[0-9a-f]{6}$/i.test(a.warna)) hasil.warna = a.warna.toLowerCase();
+  if (a.panel && typeof a.panel === 'object') {
+    const p = a.panel as Record<string, unknown>, panel: Record<string, number> = {};
+    for (const [k, batas] of Object.entries(ANGKA_PANEL)) { const v = angka(p[k], batas); if (v !== undefined) panel[k] = v; }
+    if (Object.keys(panel).length === Object.keys(ANGKA_PANEL).length) hasil.panel = panel;
+  }
+  return hasil;
+}
+
+/** Template baru yang sah (label, keterangan, jenis, atur), atau alasan penolakan. */
+export function periksaProduk(x: unknown): { ok: true; data: Pick<ProdukTim, 'label' | 'ket' | 'jenis' | 'atur'> } | { ok: false; alasan: string } {
+  const d = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
+  const label = typeof d.label === 'string' ? d.label.trim().slice(0, 80) : '';
+  if (!label) return { ok: false, alasan: 'Nama produk wajib diisi.' };
+  const jenis = d.jenis as ProdukTim['jenis'];
+  if (!JENIS_PRODUK.includes(jenis)) return { ok: false, alasan: 'Jenis produk tidak bisa dijadikan template.' };
+  const atur = bersihkanAturProduk(d.atur);
+  if (!(typeof atur.w === 'number' && typeof atur.h === 'number' && typeof atur.d === 'number')) return { ok: false, alasan: 'Ukuran produk tidak sah.' };
+  const data = { label, ket: typeof d.ket === 'string' ? d.ket.trim().slice(0, 120) : '', jenis, atur };
+  if (JSON.stringify(data).length > MAKS_BYTE_PRODUK) return { ok: false, alasan: 'Data produk terlalu besar.' };
+  return { ok: true, data };
+}
+
+/** Daftar template dari app_settings (baris rusak dibuang). */
+export function bacaDaftarProduk(v: unknown): ProdukTim[] {
+  const daftar = (v && typeof v === 'object' ? (v as { daftar?: unknown }).daftar : null);
+  if (!Array.isArray(daftar)) return [];
+  return daftar.flatMap((x): ProdukTim[] => {
+    const p = periksaProduk(x);
+    const r = x as Record<string, unknown>;
+    if (!p.ok || typeof r.id !== 'string') return [];
+    return [{ ...p.data, id: r.id, oleh: String(r.oleh ?? ''), olehId: String(r.olehId ?? ''), dibuat: String(r.dibuat ?? '') }];
+  });
+}

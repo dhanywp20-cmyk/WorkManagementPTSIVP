@@ -7,7 +7,9 @@
 import {
   type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
   pusatkanIsi, jendelaSekat, pintuSekat, PINTU, ukuranPintu, spekVideowall, terapkanUkuran, ukuranLayar, ukuranIFP, warnaSah, tandaBentuk,
+  bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, fovKamera, sebaranSpeaker, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
 } from '../app/tools-team/_components/desain3d/model';
+import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
 
 let lulus = 0, gagal = 0;
@@ -248,6 +250,62 @@ console.log('\n10. Semua bisa custom: videowall, layar, IFP, rack, pintu, warna'
   const kursi = bendaBaru('kursi', k);
   cek('ganti warna / panel memicu bangun ulang model', tandaBentuk(kursi) !== tandaBentuk({ ...kursi, warna: '#ff0000' })
     && tandaBentuk(vw) !== tandaBentuk({ ...vw, panel: { ...vw.panel!, bezelMm: 3 } }));
+}
+
+console.log('\n11. Batch 2: bukaan, set kelas, jangkauan, proyektor, signage, Produk saya, analisis');
+{
+  const k = { x0: 0, p: 8, l: 6, t: 3 };
+  //  Pintu & jendela dinding luar.
+  const satu: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', bukaan: [
+    { id: 'p1', ruang: 0, sisi: 'belakang', jenis: 'pintu', posisi: 2, lebar: 0.9, tinggi: 2.1, ambang: 0.5 },
+    { id: 'j1', ruang: 0, sisi: 'kiri', jenis: 'jendela', posisi: 50, lebar: 9, tinggi: 5, ambang: 0.9 },
+  ] };
+  const pintu = bukaanDinding(satu, 0, 'belakang');
+  cek('pintu luar: posisi dari kiri, mulai dari lantai (ambang diabaikan)', pintu.length === 1 && dekat(pintu[0].x0, 1.55) && dekat(pintu[0].x1, 2.45) && pintu[0].y0 === 0 && dekat(pintu[0].y1, 2.1));
+  const jd = bukaanDinding(satu, 0, 'kiri')[0];
+  cek('jendela kebesaran & kelewat ujung dijepit di dalam dinding', jd.x0 >= 0.1 - 1e-9 && jd.x1 <= 6 - 0.1 + 1e-9 && jd.y1 <= 3 - 0.05 + 1e-9 && dekat(jd.y0, 0.9), JSON.stringify(jd));
+  cek('dinding tanpa bukaan: kosong', bukaanDinding(satu, 0, 'depan').length === 0);
+  const dua: Ruang = { ...satu, r2: { aktif: true, p: 6, l: 6, t: 3, lantai: 'kayu', pintu: false }, bukaan: [{ id: 'x', ruang: 0, sisi: 'kanan', jenis: 'jendela', posisi: 3, lebar: 1, tinggi: 1, ambang: 1 }] };
+  cek('dinding sekat bukan dinding luar (bukaan di sana tidak digambar)', !sisiLuar(dua, 0).includes('kanan') && !sisiLuar(dua, 1).includes('kiri') && bukaanDinding(dua, 0, 'kanan').length === 0);
+  cek('ruang 2 tidak aktif: bukaannya tidak digambar', bukaanDinding({ ...satu, bukaan: [{ ...satu.bukaan![0], ruang: 1 }] }, 1, 'belakang').length === 0);
+  //  Set ruang kelas custom.
+  const set = setRuangKelas(k, { kolom: 3, baris: 2, kursiPerMeja: 3, pengajar: false });
+  cek('set kelas 3 x 2 meja, 3 kursi per meja, tanpa meja pengajar', set.filter(b => b.jenis === 'meja').length === 6 && set.filter(b => b.jenis === 'kursi').length === 18);
+  const otomatis = ukuranSetKelas(k);
+  cek('set kelas otomatis sama seperti sebelumnya (2 kursi/meja + meja pengajar)', setRuangKelas(k).filter(b => b.jenis === 'kursi').length === otomatis.kolom * otomatis.baris * 2
+    && setRuangKelas(k).some(b => b.nama === 'Meja pengajar'));
+  //  Kamera & speaker.
+  cek('FOV kamera bawaan per tipe & isian sendiri', fovKamera(bendaBaru('kamera', k)) === 70 && fovKamera(bendaBaru('kamera', k, { tipeKamera: 'xbar' })) === 120 && fovKamera({ ...bendaBaru('kamera', k), fov: 95 }) === 95);
+  const spp = { ...bendaBaru('speaker-plafon', k), elev: 2.94, sebaran: 90 };
+  cek('cakupan speaker plafon 90° dari 2,94 m = jari-jari (2,94-1,2)·tan45°', dekat(cakupanSpeakerPlafon(spp), 1.74) && sebaranSpeaker(bendaBaru('speaker', k)) === 90);
+  //  Proyektor: offset lensa & lens shift.
+  const r: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu' };
+  const layar = { ...bendaBaru('layar', k), x: 4, z: 0.05, elev: 0.9 };
+  const proj = proyektorKeLayar(bendaBaru('proyektor', k), layar, k, r);
+  const s0 = sinarProyektor(proj, [layar, proj], r);
+  const s1 = sinarProyektor({ ...proj, geserLensaH: 0.2 }, [layar, proj], r);
+  cek('lens shift H 20% menggeser gambar 0,2 x lebar ke kanan (dilihat dari proyektor)', dekat((s1.selisihH ?? 0) - (s0.selisihH ?? 0), 0.2 * s0.lebar, 0.01), `${s0.selisihH} -> ${s1.selisihH}`);
+  const s2 = sinarProyektor({ ...proj, offsetLensa: 0 }, [layar, proj], r);
+  cek('offset 0% memindahkan gambar setengah tinggi gambar (dari offset 100%)', dekat(Math.abs((s2.selisihV ?? 0) - (s0.selisihV ?? 0)), 0.5 * s0.tinggi, 0.01) && offsetLensaDari(proj) === 0.5);
+  const c = kecerahanProyektor({ ...proj, lumen: 5000 }, 2.66 * 1.5);
+  cek('kecerahan: lux = lumen / luas, nits = lux / pi', dekat(c.lux, 5000 / 3.99, 0.5) && dekat(c.nits, c.lux / Math.PI, 0.01) && c.nada === 'baik');
+  //  Signage display.
+  const sg = bendaBaru('tv', k, { diag: 55, nama: 'Signage 55"' });
+  cek('signage 55": area aktif 16:9 + bezel ±12 mm (≈1,234 x 0,705 m)', dekat(sg.w, 1.2176 + 0.024, 0.003) && dekat(sg.h, 0.6849 + 0.024, 0.003) && sg.nama === 'Signage 55"', `${sg.w} x ${sg.h}`);
+  cek('signage standfloor berdiri di lantai (elev meja-stand), bukan di dinding', bendaBaru('tv', k, { pasang: 'standfloor' }).elev === 0.75);
+  //  Produk saya (validasi server).
+  const vwc = terapkanUkuran({ ...bendaBaru('videowall', k), vw: 'custom', panel: { w: 1, h: 0.5, d: 0.08, bezelMm: 1.8, resX: 3840, resY: 2160, wTipikal: 200, wMaks: 400 } });
+  const ok = periksaProduk({ label: '  Samsung VH55R ', ket: 'videowall', jenis: 'videowall', atur: { ...vwc, id: 'x', x: 9, z: 9, rot: 90, konten: 'gambar', modelKunci: 'k', warna: '#ABCDEF', jahat: '<script>' } });
+  cek('Produk saya: label dirapikan, id/posisi/kunci asing dibuang, panel & warna disimpan',
+    ok.ok && ok.data.label === 'Samsung VH55R' && !('id' in ok.data.atur) && !('x' in ok.data.atur) && !('rot' in ok.data.atur) && !('jahat' in ok.data.atur)
+    && !('konten' in ok.data.atur) && !('modelKunci' in ok.data.atur) && ok.data.atur.warna === '#abcdef' && (ok.data.atur.panel as { resX: number }).resX === 3840);
+  cek('Produk saya: jenis model GLB / tanpa ukuran / tanpa nama ditolak', !periksaProduk({ label: 'x', jenis: 'model', atur: vwc }).ok
+    && !periksaProduk({ label: 'x', jenis: 'tv', atur: { w: 1 } }).ok && !periksaProduk({ label: ' ', jenis: 'tv', atur: vwc }).ok);
+  cek('Produk saya: angka di luar batas & enum asing dibuang', !('w' in bersihkanAturProduk({ w: -1 })) && !('vw' in bersihkanAturProduk({ vw: 'X' })) && bersihkanAturProduk({ tipeKamera: 'xbar' }).tipeKamera === 'xbar');
+  cek('Produk saya: baris rusak di app_settings diabaikan', bacaDaftarProduk({ daftar: [{ id: 'a', label: 'ok', jenis: 'tv', atur: { w: 1, h: 1, d: 0.1 } }, { label: 'tanpa id', jenis: 'tv', atur: { w: 1, h: 1, d: 1 } }, 5] }).length === 1
+    && bacaDaftarProduk(null).length === 0);
+  //  Analisis tersimpan bersama desain.
+  cek('analisis bawaan & tersimpan', analisisDari({ p: 1, l: 1, t: 1, lantai: 'kayu' }).sudut === 45 && analisisDari({ p: 1, l: 1, t: 1, lantai: 'kayu', analisis: { jenis: 'custom', faktor: 3, sudut: 30 } }).faktor === 3);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

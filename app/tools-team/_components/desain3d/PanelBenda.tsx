@@ -1,10 +1,11 @@
 'use client';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Angka, Pilih, Segmen, f } from '../ui';
 import { Ikon } from '@/components/shared/Ikon';
 import {
   type Benda, type ModelVW, type BentukMeja, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
-  DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, IFP_DIAG, RASIO_LAYAR, PANEL_VW_AWAL, terapkanUkuran, bendaBaru, spekVideowall, warnaSah,
+  DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, IFP_DIAG, TV_DIAG, RASIO_LAYAR, PANEL_VW_AWAL, terapkanUkuran, bendaBaru, spekVideowall, warnaSah,
+  fovKamera, sebaranSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, offsetLensaDari, geserLensaDari, lumenDari,
 } from './model';
 
 /** Warna bawaan per jenis untuk pemilih warna (hanya titik awal pemilih; model tetap memakai bawaannya bila kosong). */
@@ -24,16 +25,20 @@ const BAGIAN_WARNA: Partial<Record<Benda['jenis'], string>> = {
  * Panel "Atur benda" - mengisi panel kanan di samping tampilan 3D, jadi
  * perubahan langsung terlihat tanpa menutupi kanvas.
  */
-export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra }: {
+export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk }: {
   b: Benda; plafon: number; batas: { x: number; z: number };
   onUbah: (b: Benda) => void; onGambar: () => void; onTutup: () => void;
   /** Isi tambahan khusus jenis (mis. info jarak lempar proyektor). */ ekstra?: ReactNode;
+  /** Simpan benda ini sebagai template "Produk saya" (tim). Mengembalikan pesan galat atau null. Tanpa prop = tidak tersedia. */
+  onSimpanProduk?: (label: string, ket: string) => Promise<string | null>;
 }) {
+  const [formProduk, setFormProduk] = useState<{ label: string; ket: string; status: string; sibuk: boolean } | null>(null);
   const set = (x: Partial<Benda>) => onUbah({ ...b, ...x });
   const setUkuran = (x: Partial<Benda>) => {
     const nb = terapkanUkuran({ ...b, ...x });
     //  Nama bawaan videowall ("Videowall 55" 2×2") ikut model/kolom/baris; nama yang sudah diganti engineer dibiarkan.
     if (nb.jenis === 'videowall' && /^Videowall \d+" \d+×\d+$/.test(b.nama)) nb.nama = `Videowall ${spekVideowall(nb).inci}" ${nb.kol}×${nb.bar}`;
+    if (nb.jenis === 'tv' && /^Signage \d+(\.\d+)?"$/.test(b.nama)) nb.nama = `Signage ${nb.diag}"`;
     onUbah(nb);
   };
   const label = 'block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1';
@@ -145,7 +150,12 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         )}
 
         {b.jenis === 'tv' && (
-          <Angka label="Diagonal" nilai={b.diag ?? 65} satuan="inci" onUbah={v => v >= 20 && v <= 120 && setUkuran({ diag: v })} />
+          <>
+            <Pilih label="Ukuran" nilai={TV_DIAG.includes(b.diag ?? 65) ? b.diag ?? 65 : -1}
+              onUbah={v => setUkuran({ diag: v > 0 ? v : (b.diag && !TV_DIAG.includes(b.diag) ? b.diag : 98) })}
+              opsi={[...TV_DIAG.map(d => ({ v: d, l: `${d}"` })), { v: -1, l: 'Custom...' }]} />
+            {!TV_DIAG.includes(b.diag ?? 65) && <Angka label="Diagonal" nilai={b.diag ?? 65} satuan="inci" onUbah={v => v >= 20 && v <= 150 && setUkuran({ diag: v })} />}
+          </>
         )}
 
         {(b.jenis === 'videowall' || b.jenis === 'ifp' || b.jenis === 'tv') && (
@@ -215,6 +225,31 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
             onUbah({ ...b, tipeKamera: v, w: baru.w, h: baru.h, d: baru.d, nama: namaBawaan ? baru.nama : b.nama });
           }} opsi={[{ v: 'ptz', l: 'PTZ' }, { v: 'ptz-ai', l: 'PTZ AI' }, { v: 'xbar', l: 'Soundbar' }]} />
         )}
+        {b.jenis === 'kamera' && (
+          <div className="grid grid-cols-2 gap-2">
+            <Angka label="Sudut pandang (H)" nilai={fovKamera(b)} satuan="°" step={1} bantuan="sisi lebar lensa (datasheet)"
+              onUbah={v => v >= 5 && v <= 180 && set({ fov: v })} />
+            <Angka label="Jangkauan" nilai={jangkauanDari(b)} satuan="m" step={0.5} bantuan="panjang area yang digambar"
+              onUbah={v => v >= 0.5 && v <= 40 && set({ jangkauan: v })} />
+          </div>
+        )}
+        {(b.jenis === 'speaker' || b.jenis === 'speaker-plafon') && (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <Angka label="Sudut sebaran" nilai={sebaranSpeaker(b)} satuan="°" step={1} bantuan="kerucut penuh (datasheet)"
+                onUbah={v => v >= 10 && v <= 180 && set({ sebaran: v })} />
+              {b.jenis === 'speaker' && (
+                <Angka label="Jangkauan" nilai={jangkauanDari(b)} satuan="m" step={0.5} onUbah={v => v >= 0.5 && v <= 40 && set({ jangkauan: v })} />
+              )}
+            </div>
+            {b.jenis === 'speaker-plafon' && (
+              <p className="text-[12px] text-slate-600">
+                Cakupan di tinggi telinga duduk ({f(TINGGI_DENGAR)} m): lingkaran Ø {f(cakupanSpeakerPlafon(b) * 2)} m.
+                {' '}Jarak antar speaker plafon ±{f(cakupanSpeakerPlafon(b) * Math.SQRT2)} m untuk cakupan rata (pola kotak).
+              </p>
+            )}
+          </>
+        )}
 
         {b.jenis === 'lift' && (
           <>
@@ -253,6 +288,14 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
               </div>
               <p className="text-[11px] text-slate-500 mt-1">Tilt negatif = menunduk. Pan memutar proyektor ke kiri/kanan.</p>
             </div>
+            <div className="grid grid-cols-3 gap-2">
+              <Angka label="Lumen" nilai={lumenDari(b)} satuan="lm" step={100} onUbah={v => v >= 100 && v <= 100000 && set({ lumen: Math.round(v) })} />
+              <Angka label="Offset V" nilai={Math.round(offsetLensaDari(b) * 200)} satuan="%" step={1}
+                onUbah={v => v >= -100 && v <= 300 && set({ offsetLensa: v / 200 })} />
+              <Angka label="Shift H" nilai={Math.round(geserLensaDari(b) * 100)} satuan="%" step={1} min={-60}
+                onUbah={v => v >= -60 && v <= 60 && set({ geserLensaH: v / 100 })} />
+            </div>
+            <p className="text-[11px] text-slate-500 -mt-1">Offset 100% = tepi gambar sejajar sumbu lensa (umum tanpa lens shift); 0% = gambar di tengah sumbu lensa. Shift H = geser gambar ke kanan(+)/kiri(-) dalam % lebar gambar.</p>
             <Angka label="Throw ratio lensa" nilai={b.throwRatio ?? 1.5} satuan=": 1" step={0.01}
               onUbah={v => v >= 0.2 && v <= 10 && set({ throwRatio: Math.round(v * 100) / 100 })}
               bantuan="Jarak lempar ÷ lebar gambar (lihat datasheet; lensa zoom = rentang)." />
@@ -313,6 +356,40 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         {DISPLAY.includes(b.jenis) && (
           <Segmen label="Konten layar" nilai={b.konten ?? 'pola'} onUbah={v => (v === 'gambar' ? onGambar() : set({ konten: v }))}
             opsi={[{ v: 'pola', l: 'Pola uji' }, { v: 'gambar', l: 'Gambar...' }, { v: 'mati', l: 'Mati' }]} />
+        )}
+
+        {onSimpanProduk && b.jenis !== 'model' && (
+          <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-2.5">
+            {!formProduk ? (
+              <button type="button" onClick={() => setFormProduk({ label: b.nama, ket: '', status: '', sibuk: false })}
+                className="w-full px-3 py-2 rounded-lg text-[12.5px] font-bold text-violet-800 bg-white border border-violet-200 hover:bg-violet-100">
+                <Ikon nama="⭐" ukuran={14} /> Simpan ke Produk saya
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-violet-800">Simpan sebagai template tim</p>
+                <input value={formProduk.label} maxLength={80} onChange={e => setFormProduk({ ...formProduk, label: e.target.value })} placeholder="Nama produk (mis. Samsung QM55C)"
+                  aria-label="Nama produk" className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-base sm:text-sm" />
+                <input value={formProduk.ket} maxLength={120} onChange={e => setFormProduk({ ...formProduk, ket: e.target.value })} placeholder="Keterangan (opsional, mis. merek / tipe)"
+                  aria-label="Keterangan produk" className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-base sm:text-sm" />
+                <p className="text-[11px] text-slate-600">Disimpan: ukuran, model, warna, spesifikasi & tinggi pasang - muncul di Tambah → Produk saya untuk seluruh tim.</p>
+                {formProduk.status && <p className="text-[12px] font-semibold text-rose-700">{formProduk.status}</p>}
+                <div className="flex gap-2">
+                  <button type="button" disabled={formProduk.sibuk || !formProduk.label.trim()}
+                    onClick={async () => {
+                      setFormProduk({ ...formProduk, sibuk: true, status: '' });
+                      const galat = await onSimpanProduk(formProduk.label.trim(), formProduk.ket.trim());
+                      if (galat) setFormProduk({ ...formProduk, sibuk: false, status: galat }); else setFormProduk(null);
+                    }}
+                    className="flex-1 px-3 py-1.5 rounded-lg text-[12.5px] font-bold text-white bg-violet-700 hover:bg-violet-800 disabled:opacity-50">
+                    {formProduk.sibuk ? 'Menyimpan...' : 'Simpan'}
+                  </button>
+                  <button type="button" onClick={() => setFormProduk(null)}
+                    className="px-3 py-1.5 rounded-lg text-[12.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">Batal</button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
