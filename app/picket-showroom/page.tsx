@@ -399,6 +399,12 @@ function PiketShowroomPageInner() {
         </PageHeader>
 
         <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
+          {/* Akun non-PTS yang tidak disetel "Semua catatan": jelaskan apa yang tampil, supaya sedikitnya data tidak terbaca sebagai halaman rusak. */}
+          {currentUser&&!bisaLihatSemuaTamu(currentUser)&&(
+            <p className="text-[12px] text-slate-700 bg-white/90 border border-slate-200 rounded-xl px-3.5 py-2">
+              Yang tampil: jadwal piket, kegiatan internal PTS (RnD, maintenance, shooting), dan kunjungan tamu atas nama atau divisi Anda. Kunjungan pelanggan divisi lain tidak ditampilkan.
+            </p>
+          )}
           <div className="animate-slide-up anim-d80">
             <TamuSummaryCards allRows={allRows} kegiatanList={kegiatanList} selectedYear={summaryYear} selectedMonth={summaryMonth} onYearChange={setSummaryYear} onMonthChange={setSummaryMonth}/>
           </div>
