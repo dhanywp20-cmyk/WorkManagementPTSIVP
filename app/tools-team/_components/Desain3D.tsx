@@ -12,7 +12,7 @@ import { Modal } from '@/components/shared/Modal';
 import {
   type Benda, type Ruang, type Kotak, type ItemKatalog, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturPolaUji,
-  salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
+  salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, PINTU, JENDELA_AWAL, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc } from './cetak';
@@ -397,63 +397,43 @@ export default function Desain3D() {
     const lantaiDari = (i: number) => (i === 0 ? ruang.lantai : ruang.r2?.lantai ?? 'kayu');
     const bahanDinding = new THREE.MeshStandardMaterial({ color: 0xf5f5f4, roughness: 0.95, side: THREE.FrontSide });
     const garis = new THREE.LineBasicMaterial({ color: 0xa8a29e });
-    const pintuDi = daftar.length > 1 && ruang.r2?.pintu ? Math.max(0.6, Math.min(daftar[0].l, daftar[1].l) - 1.0) : null;
-    //  Sekat kaca antar ruang: tembus pandang dari kedua sisi. 'kaca' = kaca polos
-    //  berangka aluminium tipis; 'kaca-kotak' = kaca berpanel persegi berangka
-    //  gelap dengan ambang bawah, seperti dinding ruang sidang / meeting kaca.
+    const pintuDi = pintuSekat(ruang);
+    //  Sekat antar ruang: 'tembok' (bawaan), 'kaca' = kaca penuh berangka
+    //  aluminium, 'jendela' = tetap tembok dengan SATU jendela kaca persegi untuk
+    //  melihat ke ruang sebelah (ruang observasi / sidang).
     const jenisSekat = daftar.length > 1 ? (ruang.r2?.sekat ?? 'tembok') : 'tembok';
-    const kaca = jenisSekat === 'kaca' || jenisSekat === 'kaca-kotak';
-    const kotakKaca = jenisSekat === 'kaca-kotak';
-    const bahanRangkaGelap = new THREE.MeshStandardMaterial({ color: 0x1f2329, metalness: 0.6, roughness: 0.4 });
+    const kaca = jenisSekat === 'kaca';
+    const jendela = jendelaSekat(ruang);
+    const bahanRangkaGelap = new THREE.MeshStandardMaterial({ color: 0x2b2f36, metalness: 0.6, roughness: 0.4 });
     const bahanKaca = new THREE.MeshPhysicalMaterial({
       color: 0xcfe6f5, roughness: 0.05, metalness: 0, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false,
     });
     const bahanRangka = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.7, roughness: 0.35 });
 
-    /** Dinding sepanjang `panjang`, tengah (x,z), opsional lubang pintu (pusat lokal); `tembus` = sekat kaca. */
-    const dinding = (panjang: number, tinggi: number, x: number, z: number, rotY: number, lubang: number | null, tembus = false) => {
+    type Lubang = { x0: number; x1: number; y0: number; y1: number; jenis: 'pintu' | 'jendela' };
+    /**
+     * Dinding sepanjang `panjang`, tengah (x,z), dengan lubang (koordinat lokal
+     * dinding: x sepanjang dinding, y dari lantai). `tembus` = kaca penuh;
+     * `pasangKaca` = isi lubang jendela dengan kaca + kusen (cukup di SATU sisi
+     * sekat - dua bidang kaca di posisi yang sama akan berkedip).
+     */
+    const dinding = (panjang: number, tinggi: number, x: number, z: number, rotY: number, lubang: Lubang[] = [], opsi: { tembus?: boolean; pasangKaca?: boolean } = {}) => {
+      const tembus = !!opsi.tembus;
       const gw = new THREE.Group(); gw.position.set(x, 0, z); gw.rotation.y = rotY;
       const bidang = (x0: number, x1: number, y0: number, y1: number) => {
         if (x1 - x0 < 0.01 || y1 - y0 < 0.01) return;
         const d = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, y1 - y0), tembus ? bahanKaca : bahanDinding);
         d.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0); d.receiveShadow = !tembus; gw.add(d);
       };
-      if (tembus && kotakKaca) {
-        //  Panel persegi ±1 m: tiang & palang tegak/datar berangka gelap, ambang
-        //  bawah solid. Palang di bawah tinggi pintu dipotong di lubang pintu,
-        //  dan pintunya diberi kusen sendiri.
-        const lp = 0.9, tp = Math.min(2.1, tinggi - 0.1), tebal = 0.05;
-        const kol = Math.max(1, Math.round(panjang / 1.0)), bar = Math.max(1, Math.round(tinggi / 1.0));
-        const balok = (w: number, h: number, x: number, y: number, m: T.Material = bahanRangkaGelap) => {
-          if (w < 0.005 || h < 0.005) return;
-          const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, tebal), m); b.position.set(x, y, 0); gw.add(b);
-        };
-        const diPintu = (x: number) => lubang !== null && Math.abs(x - lubang) < lp / 2 + 0.02;
-        for (let i = 0; i <= kol; i++) {
-          const xt = -panjang / 2 + (panjang * i) / kol;
-          if (diPintu(xt)) continue;
-          balok(0.05, tinggi, xt, tinggi / 2);
-        }
-        for (let j = 0; j <= bar; j++) {
-          const y = j === 0 ? 0.05 : j === bar ? tinggi - 0.025 : (tinggi * j) / bar;
-          const h = j === 0 ? 0.1 : 0.05;
-          if (lubang !== null && y < tp) {
-            //  Potong di pintu: kiri & kanan lubang saja.
-            const kiri = lubang - lp / 2, kanan = lubang + lp / 2;
-            balok(kiri + panjang / 2, h, (-panjang / 2 + kiri) / 2, y);
-            balok(panjang / 2 - kanan, h, (kanan + panjang / 2) / 2, y);
-          } else balok(panjang, h, 0, y);
-        }
-        if (lubang !== null) {
-          for (const sx of [-1, 1]) balok(0.06, tp, lubang + sx * (lp / 2 + 0.03), tp / 2);
-          balok(lp + 0.12, 0.06, lubang, tp + 0.03);
-        }
-      } else if (tembus) {
+      const balok = (w: number, h: number, bx: number, by: number, m: T.Material = bahanRangkaGelap, tebal = 0.07) => {
+        const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, tebal), m); o.position.set(bx, by, 0); gw.add(o);
+      };
+      if (tembus) {
         //  Rangka: tiang tiap ±1,2 m + ambang atas & bawah, supaya kacanya terbaca sebagai kaca.
         const n = Math.max(1, Math.round(panjang / 1.2));
         for (let i = 0; i <= n; i++) {
           const xt = -panjang / 2 + (panjang * i) / n;
-          if (lubang !== null && Math.abs(xt - lubang) < 0.5) continue;   // jangan menghalangi pintu
+          if (lubang.some(l => xt > l.x0 - 0.05 && xt < l.x1 + 0.05)) continue;   // jangan menghalangi pintu
           const t = new THREE.Mesh(new THREE.BoxGeometry(0.04, tinggi, 0.05), bahanRangka);
           t.position.set(xt, tinggi / 2, 0); gw.add(t);
         }
@@ -462,16 +442,50 @@ export default function Desain3D() {
           a.position.set(0, y, 0); gw.add(a);
         }
       }
-      if (lubang === null) bidang(-panjang / 2, panjang / 2, 0, tinggi);
-      else {
-        const lp = 0.9, tp = Math.min(2.1, tinggi - 0.1);
-        bidang(-panjang / 2, lubang - lp / 2, 0, tinggi); bidang(lubang + lp / 2, panjang / 2, 0, tinggi); bidang(lubang - lp / 2, lubang + lp / 2, tp, tinggi);
-        const kusen = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(lp, tp)), garis);
-        kusen.position.set(lubang, tp / 2, 0.002); gw.add(kusen);
+      //  Isi dinding = potongan-potongan persegi di sekitar lubang: dibagi per
+      //  lajur di antara tepi-tepi lubang, tiap lajur diisi di atas & bawah lubangnya.
+      const xs = [...new Set([-panjang / 2, panjang / 2, ...lubang.flatMap(l => [l.x0, l.x1])]
+        .map(v => Math.min(panjang / 2, Math.max(-panjang / 2, v))))].sort((p1, p2) => p1 - p2);
+      for (let i = 0; i < xs.length - 1; i++) {
+        const xa = xs[i], xb = xs[i + 1], tengah = (xa + xb) / 2;
+        let y = 0;
+        for (const l of lubang.filter(h => h.x0 < tengah && h.x1 > tengah).sort((h1, h2) => h1.y0 - h2.y0)) {
+          bidang(xa, xb, y, l.y0); y = Math.max(y, l.y1);
+        }
+        bidang(xa, xb, y, tinggi);
+      }
+      for (const l of lubang) {
+        if (l.jenis === 'pintu') {
+          const kusen = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(l.x1 - l.x0, l.y1 - l.y0)), garis);
+          kusen.position.set((l.x0 + l.x1) / 2, (l.y0 + l.y1) / 2, 0.002); gw.add(kusen);
+        } else if (opsi.pasangKaca) {
+          //  Kaca jendela + kusen gelap di keempat sisi.
+          const w = l.x1 - l.x0, h = l.y1 - l.y0, cx = (l.x0 + l.x1) / 2, cy = (l.y0 + l.y1) / 2, k = 0.05;
+          const kaca2 = new THREE.Mesh(new THREE.PlaneGeometry(w, h), bahanKaca); kaca2.position.set(cx, cy, 0); gw.add(kaca2);
+          balok(w + 2 * k, k, cx, l.y1 + k / 2); balok(w + 2 * k, k, cx, l.y0 - k / 2);
+          balok(k, h, l.x0 - k / 2, cy); balok(k, h, l.x1 + k / 2, cy);
+        }
       }
       const e = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(panjang, tinggi)), garis);
       e.position.y = tinggi / 2; gw.add(e);
       grupRuang.add(gw);
+    };
+
+    /** Lubang di sekat, dalam koordinat lokal dinding ruang i (z dunia -> x lokal). */
+    const lubangSekat = (i: number, k: Kotak): Lubang[] => {
+      if (daftar.length < 2) return [];
+      //  Ruang 1 dinding kanan (rotY -90°): x lokal = z - l/2. Ruang 2 dinding kiri (rotY +90°): x lokal = -(z - l/2).
+      const keLokal = (z0: number, z1: number) => (i === 0 ? [z0 - k.l / 2, z1 - k.l / 2] : [-(z1 - k.l / 2), -(z0 - k.l / 2)]);
+      const hasil: Lubang[] = [];
+      if (pintuDi !== null) {
+        const [x0, x1] = keLokal(pintuDi - PINTU.lebar / 2, pintuDi + PINTU.lebar / 2);
+        hasil.push({ x0, x1, y0: 0, y1: Math.min(PINTU.tinggi, k.t - 0.1), jenis: 'pintu' });
+      }
+      if (jendela) {
+        const [x0, x1] = keLokal(jendela.z0, jendela.z1);
+        hasil.push({ x0, x1, y0: jendela.y0, y1: jendela.y1, jenis: 'jendela' });
+      }
+      return hasil;
     };
 
     daftar.forEach((k, i) => {
@@ -480,12 +494,12 @@ export default function Desain3D() {
         new THREE.MeshStandardMaterial({ map: teksturLantai(THREE, jenis, k.p, k.l), roughness: jenis === 'keramik' ? 0.35 : 0.8 }));
       lantai.rotation.x = -Math.PI / 2; lantai.position.set(k.x0 + k.p / 2, 0, k.l / 2); lantai.receiveShadow = true;
       grupRuang.add(lantai);
-      dinding(k.p, k.t, k.x0 + k.p / 2, 0, 0, null);                    // depan
-      dinding(k.p, k.t, k.x0 + k.p / 2, k.l, Math.PI, null);            // belakang
+      dinding(k.p, k.t, k.x0 + k.p / 2, 0, 0);                    // depan
+      dinding(k.p, k.t, k.x0 + k.p / 2, k.l, Math.PI);            // belakang
       //  Kiri (rotY +90°: sumbu lokal x = -z dunia) & kanan (-90°: lokal x = +z dunia).
-      //  Sekat kaca cukup satu bidang (milik ruang 1) - dua bidang tembus pandang di posisi yang sama akan berkedip.
-      if (!(kaca && i === 1)) dinding(k.l, k.t, k.x0, k.l / 2, Math.PI / 2, i === 1 && pintuDi !== null ? -(pintuDi - k.l / 2) : null);
-      dinding(k.l, k.t, k.x0 + k.p, k.l / 2, -Math.PI / 2, i === 0 && daftar.length > 1 && pintuDi !== null ? pintuDi - k.l / 2 : null, kaca && i === 0);
+      //  Sekat kaca penuh cukup satu bidang (milik ruang 1) - dua bidang tembus pandang di posisi yang sama akan berkedip.
+      if (!(kaca && i === 1)) dinding(k.l, k.t, k.x0, k.l / 2, Math.PI / 2, i === 1 ? lubangSekat(1, k) : []);
+      dinding(k.l, k.t, k.x0 + k.p, k.l / 2, -Math.PI / 2, i === 0 ? lubangSekat(0, k) : [], { tembus: kaca && i === 0, pasangKaca: i === 0 });
     });
   }, [ruang, siap]);
 
@@ -1031,7 +1045,7 @@ export default function Desain3D() {
       subjudul: namaDesain || 'Tanpa nama',
       kepala: [['Dibuat oleh', getSession<{ full_name?: string }>()?.full_name ?? '']],
       seksi: [
-        { judul: duaRuang ? `Ruangan · sekat ${ruang.r2?.sekat === 'kaca-kotak' ? 'kaca berpanel' : ruang.r2?.sekat === 'kaca' ? 'kaca' : 'tembok'}${ruang.r2?.pintu ? ' dengan pintu penghubung' : ''}` : 'Ruangan',
+        { judul: duaRuang ? `Ruangan · sekat ${ruang.r2?.sekat === 'jendela' ? 'tembok dengan jendela kaca' : ruang.r2?.sekat === 'kaca' ? 'kaca' : 'tembok'}${ruang.r2?.pintu ? ' dengan pintu penghubung' : ''}` : 'Ruangan',
           jenis: 'tabel', kepala: ['Ruang', 'Panjang', 'Lebar', 'Plafon', 'Luas'], rataKanan: [1, 2, 3, 4],
           isi: kotakRuang.map((k, i) => [`Ruang ${i + 1}`, `${fm(k.p)} m`, `${fm(k.l)} m`, `${fm(k.t)} m`, `${fm(k.p * k.l)} m²`]) },
         { judul: 'Tampilan desain', jenis: 'html',
@@ -1525,8 +1539,22 @@ export default function Desain3D() {
               </label>
               <div className="mt-2">
                 <Segmen label="Sekat antar ruang" nilai={ruang.r2.sekat ?? 'tembok'} onUbah={v => setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, sekat: v } }))}
-                  opsi={[{ v: 'tembok', l: 'Tembok' }, { v: 'kaca', l: 'Kaca polos' }, { v: 'kaca-kotak', l: 'Kaca berpanel' }]} />
-                <p className="text-[11px] text-slate-500 mt-1">Kaca berpanel: kisi panel persegi berangka gelap, seperti dinding ruang sidang.</p>
+                  opsi={[{ v: 'tembok', l: 'Tembok' }, { v: 'jendela', l: 'Tembok + jendela kaca' }, { v: 'kaca', l: 'Kaca penuh' }]} />
+                {ruang.r2.sekat === 'jendela' && (() => {
+                  const j = { ...JENDELA_AWAL, ...(ruang.r2.jendela ?? {}) };
+                  const setJ = (x: Partial<typeof j>) => setRuang(r => ({ ...r, r2: r.r2 && { ...r.r2, jendela: { ...JENDELA_AWAL, ...(r.r2.jendela ?? {}), ...x } } }));
+                  return (
+                    <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <Angka label="Lebar jendela" nilai={j.lebar} satuan="m" onUbah={v => v >= 0.3 && v <= 20 && setJ({ lebar: v })} />
+                      <Angka label="Tinggi jendela" nilai={j.tinggi} satuan="m" onUbah={v => v >= 0.2 && v <= 5 && setJ({ tinggi: v })} />
+                      <Angka label="Dari lantai" nilai={j.ambang} satuan="m" onUbah={v => v >= 0.1 && v <= 3 && setJ({ ambang: v })} />
+                      <Angka label="Geser" nilai={j.geser} satuan="m" min={-20} onUbah={v => v >= -20 && v <= 20 && setJ({ geser: v })} />
+                    </div>
+                  );
+                })()}
+                <p className="text-[11px] text-slate-500 mt-1">
+                  {ruang.r2.sekat === 'jendela' ? 'Satu jendela kaca persegi di tengah sekat untuk melihat ke ruang sebelah. Geser: + ke belakang, − ke depan; otomatis menghindari pintu.' : 'Kaca penuh: seluruh sekat tembus pandang.'}
+                </p>
               </div>
             </div>
           )}

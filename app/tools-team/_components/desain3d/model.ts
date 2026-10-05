@@ -57,7 +57,9 @@ export interface Ruang {
   p: number; l: number; t: number; lantai: 'kayu' | 'karpet' | 'keramik';
   /** Ruang ke-2 bersebelahan di sisi kanan (x = p .. p + r2.p). */
   r2?: { aktif: boolean; p: number; l: number; t: number; lantai: Ruang['lantai']; pintu: boolean;
-    /** Sekat antara ruang 1 & 2: tembok (bawaan), kaca polos, atau kaca berpanel kotak (ruang sidang). */ sekat?: 'tembok' | 'kaca' | 'kaca-kotak' } | null;
+    /** Sekat antara ruang 1 & 2: tembok (bawaan), kaca penuh, atau tembok dengan satu jendela kaca. */ sekat?: 'tembok' | 'kaca' | 'jendela';
+    /** Jendela kaca di sekat (sekat 'jendela'), dalam meter. geser = dari tengah sekat (+ ke belakang). */
+    jendela?: { lebar: number; tinggi: number; ambang: number; geser: number } } | null;
 }
 
 /** Kotak satu ruang dalam koordinat dunia. */
@@ -71,6 +73,43 @@ export function daftarRuang(r: Ruang): Kotak[] {
 /** Indeks ruang (0/1) tempat titik x berada. */
 export function ruangDari(r: Ruang, x: number): number {
   return r.r2?.aktif && x > r.p ? 1 : 0;
+}
+
+/** Lebar & tinggi lubang pintu penghubung, dan posisi pusatnya di sepanjang sekat (z dunia). */
+export const PINTU = { lebar: 0.9, tinggi: 2.1 };
+export function pintuSekat(r: Ruang): number | null {
+  return r.r2?.aktif && r.r2.pintu ? Math.max(0.6, Math.min(r.l, r.r2.l) - 1.0) : null;
+}
+
+export const JENDELA_AWAL = { lebar: 2.0, tinggi: 1.2, ambang: 0.9, geser: 0 };
+
+/**
+ * Jendela kaca di sekat antar ruang (sekat 'jendela'), dalam koordinat dunia:
+ * z0..z1 sepanjang sekat, y0..y1 dari lantai. Ukuran dibatasi supaya tetap
+ * di dalam dinding (sisa >= 20 cm di tiap tepi) dan TIDAK menimpa pintu
+ * penghubung - bila bertabrakan, jendela digeser menjauhi pintu.
+ */
+export function jendelaSekat(r: Ruang): { z0: number; z1: number; y0: number; y1: number } | null {
+  if (!r.r2?.aktif || r.r2.sekat !== 'jendela') return null;
+  const j = { ...JENDELA_AWAL, ...(r.r2.jendela ?? {}) };
+  const L = Math.min(r.l, r.r2.l), T = Math.min(r.t, r.r2.t), tepi = 0.2;
+  const lebar = Math.max(0.3, Math.min(j.lebar, L - 2 * tepi));
+  const y0 = Math.max(0.1, Math.min(j.ambang, T - 0.4));
+  const y1 = Math.max(y0 + 0.2, Math.min(y0 + j.tinggi, T - 0.15));
+  let tengah = L / 2 + j.geser;
+  tengah = Math.min(L - tepi - lebar / 2, Math.max(tepi + lebar / 2, tengah));
+  const pintu = pintuSekat(r);
+  if (pintu !== null) {
+    const p0 = pintu - PINTU.lebar / 2 - 0.15, p1 = pintu + PINTU.lebar / 2 + 0.15;
+    if (tengah + lebar / 2 > p0 && tengah - lebar / 2 < p1) {
+      //  Pindah ke sisi yang lebih lega (depan / belakang pintu).
+      const ruangDepan = p0 - tepi, ruangBelakang = L - tepi - p1;
+      tengah = ruangDepan >= ruangBelakang ? Math.min(tengah, p0 - lebar / 2) : Math.max(tengah, p1 + lebar / 2);
+      tengah = Math.min(L - tepi - lebar / 2, Math.max(tepi + lebar / 2, tengah));
+    }
+  }
+  const b = (v: number) => Math.round(v * 1000) / 1000;
+  return { z0: b(tengah - lebar / 2), z1: b(tengah + lebar / 2), y0: b(y0), y1: b(y1) };
 }
 
 // ── Katalog produk ─────────────────────────────────────────────────────────
