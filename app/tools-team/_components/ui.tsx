@@ -95,10 +95,15 @@ export function Nilai({ label, nilai, satuan, ket, nada }: { label: string; nila
 export const f = (n: number, d = 2) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { maximumFractionDigits: d }) : '-');
 
 /** Tombol salin ringkasan hasil (untuk ditempel ke WA / penawaran). */
-export function TombolSalin({ teks, onCetak }: { teks: () => string; /** Lembar cetak tersendiri (lihat cetak.ts), bukan window.print(). */ onCetak?: () => void }) {
+export function TombolSalin({ teks, onCetak, onPng }: {
+  teks: () => string;
+  /** Lembar cetak tersendiri (lihat cetak.ts), bukan window.print(). */ onCetak?: () => void;
+  /** Lembar yang sama sebagai gambar PNG. */ onPng?: () => Promise<void> | void;
+}) {
   const [ok, setOk] = useState(false);
+  const [png, setPng] = useState<'siap' | 'proses' | 'gagal'>('siap');
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 flex-wrap">
       <button type="button" onClick={async () => {
         try { await navigator.clipboard.writeText(teks()); setOk(true); setTimeout(() => setOk(false), 1800); } catch { /* abaikan */ }
       }} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
@@ -108,6 +113,16 @@ export function TombolSalin({ teks, onCetak }: { teks: () => string; /** Lembar 
         <button type="button" onClick={onCetak}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 print:hidden">
           <Ikon nama="🖨" ukuran={14} /> Cetak
+        </button>
+      )}
+      {onPng && (
+        <button type="button" disabled={png === 'proses'} title="Unduh lembar ini sebagai gambar PNG"
+          onClick={async () => {
+            setPng('proses');
+            try { await onPng(); setPng('siap'); } catch { setPng('gagal'); setTimeout(() => setPng('siap'), 2500); }
+          }}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border print:hidden disabled:opacity-60 ${png === 'gagal' ? 'border-rose-200 text-rose-700 bg-rose-50' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
+          <Ikon nama="🖼" ukuran={14} /> {png === 'proses' ? 'Membuat...' : png === 'gagal' ? 'PNG gagal' : 'PNG'}
         </button>
       )}
     </div>

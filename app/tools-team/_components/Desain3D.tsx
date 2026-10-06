@@ -16,10 +16,10 @@ import {
   salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, warnaSah, JENDELA_AWAL, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, kecerahanProyektor, tipeSpeakerDari, berkasLineArray, modulLA,
-  arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, templateRuang, KATEGORI_RUANG, type KategoriRuang,
+  arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, templateRuang, KATEGORI_RUANG, type KategoriRuang, lumenDari,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
-import { bukaCetak, esc } from './cetak';
+import { bukaCetak, esc, namaBerkas, unduhKanvasPNG, unduhLembarPNG, type Lembar } from './cetak';
 import { getSession } from '@/lib/auth';
 import { urlGambarDesain } from '@/lib/tools-team';
 
@@ -74,6 +74,48 @@ const ARAH_SUDUT: Record<Sudut, [number, number, number]> = {
   iso: [0.2, 0.75, 0.95], atas: [0, 1, 0.002],
   depan: [0, 0.38, 1], belakang: [0, 0.38, -1], kiri: [1, 0.38, 0], kanan: [-1, 0.38, 0],
 };
+
+/** Tampak untuk ekspor PNG & lembar cetak. */
+const TAMPAK: { arah: 'sekarang' | Sudut; judul: string }[] = [
+  { arah: 'sekarang', judul: 'Perspektif (sudut sekarang)' }, { arah: 'atas', judul: 'Denah dari atas' },
+  { arah: 'depan', judul: 'Tampak depan' }, { arah: 'kiri', judul: 'Tampak samping' },
+];
+
+/**
+ * Label CSS2D (ukuran, jarak, nama proyektor, dll.) digambar ke kanvas foto di posisi yang
+ * sama dengan di layar - label HTML tidak ikut tertangkap oleh WebGL. Gaya diambil dari
+ * elemennya sendiri (warna, huruf), diperbesar sesuai resolusi foto.
+ */
+function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h: number) {
+  //  Sedikit lebih besar dari di layar supaya tetap terbaca saat gambar diperkecil / dicetak.
+  const skala = (w / Math.max(1, m.renderer.domElement.clientWidth || w)) * 1.35;
+  const v = new m.THREE.Vector3();
+  m.scene.updateMatrixWorld();
+  m.scene.traverseVisible(o => {
+    const el = (o as { element?: HTMLElement }).element;
+    if (!(o as { isCSS2DObject?: boolean }).isCSS2DObject || !el || el.style.display === 'none') return;
+    const teks = (el.innerText || el.textContent || '').trim(); if (!teks) return;
+    v.setFromMatrixPosition(o.matrixWorld).project(m.kamera);
+    if (v.z < -1 || v.z > 1) return;
+    const x = ((v.x + 1) / 2) * w, y = ((1 - v.y) / 2) * h;
+    const cs = getComputedStyle(el);
+    const uk = (parseFloat(cs.fontSize) || 11) * skala;
+    g.font = `${cs.fontWeight || '600'} ${uk}px ${cs.fontFamily || 'system-ui, sans-serif'}`;
+    const baris = teks.split('\n').map(b => b.trim()).filter(Boolean);
+    const lebar = Math.max(...baris.map(b => g.measureText(b).width));
+    const padX = 6 * skala, tb = uk * 1.3, kw = lebar + padX * 2, kh = baris.length * tb + 4 * skala;
+    const latar = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent' ? cs.backgroundColor : 'rgba(15,23,42,0.85)';
+    g.save();
+    g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 3 * skala; g.shadowOffsetY = 1 * skala;
+    g.fillStyle = latar;
+    g.beginPath();
+    if (typeof g.roundRect === 'function') g.roundRect(x - kw / 2, y - kh / 2, kw, kh, 6 * skala); else g.rect(x - kw / 2, y - kh / 2, kw, kh);
+    g.fill();
+    g.restore();
+    g.fillStyle = cs.color || '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    baris.forEach((b, i) => g.fillText(b, x, y - kh / 2 + 2 * skala + tb * (i + 0.5)));
+  });
+}
 
 /**
  * Posisi kamera searah `arah` dari `target` yang memuat seluruh `kotak` di
@@ -1297,20 +1339,75 @@ export default function Desain3D() {
     } catch { setGalat('Gagal membaca berkas model.'); }
   };
 
-  const unduhPNG = () => {
-    const m = mesin.current; if (!m) return;
-    // Render 2× resolusi layar untuk gambar presentasi yang tajam.
-    const lama = m.renderer.getPixelRatio();
-    m.renderer.setPixelRatio(Math.min(3, lama * 2));
-    m.gizmo.detach();
-    m.renderer.render(m.scene, m.kamera);
-    const a = document.createElement('a');
-    a.href = m.renderer.domElement.toDataURL('image/png');
-    a.download = `${(namaDesain || 'desain-av').replace(/[^\w-]+/g, '-')}.png`;
-    a.click();
-    m.renderer.setPixelRatio(lama);
-    if (pilih) { const o = m.cache.get(pilih)?.obj; if (o) m.gizmo.attach(o); }
+  /**
+   * Foto kanvas 3D (resolusi `skala` x layar) tanpa gizmo & kotak sorotan, label ukuran/jarak
+   * ikut tergambar. `arah` = sudut kamera sementara; kamera dikembalikan seperti semula.
+   */
+  const fotoKanvas = (arah: 'sekarang' | Sudut, skala = 2): HTMLCanvasElement | null => {
+    const m = mesin.current; if (!m) return null;
+    const posLama = m.kamera.position.clone(), targetLama = m.orbit.target.clone(), rasioLama = m.renderer.getPixelRatio();
+    const sorot = m.grupBenda.children.filter(o => o.userData.sorot);
+    m.gizmo.detach(); sorot.forEach(o => { o.visible = false; });
+    try {
+      if (arah !== 'sekarang') {
+        const { target, kotak } = fokusKotak('semua');
+        m.orbit.target.copy(target);
+        m.kamera.position.copy(posisiPas(m, target, new m.THREE.Vector3(...ARAH_SUDUT[arah]).normalize(), kotak));
+        m.kamera.lookAt(target);
+      }
+      m.kamera.updateMatrixWorld();
+      m.renderer.setPixelRatio(Math.min(3, rasioLama * skala));
+      m.renderer.render(m.scene, m.kamera);
+      m.labelRenderer.render(m.scene, m.kamera);
+      const src = m.renderer.domElement;
+      const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+      const g = c.getContext('2d'); if (!g) return null;
+      g.drawImage(src, 0, 0);
+      gambarLabel(m, g, c.width, c.height);
+      return c;
+    } catch { return null; } finally {
+      m.renderer.setPixelRatio(rasioLama);
+      m.kamera.position.copy(posLama); m.orbit.target.copy(targetLama); m.orbit.update();
+      sorot.forEach(o => { o.visible = true; });
+      if (pilih) { const o = m.cache.get(pilih)?.obj; if (o) m.gizmo.attach(o); }
+      m.renderer.render(m.scene, m.kamera); m.labelRenderer.render(m.scene, m.kamera);
+    }
   };
+  const namaGambar = (bagian: string) => namaBerkas(namaDesain || 'Desain AV', bagian);
+  const [menuPng, setMenuPng] = useState(false);
+  const [sibukPng, setSibukPng] = useState(false);
+  const jalankanPng = async (kerja: () => Promise<void>) => {
+    setMenuPng(false); setSibukPng(true);
+    try { await kerja(); } catch { setGalat('Gambar PNG gagal dibuat.'); } finally { setSibukPng(false); }
+  };
+  const unduhFoto = (arah: 'sekarang' | Sudut, bagian: string) => jalankanPng(async () => {
+    const c = fotoKanvas(arah, 2); if (!c) throw new Error('foto');
+    await unduhKanvasPNG(c, namaGambar(bagian));
+  });
+  /** Empat tampak dalam satu gambar (2 x 2) dengan judul - siap dikirim ke customer. */
+  const unduhEmpatTampak = () => jalankanPng(async () => {
+    const foto = TAMPAK.map(t => ({ ...t, c: fotoKanvas(t.arah, 1.5) }));
+    if (foto.some(x => !x.c)) throw new Error('foto');
+    const w = foto[0].c!.width, h = foto[0].c!.height, k = w / 900;
+    const jarak = Math.round(16 * k), kepala = Math.round(70 * k), keterangan = Math.round(34 * k);
+    const c = document.createElement('canvas');
+    c.width = w * 2 + jarak * 3; c.height = kepala + (h + keterangan) * 2 + jarak * 3;
+    const g = c.getContext('2d'); if (!g) throw new Error('kanvas');
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height);
+    g.fillStyle = '#1d4ed8'; g.fillRect(0, 0, c.width, kepala);
+    g.fillStyle = '#ffffff'; g.textBaseline = 'middle';
+    g.font = `800 ${Math.round(26 * k)}px Segoe UI, Arial, sans-serif`; g.fillText(namaDesain || 'Desain AV', jarak, kepala * 0.38);
+    g.font = `${Math.round(15 * k)}px Segoe UI, Arial, sans-serif`;
+    g.fillText(`Desain 3D Ruang AV · ${kotakRuang.map(r => `${f(r.p)} × ${f(r.l)} × ${f(r.t)} m`).join(' + ')} · ${benda.length} item · ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`, jarak, kepala * 0.74);
+    foto.forEach((x, i) => {
+      const px = jarak + (i % 2) * (w + jarak), py = kepala + jarak + Math.floor(i / 2) * (h + keterangan + jarak);
+      g.drawImage(x.c!, px, py);
+      g.strokeStyle = '#e2e8f0'; g.lineWidth = Math.max(1, k); g.strokeRect(px, py, w, h + keterangan);
+      g.fillStyle = '#f8fafc'; g.fillRect(px, py + h, w, keterangan);
+      g.fillStyle = '#334155'; g.font = `700 ${Math.round(15 * k)}px Segoe UI, Arial, sans-serif`; g.fillText(x.judul, px + 10 * k, py + h + keterangan / 2);
+    });
+    await unduhKanvasPNG(c, namaGambar('4 tampak'));
+  });
 
   /** Gambar layar unggahan -> data URL JPEG (maks 1920 px) supaya ikut tersimpan di file laptop. */
   const gambarKeDataUrl = (t: T.Texture): string | null => {
@@ -1419,34 +1516,9 @@ export default function Desain3D() {
     setPesan(`Isi ruang dipusatkan (${sumbu === 'x' ? 'kiri-kanan' : sumbu === 'z' ? 'depan-belakang' : 'kiri-kanan & depan-belakang'}). Undo bila perlu.`);
   };
 
-  /**
-   * Render satu gambar dari kanvas (2x resolusi) tanpa gizmo & kotak sorotan.
-   * `atas` = denah dari atas; kamera dikembalikan seperti semula sesudahnya.
-   */
-  const tangkapGambar = (atas: boolean): string => {
-    const m = mesin.current; if (!m) return '';
-    const posLama = m.kamera.position.clone(), targetLama = m.orbit.target.clone(), rasioLama = m.renderer.getPixelRatio();
-    const sorot = m.grupBenda.children.filter(o => o.userData.sorot);
-    m.gizmo.detach(); sorot.forEach(o => { o.visible = false; });
-    if (atas) {
-      const { target, kotak } = fokusKotak('semua');
-      m.orbit.target.copy(target);
-      m.kamera.position.copy(posisiPas(m, target, new m.THREE.Vector3(...ARAH_SUDUT.atas).normalize(), kotak));
-      m.kamera.lookAt(target);
-    }
-    m.renderer.setPixelRatio(Math.min(3, rasioLama * 2));
-    m.renderer.render(m.scene, m.kamera);
-    const url = m.renderer.domElement.toDataURL('image/jpeg', 0.9);
-    m.renderer.setPixelRatio(rasioLama);
-    m.kamera.position.copy(posLama); m.orbit.target.copy(targetLama); m.orbit.update();
-    sorot.forEach(o => { o.visible = true; });
-    if (pilih) { const o = m.cache.get(pilih)?.obj; if (o) m.gizmo.attach(o); }
-    return url;
-  };
-
-  /** Lembar cetak A4 (pola Request Design Project), bukan tangkapan tampilan web. */
-  const cetak = () => {
-    const perspektif = tangkapGambar(false), denah = tangkapGambar(true);
+  /** Lembar cetak A4 (pola Request Design Project), bukan tangkapan tampilan web; juga diekspor sebagai PNG. */
+  const lembar3D = (): Lembar => {
+    const foto = TAMPAK.map(t => ({ ...t, url: fotoKanvas(t.arah, 1.5)?.toDataURL('image/jpeg', 0.86) ?? '' }));
     const fm = (n: number, d = 2) => f(n, d);
     //  Daftar perangkat: dikelompokkan per kategori, benda bernama sama dijumlah.
     const kategori = (j: Benda['jenis']) =>
@@ -1466,7 +1538,9 @@ export default function Desain3D() {
     const label = jenisPandang === 'custom' ? `Custom (${faktorCustom}×)` : { detail: 'Detail (4×)', analitis: 'Analitis (6×)', umum: 'Umum (8×)' }[jenisPandang];
     const proyektor = benda.filter(b => b.jenis === 'proyektor').map(p => ({ p, sn: sinarProyektor(p, benda, ruang) }));
     const gambar = (src: string, ket: string) => (src ? `<figure><img src="${src}" alt="${esc(ket)}"/><figcaption>${esc(ket)}</figcaption></figure>` : '');
-    bukaCetak({
+    const speaker = benda.filter(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon');
+    const NAMA_TIPE: Record<string, string> = { kotak: 'Speaker box', dinding6: 'Speaker dinding 6"', kolom: 'Portable aktif (kolom)', linearray: 'Line array' };
+    return {
       judul: 'Desain 3D Ruang AV',
       subjudul: namaDesain || 'Tanpa nama',
       kepala: [['Dibuat oleh', getSession<{ full_name?: string }>()?.full_name ?? '']],
@@ -1475,7 +1549,7 @@ export default function Desain3D() {
           jenis: 'tabel', kepala: ['Ruang', 'Panjang', 'Lebar', 'Plafon', 'Luas'], rataKanan: [1, 2, 3, 4],
           isi: kotakRuang.map((k, i) => [`Ruang ${i + 1}`, `${fm(k.p)} m`, `${fm(k.l)} m`, `${fm(k.t)} m`, `${fm(k.p * k.l)} m²`]) },
         { judul: 'Tampilan desain', jenis: 'html',
-          html: `<div class="gambar dua">${gambar(perspektif, 'Perspektif')}${gambar(denah, 'Denah dari atas')}</div>` },
+          html: `<div class="gambar dua">${foto.map(x => gambar(x.url, x.judul)).join('')}</div>` },
         { judul: `Daftar perangkat & furnitur (${benda.length} item)`, jenis: 'tabel', kepala: ['Kategori', 'Item', 'Ukuran (L × T × P)', 'Jumlah'], rataKanan: [3],
           isi: baris.map(r => [r.kat, r.nama, r.ukuran, String(r.jumlah)]) },
         ...(analisis.length ? [{
@@ -1487,16 +1561,30 @@ export default function Desain3D() {
         }] : []),
         ...(proyektor.length ? [{
           judul: 'Proyektor & jarak lempar', jenis: 'tabel' as const,
-          kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas'],
-          rataKanan: [3, 5, 6],
-          isi: proyektor.map(({ p, sn }) => [p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `Plafon (${fm(p.elev)} m dari lantai)`,
-            sn.layar?.nama ?? 'Dinding (tanpa layar)', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—']),
+          kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas', 'Lumen', 'Kecerahan'],
+          rataKanan: [3, 5, 6, 7, 8],
+          isi: proyektor.map(({ p, sn }) => {
+            const kc = kecerahanProyektor(p, sn.lebar * sn.tinggi);
+            return [p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `Plafon (${fm(p.elev)} m dari lantai)`,
+              sn.layar?.nama ?? 'Dinding / permukaan', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—',
+              lumenDari(p).toLocaleString('id-ID'), `±${fm(kc.lux, 0)} lux`];
+          }),
+        }] : []),
+        ...(speaker.length ? [{
+          judul: `Audio · speaker (${speaker.length})`, jenis: 'tabel' as const,
+          kepala: ['Speaker', 'Tipe', 'Pemasangan', 'Sebaran H × V', 'Jangkauan / cakupan'],
+          isi: speaker.map(b => [b.nama, b.jenis === 'speaker-plafon' ? 'Speaker plafon' : `${NAMA_TIPE[tipeSpeakerDari(b)] ?? 'Speaker'}${tipeSpeakerDari(b) === 'linearray' ? ` · ${modulLA(b)} modul` : ''}`,
+            b.jenis === 'speaker-plafon' ? `Plafon ${fm(b.elev)} m` : `${b.gantung ? 'Gantung' : 'Dinding / stand'} · ${fm(b.elev)} m`,
+            `${fm(sebaranSpeaker(b), 0)}° × ${fm(sebaranVSpeaker(b), 0)}°${tipeSpeakerDari(b) === 'linearray' && b.jenis === 'speaker' ? ' / modul' : ''}`,
+            b.jenis === 'speaker-plafon' ? `radius ±${fm(cakupanSpeakerPlafon(b), 1)} m di tinggi dengar` : `±${fm(jangkauanDari(b), 0)} m`]),
         }] : []),
       ],
       catatan: 'Aturan 4-6-8: jarak penonton terjauh maksimal 4, 6, atau 8 kali tinggi gambar untuk konten detail, analitis, atau umum. Ukuran produk mengikuti katalog bawaan; sesuaikan dengan datasheet sebelum penawaran.',
       tandaTangan: [{ label: 'Dibuat oleh', nama: getSession<{ full_name?: string }>()?.full_name ?? '' }, { label: 'Disetujui' }],
-    });
+    };
   };
+  const cetak = () => bukaCetak(lembar3D());
+  const pngLembar = () => unduhLembarPNG(lembar3D(), namaGambar('lembar'));
 
   const tulisSimpanan = (daftar: typeof tersimpan) => {
     setTersimpan(daftar);
@@ -1795,7 +1883,29 @@ export default function Desain3D() {
           <div className="flex items-center gap-2 flex-wrap">
             <Segmen nilai={tampilan} onUbah={v => pilihSudut(v === 'kursi' ? 'kursi' : v === 'atas' ? 'atas' : 'iso')}
               opsi={[{ v: '3d', l: '3D' }, { v: 'atas', l: 'Atas' }, { v: 'kursi', l: 'Dari kursi' }]} />
-            <button type="button" onClick={unduhPNG} className={tombol}><Ikon nama="📷" ukuran={14} /> PNG</button>
+            <div className="relative">
+              <button type="button" onClick={() => setMenuPng(v => !v)} aria-expanded={menuPng} disabled={sibukPng} className={menuPng ? tombolUtama : tombol}
+                title="Unduh gambar PNG (label ukuran ikut tergambar)"><Ikon nama="📷" ukuran={14} /> {sibukPng ? 'Membuat...' : 'PNG ▾'}</button>
+              {menuPng && (<>
+                <div aria-hidden="true" className="fixed inset-0 z-20" onClick={() => setMenuPng(false)} />
+                <div className="absolute right-0 top-full mt-1.5 z-30 w-64 rounded-xl bg-white border border-slate-200 shadow-xl p-1.5" role="menu">
+                  {([
+                    ['Tampilan sekarang', 'Sudut kamera saat ini', () => unduhFoto('sekarang', 'tampilan')],
+                    ['Denah dari atas', 'Tata letak & ukuran', () => unduhFoto('atas', 'denah')],
+                    ['Tampak depan', 'Menghadap dinding depan', () => unduhFoto('depan', 'tampak depan')],
+                    ['Tampak samping', 'Dari sisi kanan ruang', () => unduhFoto('kiri', 'tampak samping')],
+                    ['4 tampak dalam 1 gambar', 'Perspektif, denah, depan, samping', unduhEmpatTampak],
+                    ['Lembar lengkap', 'Sama dengan Cetak, sebagai gambar', () => jalankanPng(pngLembar)],
+                  ] as const).map(([l, k, aksi]) => (
+                    <button key={l} type="button" role="menuitem" onClick={() => void aksi()} className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50">
+                      <span className="block text-[13px] font-bold text-slate-900">{l}</span>
+                      <span className="block text-[11.5px] text-slate-600">{k}</span>
+                    </button>
+                  ))}
+                  <p className="px-3 pt-1.5 pb-1 text-[11px] text-slate-500 border-t border-slate-100 mt-1">Label yang sedang tampil (ukuran, sudut, sinar) ikut tergambar. Resolusi 2× layar.</p>
+                </div>
+              </>)}
+            </div>
             <button type="button" onClick={unduhGLB} className={tombol} title="Simpan ke laptop (.glb) - bisa dibuka lagi di sini & di SketchUp/Blender, tanpa storage server">
               <HardDriveDownload size={14} /> Simpan .glb
             </button>
