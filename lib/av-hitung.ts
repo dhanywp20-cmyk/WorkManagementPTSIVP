@@ -125,9 +125,46 @@ export function cabinetUntukUkuran(lebarM: number, tinggiM: number, cabLebar: nu
 // ── Referensi modul LED & hardware Novastar (dari LED Calculator v1 - DWP) ──
 
 export interface ModulLED {
+  /** Brand / merek (Hikvision, Absen, brand sendiri, ...). Kosong = "Umum". */ brand?: string;
+  /** Nama model / seri dari brand (opsional, mis. dari datasheet). */ model?: string;
+  /** Satuan di datasheet: modul atau cabinet. Kosong = modul. */ unit?: 'modul' | 'cabinet';
   kode: string; /** mm */ pitch: number;
   /** mm */ w: number; /** mm */ h: number; pxW: number; pxH: number;
   tipe: 'Indoor' | 'Indoor/Outdoor' | 'Outdoor'; guna: string;
+}
+
+/** Brand modul LED; `sendiri` = brand buatan perusahaan sendiri (ditampilkan paling atas). */
+export interface BrandLED { nama: string; sendiri: boolean }
+export const BRAND_UMUM = 'Umum';
+/** Daftar brand bawaan - modulnya diisi tim dari datasheet di Referensi. */
+export const BRAND_LED: BrandLED[] = [
+  { nama: BRAND_UMUM, sendiri: false }, { nama: 'Hikvision', sendiri: false }, { nama: 'Absen', sendiri: false },
+];
+export const brandModul = (m: ModulLED) => m.brand?.trim() || BRAND_UMUM;
+/** Kunci unik satu baris referensi (brand + pitch + model). */
+export const kunciModul = (m: ModulLED) => `${brandModul(m)}|${m.kode}|${m.model?.trim() ?? ''}`;
+/**
+ * Cari modul dari isian tersimpan: kunci baru (brand|kode|model), atau kode pitch saja
+ * (hitungan lama sebelum ada brand - utamakan brand Umum).
+ */
+export function cariModul(daftar: ModulLED[], nilai: string): ModulLED | undefined {
+  return daftar.find(m => kunciModul(m) === nilai)
+    ?? daftar.find(m => m.kode === nilai && brandModul(m) === BRAND_UMUM)
+    ?? daftar.find(m => m.kode === nilai);
+}
+/**
+ * Brand untuk pilihan: brand sendiri dulu, lalu yang lain (urutan daftar), plus brand yang
+ * hanya muncul di baris modul. `adaModul` = hanya brand yang punya modul.
+ */
+export function daftarBrand(brand: BrandLED[] | undefined, modul: ModulLED[], adaModul = false): (BrandLED & { jumlah: number })[] {
+  const peta = new Map<string, BrandLED & { jumlah: number }>();
+  for (const b of brand ?? []) if (b.nama.trim() && !peta.has(b.nama.trim())) peta.set(b.nama.trim(), { nama: b.nama.trim(), sendiri: b.sendiri, jumlah: 0 });
+  for (const m of modul) {
+    const n = brandModul(m), b = peta.get(n);
+    if (b) b.jumlah++; else peta.set(n, { nama: n, sendiri: false, jumlah: 1 });
+  }
+  const semua = [...peta.values()].filter(b => !adaModul || b.jumlah > 0);
+  return [...semua.filter(b => b.sendiri), ...semua.filter(b => !b.sendiri)];
 }
 
 /**

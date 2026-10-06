@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { MODUL_LED, SENDING_CARD, VIDEO_PROCESSOR, type ModulLED, type Hardware } from '@/lib/av-hitung';
+import { MODUL_LED, SENDING_CARD, VIDEO_PROCESSOR, BRAND_LED, BRAND_UMUM, brandModul, daftarBrand, type ModulLED, type Hardware, type BrandLED } from '@/lib/av-hitung';
 import { bersihkanReferensiLED, type RefLED } from '@/lib/tools-team';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
@@ -21,7 +21,7 @@ import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDia
 
 export type { RefLED };
 const KUNCI = 'wm_led_referensi';
-const BAWAAN: RefLED = { modul: MODUL_LED, kartu: SENDING_CARD, vp: VIDEO_PROCESSOR };
+const BAWAAN: RefLED = { modul: MODUL_LED, kartu: SENDING_CARD, vp: VIDEO_PROCESSOR, brand: BRAND_LED };
 
 export function useReferensiLED() {
   const [lokal, setLokal] = useState<RefLED | null>(null);
@@ -96,6 +96,17 @@ function SelTeks({ nilai, onUbah, lebar = 'w-28', label }: { nilai: string; onUb
   return <input type="text" aria-label={label} value={nilai} onChange={e => onUbah(e.target.value)} className={`${sel} ${lebar}`} />;
 }
 
+/** Nama brand: disimpan saat selesai mengetik (blur / Enter) supaya modulnya tidak ikut berpindah tiap huruf. */
+function NamaBrand({ nilai, onSimpan }: { nilai: string; onSimpan: (v: string) => void }) {
+  const [teks, setTeks] = useState<string | null>(null);
+  const simpan = () => { if (teks !== null && teks.trim() && teks.trim() !== nilai) onSimpan(teks.trim()); setTeks(null); };
+  return (
+    <input type="text" aria-label="Nama brand" value={teks ?? nilai} maxLength={60} disabled={nilai === BRAND_UMUM}
+      onChange={e => setTeks(e.target.value)} onBlur={simpan} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+      className={`${sel} w-36 font-semibold disabled:bg-slate-50 disabled:text-slate-500`} />
+  );
+}
+
 function Hapus({ onKlik, label }: { onKlik: () => void; label: string }) {
   return (
     <button type="button" onClick={onKlik} aria-label={label} title={label}
@@ -156,6 +167,24 @@ function TabelHardware({ judul, data, onUbah, tampilSender }: { judul: string; d
 
 export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoTim, bolehSimpanTim, simpanUntukTim, resetTim, sibuk, pesan, buka, onTutup }: ReturnType<typeof useReferensiLED> & { buka: boolean; onTutup: () => void }) {
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
+  const [saringBrand, setSaringBrand] = useState('');
+  //  Daftar brand lengkap (termasuk brand yang hanya tertulis di baris modul).
+  const brands = daftarBrand(r.brand, r.modul);
+  const tulisBrand = (daftar: BrandLED[], modul = r.modul) => ubah({ ...r, modul, brand: daftar });
+  const brandPolos = () => brands.map(({ nama, sendiri }) => ({ nama, sendiri }));
+  const namaBrandBaru = () => { let i = 1; while (brands.some(b => b.nama === `Brand baru ${i}`)) i++; return `Brand baru ${i}`; };
+  const gantiNamaBrand = (lama: string, baru: string) => {
+    if (brands.some(b => b.nama === baru)) return;
+    tulisBrand(brandPolos().map(b => (b.nama === lama ? { ...b, nama: baru } : b)),
+      r.modul.map(m => (brandModul(m) === lama ? { ...m, brand: baru } : m)));
+    if (saringBrand === lama) setSaringBrand(baru);
+  };
+  const hapusBrand = (nama: string) => {
+    const sisa = r.modul.filter(m => brandModul(m) !== nama);
+    if (!sisa.length) return;
+    tulisBrand(brandPolos().filter(b => b.nama !== nama), sisa);
+    if (saringBrand === nama) setSaringBrand('');
+  };
   const tglTim = infoTim.pada ? new Date(infoTim.pada).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   const keteranganSumber = sumber === 'lokal'
     ? (bolehSimpanTim ? 'Ada perubahan di perangkat ini yang belum disimpan untuk tim.' : 'Perubahan Anda hanya berlaku di perangkat ini. Referensi tim diatur Admin / Full Access.')
@@ -178,8 +207,8 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
     <>
     <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     <Modal buka={buka} onTutup={onTutup} ukuran="penuh" ikon={<Ikon nama="⚙" ukuran={18} />}
-      judul={<>Referensi modul & hardware {diubah && <span className="ml-2 align-middle text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">diubah</span>}</>}
-      keterangan={`Isi sesuai datasheet produk yang ditawarkan. Pilihan pitch dan hardware di kalkulator langsung memakai tabel ini. ${keteranganSumber}`}
+      judul={<>Referensi brand, modul & hardware {diubah && <span className="ml-2 align-middle text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">diubah</span>}</>}
+      keterangan={`Isi sesuai datasheet produk yang ditawarkan, dipilah per brand. Pilihan brand, pitch dan hardware di kalkulator langsung memakai tabel ini. ${keteranganSumber}`}
       footer={
         <div className="flex items-center justify-between gap-2 w-full flex-wrap">
           <div className="flex items-center gap-3 flex-wrap">
@@ -206,23 +235,71 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
       }>
       <div className="space-y-5">
         <div>
-          <p className="text-[12.5px] font-bold text-slate-800 mb-1.5">Modul LED</p>
+          <p className="text-[12.5px] font-bold text-slate-800 mb-1.5">Brand modul</p>
+          <div className="flex flex-wrap gap-2">
+            {brands.map(br => (
+              <div key={br.nama} className={`inline-flex items-center gap-2 rounded-xl border px-2 py-1.5 ${br.sendiri ? 'border-emerald-300 bg-emerald-50/60' : 'border-slate-200 bg-white'}`}>
+                <NamaBrand nilai={br.nama} onSimpan={v => gantiNamaBrand(br.nama, v)} />
+                <label className="inline-flex items-center gap-1 text-[12px] text-slate-700">
+                  <input type="checkbox" className="w-4 h-4" checked={br.sendiri} onChange={e => tulisBrand(brandPolos().map(x => (x.nama === br.nama ? { ...x, sendiri: e.target.checked } : x)))} />
+                  Brand sendiri
+                </label>
+                <span className="text-[11.5px] text-slate-500 tabular-nums">{br.jumlah} modul</span>
+                {br.nama !== BRAND_UMUM && (
+                  <Hapus label={`Hapus brand ${br.nama}`} onKlik={() => (br.jumlah
+                    ? setKonfirmasi({ message: `Hapus brand "${br.nama}"?`, description: `${br.jumlah} modul brand ini ikut terhapus dari referensi.`, danger: true, confirmLabel: 'Hapus', onConfirm: () => hapusBrand(br.nama) })
+                    : hapusBrand(br.nama))} />
+                )}
+              </div>
+            ))}
+          </div>
+          <Tambah teks="Tambah brand" onKlik={() => tulisBrand([...brandPolos(), { nama: namaBrandBaru(), sendiri: false }])} />
+          <p className="text-[11.5px] text-slate-500 mt-1">Centang &quot;Brand sendiri&quot; untuk brand buatan perusahaan - tampil paling atas di kalkulator. Isi modul tiap brand dari datasheet-nya.</p>
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between gap-2 flex-wrap mb-1.5">
+            <p className="text-[12.5px] font-bold text-slate-800">Modul / cabinet LED</p>
+            <div className="flex flex-wrap gap-1" role="group" aria-label="Saring brand">
+              {[{ nama: '', jumlah: r.modul.length, sendiri: false }, ...brands].map(br => {
+                const on = saringBrand === br.nama;
+                return (
+                  <button key={br.nama || 'semua'} type="button" onClick={() => setSaringBrand(br.nama)} aria-pressed={on}
+                    className={`px-2.5 py-1 rounded-lg text-[12px] font-semibold border ${on ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>
+                    {br.nama || 'Semua'} <span className={on ? 'text-white/80' : 'text-slate-500'}>{br.jumlah}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="relative overflow-x-auto rounded-xl border border-slate-200">
             <table className="w-full text-sm">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className={th}>Pitch</th><th className={th}>Pitch (mm)</th><th className={th}>Modul W (mm)</th><th className={th}>Modul H (mm)</th>
+                  <th className={th}>Brand</th><th className={th}>Model / seri</th><th className={th}>Unit</th>
+                  <th className={th}>Pitch</th><th className={th}>Pitch (mm)</th><th className={th}>Lebar (mm)</th><th className={th}>Tinggi (mm)</th>
                   <th className={th}>Pixel W</th><th className={th}>Pixel H</th><th className={th}>Tipe</th><th className={th}>Pemakaian</th>
                   <th className={th}><span className="sr-only">Hapus</span></th>
                 </tr>
               </thead>
               <tbody>
-                {r.modul.map((m, i) => (
+                {r.modul.map((m, i) => (saringBrand && brandModul(m) !== saringBrand ? null : (
                   <tr key={i} className="border-t border-slate-100">
+                    <td className={td}>
+                      <select aria-label="Brand" value={brandModul(m)} onChange={e => setModul(i, { brand: e.target.value === BRAND_UMUM ? undefined : e.target.value })} className={`${sel} w-32`}>
+                        {brands.map(br => <option key={br.nama} value={br.nama}>{br.nama}</option>)}
+                      </select>
+                    </td>
+                    <td className={td}><SelTeks label="Model / seri" nilai={m.model ?? ''} onUbah={v => setModul(i, { model: v || undefined })} lebar="w-36" /></td>
+                    <td className={td}>
+                      <select aria-label="Unit" value={m.unit ?? 'modul'} onChange={e => setModul(i, { unit: e.target.value === 'cabinet' ? 'cabinet' : undefined })} className={`${sel} w-24`}>
+                        <option value="modul">Modul</option><option value="cabinet">Cabinet</option>
+                      </select>
+                    </td>
                     <td className={td}><SelTeks label="Kode pitch" nilai={m.kode} onUbah={v => setModul(i, { kode: v })} lebar="w-20" /></td>
                     <td className={td}><SelAngka label="Pitch mm" nilai={m.pitch} onUbah={v => v > 0 && setModul(i, { pitch: v })} lebar="w-20" /></td>
-                    <td className={td}><SelAngka label="Lebar modul" nilai={m.w} onUbah={v => v > 0 && setModul(i, { w: v })} /></td>
-                    <td className={td}><SelAngka label="Tinggi modul" nilai={m.h} onUbah={v => v > 0 && setModul(i, { h: v })} /></td>
+                    <td className={td}><SelAngka label="Lebar" nilai={m.w} onUbah={v => v > 0 && setModul(i, { w: v })} /></td>
+                    <td className={td}><SelAngka label="Tinggi" nilai={m.h} onUbah={v => v > 0 && setModul(i, { h: v })} /></td>
                     <td className={td}><SelAngka label="Pixel W" nilai={m.pxW} onUbah={v => v >= 1 && setModul(i, { pxW: Math.round(v) })} lebar="w-16" /></td>
                     <td className={td}><SelAngka label="Pixel H" nilai={m.pxH} onUbah={v => v >= 1 && setModul(i, { pxH: Math.round(v) })} lebar="w-16" /></td>
                     <td className={td}>
@@ -233,11 +310,17 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
                     <td className={td}><SelTeks label="Pemakaian" nilai={m.guna} onUbah={v => setModul(i, { guna: v })} lebar="w-56" /></td>
                     <td className={td}>{r.modul.length > 1 && <Hapus label={`Hapus ${m.kode}`} onKlik={() => ubah({ ...r, modul: r.modul.filter((_, j) => j !== i) })} />}</td>
                   </tr>
-                ))}
+                )))}
               </tbody>
             </table>
           </div>
-          <Tambah teks="Tambah modul" onKlik={() => ubah({ ...r, modul: [...r.modul, { kode: 'P baru', pitch: 2.5, w: 320, h: 160, pxW: 128, pxH: 64, tipe: 'Indoor', guna: '' }] })} />
+          {saringBrand && !r.modul.some(m => brandModul(m) === saringBrand) && (
+            <p className="text-[12px] text-slate-500 mt-2">Brand {saringBrand} belum punya modul - tambahkan dari datasheet-nya.</p>
+          )}
+          <Tambah teks={`Tambah modul${saringBrand ? ` ${saringBrand}` : ''}`} onKlik={() => ubah({ ...r, modul: [...r.modul, {
+            ...(saringBrand && saringBrand !== BRAND_UMUM ? { brand: saringBrand } : {}),
+            kode: 'P baru', pitch: 2.5, w: 320, h: 160, pxW: 128, pxH: 64, tipe: 'Indoor', guna: '',
+          }] })} />
         </div>
 
         <TabelHardware judul="Sending card" data={r.kartu} onUbah={kartu => ubah({ ...r, kartu })} tampilSender={false} />

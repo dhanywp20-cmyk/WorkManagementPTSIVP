@@ -3,12 +3,13 @@ import { useMemo, useState } from 'react';
 import { getSession } from '@/lib/auth';
 import {
   hitungLED, cabinetUntukUkuran, saranHardware, kapasitasHardware, KECERAHAN, type Pembulatan, type Hardware,
+  BRAND_UMUM, brandModul, kunciModul, cariModul, daftarBrand,
 } from '@/lib/av-hitung';
 import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f, kelasInput } from './ui';
 import { useReferensiLED, EditorReferensiLED } from './ReferensiLED';
 import { Ikon } from '@/components/shared/Ikon';
 import { bukaCetak, diagramSusunan, type Info } from './cetak';
-import { ArrowRight, Cable, FolderOpen, Redo2, Save, Undo2 } from 'lucide-react';
+import { ArrowRight, Cable, Calculator, FolderOpen, Redo2, Save, Undo2 } from 'lucide-react';
 import { useRiwayat } from './riwayat';
 import { FileLED, type FileAktifLED } from './FileLED';
 import { RuangKoneksi, KONEKSI_AWAL, bersihkanKoneksi, ringkasanKoneksi, seksiCetakKoneksi, susunKoneksi, type DataKoneksi, type PengaturanKoneksi } from './KoneksiLED';
@@ -78,12 +79,19 @@ function KartuHw({ peran, hw, totalPx, portLAN, nada, catatan }: { peran: string
   );
 }
 
+export type SubLED = 'led' | 'koneksi';
+const SUB_LED: { v: SubLED; l: string; Ikon: typeof Calculator }[] = [
+  { v: 'led', l: 'Calculator LED', Ikon: Calculator }, { v: 'koneksi', l: 'Screen Connection', Ikon: Cable },
+];
+
 /**
- * Kalkulator LED + Screen Connection. Dua menu di Tools Team, satu komponen supaya isian,
- * undo/redo, dan file tersimpan tetap sama saat berpindah menu (Screen Connection memakai
- * layar dari kalkulator). `tampilan` memilih halaman yang ditampilkan.
+ * Menu LED Videotron dengan dua sub menu: Calculator LED | Screen Connection. Satu komponen
+ * supaya isian, undo/redo, dan file tersimpan tetap sama saat berpindah sub menu (Screen
+ * Connection memakai layar dari kalkulator).
  */
-export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led' | 'koneksi'; onPindah?: (alat: 'led' | 'koneksi') => void }) {
+export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; onSub?: (sub: SubLED) => void }) {
+  const [tampilan, setTampilan] = useState<SubLED>(subAwal);
+  const pindah = (v: SubLED) => { setTampilan(v); onSub?.(v); };
   const refLED = useReferensiLED();
   const { modul: daftarModul, kartu: daftarKartu, vp: daftarVP } = refLED.data;
   const [modeHw, setModeHw] = useState<'otomatis' | 'manual'>('otomatis');
@@ -146,13 +154,18 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
   const [fileMode, setFileMode] = useState<'buka' | 'simpan' | null>(null);
   const [fileAktif, setFileAktif] = useState<FileAktifLED | null>(null);
 
-  //  Satuan aktif: modul dari tabel referensi, atau cabinet bebas.
-  const modul = daftarModul.find(m => m.kode === modulKode) ?? daftarModul[0];
+  //  Satuan aktif: modul/cabinet dari referensi brand, atau cabinet ukuran bebas.
+  const modul = cariModul(daftarModul, modulKode) ?? daftarModul[0];
+  const brandAda = daftarBrand(refLED.data.brand, daftarModul, true);
+  const brandAktif = brandModul(modul);
+  const modulBrand = daftarModul.filter(m => brandModul(m) === brandAktif);
   const u = satuan === 'modul'
-    ? { pitch: modul.pitch, w: modul.w, h: modul.h, pxX: modul.pxW, pxY: modul.pxH, kode: modul.kode }
-    : { pitch, w: cabW, h: cabH, pxX: Math.round(cabW / pitch), pxY: Math.round(cabH / pitch), kode: `P${pitch}` };
+    ? { pitch: modul.pitch, w: modul.w, h: modul.h, pxX: modul.pxW, pxY: modul.pxH, kode: modul.kode, merek: brandAktif, model: modul.model ?? '' }
+    : { pitch, w: cabW, h: cabH, pxX: Math.round(cabW / pitch), pxY: Math.round(cabH / pitch), kode: `P${pitch}`, merek: '', model: '' };
+  /** Nama produk di ringkasan & cetak: brand (kecuali Umum) + model + pitch. */
+  const labelLED = [u.merek !== BRAND_UMUM && u.merek, u.model, u.kode].filter(Boolean).join(' ');
   const px = pxIn ?? { x: u.pxX, y: u.pxY };
-  const namaUnit = satuan === 'modul' ? 'modul' : 'cabinet';
+  const namaUnit = satuan === 'modul' ? (modul.unit ?? 'modul') : 'cabinet';
 
   const luasUnit = (u.w * u.h) / 1e6;
   const dayaUnitEf = dayaUnit ?? Math.round(PER_M2[lingkungan].daya * luasUnit * 10) / 10;
@@ -176,9 +189,9 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
   //  Screen connection: port per controller dari hardware terpilih (manual) atau opsi A/B (otomatis).
   const hwKoneksi = modeHw === 'manual' ? (vpAio ? vpM : kartuM) : (hw.vp?.hw ?? hw.kartu?.hw ?? null);
   const dataKoneksi: DataKoneksi = useMemo(() => ({
-    kolom, baris, wUnit: u.w, hUnit: u.h, pxX: px.x, pxY: px.y, satuan, pxPerPort: h.pxPerPort, portIdeal: h.portLAN,
+    kolom, baris, wUnit: u.w, hUnit: u.h, pxX: px.x, pxY: px.y, satuan: namaUnit, pxPerPort: h.pxPerPort, portIdeal: h.portLAN,
     ppkHw: hwKoneksi?.port ?? 0, namaHw: hwKoneksi?.nama ?? null, refresh, bit,
-  }), [kolom, baris, u.w, u.h, px.x, px.y, satuan, h.pxPerPort, h.portLAN, hwKoneksi?.port, hwKoneksi?.nama, refresh, bit]);
+  }), [kolom, baris, u.w, u.h, px.x, px.y, namaUnit, h.pxPerPort, h.portLAN, hwKoneksi?.port, hwKoneksi?.nama, refresh, bit]);
   const lewat4K = h.resX > 3840 || h.resY > 2160;
   const n = Math.max(1, screen);
   const selisihW = mode === 'ukuran' ? h.lebarM - targetW : 0;
@@ -187,8 +200,14 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
   const resetUnit = () => { setPxIn(null); setDayaUnit(null); setBeratUnit(null); };
   const pilihModul = (k: string) => {
     setModulKode(k); resetUnit();
-    const m = daftarModul.find(x => x.kode === k);
+    const m = cariModul(daftarModul, k);
     if (m) setLingkungan(LINGKUNGAN_TIPE[m.tipe]);
+  };
+  /** Ganti brand: pilih modul brand itu yang pitch-nya sama, atau yang pertama. */
+  const pilihBrand = (nama: string) => {
+    const daftar = daftarModul.filter(m => brandModul(m) === nama);
+    const m = daftar.find(x => x.kode === modul.kode) ?? daftar[0];
+    if (m) pilihModul(kunciModul(m));
   };
   const pilihCab = (v: string) => {
     setCabKey(v); resetUnit();
@@ -198,7 +217,7 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
 
   const ringkasan = () => [
     project && `*${project}*${customer ? ` - ${customer}` : ''}`,
-    `*LED Videotron ${u.kode} ${lingkungan}*${n > 1 ? ` · ${n} screen identik` : ''}`,
+    `*LED Videotron ${labelLED} ${lingkungan}*${n > 1 ? ` · ${n} screen identik` : ''}`,
     `${namaUnit[0].toUpperCase()}${namaUnit.slice(1)} ${u.w}×${u.h} mm (${px.x}×${px.y} px): ${kolom} × ${baris} = ${h.jumlahCab} ${namaUnit}/screen${n > 1 ? `, total ${h.jumlahCab * n}` : ''}`,
     `Ukuran: ${f(h.lebarM)} × ${f(h.tinggiM)} m (${f(h.luasM2)} m², diagonal ${f(h.diagonalInci, 0)}")${n > 1 ? `, total ${f(h.luasM2 * n)} m²` : ''}`,
     `Resolusi: ${h.resX} × ${h.resY} px (${f(h.totalPx / 1e6, 2)} MP), rasio ${h.rasioTerdekat}`,
@@ -231,6 +250,7 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
           kanan: [satu('Tanggal', tanggal), satu('Dibuat oleh', pembuat)] },
         { judul: 'Konfigurasi layar', jenis: 'info',
           kiri: [
+            ...(satuan === 'modul' ? [satu('Brand / model', [u.merek, u.model].filter(Boolean).join(' · '))] : []),
             satu('Pitch / tipe', `${u.kode} · ${lingkungan}`),
             satu(`Ukuran ${namaUnit}`, `${u.w} × ${u.h} mm · ${px.x} × ${px.y} px`),
             satu('Kecerahan disarankan', KECERAHAN[lingkungan]),
@@ -294,14 +314,28 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
     <>
       <EditorReferensiLED {...refLED} buka={bukaRef} onTutup={() => setBukaRef(false)} />
       <FileLED mode={fileMode} onTutup={() => setFileMode(null)} isian={isian}
-        ringkasan={{ project, customer, kode: u.kode, lebarM: h.lebarM, tinggiM: h.tinggiM, resX: h.resX, resY: h.resY, jumlahCab: h.jumlahCab, screen: n }}
+        ringkasan={{ project, customer, kode: labelLED.slice(0, 30), lebarM: h.lebarM, tinggiM: h.tinggiM, resX: h.resX, resY: h.resY, jumlahCab: h.jumlahCab, screen: n }}
         namaAwal={[project, customer].filter(Boolean).join(' - ') || `LED ${u.kode} ${f(h.lebarM)}×${f(h.tinggiM)} m`}
         fileAktif={fileAktif} onTersimpan={setFileAktif}
         onBuka={(data, file) => { terapkan(data as Partial<Isian>); riwayat.mulaiBaru({ ...isian, ...(data as Partial<Isian>) }); setFileAktif(file); }} />
     </>
   );
 
-  //  ── Menu Screen Connection ──
+  const barSub = (
+    <div className="flex items-center gap-1 p-1 rounded-2xl bg-white border border-slate-200 w-fit max-w-full overflow-x-auto print:hidden" role="tablist" aria-label="Sub menu LED Videotron">
+      {SUB_LED.map(({ v, l, Ikon: IkonSub }) => {
+        const on = tampilan === v;
+        return (
+          <button key={v} type="button" role="tab" aria-selected={on} onClick={() => pindah(v)}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap ${on ? 'bg-blue-700 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-50'}`}>
+            <IkonSub size={15} /> {l}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  //  ── Sub menu Screen Connection ──
   if (tampilan === 'koneksi') {
     const t = susunKoneksi(dataKoneksi, koneksi);
     const cetakKoneksi = () => bukaCetak({
@@ -312,7 +346,7 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
         { judul: 'Layar', jenis: 'info',
           kiri: [
             { label: 'Project', nilai: [project, customer].filter(Boolean).join(' — ') || '—' },
-            { label: 'LED', nilai: `${u.kode} · ${kolom} × ${baris} ${namaUnit} · ${f(h.lebarM)} × ${f(h.tinggiM)} m` },
+            { label: 'LED', nilai: `${labelLED} · ${kolom} × ${baris} ${namaUnit} · ${f(h.lebarM)} × ${f(h.tinggiM)} m` },
             { label: 'Resolusi', nilai: `${t.resX} × ${t.resY} px`, sorot: true },
           ],
           kanan: [
@@ -327,12 +361,13 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
     });
     const teksKoneksi = () => [
       project && `*${project}*${customer ? ` - ${customer}` : ''}`,
-      `*Screen Connection LED ${u.kode}* · ${kolom}×${baris} ${namaUnit} (${f(h.lebarM)}×${f(h.tinggiM)} m)`,
+      `*Screen Connection LED ${labelLED}* · ${kolom}×${baris} ${namaUnit} (${f(h.lebarM)}×${f(h.tinggiM)} m)`,
       ringkasanKoneksi(dataKoneksi, koneksi),
       (pembuat || tanggal) && `Dibuat: ${[pembuat, tanggal].filter(Boolean).join(', ')}`,
     ].filter(Boolean).join('\n');
     return (
       <div className="space-y-4">
+        {barSub}
         <Kartu judul="Screen Connection" aksi={<div className="flex items-center gap-2 flex-wrap">{aksiFile}<TombolSalin teks={teksKoneksi} onCetak={cetakKoneksi} /></div>}>
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="min-w-0">
@@ -341,15 +376,13 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
                 {fileAktif && <span className="text-slate-500"> · file {fileAktif.nama}</span>}
               </p>
               <p className="text-[12px] text-slate-600 mt-0.5">
-                Layar dari Kalkulator LED: <b className="text-slate-800">{u.kode}</b> · {kolom} × {baris} {namaUnit} ({u.w}×{u.h} mm, {px.x}×{px.y} px) · {f(h.lebarM)} × {f(h.tinggiM)} m · {h.resX} × {h.resY} px · {refresh} Hz {bit}-bit
+                Layar dari Calculator LED: <b className="text-slate-800">{labelLED}</b> · {kolom} × {baris} {namaUnit} ({u.w}×{u.h} mm, {px.x}×{px.y} px) · {f(h.lebarM)} × {f(h.tinggiM)} m · {h.resX} × {h.resY} px · {refresh} Hz {bit}-bit
               </p>
             </div>
-            {onPindah && (
-              <button type="button" onClick={() => onPindah('led')}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">
-                Ubah layar di LED Videotron <ArrowRight size={14} />
-              </button>
-            )}
+            <button type="button" onClick={() => pindah('led')}
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">
+              Ubah layar di Calculator LED <ArrowRight size={14} />
+            </button>
           </div>
         </Kartu>
         <RuangKoneksi d={dataKoneksi} s={koneksi} onUbah={setKoneksi} namaFile={namaFile} />
@@ -364,6 +397,8 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
   const garisTipis = (k: number) => (k > 60 ? 0 : k > 30 ? 0.3 : 0.8);
 
   return (
+    <div className="space-y-4">
+    {barSub}
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
       <div className="space-y-4 min-w-0">
         <Kartu judul="Informasi project" aksi={aksiFile}>
@@ -381,11 +416,13 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
         <Kartu judul="Spesifikasi" aksi={<TombolRef onKlik={() => setBukaRef(true)} diubah={refLED.diubah} />}>
           <div className="space-y-3">
             <Segmen label="Satuan" nilai={satuan} onUbah={v => { setSatuan(v); resetUnit(); }}
-              opsi={[{ v: 'modul', l: 'Modul (referensi)' }, { v: 'cabinet', l: 'Cabinet' }]} />
+              opsi={[{ v: 'modul', l: 'Referensi brand' }, { v: 'cabinet', l: 'Cabinet bebas' }]} />
             {satuan === 'modul' ? (
               <>
-                <Pilih label="Pitch LED" nilai={modulKode} onUbah={pilihModul}
-                  opsi={daftarModul.map(m => ({ v: m.kode, l: `${m.kode} · ${m.w}×${m.h} mm · ${m.pxW}×${m.pxH} px · ${m.tipe}` }))} />
+                <Pilih label="Brand" nilai={brandAktif} onUbah={pilihBrand}
+                  opsi={brandAda.map(b => ({ v: b.nama, l: `${b.sendiri ? '★ ' : ''}${b.nama}${b.sendiri ? ' (brand sendiri)' : ''} · ${b.jumlah} produk` }))} />
+                <Pilih label="Model / pitch" nilai={kunciModul(modul)} onUbah={pilihModul}
+                  opsi={modulBrand.map(m => ({ v: kunciModul(m), l: `${m.model ? `${m.model} · ` : ''}${m.kode} · ${m.w}×${m.h} mm · ${m.pxW}×${m.pxH} px · ${m.tipe}${m.unit === 'cabinet' ? ' · cabinet' : ''}` }))} />
                 <p className="text-[12px] text-slate-600 -mt-1">{modul.guna}</p>
               </>
             ) : (
@@ -558,13 +595,11 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
               <p className="text-[12.5px] text-amber-800">Melebihi kapasitas satu unit: layar dibagi ke beberapa controller, perlu sinkronisasi/splicer.</p>
             )}
           </div>
-          {onPindah && (
-            <button type="button" onClick={() => onPindah('koneksi')}
-              className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-left hover:bg-blue-100">
-              <span className="inline-flex items-center gap-2 text-[12.5px] font-bold text-blue-800"><Cable size={15} /> Screen Connection</span>
-              <span className="text-[12px] text-blue-800">{susunKoneksi(dataKoneksi, koneksi).portTerpakai} port · atur urutan kabel <ArrowRight size={13} className="inline" /></span>
-            </button>
-          )}
+          <button type="button" onClick={() => pindah('koneksi')}
+            className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-left hover:bg-blue-100">
+            <span className="inline-flex items-center gap-2 text-[12.5px] font-bold text-blue-800"><Cable size={15} /> Screen Connection</span>
+            <span className="text-[12px] text-blue-800">{susunKoneksi(dataKoneksi, koneksi).portTerpakai} port · atur urutan kabel <ArrowRight size={13} className="inline" /></span>
+          </button>
           <Catatan>Kecerahan disarankan: {KECERAHAN[lingkungan]}. Kapasitas sesuai tabel referensi (60 Hz 8-bit ≈ 650 rb px/port); cek datasheet dan NovaLCT sebelum penawaran.</Catatan>
         </Kartu>
 
@@ -583,6 +618,7 @@ export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led'
         </details>
       </div>
       {modalBersama}
+    </div>
     </div>
   );
 }

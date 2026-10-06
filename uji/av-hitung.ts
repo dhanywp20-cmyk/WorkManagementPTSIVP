@@ -4,7 +4,7 @@
  * Jalankan: npx tsx uji/av-hitung.ts
  */
 import {
-  hitungKoneksi,
+  hitungKoneksi, cariModul, kunciModul, daftarBrand, brandModul, BRAND_LED,
   hitungLED, pxPerPortPada, portDibutuhkan, cabinetUntukUkuran, saranHardware, kapasitasHardware, MODUL_LED, VIDEO_PROCESSOR, SENDING_CARD, layarDariJarak, ukuranDariDiagonal,
   jarakLempar, lumenDibutuhkan, bandwidthGbps, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
 } from '../lib/av-hitung';
@@ -151,6 +151,19 @@ console.log('\nScreen connection (urutan kabel & port)');
   cek('manual: port melebihi kapasitas ditandai', berat.lewat.join(',') === '1' && berat.port[0].beban > 100);
   const lebarKanan = hitungKoneksi({ ...dasar, kolom: 20, baris: 2, mulai: 'kanan-atas' });
   cek('zona dari kanan-atas: port 1 mulai kolom 20, zona kanan dulu', lebarKanan.port[0].mulai?.c === 19 && lebarKanan.sel.filter(x => x.port === 1).every(x => x.c >= 10));
+}
+
+console.log('\nBrand modul LED (referensi dipilah per brand)');
+{
+  const hik = { ...MODUL_LED[4], brand: 'Hikvision', model: 'Seri X' };
+  const sendiri = { ...MODUL_LED[4], brand: 'IVP Vision', unit: 'cabinet' as const, w: 500, h: 500, pxW: 192, pxH: 192 };
+  const daftar = [...MODUL_LED, hik, sendiri];
+  cek('modul tanpa brand = Umum', brandModul(MODUL_LED[0]) === 'Umum');
+  cek('hitungan lama (kode "P2.5") tetap menemukan modul Umum, bukan brand lain', cariModul(daftar, 'P2.5') === MODUL_LED[4]);
+  cek('kunci brand|kode|model membedakan P2.5 Hikvision dari P2.5 Umum', cariModul(daftar, kunciModul(hik)) === hik && kunciModul(hik) !== kunciModul(MODUL_LED[4]));
+  const br = daftarBrand([...BRAND_LED, { nama: 'IVP Vision', sendiri: true }], daftar);
+  cek('brand sendiri tampil paling atas, brand dari baris modul ikut terdaftar', br[0].nama === 'IVP Vision' && br.some(b => b.nama === 'Hikvision' && b.jumlah === 1));
+  cek('pilihan kalkulator hanya brand yang punya modul', daftarBrand(BRAND_LED, MODUL_LED, true).map(b => b.nama).join(',') === 'Umum');
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

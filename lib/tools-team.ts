@@ -6,9 +6,9 @@
  * dikirim peramban sebelum menyimpannya, dan peramban memakai bentuk yang
  * sama. Tanpa React / jaringan supaya aman diimpor dari mana saja.
  */
-import type { ModulLED, Hardware } from '@/lib/av-hitung';
+import type { ModulLED, Hardware, BrandLED } from '@/lib/av-hitung';
 
-export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[] }
+export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[]; /** Daftar brand modul (boleh kosong untuk data lama). */ brand?: BrandLED[] }
 
 /** Baris app_settings tempat referensi LED bersama disimpan. */
 export const KUNCI_REFERENSI_LED = 'tools_team_referensi_led';
@@ -33,7 +33,13 @@ function bersihkanModul(x: unknown): ModulLED | null {
   const pxW = bulat(m.pxW, 1, 20000), pxH = bulat(m.pxH, 1, 20000);
   const tipe = m.tipe === 'Indoor' || m.tipe === 'Indoor/Outdoor' || m.tipe === 'Outdoor' ? m.tipe : null;
   if (!kode || guna === null || pitch === null || w === null || h === null || pxW === null || pxH === null || !tipe) return null;
-  return { kode, pitch, w, h, pxW, pxH, tipe, guna };
+  const brand = teks(m.brand ?? '', 60), model = teks(m.model ?? '', 80);
+  if (brand === null || model === null) return null;
+  const hasil: ModulLED = { kode, pitch, w, h, pxW, pxH, tipe, guna };
+  if (brand.trim()) hasil.brand = brand.trim();
+  if (model.trim()) hasil.model = model.trim();
+  if (m.unit === 'cabinet') hasil.unit = 'cabinet';
+  return hasil;
 }
 
 function bersihkanHardware(x: unknown): Hardware | null {
@@ -45,14 +51,23 @@ function bersihkanHardware(x: unknown): Hardware | null {
   return { nama, ket, maksPx, port, senderBawaan: hw.senderBawaan };
 }
 
-/** Referensi LED yang sah (semua baris valid, maks 200 per tabel), atau null. */
+/** Referensi LED yang sah (semua baris valid; maks 500 modul, 200 hardware, 100 brand), atau null. */
 export function bersihkanReferensiLED(x: unknown): RefLED | null {
   const r = x as Record<string, unknown>;
   if (!r || !Array.isArray(r.modul) || !Array.isArray(r.kartu) || !Array.isArray(r.vp)) return null;
-  if (!r.modul.length || r.modul.length > 200 || r.kartu.length > 200 || r.vp.length > 200) return null;
+  if (!r.modul.length || r.modul.length > 500 || r.kartu.length > 200 || r.vp.length > 200) return null;
   const modul = r.modul.map(bersihkanModul), kartu = r.kartu.map(bersihkanHardware), vp = r.vp.map(bersihkanHardware);
   if (modul.includes(null) || kartu.includes(null) || vp.includes(null)) return null;
-  return { modul: modul as ModulLED[], kartu: kartu as Hardware[], vp: vp as Hardware[] };
+  //  Brand: opsional (referensi lama belum punya); nama unik, kosong dibuang.
+  if (r.brand !== undefined && (!Array.isArray(r.brand) || r.brand.length > 100)) return null;
+  const brand: BrandLED[] = [];
+  for (const b of (r.brand as unknown[] | undefined) ?? []) {
+    const o = b as Record<string, unknown>;
+    const nama = teks(o?.nama, 60)?.trim();
+    if (!nama || brand.some(x => x.nama === nama)) continue;
+    brand.push({ nama, sendiri: o.sendiri === true });
+  }
+  return { modul: modul as ModulLED[], kartu: kartu as Hardware[], vp: vp as Hardware[], ...(brand.length ? { brand } : {}) };
 }
 
 /** Data desain 3D yang sah ({ ruang, benda }) beserta jumlah benda, atau alasan penolakan. */
