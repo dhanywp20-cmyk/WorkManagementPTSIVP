@@ -1,8 +1,8 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, Image as IkonGambar, Plus, Trash2, Wand2, Cable, SquareDashed, Eraser } from 'lucide-react';
-import { hitungKoneksi, type SudutMulai, type SelRC, type HasilKoneksi } from '@/lib/av-hitung';
-import { Angka, Segmen, Nilai, Catatan, f } from './ui';
+import { hitungKoneksi, unitPerRC, RECEIVING_CARD, type SudutMulai, type SelRC, type HasilKoneksi } from '@/lib/av-hitung';
+import { Angka, Pilih, Segmen, Nilai, Catatan, f } from './ui';
 import { esc, namaBerkas, unduhSvgPNG, unduhUrl, type Seksi } from './cetak';
 
 /**
@@ -25,10 +25,13 @@ export interface PengaturanKoneksi {
   /** Sel tanpa receiving card. */ kosong: SelRC[];
   /** Kabel manual per port. */ manual: SelRC[][] | null;
   /** Kapasitas port (px); null = dari refresh & bit kalkulator. */ pxPort: number | null;
+  /** Model receiving card (RECEIVING_CARD); null = umum ±512×512. */ rcModel: string | null;
+  /** Kabel cadangan: tidak, loop (ujung rantai kembali ke port cadangan controller yang sama), atau controller cadangan. */
+  cadangan: 'tidak' | 'loop' | 'controller';
 }
 export const KONEKSI_AWAL: PengaturanKoneksi = {
   mode: 'template', mulai: 'kiri-atas', arah: 'horizontal', pola: 'S', bagi: 'baris', beban: 100, rcKol: null, rcBaris: null, ppk: null,
-  lebarKol: null, tinggiBaris: null, kosong: [], manual: null, pxPort: null,
+  lebarKol: null, tinggiBaris: null, kosong: [], manual: null, pxPort: null, rcModel: null, cadangan: 'tidak',
 };
 
 /** Pengaturan dari hitungan tersimpan: nilai asing / tidak sah diganti bawaan. */
@@ -54,6 +57,8 @@ export function bersihkanKoneksi(x: unknown): PengaturanKoneksi {
     kosong: daftarSel(o.kosong, 4096),
     manual: Array.isArray(o.manual) ? o.manual.slice(0, 256).map(r => daftarSel(r, 4096)) : null,
     pxPort: bulat(o.pxPort, 1000, 20_000_000),
+    rcModel: RECEIVING_CARD.some(r => r.nama === o.rcModel) ? (o.rcModel as string) : null,
+    cadangan: pilih(o.cadangan, ['tidak', 'loop', 'controller'] as const, A.cadangan),
   };
 }
 
@@ -80,14 +85,19 @@ const kunci = (c: number, r: number) => `${c},${r}`;
 export function susunKoneksi(d: DataKoneksi, s: PengaturanKoneksi) {
   const otoKol = d.satuan === 'cabinet' ? 1 : Math.max(1, Math.round(500 / Math.max(1, d.wUnit)));
   const otoBaris = d.satuan === 'cabinet' ? 1 : Math.max(1, Math.round(500 / Math.max(1, d.hUnit)));
-  const rcKol = Math.min(d.kolom, Math.max(1, Math.round(s.rcKol ?? otoKol)));
-  const rcBaris = Math.min(d.baris, Math.max(1, Math.round(s.rcBaris ?? otoBaris)));
+  //  Model receiving card dipilih: usulan otomatis dikecilkan sampai muat kapasitas kartu.
+  const rc = RECEIVING_CARD.find(r => r.nama === s.rcModel) ?? null;
+  const oto = rc ? unitPerRC(rc, d.pxX, d.pxY, otoKol, otoBaris) : { kol: otoKol, baris: otoBaris };
+  const rcKol = Math.min(d.kolom, Math.max(1, Math.round(s.rcKol ?? oto.kol)));
+  const rcBaris = Math.min(d.baris, Math.max(1, Math.round(s.rcBaris ?? oto.baris)));
   const custom = !!(s.lebarKol?.length && s.tinggiBaris?.length);
   //  Ikut kalkulator: receiving card di tepi kanan/bawah memuat sisa modul (ukurannya tepat, bukan dibulatkan).
   const lebar = custom ? s.lebarKol! : Array.from({ length: Math.ceil(d.kolom / rcKol) }, (_, c) => Math.min(rcKol, d.kolom - c * rcKol) * d.pxX);
   const tinggi = custom ? s.tinggiBaris! : Array.from({ length: Math.ceil(d.baris / rcBaris) }, (_, r) => Math.min(rcBaris, d.baris - r * rcBaris) * d.pxY);
   const K = lebar.length, B = tinggi.length;
-  const ppk = Math.max(0, Math.round(s.ppk ?? d.ppkHw));
+  //  Loop cadangan: separuh port tiap controller untuk kabel utama, separuh untuk kabel cadangan.
+  const ppkPenuh = Math.max(0, Math.round(s.ppk ?? d.ppkHw));
+  const ppk = s.cadangan === 'loop' && ppkPenuh > 1 ? Math.floor(ppkPenuh / 2) : ppkPenuh;
   const pxPort = s.pxPort ?? d.pxPerPort;
   const kosong = new Set(s.kosong.filter(([c, r]) => c < K && r < B).map(([c, r]) => kunci(c, r)));
   const hasil = hitungKoneksi({
@@ -98,8 +108,14 @@ export function susunKoneksi(d: DataKoneksi, s: PengaturanKoneksi) {
   const terisi = hasil.port.filter(p => p.jumlah);
   const portTerpakai = terisi.length;
   const controller = !terisi.length ? 0 : ppk > 0 ? Math.ceil(terisi[terisi.length - 1].port / ppk) : 1;
+  const cadangan = s.cadangan;
+  //  Kapasitas model receiving card: kartu terbesar di grid harus muat.
+  const rcLewat = rc ? lebar.some(w => w > rc.w) || tinggi.some(h => h > rc.h) : false;
   return {
-    K, B, lebar, tinggi, custom, rcKol, rcBaris, otoKol, otoBaris, ppk, pxPort, kosong, hasil, arah: s.arah, portTerpakai, controller,
+    K, B, lebar, tinggi, custom, rcKol, rcBaris, otoKol: oto.kol, otoBaris: oto.baris, ppk, ppkPenuh, pxPort, kosong, hasil, arah: s.arah, portTerpakai, controller,
+    rc, rcLewat, cadangan,
+    /** Kabel LAN cadangan & controller cadangan. */
+    portCadangan: cadangan === 'tidak' ? 0 : portTerpakai, controllerCadangan: cadangan === 'controller' ? controller : 0,
     resX: lebar.reduce((a, b) => a + b, 0), resY: tinggi.reduce((a, b) => a + b, 0),
   };
 }
@@ -110,6 +126,13 @@ const rantaiDari = (h: HasilKoneksi): SelRC[][] => h.port.map(p => h.sel.filter(
 
 const namaPort = (t: Susunan, port: number) =>
   t.ppk > 0 && t.controller > 1 ? `Controller ${Math.ceil(port / t.ppk)} · port ${((port - 1) % t.ppk) + 1}` : `Port ${port}`;
+/** Tujuan kabel cadangan dari ujung rantai port `port`. */
+export const namaCadangan = (t: Susunan, port: number) => {
+  if (t.cadangan === 'controller') return `${t.controller > 1 && t.ppk > 0 ? `Controller cadangan ${Math.ceil(port / t.ppk)}` : 'Controller cadangan'} · port ${t.ppk > 0 ? ((port - 1) % t.ppk) + 1 : port}`;
+  if (t.ppk <= 0) return `Port cadangan ${port}`;
+  const lokal = ((port - 1) % t.ppk) + 1 + t.ppk;
+  return t.controller > 1 ? `Controller ${Math.ceil(port / t.ppk)} · port ${lokal}` : `Port ${lokal}`;
+};
 
 /** Diagram koneksi (SVG mandiri) - dipakai di layar (interaktif), cetak, dan unduhan. */
 export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; interaktif?: boolean; portAktif?: number } = {}): string {
@@ -231,6 +254,28 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; inte
     atas.push(`<rect x="${n(lx)}" y="${n(ly)}" width="${n(lw)}" height="${lh}" rx="4" fill="${warna}"/>`);
     atas.push(`<text x="${n(lx + lw / 2)}" y="${n(ly + 11)}" font-size="10" font-weight="700" text-anchor="middle" fill="#fff" font-family="Segoe UI,Arial">${teks}</text>`);
   }
+  //  Kabel cadangan: dari receiving card terakhir tiap port ke tepi terdekat (garis putus-putus, label B1, B2, ...).
+  if (t.cadangan !== 'tidak') {
+    const akhir = new Map<number, { c: number; r: number; urut: number }>();
+    for (const s of t.hasil.sel) { const a = akhir.get(s.port); if (!a || s.urut > a.urut) akhir.set(s.port, s); }
+    akhir.forEach((m, port) => {
+      const warna = warnaPort(port);
+      const [cx, cy] = pusat(m.c, m.r);
+      const jarak = [{ sisi: 'kiri', v: m.c }, { sisi: 'kanan', v: t.K - 1 - m.c }, { sisi: 'atas', v: m.r }, { sisi: 'bawah', v: t.B - 1 - m.r }].sort((a, b) => a.v - b.v);
+      const teks = `B${port}`, lw = 8 + teks.length * 6.4, lh = 15;
+      const tag = (x: number, y: number) => {
+        atas.push(`<rect x="${n(x)}" y="${n(y)}" width="${n(lw)}" height="${lh}" rx="4" fill="#fff" stroke="${warna}" stroke-width="1.4" stroke-dasharray="3 2"/>`);
+        atas.push(`<text x="${n(x + lw / 2)}" y="${n(y + 11)}" font-size="10" font-weight="700" text-anchor="middle" fill="${warna}" font-family="Segoe UI,Arial">${teks}</text>`);
+      };
+      if (jarak[0].v > 0) { tag(cx - lw / 2, cy + 2); return; }
+      const sisi = jarak[0].sisi;
+      const [lx, ly] = sisi === 'kiri' ? [ox - lw - 6, cy + 4] : sisi === 'kanan' ? [ox + W + 6, cy + 4]
+        : sisi === 'atas' ? [cx + 4, oy - lh - 5] : [cx + 4, oy + H + 5];
+      const [tx, ty] = sisi === 'kiri' ? [lx + lw, ly + lh / 2] : sisi === 'kanan' ? [lx, ly + lh / 2] : sisi === 'atas' ? [lx + lw / 2, ly + lh] : [lx + lw / 2, ly];
+      atas.push(`<polyline points="${n(cx)},${n(cy)} ${n(tx)},${n(ty)}" fill="none" stroke="${warna}" stroke-width="1.4" stroke-dasharray="4 3"/>`);
+      tag(lx, ly);
+    });
+  }
   const fm = (v: number) => v.toLocaleString('id-ID', { maximumFractionDigits: 2 });
   const mmPerPx = d.wUnit / Math.max(1, d.pxX);
   atas.push(`<text x="${n(ox + W / 2)}" y="${n(oy + H + 36)}" font-size="11" text-anchor="middle" fill="#334155" font-family="Segoe UI,Arial">${t.resX} px · ±${fm((t.resX * mmPerPx) / 1000)} m · ${t.K} kolom receiving card</text>`);
@@ -259,10 +304,10 @@ export function svgPosterKoneksi(d: DataKoneksi, s: PengaturanKoneksi, judul: st
   const huruf = 'font-family="Segoe UI,Arial"';
   const legenda = port.map((p, i) => {
     const x = 20 + Math.floor(i / barisLegenda) * lebarKolom, y = yLegenda + 30 + (i % barisLegenda) * tinggiBaris;
-    const teks = `${namaPort(t, p.port)} · ${p.jumlah} RC · ${p.px.toLocaleString('id-ID')} px · ${f(p.beban, 0)}%${p.mulai ? ` · masuk kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : ''}`;
+    const teks = `${namaPort(t, p.port)} · ${p.jumlah} RC · ${p.px.toLocaleString('id-ID')} px · ${f(p.beban, 0)}%${p.mulai ? ` · masuk kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : ''}${t.cadangan !== 'tidak' && p.jumlah ? ` · B${p.port} → ${namaCadangan(t, p.port)}` : ''}`;
     return `<rect x="${x}" y="${y - 10}" width="11" height="11" rx="2" fill="${warnaPort(p.port)}"/><text x="${x + 17}" y="${y}" font-size="11.5" fill="${p.beban > s.beban ? '#b91c1c' : '#1e293b'}" ${huruf}>${esc(teks)}</text>`;
   }).join('');
-  const ringkas = `${k.sel.length} receiving card (${t.K} × ${t.B}) · ${t.resX} × ${t.resY} px · ${t.portTerpakai} port LAN${t.ppk > 0 ? ` · ${t.controller} controller × ${t.ppk} port` : ''} · ${teksCara(s)}`;
+  const ringkas = `${k.sel.length} receiving card${t.rc ? ` ${t.rc.nama}` : ''} (${t.K} × ${t.B}) · ${t.resX} × ${t.resY} px · ${t.portTerpakai} port LAN${t.ppkPenuh > 0 ? ` · ${t.controller} controller × ${t.ppkPenuh} port` : ''}${teksCadangan(t)} · ${teksCara(s)}`;
   const peringatan = [k.galat, k.tanpaPort.length ? `${k.tanpaPort.length} receiving card belum tersambung` : '', k.lewat.length ? `Port ${k.lewat.join(', ')} melebihi batas beban ${s.beban}%` : '']
     .filter(Boolean).join(' · ');
   const tanggal = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -281,6 +326,8 @@ ${peringatan ? `<text x="20" y="${H - 30}" font-size="11" fill="#b91c1c" ${huruf
 </svg>`;
 }
 
+const teksCadangan = (t: Susunan) => (t.cadangan === 'loop' ? ` · loop cadangan +${t.portCadangan} kabel`
+  : t.cadangan === 'controller' ? ` · +${t.controllerCadangan} controller cadangan` : '');
 const teksSudut = (s: SudutMulai) => SUDUT.find(x => x.v === s)!.l.toLowerCase();
 const teksCara = (s: PengaturanKoneksi) => (s.mode === 'manual' ? 'kabel manual'
   : `mulai ${teksSudut(s.mulai)}, ${s.arah === 'horizontal' ? 'mendatar' : 'tegak'} pola ${s.pola}, ${s.bagi === 'baris' ? 'baris utuh' : 'isi penuh'}`);
@@ -289,10 +336,10 @@ const teksCara = (s: PengaturanKoneksi) => (s.mode === 'manual' ? 'kabel manual'
 export function ringkasanKoneksi(d: DataKoneksi, s: PengaturanKoneksi): string {
   const t = susunKoneksi(d, s), k = t.hasil;
   return [
-    `Screen connection: ${k.sel.length} receiving card (${t.K}×${t.B}${t.kosong.size ? `, ${t.kosong.size} sel kosong` : ''}), resolusi ${t.resX}×${t.resY} px`,
-    `${t.portTerpakai} port LAN${t.ppk > 0 ? ` · ${t.controller} controller × ${t.ppk} port` : ''} · kapasitas ${f(t.pxPort / 1000, 0)} rb px/port, batas ${s.beban}%`,
+    `Screen connection: ${k.sel.length} receiving card${t.rc ? ` ${t.rc.nama}` : ''} (${t.K}×${t.B}${t.kosong.size ? `, ${t.kosong.size} sel kosong` : ''}), resolusi ${t.resX}×${t.resY} px`,
+    `${t.portTerpakai} port LAN${t.ppkPenuh > 0 ? ` · ${t.controller} controller × ${t.ppkPenuh} port` : ''}${teksCadangan(t)} · kapasitas ${f(t.pxPort / 1000, 0)} rb px/port, batas ${s.beban}%`,
     `Kabel: ${teksCara(s)}`,
-    ...k.port.map(p => `- ${namaPort(t, p.port)}: ${p.jumlah} RC, ${p.px.toLocaleString('id-ID')} px (${f(p.beban, 0)}%)${p.mulai ? `, masuk kolom ${p.mulai.c + 1} baris ${p.mulai.r + 1}` : ''}`),
+    ...k.port.map(p => `- ${namaPort(t, p.port)}: ${p.jumlah} RC, ${p.px.toLocaleString('id-ID')} px (${f(p.beban, 0)}%)${p.mulai ? `, masuk kolom ${p.mulai.c + 1} baris ${p.mulai.r + 1}` : ''}${t.cadangan !== 'tidak' && p.jumlah ? `, cadangan ke ${namaCadangan(t, p.port)}` : ''}`),
     k.tanpaPort.length ? `Belum tersambung: ${k.tanpaPort.length} receiving card` : '',
   ].filter(Boolean).join('\n');
 }
@@ -300,14 +347,15 @@ export function ringkasanKoneksi(d: DataKoneksi, s: PengaturanKoneksi): string {
 /** Seksi lembar cetak: diagram + tabel port. */
 export function seksiCetakKoneksi(d: DataKoneksi, s: PengaturanKoneksi): Seksi[] {
   const t = susunKoneksi(d, s), k = t.hasil;
-  const ket = `${t.K} × ${t.B} receiving card · ${t.resX} × ${t.resY} px · ${teksCara(s)} · label sel = port-urutan, angka kecil = ukuran receiving card (px)`;
+  const ket = `${t.K} × ${t.B} receiving card${t.rc ? ` ${t.rc.nama}` : ''} · ${t.resX} × ${t.resY} px · ${teksCara(s)}${teksCadangan(t)} · label sel = port-urutan, angka kecil = ukuran receiving card (px)${t.cadangan !== 'tidak' ? ', B = kabel cadangan dari ujung rantai' : ''}`;
   const peringatan = [k.galat, k.tanpaPort.length ? `${k.tanpaPort.length} receiving card belum tersambung.` : '', k.lewat.length ? `Port melebihi batas beban: ${k.lewat.join(', ')}.` : '']
     .filter(Boolean).map(x => `<p style="margin:4px 0 0;font-size:11px;color:#b91c1c">${esc(x)}</p>`).join('');
   return [
     { judul: 'Screen connection (urutan kabel data)', jenis: 'html',
       html: `<div class="diagram">${svgKoneksi(d, t)}<p style="margin:6px 0 0;font-size:11px;color:#475569">${esc(ket)}</p>${peringatan}</div>` },
-    { judul: 'Pembagian port LAN', jenis: 'tabel', kepala: ['Port', 'Receiving card', 'Pixel', 'Beban', 'Masuk di'], rataKanan: [1, 2, 3],
-      isi: k.port.map(p => [namaPort(t, p.port), String(p.jumlah), p.px.toLocaleString('id-ID'), `${f(p.beban, 0)}%`, p.mulai ? `kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : '—']) },
+    { judul: 'Pembagian port LAN', jenis: 'tabel', kepala: ['Port', 'Receiving card', 'Pixel', 'Beban', 'Masuk di', ...(t.cadangan !== 'tidak' ? ['Kabel cadangan (B)'] : [])], rataKanan: [1, 2, 3],
+      isi: k.port.map(p => [namaPort(t, p.port), String(p.jumlah), p.px.toLocaleString('id-ID'), `${f(p.beban, 0)}%`, p.mulai ? `kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : '—',
+        ...(t.cadangan !== 'tidak' ? [p.jumlah ? namaCadangan(t, p.port) : '—'] : [])]) },
   ];
 }
 
@@ -565,7 +613,18 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: {
           {s.pxPort !== null && <button type="button" onClick={() => ubah({ pxPort: null })} className="-mt-2 text-[12px] font-semibold text-blue-700 hover:underline">Ikut kalkulator ({d.pxPerPort.toLocaleString('id-ID')} px)</button>}
           <Angka label="Batas beban port" nilai={s.beban} satuan="%" step={1} onUbah={v => v >= 10 && v <= 100 && ubah({ beban: Math.round(v) })}
             bantuan={`Maks ${Math.floor((t.pxPort * s.beban) / 100).toLocaleString('id-ID')} px per port`} />
-          <Angka label="Port per controller" nilai={t.ppk} step={1} satuan="port" onUbah={v => v >= 0 && ubah({ ppk: Math.round(v) })}
+          <Pilih label="Model receiving card" nilai={s.rcModel ?? ''} onUbah={v => ubah({ rcModel: v || null, rcKol: null, rcBaris: null })}
+            opsi={[{ v: '', l: 'Umum (±512 × 512 px)' }, ...RECEIVING_CARD.map(r => ({ v: r.nama, l: `${r.nama} · ${r.w}×${r.h} px · ${r.ket}` }))]} />
+          <Segmen label="Kabel cadangan (backup)" nilai={s.cadangan} onUbah={v => ubah({ cadangan: v })}
+            opsi={[{ v: 'tidak', l: 'Tidak' }, { v: 'loop', l: 'Loop port' }, { v: 'controller', l: 'Controller' }]} />
+          {s.cadangan !== 'tidak' && (
+            <p className="-mt-2 text-[11px] text-slate-500">
+              {s.cadangan === 'loop'
+                ? 'Ujung tiap rantai kembali ke port cadangan di controller yang sama (separuh port controller untuk cadangan). Satu kabel putus, layar tetap tampil.'
+                : 'Ujung tiap rantai disambung ke controller cadangan (hot backup). Controller utama mati, layar tetap tampil.'}
+            </p>
+          )}
+          <Angka label="Port per controller" nilai={t.ppkPenuh} step={1} satuan="port" onUbah={v => v >= 0 && ubah({ ppk: Math.round(v) })}
             bantuan={s.ppk === null ? (d.namaHw ? `Dari ${d.namaHw}` : 'Belum ada hardware: isi manual') : 'Diisi manual'} />
           {s.ppk !== null && d.ppkHw > 0 && <button type="button" onClick={() => ubah({ ppk: null })} className="-mt-2 text-[12px] font-semibold text-blue-700 hover:underline">Ikut hardware ({d.ppkHw} port)</button>}
         </section>
@@ -576,7 +635,8 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
           <Nilai label="Receiving card" nilai={k.sel.length + k.tanpaPort.length} ket={`${t.K} × ${t.B}${t.kosong.size ? ` · ${t.kosong.size} kosong` : ''}`} />
           <Nilai label="Port LAN dipakai" nilai={t.portTerpakai} ket={`perkiraan pixel: ${d.portIdeal}`} nada={t.portTerpakai > d.portIdeal ? 'awas' : undefined} />
-          <Nilai label="Controller" nilai={t.ppk > 0 ? t.controller : '-'} ket={t.ppk > 0 ? `${t.ppk} port/unit${d.namaHw && s.ppk === null ? ` · ${d.namaHw}` : ''}` : 'isi port per controller'} />
+          <Nilai label="Controller" nilai={t.ppk > 0 ? t.controller + t.controllerCadangan : '-'}
+            ket={t.ppk > 0 ? `${t.ppkPenuh} port/unit${d.namaHw && s.ppk === null ? ` · ${d.namaHw}` : ''}${t.controllerCadangan ? ` · ${t.controllerCadangan} cadangan` : t.cadangan === 'loop' ? ` · ${t.ppk} utama + ${t.ppk} cadangan` : ''}` : 'isi port per controller'} />
           <Nilai label="Beban rata-rata" nilai={f(rataBeban, 0)} satuan="%" ket={`resolusi ${t.resX}×${t.resY}`} />
         </div>
         {k.galat && <p className="text-[12.5px] text-rose-800 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">{k.galat}</p>}
@@ -586,7 +646,15 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: {
         {k.lewat.length > 0 && (
           <p className="text-[12.5px] text-rose-800 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">Port {k.lewat.join(', ')} melebihi batas beban {s.beban}% - pindahkan sebagian receiving card ke port lain.</p>
         )}
-        {Math.max(...t.lebar) * Math.max(...t.tinggi) > PX_RC_UMUM && !k.galat && (
+        {t.rc && t.rcLewat && (
+          <p className="text-[12.5px] text-rose-800 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2">
+            Ada receiving card melebihi kapasitas {t.rc.nama} ({t.rc.w}×{t.rc.h} px). Kurangi {nUnit} per receiving card atau pilih model yang lebih besar.
+          </p>
+        )}
+        {s.cadangan === 'loop' && t.ppkPenuh === 1 && (
+          <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">Controller hanya 1 port: loop cadangan butuh port kedua. Pilih &quot;Controller&quot; atau hardware dengan port lebih banyak.</p>
+        )}
+        {!t.rc && Math.max(...t.lebar) * Math.max(...t.tinggi) > PX_RC_UMUM && !k.galat && (
           <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
             Ada receiving card lebih dari ±512×512 px (kapasitas receiving card umum). Kecilkan area per receiving card atau cek tipe receiving card.
           </p>
@@ -641,6 +709,7 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: {
                 <th className="text-right font-bold px-3 py-2">Pixel</th>
                 <th className="text-left font-bold px-3 py-2 w-40">Beban</th>
                 <th className="text-left font-bold px-3 py-2">Masuk di</th>
+                {t.cadangan !== 'tidak' && <th className="text-left font-bold px-3 py-2">Cadangan (B)</th>}
               </tr>
             </thead>
             <tbody>
@@ -661,12 +730,13 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: {
                     </div>
                   </td>
                   <td className="px-3 py-1.5 text-slate-600 whitespace-nowrap">{p.mulai ? `kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : '—'}</td>
+                  {t.cadangan !== 'tidak' && <td className="px-3 py-1.5 text-slate-600 whitespace-nowrap">{p.jumlah ? namaCadangan(t, p.port) : '—'}</td>}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        <Catatan>Label sel = port-urutan receiving card, angka kecil = ukuran receiving card (px); P1, P2, … = titik masuk kabel LAN. Samakan dengan NovaLCT (Screen Configuration → Screen Connection) saat instalasi.</Catatan>
+        <Catatan>Label sel = port-urutan receiving card, angka kecil = ukuran receiving card (px); P1, P2, … = titik masuk kabel LAN{s.cadangan !== 'tidak' ? '; B1, B2, … = kabel cadangan dari ujung rantai' : ''}. Samakan dengan NovaLCT (Screen Configuration → Screen Connection) saat instalasi.</Catatan>
       </div>
     </div>
   );

@@ -1,19 +1,36 @@
 'use client';
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { getSession } from '@/lib/auth';
 import { isPimpinan } from '@/lib/pimpinan';
 import {
   hitungLED, cabinetUntukUkuran, saranHardware, kapasitasHardware, KECERAHAN, type Pembulatan, type Hardware,
-  BRAND_UMUM, brandModul, kunciModul, cariModul, daftarBrand,
+  BRAND_UMUM, brandModul, kunciModul, cariModul, daftarBrand, bomLED, totalPenawaran,
 } from '@/lib/av-hitung';
 import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f, kelasInput } from './ui';
 import { useReferensiLED, EditorReferensiLED } from './ReferensiLED';
 import { Ikon } from '@/components/shared/Ikon';
 import { bukaCetak, diagramSusunan, unduhLembarPNG, namaBerkas, type Info, type Lembar } from './cetak';
-import { ArrowRight, Cable, Calculator, FolderOpen, Redo2, Save, Undo2 } from 'lucide-react';
+import { ArrowRight, Cable, Calculator, FolderOpen, Redo2, Save, Undo2, Zap } from 'lucide-react';
 import { useRiwayat } from './riwayat';
 import { FileLED, type FileAktifLED } from './FileLED';
 import { RuangKoneksi, KONEKSI_AWAL, bersihkanKoneksi, ringkasanKoneksi, seksiCetakKoneksi, susunKoneksi, type DataKoneksi, type PengaturanKoneksi } from './KoneksiLED';
+import { RuangDaya, DAYA_AWAL, bersihkanDaya, ringkasanDaya, seksiCetakDaya, susunDaya, type DataDaya, type PengaturanDaya } from './DayaLED';
+
+/** Pengaturan daftar material (BOM) & penawaran. */
+interface PengaturanBOM { cadanganUnit: number; cadanganRC: number; psuW: number; panjangLAN: number; ppn: number }
+const BOM_AWAL: PengaturanBOM = { cadanganUnit: 3, cadanganRC: 2, psuW: 200, panjangLAN: 10, ppn: 11 };
+function bersihkanBOM(x: unknown): PengaturanBOM {
+  const o = (x && typeof x === 'object' && !Array.isArray(x) ? x : {}) as Record<string, unknown>;
+  const a = (v: unknown, min: number, maks: number, awal: number) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(maks, Math.max(min, v)) : awal);
+  return { cadanganUnit: a(o.cadanganUnit, 0, 50, 3), cadanganRC: a(o.cadanganRC, 0, 50, 2), psuW: a(o.psuW, 50, 1000, 200), panjangLAN: a(o.panjangLAN, 1, 300, 10), ppn: a(o.ppn, 0, 30, 11) };
+}
+function bersihkanHarga(x: unknown): Record<string, number> {
+  const o = (x && typeof x === 'object' && !Array.isArray(x) ? x : {}) as Record<string, unknown>;
+  const h: Record<string, number> = {};
+  for (const [k, v] of Object.entries(o).slice(0, 100)) if (typeof v === 'number' && Number.isFinite(v) && v > 0 && k.length <= 40) h[k] = Math.min(1e12, v);
+  return h;
+}
+const rupiah = (v: number) => `Rp ${Math.round(v).toLocaleString('id-ID')}`;
 
 const PITCH = [0.9, 1.2, 1.25, 1.5, 1.56, 1.86, 1.9, 2, 2.5, 2.6, 2.9, 3.91, 4.81, 5, 6.67, 8, 10];
 const CABINET: { v: string; l: string; w: number; h: number }[] = [
@@ -80,9 +97,9 @@ function KartuHw({ peran, hw, totalPx, portLAN, nada, catatan }: { peran: string
   );
 }
 
-export type SubLED = 'led' | 'koneksi';
+export type SubLED = 'led' | 'koneksi' | 'daya';
 const SUB_LED: { v: SubLED; l: string; Ikon: typeof Calculator }[] = [
-  { v: 'led', l: 'Calculator LED', Ikon: Calculator }, { v: 'koneksi', l: 'Screen Connection', Ikon: Cable },
+  { v: 'led', l: 'Calculator LED', Ikon: Calculator }, { v: 'koneksi', l: 'Screen Connection', Ikon: Cable }, { v: 'daya', l: 'Power Connection', Ikon: Zap },
 ];
 
 /**
@@ -129,15 +146,19 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
   const [tegangan, setTegangan] = useState(220);
   const [faktorDaya, setFaktorDaya] = useState(0.95);
   const [koneksi, setKoneksi] = useState<PengaturanKoneksi>(KONEKSI_AWAL);
+  const [dayaLED, setDayaLED] = useState<PengaturanDaya>(DAYA_AWAL);
+  const [bom, setBom] = useState<PengaturanBOM>(BOM_AWAL);
+  /** Harga satuan per baris BOM (Rp), ikut tersimpan bersama hitungan. */
+  const [harga, setHarga] = useState<Record<string, number>>({});
 
   //  Potret seluruh isian: dasar undo/redo dan simpan/buka hitungan.
   const isian = useMemo(() => ({
     modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
     cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
-    refresh, bit, tegangan, faktorDaya, koneksi,
+    refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga,
   }), [modeHw, vpPilih, kartuPilih, project, customer, tanggal, pembuat, mode, satuan, modulKode, lingkungan, pitch,
     cabKey, cabW, cabH, pxIn, targetW, targetH, bulat, screen, kolomIn, barisIn, dayaUnit, beratUnit, faktorRata,
-    refresh, bit, tegangan, faktorDaya, koneksi]);
+    refresh, bit, tegangan, faktorDaya, koneksi, dayaLED, bom, harga]);
   type Isian = typeof isian;
   /** Kembalikan isian; kunci yang tidak ada (hitungan versi lama) dibiarkan. */
   const terapkan = (v: Partial<Isian>) => {
@@ -152,6 +173,7 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     pasang('faktorDaya', setFaktorDaya);
     //  Hitungan lama belum punya screen connection -> pengaturan bawaan.
     setKoneksi(bersihkanKoneksi(v.koneksi));
+    setDayaLED(bersihkanDaya(v.dayaLED)); setBom(bersihkanBOM(v.bom)); setHarga(bersihkanHarga(v.harga));
   };
   const riwayat = useRiwayat(isian, v => terapkan(v));
   const [fileMode, setFileMode] = useState<'buka' | 'simpan' | null>(null);
@@ -195,8 +217,32 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     kolom, baris, wUnit: u.w, hUnit: u.h, pxX: px.x, pxY: px.y, satuan: namaUnit, pxPerPort: h.pxPerPort, portIdeal: h.portLAN,
     ppkHw: hwKoneksi?.port ?? 0, namaHw: hwKoneksi?.nama ?? null, refresh, bit,
   }), [kolom, baris, u.w, u.h, px.x, px.y, namaUnit, h.pxPerPort, h.portLAN, hwKoneksi?.port, hwKoneksi?.nama, refresh, bit]);
+  const dataDaya: DataDaya = useMemo(() => ({
+    kolom, baris, wUnit: u.w, hUnit: u.h, satuan: namaUnit, wattUnit: dayaUnitEf, tegangan, faktorDaya,
+  }), [kolom, baris, u.w, u.h, namaUnit, dayaUnitEf, tegangan, faktorDaya]);
   const lewat4K = h.resX > 3840 || h.resY > 2160;
   const n = Math.max(1, screen);
+
+  //  Daftar material dari kalkulator + screen connection + power connection (semua screen).
+  const tKon = useMemo(() => susunKoneksi(dataKoneksi, koneksi), [dataKoneksi, koneksi]);
+  const hDaya = useMemo(() => susunDaya(dataDaya, dayaLED), [dataDaya, dayaLED]);
+  const ctrlBom = (() => {
+    if (modeHw === 'manual') return [vpM, kartuM].filter((x): x is Hardware => !!x).map(x => ({ nama: x.nama, qty: kapasitasHardware(x, h.totalPx, h.portLAN).qty }));
+    const pilih = hw.vp ?? hw.kartu;
+    return pilih ? [{ nama: pilih.hw.nama, qty: Math.max(pilih.qty, tKon.controller) }] : [];
+  })();
+  const barisBom = bomLED({
+    satuan: satuan === 'modul' && namaUnit === 'modul' ? 'modul' : 'cabinet', namaLED: labelLED,
+    unit: h.jumlahCab * n, screen: n, cadanganUnit: bom.cadanganUnit,
+    receivingCard: (tKon.hasil.sel.length + tKon.hasil.tanpaPort.length) * n, namaRC: tKon.rc?.nama ?? '', cadanganRC: bom.cadanganRC,
+    controller: ctrlBom, controllerCadangan: koneksi.cadangan === 'controller',
+    dayaMaksW: h.dayaMaksW * n, psuW: bom.psuW,
+    port: tKon.portTerpakai * n, portCadangan: tKon.portCadangan * n, panjangLAN: bom.panjangLAN,
+    sirkuit: hDaya.sirkuit.length * n, mcb: dayaLED.mcb, panjangPower: dayaLED.panjang,
+    lebarM: h.lebarM, tinggiM: h.tinggiM, baris,
+  });
+  const nilaiPenawaran = totalPenawaran(barisBom, harga, bom.ppn);
+  const adaHarga = barisBom.some(b => (harga[b.kunci] ?? 0) > 0);
   const selisihW = mode === 'ukuran' ? h.lebarM - targetW : 0;
   const selisihH = mode === 'ukuran' ? h.tinggiM - targetH : 0;
 
@@ -300,6 +346,39 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
   const cetak = () => bukaCetak(lembarLED());
   const pngLED = () => unduhLembarPNG(lembarLED(), namaBerkas('LED', labelLED, project, customer));
 
+  /** Lembar daftar material; dengan harga = penawaran (quotation). */
+  const lembarBom = (): Lembar => ({
+    judul: adaHarga ? 'Penawaran LED Videotron' : 'Daftar Material LED Videotron',
+    subjudul: [project || 'Tanpa nama project', customer].filter(Boolean).join(' — '),
+    kepala: [['Tanggal', tanggal], ['Dibuat oleh', pembuat]],
+    seksi: [
+      { judul: 'Layar', jenis: 'info',
+        kiri: [{ label: 'LED', nilai: `${labelLED} · ${kolom} × ${baris} ${namaUnit}${n > 1 ? ` · ${n} screen` : ''}` }, { label: 'Ukuran', nilai: `${f(h.lebarM)} × ${f(h.tinggiM)} m · ${h.resX} × ${h.resY} px`, sorot: true }],
+        kanan: [{ label: 'Customer', nilai: customer || '—' }, { label: 'Project', nilai: project || '—' }] },
+      { judul: adaHarga ? 'Rincian penawaran' : 'Daftar material', jenis: 'tabel',
+        kepala: adaHarga ? ['No', 'Item', 'Qty', 'Satuan', 'Harga satuan', 'Jumlah', 'Keterangan'] : ['No', 'Item', 'Qty', 'Satuan', 'Keterangan'],
+        rataKanan: adaHarga ? [0, 2, 4, 5] : [0, 2],
+        isi: [
+          ...barisBom.map((b, i) => adaHarga
+            ? [String(i + 1), b.item, b.qty.toLocaleString('id-ID'), b.satuan, harga[b.kunci] ? rupiah(harga[b.kunci]) : '—', harga[b.kunci] ? rupiah(harga[b.kunci] * b.qty) : '—', b.ket]
+            : [String(i + 1), b.item, b.qty.toLocaleString('id-ID'), b.satuan, b.ket]),
+          ...(adaHarga ? [
+            ['', 'Subtotal', '', '', '', rupiah(nilaiPenawaran.subtotal), ''],
+            ['', `PPN ${bom.ppn}%`, '', '', '', rupiah(nilaiPenawaran.ppn), ''],
+            ['', 'TOTAL', '', '', '', rupiah(nilaiPenawaran.total), ''],
+          ] : []),
+        ] },
+    ],
+    catatan: 'Jumlah power supply, kabel, dan rangka adalah perkiraan lapangan dari Tools Team. Cadangan (spare) disarankan 2-3% untuk modul & receiving card. Harga dapat berubah; verifikasi stok & datasheet sebelum penawaran resmi.',
+    tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Disetujui' }],
+  });
+  const teksBom = () => [
+    project && `*${project}*${customer ? ` - ${customer}` : ''}`,
+    `*${adaHarga ? 'Penawaran' : 'Daftar material'} LED ${labelLED}* · ${f(h.lebarM)}×${f(h.tinggiM)} m${n > 1 ? ` · ${n} screen` : ''}`,
+    ...barisBom.map((b, i) => `${i + 1}. ${b.item}: ${b.qty} ${b.satuan}${harga[b.kunci] ? ` × ${rupiah(harga[b.kunci])} = ${rupiah(harga[b.kunci] * b.qty)}` : ''}${b.ket ? ` (${b.ket})` : ''}`),
+    adaHarga && `Subtotal ${rupiah(nilaiPenawaran.subtotal)} · PPN ${bom.ppn}% ${rupiah(nilaiPenawaran.ppn)} · *Total ${rupiah(nilaiPenawaran.total)}*`,
+  ].filter(Boolean).join('\n');
+
   const aksiFile = (
     <div className="flex items-center gap-1 print:hidden">
       <button type="button" onClick={() => setFileMode('buka')} title="Buka hitungan tersimpan"
@@ -342,6 +421,63 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     </div>
   );
 
+  const kartuLayar = (judul: string, ...aksi: React.ReactNode[]) => (
+    <Kartu judul={judul} aksi={<div className="flex items-center gap-2 flex-wrap">{aksiFile}{aksi}</div>}>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-[13px] text-slate-800">
+            <span className="font-bold">{project || 'Tanpa nama project'}</span>{customer && <span className="text-slate-600"> · {customer}</span>}
+            {fileAktif && <span className="text-slate-500"> · file {fileAktif.nama}</span>}
+          </p>
+          <p className="text-[12px] text-slate-600 mt-0.5">
+            Layar dari Calculator LED: <b className="text-slate-800">{labelLED}</b> · {kolom} × {baris} {namaUnit} ({u.w}×{u.h} mm, {px.x}×{px.y} px) · {f(h.lebarM)} × {f(h.tinggiM)} m · {h.resX} × {h.resY} px · {refresh} Hz {bit}-bit
+          </p>
+        </div>
+        <button type="button" onClick={() => pindah('led')}
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">
+          Ubah layar di Calculator LED <ArrowRight size={14} />
+        </button>
+      </div>
+    </Kartu>
+  );
+
+  //  ── Sub menu Power Connection ──
+  if (tampilan === 'daya') {
+    const lembarDaya = (): Lembar => ({
+      judul: 'Power Connection LED',
+      subjudul: [project || 'Tanpa nama project', customer].filter(Boolean).join(' — '),
+      kepala: [['Tanggal', tanggal], ['Dibuat oleh', pembuat]],
+      seksi: [
+        { judul: 'Layar & listrik', jenis: 'info',
+          kiri: [
+            { label: 'LED', nilai: `${labelLED} · ${kolom} × ${baris} ${namaUnit} · ${f(h.lebarM)} × ${f(h.tinggiM)} m` },
+            { label: `Daya maks per ${namaUnit}`, nilai: `${f(dayaUnitEf, 1)} W · total ${f(h.dayaMaksW / 1000)} kW`, sorot: true },
+          ],
+          kanan: [
+            { label: 'Sumber', nilai: `${dayaLED.fase === 3 ? '3 fase' : '1 fase'} · ${tegangan} V · PF ${f(faktorDaya)}` },
+            { label: 'Sirkuit', nilai: `${hDaya.sirkuit.length} × MCB ${dayaLED.mcb} A (beban maks ${dayaLED.beban}%)`, sorot: true },
+          ] },
+        ...seksiCetakDaya(dataDaya, dayaLED),
+      ],
+      catatan: 'Rencana sirkuit dari Tools Team (daya maksimum putih penuh). Ukuran kabel, grounding, dan panel diverifikasi instalatir listrik sebelum instalasi.',
+      tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
+    });
+    const teksDaya = () => [
+      project && `*${project}*${customer ? ` - ${customer}` : ''}`,
+      `*Power Connection LED ${labelLED}* · ${kolom}×${baris} ${namaUnit} (${f(h.lebarM)}×${f(h.tinggiM)} m)`,
+      ringkasanDaya(dataDaya, dayaLED),
+    ].filter(Boolean).join('\n');
+    return (
+      <div className="space-y-4">
+        {barSub}
+        {kartuLayar('Power Connection', <TombolSalin key="salin" teks={teksDaya} onCetak={() => bukaCetak(lembarDaya())}
+          onPng={() => unduhLembarPNG(lembarDaya(), namaBerkas('Power Connection', labelLED, project, customer))} />)}
+        <RuangDaya d={dataDaya} s={dayaLED} onUbah={setDayaLED} namaFile={namaFile} />
+        {modalBersama}
+      </div>
+    );
+  }
+
   //  ── Sub menu Screen Connection ──
   if (tampilan === 'koneksi') {
     const t = susunKoneksi(dataKoneksi, koneksi);
@@ -377,23 +513,7 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     return (
       <div className="space-y-4">
         {barSub}
-        <Kartu judul="Screen Connection" aksi={<div className="flex items-center gap-2 flex-wrap">{aksiFile}<TombolSalin teks={teksKoneksi} onCetak={cetakKoneksi} onPng={pngKoneksi} /></div>}>
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="min-w-0">
-              <p className="text-[13px] text-slate-800">
-                <span className="font-bold">{project || 'Tanpa nama project'}</span>{customer && <span className="text-slate-600"> · {customer}</span>}
-                {fileAktif && <span className="text-slate-500"> · file {fileAktif.nama}</span>}
-              </p>
-              <p className="text-[12px] text-slate-600 mt-0.5">
-                Layar dari Calculator LED: <b className="text-slate-800">{labelLED}</b> · {kolom} × {baris} {namaUnit} ({u.w}×{u.h} mm, {px.x}×{px.y} px) · {f(h.lebarM)} × {f(h.tinggiM)} m · {h.resX} × {h.resY} px · {refresh} Hz {bit}-bit
-              </p>
-            </div>
-            <button type="button" onClick={() => pindah('led')}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">
-              Ubah layar di Calculator LED <ArrowRight size={14} />
-            </button>
-          </div>
-        </Kartu>
+        {kartuLayar('Screen Connection', <TombolSalin key="salin" teks={teksKoneksi} onCetak={cetakKoneksi} onPng={pngKoneksi} />)}
         <RuangKoneksi d={dataKoneksi} s={koneksi} onUbah={setKoneksi} namaFile={namaFile} />
         {modalBersama}
       </div>
@@ -607,9 +727,59 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
           <button type="button" onClick={() => pindah('koneksi')}
             className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-left hover:bg-blue-100">
             <span className="inline-flex items-center gap-2 text-[12.5px] font-bold text-blue-800"><Cable size={15} /> Screen Connection</span>
-            <span className="text-[12px] text-blue-800">{susunKoneksi(dataKoneksi, koneksi).portTerpakai} port · atur urutan kabel <ArrowRight size={13} className="inline" /></span>
+            <span className="text-[12px] text-blue-800">{tKon.portTerpakai} port · atur urutan kabel <ArrowRight size={13} className="inline" /></span>
+          </button>
+          <button type="button" onClick={() => pindah('daya')}
+            className="mt-2 w-full inline-flex items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-left hover:bg-amber-100">
+            <span className="inline-flex items-center gap-2 text-[12.5px] font-bold text-amber-900"><Zap size={15} /> Power Connection</span>
+            <span className="text-[12px] text-amber-900">{hDaya.sirkuit.length} sirkuit × MCB {dayaLED.mcb} A · atur fase <ArrowRight size={13} className="inline" /></span>
           </button>
           <Catatan>Kecerahan disarankan: {KECERAHAN[lingkungan]}. Kapasitas sesuai tabel referensi (60 Hz 8-bit ≈ 650 rb px/port); cek datasheet dan NovaLCT sebelum penawaran.</Catatan>
+        </Kartu>
+
+        <Kartu judul={adaHarga ? 'Daftar material & penawaran' : 'Daftar material (BOM)'}
+          aksi={<TombolSalin teks={teksBom} onCetak={() => bukaCetak(lembarBom())} onPng={() => unduhLembarPNG(lembarBom(), namaBerkas(adaHarga ? 'Penawaran LED' : 'BOM LED', labelLED, project, customer))} />}>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 mb-3">
+            <Angka label={`Spare ${namaUnit}`} nilai={bom.cadanganUnit} satuan="%" step={0.5} onUbah={v => v >= 0 && v <= 50 && setBom({ ...bom, cadanganUnit: v })} />
+            <Angka label="Spare RC & PSU" nilai={bom.cadanganRC} satuan="%" step={0.5} onUbah={v => v >= 0 && v <= 50 && setBom({ ...bom, cadanganRC: v })} />
+            {satuan === 'modul' && namaUnit === 'modul' && <Angka label="Power supply" nilai={bom.psuW} satuan="W" step={10} onUbah={v => v >= 50 && v <= 1000 && setBom({ ...bom, psuW: v })} />}
+            <Angka label="Kabel LAN ke layar" nilai={bom.panjangLAN} satuan="m" onUbah={v => v >= 1 && setBom({ ...bom, panjangLAN: v })} />
+            <Angka label="PPN" nilai={bom.ppn} satuan="%" onUbah={v => v >= 0 && v <= 30 && setBom({ ...bom, ppn: v })} />
+          </div>
+          <div className="overflow-x-auto -mx-1">
+            <table className="w-full text-[12.5px] min-w-[560px]">
+              <thead className="text-slate-600 bg-slate-50">
+                <tr>
+                  <th className="text-left font-bold px-2 py-2">Item</th>
+                  <th className="text-right font-bold px-2 py-2">Qty</th>
+                  <th className="text-right font-bold px-2 py-2 w-36">Harga satuan (Rp)</th>
+                  <th className="text-right font-bold px-2 py-2">Jumlah</th>
+                </tr>
+              </thead>
+              <tbody>
+                {barisBom.map(b => (
+                  <tr key={b.kunci} className="border-t border-slate-100 align-top">
+                    <td className="px-2 py-1.5"><span className="font-semibold text-slate-800">{b.item}</span>{b.ket && <span className="block text-[11px] text-slate-500">{b.ket}</span>}</td>
+                    <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">{b.qty.toLocaleString('id-ID')} <span className="text-slate-500">{b.satuan}</span></td>
+                    <td className="px-2 py-1">
+                      <input type="number" inputMode="numeric" min={0} step={1000} aria-label={`Harga satuan ${b.item}`} value={harga[b.kunci] ?? ''} placeholder="0"
+                        onChange={e => { const v = Math.max(0, Number(e.target.value) || 0); setHarga(hg => { const baru = { ...hg }; if (v > 0) baru[b.kunci] = v; else delete baru[b.kunci]; return baru; }); }}
+                        className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-right text-[12.5px] tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                    </td>
+                    <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">{harga[b.kunci] ? rupiah(harga[b.kunci] * b.qty) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+              {adaHarga && (
+                <tfoot className="border-t-2 border-slate-200">
+                  <tr><td colSpan={3} className="px-2 py-1 text-right text-slate-600">Subtotal</td><td className="px-2 py-1 text-right tabular-nums">{rupiah(nilaiPenawaran.subtotal)}</td></tr>
+                  <tr><td colSpan={3} className="px-2 py-1 text-right text-slate-600">PPN {bom.ppn}%</td><td className="px-2 py-1 text-right tabular-nums">{rupiah(nilaiPenawaran.ppn)}</td></tr>
+                  <tr><td colSpan={3} className="px-2 py-1.5 text-right font-extrabold text-slate-900">Total</td><td className="px-2 py-1.5 text-right tabular-nums font-extrabold text-blue-800">{rupiah(nilaiPenawaran.total)}</td></tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+          <Catatan>Receiving card & port dari Screen Connection, sirkuit & MCB dari Power Connection. Isi harga satuan untuk membuat lembar penawaran (harga ikut tersimpan bersama hitungan{hanyaLihat ? '' : ' saat Simpan'}).</Catatan>
         </Kartu>
 
 

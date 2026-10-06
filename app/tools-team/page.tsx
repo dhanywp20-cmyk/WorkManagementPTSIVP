@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { Ikon } from '@/components/shared/Ikon';
 import { KalkulatorLED, type SubLED } from './_components/KalkulatorLED';
+import { KalkulatorAV } from './_components/KalkulatorAV';
 
 //  three.js (~600 KB) hanya diunduh saat alat Desain 3D dibuka.
 const Desain3D = dynamic(() => import('./_components/Desain3D'), {
@@ -16,7 +17,8 @@ const Desain3D = dynamic(() => import('./_components/Desain3D'), {
 //  Desain 3D pertama = alat yang tampil saat halaman dibuka.
 const ALAT = [
   { k: '3d', judul: 'Desain 3D Ruang', ket: 'Tata letak ruang AV + analisis jarak pandang', ikon: '🧊', C: Desain3D },
-  { k: 'led', judul: 'LED Videotron', ket: 'Calculator LED & Screen Connection (urutan kabel ala NovaLCT)', ikon: '📺', C: KalkulatorLED },
+  { k: 'led', judul: 'LED Videotron', ket: 'Calculator LED, Screen & Power Connection, daftar material & penawaran', ikon: '📺', C: KalkulatorLED },
+  { k: 'av', judul: 'Kalkulator AV', ket: 'Ukuran layar, proyektor, bandwidth sinyal, audio, daya & panas', ikon: '🧮', C: KalkulatorAV },
 ] as const;
 
 function ToolsKerjaInner() {
@@ -24,7 +26,7 @@ function ToolsKerjaInner() {
   const [siap, setSiap] = useState(false);
   //  ?alat=koneksi (tautan lama) = LED Videotron, sub menu Screen Connection.
   const [aktif, setAktif] = useState<string>(() => (sp.get('alat') === 'koneksi' ? 'led' : ALAT.some(a => a.k === sp.get('alat')) ? sp.get('alat')! : '3d'));
-  const subAwal: SubLED = sp.get('alat') === 'koneksi' || sp.get('sub') === 'koneksi' ? 'koneksi' : 'led';
+  const subAwal: SubLED = sp.get('alat') === 'koneksi' || sp.get('sub') === 'koneksi' ? 'koneksi' : sp.get('sub') === 'daya' ? 'daya' : 'led';
 
   useEffect(() => {
     const u = getSession();
@@ -65,7 +67,7 @@ function ToolsKerjaInner() {
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
         <main className="min-w-0">
           {/* LED Videotron berisi sub menu Calculator LED | Screen Connection. */}
-          {aktif === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} /> : <Desain3D />}
+          {aktif === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} /> : aktif === 'av' ? <KalkulatorAV /> : <Desain3D />}
         </main>
       </div>
     </div>
