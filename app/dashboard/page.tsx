@@ -672,8 +672,12 @@ export default function Dashboard() {
         const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').eq('id', parsed.id).single();
         const userData: User = (!error && data) ? data : parsed;
         if (!error && data) {
-          //  Penanda pimpinan tidak ada di select ini - ambil dari sesi (lihat lib/auth.ts setSession).
-          const segar = { ...data, pimpinan: (parsed as { pimpinan?: unknown }).pimpinan === true };
+          //  Penanda pimpinan dibaca ulang dari DB lewat kueri terpisah & toleran (kolom baru tidak
+          //  dimasukkan ke select utama, lihat lib/auth.ts). Tanpa ini, sesi yang dibuat SEBELUM
+          //  akun dijadikan pimpinan tetap "bukan pimpinan" sampai logout - datanya tersaring.
+          const { data: pim, error: galatPim } = await supabase.from('users').select('pimpinan').eq('id', parsed.id).maybeSingle();
+          const pimpinanDb = !galatPim && pim ? (pim as { pimpinan?: unknown }).pimpinan === true : (parsed as { pimpinan?: unknown }).pimpinan === true;
+          const segar = { ...data, pimpinan: pimpinanDb };
           setCurrentUser(segar);
           setSession(segar);
         }

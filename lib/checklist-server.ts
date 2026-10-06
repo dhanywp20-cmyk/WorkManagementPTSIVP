@@ -24,6 +24,8 @@ import {
  *   - Team (role team)   : melihat semua proyek (sama seperti Project Progress
  *                          lama, lihat is_progress_admin di basis data).
  *   - Sales              : melihat proyek yang mencatat namanya.
+ *   - Pimpinan (users.pimpinan, lib/pimpinan.ts): MELIHAT semua proyek & checklist,
+ *                          tanpa hak tulis apa pun (bukan admin, bukan anggota).
  *   - Tim lapangan tanpa akun: link share checklist (centang & kendala saja).
  */
 
@@ -42,6 +44,8 @@ export interface Akun {
   id: string;
   nama: string;
   role: string;
+  /** Akun pimpinan: boleh membaca semua, tidak boleh menulis. */
+  pimpinan?: boolean;
 }
 
 export function akunAdmin(a: Akun): boolean {
@@ -53,6 +57,15 @@ export function akunLihatSemua(a: Akun): boolean {
   return ['admin', 'superadmin', 'team'].includes(a.role.toLowerCase());
 }
 
+/**
+ * Membaca semua proyek: admin, team, ATAU akun pimpinan (hanya baca - sama dengan
+ * pimpinan_lihat_semua() di kebijakan pp_select / checklist DB). Fitur tim seperti AI
+ * checklist tetap memakai akunLihatSemua.
+ */
+export function akunBacaSemua(a: Akun): boolean {
+  return akunLihatSemua(a) || a.pimpinan === true;
+}
+
 function samaNama(a: string | null | undefined, b: string | null | undefined): boolean {
   const x = (a ?? '').trim().toLowerCase();
   return !!x && x === (b ?? '').trim().toLowerCase();
@@ -62,9 +75,13 @@ export async function ambilAkun(request: NextRequest):
   Promise<{ galat: NextResponse } | { akun: Akun; db: Db }> {
   const s = await getSessionUser(request);
   if (!s) return { galat: galat('Sesi tidak valid. Login ulang.', 401) };
+  const db = getAdminClient();
+  //  Penanda pimpinan dibaca langsung dari DB (bukan dari sesi) - kueri terpisah & toleran:
+  //  bila kolom belum ada hasilnya null = bukan pimpinan.
+  const { data: pim } = await db.from('users').select('pimpinan').eq('id', s.id).maybeSingle();
   return {
-    akun: { id: s.id, nama: (s.full_name || s.username || '').trim(), role: s.role ?? '' },
-    db: getAdminClient(),
+    akun: { id: s.id, nama: (s.full_name || s.username || '').trim(), role: s.role ?? '', pimpinan: (pim as { pimpinan?: boolean } | null)?.pimpinan === true },
+    db,
   };
 }
 
@@ -137,7 +154,7 @@ export async function muatDaftarProyek(db: Db, akun: Akun): Promise<ProyekRingka
   ]);
 
   const daftarSaya = new Set(anggota.filter(x => x.user_id === akun.id).map(x => x.daftar_id));
-  const lihatSemua = akunLihatSemua(akun);
+  const lihatSemua = akunBacaSemua(akun);
   const admin = akunAdmin(akun);
 
   return proyek.flatMap(p => {
@@ -181,7 +198,7 @@ export async function muatProyek(db: Db, akun: Akun, proyekId: string): Promise<
   ]) : [[], new Map()] as [ChecklistAnggota[], Map<string, StatChecklist>];
 
   const admin = akunAdmin(akun);
-  const lihatSemua = akunLihatSemua(akun) || samaNama(proyek.sales_name, akun.nama);
+  const lihatSemua = akunBacaSemua(akun) || samaNama(proyek.sales_name, akun.nama);
   const ringkas: ChecklistRingkas[] = daftar.map(d => {
     const ang = anggota.filter(a => a.daftar_id === d.id);
     const saya = ang.some(a => a.user_id === akun.id);
@@ -208,7 +225,7 @@ export async function hakAtas(db: Db, akun: Akun, daftarId: string):
   const { data: ang } = await db.from('checklist_anggota').select('user_id')
     .eq('daftar_id', daftarId).eq('user_id', akun.id).maybeSingle();
   if (admin || ang) return { hak: { admin, edit: true }, proyekId: d.proyek_id };
-  if (akunLihatSemua(akun)) return { hak: { admin: false, edit: false }, proyekId: d.proyek_id };
+  if (akunBacaSemua(akun)) return { hak: { admin: false, edit: false }, proyekId: d.proyek_id };
   const { data: p } = await db.from('checklist_proyek').select('sales_name').eq('id', d.proyek_id).maybeSingle();
   if (p && samaNama(p.sales_name, akun.nama)) return { hak: { admin: false, edit: false }, proyekId: d.proyek_id };
   return null;
