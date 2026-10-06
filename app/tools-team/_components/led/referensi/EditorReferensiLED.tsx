@@ -1,12 +1,14 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { MODUL_LED, SENDING_CARD, VIDEO_PROCESSOR, BRAND_LED, BRAND_UMUM, brandModul, daftarBrand, type ModulLED, type Hardware, type BrandLED } from '@/lib/av-hitung';
-import { bersihkanReferensiLED, type RefLED } from '@/lib/tools-team';
+import { bukaCetak, type Lembar, unduhLembarPNG } from '../../bersama/cetak';
+import { TabelHardware } from './TabelHardware';
+import { Hapus, NamaBrand, sel, SelAngka, SelTeks, Tambah, td, th } from './komponen';
+import { useReferensiLED } from './useReferensiLED';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
-import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
-import { bukaCetak, unduhLembarPNG, type Lembar } from '../bersama/cetak';
-
+import { BRAND_LED, BRAND_UMUM, type BrandLED, brandModul, daftarBrand, type Hardware, type ModulLED } from '@/lib/av-hitung';
+import { useState } from 'react';
+import type { RefLED } from '@/lib/tools-team';
 /**
  * Tabel referensi Kalkulator LED (setara sheet "REF Module LED" & "REF
  * Hardware" di LED Calculator v1 - DWP).
@@ -21,150 +23,6 @@ import { bukaCetak, unduhLembarPNG, type Lembar } from '../bersama/cetak';
  */
 
 export type { RefLED };
-const KUNCI = 'wm_led_referensi';
-const BAWAAN: RefLED = { modul: MODUL_LED, kartu: SENDING_CARD, vp: VIDEO_PROCESSOR, brand: BRAND_LED };
-
-export function useReferensiLED() {
-  const [lokal, setLokal] = useState<RefLED | null>(null);
-  const [tim, setTim] = useState<RefLED | null>(null);
-  const [infoTim, setInfoTim] = useState<{ oleh: string | null; pada: string | null }>({ oleh: null, pada: null });
-  const [bolehSimpanTim, setBolehSimpanTim] = useState(false);
-  const [sibuk, setSibuk] = useState(false);
-  const [pesan, setPesan] = useState('');
-
-  useEffect(() => {
-    try { const s = localStorage.getItem(KUNCI); if (s) { const j = bersihkanReferensiLED(JSON.parse(s)); if (j) setLokal(j); } } catch { /* abaikan */ }
-    let hidup = true;
-    fetch('/api/tools-team/referensi-led', { credentials: 'include', cache: 'no-store' })
-      .then(r => (r.ok ? r.json() : null))
-      .then(j => {
-        if (!hidup || !j?.ok) return;
-        setTim(j.referensi ?? null); setBolehSimpanTim(!!j.bolehUbah); setInfoTim({ oleh: j.oleh ?? null, pada: j.diubahPada ?? null });
-      })
-      .catch(() => { /* luring: lapis lokal / bawaan tetap jalan */ });
-    return () => { hidup = false; };
-  }, []);
-
-  const data = lokal ?? tim ?? BAWAAN;
-  const sumber: 'lokal' | 'tim' | 'bawaan' = lokal ? 'lokal' : tim ? 'tim' : 'bawaan';
-  const tulisLokal = (r: RefLED | null) => {
-    setLokal(r);
-    try { if (r) localStorage.setItem(KUNCI, JSON.stringify(r)); else localStorage.removeItem(KUNCI); } catch { /* abaikan */ }
-  };
-  const ubah = (r: RefLED) => { tulisLokal(r); setPesan(''); };
-  /** Buang draf lokal - kembali ke referensi tim (atau bawaan bila belum ada). */
-  const reset = () => { tulisLokal(null); setPesan(''); };
-
-  const panggil = async (metode: 'PUT' | 'DELETE', body?: unknown) => {
-    setSibuk(true); setPesan('');
-    try {
-      const r = await fetch('/api/tools-team/referensi-led', {
-        method: metode, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined,
-      });
-      const j = await r.json().catch(() => null);
-      if (!r.ok || !j?.ok) { setPesan(j?.alasan ?? 'Gagal menyimpan ke server.'); return false; }
-      return true;
-    } catch { setPesan('Tidak terhubung ke server.'); return false; } finally { setSibuk(false); }
-  };
-  const simpanUntukTim = async () => {
-    if (!lokal) return;
-    if (await panggil('PUT', { referensi: lokal })) {
-      setTim(lokal); tulisLokal(null); setInfoTim({ oleh: 'Anda', pada: new Date().toISOString() }); setPesan('Tersimpan untuk seluruh tim.');
-    }
-  };
-  const resetTim = async () => {
-    if (await panggil('DELETE')) { setTim(null); tulisLokal(null); setInfoTim({ oleh: null, pada: null }); setPesan('Referensi tim dikembalikan ke tabel bawaan.'); }
-  };
-
-  return {
-    data, ubah, reset, sumber, infoTim, bolehSimpanTim, simpanUntukTim, resetTim, sibuk, pesan,
-    diubah: JSON.stringify(data) !== JSON.stringify(BAWAAN),
-  };
-}
-
-const sel = 'rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
-
-function SelAngka({ nilai, onUbah, lebar = 'w-20', label }: { nilai: number; onUbah: (v: number) => void; lebar?: string; label: string }) {
-  const [teks, setTeks] = useState<string | null>(null);
-  return (
-    <input type="number" inputMode="decimal" aria-label={label} value={teks ?? String(nilai)}
-      onChange={e => { setTeks(e.target.value); const v = parseFloat(e.target.value.replace(',', '.')); if (Number.isFinite(v) && v >= 0) onUbah(v); }}
-      onBlur={() => setTeks(null)} className={`${sel} ${lebar}`} />
-  );
-}
-
-function SelTeks({ nilai, onUbah, lebar = 'w-28', label }: { nilai: string; onUbah: (v: string) => void; lebar?: string; label: string }) {
-  return <input type="text" aria-label={label} value={nilai} onChange={e => onUbah(e.target.value)} className={`${sel} ${lebar}`} />;
-}
-
-/** Nama brand: disimpan saat selesai mengetik (blur / Enter) supaya modulnya tidak ikut berpindah tiap huruf. */
-function NamaBrand({ nilai, onSimpan }: { nilai: string; onSimpan: (v: string) => void }) {
-  const [teks, setTeks] = useState<string | null>(null);
-  const simpan = () => { if (teks !== null && teks.trim() && teks.trim() !== nilai) onSimpan(teks.trim()); setTeks(null); };
-  return (
-    <input type="text" aria-label="Nama brand" value={teks ?? nilai} maxLength={60} disabled={nilai === BRAND_UMUM}
-      onChange={e => setTeks(e.target.value)} onBlur={simpan} onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-      className={`${sel} w-36 font-semibold disabled:bg-slate-50 disabled:text-slate-500`} />
-  );
-}
-
-function Hapus({ onKlik, label }: { onKlik: () => void; label: string }) {
-  return (
-    <button type="button" onClick={onKlik} aria-label={label} title={label}
-      className="w-8 h-8 grid place-items-center rounded-lg text-slate-500 hover:text-rose-700 hover:bg-rose-50">
-      <Ikon nama="🗑" ukuran={15} />
-    </button>
-  );
-}
-
-const th = 'px-2 py-2 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600 whitespace-nowrap';
-const td = 'px-1.5 py-1 align-middle';
-
-function Tambah({ onKlik, teks }: { onKlik: () => void; teks: string }) {
-  return (
-    <button type="button" onClick={onKlik}
-      className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-blue-700 hover:bg-blue-50">
-      + {teks}
-    </button>
-  );
-}
-
-function TabelHardware({ judul, data, onUbah, tampilSender }: { judul: string; data: Hardware[]; onUbah: (d: Hardware[]) => void; tampilSender: boolean }) {
-  const set = (i: number, p: Partial<Hardware>) => onUbah(data.map((h, j) => (j === i ? { ...h, ...p } : h)));
-  return (
-    <div>
-      <p className="text-[12.5px] font-bold text-slate-800 mb-1.5">{judul}</p>
-      <div className="relative overflow-x-auto rounded-xl border border-slate-200">
-        <table className="w-full text-sm">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className={th}>Model</th><th className={th}>Maks pixel</th><th className={th}>Port LAN</th>
-              {tampilSender && <th className={th}>Sender bawaan</th>}
-              <th className={th}>Keterangan</th><th className={th}><span className="sr-only">Hapus</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((h, i) => (
-              <tr key={i} className="border-t border-slate-100">
-                <td className={td}><SelTeks label="Model" nilai={h.nama} onUbah={v => set(i, { nama: v })} lebar="w-36" /></td>
-                <td className={td}><SelAngka label="Maks pixel" nilai={h.maksPx} onUbah={v => set(i, { maksPx: Math.round(v) })} lebar="w-28" /></td>
-                <td className={td}><SelAngka label="Port LAN" nilai={h.port} onUbah={v => set(i, { port: Math.round(v) })} lebar="w-16" /></td>
-                {tampilSender && (
-                  <td className={`${td} text-center`}>
-                    <input type="checkbox" aria-label="Sender bawaan" checked={h.senderBawaan} onChange={e => set(i, { senderBawaan: e.target.checked })} className="w-4 h-4" />
-                  </td>
-                )}
-                <td className={td}><SelTeks label="Keterangan" nilai={h.ket} onUbah={v => set(i, { ket: v })} lebar="w-56" /></td>
-                <td className={td}><Hapus label={`Hapus ${h.nama}`} onKlik={() => onUbah(data.filter((_, j) => j !== i))} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <Tambah teks="Tambah model" onKlik={() => onUbah([...data, { nama: 'Model baru', maksPx: 1_000_000, port: 2, senderBawaan: tampilSender, ket: '' }])} />
-    </div>
-  );
-}
 
 export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoTim, bolehSimpanTim, simpanUntukTim, resetTim, sibuk, pesan, buka, onTutup }: ReturnType<typeof useReferensiLED> & { buka: boolean; onTutup: () => void }) {
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);

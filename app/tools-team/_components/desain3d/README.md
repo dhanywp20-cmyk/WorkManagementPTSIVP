@@ -1,5 +1,7 @@
 # Desain 3D Ruang AV — arsitektur kode
 
+Lihat juga `../README.md` (struktur seluruh Tools Team).
+
 `../Desain3D.tsx` hanya **kerangka** (±140 baris): memanggil hook per kelompok engine lalu
 menyusun panel. Logika ada di folder-folder di bawah, dipisah menurut tanggung jawab —
 dari yang paling murni (tanpa three.js / React) ke yang paling dekat ke layar.
@@ -53,7 +55,8 @@ satu baris di tabel (TypeScript menolak bila ada jenis yang terlewat).
 | `venue.ts` | tribun, panggung |
 | `mapping.ts` | bidang mapping, objek mapping (bentuk dasar & siluet), model 3D impor |
 | `ruangan.ts` | lantai & dinding tiap ruang, sekat, pintu & jendela |
-| `permukaan.ts` / `tekstur.ts` | tekstur bahan & tekstur kanvas (lantai, konten layar, isi rack) |
+| `permukaan.ts` | tekstur bahan: kayu, kain, gril speaker, logam berlubang, dinding aksen |
+| `tekstur.ts` / `konten.ts` / `rak.ts` | tekstur kanvas: lantai & lampu · konten layar (pola, CCTV, dashboard, home screen) · muka perangkat rack |
 
 ## mesin/ — engine kanvas
 

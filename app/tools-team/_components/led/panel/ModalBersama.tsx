@@ -2,7 +2,7 @@
 /** Modal bersama: editor referensi produk & buka / simpan file hitungan. */
 import { f } from '../../bersama/ui';
 import { FileLED } from '../FileLED';
-import { EditorReferensiLED } from '../ReferensiLED';
+import { EditorReferensiLED } from '../referensi/EditorReferensiLED';
 import type { AlatLED } from './alat';
 
 export function ModalBersama({ a }: { a: AlatLED }) {

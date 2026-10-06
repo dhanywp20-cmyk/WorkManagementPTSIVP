@@ -4,7 +4,8 @@
  */
 import type * as T from 'three';
 import { type Benda, modulLA, sudutModulLA, tiltLADari, tipeSpeakerDari } from '../inti';
-import { kanvas, teksturIsiRak, teksturPanel } from './tekstur';
+import { kanvas, teksturPanel } from './tekstur';
+import { teksturIsiRak } from './rak';
 import { batang, blok, type Konteks, kotak, mat, persegiBulat } from './dasar';
 import { teksturGril, teksturMicBoundary } from './permukaan';
 

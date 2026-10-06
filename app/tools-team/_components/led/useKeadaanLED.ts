@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useRiwayat } from '../bersama/riwayat';
 import type { FileAktifLED } from './FileLED';
-import { useReferensiLED } from './ReferensiLED';
+import { useReferensiLED } from './referensi/useReferensiLED';
 import { bersihkanDaya, type DataDaya, DAYA_AWAL, type PengaturanDaya, susunDaya } from './daya/data';
 import { bersihkanKoneksi, type DataKoneksi, KONEKSI_AWAL, type PengaturanKoneksi, susunKoneksi } from './koneksi/data';
 import { getSession } from '@/lib/auth';

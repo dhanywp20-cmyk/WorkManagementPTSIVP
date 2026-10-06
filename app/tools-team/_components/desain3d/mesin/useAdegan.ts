@@ -4,7 +4,8 @@
  * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
  */
 import { buatModel, sesuaikanTinggi } from '../bangun';
-import { aturNyalaLampu, teksturKonten } from '../bangun/tekstur';
+import { aturNyalaLampu } from '../bangun/tekstur';
+import { teksturKonten } from '../bangun/konten';
 import { nyalaLampu, tandaBentuk } from '../inti';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { useEffect } from 'react';
