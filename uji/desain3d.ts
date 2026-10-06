@@ -497,5 +497,20 @@ console.log('\nJalur & panjang kabel');
   cek('rekap per jenis menjumlah semua tarikan', rekap.reduce((a, r) => a + r.tarikan, 0) === j.length);
 }
 
+console.log('\nPemasangan display (pop-up / hollow / standfloor)');
+{
+  const k = M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu' })[0];
+  cek('videowall, IFP, signage & LED punya pilihan pemasangan', ['videowall', 'ifp', 'tv', 'led'].every(j => M3.BISA_PASANG.includes(j as M3.Jenis)));
+  cek('LED lama tanpa pilihan = struktur hollow, display lain = pop-up', M3.pasangDari({ jenis: 'led' }) === 'hollow' && M3.pasangDari({ jenis: 'videowall' }) === 'dinding');
+  const led = M3.bendaBaru('led', k);
+  cek('LED baru: hollow, punggung 10 cm dari dinding', led.pasang === 'hollow' && Math.abs(led.z - led.d / 2 - M3.CELAH_PASANG.hollow) < 1e-9);
+  const ledStand = M3.bendaBaru('led', k, { pasang: 'standfloor' });
+  cek('LED standfloor: lebih rendah & menjauh dari dinding', ledStand.elev < led.elev && ledStand.z > led.z);
+  const sig = M3.bendaBaru('tv', k, { pasang: 'hollow' });
+  cek('signage hollow: punggung 10 cm dari dinding', Math.abs(sig.z - sig.d / 2 - M3.CELAH_PASANG.hollow) < 1e-9);
+  cek('template Produk saya menerima pemasangan hollow', bersihkanAturProduk({ pasang: 'hollow' }).pasang === 'hollow');
+  cek('pemasangan mengubah tanda bentuk (model dibangun ulang)', M3.tandaBentuk({ ...led, pasang: 'standfloor' }) !== M3.tandaBentuk(led));
+}
+
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

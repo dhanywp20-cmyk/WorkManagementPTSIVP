@@ -1,6 +1,6 @@
 /** Pembuat model 3D three.js untuk tiap jenis benda (dipisah dari model.ts). */
 import type * as T from 'three';
-import { type Benda, type Finish, barisTribun, engselProyektor, kursiTribunPerBaris, lensaDatar, modulLA, spekVideowall, sudutLampuDari, sudutModulLA, tiltDari, tiltLADari, tipeSpeakerDari, ukuranBidang, warnaKelvin } from './model';
+import { pasangDari, type Benda, type Finish, barisTribun, engselProyektor, kursiTribunPerBaris, lensaDatar, modulLA, spekVideowall, sudutLampuDari, sudutModulLA, tiltDari, tiltLADari, tipeSpeakerDari, ukuranBidang, warnaKelvin } from './model';
 import { acak, kanvas, teksturGrid, teksturIsiRak, teksturKolamCahaya, teksturMonitor, teksturPanel, warnaSah } from './tekstur';
 
 // ── Pembuat model ──────────────────────────────────────────────────────────
@@ -535,9 +535,43 @@ function bracketPopOut(THREE: typeof T, lebar: number, tinggi: number, x: number
 }
 
 /**
- * Standfloor beroda (gaya stand interactive/signage): dua tiang tegak di
- * belakang display, dua palang dudukan, kaki bercabang depan-belakang dengan
- * roda, dan palang bawah. Tiang memanjang ke lantai mengikuti ketinggian.
+ * Wall bracket + struktur hollow (videowall, LED, signage): rangka besi hollow 40×40 di belakang
+ * display - tiang tegak tiap ±0,6 m, palang mendatar atas-bawah (+ tengah untuk display tinggi) -
+ * diikat ke dinding dengan plat siku berbaut. Mengisi celah punggung display sampai dinding.
+ */
+function strukturHollow(THREE: typeof T, lebar: number, tinggi: number, zPunggung: number): T.Group {
+  const g = new THREE.Group();
+  const besi = mat(THREE, 0x3b4048, { metalness: 0.6, roughness: 0.45 });
+  const plat = mat(THREE, 0x8b9099, { metalness: 0.75, roughness: 0.35 });
+  const baut = mat(THREE, 0xc7cbd1, { metalness: 0.9, roughness: 0.25 });
+  const s = 0.04, celah = 0.1;
+  const zDinding = zPunggung - celah;
+  const zRangka = zDinding + 0.035 + s / 2;
+  const nTiang = Math.max(2, Math.ceil(lebar / 0.6) + 1);
+  const xs = Array.from({ length: nTiang }, (_, i) => -lebar / 2 + s / 2 + ((lebar - s) * i) / (nTiang - 1));
+  const lebih = Math.min(0.08, tinggi * 0.05);
+  for (const x of xs) g.add(kotak(THREE, s, tinggi + lebih * 2, s, besi, x, tinggi / 2, zRangka));
+  const nPalang = tinggi > 1.4 ? Math.ceil(tinggi / 0.7) + 1 : 2;
+  for (let i = 0; i < nPalang; i++) {
+    const y = 0.06 + ((tinggi - 0.12) * i) / (nPalang - 1);
+    g.add(kotak(THREE, lebar + 0.04, s, s, besi, 0, y, zRangka + s));   // palang di depan tiang, menempel punggung display
+  }
+  //  Plat siku ke dinding (atas & bawah tiap tiang) dengan dua baut.
+  for (const x of xs) for (const y of [tinggi + lebih - 0.05, -lebih + 0.05]) {
+    g.add(kotak(THREE, 0.09, 0.07, 0.006, plat, x, y, zDinding + 0.003));
+    g.add(kotak(THREE, 0.006, 0.07, 0.035, plat, x - s / 2 - 0.003, y, zDinding + 0.02));
+    for (const dx of [-0.028, 0.028]) {
+      const bt = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.008, 10), baut);
+      bt.rotation.x = Math.PI / 2; bt.position.set(x + dx, y, zDinding + 0.008); g.add(bt);
+    }
+  }
+  return g;
+}
+
+/**
+ * Standfloor beroda (gaya stand interactive/signage): tiang tegak di belakang display
+ * (dua, atau tiap ±1,4 m untuk display lebar seperti videowall & LED), palang dudukan,
+ * kaki bercabang depan-belakang dengan roda, dan palang bawah. Tiang memanjang ke lantai.
  */
 export function standfloor(THREE: typeof T, g: T.Group, b: Benda, tinggiTiang: number) {
   const hitam = mat(THREE, 0x15171a, { metalness: 0.5, roughness: 0.42 });
@@ -545,12 +579,13 @@ export function standfloor(THREE: typeof T, g: T.Group, b: Benda, tinggiTiang: n
   const karet = mat(THREE, 0x0b0c0e, { roughness: 0.8 });
   const xT = Math.max(0.22, Math.min(b.w / 2 - 0.1, Math.max(0.3, b.w * 0.36)));
   const zT = -b.d / 2 - 0.03;
-  for (const sx of [-1, 1]) g.add(batang(THREE, 0.065, 0.035, hitam, sx * xT, zT, 'kaki', tinggiTiang));
+  const nTiang = b.w > 2 ? Math.ceil((xT * 2) / 1.4) + 1 : 2;
+  const xs = Array.from({ length: nTiang }, (_, i) => -xT + (2 * xT * i) / (nTiang - 1));
+  for (const x of xs) g.add(batang(THREE, 0.065, 0.035, hitam, x, zT, 'kaki', tinggiTiang));
   //  Palang dudukan display (di depan tiang, menempel punggung display).
   for (const fy of [0.78, 0.22]) g.add(kotak(THREE, xT * 2 + 0.065, 0.075, 0.012, hitam, 0, b.h * fy, -b.d / 2 - 0.008));
   const alas = new THREE.Group();
-  for (const sx of [-1, 1]) {
-    const x = sx * xT;
+  for (const x of xs) {
     for (const dz of [0.34, -0.3]) {
       alas.add(tiangAntara(THREE, new THREE.Vector3(x, 0.36, zT), new THREE.Vector3(x, 0.075, zT + dz), 0.022, hitam, 0.018));
       const rumah = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.03, 12), hitam);
@@ -561,6 +596,17 @@ export function standfloor(THREE: typeof T, g: T.Group, b: Benda, tinggiTiang: n
   }
   alas.add(kotak(THREE, xT * 2, 0.035, 0.03, abu, 0, 0.34, zT - 0.045)); // palang bawah
   g.add(diLantai(alas));
+}
+
+/** Pemasangan display sesuai pilihan: bracket pop-up per sel (kol × bar), struktur hollow, atau standfloor. */
+function pasangDisplay(THREE: typeof T, g: T.Group, b: Benda, kol: number, bar: number, faktorTiang: number) {
+  const ps = pasangDari(b);
+  if (ps === 'standfloor') { standfloor(THREE, g, b, b.h * faktorTiang); return; }
+  if (ps === 'hollow') { g.add(strukturHollow(THREE, b.w, b.h, -b.d / 2)); return; }
+  const pw = b.w / kol, ph = b.h / bar;
+  for (let i = 0; i < kol; i++) for (let j = 0; j < bar; j++) {
+    g.add(bracketPopOut(THREE, pw, ph, -b.w / 2 + pw * (i + 0.5), ph * (j + 0.5), -b.d / 2));
+  }
 }
 
 /**
@@ -593,14 +639,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       const grid = new THREE.Mesh(new THREE.PlaneGeometry(b.w, b.h),
         new THREE.MeshBasicMaterial({ map: teksturGrid(THREE, kol, bar, tebal, 'rgba(8,8,8,0.95)'), transparent: true, toneMapped: false }));
       grid.position.set(0, b.h / 2, b.d / 2 + 0.002); g.add(grid);
-      if (b.pasang === 'standfloor') standfloor(THREE, g, b, b.h * 0.8);
-      else {
-        //  Satu bracket pop-out per panel (bisa ditarik keluar untuk servis).
-        const pw = b.w / kol, ph = b.h / bar;
-        for (let i = 0; i < kol; i++) for (let j = 0; j < bar; j++) {
-          g.add(bracketPopOut(THREE, pw, ph, -b.w / 2 + pw * (i + 0.5), ph * (j + 0.5), -b.d / 2));
-        }
-      }
+      pasangDisplay(THREE, g, b, kol, bar, 0.8);
       break;
     }
     case 'tv': case 'ifp': {
@@ -613,8 +652,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
         g.add(kotak(THREE, b.w * 0.25, 0.012, 0.03, mat(THREE, 0x9ca3af, { metalness: 0.6 }), 0, -0.006, b.d / 2 - 0.01)); // baki pena
         g.add(kotak(THREE, 0.12, 0.012, 0.012, mat(THREE, 0xe5e7eb), -b.w * 0.06, 0.006, b.d / 2));
       }
-      if (b.pasang === 'standfloor') standfloor(THREE, g, b, b.h * 0.78);
-      else g.add(bracketPopOut(THREE, b.w, b.h, 0, b.h / 2, -b.d / 2));
+      pasangDisplay(THREE, g, b, 1, 1, 0.78);
       break;
     }
     case 'led': {
@@ -626,7 +664,8 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       const grid = new THREE.Mesh(new THREE.PlaneGeometry(b.w, b.h),
         new THREE.MeshBasicMaterial({ map: teksturGrid(THREE, kol, bar), transparent: true, toneMapped: false }));
       grid.position.set(0, b.h / 2, b.d / 2 + 0.002); g.add(grid);
-      for (const sx of [-0.35, 0.35]) g.add(batang(THREE, 0.06, 0.3, rangka, sx * b.w, -0.05, 'kaki'));
+      //  Bracket pop-up per ±1 m (cabinet LED berat), struktur hollow, atau standfloor beroda.
+      pasangDisplay(THREE, g, b, Math.max(1, Math.round(b.w)), Math.max(1, Math.round(b.h)), 0.8);
       break;
     }
     case 'layar': {

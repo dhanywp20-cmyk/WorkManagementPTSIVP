@@ -11,7 +11,7 @@ import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import {
-  type Benda, type Ruang, type Kotak, type ItemKatalog, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
+  type Benda, type Ruang, type Kotak, type ItemKatalog, BISA_PASANG, pasangDari, CELAH_PASANG, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, teksturLantai, teksturKonten,
   salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, sambungan, sambunganKe, MAKS_RUANG, type RuangSambung, warnaSah, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
@@ -1145,7 +1145,7 @@ export default function Desain3D() {
         { cocok: hx > 0.9, celah: bx - k.x0, pos: (dy: number) => new THREE.Vector3(k.x0 + 0.004, yTengah - dy, d.z), rotY: Math.PI / 2 },
         { cocok: hx < -0.9, celah: k.x0 + k.p - bx, pos: (dy: number) => new THREE.Vector3(k.x0 + k.p - 0.004, yTengah - dy, d.z), rotY: -Math.PI / 2 },
       ].find(x => x.cocok && x.celah >= -0.05 && x.celah <= 0.35);
-      const stand = d.pasang === 'standfloor';
+      const stand = pasangDari(d) === 'standfloor';
       if (dindingDekat && !stand) {
         //  Cahaya ruangan dari atas-depan: bayangan jatuh sedikit di bawah display, makin jauh dari dinding
         //  makin turun & makin kabur.
@@ -1403,7 +1403,9 @@ export default function Desain3D() {
   const tempel = (sisi: Sisi) => {
     if (!terpilih) return;
     const k: Kotak = kotakRuang[ruangDari(ruang, terpilih.x)] ?? kotakRuang[0];
-    const tebal = terpilih.d / 2 + (['videowall', 'tv', 'ifp'].includes(terpilih.jenis) ? 0.06 : 0.02);
+    //  Display ditempel dengan bracket / struktur hollow: punggungnya berjarak sesuai pemasangan.
+    const psTempel = BISA_PASANG.includes(terpilih.jenis) ? (pasangDari(terpilih) === 'standfloor' && terpilih.jenis !== 'ifp' ? (terpilih.jenis === 'led' ? 'hollow' : 'dinding') : pasangDari(terpilih)) : null;
+    const tebal = terpilih.d / 2 + (psTempel ? (psTempel === 'standfloor' ? 0.06 : CELAH_PASANG[psTempel]) : 0.02);
     const xi = Math.min(k.x0 + k.p - terpilih.w / 2, Math.max(k.x0 + terpilih.w / 2, terpilih.x));
     const zi = Math.min(k.l - terpilih.w / 2, Math.max(terpilih.w / 2, terpilih.z));
     const pos: Record<Sisi, Partial<Benda>> = {
@@ -1414,7 +1416,7 @@ export default function Desain3D() {
     };
     const bulat = (v?: number) => (v === undefined ? v : Math.round(v * 100) / 100);
     const p = pos[sisi];
-    gantiBenda({ ...terpilih, ...p, x: bulat(p.x)!, z: bulat(p.z)!, pasang: terpilih.pasang === 'standfloor' && terpilih.jenis !== 'ifp' ? 'dinding' : terpilih.pasang });
+    gantiBenda({ ...terpilih, ...p, x: bulat(p.x)!, z: bulat(p.z)!, pasang: psTempel ?? terpilih.pasang });
   };
 
   /** Ubah ukuran ruang: isi ruang ikut menyesuaikan, tidak tertinggal di posisi lama. */
