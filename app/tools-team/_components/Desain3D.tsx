@@ -20,7 +20,7 @@ import {
   aturNyalaLampu, nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
-import { bukaCetak, esc, namaBerkas, unduhKanvasPNG, unduhLembarPNG, type Lembar } from './cetak';
+import { bukaCetak, esc, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl, type Lembar } from './cetak';
 import { getSession } from '@/lib/auth';
 import { isPimpinan } from '@/lib/pimpinan';
 import { urlGambarDesain } from '@/lib/tools-team';
@@ -1517,9 +1517,9 @@ export default function Desain3D() {
     isi.userData = { [KUNCI_DESAIN]: dataDesainFile(namaDesain || 'Desain AV', ruang, benda, gambar) };
     new m.GLTFExporter().parse(isi, hasil => {
       const blob = new Blob([hasil as ArrayBuffer], { type: 'model/gltf-binary' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = namaFileDesain(namaDesain); a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      const url = URL.createObjectURL(blob);
+      unduhUrl(url, namaFileDesain(namaDesain));
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
       setPesan(`Tersimpan di laptop: ${namaFileDesain(namaDesain)} (${(blob.size / 1048576).toFixed(1)} MB)`);
       if (!desainAktif) { setAsal({ jenis: 'laptop', nama: namaFileDesain(namaDesain) }); setDasar(ambilKunci(ruangRef.current, bendaRef.current, namaDesain)); }
     }, () => setGalat('Simpan ke laptop gagal.'), { binary: true, maxTextureSize: 1024 });

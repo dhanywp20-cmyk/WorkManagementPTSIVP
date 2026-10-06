@@ -104,8 +104,21 @@ ${l.tandaTangan?.length ? `<div class="ttd">${l.tandaTangan.map(t => `<div><div 
   return html;
 }
 
+/**
+ * Jendela utama aplikasi Android (res/raw/sisip.js) bila halaman ini berjalan di dalamnya.
+ * Jembatan hanya disisipkan ke jendela UTAMA; menu Tools Team tampil di iframe dashboard,
+ * jadi cetak & unduh dari iframe harus memakai jembatan di jendela atas.
+ */
+type JendelaAndroid = Window & { __wmAndroid?: boolean; __unduhBlob?: (href: string, nama: string) => void };
+function jendelaAndroid(): JendelaAndroid | null {
+  for (const w of [window, (() => { try { return window.top; } catch { return null; } })()] as (Window | null)[]) {
+    try { if (w && (w as JendelaAndroid).__wmAndroid) return w as JendelaAndroid; } catch { /* lintas domain */ }
+  }
+  return null;
+}
+
 export function bukaCetak(l: Lembar): void {
-  const w = window.open('', '_blank');
+  const w = (jendelaAndroid() ?? window).open('', '_blank');
   if (w) { w.document.write(htmlLembar(l)); w.document.close(); setTimeout(() => w.print(), 400); }
 }
 
@@ -115,6 +128,10 @@ export const namaBerkas = (...bagian: string[]) =>
 
 /** Unduh data URL / blob URL sebagai berkas. */
 export function unduhUrl(url: string, nama: string) {
+  //  Aplikasi Android: serahkan langsung ke jembatan beserta NAMA berkasnya (unduhan dari iframe
+  //  tanpa ini tersimpan sebagai "unduhan" tanpa ekstensi).
+  const android = jendelaAndroid();
+  if (android?.__unduhBlob) { android.__unduhBlob(url, nama); return; }
   const a = document.createElement('a');
   a.href = url; a.download = nama;
   document.body.appendChild(a); a.click(); a.remove();
@@ -132,7 +149,8 @@ export function unduhKanvasPNG(c: HTMLCanvasElement, nama: string): Promise<void
     if (!b) { gagal(new Error('PNG gagal dibuat')); return; }
     const url = URL.createObjectURL(b);
     unduhUrl(url, nama.endsWith('.png') ? nama : `${nama}.png`);
-    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    //  Jembatan Android membaca blob secara asinkron - beri waktu sebelum dilepas.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
     ok();
   }, 'image/png'));
 }
