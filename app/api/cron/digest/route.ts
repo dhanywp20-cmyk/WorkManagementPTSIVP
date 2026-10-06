@@ -5,6 +5,7 @@ import '@/lib/wa-server';
 import { kirimPushKeUser } from '@/lib/web-push-server';
 import { bacaRahasia } from '@/lib/rahasia-server';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
+import { catatCron } from '@/lib/cron-catat';
 
 export const dynamic = 'force-dynamic';
 
@@ -332,6 +333,7 @@ async function jalankan() {
     if (hasil.ok) terkirim++; else gagal++;
   }
 
+  await catatCron(supabase, 'digest', true, `${penerima.size} penerima · WA ${terkirim} terkirim, ${gagal} gagal · Telegram ${telegram} · push ${push}`);
   return { penerima: penerima.size, terkirim, gagal, tanpaNomor, push, telegram, drAcuan: kemarin };
 }
 

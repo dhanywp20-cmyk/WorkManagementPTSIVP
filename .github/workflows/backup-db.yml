@@ -1,0 +1,69 @@
+name: Backup basis data mingguan
+
+# Paket Supabase Free tidak menyediakan backup yang bisa di-restore sendiri. Workflow ini
+# membuat dump skema public tiap Senin 02:00 WIB (+ bisa dijalankan manual), MENGENKRIPSINYA
+# (repo ini publik - artifact tanpa enkripsi bisa diunduh orang lain), lalu menyimpannya
+# sebagai artifact GitHub 90 hari. File di Storage (foto, PDF) tidak ikut.
+#
+# Perlu 2 secret (Settings -> Secrets and variables -> Actions):
+#   SUPABASE_DB_URL     connection string "Session pooler" (Supabase -> Connect), IPv4
+#   BACKUP_PASSPHRASE   kata sandi enkripsi - simpan juga di tempat aman, tanpa ini backup tak bisa dibuka
+# Tanpa keduanya workflow berhenti dengan peringatan (tidak gagal).
+# Cara restore: docs/BACKUP-DB.md
+
+on:
+  schedule:
+    - cron: '0 19 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Periksa secret
+        id: cek
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SANDI: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          if [ -z "$DB_URL" ] || [ -z "$SANDI" ]; then
+            echo "::warning::SUPABASE_DB_URL / BACKUP_PASSPHRASE belum diisi - backup dilewati."
+            echo "jalan=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "jalan=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pasang pg_dump 17 (sama dengan versi server)
+        if: steps.cek.outputs.jalan == 'true'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: Dump & enkripsi
+        if: steps.cek.outputs.jalan == 'true'
+        env:
+          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SANDI: ${{ secrets.BACKUP_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          NAMA="wm-db-$(date -u +%Y%m%d)"
+          /usr/lib/postgresql/17/bin/pg_dump "$DB_URL" --schema=public --no-owner --no-privileges -Fc -f "$NAMA.dump"
+          ls -la "$NAMA.dump"
+          gpg --batch --yes --pinentry-mode loopback --symmetric --cipher-algo AES256 --passphrase "$SANDI" -o "$NAMA.dump.gpg" "$NAMA.dump"
+          rm -f "$NAMA.dump"
+          echo "NAMA=$NAMA" >> "$GITHUB_ENV"
+
+      - name: Simpan artifact (90 hari)
+        if: steps.cek.outputs.jalan == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NAMA }}
+          path: ${{ env.NAMA }}.dump.gpg
+          retention-days: 90
+          if-no-files-found: error
