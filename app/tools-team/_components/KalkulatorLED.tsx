@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useState } from 'react';
 import { getSession } from '@/lib/auth';
+import { isPimpinan } from '@/lib/pimpinan';
 import {
   hitungLED, cabinetUntukUkuran, saranHardware, kapasitasHardware, KECERAHAN, type Pembulatan, type Hardware,
   BRAND_UMUM, brandModul, kunciModul, cariModul, daftarBrand,
@@ -91,6 +92,8 @@ const SUB_LED: { v: SubLED; l: string; Ikon: typeof Calculator }[] = [
  */
 export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; onSub?: (sub: SubLED) => void }) {
   const [tampilan, setTampilan] = useState<SubLED>(subAwal);
+  //  Akun pimpinan: menghitung & mencetak boleh, menyimpan ke server tidak.
+  const [hanyaLihat] = useState(() => isPimpinan(getSession()));
   const pindah = (v: SubLED) => { setTampilan(v); onSub?.(v); };
   const refLED = useReferensiLED();
   const { modul: daftarModul, kartu: daftarKartu, vp: daftarVP } = refLED.data;
@@ -301,8 +304,10 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     <div className="flex items-center gap-1 print:hidden">
       <button type="button" onClick={() => setFileMode('buka')} title="Buka hitungan tersimpan"
         className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"><FolderOpen size={14} /> Buka</button>
-      <button type="button" onClick={() => setFileMode('simpan')} title="Simpan hitungan untuk tim (termasuk screen connection)"
-        className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"><Save size={14} /> Simpan</button>
+      {!hanyaLihat && (
+        <button type="button" onClick={() => setFileMode('simpan')} title="Simpan hitungan untuk tim (termasuk screen connection)"
+          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"><Save size={14} /> Simpan</button>
+      )}
       <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden" role="group" aria-label="Undo dan redo">
         <button type="button" onClick={riwayat.undo} disabled={!riwayat.bisaUndo} title="Undo (Ctrl+Z)" aria-label="Undo"
           className="px-2 py-1.5 text-slate-700 hover:bg-slate-50 disabled:text-slate-300 disabled:hover:bg-transparent"><Undo2 size={14} /></button>

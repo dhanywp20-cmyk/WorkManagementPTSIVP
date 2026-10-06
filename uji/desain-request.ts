@@ -5,7 +5,7 @@
  *
  * Jalankan: npx tsx uji/desain-request.ts
  */
-import { ringkasanDesain, bolehUbahTautan, statusRuangan, bersihkanGambar, kategoriBenda, periksaIsianLED, bersihkanRingkasanLED, bersihkanReferensiLED, urlGambarDesain, MAKS_BYTE_GAMBAR_HD } from '../lib/tools-team';
+import { periksaDesain, ringkasanDesain, bolehUbahTautan, statusRuangan, bersihkanGambar, kategoriBenda, periksaIsianLED, bersihkanRingkasanLED, bersihkanReferensiLED, urlGambarDesain, MAKS_BYTE_GAMBAR_HD } from '../lib/tools-team';
 import { htmlSeksiDesain3D, ukuranRuang, type TautanDesain3D } from '../app/form-require-project/_components/desain-3d-request';
 
 let lulus = 0, gagal = 0;
@@ -97,6 +97,18 @@ console.log('\nReferensi LED per brand');
     && baru.modul[0].unit === 'cabinet' && baru.brand?.length === 2 && baru.brand[1].sendiri === true);
   cek('modul > 500 ditolak', bersihkanReferensiLED({ modul: Array(501).fill(modul), kartu: [], vp: [] }) === null);
   cek('brand bukan array ditolak', bersihkanReferensiLED({ modul: [modul], kartu: [], vp: [], brand: 'Absen' }) === null);
+}
+
+console.log('\nGambar layar ikut desain di server');
+{
+  const benda = [{ id: 'b1', jenis: 'videowall' }];
+  const jpg = 'data:image/jpeg;base64,QUJD';
+  const ok = periksaDesain({ ruang: {}, benda, layar: { b1: jpg } });
+  cek('gambar layar untuk benda yang ada diterima', ok.ok && ok.data.layar?.b1 === jpg);
+  cek('gambar untuk benda yang tidak ada ditolak', !periksaDesain({ ruang: {}, benda, layar: { zz: jpg } }).ok);
+  cek('gambar terlalu besar ditolak', !periksaDesain({ ruang: {}, benda, layar: { b1: 'data:image/jpeg;base64,' + 'A'.repeat(210_000) } }).ok);
+  cek('lebih dari 6 gambar ditolak', !periksaDesain({ ruang: {}, benda: Array.from({ length: 7 }, (_, i) => ({ id: `b${i}`, jenis: 'tv' })), layar: Object.fromEntries(Array.from({ length: 7 }, (_, i) => [`b${i}`, jpg])) }).ok);
+  cek('tanpa gambar layar: data tetap sama seperti dulu', (() => { const r = periksaDesain({ ruang: {}, benda }); return r.ok && r.data.layar === undefined; })());
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

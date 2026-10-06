@@ -30,3 +30,17 @@ export async function muatIdPimpinan(
 
 /** Pesan bila aksi tulis tetap tertembus (mis. tombol yang belum disembunyikan). */
 export const PESAN_HANYA_LIHAT = 'Akun pimpinan hanya bisa melihat data - tidak bisa menambah, mengubah, atau menghapus.';
+
+/**
+ * Server: apakah akun ini pimpinan - dibaca langsung dari DB (route ber-service-role tidak
+ * kena RLS, jadi penjaga tulisnya harus memeriksa sendiri). Toleran: gagal baca = bukan pimpinan.
+ */
+export async function pimpinanDiDb(
+  klien: { from: (t: string) => any },   // eslint-disable-line @typescript-eslint/no-explicit-any
+  userId: string,
+): Promise<boolean> {
+  try {
+    const { data, error } = await klien.from('users').select('pimpinan').eq('id', userId).maybeSingle();
+    return !error && (data as { pimpinan?: unknown } | null)?.pimpinan === true;
+  } catch { return false; }
+}

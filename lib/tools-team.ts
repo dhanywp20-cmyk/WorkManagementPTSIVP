@@ -71,7 +71,11 @@ export function bersihkanReferensiLED(x: unknown): RefLED | null {
 }
 
 /** Data desain 3D yang sah ({ ruang, benda }) beserta jumlah benda, atau alasan penolakan. */
-export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; benda: unknown[] }; jumlah: number } | { ok: false; alasan: string } {
+/** Gambar konten layar (unggahan) yang ikut disimpan: JPEG dikompres di peramban, maks 6 per desain. */
+export const MAKS_GAMBAR_LAYAR = 6;
+export const MAKS_BYTE_LAYAR = 200_000;
+
+export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; benda: unknown[]; layar?: Record<string, string> }; jumlah: number } | { ok: false; alasan: string } {
   const d = x as Record<string, unknown>;
   if (!d || typeof d !== 'object' || !d.ruang || typeof d.ruang !== 'object' || !Array.isArray(d.benda)) {
     return { ok: false, alasan: 'Data desain tidak sah.' };
@@ -80,8 +84,22 @@ export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; b
   if (d.benda.some(b => !b || typeof b !== 'object' || typeof (b as { jenis?: unknown }).jenis !== 'string')) {
     return { ok: false, alasan: 'Data benda tidak sah.' };
   }
-  const data = { ruang: d.ruang, benda: d.benda };
+  const data: { ruang: unknown; benda: unknown[]; layar?: Record<string, string> } = { ruang: d.ruang, benda: d.benda };
   if (JSON.stringify(data).length > MAKS_BYTE_DESAIN) return { ok: false, alasan: 'Desain terlalu besar untuk disimpan.' };
+  //  Gambar layar: hanya untuk benda yang ada, data URL JPEG/WebP kecil, jumlah dibatasi.
+  if (d.layar !== undefined) {
+    if (!d.layar || typeof d.layar !== 'object' || Array.isArray(d.layar)) return { ok: false, alasan: 'Gambar layar tidak sah.' };
+    const ids = new Set(d.benda.map(b => String((b as { id?: unknown }).id ?? '')));
+    const masuk = Object.entries(d.layar as Record<string, unknown>);
+    if (masuk.length > MAKS_GAMBAR_LAYAR) return { ok: false, alasan: `Maksimal ${MAKS_GAMBAR_LAYAR} gambar layar per desain.` };
+    const layar: Record<string, string> = {};
+    for (const [id, url] of masuk) {
+      const g = bersihkanGambar(url, MAKS_BYTE_LAYAR);
+      if (!ids.has(id) || !g) return { ok: false, alasan: 'Gambar layar terlalu besar atau tidak sah.' };
+      layar[id] = g;
+    }
+    if (masuk.length) data.layar = layar;
+  }
   return { ok: true, data, jumlah: d.benda.length };
 }
 

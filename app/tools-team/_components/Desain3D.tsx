@@ -22,6 +22,7 @@ import {
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc, namaBerkas, unduhKanvasPNG, unduhLembarPNG, type Lembar } from './cetak';
 import { getSession } from '@/lib/auth';
+import { isPimpinan } from '@/lib/pimpinan';
 import { urlGambarDesain } from '@/lib/tools-team';
 
 /**
@@ -206,6 +207,8 @@ export default function Desain3D() {
   const [fokusRuang, setFokusRuang] = useState<'semua' | 0 | 1>('semua');
   const [gantiIsi, setGantiIsi] = useState(false);
   const [pesan, setPesan] = useState('');
+  //  Akun pimpinan: melihat & mengekspor saja, tidak menyimpan ke server (server juga menolak).
+  const [hanyaLihat] = useState(() => isPimpinan(getSession()));
   //  Konfirmasi di dalam aplikasi (bukan dialog bawaan browser yang menampilkan alamat situs).
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const sudutRef = useRef<Sudut | 'kursi'>('iso');
@@ -1670,7 +1673,27 @@ export default function Desain3D() {
     try { localStorage.setItem(KUNCI_SIMPAN, JSON.stringify(daftar)); } catch { /* abaikan */ }
   };
   // Gambar layar & model impor hanya ada di memori - disimpan sebagai pola uji / kotak.
-  const bendaBersih = (bs: Benda[]) => bs.map(b => ({ ...b, konten: b.konten === 'gambar' ? 'pola' as const : b.konten }));
+  const bendaBersih = (bs: Benda[], ada: Set<string> = new Set()) => bs.map(b => ({ ...b, konten: b.konten === 'gambar' && !ada.has(b.id) ? 'pola' as const : b.konten }));
+  /**
+   * Gambar konten layar untuk server: JPEG maks 1280 px, kualitas diturunkan sampai <= 150 KB
+   * (hemat kuota Supabase); maks 6 gambar per desain. Yang tidak muat tetap jadi pola uji.
+   */
+  const gambarLayarServer = (bs: Benda[]): Record<string, string> => {
+    const hasil: Record<string, string> = {};
+    for (const b of bs) {
+      if (b.konten !== 'gambar' || Object.keys(hasil).length >= 6) continue;
+      const t = gambarLayar.current.get(b.id);
+      const img = t?.image as ({ width: number; height: number } & CanvasImageSource) | undefined;
+      if (!img?.width) continue;
+      try {
+        const skala = Math.min(1, 1280 / img.width);
+        const cv = document.createElement('canvas'); cv.width = Math.round(img.width * skala); cv.height = Math.round(img.height * skala);
+        cv.getContext('2d')?.drawImage(img, 0, 0, cv.width, cv.height);
+        for (const q of [0.8, 0.68, 0.55, 0.42]) { const u = cv.toDataURL('image/jpeg', q); if (u.length <= 195_000) { hasil[b.id] = u; break; } }
+      } catch { /* gambar lintas domain: lewati */ }
+    }
+    return hasil;
+  };
 
   // ── Desain tim di server ──
   const API_DESAIN = '/api/tools-team/desain';
@@ -1724,11 +1747,12 @@ export default function Desain3D() {
     const timpa = !sumber && !baru && desainAktif?.bolehUbah ? desainAktif.id : undefined;
     setSibukSimpan(true); setStatusSimpan(null);
     try {
+      const layar = sumber ? {} : gambarLayarServer(benda);
       const r = await fetch(API_DESAIN, {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: timpa, versi: timpa ? desainAktif?.versi : undefined, nama,
-          data: { ruang: sumber?.ruang ?? ruang, benda: bendaBersih(sumber?.benda ?? benda) },
+          data: { ruang: sumber?.ruang ?? ruang, benda: bendaBersih(sumber?.benda ?? benda, new Set(Object.keys(layar))), ...(Object.keys(layar).length ? { layar } : {}) },
           ...(sumber ? {} : (({ kecil, hd }) => ({ gambar: kecil ?? undefined, gambar_hd: hd ?? undefined }))(pratinjau())),
         }),
       });
@@ -1759,8 +1783,13 @@ export default function Desain3D() {
         const teks = j?.alasan ?? 'Desain tidak bisa dibuka.';
         setStatusSimpan({ teks, nada: 'galat' }); setPesan(teks); return;
       }
-      const d = j.desain as { id: string; nama: string; versi: number; versiTerbaru: number; data: { ruang: Ruang; benda: Benda[] }; bolehUbah: boolean };
+      const d = j.desain as { id: string; nama: string; versi: number; versiTerbaru: number; data: { ruang: Ruang; benda: Benda[]; layar?: Record<string, string> }; bolehUbah: boolean };
       const ruangBaru = { ...RUANG_AWAL, ...d.data.ruang };
+      //  Gambar konten layar yang ikut tersimpan di server dikembalikan sebagai tekstur.
+      const m = mesin.current;
+      if (m) for (const [idL, url] of Object.entries(d.data.layar ?? {})) {
+        new m.THREE.TextureLoader().load(url, tex => { tex.colorSpace = m.THREE.SRGBColorSpace; gambarLayar.current.set(idL, tex); setVersiGambar(v => v + 1); });
+      }
       setRuang(ruangBaru); setBenda(d.data.benda); setNamaDesain(d.nama);
       setAsal({ jenis: 'baru' }); setDasar(ambilKunci(ruangBaru, d.data.benda, d.nama));
       riwayat.mulaiBaru({ ruang: ruangBaru, benda: d.data.benda });
@@ -1987,7 +2016,7 @@ export default function Desain3D() {
               </>)}
             </div>
             <button type="button" onClick={() => setModal('buka')} className={tombol}><FolderOpen size={14} /> Buka</button>
-            <button type="button" onClick={() => setModal('simpan')} className={tombol}><Ikon nama="💾" ukuran={14} /> Simpan</button>
+            {!hanyaLihat && <button type="button" onClick={() => setModal('simpan')} className={tombol}><Ikon nama="💾" ukuran={14} /> Simpan</button>}
             <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden" role="group" aria-label="Undo dan redo">
               <button type="button" onClick={riwayat.undo} disabled={!riwayat.bisaUndo} title="Undo (Ctrl+Z)" aria-label="Undo"
                 className="px-2.5 py-1.5 text-slate-700 hover:bg-slate-50 disabled:text-slate-300 disabled:hover:bg-transparent"><Undo2 size={15} /></button>
@@ -2469,7 +2498,7 @@ export default function Desain3D() {
               <PanelBenda b={terpilih} plafon={plafonDi(terpilih.x)} batas={batas} onUbah={gantiBenda}
                 onGambar={() => inputGambar.current?.click()} onTutup={() => setPanel(false)}
                 ekstra={terpilih.jenis === 'proyektor' ? infoProyektor(terpilih) : undefined}
-                onSimpanProduk={produkTim?.bolehTambah === false ? undefined : (label, ket) => simpanProduk(terpilih, label, ket)} />
+                onSimpanProduk={hanyaLihat || produkTim?.bolehTambah === false ? undefined : (label, ket) => simpanProduk(terpilih, label, ket)} />
             )}
           </aside>
         )}
@@ -2540,7 +2569,12 @@ export default function Desain3D() {
 
       {/* ── Modal: Simpan / buka (server, dibagikan ke tim) ── */}
       <Modal buka={modal === 'simpan'} onTutup={() => setModal(null)} judul="Simpan & buka desain" ukuran="md" ikon={<Ikon nama="💾" ukuran={18} />}
-        keterangan="Ke server: bisa dibuka seluruh tim (gambar unggahan & model GLB impor tidak ikut). Ke laptop: semuanya ikut, tanpa storage server.">
+        keterangan="Ke server: bisa dibuka seluruh tim; gambar layar unggahan ikut (dikompres, maks 6). Ke laptop: semuanya ikut termasuk model .glb impor, tanpa storage server.">
+        {benda.some(b => b.jenis === 'model') && (
+          <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] text-amber-900">
+            Desain ini memuat <b>model 3D impor (.glb)</b>. Model tidak dikirim ke server (ukurannya besar &amp; menghabiskan kuota) - di server akan tampil sebagai kotak. Simpan juga ke laptop supaya modelnya tidak hilang.
+          </p>
+        )}
         <button type="button" onClick={() => { simpanKeLaptop(); }}
           className="w-full mb-3 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left hover:bg-emerald-100">
           <HardDriveDownload size={20} className="text-emerald-700 flex-shrink-0" />
