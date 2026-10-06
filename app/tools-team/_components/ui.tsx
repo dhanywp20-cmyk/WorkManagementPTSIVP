@@ -107,12 +107,12 @@ export function TombolSalin({ teks, onCetak, onPng }: {
       <button type="button" onClick={async () => {
         try { await navigator.clipboard.writeText(teks()); setOk(true); setTimeout(() => setOk(false), 1800); } catch { /* abaikan */ }
       }} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
-        <Ikon nama={ok ? '✅' : '📋'} ukuran={14} /> {ok ? 'Tersalin' : 'Salin hasil'}
+        <Ikon nama={ok ? '✅' : '📋'} ukuran={14} /> <span className="sr-only sm:not-sr-only">{ok ? 'Tersalin' : 'Salin hasil'}</span>
       </button>
       {onCetak && (
         <button type="button" onClick={onCetak}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 print:hidden">
-          <Ikon nama="🖨" ukuran={14} /> Cetak
+          <Ikon nama="🖨" ukuran={14} /> <span className="sr-only sm:not-sr-only">Cetak</span>
         </button>
       )}
       {onPng && (
@@ -122,7 +122,7 @@ export function TombolSalin({ teks, onCetak, onPng }: {
             try { await onPng(); setPng('siap'); } catch { setPng('gagal'); setTimeout(() => setPng('siap'), 2500); }
           }}
           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border print:hidden disabled:opacity-60 ${png === 'gagal' ? 'border-rose-200 text-rose-700 bg-rose-50' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-          <Ikon nama="🖼" ukuran={14} /> {png === 'proses' ? 'Membuat...' : png === 'gagal' ? 'PNG gagal' : 'PNG'}
+          <Ikon nama="🖼" ukuran={14} /> {png === 'proses' ? '...' : png === 'gagal' ? 'Gagal' : 'PNG'}
         </button>
       )}
     </div>

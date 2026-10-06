@@ -522,3 +522,177 @@ export function hitungKoneksi(o: OpsiKoneksi): HasilKoneksi {
     jumlahKartu: port.length ? kartuDari(port.length) : 0, galat, tanpaPort, lewat: port.filter(p => p.px > batas).map(p => p.port),
   };
 }
+// ── Receiving card (kapasitas per kartu) ───────────────────────────────────
+
+export interface ReceivingCard { nama: string; /** px maks mendatar */ w: number; /** px maks tegak */ h: number; ket: string }
+/**
+ * Receiving card Novastar umum: area maksimal per kartu pada 60 Hz (nilai datasheet umum;
+ * kapasitas sebenarnya bergantung IC driver & scan modul - cek NovaLCT sebelum penawaran).
+ */
+export const RECEIVING_CARD: ReceivingCard[] = [
+  { nama: 'A4s Plus', w: 256, h: 256, ket: 'Ekonomis; layar kecil / modul besar' },
+  { nama: 'A5s Plus', w: 512, h: 384, ket: 'Umum indoor & outdoor' },
+  { nama: 'A7s Plus', w: 512, h: 512, ket: 'Indoor fine pitch' },
+  { nama: 'A8s', w: 512, h: 512, ket: 'Fine pitch, kalibrasi & HDR dasar' },
+  { nama: 'A10s Plus', w: 512, h: 512, ket: 'Premium fine pitch, HDR, refresh tinggi' },
+];
+
+/**
+ * Jumlah unit (modul/cabinet) per receiving card. Mulai dari usulan (mis. ±500 mm per kartu,
+ * mengikuti cabinet) lalu dikecilkan sampai area kartu muat di kapasitas receiving card.
+ */
+export function unitPerRC(rc: ReceivingCard, pxX: number, pxY: number, usulKol: number, usulBaris: number) {
+  let kol = Math.max(1, Math.round(usulKol)), baris = Math.max(1, Math.round(usulBaris));
+  while (kol > 1 && kol * pxX > rc.w) kol--;
+  while (baris > 1 && baris * pxY > rc.h) baris--;
+  return { kol, baris, muat: kol * pxX <= rc.w && baris * pxY <= rc.h };
+}
+
+// ── Power connection LED (sirkuit listrik per MCB & fase) ──────────────────
+
+export const FASE = ['R', 'S', 'T'] as const;
+export interface OpsiDayaLED {
+  /** Susunan unit (modul/cabinet). */ kolom: number; baris: number;
+  /** W maks per unit. */ wattUnit: number;
+  tegangan: number; faktorDaya: number;
+  /** Rating MCB tiap sirkuit (A). */ mcb: number;
+  /** Beban maksimal tiap sirkuit terhadap MCB (%), bawaan 80 (beban kontinu). */ beban: number;
+  fase: 1 | 3;
+  mulai: SudutMulai; arah: 'horizontal' | 'vertikal'; pola: 'S' | 'Z';
+  kosong?: SelRC[];
+}
+export interface SirkuitLED { no: number; unit: number; watt: number; arus: number; fase: string; mulai: { c: number; r: number } | null }
+export interface HasilDayaLED {
+  /** Urutan kabel power (format sama dengan screen connection: "port" = sirkuit). */ hasil: HasilKoneksi;
+  sirkuit: SirkuitLED[];
+  perFase: { fase: string; watt: number; arus: number; sirkuit: number; mcb: number }[];
+  /** W yang boleh per sirkuit. */ kapasitasW: number; unitPerSirkuitMaks: number;
+  totalW: number; galat: string | null;
+}
+
+/**
+ * Pembagian kabel power LED ke sirkuit MCB. Satu sirkuit = satu rantai kabel power
+ * (unit disambung berurutan seperti kabel data). Batas tiap sirkuit = MCB × V × PF × beban%.
+ * Pada 3 fase, sirkuit dibagi ke R/S/T supaya beban tiap fase seimbang.
+ */
+/** Satu garis (kolom/baris) lebih besar dari kapasitas sirkuit -> garis dipecah (pakai hasil zona biasa). */
+const galatGaris = (garis: unknown[][], w: number, kap: number) => garis.some(g => g.length * w > kap + 1e-6);
+
+export function hitungDayaLED(o: OpsiDayaLED): HasilDayaLED {
+  const pf = Math.min(1, Math.max(0.5, o.faktorDaya || 1));
+  const V = Math.max(1, o.tegangan);
+  const penuhW = Math.max(1, o.mcb) * V * pf;
+  const batasPersen = Math.max(10, Math.min(100, o.beban || 80));
+  const kapasitasW = penuhW * (batasPersen / 100);
+  const w = Math.max(0.1, o.wattUnit);
+  const dasar = { kolom: o.kolom, baris: o.baris, pxPerRC: w, kosong: o.kosong, mulai: o.mulai, arah: o.arah, pola: o.pola, bagi: 'baris' as const };
+  let hasil = hitungKoneksi({ ...dasar, pxPerPort: penuhW, bebanMaks: batasPersen });
+  //  Sirkuit dibuat rata: garis (kolom/baris) dibagi seimbang ke jumlah sirkuit minimum - bukan
+  //  sirkuit penuh + sisa kecil. 3 fase: dibulatkan ke kelipatan 3 supaya R/S/T seimbang.
+  const nMin = hasil.port.length;
+  const urut = hitungKoneksi({ ...dasar, pola: 'Z', pxPerPort: 1e15 }).sel;
+  const garis: { c: number; r: number }[][] = [];
+  let kunciAkhir = -1;
+  for (const x of urut) {
+    const k = o.arah === 'horizontal' ? x.r : x.c;
+    if (k !== kunciAkhir) { garis.push([]); kunciAkhir = k; }
+    garis[garis.length - 1].push({ c: x.c, r: x.r });
+  }
+  const target = Math.min(garis.length, o.fase === 3 && nMin % 3 ? Math.ceil(nMin / 3) * 3 : nMin);
+  if (nMin > 0 && target > 0 && w <= kapasitasW && !galatGaris(garis, w, kapasitasW)) {
+    const total = urut.length * w, per = total / target;
+    const grup: { c: number; r: number }[][][] = Array.from({ length: target }, () => []);
+    let kum = 0;
+    for (const g of garis) {
+      const gw = g.length * w;
+      grup[Math.min(target - 1, Math.floor((kum + gw / 2) / per))].push(g);
+      kum += gw;
+    }
+    const isi = grup.filter(x => x.length);
+    if (isi.every(x => x.reduce((a, g) => a + g.length, 0) * w <= kapasitasW + 1e-6)) {
+      const manual = isi.map(x => x.flatMap((g, k) => (o.pola === 'Z' || k % 2 === 0 ? g : [...g].reverse()).map(s => [s.c, s.r] as SelRC)));
+      hasil = hitungKoneksi({ ...dasar, pxPerPort: penuhW, bebanMaks: batasPersen, manual });
+    }
+  }
+  const galat = w > kapasitasW ? `Satu unit (${Math.round(w)} W) melebihi kapasitas satu sirkuit (${Math.round(kapasitasW)} W) - naikkan rating MCB.` : null;
+  const nFase = o.fase === 3 ? 3 : 1;
+  const beban = Array.from({ length: nFase }, () => ({ watt: 0, sirkuit: 0 }));
+  const sirkuit: SirkuitLED[] = hasil.port.map(p => {
+    //  Fase dengan beban paling kecil (seri: urutan R, S, T) supaya seimbang dan tetap berurutan.
+    let fi = 0;
+    for (let i = 1; i < nFase; i++) if (beban[i].watt < beban[fi].watt - 1e-6) fi = i;
+    beban[fi].watt += p.px; beban[fi].sirkuit++;
+    return { no: p.port, unit: p.jumlah, watt: p.px, arus: p.px / (V * pf), fase: nFase === 1 ? 'L' : FASE[fi], mulai: p.mulai };
+  });
+  const perFase = beban.map((b, i) => {
+    const arus = b.watt / (V * pf);
+    return { fase: nFase === 1 ? 'L' : FASE[i], watt: b.watt, arus, sirkuit: b.sirkuit,
+      mcb: MCB_STANDAR.find(r => r >= arus * 1.25) ?? Math.ceil((arus * 1.25) / 10) * 10 };
+  });
+  return {
+    hasil, sirkuit, perFase, kapasitasW, unitPerSirkuitMaks: Math.max(1, Math.floor(kapasitasW / w)),
+    totalW: sirkuit.reduce((a, s) => a + s.watt, 0), galat,
+  };
+}
+
+// ── Daftar material (BOM) LED ──────────────────────────────────────────────
+
+export interface MasukanBOM {
+  satuan: 'modul' | 'cabinet'; namaLED: string;
+  /** Total unit semua screen. */ unit: number; screen: number;
+  /** Cadangan modul/cabinet (%). */ cadanganUnit: number;
+  /** Receiving card semua screen. */ receivingCard: number; namaRC: string; /** Cadangan receiving card & PSU (%). */ cadanganRC: number;
+  /** Controller / VP per screen, mis. [{ nama: 'VX600', qty: 1 }]. */ controller: { nama: string; qty: number }[];
+  /** Controller cadangan (hot backup). */ controllerCadangan: boolean;
+  /** Daya maksimum semua screen (W) & rating power supply modul (W). */ dayaMaksW: number; psuW: number;
+  /** Port LAN utama & cadangan (semua screen) & panjang kabel controller ke layar (m). */ port: number; portCadangan: number; panjangLAN: number;
+  /** Sirkuit power (semua screen), rating MCB & panjang kabel ke panel (m). */ sirkuit: number; mcb: number; panjangPower: number;
+  /** Ukuran satu screen (m) & baris unit. */ lebarM: number; tinggiM: number; baris: number;
+}
+export interface BarisBOM { kunci: string; item: string; qty: number; satuan: string; ket: string }
+
+/** Persentase cadangan dibulatkan ke atas, minimal 1 bila persen > 0. */
+export const cadangan = (jumlah: number, persen: number) => (persen > 0 && jumlah > 0 ? Math.max(1, Math.ceil((jumlah * persen) / 100)) : 0);
+
+/**
+ * Daftar material LED Videotron. Power supply (beban 80%) dan rangka (hollow tiap batas baris unit +
+ * tiang ±0,6 m untuk modul / ±1 m untuk cabinet, sisa potong 10%) adalah perkiraan lapangan.
+ */
+export function bomLED(m: MasukanBOM): BarisBOM[] {
+  const n = Math.max(1, m.screen);
+  const modul = m.satuan === 'modul';
+  const nmUnit = modul ? 'Modul' : 'Cabinet';
+  const psu = modul ? Math.ceil(m.dayaMaksW / Math.max(1, m.psuW * 0.8)) : 0;
+  const tiang = modul ? 0.6 : 1;
+  const rangkaM = ((m.baris + 1) * m.lebarM + (Math.ceil(m.lebarM / tiang) + 1) * m.tinggiM) * n * 1.1;
+  const nLAN = m.port + m.portCadangan;
+  const b: BarisBOM[] = [
+    { kunci: 'unit', item: `${nmUnit} LED ${m.namaLED}`.trim(), qty: m.unit, satuan: 'pcs', ket: n > 1 ? `${n} screen` : '' },
+    { kunci: 'unit-cadangan', item: `${nmUnit} cadangan (spare)`, qty: cadangan(m.unit, m.cadanganUnit), satuan: 'pcs', ket: `${m.cadanganUnit}% dari ${m.unit}` },
+    { kunci: 'rc', item: `Receiving card ${m.namaRC}`.trim(), qty: m.receivingCard, satuan: 'pcs', ket: '' },
+    { kunci: 'rc-cadangan', item: 'Receiving card cadangan', qty: cadangan(m.receivingCard, m.cadanganRC), satuan: 'pcs', ket: `${m.cadanganRC}%` },
+    ...m.controller.filter(c => c.qty > 0).map((c, i) => ({
+      kunci: `ctrl-${i}`, item: c.nama, qty: c.qty * n * (m.controllerCadangan ? 2 : 1), satuan: 'unit',
+      ket: m.controllerCadangan ? 'termasuk controller cadangan (hot backup)' : n > 1 ? `${c.qty} / screen` : '',
+    })),
+    ...(modul ? [
+      { kunci: 'psu', item: `Power supply LED 5 V ${m.psuW} W`, qty: psu, satuan: 'pcs', ket: 'beban 80%' },
+      { kunci: 'psu-cadangan', item: 'Power supply cadangan', qty: cadangan(psu, m.cadanganRC), satuan: 'pcs', ket: `${m.cadanganRC}%` },
+    ] : []),
+    { kunci: 'lan-jumper', item: 'Kabel LAN jumper antar receiving card', qty: Math.max(0, m.receivingCard - m.port), satuan: 'pcs', ket: 'pendek, CAT6' },
+    { kunci: 'lan-utama', item: 'Kabel LAN controller ke layar', qty: nLAN, satuan: 'pcs',
+      ket: `@ ${m.panjangLAN} m = ${Math.round(nLAN * m.panjangLAN)} m${m.portCadangan ? `, termasuk ${m.portCadangan} kabel cadangan` : ''}` },
+    { kunci: 'power-jumper', item: modul ? 'Kabel power AC antar power supply' : 'Kabel power jumper antar cabinet', qty: modul ? psu : m.unit, satuan: 'pcs', ket: '' },
+    { kunci: 'power-utama', item: 'Kabel power sirkuit ke panel', qty: m.sirkuit, satuan: 'jalur', ket: `@ ${m.panjangPower} m = ${Math.round(m.sirkuit * m.panjangPower)} m` },
+    { kunci: 'mcb', item: `MCB ${m.mcb} A per sirkuit`, qty: m.sirkuit, satuan: 'pcs', ket: '' },
+    { kunci: 'rangka', item: 'Rangka besi hollow 40×40', qty: Math.ceil(rangkaM / 6), satuan: 'batang 6 m', ket: `±${Math.round(rangkaM)} m (estimasi)` },
+  ];
+  return b.filter(x => x.qty > 0);
+}
+
+/** Total penawaran dari daftar barang & harga satuan (Rp). */
+export function totalPenawaran(baris: { kunci: string; qty: number }[], harga: Record<string, number>, ppnPersen: number) {
+  const subtotal = baris.reduce((a, x) => a + x.qty * Math.max(0, harga[x.kunci] ?? 0), 0);
+  const ppn = Math.round((subtotal * Math.max(0, ppnPersen)) / 100);
+  return { subtotal, ppn, total: subtotal + ppn };
+}

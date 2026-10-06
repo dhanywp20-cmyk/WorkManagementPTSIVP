@@ -4,7 +4,7 @@
  * Jalankan: npx tsx uji/av-hitung.ts
  */
 import {
-  hitungKoneksi, cariModul, kunciModul, daftarBrand, brandModul, BRAND_LED,
+  hitungKoneksi, hitungDayaLED, bomLED, totalPenawaran, cadangan, unitPerRC, RECEIVING_CARD, cariModul, kunciModul, daftarBrand, brandModul, BRAND_LED,
   hitungLED, pxPerPortPada, portDibutuhkan, cabinetUntukUkuran, saranHardware, kapasitasHardware, MODUL_LED, VIDEO_PROCESSOR, SENDING_CARD, layarDariJarak, ukuranDariDiagonal,
   jarakLempar, lumenDibutuhkan, bandwidthGbps, splPadaJarak, splMaks, speakerPlafon, hitungDaya,
 } from '../lib/av-hitung';
@@ -164,6 +164,46 @@ console.log('\nBrand modul LED (referensi dipilah per brand)');
   const br = daftarBrand([...BRAND_LED, { nama: 'IVP Vision', sendiri: true }], daftar);
   cek('brand sendiri tampil paling atas, brand dari baris modul ikut terdaftar', br[0].nama === 'IVP Vision' && br.some(b => b.nama === 'Hikvision' && b.jumlah === 1));
   cek('pilihan kalkulator hanya brand yang punya modul', daftarBrand(BRAND_LED, MODUL_LED, true).map(b => b.nama).join(',') === 'Umum');
+}
+
+console.log('\nReceiving card, power connection & BOM');
+{
+  const a5 = RECEIVING_CARD.find(r => r.nama === 'A5s Plus')!;
+  const u = unitPerRC(a5, 128, 64, 2, 3);
+  cek('A5s Plus (512×384): modul P2.5 128×64, usulan 2×3 tetap (256×192 muat)', u.kol === 2 && u.baris === 3 && u.muat);
+  const besar = unitPerRC(a5, 128, 64, 6, 8);
+  cek('usulan terlalu besar dikecilkan: 4×6 modul = 512×384', besar.kol === 4 && besar.baris === 6);
+  cek('cabinet lebih besar dari kartu ditandai tidak muat', !unitPerRC(a5, 640, 480, 1, 1).muat);
+
+  //  10 kolom × 4 baris cabinet 150 W, MCB 16 A @220 V PF 1, beban 80% = 2.816 W -> 18 cabinet/sirkuit.
+  const d1 = hitungDayaLED({ kolom: 10, baris: 4, wattUnit: 150, tegangan: 220, faktorDaya: 1, mcb: 16, beban: 80, fase: 1, mulai: 'kiri-bawah', arah: 'vertikal', pola: 'S' });
+  cek('kapasitas sirkuit = 16 A × 220 V × 80%', dekat(d1.kapasitasW, 2816) && d1.unitPerSirkuitMaks === 18);
+  cek('sirkuit per kolom utuh, dibagi rata: 10 kolom -> 3 sirkuit 3/4/3 kolom (bukan 4/4/2)', d1.sirkuit.map(c => c.unit).join(',') === '12,16,12');
+  cek('total daya = 40 × 150 W', dekat(d1.totalW, 6000));
+  cek('tidak ada sirkuit melebihi batas', d1.sirkuit.every(c => c.watt <= d1.kapasitasW + 1e-6));
+  const d3 = hitungDayaLED({ kolom: 12, baris: 4, wattUnit: 300, tegangan: 220, faktorDaya: 1, mcb: 16, beban: 80, fase: 3, mulai: 'kiri-bawah', arah: 'vertikal', pola: 'S' });
+  const arus = d3.perFase.map(p => p.arus);
+  cek('3 fase: sirkuit dibagi ke R, S, T', d3.perFase.map(p => p.fase).join('') === 'RST' && d3.perFase.every(p => p.sirkuit > 0));
+  cek('3 fase: beban seimbang (selisih <= 1 sirkuit)', Math.max(...arus) - Math.min(...arus) <= Math.max(...d3.sirkuit.map(c => c.arus)) + 1e-6);
+  cek('MCB utama per fase >= 1,25 × arus', d3.perFase.every(p => p.mcb >= p.arus * 1.25));
+  cek('unit lebih besar dari sirkuit -> galat', !!hitungDayaLED({ kolom: 2, baris: 1, wattUnit: 4000, tegangan: 220, faktorDaya: 1, mcb: 16, beban: 80, fase: 1, mulai: 'kiri-bawah', arah: 'vertikal', pola: 'S' }).galat);
+
+  cek('cadangan 3% dari 200 = 6; dari 10 = 1 (minimal 1); 0% = 0', cadangan(200, 3) === 6 && cadangan(10, 3) === 1 && cadangan(10, 0) === 0);
+  const bom = bomLED({ satuan: 'modul', namaLED: 'P2.5', unit: 200, screen: 1, cadanganUnit: 3, receivingCard: 20, namaRC: 'A5s Plus', cadanganRC: 2,
+    controller: [{ nama: 'VX600', qty: 1 }], controllerCadangan: false, dayaMaksW: 6000, psuW: 200, port: 3, portCadangan: 3, panjangLAN: 10,
+    sirkuit: 3, mcb: 16, panjangPower: 15, lebarM: 4, tinggiM: 2.24, baris: 14 });
+  const q = (k: string) => bom.find(b => b.kunci === k)?.qty;
+  cek('BOM: modul 200 + spare 6', q('unit') === 200 && q('unit-cadangan') === 6);
+  cek('BOM: PSU = 6000 W / (200 W × 80%) = 38', q('psu') === 38);
+  cek('BOM: LAN jumper = RC - port = 17, LAN utama = 3 + 3 cadangan', q('lan-jumper') === 17 && q('lan-utama') === 6);
+  cek('BOM: MCB per sirkuit & controller ikut', q('mcb') === 3 && q('ctrl-0') === 1);
+  const bomCab = bomLED({ satuan: 'cabinet', namaLED: 'P3.9', unit: 24, screen: 2, cadanganUnit: 0, receivingCard: 24, namaRC: '', cadanganRC: 0,
+    controller: [{ nama: 'MCTRL660', qty: 1 }], controllerCadangan: true, dayaMaksW: 9000, psuW: 200, port: 4, portCadangan: 0, panjangLAN: 20,
+    sirkuit: 4, mcb: 20, panjangPower: 10, lebarM: 3, tinggiM: 2, baris: 4 });
+  cek('BOM cabinet: tanpa PSU terpisah, tanpa baris qty 0, controller cadangan = 2 × 2 screen', !bomCab.some(b => b.kunci === 'psu') && bomCab.every(b => b.qty > 0)
+    && bomCab.find(b => b.kunci === 'ctrl-0')?.qty === 4);
+  const t = totalPenawaran([{ kunci: 'a', qty: 2 }, { kunci: 'b', qty: 3 }], { a: 1_000_000, b: 500_000 }, 11);
+  cek('penawaran: subtotal, PPN 11%, total', t.subtotal === 3_500_000 && t.ppn === 385_000 && t.total === 3_885_000);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

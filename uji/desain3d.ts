@@ -8,9 +8,15 @@ import {
   type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
   pusatkanIsi, jendelaSekat, pintuSekat, PINTU, ukuranPintu, spekVideowall, terapkanUkuran, ukuranLayar, ukuranIFP, warnaSah, tandaBentuk,
   bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, sebaranSpeaker, sebaranVSpeaker, jangkauanDari, berkasLineArray,
-  templateRuang, KATEGORI_RUANG, kursiTribun, ukuranBidang, lengkungDari,
+  kursiTribun, ukuranBidang, lengkungDari,
   luxLampuLangsung, luxCahayaDi, kontrasProyektor, setLampuGrid, luxBidangKerja, nyalaLampu, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
 } from '../app/tools-team/_components/desain3d/model';
+import * as M3 from '../app/tools-team/_components/desain3d/model';
+import * as R from '../app/tools-team/_components/desain3d/rak';
+import { templateRuang, KATEGORI_RUANG } from '../app/tools-team/_components/desain3d/template';
+import * as TP from '../app/tools-team/_components/desain3d/template';
+import * as K from '../app/tools-team/_components/desain3d/kabel';
+import { ringkasanDesain as ringkasRuang } from '../lib/tools-team';
 import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
 
@@ -404,6 +410,91 @@ console.log('\n13. Lampu plafon & kontras proyektor');
   cek('kontras = (lux gambar + lux lampu) / lux lampu', dekat(nyala.kontras, (nyala.luxGambar + nyala.cahaya.total) / nyala.cahaya.total, 0.001));
   cek('lampu dimatikan -> kontras naik & memenuhi target', mati.kontras > nyala.kontras && mati.cukup, `${nyala.kontras.toFixed(1)} -> ${mati.kontras.toFixed(1)}`);
   cek('lumen perlu = (target-1) x lux lampu x luas gambar', nyala.lumenPerlu >= (15 - 1) * nyala.cahaya.total * nyala.luas - 1);
+}
+
+console.log('\nLebih dari 2 ruang & ruang bentuk L');
+{
+  const sb = (p: number, l: number, sekat?: 'tembok' | 'kaca' | 'jendela' | 'terbuka') => ({ aktif: true, p, l, t: 3, lantai: 'karpet' as const, pintu: true, sekat });
+  const r: M3.Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: sb(6, 6), lain: [sb(4, 10, 'terbuka'), sb(5, 5)] };
+  const k = M3.daftarRuang(r);
+  cek('4 ruang berurutan: x0 = 0, 8, 14, 18', k.map(x => x.x0).join(',') === '0,8,14,18');
+  cek('ruangDari memetakan x ke ruang 0..3', [1, 9, 15, 20].map(x => M3.ruangDari(r, x)).join(',') === '0,1,2,3');
+  cek('dinding luar: ruang tengah tanpa kiri/kanan, ruang terakhir punya kanan', M3.sisiLuar(r, 1).join(',') === 'depan,belakang' && M3.sisiLuar(r, 3).includes('kanan') && !M3.sisiLuar(r, 3).includes('kiri'));
+  cek('sekat terbuka (ruang L): tidak ada pintu penghubung', M3.pintuSekat(r, 2) === null && M3.pintuSekat(r, 1) !== null);
+  cek('pintu sekat ke-3 dijepit di lebar ruang tersempit', (M3.pintuSekat(r, 3) ?? 0) <= Math.min(10, 5) - 0.45);
+  const putus: M3.Ruang = { ...r, r2: { ...sb(6, 6), aktif: false } };
+  cek('ruang 2 tidak aktif: ruang 3 & 4 ikut tidak tampil', M3.daftarRuang(putus).length === 1);
+  cek('desain lama (hanya r2) tetap 2 ruang', M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu', r2: sb(6, 6) }).length === 2);
+  const lebih: M3.Ruang = { ...r, lain: [sb(4, 4), sb(4, 4), sb(4, 4), sb(4, 4)] };
+  cek(`maksimal ${M3.MAKS_RUANG} ruang`, M3.daftarRuang(lebih).length === M3.MAKS_RUANG);
+  cek('ringkasan desain (Request Design) menghitung semua ruang', ringkasRuang({ ruang: r, benda: [] }).ruang.length === 4);
+}
+
+console.log('\nCahaya siang dari jendela');
+{
+  const jendela = { id: 'j1', ruang: 0, sisi: 'kiri' as const, jenis: 'jendela' as const, posisi: 3, lebar: 2, tinggi: 1.2, ambang: 0.9 };
+  const r: M3.Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null, bukaan: [jendela], siang: 'cerah' };
+  const sg = M3.luxSiang(r, 0);
+  //  DF = 0,7 x 2,4 x 70 x 0,9 / (180 x (1 - 0,2025)) = 0,737%; cerah 20.000 lux -> ±147 lux.
+  cek('daylight factor jendela 2,4 m² di ruang 8×6×3 ±0,74%', Math.abs(sg.df - 0.737) < 0.01 && Math.abs(sg.lux - 147) < 2);
+  cek('malam / tanpa pilihan: cahaya siang 0', M3.luxSiang({ ...r, siang: 'malam' }, 0).lux === 0 && M3.luxSiang({ ...r, siang: undefined }, 0).lux === 0);
+  cek('tirai 100% menutup cahaya siang, 50% separuh', M3.luxSiang({ ...r, tirai: 100 }, 0).lux === 0 && Math.abs(M3.luxSiang({ ...r, tirai: 50 }, 0).lux - sg.lux / 2) < 1e-6);
+  const c = M3.luxCahayaDi([], r, [4, 1.5, 0.1], [0, 0, 1]);
+  cek('cahaya siang ikut menambah cahaya ruangan (preset terang + siang)', Math.abs(c.total - (300 + sg.lux)) < 1e-6 && c.siang === sg.lux);
+}
+
+console.log('\nTemplate default kategori: lengkap & terkunci');
+{
+  const semua = TP.KATEGORI_RUANG.map(k => k.id);
+  cek('8 kategori ruangan tersedia', semua.length === 8);
+  const tanpaIsi = semua.filter(id => !TP.templateRuang(id).benda.length);
+  cek('setiap kategori punya template berisi', tanpaIsi.length === 0, tanpaIsi.join(','));
+  const sidik = (id: TP.KategoriRuang) => { const t = TP.templateRuang(id); return JSON.stringify({ r: t.ruang, b: t.benda.map(({ id: _i, ...x }) => x) }); };
+  cek('template selalu sama tiap dipasang (deterministik)', semua.every(id => sidik(id) === sidik(id)));
+  //  Mengubah salinan di kanvas tidak boleh mengubah template berikutnya.
+  const t1 = TP.templateRuang('meeting');
+  const awal = sidik('meeting');
+  t1.ruang.p = 99; t1.benda.forEach(b => { b.x = 123; b.nama = 'diubah user'; }); t1.benda.length = 0;
+  cek('mengubah salinan tidak mengubah template asli', sidik('meeting') === awal);
+}
+
+console.log('\nRack elevation');
+{
+  for (const U of [12, 20, 42]) {
+    const isi = R.isiRakBawaan(U);
+    cek(`isi bawaan ${U}U pas memenuhi rack (UPS di bawah)`, isi.reduce((a, p) => a + p.u, 0) === U && isi[isi.length - 1].jenis === 'ups');
+  }
+  const rak = { rakU: 12, nama: 'Rack 12U', isiRak: [{ jenis: 'switch' as const, u: 1, nama: 'Switch' }, { jenis: 'matrix' as const, u: 2, nama: 'Matrix' }] };
+  const s = R.susunRak(rak);
+  cek('posisi dari atas: switch di U12, matrix U11-U10, sisa 9U', s.posisi[0].uAtas === 12 && s.posisi[1].uAtas === 11 && s.posisi[1].uBawah === 10 && s.sisa === 9);
+  const penuh = R.susunRak({ ...rak, isiRak: Array.from({ length: 7 }, () => ({ jenis: 'server' as const, u: 2, nama: 'S' })) });
+  cek('melebihi kapasitas terdeteksi (14U di rack 12U)', penuh.lewat === 2 && !penuh.posisi[6].muat);
+  cek('bersihkan: jenis asing dibuang, U dijepit 1-12, nama kosong = label bawaan',
+    JSON.stringify(R.bersihkanIsiRak([{ jenis: 'x', u: 1 }, { jenis: 'ups', u: 40, nama: '' }])) === JSON.stringify([{ jenis: 'ups', u: 12, nama: 'UPS' }]));
+  cek('SVG elevation memuat nama & nomor U', R.svgElevasiRak(rak).includes('Matrix') && R.svgElevasiRak(rak).includes('>12<'));
+  cek('template Produk saya menyimpan isi rack', JSON.stringify(bersihkanAturProduk({ isiRak: rak.isiRak }).isiRak) === JSON.stringify(rak.isiRak));
+  cek('isi rack mengubah tanda bentuk (tekstur dibangun ulang)', M3.tandaBentuk({ ...M3.bendaBaru('rak', M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu' })[0]), isiRak: rak.isiRak })
+    !== M3.tandaBentuk(M3.bendaBaru('rak', M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu' })[0])));
+}
+
+console.log('\nJalur & panjang kabel');
+{
+  const ruang: M3.Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+  const k = M3.daftarRuang(ruang)[0];
+  const tanpaRak = [M3.bendaBaru('tv', k)];
+  cek('tanpa rack: belum ada jalur kabel', K.jalurKabel(tanpaRak, ruang).length === 0);
+  const tv = { ...M3.bendaBaru('tv', k), x: 1, z: 0.1, elev: 1.2 };
+  const rak = { ...M3.bendaBaru('rak', k), x: 7.5, z: 5.5 };
+  const mic = { ...M3.bendaBaru('mic', k), x: 4, z: 3, elev: 0.75 };
+  const spk = { ...M3.bendaBaru('speaker-plafon', k), x: 2, z: 2 };
+  const j = K.jalurKabel([tv, rak, mic, spk], ruang);
+  cek('TV: video + LAN, speaker plafon: kabel speaker, mic: kabel mic', j.length === 4 && j.some(x => x.kabel.kunci === 'speaker') && j.some(x => x.kabel.kunci === 'mic'));
+  const video = j.find(x => x.dari === tv.nama && x.kabel.kunci !== 'lan')!;
+  cek('TV dinding lewat plafon, mic meja lewat lantai', video.lewat === 'plafon' && j.find(x => x.kabel.kunci === 'mic')!.lewat === 'lantai');
+  cek('video > 10 m otomatis HDBaseT, panjang dibulatkan 0,5 m', video.panjang > K.HDMI_MAKS ? video.kabel.kunci === 'hdbt' : video.kabel.kunci === 'hdmi');
+  cek('panjang >= jarak siku-siku + service loop', j.every(x => x.panjang * 2 === Math.round(x.panjang * 2) && x.panjang >= 1.5));
+  const rekap = K.rekapKabel(j);
+  cek('rekap per jenis menjumlah semua tarikan', rekap.reduce((a, r) => a + r.tarikan, 0) === j.length);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

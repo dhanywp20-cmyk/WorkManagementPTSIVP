@@ -25,6 +25,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
+import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
 import { periksaDesain, ringkasanDesain, bersihkanGambar, MAKS_BYTE_GAMBAR_HD, SIMPAN_VERSI } from '@/lib/tools-team';
 
 export const runtime = 'nodejs';
@@ -92,6 +93,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const jaga = await pastikanMasuk(req);
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
+  if (await pimpinanDiDb(getAdminClient(), jaga.user.id)) return gagal(PESAN_HANYA_LIHAT, 403);
   let b: Record<string, unknown>;
   try { b = await req.json(); } catch { return gagal('Body tidak sah.'); }
 
@@ -157,6 +159,7 @@ export async function DELETE(req: NextRequest) {
   const id = req.nextUrl.searchParams.get('id') ?? '';
   if (!POLA_ID.test(id)) return gagal('ID tidak sah.');
   const db = getAdminClient();
+  if (await pimpinanDiDb(db, jaga.user.id)) return gagal(PESAN_HANYA_LIHAT, 403);
   const { data: lama } = await db.from(TABEL).select('dibuat_oleh').eq('id', id).maybeSingle();
   if (!lama) return gagal('Desain tidak ditemukan.', 404);
   if (lama.dibuat_oleh !== jaga.user.id && !(await kelolaSemua(db, jaga.user.id))) {

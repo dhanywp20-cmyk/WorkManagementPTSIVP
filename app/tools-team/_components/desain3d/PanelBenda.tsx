@@ -1,6 +1,8 @@
 'use client';
 import { useState, type ReactNode } from 'react';
 import { Angka, Pilih, Segmen, f } from '../ui';
+import { isiRakDari, susunRak, svgElevasiRak, PERANGKAT_RAK, JENIS_RAK, type PerangkatRak, type JenisPerangkatRak } from './rak';
+import { namaBerkas, unduhSvgPNG } from '../cetak';
 import { Ikon } from '@/components/shared/Ikon';
 import {
   type Benda, type ModelVW, type BentukMeja, type KontenLayar, type TipeLampu, type Ruang, SPEK_LAMPU, lumenLampu, sudutLampuDari, luxLampuLangsung, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
@@ -200,6 +202,8 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           </div>
         )}
 
+        {b.jenis === 'rak' && <EditorRak b={b} onUbah={isiRak => set({ isiRak })} />}
+
         {b.jenis === 'lampu' && (() => {
           const tipe = b.tipeLampu ?? 'downlight';
           const bawahLampu = luxLampuLangsung(b, { p: 0, l: 0, t: plafon, lantai: 'kayu', r2: null } as Ruang, [b.x, 0.75, b.z], [0, 1, 0]);
@@ -218,8 +222,8 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
                 <Pilih label="Suhu warna" nilai={b.kelvin ?? 4000} onUbah={v => set({ kelvin: v })}
                   opsi={[{ v: 3000, l: '3000 K hangat' }, { v: 4000, l: '4000 K netral' }, { v: 6500, l: '6500 K daylight' }]} />
               </div>
-              {tipe === 'linear' && (
-                <Angka label="Gantung dari plafon" nilai={b.gantungLampu ?? 0.6} satuan="m" step={0.05}
+              {SPEK_LAMPU[tipe].gantung > 0 && (
+                <Angka label="Gantung dari plafon" nilai={b.gantungLampu ?? SPEK_LAMPU[tipe].gantung} satuan="m" step={0.05}
                   onUbah={v => v >= 0 && v <= 3 && set({ gantungLampu: v, elev: Math.max(0.5, plafon - b.h - v) })} />
               )}
               <p className="text-[12px] text-slate-600">Tepat di bawah lampu, di meja (0,75 m): ±{f(bawahLampu, 0)} lux langsung (dimmer lampu ini; tanpa pantulan & dimmer ruangan). Isi lumen & sudut sinar sesuai datasheet.</p>
@@ -587,6 +591,71 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Rack elevation: isi rack per U (urutan dari atas), diagram, dan unduh PNG. */
+function EditorRak({ b, onUbah }: { b: Benda; onUbah: (isi: PerangkatRak[] | undefined) => void }) {
+  const [buka, setBuka] = useState(false);
+  const isi = isiRakDari(b);
+  const s = susunRak(b);
+  const ubah = (i: number, x: Partial<PerangkatRak>) => onUbah(isi.map((p, j) => (j === i ? { ...p, ...x } : p)));
+  const pindah = (i: number, arah: -1 | 1) => {
+    const j = i + arah; if (j < 0 || j >= isi.length) return;
+    const baru = [...isi]; [baru[i], baru[j]] = [baru[j], baru[i]]; onUbah(baru);
+  };
+  const [png, setPng] = useState<'siap' | 'proses' | 'gagal'>('siap');
+  const unduh = async () => {
+    setPng('proses');
+    try { await unduhSvgPNG(svgElevasiRak(b), namaBerkas('Rack elevation', b.nama), 2); setPng('siap'); }
+    catch { setPng('gagal'); setTimeout(() => setPng('siap'), 2500); }
+  };
+  return (
+    <div className="rounded-xl border border-slate-200 p-2.5 space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[12.5px] font-bold text-slate-800">Rack elevation</span>
+        <span className={`text-[12px] tabular-nums font-semibold ${s.lewat ? 'text-rose-700' : 'text-slate-600'}`}>{s.terpakai + s.lewat} / {s.U} U</span>
+      </div>
+      <div className="rounded-lg border border-slate-100 bg-white p-1 [&>svg]:mx-auto [&>svg]:block max-h-72 overflow-y-auto" dangerouslySetInnerHTML={{ __html: svgElevasiRak(b, false) }} />
+      {s.lewat > 0 && <p className="text-[11.5px] font-semibold text-rose-700">Melebihi kapasitas {s.lewat}U - kurangi perangkat atau tinggikan rack.</p>}
+      <div className="flex gap-1.5 flex-wrap">
+        <button type="button" onClick={() => setBuka(v => !v)} className="px-2.5 py-1.5 rounded-lg text-[12px] font-bold border border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100">
+          {buka ? 'Tutup editor' : 'Atur isi rack'}
+        </button>
+        <button type="button" onClick={() => void unduh()} disabled={png === 'proses'} className="px-2.5 py-1.5 rounded-lg text-[12px] font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50">
+          {png === 'proses' ? '...' : png === 'gagal' ? 'PNG gagal' : 'PNG'}
+        </button>
+        {b.isiRak?.length ? <button type="button" onClick={() => onUbah(undefined)} className="px-2.5 py-1.5 rounded-lg text-[12px] font-semibold text-slate-600 hover:underline">Isi bawaan</button> : null}
+      </div>
+      {buka && (
+        <div className="space-y-1.5">
+          <p className="text-[11px] text-slate-500">Urutan dari atas (U{s.U}) ke bawah (U1). Ikut tergambar di rack 3D, cetak, dan PNG.</p>
+          {isi.map((p, i) => (
+            <div key={i} className="grid grid-cols-[minmax(0,1fr)_52px_auto] gap-1 items-center">
+              <div className="min-w-0 space-y-1">
+                <select value={p.jenis} aria-label={`Jenis perangkat ${i + 1}`}
+                  onChange={e => { const j = e.target.value as JenisPerangkatRak; ubah(i, { jenis: j, u: PERANGKAT_RAK[j].u, nama: PERANGKAT_RAK[j].label }); }}
+                  className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[12px]">
+                  {JENIS_RAK.map(j => <option key={j} value={j}>{PERANGKAT_RAK[j].label}</option>)}
+                </select>
+                <input value={p.nama} maxLength={60} aria-label={`Nama perangkat ${i + 1}`} onChange={e => ubah(i, { nama: e.target.value })}
+                  className="w-full rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[12px]" />
+              </div>
+              <input type="number" min={1} max={12} step={1} value={p.u} aria-label={`Tinggi U perangkat ${i + 1}`}
+                onChange={e => { const v = Math.round(Number(e.target.value)); if (v >= 1 && v <= 12) ubah(i, { u: v }); }}
+                className="w-full rounded-md border border-slate-200 bg-white px-1 py-1 text-[12px] text-center tabular-nums" />
+              <div className="flex flex-col">
+                <button type="button" aria-label="Naikkan" onClick={() => pindah(i, -1)} className="px-1.5 text-[11px] text-slate-600 hover:text-blue-700">▲</button>
+                <button type="button" aria-label="Turunkan" onClick={() => pindah(i, 1)} className="px-1.5 text-[11px] text-slate-600 hover:text-blue-700">▼</button>
+                <button type="button" aria-label="Hapus" onClick={() => onUbah(isi.filter((_, j) => j !== i))} className="px-1.5 text-[11px] text-rose-600 hover:text-rose-800">✕</button>
+              </div>
+            </div>
+          ))}
+          <button type="button" onClick={() => onUbah([...isi, { jenis: 'switch', u: 1, nama: PERANGKAT_RAK.switch.label }])}
+            className="w-full py-1.5 rounded-lg border border-dashed border-slate-300 text-[12px] font-semibold text-slate-600 hover:bg-slate-50">+ Tambah perangkat</button>
+        </div>
+      )}
     </div>
   );
 }

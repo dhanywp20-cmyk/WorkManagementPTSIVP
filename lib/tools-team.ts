@@ -7,6 +7,7 @@
  * sama. Tanpa React / jaringan supaya aman diimpor dari mana saja.
  */
 import type { ModulLED, Hardware, BrandLED } from '@/lib/av-hitung';
+import { bersihkanIsiRak } from '@/app/tools-team/_components/desain3d/rak';
 
 export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[]; /** Daftar brand modul (boleh kosong untuk data lama). */ brand?: BrandLED[] }
 
@@ -71,7 +72,11 @@ export function bersihkanReferensiLED(x: unknown): RefLED | null {
 }
 
 /** Data desain 3D yang sah ({ ruang, benda }) beserta jumlah benda, atau alasan penolakan. */
-export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; benda: unknown[] }; jumlah: number } | { ok: false; alasan: string } {
+/** Gambar konten layar (unggahan) yang ikut disimpan: JPEG dikompres di peramban, maks 6 per desain. */
+export const MAKS_GAMBAR_LAYAR = 6;
+export const MAKS_BYTE_LAYAR = 200_000;
+
+export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; benda: unknown[]; layar?: Record<string, string> }; jumlah: number } | { ok: false; alasan: string } {
   const d = x as Record<string, unknown>;
   if (!d || typeof d !== 'object' || !d.ruang || typeof d.ruang !== 'object' || !Array.isArray(d.benda)) {
     return { ok: false, alasan: 'Data desain tidak sah.' };
@@ -80,8 +85,22 @@ export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; b
   if (d.benda.some(b => !b || typeof b !== 'object' || typeof (b as { jenis?: unknown }).jenis !== 'string')) {
     return { ok: false, alasan: 'Data benda tidak sah.' };
   }
-  const data = { ruang: d.ruang, benda: d.benda };
+  const data: { ruang: unknown; benda: unknown[]; layar?: Record<string, string> } = { ruang: d.ruang, benda: d.benda };
   if (JSON.stringify(data).length > MAKS_BYTE_DESAIN) return { ok: false, alasan: 'Desain terlalu besar untuk disimpan.' };
+  //  Gambar layar: hanya untuk benda yang ada, data URL JPEG/WebP kecil, jumlah dibatasi.
+  if (d.layar !== undefined) {
+    if (!d.layar || typeof d.layar !== 'object' || Array.isArray(d.layar)) return { ok: false, alasan: 'Gambar layar tidak sah.' };
+    const ids = new Set(d.benda.map(b => String((b as { id?: unknown }).id ?? '')));
+    const masuk = Object.entries(d.layar as Record<string, unknown>);
+    if (masuk.length > MAKS_GAMBAR_LAYAR) return { ok: false, alasan: `Maksimal ${MAKS_GAMBAR_LAYAR} gambar layar per desain.` };
+    const layar: Record<string, string> = {};
+    for (const [id, url] of masuk) {
+      const g = bersihkanGambar(url, MAKS_BYTE_LAYAR);
+      if (!ids.has(id) || !g) return { ok: false, alasan: 'Gambar layar terlalu besar atau tidak sah.' };
+      layar[id] = g;
+    }
+    if (masuk.length) data.layar = layar;
+  }
   return { ok: true, data, jumlah: d.benda.length };
 }
 
@@ -133,8 +152,11 @@ export function ringkasanDesain(data: { ruang: unknown; benda: unknown[] }): Rin
   const r = (data.ruang ?? {}) as Record<string, unknown>;
   const ukur = (x: Record<string, unknown> | undefined) => ({ p: Number(x?.p) || 0, l: Number(x?.l) || 0, t: Number(x?.t) || 0 });
   const ruang = [ukur(r)];
-  const r2 = r.r2 as Record<string, unknown> | null | undefined;
-  if (r2 && r2.aktif) ruang.push(ukur(r2));
+  //  Ruang tambahan berurutan (r2, lalu lain[]) - berhenti di yang pertama tidak aktif.
+  for (const x of [r.r2, ...(Array.isArray(r.lain) ? r.lain : [])].slice(0, 3) as (Record<string, unknown> | null | undefined)[]) {
+    if (!x || !x.aktif) break;
+    ruang.push(ukur(x));
+  }
   const peta = new Map<string, { kategori: string; nama: string; jumlah: number }>();
   for (const b of data.benda) {
     const x = b as { jenis?: unknown; nama?: unknown };
@@ -225,7 +247,7 @@ export interface ProdukTim {
 const ENUM_PRODUK: Record<string, readonly string[]> = {
   rasio: ['16:9', '16:10', '4:3', '21:9'], vw: ['55BDL2105X', '49BDL2105X', 'custom'], pasang: ['dinding', 'standfloor'],
   mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas', 'dosen', 'podium', 'kredensa', 'operator'], bentukBidang: ['datar', 'lengkung', 'cembung'], finish: ['walnut', 'oak', 'putih'],
-  tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati', 'cctv', 'dashboard', 'campuran', 'desktop'], tipeRak: ['kaca', 'tertutup', 'open'], tipeLampu: ['downlight', 'spot', 'panel', 'linear'],
+  tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati', 'cctv', 'dashboard', 'campuran', 'desktop'], tipeRak: ['kaca', 'tertutup', 'open'], tipeLampu: ['downlight', 'spot', 'panel', 'linear', 'gantung'],
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
 };
 /** Angka yang boleh ada di template beserta batasnya. */
@@ -251,6 +273,8 @@ export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
   if (typeof a.naik === 'boolean') hasil.naik = a.naik;
   if (typeof a.gantung === 'boolean') hasil.gantung = a.gantung;
   if (typeof a.warna === 'string' && /^#[0-9a-f]{6}$/i.test(a.warna)) hasil.warna = a.warna.toLowerCase();
+  const isiRak = bersihkanIsiRak(a.isiRak);
+  if (isiRak) hasil.isiRak = isiRak;
   if (a.panel && typeof a.panel === 'object') {
     const p = a.panel as Record<string, unknown>, panel: Record<string, number> = {};
     for (const [k, batas] of Object.entries(ANGKA_PANEL)) { const v = angka(p[k], batas); if (v !== undefined) panel[k] = v; }
