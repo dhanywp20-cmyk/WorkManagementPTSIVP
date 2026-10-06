@@ -22,6 +22,7 @@ import {
 import GlobalSearch from './_components/GlobalSearch';
 import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashboard';
 import OnboardingTour from './_components/OnboardingTour';
+import { NavBawahMobile } from './_components/NavBawahMobile';
 import { AsistenPlatform } from './_components/AsistenPlatform';
 import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus, latarDasbor } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
@@ -1961,6 +1962,22 @@ export default function Dashboard() {
            melewati bawah sidebar, bukan cuma selebar area modul. Root-nya
            setinggi 100dvh, jadi area modul di atasnya menyusut sendiri setinggi
            bilah ini; tidak ada yang tertutup. */}
+      {/* Bar menu bawah khusus HP (geser kiri-kanan, efek kaca). Daftar & hak akses sama dengan sidebar. */}
+      {!menuLoading && !layarPenuh && (
+        <NavBawahMobile item={[
+          { key: '__dashboard', label: 'Dashboard', ikon: <Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" />, aktif: showDashboardPanel,
+            onPilih: () => { setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); setSidebarMobileOpen(false); } },
+          ...visibleMenuItems.flatMap(menu => menu.items.map((it, n) => ({
+            key: `${menu.key}:${n}`,
+            label: menu.items.length === 1 ? menu.title : it.name,
+            ikon: MENU_ICONS[menu.key] ?? <Ikon nama={menu.icon} ukuran="1em" className="inline-block align-[-0.12em]" />,
+            aktif: !showDashboardPanel && ((showTicketing && !!it.internal && internalUrl === it.url) || iframeUrl === it.url),
+            badge: menu.key === 'reminder-schedule' && isFullAccess ? pendingRequests : 0,
+            onPilih: () => { setShowDashboardPanel(false); setSidebarMobileOpen(false); handleMenuClick(it, menu.title); },
+          }))),
+        ]} />
+      )}
+
       <FooterPlatform />
 
       <style>{`
