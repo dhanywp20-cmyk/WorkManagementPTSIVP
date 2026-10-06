@@ -6,6 +6,7 @@ import { kirimPushKeUser } from '@/lib/web-push-server';
 import { bacaRahasia } from '@/lib/rahasia-server';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { catatCron } from '@/lib/cron-catat';
+import { itemTahapTertahan, type BarisTahap } from '@/lib/eskalasi-tahap';
 
 export const dynamic = 'force-dynamic';
 
@@ -225,6 +226,34 @@ async function jalankan() {
       terlambat: overdue > 0,
       ringan: true,
     });
+  }
+
+  /*
+    Eskalasi tahap routing: request yang tertahan > 24 jam di gerbang review Sales Internal /
+    Admin / Supervisor masuk ke briefing pemegang gerbangnya (lib/eskalasi-tahap.ts). Ticket
+    tahap admin tidak diambil di sini - sudah tercakup "Menunggu approval" di atas.
+  */
+  const TAHAP = '("internal_review","admin_review","supervisor_assign")';
+  const kolomTahap = 'project_name, routing_status, status, internal_sales_id, internal_sales_id_2, assigned_supervisor_id, created_at';
+  const [{ data: rTahap }, { data: pTahap }, { data: tTahap }] = await Promise.all([
+    supabase.from('reminders').select(`${kolomTahap}, updated_at`).filter('routing_status', 'in', TAHAP).not('is_deleted', 'is', true),
+    supabase.from('project_requests').select(kolomTahap).filter('routing_status', 'in', TAHAP),
+    supabase.from('tickets').select(`${kolomTahap}, updated_at`).filter('routing_status', 'in', '("internal_review","supervisor_assign")').not('is_deleted', 'is', true),
+  ]);
+  type RT = Omit<BarisTahap, 'sumber' | 'sejak'> & { created_at: string; updated_at?: string | null };
+  const kebaris = (sumber: BarisTahap['sumber']) => (r: RT): BarisTahap => ({ ...r, sumber, sejak: r.updated_at ?? r.created_at });
+  const tertahan = itemTahapTertahan([
+    ...((rTahap ?? []) as RT[]).map(kebaris('Jadwal')),
+    ...((pTahap ?? []) as RT[]).map(kebaris('Design')),
+    ...((tTahap ?? []) as RT[]).map(kebaris('Ticket')),
+  ], Date.now());
+  if (tertahan.length) {
+    const namaId = new Map(daftarUser.map(u => [u.id, u.full_name!]));
+    const namaAdmin = daftarUser.filter(adalahAdmin).map(u => u.full_name!);
+    for (const it of tertahan) {
+      const nama = new Set(it.penerima.flatMap(id => (id === 'admin' ? namaAdmin : [namaId.get(id) ?? ''])).filter(Boolean));
+      for (const n of nama) catat(n, { label: it.label, tanggal: it.tanggal, terlambat: it.terlambat, ringan: it.ringan });
+    }
   }
 
   //  Blok tambahan per penerima (teks bebas di bawah daftar tenggat).
