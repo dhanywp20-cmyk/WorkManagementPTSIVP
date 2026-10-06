@@ -8,7 +8,7 @@ import type { JejakCron } from './cron-catat';
 export const BATAS_DB = 500 * 1024 * 1024;
 export const BATAS_STORAGE = 1024 * 1024 * 1024;
 /** Cron Vercel harian dianggap macet bila tidak tercatat jalan > 26 jam. */
-export const CRON_MACET_JAM = 26;
+export const CRON_MACET_JAM = 30;
 export const CRON_VERCEL: { nama: string; label: string; jadwal: string }[] = [
   { nama: 'escalate', label: 'Eskalasi ticket idle', jadwal: '08:00 WIB' },
   { nama: 'digest', label: 'Briefing pagi (WA / Telegram / push)', jadwal: '06:00 WIB' },

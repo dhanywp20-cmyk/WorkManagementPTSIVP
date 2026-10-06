@@ -4,6 +4,7 @@ import { sendWANotif } from '@/lib/wa';
 import '@/lib/wa-server';
 import { appLink } from '@/lib/app-url';
 import { catatCron } from '@/lib/cron-catat';
+import { kirimAlertKesehatan } from '@/lib/kesehatan-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,9 @@ async function jalankanCron() {
     const hasil = await runEscalation(supabase);
     const dibersihkan = await bersihkanLoginLama(supabase).catch(() => 0);
     await catatCron(supabase, 'escalate', true, `${hasil.escalated} ticket dieskalasi · ${dibersihkan} catatan login lama dibersihkan`);
-    return { ...hasil, loginDibersihkan: dibersihkan };
+    //  Setelah mencatat jejak sendiri: bila ada peringatan merah (mis. briefing pagi mati), kabari admin lewat Telegram.
+    const alert = await kirimAlertKesehatan(supabase);
+    return { ...hasil, loginDibersihkan: dibersihkan, alertKesehatan: alert };
   } catch (e) {
     await catatCron(supabase, 'escalate', false, (e as Error).message ?? 'gagal');
     throw e;

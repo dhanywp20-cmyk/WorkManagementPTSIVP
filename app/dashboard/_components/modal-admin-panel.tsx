@@ -16,6 +16,7 @@ import { KelompokSettingInline } from './modal-kelompok';
 import { IntegrasiInline } from './modal-integrasi';
 import { AplikasiAndroidInline } from './modal-aplikasi-android';
 import { KesehatanInline } from './modal-kesehatan';
+import { BriefingPagiKartu } from './modal-briefing';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
 
@@ -244,7 +245,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             {activeSection === 'merek' && <MerekSettingInline />}
             {activeSection === 'kelompok' && <KelompokSettingInline />}
             {activeSection === 'integrasi' && (
-              <div className="p-4"><IntegrasiInline /></div>
+              <div className="p-4"><BriefingPagiKartu /><IntegrasiInline /></div>
             )}
             {activeSection === 'android' && <AplikasiAndroidInline />}
             {activeSection === 'kesehatan' && <KesehatanInline />}

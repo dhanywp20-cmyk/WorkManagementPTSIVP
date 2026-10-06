@@ -22,8 +22,8 @@ const sehat: DataKesehatan = {
 
 console.log('\nKesehatan sistem');
 cek('semua normal -> tanpa peringatan', ringkasKesehatan(sehat, sekarang).length === 0);
-const macet = ringkasKesehatan({ ...sehat, cronVercel: { ...sehat.cronVercel, escalate: { waktu: jamLalu(30), ok: true, ringkas: '' } } }, sekarang);
-cek('cron tidak jalan > 26 jam -> merah', macet.length === 1 && macet[0].tingkat === 'merah' && macet[0].teks.includes('Eskalasi'));
+const macet = ringkasKesehatan({ ...sehat, cronVercel: { ...sehat.cronVercel, escalate: { waktu: jamLalu(36), ok: true, ringkas: "" } } }, sekarang);
+cek('cron tidak jalan > 30 jam -> merah', macet.length === 1 && macet[0].tingkat === 'merah' && macet[0].teks.includes('Eskalasi'));
 const gagalJalan = ringkasKesehatan({ ...sehat, cronVercel: { ...sehat.cronVercel, digest: { waktu: jamLalu(1), ok: false, ringkas: 'timeout' } } }, sekarang);
 cek('cron gagal -> merah dengan alasannya', gagalJalan[0]?.tingkat === 'merah' && gagalJalan[0].teks.includes('timeout'));
 cek('cron belum pernah tercatat -> kuning', ringkasKesehatan({ ...sehat, cronVercel: {} }, sekarang).filter(p => p.tingkat === 'kuning').length === 2);
