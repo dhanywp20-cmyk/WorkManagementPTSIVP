@@ -1,8 +1,8 @@
 'use client';
 import { useState, type ReactNode } from 'react';
-import { Angka, Pilih, Segmen, f } from '../ui';
-import { isiRakDari, susunRak, svgElevasiRak, PERANGKAT_RAK, JENIS_RAK, type PerangkatRak, type JenisPerangkatRak } from './rak';
-import { namaBerkas, unduhSvgPNG } from '../cetak';
+import { Angka, Pilih, Segmen, f } from '../../ui';
+import { isiRakDari, susunRak, svgElevasiRak, PERANGKAT_RAK, JENIS_RAK, type PerangkatRak, type JenisPerangkatRak } from '../inti';
+import { namaBerkas, unduhSvgPNG } from '../../cetak';
 import { Ikon } from '@/components/shared/Ikon';
 import {
   BISA_PASANG, pasangDari, CELAH_PASANG, LABEL_PASANG, type Pasang, type Benda, type ModelVW, type BentukMeja, type KontenLayar, type TipeLampu, type Ruang, SPEK_LAMPU, lumenLampu, sudutLampuDari, luxLampuLangsung, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
@@ -10,8 +10,8 @@ import {
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, offsetLensaDari, geserLensaDari, lumenDari,
   tipeSpeakerDari, modulLA, sudutModulLA, tiltLADari, berkasLineArray, type TipeSpeaker,
   zoomLensa, throwRatioDari, barisTribun, kursiTribunPerBaris, ukuranBidang, lengkungDari,
-} from './model';
-import { AturObjek } from './panel/AturObjek';
+} from '../inti';
+import { AturObjek } from './AturObjek';
 
 /** Warna bawaan per jenis untuk pemilih warna (hanya titik awal pemilih; model tetap memakai bawaannya bila kosong). */
 const WARNA_AWAL: Partial<Record<Benda['jenis'], string>> = {

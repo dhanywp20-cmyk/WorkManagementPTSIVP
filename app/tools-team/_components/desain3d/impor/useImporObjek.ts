@@ -1,7 +1,7 @@
 'use client';
 import { useState, type MutableRefObject } from 'react';
 import type * as T from 'three';
-import { bendaBaru, idBaru, type Benda, type Kotak } from '../model';
+import { bendaBaru, idBaru, type Benda, type Kotak } from '../inti';
 import { bacaBerkas3D, GalatImpor, ukuranModel } from './berkas3d';
 import type { HasilObjekGambar } from '../panel/ModalObjekGambar';
 

@@ -1,6 +1,6 @@
 'use client';
 import { Angka, Pilih, Segmen, f } from '../../ui';
-import { LABEL_BENTUK_OBJEK, type Benda, type BentukObjek } from '../model';
+import { LABEL_BENTUK_OBJEK, type Benda, type BentukObjek } from '../inti';
 import { FAKTOR_SATUAN, LABEL_SATUAN, ukuranModel, type Satuan } from '../impor/berkas3d';
 
 /**

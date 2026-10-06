@@ -5,7 +5,7 @@ import { HardDriveUpload, History } from 'lucide-react';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
 import { urlGambarDesain } from '@/lib/tools-team';
-import { warnaSah, type Ruang } from './model';
+import { warnaSah, type Ruang } from '../inti';
 
 interface BarisDesain {
   id: string; nama: string; versi: number; jumlah_benda: number; dibuat_oleh_nama: string; diubah_oleh_nama: string;

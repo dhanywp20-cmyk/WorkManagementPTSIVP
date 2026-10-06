@@ -1,5 +1,9 @@
 /** Template kategori ruangan siap pakai (dipisah dari model.ts). */
-import { type Benda, type Kotak, type Ruang, type Titik, arahkanKe, bendaBaru, contohAwal, daftarRuang, keDunia, lengkungDari, lensaProyektor, setRuangKelas } from './model';
+import { bendaBaru, contohAwal, setRuangKelas } from './katalog';
+import { lengkungDari } from './produk';
+import { arahkanKe, keDunia, lensaProyektor } from './proyektor';
+import { daftarRuang } from './ruang';
+import { type Benda, type Kotak, type Ruang, type Titik } from './tipe';
 
 // ── Kategori ruangan (template siap pakai) ─────────────────────────────────
 

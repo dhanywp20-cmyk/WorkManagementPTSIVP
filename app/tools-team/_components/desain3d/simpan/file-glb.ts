@@ -13,7 +13,7 @@
  * memuat seluruh geometri. Tanpa three / React, jadi bisa diuji di Node.
  */
 import { periksaDesain } from '@/lib/tools-team';
-import type { Benda, Ruang } from './model';
+import type { Benda, Ruang } from '../inti';
 
 /** Kunci `userData` / `extras` tempat data desain disimpan. */
 export const KUNCI_DESAIN = 'desainPTS';

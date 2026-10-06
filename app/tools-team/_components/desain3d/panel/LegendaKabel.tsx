@@ -1,5 +1,5 @@
 'use client';
-import { LEGENDA_KABEL, type GolonganKabel } from '../kabel';
+import { LEGENDA_KABEL, type GolonganKabel } from '../inti';
 import { esc } from '../../cetak';
 
 /**

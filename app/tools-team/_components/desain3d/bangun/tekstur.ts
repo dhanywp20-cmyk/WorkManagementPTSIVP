@@ -1,14 +1,8 @@
 /** Tekstur kanvas procedural (lantai, layar, rack, lampu) (dipisah dari model.ts). */
 import type * as T from 'three';
-import type { Benda, Ruang } from './model';
-import { susunRak } from './rak';
+import { warnaSah, type Benda, type Ruang } from '../inti';
+import { susunRak } from '../inti';
 
-// ── Tekstur kanvas ──────────────────────────────────────────────────────────
-
-/** Warna #rrggbb yang sah, atau undefined (nilai rusak/asing diabaikan, kembali ke warna bawaan). */
-export function warnaSah(w: unknown): string | undefined {
-  return typeof w === 'string' && /^#[0-9a-f]{6}$/i.test(w) ? w.toLowerCase() : undefined;
-}
 
 export function kanvas(w: number, h: number, gambar: (c: CanvasRenderingContext2D) => void): HTMLCanvasElement {
   const c = document.createElement('canvas'); c.width = w; c.height = h;

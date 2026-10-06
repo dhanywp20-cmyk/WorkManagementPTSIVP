@@ -1,5 +1,5 @@
 import type * as T from 'three';
-import type { JalurKabel } from '../kabel';
+import type { JalurKabel } from '../inti';
 
 /** Jari-jari tabung kabel di kanvas (m) - cukup tebal untuk terlihat dari jauh & di foto. */
 const JARI = 0.014;

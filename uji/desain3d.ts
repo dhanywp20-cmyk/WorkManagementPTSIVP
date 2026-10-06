@@ -10,15 +10,15 @@ import {
   bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, sebaranSpeaker, sebaranVSpeaker, jangkauanDari, berkasLineArray,
   kursiTribun, ukuranBidang, lengkungDari,
   luxLampuLangsung, luxCahayaDi, kontrasProyektor, setLampuGrid, luxBidangKerja, nyalaLampu, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
-} from '../app/tools-team/_components/desain3d/model';
-import * as M3 from '../app/tools-team/_components/desain3d/model';
-import * as R from '../app/tools-team/_components/desain3d/rak';
-import { templateRuang, KATEGORI_RUANG } from '../app/tools-team/_components/desain3d/template';
-import * as TP from '../app/tools-team/_components/desain3d/template';
-import * as K from '../app/tools-team/_components/desain3d/kabel';
+} from '../app/tools-team/_components/desain3d/inti';
+import * as M3 from '../app/tools-team/_components/desain3d/inti';
+import * as R from '../app/tools-team/_components/desain3d/inti/rak';
+import { templateRuang, KATEGORI_RUANG } from '../app/tools-team/_components/desain3d/inti/template';
+import * as TP from '../app/tools-team/_components/desain3d/inti/template';
+import * as K from '../app/tools-team/_components/desain3d/inti/kabel';
 import { ringkasanDesain as ringkasRuang } from '../lib/tools-team';
 import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
-import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
+import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/simpan/file-glb';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {

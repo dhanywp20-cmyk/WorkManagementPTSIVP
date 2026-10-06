@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type * as T from 'three';
 import type { OrbitControls as KontrolOrbit } from 'three/examples/jsm/controls/OrbitControls.js';
 import { AlignCenterVertical, LayoutTemplate, Copy, CopyPlus, Crosshair, Settings2, Trash2, FolderOpen, HardDriveDownload, Maximize2, Move, Pencil, Redo2, Rotate3d, RotateCcw, RotateCw, Undo2, Video, ZoomIn, ZoomOut } from 'lucide-react';
-import { bacaDesainGLB, dataDesainFile, namaFileDesain, KUNCI_DESAIN } from './desain3d/file-glb';
+import { bacaDesainGLB, dataDesainFile, namaFileDesain, KUNCI_DESAIN } from './desain3d/simpan/file-glb';
 import { useRiwayat } from './riwayat';
 import { FAKTOR_PANDANG, type JenisPandang } from '@/lib/av-hitung';
 import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f } from './ui';
@@ -12,21 +12,22 @@ import { Modal } from '@/components/shared/Modal';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import {
   type Benda, type Ruang, type Kotak, type ItemKatalog, BISA_PASANG, pasangDari, CELAH_PASANG, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
-  daftarRuang, ruangDari, titikPenonton, tandaBentuk, teksturLantai, teksturKonten,
+  daftarRuang, ruangDari, titikPenonton, tandaBentuk,
   salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, sambungan, sambunganKe, MAKS_RUANG, type RuangSambung, warnaSah, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, tipeSpeakerDari, berkasLineArray, modulLA,
   arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, lumenDari, tinggiAlasDi,
-  aturNyalaLampu, nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU } from './desain3d/model';
-import { svgElevasiRak } from './desain3d/rak';
+  nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU } from './desain3d/inti';
+import { svgElevasiRak } from './desain3d/inti';
+import { teksturLantai, teksturKonten, aturNyalaLampu } from './desain3d/bangun/tekstur';
 import { buatModel, sesuaikanTinggi, teksturDindingAksen } from './desain3d/bangun';
-import { templateRuang, KATEGORI_RUANG, type KategoriRuang } from './desain3d/template';
-import { jalurKabel, rekapKabel, golonganDipakai, HDMI_MAKS, HDBT_MAKS } from './desain3d/kabel';
+import { templateRuang, KATEGORI_RUANG, type KategoriRuang } from './desain3d/inti';
+import { jalurKabel, rekapKabel, golonganDipakai, HDMI_MAKS, HDBT_MAKS } from './desain3d/inti';
 import { gambarJalurKabel } from './desain3d/mesin/gambarKabel';
 import { LegendaKabel, denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from './desain3d/panel/LegendaKabel';
-import { PanelBenda } from './desain3d/PanelBenda';
-import { PanelRuang } from './desain3d/PanelRuang';
-import { ModalBukaDesain, JUDUL_SISI } from './desain3d/ModalBuka';
+import { PanelBenda } from './desain3d/panel/PanelBenda';
+import { PanelRuang } from './desain3d/panel/PanelRuang';
+import { ModalBukaDesain, JUDUL_SISI } from './desain3d/panel/ModalBuka';
 import { ModalObjekGambar } from './desain3d/panel/ModalObjekGambar';
 import { useImporObjek } from './desain3d/impor/useImporObjek';
 import { TERIMA_3D } from './desain3d/impor/berkas3d';

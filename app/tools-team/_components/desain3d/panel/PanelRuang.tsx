@@ -1,9 +1,9 @@
 'use client';
 import { Copy } from 'lucide-react';
-import { Angka, Pilih, Segmen, f } from '../ui';
+import { Angka, Pilih, Segmen, f } from '../../ui';
 import {
   type Benda, type Ruang, type Kotak,
-  daftarRuang, ruangDari, pintuSekat, ukuranPintu, sambungan, sambunganKe, MAKS_RUANG, type RuangSambung, JENDELA_AWAL, sisiLuar, panjangDinding, type Bukaan, type SisiDinding, LUX_LUAR, luxSiang, type Siang, luxBidangKerja } from './model';
+  daftarRuang, ruangDari, pintuSekat, ukuranPintu, sambungan, sambunganKe, MAKS_RUANG, type RuangSambung, JENDELA_AWAL, sisiLuar, panjangDinding, type Bukaan, type SisiDinding, LUX_LUAR, luxSiang, type Siang, luxBidangKerja } from '../inti';
 import { PilihWarna } from './ModalBuka';
 
 /** Panel samping "Ruangan": ukuran, lantai, dinding, cahaya, bukaan, ruang tambahan & salin isi (dipisah dari Desain3D.tsx). */

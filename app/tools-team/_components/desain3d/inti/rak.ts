@@ -2,7 +2,7 @@
  * Rack elevation: isi rack 19" per U (urutan dari atas). Dipakai tekstur isi rack 3D,
  * diagram elevation (SVG) di panel, lembar cetak, dan PNG. Murni - tanpa three.js / React.
  */
-import type { Benda } from './model';
+import { type Benda } from './tipe';
 
 export type JenisPerangkatRak =
   | 'patch' | 'kabel' | 'switch' | 'server' | 'nas' | 'amp' | 'dsp' | 'matrix' | 'codec' | 'pdu' | 'shelf' | 'ups' | 'kosong';
