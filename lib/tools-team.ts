@@ -247,7 +247,7 @@ export interface ProdukTim {
 const ENUM_PRODUK: Record<string, readonly string[]> = {
   rasio: ['16:9', '16:10', '4:3', '21:9'], vw: ['55BDL2105X', '49BDL2105X', 'custom'], pasang: ['dinding', 'standfloor'],
   mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas', 'dosen', 'podium', 'kredensa', 'operator'], bentukBidang: ['datar', 'lengkung', 'cembung'], finish: ['walnut', 'oak', 'putih'],
-  tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati', 'cctv', 'dashboard', 'campuran', 'desktop'], tipeRak: ['kaca', 'tertutup', 'open'], tipeLampu: ['downlight', 'spot', 'panel', 'linear'],
+  tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati', 'cctv', 'dashboard', 'campuran', 'desktop'], tipeRak: ['kaca', 'tertutup', 'open'], tipeLampu: ['downlight', 'spot', 'panel', 'linear', 'gantung'],
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
 };
 /** Angka yang boleh ada di template beserta batasnya. */

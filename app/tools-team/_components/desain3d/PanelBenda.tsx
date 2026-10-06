@@ -222,8 +222,8 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
                 <Pilih label="Suhu warna" nilai={b.kelvin ?? 4000} onUbah={v => set({ kelvin: v })}
                   opsi={[{ v: 3000, l: '3000 K hangat' }, { v: 4000, l: '4000 K netral' }, { v: 6500, l: '6500 K daylight' }]} />
               </div>
-              {tipe === 'linear' && (
-                <Angka label="Gantung dari plafon" nilai={b.gantungLampu ?? 0.6} satuan="m" step={0.05}
+              {SPEK_LAMPU[tipe].gantung > 0 && (
+                <Angka label="Gantung dari plafon" nilai={b.gantungLampu ?? SPEK_LAMPU[tipe].gantung} satuan="m" step={0.05}
                   onUbah={v => v >= 0 && v <= 3 && set({ gantungLampu: v, elev: Math.max(0.5, plafon - b.h - v) })} />
               )}
               <p className="text-[12px] text-slate-600">Tepat di bawah lampu, di meja (0,75 m): ±{f(bawahLampu, 0)} lux langsung (dimmer lampu ini; tanpa pantulan & dimmer ruangan). Isi lumen & sudut sinar sesuai datasheet.</p>

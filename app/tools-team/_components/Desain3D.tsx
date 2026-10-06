@@ -17,7 +17,7 @@ import {
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, tipeSpeakerDari, berkasLineArray, modulLA,
   arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, templateRuang, KATEGORI_RUANG, type KategoriRuang, lumenDari,
-  aturNyalaLampu, nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, LUX_LUAR, luxSiang, type Siang, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU,
+  aturNyalaLampu, nyalaLampu, teksturDindingAksen, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, LUX_LUAR, luxSiang, type Siang, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU,
 } from './desain3d/model';
 import { svgElevasiRak } from './desain3d/rak';
 import { jalurKabel, rekapKabel, HDMI_MAKS } from './desain3d/kabel';
@@ -538,6 +538,9 @@ export default function Desain3D() {
     const daftar = daftarRuang(ruang);
     const lantaiDari = (i: number) => (i === 0 ? ruang.lantai : sambunganKe(ruang, i)?.lantai ?? 'kayu');
     const bahanDinding = new THREE.MeshStandardMaterial({ color: warnaSah(ruang.warnaDinding) ?? 0xf5f5f4, roughness: 0.95, side: THREE.FrontSide });
+    //  Feature wall depan: marmer / panel kayu, UV dalam meter supaya slab tidak melar.
+    const aksen = ruang.dindingDepan && ruang.dindingDepan !== 'polos' ? teksturDindingAksen(THREE, ruang.dindingDepan) : null;
+    const bahanAksen = aksen ? new THREE.MeshStandardMaterial({ map: aksen.tex, roughness: ruang.dindingDepan === 'marmer' ? 0.25 : 0.7, metalness: ruang.dindingDepan === 'marmer' ? 0.05 : 0, side: THREE.FrontSide }) : null;
     const garis = new THREE.LineBasicMaterial({ color: 0xa8a29e });
     //  Sekat antar ruang (j = sekat di kiri ruang j): 'tembok' (bawaan), 'kaca' = kaca penuh berangka
     //  aluminium, 'jendela' = tetap tembok dengan SATU jendela kaca persegi untuk melihat ke ruang
@@ -564,12 +567,17 @@ export default function Desain3D() {
      * `pasangKaca` = isi lubang jendela dengan kaca + kusen (cukup di SATU sisi
      * sekat - dua bidang kaca di posisi yang sama akan berkedip).
      */
-    const dinding = (panjang: number, tinggi: number, x: number, z: number, rotY: number, lubang: Lubang[] = [], opsi: { tembus?: boolean; pasangKaca?: boolean } = {}) => {
+    const dinding = (panjang: number, tinggi: number, x: number, z: number, rotY: number, lubang: Lubang[] = [], opsi: { tembus?: boolean; pasangKaca?: boolean; aksen?: boolean } = {}) => {
       const tembus = !!opsi.tembus;
       const gw = new THREE.Group(); gw.position.set(x, 0, z); gw.rotation.y = rotY;
       const bidang = (x0: number, x1: number, y0: number, y1: number) => {
         if (x1 - x0 < 0.01 || y1 - y0 < 0.01) return;
-        const d = new THREE.Mesh(new THREE.PlaneGeometry(x1 - x0, y1 - y0), tembus ? bahanKaca : bahanDinding);
+        const geo = new THREE.PlaneGeometry(x1 - x0, y1 - y0);
+        if (opsi.aksen && aksen && !tembus) {
+          const uv = geo.attributes.uv as T.BufferAttribute;
+          for (let i = 0; i < uv.count; i++) uv.setXY(i, (x0 + uv.getX(i) * (x1 - x0) + panjang / 2) / aksen.ubinW, (y0 + uv.getY(i) * (y1 - y0)) / aksen.ubinH);
+        }
+        const d = new THREE.Mesh(geo, tembus ? bahanKaca : opsi.aksen && bahanAksen ? bahanAksen : bahanDinding);
         d.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0); d.receiveShadow = !tembus; gw.add(d);
       };
       const balok = (w: number, h: number, bx: number, by: number, m: T.Material = bahanRangkaGelap, tebal = 0.07) => {
@@ -675,7 +683,7 @@ export default function Desain3D() {
         new THREE.MeshStandardMaterial({ map: teksturLantai(THREE, jenis, k.p, k.l, i === 0 ? ruang.warnaLantai : sambunganKe(ruang, i)?.warnaLantai), roughness: jenis === 'keramik' ? 0.35 : 0.8 }));
       lantai.rotation.x = -Math.PI / 2; lantai.position.set(k.x0 + k.p / 2, 0, k.l / 2); lantai.receiveShadow = true;
       grupRuang.add(lantai);
-      dinding(k.p, k.t, k.x0 + k.p / 2, 0, 0, lubangLuar(i, 'depan', k.p));                  // depan
+      dinding(k.p, k.t, k.x0 + k.p / 2, 0, 0, lubangLuar(i, 'depan', k.p), { aksen: true });  // depan (feature wall)
       dinding(k.p, k.t, k.x0 + k.p / 2, k.l, Math.PI, lubangLuar(i, 'belakang', k.p));       // belakang
       //  Kiri (rotY +90°: sumbu lokal x = -z dunia) & kanan (-90°: lokal x = +z dunia).
       //  Sekat kaca penuh cukup satu bidang (milik ruang di kirinya) - dua bidang tembus pandang di posisi yang sama akan berkedip.
@@ -2395,6 +2403,8 @@ export default function Desain3D() {
                           </div>
                         </div>
                         <PilihWarna label="Warna dinding (semua ruang)" nilai={ruang.warnaDinding} awal="#f5f5f4" onUbah={w => setRuang(r => ({ ...r, warnaDinding: w }))} />
+                        <Segmen label="Dinding depan (feature wall)" nilai={ruang.dindingDepan ?? 'polos'} onUbah={(v: 'polos' | 'marmer' | 'kayu') => setRuang(r => ({ ...r, dindingDepan: v }))}
+                          opsi={[{ v: 'polos', l: 'Polos' }, { v: 'marmer', l: 'Marmer' }, { v: 'kayu', l: 'Panel kayu' }]} />
                         <div>
                           <Segmen label="Cahaya ruangan" nilai={ruang.cahaya ?? 'terang'} onUbah={v => setRuang(r => ({ ...r, cahaya: v }))}
                             opsi={[{ v: 'terang', l: 'Terang' }, { v: 'redup', l: 'Redup' }, { v: 'gelap', l: 'Gelap' }]} />

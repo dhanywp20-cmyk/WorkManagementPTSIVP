@@ -28,7 +28,7 @@ export type BentukMeja = 'rapat' | 'bulat' | 'kelas' | 'dosen' | 'podium' | 'kre
 /** Konten layar: pola uji, unggahan, mati, atau konten contoh (CCTV, dashboard, campuran, home screen). */
 export type KontenLayar = 'pola' | 'gambar' | 'mati' | 'cctv' | 'dashboard' | 'campuran' | 'desktop';
 export type TipeRak = 'kaca' | 'tertutup' | 'open';
-export type TipeLampu = 'downlight' | 'spot' | 'panel' | 'linear';
+export type TipeLampu = 'downlight' | 'spot' | 'panel' | 'linear' | 'gantung';
 export type Finish = 'walnut' | 'oak' | 'putih';
 export type TipeKursi = 'kantor' | 'kelas';
 export type TipeKamera = 'ptz' | 'ptz-ai' | 'xbar';
@@ -93,6 +93,8 @@ export interface Ruang {
   p: number; l: number; t: number; lantai: 'kayu' | 'karpet' | 'keramik' | 'polos';
   /** Warna lantai 'polos' ruang 1 (#rrggbb) */ warnaLantai?: string;
   /** Warna dinding semua ruang (#rrggbb), bawaan putih tulang */ warnaDinding?: string;
+  /** Finishing dinding depan (feature wall di belakang display) tiap ruang: polos (bawaan), marmer, atau panel kayu. */
+  dindingDepan?: 'polos' | 'marmer' | 'kayu';
   /** Tingkat cahaya ruangan (bawaan terang). Gelap = ruang mapping / immersive, cahaya proyektor terlihat jelas. */ cahaya?: 'terang' | 'redup' | 'gelap';
   /** Dimmer semua lampu plafon (%), bawaan 100 - skenario presentasi. */ dimmer?: number;
   /** Cahaya siang lewat jendela dinding luar (bawaan malam = tidak dihitung) & tirai/blind tertutup (%). */
@@ -356,6 +358,7 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'lampu-spot', label: 'Spotlight', ket: 'Sinar sempit 36°, aksen', jenis: 'lampu', atur: { tipeLampu: 'spot' } },
       { kunci: 'lampu-panel', label: 'Panel LED 60 × 60', ket: 'Lampu kantor ±3600 lm, sinar lebar', jenis: 'lampu', atur: { tipeLampu: 'panel' } },
       { kunci: 'lampu-linear', label: 'Lampu linear gantung', ket: 'Pendant linear 1,2 m, kabel gantung', jenis: 'lampu', atur: { tipeLampu: 'linear' } },
+      { kunci: 'lampu-gantung', label: 'Lampu gantung dekoratif', ket: 'Pendant kap kubah 42 cm, 3000 K hangat (lobi, meja rapat)', jenis: 'lampu', atur: { tipeLampu: 'gantung' } },
       { kunci: 'set-lampu', label: 'Set downlight (grid)', ket: 'Downlight merata ±2,2 m di seluruh plafon', jenis: 'lampu', set: k => setLampuGrid(k) },
     ],
   },
@@ -495,9 +498,9 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
     case 'speaker-plafon': return { ...dasar, w: 0.24, h: 0.06, d: 0.24, elev: k.t - 0.06, ...atur };
     case 'lampu': {
       const tipe = atur.tipeLampu ?? 'downlight', sp = SPEK_LAMPU[tipe];
-      const gantung = tipe === 'linear' ? atur.gantungLampu ?? sp.gantung : 0;
+      const gantung = sp.gantung > 0 ? atur.gantungLampu ?? sp.gantung : 0;
       return { ...dasar, nama: sp.label, w: sp.w, h: sp.h, d: sp.d, elev: Math.max(0.5, k.t - sp.h - gantung), tipeLampu: tipe, lumen: sp.lumen, sudutLampu: sp.sudut,
-        dimmer: 100, kelvin: 4000, ...(tipe === 'linear' ? { gantungLampu: gantung } : {}), ...atur };
+        dimmer: 100, kelvin: tipe === 'gantung' ? 3000 : 4000, ...(sp.gantung > 0 ? { gantungLampu: gantung } : {}), ...atur };
     }
     case 'mic': return (atur.mic ?? 'gooseneck') === 'boundary'
       ? { ...dasar, z: k.l * 0.55, w: 0.18, h: 0.032, d: 0.18, elev: 0.75, mic: 'boundary', nama: 'Mic boundary', ...atur }
@@ -604,7 +607,10 @@ export const SPEK_LAMPU: Record<TipeLampu, { label: string; w: number; h: number
   spot: { label: 'Spotlight', w: 0.1, h: 0.1, d: 0.1, lumen: 700, sudut: 36, gantung: 0 },
   panel: { label: 'Panel LED 60×60', w: 0.6, h: 0.04, d: 0.6, lumen: 3600, sudut: 110, gantung: 0 },
   linear: { label: 'Lampu linear gantung', w: 1.2, h: 0.07, d: 0.06, lumen: 3500, sudut: 100, gantung: 0.6 },
+  gantung: { label: 'Lampu gantung dekoratif', w: 0.42, h: 0.3, d: 0.42, lumen: 1500, sudut: 120, gantung: 0.9 },
 };
+/** Lampu yang tergantung kabel dari plafon (jarak gantung bisa diatur). */
+export const lampuGantung = (t: TipeLampu | undefined) => SPEK_LAMPU[t ?? 'downlight'].gantung > 0;
 export const lumenLampu = (b: Benda) => Math.max(0, b.lumen ?? SPEK_LAMPU[b.tipeLampu ?? 'downlight'].lumen);
 export const sudutLampuDari = (b: Benda) => Math.max(10, Math.min(160, b.sudutLampu ?? SPEK_LAMPU[b.tipeLampu ?? 'downlight'].sudut));
 /** Faktor nyala lampu 0..1 (dimmer lampu x dimmer semua lampu ruangan). */
@@ -1804,6 +1810,37 @@ function teksturKayu(THREE: typeof T, fin: Finish, sepanjangZ: boolean): T.Textu
   return t;
 }
 
+/**
+ * Tekstur feature wall: marmer putih berurat abu (slab 1,2 × 2,4 m dengan nat tipis) atau panel
+ * kayu walnut. Satu ubin tekstur = satu slab; UV bidang dinding dihitung dalam meter (repeat).
+ */
+export function teksturDindingAksen(THREE: typeof T, jenis: 'marmer' | 'kayu'): { tex: T.Texture; ubinW: number; ubinH: number } {
+  if (jenis === 'kayu') {
+    const tex = teksturKayu(THREE, 'walnut', true);
+    tex.repeat.set(1, 1);
+    return { tex, ubinW: 0.4, ubinH: 1.6 };
+  }
+  const W = 512, H = 1024;
+  const c = kanvas(W, H, g => {
+    const gr = g.createLinearGradient(0, 0, W, H);
+    gr.addColorStop(0, '#f4f2ee'); gr.addColorStop(0.5, '#ebe8e2'); gr.addColorStop(1, '#f6f4f0');
+    g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    const r = acak(77);
+    for (let i = 0; i < 14; i++) {
+      let x = r() * W, y = 0;
+      g.strokeStyle = r() > 0.6 ? 'rgba(120,120,125,0.55)' : 'rgba(160,158,155,0.4)';
+      g.lineWidth = 0.6 + r() * 2.2;
+      g.beginPath(); g.moveTo(x, y);
+      while (y < H) { x += (r() - 0.5) * 60; y += 20 + r() * 50; g.lineTo(x, y); }
+      g.stroke();
+    }
+    g.fillStyle = 'rgba(90,90,90,0.35)'; g.fillRect(0, 0, W, 2); g.fillRect(0, 0, 2, H);
+  });
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+  return { tex, ubinW: 1.2, ubinH: 2.4 };
+}
+
 /** Anyaman kain (jok kursi, soundbar). `ubin` = ukuran satu ubin dalam meter. */
 function teksturKain(THREE: typeof T, dasar: string, ubin: number): T.Texture {
   const c = kanvas(128, 128, g => {
@@ -2453,6 +2490,19 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
         g.add(kotak(THREE, b.w, b.h, b.d, rumah, 0, b.h / 2, 0));
         const muka = tandai(new THREE.Mesh(new THREE.PlaneGeometry(b.w - 0.03, b.d - 0.03), nyala));
         muka.rotation.x = Math.PI / 2; muka.position.y = -0.001; g.add(muka);
+      } else if (tipe === 'gantung') {
+        //  Pendant dekoratif: kap kubah logam gelap (dalam keemasan), bohlam menyala, kabel ke plafon.
+        const kap = mat(THREE, W(0x1f2328), { metalness: 0.7, roughness: 0.35, side: THREE.DoubleSide });
+        const dalam = mat(THREE, 0xd4a35a, { metalness: 0.8, roughness: 0.3, side: THREE.BackSide });
+        const rr = b.w / 2, profil: [number, number][] = [];
+        for (let i = 0; i <= 16; i++) { const a = (i / 16) * (Math.PI / 2); profil.push([Math.max(0.012, rr * Math.sin(a)), b.h * Math.cos(a) * 0.85 + 0.03]); }
+        const bentuk = profil.map(([x, y]) => new THREE.Vector2(x, y));
+        g.add(new THREE.Mesh(new THREE.LatheGeometry(bentuk, 40), kap));
+        g.add(new THREE.Mesh(new THREE.LatheGeometry(bentuk, 40), dalam));
+        g.add(new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.03, 0.05, 16), kap).translateY(b.h * 0.85 + 0.05));
+        const bohlam = tandai(new THREE.Mesh(new THREE.SphereGeometry(rr * 0.22, 20, 12), nyala));
+        bohlam.position.y = 0.06; g.add(bohlam);
+        g.add(batang(THREE, 0.006, 0.006, mat(THREE, 0x111111), 0, 0, 'tiang', 0, true));
       } else {
         g.add(kotak(THREE, b.w, b.h, b.d, rumah, 0, b.h / 2, 0));
         const muka = tandai(new THREE.Mesh(new THREE.PlaneGeometry(b.w - 0.02, b.d * 0.6), nyala));
