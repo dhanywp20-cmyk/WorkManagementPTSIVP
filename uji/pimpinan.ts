@@ -5,6 +5,7 @@
  */
 import { isPimpinan, muatIdPimpinan } from '../lib/pimpinan';
 import { canAccessAnalytics, canSeeTeamMonitoring, hasMenu } from '../app/dashboard/_components/widgets/permissions';
+import { akunAdmin, akunBacaSemua, akunLihatSemua } from '../lib/checklist-server';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -33,6 +34,15 @@ cek('guest biasa: dashboard ringkas (tanpa analytics)', !canAccessAnalytics(gues
 cek('pimpinan: Analytics penuh seperti team', canAccessAnalytics(direktur));
 cek('pimpinan: Team Monitoring seperti team', canSeeTeamMonitoring(direktur));
 cek('pimpinan tetap tidak punya menu yang tidak dicentang', !hasMenu(direktur, 'incentive-pts') && hasMenu(direktur, 'learning-center'));
+
+console.log('\n4. Project Progress (server): pimpinan membaca semua proyek, tanpa hak admin / fitur tim');
+const akunPim = { id: 'd', nama: 'Jonny', role: 'guest', pimpinan: true };
+const akunSales = { id: 's', nama: 'Sales', role: 'guest' };
+cek('pimpinan: boleh membaca semua proyek', akunBacaSemua(akunPim));
+cek('sales biasa: tidak membaca semua (hanya proyek atas namanya)', !akunBacaSemua(akunSales));
+cek('team & admin tetap membaca semua', akunBacaSemua({ id: 't', nama: 'T', role: 'team' }) && akunBacaSemua({ id: 'a', nama: 'A', role: 'admin' }));
+cek('pimpinan bukan admin (tidak bisa buat/ubah/hapus proyek)', !akunAdmin(akunPim));
+cek('pimpinan tidak mendapat fitur tim (AI checklist)', !akunLihatSemua(akunPim));
 
 (async () => {
   const ada = await muatIdPimpinan(klien({ data: [{ id: 'a' }, { id: 'b' }], error: null }));
