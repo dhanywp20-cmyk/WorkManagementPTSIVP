@@ -168,8 +168,8 @@ function TabelHardware({ judul, data, onUbah, tampilSender }: { judul: string; d
 export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoTim, bolehSimpanTim, simpanUntukTim, resetTim, sibuk, pesan, buka, onTutup }: ReturnType<typeof useReferensiLED> & { buka: boolean; onTutup: () => void }) {
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const [saringBrand, setSaringBrand] = useState('');
-  //  Daftar brand lengkap (termasuk brand yang hanya tertulis di baris modul).
-  const brands = daftarBrand(r.brand, r.modul);
+  //  Daftar brand lengkap (termasuk brand yang hanya tertulis di baris modul); referensi lama tanpa daftar brand memakai daftar bawaan.
+  const brands = daftarBrand(r.brand ?? BRAND_LED, r.modul);
   const tulisBrand = (daftar: BrandLED[], modul = r.modul) => ubah({ ...r, modul, brand: daftar });
   const brandPolos = () => brands.map(({ nama, sendiri }) => ({ nama, sendiri }));
   const namaBrandBaru = () => { let i = 1; while (brands.some(b => b.nama === `Brand baru ${i}`)) i++; return `Brand baru ${i}`; };
