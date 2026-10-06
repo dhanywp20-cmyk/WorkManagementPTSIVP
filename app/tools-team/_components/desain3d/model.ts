@@ -92,16 +92,27 @@ export interface Ruang {
   /** Warna dinding semua ruang (#rrggbb), bawaan putih tulang */ warnaDinding?: string;
   /** Tingkat cahaya ruangan (bawaan terang). Gelap = ruang mapping / immersive, cahaya proyektor terlihat jelas. */ cahaya?: 'terang' | 'redup' | 'gelap';
   /** Dimmer semua lampu plafon (%), bawaan 100 - skenario presentasi. */ dimmer?: number;
-  /** Pintu & jendela di dinding LUAR (sekat antar ruang punya pintu/jendela sendiri di r2). */ bukaan?: Bukaan[];
+  /** Pintu & jendela di dinding LUAR (sekat antar ruang punya pintu/jendela sendiri di r2 / lain). */ bukaan?: Bukaan[];
   /** Pengaturan analisis tampilan - ikut tersimpan bersama desain. */
   analisis?: { jenis: 'umum' | 'analitis' | 'detail' | 'custom'; faktor: number; sudut: number };
   /** Ruang ke-2 bersebelahan di sisi kanan (x = p .. p + r2.p). */
-  r2?: { aktif: boolean; p: number; l: number; t: number; lantai: Ruang['lantai']; pintu: boolean;
+  r2?: RuangSambung | null;
+  /** Ruang ke-3 dst., masing-masing di kanan ruang sebelumnya (maks MAKS_RUANG ruang). Sekatnya = sekat dengan ruang di kirinya. */
+  lain?: RuangSambung[];
+}
+
+/**
+ * Ruang tambahan yang menempel di kanan ruang sebelumnya, beserta sekat di sisi kirinya. Lebar (l)
+ * boleh berbeda dari ruang sebelah: dengan sekat 'terbuka' dua ruang menjadi satu ruang bentuk L.
+ */
+export interface RuangSambung {
+    aktif: boolean; p: number; l: number; t: number; lantai: Ruang['lantai']; pintu: boolean;
     /** Warna lantai 'polos' ruang 2 */ warnaLantai?: string;
     /** Pintu penghubung custom (meter): lebar, tinggi, z = pusat pintu dari dinding depan */ pintuUkuran?: { lebar: number; tinggi: number; z?: number };
-    /** Sekat antara ruang 1 & 2: tembok (bawaan), kaca penuh, atau tembok dengan satu jendela kaca. */ sekat?: 'tembok' | 'kaca' | 'jendela';
+    /** Sekat dengan ruang di kirinya: tembok (bawaan), kaca penuh, tembok dengan satu jendela kaca,
+     *  atau terbuka (tanpa sekat - dua ruang menyatu, mis. ruang bentuk L). */ sekat?: 'tembok' | 'kaca' | 'jendela' | 'terbuka';
     /** Jendela kaca di sekat (sekat 'jendela'), dalam meter. geser = dari tengah sekat (+ ke belakang). */
-    jendela?: { lebar: number; tinggi: number; ambang: number; geser: number } } | null;
+    jendela?: { lebar: number; tinggi: number; ambang: number; geser: number };
 }
 
 export type SisiDinding = 'depan' | 'belakang' | 'kiri' | 'kanan';
@@ -109,37 +120,57 @@ export type SisiDinding = 'depan' | 'belakang' | 'kiri' | 'kanan';
  * Pintu / jendela di dinding luar. posisi = pusat bukaan diukur dari ujung KIRI
  * dinding dilihat dari dalam ruang (m); ambang = tinggi sisi bawah jendela dari lantai.
  */
-export interface Bukaan { id: string; ruang: 0 | 1; sisi: SisiDinding; jenis: 'pintu' | 'jendela'; posisi: number; lebar: number; tinggi: number; ambang: number }
+export interface Bukaan { id: string; ruang: number; sisi: SisiDinding; jenis: 'pintu' | 'jendela'; posisi: number; lebar: number; tinggi: number; ambang: number }
 
 /** Kotak satu ruang dalam koordinat dunia. */
 export interface Kotak { x0: number; p: number; l: number; t: number }
 
+export const MAKS_RUANG = 4;
+/** Ruang tambahan yang aktif, berurutan (ruang ke-2, ke-3, ...); berhenti di yang pertama tidak aktif. */
+export function sambungan(r: Ruang): RuangSambung[] {
+  const hasil: RuangSambung[] = [];
+  for (const x of [r.r2, ...(r.lain ?? [])]) {
+    if (!x?.aktif || hasil.length >= MAKS_RUANG - 1) break;
+    hasil.push(x);
+  }
+  return hasil;
+}
+/** Ruang tambahan ke-j (j >= 1 = ruang indeks j) beserta sekat di kirinya. */
+export const sambunganKe = (r: Ruang, j: number): RuangSambung | null => (j >= 1 ? sambungan(r)[j - 1] ?? null : null);
+
 export function daftarRuang(r: Ruang): Kotak[] {
-  const satu = { x0: 0, p: r.p, l: r.l, t: r.t };
-  return r.r2?.aktif ? [satu, { x0: r.p, p: r.r2.p, l: r.r2.l, t: r.r2.t }] : [satu];
+  const hasil: Kotak[] = [{ x0: 0, p: r.p, l: r.l, t: r.t }];
+  let x = r.p;
+  for (const s of sambungan(r)) { hasil.push({ x0: x, p: s.p, l: s.l, t: s.t }); x += s.p; }
+  return hasil;
 }
 
-/** Indeks ruang (0/1) tempat titik x berada. */
+/** Indeks ruang tempat titik x berada (0 = ruang 1). */
 export function ruangDari(r: Ruang, x: number): number {
-  return r.r2?.aktif && x > r.p ? 1 : 0;
+  const k = daftarRuang(r);
+  for (let i = k.length - 1; i > 0; i--) if (x > k[i].x0) return i;
+  return 0;
 }
 
 /** Lebar & tinggi lubang pintu penghubung, dan posisi pusatnya di sepanjang sekat (z dunia). */
 export const PINTU = { lebar: 0.9, tinggi: 2.1 };
 /** Ukuran pintu penghubung (custom bila diisi), dijepit agar muat di sekat. */
-export function ukuranPintu(r: Ruang): { lebar: number; tinggi: number } {
-  const u = r.r2?.pintuUkuran;
-  const L = Math.min(r.l, r.r2?.l ?? r.l), T = Math.min(r.t, r.r2?.t ?? r.t);
+export function ukuranPintu(r: Ruang, j = 1): { lebar: number; tinggi: number } {
+  const k = daftarRuang(r), s = sambunganKe(r, j), kiri = k[j - 1] ?? k[0];
+  const u = s?.pintuUkuran;
+  const L = Math.min(kiri.l, s?.l ?? kiri.l), T = Math.min(kiri.t, s?.t ?? kiri.t);
   return {
     lebar: Math.max(0.5, Math.min(u?.lebar ?? PINTU.lebar, L - 0.4)),
     tinggi: Math.max(1.5, Math.min(u?.tinggi ?? PINTU.tinggi, T - 0.1)),
   };
 }
-/** Pusat pintu penghubung di sepanjang sekat (z dunia); bawaan 1 m dari dinding belakang. */
-export function pintuSekat(r: Ruang): number | null {
-  if (!r.r2?.aktif || !r.r2.pintu) return null;
-  const L = Math.min(r.l, r.r2.l), setengah = ukuranPintu(r).lebar / 2;
-  const z = r.r2.pintuUkuran?.z ?? L - 1.0;
+/** Pusat pintu penghubung di sekat ke-j (kiri ruang j) sepanjang z dunia; bawaan 1 m dari dinding belakang. */
+export function pintuSekat(r: Ruang, j = 1): number | null {
+  const s = sambunganKe(r, j);
+  if (!s || !s.pintu || s.sekat === 'terbuka') return null;
+  const kiri = daftarRuang(r)[j - 1];
+  const L = Math.min(kiri.l, s.l), setengah = ukuranPintu(r, j).lebar / 2;
+  const z = s.pintuUkuran?.z ?? L - 1.0;
   return Math.max(setengah + 0.15, Math.min(L - setengah - 0.15, z));
 }
 
@@ -151,8 +182,8 @@ export const analisisDari = (r: Ruang): NonNullable<Ruang['analisis']> => ({ ...
 export const BUKAAN_AWAL = { pintu: { lebar: 0.9, tinggi: 2.1, ambang: 0 }, jendela: { lebar: 1.5, tinggi: 1.2, ambang: 0.9 } };
 /** Dinding luar ruang i - dinding sekat antar ruang tidak termasuk (pintu/jendelanya diatur di r2). */
 export function sisiLuar(r: Ruang, i: number): SisiDinding[] {
-  if (!r.r2?.aktif) return ['depan', 'belakang', 'kiri', 'kanan'];
-  return i === 0 ? ['depan', 'belakang', 'kiri'] : ['depan', 'belakang', 'kanan'];
+  const n = daftarRuang(r).length;
+  return (['depan', 'belakang', 'kiri', 'kanan'] as SisiDinding[]).filter(s => !(s === 'kiri' && i > 0) && !(s === 'kanan' && i < n - 1));
 }
 export const panjangDinding = (k: Kotak, sisi: SisiDinding) => (sisi === 'depan' || sisi === 'belakang' ? k.p : k.l);
 /**
@@ -179,18 +210,20 @@ export function bukaanDinding(r: Ruang, i: number, sisi: SisiDinding): { b: Buka
  * di dalam dinding (sisa >= 20 cm di tiap tepi) dan TIDAK menimpa pintu
  * penghubung - bila bertabrakan, jendela digeser menjauhi pintu.
  */
-export function jendelaSekat(r: Ruang): { z0: number; z1: number; y0: number; y1: number } | null {
-  if (!r.r2?.aktif || r.r2.sekat !== 'jendela') return null;
-  const j = { ...JENDELA_AWAL, ...(r.r2.jendela ?? {}) };
-  const L = Math.min(r.l, r.r2.l), T = Math.min(r.t, r.r2.t), tepi = 0.2;
+export function jendelaSekat(r: Ruang, ke = 1): { z0: number; z1: number; y0: number; y1: number } | null {
+  const s = sambunganKe(r, ke);
+  if (!s || s.sekat !== 'jendela') return null;
+  const kiri = daftarRuang(r)[ke - 1];
+  const j = { ...JENDELA_AWAL, ...(s.jendela ?? {}) };
+  const L = Math.min(kiri.l, s.l), T = Math.min(kiri.t, s.t), tepi = 0.2;
   const lebar = Math.max(0.3, Math.min(j.lebar, L - 2 * tepi));
   const y0 = Math.max(0.1, Math.min(j.ambang, T - 0.4));
   const y1 = Math.max(y0 + 0.2, Math.min(y0 + j.tinggi, T - 0.15));
   let tengah = L / 2 + j.geser;
   tengah = Math.min(L - tepi - lebar / 2, Math.max(tepi + lebar / 2, tengah));
-  const pintu = pintuSekat(r);
+  const pintu = pintuSekat(r, ke);
   if (pintu !== null) {
-    const lp = ukuranPintu(r).lebar;
+    const lp = ukuranPintu(r, ke).lebar;
     const p0 = pintu - lp / 2 - 0.15, p1 = pintu + lp / 2 + 0.15;
     if (tengah + lebar / 2 > p0 && tengah - lebar / 2 < p1) {
       //  Pindah ke sisi yang lebih lega (depan / belakang pintu).

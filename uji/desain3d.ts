@@ -11,6 +11,8 @@ import {
   templateRuang, KATEGORI_RUANG, kursiTribun, ukuranBidang, lengkungDari,
   luxLampuLangsung, luxCahayaDi, kontrasProyektor, setLampuGrid, luxBidangKerja, nyalaLampu, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
 } from '../app/tools-team/_components/desain3d/model';
+import * as M3 from '../app/tools-team/_components/desain3d/model';
+import { ringkasanDesain as ringkasRuang } from '../lib/tools-team';
 import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
 
@@ -404,6 +406,24 @@ console.log('\n13. Lampu plafon & kontras proyektor');
   cek('kontras = (lux gambar + lux lampu) / lux lampu', dekat(nyala.kontras, (nyala.luxGambar + nyala.cahaya.total) / nyala.cahaya.total, 0.001));
   cek('lampu dimatikan -> kontras naik & memenuhi target', mati.kontras > nyala.kontras && mati.cukup, `${nyala.kontras.toFixed(1)} -> ${mati.kontras.toFixed(1)}`);
   cek('lumen perlu = (target-1) x lux lampu x luas gambar', nyala.lumenPerlu >= (15 - 1) * nyala.cahaya.total * nyala.luas - 1);
+}
+
+console.log('\nLebih dari 2 ruang & ruang bentuk L');
+{
+  const sb = (p: number, l: number, sekat?: 'tembok' | 'kaca' | 'jendela' | 'terbuka') => ({ aktif: true, p, l, t: 3, lantai: 'karpet' as const, pintu: true, sekat });
+  const r: M3.Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: sb(6, 6), lain: [sb(4, 10, 'terbuka'), sb(5, 5)] };
+  const k = M3.daftarRuang(r);
+  cek('4 ruang berurutan: x0 = 0, 8, 14, 18', k.map(x => x.x0).join(',') === '0,8,14,18');
+  cek('ruangDari memetakan x ke ruang 0..3', [1, 9, 15, 20].map(x => M3.ruangDari(r, x)).join(',') === '0,1,2,3');
+  cek('dinding luar: ruang tengah tanpa kiri/kanan, ruang terakhir punya kanan', M3.sisiLuar(r, 1).join(',') === 'depan,belakang' && M3.sisiLuar(r, 3).includes('kanan') && !M3.sisiLuar(r, 3).includes('kiri'));
+  cek('sekat terbuka (ruang L): tidak ada pintu penghubung', M3.pintuSekat(r, 2) === null && M3.pintuSekat(r, 1) !== null);
+  cek('pintu sekat ke-3 dijepit di lebar ruang tersempit', (M3.pintuSekat(r, 3) ?? 0) <= Math.min(10, 5) - 0.45);
+  const putus: M3.Ruang = { ...r, r2: { ...sb(6, 6), aktif: false } };
+  cek('ruang 2 tidak aktif: ruang 3 & 4 ikut tidak tampil', M3.daftarRuang(putus).length === 1);
+  cek('desain lama (hanya r2) tetap 2 ruang', M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu', r2: sb(6, 6) }).length === 2);
+  const lebih: M3.Ruang = { ...r, lain: [sb(4, 4), sb(4, 4), sb(4, 4), sb(4, 4)] };
+  cek(`maksimal ${M3.MAKS_RUANG} ruang`, M3.daftarRuang(lebih).length === M3.MAKS_RUANG);
+  cek('ringkasan desain (Request Design) menghitung semua ruang', ringkasRuang({ ruang: r, benda: [] }).ruang.length === 4);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

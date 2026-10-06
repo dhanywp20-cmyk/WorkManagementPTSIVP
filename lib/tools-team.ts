@@ -151,8 +151,11 @@ export function ringkasanDesain(data: { ruang: unknown; benda: unknown[] }): Rin
   const r = (data.ruang ?? {}) as Record<string, unknown>;
   const ukur = (x: Record<string, unknown> | undefined) => ({ p: Number(x?.p) || 0, l: Number(x?.l) || 0, t: Number(x?.t) || 0 });
   const ruang = [ukur(r)];
-  const r2 = r.r2 as Record<string, unknown> | null | undefined;
-  if (r2 && r2.aktif) ruang.push(ukur(r2));
+  //  Ruang tambahan berurutan (r2, lalu lain[]) - berhenti di yang pertama tidak aktif.
+  for (const x of [r.r2, ...(Array.isArray(r.lain) ? r.lain : [])].slice(0, 3) as (Record<string, unknown> | null | undefined)[]) {
+    if (!x || !x.aktif) break;
+    ruang.push(ukur(x));
+  }
   const peta = new Map<string, { kategori: string; nama: string; jumlah: number }>();
   for (const b of data.benda) {
     const x = b as { jenis?: unknown; nama?: unknown };
