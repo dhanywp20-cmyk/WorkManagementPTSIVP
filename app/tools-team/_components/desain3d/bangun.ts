@@ -1276,10 +1276,15 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       break;
     }
     case 'bidang': { bidangMapping(THREE, g, b, W(0xf3f4f6)); break; }
+    case 'objek': { objekMapping(THREE, g, b, W(0xe5e7eb), b.konten === 'gambar' ? bahan.layar(b) : null); break; }
     case 'model': {
       const asli = b.modelKunci ? bahan.model(b.modelKunci) : null;
       if (asli) {
-        const salinan = asli.clone(true);
+        //  Putar tegak (file Z-up) lewat pembungkus, supaya model aslinya di memori tidak ikut berubah.
+        //  (Rotasi bawaan file - mis. koreksi Z-up dari ColladaLoader - tetap utuh di dalam pembungkus.)
+        const salinan = new THREE.Group(), putar = new THREE.Group();
+        putar.rotation.x = (-(b.putarModel ?? 0) * Math.PI) / 180;
+        putar.add(asli.clone(true)); salinan.add(putar);
         //  Skala agar muat di kotak w×h×d, alas di y = 0.
         const kotakB = new THREE.Box3().setFromObject(salinan);
         const s = kotakB.getSize(new THREE.Vector3());
@@ -1296,6 +1301,61 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
   }
   g.traverse(o => { if ((o as T.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
+}
+
+/**
+ * Objek mapping (lihat model.ts BentukObjek): bentuk dasar mengisi kotak w×h×d, alas di y = 0.
+ * 'gambar' = siluet dari kontur ternormalisasi, diekstrusi setebal d; foto (bila ada) hanya di
+ * permukaan depan - samping & belakang polos supaya sinar proyektor tetap terbaca.
+ */
+function objekMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number, foto: T.Texture | null) {
+  const bahanPolos = new THREE.MeshStandardMaterial({ color: warna, roughness: 0.85, metalness: 0 });
+  const pasang = (geo: T.BufferGeometry, m: T.Material = bahanPolos) => { g.add(new THREE.Mesh(geo, m)); return geo; };
+  const { w, h, d } = b;
+  switch (b.bentukObjek ?? 'kotak') {
+    case 'kotak': pasang(new THREE.BoxGeometry(w, h, d)).translate(0, h / 2, 0); return;
+    case 'silinder': pasang(new THREE.CylinderGeometry(0.5, 0.5, 1, 48)).scale(w, h, d).translate(0, h / 2, 0); return;
+    case 'bola': pasang(new THREE.SphereGeometry(0.5, 48, 32)).scale(w, h, d).translate(0, h / 2, 0); return;
+    case 'kerucut': pasang(new THREE.ConeGeometry(0.5, 1, 48)).scale(w, h, d).translate(0, h / 2, 0); return;
+    case 'kubah': {
+      pasang(new THREE.SphereGeometry(0.5, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2)).scale(w, h * 2, d);
+      pasang(new THREE.CircleGeometry(0.5, 48)).rotateX(Math.PI / 2).scale(w, 1, d);
+      return;
+    }
+    case 'piramida': {
+      //  Kerucut 4 sisi diputar 45° -> alas persegi 1 × 1 sebelum diskala.
+      pasang(new THREE.ConeGeometry(Math.SQRT1_2, 1, 4, 1)).rotateY(Math.PI / 4).scale(w, h, d).translate(0, h / 2, 0);
+      return;
+    }
+    case 'prisma': {
+      const segi = new THREE.Shape([new THREE.Vector2(-0.5, 0), new THREE.Vector2(0.5, 0), new THREE.Vector2(0, 1)]);
+      pasang(new THREE.ExtrudeGeometry(segi, { depth: 1, bevelEnabled: false })).translate(0, 0, -0.5).scale(w, h, d);
+      return;
+    }
+    case 'gambar': {
+      const bentuk = bentukDariKontur(THREE, b);
+      if (!bentuk.length) { pasang(new THREE.BoxGeometry(w, h, d)).translate(0, h / 2, 0); return; }
+      //  Ekstrusi di ruang 0..1 lalu diskala ke ukuran nyata: tepi kontur = tepi kotak w×h.
+      pasang(new THREE.ExtrudeGeometry(bentuk, { depth: 1, bevelEnabled: false, curveSegments: 1 }))
+        .translate(-0.5, 0, -0.5).scale(w, h, d);
+      if (foto) {
+        //  ShapeGeometry memberi UV = koordinat bentuk (0..1) = UV foto yang sudah dipotong ke kotak objek.
+        const muka = new THREE.MeshStandardMaterial({ map: foto, roughness: 0.8, metalness: 0 });
+        pasang(new THREE.ShapeGeometry(bentuk, 1), muka).translate(-0.5, 0, 0).scale(w, h, 1).translate(0, 0, d / 2 + 0.002);
+      }
+      return;
+    }
+  }
+}
+
+/** THREE.Shape dari kontur tersimpan (koordinat 0..1). Kontur rusak = tanpa bentuk (jatuh ke kotak). */
+function bentukDariKontur(THREE: typeof T, b: Benda): T.Shape[] {
+  const titik = (p: number[]) => { const v: T.Vector2[] = []; for (let i = 0; i + 1 < p.length; i += 2) v.push(new THREE.Vector2(p[i], p[i + 1])); return v; };
+  return (b.kontur ?? []).filter(k => Array.isArray(k?.l) && k.l.length >= 6).map(k => {
+    const s = new THREE.Shape(titik(k.l));
+    for (const hl of k.h ?? []) if (hl.length >= 6) s.holes.push(new THREE.Path(titik(hl)));
+    return s;
+  });
 }
 
 /**

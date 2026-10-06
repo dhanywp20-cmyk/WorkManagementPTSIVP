@@ -16,15 +16,20 @@ import {
   salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, sambungan, sambunganKe, MAKS_RUANG, type RuangSambung, warnaSah, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, tipeSpeakerDari, berkasLineArray, modulLA,
-  arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, lumenDari,
+  arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, lumenDari, tinggiAlasDi,
   aturNyalaLampu, nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU } from './desain3d/model';
 import { svgElevasiRak } from './desain3d/rak';
 import { buatModel, sesuaikanTinggi, teksturDindingAksen } from './desain3d/bangun';
 import { templateRuang, KATEGORI_RUANG, type KategoriRuang } from './desain3d/template';
-import { jalurKabel, rekapKabel, HDMI_MAKS } from './desain3d/kabel';
+import { jalurKabel, rekapKabel, golonganDipakai, HDMI_MAKS, HDBT_MAKS } from './desain3d/kabel';
+import { gambarJalurKabel } from './desain3d/mesin/gambarKabel';
+import { LegendaKabel, denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from './desain3d/panel/LegendaKabel';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { PanelRuang } from './desain3d/PanelRuang';
 import { ModalBukaDesain, JUDUL_SISI } from './desain3d/ModalBuka';
+import { ModalObjekGambar } from './desain3d/panel/ModalObjekGambar';
+import { useImporObjek } from './desain3d/impor/useImporObjek';
+import { TERIMA_3D } from './desain3d/impor/berkas3d';
 import { bukaCetak, esc, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl, type Lembar } from './cetak';
 import { getSession } from '@/lib/auth';
 import { isPimpinan } from '@/lib/pimpinan';
@@ -37,7 +42,7 @@ import { isPimpinan } from '@/lib/pimpinan';
  *                                 + tombol arah pandang, zoom, putar 45°, fokus dengan animasi
  *   - TransformControls         : gizmo geser (X/Z + naik-turun) & putar benda terpilih
  *   - CSS2DRenderer             : label ukuran & jarak di ruang 3D
- *   - GLTFLoader / GLTFExporter : impor model produk (.glb) & ekspor desain (.glb)
+ *   - GLTFLoader / GLTFExporter : buka & simpan desain (.glb); impor objek luar multi-format di desain3d/impor
  * Model benda prosedural (desain3d/model.ts); maksimal 2 ruang bersebelahan.
  * three.js dimuat dinamis hanya saat alat ini dibuka.
  */
@@ -250,7 +255,11 @@ export default function Desain3D() {
   const [jangkau, setJangkau] = useState(false);
   /** Jalur kabel perangkat -> rack digambar di kanvas. */
   const [tampilKabel, setTampilKabel] = useState(false);
-  const kabel = useMemo(() => jalurKabel(benda, ruang), [benda, ruang]);
+  /** Kabel power ke stop kontak terdekat (opsional - menambah banyak garis). */
+  const [kabelPower, setKabelPower] = useState(false);
+  const kabel = useMemo(() => jalurKabel(benda, ruang, { power: kabelPower }), [benda, ruang, kabelPower]);
+  /** Legend kabel tampil (di layar, PNG & cetak) hanya saat jalur kabel dicentang. */
+  const legendaKabel = tampilKabel && kabel.length > 0 ? golonganDipakai(kabel) : null;
   /** Bayangan lembut display di dinding/lantai + cahaya layar ke lantai. */
   const [bayangan, setBayangan] = useState(true);
   /** Katalog "Produk saya" (template tim di server). */
@@ -304,6 +313,17 @@ export default function Desain3D() {
   const adaPerubahan = dasar !== null && kunciKini !== dasar;
 
   const kotakRuang = useMemo(() => daftarRuang(ruang), [ruang]);
+  /** Objek dari luar: berkas 3D (desain3d/impor/berkas3d) & siluet dari gambar (ModalObjekGambar). */
+  const [objekGambar, setObjekGambar] = useState<{ ganti?: Benda } | null>(null);
+  const impor = useImporObjek({
+    THREE: () => mesin.current?.THREE ?? null, modelImpor, gambarLayar,
+    kotak: () => kotakRuang[Number(targetRuang)] ?? kotakRuang[0],
+    tambahBenda: b => {
+      setBenda(bs => (bs.some(x => x.id === b.id) ? bs.map(x => (x.id === b.id ? b : x)) : [...bs, { ...b, elev: tinggiAlasDi(bs, b.x, b.z) }]));
+      setPilih(b.id); setModal(null);
+    },
+    gambarBerubah: () => setVersiGambar(v => v + 1), setPesan, setGalat,
+  });
   const batas = useMemo(() => batasDunia(ruang), [ruang]);
   const plafonDi = (x: number) => kotakRuang[ruangDari(ruang, x)]?.t ?? ruang.t;
 
@@ -1010,15 +1030,8 @@ export default function Desain3D() {
         if (kotakRuang.length > 1) label(`Ruang ${i + 1}`, new THREE.Vector3(k.x0 + Math.min(0.7, k.p / 4), 0.05, k.l - Math.min(0.45, k.l / 4)), 'abu');
       });
     }
-    //  Jalur kabel ke rack (warna per jenis kabel).
-    if (tampilKabel) {
-      const bahan = new Map<number, T.LineBasicMaterial>();
-      for (const j of kabel) {
-        const mt = bahan.get(j.kabel.warna) ?? new THREE.LineBasicMaterial({ color: j.kabel.warna, transparent: true, opacity: 0.9 });
-        bahan.set(j.kabel.warna, mt);
-        grupBantu.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(j.titik.map(t => new THREE.Vector3(...t))), mt));
-      }
-    }
+    //  Jalur kabel ke rack (warna legend per jenis kabel).
+    if (tampilKabel) gambarJalurKabel(THREE, grupBantu, kabel);
     //  Label produk: satu label per nama benda per ruang (kembar = "× jumlah"), di atas benda;
     //  benda di plafon (speaker plafon, proyektor gantung) labelnya di bawah benda.
     if (labelProduk) {
@@ -1318,7 +1331,7 @@ export default function Desain3D() {
     setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'template', nama: kat?.judul ?? t.nama }); setDasar(null); setPilih(null); setFokusRuang('semua');
     pasSetelahTemplate.current = true;
     setPesan(id === 'mapping-objek'
-      ? 'Template Mapping objek dipasang. Impor objek lewat Tambah → Impor model .glb, letakkan di atas alas - sinar proyektor langsung jatuh di permukaannya.'
+      ? 'Template Mapping objek dipasang. Tambah → Objek dari luar: impor berkas 3D (SketchUp .dae/.obj/.stl, .glb, .fbx) atau buat dari gambar, letakkan di atas alas - sinar proyektor langsung jatuh di permukaannya.'
       : `Template ${kat?.judul} dipasang - atur sesuai kebutuhan.`);
   };
   const tambahSetKelas = () => {
@@ -1351,7 +1364,9 @@ export default function Desain3D() {
     const b0 = bendaBaru(it.jenis, k, it.atur);
     //  Proyektor langsung menghadap layar di ruang itu (bila ada) pada jarak lempar idealnya.
     const layar = b0.jenis === 'proyektor' ? layarTerdekat(b0, benda, ruang) : null;
-    const b = layar ? proyektorKeLayar(b0, layar, k, ruang) : b0;
+    const b1 = layar ? proyektorKeLayar(b0, layar, k, ruang) : b0;
+    //  Objek mapping berdiri di atas alas / panggung di bawahnya (template Mapping objek: alas di tengah).
+    const b = b1.jenis === 'objek' ? { ...b1, elev: tinggiAlasDi(benda, b1.x, b1.z) } : b1;
     setBenda(bs => [...bs, b]); setPilih(b.id); setModal(null);
   };
 
@@ -1478,25 +1493,6 @@ export default function Desain3D() {
     });
   };
 
-  const imporModel = async (file: File | null) => {
-    const m = mesin.current; if (!file || !m) return;
-    if (file.size > 25 * 1024 * 1024) { setGalat('Berkas model maksimal 25 MB.'); return; }
-    try {
-      const data = await file.arrayBuffer();
-      new m.GLTFLoader().parse(data, '', g => {
-        const kunci = idBaru();
-        modelImpor.current.set(kunci, g.scene);
-        const k = new m.THREE.Box3().setFromObject(g.scene).getSize(new m.THREE.Vector3());
-        const besar = Math.max(k.x, k.y, k.z) || 1;
-        // Ukuran awal dari model (dianggap meter); terlalu besar/kecil -> dinormalkan ke 1 m.
-        const skala = besar > 20 || besar < 0.05 ? 1 / besar : 1;
-        const kr = kotakRuang[Number(targetRuang)] ?? kotakRuang[0];
-        const b: Benda = { ...bendaBaru('model', kr), nama: file.name.replace(/\.(glb|gltf)$/i, ''), w: k.x * skala || 1, h: k.y * skala || 1, d: k.z * skala || 1, modelKunci: kunci };
-        setBenda(bs => [...bs, b]); setPilih(b.id); setGalat(''); setModal(null);
-      }, () => setGalat('Berkas model tidak bisa dibaca. Gunakan .glb (glTF biner).'));
-    } catch { setGalat('Gagal membaca berkas model.'); }
-  };
-
   /**
    * Foto kanvas 3D (resolusi `skala` x layar) tanpa gizmo & kotak sorotan, label ukuran/jarak
    * ikut tergambar. `arah` = sudut kamera sementara; kamera dikembalikan seperti semula.
@@ -1539,7 +1535,9 @@ export default function Desain3D() {
     try { await kerja(); } catch { setGalat('Gambar PNG gagal dibuat.'); } finally { setSibukPng(false); }
   };
   const unduhFoto = (arah: 'sekarang' | Sudut, bagian: string) => jalankanPng(async () => {
-    const c = fotoKanvas(arah, 2); if (!c) throw new Error('foto');
+    const foto = fotoKanvas(arah, 2); if (!foto) throw new Error('foto');
+    //  Jalur kabel dicentang -> legend di panel samping (tidak menutupi ruangan); tidak dicentang -> tanpa legend.
+    const c = legendaKabel ? denganLegendaSamping(foto, legendaKabel, foto.width / Math.max(1, mesin.current?.renderer.domElement.clientWidth || foto.width)) : foto;
     await unduhKanvasPNG(c, namaGambar(bagian));
   });
   /** Empat tampak dalam satu gambar (2 x 2) dengan judul - siap dikirim ke customer. */
@@ -1549,7 +1547,10 @@ export default function Desain3D() {
     const w = foto[0].c!.width, h = foto[0].c!.height, k = w / 900;
     const jarak = Math.round(16 * k), kepala = Math.round(70 * k), keterangan = Math.round(34 * k);
     const c = document.createElement('canvas');
-    c.width = w * 2 + jarak * 3; c.height = kepala + (h + keterangan) * 2 + jarak * 3;
+    c.width = w * 2 + jarak * 3;
+    //  Legend kabel sekali saja, sebaris di bawah keempat tampak (hanya bila jalur kabel dicentang).
+    const tinggiLegenda = legendaKabel ? Math.ceil(gambarLegendaBaris(null, 0, 0, c.width - jarak * 2, legendaKabel, k * 1.3)) + jarak : 0;
+    c.height = kepala + (h + keterangan) * 2 + jarak * 3 + tinggiLegenda;
     const g = c.getContext('2d'); if (!g) throw new Error('kanvas');
     g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height);
     g.fillStyle = '#1d4ed8'; g.fillRect(0, 0, c.width, kepala);
@@ -1564,6 +1565,7 @@ export default function Desain3D() {
       g.fillStyle = '#f8fafc'; g.fillRect(px, py + h, w, keterangan);
       g.fillStyle = '#334155'; g.font = `700 ${Math.round(15 * k)}px Segoe UI, Arial, sans-serif`; g.fillText(x.judul, px + 10 * k, py + h + keterangan / 2);
     });
+    if (legendaKabel) gambarLegendaBaris(g, jarak, c.height - tinggiLegenda, c.width - jarak * 2, legendaKabel, k * 1.3);
     await unduhKanvasPNG(c, namaGambar('4 tampak'));
   });
 
@@ -1626,7 +1628,7 @@ export default function Desain3D() {
     const d = bacaDesainGLB(buf);
     if (!d) {
       setKonfirmasi({ message: 'File ini bukan desain dari Tools Team.', confirmLabel: 'Tambahkan',
-        description: 'Mungkin model produk. Tambahkan sebagai model 3D ke ruangan?', onConfirm: () => void imporModel(file) });
+        description: 'Mungkin model produk. Tambahkan sebagai model 3D ke ruangan?', onConfirm: () => void impor.imporBerkas([file]) });
       return;
     }
     const namaBerkas = file.name;
@@ -1659,7 +1661,10 @@ export default function Desain3D() {
         const src = (node as T.Object3D).clone(true);
         src.position.set(0, 0, 0); src.rotation.set(0, 0, 0); src.scale.set(1, 1, 1);
         const kunci = idBaru(); modelImpor.current.set(kunci, src);
-        return { ...b, modelKunci: kunci };
+        //  Rotasi tegak sudah tertanam di simpul berkas: jangan diputar lagi, ukuran berkas ikut posisi tegaknya.
+        const tegak = Math.abs(Math.round((b.putarModel ?? 0) / 90)) % 2 === 1;
+        const uf = b.ukuranFile && tegak ? [b.ukuranFile[0], b.ukuranFile[2], b.ukuranFile[1]] as [number, number, number] : b.ukuranFile;
+        return { ...b, modelKunci: kunci, putarModel: undefined, ukuranFile: uf };
       });
       pasang(bendaBaru);
     }, () => pasang(d.benda.map(b => (b.jenis === 'model' ? { ...b, modelKunci: undefined } : b))));
@@ -1712,6 +1717,7 @@ export default function Desain3D() {
           }) },
         { judul: 'Tampilan desain', jenis: 'html',
           html: `<div class="gambar dua">${foto.map(x => gambar(x.url, x.judul)).join('')}</div>` },
+        ...(legendaKabel ? [{ judul: 'Legend kabel', jenis: 'html' as const, html: htmlLegendaKabel(legendaKabel) }] : []),
         ...(kabel.length ? [{ judul: 'Jadwal kabel', jenis: 'tabel' as const, kepala: ['Dari', 'Ke', 'Kabel', 'Panjang', 'Lewat'], rataKanan: [3],
           isi: [...kabel.map(k => [k.dari, k.ke, k.kabel.nama, `±${fm(k.panjang)} m`, k.lewat]),
             ...rekapKabel(kabel).map(r => ['TOTAL', '', r.kabel.nama, `±${fm(r.meter)} m`, r.gulungan])] }] : []),
@@ -1823,16 +1829,18 @@ export default function Desain3D() {
       m.renderer.setPixelRatio(Math.min(3, Math.max(2, rasioLama * 2)));
       m.renderer.render(m.scene, m.kamera);
       const src = m.renderer.domElement;
-      const jadi = (lebar: number, maks: number) => {
+      const jadi = (lebar: number, maks: number, legenda = false) => {
         const w = Math.min(lebar, src.width), h = Math.max(1, Math.round((w * src.height) / Math.max(1, src.width)));
-        const c = document.createElement('canvas'); c.width = w; c.height = h;
-        const g = c.getContext('2d'); if (!g) return null;
+        const c0 = document.createElement('canvas'); c0.width = w; c0.height = h;
+        const g = c0.getContext('2d'); if (!g) return null;
         g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, w, h);
+        //  Gambar HD (cetak / ZIP Request Design) ikut aturan legend kabel yang sama dengan PNG.
+        const c = legenda && legendaKabel ? denganLegendaSamping(c0, legendaKabel, w / Math.max(1, src.clientWidth || w)) : c0;
         for (const q of [0.86, 0.74, 0.6, 0.45]) { const u = c.toDataURL('image/jpeg', q); if (u.length <= maks) return u; }
         return null;
       };
       //  Data URL base64 ±1,33x ukuran JPEG; batas di server 80 KB / 560 KB.
-      return { kecil: jadi(400, 78_000), hd: jadi(1400, 550_000) };
+      return { kecil: jadi(400, 78_000), hd: jadi(1400, 550_000, true) };
     } catch { return { kecil: null, hd: null }; } finally {
       m.renderer.setPixelRatio(rasioLama);
       sorot.forEach(o => { o.visible = true; });
@@ -2167,6 +2175,7 @@ export default function Desain3D() {
         <div className="flex flex-col lg:flex-row">
         <div ref={wadahRef} className="relative w-full lg:w-auto lg:flex-1 min-w-0 h-[440px] sm:h-[620px] overflow-hidden">
           {!siap && !galat && <div className="absolute inset-0 grid place-items-center text-sm text-slate-500">Memuat tampilan 3D...</div>}
+          {legendaKabel && <LegendaKabel dipakai={legendaKabel} />}
           <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5 max-w-[calc(100%-16px)]">
             <button type="button" onClick={() => setChipBuka(v => !v)} aria-expanded={chipBuka}
               className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/95 border border-slate-200 text-[12px] font-bold text-slate-700 shadow-sm">
@@ -2180,6 +2189,7 @@ export default function Desain3D() {
                 ...(adaProyektor ? [{ v: sinar, s: setSinar, l: 'Sinar proyektor' }] : []),
                 ...(benda.some(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon') ? [{ v: jangkau, s: setJangkau, l: 'Jangkauan speaker' }] : []),
                 ...(kabel.length ? [{ v: tampilKabel, s: setTampilKabel, l: 'Jalur kabel' }] : []),
+                ...(kabel.length && tampilKabel ? [{ v: kabelPower, s: setKabelPower, l: 'Kabel power' }] : []),
                 { v: bayangan, s: setBayangan, l: 'Bayangan & cahaya' }].map(t => (
                 <label key={t.l} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/90 border border-slate-200 text-[11.5px] font-semibold text-slate-700 shadow-sm">
                   <input type="checkbox" checked={t.v} onChange={e => t.s(e.target.checked)} /> {t.l}
@@ -2377,13 +2387,25 @@ export default function Desain3D() {
                           </div>
                         ))}
                         <div>
-                          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Model produk sendiri</p>
-                          <button type="button" onClick={() => inputModel.current?.click()}
-                            className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-left hover:bg-violet-100">
-                            <span className="block text-[13px] font-bold text-violet-900">Impor model .glb</span>
-                            <span className="block text-[11.5px] text-violet-800">Dari produsen atau Sketchfab, maks 25 MB · hanya selama halaman terbuka</span>
-                          </button>
-                          <input ref={inputModel} type="file" accept=".glb,model/gltf-binary" className="hidden" onChange={e => { void imporModel(e.target.files?.[0] ?? null); e.target.value = ''; }} />
+                          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Objek dari luar (mapping patung, gedung, produk)</p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
+                            <button type="button" disabled={impor.sibuk} onClick={() => inputModel.current?.click()}
+                              className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-left hover:bg-violet-100 disabled:opacity-60">
+                              <span className="block text-[13px] font-bold text-violet-900">{impor.sibuk ? 'Membaca berkas...' : 'Impor berkas 3D'}</span>
+                              <span className="block text-[11.5px] text-violet-800">SketchUp (ekspor .dae / .obj / .stl / .kmz), .glb, .fbx, .3ds, .ply, atau .zip berisi model + tekstur · maks 60 MB</span>
+                            </button>
+                            <button type="button" onClick={() => setObjekGambar({})}
+                              className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-left hover:bg-violet-100">
+                              <span className="block text-[13px] font-bold text-violet-900">Objek dari gambar</span>
+                              <span className="block text-[11.5px] text-violet-800">Foto patung / tampak gedung / logo / sketsa bidang → siluet 3D atau panel</span>
+                            </button>
+                          </div>
+                          <p className="mt-1.5 text-[11px] text-slate-500 leading-relaxed">
+                            Berkas .skp tidak bisa dibaca langsung: di SketchUp pilih File → Export → 3D Model → COLLADA (.dae). Pilih model bersama
+                            tekstur/.mtl-nya sekaligus (atau satu .zip). Bentuk dasar (kotak, silinder, kubah...) ada di grup Objek mapping di atas.
+                          </p>
+                          <input ref={inputModel} type="file" multiple accept={TERIMA_3D} className="hidden"
+                            onChange={e => { const daftar = Array.from(e.target.files ?? []); e.target.value = ''; void impor.imporBerkas(daftar); }} />
                         </div>
                       </div>
                     </>
@@ -2450,7 +2472,8 @@ export default function Desain3D() {
               <PanelBenda b={terpilih} plafon={plafonDi(terpilih.x)} batas={batas} onUbah={gantiBenda}
                 onGambar={() => inputGambar.current?.click()} onTutup={() => setPanel(false)}
                 ekstra={terpilih.jenis === 'proyektor' ? infoProyektor(terpilih) : undefined}
-                onSimpanProduk={hanyaLihat || produkTim?.bolehTambah === false ? undefined : (label, ket) => simpanProduk(terpilih, label, ket)} />
+                onSimpanProduk={hanyaLihat || produkTim?.bolehTambah === false ? undefined : (label, ket) => simpanProduk(terpilih, label, ket)}
+                adaFoto={gambarLayar.current.has(terpilih.id)} onGambarObjek={() => setObjekGambar({ ganti: terpilih })} />
             )}
           </aside>
         )}
@@ -2547,11 +2570,14 @@ export default function Desain3D() {
                   ))}</tbody>
                 </table>
               </div>
-              <Catatan>Rute siku-siku ke rack terdekat di ruang yang sama: perangkat dinding/plafon lewat tray plafon, perangkat meja/lantai lewat lantai (floor box). Panjang = rute + 10% lekukan + 1,5 m service loop. Video &gt; {HDMI_MAKS} m otomatis HDBaseT (CAT6A). Nyalakan &quot;Jalur kabel&quot; untuk melihat rutenya di 3D.</Catatan>
+              <Catatan>Rute siku-siku ke rack terdekat di ruang yang sama: perangkat dinding/plafon lewat tray plafon, perangkat meja/lantai lewat lantai (floor box). Panjang = rute + 10% lekukan + 1,5 m service loop. Video &gt; {HDMI_MAKS} m otomatis HDBaseT (CAT6A), &gt; {HDBT_MAKS} m fiber optik. Meja operator = PC operator, meja rapat / dosen / podium = laptop lewat table box. Nyalakan &quot;Jalur kabel&quot; untuk melihat rutenya di 3D.</Catatan>
             </>
           )}
         </Kartu>
       )}
+
+      <ModalObjekGambar buka={!!objekGambar} onTutup={() => setObjekGambar(null)}
+        onJadi={h => { impor.dariGambar(h, objekGambar?.ganti); setObjekGambar(null); }} />
 
       {/* ── Modal: Buka desain tersimpan (seluruh tim) + riwayat versi ── */}
       <ModalBukaDesain buka={modal === 'buka'} onTutup={() => setModal(null)} aktifId={desainAktif?.id ?? null}

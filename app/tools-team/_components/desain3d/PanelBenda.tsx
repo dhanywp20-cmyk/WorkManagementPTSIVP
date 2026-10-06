@@ -11,27 +11,30 @@ import {
   tipeSpeakerDari, modulLA, sudutModulLA, tiltLADari, berkasLineArray, type TipeSpeaker,
   zoomLensa, throwRatioDari, barisTribun, kursiTribunPerBaris, ukuranBidang, lengkungDari,
 } from './model';
+import { AturObjek } from './panel/AturObjek';
 
 /** Warna bawaan per jenis untuk pemilih warna (hanya titik awal pemilih; model tetap memakai bawaannya bila kosong). */
 const WARNA_AWAL: Partial<Record<Benda['jenis'], string>> = {
   videowall: '#0a0a0a', led: '#1f2937', layar: '#111827', ifp: '#1f2937', tv: '#111111', meja: '#6c452b', kursi: '#30353d',
   speaker: '#16181c', 'speaker-plafon': '#f4f5f7', mic: '#111827', touchpanel: '#c7ccd3', kamera: '#50555d',
-  proyektor: '#f1f2f4', rak: '#111827', lift: '#15171b', bidang: '#f3f4f6', panggung: '#6b6b6b',
+  proyektor: '#f1f2f4', rak: '#111827', lift: '#15171b', bidang: '#f3f4f6', panggung: '#6b6b6b', objek: '#e5e7eb',
 };
 /** Apa yang diwarnai, per jenis - supaya jelas bagian mana yang berubah. */
 const BAGIAN_WARNA: Partial<Record<Benda['jenis'], string>> = {
   videowall: 'bezel & rangka', led: 'rangka cabinet', layar: 'bingkai', ifp: 'bezel', tv: 'bezel', meja: 'permukaan (laminasi polos)',
   kursi: 'kain / cangkang', speaker: 'kabinet & gril', 'speaker-plafon': 'cincin & gril', mic: 'badan / kain', touchpanel: 'badan',
-  kamera: 'badan', proyektor: 'cangkang', rak: 'kabinet', lift: 'rangka & tutup', bidang: 'permukaan layar',
+  kamera: 'badan', proyektor: 'cangkang', rak: 'kabinet', lift: 'rangka & tutup', bidang: 'permukaan layar', objek: 'permukaan objek',
 };
 
 /**
  * Panel "Atur benda" - mengisi panel kanan di samping tampilan 3D, jadi
  * perubahan langsung terlihat tanpa menutupi kanvas.
  */
-export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk }: {
+export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, adaFoto = false, onGambarObjek }: {
   b: Benda; plafon: number; batas: { x: number; z: number };
   onUbah: (b: Benda) => void; onGambar: () => void; onTutup: () => void;
+  /** Objek dari gambar: foto permukaannya ada di memori; buat ulang siluet dari gambar lain. */
+  adaFoto?: boolean; onGambarObjek?: () => void;
   /** Isi tambahan khusus jenis (mis. info jarak lempar proyektor). */ ekstra?: ReactNode;
   /** Simpan benda ini sebagai template "Produk saya" (tim). Mengembalikan pesan galat atau null. Tanpa prop = tidak tersedia. */
   onSimpanProduk?: (label: string, ket: string) => Promise<string | null>;
@@ -56,7 +59,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
   const bundar = b.jenis === 'mic' && b.mic === 'boundary';
   /** Ukuran bawaan untuk varian yang sedang dipilih (model/inci/U/tipe), atau null bila tidak ada patokan. */
   const ukuranBawaan = (): { w: number; h: number; d: number } | null => {
-    if (b.jenis === 'model' || b.jenis === 'led') return null;
+    if (b.jenis === 'model' || b.jenis === 'led' || b.jenis === 'objek') return null;
     const varian: Partial<Benda> = {};
     for (const k of ['vw', 'panel', 'kol', 'bar', 'diag', 'rasio', 'rakU', 'mic', 'bentukMeja', 'tipeKursi', 'tipeKamera', 'pasangProyektor', 'pasang', 'tipeSpeaker', 'modul',
       'baris', 'kursiBaris', 'tinggiAnak', 'bentukBidang', 'jariBidang', 'busur'] as const) {
@@ -500,6 +503,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
             </div>
           </>
         )}
+        {(b.jenis === 'model' || b.jenis === 'objek') && <AturObjek b={b} set={set} adaFoto={adaFoto} onGambarBaru={() => onGambarObjek?.()} />}
         {ekstra}
 
         {b.jenis !== 'model' && (
@@ -570,7 +574,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           </div>
         )}
 
-        {onSimpanProduk && b.jenis !== 'model' && (
+        {onSimpanProduk && b.jenis !== 'model' && b.jenis !== 'objek' && (
           <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-2.5">
             {!formProduk ? (
               <button type="button" onClick={() => setFormProduk({ label: b.nama, ket: '', status: '', sibuk: false })}

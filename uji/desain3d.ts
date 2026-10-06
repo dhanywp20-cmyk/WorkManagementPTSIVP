@@ -488,13 +488,48 @@ console.log('\nJalur & panjang kabel');
   const mic = { ...M3.bendaBaru('mic', k), x: 4, z: 3, elev: 0.75 };
   const spk = { ...M3.bendaBaru('speaker-plafon', k), x: 2, z: 2 };
   const j = K.jalurKabel([tv, rak, mic, spk], ruang);
-  cek('TV: video + LAN, speaker plafon: kabel speaker, mic: kabel mic', j.length === 4 && j.some(x => x.kabel.kunci === 'speaker') && j.some(x => x.kabel.kunci === 'mic'));
+  cek('TV: video + LAN, speaker plafon: kabel speaker, mic: kabel audio', j.length === 4 && j.some(x => x.kabel.kunci === 'speaker') && j.some(x => x.kabel.kunci === 'audio'));
   const video = j.find(x => x.dari === tv.nama && x.kabel.kunci !== 'lan')!;
-  cek('TV dinding lewat plafon, mic meja lewat lantai', video.lewat === 'plafon' && j.find(x => x.kabel.kunci === 'mic')!.lewat === 'lantai');
+  cek('TV dinding lewat plafon, mic meja lewat lantai', video.lewat === 'plafon' && j.find(x => x.kabel.kunci === 'audio')!.lewat === 'lantai');
   cek('video > 10 m otomatis HDBaseT, panjang dibulatkan 0,5 m', video.panjang > K.HDMI_MAKS ? video.kabel.kunci === 'hdbt' : video.kabel.kunci === 'hdmi');
   cek('panjang >= jarak siku-siku + service loop', j.every(x => x.panjang * 2 === Math.round(x.panjang * 2) && x.panjang >= 1.5));
   const rekap = K.rekapKabel(j);
   cek('rekap per jenis menjumlah semua tarikan', rekap.reduce((a, r) => a + r.tarikan, 0) === j.length);
+
+  //  Warna = legend standar: biru LAN, merah HDMI, hijau audio, orange speaker, ungu USB, hitam power, abu fiber.
+  const warna = (g: K.GolonganKabel) => K.LEGENDA_KABEL.find(l => l.golongan === g)!.warna;
+  cek('legend 7 warna sesuai standar', K.LEGENDA_KABEL.length === 7 && warna('lan') === 0x2563eb && warna('hdmi') === 0xdc2626 && warna('audio') === 0x16a34a
+    && warna('speaker') === 0xea580c && warna('usb') === 0x7c3aed && warna('power') === 0x111111 && warna('fiber') === 0x9ca3af);
+  cek('tiap jenis kabel memakai warna golongannya', Object.values(K.KABEL).every(x => x.warna === warna(x.golongan)));
+  cek('HDBaseT = kabel LAN (biru)', K.KABEL.hdbt.golongan === 'lan');
+
+  //  Meja: PC operator / laptop dikabel lewat table box -> floor box -> rack.
+  const op = M3.bendaBaru('meja', k, { bentukMeja: 'operator' });
+  const jo = K.jalurKabel([op, rak], ruang);
+  cek('meja operator: PC operator HDMI + LAN', jo.length === 2 && jo.every(x => x.dari.includes('PC operator')) && jo.some(x => x.kabel.golongan === 'hdmi') && jo.some(x => x.kabel.golongan === 'lan'));
+  cek('kabel meja keluar dari permukaan meja, lewat lantai', jo.every(x => x.lewat === 'lantai' && Math.abs(x.titik[0][1] - (op.elev + op.h)) < 1e-9));
+  const rapat = M3.bendaBaru('meja', k, { bentukMeja: 'rapat' });
+  cek('meja rapat tanpa kamera: laptop HDMI + LAN', K.jalurKabel([rapat, rak], ruang).length === 2);
+  const jr = K.jalurKabel([rapat, rak, M3.bendaBaru('kamera', k)], ruang).filter(x => x.dari.includes('laptop'));
+  cek('meja rapat + kamera: tambah USB (BYOD)', jr.length === 3 && jr.some(x => x.kabel.golongan === 'usb'));
+  cek('meja kelas & kursi tidak dikabel', K.jalurKabel([M3.bendaBaru('meja', k, { bentukMeja: 'kelas' }), M3.bendaBaru('kursi', k), rak], ruang).length === 0);
+  const podium = K.jalurKabel([M3.bendaBaru('meja', k, { bentukMeja: 'podium' }), rak], ruang);
+  cek('podium: laptop HDMI + audio mic', podium.length === 2 && podium.some(x => x.kabel.golongan === 'audio'));
+
+  //  Jarak jauh: video > 100 m & LAN > 90 m -> fiber.
+  const besar: M3.Ruang = { p: 120, l: 20, t: 5, lantai: 'kayu', r2: null };
+  const kb = M3.daftarRuang(besar)[0];
+  const jauh = K.jalurKabel([{ ...M3.bendaBaru('tv', kb), x: 1, z: 0.1, elev: 1.2 }, { ...M3.bendaBaru('rak', kb), x: 118, z: 19 }], besar);
+  cek('video & LAN > 100 m -> fiber optik (abu-abu)', jauh.length === 2 && jauh.every(x => x.kabel.golongan === 'fiber'), jauh.map(x => `${x.kabel.kunci} ${x.panjang}`).join(', '));
+
+  //  Power: opsional, ke stop kontak dinding terdekat (proyektor gantung: plafon).
+  cek('tanpa opsi power: tidak ada kabel power', !K.jalurKabel([tv, rak, op], ruang).some(x => x.kabel.golongan === 'power'));
+  const pj = K.jalurKabel([tv, rak, op, mic, M3.bendaBaru('proyektor', k)], ruang, { power: true }).filter(x => x.kabel.golongan === 'power');
+  cek('power: TV, rack, PC operator, proyektor (mic tidak)', pj.length === 4 && !pj.some(x => x.dari === mic.nama), pj.map(x => x.dari).join(', '));
+  const pProj = pj.find(x => x.dari.startsWith('Proyektor'))!;
+  cek('proyektor gantung: stop kontak plafon', pProj.titik.length === 2 && Math.abs(pProj.titik[1][1] - (ruang.t - 0.02)) < 1e-9);
+  cek('golongan dipakai untuk legend', K.golonganDipakai(pj).has('power') && !K.golonganDipakai(jo).has('power'));
+  cek('rekap power dalam roll 50 m', K.rekapKabel(pj).find(x => x.kabel.kunci === 'power')!.gulungan.includes('roll 50 m'));
 }
 
 console.log('\nPemasangan display (pop-up / hollow / standfloor)');

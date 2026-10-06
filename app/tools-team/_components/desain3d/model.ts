@@ -17,13 +17,22 @@ import { ukuranDariDiagonal } from '@/lib/av-hitung';
 
 import { type PerangkatRak } from './rak';
 /** API tekstur yang dipakai komponen lain lewat model.ts (tetap kompatibel). */
+import type { Kontur } from './impor/kontur';
+import type { Satuan } from './impor/berkas3d';
 export { warnaSah, teksturLantai, teksturKonten, teksturPolaUji, aturNyalaLampu } from './tekstur';
 
 export type Jenis =
   | 'videowall' | 'led' | 'layar' | 'ifp' | 'tv'
   | 'meja' | 'kursi'
   | 'speaker' | 'speaker-plafon' | 'mic' | 'touchpanel' | 'kamera' | 'proyektor' | 'rak'
-  | 'lift' | 'model' | 'tribun' | 'panggung' | 'bidang' | 'lampu';
+  | 'lift' | 'model' | 'tribun' | 'panggung' | 'bidang' | 'lampu' | 'objek';
+
+/** Objek mapping: bentuk dasar, atau siluet dari gambar (patung, tampak gedung, logo) setebal `d`. */
+export type BentukObjek = 'kotak' | 'silinder' | 'bola' | 'kubah' | 'kerucut' | 'piramida' | 'prisma' | 'gambar';
+export const LABEL_BENTUK_OBJEK: Record<BentukObjek, string> = {
+  kotak: 'Kotak / balok', silinder: 'Silinder', bola: 'Bola', kubah: 'Kubah (setengah bola)', kerucut: 'Kerucut',
+  piramida: 'Piramida', prisma: 'Prisma segitiga (atap)', gambar: 'Siluet dari gambar',
+};
 
 export type BentukMeja = 'rapat' | 'bulat' | 'kelas' | 'dosen' | 'podium' | 'kredensa' | 'operator';
 /** Konten layar: pola uji, unggahan, mati, atau konten contoh (CCTV, dashboard, campuran, home screen). */
@@ -97,6 +106,11 @@ export interface Benda {
    *  Fluks memakai `lumen`. */
   tipeLampu?: TipeLampu; sudutLampu?: number; dimmer?: number; kelvin?: number; gantungLampu?: number;
   /** Model GLB impor: kunci ke cache objek di memori (tidak disimpan ke perangkat) */ modelKunci?: string;
+  /** Model impor: putar tegak (derajat sumbu X, kelipatan 90) - file Z-up (STL, 3DS, sebagian OBJ) rebah tanpa ini. */ putarModel?: number;
+  /** Model impor: ukuran kotak batas dalam satuan berkas (x, y, z sebelum diputar) & satuannya - untuk ganti satuan di panel. */
+  ukuranFile?: [number, number, number]; satuanModel?: Satuan;
+  /** Objek mapping: bentuknya. */ bentukObjek?: BentukObjek;
+  /** Objek 'gambar': siluet ternormalisasi 0..1 (lihat desain3d/kontur.ts); foto permukaan depan = konten 'gambar'. */ kontur?: Kontur;
 }
 
 export interface Ruang {
@@ -311,11 +325,11 @@ export const LABEL: Record<Jenis, string> = {
   meja: 'Meja', kursi: 'Kursi',
   speaker: 'Speaker', 'speaker-plafon': 'Speaker plafon', mic: 'Mic', touchpanel: 'Touch panel',
   kamera: 'Kamera', proyektor: 'Proyektor', rak: 'Rack server', lift: 'Display lift', model: 'Model 3D (GLB)',
-  tribun: 'Tribun', panggung: 'Panggung', bidang: 'Bidang mapping', lampu: 'Lampu plafon',
+  tribun: 'Tribun', panggung: 'Panggung', bidang: 'Bidang mapping', lampu: 'Lampu plafon', objek: 'Objek mapping',
 };
 export const DISPLAY: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv'];
 /** Benda yang bisa ditempel ke dinding (sisi belakang menyentuh dinding). */
-export const BISA_TEMPEL: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv', 'speaker', 'kamera', 'rak', 'meja', 'model', 'tribun', 'panggung', 'bidang'];
+export const BISA_TEMPEL: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv', 'speaker', 'kamera', 'rak', 'meja', 'model', 'tribun', 'panggung', 'bidang', 'objek'];
 
 export interface ItemKatalog {
   kunci: string; label: string; ket: string; jenis: Jenis; atur?: Partial<Benda>;
@@ -397,7 +411,40 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'pilar', label: 'Pilar mapping 360°', ket: 'Silinder untuk mapping keliling', jenis: 'bidang', atur: { bentukBidang: 'cembung', busur: 360, jariBidang: 0.8 } },
     ],
   },
+  {
+    //  Bentuk dasar untuk menyusun objek mapping sendiri (gedung = balok + prisma atap, tugu = silinder + kerucut, dst.).
+    grup: 'Objek mapping - bentuk dasar', item: [
+      { kunci: 'objek-kotak', label: 'Kotak / balok', ket: 'Gedung, podium, kubus mapping', jenis: 'objek', atur: { bentukObjek: 'kotak' } },
+      { kunci: 'objek-silinder', label: 'Silinder', ket: 'Tugu, tiang, tabung', jenis: 'objek', atur: { bentukObjek: 'silinder' } },
+      { kunci: 'objek-bola', label: 'Bola', ket: 'Globe / bola mapping', jenis: 'objek', atur: { bentukObjek: 'bola' } },
+      { kunci: 'objek-kubah', label: 'Kubah', ket: 'Setengah bola - kubah, dome', jenis: 'objek', atur: { bentukObjek: 'kubah' } },
+      { kunci: 'objek-kerucut', label: 'Kerucut', ket: 'Puncak tugu, tumpeng', jenis: 'objek', atur: { bentukObjek: 'kerucut' } },
+      { kunci: 'objek-piramida', label: 'Piramida', ket: 'Alas persegi, 4 sisi miring', jenis: 'objek', atur: { bentukObjek: 'piramida' } },
+      { kunci: 'objek-prisma', label: 'Prisma segitiga', ket: 'Atap pelana, bidang miring', jenis: 'objek', atur: { bentukObjek: 'prisma' } },
+    ],
+  },
 ];
+
+/** Ukuran awal objek mapping (m): lebar, tinggi, tebal. */
+const UKURAN_OBJEK: Record<BentukObjek, [number, number, number]> = {
+  kotak: [1.2, 1.2, 1.2], silinder: [0.8, 1.8, 0.8], bola: [1.2, 1.2, 1.2], kubah: [1.6, 0.8, 1.6], kerucut: [1, 1.5, 1],
+  piramida: [1.4, 1.2, 1.4], prisma: [1.6, 0.8, 1.2], gambar: [1, 2, 0.3],
+};
+
+/**
+ * Tinggi permukaan atas alas di titik (x, z): panggung / alas / meja yang tapaknya memuat titik itu
+ * (rotasi diperhitungkan). 0 = lantai. Objek & model impor baru diletakkan di atasnya, bukan terbenam.
+ */
+export function tinggiAlasDi(benda: Benda[], x: number, z: number, kecuali?: string): number {
+  let tinggi = 0;
+  for (const b of benda) {
+    if (b.id === kecuali || !['panggung', 'meja', 'objek'].includes(b.jenis)) continue;
+    const r = (b.rot * Math.PI) / 180, dx = x - b.x, dz = z - b.z;
+    const lx = dx * Math.cos(r) - dz * Math.sin(r), lz = dx * Math.sin(r) + dz * Math.cos(r);
+    if (Math.abs(lx) <= b.w / 2 && Math.abs(lz) <= b.d / 2) tinggi = Math.max(tinggi, b.elev + b.h);
+  }
+  return Math.round(tinggi * 1000) / 1000;
+}
 
 let nomor = 0;
 export const idBaru = () => `b${Date.now().toString(36)}${(nomor++).toString(36)}`;
@@ -532,6 +579,11 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       : { ...dasar, nama: 'Proyektor plafon', z: Math.min(4, k.l * 0.65), w: 0.44, h: 0.14, d: 0.36, elev: Math.max(0.5, k.t - 0.5), rot: 180, pasangProyektor: 'plafon', throwRatio: 1.6, trMin: 1.39, trMax: 2.09, ...atur };
     case 'rak': { const b = jadi({ ...dasar, x: k.x0 + k.p - 0.45, z: 0.45, w: 0.6, h: 0, d: 0.8, elev: 0, rakU: 20, tipeRak: 'kaca', ...atur } as Benda); return { ...b, nama: `Rack ${b.rakU}U` }; }
     case 'model': return { ...dasar, w: 1, h: 1, d: 1, elev: 0, ...atur };
+    case 'objek': {
+      const bentuk = atur.bentukObjek ?? 'kotak';
+      const [w, h, d] = UKURAN_OBJEK[bentuk];
+      return { ...dasar, nama: atur.nama ?? LABEL_BENTUK_OBJEK[bentuk], w, h, d, elev: 0, bentukObjek: bentuk, ...atur };
+    }
     case 'tribun': {
       const b = terapkanUkuran({ ...dasar, w: 0, h: 0, d: 0, elev: 0, rot: 180, baris: 8, kursiBaris: 12, tinggiAnak: 0.35, ...atur } as Benda);
       return { ...b, nama: `Tribun ${b.baris} baris × ${b.kursiBaris}`, z: Math.max(b.d / 2, k.l - b.d / 2 - 0.3), ...(atur.z !== undefined ? { z: atur.z } : {}) };
@@ -774,7 +826,7 @@ export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
     b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt, b.warna, b.panel ? JSON.stringify(b.panel) : '', b.diag, b.tipeSpeaker, b.modul, b.sudutModul, b.tiltLA, b.gantung,
     b.baris, b.kursiBaris, b.tinggiAnak, b.bentukBidang, b.jariBidang, b.busur, b.monitorMeja, b.tipeRak, b.tipeLampu, b.sudutLampu, b.kelvin, b.lumen,
-    b.isiRak ? JSON.stringify(b.isiRak) : ''].join('|');
+    b.isiRak ? JSON.stringify(b.isiRak) : '', b.putarModel, b.bentukObjek, b.kontur ? JSON.stringify(b.kontur) : ''].join('|');
 
 // ── Salin ke ruang sebelah ─────────────────────────────────────────────────
 
