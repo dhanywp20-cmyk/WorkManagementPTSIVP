@@ -196,7 +196,10 @@ export default function Desain3D() {
   //  Garis ukuran display (lebar & tinggi dalam mm, garis merah ala gambar kerja).
   const [garisUkur, setGarisUkur] = useState(true);
   //  Label nama produk di atas tiap benda (benda kembar cukup satu label + jumlah).
-  const [labelProduk, setLabelProduk] = useState(true);
+  //  Layar HP sempit: label produk mulai mati supaya kanvas tidak tertutup (tetap bisa dinyalakan).
+  const [labelProduk, setLabelProduk] = useState(() => typeof window === 'undefined' || window.innerWidth >= 640);
+  /** Ponsel: tombol tampilan dilipat ke satu tombol "Tampilan". */
+  const [chipBuka, setChipBuka] = useState(false);
   //  Target kontras gambar proyeksi (ANSI/INFOCOMM 3M-2011): 15:1 = presentasi / rapat.
   const [targetKontras, setTargetKontras] = useState(15);
   const [kerucut, setKerucut] = useState(true);
@@ -316,6 +319,9 @@ export default function Desain3D() {
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.localClippingEnabled = true;
         renderer.domElement.style.touchAction = 'none';
+        //  setSize(..., false) tidak menyetel ukuran CSS: tanpa ini kanvas tampil seukuran buffer (w x dpr)
+        //  sehingga di HP (dpr 2-3) yang terlihat hanya seperempat kiri-atas tampilan 3D.
+        renderer.domElement.style.width = '100%'; renderer.domElement.style.height = '100%';
         wadah.appendChild(renderer.domElement);
 
         const labelRenderer = new CSS2DRenderer();
@@ -1993,13 +1999,13 @@ export default function Desain3D() {
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-100 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap">
             <button type="button" onClick={() => bukaSisi('kategori')} aria-pressed={sisi === 'kategori'} className={sisi === 'kategori' ? tombolAktif : tombol}
-              title="Template ruangan: meeting, auditorium, smart classroom, mapping, immersive"><LayoutTemplate size={14} /> Kategori</button>
+              title="Template ruangan: meeting, auditorium, smart classroom, mapping, immersive"><LayoutTemplate size={14} /> <span className="sr-only sm:not-sr-only">Kategori</span></button>
             <button type="button" onClick={() => bukaSisi('tambah')} aria-pressed={sisi === 'tambah'} className={`${tombolUtama} ${sisi === 'tambah' ? 'ring-2 ring-offset-1 ring-blue-400' : ''}`}><Ikon nama="➕" ukuran={14} /> Tambah</button>
-            <button type="button" onClick={() => bukaSisi('ruang')} aria-pressed={sisi === 'ruang'} className={sisi === 'ruang' ? tombolAktif : tombol}><Ikon nama="🏠" ukuran={14} /> Ruangan</button>
-            <button type="button" onClick={() => bukaSisi('daftar')} aria-pressed={sisi === 'daftar'} className={sisi === 'daftar' ? tombolAktif : tombol}><Ikon nama="📋" ukuran={14} /> Benda ({benda.length})</button>
+            <button type="button" onClick={() => bukaSisi('ruang')} aria-pressed={sisi === 'ruang'} className={sisi === 'ruang' ? tombolAktif : tombol}><Ikon nama="🏠" ukuran={14} /> <span className="sr-only sm:not-sr-only">Ruangan</span></button>
+            <button type="button" onClick={() => bukaSisi('daftar')} aria-pressed={sisi === 'daftar'} className={sisi === 'daftar' ? tombolAktif : tombol}><Ikon nama="📋" ukuran={14} /> <span className="sr-only sm:not-sr-only">Benda</span> ({benda.length})</button>
             <div className="relative">
               <button type="button" onClick={() => setMenuPusat(v => !v)} aria-expanded={menuPusat} className={menuPusat ? tombolUtama : tombol}
-                title="Geser semua benda ke tengah ruang"><AlignCenterVertical size={14} /> Pusatkan isi</button>
+                title="Geser semua benda ke tengah ruang"><AlignCenterVertical size={14} /> <span className="sr-only sm:not-sr-only">Pusatkan isi</span></button>
               {menuPusat && (<>
                 <div aria-hidden="true" className="fixed inset-0 z-20" onClick={() => setMenuPusat(false)} />
                 <div className="absolute left-0 top-full mt-1.5 z-30 w-64 rounded-xl bg-white border border-slate-200 shadow-xl p-1.5">
@@ -2015,8 +2021,8 @@ export default function Desain3D() {
                 </div>
               </>)}
             </div>
-            <button type="button" onClick={() => setModal('buka')} className={tombol}><FolderOpen size={14} /> Buka</button>
-            {!hanyaLihat && <button type="button" onClick={() => setModal('simpan')} className={tombol}><Ikon nama="💾" ukuran={14} /> Simpan</button>}
+            <button type="button" onClick={() => setModal('buka')} className={tombol}><FolderOpen size={14} /> <span className="sr-only sm:not-sr-only">Buka</span></button>
+            {!hanyaLihat && <button type="button" onClick={() => setModal('simpan')} className={tombol}><Ikon nama="💾" ukuran={14} /> <span className="sr-only sm:not-sr-only">Simpan</span></button>}
             <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden" role="group" aria-label="Undo dan redo">
               <button type="button" onClick={riwayat.undo} disabled={!riwayat.bisaUndo} title="Undo (Ctrl+Z)" aria-label="Undo"
                 className="px-2.5 py-1.5 text-slate-700 hover:bg-slate-50 disabled:text-slate-300 disabled:hover:bg-transparent"><Undo2 size={15} /></button>
@@ -2051,7 +2057,7 @@ export default function Desain3D() {
               </>)}
             </div>
             <button type="button" onClick={unduhGLB} className={tombol} title="Simpan ke laptop (.glb) - bisa dibuka lagi di sini & di SketchUp/Blender, tanpa storage server">
-              <HardDriveDownload size={14} /> Simpan .glb
+              <HardDriveDownload size={14} /> <span className="sr-only sm:not-sr-only">Simpan .glb</span><span className="sm:hidden">.glb</span>
             </button>
             <TombolSalin teks={ringkasan} onCetak={cetak} />
           </div>
@@ -2061,7 +2067,11 @@ export default function Desain3D() {
         <div ref={wadahRef} className="relative w-full lg:w-auto lg:flex-1 min-w-0 h-[440px] sm:h-[620px] overflow-hidden">
           {!siap && !galat && <div className="absolute inset-0 grid place-items-center text-sm text-slate-500">Memuat tampilan 3D...</div>}
           <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5 max-w-[calc(100%-16px)]">
-            <div className="flex gap-1.5 flex-wrap">
+            <button type="button" onClick={() => setChipBuka(v => !v)} aria-expanded={chipBuka}
+              className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/95 border border-slate-200 text-[12px] font-bold text-slate-700 shadow-sm">
+              <Settings2 size={14} /> Tampilan {chipBuka ? '▴' : '▾'}
+            </button>
+            <div className={`${chipBuka ? 'flex' : 'hidden'} sm:flex gap-1.5 flex-wrap`}>
               {[{ v: ukur, s: setUkur, l: 'Ukuran' },
                 ...(benda.some(b => DISPLAY.includes(b.jenis)) ? [{ v: garisUkur, s: setGarisUkur, l: 'Garis ukuran (mm)' }] : []),
                 { v: labelProduk, s: setLabelProduk, l: 'Label produk' },
@@ -2079,21 +2089,21 @@ export default function Desain3D() {
               <div className="flex flex-row sm:flex-col gap-1 rounded-xl bg-white/95 border border-slate-200 shadow-sm p-1" role="toolbar" aria-label={`Aksi ${terpilih.nama}`}>
                 <button type="button" onClick={() => { setSisi(null); setPanel(p => !p); }} aria-pressed={panel} title="Atur ukuran, posisi & pilihan benda"
                   className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-[12px] font-bold ${panel ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-100'}`}>
-                  <Settings2 size={15} /> <span className="hidden sm:inline">Atur</span>
+                  <Settings2 size={15} /> <span className="sr-only sm:not-sr-only">Atur</span>
                 </button>
                 <button type="button" onClick={() => duplikat(terpilih)} title="Duplikat benda ini"
                   className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-[12px] font-bold text-slate-700 hover:bg-slate-100">
-                  <Copy size={15} /> <span className="hidden sm:inline">Duplikat</span>
+                  <Copy size={15} /> <span className="sr-only sm:not-sr-only">Duplikat</span>
                 </button>
                 {duaRuang && (
                   <button type="button" onClick={() => salinKeRuangLain(terpilih)} title={`Salin ke Ruang ${ruangDari(ruang, terpilih.x) === 0 ? 2 : 1}`}
                     className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-[12px] font-bold text-slate-700 hover:bg-slate-100">
-                    <CopyPlus size={15} /> <span className="hidden sm:inline">Salin ke Ruang {ruangDari(ruang, terpilih.x) === 0 ? 2 : 1}</span>
+                    <CopyPlus size={15} /> <span className="sr-only sm:not-sr-only">Salin ke Ruang {ruangDari(ruang, terpilih.x) === 0 ? 2 : 1}</span>
                   </button>
                 )}
                 <button type="button" onClick={() => { setBenda(b => b.filter(x => x.id !== terpilih.id)); setPilih(null); }} title="Hapus benda ini"
                   className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-[12px] font-bold text-rose-700 hover:bg-rose-50">
-                  <Trash2 size={15} /> <span className="hidden sm:inline">Hapus</span>
+                  <Trash2 size={15} /> <span className="sr-only sm:not-sr-only">Hapus</span>
                 </button>
               </div>
             )}

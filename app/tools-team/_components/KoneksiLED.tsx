@@ -611,7 +611,10 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: {
               <button type="button" onClick={unduhSVG} title="Unduh diagram sebagai SVG (vektor, bisa diedit di Illustrator / Inkscape)" className={kelasTombol}><Download size={14} /> SVG</button>
             </div>
           </div>
-          <div className="p-2 overflow-x-auto [&>svg]:mx-auto [&>svg]:block select-none" role="img"
+          {/* HP: diagram diberi lebar minimum (±48 px per receiving card) lalu digeser mendatar,
+              supaya sel tetap cukup besar untuk diketuk / diseret saat menyambung kabel. */}
+          <div className="overflow-x-auto">
+          <div className="p-2 [&>svg]:mx-auto [&>svg]:block select-none" role="img" style={{ minWidth: Math.min(1100, t.K * 48 + 110) }}
             aria-label={`Diagram koneksi ${t.portTerpakai} port untuk ${k.sel.length} receiving card`}
             onPointerDown={e => {
               if (!alatEf) return;
@@ -627,6 +630,7 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: {
             }}
             onPointerUp={() => { seret.current = false; }} onPointerCancel={() => { seret.current = false; }}
             dangerouslySetInnerHTML={{ __html: svg }} />
+          </div>
         </div>
         <div className="overflow-x-auto max-h-80 overflow-y-auto rounded-2xl border border-slate-200 bg-white">
           <table className="w-full text-[12.5px]">
