@@ -5,7 +5,7 @@
  *
  * Jalankan: npx tsx uji/desain-request.ts
  */
-import { ringkasanDesain, bolehUbahTautan, statusRuangan, bersihkanGambar, kategoriBenda, periksaIsianLED, bersihkanRingkasanLED, urlGambarDesain, MAKS_BYTE_GAMBAR_HD } from '../lib/tools-team';
+import { ringkasanDesain, bolehUbahTautan, statusRuangan, bersihkanGambar, kategoriBenda, periksaIsianLED, bersihkanRingkasanLED, bersihkanReferensiLED, urlGambarDesain, MAKS_BYTE_GAMBAR_HD } from '../lib/tools-team';
 import { htmlSeksiDesain3D, ukuranRuang, type TautanDesain3D } from '../app/form-require-project/_components/desain-3d-request';
 
 let lulus = 0, gagal = 0;
@@ -80,10 +80,23 @@ console.log('\n5. Kalkulator LED tersimpan');
 {
   cek('isian objek wajar diterima', periksaIsianLED({ pitch: 2.5, project: 'BPKP', pxIn: null }).ok);
   cek('bukan objek / array ditolak', !periksaIsianLED(null).ok && !periksaIsianLED([1, 2]).ok && !periksaIsianLED('x').ok);
-  cek('terlalu besar ditolak', !periksaIsianLED({ catatan: 'x'.repeat(25_000) }).ok);
+  cek('terlalu besar ditolak (batas termasuk kabel manual Screen Connection)', !periksaIsianLED({ catatan: 'x'.repeat(125_000) }).ok && periksaIsianLED({ catatan: 'x'.repeat(60_000) }).ok);
   const r = bersihkanRingkasanLED({ project: 'P'.repeat(200), lebarM: 4, resX: '1600', screen: 0, liar: 'abc' });
   cek('ringkasan: teks dipotong, angka palsu jadi 0, field asing dibuang, screen minimal 1',
     r.project.length === 120 && r.lebarM === 4 && r.resX === 0 && r.screen === 1 && !('liar' in r));
+}
+
+console.log('\nReferensi LED per brand');
+{
+  const modul = { kode: 'P2.5', pitch: 2.5, w: 320, h: 160, pxW: 128, pxH: 64, tipe: 'Indoor', guna: '' };
+  const lama = bersihkanReferensiLED({ modul: [modul], kartu: [], vp: [] });
+  cek('referensi lama tanpa brand tetap sah', !!lama && lama.brand === undefined && lama.modul[0].brand === undefined);
+  const baru = bersihkanReferensiLED({ modul: [{ ...modul, brand: ' Absen ', model: 'A27', unit: 'cabinet' }], kartu: [], vp: [],
+    brand: [{ nama: 'Absen', sendiri: false }, { nama: 'Absen', sendiri: true }, { nama: '  ' }, { nama: 'IVP Vision', sendiri: true }] });
+  cek('brand, model & unit disimpan; nama brand dobel / kosong dibuang', !!baru && baru.modul[0].brand === 'Absen' && baru.modul[0].model === 'A27'
+    && baru.modul[0].unit === 'cabinet' && baru.brand?.length === 2 && baru.brand[1].sendiri === true);
+  cek('modul > 500 ditolak', bersihkanReferensiLED({ modul: Array(501).fill(modul), kartu: [], vp: [] }) === null);
+  cek('brand bukan array ditolak', bersihkanReferensiLED({ modul: [modul], kartu: [], vp: [], brand: 'Absen' }) === null);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

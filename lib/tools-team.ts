@@ -6,9 +6,9 @@
  * dikirim peramban sebelum menyimpannya, dan peramban memakai bentuk yang
  * sama. Tanpa React / jaringan supaya aman diimpor dari mana saja.
  */
-import type { ModulLED, Hardware } from '@/lib/av-hitung';
+import type { ModulLED, Hardware, BrandLED } from '@/lib/av-hitung';
 
-export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[] }
+export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[]; /** Daftar brand modul (boleh kosong untuk data lama). */ brand?: BrandLED[] }
 
 /** Baris app_settings tempat referensi LED bersama disimpan. */
 export const KUNCI_REFERENSI_LED = 'tools_team_referensi_led';
@@ -33,7 +33,13 @@ function bersihkanModul(x: unknown): ModulLED | null {
   const pxW = bulat(m.pxW, 1, 20000), pxH = bulat(m.pxH, 1, 20000);
   const tipe = m.tipe === 'Indoor' || m.tipe === 'Indoor/Outdoor' || m.tipe === 'Outdoor' ? m.tipe : null;
   if (!kode || guna === null || pitch === null || w === null || h === null || pxW === null || pxH === null || !tipe) return null;
-  return { kode, pitch, w, h, pxW, pxH, tipe, guna };
+  const brand = teks(m.brand ?? '', 60), model = teks(m.model ?? '', 80);
+  if (brand === null || model === null) return null;
+  const hasil: ModulLED = { kode, pitch, w, h, pxW, pxH, tipe, guna };
+  if (brand.trim()) hasil.brand = brand.trim();
+  if (model.trim()) hasil.model = model.trim();
+  if (m.unit === 'cabinet') hasil.unit = 'cabinet';
+  return hasil;
 }
 
 function bersihkanHardware(x: unknown): Hardware | null {
@@ -45,14 +51,23 @@ function bersihkanHardware(x: unknown): Hardware | null {
   return { nama, ket, maksPx, port, senderBawaan: hw.senderBawaan };
 }
 
-/** Referensi LED yang sah (semua baris valid, maks 200 per tabel), atau null. */
+/** Referensi LED yang sah (semua baris valid; maks 500 modul, 200 hardware, 100 brand), atau null. */
 export function bersihkanReferensiLED(x: unknown): RefLED | null {
   const r = x as Record<string, unknown>;
   if (!r || !Array.isArray(r.modul) || !Array.isArray(r.kartu) || !Array.isArray(r.vp)) return null;
-  if (!r.modul.length || r.modul.length > 200 || r.kartu.length > 200 || r.vp.length > 200) return null;
+  if (!r.modul.length || r.modul.length > 500 || r.kartu.length > 200 || r.vp.length > 200) return null;
   const modul = r.modul.map(bersihkanModul), kartu = r.kartu.map(bersihkanHardware), vp = r.vp.map(bersihkanHardware);
   if (modul.includes(null) || kartu.includes(null) || vp.includes(null)) return null;
-  return { modul: modul as ModulLED[], kartu: kartu as Hardware[], vp: vp as Hardware[] };
+  //  Brand: opsional (referensi lama belum punya); nama unik, kosong dibuang.
+  if (r.brand !== undefined && (!Array.isArray(r.brand) || r.brand.length > 100)) return null;
+  const brand: BrandLED[] = [];
+  for (const b of (r.brand as unknown[] | undefined) ?? []) {
+    const o = b as Record<string, unknown>;
+    const nama = teks(o?.nama, 60)?.trim();
+    if (!nama || brand.some(x => x.nama === nama)) continue;
+    brand.push({ nama, sendiri: o.sendiri === true });
+  }
+  return { modul: modul as ModulLED[], kartu: kartu as Hardware[], vp: vp as Hardware[], ...(brand.length ? { brand } : {}) };
 }
 
 /** Data desain 3D yang sah ({ ruang, benda }) beserta jumlah benda, atau alasan penolakan. */
@@ -102,7 +117,8 @@ export function kategoriBenda(jenis: string): string {
   if (['videowall', 'led', 'layar', 'ifp', 'tv', 'proyektor'].includes(jenis)) return 'Display';
   if (jenis === 'kamera' || jenis === 'lift') return 'Kamera & konferensi';
   if (['speaker', 'speaker-plafon', 'mic', 'touchpanel', 'rak'].includes(jenis)) return 'Audio & kontrol';
-  if (jenis === 'meja' || jenis === 'kursi') return 'Furnitur';
+  if (['meja', 'kursi', 'tribun', 'panggung'].includes(jenis)) return 'Furnitur';
+  if (jenis === 'bidang') return 'Display';
   return 'Lainnya';
 }
 
@@ -159,8 +175,8 @@ export function bolehUbahTautan(role: string | null | undefined, status: string)
 
 // ── Kalkulator LED tersimpan (/api/tools-team/led) ─────────────────────────
 
-/** Batas ukuran satu hitungan LED tersimpan (semua isian kalkulator). */
-export const MAKS_BYTE_LED = 20_000;
+/** Batas ukuran satu hitungan LED tersimpan (semua isian kalkulator + kabel manual Screen Connection). */
+export const MAKS_BYTE_LED = 120_000;
 
 export interface RingkasanLED {
   project: string; customer: string; kode: string; lebarM: number; tinggiM: number;
@@ -185,4 +201,85 @@ export function bersihkanRingkasanLED(x: unknown): RingkasanLED {
     project: t(r.project, 120), customer: t(r.customer, 120), kode: t(r.kode, 30),
     lebarM: a(r.lebarM), tinggiM: a(r.tinggiM), resX: a(r.resX), resY: a(r.resY), jumlahCab: a(r.jumlahCab), screen: a(r.screen) || 1,
   };
+}
+
+// ── Katalog "Produk saya" (template produk bersama tim) ─────────────────────
+
+/** Baris app_settings tempat template produk tim disimpan: { daftar: ProdukTim[] }. */
+export const KUNCI_PRODUK = 'tools_team_produk';
+export const MAKS_PRODUK = 300;
+export const MAKS_BYTE_PRODUK = 6_000;
+
+/** Jenis benda yang boleh dijadikan template ('model' = GLB impor tidak, geometrinya hanya di memori). */
+export const JENIS_PRODUK = ['videowall', 'led', 'layar', 'ifp', 'tv', 'meja', 'kursi', 'speaker', 'speaker-plafon', 'mic',
+  'touchpanel', 'kamera', 'proyektor', 'rak', 'lift', 'tribun', 'panggung', 'bidang'] as const;
+
+export interface ProdukTim {
+  id: string; label: string; ket: string; jenis: (typeof JENIS_PRODUK)[number];
+  /** Properti benda (tanpa id & posisi): ukuran, model, warna, spesifikasi, tinggi pasang. */
+  atur: Record<string, unknown>;
+  oleh: string; olehId: string; dibuat: string;
+}
+
+const ENUM_PRODUK: Record<string, readonly string[]> = {
+  rasio: ['16:9', '16:10', '4:3', '21:9'], vw: ['55BDL2105X', '49BDL2105X', 'custom'], pasang: ['dinding', 'standfloor'],
+  mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas', 'dosen', 'podium'], bentukBidang: ['datar', 'lengkung', 'cembung'], finish: ['walnut', 'oak', 'putih'],
+  tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati'],
+  tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
+};
+/** Angka yang boleh ada di template beserta batasnya. */
+const ANGKA_PRODUK: Record<string, [number, number]> = {
+  w: [0.001, 40], h: [0.001, 40], d: [0.001, 40], elev: [0, 40], diag: [10, 500], pitch: [0.1, 50], cabW: [50, 3000], cabH: [50, 3000],
+  kol: [1, 30], bar: [1, 30], rakU: [1, 80], throwRatio: [0.1, 10], tilt: [-90, 45], trMin: [0.1, 10], trMax: [0.1, 10],
+  baris: [1, 60], kursiBaris: [1, 80], tinggiAnak: [0.1, 1], jariBidang: [0.2, 50], busur: [10, 360], jangkauan: [0.5, 60], sebaran: [10, 180], sebaranV: [4, 180],
+  modul: [1, 24], sudutModul: [0, 15], tiltLA: [-30, 60],
+  offsetLensa: [-0.5, 1.5], geserLensaH: [-0.6, 0.6], lumen: [100, 100000],
+};
+const ANGKA_PANEL: Record<string, [number, number]> = {
+  w: [0.05, 5], h: [0.05, 5], d: [0.001, 1], bezelMm: [0, 100], resX: [1, 16000], resY: [1, 16000], wTipikal: [0, 5000], wMaks: [0, 5000],
+};
+
+/** Properti benda yang sah untuk template - hanya kunci yang dikenal, angka dalam batas, enum yang dikenal. */
+export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
+  const a = (x && typeof x === 'object' && !Array.isArray(x) ? x : {}) as Record<string, unknown>;
+  const hasil: Record<string, unknown> = {};
+  const angka = (v: unknown, [lo, hi]: [number, number]) => (typeof v === 'number' && Number.isFinite(v) && v >= lo && v <= hi ? v : undefined);
+  for (const [k, batas] of Object.entries(ANGKA_PRODUK)) { const v = angka(a[k], batas); if (v !== undefined) hasil[k] = v; }
+  for (const [k, sah] of Object.entries(ENUM_PRODUK)) if (typeof a[k] === 'string' && sah.includes(a[k] as string)) hasil[k] = a[k];
+  if (typeof a.nama === 'string' && a.nama.trim()) hasil.nama = a.nama.trim().slice(0, 80);
+  if (typeof a.naik === 'boolean') hasil.naik = a.naik;
+  if (typeof a.gantung === 'boolean') hasil.gantung = a.gantung;
+  if (typeof a.warna === 'string' && /^#[0-9a-f]{6}$/i.test(a.warna)) hasil.warna = a.warna.toLowerCase();
+  if (a.panel && typeof a.panel === 'object') {
+    const p = a.panel as Record<string, unknown>, panel: Record<string, number> = {};
+    for (const [k, batas] of Object.entries(ANGKA_PANEL)) { const v = angka(p[k], batas); if (v !== undefined) panel[k] = v; }
+    if (Object.keys(panel).length === Object.keys(ANGKA_PANEL).length) hasil.panel = panel;
+  }
+  return hasil;
+}
+
+/** Template baru yang sah (label, keterangan, jenis, atur), atau alasan penolakan. */
+export function periksaProduk(x: unknown): { ok: true; data: Pick<ProdukTim, 'label' | 'ket' | 'jenis' | 'atur'> } | { ok: false; alasan: string } {
+  const d = (x && typeof x === 'object' ? x : {}) as Record<string, unknown>;
+  const label = typeof d.label === 'string' ? d.label.trim().slice(0, 80) : '';
+  if (!label) return { ok: false, alasan: 'Nama produk wajib diisi.' };
+  const jenis = d.jenis as ProdukTim['jenis'];
+  if (!JENIS_PRODUK.includes(jenis)) return { ok: false, alasan: 'Jenis produk tidak bisa dijadikan template.' };
+  const atur = bersihkanAturProduk(d.atur);
+  if (!(typeof atur.w === 'number' && typeof atur.h === 'number' && typeof atur.d === 'number')) return { ok: false, alasan: 'Ukuran produk tidak sah.' };
+  const data = { label, ket: typeof d.ket === 'string' ? d.ket.trim().slice(0, 120) : '', jenis, atur };
+  if (JSON.stringify(data).length > MAKS_BYTE_PRODUK) return { ok: false, alasan: 'Data produk terlalu besar.' };
+  return { ok: true, data };
+}
+
+/** Daftar template dari app_settings (baris rusak dibuang). */
+export function bacaDaftarProduk(v: unknown): ProdukTim[] {
+  const daftar = (v && typeof v === 'object' ? (v as { daftar?: unknown }).daftar : null);
+  if (!Array.isArray(daftar)) return [];
+  return daftar.flatMap((x): ProdukTim[] => {
+    const p = periksaProduk(x);
+    const r = x as Record<string, unknown>;
+    if (!p.ok || typeof r.id !== 'string') return [];
+    return [{ ...p.data, id: r.id, oleh: String(r.oleh ?? ''), olehId: String(r.olehId ?? ''), dibuat: String(r.dibuat ?? '') }];
+  });
 }

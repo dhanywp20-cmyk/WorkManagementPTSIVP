@@ -6,8 +6,11 @@
  */
 import {
   type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
-  pusatkanIsi, jendelaSekat, pintuSekat, PINTU,
+  pusatkanIsi, jendelaSekat, pintuSekat, PINTU, ukuranPintu, spekVideowall, terapkanUkuran, ukuranLayar, ukuranIFP, warnaSah, tandaBentuk,
+  bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, sebaranSpeaker, sebaranVSpeaker, jangkauanDari, berkasLineArray,
+  templateRuang, KATEGORI_RUANG, kursiTribun, ukuranBidang, lengkungDari, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
 } from '../app/tools-team/_components/desain3d/model';
+import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
 
 let lulus = 0, gagal = 0;
@@ -211,6 +214,166 @@ console.log('\n9. Sekat tembok + jendela kaca');
   cek('jendela tidak menabrak pintu sekat', jp.z1 <= pintu - PINTU.lebar / 2 || jp.z0 >= pintu + PINTU.lebar / 2, `pintu ${pintu}, jendela ${jp.z0}-${jp.z1}`);
   const geser = jendelaSekat({ ...dasar, r2: { ...dasar.r2!, jendela: { lebar: 1, tinggi: 1, ambang: 1, geser: -1 } } })!;
   cek('geser negatif = ke depan', dekat((geser.z0 + geser.z1) / 2, 1.5), JSON.stringify(geser));
+}
+
+console.log('\n10. Semua bisa custom: videowall, layar, IFP, rack, pintu, warna');
+{
+  const k = { x0: 0, p: 8, l: 6, t: 3 };
+  //  Videowall model custom: ukuran total = panel x kolom/baris, resolusi & inci dari panel isian.
+  const vw = terapkanUkuran({ ...bendaBaru('videowall', k), vw: 'custom', kol: 3, bar: 2,
+    panel: { w: 1.0, h: 0.5, d: 0.08, bezelMm: 1.8, resX: 3840, resY: 2160, wTipikal: 200, wMaks: 400 } });
+  cek('videowall custom: ukuran total = panel x 3 x 2', dekat(vw.w, 3.0) && dekat(vw.h, 1.0) && dekat(vw.d, 0.08), `${vw.w} ${vw.h} ${vw.d}`);
+  const sp = spekVideowall(vw);
+  cek('videowall custom: resolusi & inci dari isian', sp.resX === 3840 && sp.inci === Math.round(Math.hypot(1, 0.5) / 0.0254), `${sp.inci}`);
+  cek('videowall katalog tetap memakai datasheet Philips', dekat(spekVideowall({ vw: '55BDL2105X' }).w, 1.2135) && spekVideowall({}).resX === 1920);
+  //  Rasio layar tambahan.
+  const r169 = ukuranLayar(100, '16:9'), r1610 = ukuranLayar(100, '16:10'), r219 = ukuranLayar(100, '21:9');
+  cek('rasio 16:10 & 21:9 benar', dekat(r1610.w / r1610.h, 1.6, 0.001) && dekat(r219.w / r219.h, 21 / 9, 0.001) && dekat(r169.w / r169.h, 16 / 9, 0.001));
+  cek('rasio rusak jatuh ke 16:9', dekat(ukuranLayar(100, 'abc').w, r169.w));
+  //  IFP diagonal custom.
+  const i98 = ukuranIFP(98);
+  cek('IFP 98" custom diperkirakan dari diagonal (+bezel)', i98.w > 2.2 && i98.w < 2.25 && dekat(i98.h / (i98.w), (1.2448 + 0.06) / (2.1690 + 0.06), 0.02), `${i98.w} x ${i98.h}`);
+  cek('IFP 75" tetap tabel datasheet', dekat(ukuranIFP(75).w, 1.712));
+  //  Pintu penghubung custom.
+  const dua: Ruang = { p: 7, l: 5, t: 2.8, lantai: 'karpet', r2: { aktif: true, p: 6, l: 5, t: 2.8, lantai: 'kayu', pintu: true, sekat: 'jendela',
+    pintuUkuran: { lebar: 1.6, tinggi: 2.4, z: 1.2 } } };
+  const up = ukuranPintu(dua), pz = pintuSekat(dua)!;
+  cek('pintu custom: lebar/tinggi/posisi dipakai', dekat(up.lebar, 1.6) && dekat(up.tinggi, 2.4) && dekat(pz, 1.2), `${up.lebar} ${up.tinggi} ${pz}`);
+  const jd = jendelaSekat(dua)!;
+  cek('jendela menghindari pintu custom yang lebih lebar', jd.z0 >= pz + up.lebar / 2 || jd.z1 <= pz - up.lebar / 2, `pintu ${pz}±${up.lebar / 2}, jendela ${jd.z0}-${jd.z1}`);
+  const lebay: Ruang = { ...dua, r2: { ...dua.r2!, pintuUkuran: { lebar: 20, tinggi: 9, z: 99 } } };
+  const ul = ukuranPintu(lebay), zl = pintuSekat(lebay)!;
+  cek('pintu kebesaran/kelewat ujung dijepit di dalam sekat', ul.lebar <= 5 - 0.4 + 1e-9 && ul.tinggi <= 2.8 - 0.1 + 1e-9 && zl + ul.lebar / 2 <= 5 + 1e-9, `${ul.lebar} ${ul.tinggi} ${zl}`);
+  cek('tanpa pintuUkuran = ukuran & posisi lama', dekat(ukuranPintu({ ...dua, r2: { ...dua.r2!, pintuUkuran: undefined } }).lebar, PINTU.lebar)
+    && dekat(pintuSekat({ ...dua, r2: { ...dua.r2!, pintuUkuran: undefined } })!, 4.0));
+  //  Warna.
+  cek('warna sah hanya #rrggbb', warnaSah('#A1B2C3') === '#a1b2c3' && warnaSah('red') === undefined && warnaSah('#12345') === undefined && warnaSah(7) === undefined);
+  const kursi = bendaBaru('kursi', k);
+  cek('ganti warna / panel memicu bangun ulang model', tandaBentuk(kursi) !== tandaBentuk({ ...kursi, warna: '#ff0000' })
+    && tandaBentuk(vw) !== tandaBentuk({ ...vw, panel: { ...vw.panel!, bezelMm: 3 } }));
+}
+
+console.log('\n11. Batch 2: bukaan, set kelas, jangkauan, proyektor, signage, Produk saya, analisis');
+{
+  const k = { x0: 0, p: 8, l: 6, t: 3 };
+  //  Pintu & jendela dinding luar.
+  const satu: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', bukaan: [
+    { id: 'p1', ruang: 0, sisi: 'belakang', jenis: 'pintu', posisi: 2, lebar: 0.9, tinggi: 2.1, ambang: 0.5 },
+    { id: 'j1', ruang: 0, sisi: 'kiri', jenis: 'jendela', posisi: 50, lebar: 9, tinggi: 5, ambang: 0.9 },
+  ] };
+  const pintu = bukaanDinding(satu, 0, 'belakang');
+  cek('pintu luar: posisi dari kiri, mulai dari lantai (ambang diabaikan)', pintu.length === 1 && dekat(pintu[0].x0, 1.55) && dekat(pintu[0].x1, 2.45) && pintu[0].y0 === 0 && dekat(pintu[0].y1, 2.1));
+  const jd = bukaanDinding(satu, 0, 'kiri')[0];
+  cek('jendela kebesaran & kelewat ujung dijepit di dalam dinding', jd.x0 >= 0.1 - 1e-9 && jd.x1 <= 6 - 0.1 + 1e-9 && jd.y1 <= 3 - 0.05 + 1e-9 && dekat(jd.y0, 0.9), JSON.stringify(jd));
+  cek('dinding tanpa bukaan: kosong', bukaanDinding(satu, 0, 'depan').length === 0);
+  const dua: Ruang = { ...satu, r2: { aktif: true, p: 6, l: 6, t: 3, lantai: 'kayu', pintu: false }, bukaan: [{ id: 'x', ruang: 0, sisi: 'kanan', jenis: 'jendela', posisi: 3, lebar: 1, tinggi: 1, ambang: 1 }] };
+  cek('dinding sekat bukan dinding luar (bukaan di sana tidak digambar)', !sisiLuar(dua, 0).includes('kanan') && !sisiLuar(dua, 1).includes('kiri') && bukaanDinding(dua, 0, 'kanan').length === 0);
+  cek('ruang 2 tidak aktif: bukaannya tidak digambar', bukaanDinding({ ...satu, bukaan: [{ ...satu.bukaan![0], ruang: 1 }] }, 1, 'belakang').length === 0);
+  //  Set ruang kelas custom.
+  const set = setRuangKelas(k, { kolom: 3, baris: 2, kursiPerMeja: 3, pengajar: false });
+  cek('set kelas 3 x 2 meja, 3 kursi per meja, tanpa meja pengajar', set.filter(b => b.jenis === 'meja').length === 6 && set.filter(b => b.jenis === 'kursi').length === 18);
+  const otomatis = ukuranSetKelas(k);
+  cek('set kelas otomatis sama seperti sebelumnya (2 kursi/meja + meja pengajar)', setRuangKelas(k).filter(b => b.jenis === 'kursi').length === otomatis.kolom * otomatis.baris * 2
+    && setRuangKelas(k).some(b => b.nama === 'Meja pengajar'));
+  //  Kamera & speaker.
+  //  Speaker: tipe & sebaran/jangkauan bawaan.
+  const s6 = bendaBaru('speaker', k, { tipeSpeaker: 'dinding6' }), sk = bendaBaru('speaker', k), sp = bendaBaru('speaker', k, { tipeSpeaker: 'kolom' });
+  cek('speaker dinding 6" & kotak (lama tetap) & portable: ukuran/tinggi bawaan', s6.nama === 'Speaker dinding 6"' && dekat(s6.w, 0.2) && s6.elev === 2
+    && sk.tipeSpeaker === 'kotak' && dekat(sk.w, 0.21) && sp.elev === 0 && dekat(sp.h, 2));
+  cek('sebaran bawaan: dinding 90x90, portable 120x30, line array 100 x 10/modul', sebaranSpeaker(s6) === 90 && sebaranVSpeaker(s6) === 90
+    && sebaranSpeaker(sp) === 120 && sebaranVSpeaker(sp) === 30 && sebaranVSpeaker(bendaBaru('speaker', k, { tipeSpeaker: 'linearray' })) === 10
+    && jangkauanDari(sp) === 25);
+  //  Line array: jumlah modul & berkas per modul.
+  const la = bendaBaru('speaker', k, { tipeSpeaker: 'linearray', modul: 6 });
+  cek('line array 6 modul: tinggi 6 x 0,3 m, nama ikut jumlah modul', dekat(la.h, 1.8) && la.nama === 'Line array 6 modul' && la.modul === 6);
+  const lurus = berkasLineArray({ ...la, elev: 0 });
+  cek('line array lurus di lantai: 6 berkas mendatar, tidak jatuh ke telinga', lurus.length === 6 && lurus.every(x => dekat(x.arah[1], 0) && x.jatuh === null));
+  const flown = { ...la, gantung: true, elev: 4, tiltLA: 4, sudutModul: 3, rot: 0, x: 4, z: 0.5 };
+  const bf = berkasLineArray(flown);
+  cek('line array digantung & menekuk: modul bawah menunduk lebih dalam & jatuh lebih dekat', bf.every(x => x.jarak !== null)
+    && bf.every((x, i) => i === 0 || (x.arah[1] < bf[i - 1].arah[1] && x.jarak! < bf[i - 1].jarak!)), bf.map(x => x.jarak?.toFixed(1)).join(','));
+  const atas = bf[0];
+  cek('berkas modul teratas: tilt 4° -> jatuh sejauh (tinggi - 1,2) / tan 4°', dekat(atas.jarak!, (atas.asal[1] - 1.2) / Math.tan(4 * Math.PI / 180) + (atas.asal[2] - 0.5), 0.05), `${atas.jarak}`);
+  const spp = { ...bendaBaru('speaker-plafon', k), elev: 2.94, sebaran: 90 };
+  cek('cakupan speaker plafon 90° dari 2,94 m = jari-jari (2,94-1,2)·tan45°', dekat(cakupanSpeakerPlafon(spp), 1.74) && sebaranSpeaker(bendaBaru('speaker', k)) === 90);
+  //  Proyektor: offset lensa & lens shift.
+  const r: Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu' };
+  const layar = { ...bendaBaru('layar', k), x: 4, z: 0.05, elev: 0.9 };
+  const proj = proyektorKeLayar(bendaBaru('proyektor', k), layar, k, r);
+  const s0 = sinarProyektor(proj, [layar, proj], r);
+  const s1 = sinarProyektor({ ...proj, geserLensaH: 0.2 }, [layar, proj], r);
+  cek('lens shift H 20% menggeser gambar 0,2 x lebar ke kanan (dilihat dari proyektor)', dekat((s1.selisihH ?? 0) - (s0.selisihH ?? 0), 0.2 * s0.lebar, 0.01), `${s0.selisihH} -> ${s1.selisihH}`);
+  const s2 = sinarProyektor({ ...proj, offsetLensa: 0 }, [layar, proj], r);
+  cek('offset 0% memindahkan gambar setengah tinggi gambar (dari offset 100%)', dekat(Math.abs((s2.selisihV ?? 0) - (s0.selisihV ?? 0)), 0.5 * s0.tinggi, 0.01) && offsetLensaDari(proj) === 0.5);
+  const c = kecerahanProyektor({ ...proj, lumen: 5000 }, 2.66 * 1.5);
+  cek('kecerahan: lux = lumen / luas, nits = lux / pi', dekat(c.lux, 5000 / 3.99, 0.5) && dekat(c.nits, c.lux / Math.PI, 0.01) && c.nada === 'baik');
+  //  Signage display.
+  const sg = bendaBaru('tv', k, { diag: 55, nama: 'Signage 55"' });
+  cek('signage 55": area aktif 16:9 + bezel ±12 mm (≈1,234 x 0,705 m)', dekat(sg.w, 1.2176 + 0.024, 0.003) && dekat(sg.h, 0.6849 + 0.024, 0.003) && sg.nama === 'Signage 55"', `${sg.w} x ${sg.h}`);
+  cek('signage standfloor berdiri di lantai (elev meja-stand), bukan di dinding', bendaBaru('tv', k, { pasang: 'standfloor' }).elev === 0.75);
+  //  Produk saya (validasi server).
+  const vwc = terapkanUkuran({ ...bendaBaru('videowall', k), vw: 'custom', panel: { w: 1, h: 0.5, d: 0.08, bezelMm: 1.8, resX: 3840, resY: 2160, wTipikal: 200, wMaks: 400 } });
+  const ok = periksaProduk({ label: '  Samsung VH55R ', ket: 'videowall', jenis: 'videowall', atur: { ...vwc, id: 'x', x: 9, z: 9, rot: 90, konten: 'gambar', modelKunci: 'k', warna: '#ABCDEF', jahat: '<script>' } });
+  cek('Produk saya: label dirapikan, id/posisi/kunci asing dibuang, panel & warna disimpan',
+    ok.ok && ok.data.label === 'Samsung VH55R' && !('id' in ok.data.atur) && !('x' in ok.data.atur) && !('rot' in ok.data.atur) && !('jahat' in ok.data.atur)
+    && !('konten' in ok.data.atur) && !('modelKunci' in ok.data.atur) && ok.data.atur.warna === '#abcdef' && (ok.data.atur.panel as { resX: number }).resX === 3840);
+  cek('Produk saya: jenis model GLB / tanpa ukuran / tanpa nama ditolak', !periksaProduk({ label: 'x', jenis: 'model', atur: vwc }).ok
+    && !periksaProduk({ label: 'x', jenis: 'tv', atur: { w: 1 } }).ok && !periksaProduk({ label: ' ', jenis: 'tv', atur: vwc }).ok);
+  cek('Produk saya: angka di luar batas & enum asing dibuang', !('w' in bersihkanAturProduk({ w: -1 })) && !('vw' in bersihkanAturProduk({ vw: 'X' })) && bersihkanAturProduk({ tipeKamera: 'xbar' }).tipeKamera === 'xbar');
+  const atLA = bersihkanAturProduk({ tipeSpeaker: 'linearray', modul: 8, sudutModul: 3, tiltLA: 5, gantung: true, sebaranV: 10, fov: 70 });
+  cek('Produk saya: line array (modul, sudut, gantung) tersimpan; field lama fov dibuang', atLA.tipeSpeaker === 'linearray' && atLA.modul === 8 && atLA.gantung === true && atLA.sudutModul === 3 && !('fov' in atLA));
+  cek('Produk saya: baris rusak di app_settings diabaikan', bacaDaftarProduk({ daftar: [{ id: 'a', label: 'ok', jenis: 'tv', atur: { w: 1, h: 1, d: 0.1 } }, { label: 'tanpa id', jenis: 'tv', atur: { w: 1, h: 1, d: 1 } }, 5] }).length === 1
+    && bacaDaftarProduk(null).length === 0);
+  //  Analisis tersimpan bersama desain.
+  cek('analisis bawaan & tersimpan', analisisDari({ p: 1, l: 1, t: 1, lantai: 'kayu' }).sudut === 45 && analisisDari({ p: 1, l: 1, t: 1, lantai: 'kayu', analisis: { jenis: 'custom', faktor: 3, sudut: 30 } }).faktor === 3);
+}
+
+console.log('\n12. Kategori ruangan, tribun, bidang mapping, zoom, arah proyektor');
+{
+  const k = { x0: 0, p: 16, l: 20, t: 7 };
+  //  Template: semua kategori menghasilkan ruangan & isi, benda di dalam ruangan.
+  for (const kat of KATEGORI_RUANG) {
+    const t = templateRuang(kat.id);
+    const luar = t.benda.filter(b => !(b.x >= -0.01 && b.x <= t.ruang.p + 0.01 && b.z >= -0.01 && b.z <= t.ruang.l + 0.01 && b.elev + b.h <= t.ruang.t + 0.05));
+    cek(`template ${kat.judul}: ${t.benda.length} benda, semua di dalam ruangan`, t.benda.length > 0 && luar.length === 0,
+      luar.map(b => `${b.nama}@${b.x.toFixed(1)},${b.z.toFixed(1)} atas ${(b.elev + b.h).toFixed(2)}`).join('; '));
+  }
+  const imm = templateRuang('immersive');
+  cek('immersive: 4 proyektor dinding + 2 lantai (tilt -90°), ruang gelap', imm.benda.filter(b => b.jenis === 'proyektor').length === 6
+    && imm.benda.filter(b => tiltDari(b) === -90).length === 2 && imm.ruang.cahaya === 'gelap');
+  cek('immersive: UST dinding TR 0,25, lensa 1,5 m dari dinding -> gambar 6 m = lebar dinding', imm.benda.filter(b => tiltDari(b) !== -90).every(b => {
+    const l = keDunia(b, lensaProyektor(b));
+    return dekat(b.throwRatio ?? 0, 0.25) && dekat(Math.min(l[0], 6 - l[0], l[2], 6 - l[2]), 1.5, 0.002);
+  }));
+  for (const id of ['mapping-lengkung', 'mapping-cembung', 'mapping-objek'] as const) {
+    const t = templateRuang(id);
+    cek(`${id}: ruang abu-abu & redup (bukan hitam)`, t.ruang.warnaDinding === '#9ca3af' && t.ruang.cahaya === 'redup');
+  }
+  const cbg = templateRuang('mapping-cembung').benda.find(b => b.jenis === 'bidang')!;
+  cek('mapping cembung = layar cembung lebar 6 m melengkung 60 cm (bukan pilar)', cbg.bentukBidang === 'cembung' && dekat(cbg.w, 6, 0.01) && dekat(cbg.d, 0.6, 0.01) && (cbg.busur ?? 0) < 180);
+  //  Tribun.
+  const tb = bendaBaru('tribun', k, { baris: 10, kursiBaris: 20, tinggiAnak: 0.3 });
+  cek('tribun 10 x 20: 200 kursi, lebar 20 x 0,55 + 0,6, tinggi (n-1) x 0,3 + 0,95', kursiTribun(tb).length === 200 && dekat(tb.w, 11.6) && dekat(tb.d, 9) && dekat(tb.h, 3.65), `${tb.w} ${tb.d} ${tb.h}`);
+  const ks = kursiTribun({ ...tb, rot: 180, x: 8, z: 15 });
+  cek('kursi tribun menghadap depan: baris belakang lebih jauh dari dinding depan & lebih tinggi', ks[ks.length - 1].z > ks[0].z && ks[ks.length - 1].y > ks[0].y);
+  cek('kursi tribun ikut jadi penonton di analisis', titikPenonton([{ ...tb, x: 8, z: 15 }]).length === 200);
+  //  Bidang mapping.
+  const lk = ukuranBidang({ ...tb, jariBidang: 7, busur: 100 });
+  cek('bidang lengkung R7 100°: tali busur 2R sin50° & kedalaman R(1-cos50°)', dekat(lk.w, 14 * Math.sin(50 * Math.PI / 180), 0.002) && dekat(lk.d, 7 * (1 - Math.cos(50 * Math.PI / 180)), 0.002));
+  const ld = lengkungDari(6, 0.6);
+  cek('lengkungDari: lebar 6 m, kedalaman 0,6 m -> R 7,8 m', dekat(ld.jariBidang, 7.8, 0.001) && dekat(ukuranBidang({ ...tb, ...ld }).w, 6, 0.01) && dekat(ukuranBidang({ ...tb, ...ld }).d, 0.6, 0.01));
+  const datar = bendaBaru('bidang', k, { bentukBidang: 'datar' });
+  cek('layar mapping datar: lebar bebas, tebal 6 cm', datar.bentukBidang === 'datar' && dekat(datar.d, 0.06) && dekat(terapkanUkuran({ ...datar, w: 8 }).w, 8));
+  const pil = ukuranBidang({ ...tb, jariBidang: 1.2, busur: 360 });
+  cek('pilar 360°: tapak 2R x 2R', dekat(pil.w, 2.4) && dekat(pil.d, 2.4));
+  //  Zoom & arah proyektor.
+  const pj = bendaBaru('proyektor', k);
+  cek('zoom lensa bawaan proyektor plafon 1,39-2,09; tanpa isian = lensa tetap', zoomLensa(pj)[0] === 1.39 && zoomLensa(pj)[1] === 2.09
+    && zoomLensa({ ...pj, trMin: undefined, trMax: undefined, throwRatio: 1.7 })[0] === 1.7);
+  const ke = arahkanKe({ ...pj, x: 5, z: 5, elev: 3.5, h: 0.14 }, [5, 0, 5]);
+  cek('arahkan proyektor tegak ke lantai = tilt -90°, sumbu ke bawah', tiltDari(ke) === -90 && dekat(arahProyektor(ke)[1], -1));
+  const ke2 = arahkanKe({ ...pj, x: 5, z: 5, elev: 2, h: 0.14 }, [5, 2.07, 0]);
+  cek('arahkan ke dinding depan: pan 180°, tilt 0°', dekat(ke2.rot, 180) && dekat(tiltDari(ke2), 0, 0.2), `${ke2.rot} ${ke2.tilt}`);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

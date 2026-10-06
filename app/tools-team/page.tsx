@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { Ikon } from '@/components/shared/Ikon';
-import { KalkulatorLED } from './_components/KalkulatorLED';
+import { KalkulatorLED, type SubLED } from './_components/KalkulatorLED';
 
 //  three.js (~600 KB) hanya diunduh saat alat Desain 3D dibuka.
 const Desain3D = dynamic(() => import('./_components/Desain3D'), {
@@ -16,13 +16,15 @@ const Desain3D = dynamic(() => import('./_components/Desain3D'), {
 //  Desain 3D pertama = alat yang tampil saat halaman dibuka.
 const ALAT = [
   { k: '3d', judul: 'Desain 3D Ruang', ket: 'Tata letak ruang AV + analisis jarak pandang', ikon: '🧊', C: Desain3D },
-  { k: 'led', judul: 'LED Videotron', ket: 'Modul/cabinet, resolusi, daya, sending card & VP', ikon: '📺', C: KalkulatorLED },
+  { k: 'led', judul: 'LED Videotron', ket: 'Calculator LED & Screen Connection (urutan kabel ala NovaLCT)', ikon: '📺', C: KalkulatorLED },
 ] as const;
 
 function ToolsKerjaInner() {
   const sp = useSearchParams();
   const [siap, setSiap] = useState(false);
-  const [aktif, setAktif] = useState<string>(() => (ALAT.some(a => a.k === sp.get('alat')) ? sp.get('alat')! : '3d'));
+  //  ?alat=koneksi (tautan lama) = LED Videotron, sub menu Screen Connection.
+  const [aktif, setAktif] = useState<string>(() => (sp.get('alat') === 'koneksi' ? 'led' : ALAT.some(a => a.k === sp.get('alat')) ? sp.get('alat')! : '3d'));
+  const subAwal: SubLED = sp.get('alat') === 'koneksi' || sp.get('sub') === 'koneksi' ? 'koneksi' : 'led';
 
   useEffect(() => {
     const u = getSession();
@@ -37,10 +39,11 @@ function ToolsKerjaInner() {
 
   const pilih = (k: string) => {
     setAktif(k);
-    try { const url = new URL(window.location.href); url.searchParams.set('alat', k); window.history.replaceState(null, '', url); } catch { /* abaikan */ }
+    try { const url = new URL(window.location.href); url.searchParams.set('alat', k); url.searchParams.delete('sub'); window.history.replaceState(null, '', url); } catch { /* abaikan */ }
   };
-  const alat = ALAT.find(a => a.k === aktif) ?? ALAT[0];
-  const C = alat.C;
+  const pilihSub = (sub: SubLED) => {
+    try { const url = new URL(window.location.href); url.searchParams.set('alat', 'led'); if (sub === 'led') url.searchParams.delete('sub'); else url.searchParams.set('sub', sub); window.history.replaceState(null, '', url); } catch { /* abaikan */ }
+  };
 
   if (!siap) return <div className="min-h-screen grid place-items-center text-sm text-slate-500">Memuat...</div>;
 
@@ -61,7 +64,8 @@ function ToolsKerjaInner() {
       </PageHeader>
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
         <main className="min-w-0">
-          <C />
+          {/* LED Videotron berisi sub menu Calculator LED | Screen Connection. */}
+          {aktif === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} /> : <Desain3D />}
         </main>
       </div>
     </div>
