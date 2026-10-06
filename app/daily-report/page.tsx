@@ -19,7 +19,7 @@ import {
   type ReminderActivity, type TicketActivity,
   type ManualActivity, type TeamEntry,
   type DailyReport,
-  hapusAktivitasManual } from './_components/shared';
+  hapusAktivitasManual, RENTANG_HARI } from './_components/shared';
 
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
@@ -560,6 +560,45 @@ export default function DailyReportPage() {
     return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_C[(i+2) % PIE_C.length] }));
   }, [allRows]);
 
+  /*
+    Draf isian di perangkat: pernah terjadi simpan Daily Report hilang diam-diam (permintaan
+    tidak sampai server, halaman di dalam iframe termuat ulang di tengah simpan). Isian manual
+    & catatan disimpan sementara di localStorage selama form terbuka, lalu dipulihkan saat form
+    dibuka lagi (tanggal/akun/report yang sama). Dihapus setelah berhasil simpan atau Batal.
+  */
+  const kunciDraf = currentUser?.id ? `wm_dr_draf_${currentUser.id}` : '';
+  type DrafDR = { formDate: string; formUserId: string; editingId: string | null; reminderNotes: string; manualActs: ManualActivity[]; waktu: number };
+  const bacaDraf = (): DrafDR | null => {
+    if (!kunciDraf) return null;
+    try {
+      const d = JSON.parse(localStorage.getItem(kunciDraf) ?? 'null') as DrafDR | null;
+      return d && Date.now() - d.waktu < 3 * 86_400_000 ? d : null;
+    } catch { return null; }
+  };
+  const hapusDraf = () => { try { if (kunciDraf) localStorage.removeItem(kunciDraf); } catch { /* abaikan */ } };
+  const adaIsian = (acts: ManualActivity[], catatan: string) => !!catatan.trim() || acts.some(m => m.project_name.trim() || m.description.trim());
+  useEffect(() => {
+    if (!formOpen || !kunciDraf || !adaIsian(manualActs, reminderNotes)) return;
+    try {
+      localStorage.setItem(kunciDraf, JSON.stringify({ formDate, formUserId, editingId, reminderNotes, manualActs, waktu: Date.now() } satisfies DrafDR));
+    } catch { /* penyimpanan perangkat penuh / diblokir: abaikan */ }
+  }, [formOpen, kunciDraf, formDate, formUserId, editingId, reminderNotes, manualActs]);
+  //  Jangan biarkan halaman tertutup / dimuat ulang saat penyimpanan masih berjalan.
+  useEffect(() => {
+    if (!saving) return;
+    const tahan = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', tahan);
+    return () => window.removeEventListener('beforeunload', tahan);
+  }, [saving]);
+  const pulihkanDraf = (cocok: (d: DrafDR) => boolean) => {
+    const d = bacaDraf();
+    if (!d || !cocok(d) || !adaIsian(d.manualActs, d.reminderNotes)) return false;
+    setReminderNotes(d.reminderNotes);
+    setManualActs(d.manualActs.length ? d.manualActs : [emptyManual(currentUser?.username ?? '')]);
+    notify('success', 'Isian yang belum tersimpan dipulihkan dari perangkat ini.');
+    return true;
+  };
+
   // Form helpers
   const openNewForm = async () => {
     const date = todayISO();
@@ -568,6 +607,11 @@ export default function DailyReportPage() {
     setEditingId(null); setFormReminders([]); setFormTickets([]);
     if (isAdmin) setTeamEntries(teamUsers.map(u => emptyTeamEntry(u)));
     else setTeamEntries([]);
+    //  Draf laporan baru yang belum tersimpan (tanggal & akun ikut dipulihkan).
+    const draf = bacaDraf();
+    if (draf && !draf.editingId && pulihkanDraf(() => true)) {
+      setFormDate(draf.formDate); setFormUserId(draf.formUserId);
+    }
     if (!isAdmin && currentUser?.username) {
       setFormLoading(true);
       const [rem, tick] = await Promise.all([
@@ -586,6 +630,7 @@ export default function DailyReportPage() {
       ? report.manual_activities.map(m => ({ ...m, _key: newManualKey() }))
       : [emptyManual(currentUser?.username ?? '')]);
     setEditingId(report.id);
+    pulihkanDraf(d => d.editingId === report.id);
     const username = isAdmin ? (teamUsers.find(u => u.id === report.user_id)?.username ?? '') : (currentUser?.username ?? '');
     setFormLoading(true);
     const [rem, tick] = await Promise.all([
@@ -621,15 +666,23 @@ export default function DailyReportPage() {
     setSaving(true);
     const cleanManual = manualActs.filter(m => m.project_name.trim() || m.description.trim())
       .map(({ _key, ...rest }) => ({ ...rest, submitted_by: rest.submitted_by || currentUser?.username || 'system' }));
-    const result = await saveReport({
+    //  Koneksi putus / permintaan gagal di jalan: tampilkan galat, form tetap terbuka
+    //  (dulu tombol bisa macet "menyimpan" tanpa pesan apa pun).
+    let result: { ok: boolean; error?: string };
+    try {
+      result = await saveReport({
       ...(editingId ? { id: editingId } : {}),
       report_date: formDate, user_id: targetUserId, user_name: targetUser?.full_name ?? '',
       sales_division: targetUser?.sales_division ?? '',
       reminder_activities: formReminders, ticket_activities: formTickets,
       manual_activities: cleanManual, reminder_notes: reminderNotes,
       created_by: currentUser?.username ?? 'system',
-    } as any);
+      } as any);
+    } catch {
+      result = { ok: false, error: 'koneksi terputus. Isian masih ada - coba simpan lagi.' };
+    }
     if (!result.ok) { notify('error', 'Gagal menyimpan: ' + result.error); setSaving(false); return; }
+    hapusDraf();
     if (isAdmin && teamEntries.length) {
       const clean = teamEntries.filter(e => e.project_name.trim()).map(({ _key, ...rest }) => ({ ...rest, report_date: formDate, source: 'manual' as const }));
       if (clean.length) await saveTeamEntries(clean as any, formDate, currentUser?.username ?? '');
@@ -678,7 +731,7 @@ export default function DailyReportPage() {
                 {formLoading ? 'Memuat aktivitas...' : autoCount > 0 ? `${formReminders.length} reminder + ${formTickets.length} ticket ter-insert otomatis` : 'Isi form di bawah'}
               </p>
             </div>
-            <button aria-label="Tutup" onClick={() => { setFormOpen(false); setEditingId(null); }} className="p-2 rounded-xl hover:bg-gray-100 transition-all text-slate-500">
+            <button aria-label="Tutup" onClick={() => { hapusDraf(); setFormOpen(false); setEditingId(null); }} className="p-2 rounded-xl hover:bg-gray-100 transition-all text-slate-500">
               <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
@@ -794,7 +847,7 @@ export default function DailyReportPage() {
 
             {/* Save */}
             <div className="flex gap-3 pt-2 pb-2">
-              <button onClick={() => { setFormOpen(false); setEditingId(null); }} className="flex-1 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">Batal</button>
+              <button onClick={() => { hapusDraf(); setFormOpen(false); setEditingId(null); }} className="flex-1 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">Batal</button>
               <button onClick={handleSave} disabled={saving} className="flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 14px rgba(220,38,38,0.3)' }}>
                 {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 {editingId ? 'Simpan Perubahan' : '📋 Simpan Report'}
@@ -1134,6 +1187,11 @@ export default function DailyReportPage() {
               <button onClick={() => { setFilterDate(''); setFilterUser(''); setFilterStatus(''); setFilterSource(''); setSearchProject(''); }} className="px-3 py-2 rounded-xl text-xs font-semibold text-red-500 hover:bg-red-50 transition-all">Reset</button>
             )}
           </div>
+          {!filterDate && (
+            <p className="text-[11.5px] text-slate-500 -mt-1 mb-2">
+              Menampilkan {RENTANG_HARI} hari terakhir. Pilih tanggal untuk melihat hari yang lebih lama.
+            </p>
+          )}
 
           {/* Table */}
           {liveLoading && filteredRows.length === 0 ? (

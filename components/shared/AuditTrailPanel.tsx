@@ -39,8 +39,19 @@ const AKSI: Record<string, { label: string; warna: string }> = {
   download:      { label: 'File diunduh',     warna: '#64748b' },
 };
 
+/*
+  Tanggal TANPA jam (mis. due_date / bast_date "2026-09-28" pada langkah turunan) dulu
+  dibaca new Date() sebagai 00:00 UTC = 07:00 WIB, lalu tampil "6 jam lalu" atau (untuk
+  tanggal mendatang) "baru saja" - jam yang tidak pernah ada. Tanggal saja = tampilkan tanggal.
+*/
+const hanyaTanggal = (iso: string) => /^\d{4}-\d{2}-\d{2}$/.test(iso.trim());
+const labelTanggal = (iso: string) =>
+  new Date(iso.trim() + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+
 function waktuRelatif(iso: string): string {
+  if (hanyaTanggal(iso)) return labelTanggal(iso);
   const detik = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (detik < 0)      return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
   if (detik < 60)     return 'baru saja';
   if (detik < 3600)   return `${Math.floor(detik / 60)} menit lalu`;
   if (detik < 86400)  return `${Math.floor(detik / 3600)} jam lalu`;
@@ -50,6 +61,7 @@ function waktuRelatif(iso: string): string {
 
 /** Tanggal + jam pendek tetap (bukan relatif) - dipakai alur mendatar, sebaris. */
 function tanggalPendek(iso: string): string {
+  if (hanyaTanggal(iso)) return new Date(iso.trim() + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
   const d = new Date(iso);
   const tanggal = d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
   const jam = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });

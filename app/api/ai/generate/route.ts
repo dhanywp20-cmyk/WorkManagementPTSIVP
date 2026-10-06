@@ -110,15 +110,37 @@ export async function POST(request: NextRequest) {
         : { parts: [arahan] };
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-    const res = await fetch(url, {
-      method: 'POST',
-      // Token dikirim lewat header, bukan query string. Alamat lengkap berikut
-      // query-nya ikut tercatat di log perantara; header tidak.
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': token },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
+    const panggil = async (m: string) => {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+        method: 'POST',
+        // Token dikirim lewat header, bukan query string. Alamat lengkap berikut
+        // query-nya ikut tercatat di log perantara; header tidak.
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': token },
+        body: JSON.stringify(payload),
+      });
+      return { res: r, data: await r.json() };
+    };
+    let { res, data } = await panggil(model);
+    /*
+      Model yang dipilih tidak bisa membaca gambar (mis. model preview khusus teks), padahal
+      permintaannya membawa gambar - pernah terjadi di produksi ("Image input modality is not
+      enabled"). Coba sekali lagi dengan model bawaan Admin Panel bila berbeda; bila tetap
+      gagal, beri tahu dengan kalimat yang jelas, bukan pesan mentah Google.
+    */
+    const pesanGalat = () => String((Array.isArray(data) ? data[0] : data)?.error?.message ?? '');
+    const bawaGambar = /"(inlineData|inline_data|fileData|file_data)"/.test(JSON.stringify(b.contents ?? ''));
+    const tolakGambar = () => !res.ok && res.status === 400 && bawaGambar && /modality|image input/i.test(pesanGalat());
+    if (tolakGambar() && setelan.model && setelan.model !== model) {
+      console.warn('[api/ai/generate] model tanpa dukungan gambar, dicoba ulang dengan model bawaan', model, '->', setelan.model);
+      ({ res, data } = await panggil(setelan.model));
+    }
+    if (tolakGambar()) {
+      return errJson(
+        `Model "${model}" tidak bisa membaca gambar. Pilih model lain ${penilai ? 'di bilah "Penilai AI"' : 'di Admin Panel → Integrations'} ` +
+        `(model "flash" umumnya mendukung gambar), atau kirim tanpa gambar.`,
+        400,
+      );
+    }
     if (!res.ok) {
       // Log detail asli ke server log (nggak keliatan user, tapi kebaca di Vercel logs)
       // supaya gampang di-debug kalau Gemini balikin error yang shape-nya nggak terduga.

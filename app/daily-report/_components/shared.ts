@@ -147,6 +147,21 @@ export function formatLogTime(isoStr: string): string {
 }
 
 // Fetch semua reminder dari SEMUA team users (untuk listing real-time)
+/**
+ * Tanpa filter tanggal, daftar Daily Report dulu menarik SEMUA reminder & activity_logs
+ * sejak awal (+ join tickets): makin lama makin lambat (pernah 10 detik), boros kuota
+ * egress, dan diam-diam terpotong 1.000 baris oleh Supabase sehingga data lama hilang dari
+ * tampilan tanpa pemberitahuan. Sekarang tanpa tanggal = RENTANG_HARI terakhir saja;
+ * pilih tanggal untuk melihat hari yang lebih lama.
+ */
+export const RENTANG_HARI = 60;
+/** Batas baris eksplisit (sama dengan batas Supabase) supaya pemotongan bisa dideteksi. */
+export const BATAS_BARIS = 1000;
+/** Tanggal WIB (YYYY-MM-DD) n hari yang lalu. */
+export function tanggalMundur(hari: number): string {
+  return new Date(Date.now() + 7 * 3600_000 - hari * 86_400_000).toISOString().slice(0, 10);
+}
+
 export async function fetchAllReminders(opts: {
   date?: string;
   usernames?: string[];   // filter by assigned_to
@@ -158,9 +173,11 @@ export async function fetchAllReminders(opts: {
     .order('due_time', { ascending: true });
 
   if (opts.date) q = q.eq('due_date', opts.date);
+  else q = q.gte('due_date', tanggalMundur(RENTANG_HARI));
   if (opts.usernames && opts.usernames.length > 0) {
     q = q.in('assigned_to', opts.usernames);
   }
+  q = q.limit(BATAS_BARIS);
 
   const { data, error } = await q;
   if (error) { console.error('[DR] fetchAllReminders:', error.message); return []; }
@@ -197,10 +214,13 @@ export async function fetchAllTickets(opts: {
     const startUTC = new Date(opts.date + 'T00:00:00+07:00').toISOString();
     const endUTC   = new Date(opts.date + 'T23:59:59+07:00').toISOString();
     q = q.gte('created_at', startUTC).lte('created_at', endUTC);
+  } else {
+    q = q.gte('created_at', new Date(tanggalMundur(RENTANG_HARI) + 'T00:00:00+07:00').toISOString());
   }
   if (opts.usernames && opts.usernames.length > 0) {
     q = q.in('handler_username', opts.usernames);
   }
+  q = q.limit(BATAS_BARIS);
 
   const { data, error } = await q;
   if (error) { console.error('[DR] fetchAllTickets:', error.message); return []; }
@@ -320,8 +340,9 @@ export async function fetchReports(filters: {
   let q = supabase.from('daily_reports').select('id,report_date,user_id,user_name,sales_division,reminder_activities,ticket_activities,manual_activities,reminder_notes,created_by,created_at,updated_at').order('report_date', { ascending: false }).order('created_at', { ascending: false });
   if (!filters.isAdmin) q = q.eq('user_id', filters.currentUserId);
   if (filters.date) q = q.eq('report_date', filters.date);
+  else q = q.gte('report_date', tanggalMundur(RENTANG_HARI));
   if (filters.userId && filters.isAdmin) q = q.eq('user_id', filters.userId);
-  const { data, error } = await q;
+  const { data, error } = await q.limit(BATAS_BARIS);
   if (error) { console.error('[DR] fetchReports:', error.message); return []; }
   return (data ?? []) as DailyReport[];
 }
