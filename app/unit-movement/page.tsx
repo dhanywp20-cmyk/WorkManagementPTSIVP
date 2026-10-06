@@ -81,8 +81,10 @@ function UnitMovementPageInner() {
     //
     // Penyaringan dipasang DI QUERY, bukan saat render - kalau disaring saat
     // render, barisnya sudah terkirim ke browser dan terbaca lewat DevTools.
+    //  Akun pimpinan (lib/pimpinan.ts) melihat SELURUH lalu lintas unit seperti orang dalam,
+    //  hanya baca - dulu ia jatuh ke cabang Sales (role guest) sehingga daftarnya kosong.
     const peran = (currentUser?.role ?? '').toLowerCase();
-    const orangDalam = hasFullAccess(currentUser) ||
+    const orangDalam = hasFullAccess(currentUser) || isPimpinan(currentUser) ||
       ['admin','superadmin','team','team_pts','marketing'].includes(peran);
 
     let q = supabase.from('movement_logs').select('id,tanggal,nama_pts,nama_luar,status_barang,event,project_name,type_barang,serial_number,catatan,foto_surat_url,foto_barang_url,created_by,created_at,kondisi_barang,expected_return_date,return_confirmed,checkout_reference_id').order('tanggal',{ascending:false}).limit(500);
@@ -380,9 +382,11 @@ function UnitMovementPageInner() {
                             <ActionGroup>
                               <ViewIconBtn onClick={()=>setViewLog(loan)} label="Lihat" />
                               {bolehEditLog(loan) && <EditIconBtn onClick={()=>setEditLog(loan)} />}
-                              <button onClick={()=>handleMarkReturned(loan)} title="Tandai barang sudah kembali"
-                                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white transition-all hover:opacity-90"
-                                style={{background:'linear-gradient(135deg,#10b981,#059669)'}}><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></button>
+                              {!isPimpinan(currentUser) && (
+                                <button onClick={()=>handleMarkReturned(loan)} title="Tandai barang sudah kembali"
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white transition-all hover:opacity-90"
+                                  style={{background:'linear-gradient(135deg,#10b981,#059669)'}}><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></button>
+                              )}
                             </ActionGroup>
                           </td>
                         )}
