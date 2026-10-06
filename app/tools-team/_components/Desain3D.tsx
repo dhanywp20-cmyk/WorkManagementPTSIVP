@@ -2,13 +2,14 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type * as T from 'three';
 import type { OrbitControls as KontrolOrbit } from 'three/examples/jsm/controls/OrbitControls.js';
-import { AlignCenterVertical, LayoutTemplate, Copy, CopyPlus, Crosshair, Settings2, Trash2, FolderOpen, HardDriveDownload, HardDriveUpload, History, Maximize2, Move, Redo2, Rotate3d, RotateCcw, RotateCw, Undo2, Video, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlignCenterVertical, LayoutTemplate, Copy, CopyPlus, Crosshair, Settings2, Trash2, FolderOpen, HardDriveDownload, HardDriveUpload, History, Maximize2, Move, Pencil, Redo2, Rotate3d, RotateCcw, RotateCw, Undo2, Video, ZoomIn, ZoomOut } from 'lucide-react';
 import { bacaDesainGLB, dataDesainFile, namaFileDesain, KUNCI_DESAIN } from './desain3d/file-glb';
 import { useRiwayat } from './riwayat';
 import { FAKTOR_PANDANG, type JenisPandang } from '@/lib/av-hitung';
 import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f } from './ui';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import {
   type Benda, type Ruang, type Kotak, type ItemKatalog, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturPolaUji,
@@ -151,6 +152,8 @@ export default function Desain3D() {
   const [fokusRuang, setFokusRuang] = useState<'semua' | 0 | 1>('semua');
   const [gantiIsi, setGantiIsi] = useState(false);
   const [pesan, setPesan] = useState('');
+  //  Konfirmasi di dalam aplikasi (bukan dialog bawaan browser yang menampilkan alamat situs).
+  const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const sudutRef = useRef<Sudut | 'kursi'>('iso');
   const kameraSiap = useRef(false);
   //  Pengaturan analisis tampilan tersimpan bersama desain (ruang.analisis), jadi ikut
@@ -1111,8 +1114,12 @@ export default function Desain3D() {
       return null;
     } catch { return 'Tidak terhubung ke server.'; }
   };
-  const hapusProduk = async (p: ProdukTimC) => {
-    if (!window.confirm(`Hapus "${p.label}" dari Produk saya? Seluruh tim tidak bisa memakainya lagi (benda yang sudah ada di desain tidak berubah).`)) return;
+  const hapusProduk = (p: ProdukTimC) => setKonfirmasi({
+    message: `Hapus "${p.label}" dari Produk saya?`, danger: true, confirmLabel: 'Hapus',
+    description: 'Seluruh tim tidak bisa memakainya lagi (benda yang sudah ada di desain tidak berubah).',
+    onConfirm: () => void hapusProdukYa(p),
+  });
+  const hapusProdukYa = async (p: ProdukTimC) => {
     const r = await fetch(`${API_PRODUK}?id=${encodeURIComponent(p.id)}`, { method: 'DELETE', credentials: 'include' }).catch(() => null);
     const j = await r?.json().catch(() => null);
     if (!r?.ok || !j?.ok) { setGalatProduk(j?.alasan ?? 'Gagal menghapus.'); return; }
@@ -1121,7 +1128,15 @@ export default function Desain3D() {
   /** Pasang template kategori ruangan (mengganti isi kanvas; tercatat di undo). */
   const pasangKategori = (id: KategoriRuang) => {
     const kat = KATEGORI_RUANG.find(k => k.id === id);
-    if (benda.length && !window.confirm(`Ganti isi kanvas dengan template "${kat?.judul}"? Bisa dikembalikan dengan Undo.`)) return;
+    if (!benda.length) { pasangKategoriYa(id); return; }
+    setKonfirmasi({
+      message: `Ganti isi kanvas dengan template "${kat?.judul}"?`, confirmLabel: 'Ganti isi',
+      description: 'Isi kanvas sekarang diganti template ini. Bisa dikembalikan dengan Undo.',
+      onConfirm: () => pasangKategoriYa(id),
+    });
+  };
+  const pasangKategoriYa = (id: KategoriRuang) => {
+    const kat = KATEGORI_RUANG.find(k => k.id === id);
     const t = templateRuang(id);
     ruangRef.current = t.ruang;
     setRuang(t.ruang); setBenda(t.benda); setNamaDesain(t.nama);
@@ -1192,12 +1207,19 @@ export default function Desain3D() {
     const isi = benda.filter(b => ruangDari(ruang, b.x) === asal);
     if (!isi.length) { setPesan(`Ruang ${asal + 1} masih kosong.`); return; }
     const lama = benda.filter(b => ruangDari(ruang, b.x) === tujuan);
-    if (ganti && lama.length && !window.confirm(`Ganti isi Ruang ${tujuan + 1}? ${lama.length} benda di sana dihapus lalu diganti salinan Ruang ${asal + 1}.`)) return;
-    const baru = salinIsi(isi, ruang, kA, kT);
-    isi.forEach((b, i) => salinGambar(b.id, baru[i].id));
-    setBenda(bs => [...(ganti ? bs.filter(b => ruangDari(ruang, b.x) !== tujuan) : bs), ...baru]);
-    setPilih(null);
-    setPesan(`${baru.length} benda disalin dari Ruang ${asal + 1} ke Ruang ${tujuan + 1}.`);
+    const lanjut = () => {
+      const baru = salinIsi(isi, ruang, kA, kT);
+      isi.forEach((b, i) => salinGambar(b.id, baru[i].id));
+      setBenda(bs => [...(ganti ? bs.filter(b => ruangDari(ruang, b.x) !== tujuan) : bs), ...baru]);
+      setPilih(null);
+      setPesan(`${baru.length} benda disalin dari Ruang ${asal + 1} ke Ruang ${tujuan + 1}.`);
+    };
+    if (ganti && lama.length) {
+      setKonfirmasi({ message: `Ganti isi Ruang ${tujuan + 1}?`, confirmLabel: 'Ganti isi', danger: true,
+        description: `${lama.length} benda di sana dihapus lalu diganti salinan Ruang ${asal + 1}. Bisa dikembalikan dengan Undo.`, onConfirm: lanjut });
+      return;
+    }
+    lanjut();
   };
 
   /** Tempel ke dinding ruang tempat benda berada; sisi belakang menyentuh dinding, menghadap ke dalam. */
@@ -1229,10 +1251,14 @@ export default function Desain3D() {
   const aturRuang2 = (aktif: boolean) => {
     if (aktif) { setRuang(r => ({ ...r, r2: { ...R2_AWAL, ...(r.r2 ?? {}), aktif: true } })); return; }
     const diR2 = benda.filter(b => b.x > ruang.p);
-    if (diR2.length && !window.confirm(`Matikan ruang 2? ${diR2.length} benda di ruang 2 ikut dihapus.`)) return;
-    setBenda(bs => bs.filter(b => b.x <= ruang.p));
-    setRuang(r => ({ ...r, r2: r.r2 ? { ...r.r2, aktif: false } : null }));
-    setTargetRuang('0'); setFokusRuang('semua');
+    const lanjut = () => {
+      setBenda(bs => bs.filter(b => b.x <= ruang.p));
+      setRuang(r => ({ ...r, r2: r.r2 ? { ...r.r2, aktif: false } : null }));
+      setTargetRuang('0'); setFokusRuang('semua');
+    };
+    if (!diR2.length) { lanjut(); return; }
+    setKonfirmasi({ message: 'Matikan ruang 2?', confirmLabel: 'Matikan', danger: true,
+      description: `${diR2.length} benda di ruang 2 ikut dihapus. Bisa dikembalikan dengan Undo.`, onConfirm: lanjut });
   };
 
   const unggahGambar = (file: File | null) => {
@@ -1344,7 +1370,8 @@ export default function Desain3D() {
     try { buf = await file.arrayBuffer(); } catch { setGalat('File tidak bisa dibaca.'); return; }
     const d = bacaDesainGLB(buf);
     if (!d) {
-      if (window.confirm('File ini bukan desain dari Tools Team (mis. model produk). Tambahkan sebagai model 3D ke ruangan?')) void imporModel(file);
+      setKonfirmasi({ message: 'File ini bukan desain dari Tools Team.', confirmLabel: 'Tambahkan',
+        description: 'Mungkin model produk. Tambahkan sebagai model 3D ke ruangan?', onConfirm: () => void imporModel(file) });
       return;
     }
     const namaBerkas = file.name;
@@ -1587,8 +1614,11 @@ export default function Desain3D() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const hapusTim = async (d: DesainTim) => {
-    if (!window.confirm(`Hapus desain "${d.nama}" dari server? Seluruh tim tidak bisa membukanya lagi.`)) return;
+  const hapusTim = (d: DesainTim) => setKonfirmasi({
+    message: `Hapus desain "${d.nama}" dari server?`, danger: true, confirmLabel: 'Hapus',
+    description: 'Seluruh tim tidak bisa membukanya lagi.', onConfirm: () => void hapusTimYa(d),
+  });
+  const hapusTimYa = async (d: DesainTim) => {
     const r = await fetch(`${API_DESAIN}?id=${encodeURIComponent(d.id)}`, { method: 'DELETE', credentials: 'include' }).catch(() => null);
     const j = await r?.json().catch(() => null);
     if (!r?.ok || !j?.ok) { setStatusSimpan({ teks: j?.alasan ?? 'Gagal menghapus.', nada: 'galat' }); return; }
@@ -1695,6 +1725,7 @@ export default function Desain3D() {
 
   return (
     <div className="space-y-3">
+      <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
       <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white">
         {/* Berkas yang sedang dibuka: nama (bisa diganti langsung) + dari mana asalnya + sudah/belum tersimpan.
             Dulu kanvas tidak memberi tahu desain mana yang sedang terbuka. */}
@@ -1712,9 +1743,11 @@ export default function Desain3D() {
           return (
             <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-100 bg-slate-50/70 flex-wrap" role="group" aria-label="Berkas yang sedang dibuka">
               <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500"><Ikon nama="🧊" ukuran={14} /> Berkas</span>
-              <input value={namaDesain} onChange={e => setNamaDesain(e.target.value)} maxLength={80} placeholder="Nama desain" aria-label="Nama desain"
-                title="Klik untuk mengganti nama desain"
-                className="min-w-[140px] flex-1 max-w-[340px] rounded-lg border border-transparent hover:border-slate-200 focus:border-blue-400 bg-transparent focus:bg-white px-2 py-1 text-[14px] font-bold text-slate-900 outline-none" />
+              <label className="relative min-w-[160px] flex-1 max-w-[360px]" title="Klik untuk mengganti nama desain">
+                <input value={namaDesain} onChange={e => setNamaDesain(e.target.value)} maxLength={80} placeholder="Ketik nama desain..." aria-label="Nama desain"
+                  className="w-full rounded-lg border border-slate-300 bg-white pl-2.5 pr-8 py-1.5 text-[14px] font-bold text-slate-900 shadow-sm hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none" />
+                <Pencil size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden />
+              </label>
               <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11.5px] font-semibold ${kelas}`}>{rinci.teks}</span>
               {adaPerubahan && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-300 bg-amber-50 text-amber-900 text-[11.5px] font-semibold" title="Isi kanvas berbeda dari yang terakhir dibuka/disimpan">

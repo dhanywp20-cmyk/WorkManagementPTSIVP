@@ -55,8 +55,9 @@ export interface Benda {
   /** Speaker: tampilkan jangkauan suaranya (tanpa perlu centang global) */ tampilJangkauan?: boolean;
   /** Proyektor: rentang zoom lensa (throw ratio terlebar & terpanjang, datasheet). throwRatio = posisi zoom saat ini. */ trMin?: number; trMax?: number;
   /** Tribun: jumlah baris, kursi per baris, tinggi anak tangga (m) */ baris?: number; kursiBaris?: number; tinggiAnak?: number;
-  /** Bidang mapping: lengkung (cekung) atau cembung, jari-jari (m), busur (derajat, 360 = pilar) */
-  bentukBidang?: 'lengkung' | 'cembung'; jariBidang?: number; busur?: number;
+  /** Layar/bidang mapping: datar, lengkung (= cekung) atau cembung; jari-jari (m) & busur (derajat, 360 = pilar)
+   *  untuk yang melengkung, lebar = w untuk yang datar. */
+  bentukBidang?: 'datar' | 'lengkung' | 'cembung'; jariBidang?: number; busur?: number;
   /** Proyektor: offset vertikal lensa (0,5 = tepi gambar di sumbu lensa / offset 100%) */ offsetLensa?: number;
   /** Proyektor: lens shift horizontal (pecahan lebar gambar, + = ke kanan dilihat dari proyektor) */ geserLensaH?: number;
   /** Proyektor: kecerahan (ANSI lumen) */ lumen?: number;
@@ -313,8 +314,9 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
     grup: 'Venue & mapping', item: [
       { kunci: 'tribun', label: 'Tribun', ket: 'Kursi teater bertingkat, baris & kursi bebas', jenis: 'tribun' },
       { kunci: 'panggung', label: 'Panggung', ket: 'Platform + tangga', jenis: 'panggung' },
-      { kunci: 'bidang-lengkung', label: 'Bidang mapping lengkung', ket: 'Layar cekung (curve), jari-jari & busur bebas', jenis: 'bidang', atur: { bentukBidang: 'lengkung' } },
-      { kunci: 'bidang-cembung', label: 'Bidang mapping cembung', ket: 'Permukaan cembung', jenis: 'bidang', atur: { bentukBidang: 'cembung', busur: 120, jariBidang: 3 } },
+      { kunci: 'bidang-datar', label: 'Layar mapping datar', ket: 'Bidang screen datar, lebar & tinggi bebas', jenis: 'bidang', atur: { bentukBidang: 'datar' } },
+      { kunci: 'bidang-lengkung', label: 'Layar mapping cekung', ket: 'Screen melengkung ke dalam (curve), lebar & kedalaman lengkung bebas', jenis: 'bidang', atur: { bentukBidang: 'lengkung' } },
+      { kunci: 'bidang-cembung', label: 'Layar mapping cembung', ket: 'Screen melengkung keluar ke arah penonton', jenis: 'bidang', atur: { bentukBidang: 'cembung', busur: 60, jariBidang: 5 } },
       { kunci: 'pilar', label: 'Pilar mapping 360°', ket: 'Silinder untuk mapping keliling', jenis: 'bidang', atur: { bentukBidang: 'cembung', busur: 360, jariBidang: 0.8 } },
     ],
   },
@@ -352,11 +354,23 @@ export const barisTribun = (b: Benda) => Math.max(1, Math.min(60, Math.round(b.b
 export const kursiTribunPerBaris = (b: Benda) => Math.max(1, Math.min(80, Math.round(b.kursiBaris ?? 12)));
 /** Jari-jari & busur bidang mapping, dan ukuran tapaknya (lebar tali busur x kedalaman). */
 export function ukuranBidang(b: Benda) {
+  if (b.bentukBidang === 'datar') return { R: 0, busur: 0, w: Math.max(0.2, Math.min(60, b.w || 5)), d: 0.06 };
   const R = Math.max(0.2, Math.min(50, b.jariBidang ?? 4)), busur = Math.max(10, Math.min(360, b.busur ?? 90));
   const t = (busur * Math.PI) / 180;
   const w = busur >= 180 ? 2 * R : 2 * R * Math.sin(t / 2);
   const d = R * (1 - Math.cos(t / 2));
   return { R, busur, w: Math.round(Math.max(0.05, w) * 1000) / 1000, d: Math.round(Math.max(0.05, d) * 1000) / 1000 };
+}
+
+/**
+ * Jari-jari & busur dari lebar layar (tali busur) dan kedalaman lengkungnya - cara engineer
+ * menyebut layar lengkung ("lebar 6 m, melengkung 40 cm"). Kedalaman maks = setengah lebar (180°).
+ */
+export function lengkungDari(lebar: number, kedalaman: number): { jariBidang: number; busur: number } {
+  const c = Math.max(0.2, lebar), s = Math.max(0.01, Math.min(c / 2, kedalaman));
+  const R = (c * c / 4 + s * s) / (2 * s);
+  const busur = (2 * Math.asin(Math.min(1, c / (2 * R))) * 180) / Math.PI;
+  return { jariBidang: Math.round(R * 1000) / 1000, busur: Math.round(busur * 100) / 100 };
 }
 
 /** Posisi kursi tribun di dunia (x, z, tinggi dudukan) - penonton untuk analisis tampilan. */
@@ -439,8 +453,13 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       return { ...dasar, nama: 'Panggung', z: d / 2 + 0.1, w, h: 0.6, d, elev: 0, ...atur };
     }
     case 'bidang': {
-      const lengkung = (atur.bentukBidang ?? 'lengkung') === 'lengkung';
-      const b = terapkanUkuran({ ...dasar, nama: lengkung ? 'Bidang mapping lengkung' : 'Bidang mapping cembung', w: 0, h: lengkung ? 2.5 : 3, d: 0, elev: lengkung ? 0.3 : 0,
+      const bentuk = atur.bentukBidang ?? 'lengkung';
+      if (bentuk === 'datar') {
+        const b = terapkanUkuran({ ...dasar, nama: 'Layar mapping datar', w: 5, h: 2.8, d: 0.06, elev: 0.3, bentukBidang: 'datar', ...atur } as Benda);
+        return { ...b, z: atur.z ?? b.d / 2 + 0.2 };
+      }
+      const lengkung = bentuk === 'lengkung';
+      const b = terapkanUkuran({ ...dasar, nama: lengkung ? 'Layar mapping cekung' : 'Layar mapping cembung', w: 0, h: lengkung ? 2.5 : 3, d: 0, elev: lengkung ? 0.3 : 0,
         bentukBidang: lengkung ? 'lengkung' : 'cembung', jariBidang: lengkung ? 4 : 0.8, busur: lengkung ? 90 : 360, ...atur } as Benda);
       if ((b.busur ?? 90) >= 360) return { ...b, nama: atur.nama ?? 'Pilar mapping 360°', z: atur.z ?? k.l / 2 };
       return { ...b, z: atur.z ?? b.d / 2 + 0.2 };
@@ -1341,6 +1360,18 @@ function tribunModel(THREE: typeof T, g: T.Group, b: Benda, warnaKain: string) {
  * Permukaan putih doff dua sisi, lis atas-bawah, tiang penyangga dari lantai bila melayang.
  */
 function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
+  const lis = mat(THREE, 0x1f2227, { metalness: 0.4, roughness: 0.5 });
+  if (b.bentukBidang === 'datar') {
+    //  Screen datar: permukaan doff + bingkai tipis + dua kaki penyangga di belakang.
+    const { w } = ukuranBidang(b), muka = new THREE.Mesh(new THREE.PlaneGeometry(w, b.h), new THREE.MeshStandardMaterial({ color: warna, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }));
+    muka.position.set(0, b.h / 2, 0.02); g.add(muka);
+    const r = 0.02;
+    for (const [x, y, lw, lh] of [[0, 0, w, r], [0, b.h, w, r], [-w / 2, b.h / 2, r, b.h], [w / 2, b.h / 2, r, b.h]] as const) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(lw + r, lh + r, 0.04), lis); m.position.set(x, y, 0); g.add(m);
+    }
+    for (const x of [-w * 0.35, w * 0.35]) g.add(batang(THREE, 0.05, 0.05, lis, x, -0.05, 'kaki', b.h * 0.5));
+    return;
+  }
   const { R, busur, d } = ukuranBidang(b);
   const t = (busur * Math.PI) / 180, cembung = b.bentukBidang === 'cembung';
   const mulai = cembung ? -t / 2 : Math.PI - t / 2, zPusat = cembung ? d / 2 - R : R - d / 2;
@@ -1348,7 +1379,6 @@ function bidangMapping(THREE: typeof T, g: T.Group, b: Benda, warna: number) {
   const geo = new THREE.CylinderGeometry(R, R, b.h, seg, 1, true, mulai, t);
   geo.translate(0, b.h / 2, zPusat);
   g.add(new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: warna, roughness: 0.92, metalness: 0, side: THREE.DoubleSide })));
-  const lis = mat(THREE, 0x1f2227, { metalness: 0.4, roughness: 0.5 });
   const busurTitik = (y: number) => {
     const n = Math.max(8, Math.round(busur / 4)), p: T.Vector3[] = [];
     for (let i = 0; i <= n; i++) { const a = mulai + (t * i) / n; p.push(new THREE.Vector3(R * Math.sin(a), y, zPusat + R * Math.cos(a))); }
@@ -2070,11 +2100,14 @@ export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ik
   { id: 'meeting', judul: 'Ruangan Meeting', ket: 'Videowall, meja rapat, kamera, mic & speaker plafon', ikon: '🤝' },
   { id: 'auditorium', judul: 'Auditorium', ket: 'Panggung, LED videotron, line array, podium & tribun bertingkat', ikon: '🎭' },
   { id: 'kelas', judul: 'Smart Classroom', ket: 'Interactive display, meja dosen di depan, kamera tracking, meja mahasiswa', ikon: '🎓' },
-  { id: 'mapping-lengkung', judul: 'Mapping - bidang lengkung', ket: 'Layar cekung lebar + 3 proyektor blending, ruang gelap', ikon: '🌙' },
-  { id: 'mapping-cembung', judul: 'Mapping - bidang cembung', ket: 'Pilar 360° disorot 3 proyektor dari keliling', ikon: '🏛️' },
+  { id: 'mapping-lengkung', judul: 'Mapping - layar cekung', ket: 'Screen melengkung ke dalam + 3 proyektor blending; bentuk & warna bisa diganti', ikon: '🌙' },
+  { id: 'mapping-cembung', judul: 'Mapping - layar cembung', ket: 'Screen melengkung keluar + 2 proyektor blending; bentuk & warna bisa diganti', ikon: '🏛️' },
   { id: 'mapping-objek', judul: 'Mapping - objek upload', ket: 'Alas di tengah + 3 proyektor; impor objek .glb lalu cek sinarnya', ikon: '🧩' },
-  { id: 'immersive', judul: 'Immersive room', ket: 'Proyeksi dinding keliling + lantai, 14 proyektor', ikon: '🌐' },
+  { id: 'immersive', judul: 'Immersive room', ket: 'Proyeksi 4 dinding + lantai: 4 proyektor UST dinding & 2 lantai (bisa ditambah)', ikon: '🌐' },
 ];
+
+/** Warna bawaan ruang mapping: abu-abu netral (bukan hitam) supaya ruang & sinar tetap terlihat. */
+const ABU_DINDING = '#9ca3af', ABU_LANTAI = '#6b7280';
 
 /** Proyektor gantung plafon tanpa lens shift (pusat gambar = sumbu), diarahkan ke `target`. */
 function proyektorKe(k: Kotak, x: number, z: number, elev: number, target: Titik, tr: number, nama: string, zoom: [number, number] = [tr, tr]): Benda {
@@ -2111,27 +2144,30 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     return { nama: 'Smart Classroom', ruang, benda: [ifp, signage, dosen, podium, mic, tp, kam, ...spk, ...kelas] };
   }
   if (id === 'mapping-lengkung') {
-    const ruang: Ruang = { p: 14, l: 12, t: 5, lantai: 'polos', warnaLantai: '#1f2937', warnaDinding: '#374151', cahaya: 'gelap', r2: null };
+    const ruang: Ruang = { p: 14, l: 12, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'redup', r2: null };
     const k = daftarRuang(ruang)[0];
     const bidang = { ...bendaBaru('bidang', k, { bentukBidang: 'lengkung', jariBidang: 7, busur: 100 }), x: 7, h: 3.5, elev: 0.3 };
     bidang.z = bidang.d / 2 + 0.2;
     const pusatZ = bidang.z + (7 - bidang.d / 2), yT = bidang.elev + bidang.h / 2;
     const titik = (deg: number): Titik => { const a = (deg * Math.PI) / 180; return [7 + 7 * Math.sin(a), yT, pusatZ - 7 * Math.cos(a)]; };
     const proj = [-33, 0, 33].map((deg, i) => proyektorKe(k, 7 + (i - 1) * 1.2, pusatZ, 4.3, titik(deg), 1.5, `Proyektor ${i + 1} (blending)`, [1.39, 2.09]));
-    return { nama: 'Mapping bidang lengkung', ruang, benda: [bidang, ...proj] };
+    return { nama: 'Mapping layar cekung', ruang, benda: [bidang, ...proj] };
   }
   if (id === 'mapping-cembung') {
-    const ruang: Ruang = { p: 14, l: 14, t: 6, lantai: 'polos', warnaLantai: '#111827', warnaDinding: '#1f2937', cahaya: 'gelap', r2: null };
+    const ruang: Ruang = { p: 12, l: 10, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'redup', r2: null };
     const k = daftarRuang(ruang)[0];
-    const pilar = { ...bendaBaru('bidang', k, { bentukBidang: 'cembung', busur: 360, jariBidang: 1.2 }), x: 7, z: 7, h: 4, elev: 0 };
-    const proj = [0, 120, 240].map((deg, i) => {
-      const a = (deg * Math.PI) / 180;
-      return proyektorKe(k, 7 + 5 * Math.sin(a), 7 + 5 * Math.cos(a), 5.2, [7, 2, 7], 1.2, `Proyektor ${i + 1}`, [1.0, 1.6]);
-    });
-    return { nama: 'Mapping bidang cembung', ruang, benda: [pilar, ...proj] };
+    //  Screen 6 m melengkung keluar 60 cm ke arah penonton.
+    const bidang = { ...bendaBaru('bidang', k, { bentukBidang: 'cembung', ...lengkungDari(6, 0.6) }), x: 6, h: 2.2, elev: 0.8 };
+    bidang.z = bidang.d / 2 + 0.5;
+    const R = bidang.jariBidang ?? 5, pusatZ = bidang.z + bidang.d / 2 - R, yT = bidang.elev + bidang.h / 2;
+    const titik = (deg: number): Titik => { const a = (deg * Math.PI) / 180; return [6 + R * Math.sin(a), yT, pusatZ + R * Math.cos(a)]; };
+    //  Tiap proyektor membidik tengah separuh layarnya (seperempat busur), gambar ±3,5 m (separuh + blending).
+    const seperempat = (bidang.busur ?? 60) / 4;
+    const proj = [-seperempat, seperempat].map((deg, i) => proyektorKe(k, 6 + (i ? 1.5 : -1.5), 6.2, 4.3, titik(deg), 1.65, `Proyektor ${i + 1} (blending)`, [1.39, 2.09]));
+    return { nama: 'Mapping layar cembung', ruang, benda: [bidang, ...proj] };
   }
   if (id === 'mapping-objek') {
-    const ruang: Ruang = { p: 12, l: 10, t: 5, lantai: 'polos', warnaLantai: '#111827', warnaDinding: '#1f2937', cahaya: 'gelap', r2: null };
+    const ruang: Ruang = { p: 12, l: 10, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'redup', r2: null };
     const k = daftarRuang(ruang)[0];
     const alas = { ...bendaBaru('panggung', k), nama: 'Alas objek', x: 6, z: 5, w: 1.8, d: 1.8, h: 0.4 };
     const proj = [0, 120, 240].map((deg, i) => {
@@ -2141,16 +2177,26 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     return { nama: 'Mapping objek', ruang, benda: [alas, ...proj] };
   }
   if (id === 'immersive') {
-    const ruang: Ruang = { p: 10, l: 8, t: 4, lantai: 'polos', warnaLantai: '#e5e7eb', warnaDinding: '#f8fafc', cahaya: 'gelap', r2: null };
+    //  Ruang 6 x 6 x 3,5 m. Tiap dinding disorot satu proyektor ultra short throw (TR 0,25) yang
+    //  digantung 1,5 m dari dinding itu sendiri - gambar 6 x 3,375 m dari plafon sampai lantai dan
+    //  tidak terhalang proyektor lain. Lantai: dua proyektor tegak ke bawah, lens shift 12% ke luar
+    //  supaya keduanya menutup lantai dengan area blending di tengah.
+    const ruang: Ruang = { p: 6, l: 6, t: 3.5, lantai: 'polos', warnaLantai: '#e5e7eb', warnaDinding: '#f8fafc', cahaya: 'gelap', r2: null };
     const k = daftarRuang(ruang)[0];
-    const elev = 3.55, yD = 2.0, hasil: Benda[] = [];
-    const tambah = (x: number, z: number, t: Titik, tr: number, nama: string) => hasil.push(proyektorKe(k, x, z, elev, t, tr, nama, [tr, tr]));
-    for (const x of [2.5, 7.5]) { tambah(x, 2.4, [x, yD, 0], 0.5, 'Dinding depan'); tambah(x, 5.6, [x, yD, 8], 0.5, 'Dinding belakang'); }
-    for (const z of [2, 6]) { tambah(2.0, z, [0, yD, z], 0.5, 'Dinding kiri'); tambah(8.0, z, [10, yD, z], 0.5, 'Dinding kanan'); }
-    for (const x of [2.5, 7.5]) for (const z of [1.4, 4, 6.6]) {
-      const p = { ...bendaBaru('proyektor', k, { pasangProyektor: 'plafon' }), x, z, elev, rot: 0, tilt: -90, offsetLensa: 0, throwRatio: 0.7, trMin: 0.7, trMax: 0.7, nama: 'Lantai' };
-      hasil.push(p);
-    }
+    /** Proyektor plafon dengan LENSA tepat di (x, z). */
+    const diLensa = (atur: Partial<Benda>, x: number, z: number): Benda => {
+      const p0 = { ...bendaBaru('proyektor', k, { pasangProyektor: 'plafon' }), x: 0, z: 0, ...atur } as Benda;
+      const l = keDunia(p0, lensaProyektor(p0));
+      return { ...p0, x: Math.round((x - l[0]) * 1000) / 1000, z: Math.round((z - l[2]) * 1000) / 1000 };
+    };
+    const ust = (rot: number, x: number, z: number, nama: string) =>
+      diLensa({ elev: 3.3, rot, tilt: 0, offsetLensa: 0.5, throwRatio: 0.25, trMin: 0.25, trMax: 0.25, nama: `UST ${nama}` }, x, z);
+    const lantai = (rot: number, z: number) =>
+      diLensa({ elev: 3.3, rot, tilt: -90, offsetLensa: 0.12, throwRatio: 0.54, trMin: 0.5, trMax: 0.65, nama: 'Lantai' }, 3, z);
+    const hasil: Benda[] = [
+      ust(180, 3, 1.5, 'dinding depan'), ust(0, 3, 4.5, 'dinding belakang'), ust(270, 1.5, 3, 'dinding kiri'), ust(90, 4.5, 3, 'dinding kanan'),
+      lantai(0, 2), lantai(180, 4),
+    ];
     hasil.forEach((p, i) => { p.nama = `${p.nama} ${i + 1}`; });
     return { nama: 'Immersive room', ruang, benda: hasil };
   }

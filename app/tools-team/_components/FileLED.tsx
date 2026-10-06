@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Modal } from '@/components/shared/Modal';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Ikon } from '@/components/shared/Ikon';
 import type { RingkasanLED } from '@/lib/tools-team';
 import { f } from './ui';
@@ -33,6 +34,7 @@ export function FileLED({ mode, onTutup, isian, ringkasan, namaAwal, fileAktif, 
   const [status, setStatus] = useState<{ teks: string; galat: boolean } | null>(null);
   const [sibuk, setSibuk] = useState(false);
   const [segar, setSegar] = useState(0);
+  const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
 
   useEffect(() => { if (mode) { setNama(fileAktif?.nama || namaAwal); setStatus(null); } }, [mode, fileAktif, namaAwal]);
 
@@ -78,8 +80,11 @@ export function FileLED({ mode, onTutup, isian, ringkasan, namaAwal, fileAktif, 
     } catch { setStatus({ teks: 'Tidak terhubung ke server.', galat: true }); } finally { setSibuk(false); }
   };
 
-  const hapus = async (d: Baris) => {
-    if (!window.confirm(`Hapus "${d.nama}"? Seluruh tim tidak bisa membukanya lagi.`)) return;
+  const hapus = (d: Baris) => setKonfirmasi({
+    message: `Hapus "${d.nama}"?`, description: 'Seluruh tim tidak bisa membukanya lagi.', danger: true, confirmLabel: 'Hapus',
+    onConfirm: () => void hapusYa(d),
+  });
+  const hapusYa = async (d: Baris) => {
     const r = await fetch(`${API}?id=${encodeURIComponent(d.id)}`, { method: 'DELETE', credentials: 'include' }).catch(() => null);
     const j = await r?.json().catch(() => null);
     if (!r?.ok || !j?.ok) { setStatus({ teks: j?.alasan ?? 'Gagal menghapus.', galat: true }); return; }
@@ -87,6 +92,8 @@ export function FileLED({ mode, onTutup, isian, ringkasan, namaAwal, fileAktif, 
   };
 
   return (
+    <>
+    <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     <Modal buka={!!mode} onTutup={onTutup} judul={mode === 'simpan' ? 'Simpan hitungan LED' : 'Buka hitungan LED'} ukuran="md"
       ikon={<Ikon nama={mode === 'simpan' ? '💾' : '📁'} ukuran={18} />}
       keterangan="Hitungan tersimpan di server dan bisa dibuka seluruh tim. Referensi modul/hardware tidak ikut disimpan.">
@@ -136,5 +143,6 @@ export function FileLED({ mode, onTutup, isian, ringkasan, namaAwal, fileAktif, 
         </ul>
       )}
     </Modal>
+    </>
   );
 }

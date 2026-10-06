@@ -8,7 +8,7 @@ import {
   type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
   pusatkanIsi, jendelaSekat, pintuSekat, PINTU, ukuranPintu, spekVideowall, terapkanUkuran, ukuranLayar, ukuranIFP, warnaSah, tandaBentuk,
   bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, sebaranSpeaker, sebaranVSpeaker, jangkauanDari, berkasLineArray,
-  templateRuang, KATEGORI_RUANG, kursiTribun, ukuranBidang, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
+  templateRuang, KATEGORI_RUANG, kursiTribun, ukuranBidang, lengkungDari, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
 } from '../app/tools-team/_components/desain3d/model';
 import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
@@ -339,8 +339,18 @@ console.log('\n12. Kategori ruangan, tribun, bidang mapping, zoom, arah proyekto
       luar.map(b => `${b.nama}@${b.x.toFixed(1)},${b.z.toFixed(1)} atas ${(b.elev + b.h).toFixed(2)}`).join('; '));
   }
   const imm = templateRuang('immersive');
-  cek('immersive: 8 proyektor dinding + 6 lantai (tilt -90°), ruang gelap', imm.benda.filter(b => b.jenis === 'proyektor').length === 14
-    && imm.benda.filter(b => tiltDari(b) === -90).length === 6 && imm.ruang.cahaya === 'gelap');
+  cek('immersive: 4 proyektor dinding + 2 lantai (tilt -90°), ruang gelap', imm.benda.filter(b => b.jenis === 'proyektor').length === 6
+    && imm.benda.filter(b => tiltDari(b) === -90).length === 2 && imm.ruang.cahaya === 'gelap');
+  cek('immersive: UST dinding TR 0,25, lensa 1,5 m dari dinding -> gambar 6 m = lebar dinding', imm.benda.filter(b => tiltDari(b) !== -90).every(b => {
+    const l = keDunia(b, lensaProyektor(b));
+    return dekat(b.throwRatio ?? 0, 0.25) && dekat(Math.min(l[0], 6 - l[0], l[2], 6 - l[2]), 1.5, 0.002);
+  }));
+  for (const id of ['mapping-lengkung', 'mapping-cembung', 'mapping-objek'] as const) {
+    const t = templateRuang(id);
+    cek(`${id}: ruang abu-abu & redup (bukan hitam)`, t.ruang.warnaDinding === '#9ca3af' && t.ruang.cahaya === 'redup');
+  }
+  const cbg = templateRuang('mapping-cembung').benda.find(b => b.jenis === 'bidang')!;
+  cek('mapping cembung = layar cembung lebar 6 m melengkung 60 cm (bukan pilar)', cbg.bentukBidang === 'cembung' && dekat(cbg.w, 6, 0.01) && dekat(cbg.d, 0.6, 0.01) && (cbg.busur ?? 0) < 180);
   //  Tribun.
   const tb = bendaBaru('tribun', k, { baris: 10, kursiBaris: 20, tinggiAnak: 0.3 });
   cek('tribun 10 x 20: 200 kursi, lebar 20 x 0,55 + 0,6, tinggi (n-1) x 0,3 + 0,95', kursiTribun(tb).length === 200 && dekat(tb.w, 11.6) && dekat(tb.d, 9) && dekat(tb.h, 3.65), `${tb.w} ${tb.d} ${tb.h}`);
@@ -350,6 +360,10 @@ console.log('\n12. Kategori ruangan, tribun, bidang mapping, zoom, arah proyekto
   //  Bidang mapping.
   const lk = ukuranBidang({ ...tb, jariBidang: 7, busur: 100 });
   cek('bidang lengkung R7 100°: tali busur 2R sin50° & kedalaman R(1-cos50°)', dekat(lk.w, 14 * Math.sin(50 * Math.PI / 180), 0.002) && dekat(lk.d, 7 * (1 - Math.cos(50 * Math.PI / 180)), 0.002));
+  const ld = lengkungDari(6, 0.6);
+  cek('lengkungDari: lebar 6 m, kedalaman 0,6 m -> R 7,8 m', dekat(ld.jariBidang, 7.8, 0.001) && dekat(ukuranBidang({ ...tb, ...ld }).w, 6, 0.01) && dekat(ukuranBidang({ ...tb, ...ld }).d, 0.6, 0.01));
+  const datar = bendaBaru('bidang', k, { bentukBidang: 'datar' });
+  cek('layar mapping datar: lebar bebas, tebal 6 cm', datar.bentukBidang === 'datar' && dekat(datar.d, 0.06) && dekat(terapkanUkuran({ ...datar, w: 8 }).w, 8));
   const pil = ukuranBidang({ ...tb, jariBidang: 1.2, busur: 360 });
   cek('pilar 360°: tapak 2R x 2R', dekat(pil.w, 2.4) && dekat(pil.d, 2.4));
   //  Zoom & arah proyektor.

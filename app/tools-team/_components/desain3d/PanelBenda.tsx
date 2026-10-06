@@ -7,20 +7,20 @@ import {
   DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, IFP_DIAG, TV_DIAG, RASIO_LAYAR, PANEL_VW_AWAL, terapkanUkuran, bendaBaru, spekVideowall, warnaSah,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, offsetLensaDari, geserLensaDari, lumenDari,
   tipeSpeakerDari, modulLA, sudutModulLA, tiltLADari, berkasLineArray, type TipeSpeaker,
-  zoomLensa, throwRatioDari, barisTribun, kursiTribunPerBaris, ukuranBidang,
+  zoomLensa, throwRatioDari, barisTribun, kursiTribunPerBaris, ukuranBidang, lengkungDari,
 } from './model';
 
 /** Warna bawaan per jenis untuk pemilih warna (hanya titik awal pemilih; model tetap memakai bawaannya bila kosong). */
 const WARNA_AWAL: Partial<Record<Benda['jenis'], string>> = {
   videowall: '#0a0a0a', led: '#1f2937', layar: '#111827', ifp: '#1f2937', tv: '#111111', meja: '#6c452b', kursi: '#30353d',
   speaker: '#16181c', 'speaker-plafon': '#f4f5f7', mic: '#111827', touchpanel: '#c7ccd3', kamera: '#50555d',
-  proyektor: '#f1f2f4', rak: '#111827', lift: '#15171b',
+  proyektor: '#f1f2f4', rak: '#111827', lift: '#15171b', bidang: '#f3f4f6', panggung: '#6b6b6b',
 };
 /** Apa yang diwarnai, per jenis - supaya jelas bagian mana yang berubah. */
 const BAGIAN_WARNA: Partial<Record<Benda['jenis'], string>> = {
   videowall: 'bezel & rangka', led: 'rangka cabinet', layar: 'bingkai', ifp: 'bezel', tv: 'bezel', meja: 'permukaan (laminasi polos)',
   kursi: 'kain / cangkang', speaker: 'kabinet & gril', 'speaker-plafon': 'cincin & gril', mic: 'badan / kain', touchpanel: 'badan',
-  kamera: 'badan', proyektor: 'cangkang', rak: 'kabinet', lift: 'rangka & tutup',
+  kamera: 'badan', proyektor: 'cangkang', rak: 'kabinet', lift: 'rangka & tutup', bidang: 'permukaan layar',
 };
 
 /**
@@ -322,15 +322,42 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         )}
         {b.jenis === 'bidang' && (() => {
           const u = ukuranBidang(b);
+          const bentuk = b.bentukBidang ?? 'lengkung';
+          const NAMA_BIDANG: Record<string, string> = { datar: 'Layar mapping datar', lengkung: 'Layar mapping cekung', cembung: 'Layar mapping cembung' };
+          const namaBawaan = /^(Bidang|Layar) mapping (lengkung|cekung|cembung|datar)$/.test(b.nama);
+          //  Ganti bentuk dengan lebar tetap: datar -> lengkung 10% dari lebar, lengkung -> datar selebar tali busurnya.
+          const gantiBentuk = (v: 'datar' | 'lengkung' | 'cembung') => {
+            const lebar = u.busur >= 180 ? 4 : u.w;
+            const x: Partial<Benda> = v === 'datar' ? { bentukBidang: v, w: lebar } : { bentukBidang: v, ...(bentuk === 'datar' || u.busur >= 180 ? lengkungDari(lebar, lebar * 0.1) : {}) };
+            const nb = terapkanUkuran({ ...b, ...x });
+            if (namaBawaan) nb.nama = NAMA_BIDANG[v];
+            onUbah(nb);
+          };
+          const busurPenuh = bentuk !== 'datar' && u.busur >= 180;
           return (
             <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
-              <Segmen label="Bentuk bidang" nilai={b.bentukBidang ?? 'lengkung'} onUbah={v => setUkuran({ bentukBidang: v })}
-                opsi={[{ v: 'lengkung', l: 'Lengkung (cekung)' }, { v: 'cembung', l: 'Cembung' }]} />
-              <div className="grid grid-cols-2 gap-2">
-                <Angka label="Jari-jari" nilai={u.R} satuan="m" step={0.1} onUbah={v => v >= 0.2 && v <= 50 && setUkuran({ jariBidang: v })} />
-                <Angka label="Busur" nilai={u.busur} satuan="°" step={5} bantuan="360° = pilar / silinder" onUbah={v => v >= 10 && v <= 360 && setUkuran({ busur: v })} />
-              </div>
-              <p className="text-[12px] text-slate-600">Panjang permukaan {f(u.R * u.busur * Math.PI / 180)} m × tinggi {f(b.h)} m · tapak {f(u.w)} × {f(u.d)} m. Arahkan proyektor ke bidang ini - sinarnya jatuh mengikuti lengkungan.</p>
+              <Segmen label="Bentuk layar / bidang" nilai={bentuk} onUbah={gantiBentuk}
+                opsi={[{ v: 'datar', l: 'Datar' }, { v: 'lengkung', l: 'Cekung' }, { v: 'cembung', l: 'Cembung' }]} />
+              {bentuk === 'datar' ? (
+                <Angka label="Lebar layar" nilai={u.w} satuan="m" step={0.1} onUbah={v => v >= 0.2 && v <= 60 && setUkuran({ w: v })} />
+              ) : !busurPenuh && (
+                <div className="grid grid-cols-2 gap-2">
+                  <Angka label="Lebar layar" nilai={u.w} satuan="m" step={0.1} bantuan="Lurus ujung ke ujung"
+                    onUbah={v => v >= 0.2 && v <= 60 && setUkuran(lengkungDari(v, Math.min(u.d, v / 2)))} />
+                  <Angka label="Kedalaman lengkung" nilai={Math.round(u.d * 100)} satuan="cm" step={5} bantuan={bentuk === 'cembung' ? 'Tengah maju ke penonton' : 'Tengah masuk ke belakang'}
+                    onUbah={v => v >= 1 && v / 100 <= u.w / 2 && setUkuran(lengkungDari(u.w, v / 100))} />
+                </div>
+              )}
+              {bentuk !== 'datar' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <Angka label="Jari-jari" nilai={u.R} satuan="m" step={0.1} onUbah={v => v >= 0.2 && v <= 50 && setUkuran({ jariBidang: v })} />
+                  <Angka label="Busur" nilai={u.busur} satuan="°" step={5} bantuan="360° = pilar / silinder" onUbah={v => v >= 10 && v <= 360 && setUkuran({ busur: v })} />
+                </div>
+              )}
+              <p className="text-[12px] text-slate-600">
+                {bentuk === 'datar' ? `Layar ${f(u.w)} × ${f(b.h)} m.` : `Panjang permukaan ${f(u.R * u.busur * Math.PI / 180)} m × tinggi ${f(b.h)} m · tapak ${f(u.w)} × ${f(u.d)} m.`}
+                {' '}Tinggi & warna permukaan diatur di bagian Ukuran dan Warna. Arahkan proyektor ke layar ini - sinarnya jatuh mengikuti permukaannya.
+              </p>
             </div>
           );
         })()}

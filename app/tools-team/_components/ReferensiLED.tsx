@@ -4,6 +4,7 @@ import { MODUL_LED, SENDING_CARD, VIDEO_PROCESSOR, type ModulLED, type Hardware 
 import { bersihkanReferensiLED, type RefLED } from '@/lib/tools-team';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 
 /**
  * Tabel referensi Kalkulator LED (setara sheet "REF Module LED" & "REF
@@ -154,6 +155,7 @@ function TabelHardware({ judul, data, onUbah, tampilSender }: { judul: string; d
 }
 
 export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoTim, bolehSimpanTim, simpanUntukTim, resetTim, sibuk, pesan, buka, onTutup }: ReturnType<typeof useReferensiLED> & { buka: boolean; onTutup: () => void }) {
+  const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const tglTim = infoTim.pada ? new Date(infoTim.pada).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   const keteranganSumber = sumber === 'lokal'
     ? (bolehSimpanTim ? 'Ada perubahan di perangkat ini yang belum disimpan untuk tim.' : 'Perubahan Anda hanya berlaku di perangkat ini. Referensi tim diatur Admin / Full Access.')
@@ -173,6 +175,8 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
     }),
   });
   return (
+    <>
+    <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     <Modal buka={buka} onTutup={onTutup} ukuran="penuh" ikon={<Ikon nama="⚙" ukuran={18} />}
       judul={<>Referensi modul & hardware {diubah && <span className="ml-2 align-middle text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">diubah</span>}</>}
       keterangan={`Isi sesuai datasheet produk yang ditawarkan. Pilihan pitch dan hardware di kalkulator langsung memakai tabel ini. ${keteranganSumber}`}
@@ -180,11 +184,11 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
         <div className="flex items-center justify-between gap-2 w-full flex-wrap">
           <div className="flex items-center gap-3 flex-wrap">
             {sumber === 'lokal' && (
-              <button type="button" onClick={() => { if (window.confirm('Buang perubahan di perangkat ini?')) reset(); }}
+              <button type="button" onClick={() => setKonfirmasi({ message: 'Buang perubahan di perangkat ini?', danger: true, confirmLabel: 'Buang', onConfirm: reset })}
                 className="text-[12.5px] font-semibold text-blue-700 hover:underline">Buang perubahan lokal</button>
             )}
             {sumber === 'tim' && bolehSimpanTim && diubah && (
-              <button type="button" disabled={sibuk} onClick={() => { if (window.confirm('Kembalikan referensi SELURUH TIM ke tabel bawaan?')) void resetTim(); }}
+              <button type="button" disabled={sibuk} onClick={() => setKonfirmasi({ message: 'Kembalikan referensi SELURUH TIM ke tabel bawaan?', danger: true, confirmLabel: 'Kembalikan', onConfirm: () => void resetTim() })}
                 className="text-[12.5px] font-semibold text-rose-700 hover:underline disabled:opacity-50">Kembalikan tim ke tabel bawaan</button>
             )}
             {pesan && <span className="text-[12px] text-slate-600">{pesan}</span>}
@@ -241,5 +245,6 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
         <p className="text-[11.5px] text-slate-500">Video processor dengan &quot;Sender bawaan&quot; dan port LAN &gt; 0 dianggap all-in-one. Port 0 = perlu sending card terpisah.</p>
       </div>
     </Modal>
+    </>
   );
 }
