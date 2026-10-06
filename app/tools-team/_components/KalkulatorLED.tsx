@@ -8,10 +8,10 @@ import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f, kelasInput
 import { useReferensiLED, EditorReferensiLED } from './ReferensiLED';
 import { Ikon } from '@/components/shared/Ikon';
 import { bukaCetak, diagramSusunan, type Info } from './cetak';
-import { FolderOpen, Redo2, Save, Undo2 } from 'lucide-react';
+import { ArrowRight, Cable, FolderOpen, Redo2, Save, Undo2 } from 'lucide-react';
 import { useRiwayat } from './riwayat';
 import { FileLED, type FileAktifLED } from './FileLED';
-import { KartuKoneksi, KONEKSI_AWAL, bersihkanKoneksi, ringkasanKoneksi, seksiCetakKoneksi, type DataKoneksi, type PengaturanKoneksi } from './KoneksiLED';
+import { RuangKoneksi, KONEKSI_AWAL, bersihkanKoneksi, ringkasanKoneksi, seksiCetakKoneksi, susunKoneksi, type DataKoneksi, type PengaturanKoneksi } from './KoneksiLED';
 
 const PITCH = [0.9, 1.2, 1.25, 1.5, 1.56, 1.86, 1.9, 2, 2.5, 2.6, 2.9, 3.91, 4.81, 5, 6.67, 8, 10];
 const CABINET: { v: string; l: string; w: number; h: number }[] = [
@@ -78,7 +78,12 @@ function KartuHw({ peran, hw, totalPx, portLAN, nada, catatan }: { peran: string
   );
 }
 
-export function KalkulatorLED() {
+/**
+ * Kalkulator LED + Screen Connection. Dua menu di Tools Team, satu komponen supaya isian,
+ * undo/redo, dan file tersimpan tetap sama saat berpindah menu (Screen Connection memakai
+ * layar dari kalkulator). `tampilan` memilih halaman yang ditampilkan.
+ */
+export function KalkulatorLED({ tampilan = 'led', onPindah }: { tampilan?: 'led' | 'koneksi'; onPindah?: (alat: 'led' | 'koneksi') => void }) {
   const refLED = useReferensiLED();
   const { modul: daftarModul, kartu: daftarKartu, vp: daftarVP } = refLED.data;
   const [modeHw, setModeHw] = useState<'otomatis' | 'manual'>('otomatis');
@@ -172,8 +177,8 @@ export function KalkulatorLED() {
   const hwKoneksi = modeHw === 'manual' ? (vpAio ? vpM : kartuM) : (hw.vp?.hw ?? hw.kartu?.hw ?? null);
   const dataKoneksi: DataKoneksi = useMemo(() => ({
     kolom, baris, wUnit: u.w, hUnit: u.h, pxX: px.x, pxY: px.y, satuan, pxPerPort: h.pxPerPort, portIdeal: h.portLAN,
-    ppkHw: hwKoneksi?.port ?? 0, namaHw: hwKoneksi?.nama ?? null,
-  }), [kolom, baris, u.w, u.h, px.x, px.y, satuan, h.pxPerPort, h.portLAN, hwKoneksi?.port, hwKoneksi?.nama]);
+    ppkHw: hwKoneksi?.port ?? 0, namaHw: hwKoneksi?.nama ?? null, refresh, bit,
+  }), [kolom, baris, u.w, u.h, px.x, px.y, satuan, h.pxPerPort, h.portLAN, hwKoneksi?.port, hwKoneksi?.nama, refresh, bit]);
   const lewat4K = h.resX > 3840 || h.resY > 2160;
   const n = Math.max(1, screen);
   const selisihW = mode === 'ukuran' ? h.lebarM - targetW : 0;
@@ -203,7 +208,6 @@ export function KalkulatorLED() {
     `Data: ${h.portLAN} port LAN (${refresh} Hz, ${bit}-bit)`,
     modeHw === 'manual' ? `Hardware: ${teksHw || '-'} /screen` : hw.vp && `All-in-one: ${hw.vp.qty}× ${hw.vp.hw.nama}/screen`,
     modeHw === 'otomatis' && hw.kartu && `Atau sending card: ${hw.kartu.qty}× ${hw.kartu.hw.nama}/screen + video processor`,
-    ringkasanKoneksi(dataKoneksi, koneksi),
     (pembuat || tanggal) && `Dibuat: ${[pembuat, tanggal].filter(Boolean).join(', ')}`,
   ].filter(Boolean).join('\n');
 
@@ -265,12 +269,94 @@ export function KalkulatorLED() {
             satu('Kapasitas per port', `±${f(h.pxPerPort / 1000, 0)} rb px · ${refresh} Hz, ${bit}-bit`),
           ],
           kanan: hwBaris.length ? hwBaris : [satu('Hardware', '—')] },
-        ...seksiCetakKoneksi(dataKoneksi, koneksi),
       ],
       catatan: 'Angka daya, berat, dan kapasitas port adalah nilai umum industri. Verifikasi dengan datasheet produk dan NovaLCT sebelum penawaran resmi.',
       tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
     });
   };
+
+  const aksiFile = (
+    <div className="flex items-center gap-1 print:hidden">
+      <button type="button" onClick={() => setFileMode('buka')} title="Buka hitungan tersimpan"
+        className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"><FolderOpen size={14} /> Buka</button>
+      <button type="button" onClick={() => setFileMode('simpan')} title="Simpan hitungan untuk tim (termasuk screen connection)"
+        className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"><Save size={14} /> Simpan</button>
+      <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden" role="group" aria-label="Undo dan redo">
+        <button type="button" onClick={riwayat.undo} disabled={!riwayat.bisaUndo} title="Undo (Ctrl+Z)" aria-label="Undo"
+          className="px-2 py-1.5 text-slate-700 hover:bg-slate-50 disabled:text-slate-300 disabled:hover:bg-transparent"><Undo2 size={14} /></button>
+        <button type="button" onClick={riwayat.redo} disabled={!riwayat.bisaRedo} title="Redo (Ctrl+Y)" aria-label="Redo"
+          className="px-2 py-1.5 text-slate-700 hover:bg-slate-50 border-l border-slate-200 disabled:text-slate-300 disabled:hover:bg-transparent"><Redo2 size={14} /></button>
+      </div>
+    </div>
+  );
+  const namaFile = [project, customer].filter(Boolean).join(' - ') || `LED ${u.kode} ${f(h.lebarM)}x${f(h.tinggiM)} m`;
+  const modalBersama = (
+    <>
+      <EditorReferensiLED {...refLED} buka={bukaRef} onTutup={() => setBukaRef(false)} />
+      <FileLED mode={fileMode} onTutup={() => setFileMode(null)} isian={isian}
+        ringkasan={{ project, customer, kode: u.kode, lebarM: h.lebarM, tinggiM: h.tinggiM, resX: h.resX, resY: h.resY, jumlahCab: h.jumlahCab, screen: n }}
+        namaAwal={[project, customer].filter(Boolean).join(' - ') || `LED ${u.kode} ${f(h.lebarM)}×${f(h.tinggiM)} m`}
+        fileAktif={fileAktif} onTersimpan={setFileAktif}
+        onBuka={(data, file) => { terapkan(data as Partial<Isian>); riwayat.mulaiBaru({ ...isian, ...(data as Partial<Isian>) }); setFileAktif(file); }} />
+    </>
+  );
+
+  //  ── Menu Screen Connection ──
+  if (tampilan === 'koneksi') {
+    const t = susunKoneksi(dataKoneksi, koneksi);
+    const cetakKoneksi = () => bukaCetak({
+      judul: 'Screen Connection LED',
+      subjudul: [project || 'Tanpa nama project', customer].filter(Boolean).join(' — '),
+      kepala: [['Tanggal', tanggal], ['Dibuat oleh', pembuat]],
+      seksi: [
+        { judul: 'Layar', jenis: 'info',
+          kiri: [
+            { label: 'Project', nilai: [project, customer].filter(Boolean).join(' — ') || '—' },
+            { label: 'LED', nilai: `${u.kode} · ${kolom} × ${baris} ${namaUnit} · ${f(h.lebarM)} × ${f(h.tinggiM)} m` },
+            { label: 'Resolusi', nilai: `${t.resX} × ${t.resY} px`, sorot: true },
+          ],
+          kanan: [
+            { label: 'Receiving card', nilai: `${t.hasil.sel.length} (${t.K} × ${t.B})`, sorot: true },
+            { label: 'Port LAN', nilai: `${t.portTerpakai} port${t.ppk > 0 ? ` · ${t.controller} controller × ${t.ppk} port` : ''}` },
+            { label: 'Kapasitas per port', nilai: `${t.pxPort.toLocaleString('id-ID')} px · batas ${koneksi.beban}% · ${refresh} Hz ${bit}-bit` },
+          ] },
+        ...seksiCetakKoneksi(dataKoneksi, koneksi),
+      ],
+      catatan: 'Diagram dari Tools Team. Samakan dengan konfigurasi NovaLCT (Screen Configuration → Screen Connection) dan datasheet receiving card sebelum instalasi.',
+      tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
+    });
+    const teksKoneksi = () => [
+      project && `*${project}*${customer ? ` - ${customer}` : ''}`,
+      `*Screen Connection LED ${u.kode}* · ${kolom}×${baris} ${namaUnit} (${f(h.lebarM)}×${f(h.tinggiM)} m)`,
+      ringkasanKoneksi(dataKoneksi, koneksi),
+      (pembuat || tanggal) && `Dibuat: ${[pembuat, tanggal].filter(Boolean).join(', ')}`,
+    ].filter(Boolean).join('\n');
+    return (
+      <div className="space-y-4">
+        <Kartu judul="Screen Connection" aksi={<div className="flex items-center gap-2 flex-wrap">{aksiFile}<TombolSalin teks={teksKoneksi} onCetak={cetakKoneksi} /></div>}>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <p className="text-[13px] text-slate-800">
+                <span className="font-bold">{project || 'Tanpa nama project'}</span>{customer && <span className="text-slate-600"> · {customer}</span>}
+                {fileAktif && <span className="text-slate-500"> · file {fileAktif.nama}</span>}
+              </p>
+              <p className="text-[12px] text-slate-600 mt-0.5">
+                Layar dari Kalkulator LED: <b className="text-slate-800">{u.kode}</b> · {kolom} × {baris} {namaUnit} ({u.w}×{u.h} mm, {px.x}×{px.y} px) · {f(h.lebarM)} × {f(h.tinggiM)} m · {h.resX} × {h.resY} px · {refresh} Hz {bit}-bit
+              </p>
+            </div>
+            {onPindah && (
+              <button type="button" onClick={() => onPindah('led')}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-bold border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">
+                Ubah layar di LED Videotron <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
+        </Kartu>
+        <RuangKoneksi d={dataKoneksi} s={koneksi} onUbah={setKoneksi} namaFile={namaFile} />
+        {modalBersama}
+      </div>
+    );
+  }
 
   // Pratinjau grid (SVG), skala mengikuti rasio sebenarnya.
   const skala = Math.min(320 / h.lebarM, 220 / h.tinggiM);
@@ -280,20 +366,7 @@ export function KalkulatorLED() {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
       <div className="space-y-4 min-w-0">
-        <Kartu judul="Informasi project" aksi={
-          <div className="flex items-center gap-1 print:hidden">
-            <button type="button" onClick={() => setFileMode('buka')} title="Buka hitungan tersimpan"
-              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"><FolderOpen size={14} /> Buka</button>
-            <button type="button" onClick={() => setFileMode('simpan')} title="Simpan hitungan untuk tim"
-              className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"><Save size={14} /> Simpan</button>
-            <div className="inline-flex rounded-lg border border-slate-200 overflow-hidden" role="group" aria-label="Undo dan redo">
-              <button type="button" onClick={riwayat.undo} disabled={!riwayat.bisaUndo} title="Undo (Ctrl+Z)" aria-label="Undo"
-                className="px-2 py-1.5 text-slate-700 hover:bg-slate-50 disabled:text-slate-300 disabled:hover:bg-transparent"><Undo2 size={14} /></button>
-              <button type="button" onClick={riwayat.redo} disabled={!riwayat.bisaRedo} title="Redo (Ctrl+Y)" aria-label="Redo"
-                className="px-2 py-1.5 text-slate-700 hover:bg-slate-50 border-l border-slate-200 disabled:text-slate-300 disabled:hover:bg-transparent"><Redo2 size={14} /></button>
-            </div>
-          </div>
-        }>
+        <Kartu judul="Informasi project" aksi={aksiFile}>
           {fileAktif && (
             <p className="-mt-1 mb-2 text-[11.5px] text-slate-600 truncate">File: <b className="text-slate-800">{fileAktif.nama}</b>{!fileAktif.bolehUbah && ' · milik anggota lain (simpan = salinan)'}</p>
           )}
@@ -485,6 +558,13 @@ export function KalkulatorLED() {
               <p className="text-[12.5px] text-amber-800">Melebihi kapasitas satu unit: layar dibagi ke beberapa controller, perlu sinkronisasi/splicer.</p>
             )}
           </div>
+          {onPindah && (
+            <button type="button" onClick={() => onPindah('koneksi')}
+              className="mt-3 w-full inline-flex items-center justify-between gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-left hover:bg-blue-100">
+              <span className="inline-flex items-center gap-2 text-[12.5px] font-bold text-blue-800"><Cable size={15} /> Screen Connection</span>
+              <span className="text-[12px] text-blue-800">{susunKoneksi(dataKoneksi, koneksi).portTerpakai} port · atur urutan kabel <ArrowRight size={13} className="inline" /></span>
+            </button>
+          )}
           <Catatan>Kecerahan disarankan: {KECERAHAN[lingkungan]}. Kapasitas sesuai tabel referensi (60 Hz 8-bit ≈ 650 rb px/port); cek datasheet dan NovaLCT sebelum penawaran.</Catatan>
         </Kartu>
 
@@ -502,16 +582,7 @@ export function KalkulatorLED() {
           </ul>
         </details>
       </div>
-      <div className="lg:col-span-2 min-w-0">
-        <KartuKoneksi d={dataKoneksi} s={koneksi} onUbah={setKoneksi}
-          namaFile={[project, customer].filter(Boolean).join(' - ') || `LED ${u.kode} ${f(h.lebarM)}x${f(h.tinggiM)} m`} />
-      </div>
-      <EditorReferensiLED {...refLED} buka={bukaRef} onTutup={() => setBukaRef(false)} />
-      <FileLED mode={fileMode} onTutup={() => setFileMode(null)} isian={isian}
-        ringkasan={{ project, customer, kode: u.kode, lebarM: h.lebarM, tinggiM: h.tinggiM, resX: h.resX, resY: h.resY, jumlahCab: h.jumlahCab, screen: n }}
-        namaAwal={[project, customer].filter(Boolean).join(' - ') || `LED ${u.kode} ${f(h.lebarM)}×${f(h.tinggiM)} m`}
-        fileAktif={fileAktif} onTersimpan={setFileAktif}
-        onBuka={(data, file) => { terapkan(data as Partial<Isian>); riwayat.mulaiBaru({ ...isian, ...(data as Partial<Isian>) }); setFileAktif(file); }} />
+      {modalBersama}
     </div>
   );
 }

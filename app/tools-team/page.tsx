@@ -17,6 +17,7 @@ const Desain3D = dynamic(() => import('./_components/Desain3D'), {
 const ALAT = [
   { k: '3d', judul: 'Desain 3D Ruang', ket: 'Tata letak ruang AV + analisis jarak pandang', ikon: '🧊', C: Desain3D },
   { k: 'led', judul: 'LED Videotron', ket: 'Modul/cabinet, resolusi, daya, sending card & VP', ikon: '📺', C: KalkulatorLED },
+  { k: 'koneksi', judul: 'Screen Connection', ket: 'Urutan kabel receiving card & port LAN (ala NovaLCT)', ikon: '〰', C: KalkulatorLED },
 ] as const;
 
 function ToolsKerjaInner() {
@@ -39,8 +40,6 @@ function ToolsKerjaInner() {
     setAktif(k);
     try { const url = new URL(window.location.href); url.searchParams.set('alat', k); window.history.replaceState(null, '', url); } catch { /* abaikan */ }
   };
-  const alat = ALAT.find(a => a.k === aktif) ?? ALAT[0];
-  const C = alat.C;
 
   if (!siap) return <div className="min-h-screen grid place-items-center text-sm text-slate-500">Memuat...</div>;
 
@@ -61,7 +60,11 @@ function ToolsKerjaInner() {
       </PageHeader>
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
         <main className="min-w-0">
-          <C />
+          {/* LED Videotron & Screen Connection = satu komponen di posisi yang sama, jadi isian
+              kalkulator tetap ada saat berpindah di antara keduanya. */}
+          {aktif === 'led' || aktif === 'koneksi'
+            ? <KalkulatorLED tampilan={aktif} onPindah={pilih} />
+            : <Desain3D />}
         </main>
       </div>
     </div>

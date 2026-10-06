@@ -160,8 +160,8 @@ export function bolehUbahTautan(role: string | null | undefined, status: string)
 
 // ── Kalkulator LED tersimpan (/api/tools-team/led) ─────────────────────────
 
-/** Batas ukuran satu hitungan LED tersimpan (semua isian kalkulator). */
-export const MAKS_BYTE_LED = 20_000;
+/** Batas ukuran satu hitungan LED tersimpan (semua isian kalkulator + kabel manual Screen Connection). */
+export const MAKS_BYTE_LED = 120_000;
 
 export interface RingkasanLED {
   project: string; customer: string; kode: string; lebarM: number; tinggiM: number;

@@ -80,7 +80,7 @@ console.log('\n5. Kalkulator LED tersimpan');
 {
   cek('isian objek wajar diterima', periksaIsianLED({ pitch: 2.5, project: 'BPKP', pxIn: null }).ok);
   cek('bukan objek / array ditolak', !periksaIsianLED(null).ok && !periksaIsianLED([1, 2]).ok && !periksaIsianLED('x').ok);
-  cek('terlalu besar ditolak', !periksaIsianLED({ catatan: 'x'.repeat(25_000) }).ok);
+  cek('terlalu besar ditolak (batas termasuk kabel manual Screen Connection)', !periksaIsianLED({ catatan: 'x'.repeat(125_000) }).ok && periksaIsianLED({ catatan: 'x'.repeat(60_000) }).ok);
   const r = bersihkanRingkasanLED({ project: 'P'.repeat(200), lebarM: 4, resX: '1600', screen: 0, liar: 'abc' });
   cek('ringkasan: teks dipotong, angka palsu jadi 0, field asing dibuang, screen minimal 1',
     r.project.length === 120 && r.lebarM === 4 && r.resX === 0 && r.screen === 1 && !('liar' in r));

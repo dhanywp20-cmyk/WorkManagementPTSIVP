@@ -128,17 +128,29 @@ console.log('\nScreen connection (urutan kabel & port)');
   cek('receiving card melebihi kapasitas port -> peringatan', besar.galat !== null && besar.rcPerPortMaks === 1);
   const lebar = hitungKoneksi({ ...dasar, kolom: 20, baris: 2 });
   cek('baris 20 > kapasitas 16 -> 2 zona 10 kolom: 4 port x 10 RC, port 3 masuk di kolom 11', lebar.port.map(p => p.jumlah).join(',') === '10,10,10,10'
-    && lebar.port[0].mulai.c === 0 && lebar.port[2].mulai.c === 10 && lebar.port[2].mulai.r === 0);
+    && lebar.port[0].mulai?.c === 0 && lebar.port[2].mulai?.c === 10 && lebar.port[2].mulai?.r === 0);
   cek('zona: port 1 hanya kolom 1-10', lebar.sel.filter(x => x.port === 1).every(x => x.c < 10));
   const satuBaris = hitungKoneksi({ ...dasar, kolom: 12 });
-  cek('baris utuh 1 baris/port: semua port masuk dari kiri walau pola S', satuBaris.port.every(p => p.mulai.c === 0));
+  cek('baris utuh 1 baris/port: semua port masuk dari kiri walau pola S', satuBaris.port.every(p => p.mulai?.c === 0));
   const tigaBaris = hitungKoneksi({ ...dasar, kolom: 5, baris: 6 });
-  cek('3 baris/port pola S: port 2 mulai lagi dari kiri, ular di dalam port', tigaBaris.port.length === 2 && tigaBaris.port[1].mulai.c === 0
+  cek('3 baris/port pola S: port 2 mulai lagi dari kiri, ular di dalam port', tigaBaris.port.length === 2 && tigaBaris.port[1].mulai?.c === 0
     && tigaBaris.sel.filter(x => x.port === 2)[4].c === 4 && tigaBaris.sel.filter(x => x.port === 2)[5].c === 4 && tigaBaris.sel.filter(x => x.port === 2)[5].r === 4);
   const lebarPenuh = hitungKoneksi({ ...dasar, kolom: 20, baris: 2, bagi: 'penuh' });
   cek('isi penuh pada layar lebar: 16, 16, 8 (port paling hemat)', lebarPenuh.port.map(p => p.jumlah).join(',') === '16,16,8');
+  //  Custom ala NovaLCT: ukuran receiving card berbeda, sel kosong, kabel manual.
+  const beda = hitungKoneksi({ ...dasar, kolom: 3, baris: 1, lebarPx: [640, 512, 256], tinggiPx: [512], pxPerPort: 655_360, bagi: 'penuh' });
+  cek('ukuran berbeda: port dihitung per pixel (640+512 lebar muat, +256 tidak) -> port 2 RC + 1 RC', beda.port.map(p => p.jumlah).join(',') === '2,1'
+    && beda.port[0].px === 640 * 512 + 512 * 512);
+  const lubang = hitungKoneksi({ ...dasar, kosong: [[0, 0], [7, 4]] });
+  cek('sel kosong dilewati kabel: 38 receiving card, (0,0) tidak terhubung', lubang.sel.length === 38 && !lubang.sel.some(x => x.c === 0 && x.r === 0) && lubang.tanpaPort.length === 0);
+  const man = hitungKoneksi({ ...dasar, kolom: 3, baris: 2, manual: [[[2, 1], [1, 1], [1, 1], [9, 9]], [[0, 0]], []] });
+  cek('manual: urutan dari pengguna, dobel & di luar grid diabaikan, port kosong tetap ada', man.port.length === 3 && man.port[0].jumlah === 2
+    && man.sel[0].c === 2 && man.sel[0].r === 1 && man.port[2].jumlah === 0 && man.port[2].mulai === null);
+  cek('manual: receiving card yang belum dikabel terdaftar', man.tanpaPort.length === 3);
+  const berat = hitungKoneksi({ ...dasar, manual: [Array.from({ length: 20 }, (_, i) => [i % 8, Math.floor(i / 8)] as [number, number])] });
+  cek('manual: port melebihi kapasitas ditandai', berat.lewat.join(',') === '1' && berat.port[0].beban > 100);
   const lebarKanan = hitungKoneksi({ ...dasar, kolom: 20, baris: 2, mulai: 'kanan-atas' });
-  cek('zona dari kanan-atas: port 1 mulai kolom 20, zona kanan dulu', lebarKanan.port[0].mulai.c === 19 && lebarKanan.sel.filter(x => x.port === 1).every(x => x.c >= 10));
+  cek('zona dari kanan-atas: port 1 mulai kolom 20, zona kanan dulu', lebarKanan.port[0].mulai?.c === 19 && lebarKanan.sel.filter(x => x.port === 1).every(x => x.c >= 10));
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
