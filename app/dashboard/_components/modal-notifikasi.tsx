@@ -875,8 +875,7 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
     // Mark personal notification as read if it came from the `notifications` table
     if (personalNotifs.find(n => n.id === item.id)) {
       supabase.from('notifications').update({ is_read: true }).eq('id', item.id)
-        .then(() => setPersonalNotifs(p => p.filter(n => n.id !== item.id)))
-        .catch(() => {});
+        .then(() => setPersonalNotifs(p => p.filter(n => n.id !== item.id)), () => {});
     }
     if (item.internalUrl) onNavigate(item.internalUrl, item.menuTitle, item.refId ?? item.id);
   };

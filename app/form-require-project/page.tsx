@@ -430,7 +430,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         // dan PostgREST menolak SELURUH query kalau satu kolom tak dikenal.
         const KOLOM_DASAR = 'id, project_name, status, sales_name, created_at, rooms, requester_id';
         const KOLOM_BRAND = 'brand_display_pic_id, brand_display_2_pic_id, brand_middleware_pic_id';
-        let allReqsRes = await supabase.from('project_requests')
+        let allReqsRes: { data: any[] | null; error: unknown } = await supabase.from('project_requests')
           .select(`${KOLOM_DASAR}, ${KOLOM_BRAND}`).order('created_at', { ascending: false });
         if (allReqsRes.error) {
           allReqsRes = await supabase.from('project_requests')
