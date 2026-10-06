@@ -8,7 +8,7 @@ import {
 import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f, kelasInput } from './ui';
 import { useReferensiLED, EditorReferensiLED } from './ReferensiLED';
 import { Ikon } from '@/components/shared/Ikon';
-import { bukaCetak, diagramSusunan, type Info } from './cetak';
+import { bukaCetak, diagramSusunan, unduhLembarPNG, namaBerkas, type Info, type Lembar } from './cetak';
 import { ArrowRight, Cable, Calculator, FolderOpen, Redo2, Save, Undo2 } from 'lucide-react';
 import { useRiwayat } from './riwayat';
 import { FileLED, type FileAktifLED } from './FileLED';
@@ -230,8 +230,8 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     (pembuat || tanggal) && `Dibuat: ${[pembuat, tanggal].filter(Boolean).join(', ')}`,
   ].filter(Boolean).join('\n');
 
-  /** Lembar cetak A4 (pola Request Design Project), bukan tangkapan tampilan web. */
-  const cetak = () => {
+  /** Lembar cetak A4 (pola Request Design Project), bukan tangkapan tampilan web; juga diekspor sebagai PNG. */
+  const lembarLED = (): Lembar => {
     const satu = (judul: string, nilai: string, sorot = false): Info => ({ label: judul, nilai, sorot });
     const kali = (v: string) => (n > 1 ? `${v} / screen` : v);
     const hwBaris: Info[] = modeHw === 'manual'
@@ -240,7 +240,7 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
         ...(hw.vp ? [satu('Opsi A · All-in-one', `${hw.vp.qty}× ${hw.vp.hw.nama} / screen — ${hw.vp.hw.ket}`, true)] : []),
         ...(hw.kartu ? [satu('Opsi B · Sending card', `${hw.kartu.qty}× ${hw.kartu.hw.nama} / screen + video processor — ${hw.kartu.hw.ket}`)] : []),
       ];
-    bukaCetak({
+    return {
       judul: 'Kalkulator LED Videotron',
       subjudul: [project || 'Tanpa nama project', customer].filter(Boolean).join(' — '),
       kepala: [['Tanggal', tanggal], ['Dibuat oleh', pembuat]],
@@ -292,8 +292,10 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
       ],
       catatan: 'Angka daya, berat, dan kapasitas port adalah nilai umum industri. Verifikasi dengan datasheet produk dan NovaLCT sebelum penawaran resmi.',
       tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
-    });
+    };
   };
+  const cetak = () => bukaCetak(lembarLED());
+  const pngLED = () => unduhLembarPNG(lembarLED(), namaBerkas('LED', labelLED, project, customer));
 
   const aksiFile = (
     <div className="flex items-center gap-1 print:hidden">
@@ -338,7 +340,7 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
   //  ── Sub menu Screen Connection ──
   if (tampilan === 'koneksi') {
     const t = susunKoneksi(dataKoneksi, koneksi);
-    const cetakKoneksi = () => bukaCetak({
+    const lembarKoneksi = (): Lembar => ({
       judul: 'Screen Connection LED',
       subjudul: [project || 'Tanpa nama project', customer].filter(Boolean).join(' — '),
       kepala: [['Tanggal', tanggal], ['Dibuat oleh', pembuat]],
@@ -359,6 +361,8 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
       catatan: 'Diagram dari Tools Team. Samakan dengan konfigurasi NovaLCT (Screen Configuration → Screen Connection) dan datasheet receiving card sebelum instalasi.',
       tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
     });
+    const cetakKoneksi = () => bukaCetak(lembarKoneksi());
+    const pngKoneksi = () => unduhLembarPNG(lembarKoneksi(), namaBerkas('Screen Connection', labelLED, project, customer));
     const teksKoneksi = () => [
       project && `*${project}*${customer ? ` - ${customer}` : ''}`,
       `*Screen Connection LED ${labelLED}* · ${kolom}×${baris} ${namaUnit} (${f(h.lebarM)}×${f(h.tinggiM)} m)`,
@@ -368,7 +372,7 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
     return (
       <div className="space-y-4">
         {barSub}
-        <Kartu judul="Screen Connection" aksi={<div className="flex items-center gap-2 flex-wrap">{aksiFile}<TombolSalin teks={teksKoneksi} onCetak={cetakKoneksi} /></div>}>
+        <Kartu judul="Screen Connection" aksi={<div className="flex items-center gap-2 flex-wrap">{aksiFile}<TombolSalin teks={teksKoneksi} onCetak={cetakKoneksi} onPng={pngKoneksi} /></div>}>
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <div className="min-w-0">
               <p className="text-[13px] text-slate-800">
@@ -503,7 +507,7 @@ export function KalkulatorLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
       </div>
 
       <div className="space-y-4 min-w-0">
-        <Kartu judul={n > 1 ? 'Hasil per screen' : 'Hasil'} aksi={<TombolSalin teks={ringkasan} onCetak={cetak} />}>
+        <Kartu judul={n > 1 ? 'Hasil per screen' : 'Hasil'} aksi={<TombolSalin teks={ringkasan} onCetak={cetak} onPng={pngLED} />}>
           {(project || customer) && (
             <p className="text-[12.5px] text-slate-600 mb-3">
               <span className="font-semibold text-slate-800">{project || '-'}</span>{customer && ` · ${customer}`}

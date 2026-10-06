@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { Angka, Pilih, Segmen, f } from '../ui';
 import { Ikon } from '@/components/shared/Ikon';
 import {
-  type Benda, type ModelVW, type BentukMeja, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
+  type Benda, type ModelVW, type BentukMeja, type KontenLayar, type TipeLampu, type Ruang, SPEK_LAMPU, lumenLampu, sudutLampuDari, luxLampuLangsung, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
   DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, IFP_DIAG, TV_DIAG, RASIO_LAYAR, PANEL_VW_AWAL, terapkanUkuran, bendaBaru, spekVideowall, warnaSah,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, offsetLensaDari, geserLensaDari, lumenDari,
   tipeSpeakerDari, modulLA, sudutModulLA, tiltLADari, berkasLineArray, type TipeSpeaker,
@@ -183,6 +183,10 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         )}
 
         {b.jenis === 'rak' && (
+          <Segmen label="Tipe rack" nilai={b.tipeRak ?? 'kaca'} onUbah={(v: 'kaca' | 'tertutup' | 'open') => set({ tipeRak: v })}
+            opsi={[{ v: 'kaca', l: 'Pintu kaca' }, { v: 'tertutup', l: 'Tertutup' }, { v: 'open', l: 'Open frame' }]} />
+        )}
+        {b.jenis === 'rak' && (
           <div className="grid grid-cols-2 gap-2">
             <Pilih label="Tinggi rack" nilai={RAK_U.includes(b.rakU ?? 20) ? b.rakU ?? 20 : -1}
               onUbah={v => { const u = v > 0 ? v : (b.rakU && !RAK_U.includes(b.rakU) ? b.rakU : 15); setUkuran({ rakU: u, nama: b.nama.startsWith('Rack') ? `Rack ${u}U` : b.nama }); }}
@@ -196,6 +200,32 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           </div>
         )}
 
+        {b.jenis === 'lampu' && (() => {
+          const tipe = b.tipeLampu ?? 'downlight';
+          const bawahLampu = luxLampuLangsung(b, { p: 0, l: 0, t: plafon, lantai: 'kayu', r2: null } as Ruang, [b.x, 0.75, b.z], [0, 1, 0]);
+          return (
+            <div className="rounded-xl border border-amber-200 p-2.5 space-y-2 bg-amber-50/40">
+              <Pilih label="Tipe lampu" nilai={tipe} onUbah={(v: TipeLampu) => {
+                const baru = bendaBaru('lampu', kosong, { tipeLampu: v });
+                const namaBawaan = Object.values(SPEK_LAMPU).some(sp => b.nama.startsWith(sp.label)) || b.nama.startsWith('Lampu');
+                onUbah({ ...b, tipeLampu: v, w: baru.w, h: baru.h, d: baru.d, lumen: baru.lumen, sudutLampu: baru.sudutLampu, gantungLampu: baru.gantungLampu,
+                  elev: Math.max(0.5, plafon - baru.h - (baru.gantungLampu ?? 0)), nama: namaBawaan ? baru.nama : b.nama });
+              }} opsi={(Object.keys(SPEK_LAMPU) as TipeLampu[]).map(k => ({ v: k, l: `${SPEK_LAMPU[k].label} · ${SPEK_LAMPU[k].lumen} lm · ${SPEK_LAMPU[k].sudut}°` }))} />
+              <div className="grid grid-cols-2 gap-2">
+                <Angka label="Lumen" nilai={lumenLampu(b)} satuan="lm" step={100} onUbah={v => v >= 0 && v <= 50000 && set({ lumen: Math.round(v) })} />
+                <Angka label="Sudut sinar" nilai={sudutLampuDari(b)} satuan="°" step={5} onUbah={v => v >= 10 && v <= 160 && set({ sudutLampu: v })} />
+                <Angka label="Dimmer" nilai={b.dimmer ?? 100} satuan="%" step={5} onUbah={v => v >= 0 && v <= 100 && set({ dimmer: Math.round(v) })} />
+                <Pilih label="Suhu warna" nilai={b.kelvin ?? 4000} onUbah={v => set({ kelvin: v })}
+                  opsi={[{ v: 3000, l: '3000 K hangat' }, { v: 4000, l: '4000 K netral' }, { v: 6500, l: '6500 K daylight' }]} />
+              </div>
+              {tipe === 'linear' && (
+                <Angka label="Gantung dari plafon" nilai={b.gantungLampu ?? 0.6} satuan="m" step={0.05}
+                  onUbah={v => v >= 0 && v <= 3 && set({ gantungLampu: v, elev: Math.max(0.5, plafon - b.h - v) })} />
+              )}
+              <p className="text-[12px] text-slate-600">Tepat di bawah lampu, di meja (0,75 m): ±{f(bawahLampu, 0)} lux langsung (dimmer lampu ini; tanpa pantulan & dimmer ruangan). Isi lumen & sudut sinar sesuai datasheet.</p>
+            </div>
+          );
+        })()}
         {b.jenis === 'mic' && (
           <Segmen label="Tipe mic" nilai={b.mic ?? 'gooseneck'} onUbah={v => {
             const baru = bendaBaru('mic', { x0: 0, p: 0, l: 0, t: plafon }, { mic: v });
@@ -205,10 +235,16 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
 
         {b.jenis === 'meja' && (
           <>
-            <Segmen label="Bentuk meja" nilai={b.bentukMeja ?? 'rapat'} onUbah={(v: BentukMeja) => {
+            <Pilih label="Bentuk meja" nilai={b.bentukMeja ?? 'rapat'} onUbah={(v: BentukMeja) => {
               const baru = bendaBaru('meja', kosong, { bentukMeja: v });
-              onUbah({ ...b, bentukMeja: v, w: baru.w, d: baru.d, finish: baru.finish, nama: b.nama.startsWith('Meja') ? baru.nama : b.nama });
-            }} opsi={[{ v: 'rapat', l: 'Rapat' }, { v: 'bulat', l: 'Bundar' }, { v: 'kelas', l: 'Kelas' }, { v: 'dosen', l: 'Dosen' }, { v: 'podium', l: 'Podium' }]} />
+              const namaBawaan = /^(Meja|Podium|Kredensa)/.test(b.nama);
+              onUbah({ ...b, bentukMeja: v, w: baru.w, h: baru.h, d: baru.d, finish: baru.finish, monitorMeja: baru.monitorMeja, nama: namaBawaan ? baru.nama : b.nama });
+            }} opsi={[{ v: 'rapat', l: 'Meja rapat' }, { v: 'bulat', l: 'Meja bundar' }, { v: 'kelas', l: 'Meja kelas' }, { v: 'dosen', l: 'Meja dosen' },
+              { v: 'podium', l: 'Podium' }, { v: 'kredensa', l: 'Kredensa (lemari rendah)' }, { v: 'operator', l: 'Meja operator (control room)' }] as { v: BentukMeja; l: string }[]} />
+            {b.bentukMeja === 'operator' && (
+              <Angka label="Jumlah monitor" nilai={b.monitorMeja ?? 4} step={1} onUbah={v => v >= 0 && v <= 12 && set({ monitorMeja: Math.round(v) })}
+                bantuan="Berderet di sisi depan meja; keyboard 1 per 2 monitor" />
+            )}
             <Segmen label="Permukaan" nilai={b.finish ?? (b.bentukMeja === 'kelas' ? 'oak' : 'walnut')} onUbah={(v: Finish) => set({ finish: v })}
               opsi={[{ v: 'walnut', l: 'Walnut' }, { v: 'oak', l: 'Oak' }, { v: 'putih', l: 'Putih' }]} />
             {b.bentukMeja === 'bulat' && <p className="text-[12px] text-slate-600">Lebar = Panjang untuk bundar; beda nilai = oval.</p>}
@@ -499,9 +535,22 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           </div>
         </div>
 
+        <label className="flex items-center gap-2 text-[12.5px] text-slate-700">
+          <input type="checkbox" className="w-4 h-4" checked={!b.sembunyiLabel} onChange={e => set({ sembunyiLabel: e.target.checked ? undefined : true })} />
+          Tampilkan label produk benda ini
+        </label>
         {DISPLAY.includes(b.jenis) && (
-          <Segmen label="Konten layar" nilai={b.konten ?? 'pola'} onUbah={v => (v === 'gambar' ? onGambar() : set({ konten: v }))}
-            opsi={[{ v: 'pola', l: 'Pola uji' }, { v: 'gambar', l: 'Gambar...' }, { v: 'mati', l: 'Mati' }]} />
+          <div className="space-y-2">
+            <Pilih label="Konten layar" nilai={b.konten ?? 'pola'} onUbah={(v: KontenLayar) => (v === 'gambar' ? onGambar() : set({ konten: v }))}
+              opsi={[
+                { v: 'pola', l: 'Pola uji (color bar)' }, { v: 'campuran', l: 'Command center: grafik + CCTV' }, { v: 'cctv', l: 'CCTV (grid kamera)' },
+                { v: 'dashboard', l: 'Dashboard / grafik' }, { v: 'desktop', l: 'Home screen (IFP / signage)' }, { v: 'gambar', l: 'Gambar unggahan...' }, { v: 'mati', l: 'Mati (layar hitam)' },
+              ] as { v: KontenLayar; l: string }[]} />
+            <label className="flex items-center gap-2 text-[12.5px] text-slate-700">
+              <input type="checkbox" className="w-4 h-4" checked={!b.sembunyiUkur} onChange={e => set({ sembunyiUkur: e.target.checked ? undefined : true })} />
+              Tampilkan garis ukuran (mm) benda ini
+            </label>
+          </div>
         )}
 
         {onSimpanProduk && b.jenis !== 'model' && (

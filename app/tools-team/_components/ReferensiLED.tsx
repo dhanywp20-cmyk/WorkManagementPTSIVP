@@ -5,6 +5,7 @@ import { bersihkanReferensiLED, type RefLED } from '@/lib/tools-team';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
+import { bukaCetak, unduhLembarPNG, type Lembar } from './cetak';
 
 /**
  * Tabel referensi Kalkulator LED (setara sheet "REF Module LED" & "REF
@@ -185,6 +186,32 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
     tulisBrand(brandPolos().filter(b => b.nama !== nama), sisa);
     if (saringBrand === nama) setSaringBrand('');
   };
+  /** Tabel referensi sebagai lembar cetak / PNG (untuk arsip & dibagikan ke tim). */
+  const lembar = (): Lembar => {
+    const fmt = (n: number) => n.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    const hwBaris = (d: Hardware[]) => d.map(x => [x.nama, x.maksPx.toLocaleString('id-ID'), String(x.port), x.senderBawaan && x.port > 0 ? 'Ya' : 'Tidak', x.ket]);
+    const urutBrand = brands.map(b => b.nama);
+    const modulUrut = [...r.modul].sort((a, b) => urutBrand.indexOf(brandModul(a)) - urutBrand.indexOf(brandModul(b)) || a.pitch - b.pitch);
+    return {
+      judul: 'Referensi LED — brand, modul & hardware',
+      subjudul: keteranganSumber,
+      kepala: [],
+      seksi: [
+        { judul: 'Brand', jenis: 'tabel', kepala: ['Brand', 'Brand sendiri', 'Jumlah modul'], rataKanan: [2],
+          isi: brands.map(b => [b.nama, b.sendiri ? 'Ya' : '—', String(b.jumlah)]) },
+        { judul: `Modul / cabinet (${r.modul.length})`, jenis: 'tabel', kepala: ['Brand', 'Model / seri', 'Unit', 'Pitch', 'Ukuran (mm)', 'Pixel', 'Tipe', 'Pemakaian'],
+          isi: modulUrut.map(m => [brandModul(m), m.model ?? '—', m.unit === 'cabinet' ? 'Cabinet' : 'Modul', `${m.kode} (${fmt(m.pitch)} mm)`, `${fmt(m.w)} × ${fmt(m.h)}`, `${m.pxW} × ${m.pxH}`, m.tipe, m.guna || '—']) },
+        { judul: 'Sending card', jenis: 'tabel', kepala: ['Model', 'Maks pixel', 'Port LAN', 'All-in-one', 'Keterangan'], rataKanan: [1, 2], isi: hwBaris(r.kartu) },
+        { judul: 'Video processor', jenis: 'tabel', kepala: ['Model', 'Maks pixel', 'Port LAN', 'All-in-one', 'Keterangan'], rataKanan: [1, 2], isi: hwBaris(r.vp) },
+      ],
+      catatan: 'Isi sesuai datasheet produk. Video processor dengan sender bawaan dan port LAN > 0 dianggap all-in-one.',
+    };
+  };
+  const [pngStatus, setPngStatus] = useState<'siap' | 'proses' | 'gagal'>('siap');
+  const unduhPNG = async () => {
+    setPngStatus('proses');
+    try { await unduhLembarPNG(lembar(), 'Referensi LED'); setPngStatus('siap'); } catch { setPngStatus('gagal'); setTimeout(() => setPngStatus('siap'), 2500); }
+  };
   const tglTim = infoTim.pada ? new Date(infoTim.pada).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   const keteranganSumber = sumber === 'lokal'
     ? (bolehSimpanTim ? 'Ada perubahan di perangkat ini yang belum disimpan untuk tim.' : 'Perubahan Anda hanya berlaku di perangkat ini. Referensi tim diatur Admin / Full Access.')
@@ -222,7 +249,13 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
             )}
             {pesan && <span className="text-[12px] text-slate-600">{pesan}</span>}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button type="button" onClick={() => bukaCetak(lembar())}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50"><Ikon nama="🖨" ukuran={15} /> Cetak</button>
+            <button type="button" onClick={() => void unduhPNG()} disabled={pngStatus === 'proses'}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-60">
+              <Ikon nama="🖼" ukuran={15} /> {pngStatus === 'proses' ? 'Membuat...' : pngStatus === 'gagal' ? 'PNG gagal' : 'PNG'}
+            </button>
             {sumber === 'lokal' && bolehSimpanTim && (
               <button type="button" disabled={sibuk} onClick={() => void simpanUntukTim()}
                 className="px-4 py-2 rounded-xl text-sm font-bold text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100 disabled:opacity-50">

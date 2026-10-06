@@ -45,7 +45,8 @@ function seksiHtml(s: Seksi): string {
   return `<div class="section"><div class="section-title">${esc(s.judul)}</div>${isi}</div>`;
 }
 
-export function bukaCetak(l: Lembar): void {
+/** Dokumen HTML lengkap satu lembar (dipakai cetak & ekspor PNG). */
+export function htmlLembar(l: Lembar): string {
   const dicetak = new Date().toLocaleString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const html = `<!DOCTYPE html>
 <html lang="id"><head><meta charset="UTF-8">
@@ -84,7 +85,7 @@ tr:last-child td { border-bottom: none; }
 .baik { color: #047857; font-weight: 700; } .buruk { color: #b91c1c; font-weight: 700; }
 .catatan { font-size: 10.5px; color: #64748b; line-height: 1.6; margin: 4px 2px 0; }
 .ttd { display: flex; gap: 48px; margin-top: 36px; page-break-inside: avoid; }
-.ttd div { flex: 0 0 200px; border-top: 1.5px solid #334155; padding-top: 8px; }
+.ttd > div { flex: 0 0 200px; border-top: 1.5px solid #334155; padding-top: 8px; }
 .ttd .l { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .06em; }
 .ttd .n { margin-top: 6px; font-size: 12.5px; font-weight: 800; color: #1e3a8a; min-height: 16px; }
 .footer { margin-top: 18px; padding-top: 10px; border-top: 1.5px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; }
@@ -100,8 +101,81 @@ ${l.catatan ? `<p class="catatan">${esc(l.catatan)}</p>` : ''}
 ${l.tandaTangan?.length ? `<div class="ttd">${l.tandaTangan.map(t => `<div><div class="l">${esc(t.label)}</div><div class="n">${esc(t.nama ?? '')}</div></div>`).join('')}</div>` : ''}
 <div class="footer"><div>IndoVisual Professional Tools — Tools Team</div><div>Dicetak: ${esc(dicetak)}</div></div>
 </div></body></html>`;
+  return html;
+}
+
+export function bukaCetak(l: Lembar): void {
   const w = window.open('', '_blank');
-  if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 400); }
+  if (w) { w.document.write(htmlLembar(l)); w.document.close(); setTimeout(() => w.print(), 400); }
+}
+
+/** Nama berkas aman dari judul/nama project. */
+export const namaBerkas = (...bagian: string[]) =>
+  bagian.filter(Boolean).join(' - ').replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, ' ').trim().slice(0, 120) || 'tools-team';
+
+/** Unduh data URL / blob URL sebagai berkas. */
+export function unduhUrl(url: string, nama: string) {
+  const a = document.createElement('a');
+  a.href = url; a.download = nama;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+const muatGambar = (src: string) => new Promise<HTMLImageElement>((ok, gagal) => {
+  const img = new Image();
+  img.onload = () => ok(img); img.onerror = () => gagal(new Error('Gambar tidak bisa dimuat'));
+  img.src = src;
+});
+
+/** Kanvas -> unduhan PNG. */
+export function unduhKanvasPNG(c: HTMLCanvasElement, nama: string): Promise<void> {
+  return new Promise((ok, gagal) => c.toBlob(b => {
+    if (!b) { gagal(new Error('PNG gagal dibuat')); return; }
+    const url = URL.createObjectURL(b);
+    unduhUrl(url, nama.endsWith('.png') ? nama : `${nama}.png`);
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    ok();
+  }, 'image/png'));
+}
+
+/**
+ * SVG mandiri -> PNG (latar putih), `skala` x ukurannya supaya tajam saat dicetak / dipresentasikan.
+ * Lebar/tinggi diambil dari atribut width/height SVG.
+ */
+export async function unduhSvgPNG(svg: string, nama: string, skala = 2): Promise<void> {
+  const w = Number(/\swidth="([\d.]+)"/.exec(svg)?.[1] ?? 1000), h = Number(/\sheight="([\d.]+)"/.exec(svg)?.[1] ?? 600);
+  const img = await muatGambar(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
+  const c = document.createElement('canvas');
+  c.width = Math.round(w * skala); c.height = Math.round(h * skala);
+  const g = c.getContext('2d'); if (!g) throw new Error('Kanvas tidak tersedia');
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, c.width, c.height);
+  g.drawImage(img, 0, 0, c.width, c.height);
+  await unduhKanvasPNG(c, nama);
+}
+
+/**
+ * Lembar cetak yang sama -> satu gambar PNG utuh (A4 memanjang). Lembar dirender dulu di
+ * iframe tersembunyi (untuk tinggi & XHTML yang sah), lalu digambar lewat SVG foreignObject
+ * ke kanvas 2x. Gambar di dalam lembar harus data URL (sudah begitu di semua alat).
+ */
+export async function unduhLembarPNG(l: Lembar, nama: string, skala = 2): Promise<void> {
+  const LEBAR = 940;
+  const ifr = document.createElement('iframe');
+  ifr.setAttribute('aria-hidden', 'true');
+  ifr.style.cssText = `position:fixed;left:-20000px;top:0;width:${LEBAR}px;height:1200px;border:0;visibility:hidden`;
+  document.body.appendChild(ifr);
+  try {
+    const doc = ifr.contentDocument; if (!doc) throw new Error('Lembar tidak bisa dibuat');
+    doc.open(); doc.write(htmlLembar(l)); doc.close();
+    await Promise.all([...doc.images].map(img => (img.complete ? null : new Promise(r => { img.onload = img.onerror = r; }))));
+    await new Promise(r => setTimeout(r, 30));
+    //  Gaya ikut masuk ke body supaya terbawa ke dalam SVG.
+    const gaya = doc.querySelector('style');
+    if (gaya) doc.body.insertBefore(gaya.cloneNode(true), doc.body.firstChild);
+    const tinggi = Math.ceil(Math.max(doc.body.scrollHeight, doc.documentElement.scrollHeight));
+    const badan = new XMLSerializer().serializeToString(doc.body);
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${LEBAR}" height="${tinggi}"><foreignObject x="0" y="0" width="100%" height="100%">${badan}</foreignObject></svg>`;
+    await unduhSvgPNG(svg, nama, skala);
+  } finally { ifr.remove(); }
 }
 
 /** Diagram susunan cabinet/modul (SVG) dengan proporsi sebenarnya + label ukuran. */

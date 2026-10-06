@@ -1,9 +1,9 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download, Plus, Trash2, Wand2, Cable, SquareDashed, Eraser } from 'lucide-react';
+import { Download, Image as IkonGambar, Plus, Trash2, Wand2, Cable, SquareDashed, Eraser } from 'lucide-react';
 import { hitungKoneksi, type SudutMulai, type SelRC, type HasilKoneksi } from '@/lib/av-hitung';
 import { Angka, Segmen, Nilai, Catatan, f } from './ui';
-import { esc, type Seksi } from './cetak';
+import { esc, namaBerkas, unduhSvgPNG, unduhUrl, type Seksi } from './cetak';
 
 /**
  * Screen Connection ala NovaLCT: grid receiving card, urutan kabel data per port LAN.
@@ -241,6 +241,46 @@ export function svgKoneksi(d: DataKoneksi, t: Susunan, o: { judul?: string; inte
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${lebar}" height="${tinggi}" viewBox="0 0 ${lebar} ${tinggi}" style="max-width:100%;height:auto;touch-action:${o.interaktif ? 'none' : 'auto'}">${out.join('')}</svg>`;
 }
 
+/**
+ * Gambar siap kirim (PNG/SVG): judul, ringkasan, diagram lengkap, dan legenda port - satu berkas
+ * yang bisa langsung ditempel ke penawaran / dikirim ke installer.
+ */
+export function svgPosterKoneksi(d: DataKoneksi, s: PengaturanKoneksi, judul: string, sub: string): string {
+  const t = susunKoneksi(d, s), k = t.hasil;
+  const diagram = svgKoneksi(d, t);
+  const dw = Number(/\swidth="([\d.]+)"/.exec(diagram)?.[1] ?? 800), dh = Number(/\sheight="([\d.]+)"/.exec(diagram)?.[1] ?? 400);
+  const W = Math.max(dw, 820) + 40;
+  const port = k.port;
+  const kolomLegenda = port.length > 24 ? 3 : port.length > 8 ? 2 : 1;
+  const barisLegenda = Math.ceil(port.length / kolomLegenda);
+  const yDiagram = 92, yLegenda = yDiagram + dh + 16, tinggiBaris = 19;
+  const H = yLegenda + 30 + barisLegenda * tinggiBaris + 46;
+  const lebarKolom = (W - 40) / kolomLegenda;
+  const huruf = 'font-family="Segoe UI,Arial"';
+  const legenda = port.map((p, i) => {
+    const x = 20 + Math.floor(i / barisLegenda) * lebarKolom, y = yLegenda + 30 + (i % barisLegenda) * tinggiBaris;
+    const teks = `${namaPort(t, p.port)} · ${p.jumlah} RC · ${p.px.toLocaleString('id-ID')} px · ${f(p.beban, 0)}%${p.mulai ? ` · masuk kolom ${p.mulai.c + 1}, baris ${p.mulai.r + 1}` : ''}`;
+    return `<rect x="${x}" y="${y - 10}" width="11" height="11" rx="2" fill="${warnaPort(p.port)}"/><text x="${x + 17}" y="${y}" font-size="11.5" fill="${p.beban > s.beban ? '#b91c1c' : '#1e293b'}" ${huruf}>${esc(teks)}</text>`;
+  }).join('');
+  const ringkas = `${k.sel.length} receiving card (${t.K} × ${t.B}) · ${t.resX} × ${t.resY} px · ${t.portTerpakai} port LAN${t.ppk > 0 ? ` · ${t.controller} controller × ${t.ppk} port` : ''} · ${teksCara(s)}`;
+  const peringatan = [k.galat, k.tanpaPort.length ? `${k.tanpaPort.length} receiving card belum tersambung` : '', k.lewat.length ? `Port ${k.lewat.join(', ')} melebihi batas beban ${s.beban}%` : '']
+    .filter(Boolean).join(' · ');
+  const tanggal = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<rect width="${W}" height="${H}" fill="#ffffff"/>
+<rect x="0" y="0" width="${W}" height="62" fill="#1d4ed8"/>
+<text x="20" y="28" font-size="18" font-weight="800" fill="#ffffff" ${huruf}>${esc(judul)}</text>
+<text x="20" y="48" font-size="12" fill="#dbeafe" ${huruf}>${esc(sub)}</text>
+<text x="${W - 20}" y="28" font-size="11" text-anchor="end" fill="#dbeafe" ${huruf}>${esc(tanggal)}</text>
+<text x="20" y="80" font-size="12" font-weight="600" fill="#334155" ${huruf}>${esc(ringkas)}</text>
+${diagram.replace(/ style="[^"]*"/, '').replace('<svg ', `<svg x="${Math.round((W - dw) / 2)}" y="${yDiagram}" `)}
+<text x="20" y="${yLegenda + 12}" font-size="11" font-weight="800" fill="#1e3a8a" letter-spacing="0.6" ${huruf}>PEMBAGIAN PORT LAN</text>
+${legenda}
+${peringatan ? `<text x="20" y="${H - 30}" font-size="11" fill="#b91c1c" ${huruf}>${esc(peringatan)}</text>` : ''}
+<text x="20" y="${H - 12}" font-size="10" fill="#94a3b8" ${huruf}>IndoVisual Professional Tools — Tools Team · label sel = port-urutan, angka kecil = ukuran receiving card (px)</text>
+</svg>`;
+}
+
 const teksSudut = (s: SudutMulai) => SUDUT.find(x => x.v === s)!.l.toLowerCase();
 const teksCara = (s: PengaturanKoneksi) => (s.mode === 'manual' ? 'kabel manual'
   : `mulai ${teksSudut(s.mulai)}, ${s.arah === 'horizontal' ? 'mendatar' : 'tegak'} pola ${s.pola}, ${s.bagi === 'baris' ? 'baris utuh' : 'isi penuh'}`);
@@ -373,13 +413,17 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: {
   };
   const [samaW, setSamaW] = useState(256), [samaH, setSamaH] = useState(256);
 
-  const unduh = () => {
-    const isi = svgKoneksi(d, t, { judul: `Screen connection - ${namaFile}` });
-    const url = URL.createObjectURL(new Blob([isi], { type: 'image/svg+xml' }));
-    const a = document.createElement('a');
-    a.href = url; a.download = `screen-connection-${namaFile.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-') || 'led'}.svg`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const poster = () => svgPosterKoneksi(d, s, 'Screen Connection LED', namaFile);
+  const [pngStatus, setPngStatus] = useState<'siap' | 'proses' | 'gagal'>('siap');
+  const unduhPNG = async () => {
+    setPngStatus('proses');
+    try { await unduhSvgPNG(poster(), namaBerkas('Screen Connection', namaFile), 2); setPngStatus('siap'); }
+    catch { setPngStatus('gagal'); setTimeout(() => setPngStatus('siap'), 2500); }
+  };
+  const unduhSVG = () => {
+    const url = URL.createObjectURL(new Blob([poster()], { type: 'image/svg+xml' }));
+    unduhUrl(url, `${namaBerkas('Screen Connection', namaFile)}.svg`);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
   const rataBeban = k.port.length ? k.port.reduce((a, p) => a + p.beban, 0) / k.port.length : 0;
@@ -560,7 +604,12 @@ export function RuangKoneksi({ d, s, onUbah, namaFile }: {
                 : alatEf === 'kosong' ? 'Mode kosongkan sel - klik sel untuk mengosongkan / mengisi'
                   : 'Template cepat - pilih "Manual" untuk menyambung sendiri'}
             </span>
-            <button type="button" onClick={unduh} title="Unduh diagram SVG" className={kelasTombol}><Download size={14} /> Unduh SVG</button>
+            <div className="flex items-center gap-1.5">
+              <button type="button" onClick={() => void unduhPNG()} disabled={pngStatus === 'proses'} title="Unduh diagram + legenda port sebagai gambar PNG (resolusi 2x)" className={kelasTombol}>
+                <IkonGambar size={14} /> {pngStatus === 'proses' ? 'Membuat...' : pngStatus === 'gagal' ? 'PNG gagal' : 'PNG'}
+              </button>
+              <button type="button" onClick={unduhSVG} title="Unduh diagram sebagai SVG (vektor, bisa diedit di Illustrator / Inkscape)" className={kelasTombol}><Download size={14} /> SVG</button>
+            </div>
           </div>
           <div className="p-2 overflow-x-auto [&>svg]:mx-auto [&>svg]:block select-none" role="img"
             aria-label={`Diagram koneksi ${t.portTerpakai} port untuk ${k.sel.length} receiving card`}

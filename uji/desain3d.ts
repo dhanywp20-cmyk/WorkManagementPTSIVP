@@ -8,7 +8,8 @@ import {
   type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
   pusatkanIsi, jendelaSekat, pintuSekat, PINTU, ukuranPintu, spekVideowall, terapkanUkuran, ukuranLayar, ukuranIFP, warnaSah, tandaBentuk,
   bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, sebaranSpeaker, sebaranVSpeaker, jangkauanDari, berkasLineArray,
-  templateRuang, KATEGORI_RUANG, kursiTribun, ukuranBidang, lengkungDari, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
+  templateRuang, KATEGORI_RUANG, kursiTribun, ukuranBidang, lengkungDari,
+  luxLampuLangsung, luxCahayaDi, kontrasProyektor, setLampuGrid, luxBidangKerja, nyalaLampu, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
 } from '../app/tools-team/_components/desain3d/model';
 import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
@@ -374,6 +375,35 @@ console.log('\n12. Kategori ruangan, tribun, bidang mapping, zoom, arah proyekto
   cek('arahkan proyektor tegak ke lantai = tilt -90°, sumbu ke bawah', tiltDari(ke) === -90 && dekat(arahProyektor(ke)[1], -1));
   const ke2 = arahkanKe({ ...pj, x: 5, z: 5, elev: 2, h: 0.14 }, [5, 2.07, 0]);
   cek('arahkan ke dinding depan: pan 180°, tilt 0°', dekat(ke2.rot, 180) && dekat(tiltDari(ke2), 0, 0.2), `${ke2.rot} ${ke2.tilt}`);
+}
+
+console.log('\n13. Lampu plafon & kontras proyektor');
+{
+  const ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null } as Ruang;
+  const k = { x0: 0, p: 8, l: 6, t: 3 };
+  const dl = { ...bendaBaru('lampu', k, { tipeLampu: 'downlight' }), x: 4, z: 3 };
+  //  Tepat di bawah downlight 1000 lm sinar 60°: I0 = phi (m+1)/2pi, m dari intensitas 50% di 30°.
+  const m = Math.log(0.5) / Math.log(Math.cos(Math.PI / 6));
+  const harap = (1000 * (m + 1)) / (2 * Math.PI) / Math.pow(dl.elev - 0.75, 2);
+  cek('downlight 1000 lm: lux tepat di bawah = I0 / d²', dekat(luxLampuLangsung(dl, ruang, [4, 0.75, 3], [0, 1, 0]), harap, 0.5), `${harap.toFixed(1)}`);
+  //  Integral lux di lantai luas ~ fluks lampu (energi kekal).
+  let total = 0;
+  for (let x = -20; x < 20; x += 0.1) for (let z = -20; z < 20; z += 0.1) total += luxLampuLangsung(dl, ruang, [4 + x + 0.05, 0, 3 + z + 0.05], [0, 1, 0]) * 0.01;
+  cek('fluks yang jatuh ke lantai ±1000 lm (selisih < 5%)', Math.abs(total - 1000) < 50, total.toFixed(0));
+  cek('dimmer 50% lampu x 50% ruangan = 25%', dekat(nyalaLampu({ ...dl, dimmer: 50 }, { ...ruang, dimmer: 50 }), 0.25));
+  cek('permukaan menghadap menjauh tidak menerima cahaya', luxLampuLangsung(dl, ruang, [4, 0.75, 3], [0, -1, 0]) === 0);
+  const grid = setLampuGrid(k);
+  cek('set downlight grid 8 x 6 m: 4 x 3 lampu', grid.length === 12 && grid.every(b => b.jenis === 'lampu'));
+  const rata = luxBidangKerja(grid, ruang, 0);
+  cek('12 downlight 1000 lm di 48 m² -> rata-rata meja wajar (100-400 lux)', rata.rata > 100 && rata.rata < 400, rata.rata.toFixed(0));
+  cek('tanpa lampu: perkiraan dari pilihan cahaya ruangan', luxCahayaDi([], { ...ruang, cahaya: 'redup' }, [4, 1.5, 0.1], [0, 0, 1]).total === 80);
+  //  Kontras proyektor: layar di dinding depan, lampu menyala vs mati.
+  const lyr = { ...bendaBaru('layar', k, { diag: 120 }), x: 4 };
+  const pj = proyektorKeLayar({ ...bendaBaru('proyektor', k), x: 4, z: 4.5, lumen: 5000 }, lyr, k, ruang);
+  const nyala = kontrasProyektor(pj, [lyr, pj, ...grid], ruang, 15), mati = kontrasProyektor(pj, [lyr, pj, ...grid], { ...ruang, dimmer: 0 }, 15);
+  cek('kontras = (lux gambar + lux lampu) / lux lampu', dekat(nyala.kontras, (nyala.luxGambar + nyala.cahaya.total) / nyala.cahaya.total, 0.001));
+  cek('lampu dimatikan -> kontras naik & memenuhi target', mati.kontras > nyala.kontras && mati.cukup, `${nyala.kontras.toFixed(1)} -> ${mati.kontras.toFixed(1)}`);
+  cek('lumen perlu = (target-1) x lux lampu x luas gambar', nyala.lumenPerlu >= (15 - 1) * nyala.cahaya.total * nyala.luas - 1);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
