@@ -569,32 +569,53 @@ function strukturHollow(THREE: typeof T, lebar: number, tinggi: number, zPunggun
 }
 
 /**
- * Standfloor beroda (gaya stand interactive/signage): tiang tegak di belakang display
- * (dua, atau tiap ±1,4 m untuk display lebar seperti videowall & LED), palang dudukan,
- * kaki bercabang depan-belakang dengan roda, dan palang bawah. Tiang memanjang ke lantai.
+ * Standfloor portable beroda (mengikuti foto referensi owner): DUA tiang bulat abu-abu di kiri &
+ * kanan yang turun sampai ±60 cm dari lantai, lalu masing-masing terbelah menjadi kaki "A" (satu
+ * ke depan, satu ke belakang) berujung roda kastor; baki/rak abu-abu di ketinggian percabangan;
+ * dudukan display hitam = rel atas & bawah dengan dua batang tegak di antaranya, menempel punggung
+ * display. Tidak ada tiang tengah - display lebar tetap dua tiang.
  */
 export function standfloor(THREE: typeof T, g: T.Group, b: Benda, tinggiTiang: number) {
-  const hitam = mat(THREE, 0x15171a, { metalness: 0.5, roughness: 0.42 });
-  const abu = mat(THREE, 0xd4d7dc, { metalness: 0.3, roughness: 0.5 });
+  const abu = mat(THREE, 0x5f646b, { metalness: 0.55, roughness: 0.4 });
+  const hitam = mat(THREE, 0x15171a, { metalness: 0.45, roughness: 0.45 });
   const karet = mat(THREE, 0x0b0c0e, { roughness: 0.8 });
-  const xT = Math.max(0.22, Math.min(b.w / 2 - 0.1, Math.max(0.3, b.w * 0.36)));
-  const zT = -b.d / 2 - 0.03;
-  const nTiang = b.w > 2 ? Math.ceil((xT * 2) / 1.4) + 1 : 2;
-  const xs = Array.from({ length: nTiang }, (_, i) => -xT + (2 * xT * i) / (nTiang - 1));
-  for (const x of xs) g.add(batang(THREE, 0.065, 0.035, hitam, x, zT, 'kaki', tinggiTiang));
-  //  Palang dudukan display (di depan tiang, menempel punggung display).
-  for (const fy of [0.78, 0.22]) g.add(kotak(THREE, xT * 2 + 0.065, 0.075, 0.012, hitam, 0, b.h * fy, -b.d / 2 - 0.008));
-  const alas = new THREE.Group();
-  for (const x of xs) {
-    for (const dz of [0.34, -0.3]) {
-      alas.add(tiangAntara(THREE, new THREE.Vector3(x, 0.36, zT), new THREE.Vector3(x, 0.075, zT + dz), 0.022, hitam, 0.018));
-      const rumah = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.03, 12), hitam);
-      rumah.position.set(x, 0.065, zT + dz); alas.add(rumah);
-      const roda = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.024, 16), karet);
-      roda.rotation.z = Math.PI / 2; roda.position.set(x, 0.032, zT + dz); alas.add(roda);
-    }
+  const xT = Math.max(0.28, Math.min(b.w / 2 - 0.08, Math.max(0.36, b.w * 0.36)));
+  const zT = -b.d / 2 - 0.035, jari = 0.026;
+  const CABANG = 0.6;   // tinggi percabangan kaki dari lantai (m)
+  //  Tiang tegak: dari percabangan (lantai + 60 cm) sampai atas dudukan, ikut ketinggian display.
+  for (const sx of [-1, 1]) {
+    const t = batang(THREE, jari * 2, jari * 2, abu, sx * xT, zT, 'kaki', tinggiTiang, true);
+    t.userData.bawah = CABANG; g.add(t);
+    const tutup = new THREE.Mesh(new THREE.CylinderGeometry(jari, jari, 0.012, 14), abu);
+    tutup.position.set(sx * xT, tinggiTiang + 0.006, zT); g.add(tutup);
   }
-  alas.add(kotak(THREE, xT * 2, 0.035, 0.03, abu, 0, 0.34, zT - 0.045)); // palang bawah
+  //  Dudukan display: rel atas & bawah + dua batang tegak, menempel punggung display.
+  const yAtas = Math.min(tinggiTiang - 0.03, b.h * 0.74), yBawah = Math.max(0.1, b.h * 0.42);
+  const zRel = -b.d / 2 - 0.012, lebarRel = xT * 2 + jari * 2;
+  for (const y of [yAtas, yBawah]) g.add(kotak(THREE, lebarRel, 0.06, 0.022, hitam, 0, y, zRel));
+  for (const fx of [-1 / 3, 1 / 3]) g.add(kotak(THREE, 0.05, yAtas - yBawah, 0.02, hitam, fx * xT * 1.15, (yAtas + yBawah) / 2, zRel));
+  //  Bagian lantai (tinggi absolut): kaki A, roda, dan baki di percabangan.
+  const alas = new THREE.Group();
+  for (const sx of [-1, 1]) {
+    const x = sx * xT;
+    const pangkal = new THREE.Vector3(x, CABANG, zT);
+    for (const dz of [0.4, -0.36]) {
+      const lutut = new THREE.Vector3(x + sx * 0.025, 0.14, zT + dz * 0.9);
+      const ujung = new THREE.Vector3(x + sx * 0.03, 0.085, zT + dz);
+      alas.add(tiangAntara(THREE, pangkal, lutut, jari * 0.9, abu, jari * 0.85));
+      alas.add(tiangAntara(THREE, lutut, ujung, jari * 0.85, abu));
+      const sendi = new THREE.Mesh(new THREE.SphereGeometry(jari * 0.86, 12, 8), abu); sendi.position.copy(lutut); alas.add(sendi);
+      const rumah = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.024, 0.03, 12), hitam);
+      rumah.position.set(ujung.x, 0.07, ujung.z); alas.add(rumah);
+      const roda = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.026, 18), karet);
+      roda.rotation.z = Math.PI / 2; roda.position.set(ujung.x, 0.035, ujung.z); alas.add(roda);
+    }
+    const bonggol = new THREE.Mesh(new THREE.SphereGeometry(jari * 1.1, 14, 10), abu); bonggol.position.copy(pangkal); alas.add(bonggol);
+  }
+  //  Baki di percabangan: menjorok ke depan (untuk kamera / laptop), bibir depan menekuk turun.
+  const kedalaman = 0.34, zBaki = zT + kedalaman / 2 - 0.03;
+  alas.add(kotak(THREE, xT * 2 + 0.02, 0.014, kedalaman, abu, 0, CABANG + 0.01, zBaki));
+  alas.add(kotak(THREE, xT * 2 + 0.02, 0.03, 0.012, abu, 0, CABANG - 0.005, zBaki + kedalaman / 2));
   g.add(diLantai(alas));
 }
 
@@ -1226,8 +1247,10 @@ export function sesuaikanTinggi(g: T.Object3D, b: Benda, plafon: number) {
     if (!peran) continue;
     if (peran === 'lantai') { o.position.y = -b.elev; o.visible = b.elev > 0.05; continue; }
     if (peran === 'kaki') {
-      const panjang = b.elev + (o.userData.atas as number);
-      o.position.y = -b.elev; o.scale.y = Math.max(0.001, panjang); o.visible = b.elev > 0.05;
+      //  userData.bawah = pangkal kaki di atas lantai (mis. tiang standfloor mulai dari percabangan kaki A).
+      const bawah = Math.min((o.userData.bawah as number | undefined) ?? 0, b.elev + (o.userData.atas as number) - 0.05);
+      const panjang = b.elev + (o.userData.atas as number) - Math.max(0, bawah);
+      o.position.y = -b.elev + Math.max(0, bawah); o.scale.y = Math.max(0.001, panjang); o.visible = b.elev > 0.05 || bawah > 0;
     } else if (peran === 'tiang') {
       const panjang = plafon - b.elev - b.h;
       o.position.y = b.h; o.scale.y = Math.max(0.001, panjang); o.visible = panjang > 0.02;

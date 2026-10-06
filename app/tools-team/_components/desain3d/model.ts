@@ -473,7 +473,7 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
     }
     case 'led': {
       const ps = atur.pasang ?? 'hollow';
-      return { ...dasar, z: 0.05 + CELAH_PASANG[ps], w: 4, h: 2.25, d: 0.1, elev: ps === 'standfloor' ? 0.5 : 0.6, pitch: 2.5, cabW: 500, cabH: 500, pasang: ps, konten: 'pola', ...atur };
+      return { ...dasar, z: 0.05 + CELAH_PASANG[ps], w: 4, h: 2.25, d: 0.1, elev: ps === 'standfloor' ? 0.72 : 0.6, pitch: 2.5, cabW: 500, cabH: 500, pasang: ps, konten: 'pola', ...atur };
     }
     case 'layar': { const b = jadi({ ...dasar, z: 0.05, w: 0, h: 0, d: 0.03, elev: 0.9, diag: 120, rasio: '16:9', konten: 'pola', ...atur } as Benda); return { ...b, nama: `Layar ${b.diag}" ${b.rasio}` }; }
     case 'ifp': {

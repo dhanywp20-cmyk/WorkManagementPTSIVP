@@ -505,7 +505,7 @@ console.log('\nPemasangan display (pop-up / hollow / standfloor)');
   const led = M3.bendaBaru('led', k);
   cek('LED baru: hollow, punggung 10 cm dari dinding', led.pasang === 'hollow' && Math.abs(led.z - led.d / 2 - M3.CELAH_PASANG.hollow) < 1e-9);
   const ledStand = M3.bendaBaru('led', k, { pasang: 'standfloor' });
-  cek('LED standfloor: lebih rendah & menjauh dari dinding', ledStand.elev < led.elev && ledStand.z > led.z);
+  cek('LED standfloor: duduk di atas baki (±0,72 m) & menjauh dari dinding', ledStand.elev === 0.72 && ledStand.z > led.z);
   const sig = M3.bendaBaru('tv', k, { pasang: 'hollow' });
   cek('signage hollow: punggung 10 cm dari dinding', Math.abs(sig.z - sig.d / 2 - M3.CELAH_PASANG.hollow) < 1e-9);
   cek('template Produk saya menerima pemasangan hollow', bersihkanAturProduk({ pasang: 'hollow' }).pasang === 'hollow');

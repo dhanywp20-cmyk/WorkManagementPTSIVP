@@ -170,7 +170,8 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           const ganti = (v: Pasang) => {
             const r = (b.rot * Math.PI) / 180, maju = CELAH_PASANG[v] - CELAH_PASANG[lama];
             set({ pasang: v, x: Math.round((b.x + Math.sin(r) * maju) * 100) / 100, z: Math.round((b.z + Math.cos(r) * maju) * 100) / 100,
-              elev: v === 'standfloor' && b.elev > 1 ? (b.jenis === 'led' ? 0.5 : 0.72) : b.elev });
+              //  Standfloor: display duduk di atas baki percabangan kaki (±0,72 m dari lantai).
+              elev: v === 'standfloor' && (b.elev > 1.2 || b.elev < 0.66) ? 0.72 : b.elev });
           };
           return (
             <div>
