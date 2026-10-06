@@ -15,8 +15,9 @@ import {
   daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturKonten,
   salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, warnaSah, JENDELA_AWAL, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
-  sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, kecerahanProyektor, tipeSpeakerDari, berkasLineArray, modulLA,
+  sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, tipeSpeakerDari, berkasLineArray, modulLA,
   arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, templateRuang, KATEGORI_RUANG, type KategoriRuang, lumenDari,
+  aturNyalaLampu, nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc, namaBerkas, unduhKanvasPNG, unduhLembarPNG, type Lembar } from './cetak';
@@ -195,6 +196,8 @@ export default function Desain3D() {
   const [garisUkur, setGarisUkur] = useState(true);
   //  Label nama produk di atas tiap benda (benda kembar cukup satu label + jumlah).
   const [labelProduk, setLabelProduk] = useState(true);
+  //  Target kontras gambar proyeksi (ANSI/INFOCOMM 3M-2011): 15:1 = presentasi / rapat.
+  const [targetKontras, setTargetKontras] = useState(15);
   const [kerucut, setKerucut] = useState(true);
   const [sinar, setSinar] = useState(true);
   /** Seret satu jari / klik kiri: putar kamera atau geser bidang. */
@@ -675,6 +678,7 @@ export default function Desain3D() {
       c.obj.position.set(b.x, b.elev, b.z);
       c.obj.rotation.y = (b.rot * Math.PI) / 180;
       sesuaikanTinggi(c.obj, b, plafonDi(b.x));
+      if (b.jenis === 'lampu') aturNyalaLampu(c.obj, nyalaLampu(b, ruang));
     }
     // Sorotan benda terpilih (kotak batas tipis).
     grupBenda.children.filter(o => o.userData.sorot).forEach(o => { grupBenda.remove(o); buang(o); });
@@ -949,7 +953,8 @@ export default function Desain3D() {
     if (labelProduk) {
       const grup = new Map<string, Benda[]>();
       for (const b of benda) {
-        if (DISPLAY.includes(b.jenis) || b.sembunyiLabel) continue;
+        //  Interior (meja, kursi, tribun, lampu) tidak diberi label - cukup perangkat AV.
+        if (DISPLAY.includes(b.jenis) || ['meja', 'kursi', 'tribun', 'lampu'].includes(b.jenis) || b.sembunyiLabel) continue;
         const nama = b.nama.replace(/\s+\d+(\.\d+)?$/, '').trim() || b.nama;
         const kunci = `${ruangDari(ruang, b.x)}|${nama}`;
         const isi = grup.get(kunci); if (isi) isi.push(b); else grup.set(kunci, [b]);
@@ -1581,10 +1586,11 @@ export default function Desain3D() {
     const fm = (n: number, d = 2) => f(n, d);
     //  Daftar perangkat: dikelompokkan per kategori, benda bernama sama dijumlah.
     const kategori = (j: Benda['jenis']) =>
-      DISPLAY.includes(j) || j === 'proyektor' || j === 'bidang' ? 'Display' : j === 'kamera' || j === 'lift' ? 'Kamera & konferensi'
+      j === 'lampu' ? 'Interior & pencahayaan'
+        : DISPLAY.includes(j) || j === 'proyektor' || j === 'bidang' ? 'Display' : j === 'kamera' || j === 'lift' ? 'Kamera & konferensi'
         : ['speaker', 'speaker-plafon', 'mic', 'touchpanel', 'rak'].includes(j) ? 'Audio & kontrol'
           : j === 'meja' || j === 'kursi' || j === 'tribun' || j === 'panggung' ? 'Furnitur' : 'Lainnya';
-    const urutKat = ['Display', 'Kamera & konferensi', 'Audio & kontrol', 'Furnitur', 'Lainnya'];
+    const urutKat = ['Display', 'Kamera & konferensi', 'Audio & kontrol', 'Furnitur', 'Interior & pencahayaan', 'Lainnya'];
     const grup = new Map<string, { kat: string; nama: string; ukuran: string; jumlah: number }>();
     for (const b of benda) {
       const nama = b.nama.replace(/\s+\d+\.\d+$/, '');   // "Meja kelas 2.3" -> "Meja kelas"
@@ -1620,14 +1626,28 @@ export default function Desain3D() {
         }] : []),
         ...(proyektor.length ? [{
           judul: 'Proyektor & jarak lempar', jenis: 'tabel' as const,
-          kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas', 'Lumen', 'Kecerahan'],
-          rataKanan: [3, 5, 6, 7, 8],
+          kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas', 'Lumen', 'Gambar', 'Lampu di gambar', `Kontras (target ${targetKontras}:1)`],
+          rataKanan: [3, 5, 6, 7, 8, 9, 10],
           isi: proyektor.map(({ p, sn }) => {
-            const kc = kecerahanProyektor(p, sn.lebar * sn.tinggi);
+            const kp = kontrasProyektor(p, benda, ruang, targetKontras);
             return [p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `Plafon (${fm(p.elev)} m dari lantai)`,
               sn.layar?.nama ?? 'Dinding / permukaan', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—',
-              lumenDari(p).toLocaleString('id-ID'), `±${fm(kc.lux, 0)} lux`];
+              lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}`,
+              `${fm(kp.kontras, 1)} : 1 ${kp.cukup ? '✓' : `✗ (perlu ±${kp.lumenPerlu.toLocaleString('id-ID')} lm)`}`];
           }),
+        }] : []),
+        ...(benda.some(b => b.jenis === 'lampu') ? [{
+          judul: `Pencahayaan · dimmer semua lampu ${ruang.dimmer ?? 100}%`, jenis: 'tabel' as const,
+          kepala: ['Lampu', 'Jumlah', 'Lumen / unit', 'Sudut sinar', 'Dimmer', 'Suhu warna'], rataKanan: [1, 2, 3, 4],
+          isi: [...benda.filter(b => b.jenis === 'lampu').reduce((m, b) => {
+            const kunci = `${b.tipeLampu}|${lumenLampu(b)}|${sudutLampuDari(b)}|${b.dimmer ?? 100}|${b.kelvin ?? 4000}`;
+            const ada = m.get(kunci); if (ada) ada.n++; else m.set(kunci, { b, n: 1 });
+            return m;
+          }, new Map<string, { b: Benda; n: number }>()).values()].map(({ b, n }) => [SPEK_LAMPU[b.tipeLampu ?? 'downlight'].label, String(n), `${lumenLampu(b).toLocaleString('id-ID')} lm`,
+            `${fm(sudutLampuDari(b), 0)}°`, `${b.dimmer ?? 100}%`, `${b.kelvin ?? 4000} K`]).concat(kotakRuang.map((_, i) => {
+            const lx = luxBidangKerja(benda, ruang, i);
+            return [`Rata-rata di meja${kotakRuang.length > 1 ? ` (Ruang ${i + 1})` : ''}`, '', `±${fm(lx.rata, 0)} lux`, `min ${fm(lx.min, 0)}`, `maks ${fm(lx.maks, 0)}`, ''];
+          })),
         }] : []),
         ...(speaker.length ? [{
           judul: `Audio · speaker (${speaker.length})`, jenis: 'tabel' as const,
@@ -1794,6 +1814,48 @@ export default function Desain3D() {
   ].join('\n');
 
   /** Panel proyektor: jarak lempar, ukuran gambar, & tombol mengepaskan ke layar. */
+  /** Kontras gambar proyektor terhadap lampu ruangan + saran lumen / dimmer. */
+  const blokKontras = (p: Benda, kePermukaan: boolean) => {
+    const kp = kontrasProyektor(p, benda, ruang, targetKontras);
+    const warna = kp.cukup ? 'text-emerald-700' : kp.kontras >= targetKontras * 0.6 ? 'text-amber-700' : 'text-rose-700';
+    //  Dimmer semua lampu agar target tercapai (lux lampu ~ sebanding dengan dimmer).
+    const ambPerlu = kp.luxGambar / Math.max(0.01, targetKontras - 1);
+    const dimSekarang = ruang.dimmer ?? 100;
+    const dimPerlu = kp.cahaya.dariLampu && kp.cahaya.total > 0 ? Math.floor(((ambPerlu / kp.cahaya.total) * dimSekarang) / 5) * 5 : null;
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white p-2 space-y-1.5">
+        <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600">Kontras vs lampu ruangan</span>
+        <select aria-label="Target kontras" value={targetKontras} onChange={e => setTargetKontras(Number(e.target.value))}
+          className="block w-full min-w-0 rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[11.5px] text-slate-800">
+          {TARGET_KONTRAS.map(t => <option key={t.v} value={t.v}>Target {t.l} · {t.ket}</option>)}
+        </select>
+        <div className="grid grid-cols-3 gap-1.5 text-center">
+          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[10.5px] text-slate-500">Gambar</p><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luxGambar, 0)} lux</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[10.5px] text-slate-500">Lampu di {kePermukaan ? 'permukaan' : 'layar'}</p><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.cahaya.total, 0)} lux</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[10.5px] text-slate-500">Kontras</p><p className={`text-[13px] font-extrabold tabular-nums ${warna}`}>{f(kp.kontras, 1)} : 1</p></div>
+        </div>
+        <p className="text-[11.5px] text-slate-600 leading-relaxed">
+          {kp.cahaya.dariLampu
+            ? <>Dari {kp.cahaya.jumlahLampu} lampu (dimmer semua {dimSekarang}%): langsung {f(kp.cahaya.langsung, 0)} + pantulan ruangan {f(kp.cahaya.pantul, 0)} lux. Gambar {f(kp.luas, 1)} m² dari {lumenDari(p).toLocaleString('id-ID')} lm.</>
+            : <>Belum ada lampu di desain: memakai perkiraan &quot;Cahaya ruangan {ruang.cahaya ?? 'terang'}&quot; ±{LUX_PRESET[ruang.cahaya ?? 'terang']} lux. Tambah lampu (Tambah → Interior &amp; pencahayaan) untuk hitungan nyata.</>}
+        </p>
+        {kp.cukup
+          ? <p className="text-[12px] font-semibold text-emerald-700">Memenuhi target {targetKontras} : 1.</p>
+          : (
+            <div className="space-y-1">
+              <p className={`text-[12px] font-semibold ${warna}`}>Di bawah target {targetKontras} : 1 - butuh proyektor ±{kp.lumenPerlu.toLocaleString('id-ID')} lm, atau kurangi cahaya lampu di {kePermukaan ? 'permukaan' : 'layar'} sampai ±{f(ambPerlu, 0)} lux.</p>
+              {dimPerlu !== null && dimPerlu < dimSekarang && (
+                <button type="button" onClick={() => setRuang(r => ({ ...r, dimmer: Math.max(0, dimPerlu) }))}
+                  className="px-2.5 py-1.5 rounded-lg text-[12px] font-bold border border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100">
+                  {dimPerlu <= 0 ? 'Matikan semua lampu' : `Redupkan semua lampu ke ${dimPerlu}%`}
+                </button>
+              )}
+            </div>
+          )}
+      </div>
+    );
+  };
+
   const infoProyektor = (p: Benda) => {
     const sn = sinarProyektor(p, benda, ruang);
     const k = kotakRuang[ruangDari(ruang, p.x)] ?? kotakRuang[0];
@@ -1809,6 +1871,7 @@ export default function Desain3D() {
           {dekat
             ? <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, dekat, k, ruang))}>Arahkan ke {dekat.nama}</button>
             : <p className="text-[12px] text-slate-600">Tambahkan Layar proyektor (Tambah → Display) untuk menghitung jarak lempar.</p>}
+          {blokKontras(p, true)}
         </div>
       );
     }
@@ -1834,14 +1897,7 @@ export default function Desain3D() {
             TR {f(trPas, 2)} di luar rentang zoom lensa ({f(zMin, 2)}–{f(zMax, 2)}): pindahkan lensa ke jarak {f(zMin * lyr.w)}–{f(zMax * lyr.w)} m dari layar, atau ganti lensa.
           </p>
         ))}
-        {(() => {
-          const c = kecerahanProyektor(p, sn.lebar * sn.tinggi);
-          return (
-            <p className={`text-[12px] font-semibold ${c.nada === 'baik' ? 'text-emerald-700' : c.nada === 'awas' ? 'text-amber-700' : 'text-rose-700'}`}>
-              Kecerahan ±{f(c.lux, 0)} lux di gambar (±{f(c.nits, 0)} nits, layar gain 1) - {c.nada === 'baik' ? 'cukup untuk ruang berlampu' : c.nada === 'awas' ? 'perlu lampu diredupkan' : 'hanya untuk ruang gelap'}.
-            </p>
-          );
-        })()}
+        {blokKontras(p, false)}
         <ul className="text-[12px] font-semibold space-y-0.5">
           <li className={pasLebar ? 'text-emerald-700' : 'text-amber-700'}>
             {pasLebar ? 'Lebar gambar pas.' : selisih > 0 ? `Gambar melebihi lebar layar ${f(sn.lebar - lyr.w)} m.` : `Gambar kurang ${f(lyr.w - sn.lebar)} m dari lebar layar.`}
@@ -2215,6 +2271,34 @@ export default function Desain3D() {
                             opsi={[{ v: 'terang', l: 'Terang' }, { v: 'redup', l: 'Redup' }, { v: 'gelap', l: 'Gelap' }]} />
                           <p className="text-[11px] text-slate-500 mt-1">Gelap = ruang mapping / immersive: cahaya proyektor & layar terlihat jelas.</p>
                         </div>
+                        {benda.some(b => b.jenis === 'lampu') && (
+                          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <p className="text-[12.5px] font-bold text-slate-800">Lampu plafon (dimmer semua)</p>
+                              <span className="text-[12.5px] font-extrabold text-amber-900 tabular-nums">{ruang.dimmer ?? 100}%</span>
+                            </div>
+                            <input type="range" min={0} max={100} step={5} value={ruang.dimmer ?? 100} aria-label="Dimmer semua lampu"
+                              onChange={e => setRuang(r => ({ ...r, dimmer: Number(e.target.value) }))} className="w-full accent-amber-600" />
+                            <div className="flex gap-1.5">
+                              {[100, 50, 20, 0].map(v => (
+                                <button key={v} type="button" onClick={() => setRuang(r => ({ ...r, dimmer: v }))}
+                                  className={`flex-1 px-2 py-1 rounded-lg text-[12px] font-bold border ${(ruang.dimmer ?? 100) === v ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-amber-900 border-amber-200 hover:bg-amber-50'}`}>
+                                  {v === 0 ? 'Mati' : `${v}%`}
+                                </button>
+                              ))}
+                            </div>
+                            {kotakRuang.map((k, i) => {
+                              if (!benda.some(b => b.jenis === 'lampu' && ruangDari(ruang, b.x) === i)) return null;
+                              const lx = luxBidangKerja(benda, ruang, i);
+                              return (
+                                <p key={i} className="text-[12px] text-slate-700">
+                                  {kotakRuang.length > 1 ? `Ruang ${i + 1}: ` : ''}rata-rata di meja (0,75 m) <b>±{f(lx.rata, 0)} lux</b> <span className="text-slate-500">(min {f(lx.min, 0)}, maks {f(lx.maks, 0)})</span>
+                                </p>
+                              );
+                            })}
+                            <p className="text-[11px] text-slate-500">Acuan: rapat / kelas ±300–500 lux. Saat presentasi proyektor, lampu diredupkan supaya kontras gambar cukup (lihat panel proyektor).</p>
+                          </div>
+                        )}
                         <div className="rounded-xl border border-slate-200 p-3">
                           <p className="text-[12.5px] font-bold text-slate-800">Pintu & jendela dinding luar</p>
                           <p className="text-[11.5px] text-slate-600 mt-0.5">Posisi = jarak dari ujung kiri dinding ke tengah bukaan, dilihat dari dalam ruang. Pintu/jendela di sekat antar ruang diatur di bagian Ruang 2.</p>

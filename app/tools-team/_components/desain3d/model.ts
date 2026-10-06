@@ -20,12 +20,13 @@ export type Jenis =
   | 'videowall' | 'led' | 'layar' | 'ifp' | 'tv'
   | 'meja' | 'kursi'
   | 'speaker' | 'speaker-plafon' | 'mic' | 'touchpanel' | 'kamera' | 'proyektor' | 'rak'
-  | 'lift' | 'model' | 'tribun' | 'panggung' | 'bidang';
+  | 'lift' | 'model' | 'tribun' | 'panggung' | 'bidang' | 'lampu';
 
 export type BentukMeja = 'rapat' | 'bulat' | 'kelas' | 'dosen' | 'podium' | 'kredensa' | 'operator';
 /** Konten layar: pola uji, unggahan, mati, atau konten contoh (CCTV, dashboard, campuran, home screen). */
 export type KontenLayar = 'pola' | 'gambar' | 'mati' | 'cctv' | 'dashboard' | 'campuran' | 'desktop';
 export type TipeRak = 'kaca' | 'tertutup' | 'open';
+export type TipeLampu = 'downlight' | 'spot' | 'panel' | 'linear';
 export type Finish = 'walnut' | 'oak' | 'putih';
 export type TipeKursi = 'kantor' | 'kelas';
 export type TipeKamera = 'ptz' | 'ptz-ai' | 'xbar';
@@ -79,6 +80,9 @@ export interface Benda {
   /** Sembunyikan label produk benda ini walau label produk dinyalakan. */ sembunyiLabel?: boolean;
   /** Meja operator: jumlah monitor di atas meja. */ monitorMeja?: number;
   /** Rack: pintu kaca (isi terlihat), tertutup (pintu besi berlubang), atau open frame. */ tipeRak?: TipeRak;
+  /** Lampu plafon: tipe, sudut sinar penuh (derajat), dimmer (%), suhu warna (K), jarak gantung dari plafon (m).
+   *  Fluks memakai `lumen`. */
+  tipeLampu?: TipeLampu; sudutLampu?: number; dimmer?: number; kelvin?: number; gantungLampu?: number;
   /** Model GLB impor: kunci ke cache objek di memori (tidak disimpan ke perangkat) */ modelKunci?: string;
 }
 
@@ -87,6 +91,7 @@ export interface Ruang {
   /** Warna lantai 'polos' ruang 1 (#rrggbb) */ warnaLantai?: string;
   /** Warna dinding semua ruang (#rrggbb), bawaan putih tulang */ warnaDinding?: string;
   /** Tingkat cahaya ruangan (bawaan terang). Gelap = ruang mapping / immersive, cahaya proyektor terlihat jelas. */ cahaya?: 'terang' | 'redup' | 'gelap';
+  /** Dimmer semua lampu plafon (%), bawaan 100 - skenario presentasi. */ dimmer?: number;
   /** Pintu & jendela di dinding LUAR (sekat antar ruang punya pintu/jendela sendiri di r2). */ bukaan?: Bukaan[];
   /** Pengaturan analisis tampilan - ikut tersimpan bersama desain. */
   analisis?: { jenis: 'umum' | 'analitis' | 'detail' | 'custom'; faktor: number; sudut: number };
@@ -256,7 +261,7 @@ export const LABEL: Record<Jenis, string> = {
   meja: 'Meja', kursi: 'Kursi',
   speaker: 'Speaker', 'speaker-plafon': 'Speaker plafon', mic: 'Mic', touchpanel: 'Touch panel',
   kamera: 'Kamera', proyektor: 'Proyektor', rak: 'Rack server', lift: 'Display lift', model: 'Model 3D (GLB)',
-  tribun: 'Tribun', panggung: 'Panggung', bidang: 'Bidang mapping',
+  tribun: 'Tribun', panggung: 'Panggung', bidang: 'Bidang mapping', lampu: 'Lampu plafon',
 };
 export const DISPLAY: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv'];
 /** Benda yang bisa ditempel ke dinding (sisi belakang menyentuh dinding). */
@@ -305,6 +310,15 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'kam-ai', label: 'Kamera PTZ AI', ket: 'Auto-tracking, bar sensor', jenis: 'kamera', atur: { tipeKamera: 'ptz-ai' } },
       { kunci: 'xbar', label: 'Camera soundbar', ket: 'Video bar: kamera + speaker + mic', jenis: 'kamera', atur: { tipeKamera: 'xbar' } },
       { kunci: 'lift', label: 'Paperless display lift', ket: 'Layar naik dari meja + mic', jenis: 'lift' },
+    ],
+  },
+  {
+    grup: 'Interior & pencahayaan', item: [
+      { kunci: 'lampu-down', label: 'Downlight', ket: 'Lampu plafon bulat ±1000 lm, sinar 60°', jenis: 'lampu', atur: { tipeLampu: 'downlight' } },
+      { kunci: 'lampu-spot', label: 'Spotlight', ket: 'Sinar sempit 36°, aksen', jenis: 'lampu', atur: { tipeLampu: 'spot' } },
+      { kunci: 'lampu-panel', label: 'Panel LED 60 × 60', ket: 'Lampu kantor ±3600 lm, sinar lebar', jenis: 'lampu', atur: { tipeLampu: 'panel' } },
+      { kunci: 'lampu-linear', label: 'Lampu linear gantung', ket: 'Pendant linear 1,2 m, kabel gantung', jenis: 'lampu', atur: { tipeLampu: 'linear' } },
+      { kunci: 'set-lampu', label: 'Set downlight (grid)', ket: 'Downlight merata ±2,2 m di seluruh plafon', jenis: 'lampu', set: k => setLampuGrid(k) },
     ],
   },
   {
@@ -441,6 +455,12 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       return { ...dasar, nama: 'Speaker dinding kotak', x: k.x0 + 0.4, z: 0.17, w: 0.21, h: 0.32, d: 0.2, elev: 2.0, tipeSpeaker: 'kotak', ...atur };
     }
     case 'speaker-plafon': return { ...dasar, w: 0.24, h: 0.06, d: 0.24, elev: k.t - 0.06, ...atur };
+    case 'lampu': {
+      const tipe = atur.tipeLampu ?? 'downlight', sp = SPEK_LAMPU[tipe];
+      const gantung = tipe === 'linear' ? atur.gantungLampu ?? sp.gantung : 0;
+      return { ...dasar, nama: sp.label, w: sp.w, h: sp.h, d: sp.d, elev: Math.max(0.5, k.t - sp.h - gantung), tipeLampu: tipe, lumen: sp.lumen, sudutLampu: sp.sudut,
+        dimmer: 100, kelvin: 4000, ...(tipe === 'linear' ? { gantungLampu: gantung } : {}), ...atur };
+    }
     case 'mic': return (atur.mic ?? 'gooseneck') === 'boundary'
       ? { ...dasar, z: k.l * 0.55, w: 0.18, h: 0.032, d: 0.18, elev: 0.75, mic: 'boundary', nama: 'Mic boundary', ...atur }
       : { ...dasar, z: k.l * 0.55, w: 0.12, h: 0.42, d: 0.12, elev: 0.75, mic: 'gooseneck', nama: 'Mic gooseneck', ...atur };
@@ -539,6 +559,120 @@ export function setRuangKelas(k: Kotak, o: OpsiKelas = {}): Benda[] {
   return hasil;
 }
 
+// ── Lampu plafon & perhitungan cahaya ───────────────────────────────────────
+
+export const SPEK_LAMPU: Record<TipeLampu, { label: string; w: number; h: number; d: number; lumen: number; sudut: number; gantung: number }> = {
+  downlight: { label: 'Downlight', w: 0.17, h: 0.06, d: 0.17, lumen: 1000, sudut: 60, gantung: 0 },
+  spot: { label: 'Spotlight', w: 0.1, h: 0.1, d: 0.1, lumen: 700, sudut: 36, gantung: 0 },
+  panel: { label: 'Panel LED 60×60', w: 0.6, h: 0.04, d: 0.6, lumen: 3600, sudut: 110, gantung: 0 },
+  linear: { label: 'Lampu linear gantung', w: 1.2, h: 0.07, d: 0.06, lumen: 3500, sudut: 100, gantung: 0.6 },
+};
+export const lumenLampu = (b: Benda) => Math.max(0, b.lumen ?? SPEK_LAMPU[b.tipeLampu ?? 'downlight'].lumen);
+export const sudutLampuDari = (b: Benda) => Math.max(10, Math.min(160, b.sudutLampu ?? SPEK_LAMPU[b.tipeLampu ?? 'downlight'].sudut));
+/** Faktor nyala lampu 0..1 (dimmer lampu x dimmer semua lampu ruangan). */
+export const nyalaLampu = (b: Benda, r: Ruang) => (Math.max(0, Math.min(100, b.dimmer ?? 100)) / 100) * (Math.max(0, Math.min(100, r.dimmer ?? 100)) / 100);
+/** Warna cahaya dari suhu warna (K). */
+export const warnaKelvin = (k = 4000) => (k <= 3200 ? 0xffd6a0 : k <= 4500 ? 0xfff1dc : 0xeef4ff);
+
+/** Downlight merata di plafon satu ruang (jarak ±2,2 m, 0,6-1,1 m dari dinding). */
+export function setLampuGrid(k: Kotak, atur: Partial<Benda> = {}): Benda[] {
+  const nx = Math.max(1, Math.round(k.p / 2.2)), nz = Math.max(1, Math.round(k.l / 2.2));
+  const hasil: Benda[] = [];
+  for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+    const b = bendaBaru('lampu', k, { tipeLampu: 'downlight', ...atur });
+    hasil.push({ ...b, x: k.x0 + (k.p * (i + 0.5)) / nx, z: (k.l * (j + 0.5)) / nz, nama: `${b.nama} ${i * nz + j + 1}` });
+  }
+  return hasil;
+}
+
+/**
+ * Iluminansi langsung (lux) dari satu lampu plafon di titik P berpermukaan normal n.
+ * Lampu = sumber titik menghadap ke bawah dengan distribusi I = I0 cos^m(a): m dipilih supaya
+ * intensitas 50% tepat di tepi sudut sinar, I0 supaya fluks total = lumen x dimmer.
+ * Lampu linear dipecah 4 titik sepanjang badannya. E = I cos(b) / d^2.
+ */
+export function luxLampuLangsung(l: Benda, r: Ruang, P: Titik, n: Titik): number {
+  const phi = lumenLampu(l) * nyalaLampu(l, r);
+  if (phi <= 0) return 0;
+  const setengah = (sudutLampuDari(l) / 2) * (Math.PI / 180);
+  const m = Math.log(0.5) / Math.log(Math.cos(Math.min(1.5, setengah)));
+  const linear = l.tipeLampu === 'linear', bagian = linear ? 4 : 1;
+  const I0 = (phi * (m + 1)) / (2 * Math.PI) / bagian;
+  const rr = (l.rot * Math.PI) / 180;
+  let E = 0;
+  for (let i = 0; i < bagian; i++) {
+    const t = linear ? ((i + 0.5) / bagian - 0.5) * l.w : 0;
+    const sx = l.x + t * Math.cos(rr), sz = l.z - t * Math.sin(rr), sy = l.elev;
+    const vx = P[0] - sx, vy = P[1] - sy, vz = P[2] - sz;
+    const d2 = vx * vx + vy * vy + vz * vz; if (d2 < 1e-4) continue;
+    const d = Math.sqrt(d2), cosA = -vy / d;
+    if (cosA <= 0) continue;
+    const cosB = Math.max(0, -(vx * n[0] + vy * n[1] + vz * n[2]) / d);
+    E += (I0 * Math.pow(cosA, m) * cosB) / d2;
+  }
+  return E;
+}
+
+/** Cahaya pantulan rata-rata di permukaan ruang (lux): fluks total x rho / (luas permukaan x (1 - rho)). */
+export function luxPantul(lampu: Benda[], r: Ruang, k: Kotak, rho = 0.45): number {
+  const phi = lampu.reduce((a, l) => a + lumenLampu(l) * nyalaLampu(l, r), 0);
+  const luas = 2 * (k.p * k.l + k.p * k.t + k.l * k.t);
+  return (phi * rho) / Math.max(1, luas * (1 - rho));
+}
+
+/** Perkiraan cahaya ruangan bila belum ada lampu di desain (dari pilihan Cahaya ruangan). */
+export const LUX_PRESET: Record<'terang' | 'redup' | 'gelap', number> = { terang: 300, redup: 80, gelap: 5 };
+
+/** Cahaya dari lampu ruangan yang jatuh di titik P (normal n): langsung + pantulan, atau perkiraan preset. */
+export function luxCahayaDi(semua: Benda[], r: Ruang, P: Titik, n: Titik) {
+  const ri = ruangDari(r, P[0]);
+  const k = daftarRuang(r)[ri] ?? daftarRuang(r)[0];
+  const lampu = semua.filter(b => b.jenis === 'lampu' && ruangDari(r, b.x) === ri);
+  if (!lampu.length) {
+    const total = LUX_PRESET[r.cahaya ?? 'terang'];
+    return { langsung: total, pantul: 0, total, dariLampu: false, jumlahLampu: 0 };
+  }
+  const langsung = lampu.reduce((a, l) => a + luxLampuLangsung(l, r, P, n), 0);
+  const pantul = luxPantul(lampu, r, k);
+  return { langsung, pantul, total: langsung + pantul, dariLampu: true, jumlahLampu: lampu.length };
+}
+
+/** Rata-rata iluminansi di bidang kerja (0,75 m) satu ruang - 8 x 6 titik. */
+export function luxBidangKerja(semua: Benda[], r: Ruang, ri: number) {
+  const k = daftarRuang(r)[ri] ?? daftarRuang(r)[0];
+  const nilai: number[] = [];
+  for (let i = 0; i < 8; i++) for (let j = 0; j < 6; j++) {
+    nilai.push(luxCahayaDi(semua, r, [k.x0 + (k.p * (i + 0.5)) / 8, 0.75, (k.l * (j + 0.5)) / 6], [0, 1, 0]).total);
+  }
+  return { rata: nilai.reduce((a, b) => a + b, 0) / nilai.length, min: Math.min(...nilai), maks: Math.max(...nilai) };
+}
+
+/** Target kontras gambar proyeksi (ANSI/INFOCOMM 3M-2011, AVIXA). */
+export const TARGET_KONTRAS: { v: number; l: string; ket: string }[] = [
+  { v: 7, l: '7 : 1', ket: 'Passive viewing (tontonan santai)' },
+  { v: 15, l: '15 : 1', ket: 'Basic decision making (presentasi, rapat)' },
+  { v: 50, l: '50 : 1', ket: 'Analytical decision making (detail, spreadsheet)' },
+  { v: 80, l: '80 : 1', ket: 'Full motion video (video, immersive)' },
+];
+
+/**
+ * Kontras gambar proyektor terhadap cahaya ruangan: (lux gambar + lux ruangan) / lux ruangan,
+ * dihitung di tengah gambar dengan normal permukaan yang dituju (layar, dinding, lantai).
+ */
+export function kontrasProyektor(p: Benda, semua: Benda[], r: Ruang, target: number) {
+  const sn = sinarProyektor(p, semua, r);
+  const P: Titik = [0, 1, 2].map(i => sn.sudut.reduce((a, c) => a + c[i], 0) / 4) as Titik;
+  let n: Titik;
+  if (sn.layar) { const rl = (sn.layar.rot * Math.PI) / 180; n = [Math.sin(rl), 0, Math.cos(rl)]; }
+  else { const D = arahProyektor(p); n = [-D[0], -D[1], -D[2]]; }
+  const luas = Math.max(0.05, sn.lebar * sn.tinggi);
+  const luxGambar = lumenDari(p) / luas;
+  const cahaya = luxCahayaDi(semua, r, P, n);
+  const amb = Math.max(0.5, cahaya.total);
+  const kontras = (luxGambar + amb) / amb;
+  return { luxGambar, cahaya, kontras, cukup: kontras >= target, lumenPerlu: Math.ceil(((target - 1) * amb * luas) / 100) * 100, luas };
+}
+
 /** Titik penonton: kursi, dan kursi bayangan di sekeliling meja yang belum berkursi. */
 export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[] {
   const tribun = b.filter(x => x.jenis === 'tribun').flatMap(t => kursiTribun(t).map((p, i) => ({ x: p.x, z: p.z, id: `${t.id}#${i}` })));
@@ -557,7 +691,7 @@ export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[
 export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
     b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt, b.warna, b.panel ? JSON.stringify(b.panel) : '', b.diag, b.tipeSpeaker, b.modul, b.sudutModul, b.tiltLA, b.gantung,
-    b.baris, b.kursiBaris, b.tinggiAnak, b.bentukBidang, b.jariBidang, b.busur, b.monitorMeja, b.tipeRak].join('|');
+    b.baris, b.kursiBaris, b.tinggiAnak, b.bentukBidang, b.jariBidang, b.busur, b.monitorMeja, b.tipeRak, b.tipeLampu, b.sudutLampu, b.kelvin, b.lumen].join('|');
 
 // ── Salin ke ruang sebelah ─────────────────────────────────────────────────
 
@@ -1360,6 +1494,31 @@ function gambarPerangkat(g: CanvasRenderingContext2D, jenis: string, y: number, 
       g.fillStyle = '#1b1e23'; for (let x = x0; x < x1; x += 10) g.fillRect(x, y + h * 0.35, 5, h * 0.3);
     }
   }
+}
+
+/** Gradasi bundar untuk kolam cahaya lampu di lantai. */
+let kolamCache: T.Texture | null = null;
+function teksturKolamCahaya(THREE: typeof T): T.Texture {
+  if (kolamCache) return kolamCache.clone();
+  const c = kanvas(128, 128, g => {
+    const gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,255,255,0.75)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.4)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  });
+  kolamCache = new THREE.CanvasTexture(c);
+  return kolamCache.clone();
+}
+
+/** Terang lampu mengikuti dimmer: emisif muka lampu & kolam cahaya di lantai. */
+export function aturNyalaLampu(g: T.Object3D, faktor: number) {
+  g.traverse(o => {
+    if (!o.userData.cahaya) return;
+    const m = (o as T.Mesh).material as T.MeshStandardMaterial & T.MeshBasicMaterial;
+    const dasar = (m.userData.dasar as number | undefined) ?? 1;
+    if ('emissiveIntensity' in m && m.emissive) m.emissiveIntensity = dasar * faktor;
+    else m.opacity = dasar * faktor;
+    o.visible = faktor > 0.001 || !!m.emissive;
+  });
 }
 
 /** Garis sambungan (cabinet LED / bezel videowall) di atas konten. */
@@ -2197,6 +2356,40 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       g.add(kotak(THREE, 0.028, 0.028, panjangLengan, besi, 0, b.h / 2, -b.d / 2 + 0.012 + panjangLengan / 2));
       break;
     }
+    case 'lampu': {
+      //  Lampu plafon: rumah lampu + permukaan menyala (emisif, ikut dimmer) + kolam cahaya di lantai.
+      const tipe = b.tipeLampu ?? 'downlight', warnaC = warnaKelvin(b.kelvin);
+      const nyala = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: warnaC, emissiveIntensity: 1.6, roughness: 0.4 });
+      nyala.userData.dasar = 1.6;
+      const rumah = mat(THREE, W(tipe === 'linear' ? 0x2b2f36 : 0xf4f5f7), { metalness: tipe === 'linear' ? 0.6 : 0.2, roughness: 0.4 });
+      const tandai = (m: T.Mesh) => { m.userData.cahaya = true; return m; };
+      if (tipe === 'downlight' || tipe === 'spot') {
+        const rr = b.w / 2;
+        g.add(new THREE.Mesh(new THREE.CylinderGeometry(rr, rr, 0.012, 32), rumah).translateY(b.h - 0.006));
+        g.add(new THREE.Mesh(new THREE.CylinderGeometry(rr * 0.78, rr * 0.7, b.h - 0.012, 32), mat(THREE, tipe === 'spot' ? 0x111318 : 0xe5e7eb, { roughness: 0.5 })).translateY((b.h - 0.012) / 2));
+        const muka = tandai(new THREE.Mesh(new THREE.CircleGeometry(rr * (tipe === 'spot' ? 0.4 : 0.66), 32), nyala));
+        muka.rotation.x = Math.PI / 2; muka.position.y = 0.002; g.add(muka);
+      } else if (tipe === 'panel') {
+        g.add(kotak(THREE, b.w, b.h, b.d, rumah, 0, b.h / 2, 0));
+        const muka = tandai(new THREE.Mesh(new THREE.PlaneGeometry(b.w - 0.03, b.d - 0.03), nyala));
+        muka.rotation.x = Math.PI / 2; muka.position.y = -0.001; g.add(muka);
+      } else {
+        g.add(kotak(THREE, b.w, b.h, b.d, rumah, 0, b.h / 2, 0));
+        const muka = tandai(new THREE.Mesh(new THREE.PlaneGeometry(b.w - 0.02, b.d * 0.6), nyala));
+        muka.rotation.x = Math.PI / 2; muka.position.y = -0.001; g.add(muka);
+        const kawat = mat(THREE, 0x9ca3af, { metalness: 0.9, roughness: 0.3 });
+        for (const sx of [-1, 1]) g.add(batang(THREE, 0.004, 0.004, kawat, sx * (b.w / 2 - 0.1), 0, 'tiang', 0, true));
+      }
+      //  Kolam cahaya di lantai (aditif, tidak menghalangi sinar proyektor).
+      const jari = Math.max(0.3, Math.min(3, b.elev * Math.tan((sudutLampuDari(b) / 2) * (Math.PI / 180))));
+      const kolamTex = teksturKolamCahaya(THREE);
+      const kolam = new THREE.Mesh(new THREE.PlaneGeometry(jari * 2 + (tipe === 'linear' ? b.w : 0), jari * 2),
+        new THREE.MeshBasicMaterial({ map: kolamTex, color: warnaC, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, depthWrite: false }));
+      kolam.rotation.x = -Math.PI / 2; kolam.position.y = 0.006;
+      kolam.userData.cahaya = true; (kolam.material as T.MeshBasicMaterial).userData.dasar = 0.16;
+      const lantai = new THREE.Group(); lantai.userData.peran = 'lantai'; lantai.add(kolam); g.add(lantai);
+      break;
+    }
     case 'speaker-plafon': {
       const putih = mat(THREE, W(0xf4f5f7), { roughness: 0.45 });
       const gril = new THREE.MeshStandardMaterial({ map: teksturGril(THREE, WS('#eef0f3'), 'rgba(70,75,85,0.55)', b.w / 0.048), roughness: 0.6 });
@@ -2572,7 +2765,9 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
       }
     }
     const rak = [8.3, 9.0].map(x => ({ ...bendaBaru('rak', k, { rakU: 42, tipeRak: 'kaca' as const }), x, z: 8.4, rot: 180 }));
-    return { nama: 'Control room', ruang, benda: [vw, kredensa, ...meja, ...kursi, ...rak] };
+    const lampu: Benda[] = [];
+    for (const x of [2.6, 5, 7.4]) for (const z of [3.2, 5.6, 7.6]) lampu.push({ ...bendaBaru('lampu', k, { tipeLampu: 'linear', dimmer: 60 }), x, z, nama: `Lampu linear ${lampu.length + 1}` });
+    return { nama: 'Control room', ruang: { ...ruang, dimmer: 100 }, benda: [vw, kredensa, ...meja, ...kursi, ...rak, ...lampu] };
   }
   if (id === 'mapping-lengkung') {
     const ruang: Ruang = { p: 14, l: 12, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'redup', r2: null };
