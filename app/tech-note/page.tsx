@@ -18,6 +18,18 @@ import { hasFullAccess } from '@/lib/constants';
 import { appLink } from '@/lib/app-url';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
+/**
+ * Link Tech Note wajib berkas OneDrive / SharePoint lewat https. Dulu link apa pun diterima -
+ * termasuk 'javascript:' yang ikut dirender sebagai <a href> dan bisa dijalankan saat orang
+ * lain mengekliknya.
+ */
+const DOMAIN_ONEDRIVE = /(^|\.)(1drv\.ms|onedrive\.live\.com|onedrive\.com|sharepoint\.com)$/i;
+function linkOneDriveSah(u: string): boolean {
+  try { const x = new URL(u.trim()); return x.protocol === 'https:' && DOMAIN_ONEDRIVE.test(x.hostname); } catch { return false; }
+}
+/** href aman untuk link lama yang mungkin belum lolos aturan di atas. */
+const hrefAman = (u: string | null | undefined) => (u && /^https?:\/\//i.test(u.trim()) ? u.trim() : undefined);
+
 function Spinner() {
   return (
     <div className="flex items-center justify-center py-24">
@@ -538,7 +550,7 @@ function TechNotePageInner() {
   }
 
   async function submitTechNote() {
-    if (!uploadForm.title.trim() || !uploadForm.folder_id || !uploadForm.one_drive_link.trim() || !currentUser) return;
+    if (!uploadForm.title.trim() || !uploadForm.folder_id || !linkOneDriveSah(uploadForm.one_drive_link) || !currentUser) return;
     setSaving(true);
     const now = new Date().toISOString();
     const tags = uploadForm.tags.split(',').map(s=>s.trim()).filter(Boolean);
@@ -815,7 +827,7 @@ function TechNotePageInner() {
                         <div className="flex items-center gap-2">
                           <span className="text-[10px] text-slate-500">{formatDateShort(tn.submitted_at)}</span>
                           {tn.one_drive_link && (
-                            <a href={tn.one_drive_link} target="_blank" rel="noopener noreferrer"
+                            <a href={hrefAman(tn.one_drive_link)} target="_blank" rel="noopener noreferrer"
                               onClick={e=>e.stopPropagation()}
                               className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg transition-colors text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100">
                               <IkonTeks nama="☁" />Drive
@@ -912,6 +924,9 @@ function TechNotePageInner() {
         <Field label="🔗 Link OneDrive *">
           <input className={inputCls} value={uploadForm.one_drive_link}
             onChange={e=>setUploadForm(p=>({...p,one_drive_link:e.target.value}))} placeholder="https://1drv.ms/b/..." />
+          {uploadForm.one_drive_link.trim() && !linkOneDriveSah(uploadForm.one_drive_link) && (
+            <p className="text-[11.5px] text-rose-600 mt-1">Harus link OneDrive / SharePoint (https://1drv.ms/..., onedrive.live.com, atau *.sharepoint.com).</p>
+          )}
         </Field>
         <Field label="Tags (pisahkan koma)">
           <input className={inputCls} value={uploadForm.tags}
@@ -922,7 +937,7 @@ function TechNotePageInner() {
         </div>
         <div className="flex gap-3 justify-end">
           <button onClick={closeUploadModal} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200">Batal</button>
-          <button onClick={submitTechNote} disabled={saving||!uploadForm.title.trim()||!uploadForm.folder_id||!uploadForm.one_drive_link.trim()}
+          <button onClick={submitTechNote} disabled={saving||!uploadForm.title.trim()||!uploadForm.folder_id||!linkOneDriveSah(uploadForm.one_drive_link)}
             className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-40 transition-colors"
             style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}>
             {saving ? '⏳ Mengirim...' : '📤 Submit untuk Review'}
@@ -953,7 +968,7 @@ function TechNotePageInner() {
               </div>
             )}
             {detailNote.one_drive_link && (
-              <a href={detailNote.one_drive_link} target="_blank" rel="noopener noreferrer"
+              <a href={hrefAman(detailNote.one_drive_link)} target="_blank" rel="noopener noreferrer"
                 className="mt-3 inline-flex items-center gap-2 text-[12px] font-bold px-4 py-2 rounded-xl transition-colors text-white bg-blue-600 hover:bg-blue-700">
                 <IkonTeks nama="☁" />Buka di OneDrive →
               </a>

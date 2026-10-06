@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { sendWANotif } from '@/lib/wa';
 import '@/lib/wa-server';
 import { appLink } from '@/lib/app-url';
+import { catatCron } from '@/lib/cron-catat';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,11 +26,41 @@ function isAuthorized(request: NextRequest): boolean {
   return false;
 }
 
-async function runEscalation() {
-  const supabase = createClient(
+/*
+  Klien SERVICE ROLE, bukan anon. Dulu memakai anon key TANPA sesi: RLS tickets mewajibkan
+  identitas login, jadi query di bawah selalu mengembalikan 0 ticket dan eskalasi TIDAK
+  PERNAH jalan (audit 6 Okt 2026: 0 ticket pernah dieskalasi). Sama seperti cron digest.
+  cache:'no-store' supaya Next tidak membekukan hasil fetch antar-jadwal.
+*/
+function klienCron() {
+  return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) } },
   );
+}
+
+/** Catatan percobaan login > 30 hari tidak dipakai penjaga brute-force (jendela 15 menit) - dibersihkan. */
+async function bersihkanLoginLama(supabase: ReturnType<typeof klienCron>) {
+  const batas = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const { count } = await supabase.from('login_attempts').delete({ count: 'exact' }).lt('attempted_at', batas);
+  return count ?? 0;
+}
+
+async function jalankanCron() {
+  const supabase = klienCron();
+  try {
+    const hasil = await runEscalation(supabase);
+    const dibersihkan = await bersihkanLoginLama(supabase).catch(() => 0);
+    await catatCron(supabase, 'escalate', true, `${hasil.escalated} ticket dieskalasi · ${dibersihkan} catatan login lama dibersihkan`);
+    return { ...hasil, loginDibersihkan: dibersihkan };
+  } catch (e) {
+    await catatCron(supabase, 'escalate', false, (e as Error).message ?? 'gagal');
+    throw e;
+  }
+}
+
+async function runEscalation(supabase: ReturnType<typeof klienCron>) {
 
   const { data: tickets } = await supabase
     .from('tickets')
@@ -115,7 +146,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   try {
-    const result = await runEscalation();
+    const result = await jalankanCron();
     return NextResponse.json(result);
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
@@ -128,7 +159,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   try {
-    const result = await runEscalation();
+    const result = await jalankanCron();
     return NextResponse.json(result);
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

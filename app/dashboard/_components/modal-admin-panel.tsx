@@ -15,13 +15,14 @@ import { MerekSettingInline } from './modal-merek';
 import { KelompokSettingInline } from './modal-kelompok';
 import { IntegrasiInline } from './modal-integrasi';
 import { AplikasiAndroidInline } from './modal-aplikasi-android';
+import { KesehatanInline } from './modal-kesehatan';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
 
 // AdminPanelModal (unified: Settings + User Management + PIC Brand)
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
-  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'android'>(initialTab);
+  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'android' | 'kesehatan'>(initialTab);
 
   /**
  * Kelompok navigasi - MENGIKUTI CARA ADMIN BERPIKIR, bukan urutan fitur
@@ -39,13 +40,15 @@ export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
  * (rahasia_integrasi). Kelompok itu
  * ditambahkan PERSIS saat isinya ada, bukan lebih dulu.
  */
-const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications'; label: string }[] = [
+const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications' | 'system'; label: string }[] = [
   { key: 'organization',  label: 'Organisasi' },
   { key: 'appearance',    label: 'Tampilan' },
   { key: 'notifications', label: 'Notifikasi' },
+  //  Kelompok Sistem ditambahkan PERSIS saat isinya ada (lihat catatan di atas): Kesehatan Sistem.
+  { key: 'system',        label: 'Sistem' },
 ];
 
-const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'android'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
+const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'android' | 'kesehatan'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
     {
       key: 'settings',
       group: 'organization',
@@ -108,6 +111,13 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
       label: 'Aplikasi Android',
       icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
       color: '#047857', activeBg: 'rgba(16,185,129,0.1)', activeBorder: 'rgba(16,185,129,0.4)', activeText: '#047857',
+    },
+    {
+      key: 'kesehatan',
+      group: 'system',
+      label: 'Kesehatan Sistem',
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h4l3-8 4 16 3-8h4" /></svg>,
+      color: '#be123c', activeBg: 'rgba(225,29,72,0.1)', activeBorder: 'rgba(225,29,72,0.4)', activeText: '#be123c',
     },
   ];
 
@@ -199,6 +209,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
                 {activeSection === 'kelompok' && 'Daftar kelompok kerja & lonceng yang boleh dilihat masing-masing'}
                 {activeSection === 'integrasi' && 'Kanal notifikasi (In-App, WhatsApp, Telegram) & event mana lewat kanal mana'}
                 {activeSection === 'android' && 'Unggah APK baru - langsung tampil di Profil untuk diunduh'}
+                {activeSection === 'kesehatan' && 'Cron, kuota paket Free, keamanan basis data, pemakaian AI & WA'}
               </p>
             </div>
             <button aria-label="Tutup" onClick={onClose}
@@ -236,6 +247,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
               <div className="p-4"><IntegrasiInline /></div>
             )}
             {activeSection === 'android' && <AplikasiAndroidInline />}
+            {activeSection === 'kesehatan' && <KesehatanInline />}
           </div>
         </div>
       </div>
