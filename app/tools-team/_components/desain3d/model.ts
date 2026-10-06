@@ -16,6 +16,8 @@
 import type * as T from 'three';
 import { ukuranDariDiagonal } from '@/lib/av-hitung';
 
+import { susunRak, type PerangkatRak } from './rak';
+
 export type Jenis =
   | 'videowall' | 'led' | 'layar' | 'ifp' | 'tv'
   | 'meja' | 'kursi'
@@ -67,6 +69,7 @@ export interface Benda {
   /** Proyektor: kecerahan (ANSI lumen) */ lumen?: number;
   /** Display: tempel dinding atau standfloor (berkaki/troli) */ pasang?: Pasang;
   /** Rak: tinggi dalam U */ rakU?: number;
+  /** Rak: isi per U dari atas (rack elevation); kosong = isi bawaan. */ isiRak?: PerangkatRak[];
   mic?: 'gooseneck' | 'boundary';
   /** Meja: bentuk & permukaan (bawaan: rapat, walnut; kelas: oak) */ bentukMeja?: BentukMeja; finish?: Finish;
   /** Kursi: kantor (beroda) / kelas (empat kaki) */ tipeKursi?: TipeKursi;
@@ -750,7 +753,8 @@ export function titikPenonton(b: Benda[]): { x: number; z: number; id: string }[
 export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
     b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt, b.warna, b.panel ? JSON.stringify(b.panel) : '', b.diag, b.tipeSpeaker, b.modul, b.sudutModul, b.tiltLA, b.gantung,
-    b.baris, b.kursiBaris, b.tinggiAnak, b.bentukBidang, b.jariBidang, b.busur, b.monitorMeja, b.tipeRak, b.tipeLampu, b.sudutLampu, b.kelvin, b.lumen].join('|');
+    b.baris, b.kursiBaris, b.tinggiAnak, b.bentukBidang, b.jariBidang, b.busur, b.monitorMeja, b.tipeRak, b.tipeLampu, b.sudutLampu, b.kelvin, b.lumen,
+    b.isiRak ? JSON.stringify(b.isiRak) : ''].join('|');
 
 // ── Salin ke ruang sebelah ─────────────────────────────────────────────────
 
@@ -1463,23 +1467,19 @@ function teksturMonitor(THREE: typeof T, cctv: boolean, benih: number): T.Textur
  * Isi rack tampak depan (1 U = 48 px): patch panel, switch, server, NAS, amplifier, DSP,
  * matrix, cable manager, blank panel, dan UPS di bawah - lengkap dengan port & LED.
  */
-function teksturIsiRak(THREE: typeof T, u: number): T.Texture {
+/** Tekstur isi rack dari rack elevation (perangkat per U dari atas; sisa U = blank panel). */
+function teksturIsiRak(THREE: typeof T, b: Benda): T.Texture {
+  const s = susunRak(b), u = s.U;
   const pxU = 48, W = 512, H = Math.max(1, u) * pxU;
   const c = kanvas(W, H, g => {
     g.fillStyle = '#0b0d10'; g.fillRect(0, 0, W, H);
-    const urutan: [string, number][] = [['patch', 1], ['kabel', 1], ['switch', 1], ['patch', 1], ['switch', 1], ['kosong', 1], ['server', 2], ['server', 2], ['nas', 2],
-      ['kosong', 1], ['amp', 2], ['dsp', 1], ['matrix', 2], ['kosong', 1], ['amp', 2], ['server', 2], ['kosong', 2]];
-    const ups = Math.min(3, Math.max(0, u - 6));
-    let y = 0, i = 0;
     const r = acak(u * 31 + 5);
-    while (y < u - ups) {
-      const [jenis, tinggi] = urutan[i % urutan.length]; i++;
-      const t = Math.min(tinggi, u - ups - y);
-      const py = y * pxU, ph = t * pxU;
-      gambarPerangkat(g, jenis, py, ph, r);
-      y += t;
+    for (const x of s.posisi) {
+      if (x.uAtas < 1) break;
+      const bawah = Math.max(1, x.uBawah);
+      gambarPerangkat(g, x.p.jenis, (u - x.uAtas) * pxU, (x.uAtas - bawah + 1) * pxU, r);
     }
-    if (ups) gambarPerangkat(g, 'ups', (u - ups) * pxU, ups * pxU, r);
+    for (let i = 0; i < s.sisa; i++) gambarPerangkat(g, 'kosong', (u - s.sisa + i) * pxU, pxU, r);
   });
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
@@ -1539,6 +1539,27 @@ function gambarPerangkat(g: CanvasRenderingContext2D, jenis: string, y: number, 
         const tinggi = (h * 0.6) * (0.2 + r() * 0.8);
         g.fillStyle = tinggi > h * 0.45 ? '#f59e0b' : '#22c55e'; g.fillRect(x0 + 110 + i * 14, y + h * 0.8 - tinggi, 8, tinggi);
       }
+      break;
+    }
+    case 'codec': {
+      g.fillStyle = '#0b1220'; g.fillRect(x0, y + h * 0.2, 110, h * 0.6);
+      g.fillStyle = '#5eead4'; g.font = `${Math.max(9, h * 0.22)}px monospace`; g.textBaseline = 'middle'; g.fillText('CODEC VC', x0 + 6, y + h / 2);
+      for (let i = 0; i < 6; i++) { g.fillStyle = '#111827'; g.fillRect(x1 - 120 + i * 18, y + h * 0.3, 12, h * 0.4); }
+      led(x0 + 130, y + h / 2 - 2, 6, '#3b82f6');
+      break;
+    }
+    case 'pdu': {
+      for (let i = 0; i < 8; i++) {
+        const px = x0 + 20 + i * ((x1 - x0 - 40) / 8);
+        g.fillStyle = '#0a0a0a'; g.fillRect(px, y + h * 0.22, 26, h * 0.56);
+        g.fillStyle = '#374151'; g.fillRect(px + 8, y + h * 0.4, 3, h * 0.2); g.fillRect(px + 15, y + h * 0.4, 3, h * 0.2);
+      }
+      led(x0 + 4, y + h / 2 - 2, 6, '#ef4444');
+      break;
+    }
+    case 'shelf': {
+      g.fillStyle = '#0f1115'; g.fillRect(x0, y + h * 0.6, x1 - x0, h * 0.3);
+      g.fillStyle = '#2b2f36'; g.fillRect(x0 + 30, y + h * 0.15, 150, h * 0.45);
       break;
     }
     case 'ups': {
@@ -2641,7 +2662,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
       const lebarIsi = Math.min(0.4826, b.w - 0.08), zIsi = b.d / 2 - 0.09;
       const rel = mat(THREE, 0x9ca3af, { metalness: 0.85, roughness: 0.3 });
       for (const sx of [-1, 1]) g.add(kotak(THREE, 0.018, tinggiRel, 0.02, rel, sx * (lebarIsi / 2 + 0.006), yRel + tinggiRel / 2, zIsi));
-      const isi = new THREE.Mesh(new THREE.PlaneGeometry(lebarIsi, tinggiRel), new THREE.MeshStandardMaterial({ map: teksturIsiRak(THREE, U), roughness: 0.55, metalness: 0.2, emissive: 0xffffff, emissiveIntensity: 0.08 }));
+      const isi = new THREE.Mesh(new THREE.PlaneGeometry(lebarIsi, tinggiRel), new THREE.MeshStandardMaterial({ map: teksturIsiRak(THREE, b), roughness: 0.55, metalness: 0.2, emissive: 0xffffff, emissiveIntensity: 0.08 }));
       isi.position.set(0, yRel + tinggiRel / 2, zIsi + 0.006); g.add(isi);
       g.add(kotak(THREE, lebarIsi, tinggiRel, 0.004, mat(THREE, 0x08090b), 0, yRel + tinggiRel / 2, zIsi - 0.004));
       //  Pintu depan.

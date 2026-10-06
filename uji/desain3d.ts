@@ -12,6 +12,7 @@ import {
   luxLampuLangsung, luxCahayaDi, kontrasProyektor, setLampuGrid, luxBidangKerja, nyalaLampu, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
 } from '../app/tools-team/_components/desain3d/model';
 import * as M3 from '../app/tools-team/_components/desain3d/model';
+import * as R from '../app/tools-team/_components/desain3d/rak';
 import { ringkasanDesain as ringkasRuang } from '../lib/tools-team';
 import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
@@ -452,6 +453,25 @@ console.log('\nTemplate default kategori: lengkap & terkunci');
   const awal = sidik('meeting');
   t1.ruang.p = 99; t1.benda.forEach(b => { b.x = 123; b.nama = 'diubah user'; }); t1.benda.length = 0;
   cek('mengubah salinan tidak mengubah template asli', sidik('meeting') === awal);
+}
+
+console.log('\nRack elevation');
+{
+  for (const U of [12, 20, 42]) {
+    const isi = R.isiRakBawaan(U);
+    cek(`isi bawaan ${U}U pas memenuhi rack (UPS di bawah)`, isi.reduce((a, p) => a + p.u, 0) === U && isi[isi.length - 1].jenis === 'ups');
+  }
+  const rak = { rakU: 12, nama: 'Rack 12U', isiRak: [{ jenis: 'switch' as const, u: 1, nama: 'Switch' }, { jenis: 'matrix' as const, u: 2, nama: 'Matrix' }] };
+  const s = R.susunRak(rak);
+  cek('posisi dari atas: switch di U12, matrix U11-U10, sisa 9U', s.posisi[0].uAtas === 12 && s.posisi[1].uAtas === 11 && s.posisi[1].uBawah === 10 && s.sisa === 9);
+  const penuh = R.susunRak({ ...rak, isiRak: Array.from({ length: 7 }, () => ({ jenis: 'server' as const, u: 2, nama: 'S' })) });
+  cek('melebihi kapasitas terdeteksi (14U di rack 12U)', penuh.lewat === 2 && !penuh.posisi[6].muat);
+  cek('bersihkan: jenis asing dibuang, U dijepit 1-12, nama kosong = label bawaan',
+    JSON.stringify(R.bersihkanIsiRak([{ jenis: 'x', u: 1 }, { jenis: 'ups', u: 40, nama: '' }])) === JSON.stringify([{ jenis: 'ups', u: 12, nama: 'UPS' }]));
+  cek('SVG elevation memuat nama & nomor U', R.svgElevasiRak(rak).includes('Matrix') && R.svgElevasiRak(rak).includes('>12<'));
+  cek('template Produk saya menyimpan isi rack', JSON.stringify(bersihkanAturProduk({ isiRak: rak.isiRak }).isiRak) === JSON.stringify(rak.isiRak));
+  cek('isi rack mengubah tanda bentuk (tekstur dibangun ulang)', M3.tandaBentuk({ ...M3.bendaBaru('rak', M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu' })[0]), isiRak: rak.isiRak })
+    !== M3.tandaBentuk(M3.bendaBaru('rak', M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu' })[0])));
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

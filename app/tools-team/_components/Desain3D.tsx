@@ -19,6 +19,7 @@ import {
   arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, templateRuang, KATEGORI_RUANG, type KategoriRuang, lumenDari,
   aturNyalaLampu, nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, LUX_LUAR, luxSiang, type Siang, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU,
 } from './desain3d/model';
+import { svgElevasiRak } from './desain3d/rak';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl, type Lembar } from './cetak';
 import { getSession } from '@/lib/auth';
@@ -88,6 +89,22 @@ const TAMPAK: { arah: 'sekarang' | Sudut; judul: string }[] = [
  * sama dengan di layar - label HTML tidak ikut tertangkap oleh WebGL. Gaya diambil dari
  * elemennya sendiri (warna, huruf), diperbesar sesuai resolusi foto.
  */
+/**
+ * Label produk tidak boleh bertumpuk: label yang menabrak label lain (urutan = prioritas) disembunyikan
+ * sementara, dan muncul lagi saat kamera di-zoom / diputar sampai ada ruang.
+ */
+function hindariTumpuk(wadah: HTMLElement) {
+  const ambil: DOMRect[] = [];
+  wadah.querySelectorAll<HTMLElement>('[data-produk]').forEach(el => {
+    if (el.style.display === 'none') return;
+    el.style.visibility = 'visible';
+    const r = el.getBoundingClientRect();
+    if (!r.width) return;
+    const tabrak = ambil.some(a => r.left < a.right + 2 && r.right > a.left - 2 && r.top < a.bottom + 1 && r.bottom > a.top - 1);
+    if (tabrak) el.style.visibility = 'hidden'; else ambil.push(r);
+  });
+}
+
 function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h: number) {
   //  Sedikit lebih besar dari di layar supaya tetap terbaca saat gambar diperkecil / dicetak.
   const skala = (w / Math.max(1, m.renderer.domElement.clientWidth || w)) * 1.35;
@@ -95,7 +112,7 @@ function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h: number
   m.scene.updateMatrixWorld();
   m.scene.traverseVisible(o => {
     const el = (o as { element?: HTMLElement }).element;
-    if (!(o as { isCSS2DObject?: boolean }).isCSS2DObject || !el || el.style.display === 'none') return;
+    if (!(o as { isCSS2DObject?: boolean }).isCSS2DObject || !el || el.style.display === 'none' || el.style.visibility === 'hidden') return;
     const teks = (el.innerText || el.textContent || '').trim(); if (!teks) return;
     v.setFromMatrixPosition(o.matrixWorld).project(m.kamera);
     if (v.z < -1 || v.z > 1) return;
@@ -107,9 +124,11 @@ function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h: number
     const lebar = Math.max(...baris.map(b => g.measureText(b).width));
     const padX = 6 * skala, tb = uk * 1.3, kw = lebar + padX * 2, kh = baris.length * tb + 4 * skala;
     const tegak = (cs.writingMode || '').startsWith('vertical');
+    //  Label produk menempel: digeser setengah tinggi (data-dy -1 = di atas titik, 1 = di bawah).
+    const dy = Number(el.dataset.dy || 0) * (kh / 2 + 1 * skala);
     const latar = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent' ? cs.backgroundColor : 'rgba(15,23,42,0.85)';
     g.save();
-    g.translate(x, y);
+    g.translate(x, y + dy);
     if (tegak) g.rotate(Math.PI / 2);
     g.save();
     g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 3 * skala; g.shadowOffsetY = 1 * skala;
@@ -429,6 +448,7 @@ export default function Desain3D() {
 
         let jalan = true;
         const vT = new THREE.Vector3(), vS = new THREE.Vector3(), sf = new THREE.Spherical();
+        let tumpukTerakhir = 0;
         const putar = () => {
           if (!jalan) return;
           const tb = mesin.current?.terbang;
@@ -448,6 +468,8 @@ export default function Desain3D() {
             if (!vT.equals(orbit.target)) { vS.subVectors(vT, orbit.target); orbit.target.add(vS); kamera.position.add(vS); }
           }
           orbit.update(); renderer.render(scene, kamera); labelRenderer.render(scene, kamera);
+          const kini = performance.now();
+          if (kini - tumpukTerakhir > 150) { tumpukTerakhir = kini; hindariTumpuk(labelRenderer.domElement); }
           requestAnimationFrame(putar);
         };
         putar();
@@ -760,6 +782,14 @@ export default function Desain3D() {
       el.style.cssText = `font:600 11px system-ui,sans-serif;padding:2px 6px;border-radius:6px;white-space:nowrap;color:#fff;background:${latar};box-shadow:0 1px 3px rgba(0,0,0,.3)`;
       const o = new CSS2DObject(el); o.position.copy(pos); grupBantu.add(o);
     };
+    /** Label produk: kecil, menempel di tepi benda (dy -1 = tepat di atas titik, 1 = tepat di bawah). */
+    const labelP = (teks: string, pos: T.Vector3, dy: -1 | 1 = -1) => {
+      const el = document.createElement('div');
+      el.textContent = teks;
+      el.dataset.produk = '1'; el.dataset.dy = String(dy);
+      el.style.cssText = `font:600 9.5px system-ui,sans-serif;line-height:1.25;padding:0 5px;border-radius:999px;white-space:nowrap;color:#0f172a;background:rgba(255,255,255,.9);border:1px solid #cbd5e1;margin-top:${dy * 7}px`;
+      const o = new CSS2DObject(el); o.position.copy(pos); grupBantu.add(o);
+    };
     for (const a of analisis) {
       const d = a.d;
       const r = (d.rot * Math.PI) / 180;
@@ -782,8 +812,8 @@ export default function Desain3D() {
         //  Garis ukuran aktif: label cukup nama, digeser di atas angka mm supaya tidak bertumpuk.
         //  Ukuran mati tetapi label produk hidup: cukup nama display.
         const adaGaris = garisUkur && !d.sembunyiUkur;
-        const naik = adaGaris ? Math.max(0.1, Math.min(0.3, Math.max(d.w, d.h) * 0.04)) + (d.jenis === 'layar' ? 0.22 : 0) + Math.max(0.1, Math.min(0.25, Math.max(d.w, d.h) * 0.035)) * 2.2 + 0.12 : 0.18;
-        label(adaGaris || !ukur ? d.nama : `${d.nama}: ${f(d.w)} × ${f(d.h)} m`, new THREE.Vector3(d.x, d.elev + d.h + naik, d.z));
+        const naik = adaGaris ? Math.max(0.1, Math.min(0.3, Math.max(d.w, d.h) * 0.04)) + (d.jenis === 'layar' ? 0.22 : 0) + Math.max(0.1, Math.min(0.25, Math.max(d.w, d.h) * 0.035)) * 2.2 : 0.02;
+        labelP(adaGaris || !ukur ? d.nama : `${d.nama}: ${f(d.w)} × ${f(d.h)} m`, new THREE.Vector3(d.x, d.elev + d.h + naik, d.z));
         if (a.terjauhP) {
           const ujung = new THREE.Vector3(a.terjauhP.x, 1.2, a.terjauhP.z);
           const garis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pusat, ujung]),
@@ -981,12 +1011,8 @@ export default function Desain3D() {
         const b = isi[0], nama = kunci.split('|').slice(1).join('|');
         const atas = b.elev + b.h;
         const diPlafon = atas > plafonDi(b.x) - 0.35;
-        const el = document.createElement('div');
-        el.textContent = isi.length > 1 ? `${nama} ×${isi.length}` : nama;
-        el.style.cssText = 'font:600 11px system-ui,sans-serif;padding:2px 7px;border-radius:999px;white-space:nowrap;color:#0f172a;background:rgba(255,255,255,.92);border:1px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,.18)';
-        const o = new CSS2DObject(el);
-        o.position.set(b.x, diPlafon ? Math.max(0.3, b.elev - 0.18) : atas + 0.16, b.z);
-        grupBantu.add(o);
+        labelP(isi.length > 1 ? `${nama} ×${isi.length}` : nama,
+          new THREE.Vector3(b.x, diPlafon ? Math.max(0.3, b.elev - 0.02) : atas + 0.02, b.z), diPlafon ? 1 : -1);
       }
     }
     //  Garis ukuran display: lebar di atas & tinggi di kanan, ujung bertanda, angka dalam mm.
@@ -1661,6 +1687,8 @@ export default function Desain3D() {
           }) },
         { judul: 'Tampilan desain', jenis: 'html',
           html: `<div class="gambar dua">${foto.map(x => gambar(x.url, x.judul)).join('')}</div>` },
+        ...(benda.some(b => b.jenis === 'rak') ? [{ judul: 'Rack elevation', jenis: 'html' as const,
+          html: `<div class="gambar dua">${benda.filter(b => b.jenis === 'rak').map(b => `<div>${svgElevasiRak(b)}</div>`).join('')}</div>` }] : []),
         { judul: `Daftar perangkat & furnitur (${benda.length} item)`, jenis: 'tabel', kepala: ['Kategori', 'Item', 'Ukuran (L × T × P)', 'Jumlah'], rataKanan: [3],
           isi: baris.map(r => [r.kat, r.nama, r.ukuran, String(r.jumlah)]) },
         ...(analisis.length ? [{

@@ -7,6 +7,7 @@
  * sama. Tanpa React / jaringan supaya aman diimpor dari mana saja.
  */
 import type { ModulLED, Hardware, BrandLED } from '@/lib/av-hitung';
+import { bersihkanIsiRak } from '@/app/tools-team/_components/desain3d/rak';
 
 export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[]; /** Daftar brand modul (boleh kosong untuk data lama). */ brand?: BrandLED[] }
 
@@ -272,6 +273,8 @@ export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
   if (typeof a.naik === 'boolean') hasil.naik = a.naik;
   if (typeof a.gantung === 'boolean') hasil.gantung = a.gantung;
   if (typeof a.warna === 'string' && /^#[0-9a-f]{6}$/i.test(a.warna)) hasil.warna = a.warna.toLowerCase();
+  const isiRak = bersihkanIsiRak(a.isiRak);
+  if (isiRak) hasil.isiRak = isiRak;
   if (a.panel && typeof a.panel === 'object') {
     const p = a.panel as Record<string, unknown>, panel: Record<string, number> = {};
     for (const [k, batas] of Object.entries(ANGKA_PANEL)) { const v = angka(p[k], batas); if (v !== undefined) panel[k] = v; }
