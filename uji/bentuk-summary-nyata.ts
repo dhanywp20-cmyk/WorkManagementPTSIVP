@@ -140,7 +140,7 @@ async function main() {
       && teks(r, 5) === 'BAST' && teks(r, 6) === 'Nominal (Rp)');
     const kolTaufik = cariKolom(r, 'Taufik wahyudi');
     ok('Grup kolom bernama "Taufik wahyudi" ada (bukan kolom peran "PIC" tetap)', kolTaufik > 0);
-    const kolInst = cariKolom(r, 'Installer');
+    const kolInst = cariKolom(r, 'PTS Daerah');
     ok('Grup Installer tetap ada, tidak berubah', kolInst > 0);
     const sub = r + 1;
     ok('Sub-kepala orang: Posisi/%/Rp',
@@ -162,7 +162,7 @@ async function main() {
   {
     const rKepala = cariBaris('1. List Project') + 1;
     const kolTaufik = cariKolom(rKepala, 'Taufik wahyudi');
-    const kolInst = cariKolom(rKepala, 'Installer');
+    const kolInst = cariKolom(rKepala, 'PTS Daerah');
 
     const awal = cariBaris('1. List Project') + 3;
     ok('Proyek pertama Korlantas', teks(awal, 3) === 'Korlantas TMC Soreang');
@@ -179,7 +179,7 @@ async function main() {
   {
     const rKepala = cariBaris('1. List Project') + 1;
     const kolTaufik = cariKolom(rKepala, 'Taufik wahyudi');
-    const kolInst = cariKolom(rKepala, 'Installer');
+    const kolInst = cariKolom(rKepala, 'PTS Daerah');
     const awal = cariBaris('1. List Project') + 3;
     const rTotal = cariBaris('TOTAL');
     //  Konsistensi diri: TOTAL harus sama dengan penjumlahan nyata tiap sel
@@ -262,7 +262,7 @@ async function main() {
     //  Posisi/nama tumpang tindih. perbesarKolom cuma boleh MELEBARKAN.
     const rKepala = cariBaris('1. List Project') + 1;
     const kolTaufik = cariKolom(rKepala, 'Taufik wahyudi');
-    const kolInst = cariKolom(rKepala, 'Installer');
+    const kolInst = cariKolom(rKepala, 'PTS Daerah');
     ok('Kolom Nominal (F) tetap >= 15 walau Tabel 3 memakai kolom yang sama',
       (ws.getColumn(6).width ?? 0) >= 15, String(ws.getColumn(6).width));
     ok('Kolom Posisi orang pertama tetap >= 12', (ws.getColumn(kolTaufik).width ?? 0) >= 12, String(ws.getColumn(kolTaufik).width));
@@ -312,7 +312,7 @@ async function main() {
     const rHeader3 = cariBaris('3. Nilai Pengajuan Incentive per Tahun') + 1;
     const kolTotal3 = cariKolom(rHeader3, 'Total');
     const rHeader1 = cariBaris('1. List Project') + 1;
-    const kolInst = cariKolom(rHeader1, 'Installer');
+    const kolInst = cariKolom(rHeader1, 'PTS Daerah');
     const kolTerakhirTabel1 = kolInst + 3; // kolInst.rp - kolom paling kanan Tabel 1
     ok('Data uji ini punya Tabel 1 lebih lebar dari Tabel 3 (memverifikasi skenario yang relevan benar-benar diuji)',
       kolTerakhirTabel1 > kolTotal3 + 2, `Tabel1=${kolTerakhirTabel1} Tabel3=${kolTotal3}`);
