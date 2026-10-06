@@ -432,7 +432,7 @@ function TicketingSystemInner() {
       ]);
       // Map users ke format TeamMember agar kompatibel dengan kode existing
       if (membersData.data) {
-        membersData.data = (membersData.data as any[]).map((u: any) => ({
+        (membersData as { data: unknown }).data = (membersData.data as any[]).map((u: any) => ({
           id: u.id,
           name: u.full_name,      // name = full_name
           username: u.username,
@@ -751,7 +751,7 @@ function TicketingSystemInner() {
         } catch { }
         setTickets(mergedTickets);
       }
-      if (membersData.data) setTeamMembers(membersData.data);
+      if (membersData.data) setTeamMembers(membersData.data as unknown as TeamMember[]);
       if (usersData.data) setUsers(usersData.data);
       if (!silent) { setLoading(false); setTicketsLoading(false); }
       else { setLoading(false); }
@@ -2499,8 +2499,8 @@ function TicketingSystemInner() {
     if (!toEscalate.length) return;
     const ids = toEscalate.map(t => t.id);
     supabase.from('tickets').update({ status: 'Overdue' }).in('id', ids)
-      .then(() => { if (currentUser) fetchData(currentUser, true); })
-      .catch((e: unknown) => console.warn('[SLA] auto-escalation error:', e));
+      .then(() => { if (currentUser) fetchData(currentUser, true); },
+        (e: unknown) => console.warn('[SLA] auto-escalation error:', e));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tickets, overdueSettings]);
 

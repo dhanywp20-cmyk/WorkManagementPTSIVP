@@ -79,7 +79,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
     ]);
     setSessions((s as QuizSession[]) ?? []);
     setMaterials(m ?? []);
-    setQuestions(q ?? []);
+    setQuestions((q ?? []) as unknown as Question[]);
     setTeamUsers((u ?? []) as User[]);
 
     //  Dihitung per ORANG, bukan per baris attempt: satu peserta yang mengulang
