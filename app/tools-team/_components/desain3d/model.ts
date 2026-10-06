@@ -42,7 +42,16 @@ export type ModelVW = '55BDL2105X' | '49BDL2105X' | 'custom';
 export type RasioLayar = '16:9' | '16:10' | '4:3' | '21:9';
 /** Panel videowall custom (merek/model lain): ukuran set & bezel dalam meter/mm. */
 export interface PanelVW { w: number; h: number; d: number; bezelMm: number; resX: number; resY: number; wTipikal: number; wMaks: number }
-export type Pasang = 'dinding' | 'standfloor';
+/** Pemasangan display: bracket pop-up di dinding, wall bracket + struktur hollow, atau standfloor portable beroda. */
+export type Pasang = 'dinding' | 'hollow' | 'standfloor';
+/** Display yang punya pilihan pemasangan. */
+export const BISA_PASANG: Jenis[] = ['videowall', 'ifp', 'tv', 'led'];
+/** Pemasangan efektif: LED videotron lama (tanpa pilihan) = struktur hollow, display lain = bracket pop-up. */
+export const pasangDari = (b: Pick<Benda, 'jenis' | 'pasang'>): Pasang => b.pasang ?? (b.jenis === 'led' ? 'hollow' : 'dinding');
+/** Jarak punggung display ke dinding (m) untuk tiap pemasangan. */
+//  Pop-up: kedalaman tertutup bracket pop-out videowall ±10 cm (seperti datasheet umumnya).
+export const CELAH_PASANG: Record<Pasang, number> = { dinding: 0.1, hollow: 0.1, standfloor: 0.45 };
+export const LABEL_PASANG: Record<Pasang, string> = { dinding: 'Wall bracket pop-up', hollow: 'Wall bracket + struktur hollow', standfloor: 'Standfloor portable beroda' };
 
 export interface Benda {
   id: string; jenis: Jenis; nama: string;
@@ -68,7 +77,7 @@ export interface Benda {
   /** Proyektor: offset vertikal lensa (0,5 = tepi gambar di sumbu lensa / offset 100%) */ offsetLensa?: number;
   /** Proyektor: lens shift horizontal (pecahan lebar gambar, + = ke kanan dilihat dari proyektor) */ geserLensaH?: number;
   /** Proyektor: kecerahan (ANSI lumen) */ lumen?: number;
-  /** Display: tempel dinding atau standfloor (berkaki/troli) */ pasang?: Pasang;
+  /** Display: bracket pop-up, wall bracket + struktur hollow, atau standfloor beroda */ pasang?: Pasang;
   /** Rak: tinggi dalam U */ rakU?: number;
   /** Rak: isi per U dari atas (rack elevation); kosong = isi bawaan. */ isiRak?: PerangkatRak[];
   mic?: 'gooseneck' | 'boundary';
@@ -327,6 +336,7 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'ifp-s', label: 'Interactive standfloor', ket: '65" / 75" / 86" · troli', jenis: 'ifp', atur: { pasang: 'standfloor' } },
       { kunci: 'signage', label: 'Signage display', ket: '55" / 65" / 75" / 86" · bracket dinding', jenis: 'tv', atur: { diag: 55, pasang: 'dinding', nama: 'Signage 55"' } },
       { kunci: 'signage-s', label: 'Signage standfloor', ket: '55" - 86" · stand beroda', jenis: 'tv', atur: { diag: 65, pasang: 'standfloor', nama: 'Signage 65"' } },
+      { kunci: 'signage-h', label: 'Signage + struktur hollow', ket: '55" - 86" · wall bracket di rangka hollow', jenis: 'tv', atur: { diag: 65, pasang: 'hollow', nama: 'Signage 65"' } },
       { kunci: 'tv', label: 'TV / Display', ket: 'Diagonal bebas', jenis: 'tv' },
     ],
   },
@@ -460,9 +470,12 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
   switch (jenis) {
     case 'videowall': {
       const b = jadi({ ...dasar, w: 0, h: 0, d: 0, elev: 0.8, vw: '55BDL2105X', kol: 2, bar: 2, pasang: 'dinding', konten: 'pola', ...atur } as Benda);
-      return { ...b, nama: `Videowall ${spekVideowall(b).inci}" ${b.kol}×${b.bar}`, z: b.d / 2 + 0.06 };
+      return { ...b, nama: `Videowall ${spekVideowall(b).inci}" ${b.kol}×${b.bar}`, z: b.d / 2 + CELAH_PASANG[pasangDari(b)] };
     }
-    case 'led': return { ...dasar, z: 0.08, w: 4, h: 2.25, d: 0.1, elev: 0.6, pitch: 2.5, cabW: 500, cabH: 500, konten: 'pola', ...atur };
+    case 'led': {
+      const ps = atur.pasang ?? 'hollow';
+      return { ...dasar, z: 0.05 + CELAH_PASANG[ps], w: 4, h: 2.25, d: 0.1, elev: ps === 'standfloor' ? 0.72 : 0.6, pitch: 2.5, cabW: 500, cabH: 500, pasang: ps, konten: 'pola', ...atur };
+    }
     case 'layar': { const b = jadi({ ...dasar, z: 0.05, w: 0, h: 0, d: 0.03, elev: 0.9, diag: 120, rasio: '16:9', konten: 'pola', ...atur } as Benda); return { ...b, nama: `Layar ${b.diag}" ${b.rasio}` }; }
     case 'ifp': {
       const stand = (atur.pasang ?? 'dinding') === 'standfloor';
@@ -471,7 +484,7 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
     }
     case 'tv': {
       const stand = atur.pasang === 'standfloor';
-      return jadi({ ...dasar, z: stand ? 0.5 : 0.09, w: 0, h: 0, d: 0.06, elev: stand ? 0.75 : 1.0, diag: 65, pasang: 'dinding', konten: 'pola', ...atur } as Benda);
+      return jadi({ ...dasar, z: stand ? 0.5 : 0.03 + CELAH_PASANG[atur.pasang ?? 'dinding'], w: 0, h: 0, d: 0.06, elev: stand ? 0.75 : 1.0, diag: 65, pasang: 'dinding', konten: 'pola', ...atur } as Benda);
     }
     case 'meja': {
       const bentuk = atur.bentukMeja ?? 'rapat';

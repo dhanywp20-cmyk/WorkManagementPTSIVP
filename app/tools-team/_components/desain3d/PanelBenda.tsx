@@ -5,7 +5,7 @@ import { isiRakDari, susunRak, svgElevasiRak, PERANGKAT_RAK, JENIS_RAK, type Per
 import { namaBerkas, unduhSvgPNG } from '../cetak';
 import { Ikon } from '@/components/shared/Ikon';
 import {
-  type Benda, type ModelVW, type BentukMeja, type KontenLayar, type TipeLampu, type Ruang, SPEK_LAMPU, lumenLampu, sudutLampuDari, luxLampuLangsung, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
+  BISA_PASANG, pasangDari, CELAH_PASANG, LABEL_PASANG, type Pasang, type Benda, type ModelVW, type BentukMeja, type KontenLayar, type TipeLampu, type Ruang, SPEK_LAMPU, lumenLampu, sudutLampuDari, luxLampuLangsung, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
   DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, IFP_DIAG, TV_DIAG, RASIO_LAYAR, PANEL_VW_AWAL, terapkanUkuran, bendaBaru, spekVideowall, warnaSah,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, offsetLensaDari, geserLensaDari, lumenDari,
   tipeSpeakerDari, modulLA, sudutModulLA, tiltLADari, berkasLineArray, type TipeSpeaker,
@@ -164,10 +164,23 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           </>
         )}
 
-        {(b.jenis === 'videowall' || b.jenis === 'ifp' || b.jenis === 'tv') && (
-          <Segmen label="Pemasangan" nilai={b.pasang ?? 'dinding'} onUbah={v => set({ pasang: v, elev: v === 'standfloor' && b.elev > 1 ? 0.72 : b.elev })}
-            opsi={[{ v: 'dinding', l: 'Dinding' }, { v: 'standfloor', l: 'Standfloor' }]} />
-        )}
+        {BISA_PASANG.includes(b.jenis) && (() => {
+          const lama = pasangDari(b);
+          //  Ganti pemasangan: display maju / mundur sejauh beda tebal pemasangan, punggung tetap di tempatnya.
+          const ganti = (v: Pasang) => {
+            const r = (b.rot * Math.PI) / 180, maju = CELAH_PASANG[v] - CELAH_PASANG[lama];
+            set({ pasang: v, x: Math.round((b.x + Math.sin(r) * maju) * 100) / 100, z: Math.round((b.z + Math.cos(r) * maju) * 100) / 100,
+              //  Standfloor: display duduk di atas baki percabangan kaki (±0,72 m dari lantai).
+              elev: v === 'standfloor' && (b.elev > 1.2 || b.elev < 0.66) ? 0.72 : b.elev });
+          };
+          return (
+            <div>
+              <Segmen label="Pemasangan" nilai={lama} onUbah={ganti}
+                opsi={[{ v: 'dinding', l: 'Pop-up' }, { v: 'hollow', l: 'Hollow' }, { v: 'standfloor', l: 'Standfloor' }]} />
+              <p className="text-[11px] text-slate-500 mt-1">{LABEL_PASANG[lama]}{lama === 'hollow' ? ' - rangka besi 40×40, tiang tiap ±0,6 m, plat siku ke dinding.' : lama === 'standfloor' ? ' - tiang & roda, bisa dipindah.' : ' - bracket gunting, display bisa ditarik keluar untuk servis.'}</p>
+            </div>
+          );
+        })()}
 
         {b.jenis === 'led' && (
           <>
