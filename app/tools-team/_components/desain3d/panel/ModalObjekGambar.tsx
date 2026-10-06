@@ -2,8 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from '@/components/shared/Modal';
 import { Ikon } from '@/components/shared/Ikon';
-import { Angka, Segmen, f } from '../../ui';
-import { konturDariPiksel, type HasilKontur, type Kontur, type ModeLatar } from '../impor/kontur';
+import { Angka, f, Segmen } from '../../ui';
+import { type HasilKontur, type Kontur, konturDariPiksel, type ModeLatar } from '../impor/kontur';
 
 /**
  * "Objek dari gambar": foto / gambar patung, tampak gedung, logo, atau sketsa bidang dari user

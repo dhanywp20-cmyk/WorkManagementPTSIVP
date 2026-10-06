@@ -10,7 +10,7 @@
  * Warna = warna standar legend (LEGENDA_KABEL), sama di layar, PNG, dan cetak.
  */
 import { daftarRuang, ruangDari } from './ruang';
-import { type Benda, type Ruang, type Titik } from './tipe';
+import type { Benda, Ruang, Titik } from './tipe';
 
 export type GolonganKabel = 'lan' | 'hdmi' | 'audio' | 'speaker' | 'usb' | 'power' | 'fiber';
 /** Legend warna kabel (urutan tampil). */

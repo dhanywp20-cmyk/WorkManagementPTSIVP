@@ -3,7 +3,7 @@
  * Model dibangun dengan alas di y = 0; ketinggian (elev) diterapkan lewat posisi grup.
  */
 import type * as T from 'three';
-import { type Benda } from '../inti';
+import type { Benda } from '../inti';
 
 // ── Pembuat model ──────────────────────────────────────────────────────────
 

@@ -1,16 +1,9 @@
 'use client';
-import { useState, type ReactNode } from 'react';
-import { Angka, Pilih, Segmen, f } from '../../ui';
-import { isiRakDari, susunRak, svgElevasiRak, PERANGKAT_RAK, JENIS_RAK, type PerangkatRak, type JenisPerangkatRak } from '../inti';
+import { type ReactNode, useState } from 'react';
+import { Angka, f, Pilih, Segmen } from '../../ui';
+import { barisTribun, type Benda, bendaBaru, type BentukMeja, berkasLineArray, BISA_PASANG, cakupanSpeakerPlafon, CELAH_PASANG, DISPLAY, type Finish, geserLensaDari, IFP_DIAG, isiRakDari, jangkauanDari, JENIS_RAK, type JenisPerangkatRak, type KontenLayar, kursiTribunPerBaris, LABEL_PASANG, LAYAR_DIAG, lengkungDari, lumenDari, lumenLampu, luxLampuLangsung, type ModelVW, modulLA, offsetLensaDari, PANEL_VW_AWAL, type PanelVW, type Pasang, pasangDari, type PasangProyektor, PERANGKAT_RAK, type PerangkatRak, PITCH_LED, RAK_U, RASIO_LAYAR, type RasioLayar, type Ruang, sebaranSpeaker, sebaranVSpeaker, SPEK_LAMPU, spekVideowall, sudutLampuDari, sudutModulLA, susunRak, svgElevasiRak, terapkanUkuran, throwRatioDari, tiltLADari, TINGGI_DENGAR, type TipeKamera, type TipeKursi, type TipeLampu, type TipeSpeaker, tipeSpeakerDari, TV_DIAG, ukuranBidang, VIDEOWALL, warnaSah, zoomLensa } from '../inti';
 import { namaBerkas, unduhSvgPNG } from '../../cetak';
 import { Ikon } from '@/components/shared/Ikon';
-import {
-  BISA_PASANG, pasangDari, CELAH_PASANG, LABEL_PASANG, type Pasang, type Benda, type ModelVW, type BentukMeja, type KontenLayar, type TipeLampu, type Ruang, SPEK_LAMPU, lumenLampu, sudutLampuDari, luxLampuLangsung, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
-  DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, IFP_DIAG, TV_DIAG, RASIO_LAYAR, PANEL_VW_AWAL, terapkanUkuran, bendaBaru, spekVideowall, warnaSah,
-  sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, offsetLensaDari, geserLensaDari, lumenDari,
-  tipeSpeakerDari, modulLA, sudutModulLA, tiltLADari, berkasLineArray, type TipeSpeaker,
-  zoomLensa, throwRatioDari, barisTribun, kursiTribunPerBaris, ukuranBidang, lengkungDari,
-} from '../inti';
 import { AturObjek } from './AturObjek';
 
 /** Warna bawaan per jenis untuk pemilih warna (hanya titik awal pemilih; model tetap memakai bawaannya bila kosong). */

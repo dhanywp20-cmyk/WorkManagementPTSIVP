@@ -1,7 +1,6 @@
 /** Tekstur kanvas procedural (lantai, layar, rack, lampu) (dipisah dari model.ts). */
 import type * as T from 'three';
-import { warnaSah, type Benda, type Ruang } from '../inti';
-import { susunRak } from '../inti';
+import { type Benda, type Ruang, susunRak, warnaSah } from '../inti';
 
 
 export function kanvas(w: number, h: number, gambar: (c: CanvasRenderingContext2D) => void): HTMLCanvasElement {

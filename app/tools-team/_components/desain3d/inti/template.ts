@@ -3,7 +3,7 @@ import { bendaBaru, contohAwal, setRuangKelas } from './katalog';
 import { lengkungDari } from './produk';
 import { arahkanKe, keDunia, lensaProyektor } from './proyektor';
 import { daftarRuang } from './ruang';
-import { type Benda, type Kotak, type Ruang, type Titik } from './tipe';
+import type { Benda, Kotak, Ruang, Titik } from './tipe';
 
 // ── Kategori ruangan (template siap pakai) ─────────────────────────────────
 

@@ -3,7 +3,7 @@
  * Model dibangun dengan alas di y = 0; ketinggian (elev) diterapkan lewat posisi grup.
  */
 import type * as T from 'three';
-import { modulLA, sudutModulLA, tiltLADari, tipeSpeakerDari, type Benda } from '../inti';
+import { type Benda, modulLA, sudutModulLA, tiltLADari, tipeSpeakerDari } from '../inti';
 import { kanvas, teksturIsiRak, teksturPanel } from './tekstur';
 import { batang, blok, type Konteks, kotak, mat, persegiBulat } from './dasar';
 import { teksturGril, teksturMicBoundary } from './permukaan';

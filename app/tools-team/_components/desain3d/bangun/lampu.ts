@@ -8,7 +8,7 @@ import { teksturKolamCahaya } from './tekstur';
 import { batang, type Konteks, kotak, mat } from './dasar';
 
 /** lampu */
-export function bangunLampu({ THREE, g, b, muka, W }: Konteks) {
+export function bangunLampu({ THREE, g, b, W }: Konteks) {
   //  Lampu plafon: rumah lampu + permukaan menyala (emisif, ikut dimmer) + kolam cahaya di lantai.
   const tipe = b.tipeLampu ?? 'downlight', warnaC = warnaKelvin(b.kelvin);
   const nyala = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: warnaC, emissiveIntensity: 1.6, roughness: 0.4 });

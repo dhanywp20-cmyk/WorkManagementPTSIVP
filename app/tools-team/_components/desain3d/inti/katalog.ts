@@ -5,7 +5,7 @@
 import { setLampuGrid, SPEK_LAMPU } from './cahaya';
 import { kursiTribun, spekVideowall, terapkanUkuran } from './produk';
 import { daftarRuang } from './ruang';
-import { CELAH_PASANG, LABEL, LABEL_BENTUK_OBJEK, pasangDari, type Benda, type BentukObjek, type Jenis, type Kotak, type Ruang } from './tipe';
+import { type Benda, type BentukObjek, CELAH_PASANG, type Jenis, type Kotak, LABEL, LABEL_BENTUK_OBJEK, pasangDari, type Ruang } from './tipe';
 
 export interface ItemKatalog {
   kunci: string; label: string; ket: string; jenis: Jenis; atur?: Partial<Benda>;

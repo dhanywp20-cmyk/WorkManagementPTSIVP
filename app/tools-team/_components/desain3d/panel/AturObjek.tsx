@@ -1,7 +1,7 @@
 'use client';
-import { Angka, Pilih, Segmen, f } from '../../ui';
-import { LABEL_BENTUK_OBJEK, type Benda, type BentukObjek } from '../inti';
-import { FAKTOR_SATUAN, LABEL_SATUAN, ukuranModel, type Satuan } from '../impor/berkas3d';
+import { Angka, f, Pilih, Segmen } from '../../ui';
+import { type Benda, type BentukObjek, LABEL_BENTUK_OBJEK } from '../inti';
+import { FAKTOR_SATUAN, LABEL_SATUAN, type Satuan, ukuranModel } from '../impor/berkas3d';
 
 /**
  * Bagian panel "Atur benda" untuk objek mapping (bentuk dasar & siluet gambar) dan model 3D impor:

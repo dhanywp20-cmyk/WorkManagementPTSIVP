@@ -12,7 +12,7 @@
  * yang menyentuh lantai / plafon diberi userData.peran dan disesuaikan sesuaikanTinggi().
  */
 import type * as T from 'three';
-import { warnaSah, type Benda, type Jenis } from '../inti';
+import { type Benda, type Jenis, warnaSah } from '../inti';
 import type { Bahan, Konteks } from './dasar';
 import { bangunMic, bangunRak, bangunSpeaker, bangunSpeakerPlafon, bangunTouchpanel } from './audio';
 import { bangunLayar, bangunLed, bangunProyektor, bangunTvIfp, bangunVideowall } from './display';

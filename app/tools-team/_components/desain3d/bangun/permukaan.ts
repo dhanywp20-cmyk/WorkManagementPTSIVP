@@ -3,7 +3,7 @@
  * Model dibangun dengan alas di y = 0; ketinggian (elev) diterapkan lewat posisi grup.
  */
 import type * as T from 'three';
-import { type Finish } from '../inti';
+import type { Finish } from '../inti';
 import { acak, kanvas } from './tekstur';
 
 // ── Tekstur material: kayu, kain, gril, layar lift ─────────────────────────
