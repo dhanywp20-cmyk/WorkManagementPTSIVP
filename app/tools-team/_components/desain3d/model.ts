@@ -49,7 +49,8 @@ export const BISA_PASANG: Jenis[] = ['videowall', 'ifp', 'tv', 'led'];
 /** Pemasangan efektif: LED videotron lama (tanpa pilihan) = struktur hollow, display lain = bracket pop-up. */
 export const pasangDari = (b: Pick<Benda, 'jenis' | 'pasang'>): Pasang => b.pasang ?? (b.jenis === 'led' ? 'hollow' : 'dinding');
 /** Jarak punggung display ke dinding (m) untuk tiap pemasangan. */
-export const CELAH_PASANG: Record<Pasang, number> = { dinding: 0.06, hollow: 0.1, standfloor: 0.45 };
+//  Pop-up: kedalaman tertutup bracket pop-out videowall ±10 cm (seperti datasheet umumnya).
+export const CELAH_PASANG: Record<Pasang, number> = { dinding: 0.1, hollow: 0.1, standfloor: 0.45 };
 export const LABEL_PASANG: Record<Pasang, string> = { dinding: 'Wall bracket pop-up', hollow: 'Wall bracket + struktur hollow', standfloor: 'Standfloor portable beroda' };
 
 export interface Benda {

@@ -501,36 +501,98 @@ function lineArray(THREE: typeof T, g: T.Group, b: Benda, warna: number, warnaGr
   }
 }
 
+/** Tekstur pelat besi hitam berlubang oval (bracket videowall), satu ubin = 16 cm, 4 lubang. */
+let lubangCache: { h: T.Texture; v: T.Texture } | null = null;
+function teksturBerlubang(THREE: typeof T, tegak: boolean, panjang: number): T.Texture {
+  if (!lubangCache) {
+    const buat = (v: boolean) => {
+      const W = v ? 32 : 128, H = v ? 128 : 32;
+      const c = kanvas(W, H, g => {
+        g.fillStyle = '#1d2025'; g.fillRect(0, 0, W, H);
+        g.fillStyle = 'rgba(255,255,255,0.06)'; if (v) g.fillRect(0, 0, 3, H); else g.fillRect(0, 0, W, 3);
+        g.fillStyle = '#040506';
+        for (let k = 0; k < 4; k++) {
+          const t = k * 32 + 16;
+          g.beginPath();
+          const [rx, ry, rw, rh] = v ? [11, t - 8, 10, 16] : [t - 8, 11, 16, 10];
+          if (typeof g.roundRect === 'function') g.roundRect(rx, ry, rw, rh, 5); else g.rect(rx, ry, rw, rh);
+          g.fill();
+        }
+      });
+      const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+      return t;
+    };
+    lubangCache = { h: buat(false), v: buat(true) };
+  }
+  const t = (tegak ? lubangCache.v : lubangCache.h).clone();
+  const n = Math.max(1, panjang / 0.16);
+  t.repeat.set(tegak ? 1 : n, tegak ? n : 1);
+  return t;
+}
+
+/** Pelat pipih dari titik a ke b (lebar di sumbu x lokal, tebal di z lokal) - untuk lengan gunting. */
+function pelatAntara(THREE: typeof T, a: T.Vector3, b: T.Vector3, lebar: number, tebal: number, m: T.Material) {
+  const arah = b.clone().sub(a);
+  const o = new THREE.Mesh(new THREE.BoxGeometry(tebal, arah.length(), lebar), m);
+  o.position.copy(a).add(b).multiplyScalar(0.5);
+  o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), arah.normalize());
+  return o;
+}
+
 /**
- * Bracket pop-out (videowall & signage): rel dinding atas-bawah berkenop penyetel,
- * rangka tegak di punggung display, dan lengan gunting X di antaranya. Display
- * menempel dinding dengan celah 6 cm (lihat tempel() di Desain3D), jadi bracket
- * membentang dari punggung display (zPunggung) sampai bidang dinding.
+ * Bracket pop-out videowall (mengikuti foto referensi owner): rangka dinding = rel atas & bawah
+ * berlubang + dua tegak samping; rangka depan (menempel punggung display) = dua tiang tegak
+ * berlubang, palang atas & bawah lebar berlubang, palang tengah berpelat, blok pengunci di
+ * atas tiang; di kiri & kanan lengan gunting X (dengan baut poros) menghubungkan keduanya;
+ * kenop T penyetel di atas palang atas dan di ujung palang bawah. Semua hitam.
+ * Celah punggung display ke dinding = CELAH_PASANG.dinding (10 cm).
  */
 function bracketPopOut(THREE: typeof T, lebar: number, tinggi: number, x: number, yTengah: number, zPunggung: number): T.Group {
   const g = new THREE.Group();
-  const hitam = mat(THREE, 0x1c1f24, { metalness: 0.55, roughness: 0.45 });
-  const kenop = mat(THREE, 0x0d0f12, { roughness: 0.65 });
-  const zDinding = zPunggung - 0.06;
-  const W = Math.max(0.2, Math.min(0.62, lebar * 0.55)), H = Math.max(0.18, Math.min(0.5, tinggi * 0.62));
-  for (const sy of [1, -1]) {
-    const y = yTengah + sy * (H / 2);
-    g.add(kotak(THREE, W + 0.1, 0.05, 0.014, hitam, x, y, zDinding + 0.007));            // rel dinding
-    g.add(kotak(THREE, W + 0.1, 0.012, 0.03, hitam, x, y + sy * 0.019, zDinding + 0.02)); // bibir rel
-    for (const sx of [-1, 1]) {
-      const k = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.013, 0.022, 14), kenop);
-      k.position.set(x + sx * (W / 2 - 0.03), y + sy * 0.045, zDinding + 0.024); g.add(k);
-    }
-  }
+  const hitam = mat(THREE, 0x1a1d22, { metalness: 0.55, roughness: 0.45 });
+  const kenop = mat(THREE, 0x0b0c0f, { roughness: 0.6 });
+  const baut = mat(THREE, 0x9ca3af, { metalness: 0.85, roughness: 0.3 });
+  const berlubang = (tegak: boolean, panjang: number) =>
+    new THREE.MeshStandardMaterial({ map: teksturBerlubang(THREE, tegak, panjang), metalness: 0.55, roughness: 0.45 });
+  const zDinding = zPunggung - 0.1;
+  const W = Math.max(0.24, Math.min(0.62, lebar * 0.55)), H = Math.max(0.2, Math.min(0.5, tinggi * 0.62));
+  const yA = yTengah + H / 2, yB = yTengah - H / 2;
+  //  Rangka dinding.
+  for (const y of [yA - 0.025, yB + 0.025]) g.add(kotak(THREE, W + 0.06, 0.05, 0.008, berlubang(false, W + 0.06), x, y, zDinding + 0.004));
+  for (const sx of [-1, 1]) g.add(kotak(THREE, 0.035, H, 0.012, berlubang(true, H), x + sx * (W / 2 - 0.018), yTengah, zDinding + 0.01));
+  //  Rangka depan.
+  const xT = W * 0.36, zD = zPunggung - 0.011;
   for (const sx of [-1, 1]) {
-    g.add(kotak(THREE, 0.04, H + 0.16, 0.012, hitam, x + sx * W * 0.4, yTengah, zPunggung - 0.007)); // tiang punggung
-    //  Lengan gunting X di bidang kedalaman (dari dinding ke punggung display).
-    const xa = x + sx * W * 0.24;
-    const atas = yTengah + H / 2 - 0.04, bawah = yTengah - H / 2 + 0.04;
-    g.add(tiangAntara(THREE, new THREE.Vector3(xa, atas, zDinding + 0.016), new THREE.Vector3(xa, bawah, zPunggung - 0.015), 0.008, hitam));
-    g.add(tiangAntara(THREE, new THREE.Vector3(xa, bawah, zDinding + 0.016), new THREE.Vector3(xa, atas, zPunggung - 0.015), 0.008, hitam));
+    g.add(kotak(THREE, 0.05, H + 0.1, 0.022, berlubang(true, H + 0.1), x + sx * xT, yTengah, zD));
+    g.add(kotak(THREE, 0.075, 0.04, 0.034, hitam, x + sx * xT, yA - 0.03, zD - 0.02));          // blok pengunci
   }
-  for (const sy of [1, -1]) g.add(kotak(THREE, W * 0.8 + 0.04, 0.035, 0.01, hitam, x, yTengah + sy * H * 0.36, zPunggung - 0.005)); // palang punggung
+  const lebarDepan = W + 0.12;
+  g.add(kotak(THREE, lebarDepan, 0.045, 0.01, berlubang(false, lebarDepan), x, yA + 0.025, zPunggung - 0.005));
+  g.add(kotak(THREE, lebarDepan, 0.045, 0.01, berlubang(false, lebarDepan), x, yB - 0.025, zPunggung - 0.005));
+  g.add(kotak(THREE, xT * 2, 0.05, 0.012, hitam, x, yTengah + H * 0.06, zD - 0.016));                 // palang tengah
+  g.add(kotak(THREE, 0.12, 0.085, 0.01, hitam, x, yTengah + H * 0.06, zD - 0.024));                   // pelat tengah
+  //  Lengan gunting X kiri & kanan (bidang y-z, di sisi dalam tiang depan).
+  for (const sx of [-1, 1]) {
+    const xa = x + sx * (xT - 0.04);
+    const atasD = new THREE.Vector3(xa, yA - 0.05, zDinding + 0.02), bawahD = new THREE.Vector3(xa, yB + 0.05, zDinding + 0.02);
+    const atasP = new THREE.Vector3(xa, yA - 0.05, zD - 0.016), bawahP = new THREE.Vector3(xa, yB + 0.05, zD - 0.016);
+    g.add(pelatAntara(THREE, atasD, bawahP, 0.028, 0.008, hitam));
+    g.add(pelatAntara(THREE, bawahD, atasP.clone().setX(xa + sx * 0.01), 0.028, 0.008, hitam));
+    const poros = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.03, 12), baut);
+    poros.rotation.z = Math.PI / 2; poros.position.set(xa + sx * 0.005, yTengah, (zDinding + zD) / 2); g.add(poros);
+  }
+  //  Kenop T: dua di atas palang atas (tegak), dua di ujung palang bawah (mendatar).
+  const kenopT = (px: number, py: number, pz: number, mendatar: number) => {
+    const k = new THREE.Group();
+    k.add(new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.03, 10), baut).translateY(0.015));
+    k.add(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.012, 14), kenop).translateY(0.034));
+    const gagang = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.014, 0.014), kenop); gagang.position.y = 0.046; k.add(gagang);
+    k.position.set(px, py, pz); if (mendatar) k.rotation.z = -mendatar * Math.PI / 2; g.add(k);
+  };
+  for (const sx of [-1, 1]) {
+    kenopT(x + sx * W * 0.24, yA + 0.047, zPunggung - 0.02, 0);
+    kenopT(x + sx * (lebarDepan / 2 - 0.01), yB - 0.025, zPunggung - 0.02, sx);
+  }
   return g;
 }
 
