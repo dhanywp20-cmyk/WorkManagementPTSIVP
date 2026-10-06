@@ -1,6 +1,6 @@
 'use client';
 import { Copy } from 'lucide-react';
-import { Angka, f, Pilih, Segmen } from '../../ui';
+import { Angka, f, Pilih, Segmen } from '../../bersama/ui';
 import { type Benda, type Bukaan, daftarRuang, JENDELA_AWAL, type Kotak, LUX_LUAR, luxBidangKerja, luxSiang, MAKS_RUANG, panjangDinding, pintuSekat, type Ruang, ruangDari, type RuangSambung, sambungan, sambunganKe, type Siang, type SisiDinding, sisiLuar, ukuranPintu } from '../inti';
 import { PilihWarna } from './ModalBuka';
 

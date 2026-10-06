@@ -1,7 +1,7 @@
 'use client';
 /** Atur rack: ukuran U, tipe pintu, isi rack (elevation) + editor & PNG elevation. */
-import { namaBerkas, unduhSvgPNG } from '../../../cetak';
-import { Angka, Pilih, Segmen } from '../../../ui';
+import { namaBerkas, unduhSvgPNG } from '../../../bersama/cetak';
+import { Angka, Pilih, Segmen } from '../../../bersama/ui';
 import { type Benda, isiRakDari, JENIS_RAK, type JenisPerangkatRak, PERANGKAT_RAK, type PerangkatRak, RAK_U, susunRak, svgElevasiRak } from '../../inti';
 import { useState } from 'react';
 import type { KonteksAtur } from './konteks';

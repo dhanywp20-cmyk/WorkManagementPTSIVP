@@ -4,10 +4,10 @@
  * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
  */
 import { useState } from 'react';
-import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG } from '../../cetak';
+import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG } from '../../bersama/cetak';
 import { type Benda, cakupanSpeakerPlafon, DISPLAY, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, rekapKabel, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, throwRatioDari, tipeSpeakerDari } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
-import { f } from '../../ui';
+import { f } from '../../bersama/ui';
 import { getSession } from '@/lib/auth';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import type { useKamera } from '../mesin/useKamera';

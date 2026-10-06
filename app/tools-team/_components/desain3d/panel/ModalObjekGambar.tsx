@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from '@/components/shared/Modal';
 import { Ikon } from '@/components/shared/Ikon';
-import { Angka, f, Segmen } from '../../ui';
+import { Angka, f, Segmen } from '../../bersama/ui';
 import { type HasilKontur, type Kontur, konturDariPiksel, type ModeLatar } from '../impor/kontur';
 
 /**

@@ -5,7 +5,7 @@ import { bersihkanReferensiLED, type RefLED } from '@/lib/tools-team';
 import { Ikon } from '@/components/shared/Ikon';
 import { Modal } from '@/components/shared/Modal';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
-import { bukaCetak, unduhLembarPNG, type Lembar } from './cetak';
+import { bukaCetak, unduhLembarPNG, type Lembar } from '../bersama/cetak';
 
 /**
  * Tabel referensi Kalkulator LED (setara sheet "REF Module LED" & "REF

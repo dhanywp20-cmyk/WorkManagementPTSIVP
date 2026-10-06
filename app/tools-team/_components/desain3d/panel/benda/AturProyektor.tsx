@@ -1,6 +1,6 @@
 'use client';
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen. */
-import { Angka, f, Segmen } from '../../../ui';
+import { Angka, f, Segmen } from '../../../bersama/ui';
 import { bendaBaru, geserLensaDari, lumenDari, offsetLensaDari, type PasangProyektor, throwRatioDari, zoomLensa } from '../../inti';
 import type { KonteksAtur } from './konteks';
 

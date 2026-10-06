@@ -5,8 +5,8 @@ import {
   jarakLempar, lumenDibutuhkan, bandwidthGbps, ANTARMUKA, type Chroma,
   splPadaJarak, splMaks, speakerPlafon, hitungDaya, type Beban,
 } from '@/lib/av-hitung';
-import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f } from './ui';
-import { bukaCetak, unduhLembarPNG, namaBerkas, type Lembar, type Seksi } from './cetak';
+import { Angka, Pilih, Segmen, Kartu, Nilai, TombolSalin, Catatan, f } from './bersama/ui';
+import { bukaCetak, unduhLembarPNG, namaBerkas, type Lembar, type Seksi } from './bersama/cetak';
 import { Ikon } from '@/components/shared/Ikon';
 
 /**

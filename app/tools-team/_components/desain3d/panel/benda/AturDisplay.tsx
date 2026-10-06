@@ -1,6 +1,6 @@
 'use client';
 /** Atur display: videowall (termasuk panel custom), layar proyektor, IFP, TV / signage, LED, pilihan pemasangan. */
-import { Angka, f, Pilih, Segmen } from '../../../ui';
+import { Angka, f, Pilih, Segmen } from '../../../bersama/ui';
 import { BISA_PASANG, CELAH_PASANG, IFP_DIAG, LABEL_PASANG, LAYAR_DIAG, type ModelVW, PANEL_VW_AWAL, type PanelVW, type Pasang, pasangDari, PITCH_LED, RASIO_LAYAR, type RasioLayar, spekVideowall, TV_DIAG, VIDEOWALL } from '../../inti';
 import type { KonteksAtur } from './konteks';
 

@@ -4,7 +4,7 @@ import { Modal } from '@/components/shared/Modal';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Ikon } from '@/components/shared/Ikon';
 import type { RingkasanLED } from '@/lib/tools-team';
-import { f } from './ui';
+import { f } from '../bersama/ui';
 
 const API = '/api/tools-team/led';
 

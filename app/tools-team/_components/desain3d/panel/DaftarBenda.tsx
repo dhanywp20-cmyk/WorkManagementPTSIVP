@@ -1,6 +1,6 @@
 'use client';
 /** Panel daftar benda: pilih, sembunyikan label, hapus. */
-import { f } from '../../ui';
+import { f } from '../../bersama/ui';
 import { ruangDari } from '../inti';
 import { Copy } from 'lucide-react';
 import type { AlatDesain } from './alat';

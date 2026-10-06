@@ -1,6 +1,6 @@
 'use client';
 /** Atur lampu plafon: tipe, lumen, sudut sinar, dimmer, suhu warna, lux langsung. */
-import { Angka, f, Pilih } from '../../../ui';
+import { Angka, f, Pilih } from '../../../bersama/ui';
 import { bendaBaru, lumenLampu, luxLampuLangsung, type Ruang, SPEK_LAMPU, sudutLampuDari, type TipeLampu } from '../../inti';
 import type { KonteksAtur } from './konteks';
 

@@ -2,7 +2,7 @@
  * desain3d/mesin/alatBantu.ts - Alat bantu kanvas: label ukuran & produk, garis jarak terjauh, kerucut sudut pandang, sinar proyektor (raycast ke semua permukaan), jangkauan speaker, jalur kabel, garis ukuran display (mm).
  * Dipanggil useAdegan setiap keadaan terkait berubah; isi lama dibuang dulu oleh pemanggil / fungsi ini.
  */
-import { f } from '../../ui';
+import { f } from '../../bersama/ui';
 import { arahProyektor, type Benda, berkasLineArray, cakupanSpeakerPlafon, DISPLAY, geserLensaDari, jangkauanDari, modulLA, offsetLensaDari, ruangDari, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, throwRatioDari, TINGGI_DENGAR, tipeSpeakerDari } from '../inti';
 import { gambarJalurKabel } from './gambarKabel';
 import type * as T from 'three';

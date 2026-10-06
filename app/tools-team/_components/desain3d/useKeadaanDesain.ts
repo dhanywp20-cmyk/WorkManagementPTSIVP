@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useImporObjek } from './impor/useImporObjek';
 import { analisisDari, type Benda, contohAwal, daftarRuang, DISPLAY, golonganDipakai, jalurKabel, type OpsiKelas, type Ruang, ruangDari, tinggiAlasDi, titikPenonton } from './inti';
-import { useRiwayat } from '../riwayat';
+import { useRiwayat } from '../bersama/riwayat';
 import type { ConfirmState } from '@/components/shared/ConfirmDialog';
 import { getSession } from '@/lib/auth';
 import { FAKTOR_PANDANG, type JenisPandang } from '@/lib/av-hitung';

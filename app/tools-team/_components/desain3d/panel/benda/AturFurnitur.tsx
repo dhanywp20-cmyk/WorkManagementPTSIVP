@@ -1,6 +1,6 @@
 'use client';
 /** Atur furnitur: meja (bentuk, finish, monitor operator), kursi, tribun. */
-import { Angka, f, Pilih, Segmen } from '../../../ui';
+import { Angka, f, Pilih, Segmen } from '../../../bersama/ui';
 import { barisTribun, bendaBaru, type BentukMeja, type Finish, kursiTribunPerBaris, type TipeKursi } from '../../inti';
 import type { KonteksAtur } from './konteks';
 

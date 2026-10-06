@@ -4,7 +4,7 @@
  * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
  */
 import { useEffect } from 'react';
-import { unduhUrl } from '../../cetak';
+import { unduhUrl } from '../../bersama/cetak';
 import { type Benda, idBaru, type Ruang } from '../inti';
 import { denganLegendaSamping } from '../panel/LegendaKabel';
 import { bacaDesainGLB, dataDesainFile, KUNCI_DESAIN, namaFileDesain } from './file-glb';

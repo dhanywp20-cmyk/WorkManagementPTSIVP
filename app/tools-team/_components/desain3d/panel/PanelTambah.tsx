@@ -1,6 +1,6 @@
 'use client';
 /** Panel Tambah benda: Produk saya (tim), katalog per grup, set ruang kelas, objek dari luar. */
-import { Angka, Segmen } from '../../ui';
+import { Angka, Segmen } from '../../bersama/ui';
 import { TERIMA_3D } from '../impor/berkas3d';
 import { KATALOG, LABEL, type OpsiKelas, ukuranSetKelas } from '../inti';
 import { Trash2 } from 'lucide-react';

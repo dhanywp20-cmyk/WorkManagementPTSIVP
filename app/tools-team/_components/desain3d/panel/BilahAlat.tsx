@@ -1,6 +1,6 @@
 'use client';
 /** Bilah alat: kategori, tambah, ruangan, daftar benda, pusatkan, buka/simpan, undo, sudut pandang, PNG, cetak. */
-import { Segmen, TombolSalin } from '../../ui';
+import { Segmen, TombolSalin } from '../../bersama/ui';
 import { tombol, tombolAktif, tombolUtama } from './gaya';
 import { Ikon } from '@/components/shared/Ikon';
 import { AlignCenterVertical, FolderOpen, HardDriveDownload, LayoutTemplate, Redo2, Undo2 } from 'lucide-react';

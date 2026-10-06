@@ -1,6 +1,6 @@
 'use client';
 import { type GolonganKabel, LEGENDA_KABEL } from '../inti';
-import { esc } from '../../cetak';
+import { esc } from '../../bersama/cetak';
 
 /**
  * Legend warna kabel. Aturannya satu: tampil HANYA saat "Jalur kabel" dicentang - di sisi kanvas,

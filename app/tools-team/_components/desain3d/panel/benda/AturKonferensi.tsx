@@ -1,6 +1,6 @@
 'use client';
 /** Atur kamera & paperless lift. */
-import { Segmen } from '../../../ui';
+import { Segmen } from '../../../bersama/ui';
 import { bendaBaru, type TipeKamera } from '../../inti';
 import type { KonteksAtur } from './konteks';
 

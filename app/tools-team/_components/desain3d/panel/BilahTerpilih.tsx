@@ -1,6 +1,6 @@
 'use client';
 /** Bilah benda terpilih: geser / putar, tempel ke dinding. */
-import { Segmen } from '../../ui';
+import { Segmen } from '../../bersama/ui';
 import { BISA_TEMPEL } from '../inti';
 import type { Sisi } from '../mesin/tipe';
 import type { AlatDesain } from './alat';

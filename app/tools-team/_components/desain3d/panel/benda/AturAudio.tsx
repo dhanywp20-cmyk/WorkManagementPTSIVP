@@ -1,6 +1,6 @@
 'use client';
 /** Atur audio: mic, speaker (tipe, sebaran, jangkauan), line array (modul, sudut, tilt). */
-import { Angka, f, Segmen } from '../../../ui';
+import { Angka, f, Segmen } from '../../../bersama/ui';
 import { bendaBaru, berkasLineArray, cakupanSpeakerPlafon, jangkauanDari, modulLA, sebaranSpeaker, sebaranVSpeaker, sudutModulLA, tiltLADari, TINGGI_DENGAR, type TipeSpeaker, tipeSpeakerDari } from '../../inti';
 import type { KonteksAtur } from './konteks';
 

@@ -1,7 +1,7 @@
 'use client';
 /** Panel proyektor (Atur benda): jarak lempar, ukuran gambar, tombol mengepaskan ke layar, kontras vs lampu. */
 import { type Benda, kontrasProyektor, layarTerdekat, lumenDari, LUX_PRESET, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, throwRatioDari, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
-import { f } from '../../ui';
+import { f } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 
 export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {

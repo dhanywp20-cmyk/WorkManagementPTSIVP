@@ -1,6 +1,6 @@
 'use client';
 /** Bagian umum panel Atur benda: warna, ukuran produk, posisi, label, konten layar, simpan ke Produk saya. */
-import { Angka, Pilih } from '../../../ui';
+import { Angka, Pilih } from '../../../bersama/ui';
 import { type Benda, DISPLAY, type KontenLayar, warnaSah } from '../../inti';
 import { Ikon } from '@/components/shared/Ikon';
 import type { KonteksAtur } from './konteks';

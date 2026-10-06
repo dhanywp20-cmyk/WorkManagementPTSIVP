@@ -1,6 +1,6 @@
 'use client';
 /** Atur bidang / layar mapping: datar, cekung, cembung, pilar 360°. */
-import { Angka, f, Segmen } from '../../../ui';
+import { Angka, f, Segmen } from '../../../bersama/ui';
 import { type Benda, lengkungDari, terapkanUkuran, ukuranBidang } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
