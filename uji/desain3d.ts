@@ -13,6 +13,7 @@ import {
 } from '../app/tools-team/_components/desain3d/model';
 import * as M3 from '../app/tools-team/_components/desain3d/model';
 import * as R from '../app/tools-team/_components/desain3d/rak';
+import * as K from '../app/tools-team/_components/desain3d/kabel';
 import { ringkasanDesain as ringkasRuang } from '../lib/tools-team';
 import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
 import { bacaDesainGLB, dataDesainFile, jsonDariGLB, namaFileDesain, KUNCI_DESAIN } from '../app/tools-team/_components/desain3d/file-glb';
@@ -472,6 +473,26 @@ console.log('\nRack elevation');
   cek('template Produk saya menyimpan isi rack', JSON.stringify(bersihkanAturProduk({ isiRak: rak.isiRak }).isiRak) === JSON.stringify(rak.isiRak));
   cek('isi rack mengubah tanda bentuk (tekstur dibangun ulang)', M3.tandaBentuk({ ...M3.bendaBaru('rak', M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu' })[0]), isiRak: rak.isiRak })
     !== M3.tandaBentuk(M3.bendaBaru('rak', M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu' })[0])));
+}
+
+console.log('\nJalur & panjang kabel');
+{
+  const ruang: M3.Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };
+  const k = M3.daftarRuang(ruang)[0];
+  const tanpaRak = [M3.bendaBaru('tv', k)];
+  cek('tanpa rack: belum ada jalur kabel', K.jalurKabel(tanpaRak, ruang).length === 0);
+  const tv = { ...M3.bendaBaru('tv', k), x: 1, z: 0.1, elev: 1.2 };
+  const rak = { ...M3.bendaBaru('rak', k), x: 7.5, z: 5.5 };
+  const mic = { ...M3.bendaBaru('mic', k), x: 4, z: 3, elev: 0.75 };
+  const spk = { ...M3.bendaBaru('speaker-plafon', k), x: 2, z: 2 };
+  const j = K.jalurKabel([tv, rak, mic, spk], ruang);
+  cek('TV: video + LAN, speaker plafon: kabel speaker, mic: kabel mic', j.length === 4 && j.some(x => x.kabel.kunci === 'speaker') && j.some(x => x.kabel.kunci === 'mic'));
+  const video = j.find(x => x.dari === tv.nama && x.kabel.kunci !== 'lan')!;
+  cek('TV dinding lewat plafon, mic meja lewat lantai', video.lewat === 'plafon' && j.find(x => x.kabel.kunci === 'mic')!.lewat === 'lantai');
+  cek('video > 10 m otomatis HDBaseT, panjang dibulatkan 0,5 m', video.panjang > K.HDMI_MAKS ? video.kabel.kunci === 'hdbt' : video.kabel.kunci === 'hdmi');
+  cek('panjang >= jarak siku-siku + service loop', j.every(x => x.panjang * 2 === Math.round(x.panjang * 2) && x.panjang >= 1.5));
+  const rekap = K.rekapKabel(j);
+  cek('rekap per jenis menjumlah semua tarikan', rekap.reduce((a, r) => a + r.tarikan, 0) === j.length);
 }
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);

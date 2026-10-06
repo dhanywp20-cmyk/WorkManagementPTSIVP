@@ -20,6 +20,7 @@ import {
   aturNyalaLampu, nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, LUX_LUAR, luxSiang, type Siang, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU,
 } from './desain3d/model';
 import { svgElevasiRak } from './desain3d/rak';
+import { jalurKabel, rekapKabel, HDMI_MAKS } from './desain3d/kabel';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl, type Lembar } from './cetak';
 import { getSession } from '@/lib/auth';
@@ -245,6 +246,9 @@ export default function Desain3D() {
   const setSudutNyaman = (v: number) => setAnalisis({ sudut: v });
   /** Tampilkan jangkauan suara semua speaker (per speaker: Benda.tampilJangkauan). */
   const [jangkau, setJangkau] = useState(false);
+  /** Jalur kabel perangkat -> rack digambar di kanvas. */
+  const [tampilKabel, setTampilKabel] = useState(false);
+  const kabel = useMemo(() => jalurKabel(benda, ruang), [benda, ruang]);
   /** Bayangan lembut display di dinding/lantai + cahaya layar ke lantai. */
   const [bayangan, setBayangan] = useState(true);
   /** Katalog "Produk saya" (template tim di server). */
@@ -996,6 +1000,15 @@ export default function Desain3D() {
         if (kotakRuang.length > 1) label(`Ruang ${i + 1}`, new THREE.Vector3(k.x0 + Math.min(0.7, k.p / 4), 0.05, k.l - Math.min(0.45, k.l / 4)), 'abu');
       });
     }
+    //  Jalur kabel ke rack (warna per jenis kabel).
+    if (tampilKabel) {
+      const bahan = new Map<number, T.LineBasicMaterial>();
+      for (const j of kabel) {
+        const mt = bahan.get(j.kabel.warna) ?? new THREE.LineBasicMaterial({ color: j.kabel.warna, transparent: true, opacity: 0.9 });
+        bahan.set(j.kabel.warna, mt);
+        grupBantu.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(j.titik.map(t => new THREE.Vector3(...t))), mt));
+      }
+    }
     //  Label produk: satu label per nama benda per ruang (kembar = "× jumlah"), di atas benda;
     //  benda di plafon (speaker plafon, proyektor gantung) labelnya di bawah benda.
     if (labelProduk) {
@@ -1039,7 +1052,7 @@ export default function Desain3D() {
         grupBantu.add(grp);
       }
     }
-  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, pilih]);
+  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, pilih, tampilKabel, kabel]);
 
   //  Setelah template dipasang: pas-kan kamera ke ruangan BARU (dipanggil dari efek supaya ukuran ruangnya sudah yang baru).
   useEffect(() => {
@@ -1687,6 +1700,9 @@ export default function Desain3D() {
           }) },
         { judul: 'Tampilan desain', jenis: 'html',
           html: `<div class="gambar dua">${foto.map(x => gambar(x.url, x.judul)).join('')}</div>` },
+        ...(kabel.length ? [{ judul: 'Jadwal kabel', jenis: 'tabel' as const, kepala: ['Dari', 'Ke', 'Kabel', 'Panjang', 'Lewat'], rataKanan: [3],
+          isi: [...kabel.map(k => [k.dari, k.ke, k.kabel.nama, `±${fm(k.panjang)} m`, k.lewat]),
+            ...rekapKabel(kabel).map(r => ['TOTAL', '', r.kabel.nama, `±${fm(r.meter)} m`, r.gulungan])] }] : []),
         ...(benda.some(b => b.jenis === 'rak') ? [{ judul: 'Rack elevation', jenis: 'html' as const,
           html: `<div class="gambar dua">${benda.filter(b => b.jenis === 'rak').map(b => `<div>${svgElevasiRak(b)}</div>`).join('')}</div>` }] : []),
         { judul: `Daftar perangkat & furnitur (${benda.length} item)`, jenis: 'tabel', kepala: ['Kategori', 'Item', 'Ukuran (L × T × P)', 'Jumlah'], rataKanan: [3],
@@ -2151,6 +2167,7 @@ export default function Desain3D() {
                 { v: kerucut, s: setKerucut, l: 'Sudut pandang' },
                 ...(adaProyektor ? [{ v: sinar, s: setSinar, l: 'Sinar proyektor' }] : []),
                 ...(benda.some(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon') ? [{ v: jangkau, s: setJangkau, l: 'Jangkauan speaker' }] : []),
+                ...(kabel.length ? [{ v: tampilKabel, s: setTampilKabel, l: 'Jalur kabel' }] : []),
                 { v: bayangan, s: setBayangan, l: 'Bayangan & cahaya' }].map(t => (
                 <label key={t.l} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/90 border border-slate-200 text-[11.5px] font-semibold text-slate-700 shadow-sm">
                   <input type="checkbox" checked={t.v} onChange={e => t.s(e.target.checked)} /> {t.l}
@@ -2683,6 +2700,44 @@ export default function Desain3D() {
           ))}
         <Catatan>Posisi penonton diambil dari kursi (atau sekeliling meja bila belum ada kursi) di ruang yang sama dengan display. Aturan 4-6-8: jarak terjauh maksimal 4/6/8× tinggi gambar untuk konten detail/analitis/umum - atau faktor custom sesuai standar proyek.</Catatan>
       </Kartu>
+
+      {(benda.some(b => b.jenis === 'rak') || kabel.length > 0) && (
+        <Kartu judul="Jalur & panjang kabel" aksi={kabel.length ? <TombolSalin teks={() => [
+          `*Jadwal kabel ${namaDesain || 'desain'}*`,
+          ...rekapKabel(kabel).map(r => `- ${r.kabel.nama}: ${r.tarikan} tarikan, ±${f(r.meter, 1)} m (${r.gulungan})`),
+          '', ...kabel.map(k => `${k.dari} → ${k.ke}: ${k.kabel.nama} ±${f(k.panjang, 1)} m lewat ${k.lewat}`),
+        ].join('\n')} /> : undefined}>
+          {!kabel.length ? <p className="text-sm text-slate-600">Belum ada perangkat ber-kabel (display, proyektor, kamera, speaker, mic, touch panel).</p> : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
+                {rekapKabel(kabel).map(r => (
+                  <div key={r.kabel.kunci} className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+                    <p className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: `#${r.kabel.warna.toString(16).padStart(6, '0')}` }} />{r.kabel.nama}</p>
+                    <p className="text-lg font-extrabold text-slate-900 tabular-nums">±{f(r.meter, 0)} m</p>
+                    <p className="text-[11px] text-slate-500">{r.tarikan} tarikan · {r.gulungan}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="overflow-x-auto max-h-72 overflow-y-auto rounded-xl border border-slate-200">
+                <table className="w-full text-[12.5px]">
+                  <thead className="bg-slate-50 text-slate-600 sticky top-0"><tr>
+                    <th className="text-left font-bold px-3 py-2">Dari</th><th className="text-left font-bold px-3 py-2">Ke</th>
+                    <th className="text-left font-bold px-3 py-2">Kabel</th><th className="text-right font-bold px-3 py-2">Panjang</th><th className="text-left font-bold px-3 py-2">Lewat</th>
+                  </tr></thead>
+                  <tbody>{kabel.map(k => (
+                    <tr key={k.id} className="border-t border-slate-100">
+                      <td className="px-3 py-1.5 font-semibold text-slate-800">{k.dari}</td><td className="px-3 py-1.5 text-slate-600">{k.ke}</td>
+                      <td className="px-3 py-1.5 whitespace-nowrap"><span className="inline-block w-2.5 h-2.5 rounded-sm mr-1.5 align-middle" style={{ background: `#${k.kabel.warna.toString(16).padStart(6, '0')}` }} />{k.kabel.nama}</td>
+                      <td className="px-3 py-1.5 text-right tabular-nums">±{f(k.panjang, 1)} m</td><td className="px-3 py-1.5 text-slate-600">{k.lewat}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+              <Catatan>Rute siku-siku ke rack terdekat di ruang yang sama: perangkat dinding/plafon lewat tray plafon, perangkat meja/lantai lewat lantai (floor box). Panjang = rute + 10% lekukan + 1,5 m service loop. Video &gt; {HDMI_MAKS} m otomatis HDBaseT (CAT6A). Nyalakan &quot;Jalur kabel&quot; untuk melihat rutenya di 3D.</Catatan>
+            </>
+          )}
+        </Kartu>
+      )}
 
       {/* ── Modal: Buka desain tersimpan (seluruh tim) + riwayat versi ── */}
       <ModalBukaDesain buka={modal === 'buka'} onTutup={() => setModal(null)} aktifId={desainAktif?.id ?? null}
