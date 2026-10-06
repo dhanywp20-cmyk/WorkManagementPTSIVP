@@ -8,11 +8,13 @@ import {
   type Benda, type Kotak, type Ruang, bendaBaru, contohAwal, salinKeRuang, salinIsi, sesuaikanUkuranRuang, sinarProyektor, proyektorKeLayar, tiltKeLayar, keDunia, lensaProyektor, layarTerdekat,
   pusatkanIsi, jendelaSekat, pintuSekat, PINTU, ukuranPintu, spekVideowall, terapkanUkuran, ukuranLayar, ukuranIFP, warnaSah, tandaBentuk,
   bukaanDinding, sisiLuar, setRuangKelas, ukuranSetKelas, sebaranSpeaker, sebaranVSpeaker, jangkauanDari, berkasLineArray,
-  templateRuang, KATEGORI_RUANG, kursiTribun, ukuranBidang, lengkungDari,
+  kursiTribun, ukuranBidang, lengkungDari,
   luxLampuLangsung, luxCahayaDi, kontrasProyektor, setLampuGrid, luxBidangKerja, nyalaLampu, zoomLensa, arahkanKe, arahProyektor, tiltDari, titikPenonton, cakupanSpeakerPlafon, kecerahanProyektor, analisisDari, offsetLensaDari,
 } from '../app/tools-team/_components/desain3d/model';
 import * as M3 from '../app/tools-team/_components/desain3d/model';
 import * as R from '../app/tools-team/_components/desain3d/rak';
+import { templateRuang, KATEGORI_RUANG } from '../app/tools-team/_components/desain3d/template';
+import * as TP from '../app/tools-team/_components/desain3d/template';
 import * as K from '../app/tools-team/_components/desain3d/kabel';
 import { ringkasanDesain as ringkasRuang } from '../lib/tools-team';
 import { periksaProduk, bersihkanAturProduk, bacaDaftarProduk } from '../lib/tools-team';
@@ -443,14 +445,14 @@ console.log('\nCahaya siang dari jendela');
 
 console.log('\nTemplate default kategori: lengkap & terkunci');
 {
-  const semua = M3.KATEGORI_RUANG.map(k => k.id);
+  const semua = TP.KATEGORI_RUANG.map(k => k.id);
   cek('8 kategori ruangan tersedia', semua.length === 8);
-  const tanpaIsi = semua.filter(id => !M3.templateRuang(id).benda.length);
+  const tanpaIsi = semua.filter(id => !TP.templateRuang(id).benda.length);
   cek('setiap kategori punya template berisi', tanpaIsi.length === 0, tanpaIsi.join(','));
-  const sidik = (id: M3.KategoriRuang) => { const t = M3.templateRuang(id); return JSON.stringify({ r: t.ruang, b: t.benda.map(({ id: _i, ...x }) => x) }); };
+  const sidik = (id: TP.KategoriRuang) => { const t = TP.templateRuang(id); return JSON.stringify({ r: t.ruang, b: t.benda.map(({ id: _i, ...x }) => x) }); };
   cek('template selalu sama tiap dipasang (deterministik)', semua.every(id => sidik(id) === sidik(id)));
   //  Mengubah salinan di kanvas tidak boleh mengubah template berikutnya.
-  const t1 = M3.templateRuang('meeting');
+  const t1 = TP.templateRuang('meeting');
   const awal = sidik('meeting');
   t1.ruang.p = 99; t1.benda.forEach(b => { b.x = 123; b.nama = 'diubah user'; }); t1.benda.length = 0;
   cek('mengubah salinan tidak mengubah template asli', sidik('meeting') === awal);

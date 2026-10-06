@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type * as T from 'three';
 import type { OrbitControls as KontrolOrbit } from 'three/examples/jsm/controls/OrbitControls.js';
-import { AlignCenterVertical, LayoutTemplate, Copy, CopyPlus, Crosshair, Settings2, Trash2, FolderOpen, HardDriveDownload, HardDriveUpload, History, Maximize2, Move, Pencil, Redo2, Rotate3d, RotateCcw, RotateCw, Undo2, Video, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlignCenterVertical, LayoutTemplate, Copy, CopyPlus, Crosshair, Settings2, Trash2, FolderOpen, HardDriveDownload, Maximize2, Move, Pencil, Redo2, Rotate3d, RotateCcw, RotateCw, Undo2, Video, ZoomIn, ZoomOut } from 'lucide-react';
 import { bacaDesainGLB, dataDesainFile, namaFileDesain, KUNCI_DESAIN } from './desain3d/file-glb';
 import { useRiwayat } from './riwayat';
 import { FAKTOR_PANDANG, type JenisPandang } from '@/lib/av-hitung';
@@ -12,20 +12,22 @@ import { Modal } from '@/components/shared/Modal';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import {
   type Benda, type Ruang, type Kotak, type ItemKatalog, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
-  daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturKonten,
-  salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, sambungan, sambunganKe, MAKS_RUANG, type RuangSambung, warnaSah, JENDELA_AWAL, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
+  daftarRuang, ruangDari, titikPenonton, tandaBentuk, teksturLantai, teksturKonten,
+  salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, sambungan, sambunganKe, MAKS_RUANG, type RuangSambung, warnaSah, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, tipeSpeakerDari, berkasLineArray, modulLA,
-  arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, templateRuang, KATEGORI_RUANG, type KategoriRuang, lumenDari,
-  aturNyalaLampu, nyalaLampu, teksturDindingAksen, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, LUX_LUAR, luxSiang, type Siang, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU,
-} from './desain3d/model';
+  arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, lumenDari,
+  aturNyalaLampu, nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU } from './desain3d/model';
 import { svgElevasiRak } from './desain3d/rak';
+import { buatModel, sesuaikanTinggi, teksturDindingAksen } from './desain3d/bangun';
+import { templateRuang, KATEGORI_RUANG, type KategoriRuang } from './desain3d/template';
 import { jalurKabel, rekapKabel, HDMI_MAKS } from './desain3d/kabel';
 import { PanelBenda } from './desain3d/PanelBenda';
+import { PanelRuang } from './desain3d/PanelRuang';
+import { ModalBukaDesain, JUDUL_SISI } from './desain3d/ModalBuka';
 import { bukaCetak, esc, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl, type Lembar } from './cetak';
 import { getSession } from '@/lib/auth';
 import { isPimpinan } from '@/lib/pimpinan';
-import { urlGambarDesain } from '@/lib/tools-team';
 
 /**
  * Desain 3D Ruang AV - dibangun di atas three.js (threejs.org) + add-on resminya:
@@ -2385,207 +2387,7 @@ export default function Desain3D() {
                     </>
                   )}
                   {sisi === 'ruang' && (
-                    <>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-[12.5px] font-bold text-slate-800 mb-1.5">Ruang 1</p>
-                          <div className="grid grid-cols-3 gap-2">
-                            <Angka label="Panjang" nilai={ruang.p} onUbah={v => v >= 2 && v <= 30 && ubahUkuran(r => ({ ...r, p: v }))} satuan="m" />
-                            <Angka label="Lebar" nilai={ruang.l} onUbah={v => v >= 2 && v <= 30 && ubahUkuran(r => ({ ...r, l: v }))} satuan="m" />
-                            <Angka label="Plafon" nilai={ruang.t} onUbah={v => v >= 2 && v <= 15 && ubahUkuran(r => ({ ...r, t: v }))} satuan="m" />
-                          </div>
-                          <div className="mt-2">
-                            <Segmen label="Lantai" nilai={ruang.lantai} onUbah={v => setRuang(r => ({ ...r, lantai: v }))}
-                              opsi={[{ v: 'kayu', l: 'Kayu' }, { v: 'karpet', l: 'Karpet' }, { v: 'keramik', l: 'Keramik' }, { v: 'polos', l: 'Warna' }]} />
-                            {ruang.lantai === 'polos' && (
-                              <PilihWarna label="Warna lantai" nilai={ruang.warnaLantai} awal="#9ca3af" onUbah={w => setRuang(r => ({ ...r, warnaLantai: w }))} />
-                            )}
-                          </div>
-                        </div>
-                        <PilihWarna label="Warna dinding (semua ruang)" nilai={ruang.warnaDinding} awal="#f5f5f4" onUbah={w => setRuang(r => ({ ...r, warnaDinding: w }))} />
-                        <Segmen label="Dinding depan (feature wall)" nilai={ruang.dindingDepan ?? 'polos'} onUbah={(v: 'polos' | 'marmer' | 'kayu') => setRuang(r => ({ ...r, dindingDepan: v }))}
-                          opsi={[{ v: 'polos', l: 'Polos' }, { v: 'marmer', l: 'Marmer' }, { v: 'kayu', l: 'Panel kayu' }]} />
-                        <div>
-                          <Segmen label="Cahaya ruangan" nilai={ruang.cahaya ?? 'terang'} onUbah={v => setRuang(r => ({ ...r, cahaya: v }))}
-                            opsi={[{ v: 'terang', l: 'Terang' }, { v: 'redup', l: 'Redup' }, { v: 'gelap', l: 'Gelap' }]} />
-                          <p className="text-[11px] text-slate-500 mt-1">Gelap = ruang mapping / immersive: cahaya proyektor & layar terlihat jelas.</p>
-                        </div>
-                        {(ruang.bukaan ?? []).some(b => b.jenis === 'jendela') && (
-                          <div className="rounded-xl border border-sky-200 bg-sky-50/50 p-3 space-y-2">
-                            <Segmen label="Cahaya siang dari jendela" nilai={ruang.siang ?? 'malam'} onUbah={(v: Siang) => setRuang(r => ({ ...r, siang: v }))}
-                              opsi={[{ v: 'malam', l: 'Malam' }, { v: 'mendung', l: 'Mendung' }, { v: 'cerah', l: 'Cerah' }, { v: 'terik', l: 'Terik' }]} />
-                            <div>
-                              <div className="flex items-center justify-between text-[12px]"><span className="font-semibold text-slate-700">Tirai / blind tertutup</span><b className="tabular-nums text-slate-800">{ruang.tirai ?? 0}%</b></div>
-                              <input type="range" min={0} max={100} step={10} value={ruang.tirai ?? 0} aria-label="Tirai tertutup"
-                                onChange={e => setRuang(r => ({ ...r, tirai: Number(e.target.value) }))} className="w-full accent-sky-600" />
-                            </div>
-                            {kotakRuang.map((_, i) => {
-                              const sg = luxSiang(ruang, i);
-                              if (!sg.luasJendela) return null;
-                              return (
-                                <p key={i} className="text-[12px] text-slate-700">
-                                  {kotakRuang.length > 1 ? `Ruang ${i + 1}: ` : ''}jendela {f(sg.luasJendela, 1)} m² · daylight factor {f(sg.df, 2)}% → <b>±{f(sg.lux, 0)} lux</b> di dalam ruang
-                                </p>
-                              );
-                            })}
-                            <p className="text-[11px] text-slate-500">Langit {ruang.siang ?? 'malam'} ±{LUX_LUAR[ruang.siang ?? 'malam'].toLocaleString('id-ID')} lux di luar (tanpa sinar matahari langsung). Ikut dihitung di kontras proyektor & lux meja.</p>
-                          </div>
-                        )}
-                        {benda.some(b => b.jenis === 'lampu') && (
-                          <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <p className="text-[12.5px] font-bold text-slate-800">Lampu plafon (dimmer semua)</p>
-                              <span className="text-[12.5px] font-extrabold text-amber-900 tabular-nums">{ruang.dimmer ?? 100}%</span>
-                            </div>
-                            <input type="range" min={0} max={100} step={5} value={ruang.dimmer ?? 100} aria-label="Dimmer semua lampu"
-                              onChange={e => setRuang(r => ({ ...r, dimmer: Number(e.target.value) }))} className="w-full accent-amber-600" />
-                            <div className="flex gap-1.5">
-                              {[100, 50, 20, 0].map(v => (
-                                <button key={v} type="button" onClick={() => setRuang(r => ({ ...r, dimmer: v }))}
-                                  className={`flex-1 px-2 py-1 rounded-lg text-[12px] font-bold border ${(ruang.dimmer ?? 100) === v ? 'bg-amber-600 text-white border-amber-600' : 'bg-white text-amber-900 border-amber-200 hover:bg-amber-50'}`}>
-                                  {v === 0 ? 'Mati' : `${v}%`}
-                                </button>
-                              ))}
-                            </div>
-                            {kotakRuang.map((k, i) => {
-                              if (!benda.some(b => b.jenis === 'lampu' && ruangDari(ruang, b.x) === i)) return null;
-                              const lx = luxBidangKerja(benda, ruang, i);
-                              return (
-                                <p key={i} className="text-[12px] text-slate-700">
-                                  {kotakRuang.length > 1 ? `Ruang ${i + 1}: ` : ''}rata-rata di meja (0,75 m) <b>±{f(lx.rata, 0)} lux</b> <span className="text-slate-500">(min {f(lx.min, 0)}, maks {f(lx.maks, 0)})</span>
-                                </p>
-                              );
-                            })}
-                            <p className="text-[11px] text-slate-500">Acuan: rapat / kelas ±300–500 lux. Saat presentasi proyektor, lampu diredupkan supaya kontras gambar cukup (lihat panel proyektor).</p>
-                          </div>
-                        )}
-                        <div className="rounded-xl border border-slate-200 p-3">
-                          <p className="text-[12.5px] font-bold text-slate-800">Pintu & jendela dinding luar</p>
-                          <p className="text-[11.5px] text-slate-600 mt-0.5">Posisi = jarak dari ujung kiri dinding ke tengah bukaan, dilihat dari dalam ruang. Pintu/jendela di sekat antar ruang diatur di bagian ruang sebelahnya.</p>
-                          <div className="mt-2 flex gap-2">
-                            <button type="button" onClick={() => tambahBukaan('pintu')} className="flex-1 px-3 py-1.5 rounded-lg text-[12.5px] font-bold text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100">+ Pintu</button>
-                            <button type="button" onClick={() => tambahBukaan('jendela')} className="flex-1 px-3 py-1.5 rounded-lg text-[12.5px] font-bold text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100">+ Jendela</button>
-                          </div>
-                          {(ruang.bukaan ?? []).map((b, idx) => {
-                            const ruangAda = b.ruang < kotakRuang.length;
-                            const sisiAda = sisiLuar(ruang, b.ruang);
-                            const sah = ruangAda && sisiAda.includes(b.sisi);
-                            const kb = daftarRuang(ruang)[b.ruang];
-                            return (
-                              <div key={b.id} className="mt-2 rounded-lg border border-slate-200 bg-slate-50/60 p-2 space-y-2">
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className="text-[12.5px] font-bold text-slate-800">{b.jenis === 'pintu' ? 'Pintu' : 'Jendela'} {idx + 1}</span>
-                                  <button type="button" onClick={() => setRuang(r => ({ ...r, bukaan: (r.bukaan ?? []).filter(x => x.id !== b.id) }))}
-                                    className="text-[12px] font-bold text-rose-700 hover:underline">Hapus</button>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {duaRuang && (
-                                    <Segmen label="Ruang" nilai={String(b.ruang)} onUbah={v => {
-                                      const ri = Number(v) || 0;
-                                      const sa = sisiLuar(ruang, ri);
-                                      ubahBukaan(b.id, { ruang: ri, sisi: sa.includes(b.sisi) ? b.sisi : sa[0] });
-                                    }} opsi={kotakRuang.map((_, i) => ({ v: String(i), l: String(i + 1) }))} />
-                                  )}
-                                  <Pilih label="Dinding" nilai={b.sisi} onUbah={(v: SisiDinding) => ubahBukaan(b.id, { sisi: v })}
-                                    opsi={(['depan', 'belakang', 'kiri', 'kanan'] as SisiDinding[]).filter(x => sisiAda.includes(x) || x === b.sisi).map(x => ({ v: x, l: x[0].toUpperCase() + x.slice(1) }))} />
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2">
-                                  <Angka label="Posisi" nilai={b.posisi} satuan="m" onUbah={v => v >= 0 && v <= 40 && ubahBukaan(b.id, { posisi: v })} />
-                                  <Angka label="Lebar" nilai={b.lebar} satuan="m" onUbah={v => v >= 0.3 && v <= 20 && ubahBukaan(b.id, { lebar: v })} />
-                                  <Angka label="Tinggi" nilai={b.tinggi} satuan="m" onUbah={v => v >= 0.2 && v <= 10 && ubahBukaan(b.id, { tinggi: v })} />
-                                  {b.jenis === 'jendela' && <Angka label="Dari lantai" nilai={b.ambang} satuan="m" onUbah={v => v >= 0 && v <= 8 && ubahBukaan(b.id, { ambang: v })} />}
-                                </div>
-                                {!sah && <p className="text-[11.5px] font-semibold text-amber-700">{ruangAda ? 'Dinding ini sekarang sekat antar ruang - pilih dinding lain.' : `Ruang ${b.ruang + 1} tidak ada - bukaan ini tidak digambar.`}</p>}
-                                {sah && kb && <p className="text-[11px] text-slate-500">Panjang dinding {f(panjangDinding(kb, b.sisi))} m.</p>}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {sambungan(ruang).map((r2, idx) => {
-                          const j = idx + 1;
-                          const up = ukuranPintu(ruang, j), zp = pintuSekat(ruang, j) ?? 0;
-                          const setP = (x: Partial<{ lebar: number; tinggi: number; z: number }>) =>
-                            setRuang(r => { const s0 = sambunganKe(r, j); return s0 ? pasangSambungan(r, j, { ...s0, pintuUkuran: { lebar: ukuranPintu(r, j).lebar, tinggi: ukuranPintu(r, j).tinggi, z: pintuSekat(r, j) ?? undefined, ...x } }) : r; });
-                          const jd = { ...JENDELA_AWAL, ...(r2.jendela ?? {}) };
-                          const setJ = (x: Partial<typeof jd>) => ubahSambungan(j, { jendela: { ...jd, ...x } });
-                          const terakhir = j === kotakRuang.length - 1;
-                          return (
-                            <div key={j} className="rounded-xl border border-slate-200 p-3">
-                              <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <p className="text-[12.5px] font-bold text-slate-800">Ruang {j + 1} <span className="font-normal text-slate-500">· di kanan Ruang {j}</span></p>
-                                {terakhir && <button type="button" onClick={hapusRuangTerakhir} className="text-[12px] font-bold text-rose-700 hover:underline">Hapus ruang</button>}
-                              </div>
-                              <div className="grid grid-cols-3 gap-2">
-                                <Angka label="Panjang" nilai={r2.p} onUbah={v => v >= 2 && v <= 30 && ubahSambungan(j, { p: v }, true)} satuan="m" />
-                                <Angka label="Lebar" nilai={r2.l} onUbah={v => v >= 2 && v <= 30 && ubahSambungan(j, { l: v }, true)} satuan="m" />
-                                <Angka label="Plafon" nilai={r2.t} onUbah={v => v >= 2 && v <= 15 && ubahSambungan(j, { t: v }, true)} satuan="m" />
-                              </div>
-                              <div className="mt-2">
-                                <Segmen label="Lantai" nilai={r2.lantai} onUbah={v => ubahSambungan(j, { lantai: v })}
-                                  opsi={[{ v: 'kayu', l: 'Kayu' }, { v: 'karpet', l: 'Karpet' }, { v: 'keramik', l: 'Keramik' }, { v: 'polos', l: 'Warna' }]} />
-                                {r2.lantai === 'polos' && (
-                                  <PilihWarna label="Warna lantai" nilai={r2.warnaLantai} awal="#9ca3af" onUbah={w => ubahSambungan(j, { warnaLantai: w })} />
-                                )}
-                              </div>
-                              <div className="mt-2">
-                                <Pilih label={`Sekat dengan Ruang ${j}`} nilai={r2.sekat ?? 'tembok'} onUbah={(v: NonNullable<RuangSambung['sekat']>) => ubahSambungan(j, { sekat: v })}
-                                  opsi={[{ v: 'tembok', l: 'Tembok' }, { v: 'jendela', l: 'Tembok + jendela kaca' }, { v: 'kaca', l: 'Kaca penuh' }, { v: 'terbuka', l: 'Terbuka (menyatu / ruang bentuk L)' }]} />
-                                <p className="text-[11px] text-slate-500 mt-1">
-                                  {r2.sekat === 'terbuka' ? 'Tanpa sekat: kedua ruang menyatu. Bedakan lebar ruang untuk membuat ruang bentuk L - sisa dinding tetap tembok.'
-                                    : r2.sekat === 'jendela' ? 'Satu jendela kaca persegi di sekat untuk melihat ke ruang sebelah. Geser: + ke belakang, − ke depan; otomatis menghindari pintu.'
-                                      : r2.sekat === 'kaca' ? 'Kaca penuh: seluruh sekat tembus pandang.' : 'Sekat tembok biasa.'}
-                                </p>
-                              </div>
-                              {r2.sekat === 'jendela' && (
-                                <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2">
-                                  <Angka label="Lebar jendela" nilai={jd.lebar} satuan="m" onUbah={v => v >= 0.3 && v <= 20 && setJ({ lebar: v })} />
-                                  <Angka label="Tinggi jendela" nilai={jd.tinggi} satuan="m" onUbah={v => v >= 0.2 && v <= 5 && setJ({ tinggi: v })} />
-                                  <Angka label="Dari lantai" nilai={jd.ambang} satuan="m" onUbah={v => v >= 0.1 && v <= 3 && setJ({ ambang: v })} />
-                                  <Angka label="Geser" nilai={jd.geser} satuan="m" min={-20} onUbah={v => v >= -20 && v <= 20 && setJ({ geser: v })} />
-                                </div>
-                              )}
-                              {r2.sekat !== 'terbuka' && (
-                                <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
-                                  <input type="checkbox" className="w-4 h-4" checked={r2.pintu} onChange={e => ubahSambungan(j, { pintu: e.target.checked })} /> Pintu penghubung
-                                </label>
-                              )}
-                              {r2.pintu && r2.sekat !== 'terbuka' && (
-                                <div className="mt-2 grid grid-cols-3 gap-2">
-                                  <Angka label="Lebar pintu" nilai={Math.round(up.lebar * 100) / 100} satuan="m" onUbah={v => v >= 0.5 && v <= 6 && setP({ lebar: v })} />
-                                  <Angka label="Tinggi pintu" nilai={Math.round(up.tinggi * 100) / 100} satuan="m" onUbah={v => v >= 1.5 && v <= 5 && setP({ tinggi: v })} />
-                                  <Angka label="Dari depan" nilai={Math.round(zp * 100) / 100} satuan="m" onUbah={v => v >= 0 && v <= 30 && setP({ z: v })} />
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                        {kotakRuang.length < MAKS_RUANG && (
-                          <button type="button" onClick={tambahRuang}
-                            className="w-full px-3 py-2 rounded-xl text-[12.5px] font-bold text-blue-800 bg-blue-50 border border-dashed border-blue-300 hover:bg-blue-100">
-                            + Tambah ruang bersebelahan (Ruang {kotakRuang.length + 1}, maks {MAKS_RUANG})
-                          </button>
-                        )}
-                        {duaRuang && (
-                          <div className="rounded-xl border border-slate-200 p-3">
-                            <p className="text-[12.5px] font-bold text-slate-800">Salin perangkat & interior ke ruang lain</p>
-                            <p className="text-[12px] text-slate-600 mt-0.5 leading-relaxed">
-                              Benda yang menempel dinding tetap menempel, perangkat plafon tetap di plafon, susunan meja-kursi tetap di tengah ruang - walau ukuran ruang berbeda.
-                            </p>
-                            <label className="mt-2 flex items-center gap-2 text-[12.5px] text-slate-700">
-                              <input type="checkbox" className="w-4 h-4" checked={gantiIsi} onChange={e => setGantiIsi(e.target.checked)} /> Kosongkan ruang tujuan dulu
-                            </label>
-                            <div className="mt-2 grid grid-cols-2 gap-2">
-                              {kotakRuang.flatMap((_, i) => kotakRuang.map((__, t) => [i, t] as const)).filter(([i, t]) => i !== t && (kotakRuang.length <= 2 || Math.abs(i - t) === 1)).map(([i, t]) => (
-                                <button key={`${i}-${t}`} type="button" onClick={() => salinIsiRuang(i, gantiIsi, t)}
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[12.5px] font-bold text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100">
-                                  <Copy size={14} /> Ruang {i + 1} → Ruang {t + 1}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </>
+                    <PanelRuang ruang={ruang} setRuang={setRuang} ubahUkuran={ubahUkuran} benda={benda} kotakRuang={kotakRuang} tambahBukaan={tambahBukaan} ubahBukaan={ubahBukaan} tambahRuang={tambahRuang} hapusRuangTerakhir={hapusRuangTerakhir} ubahSambungan={ubahSambungan} pasangSambungan={pasangSambungan} gantiIsi={gantiIsi} setGantiIsi={setGantiIsi} salinIsiRuang={salinIsiRuang} duaRuang={duaRuang} />
                   )}
                   {sisi === 'kategori' && (
                     <>
@@ -2837,140 +2639,6 @@ export default function Desain3D() {
           </>
         )}
       </Modal>
-    </div>
-  );
-}
-
-interface BarisDesain {
-  id: string; nama: string; versi: number; jumlah_benda: number; dibuat_oleh_nama: string; diubah_oleh_nama: string;
-  updated_at: string; ruang: Ruang | null;
-}
-
-/** Pratinjau satu versi: dimuat malas & di-cache peramban; placeholder bila belum ada gambar. */
-export function GambarVersi({ id, versi, className }: { id: string; versi: number; className: string }) {
-  const [gagal, setGagal] = useState(false);
-  if (gagal) return <div className={`${className} rounded-lg bg-slate-100 grid place-items-center flex-shrink-0 text-slate-400`}><Ikon nama="🧊" ukuran={18} /></div>;
-  return <img src={urlGambarDesain(id, versi)} alt="" loading="lazy" decoding="async" onError={() => setGagal(true)}
-    className={`${className} object-cover rounded-lg border border-slate-100 flex-shrink-0 bg-slate-50`} />;
-}
-
-/**
- * Daftar desain tersimpan seluruh tim untuk dibuka lagi (cari di server),
- * dengan pratinjau dan riwayat versi - versi lama bisa dibuka; menyimpannya
- * membuat versi baru, riwayat tidak berubah.
- */
-const JUDUL_SISI: Record<'kategori' | 'tambah' | 'ruang' | 'daftar', { judul: string; ikon: string; ket?: string }> = {
-  kategori: { judul: 'Kategori ruangan', ikon: '🏛', ket: 'Mulai dari tata letak siap pakai - semua isi tetap bisa diubah. Isi kanvas sekarang diganti (bisa dikembalikan dengan Undo).' },
-  tambah: { judul: 'Tambah benda', ikon: '➕', ket: 'Klik produk untuk menambahkannya; panel tetap terbuka supaya bisa menambah beberapa sekaligus.' },
-  ruang: { judul: 'Ruangan', ikon: '🏠', ket: 'Maks 4 ruang berderet ke kanan; sekat terbuka + lebar berbeda = ruang bentuk L. Saat ukuran diubah, isi ruang ikut menyesuaikan.' },
-  daftar: { judul: 'Daftar benda', ikon: '📋', ket: 'Klik nama benda untuk memilihnya di tampilan 3D.' },
-};
-
-function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {
-  buka: boolean; onTutup: () => void; aktifId: string | null; onBuka: (id: string, versi?: number) => void; onLaptop: () => void;
-}) {
-  const [q, setQ] = useState('');
-  const [daftar, setDaftar] = useState<BarisDesain[] | null>(null);
-  const [galat, setGalat] = useState('');
-  const [riwayatId, setRiwayatId] = useState<string | null>(null);
-  const [versi, setVersi] = useState<{ versi: number; created_at: string; dibuat_oleh_nama: string }[] | null>(null);
-
-  useEffect(() => {
-    if (!buka) return;
-    let hidup = true;
-    const t = setTimeout(async () => {
-      try {
-        const r = await fetch(`/api/tools-team/desain${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`, { credentials: 'include', cache: 'no-store' });
-        const j = await r.json().catch(() => null);
-        if (!hidup) return;
-        if (r.ok && j?.ok) { setDaftar(j.daftar); setGalat(''); } else { setDaftar([]); setGalat(j?.alasan ?? 'Daftar tidak bisa dimuat.'); }
-      } catch { if (hidup) { setDaftar([]); setGalat('Tidak terhubung ke server.'); } }
-    }, q ? 300 : 0);
-    return () => { hidup = false; clearTimeout(t); };
-  }, [buka, q]);
-
-  const lihatRiwayat = async (id: string) => {
-    if (riwayatId === id) { setRiwayatId(null); return; }
-    setRiwayatId(id); setVersi(null);
-    try {
-      const r = await fetch(`/api/tools-team/desain?id=${encodeURIComponent(id)}&riwayat=1`, { credentials: 'include', cache: 'no-store' });
-      const j = await r.json().catch(() => null);
-      setVersi(r.ok && j?.ok ? j.versi : []);
-    } catch { setVersi([]); }
-  };
-  const tgl = (x: string) => new Date(x).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-  return (
-    <Modal buka={buka} onTutup={onTutup} judul="Buka desain tersimpan" ukuran="lg" ikon={<Ikon nama="📁" ukuran={18} />}
-      keterangan="Dari laptop, atau dari desain yang disimpan anggota tim di server (versi lama bisa dibuka dari riwayat).">
-      <button type="button" onClick={onLaptop}
-        className="w-full mb-3 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left hover:bg-emerald-100">
-        <HardDriveUpload size={20} className="text-emerald-700 flex-shrink-0" />
-        <span className="min-w-0">
-          <span className="block text-[13px] font-bold text-emerald-900">Buka dari laptop (.glb)</span>
-          <span className="block text-[11.5px] text-emerald-800">File yang disimpan lewat "Simpan .glb" - tanpa storage server</span>
-        </span>
-      </button>
-      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Desain tim di server</p>
-      <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cari nama desain atau pembuat" aria-label="Cari desain"
-        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm mb-3" />
-      {galat && <p className="text-[12.5px] text-rose-700 mb-2">{galat}</p>}
-      {daftar === null ? <p className="text-sm text-slate-500">Memuat...</p> : daftar.length === 0 ? (
-        <p className="text-sm text-slate-500">{q ? 'Tidak ada desain yang cocok.' : 'Belum ada desain tersimpan. Simpan desain lewat tombol Simpan.'}</p>
-      ) : (
-        <ul className="grid sm:grid-cols-2 gap-2">
-          {daftar.map(d => (
-            <li key={d.id} className={`rounded-xl border p-2 ${aktifId === d.id ? 'border-blue-400 bg-blue-50/40' : 'border-slate-200'}`}>
-              <div className="flex gap-2.5">
-                <GambarVersi id={d.id} versi={d.versi} className="w-24 h-14" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-bold text-slate-900 truncate">{d.nama}{aktifId === d.id && <span className="ml-1 text-[11px] font-bold text-emerald-700">· terbuka</span>}</p>
-                  <p className="text-[11.5px] text-slate-600 truncate">v{d.versi} · {d.ruang ? `${d.ruang.p}×${d.ruang.l} m${d.ruang.r2?.aktif ? ` + ${1 + (d.ruang.lain ?? []).filter(x => x?.aktif).length} ruang` : ''} · ` : ''}{d.jumlah_benda} benda</p>
-                  <p className="text-[11px] text-slate-500 truncate">{d.diubah_oleh_nama || d.dibuat_oleh_nama || '—'} · {tgl(d.updated_at)}</p>
-                </div>
-              </div>
-              <div className="mt-2 flex gap-1.5">
-                <button type="button" onClick={() => onBuka(d.id)} className="flex-1 px-2 py-1.5 rounded-lg text-[12px] font-bold text-white bg-blue-700 hover:bg-blue-800">Buka</button>
-                {d.versi > 1 && (
-                  <button type="button" onClick={() => void lihatRiwayat(d.id)} aria-expanded={riwayatId === d.id}
-                    className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[12px] font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">
-                    <History size={13} /> Riwayat ({d.versi})
-                  </button>
-                )}
-              </div>
-              {riwayatId === d.id && (
-                <ul className="mt-2 border-t border-slate-100 pt-1.5 space-y-0.5 max-h-48 overflow-y-auto">
-                  {versi === null ? <li className="text-[12px] text-slate-500">Memuat...</li> : versi.map(v => (
-                    <li key={v.versi} className="flex items-center justify-between gap-2 text-[12px]">
-                      <span className="text-slate-700"><b>v{v.versi}</b> · {v.dibuat_oleh_nama || '—'} · {tgl(v.created_at)}</span>
-                      <button type="button" onClick={() => onBuka(d.id, v.versi)} className="text-blue-700 font-bold hover:underline">Buka</button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </Modal>
-  );
-}
-
-/** Pemilih warna dengan tombol kembali ke bawaan; `nilai` kosong = warna bawaan. */
-function PilihWarna({ label, nilai, awal, onUbah }: { label: string; nilai?: string; awal: string; onUbah: (w: string | undefined) => void }) {
-  const sah = warnaSah(nilai);
-  return (
-    <div className="mt-2">
-      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">{label}</span>
-      <div className="flex items-center gap-2">
-        <input type="color" aria-label={label} value={sah ?? awal} onChange={e => onUbah(e.target.value)}
-          className="h-9 w-12 rounded-lg border border-slate-200 bg-white p-0.5 cursor-pointer" />
-        <span className="text-[12px] font-mono text-slate-700">{sah ?? 'bawaan'}</span>
-        {sah && (
-          <button type="button" onClick={() => onUbah(undefined)}
-            className="ml-auto px-2 py-1 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">Bawaan</button>
-        )}
-      </div>
     </div>
   );
 }
