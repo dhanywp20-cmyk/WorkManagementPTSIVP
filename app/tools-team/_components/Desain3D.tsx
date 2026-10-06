@@ -17,7 +17,7 @@ import {
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, tipeSpeakerDari, berkasLineArray, modulLA,
   arahProyektor, offsetLensaDari, geserLensaDari, zoomLensa, templateRuang, KATEGORI_RUANG, type KategoriRuang, lumenDari,
-  aturNyalaLampu, nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU,
+  aturNyalaLampu, nyalaLampu, kontrasProyektor, TARGET_KONTRAS, LUX_PRESET, LUX_LUAR, luxSiang, type Siang, luxBidangKerja, lumenLampu, sudutLampuDari, SPEK_LAMPU,
 } from './desain3d/model';
 import { PanelBenda } from './desain3d/PanelBenda';
 import { bukaCetak, esc, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl, type Lembar } from './cetak';
@@ -242,7 +242,7 @@ export default function Desain3D() {
    * baru = belum pernah disimpan; laptop = dibuka dari/disimpan ke .glb; lokal = salinan di perangkat ini.
    * Desain server dikenali dari `desainAktif`. `dasar` = sidik isi saat terakhir dibuka/disimpan.
    */
-  const [asal, setAsal] = useState<{ jenis: 'baru' | 'laptop' | 'lokal'; nama?: string }>({ jenis: 'baru' });
+  const [asal, setAsal] = useState<{ jenis: 'baru' | 'laptop' | 'lokal' | 'template'; nama?: string }>({ jenis: 'baru' });
   const [dasar, setDasar] = useState<string | null>(null);
   const [tersimpan, setTersimpan] = useState<{ nama: string; ruang: Ruang; benda: Benda[] }[]>([]);
   /** Desain tim di server (/api/tools-team/desain) & desain server yang sedang dibuka. */
@@ -1263,8 +1263,10 @@ export default function Desain3D() {
     const kat = KATEGORI_RUANG.find(k => k.id === id);
     const t = templateRuang(id);
     ruangRef.current = t.ruang;
-    setRuang(t.ruang); setBenda(t.benda); setNamaDesain(t.nama);
-    setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'baru' }); setDasar(null); setPilih(null); setFokusRuang('semua');
+    //  Template default dibuat ulang dari kode tiap kali dipasang (terkunci - tidak ada yang bisa mengubah
+    //  aslinya). Yang diubah pengguna hanya salinan di kanvas; Simpan selalu membuat file baru miliknya.
+    setRuang(t.ruang); setBenda(t.benda); setNamaDesain(`${t.nama} (salinan)`);
+    setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'template', nama: kat?.judul ?? t.nama }); setDasar(null); setPilih(null); setFokusRuang('semua');
     pasSetelahTemplate.current = true;
     setPesan(id === 'mapping-objek'
       ? 'Template Mapping objek dipasang. Impor objek lewat Tambah → Impor model .glb, letakkan di atas alas - sinar proyektor langsung jatuh di permukaannya.'
@@ -1891,7 +1893,8 @@ export default function Desain3D() {
     //  Dimmer semua lampu agar target tercapai (lux lampu ~ sebanding dengan dimmer).
     const ambPerlu = kp.luxGambar / Math.max(0.01, targetKontras - 1);
     const dimSekarang = ruang.dimmer ?? 100;
-    const dimPerlu = kp.cahaya.dariLampu && kp.cahaya.total > 0 ? Math.floor(((ambPerlu / kp.cahaya.total) * dimSekarang) / 5) * 5 : null;
+    const luxLampu = kp.cahaya.total - kp.cahaya.siang;
+    const dimPerlu = kp.cahaya.dariLampu && luxLampu > 0 ? Math.floor((((ambPerlu - kp.cahaya.siang) / luxLampu) * dimSekarang) / 5) * 5 : null;
     return (
       <div className="rounded-lg border border-slate-200 bg-white p-2 space-y-1.5">
         <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600">Kontras vs lampu ruangan</span>
@@ -1906,14 +1909,20 @@ export default function Desain3D() {
         </div>
         <p className="text-[11.5px] text-slate-600 leading-relaxed">
           {kp.cahaya.dariLampu
-            ? <>Dari {kp.cahaya.jumlahLampu} lampu (dimmer semua {dimSekarang}%): langsung {f(kp.cahaya.langsung, 0)} + pantulan ruangan {f(kp.cahaya.pantul, 0)} lux. Gambar {f(kp.luas, 1)} m² dari {lumenDari(p).toLocaleString('id-ID')} lm.</>
-            : <>Belum ada lampu di desain: memakai perkiraan &quot;Cahaya ruangan {ruang.cahaya ?? 'terang'}&quot; ±{LUX_PRESET[ruang.cahaya ?? 'terang']} lux. Tambah lampu (Tambah → Interior &amp; pencahayaan) untuk hitungan nyata.</>}
+            ? <>Dari {kp.cahaya.jumlahLampu} lampu (dimmer semua {dimSekarang}%): langsung {f(kp.cahaya.langsung, 0)} + pantulan ruangan {f(kp.cahaya.pantul, 0)} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Gambar {f(kp.luas, 1)} m² dari {lumenDari(p).toLocaleString('id-ID')} lm.</>
+            : <>Belum ada lampu di desain: memakai perkiraan &quot;Cahaya ruangan {ruang.cahaya ?? 'terang'}&quot; ±{LUX_PRESET[ruang.cahaya ?? 'terang']} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Tambah lampu (Tambah → Interior &amp; pencahayaan) untuk hitungan nyata.</>}
         </p>
         {kp.cukup
           ? <p className="text-[12px] font-semibold text-emerald-700">Memenuhi target {targetKontras} : 1.</p>
           : (
             <div className="space-y-1">
               <p className={`text-[12px] font-semibold ${warna}`}>Di bawah target {targetKontras} : 1 - butuh proyektor ±{kp.lumenPerlu.toLocaleString('id-ID')} lm, atau kurangi cahaya lampu di {kePermukaan ? 'permukaan' : 'layar'} sampai ±{f(ambPerlu, 0)} lux.</p>
+              {kp.cahaya.siang > 0.5 && (ruang.tirai ?? 0) < 100 && (
+                <button type="button" onClick={() => setRuang(r => ({ ...r, tirai: 100 }))}
+                  className="mr-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-bold border border-sky-200 bg-sky-50 text-sky-900 hover:bg-sky-100">
+                  Tutup tirai jendela (−{f(kp.cahaya.siang, 0)} lux)
+                </button>
+              )}
               {dimPerlu !== null && dimPerlu < dimSekarang && (
                 <button type="button" onClick={() => setRuang(r => ({ ...r, dimmer: Math.max(0, dimPerlu) }))}
                   className="px-2.5 py-1.5 rounded-lg text-[12px] font-bold border border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100">
@@ -2011,6 +2020,7 @@ export default function Desain3D() {
                 : { teks: `Tersimpan di server · v${desainAktif.versi}`, nada: 'ok' })
             : asal.jenis === 'laptop' ? { teks: `Berkas laptop · ${asal.nama ?? '.glb'}`, nada: 'ok' }
             : asal.jenis === 'lokal' ? { teks: 'Salinan di perangkat ini · belum di server', nada: 'info' }
+            : asal.jenis === 'template' ? { teks: `🔒 Dari template default "${asal.nama}" (terkunci) · Simpan = file baru milik Anda`, nada: 'info' }
             : { teks: 'Desain baru · belum disimpan', nada: 'awas' };
           const kelas = { ok: 'bg-emerald-50 text-emerald-800 border-emerald-200', info: 'bg-blue-50 text-blue-800 border-blue-200', awas: 'bg-amber-50 text-amber-900 border-amber-200' }[rinci.nada];
           return (
@@ -2345,6 +2355,27 @@ export default function Desain3D() {
                             opsi={[{ v: 'terang', l: 'Terang' }, { v: 'redup', l: 'Redup' }, { v: 'gelap', l: 'Gelap' }]} />
                           <p className="text-[11px] text-slate-500 mt-1">Gelap = ruang mapping / immersive: cahaya proyektor & layar terlihat jelas.</p>
                         </div>
+                        {(ruang.bukaan ?? []).some(b => b.jenis === 'jendela') && (
+                          <div className="rounded-xl border border-sky-200 bg-sky-50/50 p-3 space-y-2">
+                            <Segmen label="Cahaya siang dari jendela" nilai={ruang.siang ?? 'malam'} onUbah={(v: Siang) => setRuang(r => ({ ...r, siang: v }))}
+                              opsi={[{ v: 'malam', l: 'Malam' }, { v: 'mendung', l: 'Mendung' }, { v: 'cerah', l: 'Cerah' }, { v: 'terik', l: 'Terik' }]} />
+                            <div>
+                              <div className="flex items-center justify-between text-[12px]"><span className="font-semibold text-slate-700">Tirai / blind tertutup</span><b className="tabular-nums text-slate-800">{ruang.tirai ?? 0}%</b></div>
+                              <input type="range" min={0} max={100} step={10} value={ruang.tirai ?? 0} aria-label="Tirai tertutup"
+                                onChange={e => setRuang(r => ({ ...r, tirai: Number(e.target.value) }))} className="w-full accent-sky-600" />
+                            </div>
+                            {kotakRuang.map((_, i) => {
+                              const sg = luxSiang(ruang, i);
+                              if (!sg.luasJendela) return null;
+                              return (
+                                <p key={i} className="text-[12px] text-slate-700">
+                                  {kotakRuang.length > 1 ? `Ruang ${i + 1}: ` : ''}jendela {f(sg.luasJendela, 1)} m² · daylight factor {f(sg.df, 2)}% → <b>±{f(sg.lux, 0)} lux</b> di dalam ruang
+                                </p>
+                              );
+                            })}
+                            <p className="text-[11px] text-slate-500">Langit {ruang.siang ?? 'malam'} ±{LUX_LUAR[ruang.siang ?? 'malam'].toLocaleString('id-ID')} lux di luar (tanpa sinar matahari langsung). Ikut dihitung di kontras proyektor & lux meja.</p>
+                          </div>
+                        )}
                         {benda.some(b => b.jenis === 'lampu') && (
                           <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-3 space-y-2">
                             <div className="flex items-center justify-between">
@@ -2502,6 +2533,11 @@ export default function Desain3D() {
                     </>
                   )}
                   {sisi === 'kategori' && (
+                    <>
+                    <p className="mb-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[11.5px] text-slate-700 leading-relaxed">
+                      <b>🔒 Template default terkunci.</b> Isinya selalu sama untuk semua pengguna - perubahan Anda di kanvas hanya mengubah salinan,
+                      lalu <b>Simpan</b> menjadi file baru milik Anda. Pilih template lagi kapan saja untuk kembali ke versi aslinya.
+                    </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
                       {KATEGORI_RUANG.map(k => (
                         <button key={k.id} type="button" onClick={() => pasangKategori(k.id)}
@@ -2514,6 +2550,7 @@ export default function Desain3D() {
                         </button>
                       ))}
                     </div>
+                    </>
                   )}
                   {sisi === 'daftar' && (
                     <>

@@ -426,5 +426,33 @@ console.log('\nLebih dari 2 ruang & ruang bentuk L');
   cek('ringkasan desain (Request Design) menghitung semua ruang', ringkasRuang({ ruang: r, benda: [] }).ruang.length === 4);
 }
 
+console.log('\nCahaya siang dari jendela');
+{
+  const jendela = { id: 'j1', ruang: 0, sisi: 'kiri' as const, jenis: 'jendela' as const, posisi: 3, lebar: 2, tinggi: 1.2, ambang: 0.9 };
+  const r: M3.Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null, bukaan: [jendela], siang: 'cerah' };
+  const sg = M3.luxSiang(r, 0);
+  //  DF = 0,7 x 2,4 x 70 x 0,9 / (180 x (1 - 0,2025)) = 0,737%; cerah 20.000 lux -> ±147 lux.
+  cek('daylight factor jendela 2,4 m² di ruang 8×6×3 ±0,74%', Math.abs(sg.df - 0.737) < 0.01 && Math.abs(sg.lux - 147) < 2);
+  cek('malam / tanpa pilihan: cahaya siang 0', M3.luxSiang({ ...r, siang: 'malam' }, 0).lux === 0 && M3.luxSiang({ ...r, siang: undefined }, 0).lux === 0);
+  cek('tirai 100% menutup cahaya siang, 50% separuh', M3.luxSiang({ ...r, tirai: 100 }, 0).lux === 0 && Math.abs(M3.luxSiang({ ...r, tirai: 50 }, 0).lux - sg.lux / 2) < 1e-6);
+  const c = M3.luxCahayaDi([], r, [4, 1.5, 0.1], [0, 0, 1]);
+  cek('cahaya siang ikut menambah cahaya ruangan (preset terang + siang)', Math.abs(c.total - (300 + sg.lux)) < 1e-6 && c.siang === sg.lux);
+}
+
+console.log('\nTemplate default kategori: lengkap & terkunci');
+{
+  const semua = M3.KATEGORI_RUANG.map(k => k.id);
+  cek('8 kategori ruangan tersedia', semua.length === 8);
+  const tanpaIsi = semua.filter(id => !M3.templateRuang(id).benda.length);
+  cek('setiap kategori punya template berisi', tanpaIsi.length === 0, tanpaIsi.join(','));
+  const sidik = (id: M3.KategoriRuang) => { const t = M3.templateRuang(id); return JSON.stringify({ r: t.ruang, b: t.benda.map(({ id: _i, ...x }) => x) }); };
+  cek('template selalu sama tiap dipasang (deterministik)', semua.every(id => sidik(id) === sidik(id)));
+  //  Mengubah salinan di kanvas tidak boleh mengubah template berikutnya.
+  const t1 = M3.templateRuang('meeting');
+  const awal = sidik('meeting');
+  t1.ruang.p = 99; t1.benda.forEach(b => { b.x = 123; b.nama = 'diubah user'; }); t1.benda.length = 0;
+  cek('mengubah salinan tidak mengubah template asli', sidik('meeting') === awal);
+}
+
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

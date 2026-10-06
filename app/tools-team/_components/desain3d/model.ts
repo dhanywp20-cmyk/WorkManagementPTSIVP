@@ -92,6 +92,8 @@ export interface Ruang {
   /** Warna dinding semua ruang (#rrggbb), bawaan putih tulang */ warnaDinding?: string;
   /** Tingkat cahaya ruangan (bawaan terang). Gelap = ruang mapping / immersive, cahaya proyektor terlihat jelas. */ cahaya?: 'terang' | 'redup' | 'gelap';
   /** Dimmer semua lampu plafon (%), bawaan 100 - skenario presentasi. */ dimmer?: number;
+  /** Cahaya siang lewat jendela dinding luar (bawaan malam = tidak dihitung) & tirai/blind tertutup (%). */
+  siang?: Siang; tirai?: number;
   /** Pintu & jendela di dinding LUAR (sekat antar ruang punya pintu/jendela sendiri di r2 / lain). */ bukaan?: Bukaan[];
   /** Pengaturan analisis tampilan - ikut tersimpan bersama desain. */
   analisis?: { jenis: 'umum' | 'analitis' | 'detail' | 'custom'; faktor: number; sudut: number };
@@ -653,21 +655,45 @@ export function luxPantul(lampu: Benda[], r: Ruang, k: Kotak, rho = 0.45): numbe
   return (phi * rho) / Math.max(1, luas * (1 - rho));
 }
 
+/** Cahaya langit di luar (lux horizontal, difus - tanpa sinar matahari langsung masuk) per kondisi. */
+export const LUX_LUAR = { malam: 0, mendung: 8000, cerah: 20000, terik: 35000 } as const;
+export type Siang = keyof typeof LUX_LUAR;
+
+/**
+ * Cahaya siang rata-rata di dalam ruang ri dari jendela dinding luar (lux), rumus average daylight
+ * factor (BRE): DF% = T × Aw × θ × M / (A × (1 − R²)) dengan transmisi kaca T 0,7, sudut langit
+ * terlihat θ 70°, faktor kotor M 0,9, pantulan rata-rata R 0,45, A = luas semua permukaan ruang.
+ * Tirai/blind mengurangi sebanding persen tertutup. Jendela di sekat (ke ruang lain) tidak dihitung.
+ */
+export function luxSiang(r: Ruang, ri: number): { lux: number; df: number; luasJendela: number } {
+  const k = daftarRuang(r)[ri] ?? daftarRuang(r)[0];
+  let Aw = 0;
+  for (const sisi of sisiLuar(r, ri)) for (const x of bukaanDinding(r, ri, sisi)) if (x.b.jenis === 'jendela') Aw += (x.x1 - x.x0) * (x.y1 - x.y0);
+  const A = 2 * (k.p * k.l + k.p * k.t + k.l * k.t);
+  const df = (0.7 * Aw * 70 * 0.9) / Math.max(1, A * (1 - 0.45 * 0.45));
+  const tutup = Math.min(100, Math.max(0, r.tirai ?? 0)) / 100;
+  return { lux: (LUX_LUAR[r.siang ?? 'malam'] * df) / 100 * (1 - tutup), df, luasJendela: Aw };
+}
+
 /** Perkiraan cahaya ruangan bila belum ada lampu di desain (dari pilihan Cahaya ruangan). */
 export const LUX_PRESET: Record<'terang' | 'redup' | 'gelap', number> = { terang: 300, redup: 80, gelap: 5 };
 
-/** Cahaya dari lampu ruangan yang jatuh di titik P (normal n): langsung + pantulan, atau perkiraan preset. */
+/**
+ * Cahaya ruangan yang jatuh di titik P (normal n): lampu (langsung + pantulan, atau perkiraan preset
+ * bila belum ada lampu) ditambah cahaya siang dari jendela.
+ */
 export function luxCahayaDi(semua: Benda[], r: Ruang, P: Titik, n: Titik) {
   const ri = ruangDari(r, P[0]);
   const k = daftarRuang(r)[ri] ?? daftarRuang(r)[0];
   const lampu = semua.filter(b => b.jenis === 'lampu' && ruangDari(r, b.x) === ri);
+  const siang = luxSiang(r, ri).lux;
   if (!lampu.length) {
-    const total = LUX_PRESET[r.cahaya ?? 'terang'];
-    return { langsung: total, pantul: 0, total, dariLampu: false, jumlahLampu: 0 };
+    const preset = LUX_PRESET[r.cahaya ?? 'terang'];
+    return { langsung: preset, pantul: 0, siang, total: preset + siang, dariLampu: false, jumlahLampu: 0 };
   }
   const langsung = lampu.reduce((a, l) => a + luxLampuLangsung(l, r, P, n), 0);
   const pantul = luxPantul(lampu, r, k);
-  return { langsung, pantul, total: langsung + pantul, dariLampu: true, jumlahLampu: lampu.length };
+  return { langsung, pantul, siang, total: langsung + pantul + siang, dariLampu: true, jumlahLampu: lampu.length };
 }
 
 /** Rata-rata iluminansi di bidang kerja (0,75 m) satu ruang - 8 x 6 titik. */
