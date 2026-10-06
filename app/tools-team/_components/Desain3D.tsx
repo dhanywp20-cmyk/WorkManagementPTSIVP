@@ -12,7 +12,7 @@ import { Modal } from '@/components/shared/Modal';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import {
   type Benda, type Ruang, type Kotak, type ItemKatalog, DISPLAY, BISA_TEMPEL, KATALOG, idBaru, bendaBaru, contohAwal,
-  daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturPolaUji,
+  daftarRuang, ruangDari, titikPenonton, tandaBentuk, buatModel, sesuaikanTinggi, teksturLantai, teksturKonten,
   salinKeRuang, salinIsi, sesuaikanUkuranRuang, pusatkanIsi, type SumbuPusat, pintuSekat, jendelaSekat, ukuranPintu, warnaSah, JENDELA_AWAL, sinarProyektor, layarTerdekat, proyektorKeLayar, tiltKeLayar, throwRatioDari, tiltDari,
   analisisDari, bukaanDinding, sisiLuar, panjangDinding, BUKAAN_AWAL, type Bukaan, type SisiDinding, type OpsiKelas, setRuangKelas, ukuranSetKelas, LABEL,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, kecerahanProyektor, tipeSpeakerDari, berkasLineArray, modulLA,
@@ -104,16 +104,21 @@ function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h: number
     const baris = teks.split('\n').map(b => b.trim()).filter(Boolean);
     const lebar = Math.max(...baris.map(b => g.measureText(b).width));
     const padX = 6 * skala, tb = uk * 1.3, kw = lebar + padX * 2, kh = baris.length * tb + 4 * skala;
+    const tegak = (cs.writingMode || '').startsWith('vertical');
     const latar = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent' ? cs.backgroundColor : 'rgba(15,23,42,0.85)';
+    g.save();
+    g.translate(x, y);
+    if (tegak) g.rotate(Math.PI / 2);
     g.save();
     g.shadowColor = 'rgba(0,0,0,0.3)'; g.shadowBlur = 3 * skala; g.shadowOffsetY = 1 * skala;
     g.fillStyle = latar;
     g.beginPath();
-    if (typeof g.roundRect === 'function') g.roundRect(x - kw / 2, y - kh / 2, kw, kh, 6 * skala); else g.rect(x - kw / 2, y - kh / 2, kw, kh);
+    if (typeof g.roundRect === 'function') g.roundRect(-kw / 2, -kh / 2, kw, kh, 6 * skala); else g.rect(-kw / 2, -kh / 2, kw, kh);
     g.fill();
     g.restore();
     g.fillStyle = cs.color || '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    baris.forEach((b, i) => g.fillText(b, x, y - kh / 2 + 2 * skala + tb * (i + 0.5)));
+    baris.forEach((b, i) => g.fillText(b, 0, -kh / 2 + 2 * skala + tb * (i + 0.5)));
+    g.restore();
   });
 }
 
@@ -186,6 +191,10 @@ export default function Desain3D() {
   const [tampilan, setTampilan] = useState<'3d' | 'atas' | 'kursi'>('3d');
   const [modeGizmo, setModeGizmo] = useState<'translate' | 'rotate'>('translate');
   const [ukur, setUkur] = useState(true);
+  //  Garis ukuran display (lebar & tinggi dalam mm, garis merah ala gambar kerja).
+  const [garisUkur, setGarisUkur] = useState(true);
+  //  Label nama produk di atas tiap benda (benda kembar cukup satu label + jumlah).
+  const [labelProduk, setLabelProduk] = useState(true);
   const [kerucut, setKerucut] = useState(true);
   const [sinar, setSinar] = useState(true);
   /** Seret satu jari / klik kiri: putar kamera atau geser bidang. */
@@ -656,7 +665,7 @@ export default function Desain3D() {
         if (c) { grupBenda.remove(c.obj); buang(c.obj); }
         const obj = buatModel(b, {
           THREE,
-          layar: x => (x.konten === 'mati' ? null : x.konten === 'gambar' ? gambarLayar.current.get(x.id) ?? null : teksturPolaUji(THREE, x.nama, x.w / Math.max(0.01, x.h))),
+          layar: x => (x.konten === 'mati' ? null : x.konten === 'gambar' ? gambarLayar.current.get(x.id) ?? null : teksturKonten(THREE, x)),
           model: k => modelImpor.current.get(k) ?? null,
         });
         obj.userData.id = b.id;
@@ -747,8 +756,12 @@ export default function Desain3D() {
         kipas.rotation.x = -Math.PI / 2; kipas.rotation.z = r;
         kipas.position.set(d.x, 0.01, d.z); grupBantu.add(kipas);
       }
-      if (ukur) {
-        label(`${d.nama}: ${f(d.w)} × ${f(d.h)} m`, new THREE.Vector3(d.x, d.elev + d.h + 0.18, d.z));
+      if (ukur || (labelProduk && !d.sembunyiLabel)) {
+        //  Garis ukuran aktif: label cukup nama, digeser di atas angka mm supaya tidak bertumpuk.
+        //  Ukuran mati tetapi label produk hidup: cukup nama display.
+        const adaGaris = garisUkur && !d.sembunyiUkur;
+        const naik = adaGaris ? Math.max(0.1, Math.min(0.3, Math.max(d.w, d.h) * 0.04)) + (d.jenis === 'layar' ? 0.22 : 0) + Math.max(0.1, Math.min(0.25, Math.max(d.w, d.h) * 0.035)) * 2.2 + 0.12 : 0.18;
+        label(adaGaris || !ukur ? d.nama : `${d.nama}: ${f(d.w)} × ${f(d.h)} m`, new THREE.Vector3(d.x, d.elev + d.h + naik, d.z));
         if (a.terjauhP) {
           const ujung = new THREE.Vector3(a.terjauhP.x, 1.2, a.terjauhP.z);
           const garis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pusat, ujung]),
@@ -931,7 +944,53 @@ export default function Desain3D() {
         if (kotakRuang.length > 1) label(`Ruang ${i + 1}`, new THREE.Vector3(k.x0 + Math.min(0.7, k.p / 4), 0.05, k.l - Math.min(0.45, k.l / 4)), 'abu');
       });
     }
-  }, [analisis, ukur, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, pilih]);
+    //  Label produk: satu label per nama benda per ruang (kembar = "× jumlah"), di atas benda;
+    //  benda di plafon (speaker plafon, proyektor gantung) labelnya di bawah benda.
+    if (labelProduk) {
+      const grup = new Map<string, Benda[]>();
+      for (const b of benda) {
+        if (DISPLAY.includes(b.jenis) || b.sembunyiLabel) continue;
+        const nama = b.nama.replace(/\s+\d+(\.\d+)?$/, '').trim() || b.nama;
+        const kunci = `${ruangDari(ruang, b.x)}|${nama}`;
+        const isi = grup.get(kunci); if (isi) isi.push(b); else grup.set(kunci, [b]);
+      }
+      for (const [kunci, isi] of grup) {
+        const b = isi[0], nama = kunci.split('|').slice(1).join('|');
+        const atas = b.elev + b.h;
+        const diPlafon = atas > plafonDi(b.x) - 0.35;
+        const el = document.createElement('div');
+        el.textContent = isi.length > 1 ? `${nama} ×${isi.length}` : nama;
+        el.style.cssText = 'font:600 11px system-ui,sans-serif;padding:2px 7px;border-radius:999px;white-space:nowrap;color:#0f172a;background:rgba(255,255,255,.92);border:1px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,.18)';
+        const o = new CSS2DObject(el);
+        o.position.set(b.x, diPlafon ? Math.max(0.3, b.elev - 0.18) : atas + 0.16, b.z);
+        grupBantu.add(o);
+      }
+    }
+    //  Garis ukuran display: lebar di atas & tinggi di kanan, ujung bertanda, angka dalam mm.
+    if (garisUkur) {
+      const merah = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
+      for (const b of benda) {
+        if (!DISPLAY.includes(b.jenis) || b.sembunyiUkur) continue;
+        const grp = new THREE.Group();
+        grp.position.set(b.x, b.elev, b.z); grp.rotation.y = (b.rot * Math.PI) / 180;
+        const t = Math.max(0.01, Math.max(b.w, b.h) * 0.004), tanda = Math.max(0.1, Math.min(0.25, Math.max(b.w, b.h) * 0.035));
+        const jarak = Math.max(0.1, Math.min(0.3, Math.max(b.w, b.h) * 0.04)) + (b.jenis === 'layar' ? 0.22 : 0);
+        const zp = b.d / 2 + 0.03, yAtas = b.h + jarak, xKanan = b.w / 2 + Math.max(0.1, Math.min(0.3, Math.max(b.w, b.h) * 0.04));
+        const balok = (w: number, h: number, x: number, y: number) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, t), merah); m.position.set(x, y, zp); grp.add(m); };
+        balok(b.w, t, 0, yAtas); balok(t, tanda, -b.w / 2, yAtas); balok(t, tanda, b.w / 2, yAtas);
+        balok(t, b.h, xKanan, b.h / 2); balok(tanda, t, xKanan, 0); balok(tanda, t, xKanan, b.h);
+        const teks = (isi: string, x: number, y: number, tegak: boolean) => {
+          const el = document.createElement('div');
+          el.textContent = isi;
+          el.style.cssText = `font:700 12px system-ui,sans-serif;color:#dc2626;background:rgba(255,255,255,.85);padding:${tegak ? '4px 1px' : '1px 4px'};border-radius:4px;white-space:nowrap${tegak ? ';writing-mode:vertical-rl' : ''}`;
+          const o = new CSS2DObject(el); o.position.set(x, y, zp); grp.add(o);
+        };
+        teks(`${Math.round(b.w * 1000)} mm`, 0, yAtas + tanda * 0.9, false);
+        teks(`${Math.round(b.h * 1000)} mm`, xKanan + tanda * 0.9, b.h / 2, true);
+        grupBantu.add(grp);
+      }
+    }
+  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, pilih]);
 
   //  Setelah template dipasang: pas-kan kamera ke ruangan BARU (dipanggil dari efek supaya ukuran ruangnya sudah yang baru).
   useEffect(() => {
@@ -1918,7 +1977,10 @@ export default function Desain3D() {
           {!siap && !galat && <div className="absolute inset-0 grid place-items-center text-sm text-slate-500">Memuat tampilan 3D...</div>}
           <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5 max-w-[calc(100%-16px)]">
             <div className="flex gap-1.5 flex-wrap">
-              {[{ v: ukur, s: setUkur, l: 'Ukuran' }, { v: kerucut, s: setKerucut, l: 'Sudut pandang' },
+              {[{ v: ukur, s: setUkur, l: 'Ukuran' },
+                ...(benda.some(b => DISPLAY.includes(b.jenis)) ? [{ v: garisUkur, s: setGarisUkur, l: 'Garis ukuran (mm)' }] : []),
+                { v: labelProduk, s: setLabelProduk, l: 'Label produk' },
+                { v: kerucut, s: setKerucut, l: 'Sudut pandang' },
                 ...(adaProyektor ? [{ v: sinar, s: setSinar, l: 'Sinar proyektor' }] : []),
                 ...(benda.some(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon') ? [{ v: jangkau, s: setJangkau, l: 'Jangkauan speaker' }] : []),
                 { v: bayangan, s: setBayangan, l: 'Bayangan & cahaya' }].map(t => (

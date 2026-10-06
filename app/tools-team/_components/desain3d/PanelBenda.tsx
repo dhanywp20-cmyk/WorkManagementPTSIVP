@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { Angka, Pilih, Segmen, f } from '../ui';
 import { Ikon } from '@/components/shared/Ikon';
 import {
-  type Benda, type ModelVW, type BentukMeja, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
+  type Benda, type ModelVW, type BentukMeja, type KontenLayar, type Finish, type TipeKursi, type TipeKamera, type PasangProyektor, type PanelVW, type RasioLayar,
   DISPLAY, VIDEOWALL, LAYAR_DIAG, RAK_U, PITCH_LED, IFP_DIAG, TV_DIAG, RASIO_LAYAR, PANEL_VW_AWAL, terapkanUkuran, bendaBaru, spekVideowall, warnaSah,
   sebaranSpeaker, sebaranVSpeaker, jangkauanDari, cakupanSpeakerPlafon, TINGGI_DENGAR, offsetLensaDari, geserLensaDari, lumenDari,
   tipeSpeakerDari, modulLA, sudutModulLA, tiltLADari, berkasLineArray, type TipeSpeaker,
@@ -183,6 +183,10 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         )}
 
         {b.jenis === 'rak' && (
+          <Segmen label="Tipe rack" nilai={b.tipeRak ?? 'kaca'} onUbah={(v: 'kaca' | 'tertutup' | 'open') => set({ tipeRak: v })}
+            opsi={[{ v: 'kaca', l: 'Pintu kaca' }, { v: 'tertutup', l: 'Tertutup' }, { v: 'open', l: 'Open frame' }]} />
+        )}
+        {b.jenis === 'rak' && (
           <div className="grid grid-cols-2 gap-2">
             <Pilih label="Tinggi rack" nilai={RAK_U.includes(b.rakU ?? 20) ? b.rakU ?? 20 : -1}
               onUbah={v => { const u = v > 0 ? v : (b.rakU && !RAK_U.includes(b.rakU) ? b.rakU : 15); setUkuran({ rakU: u, nama: b.nama.startsWith('Rack') ? `Rack ${u}U` : b.nama }); }}
@@ -205,10 +209,16 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
 
         {b.jenis === 'meja' && (
           <>
-            <Segmen label="Bentuk meja" nilai={b.bentukMeja ?? 'rapat'} onUbah={(v: BentukMeja) => {
+            <Pilih label="Bentuk meja" nilai={b.bentukMeja ?? 'rapat'} onUbah={(v: BentukMeja) => {
               const baru = bendaBaru('meja', kosong, { bentukMeja: v });
-              onUbah({ ...b, bentukMeja: v, w: baru.w, d: baru.d, finish: baru.finish, nama: b.nama.startsWith('Meja') ? baru.nama : b.nama });
-            }} opsi={[{ v: 'rapat', l: 'Rapat' }, { v: 'bulat', l: 'Bundar' }, { v: 'kelas', l: 'Kelas' }, { v: 'dosen', l: 'Dosen' }, { v: 'podium', l: 'Podium' }]} />
+              const namaBawaan = /^(Meja|Podium|Kredensa)/.test(b.nama);
+              onUbah({ ...b, bentukMeja: v, w: baru.w, h: baru.h, d: baru.d, finish: baru.finish, monitorMeja: baru.monitorMeja, nama: namaBawaan ? baru.nama : b.nama });
+            }} opsi={[{ v: 'rapat', l: 'Meja rapat' }, { v: 'bulat', l: 'Meja bundar' }, { v: 'kelas', l: 'Meja kelas' }, { v: 'dosen', l: 'Meja dosen' },
+              { v: 'podium', l: 'Podium' }, { v: 'kredensa', l: 'Kredensa (lemari rendah)' }, { v: 'operator', l: 'Meja operator (control room)' }] as { v: BentukMeja; l: string }[]} />
+            {b.bentukMeja === 'operator' && (
+              <Angka label="Jumlah monitor" nilai={b.monitorMeja ?? 4} step={1} onUbah={v => v >= 0 && v <= 12 && set({ monitorMeja: Math.round(v) })}
+                bantuan="Berderet di sisi depan meja; keyboard 1 per 2 monitor" />
+            )}
             <Segmen label="Permukaan" nilai={b.finish ?? (b.bentukMeja === 'kelas' ? 'oak' : 'walnut')} onUbah={(v: Finish) => set({ finish: v })}
               opsi={[{ v: 'walnut', l: 'Walnut' }, { v: 'oak', l: 'Oak' }, { v: 'putih', l: 'Putih' }]} />
             {b.bentukMeja === 'bulat' && <p className="text-[12px] text-slate-600">Lebar = Panjang untuk bundar; beda nilai = oval.</p>}
@@ -499,9 +509,22 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           </div>
         </div>
 
+        <label className="flex items-center gap-2 text-[12.5px] text-slate-700">
+          <input type="checkbox" className="w-4 h-4" checked={!b.sembunyiLabel} onChange={e => set({ sembunyiLabel: e.target.checked ? undefined : true })} />
+          Tampilkan label produk benda ini
+        </label>
         {DISPLAY.includes(b.jenis) && (
-          <Segmen label="Konten layar" nilai={b.konten ?? 'pola'} onUbah={v => (v === 'gambar' ? onGambar() : set({ konten: v }))}
-            opsi={[{ v: 'pola', l: 'Pola uji' }, { v: 'gambar', l: 'Gambar...' }, { v: 'mati', l: 'Mati' }]} />
+          <div className="space-y-2">
+            <Pilih label="Konten layar" nilai={b.konten ?? 'pola'} onUbah={(v: KontenLayar) => (v === 'gambar' ? onGambar() : set({ konten: v }))}
+              opsi={[
+                { v: 'pola', l: 'Pola uji (color bar)' }, { v: 'campuran', l: 'Command center: grafik + CCTV' }, { v: 'cctv', l: 'CCTV (grid kamera)' },
+                { v: 'dashboard', l: 'Dashboard / grafik' }, { v: 'desktop', l: 'Home screen (IFP / signage)' }, { v: 'gambar', l: 'Gambar unggahan...' }, { v: 'mati', l: 'Mati (layar hitam)' },
+              ] as { v: KontenLayar; l: string }[]} />
+            <label className="flex items-center gap-2 text-[12.5px] text-slate-700">
+              <input type="checkbox" className="w-4 h-4" checked={!b.sembunyiUkur} onChange={e => set({ sembunyiUkur: e.target.checked ? undefined : true })} />
+              Tampilkan garis ukuran (mm) benda ini
+            </label>
+          </div>
         )}
 
         {onSimpanProduk && b.jenis !== 'model' && (

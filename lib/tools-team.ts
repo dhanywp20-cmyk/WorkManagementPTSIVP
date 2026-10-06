@@ -223,8 +223,8 @@ export interface ProdukTim {
 
 const ENUM_PRODUK: Record<string, readonly string[]> = {
   rasio: ['16:9', '16:10', '4:3', '21:9'], vw: ['55BDL2105X', '49BDL2105X', 'custom'], pasang: ['dinding', 'standfloor'],
-  mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas', 'dosen', 'podium'], bentukBidang: ['datar', 'lengkung', 'cembung'], finish: ['walnut', 'oak', 'putih'],
-  tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati'],
+  mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas', 'dosen', 'podium', 'kredensa', 'operator'], bentukBidang: ['datar', 'lengkung', 'cembung'], finish: ['walnut', 'oak', 'putih'],
+  tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati', 'cctv', 'dashboard', 'campuran', 'desktop'], tipeRak: ['kaca', 'tertutup', 'open'],
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
 };
 /** Angka yang boleh ada di template beserta batasnya. */
@@ -233,7 +233,7 @@ const ANGKA_PRODUK: Record<string, [number, number]> = {
   kol: [1, 30], bar: [1, 30], rakU: [1, 80], throwRatio: [0.1, 10], tilt: [-90, 45], trMin: [0.1, 10], trMax: [0.1, 10],
   baris: [1, 60], kursiBaris: [1, 80], tinggiAnak: [0.1, 1], jariBidang: [0.2, 50], busur: [10, 360], jangkauan: [0.5, 60], sebaran: [10, 180], sebaranV: [4, 180],
   modul: [1, 24], sudutModul: [0, 15], tiltLA: [-30, 60],
-  offsetLensa: [-0.5, 1.5], geserLensaH: [-0.6, 0.6], lumen: [100, 100000],
+  offsetLensa: [-0.5, 1.5], geserLensaH: [-0.6, 0.6], lumen: [100, 100000], monitorMeja: [0, 12],
 };
 const ANGKA_PANEL: Record<string, [number, number]> = {
   w: [0.05, 5], h: [0.05, 5], d: [0.001, 1], bezelMm: [0, 100], resX: [1, 16000], resY: [1, 16000], wTipikal: [0, 5000], wMaks: [0, 5000],
