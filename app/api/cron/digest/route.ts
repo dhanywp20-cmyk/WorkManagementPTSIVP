@@ -7,6 +7,8 @@ import { bacaRahasia } from '@/lib/rahasia-server';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { catatCron } from '@/lib/cron-catat';
 import { itemTahapTertahan, type BarisTahap } from '@/lib/eskalasi-tahap';
+import { KUNCI_BRIEFING, rapikanBriefing } from '@/lib/briefing-pagi';
+import { kirimAlertKesehatan } from '@/lib/kesehatan-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,6 +74,19 @@ async function jalankan() {
     //  dibekukan sejak jadwal pertama route ini jalan setelah deploy.
     { global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) } },
   );
+
+  /*
+    Saklar dari Admin Panel -> Integrations -> Briefing Pagi. Mati = tidak mengirim apa pun,
+    tetapi jejak "terakhir jalan" tetap dicatat (cron-nya sehat, hanya sengaja dimatikan).
+    Alert kesehatan tetap diperiksa: briefing yang mati tidak boleh ikut membisukan alert admin.
+  */
+  const { data: barisSaklar } = await supabase.from('app_settings').select('value').eq('key', KUNCI_BRIEFING).maybeSingle();
+  const saklar = rapikanBriefing(barisSaklar?.value);
+  if (!saklar.aktif) {
+    await catatCron(supabase, 'digest', true, 'dimatikan di Admin Panel - tidak ada yang dikirim');
+    const alert = await kirimAlertKesehatan(supabase);
+    return { penerima: 0, terkirim: 0, gagal: 0, catatan: 'briefing dimatikan di Admin Panel', alertKesehatan: alert };
+  }
 
   const hariIni = tanggalISO(0);
   const batas   = tanggalISO(HARI_KE_DEPAN);
@@ -200,7 +215,8 @@ async function jalankan() {
 
   const { data: drKemarin } = await supabase.from('daily_reports').select('user_id').eq('report_date', kemarin);
   const sudahDR = new Set(((drKemarin ?? []) as { user_id: string }[]).map(r => r.user_id));
-  const belumDR = timPTS.filter(u => !sudahDR.has(u.id));
+  //  Saklar "Pengingat Daily Report" mati: daftar kosong -> tak ada baris pengingat & tak ada blok atasan.
+  const belumDR = saklar.pengingatDailyReport ? timPTS.filter(u => !sudahDR.has(u.id)) : [];
   const labelKemarin = new Date(kemarin + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
   for (const u of belumDR) {
     catat(u.full_name, { label: `📝 Daily Report ${labelKemarin} belum diisi`, tanggal: kemarin, terlambat: true, ringan: true });
@@ -292,8 +308,10 @@ async function jalankan() {
       `*Insight mingguan (7 hari terakhir)*\n` +
       `• Tiket baru: ${(tDibuat ?? []).length} · Solved: ${(tSelesai ?? []).length}\n` +
       `• Jadwal lewat tenggat & belum selesai: ${(rLewat ?? []).length}\n` +
-      `• Pengisian Daily Report: ${target ? Math.round((terisi / target) * 100) : 0}% (${terisi}/${target})` +
-      (palingKurang.length ? `\n• Paling banyak belum isi: ${palingKurang.map(p => `${p.nama} (${p.kurang} hari)`).join(', ')}` : '');
+      (saklar.pengingatDailyReport
+        ? `• Pengisian Daily Report: ${target ? Math.round((terisi / target) * 100) : 0}% (${terisi}/${target})` +
+          (palingKurang.length ? `\n• Paling banyak belum isi: ${palingKurang.map(p => `${p.nama} (${p.kurang} hari)`).join(', ')}` : '')
+        : '').replace(/\n$/, '');
     for (const u of daftarUser.filter(u => adalahAdmin(u) || adalahManager(u))) tambahBlok(u.full_name!, insight);
   }
 
@@ -363,7 +381,8 @@ async function jalankan() {
   }
 
   await catatCron(supabase, 'digest', true, `${penerima.size} penerima · WA ${terkirim} terkirim, ${gagal} gagal · Telegram ${telegram} · push ${push}`);
-  return { penerima: penerima.size, terkirim, gagal, tanpaNomor, push, telegram, drAcuan: kemarin };
+  const alert = await kirimAlertKesehatan(supabase);
+  return { penerima: penerima.size, terkirim, gagal, tanpaNomor, push, telegram, drAcuan: kemarin, alertKesehatan: alert };
 }
 
 export async function GET(request: NextRequest) {
