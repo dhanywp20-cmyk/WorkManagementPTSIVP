@@ -77,10 +77,13 @@ export async function kirimFcmKeUser(userIds: string[], payload: PushPayload): P
           body: JSON.stringify({
             message: {
               token,
-              notification: { title: payload.title, body: payload.body ?? '' },
-              data: { url: payload.url ?? '/dashboard' },
-              // Kanal 'notifikasi' dibuat aplikasi dengan bunyi notif.wav.
-              android: { priority: 'HIGH', notification: { channel_id: 'notifikasi', sound: 'notif' } },
+              // DATA saja (tanpa blok `notification`): aplikasi SELALU yang menampilkan
+              // (LayananPesan -> Notifikasi.tampilkan), juga saat tertutup. Dengan blok
+              // notification, sistem yang menampilkan saat aplikasi di latar & tiap pesan
+              // berbunyi; kini aplikasi membatasi bunyi sekali per rentetan & senyap saat
+              // aplikasi dibuka (APK >= 1.0.2). APK lama juga membaca title/body dari data.
+              data: { title: payload.title, body: payload.body ?? '', url: payload.url ?? '/dashboard' },
+              android: { priority: 'HIGH' },
             },
           }),
         });

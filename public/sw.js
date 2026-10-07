@@ -27,6 +27,10 @@ self.addEventListener('fetch', () => {
   // request seperti biasa (network langsung). Lihat catatan di atas.
 });
 
+/** Waktu bunyi push terakhir (selama service worker hidup - rentetan push datang dalam hitungan detik). */
+let terakhirBunyi = 0;
+const JEDA_BUNYI_MS = 10000;
+
 self.addEventListener('push', (event) => {
   let data = { title: 'Notifikasi', body: '', url: '/dashboard' };
   try {
@@ -35,19 +39,32 @@ self.addEventListener('push', (event) => {
     if (event.data) data.body = event.data.text();
   }
 
-  const options = {
-    body: data.body,
-    icon: '/icons/icon-192.png',
-    badge: '/icons/badge-96.png',
-    data: { url: data.url },
-    vibrate: [120, 60, 120],
-    // tag+renotify: notifikasi baru dari url yang sama MENIMPA yang lama di
-    // panel notifikasi HP, bukan menumpuk jadi puluhan baris kalau orang
-    // tidak sempat membuka HP-nya seharian.
-    tag: data.url,
-    renotify: true,
-  };
-  event.waitUntil(self.registration.showNotification(data.title, options));
+  event.waitUntil((async () => {
+    // Bunyi SEKALI per rentetan: push yang datang berdekatan (beberapa notifikasi
+    // sekaligus) cukup satu bunyi/getar, sisanya tetap tampil tapi senyap. Senyap
+    // juga bila halaman Work Management sedang terlihat - alarm di halaman itu
+    // sudah berbunyi (lib/notif-sound.ts), jangan dobel.
+    const jendela = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const adaTerlihat = jendela.some((c) => c.visibilityState === 'visible');
+    const sekarang = Date.now();
+    const senyap = adaTerlihat || sekarang - terakhirBunyi < JEDA_BUNYI_MS;
+    if (!senyap) terakhirBunyi = sekarang;
+    const options = {
+      body: data.body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/badge-96.png',
+      data: { url: data.url },
+      // tag: notifikasi baru dari url yang sama MENIMPA yang lama di panel
+      // notifikasi HP, bukan menumpuk jadi puluhan baris kalau orang tidak
+      // sempat membuka HP-nya seharian. renotify = bunyi lagi saat menimpa.
+      tag: data.url,
+      renotify: !senyap,
+      silent: senyap,
+      // vibrate bersama silent:true ditolak browser (TypeError).
+      ...(senyap ? {} : { vibrate: [120, 60, 120] }),
+    };
+    await self.registration.showNotification(data.title, options);
+  })());
 });
 
 self.addEventListener('notificationclick', (event) => {

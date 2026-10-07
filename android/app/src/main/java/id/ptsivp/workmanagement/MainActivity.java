@@ -3,6 +3,7 @@ package id.ptsivp.workmanagement;
 import android.Manifest;
 import android.app.Activity;
 import android.app.DownloadManager;
+import android.app.NotificationManager;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ContentValues;
@@ -107,9 +108,23 @@ public class MainActivity extends Activity {
         web.saveState(keluar);
     }
 
+    /** Aplikasi sedang terlihat: notifikasi baru masuk senyap (alarm halaman web yang berbunyi). */
+    static volatile boolean terlihat;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        terlihat = true;
+        //  Aplikasi dibuka -> notifikasi di panel (dan titik/angka di ikon aplikasi) dibersihkan;
+        //  isinya tetap ada di lonceng notifikasi di dalam aplikasi.
+        NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm != null) nm.cancelAll();
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
+        terlihat = false;
         CookieManager.getInstance().flush();
     }
 
