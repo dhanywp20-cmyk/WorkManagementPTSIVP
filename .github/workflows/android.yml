@@ -55,6 +55,15 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: gradle -p android assembleRelease --no-daemon
 
+      # Nama berkas rilis: Work-ManagementPTS-<versi>.apk (bukan app-release.apk) - nama
+      # inilah yang dilihat orang di artefak & saat diunggah ke Admin Panel.
+      - name: Beri nama APK rilis
+        if: steps.kunci.outputs.ada == '1'
+        run: |
+          V=$(grep '^versionName=' android/version.properties | cut -d= -f2 | tr -d '[:space:]')
+          mv android/app/build/outputs/apk/release/app-release.apk "android/app/build/outputs/apk/release/Work-ManagementPTS-$V.apk"
+          ls android/app/build/outputs/apk/release/
+
       - name: Build APK debug (tanpa kunci)
         if: steps.kunci.outputs.ada != '1'
         run: gradle -p android assembleDebug --no-daemon

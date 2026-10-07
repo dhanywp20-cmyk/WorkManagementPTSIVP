@@ -93,7 +93,7 @@ export function AplikasiAndroidInline() {
     setPesan(null);
     if (f && !/\.apk$/i.test(f.name)) { setPesan({ tipe: 'gagal', teks: 'Pilih berkas .apk.' }); return; }
     setBerkas(f);
-    // app-release-1.0.3.apk -> isi otomatis versinya bila masih kosong.
+    // Work-ManagementPTS-1.0.3.apk -> isi otomatis versinya bila masih kosong.
     const m = f?.name.match(/(\d+\.\d+(?:\.\d+)?)/);
     if (m && !versi) setVersi(m[1]);
   };
