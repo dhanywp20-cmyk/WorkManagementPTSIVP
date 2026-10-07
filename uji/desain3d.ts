@@ -491,7 +491,8 @@ console.log('\nJalur & panjang kabel');
   cek('TV: video + LAN, speaker plafon: kabel speaker, mic: kabel audio', j.length === 4 && j.some(x => x.kabel.kunci === 'speaker') && j.some(x => x.kabel.kunci === 'audio'));
   const video = j.find(x => x.dari === tv.nama && x.kabel.kunci !== 'lan')!;
   cek('TV dinding lewat plafon, mic meja lewat lantai', video.lewat === 'plafon' && j.find(x => x.kabel.kunci === 'audio')!.lewat === 'lantai');
-  cek('video > 10 m otomatis HDBaseT, panjang dibulatkan 0,5 m', video.panjang > K.HDMI_MAKS ? video.kabel.kunci === 'hdbt' : video.kabel.kunci === 'hdmi');
+  cek('video > 10 m otomatis HDMI AOC (tetap kabel HDMI merah), panjang dibulatkan 0,5 m',
+    (video.panjang > K.HDMI_MAKS ? video.kabel.kunci === 'hdmi-aoc' : video.kabel.kunci === 'hdmi') && video.kabel.golongan === 'hdmi');
   cek('panjang >= jarak siku-siku + service loop', j.every(x => x.panjang * 2 === Math.round(x.panjang * 2) && x.panjang >= 1.5));
   const rekap = K.rekapKabel(j);
   cek('rekap per jenis menjumlah semua tarikan', rekap.reduce((a, r) => a + r.tarikan, 0) === j.length);
@@ -501,7 +502,24 @@ console.log('\nJalur & panjang kabel');
   cek('legend 7 warna sesuai standar', K.LEGENDA_KABEL.length === 7 && warna('lan') === 0x2563eb && warna('hdmi') === 0xdc2626 && warna('audio') === 0x16a34a
     && warna('speaker') === 0xea580c && warna('usb') === 0x7c3aed && warna('power') === 0x111111 && warna('fiber') === 0x9ca3af);
   cek('tiap jenis kabel memakai warna golongannya', Object.values(K.KABEL).every(x => x.warna === warna(x.golongan)));
-  cek('HDBaseT = kabel LAN (biru)', K.KABEL.hdbt.golongan === 'lan');
+  cek('HDMI AOC = golongan HDMI (merah)', K.KABEL.hdmiAoc.golongan === 'hdmi');
+
+  //  Proyektor: selalu 1 HDMI (sinyal) + 1 LAN (kontrol), dekat maupun jauh dari rack.
+  const projDekat = { ...M3.bendaBaru('proyektor', k), id: 'pd', x: 6.5, z: 4.5 };
+  const projJauh = { ...M3.bendaBaru('proyektor', k), id: 'pj', x: 0.5, z: 0.5 };
+  const jp = K.jalurKabel([projDekat, projJauh, rak], ruang);
+  const isiProj = (id: string) => jp.filter(x => x.id.startsWith(`${id}-`)).map(x => x.kabel.golongan).sort().join(',');
+  cek('proyektor dekat & jauh sama-sama 1 HDMI + 1 LAN', isiProj('pd') === 'hdmi,lan' && isiProj('pj') === 'hdmi,lan', `${isiProj('pd')} | ${isiProj('pj')}`);
+
+  //  Kabel diatur sendiri di panel Atur: jenis (warna) & jumlah menggantikan aturan otomatis.
+  cek('kabel otomatis proyektor = HDMI ×1 + LAN ×1', JSON.stringify(K.kabelOtomatis(projDekat, [projDekat])) === JSON.stringify([{ golongan: 'hdmi', jumlah: 1 }, { golongan: 'lan', jumlah: 1 }]));
+  const custom = { ...projJauh, kabelCustom: [{ golongan: 'hdmi' as const, jumlah: 2 }, { golongan: 'lan' as const, jumlah: 1 }, { golongan: 'usb' as const, jumlah: 1 }] };
+  const jc = K.jalurKabel([custom, rak], ruang);
+  cek('custom: 2 HDMI + 1 LAN + 1 USB, warna sesuai pilihan', jc.length === 4 && jc.filter(x => x.kabel.golongan === 'hdmi').length === 2
+    && jc.filter(x => x.kabel.golongan === 'lan').length === 1 && jc.filter(x => x.kabel.golongan === 'usb').length === 1);
+  cek('custom: jalur tetap otomatis (lewat plafon ke rack)', jc.every(x => x.lewat === 'plafon' && x.ke === rak.nama));
+  cek('custom kosong = tanpa kabel sinyal', K.jalurKabel([{ ...projJauh, kabelCustom: [] }, rak], ruang).length === 0);
+  cek('custom: jumlah dijepit 0..8', K.jalurKabel([{ ...projJauh, kabelCustom: [{ golongan: 'lan', jumlah: 40 }] }, rak], ruang).length === K.MAKS_TARIKAN);
 
   //  Meja: PC operator / laptop dikabel lewat table box -> floor box -> rack.
   const op = M3.bendaBaru('meja', k, { bentukMeja: 'operator' });

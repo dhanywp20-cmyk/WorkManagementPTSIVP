@@ -7,6 +7,10 @@ import type { Kontur } from '../impor/kontur';
 import type { Satuan } from '../impor/berkas3d';
 import type { Siang } from './cahaya';
 
+/** Golongan kabel sinyal (warna legend) yang bisa dipilih manual - kabel power diatur centang "Kabel power". */
+export type GolonganKabelSinyal = 'lan' | 'hdmi' | 'audio' | 'speaker' | 'usb' | 'fiber';
+export interface KabelCustom { golongan: GolonganKabelSinyal; jumlah: number }
+
 export type Jenis =
   | 'videowall' | 'led' | 'layar' | 'ifp' | 'tv'
   | 'meja' | 'kursi'
@@ -81,6 +85,8 @@ export interface Benda {
   /** Proyektor: tilt (derajat, negatif = menunduk). Pan = rot. */ tilt?: number;
   /** Display: konten di layar ('pola' = pola uji bawaan; 'gambar' = unggahan, tidak disimpan) */ konten?: KontenLayar;
   /** Display: sembunyikan garis ukuran (mm) benda ini walau garis ukuran dinyalakan. */ sembunyiUkur?: boolean;
+  /** Kabel sinyal ke rack diatur sendiri di panel Atur (jenis = warna legend & jumlah tarikan); tanpa = otomatis (inti/kabel.ts). */
+  kabelCustom?: KabelCustom[];
   /** Sembunyikan label produk benda ini walau label produk dinyalakan. */ sembunyiLabel?: boolean;
   /** Meja operator: jumlah monitor di atas meja. */ monitorMeja?: number;
   /** Rack: pintu kaca (isi terlihat), tertutup (pintu besi berlubang), atau open frame. */ tipeRak?: TipeRak;

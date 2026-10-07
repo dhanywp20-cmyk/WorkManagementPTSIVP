@@ -1,7 +1,7 @@
 'use client';
 /** Kartu jalur & panjang kabel: rekap per jenis, jadwal kabel. */
 import { Catatan, f, Kartu, TombolSalin } from '../../bersama/ui';
-import { HDBT_MAKS, HDMI_MAKS, rekapKabel } from '../inti';
+import { AOC_MAKS, HDMI_MAKS, rekapKabel } from '../inti';
 import type { AlatDesain } from './alat';
 
 export function KartuKabel({ a }: { a: AlatDesain }) {
@@ -40,7 +40,7 @@ export function KartuKabel({ a }: { a: AlatDesain }) {
                   ))}</tbody>
                 </table>
               </div>
-              <Catatan>Rute siku-siku ke rack terdekat di ruang yang sama: perangkat dinding/plafon lewat tray plafon, perangkat meja/lantai lewat lantai (floor box). Panjang = rute + 10% lekukan + 1,5 m service loop. Video &gt; {HDMI_MAKS} m otomatis HDBaseT (CAT6A), &gt; {HDBT_MAKS} m fiber optik. Meja operator = PC operator, meja rapat / dosen / podium = laptop lewat table box. Nyalakan &quot;Jalur kabel&quot; untuk melihat rutenya di 3D.</Catatan>
+              <Catatan>Rute siku-siku ke rack terdekat di ruang yang sama: perangkat dinding/plafon lewat tray plafon, perangkat meja/lantai lewat lantai (floor box). Panjang = rute + 10% lekukan + 1,5 m service loop. Video otomatis HDMI; &gt; {HDMI_MAKS} m HDMI AOC (fiber aktif), &gt; {AOC_MAKS} m fiber extender. Jenis &amp; jumlah kabel tiap perangkat bisa diatur sendiri: klik perangkatnya → Atur → Kabel ke rack. Meja operator = PC operator, meja rapat / dosen / podium = laptop lewat table box. Nyalakan &quot;Jalur kabel&quot; untuk melihat rutenya di 3D.</Catatan>
             </>
           )}
         </Kartu>
