@@ -30,7 +30,7 @@ jobs:
           for f in cari-reminder kelompok-daily-report kelompok-insentif kpi-lc-tahunan \
                    lingkup-project peringkat-quiz supervisor-jadi-pic tahapan-installer \
                    tahun-tahapan-kembar urutan-soal penugasan-manager av-hitung desain3d desain-request piket-akses pimpinan \
-                   bentuk-summary-nyata kesehatan eskalasi-tahap briefing-pagi olah-reminder nav-bawah; do
+                   bentuk-summary-nyata kesehatan eskalasi-tahap briefing-pagi olah-reminder objek-mapping blending-proyektor nav-bawah; do
             echo "::group::uji/$f.ts"; npx --yes tsx@4 "uji/$f.ts"; echo "::endgroup::"
           done
       - name: Build
