@@ -22,7 +22,8 @@ import {
 import GlobalSearch from './_components/GlobalSearch';
 import PermissionAwareDashboard from './_components/widgets/PermissionAwareDashboard';
 import OnboardingTour from './_components/OnboardingTour';
-import { NavBawahMobile } from './_components/NavBawahMobile';
+import { NavBawahMobile, IKON_AKUN } from './_components/NavBawahMobile';
+import { LABEL_PENDEK } from './_components/nav-bawah';
 import { AsistenPlatform } from './_components/AsistenPlatform';
 import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus, latarDasbor } from '@/lib/merek';
 import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
@@ -170,7 +171,6 @@ export default function Dashboard() {
   const [showTicketing, setShowTicketing] = useState(false);
   const [internalUrl, setInternalUrl] = useState<string>('/ticketing');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [sidebarMobileOpen, setSidebarMobileOpen] = useState(false);
 
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [adminPanelTab, setAdminPanelTab] = useState<'settings' | 'userManagement' | 'picBrand'>('settings');
@@ -528,7 +528,6 @@ export default function Dashboard() {
 
   const handleMenuClick = (item: MenuItem['items'][0], menuTitle: string) => {
     if (item.external && !item.embed) { window.open(item.url, '_blank'); return; }
-    setSidebarMobileOpen(false); // close overlay on mobile
     setIframeUrl(null); setShowTicketing(false); setInternalUrl('/ticketing'); setShowDashboardPanel(false);
     setIframeLoading(true);
     setTimeout(() => {
@@ -1217,19 +1216,6 @@ export default function Dashboard() {
 
           {/* RIGHT */}
           <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
-            {/* Mobile hamburger — only when sidebar is open (in sidebar mode) */}
-            {showSidebar && (
-              <button aria-label="Menu"
-                onClick={() => setSidebarMobileOpen(o => !o)}
-                className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all"
-                style={{ background: sidebarMobileOpen ? 'rgba(200,134,29,0.15)' : 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)', color: '#64748b' }}
-                title="Menu">
-                {sidebarMobileOpen
-                  ? <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
-                  : <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16"/></svg>
-                }
-              </button>
-            )}
             {/* Global Search icon — sebelah kiri notif */}
             {currentUser && (
               <GlobalSearch
@@ -1258,12 +1244,13 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Mobile: avatar only */}
-            {!showSidebar && (
-              <div className="md:hidden w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
+            {/* HP / APK: avatar membuka profil (keluar & Admin Panel ada di menu bawah "Lainnya") */}
+            {currentUser && (
+              <button type="button" onClick={() => setShowUserProfile(true)} aria-label={`Profil ${currentUser.full_name ?? ''}`}
+                className="md:hidden w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
                 style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}>
-                {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
-              </div>
+                {currentUser.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
+              </button>
             )}
 
             {/* User Profile — hidden di mobile */}
@@ -1283,7 +1270,7 @@ export default function Dashboard() {
             {/* Sign Out */}
             {!showSidebar && (
               <button onClick={handleLogout}
-                className="flex items-center gap-1.5 px-2 md:px-3 py-2 rounded-xl text-xs font-semibold transition-all"
+                className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all"
                 style={{ background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.22)', color: '#b91c1c' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.13)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.07)'; }}>
@@ -1299,6 +1286,31 @@ export default function Dashboard() {
 
     </div>
   );
+
+  // MENU BAWAH HP / APK (shared) - pengganti sidebar di layar < md: semua menu, digeser kiri-kanan.
+  //  Profil dibuka dari avatar di header.
+  const bukaDashboard = () => { setShowSidebar(true); setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); };
+  const renderNavBawah = () => (!menuLoading && !layarPenuh && currentUser ? (
+    <NavBawahMobile
+      aksen={merek.warnaAksen}
+      beranda={{ key: '__dashboard', label: 'Dashboard', aktif: showSidebar ? showDashboardPanel : true, onPilih: bukaDashboard }}
+      menu={visibleMenuItems.filter(m => m.items.length).map(menu => {
+        const it = menu.items[0];
+        return {
+          key: menu.key, label: menu.title, pendek: LABEL_PENDEK[menu.key],
+          ikon: MENU_ICONS[menu.key] ?? <Ikon nama={menu.icon} ukuran="1em" className="inline-block align-[-0.12em]" />,
+          aktif: showSidebar && !showDashboardPanel && menu.items.some(x => (showTicketing && !!x.internal && internalUrl === x.url) || iframeUrl === x.url),
+          badge: menu.key === 'reminder-schedule' && isFullAccess ? pendingRequests : 0,
+          onPilih: () => { setShowDashboardPanel(false); handleMenuClick(it, menu.title); },
+        };
+      })}
+      akun={[
+        ...(isAdmin ? [{ key: '__admin', label: 'Admin Panel', ikon: IKON_AKUN.admin, badge: pendingUsers,
+          onPilih: () => { setAdminPanelTab(pendingUsers > 0 ? 'userManagement' : 'settings'); setShowAdminPanel(true); } }] : []),
+        { key: '__keluar', label: 'Keluar', ikon: IKON_AKUN.keluar, bahaya: true, onPilih: handleLogout },
+      ]}
+    />
+  ) : null);
 
   // MODAL RENDERS (shared)
   const renderModals = () => (
@@ -1386,6 +1398,7 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {renderNavBawah()}
         <FooterPlatform />
 
         <style>{`
@@ -1421,24 +1434,11 @@ export default function Dashboard() {
       {renderHeader()}
 
       <div className="flex flex-1 min-h-0 overflow-hidden relative">
-        {/* Mobile sidebar backdrop */}
-        {sidebarMobileOpen && (
-          <div
-            aria-hidden="true"
-            className="fixed inset-0 z-[180] md:hidden"
-            style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(2px)' }}
-            onClick={() => setSidebarMobileOpen(false)}
-          />
-        )}
-
         {/* SIDEBAR */}
         <div
           className={`
-            flex flex-col transition-all duration-300 ease-in-out flex-shrink-0
-            ${sidebarCollapsed ? 'w-[48px] md:w-[64px]' : 'w-[220px] md:w-[272px]'}
-            md:relative
-            fixed top-0 bottom-0 left-0 z-[190]
-            ${sidebarMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+            hidden md:flex flex-col relative transition-all duration-300 ease-in-out flex-shrink-0
+            ${sidebarCollapsed ? 'w-[64px]' : 'w-[272px]'}
           `}
           style={{
             background: 'rgba(255,255,255,0.96)',
@@ -1446,8 +1446,7 @@ export default function Dashboard() {
             WebkitBackdropFilter: 'blur(20px)',
             boxShadow: '2px 0 20px rgba(0,0,0,0.10)',
             borderRight: '1px solid rgba(0,0,0,0.07)',
-            // On desktop: position:static so it participates in flex layout
-            // On mobile: fixed overlay (overridden by Tailwind fixed above)
+            // Sidebar hanya untuk desktop / laptop; HP & APK memakai NavBawahMobile.
             ...(tourVisible ? { zIndex: 1505 } : {}),
           }}
         >
@@ -1962,21 +1961,8 @@ export default function Dashboard() {
            melewati bawah sidebar, bukan cuma selebar area modul. Root-nya
            setinggi 100dvh, jadi area modul di atasnya menyusut sendiri setinggi
            bilah ini; tidak ada yang tertutup. */}
-      {/* Bar menu bawah khusus HP (geser kiri-kanan, efek kaca). Daftar & hak akses sama dengan sidebar. */}
-      {!menuLoading && !layarPenuh && (
-        <NavBawahMobile item={[
-          { key: '__dashboard', label: 'Dashboard', ikon: <Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" />, aktif: showDashboardPanel,
-            onPilih: () => { setShowDashboardPanel(true); setShowTicketing(false); setIframeUrl(null); setSidebarMobileOpen(false); } },
-          ...visibleMenuItems.flatMap(menu => menu.items.map((it, n) => ({
-            key: `${menu.key}:${n}`,
-            label: menu.items.length === 1 ? menu.title : it.name,
-            ikon: MENU_ICONS[menu.key] ?? <Ikon nama={menu.icon} ukuran="1em" className="inline-block align-[-0.12em]" />,
-            aktif: !showDashboardPanel && ((showTicketing && !!it.internal && internalUrl === it.url) || iframeUrl === it.url),
-            badge: menu.key === 'reminder-schedule' && isFullAccess ? pendingRequests : 0,
-            onPilih: () => { setShowDashboardPanel(false); setSidebarMobileOpen(false); handleMenuClick(it, menu.title); },
-          }))),
-        ]} />
-      )}
+      {/* HP / APK: menu bawah (Dashboard + 3 utama + Lainnya) menggantikan sidebar. */}
+      {renderNavBawah()}
 
       <FooterPlatform />
 

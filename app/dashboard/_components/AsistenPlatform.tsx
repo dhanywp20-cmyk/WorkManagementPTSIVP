@@ -144,7 +144,7 @@ export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
     <>
       <button
         onClick={() => { if (melebar) { setBuka(true); } else setMelebar(true); }}
-        className={`fixed bottom-6 z-[1504] flex items-center gap-2 py-2.5 text-xs font-bold text-white shadow-xl active:scale-95 ${
+        className={`fixed bottom-28 md:bottom-6 z-[1504] flex items-center gap-2 py-2.5 text-xs font-bold text-white shadow-xl active:scale-95 ${
           melebar ? 'right-6 px-4 rounded-2xl hover:scale-105' : 'right-0 pl-3 pr-2 rounded-l-2xl opacity-70 hover:opacity-100'}`}
         style={{ background: 'linear-gradient(135deg,#1d4ed8,#1e3a8a)', boxShadow: '0 4px 20px rgba(29,78,216,0.4)',
           transition: 'right 0.35s ease, opacity 0.25s ease, padding 0.35s ease, border-radius 0.35s ease' }}
