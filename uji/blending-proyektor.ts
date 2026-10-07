@@ -1,10 +1,11 @@
 /**
  * uji/blending-proyektor.ts - area blending antar proyektor (desain3d/inti/blending.ts):
- * lebar (cm) & persen tumpang tindih gambar, arah, keterhalangan, teks label.
+ * lebar (cm) & persen tumpang tindih gambar, arah, keterhalangan, ujung garis ukur, teks label.
  *
  * Jalankan: npx tsx uji/blending-proyektor.ts
  */
 import { bendaBaru, lensaDari, arahSinar, keGambar, dalamGambar, tumpangGaris, hitungBlending, teksBlending,
+  barisKeterangan, pikselBlending, jarakTitik,
   type Benda, type Titik, type Lensa } from '../app/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;
@@ -68,6 +69,27 @@ console.log('Dua proyektor berdampingan di dinding datar');
   cek('gambar tumpah ke dinding lain: persen tidak berubah', !!h2 && !!h && dekat(h2.persenA, h.persenA, 0.01), `${h2?.persenA} vs ${h?.persenA}`);
   const teks = h ? teksBlending(h) : '';
   cek('teks label "cm · %"', /^\d+ cm · \d+%$/.test(teks), teks);
+  //  Garis ukur: ujungnya TEPAT di kedua tepi area blending (diinterpolasi di bingkai B, bukan per sampel).
+  const xs = h ? h.garis.map(t => t[0]).sort((p, q) => p - q) : [];
+  cek('garis ukur mulai tepat di tepi gambar B (±1 mm)', !!h && dekat(xs[0], Math.max(xa[0], xb[0]), 0.001), `${xs[0]} vs ${Math.max(xa[0], xb[0])}`);
+  cek('garis ukur berakhir tepat di tepi gambar A (±1 mm)', !!h && dekat(xs[xs.length - 1], Math.min(xa[1], xb[1]), 0.001), `${xs[xs.length - 1]} vs ${Math.min(xa[1], xb[1])}`);
+  const panjangGaris = h ? h.garis.slice(1).reduce((t, x, i) => t + jarakTitik(h.garis[i], x), 0) : 0;
+  cek('panjang garis ukur = lebar area', !!h && dekat(panjangGaris, h.lebarM, 0.002), `${panjangGaris} vs ${h?.lebarM}`);
+  cek('lebar kini tepat (±1 mm), bukan lagi ±1 sampel', !!h && dekat(h.lebarM, harap, 0.001), `${h?.lebarM} vs ${harap}`);
+  cek('persen kini tepat (±0,05%)', !!h && dekat(h.persenA, (harap / lebarA) * 100, 0.05), `${h?.persenA} vs ${(harap / lebarA) * 100}`);
+}
+
+console.log('Keterangan detail (kartu di kanvas)');
+{
+  const b = { a: '1', b: '2', namaA: 'Proyektor 1', namaB: 'Proyektor 2', arah: 'kiri-kanan' as const, lebarM: 0.494, persenA: 12, persenB: 11.2, tengah: [0, 0, 0] as Titik, garis: [] };
+  cek('piksel kiri-kanan dari 1920', pikselBlending(12, 'kiri-kanan') === 230);
+  cek('piksel atas-bawah dari 1080', pikselBlending(10, 'atas-bawah') === 108);
+  const k = barisKeterangan(b, n => n.replace('Proyektor ', 'P'));
+  cek('kartu 4 baris', k.length === 4, JSON.stringify(k));
+  cek('baris judul memuat pasangan & arah', k[0] === 'Area blending P1 ↔ P2 · kiri-kanan', k[0]);
+  cek('baris lebar dalam cm', k[1] === 'Lebar area 49 cm', k[1]);
+  cek('baris persen & piksel tiap proyektor', k[2] === 'P1: 12% ≈ 230 px · P2: 11% ≈ 215 px', k[2]);
+  cek('atas-bawah memakai tinggi gambar', barisKeterangan({ ...b, arah: 'atas-bawah' })[1].startsWith('Tinggi area'));
 }
 
 console.log('Ukuran gambar berbeda, tidak bertumpuk, terhalang, tersusun atas-bawah');
