@@ -21,17 +21,23 @@ import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { gambarBlending } from './blending';
 import { gambarCahayaBenda, type SumberCahaya } from './cahayaBenda';
-import { gambarTeksCahaya, TINGGI_HURUF, type BlokTeks } from './teksCahaya';
+import { gambarGridCahaya, gambarTeksCahaya, TINGGI_HURUF, type BlokTeks } from './teksCahaya';
 import type { Mesin } from './tipe';
 
-export type KeadaanSinar = Pick<KeadaanDesain, 'benda' | 'ruang' | 'sinar' | 'ukur' | 'labelProduk' | 'plafonDi' | 'tampilBlending' | 'detailBlending' | 'setInfoBlending'>;
+export type KeadaanSinar = Pick<KeadaanDesain, 'benda' | 'ruang' | 'sinar' | 'ukur' | 'labelProduk' | 'plafonDi' | 'tampilBlending' | 'detailBlending' | 'gridSinar' | 'setInfoBlending'>;
 
 /** Bidang proyeksi: gambar digambar sebagai sel grid. Benda lain diterangi per titik (cahayaBenda). */
 const BIDANG_PROYEKSI = new Set<Benda['jenis']>(['layar', 'bidang']);
+/**
+ * Tulisan keterangan & lux hanya menempel di bidang yang memang disasar proyeksi (ruangan, layar, bidang &
+ * objek mapping). Proyektor / furnitur / perangkat lain yang lewat di depan lensa tetap membuat bayangan di
+ * cahaya, tetapi tidak memotong tulisan & tidak mengubah jarak lempar / lux yang ditulis.
+ */
+const BIDANG_TEKS = new Set<Benda['jenis']>(['layar', 'bidang', 'objek', 'model']);
 
 export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, pos: T.Vector3, dy?: -1 | 1) => void) {
   const { THREE, grupBantu } = m;
-  const { benda, ruang, sinar, ukur, labelProduk, plafonDi, tampilBlending, detailBlending, setInfoBlending } = k;
+  const { benda, ruang, sinar, ukur, labelProduk, plafonDi, tampilBlending, detailBlending, gridSinar, setInfoBlending } = k;
   const daftarProj = benda.filter(p => p.jenis === 'proyektor');
   const hitungBlend = tampilBlending && daftarProj.length >= 2;
   if (!hitungBlend) setInfoBlending(v => (v.length ? [] : v));
@@ -47,6 +53,10 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   //  Banyak proyektor (immersive): kerucut & bidang gambar diredam supaya tumpukannya tidak silau.
   const banyak = daftarProj.length > 4, redam = banyak ? 0.35 : 1;
   const jenisDari = new Map(benda.map(b => [b.id, b.jenis]));
+  const sasaranTeks = [...m.grupRuang.children, ...m.grupBenda.children.filter(o => {
+    const j = jenisDari.get(o.userData.id as string);
+    return !!j && BIDANG_TEKS.has(j);
+  })];
 
   /** Titik permukaan pertama yang terkena sinar (kaca & bayangan ditembus) + benda yang dikenai (null = ruangan). */
   const tembakRinci = (O: T.Vector3, arah: T.Vector3, sasaran: T.Object3D[]): { p: T.Vector3; id: string | null; n: T.Vector3 | null } | null => {
@@ -72,7 +82,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const dataBlend: { p: Benda; L: Lensa; O: T.Vector3; sasaran: T.Object3D[]; kena: (T.Vector3 | null)[]; baris: (Titik | null)[]; kolom: (Titik | null)[] }[] = [];
   const sumberCahaya: SumberCahaya[] = [];
   /** Bidang gambar tiap proyektor - dibuat SETELAH blending dihitung, supaya keterangan tidak jatuh di area tumpang tindih. */
-  const bidangGambar: { p: Benda; L: Lensa; pos: number[]; uv: number[]; opasitas: number; warna: T.Color; teks: { info: string[]; lux: (number | null)[] } | null }[] = [];
+  const bidangGambar: { p: Benda; L: Lensa; pos: number[]; uv: number[]; opasitas: number; warna: T.Color; tepi: T.Color; teks: { info: string[]; lux: (number | null)[]; pos: number[]; uv: number[] } | null }[] = [];
   const bendaTersinari = new Set<string>();
   daftarProj.forEach((p, idx) => {
     const sn = sinarProyektor(p, benda, ruang);
@@ -115,11 +125,12 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     //  dengan sinar tambahan -> tepi bayangan benda tajam. Sel yang seluruhnya di benda: cahayaBenda.
     //  uv = koordinat gambar (0..1) tiap titik - tekstur cahaya (& keterangannya) jatuh tepat di bidang.
     const pos: number[] = [], uv: number[] = [];
-    const quad = (A: T.Vector3, B: T.Vector3, C: T.Vector3, Dd: T.Vector3, batas: number, u0: number, v0: number, u1: number, v1: number) => {
+    const quadKe = (P: number[], U: number[]) => (A: T.Vector3, B: T.Vector3, C: T.Vector3, Dd: T.Vector3, batas: number, u0: number, v0: number, u1: number, v1: number) => {
       if (A.distanceTo(B) > batas || B.distanceTo(C) > batas || C.distanceTo(Dd) > batas || Dd.distanceTo(A) > batas) return;
-      pos.push(A.x, A.y, A.z, B.x, B.y, B.z, C.x, C.y, C.z, A.x, A.y, A.z, C.x, C.y, C.z, Dd.x, Dd.y, Dd.z);
-      uv.push(u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1);
+      P.push(A.x, A.y, A.z, B.x, B.y, B.z, C.x, C.y, C.z, A.x, A.y, A.z, C.x, C.y, C.z, Dd.x, Dd.y, Dd.z);
+      U.push(u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1);
     };
+    const quad = quadKe(pos, uv);
     const gu = (i: number) => i / (NX - 1), gv = (j: number) => j / (NY - 1);
     const S = 8;
     for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
@@ -171,24 +182,39 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     }
     const kilau = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfffbeb, blending: THREE.AdditiveBlending, opacity: 0.95 }));
     kilau.position.copy(O); grupBantu.add(kilau);
-    const tengah = sel(Math.floor(NX / 2), Math.floor(NY / 2));
+    //  Grid tulisan: sinar yang hanya mengenai bidang sasaran (BIDANG_TEKS) - tulisan utuh walau ada benda
+    //  di depan lensa. Saat menyeret tanpa tulisan (tekstur tidak dibuat ulang tiap frame).
+    const tulis = ukur && !kasar;
+    const teksPos: number[] = [], teksUv: number[] = [];
+    let tengah = sel(Math.floor(NX / 2), Math.floor(NY / 2));
+    if (tulis) {
+      const kt: (T.Vector3 | null)[] = [];
+      for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) kt.push(tembak(O, arahUV(gu(i) - 0.5, gv(j) - 0.5), sasaranTeks));
+      const quadTeks = quadKe(teksPos, teksUv);
+      for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
+        const [A, B, C, Dd] = [kt[j * NX + i], kt[j * NX + i + 1], kt[(j + 1) * NX + i + 1], kt[(j + 1) * NX + i]];
+        if (!A || !B || !C || !Dd) continue;
+        quadTeks(A, B, C, Dd, (((A.distanceTo(O) + C.distanceTo(O)) / 2) * w1 / (NX - 1)) * 6 + 0.05, gu(i), gv(j), gu(i + 1), gv(j + 1));
+      }
+      tengah = kt[Math.floor(NY / 2) * NX + Math.floor(NX / 2)] ?? tengah;
+    }
     const jarakSumbu = sn.layar ? sn.jarak : tengah ? tengah.distanceTo(O) : sn.jarak;
-    //  Saat menyeret tanpa tulisan (tekstur tidak dibuat ulang tiap frame).
     //  Lux di titik gambar (u, v): fluks lensa merata di bidang tegak lurus sumbu -> E = lumen/(w1·h1) ·
     //  cos(sudut datang) / (cos³(sudut ke sumbu) · jarak²). Di pusat bidang tegak = lumen / luas gambar.
     const E0 = lumenDari(p) / (w1 * h1);
     const luxDi = (u: number, v: number) => {
-      const r = arahUV(u, v).clone(), t = tembakRinci(O, r, sasaran);
+      const r = arahUV(u, v).clone(), t = tembakRinci(O, r, sasaranTeks);
       if (!t) return null;
       const d = t.p.distanceTo(O), cosA = Math.max(0.2, r.dot(D)), cosT = t.n ? Math.abs(r.dot(t.n)) : 1;
       return (E0 * cosT) / (cosA ** 3 * d * d);
     };
-    bidangGambar.push({ p, L: lensaDari(p), pos, uv, warna, opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
-      teks: ukur && !kasar ? {
+    bidangGambar.push({ p, L: lensaDari(p), pos, uv, warna, tepi: warnaTepi, opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
+      teks: tulis ? {
         info: [p.nama, `Jarak lensa → bidang ${f(jarakSumbu)} m`, `Ukuran gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`,
           `Pusat ${f(luxDi(0, 0) ?? E0 / (jarakSumbu * jarakSumbu), 0)} lx`],
         //  Kiri atas, kanan atas, kiri bawah, kanan bawah (sedikit ke dalam dari tepi gambar).
         lux: [luxDi(-0.48, 0.47), luxDi(0.48, 0.47), luxDi(-0.48, -0.47), luxDi(0.48, -0.47)],
+        pos: teksPos, uv: teksUv,
       } : null });
     if (ukur) {
       //  Di proyektor cukup namanya (bila label produk sudah menampilkannya, tidak diulang).
@@ -203,6 +229,8 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     gambarCahayaBenda(m, sumberCahaya, akar, kasar);
   }
   const blending: Blending[] = hitungBlend ? gambarBlending(m, dataBlend, NX, NY, setInfoBlending, detailBlending) : [];
+  //  Mode grid (bukan saat menyeret - tekstur tidak dibuat ulang tiap frame): cahaya diredam, pola garis menonjol.
+  const grid = gridSinar && !kasar;
   for (const bg of bidangGambar) {
     if (!bg.pos.length) continue;
     //  Sisi gambar yang bertumpuk dengan proyektor lain (area blending): keterangan digeser melewatinya &
@@ -218,8 +246,9 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(bg.pos, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(bg.uv, 2));
-    const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, color: bg.warna, opacity: bg.opasitas, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+    const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, color: bg.warna, opacity: bg.opasitas * (grid ? 0.45 : 1), side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
     gambar.renderOrder = 2; grupBantu.add(gambar);
+    if (grid) gambarGridCahaya(m, bg.pos, bg.uv, bg.tepi);
     //  Tulisan: lapisan tersendiri (campuran biasa, bukan aditif) di atas cahaya - di permukaan putih,
     //  cahaya aditif sudah mentok putih sehingga huruf yang hanya "lebih redup" tidak akan terlihat.
     if (bg.teks) {
@@ -235,7 +264,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
         //  Keterangan di pojok kiri atas (di bawah lux pojoknya), melewati area blending kiri / atas.
         { x: Math.min(0.5, tepi + kiri), y: Math.min(0.5, (kiriAtas ? tepi + hs : tepi) + atas), w: 0.42, h: hl * bg.teks.info.length + 0.02, baris: bg.teks.info, tebalPertama: true },
       ].filter((b): b is BlokTeks => !!b);
-      gambarTeksCahaya(m, bg.pos, bg.uv, blok);
+      gambarTeksCahaya(m, bg.teks.pos, bg.teks.uv, blok);
     }
   }
 }

@@ -1,8 +1,9 @@
 /**
- * desain3d/mesin/teksCahaya.ts - Tulisan hitam kecil yang tercetak DI CAHAYA gambar proyektor, seperti
+ * desain3d/mesin/teksCahaya.ts - Tulisan & pola grid yang tercetak DI CAHAYA gambar proyektor, seperti
  * simulator proyektor pabrikan: keterangan (nama, jarak lensa -> bidang, ukuran gambar, lux pusat) di
  * pojok kiri atas & lux di tiap pojok gambar. Tulisan menempel di bidang (ikut melengkung, mengecil bila
- * dilihat dari jauh) - bukan label yang melayang.
+ * dilihat dari jauh) - bukan label yang melayang. Mode grid: pola garis 16 x 9 + bingkai, diagonal & lingkaran
+ * pusat (test pattern) di seluruh gambar - bentuk gambar & sambungan antar proyektor langsung terlihat.
  *
  * Tiap blok tulisan = tekstur kecil (tajam, hemat memori) yang dipetakan lewat uv gambar (0..1) hanya ke
  * sel bidang gambar yang dilaluinya; di luar blok tekstur bening (uv dijepit di tepi bening).
@@ -65,4 +66,38 @@ export function gambarTeksCahaya(m: Mesin, pos: number[], uv: number[], blok: Bl
     }));
     tulisan.renderOrder = 3; grupBantu.add(tulisan);
   }
+}
+
+/**
+ * Pola grid di seluruh gambar satu proyektor (uv 0..1): 16 x 9 kotak sama sisi untuk gambar 16:9, bingkai
+ * tebal, dua diagonal & lingkaran pusat - warna proyektor itu. Campuran biasa (bukan aditif) supaya garis
+ * tetap terlihat di permukaan putih. Tampil dari dua sisi (pola tanpa tulisan, tidak terbaca terbalik).
+ */
+export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T.Color) {
+  const { THREE, grupBantu } = m;
+  if (!pos.length) return;
+  const W = 1024, H = 576;
+  const kv = document.createElement('canvas'); kv.width = W; kv.height = H;
+  const g = kv.getContext('2d')!;
+  g.strokeStyle = `#${warna.getHexString()}`; g.lineCap = 'round';
+  g.globalAlpha = 0.85; g.lineWidth = 2;
+  g.beginPath();
+  for (let i = 1; i < 16; i++) { const x = (i / 16) * W; g.moveTo(x, 0); g.lineTo(x, H); }
+  for (let j = 1; j < 9; j++) { const y = (j / 9) * H; g.moveTo(0, y); g.lineTo(W, y); }
+  g.moveTo(0, 0); g.lineTo(W, H); g.moveTo(W, 0); g.lineTo(0, H);
+  g.stroke();
+  g.globalAlpha = 1; g.lineWidth = 6;
+  g.strokeRect(3, 3, W - 6, H - 6);
+  g.lineWidth = 3;
+  g.beginPath(); g.arc(W / 2, H / 2, H * 0.12, 0, Math.PI * 2); g.stroke();
+  const tx = new THREE.CanvasTexture(kv);
+  tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  const pola = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
+    map: tx, transparent: true, depthWrite: false, toneMapped: false, side: THREE.DoubleSide,
+    polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+  }));
+  pola.renderOrder = 3; grupBantu.add(pola);
 }
