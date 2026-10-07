@@ -5,7 +5,7 @@
  */
 import { useState } from 'react';
 import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG } from '../../bersama/cetak';
-import { type Benda, cakupanSpeakerPlafon, DISPLAY, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, rekapKabel, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, throwRatioDari, tipeSpeakerDari } from '../inti';
+import { type Benda, cakupanSpeakerPlafon, DISPLAY, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, throwRatioDari, tipeSpeakerDari } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
 import { f } from '../../bersama/ui';
 import { getSession } from '@/lib/auth';
@@ -147,22 +147,28 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           isi: analisis.map(a => [a.d.nama, ...(duaRuang ? [`Ruang ${a.ri + 1}`] : []), `${fm(a.d.w)} × ${fm(a.d.h)} m`,
             a.jumlah ? `${fm(a.terjauh, 1)} m` : '—', `${fm(a.tinggiPerlu)} m`, `${fm(a.sudutMaks, 0)}°`, a.jumlah ? (a.cukup ? 'Cukup' : 'Kurang') : 'Tanpa penonton']),
         }] : []),
+        //  Proyektor dipecah 2 tabel: 11 kolom dalam satu tabel tidak muat di lebar A4 (kolom kanan terpotong).
         ...(proyektor.length ? [{
           judul: 'Proyektor & jarak lempar', jenis: 'tabel' as const,
-          kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas', 'Lumen', 'Gambar', 'Lampu di gambar', `Kontras (target ${targetKontras}:1)`],
-          rataKanan: [3, 5, 6, 7, 8, 9, 10],
-          isi: proyektor.map(({ p, sn }) => {
+          kepala: ['Proyektor', 'Pemasangan', 'Sasaran', 'Jarak lempar', 'Ukuran gambar', 'Throw ratio', 'TR agar pas'],
+          rataKanan: [3, 5, 6],
+          isi: proyektor.map(({ p, sn }) => [p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `Plafon (${fm(p.elev)} m dari lantai)`,
+            sn.layar?.nama ?? 'Dinding / permukaan', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—']),
+        }, {
+          judul: `Kecerahan & kontras proyektor · target ${targetKontras}:1`, jenis: 'tabel' as const,
+          kepala: ['Proyektor', 'Lumen', 'Cahaya di gambar', 'Cahaya lampu di gambar', 'Kontras'],
+          rataKanan: [1, 2, 3, 4],
+          isi: proyektor.map(({ p }) => {
             const kp = kontrasProyektor(p, benda, ruang, targetKontras);
-            return [p.nama, p.pasangProyektor === 'meja' ? 'Portabel di meja' : `Plafon (${fm(p.elev)} m dari lantai)`,
-              sn.layar?.nama ?? 'Dinding / permukaan', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—',
-              lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}`,
+            return [p.nama, lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}`,
               `${fm(kp.kontras, 1)} : 1 ${kp.cukup ? '✓' : `✗ (perlu ±${kp.lumenPerlu.toLocaleString('id-ID')} lm)`}`];
           }),
         }] : []),
         ...(tampilBlending && infoBlending.length ? [{
           judul: 'Area blending proyektor', jenis: 'tabel' as const,
-          kepala: ['Proyektor', 'Bertumpuk dengan', 'Arah', 'Lebar area', '% gambar pertama', '% gambar kedua'], rataKanan: [3, 4, 5],
-          isi: infoBlending.map(b => [b.namaA, b.namaB, b.arah, `${Math.round(b.lebarM * 100)} cm`, `${fm(b.persenA, 1)}%`, `${fm(b.persenB, 1)}%`]),
+          kepala: ['Proyektor', 'Bertumpuk dengan', 'Arah', 'Lebar / tinggi area', '% gambar pertama', '% gambar kedua'], rataKanan: [3, 4, 5],
+          isi: infoBlending.map(b => [b.namaA, b.namaB, b.arah, `${Math.round(b.lebarM * 100)} cm`,
+            `${fm(b.persenA, 1)}% ≈ ${pikselBlending(b.persenA, b.arah)} px`, `${fm(b.persenB, 1)}% ≈ ${pikselBlending(b.persenB, b.arah)} px`]),
         }] : []),
         ...(benda.some(b => b.jenis === 'lampu') ? [{
           judul: `Pencahayaan · dimmer semua lampu ${ruang.dimmer ?? 100}%`, jenis: 'tabel' as const,

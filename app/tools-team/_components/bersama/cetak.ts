@@ -39,7 +39,7 @@ function seksiHtml(s: Seksi): string {
       ? `<div class="grid2"><div>${s.kiri.map(kotakInfo).join('')}</div><div>${s.kanan.map(kotakInfo).join('')}</div></div>`
       : s.kiri.map(kotakInfo).join(''))
     : s.jenis === 'tabel'
-      ? `<table><thead><tr>${s.kepala.map((k, i) => `<th${s.rataKanan?.includes(i) ? ' class="r"' : ''}>${esc(k)}</th>`).join('')}</tr></thead>
+      ? `<table${s.kepala.length >= 7 ? ' class="rapat"' : ''}><thead><tr>${s.kepala.map((k, i) => `<th${s.rataKanan?.includes(i) ? ' class="r"' : ''}>${esc(k)}</th>`).join('')}</tr></thead>
          <tbody>${s.isi.map(r => `<tr>${r.map((c, i) => `<td${s.rataKanan?.includes(i) ? ' class="r"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>`
       : s.html;
   return `<div class="section"><div class="section-title">${esc(s.judul)}</div>${isi}</div>`;
@@ -74,6 +74,9 @@ body { font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; background: #
 table { width: 100%; border-collapse: collapse; }
 th { background: #f8fafc; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; padding: 7px 12px; border-bottom: 1px solid #e2e8f0; }
 td { padding: 7px 12px; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+/* Tabel berkolom banyak: lebih rapat & teks boleh turun baris supaya tidak terpotong di tepi kanan A4. */
+table.rapat th, table.rapat td { padding: 6px 7px; overflow-wrap: break-word; }
+table.rapat td { font-size: 11px; }
 tr:last-child td { border-bottom: none; }
 .r { text-align: right; }
 .gambar { padding: 12px; display: grid; gap: 10px; }

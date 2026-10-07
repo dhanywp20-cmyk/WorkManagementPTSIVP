@@ -2,8 +2,9 @@
  * desain3d/mesin/ukurBlending.ts - Garis ukur satu area blending di kanvas, gaya gambar kerja:
  *   |<------ 49 cm ------>|   garis menyusuri permukaan dari tepi ke tepi area blending (ikut
  *            |                lengkung layar), panah di kedua ujung tepat di tepi gambar, kaki ukur
- *            o                tegak di kedua ujung, angka lebar di atas garis, lalu garis penunjuk
- *   [ kartu keterangan ]      ke kartu detail (persen & perkiraan piksel tiap proyektor).
+ *            .                tegak di kedua ujung, angka lebar di atas garis, lalu (centang "Detail
+ *   [ kartu keterangan ]      blending") garis penunjuk tipis ke kartu detail (persen & piksel).
+ * Penanda dibuat tipis & kecil supaya tidak menutupi gambar proyeksi.
  * Garis & panah berupa mesh (ikut ke PNG / cetak), angka & kartu berupa label CSS2D (mesin/label.ts).
  */
 import type * as T from 'three';
@@ -13,7 +14,7 @@ import type { Mesin } from './tipe';
 const UNGU = 0x6d28d9;
 const batas = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
-export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa, nama: (n: string) => string) {
+export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa, nama: (n: string) => string, detail = true) {
   const { THREE, grupBantu, CSS2DObject } = m;
   if (b.garis.length < 2) return;
   //  Diangkat 3 cm dari permukaan ke arah lensa supaya garis tidak tenggelam di layar.
@@ -36,7 +37,7 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
   //  Ukuran penanda mengikuti besar gambar di titik itu, supaya terbaca di ruang kecil maupun besar.
   const kiriKanan = b.arah === 'kiri-kanan';
   const sisiTegak = jarak * (kiriKanan ? L.h1 : L.w1);
-  const r = batas(jarak * L.w1 * 0.0045, 0.008, 0.025);
+  const r = batas(jarak * L.w1 * 0.002, 0.003, 0.01);
   const bahan = new THREE.MeshBasicMaterial({ color: UNGU, toneMapped: false });
   const Y = new THREE.Vector3(0, 1, 0);
   const tambah = (g: T.BufferGeometry, pos: T.Vector3, arah?: T.Vector3) => {
@@ -55,14 +56,14 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
   //  Arah "kaki" = tegak lurus garis di permukaan: sumbu atas gambar (blending kiri-kanan) / kanan (atas-bawah).
   const sumbuKaki = new THREE.Vector3(...(kiriKanan ? L.atas : L.kanan));
   const kakiDi = (singgung: T.Vector3) => sumbuKaki.clone().addScaledVector(singgung, -sumbuKaki.dot(singgung)).normalize();
-  const tinggiPanah = Math.min(r * 9, panjang * 0.3), panjangKaki = batas(sisiTegak * 0.12, 0.12, 0.5);
+  const tinggiPanah = Math.min(r * 12, panjang * 0.25), panjangKaki = batas(sisiTegak * 0.08, 0.08, 0.3);
   for (const balik of [false, true]) {
     const ujung = balik ? titik[titik.length - 1] : titik[0];
     const arah = ujung.clone().sub(sepanjang(Math.max(tinggiPanah, 0.02), balik)).normalize();
     //  Panah: ujung kerucut tepat di tepi area blending, menghadap keluar.
-    tambah(new THREE.ConeGeometry(tinggiPanah * 0.38, tinggiPanah, 14), ujung.clone().addScaledVector(arah, -tinggiPanah / 2), arah);
+    tambah(new THREE.ConeGeometry(tinggiPanah * 0.32, tinggiPanah, 12), ujung.clone().addScaledVector(arah, -tinggiPanah / 2), arah);
     const kaki = kakiDi(arah);
-    batang(ujung.clone().addScaledVector(kaki, -panjangKaki / 2), ujung.clone().addScaledVector(kaki, panjangKaki / 2), r * 0.7);
+    batang(ujung.clone().addScaledVector(kaki, -panjangKaki / 2), ujung.clone().addScaledVector(kaki, panjangKaki / 2), r * 0.6);
   }
 
   const singgungTengah = sepanjang(panjang / 2 + 0.01).sub(sepanjang(Math.max(0, panjang / 2 - 0.01))).normalize();
@@ -90,10 +91,14 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
   angka.style.cssText = 'font:700 12px system-ui,sans-serif;color:#6d28d9;background:rgba(255,255,255,.92);border:1px solid #c4b5fd;padding:0 5px;border-radius:4px;white-space:nowrap';
   css(angka, tengah.clone().addScaledVector(kaki, panjangKaki / 2 + 0.03), tengah);
 
-  //  Garis penunjuk (titik bulat di garis ukur) ke kartu keterangan detail di sisi seberang angka.
-  const ujungPenunjuk = tengah.clone().addScaledVector(kaki, -batas(sisiTegak * 0.22, 0.3, 1.4));
-  tambah(new THREE.SphereGeometry(r * 2.2, 12, 8), tengah);
-  batang(tengah, ujungPenunjuk, r * 0.6);
+  if (!detail) return;
+  //  Garis penunjuk setipis rambut (1 px, tidak ikut membesar saat di-zoom) dari titik kecil di garis
+  //  ukur ke kartu keterangan detail di sisi seberang angka.
+  const ujungPenunjuk = tengah.clone().addScaledVector(kaki, -batas(sisiTegak * 0.15, 0.2, 0.9));
+  tambah(new THREE.SphereGeometry(r * 1.4, 10, 6), tengah);
+  const penunjuk = new THREE.Line(new THREE.BufferGeometry().setFromPoints([tengah, ujungPenunjuk]),
+    new THREE.LineBasicMaterial({ color: UNGU, transparent: true, opacity: 0.85, toneMapped: false }));
+  penunjuk.renderOrder = 4; grupBantu.add(penunjuk);
   const kartu = document.createElement('div');
   kartu.style.cssText = 'font:500 11px system-ui,sans-serif;line-height:1.35;padding:4px 8px;border-radius:8px;white-space:nowrap;color:#fff;background:#7c3aed;box-shadow:0 2px 6px rgba(0,0,0,.3)';
   barisKeterangan(b, nama).forEach((teks, i, semua) => {

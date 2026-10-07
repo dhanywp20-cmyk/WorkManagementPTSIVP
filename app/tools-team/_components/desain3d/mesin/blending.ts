@@ -43,6 +43,7 @@ const kunci = (h: Blending[]) => JSON.stringify(h.map(b => [b.a, b.b, b.namaA, b
 export function gambarBlending(
   m: Mesin, data: DataBlend[], NX: number, NY: number,
   setInfo: (f: (v: Blending[]) => Blending[]) => void,
+  /** Kartu keterangan detail (persen & piksel) ikut digambar. */ detail: boolean,
 ) {
   const { THREE, grupBantu } = m;
   const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
@@ -99,7 +100,7 @@ export function gambarBlending(
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       const zona = new THREE.Mesh(geo, bahan.clone()); zona.renderOrder = 3; grupBantu.add(zona);
     }
-    gambarUkurBlending(m, b, A.O, A.L, pendek);
+    gambarUkurBlending(m, b, A.O, A.L, pendek, detail);
   }
   bahan.dispose();
 }
