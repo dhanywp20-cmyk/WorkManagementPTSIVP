@@ -10,25 +10,26 @@ import type { Mesin } from './tipe';
  * Label produk tidak boleh bertumpuk: label yang menabrak label lain (urutan = prioritas) disembunyikan
  * sementara, dan muncul lagi saat kamera di-zoom / diputar sampai ada ruang.
  *   - [data-penting]  (keterangan area blending) selalu tampil & menang atas label lain
- *   - [data-mengalah] (mis. jarak lempar proyektor) hanya disembunyikan bila menabrak label penting
+ *   - [data-mengalah] disembunyikan bila menabrak label penting atau label mengalah lain yang sudah tampil
+ *   - [data-produk]   disembunyikan bila menabrak label penting atau label produk sebelumnya
  */
 export function hindariTumpuk(wadah: HTMLElement) {
-  const ambil: DOMRect[] = [];
+  const penting: DOMRect[] = [];
   wadah.querySelectorAll<HTMLElement>('[data-penting]').forEach(el => {
     const r = el.style.display === 'none' ? null : el.getBoundingClientRect();
-    if (r?.width) ambil.push(r);
+    if (r?.width) penting.push(r);
   });
-  const penting = ambil.length;
   const tabrak = (r: DOMRect, daftar: DOMRect[]) => daftar.some(a => r.left < a.right + 2 && r.right > a.left - 2 && r.top < a.bottom + 1 && r.bottom > a.top - 1);
-  const atur = (pilih: string, lawan: () => DOMRect[], simpan: boolean) => wadah.querySelectorAll<HTMLElement>(pilih).forEach(el => {
+  /** Tampil bila tidak menabrak `ambil` (lalu ikut masuk `ambil`), selain itu disembunyikan sementara. */
+  const atur = (pilih: string, ambil: DOMRect[]) => wadah.querySelectorAll<HTMLElement>(pilih).forEach(el => {
     if (el.style.display === 'none') return;
     el.style.visibility = 'visible';
     const r = el.getBoundingClientRect();
     if (!r.width) return;
-    if (tabrak(r, lawan())) el.style.visibility = 'hidden'; else if (simpan) ambil.push(r);
+    if (tabrak(r, ambil)) el.style.visibility = 'hidden'; else ambil.push(r);
   });
-  atur('[data-mengalah]', () => ambil.slice(0, penting), false);
-  atur('[data-produk]', () => ambil, true);
+  atur('[data-mengalah]', [...penting]);
+  atur('[data-produk]', [...penting]);
 }
 
 export function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h: number) {
@@ -66,8 +67,10 @@ export function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h:
     if (typeof g.roundRect === 'function') g.roundRect(-kw / 2, -kh / 2, kw, kh, 6 * skala); else g.rect(-kw / 2, -kh / 2, kw, kh);
     g.fill();
     g.restore();
-    g.fillStyle = cs.color || '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    baris.forEach((b, i) => g.fillText(b, 0, -kh / 2 + 2 * skala + tb * (i + 0.5)));
+    //  Rata kiri (keterangan proyektor di bidang gambar) atau tengah, mengikuti gaya elemennya.
+    const kiri = cs.textAlign === 'left' || cs.textAlign === 'start';
+    g.fillStyle = cs.color || '#ffffff'; g.textAlign = kiri ? 'left' : 'center'; g.textBaseline = 'middle';
+    baris.forEach((b, i) => g.fillText(b, kiri ? -kw / 2 + padX : 0, -kh / 2 + 2 * skala + tb * (i + 0.5)));
     g.restore();
   });
 }

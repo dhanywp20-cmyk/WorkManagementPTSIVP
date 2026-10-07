@@ -86,9 +86,9 @@ export function useAdegan(K: KeadaanDesain) {
   // ── Alat bantu: label ukuran, garis jarak terjauh, kerucut sudut pandang ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    gambarAlatBantu(m, { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, pilih, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, ukur, tampilBlending, detailBlending, setInfoBlending });
+    gambarAlatBantu(m, { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, ukur, tampilBlending, detailBlending, setInfoBlending });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, pilih, tampilKabel, kabel, tampilBlending, detailBlending]);
+  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, kabel, tampilBlending, detailBlending]);
   // ── Tingkat cahaya ruangan ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;

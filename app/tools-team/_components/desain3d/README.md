@@ -66,7 +66,10 @@ satu baris di tabel (TypeScript menolak bila ada jenis yang terlewat).
 | `useMesin.ts` | renderer, adegan, lampu, OrbitControls, gizmo, klik-pilih, putaran render |
 | `useKamera.ts` + `kamera.ts` | arah pandang, pas ruangan, zoom, putar, fokus benda / kursi |
 | `useAdegan.ts` | efek: ruangan, benda (bangun ulang hanya yang berubah), gizmo, cahaya |
-| `alatBantu.ts` | label ukuran & produk, kerucut pandang, sinar proyektor, jangkauan speaker, kabel |
+| `alatBantu.ts` | label ukuran & produk, kerucut pandang, jangkauan speaker, kabel |
+| `sinar.ts` | sinar proyektor: grid raycast ke bidang, tepi bayangan benda dipecah halus, nama di proyektor |
+| `cahayaBenda.ts` | cahaya proyektor di benda per titik permukaan (masuk bingkai, menghadap lensa, tidak terhalang) |
+| `teksCahaya.ts` | tulisan hitam kecil tercetak di cahaya: nama, jarak lensa → bidang, ukuran gambar, lux pusat & pojok |
 | `bayangan.ts` | bayangan lembut & pendar cahaya layar |
 | `blending.ts` | zona ungu area blending (raycast keterhalangan) |
 | `ukurBlending.ts` | garis ukur berpanah + kaki ukur, angka cm, garis penunjuk & kartu keterangan blending |

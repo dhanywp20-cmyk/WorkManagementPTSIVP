@@ -44,7 +44,7 @@ export function gambarBlending(
   m: Mesin, data: DataBlend[], NX: number, NY: number,
   setInfo: (f: (v: Blending[]) => Blending[]) => void,
   /** Kartu keterangan detail (persen & piksel) ikut digambar. */ detail: boolean,
-) {
+): Blending[] {
   const { THREE, grupBantu } = m;
   const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
   const arah = new THREE.Vector3(), X = new THREE.Vector3();
@@ -103,4 +103,5 @@ export function gambarBlending(
     gambarUkurBlending(m, b, A.O, A.L, pendek, detail);
   }
   bahan.dispose();
+  return hasil;
 }

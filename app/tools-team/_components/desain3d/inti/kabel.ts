@@ -7,16 +7,21 @@
  * Meja juga sumber kabel: PC operator (control room), laptop di meja rapat / meja dosen / podium
  * lewat table box -> HDMI + LAN (+ USB bila ada kamera untuk konferensi BYOD).
  *
+ * Video otomatis = HDMI; rute > 10 m memakai HDMI AOC (kabel HDMI berinti fiber aktif) supaya
+ * perangkat tetap menerima 1 kabel HDMI (proyektor: 1 HDMI sinyal + 1 LAN kontrol, sesuai
+ * praktik instalasi); > 100 m fiber extender. Engineer bisa mengatur jenis & jumlah kabel tiap
+ * perangkat sendiri (Benda.kabelCustom, panel Atur -> Kabel ke rack); jalurnya tetap otomatis.
+ *
  * Warna = warna standar legend (LEGENDA_KABEL), sama di layar, PNG, dan cetak.
  */
 import { daftarRuang, ruangDari } from './ruang';
-import type { Benda, Ruang, Titik } from './tipe';
+import type { Benda, GolonganKabelSinyal, KabelCustom, Ruang, Titik } from './tipe';
 
-export type GolonganKabel = 'lan' | 'hdmi' | 'audio' | 'speaker' | 'usb' | 'power' | 'fiber';
+export type GolonganKabel = GolonganKabelSinyal | 'power';
 /** Legend warna kabel (urutan tampil). */
 export const LEGENDA_KABEL: { golongan: GolonganKabel; warna: number; nama: string; label: string }[] = [
   { golongan: 'lan', warna: 0x2563eb, nama: 'Biru', label: 'LAN cable (CAT6 / HDBaseT)' },
-  { golongan: 'hdmi', warna: 0xdc2626, nama: 'Merah', label: 'HDMI' },
+  { golongan: 'hdmi', warna: 0xdc2626, nama: 'Merah', label: 'HDMI / HDMI AOC' },
   { golongan: 'audio', warna: 0x16a34a, nama: 'Hijau', label: 'Line audio signal (mic / XLR)' },
   { golongan: 'speaker', warna: 0xea580c, nama: 'Orange', label: 'Speaker cable' },
   { golongan: 'usb', warna: 0x7c3aed, nama: 'Ungu', label: 'USB cable' },
@@ -29,7 +34,7 @@ export interface JenisKabel { kunci: string; nama: string; warna: number; golong
 const jenis = (kunci: string, nama: string, golongan: GolonganKabel): JenisKabel => ({ kunci, nama, golongan, warna: WARNA[golongan] });
 export const KABEL = {
   hdmi: jenis('hdmi', 'HDMI', 'hdmi'),
-  hdbt: jenis('hdbt', 'HDBaseT (CAT6A)', 'lan'),
+  hdmiAoc: jenis('hdmi-aoc', 'HDMI AOC (fiber aktif, > 10 m)', 'hdmi'),
   lan: jenis('lan', 'LAN CAT6 (data / kontrol / PoE)', 'lan'),
   audio: jenis('audio', 'Kabel audio / mic XLR', 'audio'),
   speaker: jenis('speaker', 'Kabel speaker 2×1,5 mm²', 'speaker'),
@@ -37,13 +42,20 @@ export const KABEL = {
   power: jenis('power', 'Kabel power 3×1,5 mm² ke stop kontak', 'power'),
   fiberVideo: jenis('fiber-video', 'Fiber optik (HDMI over fiber)', 'fiber'),
   fiberLan: jenis('fiber-lan', 'Fiber optik (LAN, > 90 m)', 'fiber'),
+  fiber: jenis('fiber', 'Fiber optik', 'fiber'),
 } satisfies Record<string, JenisKabel>;
 
-/** Batas HDMI pasif; lebih panjang -> HDBaseT lewat CAT6A. */
+/** Batas HDMI pasif; lebih panjang -> HDMI AOC (fiber aktif). */
 export const HDMI_MAKS = 10;
-/** Batas HDBaseT / LAN tembaga; lebih panjang -> fiber optik. */
-export const HDBT_MAKS = 100;
+/** Batas HDMI AOC; lebih panjang -> fiber extender. */
+export const AOC_MAKS = 100;
+/** Batas LAN tembaga; lebih panjang -> fiber optik. */
 export const LAN_MAKS = 90;
+
+/** Golongan kabel sinyal yang bisa dipilih manual (urutan legend, tanpa power). */
+export const GOLONGAN_SINYAL = LEGENDA_KABEL.filter(l => l.golongan !== 'power') as (typeof LEGENDA_KABEL[number] & { golongan: GolonganKabelSinyal })[];
+/** Batas jumlah tarikan per jenis kabel di satu perangkat. */
+export const MAKS_TARIKAN = 8;
 
 export interface JalurKabel {
   id: string; dari: string; ke: string; kabel: JenisKabel;
@@ -99,12 +111,46 @@ const panjangRute = (t: Titik[]) => {
 
 function pilihKabel(butuh: Butuh, panjang: number): JenisKabel {
   switch (butuh) {
-    case 'video': return panjang <= HDMI_MAKS ? KABEL.hdmi : panjang <= HDBT_MAKS ? KABEL.hdbt : KABEL.fiberVideo;
+    case 'video': return panjang <= HDMI_MAKS ? KABEL.hdmi : panjang <= AOC_MAKS ? KABEL.hdmiAoc : KABEL.fiberVideo;
     case 'data': return panjang <= LAN_MAKS ? KABEL.lan : KABEL.fiberLan;
     case 'audio': return KABEL.audio;
     case 'speaker': return KABEL.speaker;
     case 'usb': return KABEL.usb;
   }
+}
+
+/** Kabel pilihan engineer: warna legend tetap seperti dipilih; HDMI panjang ditulis sebagai HDMI AOC. */
+function kabelGolongan(g: GolonganKabelSinyal, panjang: number): JenisKabel {
+  switch (g) {
+    case 'hdmi': return panjang <= HDMI_MAKS ? KABEL.hdmi : KABEL.hdmiAoc;
+    case 'lan': return KABEL.lan;
+    case 'audio': return KABEL.audio;
+    case 'speaker': return KABEL.speaker;
+    case 'usb': return KABEL.usb;
+    case 'fiber': return KABEL.fiber;
+  }
+}
+
+const GOLONGAN_BUTUH: Record<Butuh, GolonganKabelSinyal> = { video: 'hdmi', data: 'lan', audio: 'audio', speaker: 'speaker', usb: 'usb' };
+
+/** Kabel otomatis satu perangkat dalam bentuk daftar custom (titik awal saat engineer mengubah ke manual). */
+export function kabelOtomatis(b: Benda, semua: Benda[]): KabelCustom[] {
+  const hasil: KabelCustom[] = [];
+  for (const k of kebutuhan(b, semua)) {
+    const g = GOLONGAN_BUTUH[k];
+    const ada = hasil.find(h => h.golongan === g);
+    if (ada) ada.jumlah++; else hasil.push({ golongan: g, jumlah: 1 });
+  }
+  return hasil;
+}
+
+/** Kabel sinyal satu perangkat - custom (panel Atur) atau otomatis; jenisnya dipilih dari panjang rute. */
+function daftarKabel(b: Benda, semua: Benda[]): ((panjang: number) => JenisKabel)[] {
+  if (b.kabelCustom) {
+    return b.kabelCustom.flatMap(k => Array.from({ length: Math.max(0, Math.min(MAKS_TARIKAN, Math.round(k.jumlah) || 0)) },
+      () => (panjang: number) => kabelGolongan(k.golongan, panjang)));
+  }
+  return kebutuhan(b, semua).map(k => (panjang: number) => pilihKabel(k, panjang));
 }
 
 /**
@@ -118,7 +164,7 @@ export function jalurKabel(benda: Benda[], ruang: Ruang, opsi: { power?: boolean
   const hasil: JalurKabel[] = [];
   let urut = 0;
   for (const b of benda) {
-    const butuh = kebutuhan(b, benda);
+    const butuh = daftarKabel(b, benda);
     const ri = ruangDari(ruang, b.x);
     if (butuh.length) {
       const sama = rak.filter(r => ruangDari(ruang, r.x) === ri);
@@ -127,15 +173,15 @@ export function jalurKabel(benda: Benda[], ruang: Ruang, opsi: { power?: boolean
       const lewat: 'plafon' | 'lantai' = b.elev + b.h / 2 < 1.2 ? 'lantai' : 'plafon';
       //  Meja: kabel keluar dari table box di permukaan meja, turun ke floor box.
       const yAwal = b.jenis === 'meja' ? b.elev + b.h : b.elev + b.h / 2;
-      butuh.forEach((jb, i) => {
-        //  Kabel sejajar digeser supaya tidak menumpuk di gambar (tabung Ø ±3 cm): antar perangkat 4 cm, antar kabel 6 cm.
-        const geser = ((urut++ % 6) - 2.5) * 0.04 + i * 0.06;
+      butuh.forEach((pilih, i) => {
+        //  Kabel sejajar digeser supaya tidak menumpuk di gambar (tabung Ø ±1,2 cm): antar perangkat 2,5 cm, antar kabel 3,5 cm.
+        const geser = ((urut++ % 6) - 2.5) * 0.025 + i * 0.035;
         const yJalur = lewat === 'plafon' ? plafon - 0.06 - Math.abs(geser) : 0.02 + Math.abs(geser) * 0.4;
         const awal: Titik = [b.x + (b.jenis === 'meja' ? geser : 0), yAwal, b.z];
         const akhir: Titik = [tujuan.x + geser, lewat === 'plafon' ? tujuan.elev + tujuan.h : 0.12, tujuan.z];
         const titik: Titik[] = [awal, [awal[0], yJalur, awal[2]], [akhir[0], yJalur, awal[2] + geser], [akhir[0], yJalur, akhir[2]], akhir];
         const panjang = bulatSetengah(panjangRute(titik) * 1.1 + 1.5);
-        hasil.push({ id: `${b.id}-${i}`, dari: namaSumber(b), ke: tujuan.nama, kabel: pilihKabel(jb, panjang), titik, panjang, lewat });
+        hasil.push({ id: `${b.id}-${i}`, dari: namaSumber(b), ke: tujuan.nama, kabel: pilih(panjang), titik, panjang, lewat });
       });
     }
     if (opsi.power && butuhPower(b)) {
@@ -173,7 +219,7 @@ export function rekapKabel(jalur: JalurKabel[]) {
   }
   return [...peta.values()].map(x => ({
     ...x,
-    gulungan: x.kabel.kunci === 'lan' || x.kabel.kunci === 'hdbt' ? `${Math.ceil(x.meter / 305)} box 305 m`
+    gulungan: x.kabel.kunci === 'lan' ? `${Math.ceil(x.meter / 305)} box 305 m`
       : x.kabel.kunci === 'speaker' || x.kabel.kunci === 'audio' ? `${Math.ceil(x.meter / 100)} roll 100 m`
         : x.kabel.kunci === 'power' ? `${Math.ceil(x.meter / 50)} roll 50 m`
           : `${x.tarikan} kabel jadi`,

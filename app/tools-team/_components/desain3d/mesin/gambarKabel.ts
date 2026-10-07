@@ -1,8 +1,8 @@
 import type * as T from 'three';
 import type { JalurKabel } from '../inti';
 
-/** Jari-jari tabung kabel di kanvas (m) - cukup tebal untuk terlihat dari jauh & di foto. */
-const JARI = 0.014;
+/** Jari-jari tabung kabel di kanvas (m): Ø 1,2 cm - masih terlihat dari jauh & di foto tanpa menutupi perangkat. */
+const JARI = 0.006;
 
 /**
  * Gambar jalur kabel sebagai tabung berwarna (warna legend), satu InstancedMesh per warna:
