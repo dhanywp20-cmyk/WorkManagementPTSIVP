@@ -63,16 +63,24 @@ function panjangGaris(t: (Titik | null)[], dari = 0, sampai = t.length - 1): num
   return s;
 }
 
+/** Sisa ruang di dalam bingkai gambar L pada titik X: >= 0 di dalam (0 = tepat di tepi), null di belakang lensa. */
+function sisaBingkai(L: Lensa, X: Titik): number | null {
+  const k = keGambar(L, X);
+  return k ? 0.5 - Math.max(Math.abs(k.u), Math.abs(k.v)) : null;
+}
+
 /**
  * Tumpang tindih satu garis sampel gambar proyektor A (titik permukaan berurutan dari tepi ke tepi,
  * jarak SERAGAM dalam koordinat gambar) dengan gambar proyektor B: run terpanjang titik yang juga
- * disinari B. Tepi run berada di antara dua sampel -> ditambah setengah sampel di kedua ujung.
+ * disinari B. Tepi run berada di antara dua sampel: bila sampel luarnya keluar bingkai B, titik tepi
+ * diinterpolasi tepat di garis bingkai B; selain itu (terhalang / tidak kena) diambil setengah sampel.
  *   - lebarM : panjang run menyusuri permukaan (ikut menekuk di layar lengkung)
  *   - persen : porsi run terhadap lebar GAMBAR (koordinat lensa = piksel) - angka yang diisi di
  *              software blending; tidak terpengaruh gambar yang tumpah ke dinding di luar layar.
+ *   - garis  : titik permukaan dari tepi ke tepi area blending (untuk garis ukur berpanah).
  */
 export function tumpangGaris(garisA: (Titik | null)[], LB: Lensa, terlihatB: (X: Titik) => boolean = () => true):
-  { lebarM: number; persen: number; tengah: Titik } | null {
+  { lebarM: number; persen: number; tengah: Titik; garis: Titik[] } | null {
   const n = garisA.length;
   if (n < 2 || panjangGaris(garisA) <= 1e-6) return null;
   const masuk = garisA.map(x => !!x && dalamGambar(LB, x) && terlihatB(x));
@@ -85,12 +93,25 @@ export function tumpangGaris(garisA: (Titik | null)[], LB: Lensa, terlihatB: (X:
   }
   if (!terbaik) return null;
   const [s, e] = terbaik;
-  const setengah = (a: number, b: number) => (garisA[a] && garisA[b] ? jarakTitik(garisA[a]!, garisA[b]!) / 2 : 0);
-  const lebar = panjangGaris(garisA, s, e) + (s > 0 ? setengah(s - 1, s) : 0) + (e < n - 1 ? setengah(e, e + 1) : 0);
-  const porsi = (e - s + (s > 0 ? 0.5 : 0) + (e < n - 1 ? 0.5 : 0)) / (n - 1);
+  //  Segmen yang "melompat" (gambar tumpah ke permukaan lain) tidak dipakai untuk tepi: > 3x median.
+  const seg = garisA.slice(1).map((b, i) => (b && garisA[i] ? jarakTitik(garisA[i]!, b) : 0)).filter(x => x > 0).sort((a, b) => a - b);
+  const batasSeg = (seg[Math.floor(seg.length / 2)] ?? 0) * 3;
+  /** Tepi di luar sampel `dalam` ke arah sampel `luar`: porsi segmen yang masih di dalam & titiknya. */
+  const tepi = (dalam: number, luar: number): { t: number; X: Titik } => {
+    const a = garisA[dalam]!, b = garisA[luar];
+    if (!b || jarakTitik(a, b) > batasSeg) return { t: 0.5, X: a };
+    const fa = sisaBingkai(LB, a), fb = sisaBingkai(LB, b);
+    const t = fa !== null && fb !== null && fb < 0 ? Math.min(1, Math.max(0, fa / (fa - fb))) : 0.5;
+    return { t, X: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t] };
+  };
+  const awal = s > 0 ? tepi(s, s - 1) : { t: 0, X: garisA[s]! };
+  const akhir = e < n - 1 ? tepi(e, e + 1) : { t: 0, X: garisA[e]! };
+  const lebar = panjangGaris(garisA, s, e) + jarakTitik(awal.X, garisA[s]!) + jarakTitik(akhir.X, garisA[e]!);
+  const porsi = (e - s + awal.t + akhir.t) / (n - 1);
   if (lebar < 0.005) return null;
   const m = Math.round((s + e) / 2);
-  return { lebarM: lebar, persen: Math.min(100, porsi * 100), tengah: garisA[m]! };
+  const garis = [awal.X, ...(garisA.slice(s, e + 1) as Titik[]), akhir.X].filter((x, i, d) => i === 0 || jarakTitik(x, d[i - 1]) > 1e-6);
+  return { lebarM: lebar, persen: Math.min(100, porsi * 100), tengah: garisA[m]!, garis };
 }
 
 export interface SampelProyektor {
@@ -105,6 +126,7 @@ export interface Blending {
   /** Lebar area blending menyusuri permukaan (m). */ lebarM: number;
   /** Persen dari lebar (kiri-kanan) / tinggi (atas-bawah) gambar A & B. */ persenA: number; persenB: number;
   /** Titik tengah area blending (untuk label). */ tengah: Titik;
+  /** Titik permukaan dari tepi ke tepi area blending di garis tengah gambar A (garis ukur berpanah). */ garis: Titik[];
 }
 
 /** Blending di bawah ini diabaikan (sentuhan tepi / pembulatan sampel). */
@@ -132,6 +154,7 @@ export function hitungBlending(daftar: SampelProyektor[], terlihat: (i: number, 
       a: A.p.id, b: B.p.id, namaA: A.p.nama, namaB: B.p.nama, arah: pilih.arah,
       lebarM: (pilih.ab.lebarM + pilih.ba.lebarM) / 2, persenA: pilih.ab.persen, persenB: pilih.ba.persen,
       tengah: [(pilih.ab.tengah[0] + pilih.ba.tengah[0]) / 2, (pilih.ab.tengah[1] + pilih.ba.tengah[1]) / 2, (pilih.ab.tengah[2] + pilih.ba.tengah[2]) / 2],
+      garis: pilih.ab.garis,
     });
   }
   return hasil;
@@ -142,4 +165,28 @@ export function teksBlending(b: Pick<Blending, 'lebarM' | 'persenA' | 'persenB'>
   const cm = Math.round(b.lebarM * 100);
   const pa = Math.round(b.persenA), pb = Math.round(b.persenB);
   return `${cm} cm · ${pa === pb ? `${pa}%` : `${pa}% / ${pb}%`}`;
+}
+
+/** Resolusi acuan untuk perkiraan piksel: 1920 px lebar (Full HD / WUXGA) & 1080 px tinggi. */
+export const PIKSEL_ACUAN = { 'kiri-kanan': 1920, 'atas-bawah': 1080 } as const;
+
+/** Perkiraan lebar blending dalam piksel di resolusi acuan, mis. 12% kiri-kanan -> 230. */
+export const pikselBlending = (persen: number, arah: Blending['arah']) => Math.round((persen / 100) * PIKSEL_ACUAN[arah]);
+
+/**
+ * Baris keterangan detail satu blending (kartu di kanvas & PNG), mis.
+ *   Area blending P1 ↔ P2 · kiri-kanan
+ *   Lebar area 49 cm
+ *   P1: 12% ≈ 230 px · P2: 11% ≈ 211 px
+ *   dari lebar gambar (acuan 1920 px)
+ */
+export function barisKeterangan(b: Blending, nama: (n: string) => string = n => n): string[] {
+  const p = (x: number) => `${Math.round(x)}% ≈ ${pikselBlending(x, b.arah)} px`;
+  const sisi = b.arah === 'kiri-kanan' ? 'lebar' : 'tinggi';
+  return [
+    `Area blending ${nama(b.namaA)} ↔ ${nama(b.namaB)} · ${b.arah}`,
+    `${sisi === 'lebar' ? 'Lebar' : 'Tinggi'} area ${Math.round(b.lebarM * 100)} cm`,
+    `${nama(b.namaA)}: ${p(b.persenA)} · ${nama(b.namaB)}: ${p(b.persenB)}`,
+    `dari ${sisi} gambar (acuan ${PIKSEL_ACUAN[b.arah]} px)`,
+  ];
 }

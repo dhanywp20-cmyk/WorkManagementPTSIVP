@@ -68,7 +68,9 @@ satu baris di tabel (TypeScript menolak bila ada jenis yang terlewat).
 | `useAdegan.ts` | efek: ruangan, benda (bangun ulang hanya yang berubah), gizmo, cahaya |
 | `alatBantu.ts` | label ukuran & produk, kerucut pandang, sinar proyektor, jangkauan speaker, kabel |
 | `bayangan.ts` | bayangan lembut & pendar cahaya layar |
-| `blending.ts` | zona ungu & label area blending (raycast keterhalangan) |
+| `blending.ts` | zona ungu area blending (raycast keterhalangan) |
+| `ukurBlending.ts` | garis ukur berpanah + kaki ukur, angka cm, garis penunjuk & kartu keterangan blending |
+| `garisUkurDisplay.ts` | garis ukuran display merah (lebar & tinggi, mm) |
 | `gambarKabel.ts` | jalur kabel sebagai tabung berwarna (InstancedMesh per warna) |
 | `label.ts` | label CSS2D: anti-tumpuk & gambar ke foto |
 | `tipe.ts` | tipe `Mesin`, arah kamera standar |

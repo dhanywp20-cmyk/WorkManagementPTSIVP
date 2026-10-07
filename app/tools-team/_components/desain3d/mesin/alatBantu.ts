@@ -6,15 +6,16 @@ import { f } from '../../bersama/ui';
 import { arahProyektor, type Benda, berkasLineArray, cakupanSpeakerPlafon, DISPLAY, geserLensaDari, jangkauanDari, modulLA, offsetLensaDari, ruangDari, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, throwRatioDari, TINGGI_DENGAR, tipeSpeakerDari, arahSinar, lensaDari, type Lensa, type Titik } from '../inti';
 import { gambarJalurKabel } from './gambarKabel';
 import { gambarBlending } from './blending';
+import { gambarGarisUkurDisplay } from './garisUkurDisplay';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import type { Mesin } from './tipe';
 
-export type KeadaanAlatBantu = Pick<KeadaanDesain, 'analisis' | 'benda' | 'garisUkur' | 'jangkau' | 'kabel' | 'kerucut' | 'kotakRuang' | 'labelProduk' | 'pilih' | 'plafonDi' | 'ruang' | 'sinar' | 'sudutNyaman' | 'tampilKabel' | 'ukur' | 'tampilBlending' | 'setInfoBlending'>;
+export type KeadaanAlatBantu = Pick<KeadaanDesain, 'analisis' | 'benda' | 'garisUkur' | 'jangkau' | 'kabel' | 'kerucut' | 'kotakRuang' | 'labelProduk' | 'pilih' | 'plafonDi' | 'ruang' | 'sinar' | 'sudutNyaman' | 'tampilKabel' | 'ukur' | 'tampilBlending' | 'detailBlending' | 'setInfoBlending'>;
 
 export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
   const { THREE, grupBantu, CSS2DObject } = m;
-  const { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, pilih, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, ukur, tampilBlending, setInfoBlending } = k;
+  const { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, pilih, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, ukur, tampilBlending, detailBlending, setInfoBlending } = k;
   //  Isi lama dibuang BESERTA geometri & materialnya: efek ini berjalan tiap
   //  frame selama benda diseret, jadi tanpa dispose memori GPU terus naik.
   grupBantu.traverse(o => {
@@ -30,6 +31,7 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     const latar = { hijau: '#047857', merah: '#b91c1c', biru: '#1d4ed8', abu: '#334155', ungu: '#7c3aed' }[nada];
     el.style.cssText = `font:600 11px system-ui,sans-serif;padding:2px 6px;border-radius:6px;white-space:nowrap;color:#fff;background:${latar};box-shadow:0 1px 3px rgba(0,0,0,.3)`;
     const o = new CSS2DObject(el); o.position.copy(pos); grupBantu.add(o);
+    return el;
   };
   /** Label produk: kecil, menempel di tepi benda (dy -1 = tepat di atas titik, 1 = tepat di bawah). */
   const labelP = (teks: string, pos: T.Vector3, dy: -1 | 1 = -1) => {
@@ -182,10 +184,11 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
         const tengah = sel(Math.floor(NX / 2), Math.floor(NY / 2));
         const jarakSumbu = sn.layar ? sn.jarak : tengah ? tengah.distanceTo(O) : sn.jarak;
         const teks = `${p.nama}: lempar ${f(jarakSumbu)} m · gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`;
-        label(teks, tengah ? O.clone().lerp(tengah, 0.3) : O.clone().addScaledVector(D, 0.5), 'abu');
+        //  Melayang di udara -> dari sudut tertentu bisa menimpa keterangan blending: mengalah (mesin/label.ts).
+        label(teks, tengah ? O.clone().lerp(tengah, 0.3) : O.clone().addScaledVector(D, 0.5), 'abu').dataset.mengalah = '1';
       }
     });
-    if (hitungBlend) gambarBlending(m, dataBlend, NX, NY, label, setInfoBlending);
+    if (hitungBlend) gambarBlending(m, dataBlend, NX, NY, setInfoBlending, detailBlending);
   }
   //  Jangkauan suara speaker (kerucut sebaran H x V), dipotong di dinding, lantai & plafon ruangnya.
   //  Line array: satu berkas per modul + titik jatuh sumbunya di tinggi telinga. Tampil hanya bila
@@ -287,27 +290,5 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     }
   }
   //  Garis ukuran display: lebar di atas & tinggi di kanan, ujung bertanda, angka dalam mm.
-  if (garisUkur) {
-    const merah = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
-    for (const b of benda) {
-      if (!DISPLAY.includes(b.jenis) || b.sembunyiUkur) continue;
-      const grp = new THREE.Group();
-      grp.position.set(b.x, b.elev, b.z); grp.rotation.y = (b.rot * Math.PI) / 180;
-      const t = Math.max(0.01, Math.max(b.w, b.h) * 0.004), tanda = Math.max(0.1, Math.min(0.25, Math.max(b.w, b.h) * 0.035));
-      const jarak = Math.max(0.1, Math.min(0.3, Math.max(b.w, b.h) * 0.04)) + (b.jenis === 'layar' ? 0.22 : 0);
-      const zp = b.d / 2 + 0.03, yAtas = b.h + jarak, xKanan = b.w / 2 + Math.max(0.1, Math.min(0.3, Math.max(b.w, b.h) * 0.04));
-      const balok = (w: number, h: number, x: number, y: number) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, t), merah); m.position.set(x, y, zp); grp.add(m); };
-      balok(b.w, t, 0, yAtas); balok(t, tanda, -b.w / 2, yAtas); balok(t, tanda, b.w / 2, yAtas);
-      balok(t, b.h, xKanan, b.h / 2); balok(tanda, t, xKanan, 0); balok(tanda, t, xKanan, b.h);
-      const teks = (isi: string, x: number, y: number, tegak: boolean) => {
-        const el = document.createElement('div');
-        el.textContent = isi;
-        el.style.cssText = `font:700 12px system-ui,sans-serif;color:#dc2626;background:rgba(255,255,255,.85);padding:${tegak ? '4px 1px' : '1px 4px'};border-radius:4px;white-space:nowrap${tegak ? ';writing-mode:vertical-rl' : ''}`;
-        const o = new CSS2DObject(el); o.position.set(x, y, zp); grp.add(o);
-      };
-      teks(`${Math.round(b.w * 1000)} mm`, 0, yAtas + tanda * 0.9, false);
-      teks(`${Math.round(b.h * 1000)} mm`, xKanan + tanda * 0.9, b.h / 2, true);
-      grupBantu.add(grp);
-    }
-  }
+  if (garisUkur) gambarGarisUkurDisplay(m, benda);
 }

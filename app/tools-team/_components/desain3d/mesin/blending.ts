@@ -1,12 +1,13 @@
 /**
  * desain3d/mesin/blending.ts - Area blending antar proyektor di kanvas: zona ungu di permukaan yang
- * disinari dua proyektor + label "Blending P1 ↔ P2: 52 cm · 15%". Ukurannya dihitung murni di
- * inti/blending.ts; di sini hanya raycast keterhalangan & gambarnya. Hasil dikirim ke keadaan untuk
- * panel proyektor & lembar cetak.
+ * disinari dua proyektor + garis ukur berpanah & kartu keterangan (mesin/ukurBlending.ts). Ukurannya
+ * dihitung murni di inti/blending.ts; di sini hanya raycast keterhalangan & zonanya. Hasil dikirim ke
+ * keadaan untuk panel proyektor & lembar cetak.
  */
 import type * as T from 'three';
-import { hitungBlending, keGambar, teksBlending, type Benda, type Blending, type Lensa, type Titik } from '../inti';
+import { hitungBlending, keGambar, type Benda, type Blending, type Lensa, type Titik } from '../inti';
 import type { Mesin } from './tipe';
+import { gambarUkurBlending } from './ukurBlending';
 
 export interface DataBlend {
   p: Benda; L: Lensa; O: T.Vector3;
@@ -41,8 +42,8 @@ const kunci = (h: Blending[]) => JSON.stringify(h.map(b => [b.a, b.b, b.namaA, b
 
 export function gambarBlending(
   m: Mesin, data: DataBlend[], NX: number, NY: number,
-  label: (teks: string, pos: T.Vector3, nada: 'ungu') => void,
   setInfo: (f: (v: Blending[]) => Blending[]) => void,
+  /** Kartu keterangan detail (persen & piksel) ikut digambar. */ detail: boolean,
 ) {
   const { THREE, grupBantu } = m;
   const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
@@ -99,12 +100,7 @@ export function gambarBlending(
       const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
       const zona = new THREE.Mesh(geo, bahan.clone()); zona.renderOrder = 3; grupBantu.add(zona);
     }
-    //  Label di sepertiga bawah area blending (turun menyusuri arah "atas" lensa A) supaya tidak menimpa
-    //  label jarak lempar proyektor yang berada di dekat tengah atas gambar.
-    const tengah = new THREE.Vector3(...b.tengah);
-    const turun = tengah.distanceTo(A.O) * A.L.h1 * 0.3;
-    tengah.addScaledVector(new THREE.Vector3(...A.L.atas), -turun);
-    label(`Blending ${pendek(b.namaA)} ↔ ${pendek(b.namaB)}: ${teksBlending(b)}`, tengah, 'ungu');
+    gambarUkurBlending(m, b, A.O, A.L, pendek, detail);
   }
   bahan.dispose();
 }
