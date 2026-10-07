@@ -22,6 +22,7 @@ $ErrorActionPreference = 'Continue'
 # Teks yang dipipa ke gh dikirim UTF-8 (bawaan PowerShell 5.1 = ASCII, huruf non-ASCII jadi '?').
 $OutputEncoding = New-Object System.Text.UTF8Encoding $false
 $repo  = 'dhanywp20-cmyk/WorkManagementPTSIVP'
+$pemilik = 'dhanywp20-cmyk'
 $folder = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Kunci-APK-WorkManagement'
 $jks    = Join-Path $folder 'ptsivp-rilis.jks'
 
@@ -32,6 +33,10 @@ $calon += 'C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe'
 $keytool = $calon | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
 if (-not $keytool) { throw 'keytool tidak ditemukan - pasang JDK 17 dulu.' }
 if (-not (Get-Command gh -ErrorAction SilentlyContinue)) { throw 'GitHub CLI (gh) tidak ditemukan.' }
+# Laptop bisa login ke beberapa akun gh & akun AKTIF bisa berganti: secret hanya boleh diisi akun
+# pemilik repo, jadi tokennya diambil eksplisit (hanya untuk proses ini, tidak ditampilkan).
+$tokenPemilik = (gh auth token --user $pemilik 2>$null)
+if (-not $tokenPemilik) { throw "Akun GitHub $pemilik belum login di gh. Jalankan: gh auth login" }
 
 function Baca-Sandi([string]$judul) {
   $s = Read-Host -AsSecureString $judul
@@ -52,6 +57,7 @@ if ($baru) {
 }
 
 $env:WM_KUNCI_SANDI = $sandi
+$env:GH_TOKEN = $tokenPemilik
 try {
   if ($baru) {
     New-Item -ItemType Directory -Force $folder -ErrorAction Stop | Out-Null
@@ -76,4 +82,7 @@ Write-Host ''
 Write-Host "Secret terisi. Kunci tersimpan di: $jks" -ForegroundColor Green
 Write-Host 'BACKUP berkas .jks itu + kata sandinya sekarang juga.' -ForegroundColor Yellow
 gh workflow run android.yml --repo $repo --ref main
-if ($LASTEXITCODE -eq 0) { Write-Host 'Build APK rilis dimulai di GitHub Actions (+/- 2 menit).' -ForegroundColor Green }
+$hasil = $LASTEXITCODE
+Remove-Item Env:GH_TOKEN -ErrorAction SilentlyContinue
+$tokenPemilik = $null
+if ($hasil -eq 0) { Write-Host 'Build APK rilis dimulai di GitHub Actions (+/- 2 menit).' -ForegroundColor Green }
