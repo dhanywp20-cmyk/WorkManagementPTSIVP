@@ -5,7 +5,24 @@ import { f } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 
 export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
-  const { benda, gantiBenda, kotakRuang, ruang, setRuang, setTargetKontras, targetKontras } = K;
+  const { benda, gantiBenda, infoBlending, kotakRuang, ruang, setRuang, setTargetKontras, tampilBlending, targetKontras } = K;
+  /** Area blending proyektor ini dengan proyektor lain (dihitung di kanvas, mesin/blending.ts). */
+  const blend = tampilBlending ? infoBlending.filter(b => b.a === p.id || b.b === p.id) : [];
+  const blokBlending = blend.length ? (
+    <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-2 space-y-1">
+      <span className="block text-[11px] font-bold uppercase tracking-wider text-violet-800">Area blending</span>
+      {blend.map(b => {
+        const sendiri = b.a === p.id;
+        return (
+          <p key={`${b.a}-${b.b}`} className="text-[12px] text-slate-700 leading-relaxed">
+            Dengan <b>{sendiri ? b.namaB : b.namaA}</b> ({b.arah}): <b>{Math.round(b.lebarM * 100)} cm</b> ·{' '}
+            <b>{Math.round(sendiri ? b.persenA : b.persenB)}%</b> {b.arah === 'kiri-kanan' ? 'lebar' : 'tinggi'} gambar proyektor ini
+          </p>
+        );
+      })}
+      <p className="text-[11px] text-slate-500">Isi persen ini di pengaturan edge blending (software / processor); umumnya 10-25% dari lebar / tinggi gambar.</p>
+    </div>
+  ) : null;
   /** Panel proyektor: jarak lempar, ukuran gambar, & tombol mengepaskan ke layar. */
   /** Kontras gambar proyektor terhadap lampu ruangan + saran lumen / dimmer. */
   const blokKontras = (p: Benda, kePermukaan: boolean) => {
@@ -71,6 +88,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
             ? <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, dekat, k, ruang))}>Arahkan ke {dekat.nama}</button>
             : <p className="text-[12px] text-slate-600">Tambahkan Layar proyektor (Tambah → Display) untuk menghitung jarak lempar.</p>}
           {blokKontras(p, true)}
+          {blokBlending}
         </div>
       );
     }
@@ -97,6 +115,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           </p>
         ))}
         {blokKontras(p, false)}
+        {blokBlending}
         <ul className="text-[12px] font-semibold space-y-0.5">
           <li className={pasLebar ? 'text-emerald-700' : 'text-amber-700'}>
             {pasLebar ? 'Lebar gambar pas.' : selisih > 0 ? `Gambar melebihi lebar layar ${f(sn.lebar - lyr.w)} m.` : `Gambar kurang ${f(lyr.w - sn.lebar)} m dari lebar layar.`}

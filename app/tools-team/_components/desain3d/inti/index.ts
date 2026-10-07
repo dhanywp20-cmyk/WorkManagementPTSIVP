@@ -19,6 +19,7 @@ export * from './katalog';
 export * from './cahaya';
 export * from './audio';
 export * from './proyektor';
+export * from './blending';
 export * from './kabel';
 export * from './rak';
 export * from './template';
