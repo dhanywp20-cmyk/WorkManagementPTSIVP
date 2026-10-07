@@ -13,7 +13,11 @@ import type * as T from 'three';
 import { keGambar, type Lensa } from '../inti';
 import type { Mesin } from './tipe';
 
-export interface SumberCahaya { O: T.Vector3; L: Lensa; sasaran: T.Object3D[]; /** pengali terang (immersive diredam) */ kuat: number }
+export interface SumberCahaya {
+  O: T.Vector3; L: Lensa; sasaran: T.Object3D[];
+  /** pengali terang (immersive diredam) */ kuat: number;
+  /** warna sinar (rgb linear 0..1) - benda ikut berwarna sesuai proyektor yang meneranginya */ warna: [number, number, number];
+}
 
 /** Batas segitiga hasil pemecahan per mesh, & titik total yang diuji keterhalangannya (raycast). */
 const MAKS_SEGITIGA = 6000, MAKS_SEGITIGA_KASAR = 1200, MAKS_RAYCAST = 15000;
@@ -45,22 +49,23 @@ export function gambarCahayaBenda(m: Mesin, sumber: SumberCahaya[], akar: T.Obje
     cacheTerlihat.set(kunci, hasil);
     return hasil;
   };
-  /** Terang satu titik dari semua proyektor (0 = gelap). */
-  const terang = (P: T.Vector3, N: T.Vector3) => {
-    let t = 0;
+  /** Warna cahaya di satu titik dari semua proyektor (rgb, 0 = gelap) - tiap proyektor dengan warna sinarnya. */
+  const terang = (P: T.Vector3, N: T.Vector3): [number, number, number] => {
+    const t: [number, number, number] = [0, 0, 0];
     sumber.forEach((s, si) => {
       const k = keGambar(s.L, [P.x, P.y, P.z]);
       if (!k || Math.abs(k.u) > 0.5 || Math.abs(k.v) > 0.5) return;
       const jarak = keLensa.copy(s.O).sub(P).length();
       const cos = keLensa.dot(N) / jarak;
       if (cos <= 0.02 || !terlihat(si, P, jarak)) return;
-      t += s.kuat * (0.35 + 0.65 * cos);
+      const c = s.kuat * (0.35 + 0.65 * cos);
+      for (let i = 0; i < 3; i++) t[i] += s.warna[i] * c;
     });
-    return Math.min(1.3, t);
+    return [Math.min(1.3, t[0]), Math.min(1.3, t[1]), Math.min(1.3, t[2])];
   };
 
   const pos: number[] = [], warna: number[] = [];
-  const DASAR = [1, 0.945, 0.76].map(c => c * 0.34); // 0xfff1c2 x opasitas bidang gambar di permukaan (mesin/sinar.ts)
+  const OPASITAS = 0.34; // sama dengan bidang gambar di permukaan (mesin/sinar.ts)
   const nm = new THREE.Matrix3();
   for (const a of akar) {
     a.traverse(o => {
@@ -102,11 +107,11 @@ export function gambarCahayaBenda(m: Mesin, sumber: SumberCahaya[], akar: T.Obje
       }
       for (const s of jadi) {
         const t = [0, 1, 2].map(k => terang(s[k], s[k + 3]));
-        if (t.every(x => x <= 0)) continue;
+        if (t.every(x => x[0] + x[1] + x[2] <= 0)) continue;
         for (let k = 0; k < 3; k++) {
           //  Naik 3 mm searah normal supaya tidak berkedip bertumpuk dengan permukaan benda.
           pos.push(s[k].x + s[k + 3].x * 0.003, s[k].y + s[k + 3].y * 0.003, s[k].z + s[k + 3].z * 0.003);
-          warna.push(DASAR[0] * t[k], DASAR[1] * t[k], DASAR[2] * t[k]);
+          warna.push(t[k][0] * OPASITAS, t[k][1] * OPASITAS, t[k][2] * OPASITAS);
         }
       }
     });

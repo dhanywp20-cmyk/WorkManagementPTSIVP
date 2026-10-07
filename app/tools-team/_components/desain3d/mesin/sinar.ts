@@ -11,10 +11,12 @@
  *   - Keterangan (nama, jarak lensa -> bidang, ukuran gambar, lux pusat) & lux tiap pojok TERCETAK DI
  *     CAHAYA gambar itu sendiri, hitam kecil seperti simulator proyektor pabrikan (mesin/teksCahaya.ts).
  *     Di proyektor cukup namanya.
+ *   - Warna sinar per proyektor (inti/proyektor.ts warnaSinarProyektor): otomatis berbeda bila >= 2
+ *     proyektor, atau pilihan engineer - bidang gambar, kerucut & cahaya di benda memakai warna itu.
  *   - Area blending: mesin/blending.ts.
  */
 import { f } from '../../bersama/ui';
-import { arahProyektor, arahSinar, type Benda, type Blending, geserLensaDari, keGambar, lensaDari, type Lensa, lumenDari, offsetLensaDari, sinarProyektor, throwRatioDari, type Titik } from '../inti';
+import { arahProyektor, arahSinar, type Benda, type Blending, geserLensaDari, keGambar, lensaDari, type Lensa, lumenDari, offsetLensaDari, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { gambarBlending } from './blending';
@@ -70,7 +72,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const dataBlend: { p: Benda; L: Lensa; O: T.Vector3; sasaran: T.Object3D[]; kena: (T.Vector3 | null)[]; baris: (Titik | null)[]; kolom: (Titik | null)[] }[] = [];
   const sumberCahaya: SumberCahaya[] = [];
   /** Bidang gambar tiap proyektor - dibuat SETELAH blending dihitung, supaya keterangan tidak jatuh di area tumpang tindih. */
-  const bidangGambar: { p: Benda; L: Lensa; pos: number[]; uv: number[]; opasitas: number; teks: { info: string[]; lux: (number | null)[] } | null }[] = [];
+  const bidangGambar: { p: Benda; L: Lensa; pos: number[]; uv: number[]; opasitas: number; warna: T.Color; teks: { info: string[]; lux: (number | null)[] } | null }[] = [];
   const bendaTersinari = new Set<string>();
   daftarProj.forEach((p, idx) => {
     const sn = sinarProyektor(p, benda, ruang);
@@ -105,7 +107,8 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       });
     }
     if (!sinar) return;
-    sumberCahaya.push({ O, L: lensaDari(p), sasaran, kuat: (sn.layar ? 0.8 : 1) * (banyak ? 0.6 : 1) });
+    const warna = new THREE.Color(warnaSinarProyektor(p, idx, daftarProj.length));
+    sumberCahaya.push({ O, L: lensaDari(p), sasaran, kuat: (sn.layar ? 0.8 : 1) * (banyak ? 0.6 : 1), warna: [warna.r, warna.g, warna.b] });
 
     //  Bidang gambar: sel grid yang keempat sudutnya kena permukaan ruang / bidang proyeksi & tidak
     //  "melompat" (tepi objek ke dinding di belakangnya). Sel yang sebagian mengenai benda dipecah 8x8
@@ -145,14 +148,16 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     for (let j = 1; j < NY; j++) tepi.push(sel(NX - 1, j)!);
     for (let i = NX - 2; i >= 0; i--) tepi.push(sel(i, NY - 1)!);
     for (let j = NY - 2; j > 0; j--) tepi.push(sel(0, j)!);
-    const warnaTepi = new THREE.Color().setHSL((0.1 + idx * 0.17) % 1, 0.9, 0.55);
+    //  Garis tepi: warna sinar yang lebih pekat (pilihan engineer) atau rona otomatis proyektor ini.
+    const warnaTepi = p.warnaSinar ? warna.clone().offsetHSL(0, 0.1, -0.18) : new THREE.Color().setHSL(ronaProyektor(idx), 0.9, 0.55);
     const garis: number[] = [], kerucut: number[] = [], alfa: number[] = [];
     for (let i = 0; i < tepi.length; i++) {
       const A = tepi[i], B = tepi[(i + 1) % tepi.length];
       if (!A || !B) continue;
       if (A.distanceTo(B) < Math.max(0.6, A.distanceTo(O) * w1 * 0.4)) garis.push(A.x, A.y, A.z, B.x, B.y, B.z);
       kerucut.push(O.x, O.y, O.z, A.x, A.y, A.z, B.x, B.y, B.z);
-      alfa.push(1, 0.84, 0.36, 0.45 * redam, 1, 0.9, 0.55, 0.08 * redam, 1, 0.9, 0.55, 0.08 * redam);
+      //  Kerucut: pekat di lensa (warna tepi), memudar ke bidang (warna sinar).
+      alfa.push(warnaTepi.r, warnaTepi.g, warnaTepi.b, 0.45 * redam, warna.r, warna.g, warna.b, 0.08 * redam, warna.r, warna.g, warna.b, 0.08 * redam);
     }
     if (garis.length) {
       const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(garis, 3));
@@ -178,7 +183,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const d = t.p.distanceTo(O), cosA = Math.max(0.2, r.dot(D)), cosT = t.n ? Math.abs(r.dot(t.n)) : 1;
       return (E0 * cosT) / (cosA ** 3 * d * d);
     };
-    bidangGambar.push({ p, L: lensaDari(p), pos, uv, opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
+    bidangGambar.push({ p, L: lensaDari(p), pos, uv, warna, opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
       teks: ukur && !kasar ? {
         info: [p.nama, `Jarak lensa → bidang ${f(jarakSumbu)} m`, `Ukuran gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`,
           `Pusat ${f(luxDi(0, 0) ?? E0 / (jarakSumbu * jarakSumbu), 0)} lx`],
@@ -213,7 +218,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(bg.pos, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(bg.uv, 2));
-    const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfff1c2, opacity: bg.opasitas, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+    const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, color: bg.warna, opacity: bg.opasitas, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
     gambar.renderOrder = 2; grupBantu.add(gambar);
     //  Tulisan: lapisan tersendiri (campuran biasa, bukan aditif) di atas cahaya - di permukaan putih,
     //  cahaya aditif sudah mentok putih sehingga huruf yang hanya "lebih redup" tidak akan terlihat.

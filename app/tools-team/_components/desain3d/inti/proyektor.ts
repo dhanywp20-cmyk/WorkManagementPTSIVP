@@ -3,7 +3,7 @@
  * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
  */
 import { bulat2, daftarRuang, ruangDari } from './ruang';
-import type { Benda, Kotak, Ruang, Titik } from './tipe';
+import { type Benda, type Kotak, type Ruang, type Titik, warnaSah } from './tipe';
 
 /** Titik lokal benda (alas y = 0, +z = arah hadap) ke koordinat dunia. */
 export function keDunia(b: Benda, [lx, ly, lz]: Titik): Titik {
@@ -88,6 +88,29 @@ export interface Sinar {
  * terlalu tinggi/rendah bila tilt-nya tidak pas. Tanpa layar, gambar jatuh di
  * permukaan ruang yang dituju lensa.
  */
+/** HSL (0..1) -> #rrggbb. */
+function hslKeHex(h: number, s: number, l: number): string {
+  const f = (n: number) => {
+    const k = (n + h * 12) % 12, a = s * Math.min(l, 1 - l);
+    return Math.round((l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+/** Rona warna proyektor ke-`urutan` (0..1) - sama dengan garis tepi gambarnya di kanvas. */
+export const ronaProyektor = (urutan: number) => (0.1 + urutan * 0.17) % 1;
+
+/**
+ * Warna sinar proyektor di kanvas (#rrggbb): pilihan engineer (panel Atur), atau otomatis - satu proyektor
+ * putih hangat; dua atau lebih: warna pastel berbeda per urutan, supaya cakupan tiap bidang mudah dibedakan
+ * (tumpang tindih tampak sebagai campuran warna).
+ */
+export function warnaSinarProyektor(p: Benda, urutan: number, jumlah: number): string {
+  const pilihan = warnaSah(p.warnaSinar);
+  if (pilihan) return pilihan;
+  return jumlah < 2 ? '#fff1c2' : hslKeHex(ronaProyektor(urutan), 0.85, 0.72);
+}
+
 export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
   const asal = keDunia(p, lensaProyektor(p));
   const D = arahProyektor(p);

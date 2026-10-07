@@ -1,11 +1,13 @@
 'use client';
-/** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen. */
+/** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
 import { Angka, f, Segmen } from '../../../bersama/ui';
-import { bendaBaru, geserLensaDari, lumenDari, offsetLensaDari, type PasangProyektor, throwRatioDari, zoomLensa } from '../../inti';
+import { bendaBaru, geserLensaDari, lumenDari, offsetLensaDari, type PasangProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
 export function AturProyektor({ c }: { c: KonteksAtur }) {
-  const { b, kosong, label, onUbah, set } = c;
+  const { b, kosong, label, onUbah, set, semua } = c;
+  const proyektor = semua.filter(x => x.jenis === 'proyektor');
+  const warnaSinar = warnaSinarProyektor(b, Math.max(0, proyektor.findIndex(x => x.id === b.id)), proyektor.length);
   return (
     <>
       {b.jenis === 'proyektor' && (
@@ -83,6 +85,20 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
               Vertikal = geser pusat gambar dalam % tinggi gambar (relatif proyektor; gantung plafon = terbalik): 0% = tepat di sumbu lensa,
               50% = tepi gambar sejajar lensa (umum pada proyektor tanpa lens shift). Horizontal = % lebar gambar, + ke kanan.
             </p>
+          </div>
+          {/*  Warna sinar di kanvas: otomatis beda per proyektor (>= 2) supaya cakupan tiap bidang mudah dibedakan. */}
+          <div>
+            <span className={label}>Warna sinar</span>
+            <div className="flex items-center gap-2">
+              <input type="color" aria-label="Warna sinar proyektor" value={warnaSinar} onChange={e => set({ warnaSinar: e.target.value })}
+                className="h-9 w-12 rounded-lg border border-slate-200 bg-white p-0.5 cursor-pointer" />
+              <span className="text-[12px] font-mono text-slate-700">{warnaSah(b.warnaSinar) ?? 'otomatis'}</span>
+              {warnaSah(b.warnaSinar) && (
+                <button type="button" onClick={() => set({ warnaSinar: undefined })}
+                  className="ml-auto px-2 py-1 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">Otomatis</button>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1">Hanya untuk tampilan rancangan: tiap proyektor beda warna supaya bidang yang disinarinya mudah dibedakan (area tumpang tindih tampak bercampur).</p>
           </div>
         </>
       )}

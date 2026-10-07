@@ -477,6 +477,17 @@ console.log('\nRack elevation');
     !== M3.tandaBentuk(M3.bendaBaru('rak', M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu' })[0])));
 }
 
+console.log('\nWarna sinar proyektor');
+{
+  const k = M3.daftarRuang({ p: 8, l: 6, t: 3, lantai: 'kayu' })[0];
+  const p = M3.bendaBaru('proyektor', k);
+  cek('satu proyektor: putih hangat', M3.warnaSinarProyektor(p, 0, 1) === '#fff1c2');
+  const w = [0, 1, 2, 3, 4, 5].map(i => M3.warnaSinarProyektor(p, i, 6));
+  cek('6 proyektor: 6 warna berbeda & sah', new Set(w).size === 6 && w.every(x => /^#[0-9a-f]{6}$/.test(x)), w.join(' '));
+  cek('pilihan engineer dipakai', M3.warnaSinarProyektor({ ...p, warnaSinar: '#FF0000' }, 3, 6) === '#ff0000');
+  cek('warna rusak diabaikan -> otomatis', M3.warnaSinarProyektor({ ...p, warnaSinar: 'merah' }, 1, 6) === w[1]);
+}
+
 console.log('\nJalur & panjang kabel');
 {
   const ruang: M3.Ruang = { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null };

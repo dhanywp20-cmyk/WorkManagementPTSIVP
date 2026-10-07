@@ -71,6 +71,7 @@ export interface Benda {
   bentukBidang?: 'datar' | 'lengkung' | 'cembung'; jariBidang?: number; busur?: number;
   /** Proyektor: offset vertikal lensa (0,5 = tepi gambar di sumbu lensa / offset 100%) */ offsetLensa?: number;
   /** Proyektor: lens shift horizontal (pecahan lebar gambar, + = ke kanan dilihat dari proyektor) */ geserLensaH?: number;
+  /** Proyektor: warna sinar di kanvas (#rrggbb) - tanpa = otomatis (inti/proyektor.ts warnaSinarProyektor). */ warnaSinar?: string;
   /** Proyektor: kecerahan (ANSI lumen) */ lumen?: number;
   /** Display: bracket pop-up, wall bracket + struktur hollow, atau standfloor beroda */ pasang?: Pasang;
   /** Rak: tinggi dalam U */ rakU?: number;
