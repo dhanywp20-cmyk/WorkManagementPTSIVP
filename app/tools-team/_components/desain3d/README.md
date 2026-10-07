@@ -33,6 +33,7 @@ Arah ketergantungan **satu arah**: `panel → (aksi, simpan, ekspor, mesin) → 
 | `cahaya.ts` | lampu, lux langsung + pantul, cahaya siang, kontras proyektor |
 | `audio.ts` | speaker, line array, cakupan speaker plafon |
 | `proyektor.ts` | lensa (throw ratio, zoom, lens shift), arah, sinar ke layar |
+| `blending.ts` | area blending antar proyektor: lebar (cm) menyusuri permukaan & persen gambar |
 | `kabel.ts` | jalur & panjang kabel ke rack, **legend warna standar** |
 | `rak.ts` | isi rack (elevation) |
 | `template.ts` | template kategori ruangan (terkunci — selalu dibuat ulang dari kode) |
@@ -67,6 +68,7 @@ satu baris di tabel (TypeScript menolak bila ada jenis yang terlewat).
 | `useAdegan.ts` | efek: ruangan, benda (bangun ulang hanya yang berubah), gizmo, cahaya |
 | `alatBantu.ts` | label ukuran & produk, kerucut pandang, sinar proyektor, jangkauan speaker, kabel |
 | `bayangan.ts` | bayangan lembut & pendar cahaya layar |
+| `blending.ts` | zona ungu & label area blending (raycast keterhalangan) |
 | `gambarKabel.ts` | jalur kabel sebagai tabung berwarna (InstancedMesh per warna) |
 | `label.ts` | label CSS2D: anti-tumpuk & gambar ke foto |
 | `tipe.ts` | tipe `Mesin`, arah kamera standar |

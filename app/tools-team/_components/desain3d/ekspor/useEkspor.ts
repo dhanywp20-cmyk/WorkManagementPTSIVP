@@ -17,7 +17,7 @@ import { posisiPas } from '../mesin/kamera';
 
 
 export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamera>, 'fokusKotak'>) {
-  const { analisis, benda, duaRuang, faktorCustom, jenisPandang, kabel, kotakRuang, legendaKabel, mesin, namaDesain, pilih, ruang, setGalat, targetKontras } = K;
+  const { analisis, benda, duaRuang, faktorCustom, infoBlending, jenisPandang, kabel, kotakRuang, legendaKabel, mesin, namaDesain, pilih, ruang, setGalat, tampilBlending, targetKontras } = K;
   const { fokusKotak } = dep;
   /**
    * Foto kanvas 3D (resolusi `skala` x layar) tanpa gizmo & kotak sorotan, label ukuran/jarak
@@ -158,6 +158,11 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
               lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}`,
               `${fm(kp.kontras, 1)} : 1 ${kp.cukup ? '✓' : `✗ (perlu ±${kp.lumenPerlu.toLocaleString('id-ID')} lm)`}`];
           }),
+        }] : []),
+        ...(tampilBlending && infoBlending.length ? [{
+          judul: 'Area blending proyektor', jenis: 'tabel' as const,
+          kepala: ['Proyektor', 'Bertumpuk dengan', 'Arah', 'Lebar area', '% gambar pertama', '% gambar kedua'], rataKanan: [3, 4, 5],
+          isi: infoBlending.map(b => [b.namaA, b.namaB, b.arah, `${Math.round(b.lebarM * 100)} cm`, `${fm(b.persenA, 1)}%`, `${fm(b.persenB, 1)}%`]),
         }] : []),
         ...(benda.some(b => b.jenis === 'lampu') ? [{
           judul: `Pencahayaan · dimmer semua lampu ${ruang.dimmer ?? 100}%`, jenis: 'tabel' as const,

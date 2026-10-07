@@ -3,17 +3,18 @@
  * Dipanggil useAdegan setiap keadaan terkait berubah; isi lama dibuang dulu oleh pemanggil / fungsi ini.
  */
 import { f } from '../../bersama/ui';
-import { arahProyektor, type Benda, berkasLineArray, cakupanSpeakerPlafon, DISPLAY, geserLensaDari, jangkauanDari, modulLA, offsetLensaDari, ruangDari, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, throwRatioDari, TINGGI_DENGAR, tipeSpeakerDari } from '../inti';
+import { arahProyektor, type Benda, berkasLineArray, cakupanSpeakerPlafon, DISPLAY, geserLensaDari, jangkauanDari, modulLA, offsetLensaDari, ruangDari, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, throwRatioDari, TINGGI_DENGAR, tipeSpeakerDari, arahSinar, lensaDari, type Lensa, type Titik } from '../inti';
 import { gambarJalurKabel } from './gambarKabel';
+import { gambarBlending } from './blending';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import type { Mesin } from './tipe';
 
-export type KeadaanAlatBantu = Pick<KeadaanDesain, 'analisis' | 'benda' | 'garisUkur' | 'jangkau' | 'kabel' | 'kerucut' | 'kotakRuang' | 'labelProduk' | 'pilih' | 'plafonDi' | 'ruang' | 'sinar' | 'sudutNyaman' | 'tampilKabel' | 'ukur'>;
+export type KeadaanAlatBantu = Pick<KeadaanDesain, 'analisis' | 'benda' | 'garisUkur' | 'jangkau' | 'kabel' | 'kerucut' | 'kotakRuang' | 'labelProduk' | 'pilih' | 'plafonDi' | 'ruang' | 'sinar' | 'sudutNyaman' | 'tampilKabel' | 'ukur' | 'tampilBlending' | 'setInfoBlending'>;
 
 export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
   const { THREE, grupBantu, CSS2DObject } = m;
-  const { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, pilih, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, ukur } = k;
+  const { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, pilih, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, ukur, tampilBlending, setInfoBlending } = k;
   //  Isi lama dibuang BESERTA geometri & materialnya: efek ini berjalan tiap
   //  frame selama benda diseret, jadi tanpa dispose memori GPU terus naik.
   grupBantu.traverse(o => {
@@ -23,10 +24,10 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     mats.forEach(mt => mt.dispose());
   });
   grupBantu.clear();
-  const label = (teks: string, pos: T.Vector3, nada: 'biru' | 'hijau' | 'merah' | 'abu' = 'biru') => {
+  const label = (teks: string, pos: T.Vector3, nada: 'biru' | 'hijau' | 'merah' | 'abu' | 'ungu' = 'biru') => {
     const el = document.createElement('div');
     el.textContent = teks;
-    const latar = { hijau: '#047857', merah: '#b91c1c', biru: '#1d4ed8', abu: '#334155' }[nada];
+    const latar = { hijau: '#047857', merah: '#b91c1c', biru: '#1d4ed8', abu: '#334155', ungu: '#7c3aed' }[nada];
     el.style.cssText = `font:600 11px system-ui,sans-serif;padding:2px 6px;border-radius:6px;white-space:nowrap;color:#fff;background:${latar};box-shadow:0 1px 3px rgba(0,0,0,.3)`;
     const o = new CSS2DObject(el); o.position.copy(pos); grupBantu.add(o);
   };
@@ -76,95 +77,115 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
   // SEMUA permukaan - dinding, lantai, plafon, layar, bidang lengkung/cembung, furnitur, dan objek
   // .glb impor. Gambar jatuh tepat mengikuti permukaannya (melipat di sudut, menekuk di lengkungan);
   // tumpang-tindih antar proyektor (blending) tampil lebih terang karena dijumlahkan (aditif).
-  if (sinar) {
-    const daftarProj = benda.filter(p => p.jenis === 'proyektor');
-    if (daftarProj.length) {
-      m.scene.updateMatrixWorld(true);
-      const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
-      (ray.params as { Line?: { threshold: number } }).Line = { threshold: 0.0001 };
-      //  Saat menyeret: grid lebih kasar supaya tetap lancar.
-      const kasar = m.gizmo.dragging;
-      const NX = kasar ? 12 : 24, NY = kasar ? 7 : 14;
-      const cahaya = { transparent: true, depthWrite: false, toneMapped: false };
-      //  Banyak proyektor (immersive): kerucut & bidang gambar diredam supaya tumpukannya tidak silau,
-      //  label hanya untuk proyektor yang sedang dipilih.
-      const banyak = daftarProj.length > 4, redam = banyak ? 0.35 : 1;
-      daftarProj.forEach((p, idx) => {
-        const sn = sinarProyektor(p, benda, ruang);
-        const O = new THREE.Vector3(...sn.asal);
-        const sendiri = m.cache.get(p.id)?.obj;
-        const sasaran = [...m.grupRuang.children, ...m.grupBenda.children.filter(o => o !== sendiri && !o.userData.sorot)];
-        const r = (p.rot * Math.PI) / 180;
-        const D = new THREE.Vector3(...arahProyektor(p)).normalize();
-        const kanan = new THREE.Vector3(-Math.cos(r), 0, Math.sin(r));
-        const atas = new THREE.Vector3().crossVectors(kanan, D).normalize();
-        const w1 = 1 / throwRatioDari(p), h1 = (w1 * 9) / 16, arahV = p.pasangProyektor === 'meja' ? 1 : -1;
-        const offV = offsetLensaDari(p), gH = geserLensaDari(p);
-        const kena: (T.Vector3 | null)[] = [];
-        const arah = new THREE.Vector3();
-        for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
-          const u = i / (NX - 1) - 0.5, v = j / (NY - 1) - 0.5;
-          arah.copy(D).addScaledVector(kanan, (u + gH) * w1).addScaledVector(atas, (v + arahV * offV) * h1).normalize();
-          ray.set(O, arah);
-          const hit = ray.intersectObjects(sasaran, true).find(h => {
-            const o = h.object as T.Mesh;
-            if (!o.isMesh) return false;
-            const mt = (Array.isArray(o.material) ? o.material[0] : o.material) as T.Material & { opacity?: number };
-            return !(mt?.transparent && (mt.opacity ?? 1) < 0.6);    // kaca & bayangan ditembus cahaya
-          });
-          kena.push(hit ? hit.point.clone().addScaledVector(arah, -0.012) : null);
-        }
-        const sel = (i: number, j: number) => kena[j * NX + i];
-        //  Bidang gambar: sel grid yang keempat sudutnya kena & tidak "melompat" (tepi objek ke dinding di belakangnya).
-        const pos: number[] = [];
-        for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
-          const A = sel(i, j), B = sel(i + 1, j), C = sel(i + 1, j + 1), Dd = sel(i, j + 1);
-          if (!A || !B || !C || !Dd) continue;
-          const jarak = (A.distanceTo(O) + C.distanceTo(O)) / 2;
-          const batas = ((jarak * w1) / (NX - 1)) * 6 + 0.05;
-          if (A.distanceTo(B) > batas || B.distanceTo(C) > batas || C.distanceTo(Dd) > batas || Dd.distanceTo(A) > batas) continue;
-          pos.push(A.x, A.y, A.z, B.x, B.y, B.z, C.x, C.y, C.z, A.x, A.y, A.z, C.x, C.y, C.z, Dd.x, Dd.y, Dd.z);
-        }
-        if (pos.length) {
-          const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-          const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfff1c2, opacity: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1), side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
-          gambar.renderOrder = 2; grupBantu.add(gambar);
-        }
-        //  Tepi gambar (warna per proyektor) + kerucut cahaya dari lensa ke tepi itu.
-        const tepi: T.Vector3[] = [];
-        for (let i = 0; i < NX; i++) tepi.push(sel(i, 0)!);
-        for (let j = 1; j < NY; j++) tepi.push(sel(NX - 1, j)!);
-        for (let i = NX - 2; i >= 0; i--) tepi.push(sel(i, NY - 1)!);
-        for (let j = NY - 2; j > 0; j--) tepi.push(sel(0, j)!);
-        const warnaTepi = new THREE.Color().setHSL((0.1 + idx * 0.17) % 1, 0.9, 0.55);
-        const garis: number[] = [], kerucut: number[] = [], alfa: number[] = [];
-        for (let i = 0; i < tepi.length; i++) {
-          const A = tepi[i], B = tepi[(i + 1) % tepi.length];
-          if (!A || !B) continue;
-          if (A.distanceTo(B) < Math.max(0.6, A.distanceTo(O) * w1 * 0.4)) garis.push(A.x, A.y, A.z, B.x, B.y, B.z);
-          kerucut.push(O.x, O.y, O.z, A.x, A.y, A.z, B.x, B.y, B.z);
-          alfa.push(1, 0.84, 0.36, 0.45 * redam, 1, 0.9, 0.55, 0.08 * redam, 1, 0.9, 0.55, 0.08 * redam);
-        }
-        if (garis.length) {
-          const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(garis, 3));
-          grupBantu.add(new THREE.LineSegments(g2, new THREE.LineBasicMaterial({ ...cahaya, color: warnaTepi, opacity: 0.95 })));
-        }
-        if (kerucut.length) {
-          const g3 = new THREE.BufferGeometry();
-          g3.setAttribute('position', new THREE.Float32BufferAttribute(kerucut, 3)); g3.setAttribute('color', new THREE.Float32BufferAttribute(alfa, 4));
-          const kerucutSinar = new THREE.Mesh(g3, new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, side: THREE.DoubleSide }));
-          kerucutSinar.renderOrder = 2; grupBantu.add(kerucutSinar);
-        }
-        const kilau = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfffbeb, blending: THREE.AdditiveBlending, opacity: 0.95 }));
-        kilau.position.copy(O); grupBantu.add(kilau);
-        if (ukur && (!banyak || p.id === pilih)) {
-          const tengah = sel(Math.floor(NX / 2), Math.floor(NY / 2));
-          const jarakSumbu = sn.layar ? sn.jarak : tengah ? tengah.distanceTo(O) : sn.jarak;
-          const teks = `${p.nama}: lempar ${f(jarakSumbu)} m · gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`;
-          label(teks, tengah ? O.clone().lerp(tengah, 0.3) : O.clone().addScaledVector(D, 0.5), 'abu');
-        }
+  // "Area blending": lebar (cm) & persen tumpang tiap pasangan + zona ungu - mesin/blending.ts.
+  const daftarProj = benda.filter(p => p.jenis === 'proyektor');
+  const hitungBlend = tampilBlending && daftarProj.length >= 2;
+  if (!hitungBlend) setInfoBlending(v => (v.length ? [] : v));
+  if ((sinar || hitungBlend) && daftarProj.length) {
+    m.scene.updateMatrixWorld(true);
+    const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
+    (ray.params as { Line?: { threshold: number } }).Line = { threshold: 0.0001 };
+    //  Saat menyeret: grid lebih kasar supaya tetap lancar.
+    const kasar = m.gizmo.dragging;
+    const NX = kasar ? 12 : 24, NY = kasar ? 7 : 14;
+    const cahaya = { transparent: true, depthWrite: false, toneMapped: false };
+    //  Banyak proyektor (immersive): kerucut & bidang gambar diredam supaya tumpukannya tidak silau,
+    //  label hanya untuk proyektor yang sedang dipilih.
+    const banyak = daftarProj.length > 4, redam = banyak ? 0.35 : 1;
+    /** Titik permukaan pertama yang terkena sinar (kaca & bayangan ditembus), mundur 1,2 cm ke arah lensa. */
+    const tembak = (O: T.Vector3, arah: T.Vector3, sasaran: T.Object3D[]): T.Vector3 | null => {
+      ray.set(O, arah);
+      const hit = ray.intersectObjects(sasaran, true).find(h => {
+        const o = h.object as T.Mesh;
+        if (!o.isMesh) return false;
+        const mt = (Array.isArray(o.material) ? o.material[0] : o.material) as T.Material & { opacity?: number };
+        return !(mt?.transparent && (mt.opacity ?? 1) < 0.6);
       });
-    }
+      return hit ? hit.point.clone().addScaledVector(arah, -0.012) : null;
+    };
+    /** Data per proyektor untuk area blending (inti/blending.ts). */
+    const dataBlend: { p: Benda; L: Lensa; O: T.Vector3; sasaran: T.Object3D[]; kena: (T.Vector3 | null)[]; baris: (Titik | null)[]; kolom: (Titik | null)[] }[] = [];
+    daftarProj.forEach((p, idx) => {
+      const sn = sinarProyektor(p, benda, ruang);
+      const O = new THREE.Vector3(...sn.asal);
+      const sendiri = m.cache.get(p.id)?.obj;
+      const sasaran = [...m.grupRuang.children, ...m.grupBenda.children.filter(o => o !== sendiri && !o.userData.sorot)];
+      const r = (p.rot * Math.PI) / 180;
+      const D = new THREE.Vector3(...arahProyektor(p)).normalize();
+      const kanan = new THREE.Vector3(-Math.cos(r), 0, Math.sin(r));
+      const atas = new THREE.Vector3().crossVectors(kanan, D).normalize();
+      const w1 = 1 / throwRatioDari(p), h1 = (w1 * 9) / 16, arahV = p.pasangProyektor === 'meja' ? 1 : -1;
+      const offV = offsetLensaDari(p), gH = geserLensaDari(p);
+      const kena: (T.Vector3 | null)[] = [];
+      const arah = new THREE.Vector3();
+      for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
+        const u = i / (NX - 1) - 0.5, v = j / (NY - 1) - 0.5;
+        arah.copy(D).addScaledVector(kanan, (u + gH) * w1).addScaledVector(atas, (v + arahV * offV) * h1).normalize();
+        kena.push(tembak(O, arah, sasaran));
+      }
+      const sel = (i: number, j: number) => kena[j * NX + i];
+      if (hitungBlend) {
+        //  Garis tengah mendatar & tegak gambar, sampel rapat (lebih kasar saat menyeret) - dasar ukur blending.
+        const L = lensaDari(p), NB = kasar ? 31 : 81, NV = kasar ? 21 : 49;
+        const keT = (v: T.Vector3 | null): Titik | null => (v ? [v.x, v.y, v.z] : null);
+        const sampel = (u: number, v: number) => keT(tembak(O, arah.set(...arahSinar(L, u, v)), sasaran));
+        dataBlend.push({
+          p, L, O, sasaran, kena,
+          baris: Array.from({ length: NB }, (_, i) => sampel(i / (NB - 1) - 0.5, 0)),
+          kolom: Array.from({ length: NV }, (_, j) => sampel(0, j / (NV - 1) - 0.5)),
+        });
+      }
+      if (!sinar) return;
+      //  Bidang gambar: sel grid yang keempat sudutnya kena & tidak "melompat" (tepi objek ke dinding di belakangnya).
+      const pos: number[] = [];
+      for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
+        const A = sel(i, j), B = sel(i + 1, j), C = sel(i + 1, j + 1), Dd = sel(i, j + 1);
+        if (!A || !B || !C || !Dd) continue;
+        const jarak = (A.distanceTo(O) + C.distanceTo(O)) / 2;
+        const batas = ((jarak * w1) / (NX - 1)) * 6 + 0.05;
+        if (A.distanceTo(B) > batas || B.distanceTo(C) > batas || C.distanceTo(Dd) > batas || Dd.distanceTo(A) > batas) continue;
+        pos.push(A.x, A.y, A.z, B.x, B.y, B.z, C.x, C.y, C.z, A.x, A.y, A.z, C.x, C.y, C.z, Dd.x, Dd.y, Dd.z);
+      }
+      if (pos.length) {
+        const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+        const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfff1c2, opacity: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1), side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+        gambar.renderOrder = 2; grupBantu.add(gambar);
+      }
+      //  Tepi gambar (warna per proyektor) + kerucut cahaya dari lensa ke tepi itu.
+      const tepi: T.Vector3[] = [];
+      for (let i = 0; i < NX; i++) tepi.push(sel(i, 0)!);
+      for (let j = 1; j < NY; j++) tepi.push(sel(NX - 1, j)!);
+      for (let i = NX - 2; i >= 0; i--) tepi.push(sel(i, NY - 1)!);
+      for (let j = NY - 2; j > 0; j--) tepi.push(sel(0, j)!);
+      const warnaTepi = new THREE.Color().setHSL((0.1 + idx * 0.17) % 1, 0.9, 0.55);
+      const garis: number[] = [], kerucut: number[] = [], alfa: number[] = [];
+      for (let i = 0; i < tepi.length; i++) {
+        const A = tepi[i], B = tepi[(i + 1) % tepi.length];
+        if (!A || !B) continue;
+        if (A.distanceTo(B) < Math.max(0.6, A.distanceTo(O) * w1 * 0.4)) garis.push(A.x, A.y, A.z, B.x, B.y, B.z);
+        kerucut.push(O.x, O.y, O.z, A.x, A.y, A.z, B.x, B.y, B.z);
+        alfa.push(1, 0.84, 0.36, 0.45 * redam, 1, 0.9, 0.55, 0.08 * redam, 1, 0.9, 0.55, 0.08 * redam);
+      }
+      if (garis.length) {
+        const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(garis, 3));
+        grupBantu.add(new THREE.LineSegments(g2, new THREE.LineBasicMaterial({ ...cahaya, color: warnaTepi, opacity: 0.95 })));
+      }
+      if (kerucut.length) {
+        const g3 = new THREE.BufferGeometry();
+        g3.setAttribute('position', new THREE.Float32BufferAttribute(kerucut, 3)); g3.setAttribute('color', new THREE.Float32BufferAttribute(alfa, 4));
+        const kerucutSinar = new THREE.Mesh(g3, new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, side: THREE.DoubleSide }));
+        kerucutSinar.renderOrder = 2; grupBantu.add(kerucutSinar);
+      }
+      const kilau = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfffbeb, blending: THREE.AdditiveBlending, opacity: 0.95 }));
+      kilau.position.copy(O); grupBantu.add(kilau);
+      if (ukur && (!banyak || p.id === pilih)) {
+        const tengah = sel(Math.floor(NX / 2), Math.floor(NY / 2));
+        const jarakSumbu = sn.layar ? sn.jarak : tengah ? tengah.distanceTo(O) : sn.jarak;
+        const teks = `${p.nama}: lempar ${f(jarakSumbu)} m · gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`;
+        label(teks, tengah ? O.clone().lerp(tengah, 0.3) : O.clone().addScaledVector(D, 0.5), 'abu');
+      }
+    });
+    if (hitungBlend) gambarBlending(m, dataBlend, NX, NY, label, setInfoBlending);
   }
   //  Jangkauan suara speaker (kerucut sebaran H x V), dipotong di dinding, lantai & plafon ruangnya.
   //  Line array: satu berkas per modul + titik jatuh sumbunya di tinggi telinga. Tampil hanya bila

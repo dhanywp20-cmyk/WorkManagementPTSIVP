@@ -5,7 +5,7 @@ import { Copy, CopyPlus, Settings2, Trash2 } from 'lucide-react';
 import type { AlatDesain } from './alat';
 
 export function KontrolKanvas({ a }: { a: AlatDesain }) {
-  const { adaProyektor, bayangan, benda, chipBuka, duaRuang, garisUkur, jangkau, kabel, kabelPower, kerucut, kotakRuang, labelProduk, panel, ruang, setBayangan, setBenda, setChipBuka, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setPanel, setPilih, setSinar, setSisi, setTampilKabel, setUkur, sinar, tampilKabel, terpilih, ukur } = a.K;
+  const { adaProyektor, bayangan, benda, chipBuka, duaRuang, garisUkur, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, kotakRuang, labelProduk, panel, ruang, setBayangan, setBenda, setChipBuka, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setPanel, setPilih, setSinar, setSisi, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, terpilih, ukur } = a.K;
   const { duplikat, salinKeRuangLain } = a.aksi;
   return (
     <>
@@ -20,6 +20,7 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
             { v: labelProduk, s: setLabelProduk, l: 'Label produk' },
             { v: kerucut, s: setKerucut, l: 'Sudut pandang' },
             ...(adaProyektor ? [{ v: sinar, s: setSinar, l: 'Sinar proyektor' }] : []),
+            ...(jumlahProyektor >= 2 ? [{ v: tampilBlending, s: setTampilBlending, l: 'Area blending' }] : []),
             ...(benda.some(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon') ? [{ v: jangkau, s: setJangkau, l: 'Jangkauan speaker' }] : []),
             ...(kabel.length ? [{ v: tampilKabel, s: setTampilKabel, l: 'Jalur kabel' }] : []),
             ...(kabel.length && tampilKabel ? [{ v: kabelPower, s: setKabelPower, l: 'Kabel power' }] : []),
