@@ -262,6 +262,8 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
   const [reviewNotifs, setReviewNotifs]   = useState<NotificationItem[]>([]);
   // User-specific in-app notifications (from `notifications` table)
   const [personalNotifs, setPersonalNotifs] = useState<NotificationItem[]>([]);
+  /** Bertambah setiap fetchAll SELESAI (kelima daftar sudah terisi) - pemicu cek alarm suara. */
+  const [putaranMuat, setPutaranMuat] = useState(0);
 
   //  Alarm suara - bunyi begitu ada ticket/notifikasi BARU, supaya orang yang
   //  membiarkan tab ini terbuka seharian tidak harus melirik layar terus.
@@ -784,6 +786,7 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
         refId: n.ref_id ?? undefined,
       })));
     } catch { /* notifications table might not exist yet — fail silently */ }
+    setPutaranMuat(n => n + 1);
     // Keempat izin ikut jadi dependensi: kalau tidak, pengaturan lonceng yang
     // baru disimpan akan mengubah tombolnya tapi tidak isinya.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -853,9 +856,17 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
     TIDAK bunyi pada pemuatan pertama halaman - tanpa ini, siapa pun yang
     login dan langsung punya beberapa notifikasi lama akan disambut alarm,
     padahal tidak ada satu pun yang baru.
+
+    Dicek sekali per fetchAll yang SELESAI (putaranMuat), bukan tiap kali
+    salah satu daftar berubah: kelima daftar terisi bergantian di antara
+    await, jadi dulu patokan awalnya terpasang saat semua masih kosong lalu
+    tiap daftar yang datang dianggap "baru" - alarm berbunyi sampai 5x
+    begitu aplikasi dibuka. Rentetan bunyi berdekatan juga diredam di
+    useNotifSoundAlarm (sekali per jeda), walau notifikasinya banyak.
   */
   const prevNotifIdsRef = useRef<Set<string> | null>(null);
   useEffect(() => {
+    if (!putaranMuat) return;
     const idSekarang = new Set<string>([
       ...ticketNotifs.map(n => `tk:${n.id}`),
       ...requireNotifs.map(n => `rq:${n.id}`),
@@ -869,7 +880,9 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
       if (adaBaru) mainkanAlarm();
     }
     prevNotifIdsRef.current = idSekarang;
-  }, [ticketNotifs, requireNotifs, reminderNotifs, reviewNotifs, personalNotifs, mainkanAlarm]);
+    // Daftar dibaca dari render yang sama dengan putaranMuat (diset bersamaan); sengaja tidak jadi dependensi.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [putaranMuat]);
 
   const handleClick = (item: NotificationItem) => {
     // Mark personal notification as read if it came from the `notifications` table
