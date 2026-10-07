@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
   if (!data?.path) return NextResponse.json({ ok: false, alasan: 'Belum ada rilis APK.' }, { status: 404 });
 
   const { data: url, error } = await db.storage.from('aplikasi-android')
-    .createSignedUrl(data.path, 600, { download: `work-management-v${data.versi}.apk` });
+    //  Nama berkas di HP pengguna: Work-ManagementPTS-<versi>.apk (sama dengan hasil build CI).
+    .createSignedUrl(data.path, 600, { download: `Work-ManagementPTS-${String(data.versi).replace(/^v/i, '')}.apk` });
   if (error || !url) return NextResponse.json({ ok: false, alasan: error?.message ?? 'Gagal membuat tautan.' }, { status: 500 });
   return NextResponse.redirect(url.signedUrl, 302);
 }
