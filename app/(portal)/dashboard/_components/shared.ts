@@ -195,8 +195,7 @@ export const ROLE_BADGE: Record<string, string> = {
 
 
 // Brand mappings (from BrandPicSettingModal section)
-export const DISPLAY_BRANDS_DB = ['Microvision', 'Philips', 'Panasonic', 'Newline', 'Promethean', 'Maxhub', 'Ledman', 'Taniled', 'Vivitek'];
-export const MIDDLEWARE_BRANDS_DB = ['Tricolor', 'Wyrestorm', 'Extron', 'Crestron', 'AVCiT', 'Brightsign', 'Cue'];
+// Daftar merek display & middleware: Admin Panel › Daftar Pilihan (lib/daftar-pilihan.ts).
 
 export interface BrandPicMappingDB {
   id?: string;
@@ -227,6 +226,6 @@ export interface NotifBellProps {
 
 // Admin Panel props
 export interface AdminPanelModalProps {
-  initialTab: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara';
+  initialTab: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan';
   onClose: () => void;
 }

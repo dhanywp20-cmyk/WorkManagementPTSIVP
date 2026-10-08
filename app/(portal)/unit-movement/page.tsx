@@ -1,4 +1,5 @@
 'use client';
+import { denganNilai, useDaftarPilihan } from '@/lib/daftar-pilihan';
 
 import { useState, useEffect, useMemo, Suspense, type CSSProperties } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -7,7 +8,7 @@ import { isPimpinan } from '@/lib/pimpinan';
 import { namaKelompokPTSDitugaskan } from '@/lib/kelompok';
 import { MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, PageHeader, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal , Paginasi, usePaginasi } from '@/components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
-import { User, MovementLog, EVENTS, COLORS, splitTypeLines, fmtDate } from './_components/shared';
+import { User, MovementLog, COLORS, splitTypeLines, fmtDate } from './_components/shared';
 import { logAudit } from '@/lib/audit';
 import { hasFullAccess } from '@/lib/constants';
 import { ViewModal } from './_components/ViewModal';
@@ -19,6 +20,8 @@ import { URL_XLSX } from '@/lib/xlsx-loader';
 // Main Page
 
 function UnitMovementPageInner() {
+  //  Daftar event: Admin Panel › Daftar Pilihan.
+  const daftarEvent = useDaftarPilihan('unit-event');
   const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<User|null>(null);
   const [isLoggedIn,  setIsLoggedIn]  = useState(false);
@@ -430,7 +433,7 @@ function UnitMovementPageInner() {
               <select aria-label="Semua Event" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={filterEvent} onChange={e=>setFilterEvent(e.target.value)}>
                 <option value="All">Semua Event</option>
-                {EVENTS.map(ev=><option key={ev} value={ev}>{ev}</option>)}
+                {denganNilai(daftarEvent, filterEvent === 'All' ? null : filterEvent).map(ev=><option key={ev} value={ev}>{ev}</option>)}
               </select>
               <select aria-label="Semua Anggota" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={filterPTS} onChange={e=>setFilterPTS(e.target.value)}>

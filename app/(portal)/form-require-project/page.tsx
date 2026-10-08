@@ -21,8 +21,7 @@ import {
   ProjectMessage, ProjectAttachment,
   statusConfig, JABATAN_TIER, JABATAN_CC_RULES,
   fetchWACCTargets, sendWANotif, emptyRoom,
-  SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS,
-  PIE_COLORS, getRoomStatus, getRoomAssignName, getRoomAssignUserId, hasDivergentRoomStatus,
+  SALES_DIVISIONS, PIE_COLORS, getRoomStatus, getRoomAssignName, getRoomAssignUserId, hasDivergentRoomStatus,
 } from './_components/shared';
 import {
   AssignPTSModal, RoomSection, NewFormModal,

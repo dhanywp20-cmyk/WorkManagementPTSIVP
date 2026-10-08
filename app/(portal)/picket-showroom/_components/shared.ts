@@ -28,17 +28,10 @@ export const TEAM_LABEL: Record<string,{dot:string;text:string}> = {
  */
 export const DEFAULT_TEAM_COLOR = {dot:'#64748b',text:'#475569'};
 
-export const KEBUTUHAN_LIST = [
-  'Meeting Room','Auditorium','Command Center','Digital Signage Kiosk',
-  'Digital Signage Custom','Paging System','Background Music','Signage LED Outdoor',
-  'Smartclass Room','Ballroom','Camera ETLE','Conference Room',
-  'Paperless System','Delegate System','Camera Tracking',
-];
-
-export const PRODUK_LIST = ['All Product','Videowall','LED','IFP','Projector','Audio System','Lighting','Kiosk'];
-
-export const JENIS_KEGIATAN_LIST = ['Demo Product','RnD','Maintenance','Shooting Markom'] as const;
-export type JenisKegiatan = typeof JENIS_KEGIATAN_LIST[number];
+//  Kebutuhan tamu, produk showroom & jenis kegiatan: Admin Panel › Daftar Pilihan
+//  (useDaftarPilihan('piket-kebutuhan' | 'piket-produk' | 'piket-kegiatan'), lib/daftar-pilihan-bawaan.ts).
+//  "Demo Product", "RnD" & "All Product" terkunci karena memicu isian / hitungan khusus.
+export type JenisKegiatan = string;
 
 /**
  * Daftar divisi sales - HANYA nilai bawaan, bukan lagi sumber kebenaran.
@@ -148,7 +141,7 @@ export function tulisPicPiket(u: { id:string; full_name?:string|null; team_type?
   };
 }
 
-// Barang temporer di luar PRODUK_LIST default - dicatat beban dayanya (watt)
+// Barang temporer di luar daftar produk showroom - dicatat beban dayanya (watt)
 export interface ProdukLain { nama:string; watt:number }
 
 export interface KegiatanEntry {

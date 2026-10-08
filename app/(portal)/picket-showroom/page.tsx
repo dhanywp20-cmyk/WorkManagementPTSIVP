@@ -1,4 +1,5 @@
 'use client';
+import { denganNilai, useDaftarPilihan, produkSpesifik } from '@/lib/daftar-pilihan';
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -11,7 +12,7 @@ import { bisaLihatSemuaTamu, bisaIsiKegiatan } from '@/lib/piket-akses';
 import {
   PiketRow, KegiatanEntry, UserRow, DayOfWeek,
   DAYS_OF_WEEK, DAY_COLOR, TEAM_LABEL, DEFAULT_TEAM_COLOR,
-  JENIS_KEGIATAN_LIST, KEGIATAN_COLORS, PIE_COLORS,
+  KEGIATAN_COLORS, PIE_COLORS,
   getMonday, addDays, toKey, getDayDate, getRollingNameForDate,
   bacaPicPiket, tulisPicPiket,
 } from './_components/shared';
@@ -29,6 +30,9 @@ import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 // Main Page
 
 function PiketShowroomPageInner() {
+  //  Daftar pilihan: Admin Panel › Daftar Pilihan.
+  const daftarKegiatan = useDaftarPilihan('piket-kegiatan');
+  const daftarProduk = useDaftarPilihan('piket-produk');
   const searchParams = useSearchParams();
   const [currentUser,setCurrentUser]=useState<any>(null);
   const [weekStart,setWeekStart]=useState<Date>(()=>getMonday(new Date()));
@@ -324,9 +328,9 @@ function PiketShowroomPageInner() {
   });
   const kPieAll=Object.entries(filteredKgPie.reduce((acc,k)=>{(k.kebutuhan||[]).forEach(x=>{acc[x]=(acc[x]||0)+1;});return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
   const divPieAll=Object.entries(filteredKgPie.reduce((acc,k)=>{if(k.sales_division)acc[k.sales_division]=(acc[k.sales_division]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
-  const kgTypePie=JENIS_KEGIATAN_LIST.map(j=>({label:j,value:filteredKgPie.filter(k=>k.jenis_kegiatan===j).length,color:KEGIATAN_COLORS[j]})).filter(d=>d.value>0);
+  const kgTypePie=denganNilai(daftarKegiatan, filteredKgPie.map(k=>k.jenis_kegiatan)).map((j,i)=>({label:j,value:filteredKgPie.filter(k=>k.jenis_kegiatan===j).length,color:KEGIATAN_COLORS[j]||PIE_COLORS[i%PIE_COLORS.length]})).filter(d=>d.value>0);
   const instansiPie=Object.entries(filteredKgPie.filter(k=>k.tamu_instansi).reduce((acc,k)=>{const key=k.tamu_instansi!;acc[key]=(acc[key]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
-  const PRODUK_SPESIFIK=['Videowall','LED','IFP','Projector','Audio System','Lighting','Kiosk'];
+  const PRODUK_SPESIFIK=produkSpesifik(daftarProduk);
   const produkPie=Object.entries(filteredKgPie.reduce((acc,k)=>{
     const produk=k.produk||[];
     if(produk.includes('All Product')){
@@ -466,7 +470,7 @@ function PiketShowroomPageInner() {
                   <option value="">Semua Hari</option>{DAYS_OF_WEEK.map(d=><option key={d} value={d}>{d}</option>)}
                 </select>
                 <select aria-label="Semua Kegiatan" value={filterKegiatan||''} onChange={e=>setFilterKegiatan(e.target.value||null)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
-                  <option value="">Semua Kegiatan</option>{JENIS_KEGIATAN_LIST.map(j=><option key={j} value={j}>{j}</option>)}
+                  <option value="">Semua Kegiatan</option>{denganNilai(daftarKegiatan, filterKegiatan).map(j=><option key={j} value={j}>{j}</option>)}
                 </select>
                 <button onClick={()=>setFilterTamu(f=>!f)} className="px-3 py-2 rounded-xl text-xs font-semibold border"
                   style={filterTamu?{background:'rgba(16,185,129,0.12)',borderColor:'rgba(16,185,129,0.4)',color:'#047857'}:{background:'transparent',borderColor:'rgba(0,0,0,0.1)',color:'#64748b'}}>

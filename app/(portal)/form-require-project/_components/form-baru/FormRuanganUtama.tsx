@@ -1,8 +1,9 @@
 'use client';
+import { denganNilai, useDaftarPilihan } from '@/lib/daftar-pilihan';
 
 /** FormRuanganUtama - dipecah dari app/(portal)/form-require-project/_components/Modals.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
-import { User, RoomDetail, BrandPicMapping, DISPLAY_BRANDS, MIDDLEWARE_BRANDS } from '../shared';
+import { User, RoomDetail, BrandPicMapping } from '../shared';
 import { RoomSection, type InitialFormType } from '../Modals';
 
 export interface FormRuanganUtamaProps {
@@ -30,6 +31,8 @@ export interface FormRuanganUtamaProps {
 }
 
 export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqRoomMap, brandPicMappings, currentUser, form, roomPhotoMap, rooms, setActiveRoomIdx, setBoqFormFile, setBoqRoomMap, setForm, setRoomPhotoMap, setRooms, setSurveyPhotos, setSurveyPhotosPreviews, surveyPhotoRef, surveyPhotos, surveyPhotosPreviews, toggleArr }: FormRuanganUtamaProps) {
+  const merekDisplay = useDaftarPilihan('merek-display');
+  const merekMiddleware = useDaftarPilihan('merek-middleware');
   return (
     <>
       {activeRoomIdx === 0 ? (
@@ -91,7 +94,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
               setForm(prev => ({...prev, brand_display:brand, brand_display_pic_id:pic?.pic_user_id||'', brand_display_pic_name:pic?.pic_user_name||''}));
             }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400 appearance-none">
               <option value="">— Pilih Brand Display —</option>
-              {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+              {denganNilai(merekDisplay, form.brand_display).map(b => <option key={b} value={b}>{b}</option>)}
             </select>
             {form.brand_display && form.brand_display_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {form.brand_display_pic_name}</p>}
             {form.brand_display && !form.brand_display_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-set admin</p>}
@@ -104,7 +107,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
             setForm(prev => ({...prev, brand_display_2:brand, brand_display_2_pic_id:pic?.pic_user_id||'', brand_display_2_pic_name:pic?.pic_user_name||''}));
           }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400">
             <option value="">— Pilih Brand Display 2 —</option>
-            {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+            {denganNilai(merekDisplay, form.brand_display_2).map(b => <option key={b} value={b}>{b}</option>)}
           </select>
           {form.brand_display_2 && form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1"><IkonTeks nama="👤" />PIC: {form.brand_display_2_pic_name}</p>}
           {form.brand_display_2 && !form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-mapping</p>}
@@ -117,7 +120,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
               setForm(prev => ({...prev, brand_middleware:brand, brand_middleware_pic_id:pic?.pic_user_id||'', brand_middleware_pic_name:pic?.pic_user_name||''}));
             }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-violet-400 appearance-none">
               <option value="">— Pilih Brand Middleware —</option>
-              {MIDDLEWARE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+              {denganNilai(merekMiddleware, form.brand_middleware).map(b => <option key={b} value={b}>{b}</option>)}
             </select>
             {form.brand_middleware && form.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-violet-700 font-semibold bg-violet-50 border border-violet-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {form.brand_middleware_pic_name}</p>}
             {form.brand_middleware && !form.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-set admin</p>}

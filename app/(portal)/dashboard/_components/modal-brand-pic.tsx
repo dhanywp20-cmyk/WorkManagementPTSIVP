@@ -2,13 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 
-import { DISPLAY_BRANDS_DB, MIDDLEWARE_BRANDS_DB, BrandPicMappingDB } from './shared';
+import { BrandPicMappingDB } from './shared';
+import { useDaftarPilihan } from '@/lib/daftar-pilihan';
 import { ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // BrandPicSettingModal
 
 export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
+  //  Daftar merek: Admin Panel › Daftar Pilihan.
+  const merekDisplay = useDaftarPilihan('merek-display');
+  const merekMiddleware = useDaftarPilihan('merek-middleware');
   const [brandUsers, setBrandUsers] = useState<{id:string;full_name:string;sales_division?:string}[]>([]);
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -36,8 +40,8 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
     setSaving(true);
     try {
       const allBrands = [
-        ...DISPLAY_BRANDS_DB.map(b=>({brand_type:'display' as const,brand_name:b})),
-        ...MIDDLEWARE_BRANDS_DB.map(b=>({brand_type:'middleware' as const,brand_name:b})),
+        ...merekDisplay.map(b=>({brand_type:'display' as const,brand_name:b})),
+        ...merekMiddleware.map(b=>({brand_type:'middleware' as const,brand_name:b})),
       ];
       for (const {brand_type,brand_name} of allBrands) {
         const key = `${brand_type}:${brand_name}`;
@@ -86,13 +90,13 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
               <div>
                 <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3"><IkonTeks nama="🖥" />Brand Display</p>
                 <div className="bg-amber-50/50 rounded-xl border border-amber-200 px-4 py-1">
-                  {DISPLAY_BRANDS_DB.map(b=><Row key={b} type="display" brand={b}/>)}
+                  {merekDisplay.map(b=><Row key={b} type="display" brand={b}/>)}
                 </div>
               </div>
               <div>
                 <p className="text-sm font-bold text-violet-700 uppercase tracking-widest mb-3"><IkonTeks nama="🔌" />Brand Middleware</p>
                 <div className="bg-violet-50/50 rounded-xl border border-violet-200 px-4 py-1">
-                  {MIDDLEWARE_BRANDS_DB.map(b=><Row key={b} type="middleware" brand={b}/>)}
+                  {merekMiddleware.map(b=><Row key={b} type="middleware" brand={b}/>)}
                 </div>
               </div>
             </>
@@ -112,6 +116,9 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
 
 // BrandPicSettingContent (reusable inline, no overlay)
 export function BrandPicSettingContent() {
+  //  Daftar merek: Admin Panel › Daftar Pilihan.
+  const merekDisplay = useDaftarPilihan('merek-display');
+  const merekMiddleware = useDaftarPilihan('merek-middleware');
   const [brandUsers, setBrandUsers] = useState<{id:string;full_name:string;sales_division?:string}[]>([]);
   const [mappings, setMappings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -139,8 +146,8 @@ export function BrandPicSettingContent() {
     setSaving(true);
     try {
       const allBrands = [
-        ...DISPLAY_BRANDS_DB.map(b=>({brand_type:'display' as const,brand_name:b})),
-        ...MIDDLEWARE_BRANDS_DB.map(b=>({brand_type:'middleware' as const,brand_name:b})),
+        ...merekDisplay.map(b=>({brand_type:'display' as const,brand_name:b})),
+        ...merekMiddleware.map(b=>({brand_type:'middleware' as const,brand_name:b})),
       ];
       for (const {brand_type,brand_name} of allBrands) {
         const key = `${brand_type}:${brand_name}`;
@@ -190,13 +197,13 @@ export function BrandPicSettingContent() {
               <div>
                 <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3"><IkonTeks nama="🖥" />Brand Display</p>
                 <div className="bg-amber-50/50 rounded-xl border border-amber-200 px-4 py-1">
-                  {DISPLAY_BRANDS_DB.map(b=><Row key={b} type="display" brand={b}/>)}
+                  {merekDisplay.map(b=><Row key={b} type="display" brand={b}/>)}
                 </div>
               </div>
               <div>
                 <p className="text-sm font-bold text-violet-700 uppercase tracking-widest mb-3"><IkonTeks nama="🔌" />Brand Middleware</p>
                 <div className="bg-violet-50/50 rounded-xl border border-violet-200 px-4 py-1">
-                  {MIDDLEWARE_BRANDS_DB.map(b=><Row key={b} type="middleware" brand={b}/>)}
+                  {merekMiddleware.map(b=><Row key={b} type="middleware" brand={b}/>)}
                 </div>
               </div>
             </div>

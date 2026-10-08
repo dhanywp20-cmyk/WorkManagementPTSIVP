@@ -1,12 +1,13 @@
 'use client';
+import { denganNilai, useDaftarPilihan } from '@/lib/daftar-pilihan';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useDivisiSales } from '@/lib/merek';
 import { ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
 import {
   PiketRow, KegiatanEntry, JenisKegiatan, UserRow, ProdukLain,
-  DAY_COLOR, JENIS_KEGIATAN_LIST, KEGIATAN_COLORS,
-  KEBUTUHAN_LIST, PRODUK_LIST, TEAM_LABEL,
+  DAY_COLOR, KEGIATAN_COLORS,
+  TEAM_LABEL,
 } from './shared';
 import { useKelompokPTS, namaKelompokPTS, labelKelompokPTS } from '@/lib/kelompok';
 import { IkonTeks } from '@/components/shared/Ikon';
@@ -20,6 +21,10 @@ interface KFEntry {
 const emptyKF=():KFEntry=>({jenis_kegiatan:'Demo Product',jam_mulai:'09:00',jam_selesai:'10:00',produk:[],produk_lain:[],tamu_instansi:'',nama_sales:'',sales_division:'',kebutuhan:[],keterangan:'',team_rnd:''});
 
 export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;onClose:()=>void;onSaved:()=>void;currentUser?:any}) {
+  //  Daftar pilihan: Admin Panel › Daftar Pilihan.
+  const daftarKegiatan = useDaftarPilihan('piket-kegiatan');
+  const daftarProduk = useDaftarPilihan('piket-produk');
+  const daftarKebutuhan = useDaftarPilihan('piket-kebutuhan');
   const kelompokPTSList = useKelompokPTS();
   const daftarDivisi = useDivisiSales();
   const [entries,setEntries]=useState<KFEntry[]>([emptyKF()]);
@@ -180,7 +185,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                   <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🎯" />Jenis Kegiatan</label>
                   <select aria-label="🎯 Jenis Kegiatan" value={entry.jenis_kegiatan} onChange={e=>upd(idx,{jenis_kegiatan:e.target.value as JenisKegiatan})}
                     className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
-                    {JENIS_KEGIATAN_LIST.map(j=><option key={j} value={j}>{j}</option>)}
+                    {denganNilai(daftarKegiatan, entry.jenis_kegiatan).map(j=><option key={j} value={j}>{j}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -198,7 +203,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                 <div>
                   <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="📦" />Produk</label>
                   <div className="grid grid-cols-2 gap-1.5">
-                    {PRODUK_LIST.map(p=>{
+                    {denganNilai(daftarProduk, entry.produk).map(p=>{
                       const chk=entry.produk.includes(p);
                       return(
                         <button key={p} type="button" onClick={()=>toggleP(idx,p)}
@@ -274,7 +279,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                     <div>
                       <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🎯" />Kebutuhan</label>
                       <div className="grid grid-cols-2 gap-1.5">
-                        {KEBUTUHAN_LIST.map(k=>{
+                        {denganNilai(daftarKebutuhan, entry.kebutuhan).map(k=>{
                           const chk=entry.kebutuhan.includes(k);
                           return(
                             <button key={k} type="button" onClick={()=>toggleK(idx,k)}

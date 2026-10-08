@@ -1,7 +1,8 @@
 'use client';
+import { denganNilai, useDaftarPilihan } from '@/lib/daftar-pilihan';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User, MovementLog, EVENTS, KONDISI_BARANG_LIST, KondisiBarang, uploadFiles } from './shared';
+import { User, MovementLog, KONDISI_BARANG_LIST, KondisiBarang, uploadFiles } from './shared';
 import { MultiFileField } from './MultiFileField';
 import { UrlListField } from './UrlListField';
 import { ModalPortal } from '@/components/shared';
@@ -10,6 +11,8 @@ import { IkonTeks } from '@/components/shared/Ikon';
 export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }: {
   log?:MovementLog|null; currentUser:User; teamMembers:string[]; onClose:()=>void; onSave:()=>void;
 }) {
+  //  Daftar event: Admin Panel › Daftar Pilihan.
+  const daftarEvent = useDaftarPilihan('unit-event');
   const isEdit = !!log;
   const [form, setForm] = useState({
     tanggal:              log?.tanggal?.split('T')[0] ?? new Date().toISOString().split('T')[0],
@@ -118,7 +121,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
 
           <div><label htmlFor="f-unit-movement-components-addeditmodal-5" className={lbl}><IkonTeks nama="🎯" />Event</label>
             <select id="f-unit-movement-components-addeditmodal-5" className={inp+" cursor-pointer"} value={form.event} onChange={e=>set('event',e.target.value)}>
-              {EVENTS.map(ev=><option key={ev} value={ev}>{ev}</option>)}
+              {denganNilai(daftarEvent, form.event).map(ev=><option key={ev} value={ev}>{ev}</option>)}
             </select>
           </div>
 

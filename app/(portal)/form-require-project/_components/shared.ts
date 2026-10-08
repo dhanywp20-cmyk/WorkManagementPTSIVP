@@ -278,8 +278,7 @@ export async function fetchWACCTargets(
  */
 export { DIVISI_BAWAAN as SALES_DIVISIONS } from '@/lib/merek';
 
-export const DISPLAY_BRANDS = ['Microvision', 'Philips', 'Panasonic', 'Newline', 'Promethean', 'Maxhub', 'Ledman', 'Taniled', 'Vivitek'] as const;
-export const MIDDLEWARE_BRANDS = ['Tricolor', 'Wyrestorm', 'Extron', 'Crestron', 'AVCiT', 'Brightsign', 'Cue'] as const;
+// Merek display & middleware: Admin Panel › Daftar Pilihan (useDaftarPilihan, lib/daftar-pilihan.ts).
 export const BRAND_PIC_DIVISIONS = ['IVP', 'MVI', 'MLDS', 'UMP', 'OSS'];
 
 /**

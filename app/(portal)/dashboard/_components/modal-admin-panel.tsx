@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 import { User, AdminPanelModalProps } from './shared';
 import { KodeAcaraInline } from './modal-kode-acara';
+import { DaftarPilihanInline } from './modal-daftar-pilihan';
 import { ModalPortal } from '@/components/shared';
 import { muatKelompok, namaKelompokPTS, cariKelompok } from '@/lib/kelompok';
 
@@ -23,7 +24,7 @@ import { IkonTeks } from '@/components/shared/Ikon';
 // AdminPanelModal (unified: Settings + User Management + PIC Brand)
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
-  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'android' | 'kesehatan'>(initialTab);
+  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan'>(initialTab);
 
   /**
  * Kelompok navigasi - MENGIKUTI CARA ADMIN BERPIKIR, bukan urutan fitur
@@ -49,7 +50,7 @@ const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications' | 'system
   { key: 'system',        label: 'Sistem' },
 ];
 
-const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'android' | 'kesehatan'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
+const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
     {
       key: 'settings',
       group: 'organization',
@@ -77,6 +78,13 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
       label: 'PIC Brand',
       icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" /></svg>,
       color: '#b45309', activeBg: 'rgba(217,119,6,0.1)', activeBorder: 'rgba(217,119,6,0.4)', activeText: '#b45309',
+    },
+    {
+      key: 'daftarPilihan',
+      group: 'organization',
+      label: 'Daftar Pilihan',
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h10" /></svg>,
+      color: '#0f766e', activeBg: 'rgba(13,148,136,0.1)', activeBorder: 'rgba(13,148,136,0.4)', activeText: '#0f766e',
     },
     {
       key: 'kpiRoster',
@@ -241,6 +249,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             {activeSection === 'userManagement' && <UserManagementInline />}
             {activeSection === 'kodeAcara' && <KodeAcaraInline />}
             {activeSection === 'picBrand' && <BrandPicSettingInline />}
+            {activeSection === 'daftarPilihan' && <DaftarPilihanInline />}
             {activeSection === 'kpiRoster' && <KpiRosterInline />}
             {activeSection === 'merek' && <MerekSettingInline />}
             {activeSection === 'kelompok' && <KelompokSettingInline />}

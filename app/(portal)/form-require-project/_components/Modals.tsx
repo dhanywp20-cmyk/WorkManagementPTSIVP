@@ -1,4 +1,5 @@
 'use client';
+import { denganNilai, useDaftarPilihan } from '@/lib/daftar-pilihan';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
@@ -7,8 +8,7 @@ import {
   statusConfig, JABATAN_TIER, JABATAN_CC_RULES,
   fetchWACCTargets, sendWANotif, emptyRoom,
   getRoomAssignName, getRoomAssignUserId,
-  SALES_DIVISIONS, DISPLAY_BRANDS, MIDDLEWARE_BRANDS,
-  PIE_COLORS,
+  SALES_DIVISIONS, PIE_COLORS,
 } from './shared';
 import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { isAssignablePTSTeam, bolehDitugaskanOleh, adalahAdminMurni } from '@/lib/teams';
@@ -408,6 +408,8 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
   onSetBoq?: (file: File | null) => void;
   isGuest?: boolean;
 }) {
+  const merekDisplay = useDaftarPilihan('merek-display');
+  const merekMiddleware = useDaftarPilihan('merek-middleware');
   const [previews, setPreviews] = useState<string[]>([]);
   useEffect(() => { setPreviews(photos.map(f => URL.createObjectURL(f))); }, [photos]);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -498,7 +500,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             onUpdate({ brand_display: brand, brand_display_pic_id: pic?.pic_user_id||'', brand_display_pic_name: pic?.pic_user_name||'' });
           }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400 appearance-none">
             <option value="">— Pilih Brand Display —</option>
-            {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+            {denganNilai(merekDisplay, room.brand_display).map(b => <option key={b} value={b}>{b}</option>)}
           </select>
           {room.brand_display && room.brand_display_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {room.brand_display_pic_name}</p>}
           {room.brand_display && !room.brand_display_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-set admin</p>}
@@ -511,7 +513,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             onUpdate({ brand_display_2: brand, brand_display_2_pic_id: pic?.pic_user_id||'', brand_display_2_pic_name: pic?.pic_user_name||'' });
           }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400">
             <option value="">— Pilih Brand Display 2 —</option>
-            {DISPLAY_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+            {denganNilai(merekDisplay, room.brand_display_2).map(b => <option key={b} value={b}>{b}</option>)}
           </select>
           {room.brand_display_2 && room.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1"><IkonTeks nama="👤" />PIC: {room.brand_display_2_pic_name}</p>}
           {room.brand_display_2 && !room.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-mapping</p>}
@@ -524,7 +526,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
             onUpdate({ brand_middleware: brand, brand_middleware_pic_id: pic?.pic_user_id||'', brand_middleware_pic_name: pic?.pic_user_name||'' });
           }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-violet-400 appearance-none">
             <option value="">— Pilih Brand Middleware —</option>
-            {MIDDLEWARE_BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
+            {denganNilai(merekMiddleware, room.brand_middleware).map(b => <option key={b} value={b}>{b}</option>)}
           </select>
           {room.brand_middleware && room.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-violet-700 font-semibold bg-violet-50 border border-violet-200 rounded-lg px-2.5 py-1"><IkonTeks nama="👤" />PIC: {room.brand_middleware_pic_name}</p>}
           {room.brand_middleware && !room.brand_middleware_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-set admin</p>}

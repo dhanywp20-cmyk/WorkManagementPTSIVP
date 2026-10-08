@@ -1,12 +1,15 @@
 'use client';
 import { PiketRow, KegiatanEntry, MONTH_NAMES } from './shared';
 import { Ikon } from '@/components/shared/Ikon';
+import { produkSpesifik, useDaftarPilihan } from '@/lib/daftar-pilihan';
 
 export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMonth,onYearChange,onMonthChange}:{
   allRows:PiketRow[];kegiatanList:KegiatanEntry[];
   selectedYear:number;selectedMonth:number|null;
   onYearChange:(y:number)=>void;onMonthChange:(m:number|null)=>void;
 }) {
+  //  Produk showroom: Admin Panel › Daftar Pilihan ("All Product" disebar ke semuanya).
+  const daftarProduk = useDaftarPilihan('piket-produk');
   const piketDateMap:Record<string,string>={};
   allRows.forEach(r=>{piketDateMap[r.id]=r.day_date;});
 
@@ -48,11 +51,13 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
   const topKebutuhanCount=topKbtEntry?topKbtEntry[1]:0;
 
   // Jam pakai per produk - 6 kategori tetap, All Product distribusi ke semua
-  const PRODUK_KATEGORI=['Videowall','LED','IFP','Audio System','Lighting','Kiosk'] as const;
-  const PRODUK_ICONS:Record<string,string>={Videowall:'🖥️',LED:'💡',IFP:'📺','Audio System':'🔊',Lighting:'🎬',Kiosk:'🏧'};
+  const PRODUK_KATEGORI=produkSpesifik(daftarProduk);
+  const PRODUK_ICONS:Record<string,string>={Videowall:'🖥️',LED:'💡',IFP:'📺',Projector:'📽','Audio System':'🔊',Lighting:'🎬',Kiosk:'🏧'};
   // Tone 700: dipakai sebagai warna TEKS angka, jadi harus lolos kontras AA di latar putih.
-  const PRODUK_COLORS:Record<string,string>={Videowall:'#b91c1c',LED:'#b45309',IFP:'#1d4ed8','Audio System':'#6d28d9',Lighting:'#047857',Kiosk:'#0e7490'};
-  const jamPerProduk:Record<string,number>={Videowall:0,LED:0,IFP:0,'Audio System':0,Lighting:0,Kiosk:0};
+  const PRODUK_COLORS:Record<string,string>={Videowall:'#b91c1c',LED:'#b45309',IFP:'#1d4ed8',Projector:'#9d174d','Audio System':'#6d28d9',Lighting:'#047857',Kiosk:'#0e7490'};
+  const WARNA_LAIN=['#334155','#9a3412','#155e75','#3f6212','#6b21a8'];
+  const warnaProduk=(p:string,i:number)=>PRODUK_COLORS[p]??WARNA_LAIN[i%WARNA_LAIN.length];
+  const jamPerProduk:Record<string,number>={};
   activeKg.forEach(k=>{
     if(!k.jam_mulai||!k.jam_selesai||!k.produk?.length)return;
     const[hm,mm]=k.jam_mulai.split(':').map(Number);
@@ -61,7 +66,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
     if(durasi<=0)return;
     const targets=k.produk.includes('All Product')
       ?[...PRODUK_KATEGORI]
-      :k.produk.filter((p):p is typeof PRODUK_KATEGORI[number]=>PRODUK_KATEGORI.includes(p as any));
+      :k.produk.filter(p=>PRODUK_KATEGORI.includes(p));
     targets.forEach(p=>{jamPerProduk[p]=(jamPerProduk[p]||0)+durasi;});
   });
   const fmtJam=(j:number)=>j%1===0?`${j} jam`:`${j.toFixed(1)} jam`;
@@ -128,15 +133,15 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
         <div className="flex-shrink-0 px-1 py-3 flex items-center">
         
         </div>
-        {PRODUK_KATEGORI.map(p=>(
+        {PRODUK_KATEGORI.map((p,i)=>(
           <div key={p} className="flex-1 min-w-[104px] px-2.5 py-3 flex flex-col gap-0.5 flex-shrink-0">
             {/* Nama produk utuh (dulu terpotong "VIDEOW..." / "AUDIO S...") dan
                 ikon garis yang sama dengan kolom di kirinya, bukan emoji. */}
             <div className="flex items-center gap-1 mb-0.5 text-slate-500">
-              <Ikon nama={PRODUK_ICONS[p]} ukuran={12} className="flex-shrink-0" />
+              <Ikon nama={PRODUK_ICONS[p]??'📦'} ukuran={12} className="flex-shrink-0" />
               <span className="text-[10px] font-bold uppercase tracking-normal leading-none whitespace-nowrap" title={p}>{p === 'Audio System' ? 'Audio' : p}</span>
             </div>
-            <span className="text-sm font-black leading-tight" style={{color:PRODUK_COLORS[p]}}>{fmtJam(jamPerProduk[p]||0)}</span>
+            <span className="text-sm font-black leading-tight" style={{color:warnaProduk(p,i)}}>{fmtJam(jamPerProduk[p]||0)}</span>
             <span className="text-[10px] text-slate-500 leading-none">waktu pakai</span>
           </div>
         ))}

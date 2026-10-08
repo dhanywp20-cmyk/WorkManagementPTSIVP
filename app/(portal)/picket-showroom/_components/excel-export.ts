@@ -1,6 +1,7 @@
 import { loadXLSX } from '@/lib/xlsx-loader';
 import { PiketRow, KegiatanEntry, bacaPicPiket } from './shared';
 import { labelKelompokPTS } from '@/lib/kelompok';
+import { daftarPilihan, denganNilai, produkSpesifik } from '@/lib/daftar-pilihan';
 
 export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], periodLabel?:string) {
   const runExport = (XLSX:any) => {
@@ -52,9 +53,10 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       const totalHari = sorted.length;
       const totalKegiatan = kegiatanList.length;
       const totalDemo = kegiatanList.filter(k=>k.jenis_kegiatan==='Demo Product'&&k.tamu_instansi).length;
-      const totalRnD = kegiatanList.filter(k=>k.jenis_kegiatan==='RnD').length;
-      const totalMaint = kegiatanList.filter(k=>k.jenis_kegiatan==='Maintenance').length;
-      const totalShoot = kegiatanList.filter(k=>k.jenis_kegiatan==='Shooting Markom').length;
+      //  Jumlah per jenis kegiatan: daftar dari Admin Panel (+ jenis lama yang masih ada di data).
+      //  Demo Product dihitung yang ada tamunya, sama seperti sebelumnya.
+      const jenisKg = denganNilai(daftarPilihan('piket-kegiatan'), kegiatanList.map(k=>k.jenis_kegiatan));
+      const jumlahKg = (j:string) => j==='Demo Product' ? totalDemo : kegiatanList.filter(k=>k.jenis_kegiatan===j).length;
       const activeDaysSet = new Set(kegiatanList.map(k=>{const r=sorted.find(r=>r.id===k.piket_id);return r?.day_date;}).filter(Boolean));
       const totalActiveDays = activeDaysSet.size;
 
@@ -66,11 +68,11 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       const topDivisiCountEx=divArrEx[0]?.[1]||0;
 
       // Top kegiatan
-      const kgMapEx:Record<string,number>={'Demo Product':totalDemo,'RnD':totalRnD,'Maintenance':totalMaint,'Shooting Markom':totalShoot};
+      const kgMapEx:Record<string,number>=Object.fromEntries(jenisKg.map(j=>[j,jumlahKg(j)]));
       const topKgEx=Object.entries(kgMapEx).sort(([,a],[,b])=>b-a)[0]?.[0]||'-';
 
       // Top produk - distribusi All Product ke semua produk spesifik
-      const PRODUK_SPESIFIK_EX=['Videowall','LED','IFP','Audio System','Lighting','Kiosk'];
+      const PRODUK_SPESIFIK_EX=produkSpesifik(daftarPilihan('piket-produk'));
       const prodMapEx:Record<string,number>={};
       kegiatanList.forEach(k=>{
         const produk=k.produk||[];
@@ -94,10 +96,7 @@ export function exportToExcel(allRows:PiketRow[], kegiatanList:KegiatanEntry[], 
       const stats = [
         {label:'Hari Aktif (ada kegiatan)', val:totalActiveDays, note:`dari ${totalHari} hari piket`, fg:'1E3A5F'},
         {label:'Total Kegiatan',            val:totalKegiatan,   note:'semua jenis',                  fg:'DC2626'},
-        {label:'Demo Product',              val:totalDemo,       note:totalKegiatan>0?((totalDemo/totalKegiatan)*100).toFixed(1)+'%':'0%', fg:'1E40AF'},
-        {label:'RnD',                       val:totalRnD,        note:totalKegiatan>0?((totalRnD/totalKegiatan)*100).toFixed(1)+'%':'0%',  fg:'6D28D9'},
-        {label:'Maintenance',               val:totalMaint,      note:totalKegiatan>0?((totalMaint/totalKegiatan)*100).toFixed(1)+'%':'0%',fg:'92400E'},
-        {label:'Shooting Markom',           val:totalShoot,      note:totalKegiatan>0?((totalShoot/totalKegiatan)*100).toFixed(1)+'%':'0%',fg:'065F46'},
+        ...jenisKg.map(j=>{ const n=jumlahKg(j); return {label:j, val:n, note:totalKegiatan>0?((n/totalKegiatan)*100).toFixed(1)+'%':'0%', fg:kgColorMap[j]?.fg??'334155'}; }),
         {label:'Top Jenis Kegiatan',        val:topKgEx,         note:'terbanyak',                    fg:'7C3AED', isText:true},
         {label:'Top Divisi Sales',          val:topDivisiEx,     note:`${topDivisiCountEx}x kegiatan`,fg:'0891B2', isText:true},
         {label:'Top Produk Demo',           val:topProdukEx,     note:`${prodArrEx[0]?.[1]||0}x digunakan`, fg:'059669', isText:true},
