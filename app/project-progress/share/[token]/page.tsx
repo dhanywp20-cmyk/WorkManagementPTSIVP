@@ -8,7 +8,7 @@ import {
   STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari,
   type ChecklistBagian, type ChecklistItem, type StatusProyek,
 } from '@/lib/checklist';
-import { BarProgres, CatatanTeks, KepingKendala, PanelBagian, TEMA, itemPerBagian, progresDariStat } from '../../_components/tampilan';
+import { BarProgres, CatatanTeks, KepingKendala, PanelBagian, TEMA, itemPerBagian, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
 
 interface DataShare {
   proyek: {

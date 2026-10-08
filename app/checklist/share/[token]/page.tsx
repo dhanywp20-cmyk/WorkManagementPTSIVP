@@ -10,8 +10,8 @@ import {
 } from '@/lib/checklist';
 import {
   BarProgres, CatatanTeks, KepingKendala, ModalKendala, PanelBagian, TEMA, itemPerBagian, kirimFoto, progresDariStat,
-} from '@/app/project-progress/_components/tampilan';
-import { BilahSimpan, useTertunda } from '@/app/project-progress/_components/tertunda';
+} from '@/app/(portal)/project-progress/_components/tampilan';
+import { BilahSimpan, useTertunda } from '@/app/(portal)/project-progress/_components/tertunda';
 
 /**
  * Halaman link checklist untuk tim lapangan - PUBLIK, tanpa login.

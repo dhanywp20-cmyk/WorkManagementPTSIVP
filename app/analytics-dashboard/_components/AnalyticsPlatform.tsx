@@ -13,8 +13,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
 import { getSession, startSessionWatcher } from '@/lib/auth';
-import DashboardKPI from '@/app/kpi-team/_components/DashboardKPI';
-import { User as DashUser } from '@/app/dashboard/_components/shared';
+import DashboardKPI from '@/app/(portal)/kpi-team/_components/DashboardKPI';
+import { User as DashUser } from '@/app/(portal)/dashboard/_components/shared';
 import { StatCard } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 

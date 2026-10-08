@@ -7,7 +7,7 @@
  * sama. Tanpa React / jaringan supaya aman diimpor dari mana saja.
  */
 import type { ModulLED, Hardware, BrandLED } from '@/lib/av-hitung';
-import { bersihkanIsiRak } from '@/app/tools-team/_components/desain3d/inti/rak';
+import { bersihkanIsiRak } from '@/app/(portal)/tools-team/_components/desain3d/inti/rak';
 
 export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[]; /** Daftar brand modul (boleh kosong untuk data lama). */ brand?: BrandLED[] }
 

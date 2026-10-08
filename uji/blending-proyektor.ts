@@ -6,7 +6,7 @@
  */
 import { bendaBaru, lensaDari, arahSinar, keGambar, dalamGambar, tumpangGaris, hitungBlending, teksBlending,
   barisKeterangan, pikselBlending, jarakTitik,
-  type Benda, type Titik, type Lensa } from '../app/tools-team/_components/desain3d/inti';
+  type Benda, type Titik, type Lensa } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {

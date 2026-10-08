@@ -3,7 +3,7 @@
  *
  * Jalankan: npx tsx uji/nav-bawah.ts
  */
-import { LABEL_PENDEK, PRIORITAS_MENU, TOMBOL_TERLIHAT, urutNav } from '../app/dashboard/_components/nav-bawah';
+import { LABEL_PENDEK, PRIORITAS_MENU, TOMBOL_TERLIHAT, urutNav } from '../app/(portal)/dashboard/_components/nav-bawah';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {

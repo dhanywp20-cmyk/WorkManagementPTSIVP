@@ -14,8 +14,10 @@ export function LoadingScreen({
   return (
     // role="status": keadaan "sedang memuat" harus terdengar, bukan hanya
     // terlihat berputar. aria-busy memberi tahu bahwa isinya belum final.
+    //  absolute, bukan fixed: modul kini dirender di area isi KerangkaPortal (dulu di iframe), jadi
+    //  layar memuat cukup menutupi area modul - header, sidebar & menu bawah tetap terlihat.
     <div role="status" aria-live="polite" aria-busy="true"
-      className="fixed inset-0 flex items-center justify-center z-[1000]"
+      className="absolute inset-0 min-h-full flex items-center justify-center z-40"
       style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="relative z-10 flex flex-col items-center gap-3 px-10 py-8 rounded-2xl"
         style={{ background: '#ffffff', border: '1px solid #e2e8f0', boxShadow: '0 4px 16px rgba(15,23,42,0.06)' }}>
