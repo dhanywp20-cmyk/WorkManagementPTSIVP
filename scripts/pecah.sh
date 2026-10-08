@@ -10,7 +10,7 @@ F="$1"; DIR="$2"; shift 2
 mkdir -p "$DIR"
 for pasangan in "$@"; do
   pola="${pasangan%|*}"; nama="${pasangan##*|}"
-  baris=$(grep -nF -- "$pola" "$F" | head -1 | cut -d: -f1)
+  baris=$(grep -nF -- "$pola" "$F" | tail -1 | cut -d: -f1)  # kemunculan TERAKHIR (urutan bawah -> atas)
   if [ -z "$baris" ]; then echo "pola tidak ada: $pola"; exit 1; fi
   node scripts/ekstrak-jsx.mjs "$F" "$baris" "$nama" "$DIR/$nama.tsx"
 done

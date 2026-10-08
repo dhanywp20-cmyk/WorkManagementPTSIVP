@@ -86,7 +86,28 @@ function catat(id, sym) {
   ts.forEachChild(n, jalan);
 })(blok);
 
-if (modul.size) { console.error('deklarasi tingkat modul dipakai blok (pindahkan dulu):', [...modul].join(', ')); process.exit(1); }
+//  Deklarasi tingkat modul yang dipakai blok: di page/layout Next.js tidak boleh diekspor (tolak);
+//  di berkas komponen biasa cukup diekspor lalu diimpor komponen baru.
+const halamanNext = /(^|[\\/])(page|layout)\.tsx?$/.test(absBerkas);
+if (modul.size && halamanNext) { console.error('deklarasi tingkat modul dipakai blok (pindahkan dulu):', [...modul].join(', ')); process.exit(1); }
+//  Tipe/interface tingkat modul yang tercetak polos di tipe props (mis. `StatusRahasia`) ikut diekspor
+//  & diimpor - kalau tidak, berkas anak tidak mengenal namanya.
+const tipeModul = new Set();
+if (!halamanNext) {
+  const teksTipe2 = [...lokal.values()].join(' ');
+  for (const st of sf.statements) if ((ts.isInterfaceDeclaration(st) || ts.isTypeAliasDeclaration(st)) && new RegExp(`(^|[^.\\w"])${st.name.text}\\b`).test(teksTipe2)) tipeModul.add(st.name.text);
+}
+const eksporModul = [];
+const pernyataanUntuk = (n, nilai) => sf.statements.find(s => nilai
+  //  Nama yang dipakai sebagai NILAI: cari deklarasi nilai (fungsi/variabel/kelas), bukan tipe senama.
+  ? ((ts.isFunctionDeclaration(s) || ts.isClassDeclaration(s) || ts.isEnumDeclaration(s)) && s.name?.text === n) || (ts.isVariableStatement(s) && s.declarationList.declarations.some(d => ts.isIdentifier(d.name) && d.name.text === n))
+  : (ts.isInterfaceDeclaration(s) || ts.isTypeAliasDeclaration(s)) && s.name.text === n);
+for (const [n, nilai] of [...[...modul].map(n => [n, true]), ...[...tipeModul].map(n => [n, false])]) {
+  const st = pernyataanUntuk(n, nilai);
+  if (!st) { console.error('deklarasi tidak ditemukan:', n); process.exit(1); }
+  const mods = ts.canHaveModifiers(st) ? ts.getModifiers(st) ?? [] : [];
+  if (!mods.some(m => m.kind === ts.SyntaxKind.ExportKeyword) && !eksporModul.includes(st.getStart(sf))) eksporModul.push(st.getStart(sf));
+}
 
 // 3. Tipe: import("C:/.../x") -> import("@/x")
 const keAlias = t => t.replace(/import\("([^"]+)"\)/g, (_, p) => {
@@ -126,6 +147,13 @@ for (const [d, nama2] of perImpor) {
   if (bagian.length) baris_impor.push(`import ${kl?.isTypeOnly ? 'type ' : ''}${bagian.join(', ')} from '${spes}';`);
 }
 
+if (modul.size || tipeModul.size) {
+  let rel = path.relative(dirTujuan, absBerkas).split(path.sep).join('/').replace(/\.tsx?$/, '');
+  if (!rel.startsWith('.')) rel = './' + rel;
+  const nama3 = [...[...modul].sort(), ...[...tipeModul].filter(t => !modul.has(t)).sort().map(t => `type ${t}`)];
+  baris_impor.push(`import { ${nama3.join(', ')} } from '${rel}';`);
+}
+
 const props = [...lokal.keys()].sort();
 const isiBlok = teks.slice(blok.getStart(sf), blok.end);
 const indentAsal = teks.slice(teks.lastIndexOf('\n', blok.getStart(sf)) + 1, blok.getStart(sf));
@@ -147,15 +175,21 @@ ${jsx}
   );
 }
 `;
+fs.mkdirSync(path.dirname(path.resolve(tujuan)), { recursive: true });
 fs.writeFileSync(tujuan, out);
 
-// 5. Induk: ganti blok dengan elemen, tambah impor.
+// 5. Induk: ganti blok dengan elemen, ekspor deklarasi modul yang kini dipakai anak, tambah impor.
+//    Semua suntingan diterapkan dari posisi terbesar ke terkecil supaya posisinya tidak bergeser.
 const elemen = `<${nama}\n${indentAsal}  ${props.map(p => `${p}={${p}}`).join(' ')}\n${indentAsal}/>`;
-let induk = teks.slice(0, blok.getStart(sf)) + elemen + teks.slice(blok.end);
 let relImpor = path.relative(path.dirname(absBerkas), path.resolve(tujuan)).split(path.sep).join('/').replace(/\.tsx$/, '');
 if (!relImpor.startsWith('.')) relImpor = './' + relImpor;
 const terakhirImpor = [...sf.statements].filter(ts.isImportDeclaration).pop();
-const posImpor = terakhirImpor.end;
-induk = induk.slice(0, posImpor) + `\nimport { ${nama} } from '${relImpor}';` + induk.slice(posImpor);
+const suntingan = [
+  { awal: blok.getStart(sf), akhir: blok.end, isi: elemen },
+  { awal: terakhirImpor.end, akhir: terakhirImpor.end, isi: `\nimport { ${nama} } from '${relImpor}';` },
+  ...eksporModul.map(p => ({ awal: p, akhir: p, isi: 'export ' })),
+].sort((x, y) => y.awal - x.awal);
+let induk = teks;
+for (const s of suntingan) induk = induk.slice(0, s.awal) + s.isi + induk.slice(s.akhir);
 fs.writeFileSync(absBerkas, induk);
 console.log(`${nama}: ${props.length} props, ${isiBlok.split('\n').length} baris dipindah -> ${tujuan}`);

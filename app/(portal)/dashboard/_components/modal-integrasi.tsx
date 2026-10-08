@@ -36,8 +36,14 @@ import { PENYEDIA_WA, penyediaWA } from '@/lib/notifikasi/penyedia-wa';
 import { supabase } from '@/lib/supabase';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { SeksiAI } from './integrasi/SeksiAI';
+import { SeksiTim } from './integrasi/SeksiTim';
+import { SeksiPush } from './integrasi/SeksiPush';
+import { SeksiTelegram } from './integrasi/SeksiTelegram';
+import { SeksiWhatsApp } from './integrasi/SeksiWhatsApp';
+import { SeksiKanal } from './integrasi/SeksiKanal';
 
-const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
+export const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
   ticket: 'Ticket', approval: 'Approval', assignment: 'Assignment',
   reminder: 'Reminder', schedule: 'Jadwal', project: 'Project', system: 'Sistem',
 };
@@ -54,7 +60,7 @@ const JUDUL_KATEGORI: Record<KategoriEvent, string> = {
   Isian teks tetap ada, tapi hanya bila daftarnya tidak bisa dibaca - tanpa
   jalan apa pun, token yang bermasalah membuat modelnya terkunci.
 */
-function PilihModel({ nilai, profil, onGanti, warna }: {
+export function PilihModel({ nilai, profil, onGanti, warna }: {
   nilai: string;
   profil?: 'penilai';
   onGanti: (m: string) => void;
@@ -116,7 +122,7 @@ function PilihModel({ nilai, profil, onGanti, warna }: {
   );
 }
 
-function Saklar({ aktif, onKlik, warna }: { aktif: boolean; onKlik: () => void; warna: string }) {
+export function Saklar({ aktif, onKlik, warna }: { aktif: boolean; onKlik: () => void; warna: string }) {
   return (
     <button type="button" onClick={onKlik} role="switch" aria-checked={aktif}
       className="relative w-9 h-5 rounded-full transition-colors flex-shrink-0"
@@ -127,7 +133,7 @@ function Saklar({ aktif, onKlik, warna }: { aktif: boolean; onKlik: () => void; 
   );
 }
 
-interface StatusRahasia {
+export interface StatusRahasia {
   terisi: boolean; penanda?: string; diperbarui?: string; oleh?: string;
   /** true = nilainya masih berasal dari variabel lingkungan, belum dari Admin Panel. */
   dariEnv?: boolean;
@@ -146,14 +152,14 @@ interface StatusRahasia {
   lencana di kepala tiap kartu, dan hasil tiap tombol muncul DI KARTU ITU
   JUGA - di tempat mata sedang menatap.
 */
-type StatusKoneksi =
+export type StatusKoneksi =
   | { keadaan: 'memuat' }
   | { keadaan: 'terhubung'; info: string }
   | { keadaan: 'putus'; alasan: string };
 
-type PesanKotak = { tipe: 'ok' | 'gagal'; teks: string };
+export type PesanKotak = { tipe: 'ok' | 'gagal'; teks: string };
 
-function LencanaStatus({ status }: { status: StatusKoneksi }) {
+export function LencanaStatus({ status }: { status: StatusKoneksi }) {
   const gaya = status.keadaan === 'terhubung'
     ? { bg: '#dcfce7', fg: '#15803d', titik: '#22c55e', teks: 'Terhubung' }
     : status.keadaan === 'memuat'
@@ -177,7 +183,7 @@ function LencanaStatus({ status }: { status: StatusKoneksi }) {
  * Ini yang paling menentukan: umpan balik yang benar tapi berada di luar
  * layar sama tidak bergunanya dengan tidak ada umpan balik sama sekali.
  */
-function PesanKotak({ pesan }: { pesan: PesanKotak | null }) {
+export function PesanKotak({ pesan }: { pesan: PesanKotak | null }) {
   if (!pesan) return null;
   const ok = pesan.tipe === 'ok';
   return (
@@ -196,7 +202,7 @@ function PesanKotak({ pesan }: { pesan: PesanKotak | null }) {
 }
 
 /** Penanda bisa/tidak dijangkau di tabel Jangkauan Tim. */
-function Cek({ ya }: { ya?: boolean }) {
+export function Cek({ ya }: { ya?: boolean }) {
   return (
     <span className={`inline-grid place-items-center w-[19px] h-[19px] rounded-full text-[11px] font-black ${
       ya ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
@@ -211,7 +217,7 @@ function Cek({ ya }: { ya?: boolean }) {
  * kolom isian berarti mengirimkannya ke peramban, dan itu membatalkan seluruh
  * maksud tabel rahasia_integrasi.
  */
-function BlokToken({
+export function BlokToken({
   judul, kunci, status, petunjuk, onSimpan, onHapus,
 }: {
   judul: string; kunci: string; status?: StatusRahasia; petunjuk: React.ReactNode;
@@ -658,635 +664,37 @@ export function IntegrasiInline() {
         <div className="min-w-0">
 
           {/* ══ KANAL & EVENT ══ */}
-          {seksi === 'kanal' && (
-            <div className="space-y-3">
-              <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-700">Kanal pengiriman</h3>
-                  <p className="text-[11.5px] text-slate-500 mt-0.5">
-                    Saklar induk. Yang dimatikan di sini tidak mengirim apa pun, seberapa pun lengkap centang di bawah.
-                  </p>
-                </div>
-                <div className="p-3">
-                  <div className="rounded-lg border border-slate-200 overflow-hidden divide-y divide-slate-100">
-                    {KANAL.map(k => {
-                      const hidup = p.aktif[k.key];
-                      const sub = k.key === 'in_app' ? 'Lonceng & banner di portal'
-                        : k.key === 'whatsapp' ? `Lewat ${spWA.label} · ${timWA} nomor terdaftar`
-                        : `Bot pribadi · ${timTG} dari ${totalTim} anggota terhubung`;
-                      return (
-                        <div key={k.key} className="flex items-center gap-3 px-3.5 py-3 bg-white">
-                          <span className="w-8 h-8 rounded-lg grid place-items-center flex-shrink-0 text-sm"
-                            style={{ background: `${k.warna}1a`, color: k.warna }}>
-                            {k.key === 'in_app' ? '🔔' : k.key === 'whatsapp' ? '✆' : '➤'}
-                          </span>
-                          <span className="flex-1 min-w-0">
-                            <span className={`block text-[13px] font-bold ${hidup ? 'text-slate-700' : 'text-slate-500'}`}>{k.label}</span>
-                            <span className="block text-[11px] text-slate-500 mt-px">{sub}</span>
-                          </span>
-                          <Saklar aktif={hidup} warna={k.warna}
-                            onKlik={() => ubah(x => ({ ...x, aktif: { ...x.aktif, [k.key]: !x.aktif[k.key] } }))} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {!p.aktif.whatsapp && timWA > 0 && (
-                    <div className="mt-2.5 rounded-lg px-3 py-2.5 text-[11.5px] leading-relaxed"
-                      style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
-                      <b>WhatsApp masih mati.</b> {timWA} anggota sudah punya nomor terdaftar, tapi selama saklar ini
-                      mati tidak ada pesan WhatsApp yang benar-benar terkirim.
-                    </div>
-                  )}
-                  {!p.aktif.telegram && timTG > 0 && (
-                    <div className="mt-2.5 rounded-lg px-3 py-2.5 text-[11.5px] leading-relaxed"
-                      style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
-                      <b>Telegram masih mati.</b> {timTG} anggota sudah menghubungkan akunnya, tapi selama saklar ini
-                      mati tidak ada pesan Telegram yang benar-benar terkirim.
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/*
-                Matriks Event -> Kanal. Modelnya dipertahankan apa adanya -
-                inilah bagian yang memang sudah enak dipakai. Yang berubah:
-                ia tidak lagi disembunyikan di panel geser yang harus dibuka
-                dulu, dan dapat kolom pencarian karena 22 baris terlalu banyak
-                untuk dipindai dengan mata.
-              */}
-              <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-bold text-slate-700">Kejadian → kanal</h3>
-                    <p className="text-[11.5px] text-slate-500 mt-0.5">
-                      {KATALOG_EVENT.length} kejadian · centang lewat kanal mana masing-masing dikabarkan.
-                    </p>
-                  </div>
-                  <div className="ml-auto flex gap-3 flex-shrink-0">
-                    {KANAL.map(k => (
-                      <span key={k.key} className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ background: k.warna }} />
-                        {k.label}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="p-3">
-                  {/*
-                    Pemberitahuan ini sengaja ada dan sengaja tidak dihaluskan.
-                    Setelan per-kejadian baru berlaku untuk titik pengiriman
-                    yang sudah menyebutkan kunci event-nya; sisanya cuma
-                    tunduk pada saklar induk kanal di atas. Tanpa disebut,
-                    admin mematikan sebuah kejadian, centangnya tersimpan,
-                    lalu pesannya tetap terkirim - dan tidak ada satu pun
-                    petunjuk kenapa.
-                  */}
-                  {EVENT_TERSAMBUNG.size < KATALOG_EVENT.length && (
-                    <div className="rounded-lg px-3 py-2.5 mb-2.5 text-[11px] leading-relaxed"
-                      style={{ background: 'rgba(245,158,11,0.09)', border: '1px solid rgba(245,158,11,0.35)', color: '#92400e' }}>
-                      <span className="font-bold">Baru {EVENT_TERSAMBUNG.size} dari {KATALOG_EVENT.length} kejadian yang saklarnya berlaku.</span>{' '}
-                      Kejadian bertanda <span className="font-bold">belum aktif</span> masih memakai jalur pengiriman lama:
-                      centangnya tersimpan, tapi yang menentukan terkirim atau tidak hanya saklar induk kanal di atas.
-                      Sisanya menyusul saat tiap titik pengiriman dipindahkan.
-                    </div>
-                  )}
-                  <input value={cariEvent} onChange={e => setCariEvent(e.target.value)}
-                    placeholder="Cari kejadian…" aria-label="Cari kejadian"
-                    className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-cyan-400 mb-2.5" />
-                  <div className="rounded-lg border border-slate-200 overflow-hidden">
-                    <div className="grid grid-cols-[1fr_46px_46px_46px] px-3.5 py-1.5 bg-slate-50 border-b border-slate-200">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Kejadian</span>
-                      {KANAL.map(k => (
-                        <span key={k.key} className="text-[10px] font-bold uppercase text-center" style={{ color: k.warna }}>
-                          {k.label === 'WhatsApp' ? 'WA' : k.label === 'Telegram' ? 'TG' : 'App'}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="max-h-[420px] overflow-y-auto">
-                      {kategori.map(kat => {
-                        const isi = KATALOG_EVENT.filter(e => e.kategori === kat && cocokCari(e.label, e.key));
-                        if (isi.length === 0) return null;
-                        return (
-                          <div key={kat}>
-                            <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-700 border-y border-slate-100"
-                              style={{ background: 'rgba(8,145,178,0.06)' }}>
-                              {JUDUL_KATEGORI[kat]}
-                            </div>
-                            {isi.map(e => {
-                              const dipilih = p.perEvent[e.key] ?? (e.bawaanKanal as Kanal[]);
-                              const berlaku = kanalUntuk(e.key, p);
-                              return (
-                                <div key={e.key} className="grid grid-cols-[1fr_46px_46px_46px] items-center px-3.5 py-2 border-b border-slate-50 last:border-0 hover:bg-slate-50">
-                                  <div className="min-w-0 pr-2">
-                                    <div className="text-[12.5px] text-slate-700 truncate flex items-center gap-1.5">
-                                      <span className="truncate">{e.label}</span>
-                                      {!eventTersambung(e.key) && (
-                                        <span title="Titik pengirimannya belum menyebutkan kunci event ini — centang di baris ini belum berpengaruh, yang berlaku hanya saklar induk kanal di atas."
-                                          className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
-                                          style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
-                                          belum aktif
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="text-[10px] text-slate-500 font-mono truncate">{e.key}</div>
-                                    {dipilih.length > 0 && berlaku.length === 0 && (
-                                      <div className="text-[11px] text-amber-700 font-semibold mt-0.5">
-                                        kanalnya dimatikan di atas — tidak terkirim
-                                      </div>
-                                    )}
-                                  </div>
-                                  {KANAL.map(k => {
-                                    const on = dipilih.includes(k.key);
-                                    return (
-                                      <button key={k.key} type="button" onClick={() => toggleEvent(e.key, k.key)}
-                                        aria-label={`${e.label} — ${k.label}`} aria-pressed={on}
-                                        className="flex justify-center">
-                                        <span className="w-[18px] h-[18px] rounded-[5px] border-2 flex items-center justify-center transition-colors"
-                                          style={{
-                                            borderColor: on ? k.warna : '#cbd5e1',
-                                            background: on ? k.warna : 'transparent',
-                                            opacity: on && !p.aktif[k.key] ? 0.35 : 1,
-                                          }}>
-                                          {on && <span className="text-white text-[10px] font-black leading-none">✓</span>}
-                                        </span>
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <SeksiKanal
+            cariEvent={cariEvent} cocokCari={cocokCari} kategori={kategori} p={p} seksi={seksi} setCariEvent={setCariEvent} spWA={spWA} timTG={timTG} timWA={timWA} toggleEvent={toggleEvent} totalTim={totalTim} ubah={ubah}
+          />
 
           {/* ══ WHATSAPP ══ */}
-          {seksi === 'wa' && (
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_290px] gap-3 items-start">
-              <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-700">Gateway WhatsApp</h3>
-                    <p className="text-[11.5px] text-slate-500 mt-0.5">Penyedia yang mengantar pesan ke nomor tim.</p>
-                  </div>
-                  <span className="ml-auto flex-shrink-0"><LencanaStatus status={spWA.bisaCek ? koneksi.whatsapp : { keadaan: 'terhubung', info: spWA.label }} /></span>
-                </div>
-                <div className="p-3 space-y-3">
-                  <div className="grid grid-cols-1 formulir:grid-cols-3 gap-2">
-                    {PENYEDIA_WA.map(sp => {
-                      const dipilih = p.waPenyedia === sp.key;
-                      return (
-                        <button key={sp.key} type="button" aria-pressed={dipilih}
-                          onClick={() => ubah(x => ({ ...x, waPenyedia: sp.key }))}
-                          className="text-left rounded-lg border-2 px-2.5 py-2 transition-colors"
-                          style={{ borderColor: dipilih ? '#16a34a' : '#e2e8f0', background: dipilih ? '#16a34a0d' : 'transparent' }}>
-                          <div className="flex items-center gap-1.5 mb-0.5">
-                            <span className="text-[11.5px] font-bold text-slate-700 leading-tight">{sp.label}</span>
-                            {sp.resmi && <span className="text-[10px] font-black px-1 py-px rounded bg-sky-100 text-sky-700 flex-shrink-0">RESMI</span>}
-                          </div>
-                          <p className="text-[11px] text-slate-500 leading-snug">{sp.ringkas}</p>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {spWA.catatan && (
-                    <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
-                      <p className="text-[11px] text-amber-800 leading-relaxed">{spWA.catatan}</p>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    {spWA.kolom.map(kol => kol.rahasia ? (
-                      <BlokToken key={kol.kunci}
-                        judul={kol.label} kunci={kol.kunci} status={rahasia[kol.kunci]}
-                        onSimpan={n => simpanRahasia(kol.kunci, n)}
-                        onHapus={() => hapusRahasia(kol.kunci)}
-                        petunjuk={<>{kol.petunjuk} Tersimpan di sisi server dan tidak pernah dikirim balik ke peramban.</>} />
-                    ) : (
-                      <div key={kol.kunci}>
-                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">{kol.label}</label>
-                        <input value={p.waConfig[kol.kunci] ?? ''} placeholder={kol.placeholder}
-                          onChange={e => ubah(x => ({ ...x, waConfig: { ...x.waConfig, [kol.kunci]: e.target.value } }))}
-                          className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
-                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{kol.petunjuk}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Panel uji: di SEBELAH barang yang diuji, bukan di dasar halaman. */}
-              <div className="rounded-xl border border-slate-200 p-3.5" style={{ background: '#f8fafc' }}>
-                <h4 className="text-[13px] font-bold text-slate-700">Uji pengiriman</h4>
-                <p className="text-[11.5px] text-slate-500 mt-0.5 mb-3 leading-relaxed">
-                  Kirim satu pesan nyata untuk memastikan gateway benar-benar jalan.
-                </p>
-                <label htmlFor="f-dashboard-components-modal-integrasi-1" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nomor tujuan</label>
-                <input id="f-dashboard-components-modal-integrasi-1" value={waTujuan} onChange={e => setWaTujuan(e.target.value)} placeholder="contoh: 6281234567890"
-                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
-                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                  Kode negara tanpa <span className="font-mono">+</span>. Awalan <span className="font-mono">08…</span> ditulis <span className="font-mono">628…</span>
-                </p>
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {spWA.bisaCek && (
-                    <button type="button" onClick={() => uji('whatsapp', 'cek')} disabled={ujiJalan !== null}
-                      className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-50">
-                      {ujiJalan === 'whatsapp-cek' ? 'Mengecek…' : 'Tes Koneksi'}
-                    </button>
-                  )}
-                  <button type="button" onClick={() => uji('whatsapp', 'kirim')} disabled={ujiJalan !== null || !waTujuan.trim()}
-                    className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white disabled:opacity-50" style={{ background: '#16a34a' }}>
-                    {ujiJalan === 'whatsapp-kirim' ? 'Mengirim…' : 'Kirim Pesan Tes'}
-                  </button>
-                </div>
-                <PesanKotak pesan={pesanKanal.whatsapp ?? null} />
-                <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                  Tekan <b>Simpan</b> dulu setelah berpindah penyedia — tes memakai penyedia yang tersimpan.
-                </p>
-                {!p.aktif.whatsapp && (
-                  <div className="mt-2 rounded-lg px-2.5 py-2 text-[11px] font-semibold leading-relaxed"
-                    style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
-                    <IkonTeks nama="⚠" />Kanal WhatsApp masih mati di <b>Kanal &amp; Event</b>. Tes di sini tetap jalan, tapi notifikasi
-                    asli belum akan terkirim.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <SeksiWhatsApp
+            hapusRahasia={hapusRahasia} koneksi={koneksi} p={p} pesanKanal={pesanKanal} rahasia={rahasia} seksi={seksi} setWaTujuan={setWaTujuan} simpanRahasia={simpanRahasia} spWA={spWA} ubah={ubah} uji={uji} ujiJalan={ujiJalan} waTujuan={waTujuan}
+          />
 
           {/* ══ TELEGRAM ══ */}
-          {seksi === 'tg' && (
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_290px] gap-3 items-start">
-              <div className="space-y-3">
-                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                  <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-700">Bot Telegram</h3>
-                      <p className="text-[11.5px] text-slate-500 mt-0.5">Satu bot melayani seluruh notifikasi platform.</p>
-                    </div>
-                    <span className="ml-auto flex-shrink-0"><LencanaStatus status={koneksi.telegram} /></span>
-                  </div>
-                  <div className="p-3 space-y-3">
-                    <BlokToken
-                      judul="Token bot" kunci="telegram.bot_token" status={rahasia['telegram.bot_token']}
-                      onSimpan={n => simpanRahasia('telegram.bot_token', n)}
-                      onHapus={() => hapusRahasia('telegram.bot_token')}
-                      petunjuk={<>Dari @BotFather. Bentuknya <span className="font-mono">8333710505:AAF…</span> — salin seluruh
-                        baris termasuk angka sebelum titik dua (klik dua kali di Telegram sering hanya memilih separuhnya).</>} />
-
-                    <div>
-                      <label htmlFor="f-dashboard-components-modal-integrasi-2" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                        Tujuan bawaan <span className="normal-case tracking-normal font-normal text-slate-400">— opsional</span>
-                      </label>
-                      <input id="f-dashboard-components-modal-integrasi-2" value={p.telegramChatId} placeholder="mis. -1001234567890"
-                        onChange={e => ubah(x => ({ ...x, telegramChatId: e.target.value }))}
-                        className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400 font-mono" />
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        <button type="button" onClick={deteksiChat}
-                          disabled={deteksiJalan || koneksi.telegram.keadaan !== 'terhubung'}
-                          title={koneksi.telegram.keadaan !== 'terhubung' ? 'Isi token bot dulu.' : undefined}
-                          className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white disabled:opacity-40"
-                          style={{ background: '#0088cc' }}>
-                          {deteksiJalan ? 'Mendeteksi…' : '🔎 Deteksi Chat ID'}
-                        </button>
-                      </div>
-                      <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
-                        Untuk pemberitahuan yang tidak ditujukan ke orang tertentu (mis. ringkasan harian).
-                        Notifikasi assign selalu masuk ke Telegram pribadi masing-masing, bukan ke sini.
-                      </p>
-
-                      {chatTerdeteksi && chatTerdeteksi.length > 0 && (
-                        <div className="mt-2 rounded-lg border border-slate-200 overflow-hidden">
-                          <div className="px-2.5 py-1 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                            Percakapan terbaca — klik untuk memakai
-                          </div>
-                          {chatTerdeteksi.map(c => (
-                            <button key={c.id} type="button"
-                              onClick={() => ubah(x => ({ ...x, telegramChatId: c.id }))}
-                              className="w-full text-left px-2.5 py-1.5 border-t border-slate-100 hover:bg-sky-50 transition-colors flex items-center gap-2">
-                              <span className="text-[11px] flex-shrink-0">{c.jenis === 'private' ? '👤' : '👥'}</span>
-                              <span className="min-w-0 flex-1">
-                                <span className="block text-[11px] font-semibold text-slate-700 truncate">{c.nama}</span>
-                                <span className="block text-[10px] font-mono text-slate-500">{c.id}</span>
-                              </span>
-                              {p.telegramChatId === c.id && (
-                                <span className="text-[10px] font-bold text-sky-700 flex-shrink-0">dipakai</span>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                  <div className="px-4 py-3 border-b border-slate-100">
-                    <h3 className="text-sm font-bold text-slate-700">Cara anggota terhubung</h3>
-                    <p className="text-[11.5px] text-slate-500 mt-0.5">
-                      Telegram tidak bisa dikirim ke nomor HP — tiap orang menghubungkan akunnya sendiri, sekali saja.
-                    </p>
-                  </div>
-                  <div className="p-3">
-                    <div className="rounded-lg px-3 py-2.5 text-[11.5px] leading-relaxed"
-                      style={{ background: '#eff6ff', border: '1px solid #bfdbfe', color: '#1e40af' }}>
-                      Anggota membuka <b>Profil → Notifikasi Telegram</b>, menekan <b>Buka Bot</b>, lalu <b>Start</b> di
-                      Telegram. Chat ID-nya terisi sendiri setelah itu — tidak ada yang perlu diketik manual, dan tidak
-                      perlu diulang.
-                    </div>
-                    <button type="button" onClick={() => setSeksi('tim')}
-                      className="mt-2.5 text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200">
-                      Lihat siapa yang belum ({belumTG})
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 p-3.5" style={{ background: '#f8fafc' }}>
-                <h4 className="text-[13px] font-bold text-slate-700">Uji pengiriman</h4>
-                <p className="text-[11.5px] text-slate-500 mt-0.5 mb-3 leading-relaxed">
-                  Memakai bot dan tujuan bawaan yang tersimpan sekarang.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => uji('telegram', 'cek')} disabled={ujiJalan !== null}
-                    className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-50">
-                    {ujiJalan === 'telegram-cek' ? 'Mengecek…' : 'Tes Koneksi'}
-                  </button>
-                  <button type="button" onClick={() => uji('telegram', 'kirim')} disabled={ujiJalan !== null || !p.telegramChatId.trim()}
-                    className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white disabled:opacity-50" style={{ background: '#0088cc' }}>
-                    {ujiJalan === 'telegram-kirim' ? 'Mengirim…' : 'Kirim Pesan Tes'}
-                  </button>
-                </div>
-                {!p.telegramChatId.trim() && (
-                  <p className="text-[11px] text-slate-500 mt-2">Isi tujuan bawaan dulu untuk bisa mengirim pesan tes.</p>
-                )}
-                <PesanKotak pesan={pesanKanal.telegram ?? null} />
-                {!p.aktif.telegram && (
-                  <div className="mt-2 rounded-lg px-2.5 py-2 text-[11px] font-semibold leading-relaxed"
-                    style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
-                    <IkonTeks nama="⚠" />Kanal Telegram masih mati di <b>Kanal &amp; Event</b>. Tes di sini tetap jalan, tapi notifikasi
-                    asli belum akan terkirim.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <SeksiTelegram
+            belumTG={belumTG} chatTerdeteksi={chatTerdeteksi} deteksiChat={deteksiChat} deteksiJalan={deteksiJalan} hapusRahasia={hapusRahasia} koneksi={koneksi} p={p} pesanKanal={pesanKanal} rahasia={rahasia} seksi={seksi} setSeksi={setSeksi} simpanRahasia={simpanRahasia} ubah={ubah} uji={uji} ujiJalan={ujiJalan}
+          />
 
           {/* ══ PUSH NOTIFIKASI (APP/PWA) ══ */}
-          {seksi === 'push' && (
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_290px] gap-3 items-start">
-              <div className="space-y-3">
-                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                  <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-700">Push Notification Aplikasi</h3>
-                      <p className="text-[11.5px] text-slate-500 mt-0.5">
-                        Notifikasi sistem asli + bunyi di HP, walau aplikasi/tab sedang tertutup - seperti WhatsApp.
-                      </p>
-                    </div>
-                    <span className={`ml-auto flex-shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full ${
-                      pushInfo?.aktif ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
-                      {pushInfo === null ? 'Memuat…' : pushInfo.aktif ? 'Aktif' : 'Belum aktif'}
-                    </span>
-                  </div>
-                  <div className="p-3 space-y-3">
-                    {!pushInfo?.aktif ? (
-                      <>
-                        <p className="text-[11.5px] text-slate-500 leading-relaxed">
-                          Sekali diaktifkan, siapa pun di tim yang menekan tombol 🔔 di lonceng notifikasi dashboard
-                          bisa mendaftarkan HP-nya sendiri untuk menerima notifikasi ini - tidak perlu diatur admin
-                          per-orang.
-                        </p>
-                        <button type="button" onClick={() => aktifkanPushServer(false)} disabled={pushMemuat}
-                          className="text-[12px] font-bold px-3 py-2 rounded-lg text-white disabled:opacity-50"
-                          style={{ background: 'linear-gradient(135deg,#e11d48,#be123c)' }}>
-                          {pushMemuat ? 'Mengaktifkan…' : '📲 Aktifkan Push Notification'}
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-[11.5px] text-slate-500 leading-relaxed">
-                          <b>{pushInfo.jumlahPerangkat}</b> perangkat terdaftar saat ini.
-                        </p>
-                        <button type="button" onClick={() => setConfirmState({ message: 'Buat ulang kunci push?', description: 'SEMUA perangkat yang sudah terdaftar akan terputus dan harus mendaftar ulang.', danger: true, confirmLabel: 'Ya, buat ulang', onConfirm: () => aktifkanPushServer(true) })}
-                          disabled={pushMemuat}
-                          className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 disabled:opacity-50">
-                          {pushMemuat ? 'Memproses…' : '🔁 Generate Ulang Kunci'}
-                        </button>
-                      </>
-                    )}
-                    <PesanKotak pesan={pushPesan} />
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                  <div className="px-4 py-3 border-b border-slate-100">
-                    <h3 className="text-sm font-bold text-slate-700">Aplikasi Android (Firebase)</h3>
-                    <p className="text-[11.5px] text-slate-500 mt-0.5">
-                      Notifikasi + bunyi di aplikasi Android walau aplikasinya ditutup. Terpisah dari push browser di atas.
-                    </p>
-                  </div>
-                  <div className="p-3">
-                    <BlokToken
-                      judul="Service account JSON" kunci="push.fcm_service_account" status={rahasia['push.fcm_service_account']}
-                      onSimpan={n => simpanRahasia('push.fcm_service_account', n)}
-                      onHapus={() => hapusRahasia('push.fcm_service_account')}
-                      petunjuk={<>Firebase Console → Project settings → Service accounts → <b>Generate new private key</b>.
-                        Tempel seluruh isi berkas JSON-nya.</>} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 p-3.5" style={{ background: '#f8fafc' }}>
-                <h4 className="text-[13px] font-bold text-slate-700">Cara anggota mengaktifkan</h4>
-                <p className="text-[11.5px] text-slate-500 mt-1.5 leading-relaxed">
-                  Buka Dashboard di HP → tekan ikon <b><Ikon nama="📲" ukuran="1em" className="inline-block align-[-0.12em]" /></b> di sebelah lonceng notifikasi → izinkan saat diminta.
-                  Sekali per HP/browser, tidak perlu diulang.
-                </p>
-                <p className="text-[11px] text-slate-500 mt-2.5 leading-relaxed">
-                  Di iPhone, notifikasi push HANYA berjalan setelah platform ini dipasang lewat &quot;Tambah ke Layar
-                  Utama&quot; (Safari) - batasan dari Apple, bukan platform ini.
-                </p>
-              </div>
-            </div>
-          )}
+          <SeksiPush
+            aktifkanPushServer={aktifkanPushServer} hapusRahasia={hapusRahasia} pushInfo={pushInfo} pushMemuat={pushMemuat} pushPesan={pushPesan} rahasia={rahasia} seksi={seksi} setConfirmState={setConfirmState} simpanRahasia={simpanRahasia}
+          />
 
           {/* ══ JANGKAUAN TIM ══ */}
-          {seksi === 'tim' && (
-            <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-              <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2">
-                <div>
-                  <h3 className="text-sm font-bold text-slate-700">Jangkauan tim</h3>
-                  <p className="text-[11.5px] text-slate-500 mt-0.5">Siapa yang benar-benar bisa dikabarkan lewat kanal mana.</p>
-                </div>
-                {belumTG > 0 && (
-                  <span className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
-                    {belumTG} belum Telegram
-                  </span>
-                )}
-              </div>
-              <div className="p-3">
-                <div className="overflow-x-auto rounded-lg border border-slate-200">
-                  <table className="w-full min-w-[520px] border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="text-left px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Anggota</th>
-                        <th className="text-left px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Tim</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">In-App</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">WhatsApp</th>
-                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">Telegram</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tim.length === 0 ? (
-                        <tr><td colSpan={5} className="px-3.5 py-6 text-center text-xs text-slate-500">Memuat daftar tim…</td></tr>
-                      ) : tim.map(t => (
-                        <tr key={t.nama} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
-                          <td className="px-3.5 py-2.5">
-                            <div className="text-[12.5px] text-slate-700">{t.nama}</div>
-                            <div className="text-[11px] text-slate-500">{t.jabatan}</div>
-                          </td>
-                          <td className="px-3.5 py-2.5 text-[11.5px] text-slate-500">{t.tim}</td>
-                          <td className="px-3 py-2.5 text-center"><Cek ya /></td>
-                          <td className="px-3 py-2.5 text-center"><Cek ya={t.wa} /></td>
-                          <td className="px-3 py-2.5 text-center"><Cek ya={t.tg} /></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="mt-2.5 rounded-lg px-3 py-2.5 text-[11.5px] leading-relaxed"
-                  style={{ background: '#f8fafc', border: '1px solid #e2e8f0', color: '#475569' }}>
-                  <b>Kolom Telegram hanya bisa diisi oleh orangnya sendiri.</b> Admin tidak bisa mengisikannya —
-                  Telegram baru menerbitkan Chat ID setelah orang itu menekan Start di bot.
-                </div>
-              </div>
-            </div>
-          )}
+          <SeksiTim
+            belumTG={belumTG} seksi={seksi} tim={tim}
+          />
 
           {/* ══ AI LEARNING CENTER ══
               Dipindah ke bagiannya sendiri. Sebelumnya menumpuk di bawah kartu
               Telegram di halaman yang sama - padahal ia sama sekali bukan kanal
               notifikasi, dan justru itulah yang membuat layar ini terasa penuh. */}
-          {seksi === 'ai' && (
-            <div className="space-y-3">
-              <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                <div className="px-4 py-3 border-b border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-700">Pembuat Soal AI</h3>
-                  <p className="text-[11.5px] text-slate-500 mt-0.5">Dipakai Learning Center untuk menyusun soal dari materi.</p>
-                </div>
-                <div className="p-3 space-y-3">
-                  <BlokToken
-                    judul="Token AI" kunci="ai.gemini_token" status={rahasia['ai.gemini_token']}
-                    onSimpan={n => simpanRahasia('ai.gemini_token', n)}
-                    onHapus={() => hapusRahasia('ai.gemini_token')}
-                    petunjuk={<>Ambil dari Google AI Studio (aistudio.google.com → Get API key). Token disimpan di server
-                      dan tidak pernah dikirim ke peramban.</>} />
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Model</label>
-                    <PilihModel nilai={ai.model} warna="sky" onGanti={m => setAi(x => ({ ...x, model: m }))} />
-                  </div>
-                  <div>
-                    <label htmlFor="f-dashboard-components-modal-integrasi-3" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                      Arahan topik <span className="normal-case tracking-normal font-normal text-slate-400">— opsional</span>
-                    </label>
-                    <textarea id="f-dashboard-components-modal-integrasi-3" value={ai.arahan} rows={3} onChange={e => setAi(x => ({ ...x, arahan: e.target.value }))}
-                      placeholder={'Contoh:\nUtamakan topik konfigurasi videowall dan troubleshooting sinyal HDMI/HDBaseT.\nHindari pertanyaan tentang sejarah merek atau harga.'}
-                      className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400 leading-relaxed" />
-                    <p className="text-[11px] text-slate-500 mt-1">
-                      Ditambahkan pada instruksi AI, bukan menggantinya — aturan bentuk soal tetap dipegang platform.
-                    </p>
-                  </div>
-                  <div>
-                    <label htmlFor="f-dashboard-components-modal-integrasi-4" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                      Variasi soal <span className="normal-case tracking-normal font-normal text-slate-500">({ai.suhu.toFixed(1)})</span>
-                    </label>
-                    <input id="f-dashboard-components-modal-integrasi-4" type="range" min={0} max={2} step={0.1} value={ai.suhu} aria-label="Variasi soal"
-                      onChange={e => setAi(x => ({ ...x, suhu: Number(e.target.value) }))} className="w-full accent-sky-500" />
-                    <div className="flex justify-between text-[10px] text-slate-500">
-                      <span>0 — taat pada materi</span><span>2 — banyak variasi</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-sky-200 overflow-hidden" style={{ background: 'rgba(14,165,233,0.04)' }}>
-                <div className="px-4 py-3 border-b border-sky-100">
-                  <h3 className="text-sm font-bold text-sky-800">Asisten AI (Tanya Platform & draf Daily Report)</h3>
-                  <p className="text-[11.5px] text-slate-600 mt-0.5">
-                    Dipakai seluruh tim setiap hari. Batas per orang: 20 pertanyaan/jam, 80/hari.
-                  </p>
-                </div>
-                <div className="p-3">
-                  <BlokToken
-                    judul="Token AI Asisten" kunci="ai.gemini_token_asisten" status={rahasia['ai.gemini_token_asisten']}
-                    onSimpan={n => simpanRahasia('ai.gemini_token_asisten', n)}
-                    onHapus={() => hapusRahasia('ai.gemini_token_asisten')}
-                    petunjuk={<>Kosongkan untuk memakai Token AI pembuat soal. Disarankan kunci dari <b>proyek Google
-                      terpisah</b> supaya jatah pembuat soal & penilai tidak ikut habis.</>} />
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-violet-200 overflow-hidden" style={{ background: 'rgba(139,92,246,0.04)' }}>
-                <div className="px-4 py-3 border-b border-violet-100">
-                  <h3 className="text-sm font-bold text-violet-700">Penilai Jawaban Essay</h3>
-                  <p className="text-[11.5px] text-violet-400 mt-0.5">
-                    Token terpisah supaya penilaian borongan tidak menghabiskan jatah pembuat soal.
-                  </p>
-                </div>
-                <div className="p-3 space-y-3">
-                  <BlokToken
-                    judul="Token AI Koreksi" kunci="ai.gemini_token_koreksi" status={rahasia['ai.gemini_token_koreksi']}
-                    onSimpan={n => simpanRahasia('ai.gemini_token_koreksi', n)}
-                    onHapus={() => hapusRahasia('ai.gemini_token_koreksi')}
-                    petunjuk={<>Kosongkan untuk memakai Token AI pembuat soal. Isi dengan kunci dari <b>proyek Google
-                      terpisah</b> supaya jatahnya tidak berebut.</>} />
-                  <div>
-                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Model penilai</label>
-                    <PilihModel nilai={penilai.model} profil="penilai" warna="violet"
-                      onGanti={m => setPenilai(x => ({ ...x, model: m }))} />
-                  </div>
-                  <div>
-                    <label htmlFor="f-dashboard-components-modal-integrasi-5" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                      Arahan penilaian <span className="normal-case tracking-normal font-normal text-slate-400">— opsional</span>
-                    </label>
-                    <textarea id="f-dashboard-components-modal-integrasi-5" value={penilai.arahan} rows={3} onChange={e => setPenilai(x => ({ ...x, arahan: e.target.value }))}
-                      placeholder={'Contoh:\nHargai jawaban yang benar secara konsep walau istilahnya tidak baku.\nJangan mengurangi nilai karena ejaan.'}
-                      className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-violet-400 leading-relaxed" />
-                  </div>
-                  <div>
-                    <label htmlFor="f-dashboard-components-modal-integrasi-6" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
-                      Ketaatan pada kunci <span className="normal-case tracking-normal font-normal text-slate-500">({penilai.suhu.toFixed(1)})</span>
-                    </label>
-                    <input id="f-dashboard-components-modal-integrasi-6" type="range" min={0} max={2} step={0.1} value={penilai.suhu}
-                      aria-label="Ketaatan penilaian pada kunci referensi"
-                      onChange={e => setPenilai(x => ({ ...x, suhu: Number(e.target.value) }))} className="w-full accent-violet-500" />
-                    <div className="flex justify-between text-[10px] text-slate-500">
-                      <span>0 — taat pada kunci</span><span>2 — longgar</span>
-                    </div>
-                  </div>
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input type="checkbox" checked={penilai.otomatis}
-                      onChange={e => setPenilai(x => ({ ...x, otomatis: e.target.checked }))}
-                      className="mt-0.5 w-4 h-4 rounded accent-violet-600 flex-shrink-0" />
-                    <span className="text-[11.5px] leading-snug text-slate-600">
-                      <b>Nilai otomatis saat halaman penilaian dibuka</b>
-                      <span className="block text-[11px] text-slate-500 mt-0.5">
-                        Mati secara bawaan. Bila dinyalakan, sekadar <em>membuka</em> jawaban seorang peserta sudah
-                        memakai jatah — termasuk saat penilai hanya ingin membacanya.
-                      </span>
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
+          <SeksiAI
+            ai={ai} hapusRahasia={hapusRahasia} penilai={penilai} rahasia={rahasia} seksi={seksi} setAi={setAi} setPenilai={setPenilai} simpanRahasia={simpanRahasia}
+          />
 
           {/* ── Bilah Simpan: menempel di bawah, selalu terlihat ──
               Dulu ia berada di dasar seluruh gulungan, jadi sesudah mengubah
