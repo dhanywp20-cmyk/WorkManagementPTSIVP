@@ -55,7 +55,7 @@ const PUBLIC_EXACT = [
 // Cron jobs are called by Vercel scheduler with CRON_SECRET, not a user session
 const CRON_PREFIX = '/api/cron/';
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (PUBLIC_EXACT.includes(pathname)) return NextResponse.next();

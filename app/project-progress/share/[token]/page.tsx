@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { CalendarDays, ChevronDown, Eye, Lock, MapPin } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
 import {
@@ -24,7 +25,9 @@ interface DataShare {
  * ditampilkan hanya-baca (untuk client / atasan). Token Project Progress lama
  * tetap berlaku karena ikut disalin ke proyek baru oleh migrasi 025.
  */
-export default function ProyekSharePage({ params }: { params: { token: string } }) {
+export default function ProyekSharePage() {
+  //  Next 15+: params halaman berupa Promise - di client component cukup useParams().
+  const params = useParams<{ token: string }>();
   const [data, setData] = useState<DataShare | null>(null);
   const [memuat, setMemuat] = useState(true);
   const [galat, setGalat] = useState('');

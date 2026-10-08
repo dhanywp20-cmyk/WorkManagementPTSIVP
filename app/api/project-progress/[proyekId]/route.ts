@@ -11,7 +11,8 @@ export const revalidate = 0;
  *   PATCH  -> admin: { aksi: 'ubahInfo' | 'status' | 'share' | 'tokenBaru', ... }
  *   DELETE -> admin: hapus proyek beserta semua checklist & riwayatnya
  */
-export async function GET(request: NextRequest, { params }: { params: { proyekId: string } }) {
+export async function GET(request: NextRequest, ctx: { params: Promise<{ proyekId: string }> }) {
+  const params = await ctx.params;
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
   try {
@@ -24,7 +25,8 @@ export async function GET(request: NextRequest, { params }: { params: { proyekId
   }
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { proyekId: string } }) {
+export async function PATCH(request: NextRequest, ctx: { params: Promise<{ proyekId: string }> }) {
+  const params = await ctx.params;
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
   if (!akunAdmin(s.akun)) return galat('Hanya admin yang bisa mengubah proyek.', 403);
@@ -79,7 +81,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { proyek
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { proyekId: string } }) {
+export async function DELETE(request: NextRequest, ctx: { params: Promise<{ proyekId: string }> }) {
+  const params = await ctx.params;
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
   if (!akunAdmin(s.akun)) return galat('Hanya admin yang bisa menghapus proyek.', 403);

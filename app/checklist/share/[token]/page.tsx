@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { CalendarDays, Lock, RefreshCw, UserRound } from 'lucide-react';
 import { ConfirmDialog, Modal, Toast, TombolModal, type ConfirmState, type Notif } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
@@ -39,7 +40,9 @@ function simpanNama(nama: string) {
 
 type Lanjutan = { jenis: 'simpan' } | null;
 
-export default function ChecklistSharePage({ params }: { params: { token: string } }) {
+export default function ChecklistSharePage() {
+  //  Next 15+: params halaman berupa Promise - di client component cukup useParams().
+  const params = useParams<{ token: string }>();
   const [detail, setDetail] = useState<ChecklistDetail | null>(null);
   const [memuat, setMemuat] = useState(true);
   const [galat, setGalat] = useState('');

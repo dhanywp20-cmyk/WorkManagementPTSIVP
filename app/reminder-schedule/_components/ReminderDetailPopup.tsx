@@ -91,7 +91,7 @@ export function ReminderDetailPopup({
   sendingWA: string | null;
   handleSendWA: (r: Reminder) => void;
   openEdit: (r: Reminder) => void;
-  statusPhotoRef: RefObject<HTMLInputElement>;
+  statusPhotoRef: RefObject<HTMLInputElement | null>;
   handleConfirmStatusUpdate: () => void;
   updatingStatus: boolean;
   guestUsers: GuestUser[];

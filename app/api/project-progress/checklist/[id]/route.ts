@@ -19,7 +19,8 @@ export const revalidate = 0;
  * Admin: semua aksi. Anggota (yang di-assign): semua kecuali ubah info
  * checklist, atur anggota, dan hapus.
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
   try {
@@ -35,7 +36,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 const KHUSUS_ADMIN = new Set(['ubahInfo', 'anggota']);
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
   const { db, akun } = s;
@@ -197,7 +199,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
   const akses = await hakAtas(s.db, s.akun, params.id);

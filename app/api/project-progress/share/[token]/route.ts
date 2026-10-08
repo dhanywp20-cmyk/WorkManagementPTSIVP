@@ -15,7 +15,8 @@ export const revalidate = 0;
  * Keamanan: service_role di server, hanya BACA, kolom dipilih eksplisit -
  * share_token proyek maupun checklist tidak pernah ikut keluar.
  */
-export async function GET(_request: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(_request: NextRequest, ctx: { params: Promise<{ token: string }> }) {
+  const params = await ctx.params;
   const token = (params.token ?? '').trim();
   if (!tokenSah(token)) return galat('Link tidak valid.', 404);
   const db = getAdminClient();

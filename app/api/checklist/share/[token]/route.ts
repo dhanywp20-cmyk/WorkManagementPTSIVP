@@ -28,7 +28,8 @@ export const revalidate = 0;
 const JEDA_SIMPAN_MS = 3_000;
 const TIDAK_ADA = 'Link tidak ditemukan atau sudah dinonaktifkan.';
 
-export async function GET(_request: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(_request: NextRequest, ctx: { params: Promise<{ token: string }> }) {
+  const params = await ctx.params;
   const ketemu = await cariChecklistShare((params.token ?? '').trim());
   if (!ketemu) return galat(TIDAK_ADA, 404);
   try {
@@ -40,7 +41,8 @@ export async function GET(_request: NextRequest, { params }: { params: { token: 
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
+export async function POST(request: NextRequest, ctx: { params: Promise<{ token: string }> }) {
+  const params = await ctx.params;
   const ketemu = await cariChecklistShare((params.token ?? '').trim());
   if (!ketemu) return galat(TIDAK_ADA, 404);
   const { db, id } = ketemu;
