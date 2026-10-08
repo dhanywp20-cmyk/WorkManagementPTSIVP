@@ -670,8 +670,10 @@ export function AnalyticsPlatform({
           </div>
         )}
 
-        <p className="text-center text-[10px] text-slate-500 select-none pb-2">
-          Analytics Platform — IndoVisual PTS · Work Management
+        <p className="text-center select-none pb-2">
+          <span className="inline-block text-[10px] text-slate-500 bg-white/90 rounded-full px-3 py-1 shadow-sm">
+            Analytics Platform — IndoVisual PTS · Work Management
+          </span>
         </p>
       </div>{/* end scrollable content */}
     </div>

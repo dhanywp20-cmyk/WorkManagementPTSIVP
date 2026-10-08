@@ -271,7 +271,7 @@ export function AnalyticsPage() {
               )}
             </div>
           </div>
-          <p className="text-xs text-slate-500 mb-4 ml-1">
+          <p className="inline-block text-xs text-slate-500 mb-4 bg-white/90 rounded-full px-3 py-1 shadow-sm">
             Klik nama untuk melihat detail nilai & aktivitas per quiz{divisionFilter && <> · Menampilkan divisi <strong>{divisionFilter}</strong></>}
           </p>
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">

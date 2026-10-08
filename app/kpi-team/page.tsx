@@ -715,8 +715,9 @@ export default function KPITeamPage() {
           })()}
         </div>
 
-        {/* ── Period Selector Bar ── */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* ── Period Selector Bar ── berpanel: latar halaman bisa foto (Admin Panel > Merek) */}
+        <div className="flex items-center gap-2 flex-wrap rounded-2xl px-3 py-2 border border-slate-200 shadow-sm"
+          style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)' }}>
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">Periode</span>
           {PERIODS.map(p => (
             <button key={p} onClick={() => setPeriod(p)}

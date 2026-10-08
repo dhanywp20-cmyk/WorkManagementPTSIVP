@@ -349,7 +349,9 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
         <div className="space-y-3 min-w-0">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
+          {/* Berpanel: latar halaman bisa berupa foto (Admin Panel > Merek), teks lepas tidak terbaca di atasnya. */}
+          <div className="flex items-center justify-between gap-2 flex-wrap rounded-xl px-4 py-2.5 shadow-sm"
+            style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
             <p className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>
               <span style={fontAngka}>{detail.bagian.length}</span> bagian · <span style={fontAngka}>{stat.total - stat.selesai}</span> item belum selesai
             </p>
@@ -406,7 +408,8 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
 
           {hak.edit && detail.bagian.length > 0 && (
             <button onClick={() => setFormBagian({ bagian: null, judul: '', catatan: '' })}
-              className="inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: TEMA.warna }}>
+              className="inline-flex items-center gap-1 text-[12px] font-bold rounded-lg px-3 py-1.5 shadow-sm"
+              style={{ color: TEMA.warna, background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
               <Plus size={14} /> Tambah bagian
             </button>
           )}

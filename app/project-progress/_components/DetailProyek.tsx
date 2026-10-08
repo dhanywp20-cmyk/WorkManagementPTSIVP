@@ -169,7 +169,9 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
         {proyek.deskripsi && <CatatanTeks teks={proyek.deskripsi} />}
       </div>
 
-      <div className="flex items-center justify-between gap-2">
+      {/* Berpanel: latar halaman bisa berupa foto (Admin Panel > Merek). */}
+      <div className="flex items-center justify-between gap-2 rounded-xl px-4 py-2.5 shadow-sm"
+        style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
         <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: NETRAL.tinta2 }}>
           Checklist per lokasi · {checklist.length}
         </p>
