@@ -37,6 +37,7 @@ Arah ketergantungan **satu arah**: `panel → (aksi, simpan, ekspor, mesin) → 
 | `kabel.ts` | jalur & panjang kabel ke rack, **legend warna standar** |
 | `rak.ts` | isi rack (elevation) |
 | `template.ts` | template kategori ruangan (terkunci — selalu dibuat ulang dari kode) |
+| `pustaka.ts` | isi proyektor / display / speaker dari Pustaka Tools Team (katalog produk Admin) |
 | `index.ts` | barrel: `import { ... } from '../inti'` |
 
 ## bangun/ — geometri three.js

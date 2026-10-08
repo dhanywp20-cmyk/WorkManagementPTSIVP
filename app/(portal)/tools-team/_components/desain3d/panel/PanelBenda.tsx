@@ -11,6 +11,7 @@ import { AturBidang } from './benda/AturBidang';
 import { AturProyektor } from './benda/AturProyektor';
 import { AturKabel } from './benda/AturKabel';
 import { BagianUmum } from './benda/BagianUmum';
+import { DariPustaka } from './benda/DariPustaka';
 import { useKonteksAtur, type PropsPanelBenda } from './benda/konteks';
 
 /**
@@ -34,6 +35,8 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
           <span className={label}>Nama</span>
           <input value={b.nama} onChange={e => set({ nama: e.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm" />
         </label>
+
+        <DariPustaka c={c} />
 
         {/* Bagian khusus jenis - tiap komponen hanya tampil untuk jenisnya sendiri. */}
         <AturDisplay c={c} />

@@ -11,6 +11,7 @@
  *   kabel      jalur & panjang kabel, legend warna
  *   rak        isi rack (elevation)
  *   template   template kategori ruangan (terkunci)
+ *   pustaka    isi proyektor / display / speaker dari Pustaka Tools Team
  */
 export * from './tipe';
 export * from './ruang';
@@ -23,3 +24,4 @@ export * from './blending';
 export * from './kabel';
 export * from './rak';
 export * from './template';
+export * from './pustaka';
