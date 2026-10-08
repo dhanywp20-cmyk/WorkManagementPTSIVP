@@ -8,6 +8,7 @@ import type { Ticket, User } from './shared';
 import { formatDateTime, statusColors, ringkasPenanganan, bolehReroute, adalahPending } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { SolusiSerupa } from './SolusiSerupa';
+import { ALUR_STATUS_PTS, statusTerkunci } from './alur-status';
 
 /** Bentuk state form "Update Status" di page.tsx - dioper ke sini apa adanya. */
 export type NewActivityForm = {
@@ -67,8 +68,11 @@ export function TicketDetailPopup({
         onClick={e => { if (e.target === e.currentTarget) { onClose(); setShowUpdateForm(false); } }}>
         <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1120px' : '720px', transition: 'max-width 0.2s' }}>
 
-          {/* LEFT: Detail */}
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden w-full flex flex-col flex-1 min-w-0"
+          {/* LEFT: Detail. Di HP disembunyikan selama panel Update Status
+              terbuka - dua panel berdampingan di layar sempit membuat detail
+              terjepit jadi kolom selebar beberapa huruf. Panel Update punya
+              tombol "‹ Detail" untuk kembali. */}
+          <div className={`bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden w-full flex-col flex-1 min-w-0 ${showUpdateForm ? 'hidden md:flex' : 'flex'}`}
             style={{ animation: "scale-in 0.25s ease-out", border: "1px solid rgba(0,0,0,0.1)", maxHeight: "94vh" }}>
             {/* Header */}
             <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
@@ -330,15 +334,23 @@ export function TicketDetailPopup({
 
           {/* RIGHT: Update Status Panel */}
           {showUpdateForm && bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden flex-shrink-0"
-              style={{ width: 340, animation: "scale-in 0.2s ease-out", border: "2px solid rgba(220,38,38,0.25)", maxHeight: "94vh" }}>
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden flex-shrink-0 w-full md:w-[340px]"
+              style={{ animation: "scale-in 0.2s ease-out", border: "2px solid rgba(220,38,38,0.25)", maxHeight: "94vh" }}>
               <div className="px-4 py-3" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-center justify-between gap-2">
+                  <button type="button" onClick={() => setShowUpdateForm(false)} aria-label="Kembali ke detail ticket"
+                    className="md:hidden flex-shrink-0 inline-flex items-center gap-0.5 -ml-1 pl-1 pr-2.5 py-1.5 rounded-lg text-white text-xs font-bold bg-black/20 active:bg-black/35">
+                    <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
+                    Detail
+                  </button>
+                  <div className="min-w-0 flex-1">
                     <h3 className="font-bold text-white text-sm">{currentUserTeamType === "Team Services" ? "🔧 Update Services" : "➕ Update Status"}</h3>
+                    {/* Di HP panel detail tersembunyi, jadi nama project
+                        disebut di sini supaya jelas ticket mana yang diubah. */}
+                    <p className="md:hidden text-white/90 text-[11px] font-semibold truncate">{selectedTicket.project_name}</p>
                     <p className="text-red-200 text-[10px]">Handler: {newActivity.handler_name}</p>
                   </div>
-                  <button aria-label="Tutup" onClick={() => setShowUpdateForm(false)} className="text-white hover:bg-white/20 rounded-lg p-1 font-bold text-xs">✕</button>
+                  <button aria-label="Tutup panel update" onClick={() => setShowUpdateForm(false)} className="hidden md:block text-white hover:bg-white/20 rounded-lg p-1 font-bold text-xs">✕</button>
                 </div>
               </div>
 
@@ -367,9 +379,7 @@ export function TicketDetailPopup({
                   ) : (
                     <div className="flex flex-col gap-1.5">
                       {(() => {
-                        const flow = ["Pending","Call","Onsite","In Progress","Pending Action","Solved"] as const;
-                        const curStatus = selectedTicket.status;
-                        const curIdx = flow.indexOf(curStatus as any);
+                        const riwayatStatus = (selectedTicket.activity_logs ?? []).map(l => l.new_status);
                         const styleMap: Record<string,{icon:string;sel:string;unsel:string}> = {
                           Pending:      { icon:'🟡', sel:'bg-amber-500 text-white border-amber-500',    unsel:'bg-white text-amber-700 border-amber-200 hover:bg-amber-50' },
                           Call:         { icon:'📞', sel:'bg-cyan-600 text-white border-cyan-600',      unsel:'bg-white text-cyan-700 border-cyan-200 hover:bg-cyan-50' },
@@ -378,13 +388,8 @@ export function TicketDetailPopup({
                           'Pending Action':{ icon:'⏸️', sel:'bg-orange-600 text-white border-orange-600', unsel:'bg-white text-orange-700 border-orange-200 hover:bg-orange-50' },
                           Solved:       { icon:'✅', sel:'bg-emerald-500 text-white border-emerald-500',unsel:'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50' },
                         };
-                        return flow.map((step, idx) => {
-                          const stepIdx = flow.indexOf(step);
-                          // Boleh mundur ke "In Progress" dari "Pending Action" (kendala selesai, lanjut kerja).
-                          const locked = stepIdx < curIdx && !(curStatus === "Pending Action" && step === "In Progress");
-                          // Solved hanya dari Onsite+; Pending Action hanya dari In Progress+.
-                          const skipLocked = (step === 'Solved' && curIdx < 2) || (step === 'Pending Action' && curIdx < 3);
-                          const disabled = locked || skipLocked;
+                        return ALUR_STATUS_PTS.map(step => {
+                          const disabled = statusTerkunci(step, selectedTicket.status, riwayatStatus);
                           const st = styleMap[step];
                           const isSelected = newActivity.new_status === step;
                           return (

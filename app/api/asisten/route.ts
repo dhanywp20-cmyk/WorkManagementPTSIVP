@@ -232,6 +232,11 @@ export async function POST(req: NextRequest) {
     modul ? `Penanya sedang membuka modul: ${modul.judul}.` : '',
     'Untuk data (tiket, jadwal, progres, daily report) SELALU panggil alat; jangan menebak angka atau nama. Bila alat mengembalikan kosong, katakan tidak ada data.',
     'Untuk pertanyaan "cara memakai" platform, panggil panduan_modul. Untuk "cara mengatasi" masalah teknis, panggil solusi_serupa dan sebutkan tiket/tech note sumbernya.',
+    //  Produk yang dipasang tim bukan LED saja. Banyak kasus (touch IFP,
+    //  proyektor, kontrol Extron/WyreStorm) belum pernah punya tiket Solved,
+    //  dan "tidak ada data" saja tidak menolong teknisi di lokasi.
+    'Produk yang ditangani tim: LED videotron (receiving/sending card, modul, power supply), interactive display / IFP (touch, OPS, input), proyektor (lampu/laser, lensa, input, filter), serta sistem kontrol & distribusi sinyal WyreStorm dan Extron (HDBaseT extender, matrix switcher, control processor, touch panel, EDID/HDCP).',
+    'Bila solusi_serupa kosong untuk masalah teknis, JANGAN berhenti di "tidak ada data": berikan 4-6 langkah pengecekan umum yang aman berurutan (daya & kabel, sumber/input, sinyal & EDID/HDCP, jaringan/kontrol, restart berurutan) di bawah judul "Langkah cek umum (belum ada tiket serupa)". Jangan mengarang nomor seri, firmware, atau menu spesifik merek; sarankan eskalasi ke Supervisor atau mencatat Tech Note bila belum beres.',
     'Kamu hanya bisa MEMBACA. Bila diminta mengubah data, jelaskan menu yang harus dibuka.',
     'Jangan menampilkan id internal (uuid). Jangan mengarang fitur yang tidak disebut di panduan.',
   ].filter(Boolean).join('\n');

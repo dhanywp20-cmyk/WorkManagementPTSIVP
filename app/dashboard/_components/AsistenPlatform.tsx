@@ -137,7 +137,16 @@ export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
     'Jadwal saya 7 hari ke depan?',
     ...(atasan ? ['Siapa yang belum isi Daily Report hari ini?'] : ['Daily Report saya hari ini sudah lengkap?']),
     `Bagaimana cara pakai ${cariPanduan(modul)?.judul ?? 'Beranda'}?`,
-    'Cara mengatasi layar LED blank?',
+  ];
+  //  Satu kasus per lini produk yang kita pasang, bukan LED saja - dijawab
+  //  dari tiket lama yang Solved & Tech Note, atau langkah cek umum bila
+  //  belum pernah ada tiketnya (lihat prompt di /api/asisten).
+  const saranTroubleshoot = [
+    'Cara mengatasi layar LED blank / sebagian mati?',
+    'Cara mengatasi touch interactive display tidak merespon?',
+    'Cara mengatasi proyektor tidak ada gambar atau redup?',
+    'Cara mengatasi WyreStorm HDBaseT / matrix no signal?',
+    'Cara mengatasi panel kontrol Extron tidak merespon?',
   ];
 
   return (
@@ -195,6 +204,13 @@ export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
                         {saran.map(s => (
                           <button key={s} type="button" onClick={() => kirim(s)}
                             className="text-left text-[12px] font-medium px-3 py-1.5 rounded-full border border-blue-100 bg-blue-50 text-blue-800 hover:bg-blue-100">{s}</button>
+                        ))}
+                      </div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 pt-1">Troubleshooting perangkat</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {saranTroubleshoot.map(s => (
+                          <button key={s} type="button" onClick={() => kirim(s)}
+                            className="text-left text-[12px] font-medium px-3 py-1.5 rounded-full border border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100">{s}</button>
                         ))}
                       </div>
                     </div>
