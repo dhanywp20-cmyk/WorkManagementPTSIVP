@@ -5,6 +5,7 @@ import type { useAksiDesain } from '../aksi/useAksiDesain';
 import type { useProdukTim } from '../simpan/useProdukTim';
 import type { useEkspor } from '../ekspor/useEkspor';
 import type { useSimpanDesain } from '../simpan/useSimpanDesain';
+import type { useTemplateKategori } from '../simpan/useTemplateKategori';
 
 export interface AlatDesain {
   K: KeadaanDesain;
@@ -13,4 +14,5 @@ export interface AlatDesain {
   produk: ReturnType<typeof useProdukTim>;
   ekspor: ReturnType<typeof useEkspor>;
   simpan: ReturnType<typeof useSimpanDesain>;
+  template: ReturnType<typeof useTemplateKategori>;
 }

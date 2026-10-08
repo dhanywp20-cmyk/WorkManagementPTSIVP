@@ -14,6 +14,7 @@ import { useAksiDesain } from './desain3d/aksi/useAksiDesain';
 import { useProdukTim } from './desain3d/simpan/useProdukTim';
 import { useEkspor } from './desain3d/ekspor/useEkspor';
 import { useSimpanDesain } from './desain3d/simpan/useSimpanDesain';
+import { useTemplateKategori } from './desain3d/simpan/useTemplateKategori';
 import { InfoProyektor } from './desain3d/panel/InfoProyektor';
 
 import { BilahBerkas } from './desain3d/panel/BilahBerkas';
@@ -52,12 +53,13 @@ export default function Desain3D() {
   const produk = useProdukTim(K);
   const ekspor = useEkspor(K, { ...kamera });
   const simpan = useSimpanDesain(K);
+  const template = useTemplateKategori(K, aksi, simpan);
   const { asideRef, batas, benda, desainAktif, duaRuang, galat, gambarLayar, gantiBenda, gantiIsi, hanyaLihat, impor, inputGambar, inputLaptop, konfirmasi, kotakRuang, legendaKabel, lihatVersi, modal, objekGambar, panel, pesan, plafonDi, produkTim, ruang, setGantiIsi, setKonfirmasi, setModal, setObjekGambar, setPanel, setRuang, setSisi, siap, sisi, terpilih, wadahRef } = K;
   const { hapusRuangTerakhir, pasangSambungan, salinIsiRuang, tambahBukaan, tambahRuang, ubahBukaan, ubahSambungan, ubahUkuran, unggahGambar } = aksi;
   const { simpanProduk } = produk;
   const { bukaDariLaptop, bukaTim } = simpan;
 
-  const a: AlatDesain = { K, kamera, aksi, produk, ekspor, simpan };
+  const a: AlatDesain = { K, kamera, aksi, produk, ekspor, simpan, template };
   return (
     <div className="space-y-3">
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />

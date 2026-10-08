@@ -5,32 +5,43 @@
  */
 import { type Benda, bendaBaru, BISA_PASANG, type Bukaan, BUKAAN_AWAL, CELAH_PASANG, daftarRuang, idBaru, type ItemKatalog, KATEGORI_RUANG, type KategoriRuang, type Kotak, layarTerdekat, MAKS_RUANG, panjangDinding, pasangDari, proyektorKeLayar, pusatkanIsi, type Ruang, ruangDari, type RuangSambung, salinIsi, salinKeRuang, sambungan, sambunganKe, sesuaikanUkuranRuang, setRuangKelas, type SisiDinding, sisiLuar, type SumbuPusat, templateRuang, tinggiAlasDi } from '../inti';
 import type { KeadaanDesain } from '../useKeadaanDesain';
-import { R2_AWAL } from '../useKeadaanDesain';
+import { R2_AWAL, RUANG_AWAL } from '../useKeadaanDesain';
 import type { Sisi } from '../mesin/tipe';
 
 
+/** Isi template default kategori yang ditetapkan Admin (format sama dengan data desain tim). */
+export interface IsiTemplateKategori { nama: string; ruang: Ruang; benda: Benda[]; layar?: Record<string, string> }
+
 export function useAksiDesain(K: KeadaanDesain) {
   const { batas, benda, gambarLayar, gantiBenda, kotakRuang, mesin, opsiKelas, pasSetelahTemplate, ruang, ruangRef, setAsal, setBenda, setBukaKelas, setDasar, setDesainAktif, setFokusRuang, setKonfirmasi, setLihatVersi, setMenuPusat, setModal, setNamaDesain, setPesan, setPilih, setRuang, setTargetRuang, setVersiGambar, targetRuang, terpilih } = K;
-  /** Pasang template kategori ruangan (mengganti isi kanvas; tercatat di undo). */
-  const pasangKategori = (id: KategoriRuang) => {
+  /**
+   * Pasang template kategori ruangan (mengganti isi kanvas; tercatat di undo). `kustom` = template default
+   * yang ditetapkan Admin untuk kategori ini (simpan/useTemplateKategori.ts); tanpa itu = bawaan kode.
+   */
+  const pasangKategori = (id: KategoriRuang, kustom?: IsiTemplateKategori | null) => {
     const kat = KATEGORI_RUANG.find(k => k.id === id);
-    if (!benda.length) { pasangKategoriYa(id); return; }
+    if (!benda.length) { pasangKategoriYa(id, kustom); return; }
     setKonfirmasi({
       message: `Ganti isi kanvas dengan template "${kat?.judul}"?`, confirmLabel: 'Ganti isi',
       description: 'Isi kanvas sekarang diganti template ini. Bisa dikembalikan dengan Undo.',
-      onConfirm: () => pasangKategoriYa(id),
+      onConfirm: () => pasangKategoriYa(id, kustom),
     });
   };
-  const pasangKategoriYa = (id: KategoriRuang) => {
+  const pasangKategoriYa = (id: KategoriRuang, kustom?: IsiTemplateKategori | null) => {
     const kat = KATEGORI_RUANG.find(k => k.id === id);
-    const t = templateRuang(id);
+    const t = kustom ? { nama: kustom.nama, ruang: { ...RUANG_AWAL, ...kustom.ruang }, benda: kustom.benda } : templateRuang(id);
+    //  Gambar konten layar milik template Admin dikembalikan sebagai tekstur (sama seperti membuka desain tim).
+    const m = mesin.current;
+    if (kustom?.layar && m) for (const [idL, url] of Object.entries(kustom.layar)) {
+      new m.THREE.TextureLoader().load(url, tex => { tex.colorSpace = m.THREE.SRGBColorSpace; gambarLayar.current.set(idL, tex); setVersiGambar(v => v + 1); });
+    }
     ruangRef.current = t.ruang;
     //  Template default dibuat ulang dari kode tiap kali dipasang (terkunci - tidak ada yang bisa mengubah
     //  aslinya). Yang diubah pengguna hanya salinan di kanvas; Simpan selalu membuat file baru miliknya.
     setRuang(t.ruang); setBenda(t.benda); setNamaDesain(`${t.nama} (salinan)`);
-    setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'template', nama: kat?.judul ?? t.nama }); setDasar(null); setPilih(null); setFokusRuang('semua');
+    setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'template', nama: kustom ? `${kat?.judul ?? t.nama} · default Admin` : kat?.judul ?? t.nama }); setDasar(null); setPilih(null); setFokusRuang('semua');
     pasSetelahTemplate.current = true;
-    setPesan(id === 'mapping-objek'
+    setPesan(kustom ? `Template ${kat?.judul} (default dari Admin) dipasang - atur sesuai kebutuhan.` : id === 'mapping-objek'
       ? 'Template Mapping objek dipasang. Tambah → Objek dari luar: impor berkas 3D (SketchUp .dae/.obj/.stl, .glb, .fbx) atau buat dari gambar, letakkan di atas alas - sinar proyektor langsung jatuh di permukaannya.'
       : `Template ${kat?.judul} dipasang - atur sesuai kebutuhan.`);
   };

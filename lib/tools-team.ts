@@ -308,3 +308,14 @@ export function bacaDaftarProduk(v: unknown): ProdukTim[] {
     return [{ ...p.data, id: r.id, oleh: String(r.oleh ?? ''), olehId: String(r.olehId ?? ''), dibuat: String(r.dibuat ?? '') }];
   });
 }
+
+/**
+ * Id kategori ruangan Desain 3D yang boleh punya template default dari Admin
+ * (/api/tools-team/template-kategori). HARUS sama dengan KATEGORI_RUANG di
+ * desain3d/inti/template.ts - dijaga uji/template-kategori.ts.
+ */
+export const ID_KATEGORI_RUANG = [
+  'meeting', 'auditorium', 'control-room', 'kelas', 'mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'immersive',
+] as const;
+export const kategoriRuangSah = (x: unknown): x is (typeof ID_KATEGORI_RUANG)[number] =>
+  typeof x === 'string' && (ID_KATEGORI_RUANG as readonly string[]).includes(x);

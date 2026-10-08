@@ -13,7 +13,7 @@ desain3d/
   mesin/     engine kanvas: renderer, kamera, adegan, alat bantu, label
   impor/     objek dari luar: berkas 3D (glTF/OBJ/FBX/DAE/STL/...), siluet dari gambar
   aksi/      aksi edit desain (template, tambah, salin, tempel, ruang & bukaan)
-  simpan/    simpan & buka: server tim, laptop (.glb), produk tim
+  simpan/    simpan & buka: server tim, laptop (.glb), produk tim, template default kategori (Admin)
   ekspor/    foto kanvas, PNG, lembar cetak A4
   panel/     komponen React (bilah, panel samping, kartu hasil, modal)
   useKeadaanDesain.ts   seluruh state + nilai turunan (satu sumber kebenaran)
@@ -82,7 +82,7 @@ satu baris di tabel (TypeScript menolak bila ada jenis yang terlewat).
 
 ```
 useKeadaanDesain()  ── K ──►  useMesin(K) · useKamera(K) · useAdegan(K)
-                              useAksiDesain(K) · useProdukTim(K) · useEkspor(K, kamera) · useSimpanDesain(K)
+                              useAksiDesain(K) · useProdukTim(K) · useEkspor(K, kamera) · useSimpanDesain(K) · useTemplateKategori(K, aksi, simpan)
                                           │
                      a = { K, kamera, aksi, produk, ekspor, simpan }  (panel/alat.ts)
                                           ▼
