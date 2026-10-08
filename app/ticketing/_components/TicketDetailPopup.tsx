@@ -351,6 +351,11 @@ export function TicketDetailPopup({
                     <p className="text-red-200 text-[10px]">Handler: {newActivity.handler_name}</p>
                   </div>
                   <button aria-label="Tutup panel update" onClick={() => setShowUpdateForm(false)} className="hidden md:block text-white hover:bg-white/20 rounded-lg p-1 font-bold text-xs">✕</button>
+                  {/* HP: ✕ bulat sama persis dengan detail ticket - menutup
+                      seluruh popup, bukan hanya kembali ke detail (itu tugas
+                      tombol "‹ Detail"). */}
+                  <button aria-label="Tutup" onClick={() => { onClose(); setShowUpdateForm(false); }}
+                    className="md:hidden flex-shrink-0 self-start w-7 h-7 rounded-full bg-black/20 active:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
                 </div>
               </div>
 
