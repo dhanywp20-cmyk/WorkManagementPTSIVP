@@ -2,23 +2,27 @@
 import { KalkulatorAudio } from './av/KalkulatorAudio';
 import { KalkulatorDaya } from './av/KalkulatorDaya';
 import { KalkulatorLayar } from './av/KalkulatorLayar';
+import { KalkulatorPoE } from './av/KalkulatorPoE';
 import { KalkulatorProyektor } from './av/KalkulatorProyektor';
+import { KalkulatorRak } from './av/KalkulatorRak';
 import { KalkulatorSinyal } from './av/KalkulatorSinyal';
 import { Ikon } from '@/components/shared/Ikon';
 import { useState } from 'react';
 
 /**
- * Kalkulator AV (ukuran layar, proyektor, bandwidth sinyal, audio, daya & panas). Rumus di
+ * Kalkulator AV (ukuran layar, proyektor, sinyal & jaringan AV, audio, daya & panas, rak, PoE). Rumus di
  * lib/av-hitung.ts; tiap hasil bisa disalin, dicetak (lembar A4), dan diunduh PNG.
  */
 
-/** Menu Kalkulator AV: lima kalkulator dalam satu alat (sub menu). */
+/** Menu Kalkulator AV: tujuh kalkulator dalam satu alat (sub menu). */
 const SUB_AV = [
   { k: 'layar', judul: 'Ukuran Layar', ikon: '📐', C: KalkulatorLayar },
   { k: 'proyektor', judul: 'Proyektor', ikon: '📽', C: KalkulatorProyektor },
   { k: 'sinyal', judul: 'Bandwidth Sinyal', ikon: '〰', C: KalkulatorSinyal },
   { k: 'audio', judul: 'Audio', ikon: '🔊', C: KalkulatorAudio },
   { k: 'daya', judul: 'Daya & Panas', ikon: '⚡', C: KalkulatorDaya },
+  { k: 'rak', judul: 'Rak', ikon: '🗄', C: KalkulatorRak },
+  { k: 'poe', judul: 'PoE', ikon: '🔌', C: KalkulatorPoE },
 ] as const;
 
 export function KalkulatorAV() {

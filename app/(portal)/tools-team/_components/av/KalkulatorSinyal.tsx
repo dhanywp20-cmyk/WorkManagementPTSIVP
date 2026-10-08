@@ -4,6 +4,7 @@ import { Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
 import { ANTARMUKA, bandwidthGbps, type Chroma } from '@/lib/av-hitung';
 import { useState } from 'react';
+import { PanelJaringanAV } from './sinyal/PanelJaringanAV';
 
 const RESOLUSI = [[1280, 720], [1920, 1080], [2560, 1440], [3840, 2160], [4096, 2160], [7680, 4320]];
 
@@ -16,6 +17,7 @@ export function KalkulatorSinyal() {
   const b = bandwidthGbps(lebar, tinggi, hz, bit, chroma);
   const ringkas = () => `${lebar}×${tinggi} @${hz}Hz ${bit}-bit ${chroma}: ±${f(b.dataGbps, 2)} Gbps. Cocok: ${ANTARMUKA.filter(a => a.gbps >= b.dataGbps).map(a => a.nama).join(', ') || 'tidak ada (butuh kompresi DSC)'}.`;
   return (
+    <div className="space-y-4">
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
       <Kartu judul="Format sinyal">
         <div className="grid grid-cols-2 gap-3">
@@ -53,6 +55,8 @@ export function KalkulatorSinyal() {
         </ul>
         <Catatan>Perhitungan memakai timing standar (termasuk blanking). Extender/matrix tertentu memakai kompresi (DSC, VC-2) sehingga bisa membawa format di atas kapasitas murninya - cek spesifikasi perangkat.</Catatan>
       </Kartu>
+    </div>
+    <PanelJaringanAV />
     </div>
   );
 }

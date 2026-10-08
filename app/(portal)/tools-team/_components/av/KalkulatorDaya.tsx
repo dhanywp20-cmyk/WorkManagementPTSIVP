@@ -3,6 +3,7 @@
 import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
 import { type Beban, hitungDaya } from '@/lib/av-hitung';
+import { runtimeUPSMenit } from '@/lib/av-audio-jaringan';
 import { useMemo, useState } from 'react';
 
 const BEBAN_AWAL: Beban[] = [
@@ -17,12 +18,16 @@ export function KalkulatorDaya() {
   const [tegangan, setTegangan] = useState(220);
   const [pf, setPf] = useState(0.9);
   const h = useMemo(() => hitungDaya(beban, tegangan, pf), [beban, tegangan, pf]);
+  //  Lama cadangan UPS dari baterai terpasang (perkiraan; pakai tabel runtime pabrikan untuk angka pasti).
+  const [batV, setBatV] = useState(12); const [batAh, setBatAh] = useState(9); const [batN, setBatN] = useState(2);
+  const runtime = runtimeUPSMenit(h.totalW, batV, batAh, batN);
   const ubah = (i: number, x: Partial<Beban>) => setBeban(b => b.map((v, j) => (j === i ? { ...v, ...x } : v)));
   const ringkas = () => [
     '*Beban daya perangkat AV*',
     ...beban.map(b => `- ${b.nama}: ${b.jumlah} × ${b.watt} W`),
     `Total ${f(h.totalW, 0)} W (${f(h.va, 0)} VA), arus ${f(h.arusA, 1)} A @${tegangan}V, MCB ${h.mcbA} A`,
     `UPS saran ${f(h.upsVA, 0)} VA; panas ±${f(h.btu, 0)} BTU/jam (±${f(h.pkAC, 1)} PK)`,
+    `Baterai ${batN} × ${batV} V ${batAh} Ah → cadangan ±${f(runtime, 0)} menit`,
   ].join('\n');
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)] items-start">
@@ -47,11 +52,16 @@ export function KalkulatorDaya() {
             <Angka label="Tegangan" nilai={tegangan} onUbah={v => v > 0 && setTegangan(v)} satuan="V" />
             <Angka label="Power factor" nilai={pf} onUbah={v => v > 0.3 && v <= 1 && setPf(v)} />
           </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Angka label="Baterai UPS" nilai={batV} onUbah={v => v > 0 && setBatV(v)} satuan="V" />
+            <Angka label="Kapasitas" nilai={batAh} onUbah={v => v > 0 && setBatAh(v)} satuan="Ah" />
+            <Angka label="Jumlah" nilai={batN} onUbah={v => v >= 1 && setBatN(Math.round(v))} step={1} />
+          </div>
         </div>
       </Kartu>
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(() => lembarAV('Daya, UPS & Panas Perangkat AV',
         [['Tegangan', `${tegangan} V`], ['Power factor', f(pf)], ['Jumlah perangkat', String(beban.reduce((a, b) => a + b.jumlah, 0))]],
-        [['Total daya', `${f(h.totalW, 0)} W · ${f(h.va, 0)} VA`, true], [`Arus @${tegangan} V`, `${f(h.arusA, 1)} A · MCB ${h.mcbA} A`], ['UPS saran', `${f(h.upsVA, 0)} VA (+25%)`, true], ['Panas', `±${f(h.btu, 0)} BTU/jam (±${f(h.pkAC, 1)} PK)`]],
+        [['Total daya', `${f(h.totalW, 0)} W · ${f(h.va, 0)} VA`, true], [`Arus @${tegangan} V`, `${f(h.arusA, 1)} A · MCB ${h.mcbA} A`], ['UPS saran', `${f(h.upsVA, 0)} VA (+25%)`, true], ['Cadangan UPS', `±${f(runtime, 0)} menit (${batN} × ${batV} V ${batAh} Ah)`], ['Panas', `±${f(h.btu, 0)} BTU/jam (±${f(h.pkAC, 1)} PK)`]],
         'Gunakan daya maksimum dari datasheet. Kebutuhan AC ruangan juga dipengaruhi jumlah orang, kaca, dan luas ruang.',
         [{ judul: 'Daftar perangkat', jenis: 'tabel', kepala: ['Perangkat', 'Watt', 'Jumlah', 'Subtotal'], rataKanan: [1, 2, 3],
           isi: beban.map(b => [b.nama, `${b.watt} W`, String(b.jumlah), `${f(b.watt * b.jumlah, 0)} W`]) }]), 'Daya AV')} />}>
@@ -60,6 +70,7 @@ export function KalkulatorDaya() {
           <Nilai label={`Arus @${tegangan}V`} nilai={f(h.arusA, 1)} satuan="A" ket={`MCB ${h.mcbA} A`} />
           <Nilai label="UPS saran" nilai={f(h.upsVA, 0)} satuan="VA" ket="+25% cadangan" />
           <Nilai label="Panas" nilai={f(h.btu, 0)} satuan="BTU/h" ket={`±${f(h.pkAC, 1)} PK AC (perangkat saja)`} />
+          <Nilai label="Cadangan UPS" nilai={Number.isFinite(runtime) ? f(runtime, 0) : '-'} satuan="menit" ket={`${batN} × ${batV} V ${batAh} Ah · efisiensi 85%, DoD 80%`} nada={runtime < 10 ? 'awas' : 'baik'} />
         </div>
         <Catatan>Gunakan daya maksimum dari datasheet. Kebutuhan AC ruangan juga dipengaruhi jumlah orang, kaca, dan luas ruang.</Catatan>
       </Kartu>

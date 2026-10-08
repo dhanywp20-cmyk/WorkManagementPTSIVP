@@ -4,6 +4,8 @@ import { Angka, Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../
 import { aksiLembar, type Baris, lembarAV } from './lembar';
 import { FAKTOR_PANDANG, jarakMaksDariLayar, type JenisPandang, layarDariJarak, ukuranDariDiagonal } from '@/lib/av-hitung';
 import { useState } from 'react';
+import { PanelPasang } from './layar/PanelPasang';
+import { PanelVideowall } from './layar/PanelVideowall';
 
 const JENIS: { v: JenisPandang; l: string }[] = [
   { v: 'umum', l: 'Umum (video, presentasi)' },
@@ -32,7 +34,10 @@ export function KalkulatorLayar() {
   const ringkas = () => mode === 'dariJarak'
     ? `Penonton terjauh ${jarak} m (${jenis}): tinggi gambar min ${f(dariJarak.tinggiM)} m, lebar ${f(dariJarak.lebarM)} m, diagonal ±${f(dariJarak.diagonalInci, 0)}" (${rasioK}).`
     : `Layar ${diag}" ${rasioK}: ${f(ukuran.lebarM)} × ${f(ukuran.tinggiM)} m; jarak maks umum ${f(jarakMaksDariLayar(ukuran.tinggiM, 'umum'), 1)} m, analitis ${f(jarakMaksDariLayar(ukuran.tinggiM, 'analitis'), 1)} m, detail ${f(jarakMaksDariLayar(ukuran.tinggiM, 'detail'), 1)} m.`;
+  //  Ukuran gambar untuk panel pemasangan & videowall: hasil cari (mode 1) atau layar yang dicek (mode 2).
+  const gambar = mode === 'dariJarak' ? { lebarM: dariJarak.lebarM, tinggiM: dariJarak.tinggiM } : ukuran;
   return (
+    <div className="space-y-4">
     <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
       <Kartu judul="Masukan">
         <div className="space-y-3">
@@ -70,6 +75,9 @@ export function KalkulatorLayar() {
           </div>
         )}
       </Kartu>
+    </div>
+    <PanelPasang lebarM={gambar.lebarM} tinggiM={gambar.tinggiM} />
+    <PanelVideowall lebarM={gambar.lebarM} tinggiM={gambar.tinggiM} />
     </div>
   );
 }
