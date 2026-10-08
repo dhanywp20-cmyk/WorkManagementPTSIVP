@@ -70,7 +70,11 @@ function ToolsKerjaInner() {
       <div className="max-w-[1600px] mx-auto px-3 sm:px-6 py-4 space-y-4">
         <main className="min-w-0">
           {/* LED Videotron berisi sub menu Calculator LED | Screen Connection. */}
-          {aktif === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} /> : aktif === 'av' ? <KalkulatorAV /> : <Desain3D />}
+          {/*  Tiap alat dirender eksplisit - alat baru di ALAT WAJIB punya cabang di sini (dulu Pustaka jatuh ke Desain 3D). */}
+          {aktif === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} />
+            : aktif === 'av' ? <KalkulatorAV />
+            : aktif === 'pustaka' ? <Pustaka />
+            : <Desain3D />}
         </main>
       </div>
     </div>
