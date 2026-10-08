@@ -41,7 +41,7 @@ export function PanelTambah({ a }: { a: AlatDesain }) {
                           className="w-full h-full text-left rounded-xl border border-violet-200 bg-violet-50/50 px-3 py-2.5 pr-7 hover:border-violet-400 hover:bg-violet-100/60">
                           <span className="block text-[13px] font-bold text-slate-900 break-words">{p.label}</span>
                           <span className="block text-[11.5px] text-slate-600">{p.ket || LABEL[p.jenis]}</span>
-                          <span className="block text-[10.5px] text-slate-500 mt-0.5">
+                          <span className="block text-[11px] text-slate-500 mt-0.5">
                             {typeof p.atur.w === 'number' && typeof p.atur.h === 'number' ? `${Math.round((p.atur.w as number) * 1000)} × ${Math.round((p.atur.h as number) * 1000)} mm · ` : ''}{p.oleh}
                           </span>
                         </button>

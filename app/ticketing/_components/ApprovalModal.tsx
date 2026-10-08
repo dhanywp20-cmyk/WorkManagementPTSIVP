@@ -97,7 +97,7 @@ export function ApprovalModal({
                     const unique = Array.from(new Map(suggested.map(r => [r.assign_name, r])).values());
                     return (
                       <div className="mb-2">
-                        <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-wide mb-1.5"><IkonTeks nama="💡" />Saran Handler (handle project ini sebelumnya)</p>
+                        <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-wide mb-1.5"><IkonTeks nama="💡" />Saran Handler (handle project ini sebelumnya)</p>
                         <div className="flex flex-wrap gap-2">
                           {unique.map((ref, idx) => {
                             const isSelected = approvalAssignees[ticket.id] === ref.assign_name;
@@ -110,7 +110,7 @@ export function ApprovalModal({
                             );
                           })}
                         </div>
-                        <p className="text-[10px] text-gray-500 mt-1 mb-2">Atau pilih anggota lain:</p>
+                        <p className="text-[11px] text-gray-500 mt-1 mb-2">Atau pilih anggota lain:</p>
                       </div>
                     );
                   })()}

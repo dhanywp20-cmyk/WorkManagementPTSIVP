@@ -13,6 +13,8 @@ export {
 export { Toast, InlineToast, type Notif } from './Toast';
 // Pemberitahuan simpan yang gagal - satu untuk semua modul, dipasang di app/layout.tsx.
 export { PenjagaGalatTulis } from './PenjagaGalatTulis';
+// Esc & fokus untuk semua popup, termasuk overlay manual - dipasang di app/layout.tsx.
+export { PenjagaDialog } from './PenjagaDialog';
 export { LoadingScreen, InlineSpinner } from './LoadingScreen';
 export { FormField, SectionHeader, SectionHeaderSmall, InfoRow, InfoLine } from './FormParts';
 export { StarRating } from './StarRating';

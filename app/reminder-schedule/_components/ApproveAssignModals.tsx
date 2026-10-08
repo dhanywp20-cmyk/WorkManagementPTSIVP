@@ -65,7 +65,7 @@ export function ApproveAssignModal({
             {/* Info request */}
             <div className="rounded-xl p-3 space-y-1"
               style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
-              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
+              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
               <p className="text-sm font-bold text-slate-800">{approveTarget.sales_name}{approveTarget.sales_division ? ` · ${approveTarget.sales_division}` : ''}</p>
               <p className="text-xs text-slate-500"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {approveTarget.address || '-'} · 🏷️ {approveTarget.category}</p>
               <p className="text-xs text-slate-500"><IkonTeks nama="📅" />Usulan: {formatDate(approveTarget.due_date)} {approveTarget.due_time}</p>
@@ -158,7 +158,7 @@ export function ApproveAssignModal({
                 </p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="f-reminder-schedule-components-approveassignmodals-4" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+                    <label htmlFor="f-reminder-schedule-components-approveassignmodals-4" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                       Mulai Pengerjaan
                     </label>
                     <input id="f-reminder-schedule-components-approveassignmodals-4" type="date" value={approveStart}
@@ -167,7 +167,7 @@ export function ApproveAssignModal({
                       style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
                   </div>
                   <div>
-                    <label htmlFor="f-reminder-schedule-components-approveassignmodals-5" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+                    <label htmlFor="f-reminder-schedule-components-approveassignmodals-5" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                       Target Selesai
                     </label>
                     <input id="f-reminder-schedule-components-approveassignmodals-5" type="date" value={approveTarget2} min={approveStart || undefined}
@@ -248,7 +248,7 @@ export function SupervisorAssignModal({
           </div>
           <div className="p-6 space-y-4">
             <div className="rounded-xl p-3 space-y-1" style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
-              <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
+              <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
               <p className="text-sm font-bold text-slate-800">{supervisorAssignTarget.sales_name}{supervisorAssignTarget.sales_division ? ` · ${supervisorAssignTarget.sales_division}` : ''}</p>
               <p className="text-xs text-slate-500"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {supervisorAssignTarget.address || '-'} · 🏷️ {supervisorAssignTarget.category}</p>
               <p className="text-xs text-slate-500"><IkonTeks nama="📅" />Jadwal: {formatDate(supervisorAssignTarget.due_date)} {supervisorAssignTarget.due_time}</p>

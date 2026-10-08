@@ -46,7 +46,7 @@ export function SolusiSerupa({ ticketId, teks }: { ticketId: string; teks: strin
                 {t.project_name ?? '-'}{t.product ? ` · ${t.product}` : ''} · {t.assign_name ?? '-'} · {t.tanggal}
               </p>
               {t.solusi && <p className="text-[12px] text-slate-700 mt-1.5 leading-relaxed"><b>Penyelesaian:</b> {t.solusi}</p>}
-              <p className="text-[10.5px] text-slate-500 mt-1">cocok: {t.cocok.join(', ')}</p>
+              <p className="text-[11px] text-slate-500 mt-1">cocok: {t.cocok.join(', ')}</p>
             </div>
           ))}
           {data.techNote.map(n => (
@@ -55,7 +55,7 @@ export function SolusiSerupa({ ticketId, teks }: { ticketId: string; teks: strin
               <Ikon nama="📄" ukuran={14} className="text-sky-700 flex-shrink-0" />
               <span className="min-w-0">
                 <span className="block text-[12.5px] font-semibold text-slate-800 truncate">Tech Note: {n.title}</span>
-                <span className="block text-[10.5px] text-slate-500">cocok: {n.cocok.join(', ')}</span>
+                <span className="block text-[11px] text-slate-500">cocok: {n.cocok.join(', ')}</span>
               </span>
             </a>
           ))}

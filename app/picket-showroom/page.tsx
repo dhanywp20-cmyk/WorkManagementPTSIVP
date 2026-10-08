@@ -433,9 +433,9 @@ function PiketShowroomPageInner() {
                     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{background:'rgba(220,38,38,0.07)',border:'1px solid rgba(220,38,38,0.2)'}}>
                       <div className="flex flex-col">
                         <span className="text-[11px] font-bold text-red-700 leading-tight">{wLabel}</span>
-                        <span className="text-[10px] text-red-600 leading-tight">{wLabel2}</span>
+                        <span className="text-[11px] text-red-600 leading-tight">{wLabel2}</span>
                       </div>
-                      {!isCurrWeek&&<button onClick={()=>setWeekStart(getMonday(new Date()))} className="text-[9px] font-bold px-2 py-1 rounded-lg text-white flex-shrink-0" style={{background:'#dc2626'}}>Ini</button>}
+                      {!isCurrWeek&&<button onClick={()=>setWeekStart(getMonday(new Date()))} className="text-[10px] font-bold px-2 py-1 rounded-lg text-white flex-shrink-0" style={{background:'#dc2626'}}>Ini</button>}
                     </div>
                     <button aria-label="Berikutnya" onClick={()=>setWeekStart(d=>addDays(d,14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">›</button>
                     <button onClick={()=>setWeekStart(d=>addDays(d,28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">››</button>
@@ -474,10 +474,10 @@ function PiketShowroomPageInner() {
               </div>
               {(filterInstansi||filterKebutuhan||filterDivision||filterKegiatan)&&(
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {filterInstansi&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.35)'}}><span className="text-[10px] font-bold text-sky-700"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterInstansi}</span><button aria-label="Tutup" onClick={()=>setFilterInstansi(null)} className="text-sky-400 text-[10px] ml-1">✕</button></div>)}
-                  {filterKebutuhan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(124,58,237,0.1)',border:'1px solid rgba(124,58,237,0.35)'}}><span className="text-[10px] font-bold text-violet-600"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterKebutuhan}</span><button aria-label="Tutup" onClick={()=>setFilterKebutuhan(null)} className="text-violet-400 text-[10px] ml-1">✕</button></div>)}
-                  {filterDivision&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.35)'}}><span className="text-[10px] font-bold text-amber-700"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterDivision}</span><button aria-label="Tutup" onClick={()=>setFilterDivision(null)} className="text-amber-400 text-[10px] ml-1">✕</button></div>)}
-                  {filterKegiatan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:`${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}18`,border:`1px solid ${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}50`}}><span className="text-[10px] font-bold" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterKegiatan}</span><button aria-label="Tutup" onClick={()=>setFilterKegiatan(null)} className="text-[10px] ml-1" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}>✕</button></div>)}
+                  {filterInstansi&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(14,165,233,0.1)',border:'1px solid rgba(14,165,233,0.35)'}}><span className="text-[11px] font-bold text-sky-700"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterInstansi}</span><button aria-label="Tutup" onClick={()=>setFilterInstansi(null)} className="text-sky-400 text-[11px] ml-1">✕</button></div>)}
+                  {filterKebutuhan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(124,58,237,0.1)',border:'1px solid rgba(124,58,237,0.35)'}}><span className="text-[11px] font-bold text-violet-600"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterKebutuhan}</span><button aria-label="Tutup" onClick={()=>setFilterKebutuhan(null)} className="text-violet-400 text-[11px] ml-1">✕</button></div>)}
+                  {filterDivision&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.35)'}}><span className="text-[11px] font-bold text-amber-700"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterDivision}</span><button aria-label="Tutup" onClick={()=>setFilterDivision(null)} className="text-amber-400 text-[11px] ml-1">✕</button></div>)}
+                  {filterKegiatan&&(<div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg" style={{background:`${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}18`,border:`1px solid ${KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}50`}}><span className="text-[11px] font-bold" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterKegiatan}</span><button aria-label="Tutup" onClick={()=>setFilterKegiatan(null)} className="text-[11px] ml-1" style={{color:KEGIATAN_COLORS[filterKegiatan]||'#6366f1'}}>✕</button></div>)}
                 </div>
               )}
             </div>
@@ -503,9 +503,9 @@ function PiketShowroomPageInner() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-black" style={{color:todayDc?.accent||'#dc2626'}}><IkonTeks nama="📍" />Hari ini: {todayName}</span>
-                      <span className="text-[10px] text-slate-500 font-medium">{now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>
-                      {todayInView&&todayPIC&&<span className="text-[10px] font-semibold px-2 py-0.5 rounded-full text-white" style={{background:todayDc?.accent||'#dc2626'}}>PIC: {todayPIC}</span>}
-                      {!todayInView&&<span className="text-[10px] text-slate-500 italic">Jadwal hari ini tidak tampil di view ini</span>}
+                      <span className="text-[11px] text-slate-500 font-medium">{now.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</span>
+                      {todayInView&&todayPIC&&<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full text-white" style={{background:todayDc?.accent||'#dc2626'}}>PIC: {todayPIC}</span>}
+                      {!todayInView&&<span className="text-[11px] text-slate-500 italic">Jadwal hari ini tidak tampil di view ini</span>}
                     </div>
                   </div>
                 </div>
@@ -536,8 +536,8 @@ function PiketShowroomPageInner() {
                     <div key={row.id} className={`px-4 py-3 flex items-start gap-3 ${todayRow?'bg-green-50/60':''}`}>
                       <div className="flex flex-col items-center w-11 flex-shrink-0" style={{color:dc.accent}}>
                         <span className="text-lg font-black leading-none">{new Date(row.day_date+'T00:00:00').getDate()}</span>
-                        <span className="text-[10px] font-bold">{row.day_of_week}</span>
-                        {todayRow&&<span className="text-[7px] font-bold px-1 py-0.5 rounded text-white mt-0.5" style={{background:dc.accent}}>HARI INI</span>}
+                        <span className="text-[11px] font-bold">{row.day_of_week}</span>
+                        {todayRow&&<span className="text-[11px] font-bold px-1 py-0.5 rounded text-white mt-0.5 text-center leading-tight" style={{background:dc.accent}}>Hari ini</span>}
                       </div>
                       <div className="flex-1 min-w-0 pt-0.5">
                         {isHoliday?(
@@ -548,14 +548,14 @@ function PiketShowroomPageInner() {
                           <div className="space-y-1">
                             {pics.map(p=>(
                               <div key={p.team} className="flex items-center gap-1.5">
-                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0" style={{background:TEAM_LABEL[p.team]?.dot??'#64748b'}}>{p.name!.charAt(0).toUpperCase()}</div>
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0" style={{background:TEAM_LABEL[p.team]?.dot??'#64748b'}}>{p.name!.charAt(0).toUpperCase()}</div>
                                 <span className="text-[13px] font-semibold text-slate-800 truncate">{p.name}</span>
-                                <span className="text-[9px] text-slate-500 flex-shrink-0">{p.team.replace('PTS ','')}</span>
+                                <span className="text-[10px] text-slate-500 flex-shrink-0">{p.team.replace('PTS ','')}</span>
                               </div>
                             ))}
                           </div>
                         )}
-                        {jumlahKg>0&&<p className="text-[10px] text-slate-500 mt-1">{jumlahKg} kegiatan tercatat</p>}
+                        {jumlahKg>0&&<p className="text-[11px] text-slate-500 mt-1">{jumlahKg} kegiatan tercatat</p>}
                       </div>
                       {/* Aksi - SAMA dengan kolom Action di tabel desktop. Dulu
                           daftar HP tidak punya tombol sama sekali, jadi dari HP
@@ -570,7 +570,7 @@ function PiketShowroomPageInner() {
                         {isAdmin&&(
                           <button type="button" aria-label={isHoliday?'Batalkan libur':'Tandai sebagai hari libur'}
                             onClick={()=>toggleHoliday(row.day_date)}
-                            className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                            className="text-[11px] font-semibold px-2 py-0.5 rounded-md"
                             style={isHoliday
                               ?{background:'#fef2f2',color:'#dc2626',border:'1px solid #fca5a5'}
                               :{background:'#f8fafc',color:'#64748b',border:'1px solid #e2e8f0'}}>
@@ -597,7 +597,7 @@ function PiketShowroomPageInner() {
                   <thead>
                     <tr style={{background:'linear-gradient(135deg,#fff1f2 0%,#ffe4e6 100%)',borderBottom:'2px solid rgba(220,38,38,0.18)'}}>
                       {['No','Tanggal','PIC','Kegiatan','Jam','Produk','Tamu Instansi','Sales','Keterangan','Edit By','Action'].map((h,i)=>(
-                        <th key={h} className="px-3 py-3 text-center" style={{borderRight:i<10?'1px solid rgba(220,38,38,0.1)':'none'}}><span className="text-[10px] font-black uppercase tracking-wider" style={{color:'#9f1239',letterSpacing:'0.08em'}}>{h}</span></th>
+                        <th key={h} className="px-3 py-3 text-center" style={{borderRight:i<10?'1px solid rgba(220,38,38,0.1)':'none'}}><span className="text-[11px] font-black uppercase tracking-wider" style={{color:'#9f1239',letterSpacing:'0.08em'}}>{h}</span></th>
                       ))}
                     </tr>
                   </thead>
@@ -636,11 +636,11 @@ function PiketShowroomPageInner() {
                               <td className="px-3 py-3 align-middle" rowSpan={kgToShow.length} style={{borderRight:'1px solid #cbd5e1',verticalAlign:'middle'}}>
                                 <div className="flex flex-col" style={{borderLeft:`3px solid ${dc.accent}`,paddingLeft:'6px'}}>
                                   <span className="text-base font-black leading-tight" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').getDate()}</span>
-                                  <span className="text-[9px] font-bold" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
+                                  <span className="text-[10px] font-bold" style={{color:dc.accent}}>{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{month:'short',year:'2-digit'})}</span>
                                   <span className="text-xs font-bold mt-0.5" style={{color:dc.accent}}>{row.day_of_week}</span>
-                                  {todayRow&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md text-white mt-0.5 w-fit" style={{background:dc.accent,boxShadow:`0 2px 6px ${dc.accent}50`}}><IkonTeks nama="📍" />HARI INI</span>}
-                                  {countdownBadge&&<span className="text-[8px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 w-fit" style={{background:`${countdownBadge.color}15`,color:countdownBadge.color,border:`1px solid ${countdownBadge.color}40`}}>{countdownBadge.label}</span>}
-                                  {isHoliday&&<span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white mt-0.5 w-fit" style={{background:'#dc2626',letterSpacing:'0.03em'}}><IkonTeks nama="🎌" />LIBUR</span>}
+                                  {todayRow&&<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md text-white mt-0.5 w-fit" style={{background:dc.accent,boxShadow:`0 2px 6px ${dc.accent}50`}}><IkonTeks nama="📍" />HARI INI</span>}
+                                  {countdownBadge&&<span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md mt-0.5 w-fit" style={{background:`${countdownBadge.color}15`,color:countdownBadge.color,border:`1px solid ${countdownBadge.color}40`}}>{countdownBadge.label}</span>}
+                                  {isHoliday&&<span className="text-[11px] font-black px-2 py-0.5 rounded-full text-white mt-0.5 w-fit" style={{background:'#dc2626',letterSpacing:'0.03em'}}><IkonTeks nama="🎌" />LIBUR</span>}
                                 </div>
                               </td>
                               {/* PIC — tambah keterangan tim */}
@@ -661,10 +661,10 @@ function PiketShowroomPageInner() {
                                     const tc=TEAM_LABEL[team]??DEFAULT_TEAM_COLOR;
                                     return(
                                       <div className="flex items-center gap-1.5">
-                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{picBaris.name.charAt(0).toUpperCase()}</div>
+                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{picBaris.name.charAt(0).toUpperCase()}</div>
                                         <div className="min-w-0">
                                           <p className="text-[13px] font-semibold text-slate-800 truncate leading-tight">{picBaris.name}</p>
-                                          <span className="text-[8px] font-bold uppercase" style={{color:tc.text}}>{team}</span>
+                                          <span className="text-[10px] font-bold uppercase" style={{color:tc.text}}>{team}</span>
                                         </div>
                                       </div>
                                     );
@@ -677,21 +677,21 @@ function PiketShowroomPageInner() {
                           <td className="px-3 py-2.5 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?(
                               <div className="flex flex-col gap-1">
-                                <span className="text-[10px] font-bold border-b-2 pb-0.5 w-fit"
+                                <span className="text-[11px] font-bold border-b-2 pb-0.5 w-fit"
                                   style={{color:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent,borderBottomColor:KEGIATAN_COLORS[kg.jenis_kegiatan]||dc.accent}}>
                                   {kg.jenis_kegiatan}
                                 </span>
                                 {/* RnD: tampilkan team_rnd dengan PTS info */}
                                 {kg.jenis_kegiatan==='RnD'&&(kg as any).team_rnd&&(
                                   <div className="flex items-center gap-1 mt-0.5">
-                                    <span className="text-[9px] font-semibold text-violet-500"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                                    <span className="text-[9px] font-semibold text-violet-700">{(kg as any).team_rnd}</span>
+                                    <span className="text-[10px] font-semibold text-violet-500"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                                    <span className="text-[10px] font-semibold text-violet-700">{(kg as any).team_rnd}</span>
                                     {/* Cari PTS team dari ptUsers */}
                                     {(()=>{
                                       const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);
                                       const teamLabel=u?.team_type?labelKelompokPTS(u.team_type):'';
                                       const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
-                                      return tc?<span className="text-[8px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
+                                      return tc?<span className="text-[10px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
                                     })()}
                                   </div>
                                 )}
@@ -699,7 +699,7 @@ function PiketShowroomPageInner() {
                                 {kg.jenis_kegiatan==='Demo Product'&&kg.kebutuhan&&kg.kebutuhan.length>0&&(
                                   <div className="flex flex-col gap-0.5 mt-0.5">
                                     {kg.kebutuhan.map(k=>(
-                                      <span key={k} className="flex items-center gap-1 text-[9px] font-semibold text-slate-500 leading-tight">
+                                      <span key={k} className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 leading-tight">
                                         <span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:dc.accent}}/>
                                         {k}
                                       </span>
@@ -713,8 +713,8 @@ function PiketShowroomPageInner() {
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.jam_mulai?(
                               <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1"><span className="text-[9px] font-bold text-slate-500 w-10 flex-shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
-                                <div className="flex items-center gap-1"><span className="text-[9px] font-bold text-slate-500 w-10 flex-shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 flex-shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 flex-shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
                               </div>
                             ):<span className="text-gray-400 text-xs">—</span>}
                           </td>
@@ -748,8 +748,8 @@ function PiketShowroomPageInner() {
                                   .sort((a:any,b:any)=>new Date(b.updated_at||b.created_at||0).getTime()-new Date(a.updated_at||a.created_at||0).getTime())[0] as KegiatanEntry|undefined;
                                 return lastEdited
                                   ?<div className="flex flex-col gap-0.5">
-                                    <div className="flex items-center gap-1"><span className="text-[9px]"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-[10px] font-semibold text-slate-600 leading-tight">{lastEdited.edited_by_name}</span></div>
-                                    {lastEdited.updated_at&&<span className="text-[8px] text-slate-500 leading-tight">{new Date(lastEdited.updated_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span>}
+                                    <div className="flex items-center gap-1"><span className="text-[10px]"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-[11px] font-semibold text-slate-600 leading-tight">{lastEdited.edited_by_name}</span></div>
+                                    {lastEdited.updated_at&&<span className="text-[10px] text-slate-500 leading-tight">{new Date(lastEdited.updated_at).toLocaleDateString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</span>}
                                   </div>
                                   :<span className="text-gray-400 text-xs">—</span>;
                               })()}
@@ -783,8 +783,8 @@ function PiketShowroomPageInner() {
                   </tbody>
                 </table>
                 <div className="flex items-center justify-between px-5 py-2.5" style={{borderTop:'1px solid #e5e7eb'}}>
-                  <span className="text-[10px] text-gray-500">{displayRows.length} hari kerja ditampilkan</span>
-                  <span className="text-[10px] text-gray-500">{rows.length} total · {kegiatanList.filter(k=>displayRows.some(r=>r.id===k.piket_id)).length} kegiatan</span>
+                  <span className="text-[11px] text-gray-500">{displayRows.length} hari kerja ditampilkan</span>
+                  <span className="text-[11px] text-gray-500">{rows.length} total · {kegiatanList.filter(k=>displayRows.some(r=>r.id===k.piket_id)).length} kegiatan</span>
                 </div>
               </div>
               </>

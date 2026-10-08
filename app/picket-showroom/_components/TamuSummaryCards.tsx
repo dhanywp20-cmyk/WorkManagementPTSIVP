@@ -85,7 +85,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
           <span className="text-base"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
           <div>
             <p className="text-xs font-black leading-none" style={{color:accentColor}}>Ringkasan Aktivitas</p>
-            <p className="text-[9px] text-slate-500 mt-0.5">{periodLabel}</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">{periodLabel}</p>
           </div>
         </div>
         {/* Controls: Year + Month */}
@@ -99,13 +99,13 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
           {/* Month buttons */}
           <div className="flex items-center gap-0.5 rounded-xl p-1 flex-wrap" style={{background:'rgba(15,23,42,0.05)'}}>
             <button onClick={()=>onMonthChange(null)}
-              className="px-2 py-1 rounded-lg text-[10px] font-bold transition-all"
+              className="px-2 py-1 rounded-lg text-[11px] font-bold transition-all"
               style={selectedMonth===null?{background:accentColor,color:'white'}:{color:'#475569'}}>
               Semua
             </button>
             {MONTH_NAMES.map((mn,i)=>(
               <button key={i} onClick={()=>onMonthChange(i+1)}
-                className="px-2 py-1 rounded-lg text-[10px] font-bold transition-all"
+                className="px-2 py-1 rounded-lg text-[11px] font-bold transition-all"
                 style={selectedMonth===i+1?{background:accentColor,color:'white'}:{color:'#475569'}}>
                 {mn}
               </button>
@@ -119,10 +119,10 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
           <div key={i} className="flex-[2] min-w-[168px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
             <div className="flex items-center gap-1 mb-0.5">
               <span className="text-[11px]"><Ikon nama={s.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider leading-none whitespace-nowrap">{s.label}</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-none whitespace-nowrap">{s.label}</span>
             </div>
             <span className="text-sm font-black leading-tight" style={{color:s.color}}>{s.val}</span>
-            <span className="text-[8px] text-slate-500 leading-none">{s.hint}</span>
+            <span className="text-[10px] text-slate-500 leading-none">{s.hint}</span>
           </div>
         ))}
         <div className="flex-shrink-0 px-1 py-3 flex items-center">
@@ -134,10 +134,10 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
                 ikon garis yang sama dengan kolom di kirinya, bukan emoji. */}
             <div className="flex items-center gap-1 mb-0.5 text-slate-500">
               <Ikon nama={PRODUK_ICONS[p]} ukuran={12} className="flex-shrink-0" />
-              <span className="text-[9px] font-bold uppercase tracking-normal leading-none whitespace-nowrap" title={p}>{p === 'Audio System' ? 'Audio' : p}</span>
+              <span className="text-[10px] font-bold uppercase tracking-normal leading-none whitespace-nowrap" title={p}>{p === 'Audio System' ? 'Audio' : p}</span>
             </div>
             <span className="text-sm font-black leading-tight" style={{color:PRODUK_COLORS[p]}}>{fmtJam(jamPerProduk[p]||0)}</span>
-            <span className="text-[9px] text-slate-500 leading-none">waktu pakai</span>
+            <span className="text-[10px] text-slate-500 leading-none">waktu pakai</span>
           </div>
         ))}
       </div>

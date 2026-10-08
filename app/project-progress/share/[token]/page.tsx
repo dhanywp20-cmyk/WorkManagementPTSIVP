@@ -145,7 +145,7 @@ export default function ProyekSharePage({ params }: { params: { token: string } 
               );
             })}
 
-            <p className="text-center text-[10.5px] font-semibold py-4" style={{ color: TEMA.samar }}>
+            <p className="text-center text-[11px] font-semibold py-4" style={{ color: TEMA.samar }}>
               Work Management PTS IVP · Diperbarui {formatWaktu(data.proyek.updated_at)} · Halaman ini hanya menampilkan data.
             </p>
           </>

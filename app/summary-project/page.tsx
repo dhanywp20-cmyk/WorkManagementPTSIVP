@@ -137,7 +137,7 @@ export default function SummaryProjectPage() {
               className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
               style={{ background: `linear-gradient(135deg, ${THEME.color}, ${THEME.colorLight})`, boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}>
               <IkonTeks nama="🧭" />Mapping Center
-              {!!belumTerpeta && <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-amber-950 text-[10px]">{belumTerpeta}</span>}
+              {!!belumTerpeta && <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-amber-950 text-[11px]">{belumTerpeta}</span>}
             </button>
           )}
         </PageHeader>
@@ -226,15 +226,15 @@ export default function SummaryProjectPage() {
                     <thead>
                       <tr>
                         {['No', 'Kode', 'Nama Project', 'Lokasi', 'Sales'].map((h, i) => (
-                          <th key={h} className={`px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide ${i === 0 ? 'text-center' : 'text-left'}`}>{h}</th>
+                          <th key={h} className={`px-3 py-2.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide ${i === 0 ? 'text-center' : 'text-left'}`}>{h}</th>
                         ))}
                         {(['schedule', 'ticket', 'design', 'review'] as AktivitasTipe[]).map(t => (
-                          <th key={t} className="px-1 py-2.5 text-[10px] font-bold uppercase tracking-wide text-center" style={{ color: TIPE_CFG[t].color }}
+                          <th key={t} className="px-1 py-2.5 text-[11px] font-bold uppercase tracking-wide text-center" style={{ color: TIPE_CFG[t].color }}
                             title={TIPE_CFG[t].label}><Ikon nama={TIPE_CFG[t].icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {TIPE_CFG[t].pendek}</th>
                         ))}
-                        <th className="px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide text-left">Terakhir</th>
-                        <th className="px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide text-left">Status</th>
-                        <th className="px-1 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide text-center"><span className="sr-only">Aksi</span></th>
+                        <th className="px-3 py-2.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-left">Terakhir</th>
+                        <th className="px-3 py-2.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-left">Status</th>
+                        <th className="px-1 py-2.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide text-center"><span className="sr-only">Aksi</span></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -251,7 +251,7 @@ export default function SummaryProjectPage() {
                             </td>
                             <td className="px-3 py-3 align-middle">
                               <p className="text-xs font-bold text-gray-800 leading-snug break-words">{p.name}</p>
-                              {p.customer && <p className="text-[10px] text-gray-500 font-semibold mt-0.5 truncate">{p.customer}</p>}
+                              {p.customer && <p className="text-[11px] text-gray-500 font-semibold mt-0.5 truncate">{p.customer}</p>}
                             </td>
                             <td className="px-3 py-3 align-middle">
                               <p className="text-[11px] text-gray-600 line-clamp-2" title={p.location ?? undefined}>{p.location || <span className="text-gray-400">—</span>}</p>
@@ -260,7 +260,7 @@ export default function SummaryProjectPage() {
                               {p.sales_name ? (
                                 <>
                                   <p className="text-[11px] font-semibold text-gray-700 truncate">{p.sales_name}</p>
-                                  {p.sales_division && <p className="text-[9px] text-gray-500 font-bold uppercase tracking-wide">{p.sales_division}</p>}
+                                  {p.sales_division && <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wide">{p.sales_division}</p>}
                                 </>
                               ) : <span className="text-[11px] text-gray-400">—</span>}
                             </td>

@@ -63,7 +63,7 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
       </div>
 
       <div className="grid grid-cols-7 gap-0.5 mb-0.5">
-        {WEEKDAYS.map(w => <div key={w} className="text-center text-[8px] font-bold text-slate-500 uppercase">{w[0]}</div>)}
+        {WEEKDAYS.map(w => <div key={w} className="text-center text-[10px] font-bold text-slate-500 uppercase">{w[0]}</div>)}
       </div>
 
       <div className="grid grid-cols-7 gap-0.5">
@@ -76,7 +76,7 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
             <button key={iso} type="button" onClick={() => toggle(iso)}
               aria-pressed={selected}
               aria-label={`${day} ${MONTH_NAMES[viewMonth]} ${viewYear}${isToday ? ' (hari ini)' : ''}`}
-              className="aspect-square rounded text-[10px] font-semibold transition-all flex items-center justify-center"
+              className="aspect-square rounded text-[11px] font-semibold transition-all flex items-center justify-center"
               style={selected
                 ? { background: accentColor, color: 'white' }
                 : isToday
@@ -91,14 +91,14 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
       {dates.length > 0 && (
         <div className="flex flex-wrap items-center gap-1 mt-2 pt-2" style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }}>
           {dates.map(d => (
-            <div key={d} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+            <div key={d} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold"
               style={{ background: `${accentColor}18`, border: `1px solid ${accentColor}40`, color: accentColor }}>
               {fmtChip(d)}
               <button type="button" onClick={() => toggle(d)} className="hover:opacity-60 transition-opacity"
                 title={`Hapus tanggal ${fmtChip(d)}`} aria-label={`Hapus tanggal ${fmtChip(d)}`}><span aria-hidden="true">✕</span></button>
             </div>
           ))}
-          <span className="text-[10px] text-slate-500 ml-1">{dates.length} hari dipilih</span>
+          <span className="text-[11px] text-slate-500 ml-1">{dates.length} hari dipilih</span>
         </div>
       )}
     </div>

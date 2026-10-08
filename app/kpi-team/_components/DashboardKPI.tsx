@@ -461,7 +461,7 @@ function KepalaUbin({ ikon, judul, warna, catatan }: {
   return (
     <div className="flex items-center gap-2 mb-4">
       <h3 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 flex-1 truncate">{judul}</h3>
-      {catatan && <span className="text-[10px] font-semibold text-slate-500 flex-shrink-0">{catatan}</span>}
+      {catatan && <span className="text-[11px] font-semibold text-slate-500 flex-shrink-0">{catatan}</span>}
     </div>
   );
 }
@@ -470,7 +470,7 @@ function KepalaUbin({ ikon, judul, warna, catatan }: {
 function KakiUbin({ kiri, kanan, warna }: { kiri: React.ReactNode; kanan: React.ReactNode; warna?: string }) {
   return (
     <div className="flex justify-between items-center mt-2.5 pt-2.5" style={{ borderTop: '1px dashed rgba(15,23,42,0.10)' }}>
-      <span className="text-[10px] font-bold text-slate-500">{kiri}</span>
+      <span className="text-[11px] font-bold text-slate-500">{kiri}</span>
       <span className="text-[11.5px] font-black" style={{ color: warna ?? '#475569' }}>{kanan}</span>
     </div>
   );
@@ -1218,7 +1218,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                         {team:'MVI', person:kpi?.piket.todayMvi},
                       ].map(p=>(
                         <div key={p.team} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-[10px] bg-slate-50 border border-black/[0.05]">
-                          <span className="text-[10px] font-black tracking-[0.08em] flex-shrink-0" style={{color:'#0e7490'}}>{p.team}</span>
+                          <span className="text-[11px] font-black tracking-[0.08em] flex-shrink-0" style={{color:'#0e7490'}}>{p.team}</span>
                           {loading
                             ? <span className="inline-block h-2.5 w-16 rounded bg-slate-100 animate-pulse"/>
                             : p.person
@@ -1272,7 +1272,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                       <div className="flex flex-col">
                         {kpi.tickets.byHandler.slice(0,5).map((h,i)=>(
                           <div key={h.name} className="flex items-center gap-2.5 py-[7px] border-b border-black/[0.05] last:border-b-0">
-                            <span aria-hidden="true" className="w-7 h-7 rounded-[10px] grid place-items-center text-[10.5px] font-black text-white flex-shrink-0"
+                            <span aria-hidden="true" className="w-7 h-7 rounded-[10px] grid place-items-center text-[11px] font-black text-white flex-shrink-0"
                               style={{ background: i===0 ? AKSEN : '#cbd5e1' }}>{inisial(h.name)}</span>
                             <span className="text-[12px] font-extrabold text-slate-800 flex-1 truncate">{h.name}</span>
                             <span className="text-[16px] font-black tabular-nums flex-shrink-0"
@@ -1343,7 +1343,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                         {label:'Avg skor', value:kpi?.learning.avgScore??0,          w:BAIK},
                       ].map(s=>(
                         <div key={s.label}>
-                          <p className="text-[9.5px] font-black uppercase tracking-[0.07em] text-slate-500 truncate">{s.label}</p>
+                          <p className="text-[10px] font-black uppercase tracking-[0.07em] text-slate-500 truncate">{s.label}</p>
                           {loading
                             ? <div className="h-6 w-10 rounded bg-slate-100 animate-pulse mt-1"/>
                             : <p className="text-[24px] font-black leading-none mt-1 tabular-nums" style={{color:s.w,letterSpacing:'-0.03em'}}>{s.value}</p>}
@@ -1364,9 +1364,9 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                           <div className="min-w-0">
                             <p className="text-[11px] font-extrabold text-slate-700">Pass rate</p>
                             <div className="flex flex-col gap-1 mt-1.5">
-                              <span className="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-500">
+                              <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
                                 <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:w}}/>{kpi.learning.completedSessions} lulus</span>
-                              <span className="flex items-center gap-1.5 text-[10.5px] font-bold text-slate-500">
+                              <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
                                 <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:'#e2e8f0'}}/>{gagal} gagal</span>
                             </div>
                           </div>
@@ -1402,7 +1402,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                           </div>
                           <div className="flex flex-wrap gap-x-3.5 gap-y-1.5 mt-2.5">
                             {peran.map((r,i)=>(
-                              <span key={r.role??i} className="inline-flex items-center gap-1.5 text-[10.5px] font-bold text-slate-500">
+                              <span key={r.role??i} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
                                 <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:WARNA[i%WARNA.length]}}/>
                                 {(r.role??'Belum diatur').toUpperCase()} {r.count}
                               </span>
@@ -1450,7 +1450,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                     {allMembers.length === 0 ? (
                       <div className="flex flex-col items-center gap-2 py-10">
                         <span className="text-3xl opacity-20"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                        <p className="text-[10px] text-slate-500">Data KPI Team belum tersedia. Buka menu KPI Team untuk memuat data.</p>
+                        <p className="text-[11px] text-slate-500">Data KPI Team belum tersedia. Buka menu KPI Team untuk memuat data.</p>
                       </div>
                     ) : (
                       <div className="flex items-end gap-1.5" style={{height:160}}>
@@ -1465,7 +1465,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                                 <div className="w-[42%] rounded-t transition-all duration-700" title={`LC: ${l}`}
                                   style={{height:hL||2, background:'#6366f1', opacity:l?0.85:0.12}}/>
                               </div>
-                              <span className="text-[10px] text-slate-500">{m}</span>
+                              <span className="text-[11px] text-slate-500">{m}</span>
                             </div>
                           );
                         })}

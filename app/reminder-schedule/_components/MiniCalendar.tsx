@@ -30,7 +30,7 @@ export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selec
         <button aria-label="Sebelumnya" onClick={() => setCalendarMonth(new Date(y, m-1, 1))} className="text-white/80 hover:text-white font-bold text-lg px-2 py-0.5 rounded-lg hover:bg-white/10 transition-all">‹</button>
         <div className="text-center">
           <p className="text-white font-bold text-sm">{monthNames[m]} {y}</p>
-          <p className="text-white/70 text-[10px] mt-0.5">{totalThisMonth} jadwal bulan ini</p>
+          <p className="text-white/70 text-[11px] mt-0.5">{totalThisMonth} jadwal bulan ini</p>
         </div>
         <button aria-label="Berikutnya" onClick={() => setCalendarMonth(new Date(y, m+1, 1))} className="text-white/80 hover:text-white font-bold text-lg px-2 py-0.5 rounded-lg hover:bg-white/10 transition-all">›</button>
       </div>
@@ -38,7 +38,7 @@ export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selec
       <div className="p-3">
         <div className="grid grid-cols-7 mb-1.5">
           {['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map((d,i) => (
-            <div key={i} className="text-center text-[10px] font-bold py-1" style={{ color: '#64748b' }}>{d}</div>
+            <div key={i} className="text-center text-[11px] font-bold py-1" style={{ color: '#64748b' }}>{d}</div>
           ))}
         </div>
 
@@ -61,7 +61,7 @@ export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selec
                 <span className={`leading-none font-${cnt > 0 ? 'black' : 'semibold'} text-xs`}
                   style={{ color: isSel ? 'white' : isToday ? '#dc2626' : cnt > 0 ? '#4f46e5' : '#374151' }}>{day}</span>
                 {cnt > 0 && (
-                  <span className="text-[8px] font-bold leading-none mt-0.5 px-1.5 rounded-full"
+                  <span className="text-[10px] font-bold leading-none mt-0.5 px-1.5 rounded-full"
                     style={{ background: isSel ? 'rgba(255,255,255,0.35)' : '#4f46e5', color: 'white' }}>
                     {cnt}
                   </span>
@@ -77,7 +77,7 @@ export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selec
         const dayRems = reminders.filter(r => r.due_date === selectedCalDay);
         return dayRems.length > 0 ? (
           <div className="border-t p-3 space-y-2" style={{ borderColor: 'rgba(0,0,0,0.08)', background: 'rgba(249,250,251,0.8)' }}>
-            <p className="text-[10px] font-bold tracking-widest uppercase text-gray-500 px-1">
+            <p className="text-[11px] font-bold tracking-widest uppercase text-gray-500 px-1">
               <Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatDate(selectedCalDay)} — {dayRems.length} jadwal
             </p>
             {dayRems.map(r => (

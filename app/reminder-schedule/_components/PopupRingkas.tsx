@@ -187,7 +187,7 @@ export function PopupNotifikasi({
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <StatusBadge status={r.status} />
-                    <p className="text-[10px] text-gray-500 mt-1">{formatDate(r.due_date)}</p>
+                    <p className="text-[11px] text-gray-500 mt-1">{formatDate(r.due_date)}</p>
                   </div>
                 </div>
               </div>
@@ -263,7 +263,7 @@ export function PopupLonceng({
                       {/* Alasan ditaruh PALING DEPAN: yang dicari orang saat
                           membuka lonceng adalah "saya harus apa", bukan
                           kategori pekerjaannya. */}
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: warna }}>
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold text-white" style={{ background: warna }}>
                         {alasan}
                       </span>
                       <CategoryBadge category={r.category} />
@@ -273,7 +273,7 @@ export function PopupLonceng({
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <StatusBadge status={r.status} />
-                    <p className="text-[10px] text-gray-500 mt-1">{formatDate(r.due_date)}</p>
+                    <p className="text-[11px] text-gray-500 mt-1">{formatDate(r.due_date)}</p>
                   </div>
                 </div>
               </div>

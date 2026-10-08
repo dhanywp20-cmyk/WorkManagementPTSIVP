@@ -430,7 +430,7 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
                 <p className="text-[12px] leading-snug" style={{ color: NETRAL.tinta }}>
                   <b>{r.nama}</b> {LABEL_AKSI[r.aksi] ?? r.aksi} <span style={{ color: NETRAL.tinta2 }}>{r.teks_item}</span>
                 </p>
-                <p className="text-[10.5px] mt-0.5" style={{ color: r.aksi === 'kendala' ? TEMA.kendala : TEMA.samar }}>
+                <p className="text-[11px] mt-0.5" style={{ color: r.aksi === 'kendala' ? TEMA.kendala : TEMA.samar }}>
                   {formatWaktu(r.created_at)} · {r.lewat === 'link' ? 'via link' : 'di aplikasi'}
                 </p>
               </div>

@@ -133,15 +133,15 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
         {mode === 'edit' && (
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
             <div className="grid sm:grid-cols-2 gap-3">
-              <label className="block sm:col-span-2"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Nama Project</span>
+              <label className="block sm:col-span-2"><span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Nama Project</span>
                 <input className={INPUT} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></label>
-              <label className="block"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Customer</span>
+              <label className="block"><span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Customer</span>
                 <input className={INPUT} value={form.customer} onChange={e => setForm(f => ({ ...f, customer: e.target.value }))} /></label>
-              <label className="block"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Sales</span>
+              <label className="block"><span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Sales</span>
                 <input className={INPUT} value={form.sales_name} onChange={e => setForm(f => ({ ...f, sales_name: e.target.value }))} /></label>
-              <label className="block sm:col-span-2"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Lokasi</span>
+              <label className="block sm:col-span-2"><span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Lokasi</span>
                 <input className={INPUT} value={form.location} onChange={e => setForm(f => ({ ...f, location: e.target.value }))} /></label>
-              <label className="block"><span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Status</span>
+              <label className="block"><span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Status</span>
                 <select className={INPUT} value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as RingkasanProject['status'] }))}>
                   {Object.entries(STATUS_PROJECT).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </select></label>
@@ -187,12 +187,12 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
                   <div key={a.id} className="relative">
                     <span className="absolute -left-5 top-1 w-3 h-3 rounded-full border-2 border-white shadow-sm"
                       style={{ background: cfg.color }} aria-hidden="true" />
-                    <p className="text-[10px] font-black tracking-wider" style={{ color: cfg.color }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}</p>
+                    <p className="text-[11px] font-black tracking-wider" style={{ color: cfg.color }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}</p>
                     <p className="text-sm font-bold text-gray-800 mt-0.5">{a.judul}</p>
                     <p className="text-[11px] text-gray-500 mt-0.5">{fmtTgl(a.tanggal)} · {a.meta}</p>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                       {a.status && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
                           style={{ background: `${warnaStatus(a.status)}18`, color: warnaStatus(a.status) }}>
                           {a.status}
                         </span>

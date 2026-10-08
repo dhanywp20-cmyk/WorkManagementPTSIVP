@@ -674,7 +674,7 @@ export function QuestionsPage({ user }: { user: User }) {
             <span>Sisa ~<strong>{geminiRemaining}</strong></span>
           </div>
           {geminiLastUsedStr && (
-            <span className="text-slate-500 text-[10px]">Terakhir: {geminiLastUsedStr}</span>
+            <span className="text-slate-500 text-[11px]">Terakhir: {geminiLastUsedStr}</span>
           )}
         </div>
       </div>
@@ -696,7 +696,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="col-span-2">
           <label htmlFor="f-learning-center-components-questionspage-1" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Nama Grup / Batch
-            <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
+            <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
           </label>
           <input id="f-learning-center-components-questionspage-1" value={batchName} onChange={e => setBatchName(e.target.value)}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white"
@@ -705,7 +705,7 @@ export function QuestionsPage({ user }: { user: User }) {
         <div className="col-span-2">
           <label htmlFor="f-learning-center-components-questionspage-2" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
             Topik Khusus
-            <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
+            <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
           </label>
           <textarea id="f-learning-center-components-questionspage-2" value={genExtraPrompt} onChange={e => setGenExtraPrompt(e.target.value)} rows={2}
             className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white resize-none"
@@ -738,7 +738,7 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
         <div>
           <label htmlFor="f-learning-center-components-questionspage-6" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-            Upload PDF <span className="text-[10px] font-normal text-violet-500 normal-case tracking-normal">(sementara, tidak disimpan)</span>
+            Upload PDF <span className="text-[11px] font-normal text-violet-500 normal-case tracking-normal">(sementara, tidak disimpan)</span>
           </label>
           <input id="f-learning-center-components-questionspage-6" ref={pdfRef} type="file" accept=".pdf" onChange={e => {
             const f = e.target.files?.[0] ?? null;
@@ -783,7 +783,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 className={`flex-1 px-3 py-2 text-left transition-all ${
                   modeBanding === o.v ? 'bg-violet-600 text-white' : 'bg-white text-slate-600 hover:bg-violet-50'}`}>
                 <div className="text-xs font-bold">{o.judul}</div>
-                <div className={`text-[10px] ${modeBanding === o.v ? 'text-violet-100' : 'text-slate-500'}`}>{o.ket}</div>
+                <div className={`text-[11px] ${modeBanding === o.v ? 'text-violet-100' : 'text-slate-500'}`}>{o.ket}</div>
               </button>
             ))}
           </div>
@@ -796,7 +796,7 @@ export function QuestionsPage({ user }: { user: User }) {
                   { lbl: 'Model B', val: modelBandingB, set: setModelBandingB },
                 ] as const).map(m => (
                   <div key={m.lbl}>
-                    <label className="block text-[10px] font-bold text-violet-600 uppercase tracking-wide mb-1">{m.lbl}</label>
+                    <label className="block text-[11px] font-bold text-violet-600 uppercase tracking-wide mb-1">{m.lbl}</label>
                     <select aria-label="Model AI" value={m.val} onChange={e => m.set(e.target.value)}
                       className="w-full text-xs px-2.5 py-2 rounded-lg border border-violet-200 bg-white outline-none focus:border-violet-400">
                       {daftarModelGen.map(x => <option key={x.id} value={x.id}>{x.id}</option>)}
@@ -804,7 +804,7 @@ export function QuestionsPage({ user }: { user: User }) {
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-violet-700 mt-2 leading-relaxed">
+              <p className="text-[11px] text-violet-700 mt-2 leading-relaxed">
                 Materi, jumlah soal, tingkat kesulitan, dan arahan yang sama dikirim ke keduanya —
                 jadi yang berbeda benar-benar hanya modelnya. <b>Tidak ada yang disimpan</b> sampai
                 Anda memilih salah satu hasilnya.
@@ -829,10 +829,10 @@ export function QuestionsPage({ user }: { user: User }) {
               <div key={i} className="rounded-xl border border-slate-200 overflow-hidden flex flex-col bg-white">
                 <div className="px-3 py-2 border-b border-slate-200 flex items-center gap-2 flex-wrap"
                   style={{ background: i === 0 ? '#eef2ff' : '#f0fdf4' }}>
-                  <span className="text-[10px] font-black uppercase tracking-wider"
+                  <span className="text-[11px] font-black uppercase tracking-wider"
                     style={{ color: i === 0 ? '#4338ca' : '#15803d' }}>{i === 0 ? 'Model A' : 'Model B'}</span>
                   <span className="text-[11px] font-bold text-slate-700 truncate">{sisi.model}</span>
-                  <span className="ml-auto text-[10px] font-semibold text-slate-500">
+                  <span className="ml-auto text-[11px] font-semibold text-slate-500">
                     {sisi.galat ? '—' : `${sisi.rows.length} soal`}
                   </span>
                 </div>
@@ -846,13 +846,13 @@ export function QuestionsPage({ user }: { user: User }) {
                         {j + 1}. {String(r.question ?? '')}
                       </p>
                       {r.question_type === 'essay' ? (
-                        r.model_answer ? <p className="text-[10.5px] text-indigo-700 mt-1 leading-snug">Kunci: {String(r.model_answer)}</p> : null
+                        r.model_answer ? <p className="text-[11px] text-indigo-700 mt-1 leading-snug">Kunci: {String(r.model_answer)}</p> : null
                       ) : (
                         <div className="grid grid-cols-2 gap-1 mt-1.5">
                           {(['a', 'b', 'c', 'd'] as const).map(o => {
                             const benar = r.correct_answer === o.toUpperCase();
                             return (
-                              <div key={o} className={`text-[10px] px-1.5 py-1 rounded border leading-snug ${
+                              <div key={o} className={`text-[11px] px-1.5 py-1 rounded border leading-snug ${
                                 benar ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold'
                                       : 'border-slate-200 bg-white text-slate-500'}`}>
                                 <b>{o.toUpperCase()}.</b> {String((r as Record<string, unknown>)[`option_${o}`] ?? '')}
@@ -991,7 +991,7 @@ export function QuestionsPage({ user }: { user: User }) {
             <div>
               <label htmlFor="f-learning-center-components-questionspage-9" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                 Kunci / Referensi Jawaban
-                <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">Optional — hanya untuk bantu admin menilai, tidak dilihat peserta</span>
+                <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional — hanya untuk bantu admin menilai, tidak dilihat peserta</span>
               </label>
               <textarea id="f-learning-center-components-questionspage-9" value={newQ.model_answer} onChange={e => setNewQ(p => ({ ...p, model_answer: e.target.value }))}
                 rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
@@ -1013,7 +1013,7 @@ export function QuestionsPage({ user }: { user: User }) {
           <div>
             <label htmlFor="f-learning-center-components-questionspage-10" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
               Nama Grup / Batch
-              <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
+              <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
             </label>
             <input id="f-learning-center-components-questionspage-10" value={newQ.batch_name} onChange={e => setNewQ(p => ({ ...p, batch_name: e.target.value }))}
               className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
@@ -1411,7 +1411,7 @@ export function QuestionsPage({ user }: { user: User }) {
         {/* Material filter chips */}
         {viewMaterials.length > 0 && (
           <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">Filter:</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Filter:</span>
             <button
               onClick={() => setSelectedMat('')}
               className="px-3 py-1 rounded-lg text-xs font-semibold border transition-all"
@@ -1449,7 +1449,7 @@ export function QuestionsPage({ user }: { user: User }) {
                 {editQ.question_type === 'essay' ? (
                   <div>
                     <label htmlFor="f-learning-center-components-questionspage-12" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                      Kunci / Referensi Jawaban <span className="ml-1 text-[10px] font-normal text-slate-500 normal-case">Optional</span>
+                      Kunci / Referensi Jawaban <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case">Optional</span>
                     </label>
                     <textarea id="f-learning-center-components-questionspage-12" value={editQ.model_answer ?? ''} onChange={e => setEditQ(p => p && ({ ...p, model_answer: e.target.value }))}
                       rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Contoh jawaban ideal..." />
@@ -1601,22 +1601,22 @@ export function QuestionsPage({ user }: { user: User }) {
                               {/* Rancangan tetap hidup walau grupnya ditutup. Tanda ini
                                   yang mencegahnya terlupakan di balik grup yang terlipat. */}
                               {adaDraf && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
                                   ● Urutan belum disimpan
                                 </span>
                               )}
                               {/* Difficulty mini-chips */}
                               <div className="flex gap-1">
-                                {easyN > 0  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.easy,   color: DIFF_TEXT.easy,   border: `1px solid ${DIFF_BORDER.easy}` }}>  Mudah {easyN}</span>}
-                                {medN  > 0  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.medium, color: DIFF_TEXT.medium, border: `1px solid ${DIFF_BORDER.medium}` }}>Sedang {medN}</span>}
-                                {hardN > 0  && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.hard,   color: DIFF_TEXT.hard,   border: `1px solid ${DIFF_BORDER.hard}` }}>  Sulit {hardN}</span>}
+                                {easyN > 0  && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.easy,   color: DIFF_TEXT.easy,   border: `1px solid ${DIFF_BORDER.easy}` }}>  Mudah {easyN}</span>}
+                                {medN  > 0  && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.medium, color: DIFF_TEXT.medium, border: `1px solid ${DIFF_BORDER.medium}` }}>Sedang {medN}</span>}
+                                {hardN > 0  && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.hard,   color: DIFF_TEXT.hard,   border: `1px solid ${DIFF_BORDER.hard}` }}>  Sulit {hardN}</span>}
                               </div>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <button
                                 type="button"
                                 data-tulis onClick={e => { e.stopPropagation(); handleDeleteBatch(batchKey); }}
-                                className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-rose-500 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-all"
+                                className="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-rose-500 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-all"
                               >
                                 <svg aria-hidden="true" focusable="false" width="9" height="9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1713,7 +1713,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                   </div>
                                   <div style={{ flex: 1, padding: '14px 18px' }}>
                                     {q.question_type === 'essay' && (
-                                      <span className="inline-block text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 mb-1.5"><IkonTeks nama="📝" />ESSAY</span>
+                                      <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 mb-1.5"><IkonTeks nama="📝" />ESSAY</span>
                                     )}
                                     <p style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', lineHeight: 1.6, marginBottom: 10 }}>{q.question}</p>
                                     {q.question_type === 'essay' ? (
@@ -1730,7 +1730,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                         const isCorrect = q.correct_answer === opt.toUpperCase();
                                         return (
                                           <div key={opt} className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold' : 'border-slate-200 bg-white text-slate-600'}`}>
-                                            <span className={`w-4 h-4 rounded flex items-center justify-center text-[9px] font-black flex-shrink-0 mt-0.5 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{opt.toUpperCase()}</span>
+                                            <span className={`w-4 h-4 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 mt-0.5 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{opt.toUpperCase()}</span>
                                             <span className="leading-snug">{(q as any)[`option_${opt}`]}</span>
                                           </div>
                                         );
@@ -1739,7 +1739,7 @@ export function QuestionsPage({ user }: { user: User }) {
                                     )}
                                     <div className="flex items-center justify-between">
                                       <span style={{
-                                        fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                                        fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
                                         background: DIFF_BG[q.difficulty] ?? '#f8fafc',
                                         color: DIFF_TEXT[q.difficulty] ?? '#64748b',
                                         border: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,

@@ -107,7 +107,7 @@ export function DivisiSalesInline() {
             return (
               <span key={d} className="inline-flex items-center gap-1.5 pl-3 pr-1.5 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
                 {d}
-                {jumlah > 0 && <span className="text-[10px] font-bold text-slate-500">{jumlah} akun</span>}
+                {jumlah > 0 && <span className="text-[11px] font-bold text-slate-500">{jumlah} akun</span>}
                 <button type="button" onClick={() => hapus(d)}
                   title={jumlah > 0 ? `Masih dipakai ${jumlah} akun` : `Hapus ${d}`}
                   aria-label={jumlah > 0 ? `${d} masih dipakai ${jumlah} akun` : `Hapus ${d}`}

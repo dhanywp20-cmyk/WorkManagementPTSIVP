@@ -79,7 +79,7 @@ export function ModePenyelesaianPanel({
                 className={`py-4 rounded-xl border-2 font-bold text-sm transition-all flex flex-col items-center gap-2 ${modePenyelesaian === m ? (m === 'onsite' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-blue-500 bg-blue-50 text-blue-700') : 'border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300'}`}>
                 <span className="text-2xl">{m === 'onsite' ? '🏠' : '📡'}</span>
                 {m === 'onsite' ? 'ONSITE' : 'REMOTE'}
-                <span className="text-[10px] font-normal opacity-70">{m === 'onsite' ? 'Tim hadir langsung' : 'Tim dari jarak jauh'}</span>
+                <span className="text-[11px] font-normal opacity-70">{m === 'onsite' ? 'Tim hadir langsung' : 'Tim dari jarak jauh'}</span>
               </button>
             ))}
           </div>
@@ -90,7 +90,7 @@ export function ModePenyelesaianPanel({
           <input id="f-reminder-schedule-components-modepenyelesaianpanel-1" type="date" value={bastDate} onChange={e => setBastDate(e.target.value)}
             className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white" />
           {bastDate && (
-            <p className="text-[10px] text-gray-500 mt-1">Tranche T1 bayar {new Date(bastDate).getFullYear()+1} · T2 bayar {new Date(bastDate).getFullYear()+2} · T3 bayar {new Date(bastDate).getFullYear()+3}</p>
+            <p className="text-[11px] text-gray-500 mt-1">Tranche T1 bayar {new Date(bastDate).getFullYear()+1} · T2 bayar {new Date(bastDate).getFullYear()+2} · T3 bayar {new Date(bastDate).getFullYear()+3}</p>
           )}
         </div>
 

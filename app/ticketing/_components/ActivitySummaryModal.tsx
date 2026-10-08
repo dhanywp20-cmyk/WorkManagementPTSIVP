@@ -95,7 +95,7 @@ export function ActivitySummaryModal({
                 if (!w) return null;
                 return (<>
                   <span className="text-gray-400">|</span>
-                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[10px]"
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full font-bold text-[11px]"
                     style={w.isIn
                       ? { background: "rgba(14,165,233,0.15)", color: "#0369a1", border: "1px solid rgba(14,165,233,0.3)" }
                       : { background: "rgba(239,68,68,0.12)", color: "#dc2626", border: "1px solid rgba(239,68,68,0.3)" }}>

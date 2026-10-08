@@ -31,7 +31,7 @@ function KartuChecklist({ c, onBuka }: { c: ChecklistRingkas; onBuka: () => void
           <MapPin size={15} className="mt-0.5 flex-shrink-0" style={{ color: TEMA.warna }} /> {c.judul}
         </p>
         <span className="flex items-center gap-1 flex-shrink-0">
-          {c.saya && <span className="px-1.5 py-0.5 rounded text-[10.5px] font-bold" style={{ background: TEMA.tint, color: TEMA.warnaTua }}>Tugas saya</span>}
+          {c.saya && <span className="px-1.5 py-0.5 rounded text-[11px] font-bold" style={{ background: TEMA.tint, color: TEMA.warnaTua }}>Tugas saya</span>}
           {c.share_aktif && <Link2 size={14} aria-label="Link tim aktif" style={{ color: TEMA.selesai }} />}
         </span>
       </div>

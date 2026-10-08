@@ -145,7 +145,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           {/* Category picker */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Kategori *</label>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Kategori *</label>
             {/*
               Kartu kategori dikecilkan dan dijadikan tiga kolom.
 
@@ -177,7 +177,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           {/* Tipe Produk — WAJIB, untuk routing ke supervisor (LED→Wahyu, LCD/MW→Yoga) */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Tipe Produk *</label>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Tipe Produk *</label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {PRODUCT_TYPES.map(pt => {
                 const sel = formData.product_type === pt;
@@ -208,7 +208,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             berarti "belum tahu" - ia berarti proyeknya tidak akan terlihat.
           */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Brand * <span className="normal-case text-slate-500 font-medium tracking-normal">(menentukan Finance mana yang boleh melihat nominalnya)</span>
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -229,7 +229,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           {/* Assign To — single or bulk */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Assign To *</label>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Assign To *</label>
             {!editingReminder && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {([
@@ -342,7 +342,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                         ? { borderColor: '#0ea5e9', background: 'rgba(14,165,233,0.18)', color: '#0369a1' }
                         : { borderColor: 'rgba(14,165,233,0.25)', background: 'rgba(255,255,255,0.7)', color: '#64748b' }}>
                       {val === null ? '—' : `${val}Y`}
-                      <div className="text-[10px] font-normal mt-0.5 opacity-80">{labels[String(val)]}</div>
+                      <div className="text-[11px] font-normal mt-0.5 opacity-80">{labels[String(val)]}</div>
                     </button>
                   );
                 })}
@@ -453,7 +453,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
             <FormField label={editingReminder ? 'Hari Lain dalam Jadwal Ini' : 'Tambah Hari Lain (Opsional)'}>
               <MultiDatePicker dates={extraDates} onChange={onExtraDatesChange} accentColor="#0891b2" />
               {editingReminder && (
-                <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: '#64748b' }}>
+                <p className="text-[11px] mt-1.5 leading-relaxed" style={{ color: '#64748b' }}>
                   {extraDates.length > 0
                     ? `Jadwal ini berjalan ${extraDates.length + 1} hari. Menghapus tanggal akan membuang jadwal hari itu; menambah tanggal menambah hari baru ke jadwal yang sama.`
                     : 'Jadwal ini sehari. Menambah tanggal di sini menjadikannya jadwal berhari-hari, bukan jadwal baru yang terpisah.'}

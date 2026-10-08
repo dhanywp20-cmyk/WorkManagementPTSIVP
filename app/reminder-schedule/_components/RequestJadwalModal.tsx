@@ -186,7 +186,7 @@ export function RequestJadwalModal({
              schedule diatasnamakan Sales External tsb (nama & divisi). */}
           {isInternalSales && (
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+              <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                 SBU <span className="normal-case text-slate-500 font-medium tracking-normal">(opsional — buat atas nama Sales External)</span>
               </label>
               <SalesPicker
@@ -210,7 +210,7 @@ export function RequestJadwalModal({
              yang meng-handle & meng-approve request ini. */}
           {!isInternalSales && (
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+              <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                 Brand * <span className="normal-case text-slate-500 font-medium tracking-normal">(Sales Internal yang handle)</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -249,7 +249,7 @@ export function RequestJadwalModal({
 
           {/* Nama Project */}
           <div>
-            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-1" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-1" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Nama Project *
             </label>
             <input id="f-reminder-schedule-components-requestjadwalmodal-1"
@@ -262,7 +262,7 @@ export function RequestJadwalModal({
 
           {/* Lokasi */}
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+            <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Lokasi Project *
             </label>
             <div className="relative">
@@ -278,7 +278,7 @@ export function RequestJadwalModal({
 
           {/* Deskripsi */}
           <div>
-            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-2" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-2" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Deskripsi Kebutuhan
             </label>
             <textarea id="f-reminder-schedule-components-requestjadwalmodal-2"
@@ -296,7 +296,7 @@ export function RequestJadwalModal({
           <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           {/* Kategori */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Kategori *
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -333,7 +333,7 @@ export function RequestJadwalModal({
 
           {/* Tipe Produk — WAJIB, untuk auto-routing ke supervisor */}
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Tipe Produk *
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -354,7 +354,7 @@ export function RequestJadwalModal({
 
           {/* Product */}
           <div>
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+            <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Product / Unit (Opsional)
             </label>
             <div className="relative">
@@ -371,7 +371,7 @@ export function RequestJadwalModal({
           {/* Tanggal & Waktu */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-3" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-3" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                 Tanggal Usulan *
               </label>
               <input id="f-reminder-schedule-components-requestjadwalmodal-3"
@@ -382,7 +382,7 @@ export function RequestJadwalModal({
               />
             </div>
             <div>
-              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-4" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-4" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                 Waktu Usulan
               </label>
               <input id="f-reminder-schedule-components-requestjadwalmodal-4"
@@ -410,7 +410,7 @@ export function RequestJadwalModal({
               </p>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-5" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+                  <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-5" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                     Mulai Pengerjaan
                   </label>
                   <input id="f-reminder-schedule-components-requestjadwalmodal-5" type="date" value={form.progress_start_date}
@@ -418,7 +418,7 @@ export function RequestJadwalModal({
                     className={inputCls} style={inputStyle} />
                 </div>
                 <div>
-                  <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-6" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+                  <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-6" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                     Target Selesai
                   </label>
                   <input id="f-reminder-schedule-components-requestjadwalmodal-6" type="date" value={form.progress_target_date}
@@ -434,7 +434,7 @@ export function RequestJadwalModal({
              (layar sempit → tampilan bertumpuk); hanya muncul di layar sm: ke atas.
              Di HP user cukup submit 1 tanggal (Tanggal Usulan di atas). */}
           <div className="hidden satulayar:block">
-            <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+            <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Tambah Hari Lain (Opsional)
             </label>
             <MultiDatePicker dates={form.extra_dates} onChange={dates => f({ extra_dates: dates })} accentColor="#2563eb" />
@@ -447,7 +447,7 @@ export function RequestJadwalModal({
           {/* PIC */}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-7" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+              <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-7" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                 Nama PIC Project
               </label>
               <input id="f-reminder-schedule-components-requestjadwalmodal-7"
@@ -458,7 +458,7 @@ export function RequestJadwalModal({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+              <label className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
                 No. Telepon PIC
               </label>
               <div className="relative">
@@ -475,7 +475,7 @@ export function RequestJadwalModal({
 
           {/* Catatan */}
           <div>
-            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-8" className="block text-[10px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
+            <label htmlFor="f-reminder-schedule-components-requestjadwalmodal-8" className="block text-[11px] font-bold mb-1 tracking-widest uppercase" style={{ color: '#64748b' }}>
               Catatan Tambahan
             </label>
             <textarea id="f-reminder-schedule-components-requestjadwalmodal-8"

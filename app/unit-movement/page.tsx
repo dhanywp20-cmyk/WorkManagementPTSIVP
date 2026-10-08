@@ -327,20 +327,20 @@ function UnitMovementPageInner() {
               <span className="font-bold text-sm text-red-700 flex-1">
                 Open Loan — {openLoans.length} barang belum dikembalikan (lewat tanggal)
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">{openLoans.length}</span>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700">{openLoans.length}</span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm" style={{minWidth:700}}>
                 <thead>
                   <tr style={{background:'#fef2f2',borderBottom:'1px solid #fecaca'}}>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Project</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Nama PTS</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Type Barang</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Serial Number</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Tgl Keluar</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Jatuh Tempo</th>
-                    <th className="px-4 py-2.5 text-left text-[10px] font-bold uppercase tracking-widest text-red-600">Kondisi</th>
-                    {isAdmin && <th className="px-4 py-2.5 text-center text-[10px] font-bold uppercase tracking-widest text-red-600">Aksi</th>}
+                    <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-red-600">Project</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-red-600">Nama PTS</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-red-600">Type Barang</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-red-600">Serial Number</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-red-600">Tgl Keluar</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-red-600">Jatuh Tempo</th>
+                    <th className="px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-widest text-red-600">Kondisi</th>
+                    {isAdmin && <th className="px-4 py-2.5 text-center text-[11px] font-bold uppercase tracking-widest text-red-600">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -362,13 +362,13 @@ function UnitMovementPageInner() {
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="text-xs font-bold text-red-700 whitespace-nowrap">{fmtDate(loan.expected_return_date!)}</span>
                             {daysLate > 0 && (
-                              <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-red-100 text-red-700 whitespace-nowrap">+{daysLate}h</span>
+                              <span className="text-[11px] font-black px-1.5 py-0.5 rounded bg-red-100 text-red-700 whitespace-nowrap">+{daysLate}h</span>
                             )}
                           </div>
                         </td>
                         <td className="px-4 py-2.5">
                           {loan.kondisi_barang
-                            ? <span className={`text-[10px] font-bold px-2 py-0.5 rounded whitespace-nowrap`}
+                            ? <span className={`text-[11px] font-bold px-2 py-0.5 rounded whitespace-nowrap`}
                                 style={loan.kondisi_barang==='Baik'
                                   ? {background:'#d1fae5',color:'#065f46'}
                                   : loan.kondisi_barang==='Perlu Service'
@@ -376,7 +376,7 @@ function UnitMovementPageInner() {
                                   : {background:'#fee2e2',color:'#991b1b'}}>
                                 {loan.kondisi_barang==='Baik'?'✅':loan.kondisi_barang==='Perlu Service'?'⚠️':'❌'} {loan.kondisi_barang}
                               </span>
-                            : <span className="text-[10px] text-gray-400">—</span>}
+                            : <span className="text-[11px] text-gray-400">—</span>}
                         </td>
                         {isAdmin && (
                           <td className="px-4 py-2.5 text-center">
@@ -503,15 +503,15 @@ function UnitMovementPageInner() {
             <table className="w-full text-sm tabel-kartu" style={{minWidth:1100}}>
               <thead>
                 <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 w-10">No</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap w-24">Tanggal</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 w-32">Nama Penerima</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 w-32">Nama Pengirim</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 w-36">Project</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap w-24">Status</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap w-28">Event</th>
-                  <th className="px-3 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500" style={{minWidth:300}}>Type &amp; SN</th>
-                  <th className="px-3 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-gray-500 w-36">Action</th>
+                  <th className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 w-10">No</th>
+                  <th className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap w-24">Tanggal</th>
+                  <th className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 w-32">Nama Penerima</th>
+                  <th className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 w-32">Nama Pengirim</th>
+                  <th className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 w-36">Project</th>
+                  <th className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap w-24">Status</th>
+                  <th className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap w-28">Event</th>
+                  <th className="px-3 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500" style={{minWidth:300}}>Type &amp; SN</th>
+                  <th className="px-3 py-3 text-center text-[11px] font-bold uppercase tracking-widest text-gray-500 w-36">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -559,7 +559,7 @@ function UnitMovementPageInner() {
                         </span>
                       </td>
                       <td className="px-3 py-3">
-                        <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap">
                           {log.event||'-'}
                         </span>
                       </td>
@@ -573,7 +573,7 @@ function UnitMovementPageInner() {
                           </div>
                         ) : <span className="text-xs text-gray-500">-</span>}
                         {log.serial_number&&(
-                          <p className="text-[10px] text-gray-500 font-mono mt-1">SN: {log.serial_number}</p>
+                          <p className="text-[11px] text-gray-500 font-mono mt-1">SN: {log.serial_number}</p>
                         )}
                       </td>
                       {/* Action */}
@@ -592,8 +592,8 @@ function UnitMovementPageInner() {
           </div>
 
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100" style={{background:'rgba(255,255,255,0.97)'}}>
-            <span className="text-[10px] text-gray-500">{filteredLogs.length} log ditemukan</span>
-            <span className="text-[10px] text-gray-500">dari {logs.length} log keseluruhan</span>
+            <span className="text-[11px] text-gray-500">{filteredLogs.length} log ditemukan</span>
+            <span className="text-[11px] text-gray-500">dari {logs.length} log keseluruhan</span>
           </div>
           <Paginasi {...hal} satuan="log" />
         </div>

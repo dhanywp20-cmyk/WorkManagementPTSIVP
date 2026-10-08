@@ -103,7 +103,7 @@ export function LingkupManagerInline() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-[10px] font-bold tracking-widest uppercase text-slate-500 border-b border-slate-100">
+                <tr className="text-[11px] font-bold tracking-widest uppercase text-slate-500 border-b border-slate-100">
                   <th className="text-left px-3 py-2.5">Akun</th>
                   {group.map(g => <th key={g.nama} className="text-center px-3 py-2.5 whitespace-nowrap">{g.label}</th>)}
                   <th className="text-left px-3 py-2.5">Berlaku</th>

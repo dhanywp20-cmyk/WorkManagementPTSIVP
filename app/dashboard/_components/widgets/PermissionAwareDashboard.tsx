@@ -47,14 +47,14 @@ function HeaderTabBtn({ label, icon, active, onClick, badge }: {
 }) {
   return (
     <button type="button" onClick={onClick}
-      className="flex items-center gap-1 text-[10px] md:text-[11px] font-bold px-2 py-1 md:px-2.5 md:py-1.5 rounded-full transition-all flex-shrink-0"
+      className="flex items-center gap-1 text-[11px] md:text-[11px] font-bold px-2 py-1 md:px-2.5 md:py-1.5 rounded-full transition-all flex-shrink-0"
       style={active
         ? { background: AKSEN_UTAMA, color: 'white', border: `1px solid ${AKSEN_UTAMA}` }
         : { background: 'white', color: '#475569', border: '1px solid #e2e8f0' }}>
       <span className="select-none"><Ikon nama={icon} ukuran={14} /></span>
       <span className="hidden sm:inline">{label}</span>
       {badge !== undefined && badge > 0 && (
-        <span className="min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[9px] font-black px-1"
+        <span className="min-w-[15px] h-[15px] rounded-full flex items-center justify-center text-[10px] font-black px-1"
           style={{ background: active ? 'rgba(255,255,255,0.3)' : '#ef4444', color: 'white' }}>
           {badge > 99 ? '99+' : badge}
         </span>
@@ -167,7 +167,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-2.5 md:py-3.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="min-w-0">
             <h1 className="text-base md:text-xl font-extrabold tracking-tight leading-tight text-slate-900">{firstName ? `Halo, ${firstName}` : 'Halo'}</h1>
-            <p className="text-[10px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
+            <p className="text-[11px] md:text-xs text-slate-500 font-medium mt-0.5">{today}</p>
           </div>
           {/*
             Badge "N widget aktif" dulu di sini - angkanya cuma jumlah entri

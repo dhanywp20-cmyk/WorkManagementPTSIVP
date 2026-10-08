@@ -49,7 +49,7 @@ function AnalyticStat({ accent, label, value, subs }: {
         {subs.map((s, i) => (
           <div key={i}>
             <div className="text-sm font-black tabular-nums leading-none text-slate-700">{s.value}</div>
-            <div className="text-[9px] text-slate-500 mt-0.5">{s.label}</div>
+            <div className="text-[10px] text-slate-500 mt-0.5">{s.label}</div>
           </div>
         ))}
       </div>

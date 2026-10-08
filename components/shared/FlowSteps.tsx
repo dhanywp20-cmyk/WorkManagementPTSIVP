@@ -92,22 +92,22 @@ export function FlowSteps({
                     border: `2px solid ${w.bulat}`,
                     boxShadow: k === 'sekarang' ? `0 0 0 3px ${w.bulat}33` : undefined,
                   }}>
-                  {k === 'selesai' && <span className="text-white text-[9px] font-black">✓</span>}
-                  {k === 'batal'   && <span className="text-white text-[9px] font-black">✕</span>}
+                  {k === 'selesai' && <span className="text-white text-[10px] font-black">✓</span>}
+                  {k === 'batal'   && <span className="text-white text-[10px] font-black">✕</span>}
                   {k === 'sekarang' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                 </span>
 
-                <p className="text-[9px] font-bold text-center mt-1.5 leading-tight px-0.5 w-full break-words"
+                <p className="text-[10px] font-bold text-center mt-1.5 leading-tight px-0.5 w-full break-words"
                   style={{ color: w.teks }}>
                   {s.label}
                 </p>
                 {s.pelaku && (
-                  <p className="text-[8px] text-center leading-tight text-slate-500 px-0.5 w-full break-words">
+                  <p className="text-[10px] text-center leading-tight text-slate-500 px-0.5 w-full break-words">
                     {s.pelaku}
                   </p>
                 )}
                 {s.waktu && (
-                  <p className="text-[9px] text-center leading-tight text-slate-500 tabular-nums">
+                  <p className="text-[10px] text-center leading-tight text-slate-500 tabular-nums">
                     {s.waktu}
                   </p>
                 )}

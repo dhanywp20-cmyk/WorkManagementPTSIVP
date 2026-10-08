@@ -484,7 +484,7 @@ export function SchemeTab({ olehNama, notify }: {
                   <p className={`px-3 py-1.5 text-xs font-bold ${pas ? 'text-emerald-700 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`}>
                     Total {totalPct.toFixed(2).replace(/\.00$/, '')}%
                   </p>
-                  <p className="px-3 py-2 text-[10px] text-gray-500 leading-relaxed border-t border-gray-50">{ket}</p>
+                  <p className="px-3 py-2 text-[11px] text-gray-500 leading-relaxed border-t border-gray-50">{ket}</p>
                 </div>
               );
             })}
@@ -565,7 +565,7 @@ export function SchemeTab({ olehNama, notify }: {
                 return (
                   <div key={kunciPeta} className="rounded-xl border border-gray-100 bg-gray-50/60 p-2.5">
                     <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">{judul}</span>
+                      <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">{judul}</span>
                       <TotalPersen nilai={total} />
                     </div>
                     {[{ k: 'pic', l: 'Manager (sebagai PIC)' }, { k: 'support', l: 'Tim Support' }].map(b => (
@@ -593,7 +593,7 @@ export function SchemeTab({ olehNama, notify }: {
           */}
           <div className="sm:col-span-2 rounded-xl border border-violet-100 bg-violet-50/40 p-2.5">
             <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-              <span className="text-[10px] font-black uppercase tracking-widest text-violet-700">
+              <span className="text-[11px] font-black uppercase tracking-widest text-violet-700">
                 Supervisor merangkap PIC — tabel porsi tersendiri
               </span>
               <label className="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer flex-shrink-0">
@@ -794,10 +794,10 @@ export function SchemeTab({ olehNama, notify }: {
                   <div className="min-w-0">
                     <span className="text-xs font-semibold text-gray-700">{labelSkema(v.scheme)}</span>
                     {i === 0 && (
-                      <span className="ml-2 text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">BERLAKU</span>
+                      <span className="ml-2 text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">BERLAKU</span>
                     )}
                   </div>
-                  <span className="text-[10px] text-gray-500 whitespace-nowrap">
+                  <span className="text-[11px] text-gray-500 whitespace-nowrap">
                     {new Date(v.updated_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                     {v.updated_by ? ` · ${v.updated_by}` : ''}
                   </span>

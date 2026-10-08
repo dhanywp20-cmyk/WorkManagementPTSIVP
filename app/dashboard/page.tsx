@@ -1207,7 +1207,7 @@ export default function Dashboard() {
                 <span className="hidden sm:inline text-slate-400 font-light">|</span>
                 <span className="hidden sm:inline text-xs md:text-sm font-bold tracking-wide" style={{ color: merek.warnaAksen }}>{merek.namaPortal}</span>
               </div>
-              <p className="text-slate-500 text-[10px] md:text-xs font-medium mt-0.5 hidden sm:block">{merek.namaPerusahaan}</p>
+              <p className="text-slate-500 text-[11px] md:text-xs font-medium mt-0.5 hidden sm:block">{merek.namaPerusahaan}</p>
             </div>
           </div>
 
@@ -1239,7 +1239,7 @@ export default function Dashboard() {
                 </div>
                 <div className="leading-tight">
                   <p className="text-xs font-bold text-slate-800">{currentUser?.full_name}</p>
-                  <p className="text-[9px] font-bold tracking-widest uppercase text-amber-700">{currentUser?.role}</p>
+                  <p className="text-[10px] font-bold tracking-widest uppercase text-amber-700">{currentUser?.role}</p>
                 </div>
               </div>
             )}
@@ -1469,7 +1469,7 @@ export default function Dashboard() {
           */}
           {!sidebarCollapsed && (
             <div className="flex items-center justify-between gap-2 flex-shrink-0 pl-3.5 pr-2 pt-2.5 pb-1">
-              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 truncate">Menu</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500 truncate">Menu</span>
               <button aria-label="Ciutkan menu samping" aria-expanded={!sidebarCollapsed}
                 onClick={() => setSidebarCollapsed(true)}
                 className="w-7 h-7 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
@@ -1543,7 +1543,7 @@ export default function Dashboard() {
                           {/* Antrean request jadwal muncul DI SINI — di menu yang
                               benar-benar memuatnya, bukan di ikon Admin Panel. */}
                           {menu.key === 'reminder-schedule' && isFullAccess && pendingRequests > 0 && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">
                               {pendingRequests}
                             </span>
                           )}
@@ -1578,7 +1578,7 @@ export default function Dashboard() {
                 {visibleMenuItems.filter(m => LEARNING_KEYS.includes(m.key)).length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.56)' }}>Learning</span>
+                      <span className="text-[11px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.56)' }}>Learning</span>
                       <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
                     </div>
                     <div className="space-y-0.5">
@@ -1630,7 +1630,7 @@ export default function Dashboard() {
                 {visibleMenuItems.filter(m => PROJECT_KEYS.includes(m.key)).length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.56)' }}>Project</span>
+                      <span className="text-[11px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.56)' }}>Project</span>
                       <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
                     </div>
                     <div className="space-y-0.5">
@@ -1682,7 +1682,7 @@ export default function Dashboard() {
                 {visibleMenuItems.filter(m => INTERNAL_DAILY_KEYS.includes(m.key)).length > 0 && (
                   <div>
                     <div className="flex items-center gap-2 px-1 mb-1.5">
-                      <span className="text-[10px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.56)' }}>Internal Daily</span>
+                      <span className="text-[11px] font-bold tracking-[0.14em] uppercase" style={{ color: 'rgba(0,0,0,0.56)' }}>Internal Daily</span>
                       <div className="flex-1 h-px" style={{ background: 'rgba(0,0,0,0.08)' }} />
                     </div>
                     <div className="space-y-0.5">
@@ -1720,7 +1720,7 @@ export default function Dashboard() {
                           {/* Antrean request jadwal muncul DI SINI — di menu yang
                               benar-benar memuatnya, bukan di ikon Admin Panel. */}
                               {menu.key === 'reminder-schedule' && isFullAccess && pendingRequests > 0 && (
-                                <span className="text-[10px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">
+                                <span className="text-[11px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">
                                   {pendingRequests}
                                 </span>
                               )}
@@ -1775,7 +1775,7 @@ export default function Dashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
                     {pendingUsers > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center">{pendingUsers}</span>
+                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center">{pendingUsers}</span>
                     )}
                   </button>
                 )}
@@ -1814,7 +1814,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold truncate leading-tight" style={{ color: '#1e293b' }}>{currentUser?.full_name ?? '-'}</p>
-                    <p className="text-[10px] font-bold tracking-widest uppercase mt-0.5" style={{ color: '#c8861d' }}>{currentUser?.role ?? '-'}</p>
+                    <p className="text-[11px] font-bold tracking-widest uppercase mt-0.5" style={{ color: '#c8861d' }}>{currentUser?.role ?? '-'}</p>
                   </div>
                   <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ color: '#94a3b8' }}>
                     <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1838,7 +1838,7 @@ export default function Dashboard() {
                     </svg>
                     <span>Admin Panel</span>
                     {pendingUsers > 0 && (
-                      <span className="ml-auto text-[10px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none">{pendingUsers}</span>
+                      <span className="ml-auto text-[11px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none">{pendingUsers}</span>
                     )}
                   </button>
                 )}

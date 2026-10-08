@@ -31,7 +31,7 @@ export function ChipVersi({ gaya = 'gelap', className = '' }: {
   return (
     <span
       title={`Versi ${VERSI}${KOMIT ? ` · commit ${KOMIT}` : ''}${DIBANGUN ? ` · dibangun ${DIBANGUN}` : ''}`}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10.5px] font-semibold tracking-wide ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-wide ${className}`}
       style={terang
         ? { color: 'rgba(255,255,255,0.72)', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.16)' }
         : { color: '#64748b', background: 'rgba(255,255,255,0.75)', border: '1px solid rgba(15,23,42,0.08)' }}>

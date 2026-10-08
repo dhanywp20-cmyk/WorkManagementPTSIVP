@@ -41,9 +41,9 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           {TARGET_KONTRAS.map(t => <option key={t.v} value={t.v}>Target {t.l} · {t.ket}</option>)}
         </select>
         <div className="grid grid-cols-3 gap-1.5 text-center">
-          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[10.5px] text-slate-500">Gambar</p><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luxGambar, 0)} lux</p></div>
-          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[10.5px] text-slate-500">Lampu di {kePermukaan ? 'permukaan' : 'layar'}</p><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.cahaya.total, 0)} lux</p></div>
-          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[10.5px] text-slate-500">Kontras</p><p className={`text-[13px] font-extrabold tabular-nums ${warna}`}>{f(kp.kontras, 1)} : 1</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[11px] text-slate-500">Gambar</p><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luxGambar, 0)} lux</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[11px] text-slate-500">Lampu di {kePermukaan ? 'permukaan' : 'layar'}</p><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.cahaya.total, 0)} lux</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[11px] text-slate-500">Kontras</p><p className={`text-[13px] font-extrabold tabular-nums ${warna}`}>{f(kp.kontras, 1)} : 1</p></div>
         </div>
         <p className="text-[11.5px] text-slate-600 leading-relaxed">
           {kp.cahaya.dariLampu

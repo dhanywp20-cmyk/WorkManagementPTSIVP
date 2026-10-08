@@ -429,7 +429,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                   <div>
                     <label htmlFor="f-learning-center-components-sessionspage-3" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
                       Grup / Batch Soal
-                      <span className="ml-1.5 text-[10px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
+                      <span className="ml-1.5 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
                     </label>
                     <select id="f-learning-center-components-sessionspage-3"
                       value={form.batch_filter}
@@ -472,13 +472,13 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                 <label htmlFor="f-learning-center-components-sessionspage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="⏰" />Waktu Dibuka</label>
                 <input id="f-learning-center-components-sessionspage-7" type="datetime-local" value={form.open_at} onChange={e => setForm(p => ({ ...p, open_at: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
-                <p className="text-[10px] text-slate-500 mt-1">Kosongkan = langsung aktif sekarang</p>
+                <p className="text-[11px] text-slate-500 mt-1">Kosongkan = langsung aktif sekarang</p>
               </div>
               <div>
                 <label htmlFor="f-learning-center-components-sessionspage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔒" />Waktu Ditutup</label>
                 <input id="f-learning-center-components-sessionspage-8" type="datetime-local" value={form.close_at} onChange={e => setForm(p => ({ ...p, close_at: e.target.value }))}
                   className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
-                <p className="text-[10px] text-slate-500 mt-1">Kosongkan = tidak ada batas waktu</p>
+                <p className="text-[11px] text-slate-500 mt-1">Kosongkan = tidak ada batas waktu</p>
               </div>
               <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1">
                 <label className="flex items-center gap-2 cursor-pointer">
@@ -492,7 +492,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                   <input type="checkbox" checked={form.acak_soal} onChange={e => setForm(p => ({ ...p, acak_soal: e.target.checked }))}
                     className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400" />
                   <span className="text-sm font-medium text-slate-700"><IkonTeks nama="🔀" />Acak Urutan Soal</span>
-                  <span className="text-[10px] text-slate-500">(beda tiap peserta)</span>
+                  <span className="text-[11px] text-slate-500">(beda tiap peserta)</span>
                 </label>
               </div>
               <div className="col-span-2">
@@ -629,7 +629,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>
-                              <p className="text-[10px] text-slate-500">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
+                              <p className="text-[11px] text-slate-500">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
                             </div>
                           </label>
                         );
@@ -1019,7 +1019,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>
-                            <p className="text-[10px] text-slate-500">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
+                            <p className="text-[11px] text-slate-500">{u.role}{u.jabatan ? ` · ${u.jabatan}` : ''}</p>
                           </div>
                         </label>
                       );

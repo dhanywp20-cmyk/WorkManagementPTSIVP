@@ -17,7 +17,7 @@ export function LegendaKabel({ dipakai }: { dipakai: Set<GolonganKabel> }) {
   return (
     <div className="absolute right-2 bottom-2 z-10 rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-md px-2.5 py-2 max-w-[calc(100%-120px)]"
       role="note" aria-label="Legend warna kabel">
-      <p className="text-[10.5px] font-bold uppercase tracking-wider text-slate-600 mb-1">Legend kabel</p>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Legend kabel</p>
       <ul className="space-y-0.5">
         {LEGENDA_KABEL.map(l => (
           <li key={l.golongan} className={`flex items-center gap-1.5 text-[11px] leading-tight ${dipakai.has(l.golongan) ? 'text-slate-800 font-semibold' : 'text-slate-400'}`}>

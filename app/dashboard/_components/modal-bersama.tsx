@@ -116,7 +116,7 @@ export function Kartu({ icon, judul, hitung, children }: {
           <span className="text-sm"><Ikon nama={icon} ukuran={14} /></span> {judul}
         </p>
         {hitung && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">
             {hitung}
           </span>
         )}
@@ -149,7 +149,7 @@ export function Kelompok({ label, kosong, orang, warna }: {
 }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-widest mb-1.5" style={{ color: warna }}>{label}</p>
+      <p className="text-[11px] font-bold uppercase tracking-widest mb-1.5" style={{ color: warna }}>{label}</p>
       {orang.length === 0 ? (
         <p className="text-xs text-slate-500 italic">{kosong}</p>
       ) : (
@@ -188,7 +188,7 @@ export function StripInfo({ icon, judul, keterangan, angka, satuan }: {
       {angka !== undefined && (
         <div className="text-right flex-shrink-0 pl-2">
           <p className="text-xl font-black text-slate-800 leading-none">{angka}</p>
-          {satuan && <p className="text-[10px] text-slate-500 mt-1">{satuan}</p>}
+          {satuan && <p className="text-[11px] text-slate-500 mt-1">{satuan}</p>}
         </div>
       )}
     </div>

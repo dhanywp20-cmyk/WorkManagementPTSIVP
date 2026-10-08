@@ -78,7 +78,7 @@ export function NavBawahMobile({ beranda, menu, akun, aksen = '#b45309' }: {
               <span className="relative">
                 <IkonNav ikon={m.ikon} ukuran={24} />
                 {!!m.badge && m.badge > 0 && (
-                  <span className="absolute -top-1.5 left-1/2 ml-1.5 min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center ring-2 ring-white">
+                  <span className="absolute -top-1.5 left-1/2 ml-1.5 min-w-[17px] h-[17px] px-1 rounded-full bg-red-500 text-white text-[11px] font-black flex items-center justify-center ring-2 ring-white">
                     {m.badge > 99 ? '99+' : m.badge}
                   </span>
                 )}

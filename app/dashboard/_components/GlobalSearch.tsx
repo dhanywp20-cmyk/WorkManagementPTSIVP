@@ -585,7 +585,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
       </svg>
       <span className="hidden sm:inline text-sm font-bold text-slate-600 whitespace-nowrap">Pencarian</span>
-      <kbd className="hidden lg:inline text-[10px] font-bold text-slate-500 border border-slate-300 rounded px-1 py-0.5 leading-none">⌘K</kbd>
+      <kbd className="hidden lg:inline text-[11px] font-bold text-slate-500 border border-slate-300 rounded px-1 py-0.5 leading-none">⌘K</kbd>
     </button>
   );
 
@@ -610,7 +610,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
             <div className="w-4 h-4 border-2 border-rose-500 border-t-transparent rounded-full animate-spin flex-shrink-0" />
           )}
           <button onClick={() => setOpen(false)}
-            className="text-[10px] font-bold text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100 transition-all flex-shrink-0">
+            className="text-[11px] font-bold text-slate-500 px-1.5 py-0.5 rounded border border-slate-200 hover:bg-slate-100 transition-all flex-shrink-0">
             ESC
           </button>
         </div>
@@ -644,7 +644,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
               <div className="text-4xl mb-3"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <p className="text-sm font-semibold text-slate-600">Cari di seluruh platform</p>
               <p className="text-[11px] text-slate-500 mt-1">Ticket · Reminder · Project · Piket · Unit Movement · User</p>
-              <div className="flex items-center justify-center gap-4 mt-4 text-[10px] text-slate-500">
+              <div className="flex items-center justify-center gap-4 mt-4 text-[11px] text-slate-500">
                 <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200 font-mono">↑↓</kbd> navigasi</span>
                 <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200 font-mono">↵</kbd> buka</span>
                 <span className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-slate-100 rounded border border-slate-200 font-mono">ESC</kbd> tutup</span>
@@ -689,7 +689,7 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-slate-800 truncate">{r.title}</span>
                         {r.badge && (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                          <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0"
                             style={{ background: `${r.badgeColor}18`, color: r.badgeColor }}>
                             {r.badge}
                           </span>
@@ -697,11 +697,11 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[11px] text-slate-500 truncate">{r.sub}</span>
-                        {r.meta && <span className="text-[10px] text-slate-500 flex-shrink-0">· {r.meta}</span>}
+                        {r.meta && <span className="text-[11px] text-slate-500 flex-shrink-0">· {r.meta}</span>}
                       </div>
                     </div>
                     {/* Module badge */}
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full flex-shrink-0"
                       style={{ background: cfg.bg, color: cfg.color }}>
                       {cfg.label}
                     </span>
@@ -720,10 +720,10 @@ export default function GlobalSearch({ currentUser, onNavigate }: {
 
         {/* ── Footer ── */}
         <div className="px-4 py-2 border-t border-slate-100 flex items-center justify-between">
-          <span className="text-[10px] text-slate-500">
+          <span className="text-[11px] text-slate-500">
             {results.length > 0 ? `${results.length} hasil ditemukan` : 'Ketik untuk mulai pencarian'}
           </span>
-          <span className="text-[10px] text-slate-500">
+          <span className="text-[11px] text-slate-500">
             {isAdmin || isPimpinan(currentUser) ? 'Semua data' : isPTSsup ? `Scope: ${currentUser.team_type}` : isSalesSup ? 'Scope: divisi Anda' : 'Data Anda'}
           </span>
         </div>

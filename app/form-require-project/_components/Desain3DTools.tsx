@@ -78,7 +78,7 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
   return (
     <div className="rounded-xl border-2 border-violet-200 overflow-hidden">
       <div className="px-3 py-1.5 flex items-center justify-between gap-2 bg-violet-50 flex-wrap">
-        <span className="text-[10px] font-bold text-violet-700 uppercase tracking-widest">
+        <span className="text-[11px] font-bold text-violet-700 uppercase tracking-widest">
           Design 3D dari Tools Team <span className="normal-case font-semibold text-violet-500">· tambahan, opsional</span>
         </span>
         {bolehUbah && (
@@ -106,12 +106,12 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-gray-800 truncate">
                       {s?.nama ?? t.sumber?.nama ?? 'Design 3D'}
-                      <span className="ml-1.5 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-violet-600 text-white align-middle">v{t.versi}</span>
+                      <span className="ml-1.5 text-[10px] font-black px-1.5 py-0.5 rounded-full bg-violet-600 text-white align-middle">v{t.versi}</span>
                     </p>
-                    <p className="text-[10.5px] text-gray-500 mt-0.5">{ukuranRuang(rs) || '—'} · {rs?.jumlah ?? 0} benda</p>
-                    <p className="text-[10px] text-gray-500">ditautkan {t.dilampirkan_oleh_nama || '—'} · {tgl(t.updated_at)}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">{ukuranRuang(rs) || '—'} · {rs?.jumlah ?? 0} benda</p>
+                    <p className="text-[11px] text-gray-500">ditautkan {t.dilampirkan_oleh_nama || '—'} · {tgl(t.updated_at)}</p>
                     {terbaru && (
-                      <p className="mt-1 text-[10.5px] font-semibold text-amber-700">
+                      <p className="mt-1 text-[11px] font-semibold text-amber-700">
                         Versi terbaru v{terbaru} tersedia di Tools Team - request ini tetap memakai v{t.versi}.
                         {bolehUbah && (
                           <button type="button" disabled={sibuk} onClick={() => setKonfirmasi({
@@ -121,7 +121,7 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
                         )}
                       </p>
                     )}
-                    {t.sumber?.diarsipkan_at && <p className="mt-1 text-[10.5px] text-gray-500">Desain sumber sudah diarsipkan - versi v{t.versi} ini tetap tersimpan.</p>}
+                    {t.sumber?.diarsipkan_at && <p className="mt-1 text-[11px] text-gray-500">Desain sumber sudah diarsipkan - versi v{t.versi} ini tetap tersimpan.</p>}
                   </div>
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
@@ -157,7 +157,7 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
                         </tbody>
                       </table>
                     )}
-                    <p className="mt-1.5 text-[10px] text-gray-500">Snapshot v{t.versi} ({s ? tgl(s.created_at) : '—'}). Estimasi tata letak - verifikasi dengan datasheet & kondisi lokasi.</p>
+                    <p className="mt-1.5 text-[11px] text-gray-500">Snapshot v{t.versi} ({s ? tgl(s.created_at) : '—'}). Estimasi tata letak - verifikasi dengan datasheet & kondisi lokasi.</p>
                   </div>
                 )}
               </li>
@@ -166,7 +166,7 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
         </ul>
       )}
       {izinIni && !izinIni.ok && tautan.length > 0 && /Completed/.test(izinIni.alasan) && (
-        <p className="px-3 py-1.5 text-[10.5px] text-gray-500 border-t border-gray-100">🔒 {izinIni.alasan}</p>
+        <p className="px-3 py-1.5 text-[11px] text-gray-500 border-t border-gray-100">🔒 {izinIni.alasan}</p>
       )}
 
       <PemilihDesain buka={pilih} onTutup={() => setPilih(false)} projectName={projectName} namaRuang={namaRuang}
@@ -226,7 +226,7 @@ function PemilihDesain({ buka, onTutup, projectName, namaRuang, sudah, sibuk, on
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-bold text-gray-800 truncate">
                     {d.nama}
-                    {cocok(d.nama) && <span className="ml-1.5 text-[9.5px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full align-middle">Disarankan</span>}
+                    {cocok(d.nama) && <span className="ml-1.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full align-middle">Disarankan</span>}
                   </p>
                   <p className="text-[11px] text-gray-500 truncate">
                     v{d.versi} · {d.ruang ? `${d.ruang.p}×${d.ruang.l}×${d.ruang.t} m${d.ruang.r2?.aktif ? ' + 1 ruang' : ''} · ` : ''}{d.jumlah_benda} benda · {d.dibuat_oleh_nama || '—'} · {tgl(d.updated_at)}

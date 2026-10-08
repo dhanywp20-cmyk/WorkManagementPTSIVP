@@ -199,7 +199,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
                       <td className="px-5 py-3.5 font-semibold text-slate-800">
                         {a.users?.full_name ?? <span className="text-slate-500 italic font-normal">(nama tidak termuat)</span>}
                         {a.users?.sales_division && (
-                          <span className="ml-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 align-middle">
+                          <span className="ml-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 align-middle">
                             {a.users.sales_division}
                           </span>
                         )}

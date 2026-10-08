@@ -23,7 +23,7 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90dvh] overflow-y-auto"
           style={{ animation: 'scale-in 0.2s ease-out' }}>
           <div className="px-6 py-5 rounded-t-2xl text-white relative" style={{ background: `linear-gradient(135deg, ${warnaUtama}, #881337)` }}>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/60 mb-1">Tanpa file, tanpa admin</p>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-white/60 mb-1">Tanpa file, tanpa admin</p>
             <h2 className="text-lg font-black"><IkonTeks nama="📲" />Pasang Aplikasi di HP</h2>
             <p className="text-white/75 text-xs mt-1">Cukup 1-2 ketuk lewat menu browser - tidak perlu download file .apk atau izin admin.</p>
             <button aria-label="Tutup" onClick={onClose}
@@ -45,7 +45,7 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
                   'Ketuk "Install" / "Tambahkan" - selesai. Ikonnya langsung muncul di HP.',
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0 mt-0.5" style={{ background: '#16a34a' }}>{i + 1}</span>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white flex-shrink-0 mt-0.5" style={{ background: '#16a34a' }}>{i + 1}</span>
                     {step}
                   </li>
                 ))}
@@ -66,7 +66,7 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
                   'Ketuk "Tambah" - selesai. Ikonnya muncul di layar utama seperti aplikasi biasa.',
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0 mt-0.5" style={{ background: '#1f2937' }}>{i + 1}</span>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white flex-shrink-0 mt-0.5" style={{ background: '#1f2937' }}>{i + 1}</span>
                     {step}
                   </li>
                 ))}

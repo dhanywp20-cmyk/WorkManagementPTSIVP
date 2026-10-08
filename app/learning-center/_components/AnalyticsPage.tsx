@@ -181,7 +181,7 @@ export function AnalyticsPage() {
 
         {sessionStats.length > 0 && (
           <section>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Statistik Per Sesi</h3>
+            <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Statistik Per Sesi</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {sessionStats.map((s: any) => (
                 <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
@@ -196,7 +196,7 @@ export function AnalyticsPage() {
                         size={68} strokeWidth={10}
                         label={s.total > 0 ? `${Math.round(s.passed / s.total * 100)}%` : '-'}
                       />
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Lulus</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lulus</span>
                     </div>
                     <div className="flex flex-col items-center gap-1">
                       <DonutChart
@@ -208,7 +208,7 @@ export function AnalyticsPage() {
                         size={68} strokeWidth={10}
                         label={s.avg.toFixed(0)}
                       />
-                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Nilai</span>
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Nilai</span>
                     </div>
                     {s.avgMin !== null && (
                       <div className="flex flex-col items-center gap-1">
@@ -220,7 +220,7 @@ export function AnalyticsPage() {
                           size={68} strokeWidth={10}
                           label={`${Math.round(s.avgMin)}m`}
                         />
-                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Waktu</span>
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Waktu</span>
                       </div>
                     )}
                     <div className="flex-1 space-y-1.5 pt-1">
@@ -241,11 +241,11 @@ export function AnalyticsPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-x-3 gap-y-1 mt-4 pt-3 border-t border-slate-100">
-                    <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{s.passed} lulus</span>
-                    <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-rose-400" />{s.failed} gagal</span>
-                    <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />≥80: {s.scoreGood}</span>
-                    <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />60–79: {s.scoreMid}</span>
-                    <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-red-400" />&lt;60: {s.scoreLow}</span>
+                    <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{s.passed} lulus</span>
+                    <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-rose-400" />{s.failed} gagal</span>
+                    <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />≥80: {s.scoreGood}</span>
+                    <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />60–79: {s.scoreMid}</span>
+                    <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-red-400" />&lt;60: {s.scoreLow}</span>
                   </div>
                 </div>
               ))}
@@ -256,7 +256,7 @@ export function AnalyticsPage() {
         {/* ── Top Performers — Team ─────────────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
-            <h3 className="text-[10px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+            <h3 className="text-[11px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
               <IkonTeks nama="🏆" />Top Performers — {TEAM_FILTER_CONFIG[activeTeam].label}
             </h3>
             <div className="flex items-center gap-2">
@@ -298,7 +298,7 @@ export function AnalyticsPage() {
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors">{u.name}</span>
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold"><IkonTeks nama="👁" />detail</span>
+                        <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-indigo-400 font-semibold"><IkonTeks nama="👁" />detail</span>
                       </div>
                     </td>
                     <td className="px-5 py-3.5 text-center text-slate-500 text-xs font-semibold">{u.total}</td>
@@ -345,7 +345,7 @@ export function AnalyticsPage() {
         {/* ── Top Performers — Sales Division ───────────────────────────── */}
         {divisionStats.length > 0 && (
           <section>
-            <h3 className="text-[10px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm"><IkonTeks nama="🏢" />Top Performers — Sales Division</h3>
+            <h3 className="text-[11px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm"><IkonTeks nama="🏢" />Top Performers — Sales Division</h3>
             <p className="text-xs text-slate-500 mb-4 ml-1">Ranking performa per divisi penjualan, diurutkan berdasarkan rata-rata nilai</p>
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
               <table className="w-full text-sm table-zebra">
@@ -374,7 +374,7 @@ export function AnalyticsPage() {
                             <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm flex-shrink-0"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                             <div>
                               <p className="font-bold text-slate-800 text-sm">{d.div}</p>
-                              {medal && <p className="text-[10px] text-slate-500">{medal} Top {i + 1}</p>}
+                              {medal && <p className="text-[11px] text-slate-500">{medal} Top {i + 1}</p>}
                             </div>
                           </div>
                         </td>
@@ -414,15 +414,15 @@ export function AnalyticsPage() {
                         </td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-1.5 justify-center">
-                            <div className="flex items-center gap-1 text-[10px]">
+                            <div className="flex items-center gap-1 text-[11px]">
                               <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
                               <span className="text-slate-500">≥80: <strong>{d.scoreGood}</strong></span>
                             </div>
-                            <div className="flex items-center gap-1 text-[10px]">
+                            <div className="flex items-center gap-1 text-[11px]">
                               <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
                               <span className="text-slate-500">60–79: <strong>{d.scoreMid}</strong></span>
                             </div>
-                            <div className="flex items-center gap-1 text-[10px]">
+                            <div className="flex items-center gap-1 text-[11px]">
                               <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
                               <span className="text-slate-500">&lt;60: <strong>{d.scoreLow}</strong></span>
                             </div>
@@ -488,7 +488,7 @@ export function AnalyticsPage() {
                     ].map(c => (
                       <div key={c.label} className="bg-slate-50 rounded-xl border border-slate-200 p-3 text-center">
                         <div className={`text-2xl font-black ${c.color}`}>{c.value}</div>
-                        <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{c.label}</div>
+                        <div className="text-[11px] text-slate-500 font-semibold mt-0.5">{c.label}</div>
                       </div>
                     ))}
                   </div>
@@ -538,9 +538,9 @@ export function AnalyticsPage() {
                             <p className="text-xs font-semibold text-slate-600">
                               {a.total_correct ?? '?'}/{a.total_questions ?? '?'} benar
                             </p>
-                            <p className="text-[10px] text-slate-500">KKM {passing}</p>
+                            <p className="text-[11px] text-slate-500">KKM {passing}</p>
                             {a.submitted_at && (
-                              <p className="text-[10px] text-slate-500">
+                              <p className="text-[11px] text-slate-500">
                                 {new Date(a.submitted_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
                               </p>
                             )}

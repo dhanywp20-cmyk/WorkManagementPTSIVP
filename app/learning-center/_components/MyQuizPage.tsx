@@ -432,7 +432,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                       if (isUserChoice && !isCorrectOpt) cls = 'bg-rose-50 border-rose-400 text-rose-800 font-bold';
                       return (
                         <div key={opt} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs ${cls}`}>
-                          <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
+                          <span className={`w-5 h-5 rounded flex items-center justify-center text-[11px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
                           <span className="flex-1">{optVal}</span>
                           {isCorrectOpt && <span className="text-emerald-700">✓</span>}
                           {isUserChoice && !isCorrectOpt && <span className="text-rose-600">←</span>}
@@ -597,7 +597,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
             <h2 className="font-bold text-[12.5px] sm:text-sm truncate text-slate-800">
               {session.session_name}
             </h2>
-            <p className="text-[10.5px] sm:text-[11.5px] mt-0.5 text-slate-500">
+            <p className="text-[11px] sm:text-[11.5px] mt-0.5 text-slate-500">
               {answered} dari {questions.length} soal terjawab
             </p>
           </div>
@@ -629,7 +629,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                   style={{ color: WARNA_WAKTU[tingkatWaktu], letterSpacing: '-0.02em' }}>
                   {fmtTimer(timeLeft)}
                 </div>
-                <span className="block text-[8.5px] sm:text-[9.5px] font-bold uppercase mt-1 text-slate-500"
+                <span className="block text-[10px] font-bold uppercase mt-1 text-slate-500"
                   style={{ letterSpacing: '0.16em' }}>
                   {KET_WAKTU[tingkatWaktu]}
                 </span>
@@ -698,7 +698,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                 style={{ background: '#EEEEFE', color: '#5B5BF5', letterSpacing: '0.1em' }}>
                 Soal {current + 1} / {questions.length}
               </span>
-              <span className={`text-[10.5px] lg:text-xs font-bold px-2 py-0.5 rounded-full border ${q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : q.difficulty === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{q.difficulty}</span>
+              <span className={`text-[11px] lg:text-xs font-bold px-2 py-0.5 rounded-full border ${q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : q.difficulty === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{q.difficulty}</span>
             </div>
             {/*  break-words: pengaman untuk teks panjang tanpa spasi (mis. satu
                  kata sangat panjang atau tautan) supaya tetap terbungkus rapi

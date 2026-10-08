@@ -75,12 +75,12 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
             chip berlabel mendorong deretan header keluar layar. */}
         <span className="text-xs font-bold hidden 2xl:block" style={{ color: count > 0 ? color : '#64748b' }}>{label}</span>
         {count > 0 && (
-          <span className="flex items-center justify-center rounded-full text-white font-black text-[10px] min-w-[18px] h-[18px] px-1 animate-pulse"
+          <span className="flex items-center justify-center rounded-full text-white font-black text-[11px] min-w-[18px] h-[18px] px-1 animate-pulse"
             style={{ background: dotColor, boxShadow: `0 0 6px ${dotColor}88` }}>
             {count > 99 ? '99+' : count}
           </span>
         )}
-        {count === 0 && <span className="text-[10px] font-semibold text-slate-500">0</span>}
+        {count === 0 && <span className="text-[11px] font-semibold text-slate-500">0</span>}
       </button>
 
       {open && (
@@ -99,7 +99,7 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
               <span className="text-sm font-bold" style={{ color }}>{label}</span>
             </div>
             {count > 0 && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-black text-white" style={{ background: dotColor }}>{count} baru</span>
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-black text-white" style={{ background: dotColor }}>{count} baru</span>
             )}
           </div>
           {onMarkAllRead && count > 0 && (
@@ -123,14 +123,14 @@ export function NotifBell({ icon: Icon, label, count, color, bgColor, borderColo
                     <p className="text-sm font-semibold text-slate-800 truncate leading-tight">{item.title}</p>
                     <p className="text-[11px] text-slate-500 truncate mt-0.5">{item.subtitle}</p>
                   </div>
-                  <span className="text-[10px] text-slate-500 flex-shrink-0 mt-0.5">{formatTime(item.time)}</span>
+                  <span className="text-[11px] text-slate-500 flex-shrink-0 mt-0.5">{formatTime(item.time)}</span>
                 </button>
               ))
             )}
           </div>
           {items.length > 0 && (
             <div className="px-4 py-2.5 border-t border-slate-100">
-              <p className="text-[10px] text-center text-slate-500 font-medium">Klik item untuk membuka</p>
+              <p className="text-[11px] text-center text-slate-500 font-medium">Klik item untuk membuka</p>
             </div>
           )}
         </div>

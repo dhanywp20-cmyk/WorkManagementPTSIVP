@@ -9,7 +9,7 @@ import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+    <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
       {children}
     </h3>
   );
@@ -325,7 +325,7 @@ export function AdminDashboard({ user }: { user: User }) {
                       <DonutChart segments={c.segments} size={72} strokeWidth={10} label={c.label} />
                       <div className="text-center">
                         <p className="text-xs font-bold text-slate-700">{c.title}</p>
-                        <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{c.sub}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{c.sub}</p>
                       </div>
                     </div>
                   ))}
@@ -410,9 +410,9 @@ export function AdminDashboard({ user }: { user: User }) {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-semibold text-slate-800 group-hover:text-indigo-700 transition-colors text-sm">{u.name}</span>
-                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] text-indigo-400 font-semibold"><Ikon nama="👁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[11px] text-indigo-400 font-semibold"><Ikon nama="👁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                           {u.consistency !== null && u.consistency > 40 && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><IkonTeks nama="⚡" />Inkonsisten</span>
+                            <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><IkonTeks nama="⚡" />Inkonsisten</span>
                           )}
                         </div>
                       </td>
@@ -436,10 +436,10 @@ export function AdminDashboard({ user }: { user: User }) {
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1 flex-wrap">
                           {u.tabSw > 0 && (
-                            <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.tabSw}×</span>
+                            <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.tabSw}×</span>
                           )}
                           {u.fastCount > 0 && (
-                            <span className="text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full"><Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.fastCount}×</span>
+                            <span className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full"><Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /> {u.fastCount}×</span>
                           )}
                           {u.tabSw === 0 && u.fastCount === 0 && <span className="text-xs text-slate-400">—</span>}
                         </div>
@@ -456,15 +456,15 @@ export function AdminDashboard({ user }: { user: User }) {
               </div>{/* tutup overflow-x-auto pembungkus tabel */}
               {/* Legend — inside card as footer */}
               <div className="flex flex-wrap gap-x-4 gap-y-1 px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
-                <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
                   <span className="inline-flex items-center gap-0.5 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚠" />N×</span>
                   Pindah tab
                 </span>
-                <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
                   <span className="inline-flex items-center gap-0.5 font-bold text-rose-600 bg-rose-50 border border-rose-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="🚨" />N×</span>
                   Submit &lt;5det/soal
                 </span>
-                <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
                   <span className="inline-flex items-center gap-0.5 font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><IkonTeks nama="⚡" />Inkonsisten</span>
                   Nilai selisih &gt;40pt
                 </span>
@@ -516,10 +516,10 @@ export function AdminDashboard({ user }: { user: User }) {
                       segments={[{ value: totalPassed, color: '#10b981' }, { value: totalFailed, color: '#f43f5e' }]}
                       label={totalPeserta > 0 ? `${Math.round(totalPassed / totalPeserta * 100)}%` : '-'}
                     />
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Lulus vs Gagal</span>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Lulus vs Gagal</span>
                     <div className="flex gap-3">
-                      <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{totalPassed} lulus</span>
-                      <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-rose-400" />{totalFailed} gagal</span>
+                      <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />{totalPassed} lulus</span>
+                      <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-rose-400" />{totalFailed} gagal</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-1.5">
@@ -531,11 +531,11 @@ export function AdminDashboard({ user }: { user: User }) {
                       ]}
                       label={avgScore.toFixed(0)}
                     />
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Sebaran Nilai</span>
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Sebaran Nilai</span>
                     <div className="flex gap-3">
-                      <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />≥80: {scoreGood}</span>
-                      <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />60–79: {scoreMid}</span>
-                      <span className="flex items-center gap-1 text-[10px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-red-400" />&lt;60: {scoreLow}</span>
+                      <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-blue-400" />≥80: {scoreGood}</span>
+                      <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" />60–79: {scoreMid}</span>
+                      <span className="flex items-center gap-1 text-[11px] text-slate-500"><span className="w-1.5 h-1.5 rounded-full bg-red-400" />&lt;60: {scoreLow}</span>
                     </div>
                   </div>
                   {avgMin !== null && (
@@ -547,7 +547,7 @@ export function AdminDashboard({ user }: { user: User }) {
                         ]}
                         label={`${Math.round(avgMin)}m`}
                       />
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rata-rata Waktu</span>
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rata-rata Waktu</span>
                     </div>
                   )}
                 </div>
@@ -556,11 +556,11 @@ export function AdminDashboard({ user }: { user: User }) {
                   <table className="w-full text-sm table-zebra" style={{ minWidth: '480px' }}>
                     <thead className="border-b border-slate-200">
                       <tr>
-                        <th className="px-3 py-2 text-left text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sesi</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">Peserta</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">Avg</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
-                        <th className="px-3 py-2 text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest">Waktu</th>
+                        <th className="px-3 py-2 text-left text-[11px] font-bold text-slate-500 uppercase tracking-widest">Sesi</th>
+                        <th className="px-3 py-2 text-center text-[11px] font-bold text-slate-500 uppercase tracking-widest">Peserta</th>
+                        <th className="px-3 py-2 text-center text-[11px] font-bold text-slate-500 uppercase tracking-widest">Avg</th>
+                        <th className="px-3 py-2 text-center text-[11px] font-bold text-slate-500 uppercase tracking-widest">Lulus</th>
+                        <th className="px-3 py-2 text-center text-[11px] font-bold text-slate-500 uppercase tracking-widest">Waktu</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -575,7 +575,7 @@ export function AdminDashboard({ user }: { user: User }) {
                       ))}
                     </tbody>
                   </table>
-                  <p className="text-[10px] text-slate-500 pt-2">Diurutkan dari nilai rata-rata terendah</p>
+                  <p className="text-[11px] text-slate-500 pt-2">Diurutkan dari nilai rata-rata terendah</p>
                 </div>
               </div>
             </section>
@@ -607,14 +607,14 @@ export function AdminDashboard({ user }: { user: User }) {
                           <div className="flex items-center gap-2">
                             <span className="font-semibold text-slate-800 text-sm">{d.name}</span>
                             {d.source === 'division' && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 uppercase tracking-wide">Sales Div</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 uppercase tracking-wide">Sales Div</span>
                             )}
                             {d.source === 'jabatan' && (
-                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide">Jabatan</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-wide">Jabatan</span>
                             )}
                           </div>
                           {d.source === 'division' && d.jabatan && (
-                            <p className="text-[10px] text-slate-500 mt-0.5 truncate max-w-[220px]">{d.jabatan}</p>
+                            <p className="text-[11px] text-slate-500 mt-0.5 truncate max-w-[220px]">{d.jabatan}</p>
                           )}
                         </div>
                       </td>
@@ -745,7 +745,7 @@ export function AdminDashboard({ user }: { user: User }) {
                     ].map(c => (
                       <div key={c.label} className="bg-slate-50 rounded-xl border border-slate-200 p-3 text-center">
                         <div className={`text-2xl font-black ${c.color}`}>{c.value}</div>
-                        <div className="text-[10px] text-slate-500 font-semibold mt-0.5">{c.label}</div>
+                        <div className="text-[11px] text-slate-500 font-semibold mt-0.5">{c.label}</div>
                       </div>
                     ))}
                   </div>
@@ -781,8 +781,8 @@ export function AdminDashboard({ user }: { user: User }) {
                           </div>
                           <div className="text-right flex-shrink-0 space-y-0.5">
                             <p className="text-xs font-semibold text-slate-600">{a.total_correct ?? '?'}/{a.total_questions ?? '?'} benar</p>
-                            <p className="text-[10px] text-slate-500">KKM {passing}</p>
-                            {a.submitted_at && <p className="text-[10px] text-slate-500">{new Date(a.submitted_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}
+                            <p className="text-[11px] text-slate-500">KKM {passing}</p>
+                            {a.submitted_at && <p className="text-[11px] text-slate-500">{new Date(a.submitted_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</p>}
                           </div>
                         </div>
                       );

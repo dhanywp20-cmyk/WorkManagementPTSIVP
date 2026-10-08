@@ -14,7 +14,7 @@ export function PriorityBadge({ priority, onHeader }: { priority: Priority; onHe
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
       style={{ color: c.color, background: c.bg, border: `1px solid ${c.border}` }}>
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.dot }} />
       {c.label}
@@ -56,7 +56,7 @@ export function CategoryBadge({ category, onHeader }: { category: string; onHead
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold"
       style={{ color: c.color, background: c.bg, border: `1px solid ${c.border}` }}>
       <Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {category}
     </span>

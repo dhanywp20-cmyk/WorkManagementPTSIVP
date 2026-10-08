@@ -117,13 +117,13 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
 
                 {/* Holiday marker */}
                 {isHoliday && inMonth && (
-                  <div className="text-[8px] font-black px-1 py-0.5 rounded-full text-white mb-0.5 w-fit"
+                  <div className="text-[10px] font-black px-1 py-0.5 rounded-full text-white mb-0.5 w-fit"
                     style={{background:'#dc2626'}}><IkonTeks nama="🎌" />LIBUR</div>
                 )}
 
                 {/* Actual DB PIC names — hidden on holiday */}
                 {hasDB && inMonth && !isHoliday && dbPics.map((name,pi)=>(
-                  <div key={pi} className="text-[9px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded mb-0.5"
+                  <div key={pi} className="text-[10px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded mb-0.5"
                     style={{color:dc?.accent||'#374151',background:`${dc?.accent||'#dc2626'}18`}}>
                     {name}
                   </div>
@@ -131,7 +131,7 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
 
                 {/* Rolling projection — shown only when no DB row exists */}
                 {rollingName && (
-                  <div className="text-[9px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded mb-0.5"
+                  <div className="text-[10px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded mb-0.5"
                     style={{
                       color:rollingDc?.accent||'#94a3b8',
                       background:`${rollingDc?.accent||'#94a3b8'}12`,
@@ -149,15 +149,15 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
         <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-4">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{background:'rgba(220,38,38,0.18)'}}/>
-            <span className="text-[10px] text-gray-500 font-medium">Jadwal tersimpan</span>
+            <span className="text-[11px] text-gray-500 font-medium">Jadwal tersimpan</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded" style={{background:'rgba(148,163,184,0.18)',opacity:0.75}}/>
-            <span className="text-[10px] text-gray-500 font-medium">Proyeksi rolling (belum dikonfirmasi)</span>
+            <span className="text-[11px] text-gray-500 font-medium">Proyeksi rolling (belum dikonfirmasi)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full" style={{background:'#dc2626'}}/>
-            <span className="text-[10px] text-gray-500 font-medium">Hari libur</span>
+            <span className="text-[11px] text-gray-500 font-medium">Hari libur</span>
           </div>
         </div>
       </div>

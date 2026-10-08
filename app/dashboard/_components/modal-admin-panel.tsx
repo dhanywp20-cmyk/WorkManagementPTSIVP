@@ -145,7 +145,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
               </div>
               <div>
                 <p className="text-white font-bold text-sm leading-tight">Admin Panel</p>
-                <p className="text-white/40 text-[10px] hidden sm:block">Superadmin Settings</p>
+                <p className="text-white/40 text-[11px] hidden sm:block">Superadmin Settings</p>
               </div>
             </div>
           </div>
@@ -164,7 +164,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
               if (items.length === 0) return null;
               return (
                 <div key={grup.key} className={`flex flex-row sm:flex-col flex-shrink-0 sm:flex-shrink gap-1 sm:gap-0.5 ${gi > 0 ? 'sm:mt-4 pl-2 sm:pl-0 ml-1 sm:ml-0 border-l sm:border-l-0 border-white/10' : ''}`}>
-                  <p className="hidden sm:block px-3 pt-1 pb-1.5 text-[10px] font-bold tracking-widest uppercase text-white/30">
+                  <p className="hidden sm:block px-3 pt-1 pb-1.5 text-[11px] font-bold tracking-widest uppercase text-white/30">
                     {grup.label}
                   </p>
                   {items.map(item => {
@@ -200,7 +200,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             </div>
             <div className="flex-1 min-w-0">
               <h2 className="font-bold text-slate-800 text-sm sm:text-base leading-tight">{activeNav.label}</h2>
-              <p className="text-slate-500 text-[10px] sm:text-xs hidden sm:block">
+              <p className="text-slate-500 text-[11px] sm:text-xs hidden sm:block">
                 {activeSection === 'settings' && 'Kelola akun user & hak akses menu'}
                 {activeSection === 'userManagement' && 'Mapping Atasan, IVP & MVI Account & CC per User'}
                 {activeSection === 'kodeAcara' && 'Pendaftaran acara tanpa persetujuan admin'}
@@ -338,7 +338,7 @@ export function KpiRosterInline() {
         <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100 bg-slate-50/60">
           <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
           <span className="text-[11px] font-bold uppercase tracking-widest flex-1" style={{ color }}>{label}</span>
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">
             {aktif}/{members.length} aktif
           </span>
         </div>
@@ -367,7 +367,7 @@ export function KpiRosterInline() {
                   <p className="text-xs text-slate-500 truncate">{u.jabatan ?? '—'}</p>
                 </div>
                 {/* Status badge */}
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
                   enabled
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : 'bg-slate-100 text-slate-500 border-slate-200'

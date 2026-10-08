@@ -63,7 +63,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
         </select>
-        {mappings[key] && <span className="text-[10px] text-teal-700 font-bold flex-shrink-0"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
+        {mappings[key] && <span className="text-[11px] text-teal-700 font-bold flex-shrink-0"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
       </div>
     );
   };
@@ -166,7 +166,7 @@ export function BrandPicSettingContent() {
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
         </select>
-        {mappings[key] && <span className="text-[10px] text-amber-700 font-bold flex-shrink-0"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
+        {mappings[key] && <span className="text-[11px] text-amber-700 font-bold flex-shrink-0"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
       </div>
     );
   };

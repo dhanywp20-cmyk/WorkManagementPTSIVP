@@ -201,7 +201,7 @@ export function KelompokSettingInline() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-[10px] font-bold tracking-widest uppercase text-slate-500 border-b border-slate-100">
+              <tr className="text-[11px] font-bold tracking-widest uppercase text-slate-500 border-b border-slate-100">
                 <th className="text-left px-4 py-2.5">Kelompok</th>
                 <th className="text-left px-3 py-2.5">Jenis</th>
                 <th className="text-center px-3 py-2.5" title="Ikut dropdown assign di Ticketing, Request Schedule, Request Design Project">Bisa&nbsp;Ditugaskan</th>
@@ -257,7 +257,7 @@ export function KelompokSettingInline() {
                               title={belumSelaras
                                 ? `${jumlah} akun di ${k.label} masih memakai menu lama — tekan untuk menyamakannya`
                                 : `Samakan menu ${jumlah} akun yang sudah ada di ${k.label} dengan pilihan ini`}
-                              className={`text-[10px] font-bold px-1.5 py-1 rounded-lg border disabled:opacity-50 transition-all whitespace-nowrap ${belumSelaras
+                              className={`text-[11px] font-bold px-1.5 py-1 rounded-lg border disabled:opacity-50 transition-all whitespace-nowrap ${belumSelaras
                                 ? 'border-amber-400 bg-amber-50 text-amber-700 hover:bg-amber-100'
                                 : 'border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700'}`}>
                               {menerapkan === k.nama ? '…' : belumSelaras ? `Terapkan ke ${jumlah} akun` : 'Terapkan'}
@@ -289,7 +289,7 @@ export function KelompokSettingInline() {
 
         <div className="p-4 border-t border-slate-100 space-y-3">
           <div>
-            <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500">Tambah Kelompok PTS</label>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500">Tambah Kelompok PTS</label>
             <div className="flex gap-2">
               <input value={namaBaru} onChange={e => setNamaBaru(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); tambah(); } }}

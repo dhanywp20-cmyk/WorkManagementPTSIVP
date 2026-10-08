@@ -68,7 +68,7 @@ function CincinProgres({ pct, sudah, total }: { pct: number; sudah: number; tota
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
         <span className="text-xl font-extrabold text-slate-900 tabular-nums">{pct}%</span>
-        <span className="text-[10px] font-semibold text-slate-500 mt-1 tabular-nums">{sudah}/{total}</span>
+        <span className="text-[11px] font-semibold text-slate-500 mt-1 tabular-nums">{sudah}/{total}</span>
       </div>
     </div>
   );
@@ -81,7 +81,7 @@ function StatPills({ items }: { items: { label: string; value: number; color: st
         <div key={i} className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span aria-hidden="true" className="w-2 h-2 rounded-[3px] flex-shrink-0" style={{ background: s.color }} />
-            <span className="text-[9.5px] font-black uppercase tracking-[0.07em] text-slate-500 truncate">{s.label}</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.07em] text-slate-500 truncate">{s.label}</span>
           </div>
           <div className="text-[26px] font-black leading-none mt-1 tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>{s.value}</div>
         </div>
@@ -96,7 +96,7 @@ function MiniRow({ title, sub, tone }: { title: string; sub: string; tone?: stri
       <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: tone ?? '#94a3b8' }} />
       <div className="min-w-0 flex-1">
         <div className="text-xs font-semibold text-slate-700 truncate">{title}</div>
-        <div className="text-[10px] text-slate-500 truncate">{sub}</div>
+        <div className="text-[11px] text-slate-500 truncate">{sub}</div>
       </div>
     </div>
   );
@@ -253,13 +253,13 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 self-center" style={{ background: '#f59e0b' }}
             title="Belum daily report" />
         )}
-        {/* Judul kelompok naik dari text-[10px]: keluhannya nama terlalu kecil, dan judul induknya harus tetap lebih tegas dari nama anggotanya. */}
+        {/* Judul kelompok naik dari text-[11px]: keluhannya nama terlalu kecil, dan judul induknya harus tetap lebih tegas dari nama anggotanya. */}
         <span className={`text-[11px] font-bold truncate max-w-[170px] ${g.ketuaBelumLapor ? 'text-amber-700' : 'text-slate-500'}`}>{g.nama}</span>
         {g.jabatan && (
-          <span className="text-[10px] font-semibold text-slate-500 flex-shrink-0">{g.jabatan}</span>
+          <span className="text-[11px] font-semibold text-slate-500 flex-shrink-0">{g.jabatan}</span>
         )}
         {g.anggota.length > 0 && (
-          <span className="text-[10px] font-bold text-slate-500 flex-shrink-0">{g.anggota.length}</span>
+          <span className="text-[11px] font-bold text-slate-500 flex-shrink-0">{g.anggota.length}</span>
         )}
       </div>
       {/*
@@ -287,7 +287,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
               */}
               <span className="text-[13px] font-semibold text-slate-700 truncate max-w-[170px]">{m.name}</span>
               {m.active > 0 && (
-                <span className="text-[10px] font-bold px-1 py-px rounded-full flex-shrink-0"
+                <span className="text-[11px] font-bold px-1 py-px rounded-full flex-shrink-0"
                   style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{m.active}</span>
               )}
             </button>
@@ -330,7 +330,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
               <div className="text-xs font-semibold text-green-700 flex items-center h-full min-h-[60px]"><IkonTeks nama="🎉" />Semua tim sudah update Daily Report hari ini!</div>
             ) : (
               <>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
                 {/*
                   Ditumpuk vertikal (bukan flex-wrap berdampingan) supaya
                   hierarkinya jelas: Manager selalu di atas, Supervisor
@@ -380,17 +380,17 @@ function BarisRiwayatQuiz({ r, onClick }: { r: RiwayatQuizRingkas; onClick: () =
     // keyboard/pembaca layar seperti kontrol lain di platform ini.
     <button type="button" onClick={onClick}
       className="flex items-center gap-2 py-1.5 w-full text-left border-b border-indigo-100/70 last:border-0 hover:bg-indigo-100/40 rounded-lg px-1 -mx-1 transition-colors">
-      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black flex-shrink-0 ${warna}`}>
+      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black flex-shrink-0 ${warna}`}>
         {menunggu ? '⏳' : (r.score?.toFixed(0) ?? '—')}
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-semibold text-indigo-900 truncate leading-tight">{r.sesi}</p>
-        {r.submitted_at && <p className="text-[9px] text-indigo-400 leading-tight mt-0.5">{fmtTglSingkat(r.submitted_at)}</p>}
+        {r.submitted_at && <p className="text-[10px] text-indigo-400 leading-tight mt-0.5">{fmtTglSingkat(r.submitted_at)}</p>}
       </div>
       {/*  Lencana panah, bukan sekadar chevron tipis - diminta eksplisit
           sebagai penanda "klik untuk buka popup", bukan hiasan yang gampang
           terlewat matanya di kartu sepadat ini. */}
-      <span aria-hidden="true" className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 bg-indigo-100 text-indigo-600">→</span>
+      <span aria-hidden="true" className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 bg-indigo-100 text-indigo-600">→</span>
     </button>
   );
 }
@@ -400,9 +400,9 @@ function BarisAngka({ icon, label, value, sub }: { icon: string; label: string; 
     <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-indigo-50/70 border border-indigo-100">
       <span className="text-lg flex-shrink-0" aria-hidden="true"><Ikon nama={icon} ukuran={18} /></span>
       <div className="min-w-0 flex-1">
-        <div className="text-[10px] text-indigo-400 font-semibold leading-none">{label}</div>
+        <div className="text-[11px] text-indigo-400 font-semibold leading-none">{label}</div>
         <div className="text-sm font-black text-indigo-800 leading-tight mt-0.5">
-          {value}{sub && <span className="text-[10px] font-medium text-indigo-400 ml-1">{sub}</span>}
+          {value}{sub && <span className="text-[11px] font-medium text-indigo-400 ml-1">{sub}</span>}
         </div>
       </div>
     </div>
@@ -578,11 +578,11 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
   return (
     <WidgetCard title="Piket Showroom" icon="🏪" accent="#0d9488" onSeeAll={() => openMenu('picket-showroom')}>
       <div className="rounded-xl p-3 mb-3 text-center" style={{ background: 'rgba(13,148,136,0.1)' }}>
-        <div className="text-[10px] font-bold text-teal-700 uppercase tracking-wide">PIC Piket Hari Ini</div>
+        <div className="text-[11px] font-bold text-teal-700 uppercase tracking-wide">PIC Piket Hari Ini</div>
         {today && today.name ? (
           <>
             <div className="text-base font-black text-slate-800 mt-0.5">{today.name}</div>
-            {today.team && <div className="text-[10px] text-slate-500">{today.team.replace('Team ', '')}</div>}
+            {today.team && <div className="text-[11px] text-slate-500">{today.team.replace('Team ', '')}</div>}
           </>
         ) : (
           /*  Tiga keadaan berbeda, bukan satu kalimat "libur / akhir pekan"
@@ -598,7 +598,7 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
             style={d.isToday ? { background: 'rgba(13,148,136,0.06)', borderRadius: 8 } : undefined}>
             <span className="text-[11px] font-bold w-12 flex-shrink-0" style={{ color: d.isToday ? '#0f766e' : '#64748b' }}>{d.day}</span>
             <span className="text-xs font-semibold text-slate-700 truncate flex-1">{d.name || <span className="text-slate-500 font-normal">{d.libur ? 'Libur' : '—'}</span>}</span>
-            {d.isToday && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: '#0f766e', color: 'white' }}>Hari ini</span>}
+            {d.isToday && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: '#0f766e', color: 'white' }}>Hari ini</span>}
           </div>
         ))}
       </div>

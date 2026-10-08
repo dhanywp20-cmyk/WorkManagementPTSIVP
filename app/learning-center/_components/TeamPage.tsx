@@ -340,7 +340,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
         {bolehAturModel && questions.some(q => q.question_type === 'essay') && (
           <div className="flex items-center gap-2 flex-wrap px-4 sm:px-8 py-2 border-b sticky top-[64px] sm:top-[84px] z-10"
             style={{ background: '#faf7ff', borderColor: '#ede9fe' }}>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-violet-600 whitespace-nowrap">
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-violet-600 whitespace-nowrap">
               Penilai AI
             </span>
 
@@ -372,7 +372,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                   onBlur={e => gantiModel(e.target.value)}
                   aria-label="Nama model AI penilai"
                   className="text-xs font-semibold text-indigo-800 bg-white border border-amber-300 rounded-lg px-2 py-1.5 w-[220px] outline-none focus:border-violet-400" />
-                <span className="text-[10px] text-amber-700 max-w-[380px] leading-snug">
+                <span className="text-[11px] text-amber-700 max-w-[380px] leading-snug">
                   Daftar model tidak bisa dibaca ({galatModel}) — ketik nama modelnya.
                 </span>
               </>
@@ -392,7 +392,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
             </label>
 
             <span className="flex-1 min-w-[4px]" />
-            <span className="text-[10px] text-violet-400 whitespace-nowrap">
+            <span className="text-[11px] text-violet-400 whitespace-nowrap">
               tersimpan sebagai bawaan
             </span>
           </div>
@@ -434,7 +434,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                       </div>
                       <div className="ml-2 sm:ml-10 space-y-3">
                         <div className="bg-white rounded-xl border border-slate-200 p-3">
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Jawaban Peserta</p>
+                          <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1">Jawaban Peserta</p>
                           {ans?.answer_thumb_url ? (
                             /*
                               Yang dimuat daftar ini PRATINJAU-nya, bukan gambar
@@ -462,7 +462,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                         </div>
                         {q.model_answer && (
                           <div className="bg-emerald-50 rounded-xl border border-emerald-200 p-3">
-                            <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1">Kunci Referensi (untuk admin)</p>
+                            <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest mb-1">Kunci Referensi (untuk admin)</p>
                             <p className="text-sm text-emerald-800 whitespace-pre-wrap leading-relaxed">{q.model_answer}</p>
                           </div>
                         )}
@@ -477,7 +477,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                             {aiFeedback[q.id] && (
                               <div className="bg-violet-50 rounded-xl border border-violet-200 p-3">
                                 <div className="flex items-center justify-between gap-2 mb-1">
-                                  <p className="text-[10px] font-bold text-violet-500 uppercase tracking-widest"><IkonTeks nama="🤖" />Saran AI — jawaban peserta vs kunci referensi</p>
+                                  <p className="text-[11px] font-bold text-violet-500 uppercase tracking-widest"><IkonTeks nama="🤖" />Saran AI — jawaban peserta vs kunci referensi</p>
                                   {aiScores[q.id] !== undefined && (
                                     <span className="text-[11px] font-black text-violet-700 bg-violet-100 border border-violet-300 rounded-full px-2 py-0.5 whitespace-nowrap">
                                       AI: {aiScores[q.id]}
@@ -571,7 +571,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                         if (isUserChoice && !isCorrectOpt) style = 'bg-rose-50 border-rose-400 text-rose-800 font-bold';
                         return (
                           <div key={opt} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs transition-all ${style}`}>
-                            <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
+                            <span className={`w-5 h-5 rounded flex items-center justify-center text-[11px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
                             <span className="flex-1">{optVal}</span>
                             {isCorrectOpt && <span className="text-emerald-700 font-bold">✓ Benar</span>}
                             {isUserChoice && !isCorrectOpt && <span className="text-rose-600 font-bold">← Pilihan</span>}
@@ -745,7 +745,7 @@ export function TeamPage() {
                         </div>
                         <div>
                           <p className="font-semibold text-slate-800">{u.full_name}</p>
-                          <p className="text-[10px] text-slate-500">{u.username}</p>
+                          <p className="text-[11px] text-slate-500">{u.username}</p>
                         </div>
                       </div>
                     </td>
@@ -754,7 +754,7 @@ export function TeamPage() {
                     </td>
                     <td className="px-5 py-3.5 text-center font-bold text-slate-700">
                       {ua.length}
-                      {pendingCount > 0 && <span className="ml-1.5 text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /> {pendingCount}</span>}
+                      {pendingCount > 0 && <span className="ml-1.5 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /> {pendingCount}</span>}
                     </td>
                     <td className="px-5 py-3.5 text-center">
                       {avg !== null ? <span className={`font-bold ${avg >= 70 ? 'text-emerald-700' : 'text-rose-600'}`}>{avg.toFixed(1)}</span> : <span className="text-slate-400">—</span>}

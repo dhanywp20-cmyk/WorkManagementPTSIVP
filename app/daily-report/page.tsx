@@ -764,7 +764,7 @@ export default function DailyReportPage() {
               <div className="px-4 py-3 rounded-xl flex items-center gap-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)' }}>
                 {formLoading
                   ? <><div className="w-4 h-4 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin flex-shrink-0" /><span className="text-xs text-sky-700 font-semibold">Memuat aktivitas otomatis...</span></>
-                  : <><span className="text-base"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs text-sky-700 font-semibold">{formReminders.length} reminder &amp; {formTickets.length} ticket ter-insert otomatis dari platform</span><span className="ml-auto text-[10px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.12)', color: '#0ea5e9' }}>Auto-insert</span></>
+                  : <><span className="text-base"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs text-sky-700 font-semibold">{formReminders.length} reminder &amp; {formTickets.length} ticket ter-insert otomatis dari platform</span><span className="ml-auto text-[11px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.12)', color: '#0ea5e9' }}>Auto-insert</span></>
                 }
               </div>
             )}
@@ -830,7 +830,7 @@ export default function DailyReportPage() {
                   {teamEntries.map(e => (
                     <div key={e._key} className="rounded-xl p-4 space-y-3" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)' }}>
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold" style={{ background: avc(e.member_name) }}>{ini(e.member_name)}</div>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold" style={{ background: avc(e.member_name) }}>{ini(e.member_name)}</div>
                         <p className="text-sm font-bold text-slate-700">{e.member_name}</p>
                       </div>
                       <CatPicker value={e.category} onChange={v => updT(e._key, { category: v })} />
@@ -877,15 +877,15 @@ export default function DailyReportPage() {
             <div className="flex items-start gap-3">
               <span className="text-3xl">{row.kegiatan_icon}</span>
               <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mb-0.5">Sumber</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mb-0.5">Sumber</p>
                 <p className="text-[11px] font-bold uppercase tracking-widest opacity-80">
                   {row.source === 'reminder' ? 'Reminder Schedule' : row.source === 'ticket' ? 'Ticket Troubleshooting' : 'Aktivitas Manual'}
                 </p>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-2 mb-0.5">Nama Project</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-2 mb-0.5">Nama Project</p>
                 <h3 className="text-base font-black leading-tight">{row.project_name}</h3>
                 {row.address && (
                   <>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
                     <p className="text-xs opacity-80 flex items-center gap-1"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>
                   </>
                 )}
@@ -905,7 +905,7 @@ export default function DailyReportPage() {
             <div className="grid grid-cols-2 gap-4">
               {/* Kategori */}
               <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Kategori</p>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Kategori</p>
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold" style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
                   <Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {row.category}
                 </span>
@@ -913,24 +913,24 @@ export default function DailyReportPage() {
               {/* Product */}
               {row.product && (
                 <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Product</p>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Product</p>
                   <span className="text-xs font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2.5 py-1.5 rounded-lg inline-block">{row.product}</span>
                 </div>
               )}
               {/* Handler */}
               <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Handler</p>
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Handler</p>
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
-                  <div><p className="text-xs font-bold text-slate-800">{row.handler_name}</p>{row.handler_username && <p className="text-[10px] text-slate-500"><Username value={row.handler_username} /></p>}</div>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
+                  <div><p className="text-xs font-bold text-slate-800">{row.handler_name}</p>{row.handler_username && <p className="text-[11px] text-slate-500"><Username value={row.handler_username} /></p>}</div>
                 </div>
               </div>
               {/* Sales */}
               {row.sales_name && (
                 <div>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Sales</p>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Sales</p>
                   <p className="text-xs font-bold text-slate-800">{row.sales_name}</p>
-                  {row.sales_division && <p className="text-[10px] text-slate-500">{row.sales_division}</p>}
+                  {row.sales_division && <p className="text-[11px] text-slate-500">{row.sales_division}</p>}
                 </div>
               )}
             </div>
@@ -939,7 +939,7 @@ export default function DailyReportPage() {
               const ringkas = reports.find(r => r.id === row.report_id)?.reminder_notes?.trim();
               return ringkas ? (
                 <div className="px-4 py-3 rounded-xl bg-blue-50 border border-blue-100">
-                  <p className="text-[10px] font-bold text-blue-800 uppercase tracking-wider mb-1">Ringkasan hari ini</p>
+                  <p className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-1">Ringkasan hari ini</p>
                   <p className="text-xs text-slate-700 whitespace-pre-line leading-relaxed">{ringkas}</p>
                 </div>
               ) : null;
@@ -947,21 +947,21 @@ export default function DailyReportPage() {
             {/* Ticket detail */}
             {row.source === 'ticket' && row.raw?.action_taken && (
               <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(251,113,133,0.05)', border: '1px solid rgba(251,113,133,0.2)' }}>
-                <p className="text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1">Tindakan</p>
+                <p className="text-[11px] font-bold text-rose-500 uppercase tracking-wider mb-1">Tindakan</p>
                 <p className="text-xs text-slate-700">{row.raw.action_taken}</p>
               </div>
             )}
             {/* Reminder detail */}
             {row.source === 'reminder' && row.raw?.description && (
               <div className="px-4 py-3 rounded-xl" style={{ background: c.bg, border: `1px solid ${c.border}` }}>
-                <p className="text-[10px] font-bold uppercase tracking-wider mb-1" style={{ color: c.color }}>Deskripsi</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider mb-1" style={{ color: c.color }}>Deskripsi</p>
                 <p className="text-xs" style={{ color: c.color }}>{row.raw.description}</p>
               </div>
             )}
             {/* Manual detail */}
             {row.source === 'manual' && row.raw?.description && (
               <div className="px-4 py-3 rounded-xl" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
-                <p className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-1">Deskripsi</p>
+                <p className="text-[11px] font-bold text-amber-700 uppercase tracking-wider mb-1">Deskripsi</p>
                 <p className="text-xs text-slate-700">{row.raw.description}</p>
               </div>
             )}
@@ -969,7 +969,7 @@ export default function DailyReportPage() {
             {row.raw?.pic_name && (
               <div className="flex items-center gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.07)' }}>
                 <span className="text-base"><Ikon nama="🙋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                <div><p className="text-xs font-bold text-slate-800">{row.raw.pic_name}</p>{row.raw.pic_phone && <p className="text-[10px] text-slate-500"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.raw.pic_phone}</p>}</div>
+                <div><p className="text-xs font-bold text-slate-800">{row.raw.pic_name}</p>{row.raw.pic_phone && <p className="text-[11px] text-slate-500"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.raw.pic_phone}</p>}</div>
               </div>
             )}
             {/* Link to submitted report */}
@@ -977,17 +977,17 @@ export default function DailyReportPage() {
               <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: 'rgba(220,38,38,0.05)', border: '1px solid rgba(220,38,38,0.15)' }}>
                 <span className="text-sm"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-xs text-red-600 font-semibold">Sudah di-submit dalam Daily Report {formatDate(linkedReport.report_date)}</p>
-                {!pimpinan && <button onClick={() => { setModalRow(null); openEditForm(linkedReport); }} className="ml-auto text-[10px] font-bold px-2 py-1 rounded-lg text-white" style={{ background: '#dc2626' }}>Edit</button>}
+                {!pimpinan && <button onClick={() => { setModalRow(null); openEditForm(linkedReport); }} className="ml-auto text-[11px] font-bold px-2 py-1 rounded-lg text-white" style={{ background: '#dc2626' }}>Edit</button>}
               </div>
             )}
             {/* Source badge */}
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[10px] font-bold px-2.5 py-1.5 rounded-full"
+              <span className="text-[11px] font-bold px-2.5 py-1.5 rounded-full"
                 style={row.source === 'reminder' ? { background: 'rgba(16,185,129,0.1)', color: '#047857' } : row.source === 'ticket' ? { background: 'rgba(251,113,133,0.1)', color: '#be185d' } : { background: 'rgba(245,158,11,0.1)', color: '#b45309' }}>
                 {row.source === 'reminder' ? '🔔 Reminder Schedule' : row.source === 'ticket' ? '🎫 Ticket Troubleshooting' : '✍️ Aktivitas Manual'}
               </span>
               {!linkedReport && row.source !== 'manual' && (
-                <button onClick={() => { setModalRow(null); openNewForm(); }} className="text-[10px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>+ Buat Report</button>
+                <button onClick={() => { setModalRow(null); openNewForm(); }} className="text-[11px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>+ Buat Report</button>
               )}
             </div>
           </div>
@@ -1062,11 +1062,11 @@ export default function DailyReportPage() {
               <span><Ikon nama={s.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
               <span>{s.label}</span>
               <span className="ml-1 font-black text-sm" style={{ color: s.color }}>{s.value}</span>
-              {filterSource === s.source && <span className="text-[9px] ml-0.5">✕</span>}
+              {filterSource === s.source && <span className="text-[10px] ml-0.5">✕</span>}
             </button>
           ))}
           {filterSource && (
-            <span className="text-[10px] text-slate-500 italic ml-auto">Klik badge untuk reset filter</span>
+            <span className="text-[11px] text-slate-500 italic ml-auto">Klik badge untuk reset filter</span>
           )}
         </div>
 
@@ -1237,21 +1237,21 @@ export default function DailyReportPage() {
                         <p className="font-semibold text-slate-800 text-sm leading-tight truncate">{row.project_name}</p>
                         {row.address && <p className="text-[11px] text-slate-500 mt-0.5 truncate"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>}
                       </div>
-                      <span className="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-bold"
+                      <span className="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-bold"
                         style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>
                         {badge.label}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold"
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-bold"
                         style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
                         {row.kegiatan_icon} {row.source === 'ticket' ? 'Troubleshooting' : row.category}
                       </span>
-                      {row.product && <span className="text-[10px] font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-lg">{row.product}</span>}
+                      {row.product && <span className="text-[11px] font-semibold text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-lg">{row.product}</span>}
                     </div>
                     <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
                         <span className="text-xs font-semibold text-slate-700 truncate">{row.handler_name || '—'}</span>
                       </div>
                       <span className="text-[11px] text-slate-500 flex-shrink-0">
@@ -1340,9 +1340,9 @@ export default function DailyReportPage() {
                             style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
                             {row.kegiatan_icon} {row.source === 'ticket' ? 'Troubleshooting' : row.category}
                           </span>
-                          {row.source === 'ticket' && <p className="text-[10px] text-slate-500 mt-0.5">{row.kegiatan_label}</p>}
+                          {row.source === 'ticket' && <p className="text-[11px] text-slate-500 mt-0.5">{row.kegiatan_label}</p>}
                           <p className="mt-1">
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full"
                               style={
                                 row.source === 'ticket'
                                   ? { background: 'rgba(251,113,133,0.12)', color: '#be185d' }
@@ -1356,12 +1356,12 @@ export default function DailyReportPage() {
                         </td>
                         <td style={TD}>
                           {row.sales_name
-                            ? <div><p className="text-xs font-semibold text-slate-700">{row.sales_name}</p>{row.sales_division && <p className="text-[10px] text-slate-500">{row.sales_division}</p>}</div>
+                            ? <div><p className="text-xs font-semibold text-slate-700">{row.sales_name}</p>{row.sales_division && <p className="text-[11px] text-slate-500">{row.sales_division}</p>}</div>
                             : <span className="text-slate-400">—</span>}
                         </td>
                         <td style={TD}>
                           <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
                             <span className="text-xs font-semibold text-slate-700">{row.handler_name || '—'}</span>
                           </div>
                         </td>
@@ -1375,10 +1375,10 @@ export default function DailyReportPage() {
                         <td style={TD}>
                           <div className="rounded-xl text-center px-2.5 py-2 inline-flex flex-col items-center" style={{ background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.15)', minWidth: '64px' }}>
                             <span className="text-base font-black text-red-600 leading-none">{row.report_date?.split('-')[2] ?? '—'}</span>
-                            <span className="text-[9px] font-bold text-red-600 uppercase">
+                            <span className="text-[10px] font-bold text-red-600 uppercase">
                               {row.report_date ? new Date(row.report_date + 'T00:00:00').toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }).toUpperCase() : '—'}
                             </span>
-                            {row.jam !== '-' && <span className="text-[9px] text-slate-500 mt-0.5">{row.jam}</span>}
+                            {row.jam !== '-' && <span className="text-[10px] text-slate-500 mt-0.5">{row.jam}</span>}
                           </div>
                         </td>
                         <td style={{ ...TD, textAlign: 'center' as const }} onClick={e => e.stopPropagation()}>

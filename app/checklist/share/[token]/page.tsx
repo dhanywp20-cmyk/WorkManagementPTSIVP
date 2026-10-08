@@ -235,7 +235,7 @@ export default function ChecklistSharePage({ params }: { params: { token: string
               );
             })}
 
-            <p className="text-center text-[10.5px] font-semibold py-4" style={{ color: TEMA.samar }}>
+            <p className="text-center text-[11px] font-semibold py-4" style={{ color: TEMA.samar }}>
               Work Management PTS IVP · Setiap perubahan dicatat dengan nama dan waktunya.
             </p>
           </>

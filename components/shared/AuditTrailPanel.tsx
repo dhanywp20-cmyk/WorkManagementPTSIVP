@@ -263,7 +263,7 @@ export function AuditTrailPanel({
           className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-black/[0.03]">
           <span className="text-sm"><Ikon nama="🕘" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
           <span className="text-xs font-bold uppercase tracking-wide text-slate-600 flex-1">{judul}</span>
-          <span className="text-[10px] font-bold text-slate-500 tabular-nums">
+          <span className="text-[11px] font-bold text-slate-500 tabular-nums">
             {memuat ? '…' : semua.length}
           </span>
           <span className="text-slate-500 text-xs transition-transform"
@@ -273,7 +273,7 @@ export function AuditTrailPanel({
 
       {terbuka && arah === 'horizontal' && (
         memuat ? (
-          <p className="text-[10px] text-slate-500 py-1">Memuat riwayat…</p>
+          <p className="text-[11px] text-slate-500 py-1">Memuat riwayat…</p>
         ) : (
           <div className="flex items-start overflow-x-auto pb-0.5" style={{ scrollbarWidth: 'thin' }}>
             {/* Paling lama di kiri, terbaru di kanan — arah alur, bukan urutan basis data. */}
@@ -289,10 +289,10 @@ export function AuditTrailPanel({
                       style={{ background: cfg.warna }}>
                       <span className="text-white leading-none" style={{ fontSize: 8 }}>✓</span>
                     </span>
-                    <span className="text-[9px] font-bold text-center leading-tight break-words" style={{ color: cfg.warna }}>
+                    <span className="text-[10px] font-bold text-center leading-tight break-words" style={{ color: cfg.warna }}>
                       {labelLangkah(e)}
                     </span>
-                    <span className="text-[8px] text-slate-500 text-center leading-tight"
+                    <span className="text-[10px] text-slate-500 text-center leading-tight"
                       title={new Date(e.created_at).toLocaleString('id-ID')}>
                       {tanggalPendek(e.created_at)}
                     </span>
@@ -311,7 +311,7 @@ export function AuditTrailPanel({
             : selaluTerbuka ? "px-4 py-3 flex flex-col gap-0" : "px-4 pb-3 flex flex-col gap-0"
         }>
           {memuat ? (
-            <p className="text-[10px] text-slate-500 py-1">Memuat riwayat…</p>
+            <p className="text-[11px] text-slate-500 py-1">Memuat riwayat…</p>
           ) : semua.map((e, i) => {
             const cfg = AKSI[e.action] ?? { label: e.action, warna: '#94a3b8' };
             const adaPerubahanNilai = e.old_value || e.new_value;
@@ -327,14 +327,14 @@ export function AuditTrailPanel({
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className={kompak ? "text-[10px]" : "text-xs"}>
+                  <p className={kompak ? "text-[11px]" : "text-xs"}>
                     <span className="font-bold" style={{ color: cfg.warna }}>{cfg.label}</span>
                     <span className="text-slate-500"> oleh </span>
                     <span className="font-semibold text-slate-700">{e.user_name || 'sistem'}</span>
                   </p>
 
                   {adaPerubahanNilai && (
-                    <p className={kompak ? "text-[9px] text-slate-500 mt-0.5 break-words" : "text-[11px] text-slate-500 mt-0.5 break-words"}>
+                    <p className={kompak ? "text-[10px] text-slate-500 mt-0.5 break-words" : "text-[11px] text-slate-500 mt-0.5 break-words"}>
                       {e.old_value && <span className="line-through opacity-60">{bersihkanPenandaSupervisor(e.old_value)}</span>}
                       {e.old_value && e.new_value && <span className="mx-1 text-slate-400">→</span>}
                       {e.new_value && <span className="font-medium text-slate-700">{bersihkanPenandaSupervisor(e.new_value)}</span>}
@@ -354,7 +354,7 @@ export function AuditTrailPanel({
                     <p className="text-[11px] text-slate-500 mt-0.5 break-words">{bersihkanPenandaSupervisor(e.notes)}</p>
                   )}
 
-                  <p className={kompak ? "text-[9px] text-slate-500 mt-0.5" : "text-[10px] text-slate-500 mt-0.5"}
+                  <p className={kompak ? "text-[10px] text-slate-500 mt-0.5" : "text-[11px] text-slate-500 mt-0.5"}
                     title={new Date(e.created_at).toLocaleString('id-ID')}>
                     {waktuRelatif(e.created_at)}
                   </p>

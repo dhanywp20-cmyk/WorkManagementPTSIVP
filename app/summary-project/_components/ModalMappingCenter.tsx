@@ -116,7 +116,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
         <span className="block text-sm font-bold text-gray-800 truncate">{p.name}</span>
         <span className="block text-[11px] text-gray-500 truncate">{p.code}{p.location ? ` · ${p.location}` : ''}{p.sales_name ? ` · ${p.sales_name}` : ''}</span>
       </span>
-      {p.skor > 0 && <span className="text-[10px] font-bold text-indigo-600 flex-shrink-0">{Math.round(p.skor * 100)}%</span>}
+      {p.skor > 0 && <span className="text-[11px] font-bold text-indigo-600 flex-shrink-0">{Math.round(p.skor * 100)}%</span>}
     </button>
   );
 
@@ -134,7 +134,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
               ['Total project', statistik.total_project, '#0891b2'],
             ] as const).map(([label, nilai, warna]) => (
               <div key={label} className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
-                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500">{label}</p>
+                <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500">{label}</p>
                 <p className="text-lg font-black" style={{ color: warna }}>{nilai}</p>
               </div>
             ))}
@@ -175,7 +175,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
                 <button key={g.kunci} type="button" onClick={() => pilihGrup(g)}
                   className={`w-full text-left px-3 py-2.5 hover:bg-indigo-50/60 flex items-center justify-between gap-2 ${aktif?.kunci === g.kunci ? 'bg-indigo-50' : ''}`}>
                   <span className="text-sm font-semibold text-gray-800 truncate">{g.nama}</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 flex-shrink-0">{g.records.length}</span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 flex-shrink-0">{g.records.length}</span>
                 </button>
               ))}
             </div>
@@ -190,7 +190,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
             ) : (
               <div className="space-y-3">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Record ({terpilih.size}/{aktif.records.length} dicentang)</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Record ({terpilih.size}/{aktif.records.length} dicentang)</p>
                   <div className="border border-gray-100 rounded-xl divide-y divide-gray-100 max-h-44 overflow-y-auto">
                     {aktif.records.map(r => {
                       const k = `${r.source_module}:${r.source_record_id}`;
@@ -204,7 +204,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
                               return s;
                             })} />
                           <span className="min-w-0">
-                            <span className="block text-[10px] font-black" style={{ color: m.color }}>{m.label} · {fmtTgl(r.tanggal)}</span>
+                            <span className="block text-[11px] font-black" style={{ color: m.color }}>{m.label} · {fmtTgl(r.tanggal)}</span>
                             <span className="block text-[11px] text-gray-500 truncate">{r.info || r.project_name}</span>
                           </span>
                         </label>
@@ -214,7 +214,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
                 </div>
 
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Saran project</p>
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Saran project</p>
                   <div className="space-y-1.5">
                     {saran.length ? saran.map(p => <KartuProject key={p.project_id} p={p} />)
                       : <p className="text-[11px] text-gray-500">Tidak ada project yang namanya mirip.</p>}
@@ -232,7 +232,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
 
                 <div className="rounded-xl border border-gray-100 p-3 space-y-2">
                   <label className="block">
-                    <span className="block text-[10px] font-bold uppercase tracking-wide text-gray-500 mb-1">Atau buat project baru</span>
+                    <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Atau buat project baru</span>
                     <input value={namaBaru} onChange={e => setNamaBaru(e.target.value)}
                       className="w-full px-3 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
                   </label>

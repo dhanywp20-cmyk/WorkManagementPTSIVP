@@ -55,7 +55,7 @@ export function PanelDuplikat({ currentUserName, onBerubah }: {
 
   const Sisi = ({ code, name, total }: { code: string; name: string; total: number }) => (
     <span className="min-w-0 flex-1">
-      <span className="block text-[10px] font-black text-indigo-600">{code} · {total} aktivitas</span>
+      <span className="block text-[11px] font-black text-indigo-600">{code} · {total} aktivitas</span>
       <span className="block text-sm font-bold text-gray-800 break-words">{name}</span>
     </span>
   );
@@ -91,7 +91,7 @@ export function PanelDuplikat({ currentUserName, onBerubah }: {
             <div key={`${d.a_id}:${d.b_id}`} className="p-3 space-y-2">
               <div className="flex items-start gap-3">
                 <Sisi code={d.a_code} name={d.a_name} total={d.a_total} />
-                <span className="text-[10px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full flex-shrink-0 mt-1">{Math.round(d.skor * 100)}% mirip</span>
+                <span className="text-[11px] font-black text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full flex-shrink-0 mt-1">{Math.round(d.skor * 100)}% mirip</span>
                 <Sisi code={d.b_code} name={d.b_name} total={d.b_total} />
               </div>
               <div className="flex flex-wrap gap-1.5">

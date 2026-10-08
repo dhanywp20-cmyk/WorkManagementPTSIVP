@@ -414,7 +414,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                             <input id="f-dashboard-components-modal-akun-7" value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
                               placeholder="Contoh: Surabaya, Bandung, Medan..."
                               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
-                            <p className="text-[10px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
+                            <p className="text-[11px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                           </div>
                         )}
                         {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
@@ -465,15 +465,15 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                               <p className="text-xs text-slate-500 mt-0.5"><Ikon nama="📞" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</p>
                             )}
                             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                              <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-slate-200 text-slate-600">{labelRole(user.role)}</span>
+                              <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold tracking-widest uppercase bg-slate-200 text-slate-600">{labelRole(user.role)}</span>
                               {user.jabatan && (
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.jabatan}</span>
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.jabatan}</span>
                               )}
                               {user.team_type && (
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-rose-100 text-rose-600 border border-rose-200"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.team_type}</span>
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold tracking-widest uppercase bg-rose-100 text-rose-600 border border-rose-200"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.team_type}</span>
                               )}
                               {user.sales_division && (
-                                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-violet-100 text-violet-600 border border-violet-200"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.sales_division}</span>
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold tracking-widest uppercase bg-violet-100 text-violet-600 border border-violet-200"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.sales_division}</span>
                               )}
                             </div>
                           </div>
@@ -549,7 +549,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                     <input id="f-dashboard-components-modal-akun-16" value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                       placeholder="Contoh: Surabaya, Bandung, Medan..."
                       className="w-full border border-slate-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-rose-200 focus:border-rose-400 outline-none" />
-                    <p className="text-[10px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
+                    <p className="text-[11px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                   </div>
                 )}
                 {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
@@ -867,7 +867,7 @@ export function AccountSettingsInline() {
         </button>
         <button onClick={() => { setActiveTab('pending'); setApprovingUser(null); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'pending' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
-          <IkonTeks nama="🕐" />Pending {pendingUsers.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[9px] font-black rounded-full">{pendingUsers.length}</span>}
+          <IkonTeks nama="🕐" />Pending {pendingUsers.length > 0 && <span className="ml-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-black rounded-full">{pendingUsers.length}</span>}
         </button>
       </div>
 
@@ -934,7 +934,7 @@ export function AccountSettingsInline() {
                       <input id="f-dashboard-components-modal-akun-26" value={editPtsDaerah} onChange={e => setEditPtsDaerah(e.target.value)}
                         placeholder="Contoh: Surabaya, Bandung, Medan..."
                         className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
-                      <p className="text-[10px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
+                      <p className="text-[11px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                     </div>
                   )}
                   {(editDivisi === 'Sales' || editDivisi === 'Marketing') && (
@@ -1147,7 +1147,7 @@ export function AccountSettingsInline() {
                         <tr key={user.id} className="border-b border-slate-100 hover:bg-rose-50/30 transition-colors" style={{ background: rowBg }}>
                           <td className="px-4 py-2.5 font-semibold text-slate-800 whitespace-nowrap">{user.full_name}</td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
-                          <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{labelRole(user.role)}</span></td>
+                          <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{labelRole(user.role)}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
                           <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span> : <span className="text-slate-400">—</span>}</td>
                           <td className="md:sticky md:right-0 px-4 py-2.5" style={{ background: rowBg }}>
@@ -1213,7 +1213,7 @@ export function AccountSettingsInline() {
                   <input id="f-dashboard-components-modal-akun-35" value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                     placeholder="Contoh: Surabaya, Bandung, Medan..."
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
-                  <p className="text-[10px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
                 </div>
               )}
               {(newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') && (
@@ -1320,18 +1320,18 @@ export function AccountSettingsInline() {
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
                         {daysPending !== null && (
-                          <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-black flex-shrink-0 ${isStale ? 'bg-red-200 text-red-800' : 'bg-amber-100 text-amber-700'}`}>
+                          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black flex-shrink-0 ${isStale ? 'bg-red-200 text-red-800' : 'bg-amber-100 text-amber-700'}`}>
                             {isStale ? `⚠️ ${daysPending}h` : `${daysPending}h`}
                           </span>
                         )}
                       </div>
                       <p className="text-xs text-slate-500"><Username value={user.username} /></p>
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-200 text-amber-800">
+                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-200 text-amber-800">
                           {user.sales_division?.startsWith('PTS') ? `PTS • ${user.sales_division}` : user.sales_division?.startsWith('Marketing:') ? `Marketing • ${user.sales_division.replace('Marketing:', '')}` : `Sales • ${user.sales_division}`}
                         </span>
-                        {user.jabatan && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">{user.jabatan}</span>}
-                        {user.phone_number && <span className="text-[9px] text-slate-500"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span>}
+                        {user.jabatan && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">{user.jabatan}</span>}
+                        {user.phone_number && <span className="text-[10px] text-slate-500"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span>}
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 flex-shrink-0">

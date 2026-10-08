@@ -146,7 +146,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
               <div className="grid grid-cols-[100px_1fr_1fr] gap-2">
                 <div/>
                 {[{wk:wk1,ws:weekStart},{wk:wk2,ws:week2Start}].map(({wk,ws})=>(
-                  <div key={wk} className="text-center py-1.5 rounded-lg text-[10px] font-bold" style={{background:'rgba(220,38,38,0.07)',color:'#dc2626',border:'1px solid rgba(220,38,38,0.2)'}}>
+                  <div key={wk} className="text-center py-1.5 rounded-lg text-[11px] font-bold" style={{background:'rgba(220,38,38,0.07)',color:'#dc2626',border:'1px solid rgba(220,38,38,0.2)'}}>
                     <Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {fmtWk(ws)}
                   </div>
                 ))}
@@ -157,7 +157,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                   <div key={day} className="grid grid-cols-[100px_1fr_1fr] gap-2 items-center">
                     {/* Day label */}
                     <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{background:dc.light}}>
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[10px] font-black flex-shrink-0" style={{background:dc.grad}}>{DAY_EN[day]}</div>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{background:dc.grad}}>{DAY_EN[day]}</div>
                       <span className="text-xs font-bold" style={{color:dc.accent}}>{day}</span>
                     </div>
                     {/* 2 week dropdowns */}
@@ -169,7 +169,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                       const tc=teamKey?TEAM_LABEL[teamKey]:null;
                       return(
                         <div key={wk} className="relative">
-                          {isToday(date)&&<span className="absolute -top-2 left-2 text-[8px] font-bold px-1 py-0.5 rounded text-white z-10" style={{background:dc.accent}}>TODAY</span>}
+                          {isToday(date)&&<span className="absolute -top-2 left-2 text-[10px] font-bold px-1 py-0.5 rounded text-white z-10" style={{background:dc.accent}}>TODAY</span>}
                           <div className="flex items-center gap-1.5 p-1.5 rounded-xl border" style={{borderColor:`${dc.accent}25`,background:'white'}}>
                             {tc&&<div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background:tc.dot}}/>}
                             <select aria-label="— Belum —" value={assign[wk]?.[day]||''} onChange={e=>setAssign(p=>({...p,[wk]:{...p[wk],[day]:e.target.value}}))}

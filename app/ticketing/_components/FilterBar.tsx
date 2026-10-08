@@ -104,7 +104,7 @@ export function FilterBar({
       <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
         <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3" aktif={[searchSalesName, searchProduct, handlerFilter, filterStatus, salesDivisionFilter]}>
           <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Cari Project / Location</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Cari Project / Location</label>
             <div className="relative">
               <Ico name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input aria-label="Search project / lokasi..."
@@ -117,7 +117,7 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Cari Sales Name</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Cari Sales Name</label>
             <div className="relative">
               <Ico name="user" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input aria-label="Search sales name..."
@@ -130,7 +130,7 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Product</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Product</label>
             <div className="relative">
               <Ico name="package" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input aria-label="Cari product..."
@@ -143,7 +143,7 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
             <div className="relative">
               <Ico name="users" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <select aria-label="All Handlers"
@@ -160,7 +160,7 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Status</label>
             <div className="relative">
               <Ico name="tag" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <select aria-label="All Status"
@@ -186,7 +186,7 @@ export function FilterBar({
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
+            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Filter Year</label>
             <div className="relative">
               <Ico name="calendar" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <select aria-label="All Years"
@@ -226,7 +226,7 @@ export function FilterBar({
       {/* ── Filter Aktif chips — posisi di bawah filter bar ── */}
       {(filterStatus !== "All" || handlerFilter || salesDivisionFilter || productFilter || searchProject || searchSalesName || searchProduct) && (
         <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: "rgba(255,255,255,0.97)" }}>
-          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
+          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
           {filterStatus !== "All" && (
             <button onClick={() => setFilterStatus("All")} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: "#d97706" }}>Status: {filterStatus} ✕</button>
           )}

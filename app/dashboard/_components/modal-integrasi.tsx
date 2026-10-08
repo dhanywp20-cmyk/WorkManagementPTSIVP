@@ -88,7 +88,7 @@ function PilihModel({ nilai, profil, onGanti, warna }: {
         <input value={nilai} onChange={e => onGanti(e.target.value)}
           aria-label="Nama model AI"
           className={`w-full text-xs px-2.5 py-2 rounded-lg border border-amber-300 focus:outline-none ${fokus}`} />
-        <p className="text-[9px] text-amber-700 mt-1 leading-relaxed">
+        <p className="text-[10px] text-amber-700 mt-1 leading-relaxed">
           Daftar model tidak bisa dibaca{galat ? ` (${galat})` : ''} — ketik nama modelnya.
           Periksa tokennya lebih dulu; nama yang salah baru ketahuan saat AI dipakai.
         </p>
@@ -109,7 +109,7 @@ function PilihModel({ nilai, profil, onGanti, warna }: {
         )}
         {daftar.map(m => <option key={m.id} value={m.id}>{m.id}</option>)}
       </select>
-      <p className="text-[9px] text-slate-500 mt-1">
+      <p className="text-[10px] text-slate-500 mt-1">
         {daftar.length} model tersedia untuk token ini — dibaca langsung dari Google, jadi tidak pernah basi.
       </p>
     </>
@@ -161,7 +161,7 @@ function LencanaStatus({ status }: { status: StatusKoneksi }) {
       : { bg: '#fef3c7', fg: '#b45309', titik: '#f59e0b', teks: 'Belum Terhubung' };
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
       style={{ background: gaya.bg, color: gaya.fg }}
       title={status.keadaan === 'putus' ? status.alasan
              : status.keadaan === 'terhubung' ? status.info : 'Sedang memeriksa koneksi…'}>
@@ -188,7 +188,7 @@ function PesanKotak({ pesan }: { pesan: PesanKotak | null }) {
         border: `1px solid ${ok ? '#bbf7d0' : '#fecaca'}`,
       }}>
       <span className="text-[11px] leading-none mt-px flex-shrink-0">{ok ? '✅' : '⚠️'}</span>
-      <span className={`text-[10px] font-semibold leading-relaxed ${ok ? 'text-green-700' : 'text-red-600'}`}>
+      <span className={`text-[11px] font-semibold leading-relaxed ${ok ? 'text-green-700' : 'text-red-600'}`}>
         {pesan.teks}
       </span>
     </div>
@@ -198,7 +198,7 @@ function PesanKotak({ pesan }: { pesan: PesanKotak | null }) {
 /** Penanda bisa/tidak dijangkau di tabel Jangkauan Tim. */
 function Cek({ ya }: { ya?: boolean }) {
   return (
-    <span className={`inline-grid place-items-center w-[19px] h-[19px] rounded-full text-[10px] font-black ${
+    <span className={`inline-grid place-items-center w-[19px] h-[19px] rounded-full text-[11px] font-black ${
       ya ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
       {ya ? '✓' : '✕'}
     </span>
@@ -229,16 +229,16 @@ function BlokToken({
             admin mengira fiturnya mati, lalu mengisi ulang token baru padahal
             yang lama masih dipakai dan sah. */}
         {status?.terisi && status.dariEnv ? (
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700"
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-sky-100 text-sky-700"
             title="Nilai bawaan dari variabel lingkungan server. Sudah aktif — isi di sini hanya bila ingin menggantinya.">
             bawaan {status.penanda}
           </span>
         ) : status?.terisi ? (
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-green-100 text-green-700">
             terisi {status.penanda}
           </span>
         ) : (
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">belum diisi</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">belum diisi</span>
         )}
       </div>
       <div className="flex gap-1.5">
@@ -266,12 +266,12 @@ function BlokToken({
         )}
       </div>
       {status?.terisi && status.diperbarui && (
-        <div className="text-[9px] text-slate-500 mt-1">
+        <div className="text-[10px] text-slate-500 mt-1">
           Diperbarui {new Date(status.diperbarui).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
           {status.oleh ? ` oleh ${status.oleh}` : ''}
         </div>
       )}
-      <p className="text-[9px] text-slate-500 mt-1 leading-relaxed">{petunjuk}</p>
+      <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">{petunjuk}</p>
     </div>
   );
 }
@@ -603,14 +603,14 @@ export function IntegrasiInline() {
       <span className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: warna }} />
       <div className="flex items-center gap-1.5 mb-1.5">
         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: warna }} />
-        <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-500 truncate">{nama}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">{nama}</span>
       </div>
       <div className="text-[17px] font-bold text-slate-800 leading-tight">{nilai}</div>
-      <span className={`inline-block mt-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+      <span className={`inline-block mt-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full ${
         jenis === 'ok' ? 'bg-green-100 text-green-700'
         : jenis === 'warn' ? 'bg-amber-100 text-amber-700'
         : 'bg-slate-100 text-slate-500'}`}>{lencana}</span>
-      <p className="text-[10.5px] text-slate-500 mt-1.5 leading-snug">{ket}</p>
+      <p className="text-[11px] text-slate-500 mt-1.5 leading-snug">{ket}</p>
     </div>
   );
 
@@ -666,7 +666,7 @@ export function IntegrasiInline() {
                         : 'border-transparent text-slate-500 hover:bg-slate-100 font-semibold'}`}>
                 <span className="text-xs flex-1">{r.label}</span>
                 {r.hitung && (
-                  <span className={`text-[10px] font-bold ${aktif ? 'text-cyan-700' : 'text-slate-500'}`}>{r.hitung}</span>
+                  <span className={`text-[11px] font-bold ${aktif ? 'text-cyan-700' : 'text-slate-500'}`}>{r.hitung}</span>
                 )}
                 {r.tanda && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
               </button>
@@ -743,7 +743,7 @@ export function IntegrasiInline() {
                   </div>
                   <div className="ml-auto flex gap-3 flex-shrink-0">
                     {KANAL.map(k => (
-                      <span key={k.key} className="flex items-center gap-1 text-[9.5px] font-bold uppercase tracking-wide text-slate-500">
+                      <span key={k.key} className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: k.warna }} />
                         {k.label}
                       </span>
@@ -774,9 +774,9 @@ export function IntegrasiInline() {
                     className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-cyan-400 mb-2.5" />
                   <div className="rounded-lg border border-slate-200 overflow-hidden">
                     <div className="grid grid-cols-[1fr_46px_46px_46px] px-3.5 py-1.5 bg-slate-50 border-b border-slate-200">
-                      <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-500">Kejadian</span>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Kejadian</span>
                       {KANAL.map(k => (
-                        <span key={k.key} className="text-[9.5px] font-bold uppercase text-center" style={{ color: k.warna }}>
+                        <span key={k.key} className="text-[10px] font-bold uppercase text-center" style={{ color: k.warna }}>
                           {k.label === 'WhatsApp' ? 'WA' : k.label === 'Telegram' ? 'TG' : 'App'}
                         </span>
                       ))}
@@ -787,7 +787,7 @@ export function IntegrasiInline() {
                         if (isi.length === 0) return null;
                         return (
                           <div key={kat}>
-                            <div className="px-3.5 py-1 text-[9.5px] font-bold uppercase tracking-wider text-cyan-700 border-y border-slate-100"
+                            <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-700 border-y border-slate-100"
                               style={{ background: 'rgba(8,145,178,0.06)' }}>
                               {JUDUL_KATEGORI[kat]}
                             </div>
@@ -801,15 +801,15 @@ export function IntegrasiInline() {
                                       <span className="truncate">{e.label}</span>
                                       {!eventTersambung(e.key) && (
                                         <span title="Titik pengirimannya belum menyebutkan kunci event ini — centang di baris ini belum berpengaruh, yang berlaku hanya saklar induk kanal di atas."
-                                          className="flex-shrink-0 text-[8.5px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                                          className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
                                           style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
                                           belum aktif
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-[9.5px] text-slate-500 font-mono truncate">{e.key}</div>
+                                    <div className="text-[10px] text-slate-500 font-mono truncate">{e.key}</div>
                                     {dipilih.length > 0 && berlaku.length === 0 && (
-                                      <div className="text-[10px] text-amber-700 font-semibold mt-0.5">
+                                      <div className="text-[11px] text-amber-700 font-semibold mt-0.5">
                                         kanalnya dimatikan di atas — tidak terkirim
                                       </div>
                                     )}
@@ -826,7 +826,7 @@ export function IntegrasiInline() {
                                             background: on ? k.warna : 'transparent',
                                             opacity: on && !p.aktif[k.key] ? 0.35 : 1,
                                           }}>
-                                          {on && <span className="text-white text-[9px] font-black leading-none">✓</span>}
+                                          {on && <span className="text-white text-[10px] font-black leading-none">✓</span>}
                                         </span>
                                       </button>
                                     );
@@ -866,9 +866,9 @@ export function IntegrasiInline() {
                           style={{ borderColor: dipilih ? '#16a34a' : '#e2e8f0', background: dipilih ? '#16a34a0d' : 'transparent' }}>
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <span className="text-[11.5px] font-bold text-slate-700 leading-tight">{sp.label}</span>
-                            {sp.resmi && <span className="text-[8px] font-black px-1 py-px rounded bg-sky-100 text-sky-700 flex-shrink-0">RESMI</span>}
+                            {sp.resmi && <span className="text-[10px] font-black px-1 py-px rounded bg-sky-100 text-sky-700 flex-shrink-0">RESMI</span>}
                           </div>
-                          <p className="text-[10px] text-slate-500 leading-snug">{sp.ringkas}</p>
+                          <p className="text-[11px] text-slate-500 leading-snug">{sp.ringkas}</p>
                         </button>
                       );
                     })}
@@ -889,11 +889,11 @@ export function IntegrasiInline() {
                         petunjuk={<>{kol.petunjuk} Tersimpan di sisi server dan tidak pernah dikirim balik ke peramban.</>} />
                     ) : (
                       <div key={kol.kunci}>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">{kol.label}</label>
+                        <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">{kol.label}</label>
                         <input value={p.waConfig[kol.kunci] ?? ''} placeholder={kol.placeholder}
                           onChange={e => ubah(x => ({ ...x, waConfig: { ...x.waConfig, [kol.kunci]: e.target.value } }))}
                           className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
-                        <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">{kol.petunjuk}</p>
+                        <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{kol.petunjuk}</p>
                       </div>
                     ))}
                   </div>
@@ -906,10 +906,10 @@ export function IntegrasiInline() {
                 <p className="text-[11.5px] text-slate-500 mt-0.5 mb-3 leading-relaxed">
                   Kirim satu pesan nyata untuk memastikan gateway benar-benar jalan.
                 </p>
-                <label htmlFor="f-dashboard-components-modal-integrasi-1" className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nomor tujuan</label>
+                <label htmlFor="f-dashboard-components-modal-integrasi-1" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nomor tujuan</label>
                 <input id="f-dashboard-components-modal-integrasi-1" value={waTujuan} onChange={e => setWaTujuan(e.target.value)} placeholder="contoh: 6281234567890"
                   className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
-                <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">
+                <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
                   Kode negara tanpa <span className="font-mono">+</span>. Awalan <span className="font-mono">08…</span> ditulis <span className="font-mono">628…</span>
                 </p>
                 <div className="flex flex-wrap gap-2 mt-3">
@@ -925,11 +925,11 @@ export function IntegrasiInline() {
                   </button>
                 </div>
                 <PesanKotak pesan={pesanKanal.whatsapp ?? null} />
-                <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
                   Tekan <b>Simpan</b> dulu setelah berpindah penyedia — tes memakai penyedia yang tersimpan.
                 </p>
                 {!p.aktif.whatsapp && (
-                  <div className="mt-2 rounded-lg px-2.5 py-2 text-[10.5px] font-semibold leading-relaxed"
+                  <div className="mt-2 rounded-lg px-2.5 py-2 text-[11px] font-semibold leading-relaxed"
                     style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
                     <IkonTeks nama="⚠" />Kanal WhatsApp masih mati di <b>Kanal &amp; Event</b>. Tes di sini tetap jalan, tapi notifikasi
                     asli belum akan terkirim.
@@ -960,7 +960,7 @@ export function IntegrasiInline() {
                         baris termasuk angka sebelum titik dua (klik dua kali di Telegram sering hanya memilih separuhnya).</>} />
 
                     <div>
-                      <label htmlFor="f-dashboard-components-modal-integrasi-2" className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                      <label htmlFor="f-dashboard-components-modal-integrasi-2" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                         Tujuan bawaan <span className="normal-case tracking-normal font-normal text-slate-400">— opsional</span>
                       </label>
                       <input id="f-dashboard-components-modal-integrasi-2" value={p.telegramChatId} placeholder="mis. -1001234567890"
@@ -975,14 +975,14 @@ export function IntegrasiInline() {
                           {deteksiJalan ? 'Mendeteksi…' : '🔎 Deteksi Chat ID'}
                         </button>
                       </div>
-                      <p className="text-[10px] text-slate-500 mt-1.5 leading-relaxed">
+                      <p className="text-[11px] text-slate-500 mt-1.5 leading-relaxed">
                         Untuk pemberitahuan yang tidak ditujukan ke orang tertentu (mis. ringkasan harian).
                         Notifikasi assign selalu masuk ke Telegram pribadi masing-masing, bukan ke sini.
                       </p>
 
                       {chatTerdeteksi && chatTerdeteksi.length > 0 && (
                         <div className="mt-2 rounded-lg border border-slate-200 overflow-hidden">
-                          <div className="px-2.5 py-1 bg-slate-50 text-[9.5px] font-bold text-slate-500 uppercase tracking-wider">
+                          <div className="px-2.5 py-1 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                             Percakapan terbaca — klik untuk memakai
                           </div>
                           {chatTerdeteksi.map(c => (
@@ -992,10 +992,10 @@ export function IntegrasiInline() {
                               <span className="text-[11px] flex-shrink-0">{c.jenis === 'private' ? '👤' : '👥'}</span>
                               <span className="min-w-0 flex-1">
                                 <span className="block text-[11px] font-semibold text-slate-700 truncate">{c.nama}</span>
-                                <span className="block text-[9.5px] font-mono text-slate-500">{c.id}</span>
+                                <span className="block text-[10px] font-mono text-slate-500">{c.id}</span>
                               </span>
                               {p.telegramChatId === c.id && (
-                                <span className="text-[9.5px] font-bold text-sky-700 flex-shrink-0">dipakai</span>
+                                <span className="text-[10px] font-bold text-sky-700 flex-shrink-0">dipakai</span>
                               )}
                             </button>
                           ))}
@@ -1043,11 +1043,11 @@ export function IntegrasiInline() {
                   </button>
                 </div>
                 {!p.telegramChatId.trim() && (
-                  <p className="text-[10px] text-slate-500 mt-2">Isi tujuan bawaan dulu untuk bisa mengirim pesan tes.</p>
+                  <p className="text-[11px] text-slate-500 mt-2">Isi tujuan bawaan dulu untuk bisa mengirim pesan tes.</p>
                 )}
                 <PesanKotak pesan={pesanKanal.telegram ?? null} />
                 {!p.aktif.telegram && (
-                  <div className="mt-2 rounded-lg px-2.5 py-2 text-[10.5px] font-semibold leading-relaxed"
+                  <div className="mt-2 rounded-lg px-2.5 py-2 text-[11px] font-semibold leading-relaxed"
                     style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e' }}>
                     <IkonTeks nama="⚠" />Kanal Telegram masih mati di <b>Kanal &amp; Event</b>. Tes di sini tetap jalan, tapi notifikasi
                     asli belum akan terkirim.
@@ -1069,7 +1069,7 @@ export function IntegrasiInline() {
                         Notifikasi sistem asli + bunyi di HP, walau aplikasi/tab sedang tertutup - seperti WhatsApp.
                       </p>
                     </div>
-                    <span className={`ml-auto flex-shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    <span className={`ml-auto flex-shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full ${
                       pushInfo?.aktif ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                       {pushInfo === null ? 'Memuat…' : pushInfo.aktif ? 'Aktif' : 'Belum aktif'}
                     </span>
@@ -1128,7 +1128,7 @@ export function IntegrasiInline() {
                   Buka Dashboard di HP → tekan ikon <b><Ikon nama="📲" ukuran="1em" className="inline-block align-[-0.12em]" /></b> di sebelah lonceng notifikasi → izinkan saat diminta.
                   Sekali per HP/browser, tidak perlu diulang.
                 </p>
-                <p className="text-[10.5px] text-slate-500 mt-2.5 leading-relaxed">
+                <p className="text-[11px] text-slate-500 mt-2.5 leading-relaxed">
                   Di iPhone, notifikasi push HANYA berjalan setelah platform ini dipasang lewat &quot;Tambah ke Layar
                   Utama&quot; (Safari) - batasan dari Apple, bukan platform ini.
                 </p>
@@ -1145,7 +1145,7 @@ export function IntegrasiInline() {
                   <p className="text-[11.5px] text-slate-500 mt-0.5">Siapa yang benar-benar bisa dikabarkan lewat kanal mana.</p>
                 </div>
                 {belumTG > 0 && (
-                  <span className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
+                  <span className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
                     {belumTG} belum Telegram
                   </span>
                 )}
@@ -1155,11 +1155,11 @@ export function IntegrasiInline() {
                   <table className="w-full min-w-[520px] border-collapse">
                     <thead>
                       <tr className="bg-slate-50 border-b border-slate-200">
-                        <th className="text-left px-3.5 py-2 text-[9.5px] font-bold uppercase tracking-wider text-slate-500">Anggota</th>
-                        <th className="text-left px-3.5 py-2 text-[9.5px] font-bold uppercase tracking-wider text-slate-500">Tim</th>
-                        <th className="px-3 py-2 text-[9.5px] font-bold uppercase tracking-wider text-slate-500 text-center">In-App</th>
-                        <th className="px-3 py-2 text-[9.5px] font-bold uppercase tracking-wider text-slate-500 text-center">WhatsApp</th>
-                        <th className="px-3 py-2 text-[9.5px] font-bold uppercase tracking-wider text-slate-500 text-center">Telegram</th>
+                        <th className="text-left px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Anggota</th>
+                        <th className="text-left px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Tim</th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">In-App</th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">WhatsApp</th>
+                        <th className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 text-center">Telegram</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1169,7 +1169,7 @@ export function IntegrasiInline() {
                         <tr key={t.nama} className="border-b border-slate-50 last:border-0 hover:bg-slate-50">
                           <td className="px-3.5 py-2.5">
                             <div className="text-[12.5px] text-slate-700">{t.nama}</div>
-                            <div className="text-[10.5px] text-slate-500">{t.jabatan}</div>
+                            <div className="text-[11px] text-slate-500">{t.jabatan}</div>
                           </td>
                           <td className="px-3.5 py-2.5 text-[11.5px] text-slate-500">{t.tim}</td>
                           <td className="px-3 py-2.5 text-center"><Cek ya /></td>
@@ -1208,27 +1208,27 @@ export function IntegrasiInline() {
                     petunjuk={<>Ambil dari Google AI Studio (aistudio.google.com → Get API key). Token disimpan di server
                       dan tidak pernah dikirim ke peramban.</>} />
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Model</label>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Model</label>
                     <PilihModel nilai={ai.model} warna="sky" onGanti={m => setAi(x => ({ ...x, model: m }))} />
                   </div>
                   <div>
-                    <label htmlFor="f-dashboard-components-modal-integrasi-3" className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    <label htmlFor="f-dashboard-components-modal-integrasi-3" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                       Arahan topik <span className="normal-case tracking-normal font-normal text-slate-400">— opsional</span>
                     </label>
                     <textarea id="f-dashboard-components-modal-integrasi-3" value={ai.arahan} rows={3} onChange={e => setAi(x => ({ ...x, arahan: e.target.value }))}
                       placeholder={'Contoh:\nUtamakan topik konfigurasi videowall dan troubleshooting sinyal HDMI/HDBaseT.\nHindari pertanyaan tentang sejarah merek atau harga.'}
                       className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400 leading-relaxed" />
-                    <p className="text-[10px] text-slate-500 mt-1">
+                    <p className="text-[11px] text-slate-500 mt-1">
                       Ditambahkan pada instruksi AI, bukan menggantinya — aturan bentuk soal tetap dipegang platform.
                     </p>
                   </div>
                   <div>
-                    <label htmlFor="f-dashboard-components-modal-integrasi-4" className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    <label htmlFor="f-dashboard-components-modal-integrasi-4" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                       Variasi soal <span className="normal-case tracking-normal font-normal text-slate-500">({ai.suhu.toFixed(1)})</span>
                     </label>
                     <input id="f-dashboard-components-modal-integrasi-4" type="range" min={0} max={2} step={0.1} value={ai.suhu} aria-label="Variasi soal"
                       onChange={e => setAi(x => ({ ...x, suhu: Number(e.target.value) }))} className="w-full accent-sky-500" />
-                    <div className="flex justify-between text-[9.5px] text-slate-500">
+                    <div className="flex justify-between text-[10px] text-slate-500">
                       <span>0 — taat pada materi</span><span>2 — banyak variasi</span>
                     </div>
                   </div>
@@ -1267,12 +1267,12 @@ export function IntegrasiInline() {
                     petunjuk={<>Kosongkan untuk memakai Token AI pembuat soal. Isi dengan kunci dari <b>proyek Google
                       terpisah</b> supaya jatahnya tidak berebut.</>} />
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">Model penilai</label>
+                    <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Model penilai</label>
                     <PilihModel nilai={penilai.model} profil="penilai" warna="violet"
                       onGanti={m => setPenilai(x => ({ ...x, model: m }))} />
                   </div>
                   <div>
-                    <label htmlFor="f-dashboard-components-modal-integrasi-5" className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    <label htmlFor="f-dashboard-components-modal-integrasi-5" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                       Arahan penilaian <span className="normal-case tracking-normal font-normal text-slate-400">— opsional</span>
                     </label>
                     <textarea id="f-dashboard-components-modal-integrasi-5" value={penilai.arahan} rows={3} onChange={e => setPenilai(x => ({ ...x, arahan: e.target.value }))}
@@ -1280,13 +1280,13 @@ export function IntegrasiInline() {
                       className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-violet-400 leading-relaxed" />
                   </div>
                   <div>
-                    <label htmlFor="f-dashboard-components-modal-integrasi-6" className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                    <label htmlFor="f-dashboard-components-modal-integrasi-6" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
                       Ketaatan pada kunci <span className="normal-case tracking-normal font-normal text-slate-500">({penilai.suhu.toFixed(1)})</span>
                     </label>
                     <input id="f-dashboard-components-modal-integrasi-6" type="range" min={0} max={2} step={0.1} value={penilai.suhu}
                       aria-label="Ketaatan penilaian pada kunci referensi"
                       onChange={e => setPenilai(x => ({ ...x, suhu: Number(e.target.value) }))} className="w-full accent-violet-500" />
-                    <div className="flex justify-between text-[9.5px] text-slate-500">
+                    <div className="flex justify-between text-[10px] text-slate-500">
                       <span>0 — taat pada kunci</span><span>2 — longgar</span>
                     </div>
                   </div>
@@ -1296,7 +1296,7 @@ export function IntegrasiInline() {
                       className="mt-0.5 w-4 h-4 rounded accent-violet-600 flex-shrink-0" />
                     <span className="text-[11.5px] leading-snug text-slate-600">
                       <b>Nilai otomatis saat halaman penilaian dibuka</b>
-                      <span className="block text-[10px] text-slate-500 mt-0.5">
+                      <span className="block text-[11px] text-slate-500 mt-0.5">
                         Mati secara bawaan. Bila dinyalakan, sekadar <em>membuka</em> jawaban seorang peserta sudah
                         memakai jatah — termasuk saat penilai hanya ingin membacanya.
                       </span>

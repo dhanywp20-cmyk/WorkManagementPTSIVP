@@ -179,7 +179,7 @@ function chipStyle(state: FlowChip['state']): React.CSSProperties {
 function FlowViz({ flow }: { flow: FlowChip[] }) {
   return (
     <div style={{ padding: '10px 12px', background: 'rgba(0,0,0,0.03)', borderRadius: 10, marginTop: 8 }}>
-      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', color: '#64748b', textTransform: 'uppercase', marginBottom: 8 }}>
         Alur penggunaan
       </p>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
@@ -194,7 +194,7 @@ function FlowViz({ flow }: { flow: FlowChip[] }) {
               {chip.label}
             </span>
             {i < flow.length - 1 && (
-              <span style={{ color: '#cbd5e1', fontSize: 10, fontWeight: 700 }}>›</span>
+              <span style={{ color: '#cbd5e1', fontSize: 11, fontWeight: 700 }}>›</span>
             )}
           </React.Fragment>
         ))}
@@ -418,7 +418,7 @@ export default function OnboardingTour({ currentUser, visibleMenuKeys, forceShow
                 <Ikon nama={s.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" />
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <p style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: `${s.color}99`, marginBottom: 3 }}>
+                <p style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: `${s.color}99`, marginBottom: 3 }}>
                   Langkah {step + 1} dari {steps.length}
                 </p>
                 <h3 style={{ fontSize: 13.5, fontWeight: 800, color: '#1e293b', lineHeight: 1.35, margin: 0 }}>

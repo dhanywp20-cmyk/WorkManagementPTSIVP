@@ -183,6 +183,20 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
   );
 }
 
+/** Judul modul - ukuran & bentuk sama dengan PageHeader modul lain (ikon 9, h1 text-base, subjudul). */
+function JudulLC() {
+  return (
+    <div className="flex items-center gap-2.5 sm:gap-3 px-4 sm:px-6 pt-2.5 sm:pt-3.5 pb-0">
+      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: '#4f46e514', color: '#4f46e5', border: '1px solid #4f46e526' }}><Ikon nama="🎓" ukuran={18} /></div>
+      <div>
+        <h1 className="text-[15px] sm:text-base font-bold tracking-tight leading-tight text-slate-900">Learning Center</h1>
+        <p className="hidden sm:block text-[11px] font-medium text-slate-600">Materi, quiz &amp; perkembangan belajar tim</p>
+      </div>
+    </div>
+  );
+}
+
 function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminView) => void }) {
   const items: { key: AdminView; icon: string; label: string }[] = [
     { key: 'dashboard', icon: '📊', label: 'Dashboard' },
@@ -196,12 +210,7 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
   return (
     <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #4f46e5' }}
       className="flex-shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
-      <div className="flex items-center gap-3 px-6 pt-4 pb-0">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#4f46e514', color: '#4f46e5', border: '1px solid #4f46e526' }}><Ikon nama="🎓" ukuran={16} /></div>
-        <div>
-          <span className="text-sm font-bold text-slate-800 leading-tight">Learning Center</span>
-        </div>
-      </div>
+      <JudulLC />
       {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
           tombol lepas. Dengan penandanya pembaca layar menyebut "tab 2 dari 6"
           dan mana yang sedang terpilih. Sudah overflow-x-auto dari dulu, tapi
@@ -244,12 +253,7 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
   return (
     <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #4f46e5' }}
       className="flex-shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
-      <div className="flex items-center gap-3 px-6 pt-4 pb-0">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: '#4f46e514', color: '#4f46e5', border: '1px solid #4f46e526' }}><Ikon nama="🎓" ukuran={16} /></div>
-        <div>
-          <span className="text-sm font-bold text-slate-800 leading-tight">Learning Center</span>
-        </div>
-      </div>
+      <JudulLC />
       {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
           tombol lepas. Dengan penandanya pembaca layar menyebut "tab 2 dari 6"
           dan mana yang sedang terpilih. */}

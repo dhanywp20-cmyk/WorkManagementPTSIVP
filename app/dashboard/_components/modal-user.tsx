@@ -170,7 +170,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     if (!u?.jabatan) return null;
     const cfg = JABATAN_CONFIG[u.jabatan as JabatanType];
     if (!cfg) return null;
-    return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
   };
 
   const atasanByDiv: Record<string, typeof divSupMaps> = {};
@@ -254,7 +254,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                 </p>
                 <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="f-dashboard-components-modal-user-1" className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division</label>
+                    <label htmlFor="f-dashboard-components-modal-user-1" className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division</label>
                     <select id="f-dashboard-components-modal-user-1" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)}
                       className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 bg-white">
                       <option value="">— Pilih Divisi —</option>
@@ -262,7 +262,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Atasan (Jabatan Supervisor+)</label>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Atasan (Jabatan Supervisor+)</label>
                     {supervisorCandidates.length === 0 ? (
                       <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200"><IkonTeks nama="⚠" />Set jabatan user di Account Settings terlebih dahulu.</div>
                     ) : (
@@ -336,31 +336,31 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                             <span className="text-base"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                             <span className="font-bold text-amber-800 text-sm">{division}</span>
                             <div className="ml-auto flex items-center gap-2">
-                              <span className="text-[10px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full border border-slate-200"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {divUsers.length} user</span>
-                              <span className="text-[10px] text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200">{maps.length} atasan</span>
+                              <span className="text-[11px] text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-full border border-slate-200"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {divUsers.length} user</span>
+                              <span className="text-[11px] text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded-full border border-amber-200">{maps.length} atasan</span>
                             </div>
                           </div>
                           {divUsers.length > 0 && (
                             <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-100">
-                              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Bawahan di Divisi Ini</p>
+                              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">Bawahan di Divisi Ini</p>
                               <div className="flex flex-wrap gap-1.5">
                                 {divUsers.map(u => {
                                   const cfg = u.jabatan ? JABATAN_CONFIG[u.jabatan as JabatanType] : null;
                                   return (
                                     <div key={u.id} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white border border-slate-200 text-xs">
-                                      <div className="w-4 h-4 rounded-full flex items-center justify-center font-black text-[9px] flex-shrink-0"
+                                      <div className="w-4 h-4 rounded-full flex items-center justify-center font-black text-[10px] flex-shrink-0"
                                         style={{ background: 'linear-gradient(135deg,#fde68a,#f59e0b)', color: '#78350f' }}>
                                         {u.full_name?.charAt(0)?.toUpperCase()}
                                       </div>
                                       <span className="font-semibold text-slate-700">{u.full_name}</span>
                                       {u.jabatan && (
-                                        <span className="text-[9px] font-bold px-1 py-0.5 rounded"
+                                        <span className="text-[10px] font-bold px-1 py-0.5 rounded"
                                           style={{ background: cfg?.bg ?? '#f1f5f9', color: cfg?.color ?? '#475569' }}>
                                           <Ikon nama={cfg?.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}
                                         </span>
                                       )}
                                       {u.sales_division && u.sales_division !== division && (
-                                        <span className="text-[9px] text-slate-500 bg-slate-100 px-1 py-0.5 rounded">{u.sales_division}</span>
+                                        <span className="text-[10px] text-slate-500 bg-slate-100 px-1 py-0.5 rounded">{u.sales_division}</span>
                                       )}
                                     </div>
                                   );
@@ -384,10 +384,10 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                       {jabatanBadge(sup)}
                                     </div>
                                     <div className="flex items-center gap-2 mt-0.5">
-                                      <p className="text-[10px] text-slate-500"><Username value={sup?.username} /></p>
+                                      <p className="text-[11px] text-slate-500"><Username value={sup?.username} /></p>
                                       {sup?.phone_number
-                                        ? <span className="text-[10px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(sup.phone_number)}</span>
-                                        : <span className="text-[10px] text-rose-600"><IkonTeks nama="⚠" />No WA</span>}
+                                        ? <span className="text-[11px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(sup.phone_number)}</span>
+                                        : <span className="text-[11px] text-rose-600"><IkonTeks nama="⚠" />No WA</span>}
                                     </div>
                                   </div>
                                   <button aria-label="Tutup" onClick={() => handleDeleteAtasan(m.id)}
@@ -418,7 +418,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                   pilih brand saat request → CC/approval ke handler brand itu.
                 </p>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Brand yang di-handle akun ini *</label>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Brand yang di-handle akun ini *</label>
                   <div className="flex gap-2">
                     {(['MVI', 'IVP'] as const).map(b => (
                       <button key={b} type="button" onClick={() => setIvpBrand(b)}
@@ -430,7 +430,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                 </div>
                 <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="f-dashboard-components-modal-user-2" className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division (External)</label>
+                    <label htmlFor="f-dashboard-components-modal-user-2" className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division (External)</label>
                     <select id="f-dashboard-components-modal-user-2" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)}
                       className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
                       <option value="">— Pilih Divisi —</option>
@@ -438,7 +438,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">IVP & MVI Account (Sales Internal: IVP/MVI/MLDS)</label>
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">IVP & MVI Account (Sales Internal: IVP/MVI/MLDS)</label>
                     {ivpUsers.length === 0 ? (
                       <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200"><IkonTeks nama="⚠" />Tidak ada akun Sales Internal.</div>
                     ) : (
@@ -470,7 +470,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-violet-50 border-b border-violet-100">
                           <span className="text-base"><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                           <span className="font-bold text-violet-800 text-sm">{division}</span>
-                          <span className="ml-auto text-[10px] text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full border border-violet-200">{maps.length} IVP</span>
+                          <span className="ml-auto text-[11px] text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full border border-violet-200">{maps.length} IVP</span>
                         </div>
                         <div className="divide-y divide-violet-50 bg-white">
                           {maps.map(m => {
@@ -480,13 +480,13 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                 <div className="w-8 h-8 rounded-lg bg-violet-100 border border-violet-200 flex items-center justify-center text-lg flex-shrink-0">{(m.brand_type ?? '') === 'IVP' ? '🌐' : '🏠'}</div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-bold text-sm text-violet-800 flex items-center gap-1.5">{ivp?.full_name ?? m.ivp_id}
-                                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full border" style={(m.brand_type ?? '') === 'IVP' ? { background: '#dbeafe', color: '#1e40af', borderColor: '#93c5fd' } : { background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>{(m.brand_type ?? 'MVI') === 'IVP' ? 'IVP · Global' : 'MVI · House'}</span>
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border" style={(m.brand_type ?? '') === 'IVP' ? { background: '#dbeafe', color: '#1e40af', borderColor: '#93c5fd' } : { background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>{(m.brand_type ?? 'MVI') === 'IVP' ? 'IVP · Global' : 'MVI · House'}</span>
                                   </p>
                                   <div className="flex items-center gap-2 mt-0.5">
-                                    <p className="text-[10px] text-slate-500"><Username value={ivp?.username} /></p>
+                                    <p className="text-[11px] text-slate-500"><Username value={ivp?.username} /></p>
                                     {ivp?.phone_number
-                                      ? <span className="text-[10px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(ivp.phone_number)}</span>
-                                      : <span className="text-[10px] text-rose-600"><IkonTeks nama="⚠" />No WA</span>}
+                                      ? <span className="text-[11px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(ivp.phone_number)}</span>
+                                      : <span className="text-[11px] text-rose-600"><IkonTeks nama="⚠" />No WA</span>}
                                   </div>
                                 </div>
                                 <button aria-label="Tutup" onClick={() => handleDeleteIvp(m.id)}
@@ -511,15 +511,15 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
               {/* Left: user list */}
               <div className="w-56 border-r border-slate-200 flex flex-col flex-shrink-0">
                 <div className="px-4 py-2.5 bg-teal-50 border-b border-teal-100">
-                  <p className="text-[10px] font-bold text-teal-700 uppercase tracking-widest">Pilih User</p>
-                  <p className="text-[9px] text-teal-700 mt-0.5">Centang siapa yang di-CC saat user ini buat aktivitas</p>
+                  <p className="text-[11px] font-bold text-teal-700 uppercase tracking-widest">Pilih User</p>
+                  <p className="text-[10px] text-teal-700 mt-0.5">Centang siapa yang di-CC saat user ini buat aktivitas</p>
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   {ccEligibleUsers.length === 0 ? (
                     <div className="p-4 text-center text-slate-500 text-xs py-10">
                       <p className="text-3xl mb-2">🙅</p>
                       <p>Belum ada user dengan jabatan ter-set</p>
-                      <p className="mt-1 text-[9px]">Set jabatan di Account Settings</p>
+                      <p className="mt-1 text-[10px]">Set jabatan di Account Settings</p>
                     </div>
                   ) : ccEligibleUsers.map(u => {
                     const cfg = u.jabatan ? JABATAN_CONFIG[u.jabatan as JabatanType] : null;
@@ -533,8 +533,8 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                           {cfg && <span className="text-xs"><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>}
                           <p className={`text-sm font-bold truncate ${isSelected ? 'text-teal-700' : 'text-slate-700'}`}>{u.full_name}</p>
                         </div>
-                        <p className="text-[9px] text-slate-500 truncate">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
-                        {myMaps > 0 && <span className="mt-1 inline-block bg-teal-100 text-teal-700 text-[9px] font-bold px-1.5 py-0.5 rounded-full">{myMaps} CC ter-set</span>}
+                        <p className="text-[10px] text-slate-500 truncate">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
+                        {myMaps > 0 && <span className="mt-1 inline-block bg-teal-100 text-teal-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{myMaps} CC ter-set</span>}
                       </button>
                     );
                   })}
@@ -555,17 +555,17 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs font-bold text-teal-800">CC untuk: {selectedUserObj?.full_name}</p>
-                          <p className="text-[10px] text-teal-700">{selectedJabatan} · {selectedUserObj?.sales_division}</p>
+                          <p className="text-[11px] text-teal-700">{selectedJabatan} · {selectedUserObj?.sales_division}</p>
                         </div>
                         <button
                           onClick={() => { const s = new Set(autoSuggested); setCcChecked(s); }}
-                          className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition-all hover:bg-teal-100"
+                          className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg border transition-all hover:bg-teal-100"
                           style={{ background: 'rgba(13,148,136,0.08)', color: '#0d9488', borderColor: 'rgba(13,148,136,0.2)' }}>
                           <IkonTeks nama="✨" />Auto-pilih berdasarkan jabatan
                         </button>
                       </div>
                       {selectedJabatan && JABATAN_CC_RULES[selectedJabatan as JabatanType] && (
-                        <div className="mt-2 p-2 rounded-lg text-[10px]" style={{ background: 'rgba(13,148,136,0.06)', border: '1px solid rgba(13,148,136,0.15)' }}>
+                        <div className="mt-2 p-2 rounded-lg text-[11px]" style={{ background: 'rgba(13,148,136,0.06)', border: '1px solid rgba(13,148,136,0.15)' }}>
                           <span className="font-bold text-teal-700">Rules jabatan {selectedJabatan}:</span>
                           <span className="text-teal-700 ml-1">
                             otomatis CC ke {JABATAN_CC_RULES[selectedJabatan as JabatanType].length > 0
@@ -604,12 +604,12 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5 flex-wrap">
                                     <p className="font-bold text-sm" style={{ color: cfg?.color ?? '#374151' }}>{u.full_name}</p>
-                                    {isAutoSuggested && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><IkonTeks nama="⭐" />Disarankan</span>}
+                                    {isAutoSuggested && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"><IkonTeks nama="⭐" />Disarankan</span>}
                                   </div>
-                                  <p className="text-[10px] text-slate-500">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
+                                  <p className="text-[11px] text-slate-500">{u.jabatan}{u.sales_division ? ` · ${u.sales_division}` : ''}</p>
                                   {u.phone_number
-                                    ? <p className="text-[10px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(u.phone_number)}</p>
-                                    : <p className="text-[10px] text-rose-600"><IkonTeks nama="⚠" />No WA — tidak akan di-CC</p>}
+                                    ? <p className="text-[11px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {maskPhone(u.phone_number)}</p>
+                                    : <p className="text-[11px] text-rose-600"><IkonTeks nama="⚠" />No WA — tidak akan di-CC</p>}
                                 </div>
                               </button>
                             );
@@ -620,7 +620,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
                     <div className="p-4 border-t border-slate-100 flex-shrink-0 bg-slate-50/50 flex items-center gap-3">
                       <div className="flex-1">
-                        <p className="text-[10px] text-slate-500">{ccChecked.size} orang dipilih untuk di-CC</p>
+                        <p className="text-[11px] text-slate-500">{ccChecked.size} orang dipilih untuk di-CC</p>
                       </div>
                       <button onClick={handleSaveUserCC} disabled={ccSaving}
                         className="px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-50 hover:scale-[1.02]"
@@ -794,7 +794,7 @@ export function UserManagementInline() {
     if (!u?.jabatan) return null;
     const cfg = JABATAN_CONFIG[u.jabatan as JabatanType];
     if (!cfg) return null;
-    return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
   };
 
   // Struktur Organisasi (atasan_id) helpers
@@ -1031,7 +1031,7 @@ export function UserManagementInline() {
                       </p>
                       <div className="flex flex-wrap gap-1">
                         {tidakTampil.map(u => (
-                          <span key={u.id} className="text-[10px] px-2 py-0.5 rounded-full bg-white text-amber-800 border border-amber-300">
+                          <span key={u.id} className="text-[11px] px-2 py-0.5 rounded-full bg-white text-amber-800 border border-amber-300">
                             {u.full_name}{u.jabatan ? ` · ${u.jabatan}` : ''}
                           </span>
                         ))}
@@ -1053,7 +1053,7 @@ export function UserManagementInline() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 text-[10px] text-slate-500 flex-wrap">
+                  <div className="flex items-center gap-3 text-[11px] text-slate-500 flex-wrap">
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#185FA5' }} /> Sales</span>
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#D4537E' }} /> Marketing</span>
                     <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#1D9E75' }} /> PTS</span>
@@ -1064,7 +1064,7 @@ export function UserManagementInline() {
                     {flat.length === 0 ? (
                       <div className="text-center py-10 text-slate-500 text-sm">
                         <p className="text-2xl mb-1"><Ikon nama="🏛" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
-                        Tidak ada hasil. Coba ubah filter atau jalankan migration <code className="text-[10px]">atasan_id</code>.
+                        Tidak ada hasil. Coba ubah filter atau jalankan migration <code className="text-[11px]">atasan_id</code>.
                       </div>
                     ) : flat.map(({ u, depth, directCount }) => {
                       const grp = orgGroupOf(u);
@@ -1075,18 +1075,18 @@ export function UserManagementInline() {
                           <div className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                             style={{ marginLeft: depth * 18 }} onClick={() => setOrgSelectedId(isSel ? '' : u.id)}>
                             {depth > 0 && <span className="text-slate-400 text-xs flex-shrink-0">└</span>}
-                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0" style={{ background: gs.bg, color: gs.color }}>
+                            <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{ background: gs.bg, color: gs.color }}>
                               {u.full_name?.charAt(0)?.toUpperCase() || 'U'}
                             </div>
                             <span className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</span>
                             {jabatanBadge(u)}
-                            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: gs.bg, color: gs.color }}>{grp}</span>
-                            {directCount > 0 && <span className="text-[10px] text-slate-500 flex-shrink-0">· {directCount} bawahan</span>}
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: gs.bg, color: gs.color }}>{grp}</span>
+                            {directCount > 0 && <span className="text-[11px] text-slate-500 flex-shrink-0">· {directCount} bawahan</span>}
                             <span className="ml-auto text-slate-400 text-xs flex-shrink-0">{isSel ? '▲' : '▼'}</span>
                           </div>
                           {isSel && (
                             <div style={{ marginLeft: depth * 18 + 30 }} className="my-1 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
-                              <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest mb-1.5">Atur atasan langsung — {u.full_name}</p>
+                              <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest mb-1.5">Atur atasan langsung — {u.full_name}</p>
                               <select aria-label="— Tidak ada (puncak / Direktur) —" value={u.atasan_id || ''} onChange={e => { handleSetAtasan(u.id, e.target.value); setOrgSelectedId(''); }} disabled={saving}
                                 className="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-200 bg-white">
                                 <option value="">— Tidak ada (puncak / Direktur) —</option>
@@ -1094,7 +1094,7 @@ export function UserManagementInline() {
                                   <option key={c.id} value={c.id}>{c.full_name}{c.jabatan ? ` · ${c.jabatan}` : ''} ({orgGroupOf(c)})</option>
                                 ))}
                               </select>
-                              <p className="text-[10px] text-emerald-700 mt-1.5">Daftar berisi SEMUA user lintas divisi · otomatis tervalidasi anti-loop.</p>
+                              <p className="text-[11px] text-emerald-700 mt-1.5">Daftar berisi SEMUA user lintas divisi · otomatis tervalidasi anti-loop.</p>
                             </div>
                           )}
                         </div>
@@ -1124,7 +1124,7 @@ export function UserManagementInline() {
                   <p className="text-xs font-bold text-amber-700 mb-3"><IkonTeks nama="➕" />Tambah Mapping Atasan</p>
                   <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
-                      <label htmlFor="f-dashboard-components-modal-user-3" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi / Grup</label>
+                      <label htmlFor="f-dashboard-components-modal-user-3" className="block text-[11px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi / Grup</label>
                       <select id="f-dashboard-components-modal-user-3" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
                         <option value="">-- Pilih Divisi / Grup --</option>
                         <optgroup label="Divisi Sales">{nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}</optgroup>
@@ -1132,7 +1132,7 @@ export function UserManagementInline() {
                       </select>
                     </div>
                     <div>
-                      <label htmlFor="f-dashboard-components-modal-user-4" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Atasan</label>
+                      <label htmlFor="f-dashboard-components-modal-user-4" className="block text-[11px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Atasan</label>
                       <select id="f-dashboard-components-modal-user-4" value={atasanSupId} onChange={e => setAtasanSupId(e.target.value)} className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
                         <option value="">-- Pilih Atasan --</option>{supervisorCandidates.map(u => <option key={u.id} value={u.id}>{u.full_name} ({u.jabatan}{u.team_type ? ` · ${u.team_type}` : ''})</option>)}
                       </select>
@@ -1150,7 +1150,7 @@ export function UserManagementInline() {
                     <div key={div} className="rounded-xl border border-amber-200 overflow-hidden">
                       <div className="px-3 py-2 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
                         <span className="font-bold text-amber-800 text-xs"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /> {div}</span>
-                        <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{maps.length}</span>
+                        <span className="text-[11px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{maps.length}</span>
                       </div>
                       <div className="divide-y divide-amber-50">
                         {maps.map(m => {
@@ -1180,7 +1180,7 @@ export function UserManagementInline() {
                 <div className="p-4 rounded-xl border border-violet-200 bg-violet-50">
                   <p className="text-xs font-bold text-violet-700 mb-2"><IkonTeks nama="➕" />Tambah Sales Handle (IVP / MVI) ke Divisi — <strong>per brand</strong></p>
                   <div className="mb-3">
-                    <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Brand yang di-handle *</label>
+                    <label className="block text-[11px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Brand yang di-handle *</label>
                     <div className="flex gap-2">
                       {(['MVI', 'IVP'] as const).map(b => (
                         <button key={b} type="button" onClick={() => setIvpBrand(b)}
@@ -1192,13 +1192,13 @@ export function UserManagementInline() {
                   </div>
                   <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
-                      <label htmlFor="f-dashboard-components-modal-user-5" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi Sales</label>
+                      <label htmlFor="f-dashboard-components-modal-user-5" className="block text-[11px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Divisi Sales</label>
                       <select id="f-dashboard-components-modal-user-5" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
                         <option value="">-- Pilih Divisi --</option>{nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label htmlFor="f-dashboard-components-modal-user-6" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Sales Account (IVP / MVI)</label>
+                      <label htmlFor="f-dashboard-components-modal-user-6" className="block text-[11px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Sales Account (IVP / MVI)</label>
                       <select id="f-dashboard-components-modal-user-6" value={ivpUserId} onChange={e => setIvpUserId(e.target.value)} className="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-violet-200 bg-white">
                         <option value="">-- Pilih Account --</option>
                         {ivpUsers.length > 0 && (
@@ -1228,22 +1228,22 @@ export function UserManagementInline() {
                       <div className="px-3 py-2 bg-violet-50 border-b border-violet-100 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span className="font-bold text-violet-900 text-xs truncate">{user?.full_name ?? '—'}</span>
-                          <span className={`flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${group === 'MVI' ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-violet-100 text-violet-700 border-violet-200'}`}>{group}</span>
+                          <span className={`flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${group === 'MVI' ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-violet-100 text-violet-700 border-violet-200'}`}>{group}</span>
                         </div>
-                        <span className="text-[10px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-full flex-shrink-0">{maps.length}</span>
+                        <span className="text-[11px] font-bold bg-violet-100 text-violet-700 px-1.5 py-0.5 rounded-full flex-shrink-0">{maps.length}</span>
                       </div>
                       {/* Phone number row */}
                       <div className="px-3 py-1 bg-violet-50/60 border-b border-violet-100">
                         {user?.phone_number
-                          ? <p className="text-[10px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</p>
-                          : <p className="text-[10px] text-rose-600"><IkonTeks nama="⚠" />No WA</p>}
+                          ? <p className="text-[11px] text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</p>
+                          : <p className="text-[11px] text-rose-600"><IkonTeks nama="⚠" />No WA</p>}
                       </div>
                       {/* Division chips */}
                       <div className="px-3 py-2 flex flex-wrap gap-1.5 bg-white">
                         {maps.map(m => (
                           <div key={m.id} className="flex items-center gap-1 bg-violet-50 border border-violet-200 rounded-lg px-2 py-0.5 group">
-                            <span className="text-[10px] font-semibold text-violet-800">{m.sales_division}</span>
-                            <span className="text-[8px] font-bold px-1 rounded" style={(m.brand_type ?? '') === 'IVP' ? { background: '#dbeafe', color: '#1e40af' } : { background: '#fef3c7', color: '#92400e' }}>{(m.brand_type ?? 'MVI') === 'IVP' ? 'IVP' : 'MVI'}</span>
+                            <span className="text-[11px] font-semibold text-violet-800">{m.sales_division}</span>
+                            <span className="text-[10px] font-bold px-1 rounded" style={(m.brand_type ?? '') === 'IVP' ? { background: '#dbeafe', color: '#1e40af' } : { background: '#fef3c7', color: '#92400e' }}>{(m.brand_type ?? 'MVI') === 'IVP' ? 'IVP' : 'MVI'}</span>
                             <button onClick={() => handleDeleteIvp(m.id)} className="text-violet-300 hover:text-red-500 transition-colors ml-0.5" title={`Hapus ${m.sales_division}`}>
                               <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
@@ -1264,14 +1264,14 @@ export function UserManagementInline() {
                   <p className="text-[11px] text-slate-500 mb-3">Request diarahkan otomatis ke Supervisor tim sesuai tipe produk (Supervisor dicari live dari Struktur Organisasi — bukan hardcode nama). "LED &amp; LCD" boleh diarahkan ke 2 tim sekaligus (keduanya di-notify, 1 tim yang eksekusi).</p>
                   <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
                     <div>
-                      <label htmlFor="f-dashboard-components-modal-user-7" className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tipe Produk</label>
+                      <label htmlFor="f-dashboard-components-modal-user-7" className="block text-[11px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tipe Produk</label>
                       <select id="f-dashboard-components-modal-user-7" value={prodType} onChange={e => setProdType(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 bg-white">
                         <option value="">-- Pilih Tipe --</option>
                         {PRODUCT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                       </select>
                     </div>
                     <div className="formulir:col-span-2">
-                      <label className="block text-[10px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tim PTS (bisa pilih lebih dari 1)</label>
+                      <label className="block text-[11px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tim PTS (bisa pilih lebih dari 1)</label>
                       <div className="flex flex-wrap gap-2">
                         {['Team PTS IVP', 'Team PTS UMP', 'Team PTS MVI'].map(tt => (
                           <button key={tt} type="button" onClick={() => toggleProdTeamType(tt)}
@@ -1299,7 +1299,7 @@ export function UserManagementInline() {
                             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                           </button>
                         </div>
-                        <div className="mt-1 text-[10px] text-slate-500">
+                        <div className="mt-1 text-[11px] text-slate-500">
                           Supervisor saat ini: {m.team_types.map(tt => getSupervisorsForTeam(tt)).join(' · ')}
                         </div>
                       </div>
@@ -1340,10 +1340,10 @@ export function UserManagementInline() {
                       <div key={u.id} className="flex items-center justify-between bg-white border border-sky-100 rounded-lg px-3 py-2">
                         <div className="min-w-0">
                           <p className="text-xs font-semibold text-slate-700 truncate">{u.full_name}</p>
-                          <p className="text-[10px] text-slate-500">{u.sales_division || '—'}</p>
+                          <p className="text-[11px] text-slate-500">{u.sales_division || '—'}</p>
                         </div>
                         <button onClick={() => handleToggleInternalSales(u.id, !!u.is_internal_sales)} disabled={savingInternal === u.id}
-                          className="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all flex-shrink-0"
+                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex-shrink-0"
                           style={u.is_internal_sales ? { background: '#0ea5e9', color: 'white' } : { background: '#f1f5f9', color: '#64748b' }}>
                           {u.is_internal_sales ? '✓ Internal' : 'External'}
                         </button>
@@ -1385,7 +1385,7 @@ export function UserManagementInline() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-slate-800 text-xs truncate">{u.full_name}</p>
-                              <p className="text-[10px] text-slate-500">{u.jabatan} · {u.sales_division}</p>
+                              <p className="text-[11px] text-slate-500">{u.jabatan} · {u.sales_division}</p>
                             </div>
                             {isSelected && <div className="w-2 h-2 rounded-full bg-teal-500 flex-shrink-0" />}
                           </button>
@@ -1417,7 +1417,7 @@ export function UserManagementInline() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-semibold text-slate-800 text-xs truncate">{target.full_name}</p>
-                                  <p className="text-[10px]" style={{ color: cfg?.color ?? '#64748b' }}><Ikon nama={cfg?.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {target.jabatan}</p>
+                                  <p className="text-[11px]" style={{ color: cfg?.color ?? '#64748b' }}><Ikon nama={cfg?.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {target.jabatan}</p>
                                 </div>
                               </button>
                             );

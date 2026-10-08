@@ -170,7 +170,7 @@ export function ReminderListBody({
                 badges={<>
                   {statusEntries.length === 1
                     ? <StatusBadge status={group[0].status} />
-                    : <div className="flex flex-wrap justify-end gap-0.5">{statusEntries.map(([s, n]) => <span key={s} className="flex items-center gap-0.5"><StatusBadge status={s as any} /><span className="text-[8px] text-gray-500">{n}×</span></span>)}</div>}
+                    : <div className="flex flex-wrap justify-end gap-0.5">{statusEntries.map(([s, n]) => <span key={s} className="flex items-center gap-0.5"><StatusBadge status={s as any} /><span className="text-[10px] text-gray-500">{n}×</span></span>)}</div>}
                   {r.incentive_excluded === true && (
                     <MobileCardBadge className="bg-amber-50 text-amber-700 border border-amber-200"
                       title="Sengaja dikeluarkan dari perhitungan Incentive PTS. Jadwalnya tetap tercatat.">
@@ -279,21 +279,21 @@ export function ReminderListBody({
             <thead>
               {/* Latar & garis bawah header diatur .tabel-kartu di globals.css. */}
               <tr>
-                <th className="px-3 py-2.5 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">
+                <th className="px-3 py-2.5 text-center text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">
           {selectMode && (isAdmin || isManager)
             ? <input type="checkbox"
                 checked={selectedIds.size === filteredReminders.length && filteredReminders.length > 0}
                 onChange={toggleSelectAll} className="w-4 h-4 rounded accent-red-600 cursor-pointer" title="Pilih Semua" />
             : 'No'}
         </th>
-                <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Project</th>
-                <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Product</th>
-                <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Kegiatan</th>
-                <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Sales</th>
-                <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Handler</th>
-                <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Status</th>
-                <th className="px-3 py-2.5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Tanggal</th>
-                <th className="px-1 py-2 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wide">Action</th>
+                <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Project</th>
+                <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Product</th>
+                <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Kegiatan</th>
+                <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Sales</th>
+                <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Handler</th>
+                <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Status</th>
+                <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Tanggal</th>
+                <th className="px-1 py-2 text-center text-[11px] font-bold text-gray-500 uppercase tracking-wide">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -331,15 +331,15 @@ export function ReminderListBody({
                     {/* Project */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="font-bold text-gray-800 text-xs leading-tight break-words">{(r.project_name || '').trim() || (r.title || '').trim() || '—'}</div>
-                      {r.address && <div className="text-[10px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.split(',')[0]}</div>}
-                      <div className="text-[10px] text-gray-500 mt-0.5">{formatDatetime(r.created_at).split(',')[0]}</div>
+                      {r.address && <div className="text-[11px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.split(',')[0]}</div>}
+                      <div className="text-[11px] text-gray-500 mt-0.5">{formatDatetime(r.created_at).split(',')[0]}</div>
                     </td>
                     {/* Product */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       {r.product ? (
                         <button
                           onClick={e => { e.stopPropagation(); setProductFilter(productFilter === r.product ? null : (r.product ?? null)); }}
-                          className="text-[10px] font-semibold px-1.5 py-0.5 rounded text-left break-words leading-tight transition-all"
+                          className="text-[11px] font-semibold px-1.5 py-0.5 rounded text-left break-words leading-tight transition-all"
                           style={{ background: productFilter === r.product ? '#6366f1' : '#eef2ff', color: productFilter === r.product ? 'white' : '#4338ca' }}>
                           {r.product}
                         </button>
@@ -348,7 +348,7 @@ export function ReminderListBody({
                           request, dipakai utk routing tim tapi sebelumnya tidak pernah
                           ditampilkan di mana pun (list maupun detail). */}
                       {r.product_type && (
-                        <div className="mt-1 text-[9px] font-bold px-1.5 py-0.5 rounded inline-block"
+                        <div className="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded inline-block"
                           style={{ background: '#fef3c7', color: '#92400e' }}>
                           <Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.product_type}
                         </div>
@@ -358,7 +358,7 @@ export function ReminderListBody({
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="flex items-center gap-1">
                         <span className="text-sm"><Ikon nama={(CATEGORY_CONFIG[r.category] ?? { icon: '📁' }).icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-                        <span className="text-[10px] font-semibold text-gray-700 leading-tight break-words">{r.category}</span>
+                        <span className="text-[11px] font-semibold text-gray-700 leading-tight break-words">{r.category}</span>
                         {r.sales_name && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(r.category) && (
                         <div className="inline-flex items-center gap-1 mt-1 px-1.5 py-1"
                           >
@@ -372,7 +372,7 @@ export function ReminderListBody({
                           saja yg tampil; detail lengkapnya (BAST, tipe display,
                           controller automation, middleware) ada di halaman Detail. */}
                       {(INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(r.category) && r.mode_penyelesaian && (
-                        <div className="mt-1 inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded"
+                        <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded"
                           style={r.mode_penyelesaian === 'onsite'
                             ? { background: '#d1fae5', color: '#047857' }
                             : { background: '#dbeafe', color: '#1d4ed8' }}>
@@ -382,7 +382,7 @@ export function ReminderListBody({
                       {r.category === 'Troubleshooting' && (
                         <button
                           onClick={e => { e.stopPropagation(); router.push('/ticketing'); }}
-                          className="mt-1 inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded text-blue-600 hover:text-blue-800 transition-colors"
+                          className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded text-blue-600 hover:text-blue-800 transition-colors"
                           style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                           <IkonTeks nama="🎫" />Ticketing
                         </button>
@@ -391,7 +391,7 @@ export function ReminderListBody({
                     {/* Sales */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="text-xs font-semibold text-gray-700 leading-tight truncate">{r.sales_name || '—'}</div>
-                      {r.sales_division && <div className="text-[10px] text-purple-600 font-semibold truncate mt-0.5">{r.sales_division}</div>}
+                      {r.sales_division && <div className="text-[11px] text-purple-600 font-semibold truncate mt-0.5">{r.sales_division}</div>}
                     </td>
                     {/* Handler */}
                     {/* Lebar sengaja TIDAK dipatok di sini — biar
@@ -402,18 +402,18 @@ export function ReminderListBody({
                       <div className="flex flex-nowrap gap-0.5">
                         {uniqueAssignNames.slice(0, 3).map(name => (
                           <div key={name} title={name}
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
                             style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
                             {name?.charAt(0)?.toUpperCase() || '?'}
                           </div>
                         ))}
                         {uniqueAssignNames.length > 3 && (
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{uniqueAssignNames.length - 3}</div>
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{uniqueAssignNames.length - 3}</div>
                         )}
                       </div>
                       {uniqueAssignNames.length === 1
-                        ? <span className="text-[10px] font-bold text-gray-800 block mt-0.5 truncate">{uniqueAssignNames[0]}</span>
-                        : <span className="text-[9px] text-gray-500 mt-0.5 block">{uniqueAssignNames.length} orang</span>
+                        ? <span className="text-[11px] font-bold text-gray-800 block mt-0.5 truncate">{uniqueAssignNames[0]}</span>
+                        : <span className="text-[10px] text-gray-500 mt-0.5 block">{uniqueAssignNames.length} orang</span>
                       }
                     </td>
                     {/* Status */}
@@ -425,7 +425,7 @@ export function ReminderListBody({
                         if (entries.length === 1) {
                           return <>
                             <StatusBadge status={group[0].status} />
-                            {group[0].wa_sent_h1 && <p className="text-[9px] font-bold text-green-700 mt-0.5"><IkonTeks nama="✅" />WA H-1</p>}
+                            {group[0].wa_sent_h1 && <p className="text-[10px] font-bold text-green-700 mt-0.5"><IkonTeks nama="✅" />WA H-1</p>}
                           </>;
                         }
                         return (
@@ -433,7 +433,7 @@ export function ReminderListBody({
                             {entries.map(([s,n]) => (
                               <div key={s} className="flex items-center gap-1">
                                 <StatusBadge status={s as any} />
-                                <span className="text-[9px] text-gray-500 font-bold">{n}×</span>
+                                <span className="text-[10px] text-gray-500 font-bold">{n}×</span>
                               </div>
                             ))}
                           </div>
@@ -441,10 +441,10 @@ export function ReminderListBody({
                       })()}
                       {!group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && (
                         group[0].routing_status === 'internal_review'
-                          ? <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[9px] font-bold text-white" style={{ background: '#f59e0b' }} title="Menunggu review Sales Internal sebelum Admin bisa proses">
+                          ? <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: '#f59e0b' }} title="Menunggu review Sales Internal sebelum Admin bisa proses">
                               <IkonTeks nama="🔍" />Review: {guestUsers.find(g => g.id === group[0].internal_sales_id)?.full_name ?? '—'}
                             </span>
-                          : <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[9px] font-bold text-white" style={{ background: '#2563eb' }}
+                          : <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 text-[10px] font-bold text-white" style={{ background: '#2563eb' }}
                               title={group[0].created_by ? `Diinput oleh: ${group[0].created_by}${group[0].sales_name ? ` — atas nama Sales: ${group[0].sales_name}` : ''}` : undefined}>
                               <IkonTeks nama="📩" />Req. Sales
                             </span>
@@ -456,10 +456,10 @@ export function ReminderListBody({
                         <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center" title={uniqueDates.map(fmtShort).join(', ')}
                           style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)' }}>
                           <span className="text-sm font-black leading-none" style={{ color: '#4f46e5' }}><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /> {uniqueDates.length}h</span>
-                          <span className="text-[8px] font-bold uppercase leading-tight" style={{ color: '#6366f1' }}>
+                          <span className="text-[10px] font-bold uppercase leading-tight" style={{ color: '#6366f1' }}>
                             {fmtShort(uniqueDates[0])}–{fmtShort(uniqueDates[uniqueDates.length - 1])}
                           </span>
-                          {r.due_time && <span className="text-[8px] text-gray-500 leading-tight">{r.due_time}</span>}
+                          {r.due_time && <span className="text-[10px] text-gray-500 leading-tight">{r.due_time}</span>}
                         </div>
                       ) : (
                         <div className="inline-flex flex-col items-center px-2 py-1 rounded-lg text-center"
@@ -470,10 +470,10 @@ export function ReminderListBody({
                           <span className="text-base font-black leading-none" style={{ color: today ? '#dc2626' : '#4f46e5' }}>
                             {new Date(r.due_date + 'T00:00:00').getDate()}
                           </span>
-                          <span className="text-[8px] font-bold uppercase leading-tight" style={{ color: today ? '#dc2626' : '#6366f1' }}>
+                          <span className="text-[10px] font-bold uppercase leading-tight" style={{ color: today ? '#dc2626' : '#6366f1' }}>
                             {new Date(r.due_date + 'T00:00:00').toLocaleDateString('id-ID', { month: 'short', year: '2-digit' })}
                           </span>
-                          {r.due_time && <span className="text-[8px] text-gray-500 leading-tight">{r.due_time}</span>}
+                          {r.due_time && <span className="text-[10px] text-gray-500 leading-tight">{r.due_time}</span>}
                         </div>
                       )}
                     </td>
@@ -544,8 +544,8 @@ export function ReminderListBody({
               karena yang tampil cuma satu halaman. Rentang yang sebenarnya
               ditampilkan Paginasi di bawahnya. */}
           <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
-            <span className="text-[10px] text-gray-500">{groupedReminders.length} event ({filteredReminders.length} jadwal)</span>
-            <span className="text-[10px] text-gray-500">dari {reminders.length} jadwal keseluruhan</span>
+            <span className="text-[11px] text-gray-500">{groupedReminders.length} event ({filteredReminders.length} jadwal)</span>
+            <span className="text-[11px] text-gray-500">dari {reminders.length} jadwal keseluruhan</span>
           </div>
           <Paginasi {...hal} satuan="event" />
         </div>{/* end hidden md:block */}

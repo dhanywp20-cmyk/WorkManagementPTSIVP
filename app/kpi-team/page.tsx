@@ -599,8 +599,8 @@ export default function KPITeamPage() {
           {/* Header */}
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="🏅" />Penilaian KPI</span>
-              <span className="text-[9px] font-bold px-2 py-1 rounded-lg text-blue-700" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="🏅" />Penilaian KPI</span>
+              <span className="text-[10px] font-bold px-2 py-1 rounded-lg text-blue-700" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                 <Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {kpiPeriodLabel}
               </span>
               {kpiLoading && <div className="w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />}
@@ -610,7 +610,7 @@ export default function KPITeamPage() {
               <div className="flex rounded-lg border border-slate-200 overflow-hidden">
                 {(['6m','1y'] as const).map(p => (
                   <button key={p} onClick={() => { setKpiPeriodLen(p); if (p==='1y') setKpiStartMonth(1); }}
-                    className="px-2.5 py-1 text-[10px] font-bold transition-all"
+                    className="px-2.5 py-1 text-[11px] font-bold transition-all"
                     style={{ background: kpiPeriodLen===p ? '#0369a1' : '#fff', color: kpiPeriodLen===p ? '#fff' : '#64748b' }}>
                     {p==='6m' ? '6 Bln' : '1 Thn'}
                   </button>
@@ -618,22 +618,22 @@ export default function KPITeamPage() {
               </div>
               {kpiPeriodLen === '6m' && (
                 <select value={kpiStartMonth} onChange={e => setKpiStartMonth(Number(e.target.value))} aria-label="Periode enam bulan"
-                  className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
+                  className="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
                   {[{v:1,l:'Jan–Jun'},{v:2,l:'Feb–Jul'},{v:3,l:'Mar–Agt'},{v:4,l:'Apr–Sep'},{v:5,l:'Mei–Okt'},{v:6,l:'Jun–Nov'},{v:7,l:'Jul–Des'}].map(o=>(
                     <option key={o.v} value={o.v}>{o.l}</option>
                   ))}
                 </select>
               )}
               <select value={kpiYear} onChange={e => setKpiYear(Number(e.target.value))} aria-label="Tahun"
-                className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
+                className="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
                 {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
               </select>
               <button onClick={() => fetchKPIMembers()}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all">
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all">
                 <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                 Refresh
               </button>
-              <span className="text-[9px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+              <span className="text-[10px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
                 <Ikon nama="🎫" ukuran="1em" className="inline-block align-[-0.12em]" />{Math.round(kpiSettings.ticketOverdueWeight*100)}% ⭐{Math.round(kpiSettings.bastWeight*100)}% 🎓{Math.round(kpiSettings.lcWeight*100)}% 📝{Math.round(kpiSettings.rndWeight*100)}%
               </span>
             </div>
@@ -675,9 +675,9 @@ export default function KPITeamPage() {
                   return (
                     <div key={tt} className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-100" style={{ background: `${col}08` }}>
-                        <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-black flex-shrink-0" style={{ background: col }}>{abbr[0]}</div>
+                        <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{ background: col }}>{abbr[0]}</div>
                         <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">{tt}</span>
-                        <span className="text-[10px] text-slate-500">{ms.length} anggota</span>
+                        <span className="text-[11px] text-slate-500">{ms.length} anggota</span>
                         {avg !== null && <span className="ml-auto text-sm font-black" style={{ color: avgC }}>avg {avg}%</span>}
                       </div>
                       <div className="flex gap-2 px-3 py-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
@@ -703,13 +703,13 @@ export default function KPITeamPage() {
                                 style={{ background: `linear-gradient(135deg,${c},${c}88)` }}>
                                 {m.name.charAt(0)}
                               </div>
-                              <div className="text-[10px] font-bold text-slate-700 text-center leading-tight w-full truncate" title={m.name}>
+                              <div className="text-[11px] font-bold text-slate-700 text-center leading-tight w-full truncate" title={m.name}>
                                 {m.name.split(' ')[0]}
                               </div>
                               <div className="text-sm font-black leading-none" style={{ color: c }}>
                                 {noData ? '—' : `${score}%`}
                               </div>
-                              <div className="text-[8px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
+                              <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
                               {m.monthlyTickets.some(v => v > 0) && (
                                 <svg aria-hidden="true" focusable="false" width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
                                   <polyline points={pts} fill="none" stroke={c} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.7} />
@@ -719,7 +719,7 @@ export default function KPITeamPage() {
                               {alerts.length > 0 && (
                                 <div className="flex gap-0.5 flex-wrap justify-center">
                                   {alerts.map((a, i) => (
-                                    <span key={i} className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 leading-none">{a}</span>
+                                    <span key={i} className="text-[10px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 leading-none">{a}</span>
                                   ))}
                                 </div>
                               )}
@@ -738,7 +738,7 @@ export default function KPITeamPage() {
         {/* ── Period Selector Bar ── berpanel: latar halaman bisa foto (Admin Panel > Merek) */}
         <div className="flex items-center gap-2 flex-wrap rounded-2xl px-3 py-2 border border-slate-200 shadow-sm"
           style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)' }}>
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mr-1">Periode</span>
+          <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Periode</span>
           {PERIODS.map(p => (
             <button key={p} onClick={() => setPeriod(p)}
               className="flex items-center gap-1 px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all"
@@ -751,7 +751,7 @@ export default function KPITeamPage() {
               {p}
             </button>
           ))}
-          <span className="ml-2 text-[10px] text-slate-500">{periodLabel}</span>
+          <span className="ml-2 text-[11px] text-slate-500">{periodLabel}</span>
 
           {loading && (
             <div className="ml-2 w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />
@@ -772,9 +772,9 @@ export default function KPITeamPage() {
           {/* Table header */}
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="👥" />Handler Performance</span>
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="👥" />Handler Performance</span>
               {!loading && (
-                <span className="text-[10px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
+                <span className="text-[11px] text-slate-500 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">
                   {sortedMembers.length} anggota
                 </span>
               )}
@@ -880,13 +880,13 @@ export default function KPITeamPage() {
                       {/* Name */}
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0"
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black text-white flex-shrink-0"
                             style={{ background: `linear-gradient(135deg,${teamCol},${teamCol}cc)` }}>
                             {m.name.charAt(0)}
                           </div>
                           <div className="min-w-0">
                             <div className="font-semibold text-slate-700 leading-tight truncate">{m.name}</div>
-                            <div className="text-[9px] text-slate-500 truncate">{m.team_type.replace('Team ','')} · {m.jabatan}</div>
+                            <div className="text-[10px] text-slate-500 truncate">{m.team_type.replace('Team ','')} · {m.jabatan}</div>
                           </div>
                         </div>
                       </td>
@@ -895,7 +895,7 @@ export default function KPITeamPage() {
                       <td className="px-3 py-3 text-center">
                         <span className="font-black text-slate-700">{m.ticketsHandled}</span>
                         {m.ticketsOverdue > 0 && (
-                          <div className="text-[8px] font-bold text-red-600">{m.ticketsOverdue} OD</div>
+                          <div className="text-[10px] font-bold text-red-600">{m.ticketsOverdue} OD</div>
                         )}
                       </td>
 
@@ -922,14 +922,14 @@ export default function KPITeamPage() {
                           {m.lcAvgScore === 0 ? '—' : m.lcAvgScore}
                         </span>
                         {m.lcAttempts > 0 && (
-                          <div className="text-[8px] text-slate-500">{m.lcAttempts}x</div>
+                          <div className="text-[10px] text-slate-500">{m.lcAttempts}x</div>
                         )}
                       </td>
 
                       {/* Piket */}
                       <td className="px-3 py-3 text-center">
                         <span className="font-bold text-slate-600">{m.piketFilled}</span>
-                        <div className="text-[8px] text-slate-500">hari</div>
+                        <div className="text-[10px] text-slate-500">hari</div>
                       </td>
 
                       {/* Trend Spark */}
@@ -956,14 +956,14 @@ export default function KPITeamPage() {
           {/* Legend */}
           {!loading && sortedMembers.length > 0 && (
             <div className="px-4 py-2.5 border-t border-slate-50 flex items-center gap-4 flex-wrap">
-              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Progress bar:</span>
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Progress bar:</span>
               {[['≥90%', '#10b981'], ['70–89%', '#f59e0b'], ['<70%', '#ef4444']].map(([lbl, c]) => (
                 <div key={lbl} className="flex items-center gap-1">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ background: c }} />
-                  <span className="text-[9px] text-slate-500 font-medium">{lbl}</span>
+                  <span className="text-[10px] text-slate-500 font-medium">{lbl}</span>
                 </div>
               ))}
-              <span className="text-[9px] text-slate-500 ml-auto italic">Klik baris untuk detail →</span>
+              <span className="text-[10px] text-slate-500 ml-auto italic">Klik baris untuk detail →</span>
             </div>
           )}
         </div>
@@ -974,8 +974,8 @@ export default function KPITeamPage() {
               {/* Header */}
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="🏅" />Penilaian KPI</span>
-                  <span className="text-[9px] font-bold px-2 py-1 rounded-lg text-blue-700" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="🏅" />Penilaian KPI</span>
+                  <span className="text-[10px] font-bold px-2 py-1 rounded-lg text-blue-700" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                     <Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {kpiPeriodLabel}
                   </span>
                   {kpiLoading && <div className="w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />}
@@ -986,7 +986,7 @@ export default function KPITeamPage() {
                   <div className="flex rounded-lg border border-slate-200 overflow-hidden">
                     {(['6m','1y'] as const).map(p => (
                       <button key={p} onClick={() => { setKpiPeriodLen(p); if (p==='1y') setKpiStartMonth(1); }}
-                        className="px-2.5 py-1 text-[10px] font-bold transition-all"
+                        className="px-2.5 py-1 text-[11px] font-bold transition-all"
                         style={{ background: kpiPeriodLen===p ? '#0369a1' : '#fff', color: kpiPeriodLen===p ? '#fff' : '#64748b' }}>
                         {p==='6m' ? '6 Bln' : '1 Thn'}
                       </button>
@@ -995,7 +995,7 @@ export default function KPITeamPage() {
                   {/* Start month (only for 6m) */}
                   {kpiPeriodLen === '6m' && (
                     <select aria-label="Periode awal KPI" value={kpiStartMonth} onChange={e => setKpiStartMonth(Number(e.target.value))}
-                      className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
+                      className="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
                       {[{v:1,l:'Jan–Jun'},{v:2,l:'Feb–Jul'},{v:3,l:'Mar–Agt'},{v:4,l:'Apr–Sep'},{v:5,l:'Mei–Okt'},{v:6,l:'Jun–Nov'},{v:7,l:'Jul–Des'}].map(o=>(
                         <option key={o.v} value={o.v}>{o.l}</option>
                       ))}
@@ -1003,15 +1003,15 @@ export default function KPITeamPage() {
                   )}
                   {/* Year */}
                   <select aria-label="Tahun KPI" value={kpiYear} onChange={e => setKpiYear(Number(e.target.value))}
-                    className="text-[10px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
+                    className="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
                     {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
                   </select>
                   <button onClick={() => fetchKPIMembers()}
-                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all">
+                    className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-700 bg-white border border-slate-200 transition-all">
                     <svg aria-hidden="true" focusable="false" className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                     Refresh
                   </button>
-                  <span className="text-[9px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  <span className="text-[10px] font-semibold px-2 py-1 rounded-lg text-slate-500" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
                     <Ikon nama="🎫" ukuran="1em" className="inline-block align-[-0.12em]" />{Math.round(kpiSettings.ticketOverdueWeight*100)}% ⭐{Math.round(kpiSettings.bastWeight*100)}% 🎓{Math.round(kpiSettings.lcWeight*100)}% 📝{Math.round(kpiSettings.rndWeight*100)}%
                   </span>
                 </div>
@@ -1053,9 +1053,9 @@ export default function KPITeamPage() {
                       return (
                         <div key={tt} className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                           <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-100" style={{ background: `${col}08` }}>
-                            <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[10px] font-black flex-shrink-0" style={{ background: col }}>{abbr[0]}</div>
+                            <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{ background: col }}>{abbr[0]}</div>
                             <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">{tt}</span>
-                            <span className="text-[10px] text-slate-500">{ms.length} anggota</span>
+                            <span className="text-[11px] text-slate-500">{ms.length} anggota</span>
                             {avg !== null && <span className="ml-auto text-sm font-black" style={{ color: avgC }}>avg {avg}%</span>}
                           </div>
                           <div className="flex gap-2 px-3 py-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
@@ -1081,13 +1081,13 @@ export default function KPITeamPage() {
                                     style={{ background: `linear-gradient(135deg,${c},${c}88)` }}>
                                     {m.name.charAt(0)}
                                   </div>
-                                  <div className="text-[10px] font-bold text-slate-700 text-center leading-tight w-full truncate" title={m.name}>
+                                  <div className="text-[11px] font-bold text-slate-700 text-center leading-tight w-full truncate" title={m.name}>
                                     {m.name.split(' ')[0]}
                                   </div>
                                   <div className="text-sm font-black leading-none" style={{ color: c }}>
                                     {noData ? '—' : `${score}%`}
                                   </div>
-                                  <div className="text-[8px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
+                                  <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
                                   {m.monthlyTickets.some(v => v > 0) && (
                                     <svg aria-hidden="true" focusable="false" width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
                                       <polyline points={pts} fill="none" stroke={c} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" opacity={0.7} />
@@ -1097,7 +1097,7 @@ export default function KPITeamPage() {
                                   {alerts.length > 0 && (
                                     <div className="flex gap-0.5 flex-wrap justify-center">
                                       {alerts.map((a, i) => (
-                                        <span key={i} className="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 leading-none">{a}</span>
+                                        <span key={i} className="text-[10px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 leading-none">{a}</span>
                                       ))}
                                     </div>
                                   )}
@@ -1118,8 +1118,8 @@ export default function KPITeamPage() {
         <div className="rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', border: '1px solid rgba(255,255,255,0.7)' }}>
           <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="📋" />Riwayat KPI</span>
-              <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold" style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}>{kpiSnapshots.length} periode tersimpan</span>
+              <span className="text-[11px] font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="📋" />Riwayat KPI</span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}>{kpiSnapshots.length} periode tersimpan</span>
             </div>
             {expandedSnapshot && (
               <button onClick={() => setExpandedSnapshot(null)}
@@ -1144,7 +1144,7 @@ export default function KPITeamPage() {
               <div className="p-4">
                 <div className="mb-3 flex flex-wrap items-center gap-3">
                   <span className="font-bold text-slate-700">{snap.period_label}</span>
-                  <span className="text-[9px] px-2 py-0.5 rounded-full font-semibold" style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}>
                     {snap.period === '1y' ? '1 Tahun' : '6 Bulan'}
                   </span>
                   <span className="text-xs text-slate-500">oleh <b className="text-slate-600">{snap.created_by}</b></span>
@@ -1174,11 +1174,11 @@ export default function KPITeamPage() {
                             onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#fafafa')}>
                             <td className="px-3 py-2.5">
                               <div className="flex items-center gap-2">
-                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black text-white flex-shrink-0"
+                                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0"
                                   style={{ background: `linear-gradient(135deg,${tc},${tc}cc)` }}>{m.name.charAt(0)}</div>
                                 <div>
                                   <div className="font-semibold text-slate-700 leading-tight">{m.name}</div>
-                                  <div className="text-[9px] text-slate-500">{m.team_type.replace('Team ','')}</div>
+                                  <div className="text-[10px] text-slate-500">{m.team_type.replace('Team ','')}</div>
                                 </div>
                               </div>
                             </td>
@@ -1189,7 +1189,7 @@ export default function KPITeamPage() {
                             <td className="px-3 py-2.5 text-center">
                               <div className="flex flex-col items-center gap-0.5">
                                 <span className="text-base font-black" style={{ color: c }}>{m.finalKPI}%</span>
-                                <span className="text-[8px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</span>
                               </div>
                             </td>
                           </tr>
@@ -1240,28 +1240,28 @@ export default function KPITeamPage() {
                         onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#fafafa')}>
                         <td className="px-4 py-3">
                           <div className="font-semibold text-slate-700">{snap.period_label}</div>
-                          <div className="text-[9px] text-slate-500">{snap.period === '1y' ? '1 Tahun' : '6 Bulan'}</div>
+                          <div className="text-[10px] text-slate-500">{snap.period === '1y' ? '1 Tahun' : '6 Bulan'}</div>
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className="font-bold text-slate-700">{ms.length}</span>
-                          <div className="text-[9px] text-slate-500">anggota</div>
+                          <div className="text-[10px] text-slate-500">anggota</div>
                         </td>
                         <td className="px-4 py-3 text-center">
                           <span className="text-lg font-black" style={{ color: c }}>{avg}%</span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1 justify-center flex-wrap">
-                            {exc > 0 && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-700">{exc} Excellent</span>}
-                            {gd > 0  && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 text-blue-700">{gd} Good</span>}
-                            {fr > 0  && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-700">{fr} Fair</span>}
-                            {nw > 0  && <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-red-100 text-red-600">{nw} NW</span>}
+                            {exc > 0 && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">{exc} Excellent</span>}
+                            {gd > 0  && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">{gd} Good</span>}
+                            {fr > 0  && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">{fr} Fair</span>}
+                            {nw > 0  && <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-600">{nw} NW</span>}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-slate-500">{snap.created_by}</td>
                         <td className="px-4 py-3 text-center text-slate-500">{new Date(snap.created_at).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' })}</td>
                         <td className="px-4 py-3 text-center">
                           <button onClick={e => { e.stopPropagation(); setExpandedSnapshot(snap.id); }}
-                            className="px-2.5 py-1 rounded-lg text-[10px] font-bold text-sky-700 hover:bg-sky-50 border border-sky-200 transition-all">
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold text-sky-700 hover:bg-sky-50 border border-sky-200 transition-all">
                             Detail →
                           </button>
                         </td>
@@ -1311,7 +1311,7 @@ export default function KPITeamPage() {
                 </div>
                 <div className="flex flex-col items-end mr-1 flex-shrink-0">
                   <div className="text-lg sm:text-2xl font-black" style={{ color: c }}>{noData ? '—' : `${finalKPI}%`}</div>
-                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">KPI Score</div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">KPI Score</div>
                 </div>
                 <button aria-label="Tutup" onClick={() => setSelectedKPIMember(null)}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0">
@@ -1330,9 +1330,9 @@ export default function KPITeamPage() {
                   ].map(k => (
                     <div key={k.label} className="rounded-xl border p-2 text-center" style={{ background: k.bg, borderColor: k.border }}>
                       <div className="text-xs mb-0.5"><Ikon nama={k.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
-                      <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-tight mb-1">{k.label}</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide leading-tight mb-1">{k.label}</div>
                       <div className="text-lg font-black leading-none" style={{ color: k.color }}>{k.pct}%</div>
-                      <div className="text-[9px] text-slate-500 mt-0.5">bobot {k.w}%</div>
+                      <div className="text-[10px] text-slate-500 mt-0.5">bobot {k.w}%</div>
                     </div>
                   ))}
                 </div>
@@ -1342,7 +1342,7 @@ export default function KPITeamPage() {
                   <div className="rounded-xl border px-3 py-2.5 flex items-center justify-between gap-3 flex-wrap"
                     style={potonganLC > 0 ? { background: '#fef2f2', borderColor: '#fecaca' } : { background: '#f0fdf4', borderColor: '#bbf7d0' }}>
                     <div className="min-w-0">
-                      <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: potonganLC > 0 ? '#b91c1c' : '#15803d' }}>
+                      <div className="text-[11px] font-bold uppercase tracking-wider" style={{ color: potonganLC > 0 ? '#b91c1c' : '#15803d' }}>
                         <IkonTeks nama="🎓" />Kelulusan Learning Center {kpiYear}
                       </div>
                       <div className="text-xs text-slate-600 mt-0.5">
@@ -1362,14 +1362,14 @@ export default function KPITeamPage() {
 
                 {/* Auto platform data */}
                 <div>
-                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2"><IkonTeks nama="✅" />Data Platform (Otomatis)</div>
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2"><IkonTeks nama="✅" />Data Platform (Otomatis)</div>
                   <div className="grid grid-cols-3 gap-2">
 
                     {/* Ticketing */}
                     <div className="rounded-xl border p-3" style={{ borderColor: '#ef444440', background: '#fef2f2' }}>
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[10px] font-bold text-red-600 uppercase tracking-wider"><IkonTeks nama="🎫" />Ticketing</div>
-                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: tickScore >= 1 ? '#d1fae5' : '#fee2e2', color: tickScore >= 1 ? '#065f46' : '#991b1b' }}>
+                        <div className="text-[11px] font-bold text-red-600 uppercase tracking-wider"><IkonTeks nama="🎫" />Ticketing</div>
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: tickScore >= 1 ? '#d1fae5' : '#fee2e2', color: tickScore >= 1 ? '#065f46' : '#991b1b' }}>
                           {Math.round(tickScore * _s.ticketOverdueWeight * 100)}/{Math.round(_s.ticketOverdueWeight * 100)}%
                         </span>
                       </div>
@@ -1379,49 +1379,49 @@ export default function KPITeamPage() {
                         <div className="flex justify-between"><span>Overdue</span><b className={member.ticketsOverdue > 0 ? 'text-red-600' : 'text-emerald-700'}>{member.ticketsOverdue}</b></div>
                         <div className="flex justify-between"><span>Avg Response</span><b className={member.ticketAvgResponseHours > 24 ? 'text-red-600' : 'text-emerald-700'}>{member.ticketAvgResponseHours > 0 ? `${member.ticketAvgResponseHours}j` : '—'}</b></div>
                         {member.ticketsOverdue === 0
-                          ? <div className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada overdue</div>
-                          : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {member.ticketsOverdue} ticket overdue</div>}
+                          ? <div className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada overdue</div>
+                          : <div className="text-[11px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {member.ticketsOverdue} ticket overdue</div>}
                       </div>
                     </div>
 
                     {/* BAST & Demo */}
                     <div className="rounded-xl border p-3" style={{ borderColor: '#f59e0b40', background: '#fffbeb' }}>
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider"><IkonTeks nama="⭐" />BAST &amp; Demo</div>
-                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: bastScore >= 1 ? '#d1fae5' : '#fee2e2', color: bastScore >= 1 ? '#065f46' : '#991b1b' }}>
+                        <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider"><IkonTeks nama="⭐" />BAST &amp; Demo</div>
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: bastScore >= 1 ? '#d1fae5' : '#fee2e2', color: bastScore >= 1 ? '#065f46' : '#991b1b' }}>
                           {Math.round(bastScore * _s.bastWeight * 100)}/{Math.round(_s.bastWeight * 100)}%
                         </span>
                       </div>
                       <div className="space-y-1.5 text-[11px] text-slate-600">
-                        <div className="text-[9px] text-slate-500 mb-1">Sumber: Form Review BAST &amp; Demo</div>
+                        <div className="text-[10px] text-slate-500 mb-1">Sumber: Form Review BAST &amp; Demo</div>
                         <div className="flex justify-between"><span>Total Review</span><b className="text-slate-800">{member.formReviewTotal}</b></div>
                         <div className="flex justify-between"><span>Komplain (★1-2)</span><b className={member.formReviewLowRating > 0 ? 'text-red-600' : 'text-emerald-700'}>{member.formReviewLowRating}x</b></div>
                         {member.formReviewTotal === 0
-                          ? <div className="text-[10px] text-slate-500 font-semibold bg-slate-50 rounded-lg px-2 py-1"><IkonTeks nama="⏳" />Belum ada review</div>
+                          ? <div className="text-[11px] text-slate-500 font-semibold bg-slate-50 rounded-lg px-2 py-1"><IkonTeks nama="⏳" />Belum ada review</div>
                           : member.formReviewLowRating === 0
-                            ? <div className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada komplain dari {member.formReviewTotal} review</div>
-                            : <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {member.formReviewLowRating}x komplain dari {member.formReviewTotal} review</div>}
+                            ? <div className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Tidak ada komplain dari {member.formReviewTotal} review</div>
+                            : <div className="text-[11px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {member.formReviewLowRating}x komplain dari {member.formReviewTotal} review</div>}
                       </div>
                     </div>
 
                     {/* Learning Center */}
                     <div className="rounded-xl border p-3" style={{ borderColor: '#6366f140', background: '#f5f3ff' }}>
                       <div className="flex items-center justify-between mb-2">
-                        <div className="text-[10px] font-bold text-violet-600 uppercase tracking-wider"><IkonTeks nama="🎓" />Learning Center</div>
-                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: lcScore >= 1 ? '#d1fae5' : '#fee2e2', color: lcScore >= 1 ? '#065f46' : '#991b1b' }}>
+                        <div className="text-[11px] font-bold text-violet-600 uppercase tracking-wider"><IkonTeks nama="🎓" />Learning Center</div>
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: lcScore >= 1 ? '#d1fae5' : '#fee2e2', color: lcScore >= 1 ? '#065f46' : '#991b1b' }}>
                           {Math.round(lcScore * _s.lcWeight * 100)}/{Math.round(_s.lcWeight * 100)}%
                         </span>
                       </div>
                       <div className="space-y-1.5 text-[11px] text-slate-600">
-                        <div className="text-[9px] text-slate-500 mb-1">Nilai penuh jika tidak ada &lt;{_s.lcMinScore}</div>
+                        <div className="text-[10px] text-slate-500 mb-1">Nilai penuh jika tidak ada &lt;{_s.lcMinScore}</div>
                         <div className="flex justify-between"><span>Total Attempt</span><b className="text-slate-800">{member.lcAttempts}</b></div>
                         <div className="flex justify-between"><span>Avg Score</span><b className={member.lcAvgScore < _s.lcMinScore && member.lcAvgScore > 0 ? 'text-red-600' : 'text-emerald-700'}>{member.lcAvgScore || '—'}</b></div>
                         <div className="flex justify-between"><span>Lulus</span><b className="text-emerald-700">{member.lcPassed}</b></div>
                         <div className="flex justify-between"><span>Nilai &lt;{_s.lcMinScore}</span><b className={lcFailed > 0 ? 'text-red-600' : 'text-emerald-700'}>{lcFailed}x</b></div>
                         {lcFailed > 0
-                          ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {lcFailed}x nilai &lt;{_s.lcMinScore}</div>
+                          ? <div className="text-[11px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> {lcFailed}x nilai &lt;{_s.lcMinScore}</div>
                           : member.lcAttempts > 0
-                            ? <div className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Semua nilai ≥{_s.lcMinScore}</div>
+                            ? <div className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-2 py-1">✓ Semua nilai ≥{_s.lcMinScore}</div>
                             : null}
                       </div>
                     </div>
@@ -1438,8 +1438,8 @@ export default function KPITeamPage() {
                 {/* R&D Tech Note */}
                 <div className="rounded-xl border p-3" style={{ borderColor: '#ec489940', background: '#fdf4ff' }}>
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-[10px] font-bold text-pink-600 uppercase tracking-wider"><IkonTeks nama="📝" />R&amp;D Tech Note (Otomatis dari Platform)</div>
-                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full" style={{ background: rndScore >= 1 ? '#d1fae5' : '#fee2e2', color: rndScore >= 1 ? '#065f46' : '#991b1b' }}>
+                    <div className="text-[11px] font-bold text-pink-600 uppercase tracking-wider"><IkonTeks nama="📝" />R&amp;D Tech Note (Otomatis dari Platform)</div>
+                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: rndScore >= 1 ? '#d1fae5' : '#fee2e2', color: rndScore >= 1 ? '#065f46' : '#991b1b' }}>
                       {Math.round(rndScore * _s.rndWeight * 100)}/{Math.round(_s.rndWeight * 100)}%
                     </span>
                   </div>
@@ -1448,16 +1448,16 @@ export default function KPITeamPage() {
                   </div>
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-lg sm:text-2xl font-black" style={{ color: rndScore >= 1 ? '#059669' : '#dc2626' }}>{member.techNotesApproved}</span>
-                    <span className="text-[10px] text-slate-500 font-medium">/ {_s.rndTarget}</span>
+                    <span className="text-[11px] text-slate-500 font-medium">/ {_s.rndTarget}</span>
                     <div className="h-2 flex-1 rounded-full bg-pink-100 overflow-hidden">
                       <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, rndScore * 100)}%`, background: rndScore >= 1 ? '#10b981' : '#f472b6' }} />
                     </div>
                   </div>
                   {member.techNotesApproved === 0
-                    ? <div className="text-[10px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1.5"><IkonTeks nama="⚠" />Belum ada Tech Note yang diapprove tahun ini</div>
+                    ? <div className="text-[11px] text-red-500 font-semibold bg-red-50 rounded-lg px-2 py-1.5"><IkonTeks nama="⚠" />Belum ada Tech Note yang diapprove tahun ini</div>
                     : member.techNotesApproved >= _s.rndTarget
-                      ? <div className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-2 py-1.5"><IkonTeks nama="✅" />KKM Tech Note terpenuhi ({member.techNotesApproved}/{_s.rndTarget})</div>
-                      : <div className="text-[10px] text-amber-700 font-semibold bg-amber-50 rounded-lg px-2 py-1.5"><IkonTeks nama="⏳" />Kurang {_s.rndTarget - member.techNotesApproved} Tech Note lagi</div>}
+                      ? <div className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 rounded-lg px-2 py-1.5"><IkonTeks nama="✅" />KKM Tech Note terpenuhi ({member.techNotesApproved}/{_s.rndTarget})</div>
+                      : <div className="text-[11px] text-amber-700 font-semibold bg-amber-50 rounded-lg px-2 py-1.5"><IkonTeks nama="⏳" />Kurang {_s.rndTarget - member.techNotesApproved} Tech Note lagi</div>}
                 </div>
               </div>
             </div>
@@ -1535,12 +1535,12 @@ export default function KPITeamPage() {
                   <div className="font-bold text-slate-800 text-sm truncate">{m.name}</div>
                   <div className="text-xs text-slate-500 flex items-center gap-1.5">
                     {m.jabatan} · {m.team_type}
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}><IkonTeks nama="🔒" />Snapshot</span>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}><IkonTeks nama="🔒" />Snapshot</span>
                   </div>
                 </div>
                 <div className="flex flex-col items-end mr-1 flex-shrink-0">
                   <div className="text-lg sm:text-2xl font-black" style={{ color: c }}>{m.finalKPI}%</div>
-                  <div className="text-[9px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
+                  <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
                 </div>
                 <button aria-label="Tutup" onClick={() => setSelectedSnapMember(null)}
                   className="w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0">
@@ -1548,7 +1548,7 @@ export default function KPITeamPage() {
                 </button>
               </div>
               <div className="p-4 space-y-3">
-                <div className="text-[10px] text-slate-500 text-center italic"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {snap.period_label} — Data dibekukan pada {new Date(snap.created_at).toLocaleDateString('id-ID')}</div>
+                <div className="text-[11px] text-slate-500 text-center italic"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {snap.period_label} — Data dibekukan pada {new Date(snap.created_at).toLocaleDateString('id-ID')}</div>
                 <div className="grid grid-cols-4 gap-2">
                   {[
                     { label: 'Ticketing', val: m.tickScore, color: '#ef4444', icon: '🎫', bg: '#fef2f2' },
@@ -1558,7 +1558,7 @@ export default function KPITeamPage() {
                   ].map(k => (
                     <div key={k.label} className="rounded-xl border p-2 text-center" style={{ background: k.bg, borderColor: `${k.color}40` }}>
                       <div className="text-xs mb-0.5"><Ikon nama={k.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
-                      <div className="text-[9px] font-bold text-slate-500 uppercase tracking-wide leading-tight mb-1">{k.label}</div>
+                      <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide leading-tight mb-1">{k.label}</div>
                       <div className="text-lg font-black" style={{ color: sc(k.val) }}>{k.val}%</div>
                     </div>
                   ))}

@@ -152,9 +152,9 @@ export function MerekSettingInline() {
               </div>
               <div>
                 <p className="text-base font-black leading-tight line-clamp-2">{form.judulLogin}</p>
-                <p className="text-white/80 text-[10px] mt-1 line-clamp-2">{form.subjudulLogin}</p>
+                <p className="text-white/80 text-[11px] mt-1 line-clamp-2">{form.subjudulLogin}</p>
               </div>
-              <p className="text-white/50 text-[9px]">© 2026 {form.namaPerusahaan}</p>
+              <p className="text-white/50 text-[10px]">© 2026 {form.namaPerusahaan}</p>
             </div>
             <div className="w-1/2 flex items-center justify-center p-4"
               style={{ background: `rgba(255,255,255,${angkaTembus(form.tembusKanan, 0.55)})` }}>
@@ -162,7 +162,7 @@ export function MerekSettingInline() {
                 <p className="text-sm font-bold text-slate-800">Selamat Datang</p>
                 <div className="h-5 rounded-md bg-slate-100 mt-2" />
                 <div className="h-5 rounded-md bg-slate-100 mt-1.5" />
-                <div className="h-7 rounded-lg mt-2 flex items-center justify-center text-white text-[10px] font-bold"
+                <div className="h-7 rounded-lg mt-2 flex items-center justify-center text-white text-[11px] font-bold"
                   style={{ background: `linear-gradient(to right, ${form.warnaUtama}, ${form.warnaUtama2})` }}>
                   Masuk ke Portal
                 </div>
@@ -221,7 +221,7 @@ function Kepala({ judul, catatan }: { judul: string; catatan: string }) {
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <span className="block text-[10px] font-bold tracking-widest uppercase text-slate-500">{children}</span>;
+  return <span className="block text-[11px] font-bold tracking-widest uppercase text-slate-500">{children}</span>;
 }
 
 function KotakLogo({ url, a, b, tembus, sisi }: { url: string; a?: string; b?: string; tembus?: boolean; sisi: number }) {
@@ -258,7 +258,7 @@ function Unggah({ label, jenis, nilai, sedang, keterangan, onBerkas, onHapus }: 
           {nilai
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={nilai} alt="" className="w-full h-full object-contain" />
-            : <span className="text-[10px] text-slate-500 font-bold">kosong</span>}
+            : <span className="text-[11px] text-slate-500 font-bold">kosong</span>}
         </div>
         <div className="flex flex-wrap gap-2">
           <input ref={input} type="file" accept="image/*" className="hidden" aria-label={`Unggah ${label}`}

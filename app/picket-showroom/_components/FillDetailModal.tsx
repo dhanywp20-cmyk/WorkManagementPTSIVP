@@ -156,9 +156,9 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 flex flex-col" style={{animation:'scale-in 0.25s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96dvh'}}>
         <div className="px-6 py-5 rounded-t-2xl flex-shrink-0 relative" style={{background:dc.grad}}>
           <div>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Hari Piket</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Hari Piket</p>
             <h2 className="text-lg font-bold text-white"><IkonTeks nama="✍" />Detail Piket — {row.day_of_week}</h2>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Tanggal · PIC</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Tanggal · PIC</p>
             <p className="text-white/70 text-xs">{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · {[row.pic_ivp_name,row.pic_ump_name,row.pic_mvi_name].filter(Boolean).join(' / ')||'Belum ada PIC'}</p>
           </div>
           <button aria-label="Tutup" onClick={requestClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
@@ -177,7 +177,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
               </div>
               <div className="p-4 space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🎯" />Jenis Kegiatan</label>
+                  <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🎯" />Jenis Kegiatan</label>
                   <select aria-label="🎯 Jenis Kegiatan" value={entry.jenis_kegiatan} onChange={e=>upd(idx,{jenis_kegiatan:e.target.value as JenisKegiatan})}
                     className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                     {JENIS_KEGIATAN_LIST.map(j=><option key={j} value={j}>{j}</option>)}
@@ -185,18 +185,18 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🕐" />Jam Mulai</label>
+                    <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🕐" />Jam Mulai</label>
                     <input aria-label="🕐 Jam Mulai" type="time" value={entry.jam_mulai} onChange={e=>upd(idx,{jam_mulai:e.target.value})}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🕐" />Jam Selesai</label>
+                    <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🕐" />Jam Selesai</label>
                     <input aria-label="🕐 Jam Selesai" type="time" value={entry.jam_selesai} onChange={e=>upd(idx,{jam_selesai:e.target.value})}
                       className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="📦" />Produk</label>
+                  <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="📦" />Produk</label>
                   <div className="grid grid-cols-2 gap-1.5">
                     {PRODUK_LIST.map(p=>{
                       const chk=entry.produk.includes(p);
@@ -215,13 +215,13 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                   </div>
                   {entry.produk.length>0&&(
                     <div className="mt-2 p-2.5 rounded-xl flex flex-wrap gap-1.5" style={{background:'rgba(0,0,0,0.03)',border:'1px solid rgba(0,0,0,0.08)'}}>
-                      {entry.produk.map(p=><span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{background:dc.grad}}>{p}<button aria-label="Tutup" onClick={()=>toggleP(idx,p)} className="ml-0.5 opacity-80">✕</button></span>)}
+                      {entry.produk.map(p=><span key={p} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold text-white" style={{background:dc.grad}}>{p}<button aria-label="Tutup" onClick={()=>toggleP(idx,p)} className="ml-0.5 opacity-80">✕</button></span>)}
                     </div>
                   )}
                 </div>
                 {/* Produk Lain — barang temporer di luar list + beban daya (watt) */}
                 <div>
-                  <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="⚡" />Produk Lain (di luar list) — beban daya</label>
+                  <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="⚡" />Produk Lain (di luar list) — beban daya</label>
                   {entry.produk_lain.length===0&&(
                     <p className="text-[11px] text-slate-500 mb-2">Tambah bila ada unit temporer di luar list. Beban dayanya dicatat (Watt); jam hidupnya mengikuti jam mulai/selesai kegiatan ini.</p>
                   )}
@@ -233,7 +233,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                         <div className="relative w-28 flex-shrink-0">
                           <input type="number" min={0} value={pl.watt||''} onChange={e=>updProdukLain(idx,j,{watt:Number(e.target.value)||0})} placeholder="Watt"
                             className="w-full rounded-xl pl-3 pr-8 py-2 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}}/>
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-500">W</span>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-slate-500">W</span>
                         </div>
                         <button aria-label="Tutup" type="button" onClick={()=>rmProdukLain(idx,j)} className="w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 flex items-center justify-center flex-shrink-0" style={{border:'1px solid rgba(220,38,38,0.25)'}}>✕</button>
                       </div>
@@ -245,25 +245,25 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                     + Tambah Produk Lain
                   </button>
                   {entry.produk_lain.length>0&&(
-                    <p className="text-[10px] text-slate-500 mt-1.5">Total beban daya tambahan: <strong>{entry.produk_lain.reduce((s,p)=>s+(p.watt||0),0).toLocaleString('id-ID')} W</strong></p>
+                    <p className="text-[11px] text-slate-500 mt-1.5">Total beban daya tambahan: <strong>{entry.produk_lain.reduce((s,p)=>s+(p.watt||0),0).toLocaleString('id-ID')} W</strong></p>
                   )}
                 </div>
                 {/* Demo Product fields */}
                 {entry.jenis_kegiatan==='Demo Product'&&(
                   <>
                     <div>
-                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🏢" />Tamu Instansi</label>
+                      <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🏢" />Tamu Instansi</label>
                       <input value={entry.tamu_instansi} onChange={e=>upd(idx,{tamu_instansi:e.target.value})}
                         className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder="Nama instansi / perusahaan tamu..."/>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="👤" />Nama Sales</label>
+                        <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="👤" />Nama Sales</label>
                         <input value={entry.nama_sales} onChange={e=>upd(idx,{nama_sales:e.target.value})}
                           className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder="Nama sales..."/>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🏷" />Division</label>
+                        <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🏷" />Division</label>
                         <select aria-label="— Pilih Division —" value={entry.sales_division} onChange={e=>upd(idx,{sales_division:e.target.value})}
                           className="w-full rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
                           <option value="">— Pilih Division —</option>
@@ -272,7 +272,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🎯" />Kebutuhan</label>
+                      <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="🎯" />Kebutuhan</label>
                       <div className="grid grid-cols-2 gap-1.5">
                         {KEBUTUHAN_LIST.map(k=>{
                           const chk=entry.kebutuhan.includes(k);
@@ -291,7 +291,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       </div>
                       {entry.kebutuhan.length>0&&(
                         <div className="mt-2 p-2.5 rounded-xl flex flex-wrap gap-1.5" style={{background:'rgba(0,0,0,0.03)',border:'1px solid rgba(0,0,0,0.08)'}}>
-                          {entry.kebutuhan.map(k=><span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{background:dc.grad}}>{k}<button aria-label="Tutup" onClick={()=>toggleK(idx,k)} className="ml-0.5 opacity-80">✕</button></span>)}
+                          {entry.kebutuhan.map(k=><span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold text-white" style={{background:dc.grad}}>{k}<button aria-label="Tutup" onClick={()=>toggleK(idx,k)} className="ml-0.5 opacity-80">✕</button></span>)}
                         </div>
                       )}
                     </div>
@@ -302,7 +302,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                   <div className="space-y-3">
                     {entry.jenis_kegiatan==='RnD'&&(
                       <div>
-                        <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="👥" />Team yang RnD</label>
+                        <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="👥" />Team yang RnD</label>
                         <div className="flex items-center gap-2">
                           <select aria-label="— Pilih Team —" value={entry.team_rnd} onChange={e=>upd(idx,{team_rnd:e.target.value})}
                             className="flex-1 rounded-xl px-3 py-2.5 text-sm outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.12)'}}>
@@ -322,7 +322,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                             const teamLabel=getPTSTeamLabel(entry.team_rnd);
                             const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
                             return tc?(
-                              <span className="text-[10px] font-black px-2 py-1.5 rounded-lg text-white flex-shrink-0" style={{background:tc.dot}}>
+                              <span className="text-[11px] font-black px-2 py-1.5 rounded-lg text-white flex-shrink-0" style={{background:tc.dot}}>
                                 {teamLabel}
                               </span>
                             ):null;
@@ -331,7 +331,7 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
                       </div>
                     )}
                     <div>
-                      <label className="block text-[10px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="📝" />Keterangan</label>
+                      <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase text-slate-500"><IkonTeks nama="📝" />Keterangan</label>
                       <textarea value={entry.keterangan} onChange={e=>upd(idx,{keterangan:e.target.value})} rows={3}
                         className="w-full rounded-xl px-3 py-2.5 text-sm outline-none resize-none"
                         style={{background:'rgba(255,255,255,0.95)',border:'1px solid rgba(0,0,0,0.12)'}} placeholder={`Keterangan ${entry.jenis_kegiatan}...`}/>

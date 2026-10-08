@@ -22,7 +22,7 @@ import {
   bisaKonfigPenuh, bisaInputNominal, tingkatAkses,
   LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES, type TingkatAkses,
 } from '@/lib/incentive-akses';
-import { MobileListCard, MobileCardBadge, ModalPortal, ConfirmDialog, type ConfirmState, Paginasi, usePaginasi } from '@/components/shared';
+import { PageHeader, MobileListCard, MobileCardBadge, ModalPortal, ConfirmDialog, type ConfirmState, Paginasi, usePaginasi } from '@/components/shared';
 import { logAudit } from '@/lib/audit';
 import { createNotification } from '@/lib/notifications';
 import { managerUtama } from '@/lib/penerima-admin';
@@ -1014,23 +1014,15 @@ export default function IncentivePTSPage() {
 
       <Toast notif={toast} />
 
-      {/* Header */}
-      <header className="flex-shrink-0 z-50"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', borderBottom: '3px solid #f43f5e', boxShadow: '0 2px 12px rgba(99,102,241,0.10)' }}>
-        <div className="w-full px-4 py-3 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-rose-500 to-purple-600 flex items-center justify-center text-white text-lg flex-shrink-0"><Ikon nama="💰" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-base font-bold text-gray-800">Incentive PTS</h1>
-            <p className="text-[11px] text-gray-500">IndoVisual Professional Tools</p>
-          </div>
+      {/* Header - header baku semua modul (components/shared/PageHeader) */}
+      <PageHeader icon="💰" title="Incentive PTS" subtitle="Insentif tim PTS per proyek & tranche pembayaran" color="#f43f5e">
           <div className="hidden sm:flex items-center gap-4 text-right">
-            <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Total Pool</p><p className="text-sm font-black text-emerald-700">{formatRupiah(totalPool)}</p></div>
-            <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Projects</p><p className="text-sm font-black text-rose-600">{projects.length}</p></div>
-            <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pending Nominal</p><p className="text-sm font-black text-amber-700">{pendingNominal}</p></div>
-            <div><p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Pending Tranche</p><p className="text-sm font-black text-rose-600">{pendingTranche}</p></div>
+            <div><p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Total Pool</p><p className="text-sm font-black text-emerald-700">{formatRupiah(totalPool)}</p></div>
+            <div><p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Projects</p><p className="text-sm font-black text-rose-600">{projects.length}</p></div>
+            <div><p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Pending Nominal</p><p className="text-sm font-black text-amber-700">{pendingNominal}</p></div>
+            <div><p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Pending Tranche</p><p className="text-sm font-black text-rose-600">{pendingTranche}</p></div>
           </div>
-        </div>
-      </header>
+      </PageHeader>
 
       {/* Tabs */}
       <div className="flex-shrink-0 z-40"
@@ -1067,7 +1059,7 @@ export default function IncentivePTSPage() {
             <div className="mb-4 rounded-xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-purple-50 p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-black text-gray-700 flex items-center gap-1.5"><IkonTeks nama="💰" />Insentif Saya
-                  <span className="text-[10px] font-semibold text-gray-500">
+                  <span className="text-[11px] font-semibold text-gray-500">
                     {filterBastYear == null ? '· semua tahun BAST' : `· tahun BAST ${filterBastYear}`}
                   </span>
                 </h3>
@@ -1083,19 +1075,19 @@ export default function IncentivePTSPage() {
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Total</p>
+                    <p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Total</p>
                     <p className="text-lg font-black text-gray-700">{formatRupiah(myTotalInsentif)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Sudah Cair</p>
+                    <p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Sudah Cair</p>
                     <p className="text-lg font-black text-emerald-700">{formatRupiah(myPaidInsentif)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Belum Cair</p>
+                    <p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Belum Cair</p>
                     <p className="text-lg font-black text-amber-700">{formatRupiah(myPendingInsentif)}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Jumlah Project</p>
+                    <p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Jumlah Project</p>
                     <p className="text-lg font-black text-rose-600">{myProjectCount}</p>
                   </div>
                 </div>
@@ -1301,7 +1293,7 @@ export default function IncentivePTSPage() {
                       */}
                       {hasNominal
                         ? <span className="text-sm font-black text-emerald-700 whitespace-nowrap">{formatRupiah(p.incentive_value || 0)}</span>
-                        : <span className="text-[10px] font-bold text-amber-700 whitespace-nowrap"><IkonTeks nama="⏳" />Belum nominal</span>}
+                        : <span className="text-[11px] font-bold text-amber-700 whitespace-nowrap"><IkonTeks nama="⏳" />Belum nominal</span>}
                     </>}
                     fields={[
                       { label: 'Mode', value: p.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : p.mode_penyelesaian === 'remote' ? '💻 Remote' : '—' },
@@ -1395,7 +1387,7 @@ export default function IncentivePTSPage() {
                         </td>
                         <td className={cellCls}>
                           <p className="text-sm font-medium text-gray-700">{p.assign_name || '—'}</p>
-                          {p.pic_type === 'manager_pic' && <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-0.5 inline-block">Manager PIC</span>}
+                          {p.pic_type === 'manager_pic' && <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 mt-0.5 inline-block">Manager PIC</span>}
                           {/*
                             Lencana brand. Dua petugas Finance memakai daftar
                             yang sudah tersaring, jadi lencana ini bukan sekadar
@@ -1415,7 +1407,7 @@ export default function IncentivePTSPage() {
                               <button type="button"
                                 onClick={() => setBrandEditFor(brandEditFor === p.id ? null : p.id)}
                                 title="Klik untuk set brand manual"
-                                className={`text-[10px] font-bold px-1.5 py-0.5 rounded border inline-block hover:opacity-75 transition-opacity ${
+                                className={`text-[11px] font-bold px-1.5 py-0.5 rounded border inline-block hover:opacity-75 transition-opacity ${
                                   p.brand === 'MVI'  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
                                   : p.brand === 'IVP' ? 'text-blue-700 bg-blue-50 border-blue-200'
                                   : p.brand === 'BOTH' ? 'text-violet-700 bg-violet-50 border-violet-200'
@@ -1428,7 +1420,7 @@ export default function IncentivePTSPage() {
                                   {(['MVI', 'IVP', 'BOTH'] as const).map(b => (
                                     <button key={b} type="button"
                                       onClick={() => { handleSetProjectBrand(p.id, b); setBrandEditFor(null); }}
-                                      className="text-[10px] font-bold px-2 py-1 rounded hover:bg-gray-100 text-gray-700 border border-transparent hover:border-gray-200">
+                                      className="text-[11px] font-bold px-2 py-1 rounded hover:bg-gray-100 text-gray-700 border border-transparent hover:border-gray-200">
                                       {b === 'MVI' ? '🏠 MVI' : b === 'IVP' ? '🌐 IVP' : '🏠🌐 Kedua'}
                                     </button>
                                   ))}
@@ -1436,7 +1428,7 @@ export default function IncentivePTSPage() {
                               )}
                             </span>
                           ) : (
-                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border mt-0.5 ml-1 inline-block ${
+                            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded border mt-0.5 ml-1 inline-block ${
                               p.brand === 'MVI'  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
                               : p.brand === 'IVP' ? 'text-blue-700 bg-blue-50 border-blue-200'
                               : p.brand === 'BOTH' ? 'text-violet-700 bg-violet-50 border-violet-200'
@@ -1449,7 +1441,7 @@ export default function IncentivePTSPage() {
                         <td className={cellCls}>
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-700 border border-purple-200">{p.category}</span>
                           {p.requires_controller_automation && (
-                            <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><Ikon nama="⚡" ukuran="1em" className="inline-block align-[-0.12em]" />{p.controller_automation_brand?.toUpperCase()}</span>
+                            <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200"><Ikon nama="⚡" ukuran="1em" className="inline-block align-[-0.12em]" />{p.controller_automation_brand?.toUpperCase()}</span>
                           )}
                         </td>
                         <td className={cellCls}>
@@ -1457,8 +1449,8 @@ export default function IncentivePTSPage() {
                           {p.mode_penyelesaian === 'remote' && (
                             <div>
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-200"><IkonTeks nama="💻" />Remote</span>
-                              {p.installer_name && <p className="text-[10px] text-blue-600 mt-0.5 truncate max-w-[90px]"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.installer_name}</p>}
-                              {p.installer_daerah && <p className="text-[10px] text-gray-500 truncate max-w-[90px]"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.installer_daerah}</p>}
+                              {p.installer_name && <p className="text-[11px] text-blue-600 mt-0.5 truncate max-w-[90px]"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.installer_name}</p>}
+                              {p.installer_daerah && <p className="text-[11px] text-gray-500 truncate max-w-[90px]"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {p.installer_daerah}</p>}
                             </div>
                           )}
                           {!p.mode_penyelesaian && <span className="text-xs text-gray-400">—</span>}
@@ -1478,7 +1470,7 @@ export default function IncentivePTSPage() {
                             {handlerSplit ? (
                               <div>
                                 <p className="text-sm font-black text-rose-700">{formatRupiah(handlerSplit.amt)}</p>
-                                <p className="text-[10px] text-gray-500">{handlerSplit.pct.toFixed(0)}% pool</p>
+                                <p className="text-[11px] text-gray-500">{handlerSplit.pct.toFixed(0)}% pool</p>
                               </div>
                             ) : <span className="text-xs text-gray-400">—</span>}
                           </td>
@@ -1488,7 +1480,7 @@ export default function IncentivePTSPage() {
                             <div className="flex gap-0.5 justify-center">
                               {projTranches.map(t => {
                                 const st = TRANCHE_STATUS[t.status] || TRANCHE_STATUS.pending;
-                                return <span key={t.id} title={`T${t.tranche_number} ${st.label}`} className="w-5 h-5 rounded text-[10px] font-bold flex items-center justify-center" style={{ background: st.bg, color: st.color }}>{t.tranche_number}</span>;
+                                return <span key={t.id} title={`T${t.tranche_number} ${st.label}`} className="w-5 h-5 rounded text-[11px] font-bold flex items-center justify-center" style={{ background: st.bg, color: st.color }}>{t.tranche_number}</span>;
                               })}
                             </div>
                           ) : <span className="text-xs text-gray-400">—</span>}
@@ -1666,7 +1658,7 @@ export default function IncentivePTSPage() {
                         <tr key={t.id} className={`hover:bg-rose-50/60 transition-colors ${rowBg}`}>
                           <td className="px-3 py-2.5 border border-gray-200">
                             <p className="font-bold text-gray-800">{t.project?.project_name || '—'}</p>
-                            <p className="text-[10px] text-gray-500">{t.project?.category}</p>
+                            <p className="text-[11px] text-gray-500">{t.project?.category}</p>
                           </td>
                           <td className="px-3 py-2.5 border border-gray-200 text-sm text-gray-700">{t.project?.assign_name || '—'}</td>
                           <td className="px-3 py-2.5 border border-gray-200"><span className="px-2 py-1 rounded-lg text-xs font-bold bg-gray-100 text-gray-600">T{t.tranche_number}</span></td>
@@ -1696,7 +1688,7 @@ export default function IncentivePTSPage() {
                                   {menyimpang && (
                                     <span title={`Menurut skema seharusnya ${seharusnya} (BAST ${bast} + tahun ke-${tahunKe}). `
                                       + 'Tahapan ini kemungkinan dibuat sebelum aturannya diperbaiki — hapus tahapannya lalu Generate ulang.'}
-                                      className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700 whitespace-nowrap cursor-help">
+                                      className="px-1.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-700 whitespace-nowrap cursor-help">
                                       <IkonTeks nama="⚠" />harusnya {seharusnya}
                                     </span>
                                   )}
@@ -1748,7 +1740,7 @@ export default function IncentivePTSPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-bold text-amber-700">{formatRupiah(lt.ticket_value || 0)}</span>
-                        {lt.is_sunset && <span className="px-2 py-0.5 rounded text-[10px] font-bold text-orange-600 bg-orange-50 border border-orange-200">Sunset</span>}
+                        {lt.is_sunset && <span className="px-2 py-0.5 rounded text-[11px] font-bold text-orange-600 bg-orange-50 border border-orange-200">Sunset</span>}
                       </div>
                     </div>
                   ))}
@@ -1784,7 +1776,7 @@ export default function IncentivePTSPage() {
                 {URUTAN_AKSES.map(t => (
                   <div key={t} className="rounded-lg border border-indigo-100 bg-white/70 px-3 py-2">
                     <p className="text-[11px] font-bold text-indigo-700">{LABEL_AKSES[t]}</p>
-                    <p className="text-[10px] text-gray-500 leading-snug mt-0.5">{JELAS_AKSES[t]}</p>
+                    <p className="text-[11px] text-gray-500 leading-snug mt-0.5">{JELAS_AKSES[t]}</p>
                   </div>
                 ))}
               </div>
@@ -1830,7 +1822,7 @@ export default function IncentivePTSPage() {
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-gray-700">
                           {u.full_name as string}
-                          {diriSendiri && <span className="ml-1.5 text-[10px] font-bold text-indigo-600">(Anda)</span>}
+                          {diriSendiri && <span className="ml-1.5 text-[11px] font-bold text-indigo-600">(Anda)</span>}
                         </p>
                         <p className="text-xs text-gray-500">
                           {u.username as string} · {u.role as string}
@@ -1945,8 +1937,8 @@ export default function IncentivePTSPage() {
                 <div className="flex items-center justify-between gap-3 mb-1.5">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Tanggal BAST</p>
                   {nominalProject.bast_date
-                    ? <span className="flex-shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">Auto ✓</span>
-                    : <span className="flex-shrink-0 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">Perlu diisi</span>}
+                    ? <span className="flex-shrink-0 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">Auto ✓</span>
+                    : <span className="flex-shrink-0 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">Perlu diisi</span>}
                 </div>
                 <input aria-label="Perlu diisi" type="date" value={nominalBast} onChange={e => setNominalBast(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-rose-400" />
@@ -2035,19 +2027,19 @@ export default function IncentivePTSPage() {
               <div className={`grid ${bisaInput(currentUser) ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
                 {bisaInput(currentUser) && (
                   <div className="rounded-xl p-3 text-center bg-emerald-50 border border-emerald-100">
-                    <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest">Total Pool</p>
+                    <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest">Total Pool</p>
                     <p className="text-base font-black text-emerald-700">{formatRupiah(detailProject.incentive_value || 0)}</p>
                   </div>
                 )}
                 <div className="rounded-xl p-3 text-center bg-blue-50 border border-blue-100">
-                  <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">Mode</p>
+                  <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Mode</p>
                   <p className="text-sm font-bold text-blue-700">{detailProject.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : detailProject.mode_penyelesaian === 'remote' ? '💻 Remote' : '—'}</p>
                   {detailProject.mode_penyelesaian === 'remote' && detailProject.installer_name && (
-                    <p className="text-[10px] text-blue-500 mt-0.5 font-medium"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailProject.installer_name}{detailProject.installer_daerah ? ` · ${detailProject.installer_daerah}` : ''}</p>
+                    <p className="text-[11px] text-blue-500 mt-0.5 font-medium"><Ikon nama="🔧" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailProject.installer_name}{detailProject.installer_daerah ? ` · ${detailProject.installer_daerah}` : ''}</p>
                   )}
                 </div>
                 <div className="rounded-xl p-3 text-center bg-violet-50 border border-violet-100">
-                  <p className="text-[10px] font-bold text-violet-600 uppercase tracking-widest">BAST</p>
+                  <p className="text-[11px] font-bold text-violet-600 uppercase tracking-widest">BAST</p>
                   <p className="text-sm font-bold text-violet-700">{detailProject.bast_date ? new Date(detailProject.bast_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}</p>
                 </div>
               </div>
@@ -2064,7 +2056,7 @@ export default function IncentivePTSPage() {
               */}
               <div className="rounded-xl p-3 border border-emerald-100 bg-emerald-50/60">
                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <p className="text-[10px] font-bold text-emerald-700 uppercase tracking-widest"><IkonTeks nama="⚡" />Controller Automation</p>
+                  <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest"><IkonTeks nama="⚡" />Controller Automation</p>
                   {detailProject.requires_controller_automation ? (
                     <span className="text-[11px] font-black px-2 py-0.5 rounded-lg bg-emerald-600 text-white">
                       {detailProject.controller_automation_brand?.toUpperCase() || 'YA'}
@@ -2073,7 +2065,7 @@ export default function IncentivePTSPage() {
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-slate-100 text-slate-500">Tidak dipakai</span>
                   )}
                 </div>
-                <p className="text-[10px] text-emerald-700/70 mt-1 leading-relaxed">
+                <p className="text-[11px] text-emerald-700/70 mt-1 leading-relaxed">
                   Dipilih saat pembuatan Request Schedule dan ikut tercatat pada proyek ini.
                   {detailProject.pic_type === 'manager_pic' && ' Proyek ini memakai skema Manager-sebagai-PIC karena handler-nya berjabatan Manager.'}
                 </p>
@@ -2129,8 +2121,8 @@ export default function IncentivePTSPage() {
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-sm font-bold text-gray-700">{privileged ? '💰 Pembagian Incentive' : '💰 Bagian Saya'}</h3>
                       <div className="flex items-center gap-1.5">
-                        {privileged && <span className="text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{schemeLabel} · {modeLabel}</span>}
-                        {isEstimate && <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Estimasi</span>}
+                        {privileged && <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{schemeLabel} · {modeLabel}</span>}
+                        {isEstimate && <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Estimasi</span>}
                       </div>
                     </div>
                     {!privileged && visibleSplits.length === 0 && (
@@ -2146,11 +2138,11 @@ export default function IncentivePTSPage() {
                           <div key={i} className="flex items-center justify-between rounded-xl px-4 py-2.5"
                             style={{ background: isInstaller ? 'rgba(245,158,11,0.07)' : 'rgba(99,102,241,0.05)', border: `1px solid ${isInstaller ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.12)'}` }}>
                             <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: rl.bg, color: rl.color }}>{rl.label}</span>
+                              <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: rl.bg, color: rl.color }}>{rl.label}</span>
                               <div>
                                 <p className="text-sm font-semibold text-gray-800">{s.user_name || '—'}</p>
                                 {isInstaller && detailProject.installer_daerah && (
-                                  <p className="text-[10px] text-gray-500"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailProject.installer_daerah}</p>
+                                  <p className="text-[11px] text-gray-500"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailProject.installer_daerah}</p>
                                 )}
                               </div>
                             </div>
@@ -2158,14 +2150,14 @@ export default function IncentivePTSPage() {
                               <p className="text-sm font-black text-gray-800">
                                 {pool > 0 ? formatRupiah(s.amount) : '—'}
                               </p>
-                              <p className="text-[10px] text-gray-500">{formatPct(s.percentage)}</p>
+                              <p className="text-[11px] text-gray-500">{formatPct(s.percentage)}</p>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                     {isEstimate && (
-                      <p className="text-[10px] text-amber-700 mt-1.5 italic">
+                      <p className="text-[11px] text-amber-700 mt-1.5 italic">
                         {!pool
                           ? '* Belum ada nominal — angka Rp akan muncul setelah input nominal.'
                           : '* Mode belum diset (estimasi Onsite) — akan update setelah Handler klik Completed di Reminder Schedule.'}
@@ -2190,11 +2182,11 @@ export default function IncentivePTSPage() {
                           <span className="text-xs text-gray-500">Tahun {t.payment_year}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: st.bg, color: st.color }}><Ikon nama={st.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {st.label}</span>
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: st.bg, color: st.color }}><Ikon nama={st.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {st.label}</span>
                           {t.status === 'processed' && bisaKonfig(currentUser) && (
                             <button onClick={() => konfirmasiMarkPaid(t.id, detailProject.project_name || '—', t.tranche_number)}
                               disabled={markingPaid === t.id}
-                              className="px-2 py-1 rounded text-[10px] font-bold text-emerald-700 hover:bg-emerald-50 border border-emerald-200 disabled:opacity-50">
+                              className="px-2 py-1 rounded text-[11px] font-bold text-emerald-700 hover:bg-emerald-50 border border-emerald-200 disabled:opacity-50">
                               {markingPaid === t.id ? '⏳...' : 'Tandai Paid'}
                             </button>
                           )}
@@ -2217,7 +2209,7 @@ export default function IncentivePTSPage() {
                     return (
                       <div key={s.id} className="flex items-center justify-between rounded-lg px-4 py-2.5 bg-gray-50 mb-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: rl.bg, color: rl.color }}>{rl.label}</span>
+                          <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: rl.bg, color: rl.color }}>{rl.label}</span>
                           <span className="text-sm text-gray-700">{s.user_name || '—'}</span>
                         </div>
                         <div className="text-right">
@@ -2249,7 +2241,7 @@ export default function IncentivePTSPage() {
                       <div key={th.tahunKe} className="rounded-xl border border-gray-100 overflow-hidden">
                         <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-gray-50 flex-wrap">
                           <span className="text-[11px] font-black uppercase tracking-widest text-gray-500">Tahun {th.tahunKe}</span>
-                          <span className="text-[10px] text-gray-500">{rentang}</span>
+                          <span className="text-[11px] text-gray-500">{rentang}</span>
                         </div>
                         {th.orang.length === 0 ? (
                           //  Bukan sekadar "kosong": tanpa Support di tahun itu, porsinya
@@ -2261,7 +2253,7 @@ export default function IncentivePTSPage() {
                         ) : th.orang.map(s => (
                           <div key={`${th.tahunKe}-${s.user_id}`} className="flex items-center justify-between px-3 py-1.5 border-t border-gray-50">
                             <span className="text-sm text-gray-700">{s.user_name || s.user_id}</span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200">Troubleshooting</span>
+                            <span className="px-2 py-0.5 rounded text-[11px] font-bold text-violet-700 bg-violet-50 border border-violet-200">Troubleshooting</span>
                           </div>
                         ))}
                       </div>

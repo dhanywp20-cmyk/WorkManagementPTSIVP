@@ -187,7 +187,7 @@ export function BarisItem({ item, sedang, aksi }: { item: ChecklistItem; sedang:
           textDecorationColor: TEMA.samar,
         }}>{item.teks}</p>
         {item.tertunda && (
-          <p className="text-[10.5px] font-bold uppercase tracking-wide mt-0.5" style={{ color: TEMA.warna }}>Belum disimpan</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide mt-0.5" style={{ color: TEMA.warna }}>Belum disimpan</p>
         )}
         {item.catatan && (
           <p className="text-[12px] mt-0.5 whitespace-pre-line" style={{ color: TEMA.samar }}>{item.catatan}</p>

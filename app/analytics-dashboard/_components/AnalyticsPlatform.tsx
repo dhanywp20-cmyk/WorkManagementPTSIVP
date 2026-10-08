@@ -61,7 +61,7 @@ function Panel({ title, icon, color, borderClr, count, children }: {
         <span className="text-base select-none"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
         <span className="font-bold text-sm flex-1" style={{ color }}>{title}</span>
         {count !== undefined && count > 0 && (
-          <span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white" style={{ background: color }}>
+          <span className="text-[11px] font-black px-2 py-0.5 rounded-full text-white" style={{ background: color }}>
             {count}
           </span>
         )}
@@ -93,7 +93,7 @@ function Row({ dot, title, sub, badge, badgeBg, badgeColor, badgeBorder }: {
         <p className="text-xs text-gray-500 truncate mt-0.5">{sub}</p>
       </div>
       {badge && (
-        <span className="text-[10px] font-black px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0 mt-0.5"
+        <span className="text-[11px] font-black px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0 mt-0.5"
           style={{ background: badgeBg ?? '#f3f4f6', color: badgeColor ?? '#374151', border: `1px solid ${badgeBorder ?? '#d1d5db'}` }}>
           {badge}
         </span>
@@ -141,7 +141,7 @@ export function TabBtn({ label, icon, active, onClick, badge }: {
       <Ikon nama={icon} ukuran={15} />
       {label}
       {badge !== undefined && badge > 0 && (
-        <span className="ml-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-black px-1"
+        <span className="ml-1 min-w-[18px] h-[18px] rounded-full flex items-center justify-center text-[11px] font-black px-1"
           style={{ background: active ? 'rgba(255,255,255,0.3)' : '#ef4444', color: 'white' }}>
           {badge > 99 ? '99+' : badge}
         </span>
@@ -437,7 +437,7 @@ export function AnalyticsPlatform({
               </div>
               <div>
                 <h1 className="text-base font-bold tracking-tight leading-tight" style={{color:'#0f172a'}}>Analytics Platform</h1>
-                <p className="text-[10px] text-slate-500 font-medium">Work Management PTS · {greeting()}, {user.full_name}</p>
+                <p className="text-[11px] text-slate-500 font-medium">Work Management PTS · {greeting()}, {user.full_name}</p>
               </div>
             </button>
             <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
@@ -540,7 +540,7 @@ export function AnalyticsPlatform({
                             <p className="text-sm font-semibold text-gray-800 truncate">{a.label}</p>
                             <p className="text-xs text-gray-500 truncate">{a.sub}</p>
                           </div>
-                          <span className="text-[10px] text-gray-500 flex-shrink-0 tabular-nums">{rel(a.time)}</span>
+                          <span className="text-[11px] text-gray-500 flex-shrink-0 tabular-nums">{rel(a.time)}</span>
                         </div>
                       ))
                   }
@@ -576,10 +576,10 @@ export function AnalyticsPlatform({
                 Refresh
               </button>
               <div className="ml-auto flex items-center gap-2">
-                <span className="text-[10px] text-gray-500">{auditFiltered.length} log</span>
+                <span className="text-[11px] text-gray-500">{auditFiltered.length} log</span>
                 {/* Source legend */}
-                <span className="text-[10px] px-1.5 py-0.5 rounded" style={{background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}}>audit_trail</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded" style={{background:'#dbeafe',color:'#1e40af',border:'1px solid #93c5fd'}}>activity_logs</span>
+                <span className="text-[11px] px-1.5 py-0.5 rounded" style={{background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}}>audit_trail</span>
+                <span className="text-[11px] px-1.5 py-0.5 rounded" style={{background:'#dbeafe',color:'#1e40af',border:'1px solid #93c5fd'}}>activity_logs</span>
               </div>
             </div>
 
@@ -597,7 +597,7 @@ export function AnalyticsPlatform({
                     <thead>
                       <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
                         {['Waktu','User','Aksi','Modul','Target','Perubahan','Catatan','Sumber'].map(h => (
-                          <th key={h} className="px-4 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap">{h}</th>
+                          <th key={h} className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-widest text-gray-500 whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -613,7 +613,7 @@ export function AnalyticsPlatform({
                               <span className="text-xs font-semibold text-gray-800">{a.user_name || '—'}</span>
                             </td>
                             <td className="px-4 py-2.5">
-                              <span className="text-[10px] font-black px-2 py-0.5 rounded whitespace-nowrap"
+                              <span className="text-[11px] font-black px-2 py-0.5 rounded whitespace-nowrap"
                                 style={{background:as.bg,color:as.color,border:`1px solid ${as.border}`}}>
                                 {a.action}
                               </span>
@@ -630,17 +630,17 @@ export function AnalyticsPlatform({
                             <td className="px-4 py-2.5 max-w-[180px]">
                               {(a.old_value || a.new_value)
                                 ? <div className="flex items-center gap-1 flex-wrap">
-                                    {a.old_value && <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 line-through">{a.old_value}</span>}
-                                    {a.old_value && a.new_value && <span className="text-[10px] text-gray-400">→</span>}
-                                    {a.new_value && <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-50 text-green-700 border border-green-100">{a.new_value}</span>}
+                                    {a.old_value && <span className="text-[11px] px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 line-through">{a.old_value}</span>}
+                                    {a.old_value && a.new_value && <span className="text-[11px] text-gray-400">→</span>}
+                                    {a.new_value && <span className="text-[11px] px-1.5 py-0.5 rounded bg-green-50 text-green-700 border border-green-100">{a.new_value}</span>}
                                   </div>
-                                : <span className="text-[10px] text-gray-400">—</span>}
+                                : <span className="text-[11px] text-gray-400">—</span>}
                             </td>
                             <td className="px-4 py-2.5 max-w-[160px]">
                               <span className="text-[11px] text-gray-500 truncate block" title={a.notes ?? ''}>{a.notes || '—'}</span>
                             </td>
                             <td className="px-4 py-2.5">
-                              <span className="text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap"
+                              <span className="text-[11px] px-1.5 py-0.5 rounded whitespace-nowrap"
                                 style={isLegacy
                                   ? {background:'#dbeafe',color:'#1e40af',border:'1px solid #93c5fd'}
                                   : {background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}}>
@@ -671,7 +671,7 @@ export function AnalyticsPlatform({
         )}
 
         <p className="text-center select-none pb-2">
-          <span className="inline-block text-[10px] text-slate-500 bg-white/90 rounded-full px-3 py-1 shadow-sm">
+          <span className="inline-block text-[11px] text-slate-500 bg-white/90 rounded-full px-3 py-1 shadow-sm">
             Analytics Platform — IndoVisual PTS · Work Management
           </span>
         </p>

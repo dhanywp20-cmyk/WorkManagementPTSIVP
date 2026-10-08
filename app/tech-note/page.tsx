@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
 import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { useSearchParams } from 'next/navigation';
-import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState, Toast, type Notif } from '@/components/shared';
+import { PageHeader, ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState, Toast, type Notif } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/app/dashboard/_components/shared';
 import { getSession, startSessionWatcher } from '@/lib/auth';
@@ -177,11 +177,11 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
             background: isSel ? `${folder.color}15` : 'transparent',
             border: isSel ? `1.5px solid ${folder.color}40` : '1.5px solid transparent' }}>
           {children.length > 0
-            ? <span className="text-[9px] text-slate-500 transition-transform" style={{ transform: isOpen ? 'rotate(90deg)':'none' }}><Ikon nama="▶" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+            ? <span className="text-[10px] text-slate-500 transition-transform" style={{ transform: isOpen ? 'rotate(90deg)':'none' }}><Ikon nama="▶" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             : <span className="w-3" />}
           <span className="text-base"><Ikon nama={folder.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
           <span className="flex-1 text-[13px] font-semibold truncate" style={{ color: isSel ? folder.color : '#475569' }}>{folder.name}</span>
-          {count > 0 && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ background: folder.color }}>{count}</span>}
+          {count > 0 && <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ background: folder.color }}>{count}</span>}
         </div>
         {isOpen && children.map(c => <FolderItem key={c.id} folder={c} depth={depth+1} />)}
       </div>
@@ -199,7 +199,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
         transition-transform duration-200`}
       style={{ background: '#f8fafc' }}>
       <div className="flex items-center justify-between mb-2 px-1">
-        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Folder</span>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Folder</span>
         <div className="flex items-center gap-1.5">
           {canManage && (
             <button onClick={onAdd} className="text-[11px] font-bold px-2 py-0.5 rounded-lg transition-colors text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100">
@@ -216,7 +216,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
           border: selected===null ? '1.5px solid rgba(236,72,153,0.30)':'1.5px solid transparent' }}>
         <span className="text-base"><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="flex-1 text-[13px] font-semibold" style={{ color: selected===null ? '#db2777':'#475569' }}>Semua Tech Note</span>
-        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white bg-rose-500">{technotes.length}</span>
+        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full text-white bg-rose-500">{technotes.length}</span>
       </div>
       {roots.map(f => <FolderItem key={f.id} folder={f} />)}
     </div>
@@ -699,17 +699,8 @@ function TechNotePageInner() {
     <div className="flex flex-col h-screen font-sans bg-gray-50"
       style={{ background: 'var(--latar-halaman)', backgroundSize:'cover', backgroundPosition:'center', backgroundAttachment:'fixed' }}>
 
-      {/* ── Top Nav ── */}
-      <header className="shrink-0 sticky top-0 z-30 w-full"
-        style={{ background: 'rgba(255,255,255,0.92)', backdropFilter:'blur(16px)', borderBottom:'3px solid #ec4899' }}>
-        <div className="flex items-center gap-3 px-6 py-3.5">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xl shadow-md"
-            style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-          <div>
-            <h1 className="font-black text-[16px] leading-tight tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-rose-800">Tech Note R&D</h1>
-            <p className="text-slate-500 text-[11px]">Dokumentasi teknikal & R&D · KPI 10%</p>
-          </div>
-          <div className="ml-auto flex items-center gap-3">
+      {/* ── Top Nav ── header baku semua modul (components/shared/PageHeader) */}
+      <PageHeader icon="📝" title="Tech Note R&D" subtitle="Dokumentasi teknikal & R&D · KPI 10%" color="#ec4899">
             <select aria-label="Tahun" value={year} onChange={e=>setYear(Number(e.target.value))}
               className="text-slate-700 text-sm font-bold outline-none rounded-xl px-3 py-1.5 bg-gray-100 border border-gray-200 focus:border-rose-400">
               {[curY,curY-1,curY-2].map(y=><option key={y} value={y}>{y}</option>)}
@@ -719,9 +710,7 @@ function TechNotePageInner() {
               style={{ background:'linear-gradient(135deg,#ec4899,#be185d)', boxShadow:'0 4px 14px rgba(236,72,153,0.35)' }}>
               <IkonTeks nama="➕" />Upload Tech Note
             </button>
-          </div>
-        </div>
-      </header>
+      </PageHeader>
 
       <div className="flex flex-1 overflow-hidden">
         {/* ── Sidebar ── */}
@@ -804,7 +793,7 @@ function TechNotePageInner() {
                       style={{ boxShadow:'0 1px 3px rgba(0,0,0,0.06)' }}>
                       <div className="flex items-start justify-between mb-2 gap-2">
                         {folder && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
                             style={{ background:`${folder.color}15`, color:folder.color, border:`1px solid ${folder.color}30` }}>
                             <Ikon nama={folder.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {folder.name}
                           </span>
@@ -816,7 +805,7 @@ function TechNotePageInner() {
                       {(tn.tags??[]).length>0 && (
                         <div className="flex flex-wrap gap-1 mb-3">
                           {(tn.tags??[]).slice(0,3).map(tag=>(
-                            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-md font-medium text-slate-500 bg-slate-100">#{tag}</span>
+                            <span key={tag} className="text-[11px] px-1.5 py-0.5 rounded-md font-medium text-slate-500 bg-slate-100">#{tag}</span>
                           ))}
                         </div>
                       )}
@@ -826,11 +815,11 @@ function TechNotePageInner() {
                           <span className="text-[11px] text-slate-500 font-medium truncate max-w-[100px]">{tn.author_name}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-slate-500">{formatDateShort(tn.submitted_at)}</span>
+                          <span className="text-[11px] text-slate-500">{formatDateShort(tn.submitted_at)}</span>
                           {tn.one_drive_link && (
                             <a href={hrefAman(tn.one_drive_link)} target="_blank" rel="noopener noreferrer"
                               onClick={e=>e.stopPropagation()}
-                              className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg transition-colors text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100">
+                              className="text-[11px] font-bold px-1.5 py-0.5 rounded-lg transition-colors text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100">
                               <IkonTeks nama="☁" />Drive
                             </a>
                           )}
@@ -863,7 +852,7 @@ function TechNotePageInner() {
                   }`}>
                   <span className="block text-lg leading-none mb-1"><Ikon nama={k.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                   <span className="block text-sm font-bold">{k.label}</span>
-                  <span className="block text-[10px] mt-0.5 opacity-80 leading-tight">{k.desc}</span>
+                  <span className="block text-[11px] mt-0.5 opacity-80 leading-tight">{k.desc}</span>
                 </button>
               );
             })}
@@ -964,7 +953,7 @@ function TechNotePageInner() {
             {(detailNote.tags??[]).length>0 && (
               <div className="flex flex-wrap gap-1 mt-3">
                 {(detailNote.tags??[]).map(tag=>(
-                  <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full font-semibold text-blue-600 bg-blue-50 border border-blue-200">#{tag}</span>
+                  <span key={tag} className="text-[11px] px-2 py-0.5 rounded-full font-semibold text-blue-600 bg-blue-50 border border-blue-200">#{tag}</span>
                 ))}
               </div>
             )}

@@ -628,7 +628,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
                 Project Name *
                 {projectType === 'existing' && selectedReminder && (
-                  <span className="ml-2 text-red-600 font-semibold normal-case text-[10px]"><IkonTeks nama="🔒" />dari reminder</span>
+                  <span className="ml-2 text-red-600 font-semibold normal-case text-[11px]"><IkonTeks nama="🔒" />dari reminder</span>
                 )}
               </label>
               <div className="relative">
@@ -695,7 +695,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             </div>
             <div>
               <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
-                SN Unit <span className="text-gray-500 normal-case font-normal text-[10px]">(opsional)</span>
+                SN Unit <span className="text-gray-500 normal-case font-normal text-[11px]">(opsional)</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="🔢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -711,7 +711,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
           <div>
             <div>
               <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>
-                <IkonTeks nama="📅" />Date <span className="text-gray-500 normal-case font-normal text-[10px]">(hari ini)</span>
+                <IkonTeks nama="📅" />Date <span className="text-gray-500 normal-case font-normal text-[11px]">(hari ini)</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>

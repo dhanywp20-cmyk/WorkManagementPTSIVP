@@ -591,7 +591,7 @@ function FormReviewPageInner() {
               <div className="p-8 space-y-5 flex-1 min-h-0 overflow-y-auto">
                 {/* Project Info (Read-only) */}
                 <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)' }}>
-                  <p className="text-[10px] font-bold tracking-widest uppercase text-violet-600">Informasi Project</p>
+                  <p className="text-[11px] font-bold tracking-widest uppercase text-violet-600">Informasi Project</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div><span className="text-gray-500">Project:</span> <span className="font-semibold text-gray-700">{editingReview.project_name}</span></div>
                     <div><span className="text-gray-500">Lokasi:</span> <span className="font-semibold text-gray-700">{editingReview.address}</span></div>
@@ -725,11 +725,11 @@ function FormReviewPageInner() {
                     );
                   })()}
                 </div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
                 <h2 className="text-xl font-bold text-white leading-tight">{detailReview.project_name || '—'}</h2>
                 {detailReview.address && (
                   <>
-                    <p className="text-[9px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
                     <p className="text-white/80 text-sm flex items-center gap-1.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailReview.address}</p>
                   </>
                 )}
@@ -750,7 +750,7 @@ function FormReviewPageInner() {
                     { icon: '🔄', label: 'Update', value: detailReview.updated_at ? formatDatetime(detailReview.updated_at) : null },
                   ].filter(x => x.value).map((item, i) => (
                     <div key={i} className="rounded-xl px-4 py-3" style={{ background: 'rgba(248,250,252,0.9)', border: '1px solid rgba(0,0,0,0.07)' }}>
-                      <p className="text-[9px] font-bold tracking-widest uppercase text-gray-500"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {item.label}</p>
+                      <p className="text-[10px] font-bold tracking-widest uppercase text-gray-500"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {item.label}</p>
                       <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{item.value}</p>
                     </div>
                   ))}
@@ -759,11 +759,11 @@ function FormReviewPageInner() {
                 {/* Demo Product review detail */}
                 {detailReview.review_category === 'Demo Product' && (
                   <div className="rounded-xl p-4 space-y-4" style={{ background: 'rgba(124,58,237,0.04)', border: '1.5px solid rgba(124,58,237,0.15)' }}>
-                    <p className="text-[10px] font-bold tracking-widest uppercase text-violet-600"><IkonTeks nama="🖥" />Review Demo Product</p>
+                    <p className="text-[11px] font-bold tracking-widest uppercase text-violet-600"><IkonTeks nama="🖥" />Review Demo Product</p>
 
                     {detailReview.product_demo ? (
                       <div>
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Product yang Di-Demo</p>
+                        <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">Product yang Di-Demo</p>
                         <p className="text-sm text-gray-700 whitespace-pre-wrap bg-white/60 rounded-lg px-3 py-2 border border-violet-100">{detailReview.product_demo}</p>
                       </div>
                     ) : (
@@ -771,13 +771,13 @@ function FormReviewPageInner() {
                     )}
 
                     <div>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Grade Product Knowledge</p>
+                      <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Grade Product Knowledge</p>
                       {detailReview.grade_product_knowledge ? (
                         <>
                           <StarRating value={detailReview.grade_product_knowledge} disabled />
                           {detailReview.catatan_grade_product_knowledge && (
                             <div className="mt-2 bg-white/60 rounded-lg px-3 py-2 border border-violet-100">
-                              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Catatan</p>
+                              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">Catatan</p>
                               <p className="text-xs text-gray-600 italic">{detailReview.catatan_grade_product_knowledge}</p>
                             </div>
                           )}
@@ -795,11 +795,11 @@ function FormReviewPageInner() {
                 {/* BAST review detail */}
                 {detailReview.review_category === 'BAST' && (
                   <div className="rounded-xl p-4 space-y-4" style={{ background: 'rgba(14,165,233,0.04)', border: '1.5px solid rgba(14,165,233,0.15)' }}>
-                    <p className="text-[10px] font-bold tracking-widest uppercase text-sky-700"><IkonTeks nama="📌" />Review BAST (Training)</p>
+                    <p className="text-[11px] font-bold tracking-widest uppercase text-sky-700"><IkonTeks nama="📌" />Review BAST (Training)</p>
 
                     {detailReview.product_bast ? (
                       <div>
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Product yang Di-Training</p>
+                        <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-1">Product yang Di-Training</p>
                         <p className="text-sm text-gray-700 whitespace-pre-wrap bg-white/60 rounded-lg px-3 py-2 border border-sky-100">{detailReview.product_bast}</p>
                       </div>
                     ) : (
@@ -808,7 +808,7 @@ function FormReviewPageInner() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Grade Training Customer</p>
+                        <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Grade Training Customer</p>
                         {detailReview.grade_training_customer ? (
                           <>
                             <StarRating value={detailReview.grade_training_customer} disabled />
@@ -824,7 +824,7 @@ function FormReviewPageInner() {
                         )}
                       </div>
                       <div>
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Grade Product Knowledge</p>
+                        <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2">Grade Product Knowledge</p>
                         {detailReview.grade_product_knowledge_bast ? (
                           <>
                             <StarRating value={detailReview.grade_product_knowledge_bast} disabled />
@@ -846,7 +846,7 @@ function FormReviewPageInner() {
                 {/* Foto Dokumentasi */}
                 {detailReview.foto_dokumentasi_url ? (
                   <div className="rounded-xl overflow-hidden" style={{ border: '1px solid rgba(0,0,0,0.08)' }}>
-                    <p className="text-[10px] font-bold tracking-widest uppercase text-gray-500 px-4 pt-3 pb-2"><IkonTeks nama="📸" />Foto Dokumentasi</p>
+                    <p className="text-[11px] font-bold tracking-widest uppercase text-gray-500 px-4 pt-3 pb-2"><IkonTeks nama="📸" />Foto Dokumentasi</p>
                     <img
                       src={detailReview.foto_dokumentasi_url}
                       alt="Foto Dokumentasi"
@@ -930,7 +930,7 @@ function FormReviewPageInner() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-violet-700"
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold text-violet-700"
                             style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)' }}>
                             {r.review_category === 'Demo Product' ? '🖥️' : '📌'} {r.review_category}
                           </span>
@@ -942,9 +942,9 @@ function FormReviewPageInner() {
                         )}
                       </div>
                       <div className="flex-shrink-0 text-right">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-700"
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold text-amber-700"
                           style={{ background: '#fef3c7', border: '1px solid #f59e0b' }}><IkonTeks nama="⏳" />Belum Diisi</span>
-                        <p className="text-[10px] text-gray-500 mt-1">{isTeam ? r.sales_name : r.assign_name}</p>
+                        <p className="text-[11px] text-gray-500 mt-1">{isTeam ? r.sales_name : r.assign_name}</p>
                       </div>
                     </div>
                   </div>
@@ -998,7 +998,7 @@ function FormReviewPageInner() {
                     style={{ background: 'rgba(249,250,251,0.9)', borderColor: '#e5e7eb' }}>
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-violet-700 mb-1"
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold text-violet-700 mb-1"
                           style={{ background: 'rgba(124,58,237,0.1)', border: '1px solid rgba(124,58,237,0.3)' }}>
                           {r.review_category === 'Demo Product' ? '🖥️' : '📌'} {r.review_category}
                         </span>
@@ -1008,7 +1008,7 @@ function FormReviewPageInner() {
                           <p className="text-xs text-violet-600 font-semibold mt-0.5"><IkonTeks nama="👤" />Guest: {r.sales_name}</p>
                         )}
                       </div>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold text-amber-700"
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold text-amber-700"
                         style={{ background: '#fef3c7', border: '1px solid #f59e0b' }}><IkonTeks nama="⏳" />Belum</span>
                     </div>
                   </div>
@@ -1053,7 +1053,7 @@ function FormReviewPageInner() {
               <Ikon nama="⭐" ukuran={18} />
             </div>
             <div>
-              <p className="font-bold text-base leading-tight tracking-tight text-slate-900">Form Review Demo & BAST</p>
+              <h1 className="font-bold text-base leading-tight tracking-tight text-slate-900">Form Review Demo &amp; BAST</h1>
               <p className="text-[11px] font-medium text-slate-600">Penilaian pelanggan untuk demo & serah terima</p>
             </div>
           </div>
@@ -1065,7 +1065,7 @@ function FormReviewPageInner() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               {myActivePendingReviews.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
                   style={{ background: '#f59e0b' }}>
                   {myActivePendingReviews.length}
                 </span>
@@ -1146,7 +1146,7 @@ function FormReviewPageInner() {
             {/* Filter Bar — sama persis dengan Reminder Schedule */}
             <div className="px-3 py-2 sm:px-5 sm:py-3 flex flex-wrap gap-1.5 sm:gap-3 items-end border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
               <div>
-                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="🔍" />Cari Project / Lokasi</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="🔍" />Cari Project / Lokasi</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
@@ -1155,7 +1155,7 @@ function FormReviewPageInner() {
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="👤" />Sales Name</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="👤" />Sales Name</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales..." value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
@@ -1164,7 +1164,7 @@ function FormReviewPageInner() {
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Team Handler</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search handler..." value={searchHandler} onChange={e => setSearchHandler(e.target.value)}
@@ -1173,7 +1173,7 @@ function FormReviewPageInner() {
                 </div>
               </div>
               <div>
-                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Kategori</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Kategori</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="Semua Kategori" value={filterReviewCat} onChange={e => setFilterReviewCat(e.target.value as any)}
@@ -1182,7 +1182,7 @@ function FormReviewPageInner() {
                     <option value="Demo Product">Demo Product</option>
                     <option value="BAST">BAST</option>
                   </select>
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-[10px] pointer-events-none">▼</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 text-[11px] pointer-events-none">▼</span>
                 </div>
               </div>
             </div>
@@ -1204,27 +1204,27 @@ function FormReviewPageInner() {
             {/* Active Filters Chips */}
             {(handlerFilter || productFilterChart || salesDivisionFilter || filterReviewCat !== 'all' || searchProject || searchSalesName || searchHandler) && (
               <div className="px-3 py-1.5 sm:px-5 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
                 {filterReviewCat !== 'all' && (
-                  <button onClick={() => setFilterReviewCat('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterReviewCat} ✕</button>
+                  <button onClick={() => setFilterReviewCat('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {filterReviewCat} ✕</button>
                 )}
                 {salesDivisionFilter && (
-                  <button onClick={() => setSalesDivisionFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {salesDivisionFilter} ✕</button>
+                  <button onClick={() => setSalesDivisionFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {salesDivisionFilter} ✕</button>
                 )}
                 {handlerFilter && (
-                  <button onClick={() => setHandlerFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {handlerFilter} ✕</button>
+                  <button onClick={() => setHandlerFilter(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {handlerFilter} ✕</button>
                 )}
                 {productFilterChart && (
-                  <button onClick={() => setProductFilterChart(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#6366f1' }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {productFilterChart} ✕</button>
+                  <button onClick={() => setProductFilterChart(null)} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#6366f1' }}><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {productFilterChart} ✕</button>
                 )}
                 {searchProject && (
-                  <button onClick={() => setSearchProject('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchProject} ✕</button>
+                  <button onClick={() => setSearchProject('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchProject} ✕</button>
                 )}
                 {searchSalesName && (
-                  <button onClick={() => setSearchSalesName('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchSalesName} ✕</button>
+                  <button onClick={() => setSearchSalesName('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchSalesName} ✕</button>
                 )}
                 {searchHandler && (
-                  <button onClick={() => setSearchHandler('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchHandler} ✕</button>
+                  <button onClick={() => setSearchHandler('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /> {searchHandler} ✕</button>
                 )}
                 <button onClick={() => { setFilterReviewCat('all'); setSalesDivisionFilter(null); setHandlerFilter(null); setProductFilterChart(null); setSearchProject(''); setSearchSalesName(''); setSearchHandler(''); }}
                   className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}><IkonTeks nama="🗑" />Reset Semua</button>
@@ -1316,7 +1316,7 @@ function FormReviewPageInner() {
                         switchTab === 'Demo Product' ? 'Grade PK' : 'Grade Training',
                         switchTab === 'BAST' ? 'Grade PK' : null,
                         'Status', 'Action'].filter(Boolean).map((h, i, arr) => (
-                        <th key={i} className={`px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200 ${h === 'Action' || h === 'No' ? 'text-center' : 'text-left'}`}>
+                        <th key={i} className={`px-3 py-2.5 text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200 ${h === 'Action' || h === 'No' ? 'text-center' : 'text-left'}`}>
                           {h === 'No' && selectMode && isAdmin
                             ? <input type="checkbox"
                                 checked={selectedIds.size === filteredReviews.length && filteredReviews.length > 0}
@@ -1348,8 +1348,8 @@ function FormReviewPageInner() {
                           {/* Project */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle">
                             <div className="text-xs font-bold text-gray-800 leading-tight break-words">{r.project_name || '—'}</div>
-                            {r.address && <div className="text-[10px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</div>}
-                            <div className="text-[10px] text-gray-500 mt-0.5">{r.created_at ? formatDatetime(r.created_at) : '—'}</div>
+                            {r.address && <div className="text-[11px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</div>}
+                            <div className="text-[11px] text-gray-500 mt-0.5">{r.created_at ? formatDatetime(r.created_at) : '—'}</div>
                           </td>
                           {/* Kategori */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle">
@@ -1358,12 +1358,12 @@ function FormReviewPageInner() {
                           {/* Sales */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle">
                             <div className="text-[12px] font-semibold text-gray-700 truncate max-w-[100px]">{r.sales_name || '—'}</div>
-                            {r.sales_division && <div className="text-[10px] text-purple-600 font-semibold">{r.sales_division}</div>}
+                            {r.sales_division && <div className="text-[11px] text-purple-600 font-semibold">{r.sales_division}</div>}
                           </td>
                           {/* Handler */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle">
                             <div className="flex items-center gap-1">
-                              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0"
+                              <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
                                 style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)' }}>
                                 {r.assign_name?.charAt(0)?.toUpperCase() || '?'}
                               </div>
@@ -1372,7 +1372,7 @@ function FormReviewPageInner() {
                           </td>
                           {/* Product */}
                           <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                            <div className="text-[10px] font-semibold text-gray-700 leading-tight">
+                            <div className="text-[11px] font-semibold text-gray-700 leading-tight">
                               {isDemo ? (r.product_demo || '—') : (r.product_bast || '—')}
                             </div>
                           </td>
@@ -1416,8 +1416,8 @@ function FormReviewPageInner() {
                   </tbody>
                 </table>
                 <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
-                  <span className="text-[10px] text-gray-500">{tableReviews.length} review ditemukan ({switchTab})</span>
-                  <span className="text-[10px] text-gray-500">dari {reviews.length} review keseluruhan</span>
+                  <span className="text-[11px] text-gray-500">{tableReviews.length} review ditemukan ({switchTab})</span>
+                  <span className="text-[11px] text-gray-500">dari {reviews.length} review keseluruhan</span>
                 </div>
                 <Paginasi {...hal} satuan="review" />
               </div>

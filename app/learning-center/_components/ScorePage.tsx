@@ -21,7 +21,7 @@ function aksenDariGradien(kelas: string): string {
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[10px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+    <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
       {children}
     </h3>
   );
@@ -181,7 +181,7 @@ export function ScorePage({ user }: { user: User }) {
                     <DonutChart segments={c.segments} size={68} strokeWidth={9} label={c.label} />
                     <div className="text-center">
                       <p className="text-xs font-bold text-slate-700">{c.title}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5 leading-relaxed">{c.sub}</p>
+                      <p className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">{c.sub}</p>
                     </div>
                   </div>
                 ))}
@@ -279,9 +279,9 @@ export function ScorePage({ user }: { user: User }) {
                             {r.aku ? (
                               <>
                                 <span className="font-semibold text-sm text-indigo-700">{r.nama}</span>
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full border border-indigo-200">KAMU</span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 bg-indigo-100 text-indigo-600 rounded-full border border-indigo-200">KAMU</span>
                                 {r.belumDinilai && (
-                                  <span className="text-[9px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full border border-amber-200">BELUM DINILAI</span>
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full border border-amber-200">BELUM DINILAI</span>
                                 )}
                               </>
                             ) : (
@@ -389,7 +389,7 @@ export function ScorePage({ user }: { user: User }) {
                             <span className={`text-sm font-black ${ps.rank === 1 ? 'text-amber-700' : ps.rank <= 3 ? 'text-slate-600' : 'text-slate-700'}`}>
                               {ps.rank <= 3 ? ['🥇','🥈','🥉'][ps.rank - 1] : `#${ps.rank}`}
                             </span>
-                            <span className="text-[10px] text-slate-500">dari {ps.total}</span>
+                            <span className="text-[11px] text-slate-500">dari {ps.total}</span>
                           </span>
                         : <span className="text-slate-400 text-xs">—</span>}
                     </td>

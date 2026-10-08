@@ -357,11 +357,11 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
             <div className="flex gap-2.5 flex-shrink-0">
               <div className="rounded-xl px-4 py-2.5 text-center min-w-[76px]" style={{ background: 'rgba(0,0,0,0.22)' }}>
                 <p className="text-lg sm:text-2xl font-black text-white leading-none">{menuAktif.length}</p>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-rose-200/80 mt-1">Modul</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-rose-200/80 mt-1">Modul</p>
               </div>
               <div className="rounded-xl px-4 py-2.5 text-center min-w-[76px]" style={{ background: 'rgba(250,204,21,0.9)' }}>
                 <p className="text-sm font-black text-amber-900 leading-none pt-1.5 truncate">{userData.role}</p>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-amber-900/70 mt-1.5">Peran</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-900/70 mt-1.5">Peran</p>
               </div>
             </div>
           </div>
@@ -617,7 +617,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                     {userData.role}
                   </span>
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">Level Akses</p>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-1.5">Level Akses</p>
                     <span className={`inline-flex px-3 py-1.5 rounded-lg text-xs font-bold border ${
                       (userData as { access_level?: string }).access_level === 'full'
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
@@ -654,7 +654,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       );
                     })}
                   </div>
-                  <p className="text-[10px] text-slate-500 leading-relaxed pt-1">
+                  <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
                     Daftar ini ditentukan admin lewat Admin Panel. Untuk menambah akses modul,
                     hubungi admin.
                   </p>
