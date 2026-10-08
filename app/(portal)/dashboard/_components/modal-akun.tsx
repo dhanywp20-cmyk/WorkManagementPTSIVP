@@ -441,7 +441,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                           <input id="f-dashboard-components-modal-akun-10" value={editingUser.phone_number || ''} onChange={e => setEditingUser({ ...editingUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
                         </div>
                       </div>
-                      <MenuPermissionSelector selected={editingUser.allowed_menus ?? ALL_MENU_KEYS} target="edit" />
+                      {MenuPermissionSelector({ selected: editingUser.allowed_menus ?? ALL_MENU_KEYS, target: "edit" })}
                       <div className="flex gap-3 pt-2">
                         <button onClick={handleSaveEdit} disabled={saving} className="flex-1 bg-gradient-to-r from-rose-600 to-rose-700 text-white py-2.5 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                           {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
@@ -577,7 +577,7 @@ export function AccountSettingsModal({ onClose }: AccountSettingsModalProps) {
                 </div>
               </div>
 
-              <MenuPermissionSelector selected={newUser.allowed_menus} target="new" />
+              {MenuPermissionSelector({ selected: newUser.allowed_menus, target: "new" })}
               <button onClick={handleAddUser} disabled={saving}
                 className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                 {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
@@ -1108,7 +1108,7 @@ export function AccountSettingsInline() {
                     </div>
                   )}
                   <div className="formulir:col-span-3">
-                    <MenuPermissionSelector selected={editingUser.allowed_menus ?? ALL_MENU_KEYS} target="edit" />
+                    {MenuPermissionSelector({ selected: editingUser.allowed_menus ?? ALL_MENU_KEYS, target: "edit" })}
                   </div>
                 </div>
                 <div className="flex gap-3 pt-1">
@@ -1236,7 +1236,7 @@ export function AccountSettingsInline() {
                 <input id="f-dashboard-components-modal-akun-38" value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
               </div>
               <div className="formulir:col-span-3">
-                <MenuPermissionSelector selected={newUser.allowed_menus} target="new" />
+                {MenuPermissionSelector({ selected: newUser.allowed_menus, target: "new" })}
               </div>
             </div>
             <button onClick={handleAddUser} disabled={saving}

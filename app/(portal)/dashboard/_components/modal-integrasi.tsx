@@ -619,38 +619,19 @@ export function IntegrasiInline() {
 
       {/* ── Strip kesehatan ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-        <Ubin warna="#0891b2" nama="Dalam Aplikasi"
-          nilai={totalTim ? `${totalTim} dari ${totalTim}` : '—'}
-          lencana="Selalu aktif" jenis="ok"
-          ket="Lonceng & banner di portal. Tidak perlu disiapkan." />
-        <Ubin warna="#16a34a" nama="WhatsApp"
-          nilai={totalTim ? `${timWA} dari ${totalTim}` : '—'}
-          lencana={!p.aktif.whatsapp ? 'Kanal masih mati'
+        {Ubin({ warna: "#0891b2", nama: "Dalam Aplikasi", nilai: totalTim ? `${totalTim} dari ${totalTim}` : '—', lencana: "Selalu aktif", jenis: "ok", ket: "Lonceng & banner di portal. Tidak perlu disiapkan." })}
+        {Ubin({ warna: "#16a34a", nama: "WhatsApp", nilai: totalTim ? `${timWA} dari ${totalTim}` : '—', lencana: !p.aktif.whatsapp ? 'Kanal masih mati'
                    : koneksi.whatsapp.keadaan === 'terhubung' ? `${spWA.label} tersambung`
-                   : koneksi.whatsapp.keadaan === 'memuat' ? 'Mengecek…' : 'Belum tersambung'}
-          jenis={!p.aktif.whatsapp ? 'warn'
-                 : koneksi.whatsapp.keadaan === 'terhubung' ? 'ok' : koneksi.whatsapp.keadaan === 'memuat' ? 'diam' : 'warn'}
-          ket={!p.aktif.whatsapp ? 'Saklar kanalnya belum dinyalakan.'
+                   : koneksi.whatsapp.keadaan === 'memuat' ? 'Mengecek…' : 'Belum tersambung', jenis: !p.aktif.whatsapp ? 'warn'
+                 : koneksi.whatsapp.keadaan === 'terhubung' ? 'ok' : koneksi.whatsapp.keadaan === 'memuat' ? 'diam' : 'warn', ket: !p.aktif.whatsapp ? 'Saklar kanalnya belum dinyalakan.'
                : tanpaWA.length ? `Belum punya nomor: ${tanpaWA.slice(0, 2).join(', ')}${tanpaWA.length > 2 ? ` +${tanpaWA.length - 2}` : ''}.`
-                                : 'Semua anggota punya nomor.'} />
-        <Ubin warna="#0088cc" nama="Telegram"
-          nilai={totalTim ? `${timTG} dari ${totalTim}` : '—'}
-          lencana={!p.aktif.telegram ? 'Kanal masih mati'
+                                : 'Semua anggota punya nomor.' })}
+        {Ubin({ warna: "#0088cc", nama: "Telegram", nilai: totalTim ? `${timTG} dari ${totalTim}` : '—', lencana: !p.aktif.telegram ? 'Kanal masih mati'
                    : koneksi.telegram.keadaan === 'terhubung' ? `@${koneksi.telegram.info}`
-                   : koneksi.telegram.keadaan === 'memuat' ? 'Mengecek…' : 'Bot belum siap'}
-          jenis={!p.aktif.telegram || koneksi.telegram.keadaan === 'putus' ? 'warn'
-                 : koneksi.telegram.keadaan === 'memuat' ? 'diam' : 'ok'}
-          ket={!p.aktif.telegram ? 'Saklar kanalnya belum dinyalakan.' : 'Tiap orang menghubungkan akunnya sendiri.'} />
-        <Ubin warna="#e11d48" nama="Push Notifikasi"
-          nilai={pushInfo === null ? '—' : pushInfo.aktif ? `${pushInfo.jumlahPerangkat} perangkat` : 'Belum aktif'}
-          lencana={pushInfo?.aktif ? 'Aktif' : 'Perlu diaktifkan'}
-          jenis={pushInfo?.aktif ? 'ok' : 'warn'}
-          ket={pushInfo?.aktif ? 'Bunyi + notifikasi sistem walau app HP tertutup.' : 'Aktifkan sekali - berlaku untuk semua orang.'} />
-        <Ubin warna={belumTG > 0 ? '#f59e0b' : '#16a34a'} nama="Perlu tindakan"
-          nilai={belumTG > 0 ? `${belumTG} anggota` : 'Tidak ada'}
-          lencana={belumTG > 0 ? 'Belum hubungkan Telegram' : 'Semua siap'}
-          jenis={belumTG > 0 ? 'warn' : 'ok'}
-          ket={belumTG > 0 ? 'Telegram wajib dihubungkan sendiri oleh tiap orang.' : 'Seluruh tim bisa dijangkau.'} />
+                   : koneksi.telegram.keadaan === 'memuat' ? 'Mengecek…' : 'Bot belum siap', jenis: !p.aktif.telegram || koneksi.telegram.keadaan === 'putus' ? 'warn'
+                 : koneksi.telegram.keadaan === 'memuat' ? 'diam' : 'ok', ket: !p.aktif.telegram ? 'Saklar kanalnya belum dinyalakan.' : 'Tiap orang menghubungkan akunnya sendiri.' })}
+        {Ubin({ warna: "#e11d48", nama: "Push Notifikasi", nilai: pushInfo === null ? '—' : pushInfo.aktif ? `${pushInfo.jumlahPerangkat} perangkat` : 'Belum aktif', lencana: pushInfo?.aktif ? 'Aktif' : 'Perlu diaktifkan', jenis: pushInfo?.aktif ? 'ok' : 'warn', ket: pushInfo?.aktif ? 'Bunyi + notifikasi sistem walau app HP tertutup.' : 'Aktifkan sekali - berlaku untuk semua orang.' })}
+        {Ubin({ warna: belumTG > 0 ? '#f59e0b' : '#16a34a', nama: "Perlu tindakan", nilai: belumTG > 0 ? `${belumTG} anggota` : 'Tidak ada', lencana: belumTG > 0 ? 'Belum hubungkan Telegram' : 'Semua siap', jenis: belumTG > 0 ? 'warn' : 'ok', ket: belumTG > 0 ? 'Telegram wajib dihubungkan sendiri oleh tiap orang.' : 'Seluruh tim bisa dijangkau.' })}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[190px_1fr] gap-3 items-start">

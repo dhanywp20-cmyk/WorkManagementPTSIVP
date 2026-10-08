@@ -23,7 +23,7 @@ export default [
       //  biasa. Dijadikan peringatan supaya terlihat & dibereskan saat berkasnya disentuh.
       'react-hooks/set-state-in-effect': 'warn',
       'react-hooks/immutability': 'warn',
-      'react-hooks/static-components': 'warn',
+      'react-hooks/static-components': 'error', // 0 pelanggaran sejak 2026-10-08 - jaga tetap 0
       'react-hooks/refs': 'warn',
       'react-hooks/preserve-manual-memoization': 'warn',
       'react-hooks/purity': 'warn',

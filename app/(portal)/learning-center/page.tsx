@@ -155,7 +155,7 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
           modul lain: polos bila "Netral", foto bila "Gambar".
         */}
         <div className="flex-1 overflow-y-auto" {...(hanyaLihat ? { 'data-hanya-lihat': '' } : {})}>
-          {loading ? <LoadingView /> : (
+          {loading ? LoadingView() : (
             <div key={contentKey} className="lc-page-enter">
               {isAdmin ? (
                 <>

@@ -468,14 +468,14 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
       </div>
 
       {/* Kebutuhan */}
-      <Chips label="Kebutuhan *" opts={['Signage','Immersive','Meeting Room','Mapping','Command Center','Hybrid Classroom']} value={room.kebutuhan} field="kebutuhan" multi={false} />
+      {Chips({ label: "Kebutuhan *", opts: ['Signage','Immersive','Meeting Room','Mapping','Command Center','Hybrid Classroom'], value: room.kebutuhan, field: "kebutuhan", multi: false })}
       <div className="mb-4">
         <input value={room.kebutuhan_other} onChange={e => onUpdate({ kebutuhan_other: e.target.value })} placeholder="Other kebutuhan..."
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400" />
       </div>
 
       {/* Solution Product */}
-      <Chips label="Solution Product *" opts={['Videowall','Signage Display','Videotron','Projector','Kiosk','IFP']} value={room.solution_product} field="solution_product" />
+      {Chips({ label: "Solution Product *", opts: ['Videowall','Signage Display','Videotron','Projector','Kiosk','IFP'], value: room.solution_product, field: "solution_product" })}
       <div className="mb-4">
         <input value={room.solution_other} onChange={e => onUpdate({ solution_other: e.target.value })} placeholder="Other solution..."
           className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400" />
@@ -532,8 +532,8 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
       {/* Layout Signage — only if Signage selected */}
       {room.kebutuhan.includes('Signage') && (
         <div className="mb-4 pt-2 border-t border-gray-100">
-          <Chips label="Layout Signage" opts={['Single Zone','Multi Zone','Full Screen','Custom Layout']} value={room.layout_signage} field="layout_signage" />
-          <Chips label="Jaringan CMS" opts={['Cloud','Onpremise','USB']} value={room.jaringan_cms} field="jaringan_cms" />
+          {Chips({ label: "Layout Signage", opts: ['Single Zone','Multi Zone','Full Screen','Custom Layout'], value: room.layout_signage, field: "layout_signage" })}
+          {Chips({ label: "Jaringan CMS", opts: ['Cloud','Onpremise','USB'], value: room.jaringan_cms, field: "jaringan_cms" })}
           <div className="grid grid-cols-2 gap-3 mt-1">
             <div><label htmlFor="f-form-require-project-components-modals-4" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Input</label><input id="f-form-require-project-components-modals-4" value={room.jumlah_input} onChange={e => onUpdate({jumlah_input:e.target.value})} placeholder="e.g. 4" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>
             <div><label htmlFor="f-form-require-project-components-modals-5" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Output</label><input id="f-form-require-project-components-modals-5" value={room.jumlah_output} onChange={e => onUpdate({jumlah_output:e.target.value})} placeholder="e.g. 2" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>
@@ -543,7 +543,7 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
 
       {/* Source */}
       <div className="mb-4 pt-2 border-t border-gray-100">
-        <Chips label="Source" opts={['PC / Mini PC','Laptop','URL Dashboard','NVR CCTV','Media Player','IPTV','Set Top Box']} value={room.source} field="source" />
+        {Chips({ label: "Source", opts: ['PC / Mini PC','Laptop','URL Dashboard','NVR CCTV','Media Player','IPTV','Set Top Box'], value: room.source, field: "source" })}
         <div className="flex gap-3 mb-3">
           {room.source.includes('Laptop') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-6" className="block text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-1">Qty Laptop</label><input id="f-form-require-project-components-modals-6" type="number" min="1" value={room.source_laptop_qty} onChange={e=>onUpdate({source_laptop_qty:e.target.value})} placeholder="1" className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm bg-amber-50 outline-none focus:border-amber-400"/></div>}
           {room.source.includes('PC / Mini PC') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-7" className="block text-[11px] font-bold text-blue-600 uppercase tracking-widest mb-1">Qty PC</label><input id="f-form-require-project-components-modals-7" type="number" min="1" value={room.source_pc_qty} onChange={e=>onUpdate({source_pc_qty:e.target.value})} placeholder="1" className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm bg-blue-50 outline-none focus:border-blue-400"/></div>}
@@ -559,24 +559,24 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
           Semua dipasangkan supaya ritmenya sama. */}
       <div className="pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
       <div>
-        <YN label="Camera Conference" field="camera_conference" value={room.camera_conference}/>
+        {YN({ label: "Camera Conference", field: "camera_conference", value: room.camera_conference })}
         {room.camera_conference==='Yes' && <div className="ml-4 mb-4 space-y-3 border-l-2 border-teal-200 pl-4">
           <div>
             <label htmlFor="f-form-require-project-components-modals-8" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Camera</label>
             <input id="f-form-require-project-components-modals-8" value={room.camera_jumlah} onChange={e=>onUpdate({camera_jumlah:e.target.value})} placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/>
           </div>
-          <Chips label="Tipe Tracking" opts={['Auto Tracking','Manual PTZ','Fixed']} value={room.camera_tracking} field="camera_tracking"/>
+          {Chips({ label: "Tipe Tracking", opts: ['Auto Tracking','Manual PTZ','Fixed'], value: room.camera_tracking, field: "camera_tracking" })}
         </div>}
       </div>
 
       <div>
-        <YN label="Audio System" field="audio_system" value={room.audio_system}/>
+        {YN({ label: "Audio System", field: "audio_system", value: room.audio_system })}
         {room.audio_system==='Yes' && <div className="ml-4 mb-4 space-y-3 border-l-2 border-teal-200 pl-4">
           <div>
             <label htmlFor="f-form-require-project-components-modals-9" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Mixer / DSP</label>
             <input id="f-form-require-project-components-modals-9" value={room.audio_mixer} onChange={e=>onUpdate({audio_mixer:e.target.value})} placeholder="e.g. Yamaha QL1, QSC, etc." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/>
           </div>
-          <Chips label="Audio Detail" opts={['Speaker Ceiling','Speaker Line Array','Subwoofer','Microphone','Amplifier']} value={room.audio_detail} field="audio_detail"/>
+          {Chips({ label: "Audio Detail", opts: ['Speaker Ceiling','Speaker Line Array','Subwoofer','Microphone','Amplifier'], value: room.audio_detail, field: "audio_detail" })}
         </div>}
       </div>
       </div>
@@ -584,14 +584,14 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
       {/* Wallplate + Tabletop — 2 col */}
       <div className="pt-2 border-t border-gray-100 grid grid-cols-2 gap-3">
         <div>
-          <YN label="Wallplate Input" field="wallplate_input" value={room.wallplate_input}/>
+          {YN({ label: "Wallplate Input", field: "wallplate_input", value: room.wallplate_input })}
           {room.wallplate_input==='Yes' && <div className="ml-4 border-l-2 border-teal-200 pl-4 mb-4">
             <label htmlFor="f-form-require-project-components-modals-10" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Wallplate</label>
             <input id="f-form-require-project-components-modals-10" value={room.wallplate_jumlah} onChange={e=>onUpdate({wallplate_jumlah:e.target.value})} placeholder="e.g. 3 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/>
           </div>}
         </div>
         <div>
-          <YN label="Tabletop Input" field="tabletop_input" value={room.tabletop_input}/>
+          {YN({ label: "Tabletop Input", field: "tabletop_input", value: room.tabletop_input })}
           {room.tabletop_input==='Yes' && <div className="ml-4 border-l-2 border-teal-200 pl-4 mb-4">
             <label htmlFor="f-form-require-project-components-modals-11" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Tabletop</label>
             <input id="f-form-require-project-components-modals-11" value={room.tabletop_jumlah} onChange={e=>onUpdate({tabletop_jumlah:e.target.value})} placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/>
@@ -602,17 +602,17 @@ export function RoomSection({ room, rIdx, onUpdate, onRemove, brandPicMappings, 
       {/* Wireless + Controller — 2 kolom, alasan sama dengan Camera+Audio di atas. */}
       <div className="pt-2 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
       <div>
-        <YN label="Wireless Presentation" field="wireless_presentation" value={room.wireless_presentation}/>
+        {YN({ label: "Wireless Presentation", field: "wireless_presentation", value: room.wireless_presentation })}
         {room.wireless_presentation==='Yes' && <div className="ml-4 mb-4 space-y-3 border-l-2 border-teal-200 pl-4">
-          <Chips label="Wireless Mode" opts={['Aplikasi','AirPlay','Miracast','Chromecast','BYOM']} value={room.wireless_mode} field="wireless_mode"/>
-          <YN label="Dongle" field="wireless_dongle" value={room.wireless_dongle}/>
+          {Chips({ label: "Wireless Mode", opts: ['Aplikasi','AirPlay','Miracast','Chromecast','BYOM'], value: room.wireless_mode, field: "wireless_mode" })}
+          {YN({ label: "Dongle", field: "wireless_dongle", value: room.wireless_dongle })}
         </div>}
       </div>
 
       <div>
-        <YN label="Controller / Automation" field="controller_automation" value={room.controller_automation}/>
+        {YN({ label: "Controller / Automation", field: "controller_automation", value: room.controller_automation })}
         {room.controller_automation==='Yes' && <div className="ml-4 mb-4 border-l-2 border-teal-200 pl-4">
-          <Chips label="Controller Type" opts={['Cue','Wyrestorm','Extron','Custom']} value={room.controller_type} field="controller_type"/>
+          {Chips({ label: "Controller Type", opts: ['Cue','Wyrestorm','Extron','Custom'], value: room.controller_type, field: "controller_type" })}
         </div>}
       </div>
       </div>

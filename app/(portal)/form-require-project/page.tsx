@@ -1814,7 +1814,7 @@ Hubungi Admin untuk info lebih lanjut.
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-cover bg-center bg-fixed bg-no-repeat" style={{ background: 'var(--latar-halaman)' }}>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
-      <NotifToast />
+      {NotifToast()}
 
 
       {showNewFormModal && (
