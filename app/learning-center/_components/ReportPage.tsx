@@ -68,7 +68,7 @@ export function ReportPage({ currentUser, initialSessionId, onSessionConsumed }:
       }
       const rows = attempts ?? [];
       const userIds = [...new Set(rows.map((r: any) => r.user_id).filter(Boolean))];
-      let userMap: Record<string, any> = {};
+      const userMap: Record<string, any> = {};
       if (userIds.length > 0) {
         const { data: us } = await supabase
           .from('users').select('id, full_name, username, jabatan, role, sales_division').in('id', userIds);

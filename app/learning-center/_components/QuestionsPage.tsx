@@ -226,7 +226,7 @@ export function QuestionsPage({ user }: { user: User }) {
 
       // Robust JSON extraction
       // 1. Strip all markdown code fences (```json, ```javascript, ```, etc.)
-      let cleanText = text
+      const cleanText = text
         .replace(/```[\w]*\n?/gi, '')  // opening fence with optional lang tag
         .replace(/```/g, '')            // any remaining closing fences
         .trim();

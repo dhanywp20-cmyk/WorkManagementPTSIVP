@@ -428,7 +428,7 @@ export async function kelompokTerpakai(): Promise<Record<string, number>> {
 
 // Jembatan React
 
-function pakai<T>(ambil: () => T): T {
+function usePakai<T>(ambil: () => T): T {
   const [nilai, setNilai] = useState<T>(ambil);
   useEffect(() => {
     const segarkan = () => setNilai(ambil());
@@ -440,8 +440,8 @@ function pakai<T>(ambil: () => T): T {
   return nilai;
 }
 
-export function useKelompok(): Kelompok[] { return pakai(semuaKelompok); }
-export function useKelompokPTS(): Kelompok[] { return pakai(kelompokPTS); }
-export function useKelompokPTSDitugaskan(): Kelompok[] { return pakai(kelompokPTSDitugaskan); }
-export function useKelompokCabang(): Kelompok[] { return pakai(kelompokCabang); }
-export function useLingkupManager(): LingkupManager { return pakai(lingkupManager); }
+export function useKelompok(): Kelompok[] { return usePakai(semuaKelompok); }
+export function useKelompokPTS(): Kelompok[] { return usePakai(kelompokPTS); }
+export function useKelompokPTSDitugaskan(): Kelompok[] { return usePakai(kelompokPTSDitugaskan); }
+export function useKelompokCabang(): Kelompok[] { return usePakai(kelompokCabang); }
+export function useLingkupManager(): LingkupManager { return usePakai(lingkupManager); }

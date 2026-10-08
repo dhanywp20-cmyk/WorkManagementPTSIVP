@@ -879,8 +879,8 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
             : Promise.resolve({ data: [] }),
         ]);
 
-      let tickets   = (ticketsRes.data   ?? []) as any[];
-      let reminders = (remindersRes.data ?? []) as any[];
+      const tickets   = (ticketsRes.data   ?? []) as any[];
+      const reminders = (remindersRes.data ?? []) as any[];
       let movements = (movRes.data       ?? []) as any[];
       const actLogs       = (actLogsRes.data     ?? []) as any[];
       const piketHolidays = (piketHolidaysRes.data ?? []).map((h: any) => h.date as string);

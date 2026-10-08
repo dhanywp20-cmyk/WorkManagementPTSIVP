@@ -151,7 +151,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
         //  bukan dicari di dalam `list`; kalau tidak, kelompoknya muncul
         //  tanpa nama untuk atasan yang bukan anggota team.
         const idAtasan = Array.from(new Set(list.map(m => m.atasanId).filter(Boolean))) as string[];
-        let peta: Record<string, { nama: string; jabatan: string }> = {};
+        const peta: Record<string, { nama: string; jabatan: string }> = {};
         if (idAtasan.length) {
           const { data: bos } = await ingat(`users:atasan:${[...idAtasan].sort().join(',')}`, () => supabase.from('users').select('id, full_name, jabatan').in('id', idAtasan));
           (bos ?? []).forEach((b: any) => { peta[b.id] = { nama: b.full_name ?? '—', jabatan: b.jabatan ?? '' }; });

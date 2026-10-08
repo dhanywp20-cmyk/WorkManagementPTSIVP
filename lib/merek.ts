@@ -386,7 +386,7 @@ const pendengar = new Set<() => void>();
 
 function beriTahuPendengar(): void { for (const f of pendengar) f(); }
 
-function pakaiPengaturan<T>(ambil: () => T): T {
+function usePengaturan<T>(ambil: () => T): T {
   const [nilai, setNilai] = useState<T>(ambil);
   useEffect(() => {
     const segarkan = () => setNilai(ambil());
@@ -401,7 +401,7 @@ function pakaiPengaturan<T>(ambil: () => T): T {
 }
 
 /** Merek yang sedang berlaku, ikut berubah saat pengaturan disimpan. */
-export function useMerek(): Merek { return pakaiPengaturan(merek); }
+export function useMerek(): Merek { return usePengaturan(merek); }
 
 /** Daftar divisi sales yang sedang berlaku. Tidak pernah kosong. */
-export function useDivisiSales(): string[] { return pakaiPengaturan(divisiSales); }
+export function useDivisiSales(): string[] { return usePengaturan(divisiSales); }

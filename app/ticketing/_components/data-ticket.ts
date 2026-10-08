@@ -95,7 +95,7 @@ export async function ambilTiketUntuk(
       const { data: ivpDivMaps } = await supabase.from("division_ivp_mappings").select("sales_division, brand_type").eq("ivp_id", resolvedUser.id);
       const myBrandMaps = (ivpDivMaps ?? []) as { sales_division: string; brand_type: string | null }[];
       const handledDivisions = Array.from(new Set(myBrandMaps.map(m => m.sales_division)));
-      let ivpTickets: Ticket[] = [...ownBase];
+      const ivpTickets: Ticket[] = [...ownBase];
       const addIVP = (t: Ticket) => { if (!ivpTickets.find(x => x.id === t.id)) ivpTickets.push(t); };
       if (handledDivisions.length > 0) {
         const { data: divTickets } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).in("sales_division", handledDivisions).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
@@ -117,7 +117,7 @@ export async function ambilTiketUntuk(
       return { tickets: ivpTickets, periksaPilihan: true };
     } else {
       // Non-IVP guest: mulai dari semua ticket milik sendiri (sudah di ownBase)
-      let finalTickets: Ticket[] = [...ownBase];
+      const finalTickets: Ticket[] = [...ownBase];
       const addUnique = (t: Ticket) => { if (!finalTickets.find(x => x.id === t.id)) finalTickets.push(t); };
 
       // Cek apakah user terdaftar sebagai supervisor di division_supervisor_mappings
