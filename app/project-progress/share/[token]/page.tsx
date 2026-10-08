@@ -60,7 +60,7 @@ export default function ProyekSharePage({ params }: { params: { token: string } 
   const st = data ? (STATUS_PROYEK[data.proyek.status] ?? STATUS_PROYEK.in_progress) : null;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--halaman)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--latar-halaman)' }}>
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">

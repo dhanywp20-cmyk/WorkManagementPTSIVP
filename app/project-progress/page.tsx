@@ -143,7 +143,7 @@ export default function ProjectProgressPage() {
   const saringKartu = (k: Saring) => () => setSaring(s => (s === k ? 'semua' : k));
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--halaman)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--latar-halaman)' }}>
       <Toast notif={toast} />
       <PageHeader icon="📊" title="Project Progress" color={TEMA.warna} colorLight={TEMA.warnaTua}
         subtitle="Checklist pekerjaan per proyek & lokasi · tim mencentang langsung dari lapangan">

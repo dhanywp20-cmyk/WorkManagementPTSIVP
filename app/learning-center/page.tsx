@@ -150,14 +150,11 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
           : <TeamTopNav view={teamView} onChange={changeTeamView} />}
 
         {/*
-          bg-slate-50 DISENGAJA - tanpa ini, latar foto gedung di pembungkus
-          luar (baris backgroundImage di atas) tembus lewat kartu-kartu
-          bg-white/90 yang transparan DAN lewat area kosong di bawah konten
-          pendek (mis. layar hasil quiz, tabel riwayat yang cuma sebaris) -
-          terlihat seperti bug tampilan padahal fotonya memang selalu ada di
-          sana, cuma baru kelihatan begitu kontennya tidak penuh satu layar.
+          Tanpa warna latar sendiri - latar halaman (var(--latar-halaman) di
+          pembungkus luar) diatur terpusat di Admin Panel > Merek, sama seperti
+          modul lain: polos bila "Netral", foto bila "Gambar".
         */}
-        <div className="flex-1 overflow-y-auto bg-slate-50" {...(hanyaLihat ? { 'data-hanya-lihat': '' } : {})}>
+        <div className="flex-1 overflow-y-auto" {...(hanyaLihat ? { 'data-hanya-lihat': '' } : {})}>
           {loading ? <LoadingView /> : (
             <div key={contentKey} className="lc-page-enter">
               {isAdmin ? (
