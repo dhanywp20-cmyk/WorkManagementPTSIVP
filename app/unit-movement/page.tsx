@@ -421,7 +421,7 @@ function UnitMovementPageInner() {
               <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">{loading?'…':filteredLogs.length}</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <input className="px-3 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white transition-all w-52"
+              <input aria-label="Cari project, type, SN, pihak luar" className="px-3 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white transition-all w-52"
                 placeholder="Project / Type / SN / Pihak Luar..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
               <select aria-label="Semua Status" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={filterStatus} onChange={e=>setFilterStatus(e.target.value as any)}>

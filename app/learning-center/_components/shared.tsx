@@ -192,6 +192,7 @@ export function SearchInput({ value, onChange, placeholder }: { value: string; o
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder ?? 'Cari...'}
+        aria-label={placeholder ?? 'Cari'}
         className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white w-full sm:w-64"
       />
     </div>
