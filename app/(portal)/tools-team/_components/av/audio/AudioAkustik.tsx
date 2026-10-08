@@ -5,21 +5,28 @@
  */
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
-import { type KodeMaterial, MATERIAL_AKUSTIK, rt60Sabine, serapanTambahanM2, TARGET_RT60 } from '@/lib/av-audio-jaringan';
+import { MATERIAL_AKUSTIK, rt60Sabine, serapanTambahanM2, TARGET_RT60 } from '@/lib/av-audio-jaringan';
+import { angkaDari } from '@/lib/pustaka';
+import { usePustaka } from '../../pustaka/usePustaka';
 import { useState } from 'react';
 
-interface Tambahan { material: KodeMaterial; luas: number }
-const koef = (m: KodeMaterial) => MATERIAL_AKUSTIK.find(x => x.v === m)!.a;
-const namaMat = (m: KodeMaterial) => MATERIAL_AKUSTIK.find(x => x.v === m)!.l;
-const OPSI_MAT = MATERIAL_AKUSTIK.map(m => ({ v: m.v as KodeMaterial, l: `${m.l} (α ${m.a})` }));
+/** Material diacu lewat NAMA - daftarnya dari Pustaka (material-akustik), bawaan kode bila kosong. */
+interface Tambahan { material: string; luas: number }
+const namaMat = (m: string) => m;
 const CATATAN = 'RT60 Sabine dengan koefisien serap tipikal 500 Hz - perkiraan awal untuk ruang berbentuk kotak. Permukaan tambahan (kaca, panel akustik, gorden) mengganti sebagian dinding dengan luas yang sama. Panel akustik paling efektif di dinding belakang & titik pantul samping; ruang video conference sebaiknya ≤ 0,6 s.';
 
 export function AudioAkustik() {
+  const { entri } = usePustaka('material-akustik');
+  const bahan = entri.length ? entri.map(e => ({ l: e.nama, a: angkaDari(e, 'a') })) : MATERIAL_AKUSTIK.map(m => ({ l: m.l, a: m.a }));
+  const koef = (m: string) => bahan.find(b => b.l === m)?.a ?? MATERIAL_AKUSTIK.find(x => x.l === m)?.a ?? 0.05;
+  const OPSI_MAT = bahan.map(b => ({ v: b.l, l: `${b.l} (α ${b.a})` }));
+  //  Panel akustik untuk saran luas: entri "Panel akustik" di pustaka, bila tidak ada α 0,9.
+  const aPanel = bahan.find(b => /panel akustik/i.test(b.l))?.a ?? 0.9;
   const [p, setP] = useState(8); const [l, setL] = useState(6); const [t, setT] = useState(3);
-  const [lantai, setLantai] = useState<KodeMaterial>('keramik');
-  const [plafon, setPlafon] = useState<KodeMaterial>('gipsum');
-  const [dinding, setDinding] = useState<KodeMaterial>('beton');
-  const [tambahan, setTambahan] = useState<Tambahan[]>([{ material: 'kaca', luas: 12 }]);
+  const [lantai, setLantai] = useState('Keramik / granit');
+  const [plafon, setPlafon] = useState('Gipsum');
+  const [dinding, setDinding] = useState('Beton / bata plester');
+  const [tambahan, setTambahan] = useState<Tambahan[]>([{ material: 'Kaca', luas: 12 }]);
   const [orang, setOrang] = useState(10);
   const [jenis, setJenis] = useState('meeting');
   const luasLantai = p * l, luasDinding = 2 * (p + l) * t;
@@ -33,8 +40,8 @@ export function AudioAkustik() {
   const h = rt60Sabine(volume, permukaan, orang);
   const tg = TARGET_RT60[jenis];
   const tambahSerap = serapanTambahanM2(volume, h.serapanM2, tg.maks);
-  //  Panel akustik 50 mm (α 0,9) di atas dinding: tiap m² menambah 0,9 − α dinding.
-  const panelM2 = tambahSerap > 0 ? tambahSerap / Math.max(0.05, 0.9 - koef(dinding)) : 0;
+  //  Panel akustik di atas dinding: tiap m² menambah α panel − α dinding.
+  const panelM2 = tambahSerap > 0 ? tambahSerap / Math.max(0.05, aPanel - koef(dinding)) : 0;
   const status = h.rt60 > tg.maks ? 'terlalu bergema' : h.rt60 < tg.min ? 'terlalu "mati"' : 'sesuai target';
   const ubah = (i: number, x: Partial<Tambahan>) => setTambahan(a => a.map((v, j) => (j === i ? { ...v, ...x } : v)));
   const ringkas = () => `Ruang ${p}×${l}×${t} m (${f(volume, 0)} m³), ${orang} orang: RT60 ±${f(h.rt60, 2)} s (${tg.l}: ${tg.min}-${tg.maks} s) - ${status}${panelM2 > 0 ? `; tambah ±${f(panelM2, 1)} m² panel akustik` : ''}.`;
@@ -67,7 +74,7 @@ export function AudioAkustik() {
                 className="h-[38px] rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-700">✕</button>
             </div>
           ))}
-          <button type="button" onClick={() => setTambahan(a => [...a, { material: 'panel-akustik', luas: 6 }])}
+          <button type="button" onClick={() => setTambahan(a => [...a, { material: bahan.find(b => /panel akustik/i.test(b.l))?.l ?? bahan[bahan.length - 1].l, luas: 6 }])}
             className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-50">+ Tambah permukaan</button>
           <div className="grid grid-cols-2 gap-3">
             <Angka label="Jumlah orang" nilai={orang} onUbah={v => v >= 0 && setOrang(Math.round(v))} step={1} />

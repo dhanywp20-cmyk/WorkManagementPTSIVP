@@ -8,6 +8,8 @@ import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../bersama/
 import { aksiLembar, lembarAV } from './lembar';
 import { hitungPoE, KELAS_POE, type KodePoE } from '@/lib/av-audio-jaringan';
 import { useState } from 'react';
+import { angkaDari, teksDari } from '@/lib/pustaka';
+import { PilihPustaka } from '../pustaka/PilihPustaka';
 
 interface PerangkatPoE { nama: string; watt: number; jumlah: number; kelas: KodePoE }
 const AWAL: PerangkatPoE[] = [
@@ -57,6 +59,10 @@ export function KalkulatorPoE() {
           })}
           <button type="button" onClick={() => setDaftar(a => [...a, { nama: 'Perangkat baru', watt: 10, jumlah: 1, kelas: 'af' }])}
             className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-50">+ Tambah perangkat</button>
+          <PilihPustaka jenis="perangkat-poe" label="Tambah perangkat dari Pustaka" onPilih={e => {
+            const k = teksDari(e, 'kelas'); const kelas = (KELAS_POE.some(x => x.v === k) ? k : 'af') as KodePoE;
+            setDaftar(a => [...a, { nama: e.nama, watt: angkaDari(e, 'watt'), jumlah: 1, kelas }]);
+          }} />
         </div>
       </Kartu>
       <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Kebutuhan PoE')} />}>

@@ -7,6 +7,7 @@ import { getSession, startSessionWatcher } from '@/lib/auth';
 import { Ikon } from '@/components/shared/Ikon';
 import { KalkulatorLED, type SubLED } from './_components/KalkulatorLED';
 import { KalkulatorAV } from './_components/KalkulatorAV';
+import { Pustaka } from './_components/Pustaka';
 
 //  three.js (~600 KB) hanya diunduh saat alat Desain 3D dibuka.
 const Desain3D = dynamic(() => import('./_components/Desain3D'), {
@@ -18,7 +19,8 @@ const Desain3D = dynamic(() => import('./_components/Desain3D'), {
 const ALAT = [
   { k: '3d', judul: 'Desain 3D Ruang', ket: 'Tata letak ruang AV + analisis jarak pandang', ikon: '🧊', C: Desain3D },
   { k: 'led', judul: 'LED Videotron', ket: 'Calculator LED, Screen & Power Connection, daftar material & penawaran', ikon: '📺', C: KalkulatorLED },
-  { k: 'av', judul: 'Kalkulator AV', ket: 'Ukuran layar, proyektor, bandwidth sinyal, audio, daya & panas', ikon: '🧮', C: KalkulatorAV },
+  { k: 'av', judul: 'Kalkulator AV', ket: 'Ukuran layar, proyektor, sinyal & jaringan AV, audio & akustik, daya, rak, PoE', ikon: '🧮', C: KalkulatorAV },
+  { k: 'pustaka', judul: 'Pustaka', ket: 'Katalog produk, data acuan & artikel panduan tim - diisi Admin, dipakai kalkulator', ikon: '📚', C: Pustaka },
 ] as const;
 
 function ToolsKerjaInner() {

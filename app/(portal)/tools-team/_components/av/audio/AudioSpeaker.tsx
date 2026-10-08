@@ -4,6 +4,8 @@ import { Angka, Catatan, f, Kartu, Nilai, Segmen, TombolSalin } from '../../bers
 import { aksiLembar, lembarAV } from '../lembar';
 import { speakerPlafon, splMaks, splPadaJarak } from '@/lib/av-hitung';
 import { dayaUntukSPL } from '@/lib/av-audio-jaringan';
+import { angkaDari } from '@/lib/pustaka';
+import { PilihPustaka } from '../../pustaka/PilihPustaka';
 import { useState } from 'react';
 
 export function AudioSpeaker() {
@@ -26,6 +28,10 @@ export function AudioSpeaker() {
       <Kartu judul="Masukan">
         <div className="space-y-3">
           <Segmen nilai={mode} onUbah={setMode} opsi={[{ v: 'plafon', l: 'Speaker plafon' }, { v: 'spl', l: 'SPL & jarak' }]} />
+          <PilihPustaka jenis="speaker" label="Speaker dari Pustaka" onPilih={e => {
+            setSens(angkaDari(e, 'sensitivitas', sens));
+            const s = angkaDari(e, 'sudut', 0); if (s > 10 && s < 180) setSudut(s);
+          }} />
           {mode === 'plafon' ? (
             <div className="grid grid-cols-2 gap-3">
               <Angka label="Panjang ruang" nilai={p} onUbah={v => v > 0 && setP(v)} satuan="m" />

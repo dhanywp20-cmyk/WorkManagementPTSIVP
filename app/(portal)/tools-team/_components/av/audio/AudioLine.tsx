@@ -7,6 +7,8 @@ import { Angka, Catatan, f, Kartu, Nilai, Segmen, TombolSalin } from '../../bers
 import { aksiLembar, lembarAV } from '../lembar';
 import { amplifierLine, rugiKabel, saranKabel } from '@/lib/av-audio-jaringan';
 import { useState } from 'react';
+import { tapPertama } from '@/lib/pustaka';
+import { PilihPustaka } from '../../pustaka/PilihPustaka';
 
 interface Tap { nama: string; watt: number; jumlah: number }
 const AWAL: Tap[] = [{ nama: 'Speaker plafon', watt: 6, jumlah: 12 }, { nama: 'Speaker dinding', watt: 15, jumlah: 4 }];
@@ -53,6 +55,8 @@ export function AudioLine() {
           ))}
           <button type="button" onClick={() => setTap(t => [...t, { nama: 'Speaker baru', watt: 10, jumlah: 1 }])}
             className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-50">+ Tambah speaker</button>
+          <PilihPustaka jenis="speaker" label="Tambah speaker dari Pustaka" saring={e => tapPertama(e) > 0}
+            onPilih={e => setTap(t => [...t, { nama: e.nama, watt: tapPertama(e), jumlah: 1 }])} />
           <div className="grid grid-cols-2 gap-3 pt-2">
             <Angka label="Panjang kabel (terjauh)" nilai={panjang} onUbah={x => x > 0 && setPanjang(x)} satuan="m" />
             <Angka label="Luas penampang" nilai={luas} onUbah={x => x > 0 && setLuas(x)} satuan="mm²" />

@@ -6,17 +6,22 @@
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
 import { ALIRAN_IP, danteMbps, saranLink } from '@/lib/av-audio-jaringan';
+import { angkaDari } from '@/lib/pustaka';
+import { usePustaka } from '../../pustaka/usePustaka';
 import { useState } from 'react';
 
-type KodeAliran = (typeof ALIRAN_IP)[number]['v'];
-interface Aliran { jenis: KodeAliran; jumlah: number }
+/** Aliran diacu lewat NAMA - daftarnya dari Pustaka (aliran-ip), bawaan kode bila kosong. */
+interface Aliran { jenis: string; jumlah: number }
 const CATATAN = 'Bitrate per aliran adalah angka tipikal pabrikan (bisa berbeda per encoder & pengaturan kualitas). Dante dihitung 48 kHz dengan wadah 32-bit + ±10% overhead. Sisakan ≥ 30% kapasitas link; pakai switch managed dengan IGMP snooping (multicast) & QoS untuk Dante.';
 
 export function PanelJaringanAV() {
-  const [aliran, setAliran] = useState<Aliran[]>([{ jenis: 'ndi-hx', jumlah: 4 }, { jenis: 'h264', jumlah: 2 }]);
+  const { entri } = usePustaka('aliran-ip');
+  const jenisAliran = entri.length ? entri.map(e => ({ l: e.nama, mbps: angkaDari(e, 'mbps') })) : ALIRAN_IP.map(a => ({ l: a.l, mbps: a.mbps }));
+  const mbpsDari = (n: string) => jenisAliran.find(a => a.l === n)?.mbps ?? ALIRAN_IP.find(a => a.l === n)?.mbps ?? 0;
+  const [aliran, setAliran] = useState<Aliran[]>([{ jenis: 'NDI|HX 1080p60', jumlah: 4 }, { jenis: 'H.264 1080p (encoder / streaming)', jumlah: 2 }]);
   const [dante, setDante] = useState(32);
   const ubah = (i: number, x: Partial<Aliran>) => setAliran(a => a.map((v, j) => (j === i ? { ...v, ...x } : v)));
-  const baris = aliran.map(a => { const d = ALIRAN_IP.find(x => x.v === a.jenis)!; return { ...a, label: d.l, mbps: d.mbps * Math.max(0, a.jumlah) }; });
+  const baris = aliran.map(a => ({ ...a, label: a.jenis, mbps: mbpsDari(a.jenis) * Math.max(0, a.jumlah) }));
   const videoMbps = baris.reduce((n, b) => n + b.mbps, 0);
   const audioMbps = danteMbps(dante);
   const total = videoMbps + audioMbps;
@@ -40,13 +45,13 @@ export function PanelJaringanAV() {
         <div className="space-y-2">
           {aliran.map((a, i) => (
             <div key={i} className="grid grid-cols-[minmax(0,1fr)_72px_32px] gap-2 items-end">
-              <Pilih label={i === 0 ? 'Aliran video' : ''} nilai={a.jenis} onUbah={v => ubah(i, { jenis: v })} opsi={ALIRAN_IP.map(x => ({ v: x.v, l: `${x.l} · ${f(x.mbps, 0)} Mbps` }))} />
+              <Pilih label={i === 0 ? 'Aliran video' : ''} nilai={a.jenis} onUbah={v => ubah(i, { jenis: v })} opsi={jenisAliran.map(x => ({ v: x.l, l: `${x.l} · ${f(x.mbps, 0)} Mbps` }))} />
               <Angka label={i === 0 ? 'Jml' : ''} nilai={a.jumlah} onUbah={v => ubah(i, { jumlah: Math.round(v) })} step={1} />
               <button type="button" aria-label="Hapus aliran" onClick={() => setAliran(x => x.filter((_, j) => j !== i))}
                 className="h-[38px] rounded-lg text-slate-500 hover:bg-rose-50 hover:text-rose-700">✕</button>
             </div>
           ))}
-          <button type="button" onClick={() => setAliran(a => [...a, { jenis: 'ndi-1080', jumlah: 1 }])}
+          <button type="button" onClick={() => setAliran(a => [...a, { jenis: jenisAliran[0]?.l ?? '', jumlah: 1 }])}
             className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-50">+ Tambah aliran</button>
           <Angka label="Kanal audio Dante" nilai={dante} onUbah={v => v >= 0 && setDante(Math.round(v))} step={1} bantuan="total kanal yang mengalir di link ini" />
         </div>

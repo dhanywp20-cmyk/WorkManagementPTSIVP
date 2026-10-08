@@ -7,6 +7,8 @@ import { Angka, Catatan, f, Kartu, Nilai, TombolSalin } from '../bersama/ui';
 import { aksiLembar, lembarAV } from './lembar';
 import { hitungRak, type ItemRak } from '@/lib/av-audio-jaringan';
 import { useState } from 'react';
+import { angkaDari } from '@/lib/pustaka';
+import { PilihPustaka } from '../pustaka/PilihPustaka';
 
 const AWAL: ItemRak[] = [
   { nama: 'Switcher / matrix HDMI', u: 1, kg: 4, watt: 60, jumlah: 1 },
@@ -55,6 +57,12 @@ export function KalkulatorRak() {
           ))}
           <button type="button" onClick={() => setItem(a => [...a, { nama: 'Perangkat baru', u: 1, kg: 3, watt: 50, jumlah: 1 }])}
             className="w-full py-2 rounded-xl border border-dashed border-slate-300 text-sm font-semibold text-slate-600 hover:bg-slate-50">+ Tambah perangkat</button>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <PilihPustaka jenis="perangkat-rak" label="Tambah perangkat dari Pustaka"
+              onPilih={e => setItem(a => [...a, { nama: e.nama, u: angkaDari(e, 'u', 1), kg: angkaDari(e, 'kg'), watt: angkaDari(e, 'watt'), jumlah: 1 }])} />
+            <PilihPustaka jenis="amplifier" label="Tambah amplifier dari Pustaka" saring={e => angkaDari(e, 'u') > 0}
+              onPilih={e => setItem(a => [...a, { nama: e.nama, u: angkaDari(e, 'u', 1), kg: angkaDari(e, 'kg'), watt: angkaDari(e, 'watt'), jumlah: 1 }])} />
+          </div>
           <div className="grid grid-cols-2 gap-3 pt-2 items-end">
             <Angka label="Cadangan" nilai={cadangan} onUbah={v => v >= 0 && setCadangan(v)} satuan="%" />
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 pb-2">

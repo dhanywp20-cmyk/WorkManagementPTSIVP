@@ -8,6 +8,8 @@ import { Angka, Catatan, f, Kartu, Nilai, Pilih, TombolSalin } from '../bersama/
 import { RASIO } from './KalkulatorLayar';
 import { aksiLembar, lembarAV } from './lembar';
 import { PanelBlending } from './proyektor/PanelBlending';
+import { PilihPustaka } from '../pustaka/PilihPustaka';
+import { angkaDari, type EntriPustaka, teksDari } from '@/lib/pustaka';
 import { KONTRAS_ANSI, type KategoriKontras, lumenSpesifikasi, lumenUntukKontras, rentangJarakLempar, rentangTinggiLensa } from '@/lib/av-layar-proyektor';
 import { useState } from 'react';
 
@@ -34,6 +36,14 @@ export function KalkulatorProyektor() {
   const [bawah, setBawah] = useState(0.9);
   const [shiftAtas, setShiftAtas] = useState(50);
   const [shiftBawah, setShiftBawah] = useState(50);
+  /** Model dari Pustaka (opsional): lumennya dibandingkan dengan kebutuhan. */
+  const [model, setModel] = useState<{ nama: string; lumen: number } | null>(null);
+  const pakaiModel = (e: EntriPustaka) => {
+    setThrowMin(angkaDari(e, 'throwMin', throwMin)); setThrowMax(angkaDari(e, 'throwMaks', throwMax));
+    setShiftAtas(angkaDari(e, 'shiftAtas', 0)); setShiftBawah(angkaDari(e, 'shiftBawah', 0));
+    const s = teksDari(e, 'sumber'); if (s === 'laser' || s === 'lampu' || s === 'led') setSumber(s);
+    setModel({ nama: e.nama, lumen: angkaDari(e, 'lumen') });
+  };
   const r = RASIO.find(x => x.v === rasioK)!;
   const tinggi = (lebar * r.h) / r.w;
   const luas = lebar * tinggi;
@@ -50,6 +60,7 @@ export function KalkulatorProyektor() {
     `Jarak lensa ke layar ${f(lempar.dekatM)}-${f(lempar.jauhM)} m (throw ${throwMin}-${throwMax})`,
     `Tinggi pusat lensa tanpa keystone: ${f(lensa.terendahM)}-${f(lensa.tertinggiM)} m (shift +${shiftAtas}% / −${shiftBawah}%)`,
     `Kontras ${kat.rasio}:1 (${kat.l}) di ${lux} lux: perlu ±${f(perlu, 0)} lm, spesifikasi ${sus.v} ±${f(spek, 0)} lm`,
+    ...(model ? [`Model ${model.nama}: ${f(model.lumen, 0)} lm - ${model.lumen >= spek ? 'cukup' : model.lumen >= perlu ? 'cukup saat baru' : 'kurang'}`] : []),
   ].join('\n');
   const lembar = () => lembarAV('Proyektor',
     [['Lebar gambar', `${f(lebar)} m (${rasioK})`], ['Throw ratio', `${throwMin} – ${throwMax}`], ['Tepi bawah gambar', `${f(bawah)} m`], ['Lens shift', `+${shiftAtas}% / −${shiftBawah}%`],
@@ -62,6 +73,7 @@ export function KalkulatorProyektor() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] items-start">
         <Kartu judul="Masukan">
           <div className="space-y-3">
+            <PilihPustaka jenis="proyektor" label="Model dari Pustaka" onPilih={pakaiModel} />
             <div className="grid grid-cols-2 gap-3">
               <Angka label="Lebar gambar" nilai={lebar} onUbah={v => v > 0 && setLebar(v)} satuan="m" />
               <Pilih label="Rasio" nilai={rasioK} onUbah={setRasioK} opsi={RASIO.map(x => ({ v: x.v, l: x.l }))} />
@@ -85,6 +97,10 @@ export function KalkulatorProyektor() {
             <Nilai label="Lumen perlu" nilai={f(perlu, 0)} satuan="lm" ket={`kontras ${kat.rasio}:1 di ${lux} lux`} />
             <Nilai label="Lumen spesifikasi" nilai={f(spek, 0)} satuan="lm" nada={nadaLumen}
               ket={spek > 20000 ? 'redupkan ruang / blending 2 proyektor' : spek > 10000 ? 'kelas venue / laser' : `+${sus.susut}% susut ${sus.v}`} />
+            {model && (
+              <Nilai label={`Model: ${model.nama}`} nilai={f(model.lumen, 0)} satuan="lm" nada={model.lumen >= spek ? 'baik' : model.lumen >= perlu ? 'awas' : 'buruk'}
+                ket={model.lumen >= spek ? 'cukup sampai akhir umur' : model.lumen >= perlu ? 'cukup saat baru, kurang setelah susut' : 'kurang terang'} />
+            )}
           </div>
           <Catatan>{CATATAN}</Catatan>
         </Kartu>
