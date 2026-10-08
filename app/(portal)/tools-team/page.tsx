@@ -28,7 +28,8 @@ function ToolsKerjaInner() {
   const [siap, setSiap] = useState(false);
   //  ?alat=koneksi (tautan lama) = LED Videotron, sub menu Screen Connection.
   const [aktif, setAktif] = useState<string>(() => (sp.get('alat') === 'koneksi' ? 'led' : ALAT.some(a => a.k === sp.get('alat')) ? sp.get('alat')! : '3d'));
-  const subAwal: SubLED = sp.get('alat') === 'koneksi' || sp.get('sub') === 'koneksi' ? 'koneksi' : sp.get('sub') === 'daya' ? 'daya' : 'led';
+  const subQ = sp.get('sub');
+  const subAwal: SubLED = sp.get('alat') === 'koneksi' ? 'koneksi' : (['koneksi', 'daya', 'banding', 'konten'] as const).find(v => v === subQ) ?? 'led';
 
   useEffect(() => {
     const u = getSession();

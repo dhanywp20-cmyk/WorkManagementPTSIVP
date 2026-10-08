@@ -1,11 +1,12 @@
 'use client';
-/** Tab sub menu LED Videotron: Calculator LED, Screen Connection, Power Connection. */
-import { Cable, Calculator, Zap } from 'lucide-react';
+/** Tab sub menu LED Videotron: Calculator LED, Screen & Power Connection, Bandingkan Pitch, Konten & Pola Uji. */
+import { Cable, Calculator, GitCompareArrows, Grid3x3, Zap } from 'lucide-react';
 import type { AlatLED } from './alat';
 
-export type SubLED = 'led' | 'koneksi' | 'daya';
+export type SubLED = 'led' | 'koneksi' | 'daya' | 'banding' | 'konten';
 export const SUB_LED: { v: SubLED; l: string; Ikon: typeof Calculator }[] = [
   { v: 'led', l: 'Calculator LED', Ikon: Calculator }, { v: 'koneksi', l: 'Screen Connection', Ikon: Cable }, { v: 'daya', l: 'Power Connection', Ikon: Zap },
+  { v: 'banding', l: 'Bandingkan Pitch', Ikon: GitCompareArrows }, { v: 'konten', l: 'Konten & Pola Uji', Ikon: Grid3x3 },
 ];
 
 export function BarSub({ a }: { a: AlatLED }) {
