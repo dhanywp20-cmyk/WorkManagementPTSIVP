@@ -28,7 +28,6 @@ import {
   getDeadline as getDeadlineShared,
   isTicketOverdue as isTicketOverdueShared,
   getOverdueSetting as getOverdueSettingShared,
-  getCronDisplay as getCronDisplayShared,
   getWarrantyInfo as getWarrantyInfoShared,
   bolehUpdateTicket as bolehUpdateTicketShared,
   JEDA_POLLING_MS, KOLOM_LOG_RINGKAS, TAHUN_TERBARU, rentangTiket, RENTANG_BULAN_TIKET,
@@ -121,14 +120,6 @@ function TicketingSystemInner() {
   const [projectReminders, setProjectReminders] = useState<Record<string, { due_date: string; assign_name: string; assigned_to: string; category: string; warranty_years?: number | null }[]>>({});
   const [showServicesApprovalModal, setShowServicesApprovalModal] = useState(false);
   const [servicesApprovalTicket, setServicesApprovalTicket] = useState<Ticket | null>(null);
-  const [reminderSchedule, setReminderSchedule] = useState({
-    hour_wib: "8",
-    minute: "0",
-    frequency: "daily" as "daily" | "weekdays" | "custom",
-    custom_days: [] as number[],
-    active: true,
-  });
-  const [reminderSaving, setReminderSaving] = useState(false);
   const [showNewTicket, setShowNewTicket] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
@@ -266,33 +257,6 @@ function TicketingSystemInner() {
   const isTicketOverdue = (ticket: Ticket) => isTicketOverdueShared(ticket, overdueSettings);
   const getOverdueSetting = (ticketId: string) => getOverdueSettingShared(ticketId, overdueSettings);
 
-  const loadReminderSchedule = async () => {
-    try {
-      const { data } = await supabase.from("app_settings").select("value").eq("key", KUNCI_PENGATURAN.JADWAL_REMINDER).single();
-      if (data?.value) setReminderSchedule(data.value);
-    } catch (e) {}
-  };
-
-  const getCronDisplay = () => getCronDisplayShared(reminderSchedule);
-
-  const saveCronSchedule = async () => {
-    setReminderSaving(true);
-    try {
-      const hour = parseInt(reminderSchedule.hour_wib);
-      const minute = parseInt(reminderSchedule.minute) || 0;
-      let dayOfWeek = "*";
-      if (reminderSchedule.frequency === "weekdays") dayOfWeek = "1-5";
-      else if (reminderSchedule.frequency === "custom" && reminderSchedule.custom_days.length > 0) dayOfWeek = reminderSchedule.custom_days.join(",");
-      const { error } = await supabase.rpc("update_reminder_cron", { p_hour_wib: hour, p_minute: minute, p_day_of_week: dayOfWeek, p_active: reminderSchedule.active });
-      await supabase.from("app_settings").upsert({ key: KUNCI_PENGATURAN.JADWAL_REMINDER, value: reminderSchedule }, { onConflict: "key" });
-      if (error) {
-        const utcHour = (hour - 7 + 24) % 24;
-        const cronExpr = `${minute} ${utcHour} * * ${dayOfWeek}`;
-        notify("success", "Setting disimpan! Jalankan SQL di SQL Editor Supabase untuk mengaktifkan jadwal baru.");
-      } else notify("success", `Jadwal reminder berhasil diubah! ${getCronDisplay()}`);
-      setShowReminderSchedule(false);
-    } catch (e: any) { notify("error", "Error: " + e.message); } finally { setReminderSaving(false); }
-  };
 
   const fetchOverdueSettings = async () => {
     try { const { data } = await supabase.from("overdue_settings").select("id,ticket_id,due_date,due_hours,set_by,created_at"); if (data) setOverdueSettings(data); } catch { }
@@ -2099,7 +2063,6 @@ function TicketingSystemInner() {
   }, [loginTime]);
 
   useEffect(() => {
-    if (currentUser?.role === "admin" || currentUser?.role === "superadmin") { loadReminderSchedule(); }
     if (currentUser) fetchOverdueSettings();
   }, [currentUser]);
 
@@ -2492,7 +2455,7 @@ function TicketingSystemInner() {
 
           {/* Reminder button */}
           {canManageTickets && (
-            <button onClick={() => { setShowReminderSchedule(true); setShowAccountSettings(false); setShowNewTicket(false); }} className="flex items-center gap-1.5 text-white text-sm font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)", boxShadow: "0 2px 8px rgba(124,58,237,0.3)" }} title={`Reminder: ${getCronDisplay()}`}>
+            <button onClick={() => { setShowReminderSchedule(true); setShowAccountSettings(false); setShowNewTicket(false); }} className="flex items-center gap-1.5 text-white text-sm font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)", boxShadow: "0 2px 8px rgba(124,58,237,0.3)" }} title="Reminder harian: Briefing pagi 06.00 WIB">
               <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -2762,14 +2725,7 @@ function TicketingSystemInner() {
         )}
 
         {showReminderSchedule && canManageTickets && (
-          <ReminderScheduleModal
-            reminderSchedule={reminderSchedule}
-            setReminderSchedule={setReminderSchedule}
-            reminderSaving={reminderSaving}
-            saveCronSchedule={saveCronSchedule}
-            getCronDisplay={getCronDisplay}
-            onClose={() => setShowReminderSchedule(false)}
-          />
+          <ReminderScheduleModal onClose={() => setShowReminderSchedule(false)} />
         )}
 
         {/* ── ACCOUNT SETTINGS MODAL (Redesigned) ── */}

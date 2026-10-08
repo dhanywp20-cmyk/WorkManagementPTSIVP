@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from '@/components/shared/Modal';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import { Ikon } from '@/components/shared/Ikon';
 import { urlGambarDesain } from '@/lib/tools-team';
 import { type TautanDesain3D, type IzinRuang, tautanKeTools, ukuranRuang } from './desain-3d-request';
@@ -40,6 +41,8 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
   const izin = data?.izin ?? [];
   const galat = data?.galat ?? '';
   const [sibuk, setSibuk] = useState(false);
+  /** Konfirmasi memakai dialog platform, bukan confirm() bawaan browser. */
+  const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const [pilih, setPilih] = useState(false);
   const [buka, setBuka] = useState<string | null>(null);
   const muat = muatUlang;
@@ -111,11 +114,10 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
                       <p className="mt-1 text-[10.5px] font-semibold text-amber-700">
                         Versi terbaru v{terbaru} tersedia di Tools Team - request ini tetap memakai v{t.versi}.
                         {bolehUbah && (
-                          <button type="button" disabled={sibuk} onClick={() => {
-                            if (window.confirm(`Pakai v${terbaru} untuk ${namaRuang}? Versi v${t.versi} tetap tercatat di riwayat percakapan.`)) {
-                              void panggil('PATCH', { body: { tautan_id: t.id } }, `Diperbarui ke v${terbaru}.`);
-                            }
-                          }} className="ml-1.5 underline text-amber-800 hover:text-amber-900 disabled:opacity-50">Pakai v{terbaru}</button>
+                          <button type="button" disabled={sibuk} onClick={() => setKonfirmasi({
+                            message: `Pakai v${terbaru} untuk ${namaRuang}?`, description: `Versi v${t.versi} tetap tercatat di riwayat percakapan.`,
+                            confirmLabel: `Pakai v${terbaru}`, onConfirm: () => { void panggil('PATCH', { body: { tautan_id: t.id } }, `Diperbarui ke v${terbaru}.`); },
+                          })} className="ml-1.5 underline text-amber-800 hover:text-amber-900 disabled:opacity-50">Pakai v{terbaru}</button>
                         )}
                       </p>
                     )}
@@ -132,11 +134,10 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
                     Buka di Tools Team
                   </a>
                   {bolehUbah && (
-                    <button type="button" disabled={sibuk} onClick={() => {
-                      if (window.confirm(`Lepas "${s?.nama ?? 'desain'}" dari ${namaRuang}? Desainnya tetap ada di Tools Team.`)) {
-                        void panggil('DELETE', { tautan: t.id }, 'Tautan dilepas. Desain tetap ada di Tools Team.');
-                      }
-                    }} className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-50">
+                    <button type="button" disabled={sibuk} onClick={() => setKonfirmasi({
+                      message: `Lepas "${s?.nama ?? 'desain'}" dari ${namaRuang}?`, description: 'Desainnya tetap ada di Tools Team.',
+                      confirmLabel: 'Lepas', danger: true, onConfirm: () => { void panggil('DELETE', { tautan: t.id }, 'Tautan dilepas. Desain tetap ada di Tools Team.'); },
+                    })} className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-50">
                       Lepas
                     </button>
                   )}
@@ -171,6 +172,7 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
       <PemilihDesain buka={pilih} onTutup={() => setPilih(false)} projectName={projectName} namaRuang={namaRuang}
         sudah={new Set((semua ?? []).map(t => t.desain_id))} sibuk={sibuk}
         onPilih={async d => { if (await panggil('POST', { body: { desain_id: d.id, room_idx: roomIdx } }, `"${d.nama}" v${d.versi} ditautkan ke ${namaRuang}.`)) setPilih(false); }} />
+      <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     </div>
   );
 }

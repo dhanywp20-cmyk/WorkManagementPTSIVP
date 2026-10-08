@@ -943,16 +943,16 @@ export default function Dashboard() {
               <div className="space-y-4">
                 <div>
                   <label htmlFor="f-dashboard-page-1" className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Email</label>
-                  <input id="f-dashboard-page-1" type="text" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                  <input id="f-dashboard-page-1" type="text" autoComplete="username" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-none"
                     placeholder="email@perusahaan.com" onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Password</label>
+                  <label htmlFor="f-dashboard-login-pwd" className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Password</label>
                   <div className="relative">
-                    <input type={showLoginPwd ? 'text' : 'password'} value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                    <input id="f-dashboard-login-pwd" autoComplete="current-password" type={showLoginPwd ? 'text' : 'password'} value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                       className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-none"
-                      placeholder="Enter your password" onKeyDown={(e) => { if (e.key === 'Enter') { setLoginErr(''); handleLogin(); } }} />
+                      placeholder="Masukkan password" onKeyDown={(e) => { if (e.key === 'Enter') { setLoginErr(''); handleLogin(); } }} />
                     <button type="button" onClick={() => setShowLoginPwd(v => !v)} tabIndex={-1}
                       aria-label={showLoginPwd ? 'Sembunyikan password' : 'Tampilkan password'}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 transition-colors">
@@ -984,7 +984,7 @@ export default function Dashboard() {
                       Memverifikasi...
                     </>
                   ) : (
-                    <>🔐 Sign In to Portal</>
+                    <>🔐 Masuk ke Portal</>
                   )}
                 </button>
                 <p className="text-center text-xs text-slate-500 pt-1">

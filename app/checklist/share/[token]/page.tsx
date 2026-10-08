@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarDays, Lock, RefreshCw, UserRound } from 'lucide-react';
-import { Modal, Toast, TombolModal, type Notif } from '@/components/shared';
+import { ConfirmDialog, Modal, Toast, TombolModal, type ConfirmState, type Notif } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import {
   BATAS, formatTanggal, statDari, validasiNama, type ChecklistDetail, type ChecklistItem, type ChecklistRiwayat,
@@ -78,11 +78,14 @@ export default function ChecklistSharePage({ params }: { params: { token: string
 
   useEffect(() => { muat(); }, [muat]);
 
+  const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const muatUlang = () => {
-    if (t.jumlah && !window.confirm(`${t.jumlah} perubahan belum disimpan dan akan hilang. Tetap muat ulang?`)) return;
-    t.reset();
-    setMemuat(true);
-    muat();
+    const jalan = () => { t.reset(); setMemuat(true); muat(); };
+    if (!t.jumlah) { jalan(); return; }
+    setKonfirmasi({
+      message: `${t.jumlah} perubahan belum disimpan`, description: 'Perubahan akan hilang bila dimuat ulang sekarang.',
+      confirmLabel: 'Tetap muat ulang', danger: true, onConfirm: () => { setKonfirmasi(null); jalan(); },
+    });
   };
 
   const gantiItem = (baru: ChecklistItem) => setDetail(d => d && { ...d, items: d.items.map(i => (i.id === baru.id ? baru : i)) });
@@ -147,6 +150,7 @@ export default function ChecklistSharePage({ params }: { params: { token: string
   return (
     <div className="min-h-screen" style={{ background: 'var(--halaman)' }}>
       <Toast notif={toast} />
+      <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
 
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
         <div className="max-w-3xl mx-auto px-4 py-3 space-y-2">

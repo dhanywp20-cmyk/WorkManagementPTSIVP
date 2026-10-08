@@ -164,7 +164,7 @@ export function MerekSettingInline() {
                 <div className="h-5 rounded-md bg-slate-100 mt-1.5" />
                 <div className="h-7 rounded-lg mt-2 flex items-center justify-center text-white text-[10px] font-bold"
                   style={{ background: `linear-gradient(to right, ${form.warnaUtama}, ${form.warnaUtama2})` }}>
-                  Sign In to Portal
+                  Masuk ke Portal
                 </div>
               </div>
             </div>

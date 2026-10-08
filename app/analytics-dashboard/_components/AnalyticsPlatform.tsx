@@ -559,14 +559,14 @@ export function AnalyticsPlatform({
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-2 px-5 py-4 border-b border-gray-100">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">Audit Trail</span>
-              <input className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white w-44"
+              <input className="px-3 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white w-44"
                 placeholder="User / Target / Aksi..." value={auditSearch}
                 onChange={e => { setAuditSearch(e.target.value); setAuditPage(0); }} />
-              <select aria-label="Filter modul" className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
+              <select aria-label="Filter modul" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={auditModule} onChange={e => { setAuditModule(e.target.value); setAuditPage(0); }}>
                 {AUDIT_MODULES.map(m => <option key={m} value={m}>{m === 'All' ? 'Semua Modul' : m}</option>)}
               </select>
-              <select aria-label="Filter aksi" className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
+              <select aria-label="Filter aksi" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={auditAction} onChange={e => { setAuditAction(e.target.value); setAuditPage(0); }}>
                 {AUDIT_ACTIONS.map(a => <option key={a} value={a}>{a === 'All' ? 'Semua Aksi' : a}</option>)}
               </select>

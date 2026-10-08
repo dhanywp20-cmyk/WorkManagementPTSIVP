@@ -123,8 +123,11 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
   };
 
   const kembali = () => {
-    if (t.jumlah && !window.confirm(`${t.jumlah} perubahan belum disimpan dan akan hilang. Tetap kembali?`)) return;
-    onKembali();
+    if (!t.jumlah) { onKembali(); return; }
+    setKonfirmasi({
+      message: `${t.jumlah} perubahan belum disimpan`, description: 'Perubahan akan hilang bila kembali sekarang.',
+      confirmLabel: 'Tetap kembali', danger: true, onConfirm: () => { setKonfirmasi(null); onKembali(); },
+    });
   };
 
   const unggahFoto = async (item: ChecklistItem, file: File) => {

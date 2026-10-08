@@ -420,23 +420,23 @@ function UnitMovementPageInner() {
               <span className="bg-amber-100 text-amber-700 text-xs font-bold px-2.5 py-1 rounded-full">{loading?'…':filteredLogs.length}</span>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <input className="px-3 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white transition-all w-52"
+              <input className="px-3 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white transition-all w-52"
                 placeholder="Project / Type / SN / Pihak Luar..." value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}/>
-              <select aria-label="Semua Status" className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
+              <select aria-label="Semua Status" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={filterStatus} onChange={e=>setFilterStatus(e.target.value as any)}>
                 <option value="All">Semua Status</option><option value="Masuk">Masuk</option><option value="Keluar">Keluar</option>
               </select>
-              <select aria-label="Semua Event" className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
+              <select aria-label="Semua Event" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={filterEvent} onChange={e=>setFilterEvent(e.target.value)}>
                 <option value="All">Semua Event</option>
                 {EVENTS.map(ev=><option key={ev} value={ev}>{ev}</option>)}
               </select>
-              <select aria-label="Semua Anggota" className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
+              <select aria-label="Semua Anggota" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={filterPTS} onChange={e=>setFilterPTS(e.target.value)}>
                 <option value="All">Semua Anggota</option>
                 {teamMembers.map(m=><option key={m} value={m}>{m}</option>)}
               </select>
-              <select aria-label="Semua Tahun" className="px-2.5 py-1.5 rounded-lg text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
+              <select aria-label="Semua Tahun" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
                 value={filterYear} onChange={e=>setFilterYear(e.target.value)}>
                 <option value="All">Semua Tahun</option>
                 {availableYears.map(y=><option key={y} value={y}>{y}</option>)}

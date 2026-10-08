@@ -400,26 +400,6 @@ export function getOverdueSetting(ticketId: string, overdueSettings: OverdueSett
   return overdueSettings.find((o) => o.ticket_id === ticketId);
 }
 
-export interface ReminderCronSchedule {
-  hour_wib: string;
-  minute: string;
-  frequency: 'daily' | 'weekdays' | 'custom';
-  custom_days: number[];
-  active: boolean;
-}
-
-export function getCronDisplay(schedule: ReminderCronSchedule): string {
-  const h = schedule.hour_wib.padStart(2, "0");
-  const m = schedule.minute.padStart(2, "0");
-  const days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-  let freq = "Setiap hari";
-  if (schedule.frequency === "weekdays") freq = "Senin–Jumat";
-  else if (schedule.frequency === "custom" && schedule.custom_days.length > 0) {
-    freq = schedule.custom_days.map((d) => days[d]).join(", ");
-  }
-  return `${freq}, jam ${h}:${m} WIB`;
-}
-
 export type ProjectReminderRef = {
   due_date: string; assign_name: string; assigned_to: string;
   category: string; warranty_years?: number | null;
