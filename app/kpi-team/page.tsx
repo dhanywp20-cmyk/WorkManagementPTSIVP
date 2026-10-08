@@ -14,6 +14,8 @@ import { lingkupSaya, muatKelompok, namaKelompokPTS } from '@/lib/kelompok';
 import { hitungSkorKPI, KPIUser, KPIMember, KPISettings, DEFAULT_KPI_SETTINGS, KPIPeriodSnapshot, Scope, PeriodKey, SortKey, SortDir, PERIODS, PERIOD_EMOJI, TEAM_COLORS, warnaTim, STATUS_COLORS, MN, KPI_COLOR, fmt, getPeriodRange } from './_components/shared';
 import { bacaPicPiket } from '@/app/picket-showroom/_components/shared';
 import { ambilRekapLCTahunan, REKAP_LC_KOSONG } from '@/lib/kpi-lc-tahunan';
+import { ingat } from '@/lib/cache-singkat';
+import { saringSumberKPI, type SumberKPI } from '@/lib/kpi-sumber';
 import { DrillModal, ProgressBar } from './_components/DrillModal';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
@@ -128,14 +130,12 @@ export default function KPITeamPage() {
 
   // Data fetching
 
-  const buildMembers = useCallback(async (membersData: any[], start: string, end: string): Promise<KPIMember[]> => {
+  /** 7 tabel sumber penilaian untuk anggota & rentang ini (lihat lib/kpi-sumber.ts). */
+  const ambilSumber = useCallback(async (membersData: any[], start: string, end: string): Promise<SumberKPI> => {
     const endFull   = end + 'T23:59:59';
-    const todayStr  = fmt(new Date());
     const mNames    = membersData.map((m: any) => m.full_name as string);
     const mIds      = membersData.map((m: any) => m.id as string);
-
-    // Tahun basis faktor LC = tahun akhir periode yang dilihat.
-    const [ticketsR, actR, remR, lcR, piketR, formRevR, techNotesR, rekapLC] = await Promise.all([
+    const [ticketsR, actR, remR, lcR, piketR, formRevR, techNotesR] = await Promise.all([
       supabase.from('tickets').select('id,assign_name,status,date,created_at')
         .in('assign_name', mNames).gte('created_at', start).lte('created_at', endFull),
       supabase.from('activity_logs').select('id,ticket_id,handler_name,created_at')
@@ -155,16 +155,34 @@ export default function KPITeamPage() {
       supabase.from('tech_notes').select('id,author_id,status,reviewed_at')
         .in('author_id', mIds).eq('status', 'approved')
         .gte('reviewed_at', start).lte('reviewed_at', endFull),
-      ambilRekapLCTahunan(mIds, new Date(end).getFullYear()),
     ]);
+    return {
+      tickets: (ticketsR.data ?? []) as any[],
+      actLogs: (actR.data ?? []) as any[],
+      reminders: (remR.data ?? []) as any[],
+      lcAttempts: (lcR.data ?? []) as any[],
+      piketRows: (piketR.data ?? []) as any[],
+      formReviews: (formRevR.data ?? []) as any[],
+      techNotes: (techNotesR.data ?? []) as any[],
+    };
+  }, []);
 
-    const tickets  = (ticketsR.data  ?? []) as any[];
-    const actLogs  = (actR.data      ?? []) as any[];
-    const reminders = (remR.data     ?? []) as any[];
-    const lcAttempts = (lcR.data     ?? []) as any[];
-    const piketRows  = (piketR.data  ?? []) as any[];
-    const formReviews = (formRevR.data ?? []) as any[];
-    const techNotes   = (techNotesR.data ?? []) as any[];
+  /**
+   * `sumberGabung` = baris sumber yang sudah diambil untuk rentang lebih lebar (periode ini +
+   * sebelumnya) - dipilah ke [start, end] tanpa bertanya ke Supabase lagi.
+   */
+  const buildMembers = useCallback(async (membersData: any[], start: string, end: string, sumberGabung?: SumberKPI): Promise<KPIMember[]> => {
+    const todayStr  = fmt(new Date());
+    const mIds      = membersData.map((m: any) => m.id as string);
+    const tahun     = new Date(end).getFullYear();
+
+    // Tahun basis faktor LC = tahun akhir periode yang dilihat. Periode ini & sebelumnya sering
+    // setahun - rekapnya diingat sebentar supaya tidak diminta dua kali.
+    const [sumber, rekapLC] = await Promise.all([
+      sumberGabung ? saringSumberKPI(sumberGabung, start, end) : ambilSumber(membersData, start, end),
+      ingat(`rekap-lc:${tahun}:${[...mIds].sort().join(',')}`, () => ambilRekapLCTahunan(mIds, tahun), 60_000),
+    ]);
+    const { tickets, actLogs, reminders, lcAttempts, piketRows, formReviews, techNotes } = sumber;
 
     return membersData.map((m: any): KPIMember => {
       const name = m.full_name as string;
@@ -242,7 +260,7 @@ export default function KPITeamPage() {
         lcTahunan: rekapLC[uid] ?? REKAP_LC_KOSONG,
       };
     });
-  }, []);
+  }, [ambilSumber]);
 
   const fetchAllData = useCallback(async () => {
     if (!scopeReady || scope.kind === 'none') return;
@@ -266,9 +284,11 @@ export default function KPITeamPage() {
       if (!mData?.length) { setLoading(false); return; }
 
       const { start, end, prevStart, prevEnd } = getPeriodRange(period);
+      //  Satu pengambilan untuk kedua periode (prevStart..end), lalu dipilah per periode.
+      const sumberGabung = await ambilSumber(mData, prevStart, end);
       const [cur, prev] = await Promise.all([
-        buildMembers(mData, start, end),
-        buildMembers(mData, prevStart, prevEnd),
+        buildMembers(mData, start, end, sumberGabung),
+        buildMembers(mData, prevStart, prevEnd, sumberGabung),
       ]);
       setMembers(cur);
       setPrevMembers(prev);
@@ -281,7 +301,7 @@ export default function KPITeamPage() {
       });
     } catch { /* silent */ }
     finally { setLoading(false); }
-  }, [scopeReady, scope, period, buildMembers, currentUser]);
+  }, [scopeReady, scope, period, buildMembers, ambilSumber, currentUser]);
 
   useEffect(() => { fetchAllData(); }, [fetchAllData]);
 

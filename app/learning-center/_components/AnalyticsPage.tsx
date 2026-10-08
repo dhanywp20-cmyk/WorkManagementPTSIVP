@@ -99,11 +99,14 @@ export function AnalyticsPage() {
 
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
       if (ss) {
-        const stats = await Promise.all(ss.map(async (s: any) => {
-          const { data: att } = await supabase
-            .from('lc_quiz_attempts')
-            .select('score, passed, started_at, submitted_at')
-            .eq('quiz_session_id', s.id).eq('is_submitted', true);
+        //  Attempt terkirim semua sesi sudah ada di `a` - dikelompokkan, bukan satu query per sesi (N+1).
+        const perSesi = new Map<string, any[]>();
+        for (const x of (a ?? []) as any[]) {
+          const daftar = perSesi.get(x.quiz_session_id);
+          if (daftar) daftar.push(x); else perSesi.set(x.quiz_session_id, [x]);
+        }
+        const stats = ss.map((s: any) => {
+          const att = perSesi.get(s.id);
           if (!att?.length) return null;
           const avg = att.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / att.length;
           const passed = att.filter((a: any) => a.passed).length;
@@ -119,7 +122,7 @@ export function AnalyticsPage() {
             scoreMid: att.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length,
             scoreLow: att.filter((a: any) => (a.score ?? 0) < 60).length,
           };
-        }));
+        });
         setSessionStats(stats.filter(Boolean));
       }
       setLoading(false);

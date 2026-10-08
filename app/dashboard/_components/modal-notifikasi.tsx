@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { ingat } from '@/lib/cache-singkat';
 
 import { hasFullAccess } from '@/lib/constants';
 import {
@@ -371,7 +372,7 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
     /** Nama pelaksana -> kelompoknya. Dipakai menyaring menurut lingkup. */
     const kelompokDariNama = new Map<string, string>();
     try {
-      const { data: allMembers } = await supabase.from('team_members').select('name, team_type, username');
+      const { data: allMembers } = await ingat('team_members:nama-kelompok', () => supabase.from('team_members').select('name, team_type, username'));
       if (allMembers && allMembers.length > 0) {
         for (const m of allMembers as any[]) {
           if (m?.name && m?.team_type) kelompokDariNama.set(String(m.name).trim().toLowerCase(), String(m.team_type));
@@ -386,7 +387,7 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
     // users melengkapi team_members: sebagian orang hanya ada di salah satunya,
     // dan nama yang tidak ketemu kelompoknya akan lolos penyaringan di bawah.
     try {
-      const { data: semuaAkun } = await supabase.from('users').select('full_name, team_type').eq('role', 'team');
+      const { data: semuaAkun } = await ingat('users:team-kelompok', () => supabase.from('users').select('full_name, team_type').eq('role', 'team'));
       for (const u of (semuaAkun ?? []) as any[]) {
         const n = String(u?.full_name ?? '').trim().toLowerCase();
         if (n && u?.team_type && !kelompokDariNama.has(n)) kelompokDariNama.set(n, String(u.team_type));
@@ -441,7 +442,7 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
           } else { setTicketNotifs([]); }
         } else {
           // Non-IVP guest: existing logic
-          const { data: mappings } = await supabase.from('guest_mappings').select('project_name').eq('guest_username', currentUser.username);
+          const { data: mappings } = await ingat(`guest_mappings:${currentUser.username}`, () => supabase.from('guest_mappings').select('project_name').eq('guest_username', currentUser.username));
           const mapped = (mappings ?? []).map((m: any) => m.project_name as string);
           let q = supabase.from('tickets').select('id, project_name, issue_case, assign_name, status, created_at').neq('status', 'Solved');
           if (mapped.length > 0) {
@@ -594,13 +595,13 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
 
         } else if (selfTierN > 1 && selfDivN) {
           // Supervisor+: tambahkan request dari bawahan di divisi yang di-supervisi
-          const { data: supMapsN } = await supabase.from('division_supervisor_mappings')
-            .select('sales_division').eq('supervisor_id', currentUser.id);
+          const { data: supMapsN } = await ingat(`division_supervisor_mappings:${currentUser.id}`, () => supabase.from('division_supervisor_mappings')
+            .select('sales_division').eq('supervisor_id', currentUser.id));
           const supDivsN = (supMapsN ?? []).map((m: any) => m.sales_division as string);
           if (!supDivsN.includes(selfDivN)) supDivsN.push(selfDivN);
 
-          const { data: allGuestsN } = await supabase.from('users')
-            .select('id, full_name, jabatan, sales_division').in('role', ['guest', 'sales']);
+          const { data: allGuestsN } = await ingat('users:guest-sales', () => supabase.from('users')
+            .select('id, full_name, jabatan, sales_division').in('role', ['guest', 'sales']));
           const bawahanN = (allGuestsN ?? [])
             .filter((u: any) => (TIER_MAP[(u.jabatan as string) ?? ''] ?? 0) < selfTierN && supDivsN.includes(u.sales_division));
           const subIdsN = bawahanN.map((u: any) => u.id as string);

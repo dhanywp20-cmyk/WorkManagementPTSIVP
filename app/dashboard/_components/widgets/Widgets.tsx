@@ -14,6 +14,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { ingat } from '@/lib/cache-singkat';
 import { namaKelompokPTS } from '@/lib/kelompok';
 import type { User } from '../shared';
 import { hasMenu, canAccessAnalytics, canSeeTeamMonitoring } from './permissions';
@@ -131,8 +132,8 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           //  mengikuti struktur organisasi, bukan sekadar urutan abjad.
           //  Keduanya dari users (sql/user-hierarchy-atasan.sql) - satu sumber
           //  kebenaran yang sama dipakai Incentive PTS.
-          supabase.from('users').select('id, username, full_name, team_type, jabatan, atasan_id').eq('role', 'team')
-            .in('team_type', [...ASSIGNABLE_PTS_TEAMS]),  // IVP & MVI saja (UMP hanya utk Piket Showroom)
+          ingat('users:team-pts-atasan', () => supabase.from('users').select('id, username, full_name, team_type, jabatan, atasan_id').eq('role', 'team')
+            .in('team_type', [...ASSIGNABLE_PTS_TEAMS])),  // IVP & MVI saja (UMP hanya utk Piket Showroom)
           supabase.from('daily_reports').select('user_id').eq('report_date', today),
           supabase.from('reminders').select('assigned_to').eq('due_date', today).neq('status', 'done').neq('status', 'cancelled'),
         ]);
@@ -152,7 +153,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
         const idAtasan = Array.from(new Set(list.map(m => m.atasanId).filter(Boolean))) as string[];
         let peta: Record<string, { nama: string; jabatan: string }> = {};
         if (idAtasan.length) {
-          const { data: bos } = await supabase.from('users').select('id, full_name, jabatan').in('id', idAtasan);
+          const { data: bos } = await ingat(`users:atasan:${[...idAtasan].sort().join(',')}`, () => supabase.from('users').select('id, full_name, jabatan').in('id', idAtasan));
           (bos ?? []).forEach((b: any) => { peta[b.id] = { nama: b.full_name ?? '—', jabatan: b.jabatan ?? '' }; });
         }
         if (alive) { setRows(list); setAtasan(peta); }
@@ -551,7 +552,7 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
         const [rowsRes, holRes, usersRes] = await Promise.all([
           supabase.from('piket_schedules').select('id,day_date,week_start,day_of_week,pic,pic_ivp_id,pic_ivp_name,pic_ump_id,pic_ump_name,pic_mvi_id,pic_mvi_name'),
           supabase.from('picket_holidays').select('date'),
-          supabase.from('users').select('full_name, team_type').in('team_type', namaKelompokPTS()),
+          ingat(`users:kelompok-pts:${namaKelompokPTS().join(',')}`, () => supabase.from('users').select('full_name, team_type').in('team_type', namaKelompokPTS())),
         ]);
         const allRows = (rowsRes.data ?? []) as unknown as PiketRow[];
         const holidays = (holRes.data ?? []).map((h: any) => h.date as string);

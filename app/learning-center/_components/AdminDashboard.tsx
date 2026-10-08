@@ -52,21 +52,21 @@ export function AdminDashboard({ user }: { user: User }) {
   useEffect(() => {
     const load = async () => {
       // Round 1: counts
-      const [mat, ses, att, totalUsersRes, abandonedRes, pemulaiRes] = await Promise.all([
+      const [mat, ses, att, totalUsersRes, ringkasRes] = await Promise.all([
         supabase.from('lc_materials').select('id', { count: 'exact', head: true }),
         supabase.from('lc_quiz_sessions').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        //  Total tetap count exact: daftar baris di bawah dibatasi max-rows PostgREST (1000).
         supabase.from('lc_quiz_attempts').select('id', { count: 'exact', head: true }),
         supabase.from('users').select('id', { count: 'exact', head: true }),
-        supabase.from('lc_quiz_attempts').select('id', { count: 'exact', head: true }).eq('is_submitted', false),
-        //  Siapa saja yang sudah MEMBUKA quiz - submit atau belum. Barisnya
-        //  dibuat begitu quiz dimulai, jadi ini yang menjawab "berapa orang
-        //  sudah mengaksesnya", pertanyaan yang berbeda dari "berapa yang
-        //  selesai". Diambil barisnya (bukan count) karena satu orang bisa
-        //  punya banyak attempt dan yang dihitung adalah ORANG.
-        supabase.from('lc_quiz_attempts').select('user_id'),
+        //  SATU query untuk semua hitungan attempt (dulu 3: belum submit, pemulai,
+        //  peserta selesai). Barisnya cuma dua kolom kecil; semua
+        //  hitungan diturunkan di bawah. Pemulai = siapa saja yang sudah MEMBUKA
+        //  quiz (baris dibuat begitu quiz dimulai) - yang dihitung ORANG, bukan
+        //  attempt, karena satu orang bisa punya banyak attempt.
+        supabase.from('lc_quiz_attempts').select('user_id, is_submitted'),
       ]);
-      const { data: teamData } = await supabase.from('lc_quiz_attempts').select('user_id').eq('is_submitted', true);
-      const uniqueTeam = new Set((teamData ?? []).map((a: any) => a.user_id)).size;
+      const ringkas = (ringkasRes.data ?? []) as { user_id: string; is_submitted: boolean | null }[];
+      const uniqueTeam = new Set(ringkas.filter(a => a.is_submitted).map(a => a.user_id)).size;
       setStats({ materials: mat.count ?? 0, activeTeam: uniqueTeam, sessions: ses.count ?? 0, attempts: att.count ?? 0 });
 
       // Round 2: analytics data in parallel
@@ -106,7 +106,7 @@ export function AdminDashboard({ user }: { user: User }) {
       const scoreGood    = allAtt.filter((a: any) => (a.score ?? 0) >= 80).length;
       const scoreMid     = allAtt.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length;
       const scoreLow     = allAtt.filter((a: any) => (a.score ?? 0) < 60).length;
-      const mulai = new Set(((pemulaiRes.data ?? []) as { user_id: string }[]).map(a => a.user_id)).size;
+      const mulai = new Set(ringkas.map(a => a.user_id)).size;
       setOverviewStats({
         totalUsers: totalUsersRes.count ?? 0,
         participants,
@@ -115,7 +115,7 @@ export function AdminDashboard({ user }: { user: User }) {
         failCount: allAtt.length - passCount,
         scoreGood, scoreMid, scoreLow,
         submitted: allAtt.length,
-        abandoned: abandonedRes.count ?? 0,
+        abandoned: ringkas.filter(a => a.is_submitted === false).length,
       });
 
       // Top performers + consistency + fast-submit
@@ -201,11 +201,15 @@ export function AdminDashboard({ user }: { user: User }) {
       // Per session
       const { data: ss } = await supabase.from('lc_quiz_sessions').select('id, session_name');
       if (ss) {
-        const sStats = await Promise.all(ss.map(async (s: any) => {
-          const { data: sa } = await supabase
-            .from('lc_quiz_attempts')
-            .select('score, passed, started_at, submitted_at')
-            .eq('quiz_session_id', s.id).eq('is_submitted', true);
+        //  Attempt terkirim SEMUA sesi sudah ada di allAttRes (query Round 2) - dikelompokkan
+        //  di sini, bukan satu query per sesi seperti dulu (N+1: 10 sesi = 10 permintaan).
+        const perSesi = new Map<string, any[]>();
+        for (const a of (allAttRes.data ?? []) as any[]) {
+          const daftar = perSesi.get(a.quiz_session_id);
+          if (daftar) daftar.push(a); else perSesi.set(a.quiz_session_id, [a]);
+        }
+        const sStats = ss.map((s: any) => {
+          const sa = perSesi.get(s.id);
           if (!sa?.length) return null;
           const avg = sa.reduce((sum: number, a: any) => sum + (a.score ?? 0), 0) / sa.length;
           const passed = sa.filter((a: any) => a.passed).length;
@@ -220,7 +224,7 @@ export function AdminDashboard({ user }: { user: User }) {
             scoreMid: sa.filter((a: any) => (a.score ?? 0) >= 60 && (a.score ?? 0) < 80).length,
             scoreLow: sa.filter((a: any) => (a.score ?? 0) < 60).length,
           };
-        }));
+        });
         setSessionStats(sStats.filter(Boolean));
       }
       setLoadingAnalytics(false);

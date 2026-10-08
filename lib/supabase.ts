@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { periksaJawabanTulis } from './galat-tulis';
 
 /**
  * Token PostgREST milik user yang sedang login (lihat lib/db-token.ts).
@@ -115,7 +116,18 @@ const fetchWithToken: typeof fetch = async (input, init) => {
   }
   const headers = new Headers(init?.headers);
   if (dbToken) headers.set('Authorization', `Bearer ${dbToken}`);
-  return fetch(input, { ...init, headers });
+  //  Penulisan yang gagal diumumkan ke layar (lib/galat-tulis.ts) - banyak titik simpan tidak
+  //  memeriksa `error`, sehingga tanpa ini kegagalannya tak terlihat sama sekali.
+  const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+  try {
+    const jawaban = await fetch(input, { ...init, headers });
+    void periksaJawabanTulis(init?.method, url, jawaban);
+    return jawaban;
+  } catch (galat) {
+    //  Dibatalkan sengaja (AbortController) bukan putus koneksi.
+    if (!(galat instanceof Error && galat.name === 'AbortError')) void periksaJawabanTulis(init?.method, url, null);
+    throw galat;
+  }
 };
 
 export const supabase = createClient(
