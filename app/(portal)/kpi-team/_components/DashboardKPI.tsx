@@ -15,10 +15,14 @@ import { KPISettings, DEFAULT_KPI_SETTINGS } from '@/app/(portal)/kpi-team/_comp
 import { WARNA_STATUS_TICKET } from '@/lib/desain';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
+import { ModalPengaturanDasborKPI } from './dasbor/ModalPengaturanDasborKPI';
+import { BarisTrenKPI } from './dasbor/BarisTrenKPI';
+import { BarisRingkasanKPI } from './dasbor/BarisRingkasanKPI';
+import { BarisTicketKPI } from './dasbor/BarisTicketKPI';
 
 // Types
 
-interface KPIData {
+export interface KPIData {
   tickets: {
     total: number; open: number; solved: number; waitingApproval: number;
     byHandler: { name: string; count: number }[];
@@ -123,7 +127,7 @@ interface AuditEntry {
   severity: 'info' | 'warn' | 'critical'; icon: string;
 }
 
-interface Scope {
+export interface Scope {
   kind: 'admin' | 'pts_sup' | 'team' | 'none';
   // pts_sup
   ptsTeamType?: string;
@@ -151,7 +155,7 @@ const CATEGORY_COLORS: Record<string, string> = {
  * sementara legenda di sampingnya dipotong ke 6 teratas - sisanya jadi
  * warna di lingkaran tanpa keterangan apa pun di sebelahnya.
  */
-function batasDenganLainnya<T extends { count: number }>(
+export function batasDenganLainnya<T extends { count: number }>(
   daftar: T[], n: number, buatLainnya: (sisaCount: number) => T,
 ): T[] {
   if (daftar.length <= n) return daftar;
@@ -295,12 +299,12 @@ function SectionHeader({ icon, title, sub, right }: { icon:string; title:string;
   aksen, warna yang BERBEDA otomatis berarti sesuatu, dan itulah yang dipakai
   tiga token status di bawahnya.
 */
-const AKSEN  = '#4f46e5';
-const BAIK   = '#059669';
-const HATI   = '#d97706';
-const KRITIS = '#e11d48';
+export const AKSEN  = '#4f46e5';
+export const BAIK   = '#059669';
+export const HATI   = '#d97706';
+export const KRITIS = '#e11d48';
 
-function HBarChart({ data, color, maxItems=6, lebarLabel='7rem' }: { data:{label:string;value:number}[]; color?:string; maxItems?:number; lebarLabel?:string }) {
+export function HBarChart({ data, color, maxItems=6, lebarLabel='7rem' }: { data:{label:string;value:number}[]; color?:string; maxItems?:number; lebarLabel?:string }) {
   const top = data.slice(0, maxItems), max = Math.max(...top.map(d=>d.value), 1);
   return (
     <div className="flex flex-col gap-[7px]">
@@ -323,7 +327,7 @@ function HBarChart({ data, color, maxItems=6, lebarLabel='7rem' }: { data:{label
 }
 
 /** Satu baris rincian di kartu modul: label · bilah tipis · angka. */
-function BarisRincian({ label, value, total, warna, teks }: {
+export function BarisRincian({ label, value, total, warna, teks }: {
   label:string; value?:number; total?:number; warna?:string; teks?:React.ReactNode;
 }) {
   const pct = (total ?? 0) > 0 ? Math.min(100, ((value ?? 0) / (total as number)) * 100) : 0;
@@ -347,7 +351,7 @@ function BarisRincian({ label, value, total, warna, teks }: {
  * di tepi atas, chip ikon, dan percikan opsional membuat sederet ubin putih
  * punya identitas masing-masing tanpa mengubah permukaannya.
  */
-function KartuModul({ ikon, judul, warna, catatan, angka, satuan, percik, kaki, kelas, children }: {
+export function KartuModul({ ikon, judul, warna, catatan, angka, satuan, percik, kaki, kelas, children }: {
   ikon: string; judul: string; warna: string; catatan?: React.ReactNode;
   angka: React.ReactNode; satuan: string; percik?: number[];
   kaki?: React.ReactNode; kelas?: string; children: React.ReactNode;
@@ -407,7 +411,7 @@ function Percik({ nilai, warna, lebar = 88, tinggi = 30 }: {
  * (hari piket terisi dari total hari, attempt lulus dari total attempt),
  * bukan sekadar beberapa angka yang kebetulan berdampingan.
  */
-function Cincin({ nilai, dari, warna, ukuran = 84, teks }: {
+export function Cincin({ nilai, dari, warna, ukuran = 84, teks }: {
   nilai: number; dari: number; warna: string; ukuran?: number; teks: React.ReactNode;
 }) {
   const pct = dari > 0 ? Math.min(1, nilai / dari) : 0;
@@ -455,7 +459,7 @@ function RelSeksi({ judul }: { judul: string }) {
 }
 
 /** Kepala ubin seragam: chip ikon berwarna modul + judul + catatan kecil. */
-function KepalaUbin({ ikon, judul, warna, catatan }: {
+export function KepalaUbin({ ikon, judul, warna, catatan }: {
   ikon: string; judul: string; warna: string; catatan?: React.ReactNode;
 }) {
   return (
@@ -467,7 +471,7 @@ function KepalaUbin({ ikon, judul, warna, catatan }: {
 }
 
 /** Kaki ubin: satu keterangan kiri, satu angka kanan, dipisah garis putus. */
-function KakiUbin({ kiri, kanan, warna }: { kiri: React.ReactNode; kanan: React.ReactNode; warna?: string }) {
+export function KakiUbin({ kiri, kanan, warna }: { kiri: React.ReactNode; kanan: React.ReactNode; warna?: string }) {
   return (
     <div className="flex justify-between items-center mt-2.5 pt-2.5" style={{ borderTop: '1px dashed rgba(15,23,42,0.10)' }}>
       <span className="text-[11px] font-bold text-slate-500">{kiri}</span>
@@ -617,7 +621,7 @@ function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; loading: 
  * lebar, jadi rasionya dibuat lebih landai supaya tinggi hasil akhirnya
  * tidak ikut membengkak walau lebarnya jauh lebih besar).
  */
-function TrenBulanan({ data, viewW = 640, viewH = 168 }: { data: number[]; viewW?: number; viewH?: number }) {
+export function TrenBulanan({ data, viewW = 640, viewH = 168 }: { data: number[]; viewW?: number; viewH?: number }) {
   const MN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
   const cur = Math.min(new Date().getMonth(), 11);
   const W = viewW, H = viewH, pb = 26, pt = 18, sisi = 10;
@@ -660,7 +664,7 @@ function TrenBulanan({ data, viewW = 640, viewH = 168 }: { data: number[]; viewW
 }
 
 /** Inisial nama untuk avatar papan peringkat. */
-function inisial(nama: string) {
+export function inisial(nama: string) {
   return nama.trim().split(/\s+/).slice(0, 2).map(w => w[0]?.toUpperCase() ?? '').join('') || '?';
 }
 
@@ -1159,424 +1163,26 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
                 bilah rasio, Piket memakai cincin + papan nama karena isinya
                 memang NAMA, bukan besaran yang bisa dibandingkan panjangnya.
               */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
-
-                {/* TICKET */}
-                <KartuModul
-                  kelas="lg:col-span-3" ikon="🎫" judul="Ticket" warna="#e11d48"
-                  catatan={scope.kind==='pts_sup'?scope.ptsTeamType:'Semua'}
-                  angka={loading?'—':(kpi?.tickets.total??0)}
-                  satuan="tiket"
-                  percik={loading?undefined:(kpi?.tickets.monthlyTickets??[]).slice(0, new Date().getMonth()+1)}
-                  kaki={!loading&&kpi
-                    ? <KakiUbin kiri="Avg resolusi" warna={BAIK} kanan={`${kpi.tickets.avgResolutionDays} hari`}/>
-                    : undefined}>
-                  {loading
-                    ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
-                    : batasDenganLainnya(kpi?.tickets.byStatus??[], 4, count=>({status:'Lainnya',count,color:'#94a3b8'}))
-                        .map(s=>(
-                          <BarisRincian key={s.status} label={s.status} value={s.count}
-                            total={kpi?.tickets.total??0}
-                            warna={/overdue/i.test(s.status)?KRITIS:/solved|selesai/i.test(s.status)?BAIK:AKSEN}/>
-                        ))}
-                </KartuModul>
-
-                {/* REMINDER SCHEDULE */}
-                <KartuModul
-                  kelas="lg:col-span-3" ikon="📅" judul="Reminder Schedule" warna="#7c3aed"
-                  angka={loading?'—':(kpi?.reminders.total??0)}
-                  satuan="jadwal"
-                  kaki={!loading&&kpi
-                    ? <KakiUbin kiri="Done rate" warna={BAIK}
-                        kanan={`${kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%`}/>
-                    : undefined}>
-                  {loading
-                    ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
-                    : <>
-                        <BarisRincian label="Done"    value={kpi?.reminders.done??0}         total={kpi?.reminders.total??0} warna={BAIK}/>
-                        <BarisRincian label="Pending" value={kpi?.reminders.pending??0}      total={kpi?.reminders.total??0} warna={HATI}/>
-                        <BarisRincian label="Overdue" value={kpi?.reminders.overdueCount??0} total={kpi?.reminders.total??0} warna={KRITIS}/>
-                      </>}
-                </KartuModul>
-
-                {/* PIKET SHOWROOM — cincin + papan nama, bukan bilah */}
-                <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <RelAksen warna="#0891b2"/>
-                  <KepalaUbin ikon="🏪" judul="Piket Showroom" warna="#0891b2"
-                    catatan={new Date().toLocaleDateString('id-ID',{day:'2-digit',month:'short'})}/>
-                  <div className="flex items-center gap-3.5">
-                    <Cincin ukuran={82} warna="#0891b2"
-                      nilai={kpi?.piket.weekFilled??0} dari={kpi?.piket.weekTotal??0}
-                      teks={loading?'—':`${kpi?.piket.weekFilled??0}/${kpi?.piket.weekTotal??0}`}/>
-                    {/*  PIC piket adalah NAMA, bukan angka - bilah sepanjang nol
-                        untuk "belum diisi" cuma menipu mata: terbaca seperti
-                        nilai nol padahal artinya "belum ada datanya". */}
-                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                      {[
-                        {team:'IVP', person:kpi?.piket.todayIVP},
-                        {team:'UMP', person:kpi?.piket.todayUMP},
-                        {team:'MVI', person:kpi?.piket.todayMvi},
-                      ].map(p=>(
-                        <div key={p.team} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-[10px] bg-slate-50 border border-black/[0.05]">
-                          <span className="text-[11px] font-black tracking-[0.08em] flex-shrink-0" style={{color:'#0e7490'}}>{p.team}</span>
-                          {loading
-                            ? <span className="inline-block h-2.5 w-16 rounded bg-slate-100 animate-pulse"/>
-                            : p.person
-                              ? <span className="text-[11px] font-bold text-slate-600 truncate">{p.person}</span>
-                              : <span className="text-[11px] font-semibold text-slate-500 italic truncate">Belum diisi</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="mt-auto">
-                    {!loading&&kpi&&<KakiUbin kiri={`${kpi.piket.kegiatanToday} tamu hari ini`} warna="#0891b2"
-                      kanan={`${Math.min(100,Math.round((kpi.piket.weekFilled/Math.max(kpi.piket.weekTotal,1))*100))}% terpenuhi`}/>}
-                  </div>
-                </div>
-
-                {/* UNIT MOVEMENT */}
-                <KartuModul
-                  kelas="lg:col-span-3" ikon="🚚" judul="Unit Movement" warna="#d97706"
-                  catatan="Bulan ini"
-                  angka={loading?'—':(kpi?.units.totalLogs??0)}
-                  satuan="log tercatat"
-                  kaki={!loading&&kpi
-                    ? <KakiUbin kiri="Saldo bulan ini" warna="#d97706"
-                        kanan={`${kpi.units.masukThisMonth-kpi.units.keluarThisMonth>0?'+':''}${kpi.units.masukThisMonth-kpi.units.keluarThisMonth} unit`}/>
-                    : undefined}>
-                  {loading
-                    ? [0,1].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
-                    : <>
-                        <BarisRincian label="Keluar" value={kpi?.units.keluarThisMonth??0} total={kpi?.units.totalLogs??0} warna={HATI}/>
-                        <BarisRincian label="Masuk"  value={kpi?.units.masukThisMonth??0}  total={kpi?.units.totalLogs??0} warna={BAIK}/>
-                      </>}
-                </KartuModul>
-              </div>
+              <BarisTicketKPI
+                kpi={kpi} loading={loading} scope={scope}
+              />
 
               <RelSeksi judul="Distribusi Tiket"/>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
-
-                {/*
-                  Beban handler sebagai PAPAN PERINGKAT, bukan bar chart.
-                  Datanya sering cuma satu atau dua orang, dan grafik batang
-                  berisi satu batang tidak membandingkan apa pun - yang dibaca
-                  orang di sana adalah nama dan angkanya. Orang teratas diberi
-                  aksen penuh, sisanya abu: penekanan, bukan peringkat berwarna.
-                */}
-                <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <RelAksen warna={AKSEN}/>
-                  <KepalaUbin ikon="🏅" judul="Beban Handler" warna={AKSEN} catatan="Open"/>
-                  {loading ? <div className="h-28 rounded animate-pulse bg-slate-100"/>
-                    : kpi?.tickets.byHandler.length ? <>
-                      <div className="flex flex-col">
-                        {kpi.tickets.byHandler.slice(0,5).map((h,i)=>(
-                          <div key={h.name} className="flex items-center gap-2.5 py-[7px] border-b border-black/[0.05] last:border-b-0">
-                            <span aria-hidden="true" className="w-7 h-7 rounded-[10px] grid place-items-center text-[11px] font-black text-white flex-shrink-0"
-                              style={{ background: i===0 ? AKSEN : '#cbd5e1' }}>{inisial(h.name)}</span>
-                            <span className="text-[12px] font-extrabold text-slate-800 flex-1 truncate">{h.name}</span>
-                            <span className="text-[16px] font-black tabular-nums flex-shrink-0"
-                              style={{ color: i===0 ? AKSEN : '#94a3b8' }}>{h.count}</span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-auto">
-                        <KakiUbin kiri="Rata-rata beban" warna={AKSEN}
-                          kanan={`${(kpi.tickets.open/Math.max(kpi.tickets.byHandler.length,1)).toFixed(1).replace('.',',')} tiket/orang`}/>
-                      </div>
-                    </> : <p className="text-sm text-center py-6 text-slate-500">Tidak ada data</p>}
-                </div>
-
-                {/* DIVISI */}
-                <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <RelAksen warna={AKSEN}/>
-                  <KepalaUbin ikon="🏢" judul="Ticket per Divisi" warna={AKSEN}/>
-                  {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
-                    kpi?.tickets.byDivision.length
-                      ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))}/>
-                      : <p className="text-sm text-center py-6 text-slate-500">Tidak ada data</p>}
-                </div>
-
-                {/*
-                  Produk enam kolom: labelnya yang paling panjang di baris ini
-                  ("Philips 55BDL2105X", "Microvision MV-U55…"), dan 3+3+6
-                  menggenapkan barisnya jadi dua belas tanpa slot menggantung.
-                */}
-                <div className={`${UBIN} lg:col-span-6 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <RelAksen warna={AKSEN}/>
-                  <KepalaUbin ikon="📦" judul="Ticket per Produk" warna={AKSEN} catatan="6 teratas"/>
-                  {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
-                    kpi?.tickets.byProduct?.length
-                      ? <HBarChart lebarLabel="10rem" data={kpi.tickets.byProduct.map(p=>({label:p.product,value:p.count}))}/>
-                      : <p className="text-sm text-center py-6 text-slate-500">Tidak ada data produk</p>}
-                </div>
-              </div>
+              <BarisRingkasanKPI
+                kpi={kpi} loading={loading}
+              />
 
               <RelSeksi judul="Tim & Pembelajaran"/>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:contents">
-
-                {/* TREND — area, lihat TrenBulanan */}
-                <div className={`${UBIN} ${scope.kind==='admin'?'lg:col-span-6':'lg:col-span-12'} h-full`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <RelAksen warna={AKSEN}/>
-                  <KepalaUbin ikon="📈" judul={`Trend Ticket Bulanan ${new Date().getFullYear()}`} warna={AKSEN}
-                    catatan={!loading&&kpi ? `${kpi.tickets.monthlyTickets.reduce((s,v)=>s+v,0)} total` : undefined}/>
-                  {loading ? <div className="h-36 rounded animate-pulse bg-slate-100"/>
-                    : kpi?.tickets.monthlyTickets?.some(v=>v>0)
-                      ? <TrenBulanan data={kpi.tickets.monthlyTickets}
-                          {...(scope.kind!=='admin' ? { viewW: 1400, viewH: 220 } : {})}/>
-                      : <div className="flex flex-col items-center gap-2 py-10">
-                          <span className="text-3xl opacity-20" aria-hidden="true"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                          <p className="text-[11px] text-slate-500">Belum ada data ticket tahun ini.</p>
-                        </div>}
-                </div>
-
-                {scope.kind==='admin' && <>
-                  {/* LEARNING CENTER */}
-                  <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
-                    <RelAksen warna={BAIK}/>
-                    <KepalaUbin ikon="🎓" judul="Learning Center" warna={BAIK}/>
-                    <div className="grid grid-cols-3 gap-3">
-                      {[
-                        {label:'Peserta',  value:kpi?.learning.totalParticipants??0, w:'#0f172a'},
-                        {label:'Attempt',  value:kpi?.learning.totalSessions??0,     w:'#0f172a'},
-                        {label:'Avg skor', value:kpi?.learning.avgScore??0,          w:BAIK},
-                      ].map(s=>(
-                        <div key={s.label}>
-                          <p className="text-[10px] font-black uppercase tracking-[0.07em] text-slate-500 truncate">{s.label}</p>
-                          {loading
-                            ? <div className="h-6 w-10 rounded bg-slate-100 animate-pulse mt-1"/>
-                            : <p className="text-[24px] font-black leading-none mt-1 tabular-nums" style={{color:s.w,letterSpacing:'-0.03em'}}>{s.value}</p>}
-                        </div>
-                      ))}
-                    </div>
-                    {/*  Pass rate sebagai satu cincin - bagian-dari-keseluruhan
-                        yang sesungguhnya, menggantikan dua donat yang dulu
-                        menyatakan rasio yang sama dua kali. */}
-                    {!loading&&kpi&&(()=>{
-                      const gagal = Math.max(kpi.learning.totalSessions-kpi.learning.completedSessions,0);
-                      const pct = kpi.learning.totalSessions>0
-                        ? Math.round((kpi.learning.completedSessions/kpi.learning.totalSessions)*100) : 0;
-                      const w = pct>=80?BAIK:pct>=60?HATI:KRITIS;
-                      return (
-                        <div className="flex items-center gap-3.5 mt-auto pt-4">
-                          <Cincin ukuran={72} warna={w} nilai={kpi.learning.completedSessions} dari={kpi.learning.totalSessions} teks={`${pct}%`}/>
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-extrabold text-slate-700">Pass rate</p>
-                            <div className="flex flex-col gap-1 mt-1.5">
-                              <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
-                                <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:w}}/>{kpi.learning.completedSessions} lulus</span>
-                              <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
-                                <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:'#e2e8f0'}}/>{gagal} gagal</span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-
-                  {/*
-                    Pengguna: satu bilah bertumpuk, bukan empat bilah terpisah.
-                    Yang ditanyakan tentang peran akun adalah KOMPOSISI - berapa
-                    bagian dari seluruh akun - dan itu justru hilang kalau tiap
-                    peran diberi bilah sendiri dengan patokan panjang yang sama.
-                  */}
-                  <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
-                    <RelAksen warna="#475569"/>
-                    <KepalaUbin ikon="👥" judul="Pengguna" warna="#475569"/>
-                    <div className="flex items-baseline gap-1.5">
-                      <span className="text-[38px] font-black leading-[0.92] text-slate-900 tabular-nums" style={{letterSpacing:'-0.035em'}}>
-                        {loading?'—':(kpi?.users.total??0)}</span>
-                      <span className="text-[11px] font-bold text-slate-500">akun terdaftar</span>
-                    </div>
-                    {!loading&&kpi&&(()=>{
-                      const WARNA = ['#4f46e5','#7c3aed','#d97706','#94a3b8','#0891b2','#e11d48'];
-                      const peran = kpi.users.byRole.filter(r=>r.count>0);
-                      return (
-                        <div className="mt-auto pt-4">
-                          <div className="flex gap-[2px] h-3 rounded-full overflow-hidden">
-                            {peran.map((r,i)=>(
-                              <span key={r.role??i} title={`${(r.role??'—').toUpperCase()}: ${r.count}`}
-                                style={{flex:r.count, background:WARNA[i%WARNA.length]}}/>
-                            ))}
-                          </div>
-                          <div className="flex flex-wrap gap-x-3.5 gap-y-1.5 mt-2.5">
-                            {peran.map((r,i)=>(
-                              <span key={r.role??i} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
-                                <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:WARNA[i%WARNA.length]}}/>
-                                {(r.role??'Belum diatur').toUpperCase()} {r.count}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                </>}
-              </div>
+              <BarisTrenKPI
+                kpi={kpi} loading={loading} scope={scope}
+              />
 
             </div>
           )}
 
           {/* Cross-Module and Audit Trail tabs removed — moved to Analytics Platform page */}
-          {(tab as string)==='cross_removed'&&(
-            <div className="space-y-5">
-              <div className="lg:col-span-12 text-sm font-bold uppercase tracking-widest text-slate-500 mb-1"><IkonTeks nama="🔀" />Cross-Module Overview — Ticket · Reminder · Learning Center</div>
-
-              {/* Monthly bar chart: 3 modules side by side */}
-              {(() => {
-                const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
-                const year = new Date().getFullYear();
-                // Build monthly data from kpi data available in state
-                // We'll use kpiTeam member data to aggregate
-                const allMembers = kpiTeam.members;
-                const ticketsByMonth = Array.from({length:12},(_,mi)=>
-                  allMembers.reduce((s,m)=>s+(m.monthlyTickets?.[mi]??0),0)
-                );
-                const lcByMonth = Array.from({length:12},(_,mi)=>
-                  allMembers.reduce((s,m)=>s+(m.monthlyLC?.[mi]??0),0)
-                );
-                // For reminders we use kpi.reminders.byCategory total as flat (no monthly breakdown yet)
-                const maxVal = Math.max(...ticketsByMonth, ...lcByMonth, 1);
-                return (
-                  <div className={`${UBIN} lg:col-span-12`} style={{ boxShadow: BAYANG_UBIN }}>
-                    <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                      <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500"><IkonTeks nama="📅" />Aktivitas Bulanan {year}</h3>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{background:'#ef4444'}}/>Ticket</span>
-                        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded-sm inline-block" style={{background:'#6366f1'}}/>LC Attempt</span>
-                      </div>
-                    </div>
-                    {allMembers.length === 0 ? (
-                      <div className="flex flex-col items-center gap-2 py-10">
-                        <span className="text-3xl opacity-20"><Ikon nama="📊" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                        <p className="text-[11px] text-slate-500">Data KPI Team belum tersedia. Buka menu KPI Team untuk memuat data.</p>
-                      </div>
-                    ) : (
-                      <div className="flex items-end gap-1.5" style={{height:160}}>
-                        {MONTHS.map((m,mi)=>{
-                          const t=ticketsByMonth[mi], l=lcByMonth[mi];
-                          const hT=Math.round((t/maxVal)*140), hL=Math.round((l/maxVal)*140);
-                          return (
-                            <div key={mi} className="flex-1 flex flex-col items-center gap-1 group">
-                              <div className="flex items-end gap-0.5 w-full justify-center" style={{height:148}}>
-                                <div className="w-[42%] rounded-t transition-all duration-700" title={`Ticket: ${t}`}
-                                  style={{height:hT||2, background:'#ef4444', opacity:t?0.85:0.12}}/>
-                                <div className="w-[42%] rounded-t transition-all duration-700" title={`LC: ${l}`}
-                                  style={{height:hL||2, background:'#6366f1', opacity:l?0.85:0.12}}/>
-                              </div>
-                              <span className="text-[11px] text-slate-500">{m}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* Module summary comparison */}
-              <div className="lg:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Tickets */}
-                <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#fee2e2'}}><Ikon nama="🎫" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-                    <span className="text-sm font-black uppercase tracking-widest text-slate-500">Ticketing</span>
-                  </div>
-                  {[
-                    {label:'Total',val:kpi?.tickets.total??0,color:'#64748b'},
-                    {label:'Open',val:kpi?.tickets.open??0,color:'#ef4444'},
-                    {label:'Solved',val:kpi?.tickets.solved??0,color:'#10b981'},
-                    {label:'Overdue',val:(kpi?.tickets.byStatus??[]).find(s=>s.status==='Overdue')?.count??0,color:'#f59e0b'},
-                  ].map(r=>(
-                    <div key={r.label} className="flex items-center justify-between">
-                      <span className="text-sm text-slate-500">{r.label}</span>
-                      <span className="text-sm font-black" style={{color:r.color}}>{loading?'—':r.val}</span>
-                    </div>
-                  ))}
-                </div>
-                {/* Reminders */}
-                <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-                    <span className="text-sm font-black uppercase tracking-widest text-slate-500">Reminder</span>
-                  </div>
-                  {[
-                    {label:'Total',val:kpi?.reminders.total??0,color:'#64748b'},
-                    {label:'Pending',val:kpi?.reminders.pending??0,color:'#f59e0b'},
-                    {label:'Done',val:kpi?.reminders.done??0,color:'#10b981'},
-                    {label:'Overdue',val:kpi?.reminders.overdueCount??0,color:'#ef4444'},
-                  ].map(r=>(
-                    <div key={r.label} className="flex items-center justify-between">
-                      <span className="text-sm text-slate-500">{r.label}</span>
-                      <span className="text-sm font-black" style={{color:r.color}}>{loading?'—':r.val}</span>
-                    </div>
-                  ))}
-                </div>
-                {/* Learning Center */}
-                <div className={`${UBIN} space-y-3`} style={{ boxShadow: BAYANG_UBIN }}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-6 h-6 rounded-lg flex items-center justify-center text-sm" style={{background:'#ede9fe'}}><Ikon nama="🎓" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-                    <span className="text-sm font-black uppercase tracking-widest text-slate-500">Learning Center</span>
-                  </div>
-                  {[
-                    {label:'Total Sesi',val:kpi?.learning.totalSessions??0,color:'#64748b'},
-                    {label:'Selesai',val:kpi?.learning.completedSessions??0,color:'#10b981'},
-                    {label:'Peserta Unik',val:kpi?.learning.totalParticipants??0,color:'#6366f1'},
-                    {label:'Avg Skor',val:`${kpi?.learning.avgScore??0} pts`,color:'#f59e0b'},
-                  ].map(r=>(
-                    <div key={r.label} className="flex items-center justify-between">
-                      <span className="text-sm text-slate-500">{r.label}</span>
-                      <span className="text-sm font-black" style={{color:r.color}}>{loading?'—':r.val}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Team KPI summary table */}
-              {kpiTeam.members.length > 0 && (
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="px-5 py-3 border-b border-slate-100">
-                    <span className="text-sm font-black uppercase tracking-widest text-slate-500"><IkonTeks nama="👥" />Ringkasan KPI Tim — {kpiTeam.filterYear}</span>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm" style={{minWidth:560}}>
-                      <thead>
-                        <tr style={{background:'#f8fafc',borderBottom:'1px solid #e2e8f0'}}>
-                          {['Nama','Tim','Ticket','LC','BAST','Skor KPI'].map(h=>(
-                            <th key={h} className="px-3 py-2 text-left text-sm font-bold uppercase tracking-widest text-slate-500">{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {kpiTeam.members.map(m=>{
-                          const _s = kpiSettings;
-                          const lcFailedDyn = (m.lcScores ?? []).filter((sc: number) => sc < _s.lcMinScore).length;
-                          const tickS = m.ticketsHandled>0?Math.max(0,1-m.ticketsOverdue/Math.max(m.ticketsHandled,1)):0;
-                          const bastS = m.formReviewTotal===0?0:m.formReviewLowRating===0?1:Math.max(0,1-m.formReviewLowRating/Math.max(m.formReviewTotal,1));
-                          const lcS   = m.lcAttempts===0?0:Math.max(0,1-(lcFailedDyn/Math.max(m.lcAttempts,1)));
-                          const rndS  = m.techNotesApproved>=_s.rndTarget?1:m.techNotesApproved/_s.rndTarget;
-                          const final = Math.round((_s.ticketOverdueWeight*tickS + _s.bastWeight*bastS + _s.lcWeight*lcS + _s.rndWeight*rndS) * 100);
-                          const noData = m.ticketsHandled===0&&m.lcAttempts===0&&m.techNotesApproved===0;
-                          const c = noData?'#94a3b8':final>=85?'#10b981':final>=70?'#3b82f6':final>=50?'#f59e0b':'#ef4444';
-                          return (
-                            <tr key={m.id} style={{borderBottom:'1px solid #f1f5f9'}} className="hover:bg-slate-50/50">
-                              <td className="px-3 py-2 font-semibold text-slate-700">{m.name.split(' ').slice(0,2).join(' ')}</td>
-                              <td className="px-3 py-2 text-slate-500 text-sm">{m.team_type.replace('Team PTS ','')}</td>
-                              <td className="px-3 py-2"><span className="font-bold text-red-500">{m.ticketsHandled}</span><span className="text-slate-500 ml-1">({m.ticketsOverdue} overdue)</span></td>
-                              <td className="px-3 py-2"><span className="font-bold text-indigo-600">{m.lcAttempts}</span><span className="text-slate-500 ml-1">avg {m.lcAvgScore}</span></td>
-                              <td className="px-3 py-2"><span className="font-bold text-amber-700">{m.formReviewLowRating}</span><span className="text-slate-500 ml-1">low-rating</span></td>
-                              <td className="px-3 py-2"><span className="text-sm font-black" style={{color:c}}>{noData?'—':`${final}%`}</span></td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {(tab as string)==='audit_removed'&&(
             <div className="rounded-2xl p-4 space-y-3"
@@ -1618,89 +1224,9 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
         </div>{/* end content */}
 
       {/* ══ Settings Modal ══ */}
-      {showSettings && typeof document !== 'undefined' && createPortal(
-        <div role="dialog" aria-modal="true" aria-label="Pengaturan KPI" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
-          style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowSettings(false); }}>
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <div>
-                <div className="font-bold text-slate-800 text-base"><IkonTeks nama="⚙" />Pengaturan KPI</div>
-                <div className="text-sm text-slate-500 mt-0.5">Atur batas & bobot masing-masing komponen</div>
-              </div>
-              <button aria-label="Tutup" onClick={()=>setShowSettings(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100">×</button>
-            </div>
-            <div className="p-6 space-y-5">
-              {/* LC Min Score */}
-              <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1.5 uppercase tracking-wide"><IkonTeks nama="🎓" />Learning Center — Batas Nilai Minimum</label>
-                <div className="flex items-center gap-3">
-                  <input aria-label="🎓 Learning Center — Batas Nilai Minimum" type="range" min={40} max={85} step={5} value={kpiSettings.lcMinScore}
-                    onChange={e=>setKpiSettings(p=>({...p, lcMinScore:Number(e.target.value)}))}
-                    className="flex-1 accent-violet-600"/>
-                  <span className="text-lg font-black text-violet-600 w-12 text-right">&lt;{kpiSettings.lcMinScore}</span>
-                </div>
-                <div className="text-sm text-slate-500 mt-1">Nilai di bawah ini dianggap tidak lulus KPI LC</div>
-              </div>
-              {/* RnD Target */}
-              <div>
-                <label className="block text-sm font-bold text-slate-600 mb-1.5 uppercase tracking-wide"><IkonTeks nama="📝" />R&D Tech Note — Target per Tahun</label>
-                <div className="flex items-center gap-3">
-                  <input aria-label="📝 R&D Tech Note — Target per Tahun" type="range" min={1} max={8} step={1} value={kpiSettings.rndTarget}
-                    onChange={e=>setKpiSettings(p=>({...p, rndTarget:Number(e.target.value)}))}
-                    className="flex-1 accent-pink-600"/>
-                  <span className="text-lg font-black text-pink-600 w-12 text-right">{kpiSettings.rndTarget}x</span>
-                </div>
-                <div className="text-sm text-slate-500 mt-1">Minimal Tech Note approved per tahun untuk nilai penuh</div>
-              </div>
-              {/* Bobot section */}
-              <div>
-                <label className="block text-sm font-bold text-slate-600 mb-3 uppercase tracking-wide"><IkonTeks nama="📊" />Bobot Komponen KPI (total harus 100%)</label>
-                <div className="space-y-3">
-                  {([
-                    {key:'ticketOverdueWeight', label:'🎫 Ticketing', color:'#ef4444'},
-                    {key:'bastWeight', label:'⭐ BAST & Demo', color:'#f59e0b'},
-                    {key:'lcWeight', label:'🎓 Learning Center', color:'#6366f1'},
-                    {key:'rndWeight', label:'📝 R&D Tech Note', color:'#ec4899'},
-                  ] as {key: keyof KPISettings, label:string, color:string}[]).map(item=>(
-                    <div key={item.key} className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-slate-600 w-36 flex-shrink-0">{item.label}</span>
-                      <input aria-label="Bobot KPI" type="range" min={5} max={60} step={5} value={Math.round((kpiSettings[item.key] as number)*100)}
-                        onChange={e=>setKpiSettings(p=>({...p, [item.key]:Number(e.target.value)/100}))}
-                        className="flex-1" style={{accentColor:item.color}}/>
-                      <span className="text-sm font-black w-10 text-right" style={{color:item.color}}>
-                        {Math.round((kpiSettings[item.key] as number)*100)}%
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-sm text-slate-500">Total bobot sekarang:</span>
-                  <span className={`text-sm font-black ${Math.round((kpiSettings.ticketOverdueWeight+kpiSettings.bastWeight+kpiSettings.lcWeight+kpiSettings.rndWeight)*100)===100?'text-emerald-700':'text-red-500'}`}>
-                    {Math.round((kpiSettings.ticketOverdueWeight+kpiSettings.bastWeight+kpiSettings.lcWeight+kpiSettings.rndWeight)*100)}%
-                    {Math.round((kpiSettings.ticketOverdueWeight+kpiSettings.bastWeight+kpiSettings.lcWeight+kpiSettings.rndWeight)*100)===100?' ✓':' ⚠ harus 100%'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="flex gap-3 px-6 pb-5 justify-end">
-              <button onClick={()=>{
-                  setKpiSettings(DEFAULT_KPI_SETTINGS);
-                  saveKpiSettings(DEFAULT_KPI_SETTINGS);
-                }}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors">
-                Reset Default
-              </button>
-              <button onClick={()=>{ saveKpiSettings(kpiSettings); setShowSettings(false); }}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-colors"
-                style={{background:'linear-gradient(135deg,#7c3aed,#6d28d9)'}}>
-                ✓ Simpan & Tutup
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      <ModalPengaturanDasborKPI
+        kpiSettings={kpiSettings} saveKpiSettings={saveKpiSettings} setKpiSettings={setKpiSettings} setShowSettings={setShowSettings} showSettings={showSettings}
+      />
     </div>
   );
 }

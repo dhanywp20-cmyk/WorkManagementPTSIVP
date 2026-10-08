@@ -5,6 +5,10 @@ import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput, AppDia
 import { ModalPortal } from '@/components/shared';
 import { compressImage } from '@/lib/image-compress';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { DaftarSesiKuis } from './kuis/DaftarSesiKuis';
+import { BilahNavigasiSoal } from './kuis/BilahNavigasiSoal';
+import { IsiSoalKuis } from './kuis/IsiSoalKuis';
+import { BilahAtasKuis } from './kuis/BilahAtasKuis';
 
 /*
   Menerjemahkan galat unggah Supabase jadi kalimat yang bisa ditindaklanjuti.
@@ -43,7 +47,7 @@ function terjemahkanGalatUnggah(pesan?: string): string {
  * perQuestionResult di bawah) - sebelum itu, mengirim correct_answer ke
  * browser sama saja membocorkan kunci jawaban sebelum soal dijawab.
  */
-type QuizQuestion = Omit<Question, 'correct_answer' | 'model_answer'>;
+export type QuizQuestion = Omit<Question, 'correct_answer' | 'model_answer'>;
 
 /**
  * Pengacak urutan soal - Fisher-Yates dengan benih (seed), bukan Math.random().
@@ -591,302 +595,24 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           oleh UKURAN kartu soal dan garis pemisahnya yang tegas, bukan lagi
           kontras terang-gelap.
         */}
-        <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 flex-shrink-0 bg-white border-b border-slate-200"
-          style={{ boxShadow: '0 8px 24px -18px rgba(15,23,42,.18)' }}>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-bold text-[12.5px] sm:text-sm truncate text-slate-800">
-              {session.session_name}
-            </h2>
-            <p className="text-[11px] sm:text-[11.5px] mt-0.5 text-slate-500">
-              {answered} dari {questions.length} soal terjawab
-            </p>
-          </div>
-
-          {/*
-            TIMER - benda terbesar di bilah ini, dan memang seharusnya.
-
-            Bentuk lamanya sebuah pil kecil seukuran tombol Submit di sebelahnya.
-            Padahal di quiz berbatas waktu, inilah angka yang paling sering
-            dicari orang. Cincin di kirinya menyusut mengikuti sisa waktu, jadi
-            bisa dibaca sekilas tanpa memproses angkanya.
-          */}
-          {timeLeft !== null && (
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <div className="relative flex-shrink-0" style={{ width: 38, height: 38 }}>
-                <svg width="38" height="38" viewBox="0 0 46 46" aria-hidden="true"
-                  style={{ transform: 'rotate(-90deg)', display: 'block' }}>
-                  <circle cx="23" cy="23" r="19" fill="none" stroke="#E2E8F0" strokeWidth="4" />
-                  <circle cx="23" cy="23" r="19" fill="none" strokeWidth="4" strokeLinecap="round"
-                    stroke={WARNA_WAKTU[tingkatWaktu]}
-                    strokeDasharray={KELILING}
-                    strokeDashoffset={KELILING * (1 - porsiWaktu)}
-                    style={{ transition: 'stroke-dashoffset 1s linear, stroke .3s' }} />
-                </svg>
-              </div>
-              <div>
-                <div role="timer"
-                  className={`font-black tabular-nums leading-none text-[26px] sm:text-[34px] ${isUrgent ? 'animate-pulse' : ''}`}
-                  style={{ color: WARNA_WAKTU[tingkatWaktu], letterSpacing: '-0.02em' }}>
-                  {fmtTimer(timeLeft)}
-                </div>
-                <span className="block text-[10px] font-bold uppercase mt-1 text-slate-500"
-                  style={{ letterSpacing: '0.16em' }}>
-                  {KET_WAKTU[tingkatWaktu]}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/*
-            Submit di bilah atas TINGGAL jalan keluar untuk mengumpulkan lebih
-            awal - dan hanya selama masih ada soal kosong. Begitu semua
-            terjawab ia menghilang, digantikan tombol besar di bawah, tempat
-            mata peserta sudah berada.
-          */}
-          {answered < questions.length && (
-            <button onClick={() => handleSubmit(false)}
-              className="px-3 py-2 lg:px-7 lg:py-3.5 text-[12px] lg:text-base font-bold rounded-lg lg:rounded-xl transition-all flex-shrink-0 hidden formulir:block bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200">
-              Submit
-            </button>
-          )}
-
-          {/* Tutup TIDAK langsung keluar - lihat dialog konfirmasi di bawah.
-              Menutup quiz berbatas waktu tanpa peringatan berarti kehilangan
-              kesempatan mengerjakan, dan itu tidak bisa dibatalkan. */}
-          <button onClick={() => setKonfirmasiKeluar(true)} aria-label="Keluar dari quiz"
-            className="w-9 h-9 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center transition-all flex-shrink-0 bg-transparent hover:bg-slate-100 text-slate-500 border border-slate-200">
-            <svg aria-hidden="true" focusable="false" className="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        <BilahAtasKuis
+          KELILING={KELILING} KET_WAKTU={KET_WAKTU} WARNA_WAKTU={WARNA_WAKTU} answered={answered} fmtTimer={fmtTimer} handleSubmit={handleSubmit} isUrgent={isUrgent} porsiWaktu={porsiWaktu} questions={questions} session={session} setKonfirmasiKeluar={setKonfirmasiKeluar} timeLeft={timeLeft} tingkatWaktu={tingkatWaktu}
+        />
 
         {relSoal()}
 
-        <div className="flex-1 overflow-y-auto px-3 sm:px-6 py-5 sm:py-8 lg:py-10">
-          {/*
-            Panah sebelumnya/berikutnya di SAMPING kartu, khusus laptop
-            (lg+) - permintaan eksplisit supaya navigasi tidak melulu numpuk
-            di bilah bawah yang sempit. Di ponsel/tablet tetap lewat bilah
-            bawah seperti sebelumnya (dianggap sudah cukup), jadi tombol ini
-            disembunyikan di bawah lg lewat hidden lg:flex, bukan dihapus.
-          */}
-          <div className="max-w-5xl mx-auto flex items-center gap-3 lg:gap-5">
-            <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
-              aria-label="Soal sebelumnya"
-              className="hidden lg:flex flex-shrink-0 w-12 h-12 rounded-full items-center justify-center bg-white border border-slate-200 text-slate-500 transition-all hover:text-[#5B5BF5] hover:border-[#5B5BF5] hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-500 disabled:hover:border-slate-200 disabled:hover:shadow-none"
-              style={{ boxShadow: '0 1px 2px rgba(15,23,42,.04), 0 6px 16px -6px rgba(15,23,42,.12)' }}>
-              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-
-          {/*
-            SATU kartu memuat nomor, soal, dan pilihan - dulu tiga blok
-            terpisah di atas latar yang sama, yang membuat batas antara "soal"
-            dan "antarmuka" kabur.
-
-            Lebar dan padding-nya bertingkat lebih besar di layar lebar
-            (sm/lg) - di laptop, kartu 672px yang cocok untuk ponsel duduk
-            kecil di tengah layar kosong dan terasa sempit. Di ponsel ukurannya
-            tidak diubah dari sebelumnya, sesuai yang diminta.
-          */}
-          <div className="flex-1 min-w-0 max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto rounded-2xl bg-white border border-slate-200 p-5 sm:p-8 lg:p-10"
-            style={{ boxShadow: '0 1px 3px rgba(15,23,42,.05), 0 20px 40px -20px rgba(15,23,42,.18)' }}>
-            <div className="flex items-center gap-2.5 mb-3.5 lg:mb-5 flex-wrap">
-              <span className="text-[11px] lg:text-xs font-bold uppercase px-2.5 py-1 rounded-md"
-                style={{ background: '#EEEEFE', color: '#5B5BF5', letterSpacing: '0.1em' }}>
-                Soal {current + 1} / {questions.length}
-              </span>
-              <span className={`text-[11px] lg:text-xs font-bold px-2 py-0.5 rounded-full border ${q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : q.difficulty === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{q.difficulty}</span>
-            </div>
-            {/*  break-words: pengaman untuk teks panjang tanpa spasi (mis. satu
-                 kata sangat panjang atau tautan) supaya tetap terbungkus rapi
-                 di layar sempit, bukan meluber keluar kartu. */}
-            <p className="text-[17px] sm:text-xl lg:text-2xl font-semibold leading-snug mb-5 lg:mb-7 break-words"
-              style={{ color: '#141828', letterSpacing: '-0.015em' }}>{q.question}</p>
-            <div className="space-y-2.5 lg:space-y-3">
-              {isEssay && q.answer_format === 'image' ? (
-                /* Jawaban berupa foto - untuk soal merancang yang paling wajar
-                   digambar tangan. Yang ditampilkan setelah unggah adalah
-                   PRATINJAU kecilnya, bukan gambar penuh: peserta sudah tahu
-                   apa yang ia foto, jadi mengunduh ulang versi besar hanya
-                   menghabiskan kuotanya sendiri. */
-                <div className="space-y-3">
-                  {gambarJawaban[q.id] ? (
-                    <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3">
-                      <div className="flex items-start gap-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={gambarJawaban[q.id]} alt="Pratinjau jawaban kamu"
-                          className="w-24 h-24 object-cover rounded-lg border border-emerald-200 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-emerald-700">✓ Foto jawaban tersimpan</p>
-                          <p className="text-[11px] text-emerald-700 leading-relaxed mt-0.5">
-                            Boleh diganti selama quiz belum dikumpulkan.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-5 text-center">
-                      <p className="text-3xl mb-1"><Ikon nama="📷" ukuran="1em" className="inline-block align-[-0.12em]" /></p>
-                      <p className="text-sm font-semibold text-slate-600">Belum ada foto jawaban</p>
-                      <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-                        Gambar jawabanmu di kertas, lalu foto dan unggah di sini.
-                      </p>
-                    </div>
-                  )}
-                  <label className={`block w-full text-center px-4 py-3 rounded-xl font-bold text-sm cursor-pointer transition-all ${
-                    unggah === q.id ? 'bg-slate-200 text-slate-500 cursor-wait'
-                                    : 'bg-slate-800 text-white hover:bg-slate-700'}`}>
-                    {unggah === q.id ? 'Mengunggah…' : gambarJawaban[q.id] ? 'Ganti Foto' : 'Ambil / Pilih Foto'}
-                    <input type="file" accept="image/*" capture="environment" className="hidden"
-                      disabled={unggah !== null}
-                      onChange={e => {
-                        const f = e.target.files?.[0];
-                        // Nilai input dikosongkan supaya memilih berkas yang SAMA
-                        // dua kali tetap memicu onChange - kalau tidak, unggah
-                        // ulang setelah gagal terasa seperti tombolnya rusak.
-                        e.target.value = '';
-                        if (f) void handleUploadGambar(q.id, f);
-                      }} />
-                  </label>
-                  <p className="text-[11px] text-slate-500 text-center leading-relaxed">
-                    Foto dikecilkan otomatis di perangkatmu sebelum dikirim, jadi hemat kuota.
-                  </p>
-                </div>
-              ) : isEssay ? (
-                <textarea
-                  key={q.id}
-                  defaultValue={answers[q.id] ?? savedAnswers[q.id] ?? ''}
-                  onChange={e => setAnswers(p => ({ ...p, [q.id]: e.target.value }))}
-                  onBlur={e => handleAnswer(q.id, e.target.value)}
-                  rows={8}
-                  className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-slate-500 resize-y"
-                  placeholder="Tulis jawaban essay kamu di sini..."
-                />
-              ) : (['A','B','C','D'] as const).map(opt => {
-                const val = (q as any)[`option_${opt.toLowerCase()}`];
-                const selected = (answers[q.id] ?? savedAnswers[q.id]) === opt;
-                return (
-                  /*
-                    Terpilih ditandai lewat KOTAK HURUF yang jadi solid, bukan
-                    seluruh baris yang menghitam. Yang lama membalik latar dan
-                    teksnya sekaligus - terbaca seperti tombol yang sedang
-                    ditekan, bukan pilihan yang sudah diambil, dan di layar
-                    terang perbedaannya menyilaukan saat berpindah soal.
-                  */
-                  <button key={opt} onClick={() => handleAnswer(q.id, opt)}
-                    aria-pressed={selected}
-                    className={`w-full flex items-center gap-3 lg:gap-4 px-4 py-3.5 sm:px-5 sm:py-4 lg:py-5 rounded-xl text-left transition-all duration-200 ${selected ? '' : 'hover:border-[#C7CBF5] hover:-translate-y-px hover:shadow-sm'}`}
-                    style={{
-                      border: `1.5px solid ${selected ? '#5B5BF5' : '#E4E7F0'}`,
-                      background: selected ? '#EEEEFE' : '#FFFFFF',
-                      color: '#141828',
-                      boxShadow: selected ? '0 1px 2px rgba(91,91,245,.12)' : undefined,
-                    }}>
-                    <span className="w-[30px] h-[30px] sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center text-[13px] sm:text-sm lg:text-base font-black flex-shrink-0 transition-all tabular-nums"
-                      style={{
-                        background: selected ? '#5B5BF5' : '#F1F2F8',
-                        color: selected ? '#FFFFFF' : '#5A6180',
-                      }}>{opt}</span>
-                    {/*  min-w-0: tanpa ini, span di dalam flex row tidak mau
-                         menyusut di bawah lebar isinya sendiri untuk teks yang
-                         panjang tanpa spasi - baris pilihannya akan meluber
-                         keluar kartu alih-alih membungkus rapi ke bawah. */}
-                    <span className="text-[14.5px] sm:text-base lg:text-lg font-medium flex-1 min-w-0 break-words">{val}</span>
-                    {selected && (
-                      <svg aria-hidden="true" focusable="false" className="w-5 h-5 lg:w-6 lg:h-6 flex-shrink-0" style={{ color: '#5B5BF5' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-            <button onClick={() => setCurrent(p => Math.min(questions.length - 1, p + 1))} disabled={current === questions.length - 1}
-              aria-label="Soal berikutnya"
-              className="hidden lg:flex flex-shrink-0 w-12 h-12 rounded-full items-center justify-center bg-white border border-slate-200 text-slate-500 transition-all hover:text-[#5B5BF5] hover:border-[#5B5BF5] hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-500 disabled:hover:border-slate-200 disabled:hover:shadow-none"
-              style={{ boxShadow: '0 1px 2px rgba(15,23,42,.04), 0 6px 16px -6px rgba(15,23,42,.12)' }}>
-              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        </div>
+        <IsiSoalKuis
+          answers={answers} current={current} gambarJawaban={gambarJawaban} handleAnswer={handleAnswer} handleUploadGambar={handleUploadGambar} isEssay={isEssay} q={q} questions={questions} savedAnswers={savedAnswers} setAnswers={setAnswers} setCurrent={setCurrent} unggah={unggah}
+        />
 
         {/*
           Bilah aksi menempel di BAWAH layar, bukan ikut menggulung bersama
           soal. Di ponsel inilah tempat ibu jari berada, dan tombolnya tidak
           perlu dicari dengan menggulung sampai habis.
         */}
-        <div className="flex-shrink-0 px-4 sm:px-6 py-3.5 bg-white border-t border-slate-200"
-          style={{ boxShadow: '0 -8px 24px -16px rgba(15,23,42,.16)' }}>
-          <div className="max-w-2xl sm:max-w-3xl lg:max-w-4xl mx-auto flex flex-col gap-2.5">
-
-            {answered < questions.length && (
-              <p className="text-[12px] text-slate-500">
-                <b className="text-slate-800">{questions.length - answered} soal belum dijawab.</b>{' '}
-                <span className="lg:hidden">Ketuk ruas abu di rel atas untuk lompat ke sana.</span>
-                <span className="hidden lg:inline">Pakai panah di samping soal, atau ruas abu di rel atas, untuk lompat ke sana.</span>
-              </p>
-            )}
-
-            {/*
-              Tombol besar muncul di soal MANA PUN begitu seluruh soal
-              terjawab, bukan cuma di soal terakhir: orang tidak selalu selesai
-              di nomor terakhir - ia melompat ke nomor yang tadi dilewati,
-              mengisinya, lalu berhenti di sana.
-
-              Tombol Sebelumnya/Berikutnya polos disembunyikan di layar lg -
-              di laptop navigasinya sudah dipegang panah di samping kartu
-              soal (lihat di atas), jadi tidak perlu dobel di sini.
-            */}
-            {answered === questions.length ? (
-              <div className="flex gap-2.5">
-                <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
-                  className="lg:hidden px-4 sm:px-5 py-4 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">
-                  ←<span className="hidden formulir:inline"> Sebelumnya</span>
-                </button>
-                <button onClick={() => handleSubmit(false)}
-                  className="flex-1 px-6 py-4 text-[15px] sm:text-base font-black rounded-xl transition-all bg-emerald-600 hover:bg-emerald-700 text-white">
-                  ✓ Kumpulkan Jawaban
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2.5">
-                <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
-                  className="lg:hidden px-4 sm:px-5 py-3.5 text-sm font-bold rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200">
-                  ←<span className="hidden formulir:inline"> Sebelumnya</span>
-                </button>
-                {current === questions.length - 1 ? (
-                  //  Soal terakhir tapi masih ada yang kosong: Berikutnya tidak
-                  //  ada gunanya lagi, jadi tempatnya dipakai Submit - dengan
-                  //  angkanya, supaya jelas ini mengumpulkan pekerjaan separuh.
-                  //  Tombol ini TETAP tampil di lg (bukan navigasi polos).
-                  <button onClick={() => handleSubmit(false)}
-                    className="flex-1 px-5 py-3.5 text-sm font-bold rounded-xl transition-all bg-slate-800 hover:bg-slate-900 text-white">
-                    Submit ({answered}/{questions.length})
-                  </button>
-                ) : (
-                  <button onClick={() => setCurrent(p => Math.min(questions.length - 1, p + 1))}
-                    className="lg:hidden flex-1 px-5 py-3.5 text-sm font-bold rounded-xl transition-all"
-                    style={{ background: '#5B5BF5', color: '#FFFFFF' }}>
-                    Berikutnya →
-                  </button>
-                )}
-              </div>
-            )}
-
-            {tabSwitches > 0 && (
-              <p className="text-[11px] font-semibold text-rose-600">
-                <IkonTeks nama="⚠" />Berpindah tab tercatat: {tabSwitches}x
-              </p>
-            )}
-          </div>
-        </div>
+        <BilahNavigasiSoal
+          answered={answered} current={current} handleSubmit={handleSubmit} questions={questions} setCurrent={setCurrent} tabSwitches={tabSwitches}
+        />
       </div>
     </div>
     {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
@@ -950,7 +676,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
  * tenggatnya memang tinggal hitungan jam. Kalau setiap tenggat merah, tidak
  * ada satu pun yang terbaca mendesak.
  */
-function tenggatQuiz(closeAt: string | null | undefined): { teks: string; mendesak: boolean } | null {
+export function tenggatQuiz(closeAt: string | null | undefined): { teks: string; mendesak: boolean } | null {
   if (!closeAt) return null;
   const tutup = new Date(closeAt);
   if (Number.isNaN(tutup.getTime())) return null;
@@ -1068,104 +794,9 @@ export function MyQuizPage({ user }: { user: User }) {
         </div>
         <SearchInput value={search} onChange={setSearch} placeholder="Cari quiz..." />
       </div>
-      <div className="p-4 sm:p-8 grid grid-cols-1 gap-4">
-        {filteredSessions.length === 0 && (
-          <div className="flex justify-center py-16">
-            <div className="text-center px-10 py-8 rounded-2xl"
-              style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-              <div className="text-5xl mb-3"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-              <p className="font-semibold text-slate-700">{search ? 'Tidak ada quiz yang cocok' : 'Belum ada quiz aktif'}</p>
-              {!search && <p className="text-sm mt-1 text-slate-500">Tunggu admin membuat sesi quiz baru</p>}
-            </div>
-          </div>
-        )}
-        {filteredSessions.map(s => {
-          const inProgress  = activeAttempts[s.id];
-          const alreadyDone = !s.allow_retake && submittedSessionIds.has(s.id);
-          const menungguNilai = pendingReviewIds.has(s.id);
-          const tenggat = tenggatQuiz(s.close_at);
-
-          /*
-            Tombolnya ditulis sekali lalu dipakai di dua tempat: di kanan judul
-            saat ruangnya cukup, dan selebar kartu di layar sempit. Menyalinnya
-            dua kali berarti dua tombol yang bisa berbeda diam-diam - dan yang
-            di ponsel justru yang paling jarang dilihat saat menyunting.
-          */
-          const tombol = alreadyDone ? (
-            <button disabled
-              className="px-5 py-2.5 text-sm font-bold rounded-xl bg-slate-200 text-slate-500 cursor-not-allowed w-full formulir:w-auto"
-              title="Quiz ini sudah kamu kerjakan dan tidak bisa diulang">
-              <IkonTeks nama="✅" />Selesai
-            </button>
-          ) : (
-            <button onClick={() => handleStart(s)}
-              className={`px-5 py-2.5 text-sm font-bold rounded-xl shadow transition-all w-full formulir:w-auto ${inProgress ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
-              {inProgress ? '▶️ Lanjutkan Quiz' : '🚀 Mulai Quiz'}
-            </button>
-          );
-
-          return (
-            <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-5 sm:p-6 hover:shadow-md transition-all"
-              style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', opacity: alreadyDone ? 0.75 : 1 }}>
-              <div className="flex items-start gap-4 sm:gap-5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-slate-800 text-base sm:text-lg">
-                    {s.session_name}
-                    {s.session_type === 'essay' && <span className="ml-2 align-middle text-xs px-2 py-0.5 rounded-full font-bold bg-indigo-100 text-indigo-700 border border-indigo-200"><IkonTeks nama="📝" />Essay</span>}
-                  </h4>
-                  <p className="text-sm text-slate-500 mt-1">{s.materi_name}</p>
-                </div>
-                {/*
-                  Tombol di kanan HANYA saat ruangnya cukup. Di lebar ponsel ia
-                  dan judul quiz berebut lebar yang sama: judulnya pecah jadi
-                  beberapa baris sementara tombolnya tetap menahan ruangnya.
-                  Di bawah 'formulir' tombolnya turun ke bawah, selebar kartu.
-                */}
-                <div className="hidden formulir:block flex-shrink-0">{tombol}</div>
-              </div>
-
-              <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 text-xs text-slate-500">
-                <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {s.question_count} soal</span>
-                <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {s.timer_minutes ? `${s.timer_minutes} mnt` : 'Tanpa batas waktu'}</span>
-                <span><IkonTeks nama="🎯" />Passing: {s.passing_grade}%</span>
-                <span>🔁 {s.allow_retake ? 'Boleh retake' : 'Sekali submit'}</span>
-              </div>
-
-              {/*
-                SATU baris lencana yang membungkus, bukan tiga div bertumpuk.
-                Yang lama memberi tiap lencana div-nya sendiri dengan mt-2, jadi
-                kartunya memanjang ke bawah satu tingkat per lencana - melar
-                persis saat isinya paling ramai.
-              */}
-              {(inProgress || menungguNilai || alreadyDone || tenggat) && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {inProgress && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="⏳" />Sedang Berlangsung</span>
-                  )}
-                  {menungguNilai && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="⏳" />Menunggu Penilaian Admin</span>
-                  )}
-                  {alreadyDone && !menungguNilai && (
-                    <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold"><IkonTeks nama="✅" />Sudah Dikerjakan</span>
-                  )}
-                  {tenggat && !alreadyDone && (
-                    <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-semibold border ${
-                      tenggat.mendesak
-                        ? 'bg-rose-100 text-rose-700 border-rose-200'
-                        : 'bg-slate-100 text-slate-600 border-slate-200'
-                    }`}>
-                      <Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /> {tenggat.teks}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              <div className="formulir:hidden mt-4">{tombol}</div>
-            </div>
-          );
-        })}
-      </div>
+      <DaftarSesiKuis
+        activeAttempts={activeAttempts} filteredSessions={filteredSessions} handleStart={handleStart} pendingReviewIds={pendingReviewIds} search={search} submittedSessionIds={submittedSessionIds}
+      />
       {dialog && <AppDialog dialog={dialog} onClose={() => setDialog(null)} />}
     </div>
   );

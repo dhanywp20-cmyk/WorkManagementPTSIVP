@@ -10,6 +10,13 @@ import {
   BtnEdit, BtnDelete, ambilDaftarModel, type ModelAI,
 } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { GrupBatchSoal } from './soal/GrupBatchSoal';
+import { GridSubfolderSoal } from './soal/GridSubfolderSoal';
+import { HeaderBankSoal } from './soal/HeaderBankSoal';
+import { IsiFolderSoal } from './soal/IsiFolderSoal';
+import { DialogFormSoal } from './soal/DialogFormSoal';
+import { HasilBandingSoal } from './soal/HasilBandingSoal';
+import { IsianGenerateSoal } from './soal/IsianGenerateSoal';
 
 // Folder color palette
 const FOLDER_COLORS = [
@@ -20,18 +27,21 @@ const FOLDER_COLORS = [
   { gradient: 'linear-gradient(135deg,#f43f5e,#db2777)', light: '#ffe4e6', icon: '#f43f5e' },
   { gradient: 'linear-gradient(135deg,#06b6d4,#0284c7)', light: '#cffafe', icon: '#06b6d4' },
 ];
-const getFolderColor = (name: string) => FOLDER_COLORS[name.charCodeAt(0) % FOLDER_COLORS.length];
+export const getFolderColor = (name: string) => FOLDER_COLORS[name.charCodeAt(0) % FOLDER_COLORS.length];
 
 // Difficulty helpers
-const DIFF_BG: Record<string, string> = { easy: '#ecfdf5', medium: '#fffbeb', hard: '#fff1f2' };
-const DIFF_BORDER: Record<string, string> = { easy: '#d1fae5', medium: '#fef3c7', hard: '#ffe4e6' };
-const DIFF_TEXT: Record<string, string> = { easy: '#065f46', medium: '#92400e', hard: '#be123c' };
-const DIFF_NUM_BG: Record<string, string> = {
+export const DIFF_BG: Record<string, string> = { easy: '#ecfdf5', medium: '#fffbeb', hard: '#fff1f2' };
+export const DIFF_BORDER: Record<string, string> = { easy: '#d1fae5', medium: '#fef3c7', hard: '#ffe4e6' };
+export const DIFF_TEXT: Record<string, string> = { easy: '#065f46', medium: '#92400e', hard: '#be123c' };
+export const DIFF_NUM_BG: Record<string, string> = {
   easy: 'linear-gradient(135deg,#10b981,#059669)',
   medium: 'linear-gradient(135deg,#f59e0b,#d97706)',
   hard: 'linear-gradient(135deg,#f43f5e,#e11d48)',
 };
-const DIFF_LABEL: Record<string, string> = { easy: 'Mudah', medium: 'Sedang', hard: 'Sulit' };
+export const DIFF_LABEL: Record<string, string> = { easy: 'Mudah', medium: 'Sedang', hard: 'Sulit' };
+
+/** Satu sisi hasil banding dua model AI. */
+export interface SisiBanding { model: string; rows: Record<string, unknown>[]; galat: string }
 
 export function QuestionsPage({ user }: { user: User }) {
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -82,7 +92,6 @@ export function QuestionsPage({ user }: { user: User }) {
   const [modelBandingA, setModelBandingA] = useState('');
   const [modelBandingB, setModelBandingB] = useState('');
   const [daftarModelGen, setDaftarModelGen] = useState<ModelAI[]>([]);
-  interface SisiBanding { model: string; rows: Record<string, unknown>[]; galat: string }
   const [hasilBanding, setHasilBanding] = useState<{ a: SisiBanding; b: SisiBanding } | null>(null);
 
   useEffect(() => {
@@ -692,80 +701,9 @@ export function QuestionsPage({ user }: { user: User }) {
           </button>
         ))}
       </div>
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        <div className="col-span-2">
-          <label htmlFor="f-learning-center-components-questionspage-1" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-            Nama Grup / Batch
-            <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
-          </label>
-          <input id="f-learning-center-components-questionspage-1" value={batchName} onChange={e => setBatchName(e.target.value)}
-            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white"
-            placeholder="contoh: Instalasi Dasar, Troubleshooting Level 1, Quiz Minggu ke-3..." />
-        </div>
-        <div className="col-span-2">
-          <label htmlFor="f-learning-center-components-questionspage-2" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-            Topik Khusus
-            <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
-          </label>
-          <textarea id="f-learning-center-components-questionspage-2" value={genExtraPrompt} onChange={e => setGenExtraPrompt(e.target.value)} rows={2}
-            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white resize-none"
-            placeholder="contoh: Fokus pada cara pemasangan LED indoor P2.5, atau khusus troubleshooting sinyal HDMI..." />
-        </div>
-        <div>
-          <label htmlFor="f-learning-center-components-questionspage-3" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-          <select id="f-learning-center-components-questionspage-3" value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
-            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
-            <option value="">-- Pilih Materi --</option>
-            {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
-              <option key={m.id} value={m.id}>{m.materi_name}{m.content_text ? ' ✅' : ''}</option>
-            )}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="f-learning-center-components-questionspage-4" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
-          <input id="f-learning-center-components-questionspage-4" type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
-            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white" />
-        </div>
-        <div>
-          <label htmlFor="f-learning-center-components-questionspage-5" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
-          <select id="f-learning-center-components-questionspage-5" value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
-            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
-            <option value="mixed">Mixed (Campuran)</option>
-            <option value="easy">Easy — Mudah</option>
-            <option value="medium">Medium — Sedang</option>
-            <option value="hard">Hard — Sulit</option>
-          </select>
-        </div>
-        <div>
-          <label htmlFor="f-learning-center-components-questionspage-6" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-            Upload PDF <span className="text-[11px] font-normal text-violet-500 normal-case tracking-normal">(sementara, tidak disimpan)</span>
-          </label>
-          <input id="f-learning-center-components-questionspage-6" ref={pdfRef} type="file" accept=".pdf" onChange={e => {
-            const f = e.target.files?.[0] ?? null;
-            if (f && f.size > MAX_PDF_BYTES) {
-              setDialog({
-                type: 'error',
-                title: 'PDF Terlalu Besar',
-                message: `File "${f.name}" berukuran ${(f.size / 1_000_000).toFixed(1)} MB, maksimal ${(MAX_PDF_BYTES / 1_000_000).toFixed(1)} MB. Kompres dulu atau pakai PDF yang lebih kecil.`,
-              });
-              e.target.value = '';
-              setPdfFile(null);
-              return;
-            }
-            setPdfFile(f);
-          }} className="hidden" />
-          <div className="flex items-center gap-2">
-            <button onClick={() => pdfRef.current?.click()}
-              className="px-3 py-2 bg-white border border-violet-200 hover:bg-violet-50 text-violet-700 text-xs font-semibold rounded-xl transition-all">
-              <IkonTeks nama="📄" />Pilih PDF
-            </button>
-            {pdfFile
-              ? <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {pdfFile.name}</span>
-              : <span className="text-xs text-slate-500">atau dari teks materi</span>}
-            {pdfFile && <button aria-label="Tutup" onClick={() => { setPdfFile(null); if (pdfRef.current) pdfRef.current.value = ''; }} className="text-xs text-rose-500">✕</button>}
-          </div>
-        </div>
-      </div>
+      <IsianGenerateSoal
+        batchName={batchName} genCount={genCount} genDiff={genDiff} genExtraPrompt={genExtraPrompt} materials={materials} pdfFile={pdfFile} pdfRef={pdfRef} selectedMat={selectedMat} setBatchName={setBatchName} setDialog={setDialog} setGenCount={setGenCount} setGenDiff={setGenDiff} setGenExtraPrompt={setGenExtraPrompt} setPdfFile={setPdfFile} setSelectedMat={setSelectedMat} viewMaterials={viewMaterials}
+      />
       {/* ── Mode: satu model, atau bandingkan dua ──────────────────────────
           Saklarnya hanya muncul bila daftar model bisa dibaca. Menawarkan
           perbandingan yang pasti gagal karena modelnya tidak bisa dipilih
@@ -822,66 +760,9 @@ export function QuestionsPage({ user }: { user: User }) {
       )}
 
       {/* ── Hasil banding: berdampingan, dan HANYA satu yang bisa disimpan ── */}
-      {hasilBanding && (
-        <div className="mb-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            {([hasilBanding.a, hasilBanding.b] as const).map((sisi, i) => (
-              <div key={i} className="rounded-xl border border-slate-200 overflow-hidden flex flex-col bg-white">
-                <div className="px-3 py-2 border-b border-slate-200 flex items-center gap-2 flex-wrap"
-                  style={{ background: i === 0 ? '#eef2ff' : '#f0fdf4' }}>
-                  <span className="text-[11px] font-black uppercase tracking-wider"
-                    style={{ color: i === 0 ? '#4338ca' : '#15803d' }}>{i === 0 ? 'Model A' : 'Model B'}</span>
-                  <span className="text-[11px] font-bold text-slate-700 truncate">{sisi.model}</span>
-                  <span className="ml-auto text-[11px] font-semibold text-slate-500">
-                    {sisi.galat ? '—' : `${sisi.rows.length} soal`}
-                  </span>
-                </div>
-
-                <div className="p-2 space-y-1.5 max-h-[340px] overflow-y-auto flex-1">
-                  {sisi.galat ? (
-                    <p className="text-xs text-rose-600 p-2 leading-relaxed">{sisi.galat}</p>
-                  ) : sisi.rows.map((r, j) => (
-                    <div key={j} className="rounded-lg border border-slate-100 bg-slate-50/70 p-2">
-                      <p className="text-[11.5px] font-semibold text-slate-800 leading-snug">
-                        {j + 1}. {String(r.question ?? '')}
-                      </p>
-                      {r.question_type === 'essay' ? (
-                        r.model_answer ? <p className="text-[11px] text-indigo-700 mt-1 leading-snug">Kunci: {String(r.model_answer)}</p> : null
-                      ) : (
-                        <div className="grid grid-cols-2 gap-1 mt-1.5">
-                          {(['a', 'b', 'c', 'd'] as const).map(o => {
-                            const benar = r.correct_answer === o.toUpperCase();
-                            return (
-                              <div key={o} className={`text-[11px] px-1.5 py-1 rounded border leading-snug ${
-                                benar ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold'
-                                      : 'border-slate-200 bg-white text-slate-500'}`}>
-                                <b>{o.toUpperCase()}.</b> {String((r as Record<string, unknown>)[`option_${o}`] ?? '')}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="p-2 border-t border-slate-100">
-                  <button type="button" disabled={generating || !!sisi.galat || sisi.rows.length === 0}
-                    onClick={() => simpanHasil(sisi.rows)}
-                    className="w-full py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40"
-                    style={{ background: i === 0 ? '#4f46e5' : '#16a34a' }}>
-                    <IkonTeks nama="💾" />Simpan hasil {i === 0 ? 'Model A' : 'Model B'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-          <button type="button" onClick={() => setHasilBanding(null)}
-            className="mt-2 text-[11px] text-slate-500 underline">
-            Buang keduanya, coba lagi
-          </button>
-        </div>
-      )}
+      <HasilBandingSoal
+        generating={generating} hasilBanding={hasilBanding} setHasilBanding={setHasilBanding} simpanHasil={simpanHasil}
+      />
 
       <div className="flex gap-3">
         <button onClick={modeBanding ? handleBanding : handleGenerate} disabled={generating}
@@ -899,148 +780,9 @@ export function QuestionsPage({ user }: { user: User }) {
   // Manual Add Modal (plain JSX var - NOT a sub-component, avoids remount on every keystroke)
   const addManualModalJSX = showAddManual ? (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
-      <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
-        <h3 className="font-bold text-slate-800 mb-1 text-base sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">
-          {modeGrup ? '➕ Tambah Soal ke Grup' : '➕ Tambah Soal Manual'}
-        </h3>
-        <p className="text-xs text-slate-500 mb-3">
-          {newQ.question_type === 'essay' ? 'Isi pertanyaan essay dan (opsional) kunci jawaban referensi untuk membantu penilaian manual nanti.' : 'Isi semua field, klik tombol "✓ Benar" untuk menandai jawaban yang benar.'}
-        </p>
-        {/*
-          Tujuan penyimpanannya dibaca dari isian yang berlaku SEKARANG, bukan
-          dari grup yang tadi diklik. Kedua isian di bawah tetap bisa diubah,
-          dan keterangan yang membeku pada nilai awal akan menyebut grup yang
-          bukan tempat soalnya benar-benar mendarat.
-        */}
-        {modeGrup && (
-          <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5">
-            <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-widest mb-0.5">Disimpan ke</p>
-            <p className="text-[13px] text-emerald-900 leading-snug">
-              <span className="font-bold">
-                {materials.find(m => m.id === newQ.material_id)?.materi_name ?? '— materi belum dipilih —'}
-              </span>
-              {' · '}
-              {newQ.batch_name.trim()
-                ? <span className="font-bold"><Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /> {newQ.batch_name}</span>
-                : <span className="italic">Tanpa Grup</span>}
-            </p>
-            <p className="text-[11px] text-emerald-700 mt-1 leading-relaxed">
-              Form tetap terbuka setelah disimpan, jadi soal berikutnya bisa langsung diketik.
-            </p>
-          </div>
-        )}
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-xs font-bold text-slate-600 uppercase tracking-widest mr-1">Tipe Soal</span>
-          {(['abcd', 'essay'] as const).map(t => (
-            <button key={t} type="button" onClick={() => setNewQ(p => ({ ...p, question_type: t }))}
-              className={`px-3.5 py-1.5 text-xs font-bold rounded-lg border transition-all ${newQ.question_type === t ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-emerald-50'}`}>
-              {t === 'abcd' ? '🔤 Pilihan Ganda (ABCD)' : '📝 Essay'}
-            </button>
-          ))}
-        </div>
-        <div className="space-y-3">
-          <div>
-            <label htmlFor="f-learning-center-components-questionspage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
-            <select id="f-learning-center-components-questionspage-7" value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
-              <option value="">-- Pilih Materi --</option>
-              {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
-                <option key={m.id} value={m.id}>{m.materi_name}</option>
-              )}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="f-learning-center-components-questionspage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pertanyaan *</label>
-            <textarea id="f-learning-center-components-questionspage-8" value={newQ.question} onChange={e => setNewQ(p => ({ ...p, question: e.target.value }))}
-              rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
-              placeholder="Tulis pertanyaan di sini..." />
-          </div>
-          {newQ.question_type === 'essay' ? (
-            <>
-            <div>
-              <label className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                Bentuk Jawaban Peserta
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {([
-                  { v: 'text',  ikon: '⌨️', judul: 'Diketik',      ket: 'Peserta mengetik jawabannya' },
-                  { v: 'image', ikon: '📷', judul: 'Foto Gambar', ket: 'Digambar di kertas lalu difoto' },
-                ] as const).map(o => {
-                  const aktif = (newQ.answer_format ?? 'text') === o.v;
-                  return (
-                    <button key={o.v} type="button"
-                      onClick={() => setNewQ(p => ({ ...p, answer_format: o.v }))}
-                      className={`text-left px-3 py-2.5 rounded-xl border transition-all ${
-                        aktif ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-300'
-                              : 'bg-white border-slate-200 hover:border-emerald-200'}`}>
-                      <div className="text-sm font-bold text-slate-700"><Ikon nama={o.ikon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {o.judul}</div>
-                      <div className="text-[11px] text-slate-500 leading-snug mt-0.5">{o.ket}</div>
-                    </button>
-                  );
-                })}
-              </div>
-              {(newQ.answer_format ?? 'text') === 'image' && (
-                <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5 mt-2 leading-relaxed">
-                  Peserta akan diminta mengunggah foto. Fotonya dikecilkan di perangkat peserta
-                  sebelum dikirim, jadi tidak memberatkan kuota — foto 5 MB dari kamera ponsel
-                  menjadi sekitar 250 KB.
-                </p>
-              )}
-            </div>
-            <div>
-              <label htmlFor="f-learning-center-components-questionspage-9" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-                Kunci / Referensi Jawaban
-                <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional — hanya untuk bantu admin menilai, tidak dilihat peserta</span>
-              </label>
-              <textarea id="f-learning-center-components-questionspage-9" value={newQ.model_answer} onChange={e => setNewQ(p => ({ ...p, model_answer: e.target.value }))}
-                rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
-                placeholder="Contoh jawaban ideal / poin-poin kunci penilaian..." />
-            </div>
-            </>
-          ) : (['a', 'b', 'c', 'd'] as const).map(opt => (
-            <div key={opt} className="flex items-center gap-2">
-              <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
-              <input value={(newQ as any)[`option_${opt}`]} onChange={e => setNewQ(p => ({ ...p, [`option_${opt}`]: e.target.value }))}
-                className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400"
-                placeholder={`Pilihan ${opt.toUpperCase()}`} />
-              <button onClick={() => setNewQ(p => ({ ...p, correct_answer: opt.toUpperCase() }))}
-                className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-slate-100 text-slate-500 hover:bg-green-50 border border-transparent'}`}>
-                ✓ Benar
-              </button>
-            </div>
-          ))}
-          <div>
-            <label htmlFor="f-learning-center-components-questionspage-10" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">
-              Nama Grup / Batch
-              <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
-            </label>
-            <input id="f-learning-center-components-questionspage-10" value={newQ.batch_name} onChange={e => setNewQ(p => ({ ...p, batch_name: e.target.value }))}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
-              placeholder="contoh: Instalasi Dasar, Quiz Minggu 1, Troubleshooting..." />
-          </div>
-          <div>
-            <label htmlFor="f-learning-center-components-questionspage-11" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
-            <select id="f-learning-center-components-questionspage-11" value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
-              className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
-              <option value="easy">Easy</option>
-              <option value="medium">Medium</option>
-              <option value="hard">Hard</option>
-            </select>
-          </div>
-        </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={handleAddManual}
-            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all">
-            <IkonTeks nama="💾" />Simpan Soal
-          </button>
-          <button onClick={tutupTambahManual}
-            className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">
-            {modeGrup ? 'Selesai' : 'Batal'}
-          </button>
-        </div>
-      </div>
-    </div>
+    <DialogFormSoal
+      handleAddManual={handleAddManual} materials={materials} modeGrup={modeGrup} newQ={newQ} setNewQ={setNewQ} tutupTambahManual={tutupTambahManual} viewMaterials={viewMaterials}
+    />
   </ModalPortal>
   ) : null;
 
@@ -1098,96 +840,9 @@ export function QuestionsPage({ user }: { user: User }) {
         </div>
 
         {/* ── Content ── */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-5xl mx-auto space-y-6">
-          {showGenerate && generatePanelJSX}
-
-          <div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {rootMaterials.length > 0 && (() => {
-                const fc = getFolderColor('Tanpa');
-                return (
-                  <button
-                    onClick={() => setSelectedFolder('__root__')}
-                    className="group flex flex-col p-4 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
-                  >
-                    <div
-                      className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3"
-                      style={{ background: fc.light }}
-                    >
-                      <svg aria-hidden="true" focusable="false" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-bold text-slate-800 truncate">Tanpa Folder</p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {questions.filter(q => rootMaterials.map(m => m.id).includes(q.material_id)).length} soal
-                    </p>
-                    <div className="flex justify-end mt-2">
-                      <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </button>
-                );
-              })()}
-              {rootFolders.map(fKey => {
-                const fNode = folderTree.children[fKey];
-                const collectMats = (n: FolderNode): Material[] => [...n.materials, ...Object.values(n.children).flatMap(child => collectMats(child))];
-                const matIds = collectMats(fNode).map(m => m.id);
-                const qCount = questions.filter(q => matIds.includes(q.material_id)).length;
-                const subCount = Object.keys(fNode.children).length;
-                const fc = getFolderColor(fKey);
-                return (
-                  <div key={fKey} className="group relative">
-                    <button
-                      onClick={() => { setSelectedFolder(fKey); setSelectedSubFolder(null); }}
-                      className="w-full flex flex-col p-4 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
-                    >
-                      <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-3" style={{ background: fc.light }}>
-                        <svg aria-hidden="true" focusable="false" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-sm font-bold text-slate-800 truncate pr-6">{fKey}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{subCount > 0 ? `${subCount} subfolder · ` : ''}{qCount} soal</p>
-                    </button>
-                    {/* Folder action buttons */}
-                    <div data-tulis className="absolute top-2.5 right-2.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                      <button aria-label="Ubah nama folder"
-                        onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: fKey, newName: fKey }); }}
-                        className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-blue-100 bg-white/80 border border-slate-200 hover:border-blue-300"
-                        title="Ubah nama folder">
-                        <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button aria-label="Hapus semua soal folder"
-                        onClick={e => { e.stopPropagation(); handleDeleteFolder(fKey); }}
-                        className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-rose-100 bg-white/80 border border-slate-200 hover:border-rose-300"
-                        title="Hapus semua soal folder">
-                        <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {rootFolders.length === 0 && rootMaterials.length === 0 && (
-              <div className="flex justify-center py-16">
-                <div className="text-center px-10 py-8 rounded-2xl"
-                  style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
-                  <div className="text-5xl mb-3"><Ikon nama="🧩" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-                  <p className="font-semibold text-slate-700">Belum ada materi</p>
-                  <p className="text-sm mt-1 text-slate-500">Tambah materi di tab Materi terlebih dahulu</p>
-                </div>
-              </div>
-            )}
-          </div>
-          </div>{/* end max-w-5xl */}
-        </div>
+        <IsiFolderSoal
+          folderTree={folderTree} generatePanelJSX={generatePanelJSX} handleDeleteFolder={handleDeleteFolder} questions={questions} rootFolders={rootFolders} rootMaterials={rootMaterials} setRenameFolder={setRenameFolder} setSelectedFolder={setSelectedFolder} setSelectedSubFolder={setSelectedSubFolder} showGenerate={showGenerate}
+        />
 
         {addManualModalJSX}
         {renameFolderModalJSX}
@@ -1208,89 +863,9 @@ export function QuestionsPage({ user }: { user: User }) {
   return (
     <div className="flex flex-col h-full">
       {/* ── Header ── */}
-      <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-slate-200">
-        <div className="flex items-center justify-between px-6 py-4 gap-4">
-          <div className="min-w-0">
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-1 text-xs text-slate-500 mb-1 flex-wrap">
-              <span className="font-medium">Bank Soal</span>
-              <svg aria-hidden="true" focusable="false" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-              <span className="font-medium text-slate-600 truncate max-w-[120px]">
-                {selectedFolder === '__root__' ? 'Tanpa Folder' : selectedFolder}
-              </span>
-              {selectedSubFolder && selectedSubFolder !== '__direct__' && (
-                <>
-                  <svg aria-hidden="true" focusable="false" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                  <span className="font-medium text-slate-600 truncate max-w-[120px]">{selectedSubFolder}</span>
-                </>
-              )}
-              {selectedSubFolder === '__direct__' && (
-                <>
-                  <svg aria-hidden="true" focusable="false" width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                  <span className="font-medium text-slate-600">Langsung</span>
-                </>
-              )}
-            </div>
-            <h1 className="text-lg font-bold text-slate-800 tracking-tight"><IkonTeks nama="🧩" />Bank Soal</h1>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <SearchInput value={search} onChange={setSearch} placeholder="Cari soal..." />
-            <button
-              onClick={goBack}
-              className="flex items-center gap-1.5 px-3 py-2 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-all"
-            >
-              <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Kembali
-            </button>
-            <button
-              data-tulis onClick={() => setShowAddManual(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
-            >
-              <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Tambah Manual
-            </button>
-            <button
-              data-tulis onClick={() => setShowGenerate(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}
-            >
-              <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />
-              </svg>
-              Generate AI
-            </button>
-          </div>
-        </div>
-        {/* Stats bar */}
-        <div className="flex items-center gap-2 px-6 py-2.5 bg-slate-50 border-t border-slate-100 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm">
-            Total: {filteredQuestions.length}
-          </span>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
-            style={{ background: DIFF_BG.easy, color: DIFF_TEXT.easy, border: `1px solid ${DIFF_BORDER.easy}` }}>
-            Mudah: {easyCount}
-          </span>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
-            style={{ background: DIFF_BG.medium, color: DIFF_TEXT.medium, border: `1px solid ${DIFF_BORDER.medium}` }}>
-            Sedang: {mediumCount}
-          </span>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
-            style={{ background: DIFF_BG.hard, color: DIFF_TEXT.hard, border: `1px solid ${DIFF_BORDER.hard}` }}>
-            Sulit: {hardCount}
-          </span>
-        </div>
-      </div>
+      <HeaderBankSoal
+        easyCount={easyCount} filteredQuestions={filteredQuestions} goBack={goBack} hardCount={hardCount} mediumCount={mediumCount} search={search} selectedFolder={selectedFolder} selectedSubFolder={selectedSubFolder} setSearch={setSearch} setShowAddManual={setShowAddManual} setShowGenerate={setShowGenerate}
+      />
 
       {/* ── Content ── */}
       <div className="flex-1 overflow-y-auto p-6">
@@ -1315,98 +890,9 @@ export function QuestionsPage({ user }: { user: User }) {
         )}
 
         {/* Subfolder grid */}
-        {subFolders.length > 0 && !selectedSubFolder && (
-          <div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-2">
-              {subFolders.map(sfKey => {
-                const sfNode = currentFolderNode!.children[sfKey];
-                const sfQCount = questions.filter(q => sfNode.materials.map(m => m.id).includes(q.material_id)).length;
-                const fc = getFolderColor(sfKey);
-                return (
-                  <div key={sfKey} className="group relative">
-                    <button
-                      onClick={() => setSelectedSubFolder(sfKey)}
-                      className="w-full flex flex-col p-3 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
-                    >
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: fc.light }}>
-                        <svg aria-hidden="true" focusable="false" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-sm font-bold text-slate-800 truncate pr-6">{sfKey}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{sfNode.materials.length} materi · {sfQCount} soal</p>
-                      <div className="flex justify-end mt-1.5">
-                        <svg aria-hidden="true" focusable="false" width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </button>
-                    {/* Subfolder action buttons */}
-                    <div data-tulis className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                      <button aria-label="Ubah nama subfolder"
-                        onClick={e => { e.stopPropagation(); setRenameFolder({ oldName: sfKey, newName: sfKey }); }}
-                        className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-blue-100 bg-white/80 border border-slate-200 hover:border-blue-300"
-                        title="Ubah nama subfolder">
-                        <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="#3b82f6" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button aria-label="Hapus semua soal subfolder"
-                        onClick={e => {
-                          e.stopPropagation();
-                          // Delete all questions in this subfolder
-                          const sfQIds = sfNode.materials.map(m => m.id);
-                          const sfQCount = questions.filter(q => sfQIds.includes(q.material_id)).length;
-                          setDialog({
-                            type: 'confirm', title: 'Hapus Soal Subfolder',
-                            message: `Semua ${sfQCount} soal dalam subfolder "${sfKey}" akan dihapus permanen. Lanjutkan?`,
-                            confirmLabel: 'Hapus Semua',
-                            onConfirm: async () => {
-                              if (sfQIds.length > 0) {
-                                const sfQuestionIds = questions.filter(q => sfQIds.includes(q.material_id)).map(q => q.id);
-                                if (sfQuestionIds.length > 0) await supabase.from('lc_answers').delete().in('question_id', sfQuestionIds);
-                                const { error } = await supabase.from('lc_questions').delete().in('material_id', sfQIds);
-                                if (error) { setDialog({ type: 'error', title: 'Gagal Hapus', message: 'Error: ' + error.message }); return; }
-                              }
-                              load();
-                            },
-                          });
-                        }}
-                        className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-rose-100 bg-white/80 border border-slate-200 hover:border-rose-300"
-                        title="Hapus semua soal subfolder">
-                        <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="#be123c" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-              {currentFolderNode?.materials && currentFolderNode.materials.length > 0 && (() => {
-                const fc = getFolderColor('Langsung');
-                return (
-                  <button
-                    onClick={() => setSelectedSubFolder('__direct__')}
-                    className="group flex flex-col p-3 rounded-2xl border-2 border-slate-200 bg-white hover:shadow-lg hover:-translate-y-0.5 transition-all text-left"
-                  >
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-2" style={{ background: fc.light }}>
-                      <svg aria-hidden="true" focusable="false" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke={fc.icon}>
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                      </svg>
-                    </div>
-                    <p className="text-sm font-bold text-slate-800">Langsung</p>
-                    <p className="text-xs text-slate-500 mt-0.5">{currentFolderNode.materials.length} materi</p>
-                    <div className="flex justify-end mt-1.5">
-                      <svg aria-hidden="true" focusable="false" width="12" height="12" fill="none" stroke="#94a3b8" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
-                  </button>
-                );
-              })()}
-            </div>
-          </div>
-        )}
+        <GridSubfolderSoal
+          currentFolderNode={currentFolderNode} load={load} questions={questions} selectedSubFolder={selectedSubFolder} setDialog={setDialog} setRenameFolder={setRenameFolder} setSelectedSubFolder={setSelectedSubFolder} subFolders={subFolders}
+        />
 
         {/* Material filter chips */}
         {viewMaterials.length > 0 && (
@@ -1552,232 +1038,9 @@ export function QuestionsPage({ user }: { user: User }) {
                   </div>
 
                   {/* Batch sub-groups — collapsible accordion */}
-                  <div className="space-y-2 pl-3 border-l-2" style={{ borderColor: matColor.icon + '40' }}>
-                    {batchKeys.map((batchKey, batchIdx) => {
-                      const batchTersimpan = qs.filter(q => (q.batch_name ?? '') === batchKey).sort(bandingkanUrutan);
-                      const BATCH_COLORS = [
-                        { bg: '#f5f3ff', border: '#ddd6fe', text: '#6d28d9', dot: '#8b5cf6', hdr: '#ede9fe' },
-                        { bg: '#ecfdf5', border: '#a7f3d0', text: '#065f46', dot: '#10b981', hdr: '#d1fae5' },
-                        { bg: '#eff6ff', border: '#bfdbfe', text: '#1d4ed8', dot: '#3b82f6', hdr: '#dbeafe' },
-                        { bg: '#fff7ed', border: '#fed7aa', text: '#c2410c', dot: '#f97316', hdr: '#ffedd5' },
-                        { bg: '#fdf2f8', border: '#f9a8d4', text: '#9d174d', dot: '#ec4899', hdr: '#fce7f3' },
-                        { bg: '#f0fdf4', border: '#bbf7d0', text: '#166534', dot: '#22c55e', hdr: '#dcfce7' },
-                      ];
-                      const bc = BATCH_COLORS[batchIdx % BATCH_COLORS.length];
-                      const expandKey = `${mat.id}__${batchKey || '__none__'}`;
-                      const isExpanded = expandedBatches.has(expandKey);
-                      // Yang dirender adalah rancangan bila grup ini sedang disusun.
-                      const batchQs = susunanTampil(expandKey, batchTersimpan);
-                      const adaDraf = !!urutanDraf[expandKey];
-                      const sedangMenyimpan = menyimpanUrutan === expandKey;
-                      const easyN  = batchQs.filter(q => q.difficulty === 'easy').length;
-                      const medN   = batchQs.filter(q => q.difficulty === 'medium').length;
-                      const hardN  = batchQs.filter(q => q.difficulty === 'hard').length;
-
-                      return (
-                        <div key={batchKey || '__none__'} className="rounded-2xl border overflow-hidden transition-all"
-                          style={{ borderColor: bc.border }}>
-
-                          {/* ── Accordion header (always visible, click to toggle) ── */}
-                          <button
-                            type="button"
-                            onClick={() => setExpandedBatches(prev => {
-                              const next = new Set(prev);
-                              next.has(expandKey) ? next.delete(expandKey) : next.add(expandKey);
-                              return next;
-                            })}
-                            className="w-full flex items-center justify-between px-4 py-3 transition-colors text-left"
-                            style={{ background: isExpanded ? bc.hdr : '#f8fafc' }}
-                          >
-                            <div className="flex items-center gap-2.5 flex-wrap">
-                              <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: bc.dot }} />
-                              {batchKey
-                                ? <span className="text-xs font-bold" style={{ color: bc.text }}><Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /> {batchKey}</span>
-                                : <span className="text-xs font-semibold text-slate-500 italic">Tanpa Grup</span>
-                              }
-                              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border" style={{ color: bc.text, borderColor: bc.border }}>
-                                {batchQs.length} soal
-                              </span>
-                              {/* Rancangan tetap hidup walau grupnya ditutup. Tanda ini
-                                  yang mencegahnya terlupakan di balik grup yang terlipat. */}
-                              {adaDraf && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
-                                  ● Urutan belum disimpan
-                                </span>
-                              )}
-                              {/* Difficulty mini-chips */}
-                              <div className="flex gap-1">
-                                {easyN > 0  && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.easy,   color: DIFF_TEXT.easy,   border: `1px solid ${DIFF_BORDER.easy}` }}>  Mudah {easyN}</span>}
-                                {medN  > 0  && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.medium, color: DIFF_TEXT.medium, border: `1px solid ${DIFF_BORDER.medium}` }}>Sedang {medN}</span>}
-                                {hardN > 0  && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.hard,   color: DIFF_TEXT.hard,   border: `1px solid ${DIFF_BORDER.hard}` }}>  Sulit {hardN}</span>}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <button
-                                type="button"
-                                data-tulis onClick={e => { e.stopPropagation(); handleDeleteBatch(batchKey); }}
-                                className="flex items-center gap-1 px-2 py-1 text-[11px] font-semibold text-rose-500 bg-white border border-rose-200 rounded-lg hover:bg-rose-50 transition-all"
-                              >
-                                <svg aria-hidden="true" focusable="false" width="9" height="9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                Hapus
-                              </button>
-                              {/* Chevron */}
-                              <svg aria-hidden="true" focusable="false"
-                                width="16" height="16" fill="none" stroke={bc.text} viewBox="0 0 24 24"
-                                className="transition-transform duration-200 flex-shrink-0"
-                                style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </div>
-                          </button>
-
-                          {/* ── Question cards — only rendered when expanded ── */}
-                          {isExpanded && (
-                            <div className="p-3 space-y-2" style={{ background: '#fafafa' }}>
-                              {/*
-                                Bilah ini hanya muncul saat ada yang digeser, dan
-                                menempel di atas daftar (sticky) - untuk grup
-                                berisi 45 soal, tombol simpan yang ikut tergulir
-                                ke luar layar berarti orang menyusun urutan lalu
-                                kehilangan cara menyimpannya.
-                              */}
-                              {adaDraf && (
-                                <div className="sticky top-0 z-20 -mx-3 -mt-3 mb-1 px-3 py-2.5 flex items-center gap-2 flex-wrap border-b"
-                                  style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
-                                  <span className="text-[11px] font-bold text-amber-900 flex-1 min-w-[140px] leading-snug">
-                                    Urutan diubah — belum disimpan.
-                                  </span>
-                                  <button type="button" disabled={sedangMenyimpan}
-                                    onClick={() => buangDraf(expandKey)}
-                                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all disabled:opacity-50">
-                                    Batalkan
-                                  </button>
-                                  <button type="button" disabled={sedangMenyimpan}
-                                    onClick={() => simpanUrutan(expandKey, batchQs)}
-                                    className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow transition-all disabled:opacity-60 flex items-center gap-1.5">
-                                    {sedangMenyimpan
-                                      ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />Menyimpan...</>
-                                      : <>💾 Simpan Urutan</>}
-                                  </button>
-                                </div>
-                              )}
-                              {batchQs.map((q, idx) => (
-                                <div key={q.id} className="flex rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all">
-                                  <div style={{
-                                    width: 48, background: DIFF_BG[q.difficulty] ?? '#f8fafc',
-                                    borderRight: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
-                                    flexShrink: 0, display: 'flex', flexDirection: 'column',
-                                    alignItems: 'center', paddingTop: 18, gap: 4,
-                                  }}>
-                                    <div style={{
-                                      width: 28, height: 28, borderRadius: 8,
-                                      background: DIFF_NUM_BG[q.difficulty] ?? 'linear-gradient(135deg,#64748b,#475569)',
-                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                      color: '#fff', fontSize: 12, fontWeight: 900,
-                                    }}>{idx + 1}</div>
-                                    {/*
-                                      Panah, bukan seret-lepas. Seret-lepas lebih
-                                      luwes di tetikus, tapi di layar sentuh ia
-                                      berebut dengan gulir halaman - menahan lalu
-                                      menggeser soal ke luar layar adalah gerakan
-                                      yang sama dengan menggulir daftarnya. Panah
-                                      bekerja sama di keduanya, dan bisa dijangkau
-                                      lewat papan ketik.
-
-                                      Hanya muncul bila kolomnya sudah ada; tanpa
-                                      itu tombolnya akan selalu gagal saat ditekan.
-                                    */}
-                                    {kolomUrutanAda && batchQs.length > 1 && (
-                                      <div data-tulis className="flex flex-col gap-0.5">
-                                        <button type="button" aria-label={`Naikkan soal ${idx + 1}`}
-                                          title="Naikkan" disabled={idx === 0}
-                                          onClick={() => geserSoal(expandKey, batchQs, idx, -1)}
-                                          className="w-6 h-5 rounded flex items-center justify-center text-slate-500 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
-                                          <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
-                                          </svg>
-                                        </button>
-                                        <button type="button" aria-label={`Turunkan soal ${idx + 1}`}
-                                          title="Turunkan" disabled={idx === batchQs.length - 1}
-                                          onClick={() => geserSoal(expandKey, batchQs, idx, 1)}
-                                          className="w-6 h-5 rounded flex items-center justify-center text-slate-500 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
-                                          <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                                          </svg>
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div style={{ flex: 1, padding: '14px 18px' }}>
-                                    {q.question_type === 'essay' && (
-                                      <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 mb-1.5"><IkonTeks nama="📝" />ESSAY</span>
-                                    )}
-                                    <p style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', lineHeight: 1.6, marginBottom: 10 }}>{q.question}</p>
-                                    {q.question_type === 'essay' ? (
-                                      q.model_answer ? (
-                                        <div className="px-2.5 py-2 rounded-lg border border-indigo-100 bg-indigo-50/60 text-xs text-indigo-800 mb-2.5">
-                                          <span className="font-bold">Kunci referensi: </span>{q.model_answer}
-                                        </div>
-                                      ) : (
-                                        <p className="text-xs text-slate-500 italic mb-2.5">Tidak ada kunci referensi — dinilai manual sepenuhnya oleh admin.</p>
-                                      )
-                                    ) : (
-                                    <div className="grid grid-cols-2 gap-1.5 mb-2.5">
-                                      {(['a', 'b', 'c', 'd'] as const).map(opt => {
-                                        const isCorrect = q.correct_answer === opt.toUpperCase();
-                                        return (
-                                          <div key={opt} className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold' : 'border-slate-200 bg-white text-slate-600'}`}>
-                                            <span className={`w-4 h-4 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 mt-0.5 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{opt.toUpperCase()}</span>
-                                            <span className="leading-snug">{(q as any)[`option_${opt}`]}</span>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                    )}
-                                    <div className="flex items-center justify-between">
-                                      <span style={{
-                                        fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
-                                        background: DIFF_BG[q.difficulty] ?? '#f8fafc',
-                                        color: DIFF_TEXT[q.difficulty] ?? '#64748b',
-                                        border: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
-                                      }}>{DIFF_LABEL[q.difficulty] ?? q.difficulty}</span>
-                                      <div data-tulis className="flex gap-2">
-                                        <BtnEdit onClick={() => setEditQ(q)} />
-                                        <BtnDelete onClick={() => handleDelete(q.id)} />
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-
-                              {/*
-                                Tombol tambah diletakkan di BAWAH daftar, bukan
-                                di kepala grup bersama tombol Hapus. Di sanalah
-                                mata berhenti setelah membaca soal terakhir,
-                                dan di sana pula soal barunya akan muncul -
-                                jaraknya nol antara niat dan tempat hasilnya
-                                terlihat. Menaruhnya di kepala berarti menekan
-                                tombol di satu ujung lalu mencari hasilnya di
-                                ujung yang lain.
-                              */}
-                              <button type="button"
-                                data-tulis onClick={() => bukaTambahDiGrup(mat.id, batchKey)}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed text-xs font-bold transition-all hover:bg-white"
-                                style={{ borderColor: bc.border, color: bc.text, background: bc.bg }}>
-                                <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                                </svg>
-                                Tambah soal ke {batchKey ? `"${batchKey}"` : 'grup ini'}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <GrupBatchSoal
+                    batchKeys={batchKeys} buangDraf={buangDraf} bukaTambahDiGrup={bukaTambahDiGrup} expandedBatches={expandedBatches} geserSoal={geserSoal} handleDelete={handleDelete} handleDeleteBatch={handleDeleteBatch} kolomUrutanAda={kolomUrutanAda} mat={mat} matColor={matColor} menyimpanUrutan={menyimpanUrutan} qs={qs} setEditQ={setEditQ} setExpandedBatches={setExpandedBatches} simpanUrutan={simpanUrutan} susunanTampil={susunanTampil} urutanDraf={urutanDraf}
+                  />
                 </div>
               );
             })}
