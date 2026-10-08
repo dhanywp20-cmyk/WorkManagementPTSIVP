@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { useSearchParams } from 'next/navigation';
 import { ListEmptyState, ModalPortal, ConfirmDialog, type ConfirmState, ErrorState, Toast, type Notif } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
@@ -170,7 +171,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
     const count    = countNotes(folder.id);
     return (
       <div>
-        <div onClick={() => { onSelect(isSel ? null : folder.id); if (children.length) setExpanded(e => ({ ...e, [folder.id]: !e[folder.id] })); }}
+        <div {...bisaDiklik(() => { onSelect(isSel ? null : folder.id); if (children.length) setExpanded(e => ({ ...e, [folder.id]: !e[folder.id] })); })}
           className="flex items-center gap-2 rounded-xl cursor-pointer transition-all mb-0.5"
           style={{ padding:`7px 10px 7px ${10+depth*18}px`,
             background: isSel ? `${folder.color}15` : 'transparent',
@@ -209,7 +210,7 @@ function FolderSidebar({ folders, technotes, selected, onSelect, onAdd, canManag
         </div>
       </div>
       {/* All */}
-      <div onClick={() => onSelect(null)}
+      <div {...bisaDiklik(() => onSelect(null))}
         className="flex items-center gap-2 rounded-xl px-2.5 py-2 cursor-pointer transition-all mb-1"
         style={{ background: selected===null ? 'rgba(236,72,153,0.10)':'transparent',
           border: selected===null ? '1.5px solid rgba(236,72,153,0.30)':'1.5px solid transparent' }}>
@@ -798,7 +799,7 @@ function TechNotePageInner() {
                 {filtered.map(tn => {
                   const folder = folders.find(f=>f.id===tn.folder_id);
                   return (
-                    <div key={tn.id} onClick={()=>openDetail(tn)}
+                    <div key={tn.id} {...bisaDiklik(()=>openDetail(tn))}
                       className="rounded-2xl p-4 cursor-pointer transition-all group bg-white border border-gray-200 hover:border-rose-300 hover:shadow-md"
                       style={{ boxShadow:'0 1px 3px rgba(0,0,0,0.06)' }}>
                       <div className="flex items-start justify-between mb-2 gap-2">

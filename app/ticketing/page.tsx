@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
+import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { ModalPortal, BARIS_PER_HALAMAN } from '@/components/shared';
 import { useRouter, useSearchParams } from "next/navigation";
@@ -2619,7 +2620,7 @@ function TicketingSystemInner() {
                 {notifications.map((ticket) => {
                   const overdueFlag = isTicketOverdue(ticket);
                   return (
-                    <div key={ticket.id} onClick={() => { setSelectedTicket(ticket); setShowNotificationPopup(false); setShowTicketDetailPopup(true); }} className="rounded-xl p-3 border-2 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all" style={{ background: "rgba(249,250,251,0.9)", borderColor: overdueFlag ? "#dc2626" : "#e5e7eb" }}>
+                    <div key={ticket.id} {...bisaDiklik(() => { setSelectedTicket(ticket); setShowNotificationPopup(false); setShowTicketDetailPopup(true); })} className="rounded-xl p-3 border-2 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all" style={{ background: "rgba(249,250,251,0.9)", borderColor: overdueFlag ? "#dc2626" : "#e5e7eb" }}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0"><div className="flex items-center gap-1.5 mb-1 flex-wrap">{overdueFlag && <span className="text-red-500"><Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}<p className="font-bold text-sm text-gray-800 truncate">{ticket.project_name}</p></div><p className="text-xs text-gray-500">{ticket.issue_case}</p>{overdueFlag && <p className="text-xs text-red-600 font-bold mt-0.5"><IkonTeks nama="⏰" />OVERDUE - Segera tangani!</p>}</div>
                         <div className="flex-shrink-0 text-right"><span className={`px-2 py-0.5 rounded-full text-xs font-bold border ${overdueFlag ? statusColors["Overdue"] : statusColors[currentUserTeamType === "Team Services" ? ticket.services_status || "Pending" : ticket.status]}`}>{overdueFlag ? "🚨 Overdue" : (currentUserTeamType === "Team Services" ? (ticket.services_status || "Pending") : ticket.status)}</span></div>
@@ -2649,7 +2650,7 @@ function TicketingSystemInner() {
                 <div className="p-12 text-center text-gray-500"><div className="text-6xl mb-4"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></div><p className="text-lg font-medium">No notifications</p><p className="text-sm mt-2">All tickets have been handled</p></div>
               ) : (
                 <div className="flex-1 min-h-0 overflow-y-auto p-4"><div className="space-y-3">{notifications.map((ticket) => { const overdueFlag = isTicketOverdue(ticket); return (
-                  <div key={ticket.id} onClick={() => { setSelectedTicket(ticket); setShowNotifications(false); setShowTicketDetailPopup(true); }} className={`rounded-xl p-4 border-2 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all ${overdueFlag ? "bg-red-50 border-red-400" : "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-300"}`}>
+                  <div key={ticket.id} {...bisaDiklik(() => { setSelectedTicket(ticket); setShowNotifications(false); setShowTicketDetailPopup(true); })} className={`rounded-xl p-4 border-2 cursor-pointer hover:shadow-lg hover:scale-[1.02] transition-all ${overdueFlag ? "bg-red-50 border-red-400" : "bg-gradient-to-r from-gray-50 to-gray-100 border-gray-300"}`}>
                     <div className="flex justify-between items-start mb-3"><div className="flex-1"><div className="flex items-center gap-2 mb-2">{overdueFlag && <span className="text-red-500"><Ikon nama="🚨" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}<p className="font-bold text-lg text-gray-800">{ticket.project_name}</p><span className="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800 font-bold">{ticket.current_team}</span></div><p className="text-sm text-gray-600 mt-1">{ticket.issue_case}</p>{overdueFlag && <p className="text-xs text-red-600 font-bold mt-1"><IkonTeks nama="⏰" />OVERDUE - Segera tangani!</p>}</div><div className="ml-3"><span className={`px-3 py-1 rounded-full text-xs font-bold border-2 ${overdueFlag ? statusColors["Overdue"] : statusColors[currentUserTeamType === "Team Services" ? ticket.services_status || "Pending" : ticket.status]}`}>{overdueFlag ? "🚨 Overdue" : (currentUserTeamType === "Team Services" ? (ticket.services_status || "Pending") : ticket.status)}</span></div></div>
                     <div className="flex justify-between items-center pt-3 border-t border-gray-300"><span className="text-xs text-gray-500"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {ticket.created_at ? formatDateTime(ticket.created_at) : "-"}</span><span className="text-sm text-blue-600 font-semibold">Click to view details →</span></div>
                   </div>

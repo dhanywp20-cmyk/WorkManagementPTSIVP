@@ -104,27 +104,27 @@ export function FilterBar({
       <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: "rgba(255,255,255,0.97)" }}>
         <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3" aktif={[searchSalesName, searchProduct, handlerFilter, filterStatus, salesDivisionFilter]}>
           <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Location</label>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Cari Project / Location</label>
             <div className="relative">
               <Ico name="search" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input aria-label="Search project / lokasi..."
                 type="text"
                 value={searchProject}
                 onChange={(e) => setSearchProject(e.target.value)}
-                placeholder="Search project / lokasi..."
+                placeholder="Cari project / lokasi..."
                 className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
               />
             </div>
           </div>
           <div>
-            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales Name</label>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Cari Sales Name</label>
             <div className="relative">
               <Ico name="user" className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input aria-label="Search sales name..."
                 type="text"
                 value={searchSalesName}
                 onChange={(e) => setSearchSalesName(e.target.value)}
-                placeholder="Search sales name..."
+                placeholder="Cari sales name..."
                 className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
               />
             </div>

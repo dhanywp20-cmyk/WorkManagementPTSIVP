@@ -234,13 +234,13 @@ function SpotlightOverlay({ rect, onClick }: { rect: DOMRect; onClick: () => voi
   return (
     <>
       {/* Top */}
-      <div onClick={onClick} style={{ position: 'fixed', inset: 0, bottom: `calc(100vh - ${y}px)`, background: dark, zIndex: 1500 }} />
+      <div aria-hidden="true" onClick={onClick} style={{ position: 'fixed', inset: 0, bottom: `calc(100vh - ${y}px)`, background: dark, zIndex: 1500 }} />
       {/* Bottom */}
-      <div onClick={onClick} style={{ position: 'fixed', inset: 0, top: y + h, background: dark, zIndex: 1500 }} />
+      <div aria-hidden="true" onClick={onClick} style={{ position: 'fixed', inset: 0, top: y + h, background: dark, zIndex: 1500 }} />
       {/* Left */}
-      <div onClick={onClick} style={{ position: 'fixed', top: y, left: 0, width: Math.max(0, x), height: h, background: dark, zIndex: 1500 }} />
+      <div aria-hidden="true" onClick={onClick} style={{ position: 'fixed', top: y, left: 0, width: Math.max(0, x), height: h, background: dark, zIndex: 1500 }} />
       {/* Right */}
-      <div onClick={onClick} style={{ position: 'fixed', top: y, left: x + w, right: 0, height: h, background: dark, zIndex: 1500 }} />
+      <div aria-hidden="true" onClick={onClick} style={{ position: 'fixed', top: y, left: x + w, right: 0, height: h, background: dark, zIndex: 1500 }} />
       {/* Highlight ring */}
       <div style={{
         position: 'fixed', top: y, left: x, width: w, height: h,
@@ -257,7 +257,7 @@ function SpotlightOverlay({ rect, onClick }: { rect: DOMRect; onClick: () => voi
 
 function FullBackdrop({ onClick }: { onClick: () => void }) {
   return (
-    <div onClick={onClick} style={{ position: 'fixed', inset: 0, background: 'rgba(2,6,23,0.75)', zIndex: 1500 }} />
+    <div aria-hidden="true" onClick={onClick} style={{ position: 'fixed', inset: 0, background: 'rgba(2,6,23,0.75)', zIndex: 1500 }} />
   );
 }
 

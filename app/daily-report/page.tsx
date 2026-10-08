@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
+import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { supabase } from '@/lib/supabase';
 import { clearSession, getSession } from '@/lib/auth';
 
@@ -146,7 +147,7 @@ function SalesDrop({ value, division, guests, onChange }: { value: string; divis
                 className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={{ background: 'rgba(220,38,38,0.04)', border: '1px solid rgba(220,38,38,0.15)', color: '#1e293b' }} />
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: '180px' }}>
-              <div className="px-4 py-2.5 text-sm cursor-pointer hover:bg-red-50 text-slate-500 italic" onClick={() => { onChange('', ''); setOpen(false); }}>-- Kosongkan --</div>
+              <div className="px-4 py-2.5 text-sm cursor-pointer hover:bg-red-50 text-slate-500 italic" {...bisaDiklik(() => { onChange('', ''); setOpen(false); })}>-- Kosongkan --</div>
               {fil.map(u => (
                 <div key={u.id} className="px-4 py-2.5 cursor-pointer flex items-center justify-between"
                   style={{ background: value === u.full_name ? 'rgba(220,38,38,0.07)' : undefined, borderLeft: value === u.full_name ? '3px solid #dc2626' : '3px solid transparent' }}

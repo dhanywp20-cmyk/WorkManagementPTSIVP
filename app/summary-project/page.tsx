@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, type CSSProperties } from 'react';
+import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import { User } from '@/app/dashboard/_components/shared';
 import {
@@ -240,7 +241,7 @@ export default function SummaryProjectPage() {
                       {hal.potongan.map((p, idx) => {
                         const st = STATUS_PROJECT_WARNA[p.status];
                         return (
-                          <tr key={p.project_id} className="cursor-pointer" onClick={() => setDipilihId(p.project_id)}
+                          <tr key={p.project_id} className="cursor-pointer" {...bisaDiklik(() => setDipilihId(p.project_id), { peran: false })}
                             style={{ '--aksen-baris': THEME.color, '--bg-baris-sorot': '#eef2ff' } as CSSProperties}>
                             <td className="px-3 py-3 text-center align-middle">
                               <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>

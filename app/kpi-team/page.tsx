@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
@@ -675,7 +676,7 @@ export default function KPITeamPage() {
                           if (m.formReviewLowRating > 0) alerts.push(`⭐${m.formReviewLowRating}×`);
                           if (m.ticketAvgResponseHours > 24) alerts.push(`⏱${m.ticketAvgResponseHours}j`);
                           return (
-                            <div key={m.id} onClick={() => setSelectedKPIMember(m.id)}
+                            <div key={m.id} {...bisaDiklik(() => setSelectedKPIMember(m.id))}
                               className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border cursor-pointer hover:shadow-md transition-all"
                               style={{ background: noData ? '#f8fafc' : `${c}08`, borderColor: noData ? '#e2e8f0' : `${c}40`, minWidth: 88, maxWidth: 104 }}>
                               <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white shadow-sm flex-shrink-0"
@@ -1052,7 +1053,7 @@ export default function KPITeamPage() {
                               if (m.formReviewLowRating > 0) alerts.push(`⭐${m.formReviewLowRating}×`);
                               if (m.ticketAvgResponseHours > 24) alerts.push(`⏱${m.ticketAvgResponseHours}j`);
                               return (
-                                <div key={m.id} onClick={() => setSelectedKPIMember(m.id)}
+                                <div key={m.id} {...bisaDiklik(() => setSelectedKPIMember(m.id))}
                                   className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border cursor-pointer hover:shadow-md transition-all"
                                   style={{ background: noData ? '#f8fafc' : `${c}08`, borderColor: noData ? '#e2e8f0' : `${c}40`, minWidth: 88, maxWidth: 104 }}>
                                   <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white shadow-sm flex-shrink-0"

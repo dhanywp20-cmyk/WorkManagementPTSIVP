@@ -52,3 +52,4 @@ export { ChipVersi } from './ChipVersi';
 export { FooterPlatform } from './FooterPlatform';
 export { Ikon, IkonTeks, ikonUntuk } from './Ikon';
 export { FilterLipat } from './FilterLipat';
+export { bisaDiklik } from './bisaDiklik';

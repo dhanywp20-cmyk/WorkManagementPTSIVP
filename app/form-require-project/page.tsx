@@ -2002,20 +2002,20 @@ Hubungi Admin untuk info lebih lanjut.
           <div className="px-3 py-2 sm:px-6 sm:py-3 border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
             <FilterLipat kelas="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-6 gap-1.5 sm:gap-3" aktif={[searchSales, filterHandler, filterStatus, filterMonth]}>
               <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Search Project / Lokasi</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Cari Project / Lokasi</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="Search project / lokasi..."
+                    placeholder="Cari project / lokasi..."
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Search Sales / Requester</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1">Cari Sales / Requester</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales / requester..." value={searchSales} onChange={e => setSearchSales(e.target.value)}
-                    placeholder="Search sales / requester..."
+                    placeholder="Cari sales / requester..."
                     className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
                 </div>
               </div>

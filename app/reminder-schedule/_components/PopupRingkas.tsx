@@ -13,6 +13,7 @@
  * page.tsx cukup memanggilnya tanpa membungkus kondisi lagi.
  */
 import { ModalPortal } from '@/components/shared';
+import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { Reminder, formatDate } from './shared';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
@@ -172,7 +173,7 @@ export function PopupNotifikasi({
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
             {myReminders.map(r => (
-              <div key={r.id} onClick={() => { setDetailReminder(r); setShowNotificationPopup(false); }}
+              <div key={r.id} {...bisaDiklik(() => { setDetailReminder(r); setShowNotificationPopup(false); })}
                 className="rounded-xl p-3 border-2 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all"
                 style={{ background: 'rgba(249,250,251,0.9)', borderColor: '#e5e7eb' }}>
                 <div className="flex items-start justify-between gap-2">
@@ -253,7 +254,7 @@ export function PopupLonceng({
                 <p className="font-semibold">Tidak ada reminder aktif</p>
               </div>
             ) : perluAksiSaya.map(({ r, alasan, warna }) => (
-              <div key={r.id} onClick={() => { setDetailReminder(r); setShowBellPopup(false); }}
+              <div key={r.id} {...bisaDiklik(() => { setDetailReminder(r); setShowBellPopup(false); })}
                 className="rounded-xl p-3 border-2 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all"
                 style={{ background: 'rgba(249,250,251,0.9)', borderColor: warna + '55' }}>
                 <div className="flex items-start justify-between gap-2">

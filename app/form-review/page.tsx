@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, Suspense, type CSSProperties } from 'react';
+import { bisaDiklik } from '@/components/shared/bisaDiklik';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { isPimpinan } from '@/lib/pimpinan';
@@ -923,7 +924,7 @@ function FormReviewPageInner() {
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-2">
                 {myPendingReviews.map(r => (
-                  <div key={r.id} onClick={() => { setDetailReview(r); setShowNotificationPopup(false); }}
+                  <div key={r.id} {...bisaDiklik(() => { setDetailReview(r); setShowNotificationPopup(false); })}
                     className="rounded-xl p-3 border-2 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all"
                     style={{ background: 'rgba(249,250,251,0.9)', borderColor: '#e5e7eb' }}>
                     <div className="flex items-start justify-between gap-2">
@@ -992,7 +993,7 @@ function FormReviewPageInner() {
                     </p>
                   </div>
                 ) : myActivePendingReviews.map(r => (
-                  <div key={r.id} onClick={() => { setDetailReview(r); setShowBellPopup(false); }}
+                  <div key={r.id} {...bisaDiklik(() => { setDetailReview(r); setShowBellPopup(false); })}
                     className="rounded-xl p-3 border-2 cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all"
                     style={{ background: 'rgba(249,250,251,0.9)', borderColor: '#e5e7eb' }}>
                     <div className="flex items-start justify-between gap-2">
@@ -1145,12 +1146,12 @@ function FormReviewPageInner() {
             {/* Filter Bar — sama persis dengan Reminder Schedule */}
             <div className="px-3 py-2 sm:px-5 sm:py-3 flex flex-wrap gap-1.5 sm:gap-3 items-end border-b border-gray-100" style={{ background: 'rgba(255,255,255,0.97)' }}>
               <div>
-                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="🔍" />Search Project / Lokasi</label>
+                <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 sm:mb-1"><IkonTeks nama="🔍" />Cari Project / Lokasi</label>
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
-                    placeholder="Search project / lokasi..." style={{ minWidth: 180 }} />
+                    placeholder="Cari project / lokasi..." style={{ minWidth: 180 }} />
                 </div>
               </div>
               <div>
@@ -1159,7 +1160,7 @@ function FormReviewPageInner() {
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales..." value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
-                    placeholder="Search sales..." />
+                    placeholder="Cari sales..." />
                 </div>
               </div>
               <div>
@@ -1168,7 +1169,7 @@ function FormReviewPageInner() {
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search handler..." value={searchHandler} onChange={e => setSearchHandler(e.target.value)}
                     className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
-                    placeholder="Search handler..." />
+                    placeholder="Cari handler..." />
                 </div>
               </div>
               <div>
