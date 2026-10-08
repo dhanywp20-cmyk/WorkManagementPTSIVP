@@ -15,6 +15,7 @@ import { NavBawahMobile, IKON_AKUN } from '../dashboard/_components/NavBawahMobi
 import { LABEL_PENDEK } from '../dashboard/_components/nav-bawah';
 import { AsistenPlatform } from '../dashboard/_components/AsistenPlatform';
 import { LayarMasuk } from './LayarMasuk';
+import { tujuanLanjutAman } from '@/lib/tujuan-lanjut';
 import { SidebarPortal } from './SidebarPortal';
 import { DAFTAR_MENU, MENU_ICONS, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KEYS } from './daftar-menu';
 import { useMerek, latarDasbor } from '@/lib/merek';
@@ -58,8 +59,11 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     setDasborMuncul(true);
     setIsLoggedIn(true);
     setShowSidebar(true);
+    //  Datang dari tautan langsung tanpa sesi (proxy.ts membawa ?lanjut=): kembali ke halaman itu.
+    const lanjut = tujuanLanjutAman(new URLSearchParams(window.location.search).get('lanjut'));
+    if (lanjut) router.replace(lanjut);
     window.setTimeout(() => setDasborMuncul(false), 700);
-  }, []);
+  }, [router]);
   const [loading, setLoading] = useState(true);
   const [menuLoading, setMenuLoading] = useState(false);
   const [showTour, setShowTour] = useState(false);

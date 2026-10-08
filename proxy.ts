@@ -71,7 +71,10 @@ export function proxy(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    //  Bawa alamat asal: setelah login portal kembali ke sana (lib/tujuan-lanjut.ts memvalidasi).
+    const keLogin = new URL('/dashboard', request.url);
+    keLogin.searchParams.set('lanjut', pathname + request.nextUrl.search);
+    return NextResponse.redirect(keLogin);
   }
 
   return NextResponse.next();
