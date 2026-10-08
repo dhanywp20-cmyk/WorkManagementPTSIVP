@@ -53,6 +53,7 @@ import { ReminderListBody } from './_components/ReminderListBody';
 import { ReminderDetailPopup } from './_components/ReminderDetailPopup';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { Toast } from '@/components/shared/Toast';
+import { URL_XLSX } from '@/lib/xlsx-loader';
 
 
 function ReminderSchedulePageInner() {
@@ -1821,7 +1822,7 @@ function ReminderSchedulePageInner() {
     if ((window as any).XLSX) runExport((window as any).XLSX);
     else {
       const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.src = URL_XLSX;
       s.onload = () => runExport((window as any).XLSX);
       s.onerror = () => notify('error', 'Gagal memuat library Excel.');
       document.head.appendChild(s);

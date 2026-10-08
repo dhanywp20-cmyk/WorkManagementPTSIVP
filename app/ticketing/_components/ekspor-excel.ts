@@ -1,4 +1,5 @@
 import { Ticket, formatDateTime } from './shared';
+import { URL_XLSX } from '@/lib/xlsx-loader';
 
 /**
  * Ekspor daftar ticket ke Excel berformat, termasuk lembar ringkasan.
@@ -169,7 +170,7 @@ export function eksporExcel({ tickets, filteredTickets, currentUserTeamType, sta
   if ((window as any).XLSX) runExport((window as any).XLSX);
   else {
     const script = document.createElement("script");
-    script.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    script.src = URL_XLSX;
     script.onload = () => runExport((window as any).XLSX);
     script.onerror = () => notify("error", "Gagal memuat library Excel.");
     document.head.appendChild(script);
