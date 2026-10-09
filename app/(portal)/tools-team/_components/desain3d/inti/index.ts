@@ -12,6 +12,7 @@
  *   rak        isi rack (elevation)
  *   template   template kategori ruangan (terkunci)
  *   pustaka    isi proyektor / display / speaker dari Pustaka Tools Team
+ *   perangkat  PC, laptop, dongle WyreStorm, HP, tablet & share layar nirkabel
  */
 export * from './tipe';
 export * from './ruang';
@@ -25,3 +26,4 @@ export * from './kabel';
 export * from './rak';
 export * from './template';
 export * from './pustaka';
+export * from './perangkat';

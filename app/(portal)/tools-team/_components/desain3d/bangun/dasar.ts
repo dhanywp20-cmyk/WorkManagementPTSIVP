@@ -43,31 +43,31 @@ export function persegiBulat(THREE: typeof T, w: number, h: number, r: number): 
 /** Bevel yang muat: tidak lebih dari separuh ukuran terkecil. */
 export const bevelAman = (bevel: number, ...ukuran: number[]) => Math.max(0, Math.min(bevel, ...ukuran.map(u => u / 2 - 0.0006)));
 
-function ekstrusi(THREE: typeof T, bentuk: T.Shape, tebal: number, bv: number, lengkung = 14) {
+function ekstrusi(THREE: typeof T, bentuk: T.Shape, tebal: number, bv: number, lengkung = 14, segBevel = 3) {
   return new THREE.ExtrudeGeometry(bentuk, {
     depth: Math.max(0.0005, tebal - 2 * bv), bevelEnabled: bv > 0, bevelThickness: bv, bevelSize: bv,
-    bevelSegments: bv > 0 ? 3 : 1, curveSegments: lengkung,
+    bevelSegments: bv > 0 ? segBevel : 1, curveSegments: lengkung,
   });
 }
 
 /** Lempeng mendatar dari bentuk tampak atas (bentuk x -> x, bentuk y -> z); y = 0 .. tebal. */
-export function lempeng(THREE: typeof T, bentuk: T.Shape, tebal: number, bv: number, m: T.Material, lengkung = 14) {
-  const geo = ekstrusi(THREE, bentuk, tebal, bv, lengkung);
+export function lempeng(THREE: typeof T, bentuk: T.Shape, tebal: number, bv: number, m: T.Material, lengkung = 14, segBevel = 3) {
+  const geo = ekstrusi(THREE, bentuk, tebal, bv, lengkung, segBevel);
   geo.rotateX(Math.PI / 2);
   geo.translate(0, tebal - bv, 0);
   return new THREE.Mesh(geo, m);
 }
 
-/** Papan tampak atas bersudut membulat: w (x) x d (z), tebal ke atas dari y = 0. */
-export function papan(THREE: typeof T, w: number, d: number, tebal: number, r: number, m: T.Material, bevel = 0.006) {
+/** Papan tampak atas bersudut membulat: w (x) x d (z), tebal ke atas dari y = 0. `halus` = segmen bevel (tepi lebih mulus). */
+export function papan(THREE: typeof T, w: number, d: number, tebal: number, r: number, m: T.Material, bevel = 0.006, halus = 3) {
   const bv = bevelAman(bevel, tebal, w, d);
-  return lempeng(THREE, persegiBulat(THREE, w - 2 * bv, d - 2 * bv, r - bv), tebal, bv, m);
+  return lempeng(THREE, persegiBulat(THREE, w - 2 * bv, d - 2 * bv, r - bv), tebal, bv, m, halus > 3 ? 24 : 14, halus);
 }
 
 /** Blok tampak depan bersudut membulat: w (x) x h (y), tebal d berpusat di z = 0, alas y = 0. */
-export function blok(THREE: typeof T, w: number, h: number, d: number, r: number, m: T.Material, bevel = 0.004) {
+export function blok(THREE: typeof T, w: number, h: number, d: number, r: number, m: T.Material, bevel = 0.004, halus = 3) {
   const bv = bevelAman(bevel, d, w, h);
-  const geo = ekstrusi(THREE, persegiBulat(THREE, w - 2 * bv, h - 2 * bv, r - bv), d, bv, 12);
+  const geo = ekstrusi(THREE, persegiBulat(THREE, w - 2 * bv, h - 2 * bv, r - bv), d, bv, halus > 3 ? 24 : 12, halus);
   geo.translate(0, h / 2, -(d - 2 * bv) / 2);
   return new THREE.Mesh(geo, m);
 }

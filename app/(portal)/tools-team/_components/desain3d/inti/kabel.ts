@@ -77,6 +77,9 @@ function kebutuhan(b: Benda, semua: Benda[]): Butuh[] {
     case 'speaker': case 'speaker-plafon': return ['speaker'];
     case 'mic': return ['audio'];
     case 'touchpanel': return ['data'];
+    //  PC: HDMI/HDBaseT ke switcher + jaringan. Laptop tanpa dongle: kabelnya lewat table box meja.
+    //  Dongle WyreStorm, HP, tablet, laptop + dongle: NIRKABEL - tidak ada kabel sama sekali.
+    case 'perangkat': return b.tipePerangkat === 'pc' ? ['video', 'data'] : [];
     case 'meja':
       switch (b.bentukMeja) {
         case 'operator': return ['video', 'data'];                                       // PC operator -> videowall controller & jaringan
@@ -97,6 +100,7 @@ function namaSumber(b: Benda): string {
 /** Perangkat yang butuh listrik sendiri (bukan PoE / pasif). */
 function butuhPower(b: Benda): boolean {
   if (['videowall', 'led', 'tv', 'ifp', 'lift', 'proyektor', 'rak'].includes(b.jenis)) return true;
+  if (b.jenis === 'perangkat') return b.tipePerangkat === 'pc';
   if (b.jenis === 'speaker') return b.tipeSpeaker === 'kolom' || b.tipeSpeaker === 'linearray';
   if (b.jenis === 'meja') return ['operator', 'rapat', 'bulat', 'dosen', 'podium'].includes(b.bentukMeja ?? 'rapat');
   return false;

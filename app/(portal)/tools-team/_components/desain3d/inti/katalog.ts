@@ -3,6 +3,7 @@
  * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
  */
 import { setLampuGrid, SPEK_LAMPU } from './cahaya';
+import { SPEK_PERANGKAT } from './perangkat';
 import { kursiTribun, spekVideowall, terapkanUkuran } from './produk';
 import { daftarRuang } from './ruang';
 import { type Benda, type BentukObjek, CELAH_PASANG, type Jenis, type Kotak, LABEL, LABEL_BENTUK_OBJEK, pasangDari, type Ruang } from './tipe';
@@ -50,6 +51,17 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'kam-ai', label: 'Kamera PTZ AI', ket: 'Auto-tracking, bar sensor', jenis: 'kamera', atur: { tipeKamera: 'ptz-ai' } },
       { kunci: 'xbar', label: 'Camera soundbar', ket: 'Video bar: kamera + speaker + mic', jenis: 'kamera', atur: { tipeKamera: 'xbar' } },
       { kunci: 'lift', label: 'Paperless display lift', ket: 'Layar naik dari meja + mic', jenis: 'lift' },
+    ],
+  },
+  {
+    //  Sumber presentasi. Dongle, HP, tablet & laptop + dongle = share NIRKABEL ke display (tanpa kabel ke rack).
+    grup: 'Perangkat & share nirkabel', item: [
+      { kunci: 'pc', label: 'PC desktop', ket: SPEK_PERANGKAT.pc.ket, jenis: 'perangkat', atur: { tipePerangkat: 'pc' } },
+      { kunci: 'laptop', label: 'Laptop', ket: 'Laptop 14" terbuka di meja', jenis: 'perangkat', atur: { tipePerangkat: 'laptop' } },
+      { kunci: 'laptop-dongle', label: 'Laptop + dongle WyreStorm', ket: 'Dongle USB-C tertancap · share nirkabel ke display', jenis: 'perangkat', atur: { tipePerangkat: 'laptop', pakaiDongle: true } },
+      { kunci: 'dongle', label: 'Dongle WyreStorm', ket: SPEK_PERANGKAT.dongle.ket, jenis: 'perangkat', atur: { tipePerangkat: 'dongle' } },
+      { kunci: 'hp', label: 'HP / smartphone', ket: SPEK_PERANGKAT.hp.ket, jenis: 'perangkat', atur: { tipePerangkat: 'hp' } },
+      { kunci: 'tablet', label: 'Tablet', ket: SPEK_PERANGKAT.tablet.ket, jenis: 'perangkat', atur: { tipePerangkat: 'tablet' } },
     ],
   },
   {
@@ -183,6 +195,12 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       if (tipe === 'ptz-ai') return { ...dasar, nama: 'Kamera PTZ AI', z: 0.12, w: 0.28, h: 0.15, d: 0.09, elev: 0.4, tipeKamera: 'ptz-ai', ...atur };
       return { ...dasar, nama: 'Kamera PTZ', z: 0.15, w: 0.17, h: 0.19, d: 0.17, elev: 0.4, tipeKamera: 'ptz', ...atur };
     }
+    case 'perangkat': {
+      const t = atur.tipePerangkat ?? 'laptop', sp = SPEK_PERANGKAT[t];
+      const nama = t === 'laptop' && atur.pakaiDongle ? 'Laptop + dongle WyreStorm' : sp.label;
+      //  Di atas meja rapat bawaan (tinggi 0,75 m), menghadap ke depan ruang (layar laptop/monitor ke penonton di belakangnya).
+      return { ...dasar, nama, z: k.l * 0.55, w: sp.w, h: sp.h, d: sp.d, elev: 0.75, rot: 180, tipePerangkat: t, ...atur };
+    }
     case 'lift': return { ...dasar, nama: 'Paperless display lift', z: k.l * 0.55, w: 0.55, h: 0.3, d: 0.22, elev: 0.75, naik: true, ...atur };
     case 'proyektor': return (atur.pasangProyektor ?? 'plafon') === 'meja'
       ? { ...dasar, nama: 'Proyektor portabel', z: k.l * 0.6, w: 0.3, h: 0.09, d: 0.23, elev: 0.75, rot: 180, pasangProyektor: 'meja', throwRatio: 1.5, trMin: 1.48, trMax: 1.78, ...atur }
@@ -289,4 +307,4 @@ export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
     b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt, b.warna, b.panel ? JSON.stringify(b.panel) : '', b.diag, b.tipeSpeaker, b.modul, b.sudutModul, b.tiltLA, b.gantung,
     b.baris, b.kursiBaris, b.tinggiAnak, b.bentukBidang, b.jariBidang, b.busur, b.monitorMeja, b.tipeRak, b.tipeLampu, b.sudutLampu, b.kelvin, b.lumen,
-    b.isiRak ? JSON.stringify(b.isiRak) : '', b.putarModel, b.bentukObjek, b.kontur ? JSON.stringify(b.kontur) : ''].join('|');
+    b.isiRak ? JSON.stringify(b.isiRak) : '', b.putarModel, b.bentukObjek, b.kontur ? JSON.stringify(b.kontur) : '', b.tipePerangkat, b.pakaiDongle].join('|');
