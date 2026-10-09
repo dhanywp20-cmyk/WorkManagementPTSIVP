@@ -17,13 +17,15 @@ import type { IsiTemplateKategori, useAksiDesain } from '../aksi/useAksiDesain';
 import type { useSimpanDesain } from './useSimpanDesain';
 
 const API = '/api/tools-team/template-kategori';
+/** Kategori yang isinya tampil saat Desain 3D pertama dibuka (contohAwal = template Ruangan Meeting). */
+const KATEGORI_AWAL: KategoriRuang = 'meeting';
 
 export interface InfoTemplateKategori { kategori: KategoriRuang; nama: string; ditetapkan_oleh_nama: string | null; updated_at: string }
 
 const judulKategori = (id: KategoriRuang) => KATEGORI_RUANG.find(k => k.id === id)?.judul ?? id;
 
 export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof useAksiDesain>, simpan: ReturnType<typeof useSimpanDesain>) {
-  const { benda, hanyaLihat, namaDesain, ruang, setKonfirmasi, setPesan, setStatusSimpan } = K;
+  const { asal, benda, bendaRef, hanyaLihat, namaDesain, potret, riwayat, ruang, setKonfirmasi, setPesan, setStatusSimpan } = K;
   const [daftar, setDaftar] = useState<Partial<Record<KategoriRuang, InfoTemplateKategori>>>({});
   const [bolehAtur, setBolehAtur] = useState(false);
   /** Kategori yang sedang dimuat / disimpan (tombolnya dinonaktifkan). */
@@ -43,28 +45,67 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
   }, [hanyaLihat]);
   useEffect(() => { void muatDaftar(); }, [muatDaftar]);
 
+  /**
+   * Isi lengkap template Admin kategori `id` (diingat selama updated_at sama). null = gagal dimuat;
+   * 'hilang' = sudah dihapus Admin lain sejak daftar dimuat.
+   */
+  const ambilIsi = async (id: KategoriRuang, info: InfoTemplateKategori): Promise<IsiTemplateKategori | null | 'hilang'> => {
+    const ingat = isiCache.current.get(id);
+    if (ingat && ingat.updated_at === info.updated_at) return ingat.isi;
+    try {
+      const r = await fetch(`${API}?kategori=${encodeURIComponent(id)}`, { credentials: 'include', cache: 'no-store' });
+      const j = await r.json().catch(() => null);
+      if (!r.ok || !j?.ok) return null;
+      const t = j.template as { nama: string; updated_at: string; data: { ruang: IsiTemplateKategori['ruang']; benda: IsiTemplateKategori['benda']; layar?: Record<string, string> } } | null;
+      if (!t) return 'hilang';
+      const isi: IsiTemplateKategori = { nama: t.nama, ruang: t.data.ruang, benda: t.data.benda, layar: t.data.layar };
+      isiCache.current.set(id, { updated_at: t.updated_at, isi });
+      return isi;
+    } catch { return null; }
+  };
+
   /** Pilih kategori: template Admin bila ada, selain itu template bawaan kode. */
   const pilihKategori = async (id: KategoriRuang) => {
     const info = daftar[id];
     if (!info) { aksi.pasangKategori(id); return; }
-    const ingat = isiCache.current.get(id);
-    if (ingat && ingat.updated_at === info.updated_at) { aksi.pasangKategori(id, ingat.isi); return; }
     setSibuk(id);
     try {
-      const r = await fetch(`${API}?kategori=${encodeURIComponent(id)}`, { credentials: 'include', cache: 'no-store' });
-      const j = await r.json().catch(() => null);
-      if (!r.ok || !j?.ok) { setPesan(`Template Admin "${judulKategori(id)}" tidak bisa dimuat - memakai template bawaan.`); aksi.pasangKategori(id); return; }
-      const t = j.template as { nama: string; updated_at: string; data: { ruang: IsiTemplateKategori['ruang']; benda: IsiTemplateKategori['benda']; layar?: Record<string, string> } } | null;
-      //  Sudah dihapus Admin lain sejak daftar dimuat: pakai bawaan & segarkan penandanya.
-      if (!t) { aksi.pasangKategori(id); void muatDaftar(); return; }
-      const isi: IsiTemplateKategori = { nama: t.nama, ruang: t.data.ruang, benda: t.data.benda, layar: t.data.layar };
-      isiCache.current.set(id, { updated_at: t.updated_at, isi });
+      const isi = await ambilIsi(id, info);
+      if (isi === 'hilang') { aksi.pasangKategori(id); void muatDaftar(); return; }
+      if (!isi) { setPesan(`Template Admin "${judulKategori(id)}" tidak bisa dimuat - memakai template bawaan.`); aksi.pasangKategori(id); return; }
       aksi.pasangKategori(id, isi);
-    } catch {
-      setPesan(`Tidak terhubung ke server - template "${judulKategori(id)}" memakai versi bawaan.`);
-      aksi.pasangKategori(id);
     } finally { setSibuk(null); }
   };
+
+  /*
+    Kanvas AWAL (saat halaman dibuka / di-refresh) = template "Ruangan Meeting" bawaan kode. Dulu default
+    Admin hanya dipakai saat kategori diklik, jadi setelah refresh kanvas kembali ke versi pabrikan walau
+    Admin sudah menetapkan default. Sekarang: begitu daftar termuat, bila kategori awal punya default
+    Admin DAN kanvas belum diubah / belum membuka berkas lain, kanvas awal memakai default Admin -
+    tanpa dialog, dan riwayat Undo dimulai dari situ (Undo tidak kembali ke versi pabrikan).
+  */
+  const bendaAwal = useRef(benda);
+  const awalDiperiksa = useRef(false);
+  const mulaiRiwayat = useRef(false);
+  useEffect(() => {
+    const info = daftar[KATEGORI_AWAL];
+    if (awalDiperiksa.current || !info) return;
+    awalDiperiksa.current = true;
+    if (bendaRef.current !== bendaAwal.current || asal.jenis !== 'baru') return;
+    void ambilIsi(KATEGORI_AWAL, info).then(isi => {
+      //  Pengguna sempat mengubah kanvas selama template diunduh: jangan ditimpa.
+      if (!isi || isi === 'hilang' || bendaRef.current !== bendaAwal.current) return;
+      mulaiRiwayat.current = true;
+      aksi.pasangKategoriYa(KATEGORI_AWAL, isi);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [daftar]);
+  useEffect(() => {
+    if (!mulaiRiwayat.current) return;
+    mulaiRiwayat.current = false;
+    riwayat.mulaiBaru(potret);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [potret]);
 
   /** Admin: jadikan isi kanvas sekarang template default kategori `id`. */
   const jadikanDefault = (id: KategoriRuang) => {
