@@ -450,8 +450,11 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   }
 
   // SHARED HEADER JSX
+  //  zIndex 60: DI ATAS header sticky modul (PageHeader z-50) - tanpa iframe keduanya satu tumpukan, dan
+  //  dengan nilai sama header modul (lebih belakang di DOM) menutupi panel lonceng / notifikasi.
+  //  Tetap di bawah layar penuh modul (z-300) & modal (z-1000).
   const renderHeader = (withBackBtn = false) => (
-    <div className="bg-white/80 backdrop-blur-md shadow-md flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 50 }}>
+    <div className="bg-white/80 backdrop-blur-md shadow-md flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 60 }}>
       <div className="w-full px-3 md:px-4 py-3 md:py-3.5">
         <div className="flex items-center justify-between gap-2 md:gap-4">
           {/* LEFT: Logo */}
