@@ -14,6 +14,7 @@ import { UserManagementInline } from './modal-user';
 import { BrandPicSettingInline } from './modal-brand-pic';
 import { MerekSettingInline } from './modal-merek';
 import { KelompokSettingInline } from './modal-kelompok';
+import { KartuSuaraNotif } from './kartu-suara-notif';
 import { IntegrasiInline } from './modal-integrasi';
 import { AplikasiAndroidInline } from './modal-aplikasi-android';
 import { KesehatanInline } from './modal-kesehatan';
@@ -252,7 +253,9 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             {activeSection === 'daftarPilihan' && <DaftarPilihanInline />}
             {activeSection === 'kpiRoster' && <KpiRosterInline />}
             {activeSection === 'merek' && <MerekSettingInline />}
-            {activeSection === 'kelompok' && <KelompokSettingInline />}
+            {activeSection === 'kelompok' && (
+              <><div className="px-4 pt-4"><KartuSuaraNotif /></div><KelompokSettingInline /></>
+            )}
             {activeSection === 'integrasi' && (
               <div className="p-4"><BriefingPagiKartu /><IntegrasiInline /></div>
             )}

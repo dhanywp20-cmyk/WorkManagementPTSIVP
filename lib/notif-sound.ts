@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { dengarSuaraNotif, muatSuaraNotif, suaraNotif, sumberSuara } from './suara-notif';
 
 /**
  * Alarm suara notifikasi - dipakai NotificationBar (dashboard) supaya orang
@@ -7,16 +8,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  * baru tanpa harus melirik layar terus-menerus.
  */
 /**
- * Berkas di /public, BUKAN data URI seperti sebelumnya.
- *
- * Suara lamanya chime sintetis ~38 KB yang ikut terbundel ke dalam JavaScript,
- * jadi setiap orang yang membuka dashboard mengunduhnya lagi bersama kodenya -
- * termasuk yang alarmnya dimatikan dan tidak akan pernah membunyikannya.
- * Sebagai berkas terpisah ia diunduh sekali lalu disimpan cache peramban, dan
- * bundel kodenya ikut menyusut sebesar itu.
+ * Berkas suara & volume: pengaturan Admin (Admin Panel › Kelompok & Notifikasi, lib/suara-notif.ts),
+ * bawaan /notif.wav. Berkas terpisah (bukan data URI di bundel) - diunduh sekali lalu di-cache.
  */
-const BERKAS_SUARA = '/notif.wav';
-
 const KUNCI_MUTE = 'wm_notif_sound_muted';
 
 /**
@@ -38,11 +32,22 @@ export function useNotifSoundAlarm() {
   });
 
   useEffect(() => {
-    audioRef.current = new Audio(BERKAS_SUARA);
+    const awal = suaraNotif();
+    audioRef.current = new Audio(sumberSuara(awal));
     //  Diminta diunduh lebih awal: kalau baru dimuat saat notifikasi datang,
     //  bunyinya terlambat beberapa ratus milidetik dari munculnya baris baru.
     audioRef.current.preload = 'auto';
-    audioRef.current.volume = 0.55;
+    audioRef.current.volume = awal.volume;
+    //  Suara / volume diganti Admin: pasang yang baru (tidak memotong bunyi yang sedang berjalan).
+    const terapkan = () => {
+      const a = audioRef.current, s = suaraNotif();
+      if (!a) return;
+      a.volume = s.volume;
+      const src = new URL(sumberSuara(s), location.href).href;
+      if (a.src !== src && a.paused) { a.src = src; a.load(); }
+    };
+    const lepasPengaturan = dengarSuaraNotif(terapkan);
+    void muatSuaraNotif().then(terapkan);
     /*
       Browser modern menolak audio.play() sebelum ada interaksi user di
       halaman itu (autoplay policy). "Unlock"-nya dengan main sebentar lalu
@@ -76,6 +81,7 @@ export function useNotifSoundAlarm() {
     document.addEventListener('click', unlock);
     document.addEventListener('keydown', unlock);
     return () => {
+      lepasPengaturan();
       document.removeEventListener('click', unlock);
       document.removeEventListener('keydown', unlock);
     };
