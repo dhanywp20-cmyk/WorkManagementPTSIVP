@@ -525,7 +525,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
               )}
               {forgotStep === 'request' ? (
                 <div className="space-y-3">
-                  <p className="text-xs text-slate-500">Masukkan email (atau username lama) kamu. Kode OTP akan dikirim ke nomor WhatsApp yang terdaftar.</p>
+                  <p className="text-xs text-slate-500">Kode OTP dikirim ke WhatsApp terdaftar.</p>
                   <input type="text" value={forgotUsername} onChange={e => setForgotUsername(e.target.value)}
                     placeholder="Email / Username" onKeyDown={e => e.key === 'Enter' && handleForgotRequest()}
                     className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />

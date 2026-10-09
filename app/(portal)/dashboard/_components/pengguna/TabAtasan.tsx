@@ -1,4 +1,5 @@
 'use client';
+import { Keterangan } from '@/components/shared/Keterangan';
 
 /** TabAtasan - dipecah dari app/(portal)/dashboard/_components/modal-user.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -33,9 +34,7 @@ export function TabAtasan({ ATASAN_JABATAN, activeTab, allUsers, atasanByDiv, at
         <>
           <div className="p-5 border-b border-slate-100 bg-amber-50/60 space-y-3 flex-shrink-0">
             <p className="text-xs font-bold text-amber-800 uppercase tracking-widest"><IkonTeks nama="➕" />Tambah Mapping Atasan Divisi</p>
-            <p className="text-[11px] text-amber-700 leading-relaxed">
-              Mapping divisi → atasan. User dengan <strong>divisi yang sama</strong> otomatis ter-CC ke atasan terdaftar. Untuk user beda divisi (misal Handono SGP 1 → Rainata SGP), gunakan tab <strong>CC per User</strong>.
-            </p>
+            <Keterangan className="ml-1">Mapping divisi → atasan. User dengan <strong>divisi yang sama</strong> otomatis ter-CC ke atasan terdaftar. Untuk user beda divisi (misal Handono SGP 1 → Rainata SGP), gunakan tab <strong>CC per User</strong>.</Keterangan>
             <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="f-dashboard-components-modal-user-1" className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division</label>

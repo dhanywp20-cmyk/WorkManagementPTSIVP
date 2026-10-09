@@ -1,4 +1,5 @@
 'use client';
+import { Keterangan } from '@/components/shared/Keterangan';
 import { useCallback, useEffect, useState } from 'react';
 import { BATAS_DB, BATAS_STORAGE, CRON_VERCEL, type DataKesehatan, type Peringatan } from '@/lib/kesehatan';
 
@@ -141,7 +142,7 @@ export function KesehatanInline() {
           {s && (
             <Kartu judul="Jadwal pg_cron (basis data)">
               {s.cron.length === 0
-                ? <p className="text-[12.5px] text-slate-600">Tidak ada jadwal. Pengingat WA lama di Ticketing tidak aktif - briefing pagi berjalan lewat cron Vercel di atas.</p>
+                ? <p className="text-[12.5px] text-slate-600">Tidak ada jadwal <Keterangan className="ml-1">Pengingat WA lama di Ticketing tidak aktif - briefing pagi berjalan lewat cron Vercel di atas.</Keterangan></p>
                 : <ul className="text-[12px] space-y-1">{s.cron.map(c => <li key={c.nama} className="flex justify-between gap-2"><span>{c.nama} <span className="text-slate-500">({c.jadwal})</span></span><b>{c.aktif ? (c.status ?? 'belum jalan') : 'nonaktif'}</b></li>)}</ul>}
             </Kartu>
           )}

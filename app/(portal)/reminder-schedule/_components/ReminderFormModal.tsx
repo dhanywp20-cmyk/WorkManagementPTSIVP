@@ -330,7 +330,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                 <span className="text-lg"><Ikon nama="🛡" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-sm font-bold text-sky-700">Masa Garansi (Warranty)</p>
               </div>
-              <p className="text-xs text-sky-700 mb-3">Tanggal BAST (field Tanggal di atas) akan digunakan sebagai titik mulai garansi. Pilih durasi warranty project ini.</p>
+              <p className="text-xs text-sky-700 mb-3">Garansi dihitung dari tanggal BAST.</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {([null, 1, 2, 3] as const).map(val => {
                   const isSelected = formData.warranty_years === val;

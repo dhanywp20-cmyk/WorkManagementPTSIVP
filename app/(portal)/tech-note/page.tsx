@@ -915,7 +915,7 @@ function TechNotePageInner() {
           <input className={inputCls} value={uploadForm.one_drive_link}
             onChange={e=>setUploadForm(p=>({...p,one_drive_link:e.target.value}))} placeholder="https://1drv.ms/b/..." />
           {uploadForm.one_drive_link.trim() && !linkOneDriveSah(uploadForm.one_drive_link) && (
-            <p className="text-[11.5px] text-rose-600 mt-1">Harus link OneDrive / SharePoint (https://1drv.ms/..., onedrive.live.com, atau *.sharepoint.com).</p>
+            <p className="text-[11.5px] text-rose-600 mt-1">Link OneDrive / SharePoint (https)</p>
           )}
         </Field>
         <Field label="Tags (pisahkan koma)">

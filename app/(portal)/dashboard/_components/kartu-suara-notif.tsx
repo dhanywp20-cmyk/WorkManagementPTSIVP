@@ -1,4 +1,5 @@
 'use client';
+import { Keterangan } from '@/components/shared/Keterangan';
 /**
  * Admin Panel › Kelompok & Notifikasi › Suara notifikasi: dengarkan, ganti (unggah MP3/WAV/OGG/M4A
  * ≤ 1 MB & ≤ 6 detik), atur volume, kembalikan bawaan. Berlaku untuk alarm di halaman (web &
@@ -60,8 +61,7 @@ export function KartuSuaraNotif() {
   return (
     <div className="rounded-2xl border border-slate-200 overflow-hidden bg-white mb-4">
       <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
-        <h3 className="font-bold text-slate-800 text-sm">🔔 Suara notifikasi</h3>
-        <p className="text-slate-500 text-xs mt-0.5">Alarm saat ada ticket / jadwal / notifikasi baru di halaman (web & aplikasi Android yang sedang dibuka), untuk semua akun.</p>
+        <h3 className="font-bold text-slate-800 text-sm">🔔 Suara notifikasi <Keterangan className="ml-1 text-slate-500">Alarm saat ada ticket / jadwal / notifikasi baru di halaman (web &amp; aplikasi Android yang sedang dibuka), untuk semua akun.</Keterangan></h3>
       </div>
       <div className="p-4 space-y-3">
         {kabar && (
@@ -86,10 +86,7 @@ export function KartuSuaraNotif() {
           <input type="range" min={10} max={100} step={5} value={Math.round(draf.volume * 100)} aria-label="Volume suara notifikasi"
             onChange={e => setDraf(d => ({ ...d, volume: Number(e.target.value) / 100 }))} className="w-full accent-indigo-700" />
         </label>
-        <p className="text-[11px] text-slate-500 leading-relaxed">
-          MP3, WAV, OGG, M4A/AAC atau WebM · maks 1 MB · maks {MAKS_DETIK_SUARA} detik - suara singkat lebih nyaman didengar berulang kali.
-          Notifikasi push di HP (aplikasi tertutup) tetap memakai suara bawaan HP / aplikasi Android.
-        </p>
+        <p className="text-[11px] text-slate-500">MP3 · WAV · OGG · M4A · maks 1 MB, {MAKS_DETIK_SUARA} detik <Keterangan className="ml-1">Notifikasi push di HP saat aplikasi tertutup tetap memakai suara bawaan HP / aplikasi Android.</Keterangan></p>
         <div className="flex items-center justify-end gap-2 flex-wrap">
           {draf.url && (
             <button type="button" onClick={() => setDraf({ ...SUARA_BAWAAN, volume: draf.volume })}

@@ -1,4 +1,5 @@
 'use client';
+import { Keterangan } from '@/components/shared/Keterangan';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Merek, MEREK_BAWAAN, merek as merekSekarang, muatMerek, simpanMerek,
@@ -127,7 +128,7 @@ export function MerekSettingInline() {
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Latar netral membuat angka & grafik lebih mudah dibaca. Halaman login tetap memakai fotonya sendiri.</p>
+            <Keterangan className="ml-1">Latar netral membuat angka & grafik lebih mudah dibaca. Halaman login tetap memakai fotonya sendiri.</Keterangan>
           </div>
 
           <Unggah label="Gambar Latar Dashboard" jenis="latarDasbor" nilai={form.gambarLatarDasbor} sedang={mengunggah === 'latarDasbor'}

@@ -41,7 +41,7 @@ export function ModalGenerateTranche({ generateProject, generating, handleGenera
               //  crash. handleGenerateTranches() sudah menolak kasus ini saat
               //  submit; pratinjau perlu penjagaan yang sama karena jalan lebih
               //  dulu.
-              if (!generateProject.bast_date) return <p className="text-sm text-amber-700 mb-6"><IkonTeks nama="⚠" />BAST belum diisi — isi lewat tombol 💲 Input Nominal pada proyek ini sebelum generate tranche.</p>;
+              if (!generateProject.bast_date) return <p className="text-sm text-amber-700 mb-6"><IkonTeks nama="⚠" />BAST belum diisi - isi lewat 💲 Input Nominal dulu.</p>;
               const pool = generateProject.incentive_value || 0;
               //  Lewat petaPorsiBerlaku, bukan persenInstaller: saat tabel Porsi
               //  Remote diatur sendiri, porsi Installer diambil dari baris di

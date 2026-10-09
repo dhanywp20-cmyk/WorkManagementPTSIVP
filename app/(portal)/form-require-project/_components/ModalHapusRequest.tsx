@@ -35,7 +35,7 @@ export function ModalHapusRequest({ deleteConfirmText, deleteModal, deleting, ha
               </div>
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2.5 mb-5">
                 <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-amber-700 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                <p className="text-xs font-semibold text-amber-700">Tindakan ini tidak dapat dibatalkan. Ticket beserta seluruh activity log dan overdue setting akan dihapus permanen dari database.</p>
+                <p className="text-xs font-semibold text-amber-700">Tidak bisa dibatalkan - activity log &amp; overdue setting ikut terhapus.</p>
               </div>
               <div className="mb-4">
                 <p className="text-sm font-bold text-gray-700 mb-2">Ketik <span className="text-red-500 font-black tracking-widest">HAPUS</span> untuk konfirmasi</p>

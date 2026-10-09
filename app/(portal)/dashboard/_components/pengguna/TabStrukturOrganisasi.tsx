@@ -1,4 +1,5 @@
 'use client';
+import { Keterangan } from '@/components/shared/Keterangan';
 
 /** TabStrukturOrganisasi - dipecah dari app/(portal)/dashboard/_components/modal-user.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { User } from '../shared';
@@ -57,7 +58,7 @@ export function TabStrukturOrganisasi({ ORG_GROUP_STYLE, activeTab, allUsers, ha
           <div className="p-5 space-y-4">
             <div className="px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200">
               <p className="text-xs font-bold text-emerald-800 mb-1"><IkonTeks nama="🏛" />Struktur Organisasi — satu tempat untuk semua divisi</p>
-              <p className="text-[11px] text-emerald-700 leading-relaxed">Atur atasan langsung setiap orang (Sales, Marketing, PTS) dalam satu pohon Direktur → Staff. Satu atasan bisa membawahi banyak orang. Klik nama untuk mengubah atasannya.</p>
+              <Keterangan className="ml-1">Atur atasan langsung setiap orang (Sales, Marketing, PTS) dalam satu pohon Direktur → Staff. Satu atasan bisa membawahi banyak orang. Klik nama untuk mengubah atasannya.</Keterangan>
             </div>
 
             {/* Peringatan: akun yang tidak muncul di pohon mana pun. */}

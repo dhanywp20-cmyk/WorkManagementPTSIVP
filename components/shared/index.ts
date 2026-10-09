@@ -48,6 +48,8 @@ export { Modal, TombolModal, type ModalProps } from './Modal';
 export { Paginasi, usePaginasi, BARIS_PER_HALAMAN, type HasilPaginasi } from './Paginasi';
 // Ekspor daftar (Excel · Cetak · PNG) yang sama di semua menu - lib/ekspor-tabel.ts.
 export { TombolEkspor } from './TombolEkspor';
+// Keterangan tambahan sebagai ikon ⓘ + popover (bukan paragraf di layar).
+export { Keterangan } from './Keterangan';
 // Bootstrap PWA - daftar service worker (banner pasang aplikasi sudah dihapus).
 // Dipasang sekali di root layout, bukan per-modul.
 export { PwaBootstrap } from './PwaBootstrap';

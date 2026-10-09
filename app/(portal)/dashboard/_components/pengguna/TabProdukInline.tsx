@@ -1,4 +1,5 @@
 'use client';
+import { Keterangan } from '@/components/shared/Keterangan';
 
 /** TabProdukInline - dipecah dari app/(portal)/dashboard/_components/modal-user.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -36,7 +37,7 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
           {/* Routing tipe produk → TIM (bukan orang) */}
           <div className="p-4 rounded-xl border border-rose-200 bg-rose-50">
             <p className="text-xs font-bold text-rose-700 mb-1"><IkonTeks nama="🎯" />Routing Tipe Produk → Tim</p>
-            <p className="text-[11px] text-slate-500 mb-3">Request diarahkan otomatis ke Supervisor tim sesuai tipe produk (Supervisor dicari live dari Struktur Organisasi — bukan hardcode nama). "LED &amp; LCD" boleh diarahkan ke 2 tim sekaligus (keduanya di-notify, 1 tim yang eksekusi).</p>
+            <Keterangan className="ml-1">Request diarahkan otomatis ke Supervisor tim sesuai tipe produk (Supervisor dicari live dari Struktur Organisasi — bukan hardcode nama). "LED &amp; LCD" boleh diarahkan ke 2 tim sekaligus (keduanya di-notify, 1 tim yang eksekusi).</Keterangan>
             <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
               <div>
                 <label htmlFor="f-dashboard-components-modal-user-7" className="block text-[11px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tipe Produk</label>
@@ -85,7 +86,7 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
           {/* Akun Manager (gerbang approval) */}
           <div className="p-4 rounded-xl border border-amber-200 bg-amber-50">
             <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="👑" />Akun Manager (gerbang approval)</p>
-            <p className="text-[11px] text-slate-500 mb-3">Manager yang wajib approve sebelum request turun ke supervisor. Untuk sekarang boleh sama dengan Admin (Dhany); bisa dialihkan ke akun lain kapan saja.</p>
+            <Keterangan className="ml-1">Manager yang wajib approve sebelum request turun ke supervisor. Untuk sekarang boleh sama dengan Admin (Dhany); bisa dialihkan ke akun lain kapan saja.</Keterangan>
             <div className="flex gap-3">
               <select aria-label="-- Pilih Akun Manager --" value={managerUserId} onChange={e => setManagerUserId(e.target.value)} className="flex-1 min-w-0 border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
                 <option value="">-- Pilih Akun Manager --</option>
@@ -98,7 +99,7 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
           {/* Internal / External Sales */}
           <div className="p-4 rounded-xl border border-sky-200 bg-sky-50">
             <p className="text-xs font-bold text-sky-700 mb-1"><IkonTeks nama="🏷" />Sales Internal / External</p>
-            <p className="text-[11px] text-slate-500 mb-3">Tandai akun Guest mana yang Sales Internal (pemilik akun, approve request dari Sales External) — dipakai pipeline, bukan tebakan dari divisi.</p>
+            <Keterangan className="ml-1">Tandai akun Guest mana yang Sales Internal (pemilik akun, approve request dari Sales External) — dipakai pipeline, bukan tebakan dari divisi.</Keterangan>
             <div className="relative mb-3">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Cari nama sales..." value={internalSearch} onChange={e => setInternalSearch(e.target.value)} placeholder="Cari nama sales..."

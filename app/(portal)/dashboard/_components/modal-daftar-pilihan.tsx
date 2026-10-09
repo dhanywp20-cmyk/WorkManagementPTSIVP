@@ -1,4 +1,5 @@
 'use client';
+import { Keterangan } from '@/components/shared/Keterangan';
 /**
  * Admin Panel › Daftar Pilihan - isi dropdown yang dulu tertulis di kode: merek display/middleware
  * (Request Design, PIC Brand), kebutuhan/produk/kegiatan Piket Showroom, event Unit Movement.
@@ -102,11 +103,9 @@ export function DaftarPilihanInline() {
   const kelompok = Array.from(new Set(DAFTAR_PILIHAN.map(d => d.menu.split(' · ')[0])));
   return (
     <div className="p-4 space-y-4">
-      <div className="rounded-2xl border border-teal-200 bg-teal-50/60 px-4 py-3 text-xs text-teal-900 leading-relaxed">
-        Isi dropdown di menu-menu berikut diatur di sini, tanpa menunggu pembaruan aplikasi. Menghapus pilihan
+      <p className="text-[12px] text-slate-600 flex items-center gap-1">🔒 = dipakai logika menu <Keterangan>Isi dropdown di menu-menu berikut diatur di sini, tanpa menunggu pembaruan aplikasi. Menghapus pilihan
         <b> tidak mengubah data lama</b> - data yang sudah memakai nilai itu tetap utuh dan tetap tampil saat diedit.
-        Pilihan bertanda 🔒 dipakai logika menu (mis. isian tamu Demo Product) sehingga tidak bisa dihapus.
-      </div>
+        Pilihan bertanda 🔒 dipakai logika menu (mis. isian tamu Demo Product) sehingga tidak bisa dihapus.</Keterangan></p>
       {kabar && (
         <div role="status" className={`rounded-xl px-3.5 py-2.5 text-xs font-semibold border ${kabar.jenis === 'ok' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'}`}>{kabar.teks}</div>
       )}
