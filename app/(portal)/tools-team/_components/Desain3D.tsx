@@ -76,7 +76,7 @@ export default function Desain3D() {
           <KontrolKanvas a={a} />
           {lihatVersi && (
             <div className="absolute left-1/2 -translate-x-1/2 bottom-2 z-20 max-w-[calc(100%-120px)] px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-300 text-amber-900 text-[12px] font-semibold shadow text-center">
-              Melihat v{lihatVersi.versi} (versi yang ditautkan). Versi terbaru v{lihatVersi.terbaru}. Menyimpan membuat versi baru dari isi ini; riwayat tidak berubah.
+              <span title="Versi yang ditautkan. Menyimpan membuat versi baru dari isi ini; riwayat tidak berubah.">v{lihatVersi.versi} · terbaru v{lihatVersi.terbaru}</span>
             </div>
           )}
           {pesan && (
@@ -93,8 +93,7 @@ export default function Desain3D() {
                 <div className="flex items-start gap-2 px-3 py-2.5 border-b border-slate-100">
                   <span className="mt-0.5 shrink-0"><Ikon nama={JUDUL_SISI[sisi].ikon} ukuran={17} /></span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-bold text-slate-900">{JUDUL_SISI[sisi].judul}</p>
-                    {JUDUL_SISI[sisi].ket && <p className="text-[11.5px] text-slate-600 leading-snug mt-0.5">{JUDUL_SISI[sisi].ket}</p>}
+                    <p className="text-[14px] font-bold text-slate-900" title={JUDUL_SISI[sisi].ket}>{JUDUL_SISI[sisi].judul}</p>
                   </div>
                   <button type="button" onClick={() => setSisi(null)} aria-label="Tutup panel" className="w-8 h-8 shrink-0 grid place-items-center rounded-lg text-slate-600 hover:bg-slate-100">
                     <Ikon nama="❌" ukuran={16} />
@@ -124,10 +123,6 @@ export default function Desain3D() {
 
         <BilahTerpilih a={a} />
         {galat && <p className="px-3 py-2 text-[12px] font-semibold text-rose-700 border-t border-rose-100 bg-rose-50">{galat}</p>}
-        <p className="px-3 py-2 text-[11.5px] text-slate-600 border-t border-slate-100">
-          Klik benda untuk memilih (tombol Atur, Duplikat & Hapus muncul di kiri-atas kanvas; panel Tambah, Ruangan, Benda & Atur terbuka di samping kanan) · seret panah gizmo untuk geser (panah hijau = naik/turun) atau cincin untuk putar · tombol Dinding menempelkan benda ke sisi ruang.
-          {' '}Kamera: seret = putar (tombol kiri-bawah mengganti ke geser) · klik kanan/Shift + seret = geser · roda/pinch = zoom ke titik yang ditunjuk · dua jari = zoom & geser · klik/ketuk dua kali = pusatkan ke titik itu
-        </p>
       </div>
 
       <KartuAnalisis a={a} />
