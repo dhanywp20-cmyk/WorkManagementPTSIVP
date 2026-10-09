@@ -13,6 +13,8 @@ import {
   REPEAT_OPTIONS, formatDate, cleanRequestNotes,
 } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { buatIcs } from '@/lib/ics';
+import { unduhUrl } from '@/lib/lembar-cetak';
 
 /**
  * Popup detail reminder (header + info project + timeline + garansi +
@@ -232,6 +234,24 @@ export function ReminderDetailPopup({
                 ketiknya sendiri, harus minta admin. Disamakan dengan
                 bolehEditReminder (lihat catatannya di atas).
               */}
+              {/*  Tambah ke kalender (Google / Outlook / HP): berkas .ics, jam WIB -> UTC (lib/ics.ts). */}
+              {detailReminder.status !== 'cancelled' && detailReminder.due_date && (
+                <button title="Tambah ke kalender (.ics)" aria-label="Tambah ke kalender"
+                  onClick={() => {
+                    const r = detailReminder;
+                    const ics = buatIcs({
+                      uid: r.id, judul: `${r.category} - ${r.project_name}`, tanggal: r.due_date, jam: r.due_time,
+                      lokasi: r.address, url: `${location.origin}/reminder-schedule?open=${encodeURIComponent(r.id)}`,
+                      keterangan: [r.assign_name && `PTS: ${r.assign_name}`, r.sales_name && `Sales: ${r.sales_name}`, r.pic_name && `PIC: ${r.pic_name}${r.pic_phone ? ` (${r.pic_phone})` : ''}`, r.description].filter(Boolean).join('\n'),
+                    });
+                    const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
+                    unduhUrl(url, `${(r.project_name || 'jadwal').replace(/[\\/:*?"<>|]+/g, '').slice(0, 60)}.ics`);
+                    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+                  }}
+                  className="flex items-center justify-center w-9 h-9 rounded-lg text-sm border border-slate-200 bg-white text-slate-700 transition-all hover:bg-slate-50">
+                  <Ikon nama="🗓" ukuran={16} />
+                </button>
+              )}
               {bolehEditReminder(detailReminder) && (
                 <button onClick={() => openEdit(detailReminder)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"

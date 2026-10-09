@@ -5,6 +5,7 @@ import { supabase, User, Question, QuizSession, QuizAttempt, SearchInput, AppDia
 import { ModalPortal } from '@/components/shared';
 import { compressImage } from '@/lib/image-compress';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { cetakSertifikat, unduhSertifikat } from './sertifikat';
 import { DaftarSesiKuis } from './kuis/DaftarSesiKuis';
 import { BilahNavigasiSoal } from './kuis/BilahNavigasiSoal';
 import { IsiSoalKuis } from './kuis/IsiSoalKuis';
@@ -492,6 +493,18 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                 <IkonTeks nama="🔄" />Coba Lagi
               </button>
             )}
+            {result.passed && !result.pendingReview && (() => {
+              const d = { nama: user.full_name, sesi: session.session_name, materi: session.materi_name, passing: session.passing_grade,
+                attempt: { id: attempt.id, passed: true, is_submitted: true, score: result.score, submitted_at: new Date().toISOString(), grading_status: 'auto' as const } };
+              return (
+                <>
+                  <button onClick={() => void unduhSertifikat(d)} title="Unduh sertifikat (PNG)"
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all text-sm"><IkonTeks nama="🎓" />Sertifikat</button>
+                  <button onClick={() => cetakSertifikat(d)} title="Cetak sertifikat" aria-label="Cetak sertifikat"
+                    className="px-3 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-sm transition-all text-sm"><Ikon nama="🖨" ukuran={16} /></button>
+                </>
+              );
+            })()}
             <button onClick={onDone}
               className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow transition-all text-sm">
               Selesai

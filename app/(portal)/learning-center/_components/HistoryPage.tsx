@@ -5,6 +5,8 @@ import { ListEmptyState } from '@/components/shared';
 import { supabase, User, fmtDate, SearchInput, BtnView, GradingStatusBadge } from './shared';
 import { UserAnswerReview } from './TeamPage';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { bolehSertifikat } from '@/lib/sertifikat';
+import { cetakSertifikat, unduhSertifikat } from './sertifikat';
 
 export function HistoryPage({ user }: { user: User }) {
   const [history, setHistory] = useState<any[]>([]);
@@ -83,6 +85,17 @@ export function HistoryPage({ user }: { user: User }) {
                   <GradingStatusBadge attempt={a} />
                   <p className="text-xs text-slate-500 mt-1.5">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
                 </div>
+                {bolehSertifikat(a) && (() => {
+                  const d = { nama: user.full_name, sesi: a.lc_quiz_sessions?.session_name ?? '-', materi: a.lc_quiz_sessions?.materi_name, passing: a.lc_quiz_sessions?.passing_grade, attempt: a };
+                  return (
+                    <div className="flex gap-1">
+                      <button type="button" title="Unduh sertifikat (PNG)" aria-label="Unduh sertifikat" onClick={() => void unduhSertifikat(d)}
+                        className="w-9 h-9 grid place-items-center rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100"><Ikon nama="🎓" ukuran={17} /></button>
+                      <button type="button" title="Cetak sertifikat" aria-label="Cetak sertifikat" onClick={() => cetakSertifikat(d)}
+                        className="w-9 h-9 grid place-items-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50"><Ikon nama="🖨" ukuran={16} /></button>
+                    </div>
+                  );
+                })()}
                 <BtnView onClick={() => setViewingAttempt(a)}>Lihat Jawaban</BtnView>
               </div>
             </div>
