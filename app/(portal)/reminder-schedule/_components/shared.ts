@@ -1,3 +1,4 @@
+import type { AdminField } from '@/lib/admin-edit';
 import { supabase } from '@/lib/supabase';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { sendWA } from '@/lib/wa';
@@ -323,3 +324,26 @@ export function layakIncentive(r: Reminder): boolean {
 export function diluarIncentive(r: Reminder): boolean {
   return r.incentive_excluded === true;
 }
+
+/** Kolom yang dibandingkan saat jadwal diedit (riwayat perubahan & WA ringkasan). */
+export const REMINDER_FIELDS: AdminField[] = [
+  { key: 'project_name', label: 'Nama Project' },
+  { key: 'description',  label: 'Deskripsi' },
+  { key: 'assigned_to',  label: 'Ditugaskan ke' },
+  { key: 'due_date',     label: 'Tanggal' },
+  { key: 'due_time',     label: 'Jam' },
+  { key: 'priority',     label: 'Prioritas' },
+  { key: 'status',       label: 'Status' },
+  { key: 'category',     label: 'Kategori' },
+  { key: 'sales_name',   label: 'Sales' },
+  { key: 'sales_division', label: 'Divisi Sales' },
+  { key: 'address',      label: 'Alamat' },
+  { key: 'pic_name',     label: 'PIC' },
+  { key: 'pic_phone',    label: 'Telepon PIC' },
+  { key: 'product',      label: 'Produk' },
+  { key: 'product_type', label: 'Tipe Produk' },
+  { key: 'notes',        label: 'Catatan' },
+  { key: 'warranty_years', label: 'Garansi (tahun)' },
+  { key: 'progress_start_date',  label: 'Mulai Pengerjaan' },
+  { key: 'progress_target_date', label: 'Target Selesai' },
+];
