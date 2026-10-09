@@ -31,6 +31,8 @@ export function useNotifSoundAlarm() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const unlockedRef = useRef(false);
   const terakhirRef = useRef(0);
+  /** Bertambah tiap bunyi notifikasi asli - unlock yang sedang berjalan tidak boleh menghentikannya. */
+  const putaranRef = useRef(0);
   const [muted, setMuted] = useState<boolean>(() => {
     try { return localStorage.getItem(KUNCI_MUTE) === '1'; } catch { return false; }
   });
@@ -47,15 +49,29 @@ export function useNotifSoundAlarm() {
       langsung pause+reset begitu klik/keydown PERTAMA terjadi di halaman -
       setelahnya audio yang sama boleh diputar dari kode (mis. dari event
       realtime) tanpa interaksi baru.
+
+      DUA hal yang dulu membuat bunyi "terpotong seperti kaset macet":
+        1. Unlock dulu dibunyikan KERAS - potongan denting terdengar di klik pertama.
+           Sekarang dibisukan (muted) selama unlock.
+        2. Kalau peramban sudah mengizinkan autoplay (situs yang dipakai seharian),
+           notifikasi bisa berbunyi SEBELUM klik pertama. Klik berikutnya - sering
+           justru klik ke lonceng karena mendengar bunyinya - menjalankan unlock yang
+           pause() + currentTime = 0: dentingnya diputus di tengah. Sekarang unlock
+           tidak menyentuh audio yang sedang berbunyi, dan bunyi yang sudah pernah
+           berhasil diputar dianggap sudah membuka kunci.
     */
     const unlock = () => {
-      if (unlockedRef.current || !audioRef.current) return;
-      audioRef.current.play().then(() => {
-        if (!audioRef.current) return;
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
+      const a = audioRef.current;
+      if (unlockedRef.current || !a) return;
+      if (!a.paused) { unlockedRef.current = true; return; }
+      const putaranSaatUnlock = putaranRef.current;
+      a.muted = true;
+      a.play().then(() => {
+        //  Notifikasi asli mulai berbunyi selama unlock berjalan -> biarkan.
+        if (putaranRef.current === putaranSaatUnlock) { a.pause(); a.currentTime = 0; }
+        a.muted = false;
         unlockedRef.current = true;
-      }).catch(() => { /* biarkan - unlock akan dicoba lagi di interaksi berikutnya */ });
+      }).catch(() => { a.muted = false; /* unlock dicoba lagi di interaksi berikutnya */ });
     };
     document.addEventListener('click', unlock);
     document.addEventListener('keydown', unlock);
@@ -86,7 +102,13 @@ export function useNotifSoundAlarm() {
       belum berinteraksi dengan halaman) TIDAK tertangkap try/catch, jadi
       harus ditangkap lewat .catch() supaya tidak jadi uncaught exception.
     */
-    try { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => { /* autoplay ditolak - abaikan */ }); } catch { /* abaikan - jangan sampai galat audio memutus alur notifikasi */ }
+    const a = audioRef.current;
+    putaranRef.current += 1;
+    try {
+      a.muted = false;
+      a.currentTime = 0;
+      a.play().then(() => { unlockedRef.current = true; }).catch(() => { /* autoplay ditolak - abaikan */ });
+    } catch { /* abaikan - jangan sampai galat audio memutus alur notifikasi */ }
   }, [muted]);
 
   return { muted, toggleMuted, playIfAllowed };
