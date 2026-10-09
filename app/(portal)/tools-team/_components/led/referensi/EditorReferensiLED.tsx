@@ -1,4 +1,5 @@
 'use client';
+import { Catatan } from '../../bersama/ui';
 import { bukaCetak, type Lembar, unduhLembarPNG } from '../../bersama/cetak';
 import { TabelHardware } from './TabelHardware';
 import { Hapus, NamaBrand, sel, SelAngka, SelTeks, Tambah, td, th } from './komponen';
@@ -145,7 +146,7 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
             ))}
           </div>
           <Tambah teks="Tambah brand" onKlik={() => tulisBrand([...brandPolos(), { nama: namaBrandBaru(), sendiri: false }])} />
-          <p className="text-[11.5px] text-slate-500 mt-1">Centang &quot;Brand sendiri&quot; untuk brand buatan perusahaan - tampil paling atas di kalkulator. Isi modul tiap brand dari datasheet-nya.</p>
+          <Catatan>&quot;Brand sendiri&quot; = brand buatan perusahaan, tampil paling atas di kalkulator. Isi modul tiap brand dari datasheet-nya.</Catatan>
         </div>
 
         <div>
@@ -216,7 +217,7 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
 
         <TabelHardware judul="Sending card" data={r.kartu} onUbah={kartu => ubah({ ...r, kartu })} tampilSender={false} />
         <TabelHardware judul="Video processor" data={r.vp} onUbah={vp => ubah({ ...r, vp })} tampilSender />
-        <p className="text-[11.5px] text-slate-500">Video processor dengan &quot;Sender bawaan&quot; dan port LAN &gt; 0 dianggap all-in-one. Port 0 = perlu sending card terpisah.</p>
+        <Catatan>Video processor dengan &quot;Sender bawaan&quot; dan port LAN &gt; 0 dianggap all-in-one. Port 0 = perlu sending card terpisah.</Catatan>
       </div>
     </Modal>
     </>

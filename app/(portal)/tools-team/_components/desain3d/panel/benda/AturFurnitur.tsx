@@ -1,6 +1,6 @@
 'use client';
 /** Atur furnitur: meja (bentuk, finish, monitor operator), kursi, tribun. */
-import { Angka, f, Pilih, Segmen } from '../../../bersama/ui';
+import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
 import { barisTribun, bendaBaru, type BentukMeja, type Finish, kursiTribunPerBaris, type TipeKursi } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
@@ -22,7 +22,7 @@ export function AturFurnitur({ c }: { c: KonteksAtur }) {
           )}
           <Segmen label="Permukaan" nilai={b.finish ?? (b.bentukMeja === 'kelas' ? 'oak' : 'walnut')} onUbah={(v: Finish) => set({ finish: v })}
             opsi={[{ v: 'walnut', l: 'Walnut' }, { v: 'oak', l: 'Oak' }, { v: 'putih', l: 'Putih' }]} />
-          {b.bentukMeja === 'bulat' && <p className="text-[12px] text-slate-600">Lebar = Panjang untuk bundar; beda nilai = oval.</p>}
+          {b.bentukMeja === 'bulat' && <Catatan>Lebar = panjang untuk bundar; beda nilai = oval.</Catatan>}
         </>
       )}
       {b.jenis === 'kursi' && (

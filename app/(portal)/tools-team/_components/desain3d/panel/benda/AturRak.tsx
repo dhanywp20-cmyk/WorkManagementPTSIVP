@@ -1,7 +1,7 @@
 'use client';
 /** Atur rack: ukuran U, tipe pintu, isi rack (elevation) + editor & PNG elevation. */
 import { namaBerkas, unduhSvgPNG } from '../../../bersama/cetak';
-import { Angka, Pilih, Segmen } from '../../../bersama/ui';
+import { Angka, Pilih, Segmen, Catatan } from '../../../bersama/ui';
 import { type Benda, isiRakDari, JENIS_RAK, type JenisPerangkatRak, PERANGKAT_RAK, type PerangkatRak, RAK_U, susunRak, svgElevasiRak } from '../../inti';
 import { useState } from 'react';
 import type { KonteksAtur } from './konteks';
@@ -41,7 +41,7 @@ function EditorRak({ b, onUbah }: { b: Benda; onUbah: (isi: PerangkatRak[] | und
       </div>
       {buka && (
         <div className="space-y-1.5">
-          <p className="text-[11px] text-slate-500">Urutan dari atas (U{s.U}) ke bawah (U1). Ikut tergambar di rack 3D, cetak, dan PNG.</p>
+          <Catatan>Urutan dari atas (U{s.U}) ke bawah (U1). Ikut tergambar di rack 3D, cetak, dan PNG.</Catatan>
           {isi.map((p, i) => (
             <div key={i} className="grid grid-cols-[minmax(0,1fr)_52px_auto] gap-1 items-center">
               <div className="min-w-0 space-y-1">

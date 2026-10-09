@@ -36,7 +36,7 @@ export function AturKabel({ c }: { c: KonteksAtur }) {
       </div>
 
       {!custom ? (
-        <p className="text-[12px] text-slate-600">{ringkas(otomatis)}. Pilih &quot;Atur sendiri&quot; untuk mengganti jenis (warna) atau jumlah kabelnya.</p>
+        <p className="text-[12px] text-slate-600" title="Atur sendiri: ganti jenis (warna) atau jumlah kabel">{ringkas(otomatis)}</p>
       ) : (
         <>
           {custom.map((k, i) => (
@@ -59,10 +59,10 @@ export function AturKabel({ c }: { c: KonteksAtur }) {
               + Tambah kabel
             </button>
           </div>
-          <p className="text-[12px] text-slate-600">Otomatis: {ringkas(otomatis)}. HDMI &gt; 10 m ditulis HDMI AOC; jalurnya tetap otomatis.</p>
+          <p className="text-[12px] text-slate-600" title="HDMI > 10 m ditulis HDMI AOC; jalurnya tetap otomatis">Otomatis: {ringkas(otomatis)}</p>
         </>
       )}
-      {!adaRak && <p className="text-[12px] text-amber-700">Belum ada rack di desain - kabel ditarik ke rack terdekat, tambahkan Rack dulu.</p>}
+      {!adaRak && <p className="text-[12px] text-amber-700">Belum ada rack</p>}
     </div>
   );
 }

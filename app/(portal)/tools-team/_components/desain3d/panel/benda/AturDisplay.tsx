@@ -1,6 +1,6 @@
 'use client';
 /** Atur display: videowall (termasuk panel custom), layar proyektor, IFP, TV / signage, LED, pilihan pemasangan. */
-import { Angka, f, Pilih, Segmen } from '../../../bersama/ui';
+import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
 import { BISA_PASANG, CELAH_PASANG, IFP_DIAG, LABEL_PASANG, LAYAR_DIAG, type ModelVW, PANEL_VW_AWAL, type PanelVW, type Pasang, pasangDari, PITCH_LED, RASIO_LAYAR, type RasioLayar, spekVideowall, TV_DIAG, VIDEOWALL } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
@@ -98,7 +98,7 @@ export function AturDisplay({ c }: { c: KonteksAtur }) {
           <div>
             <Segmen label="Pemasangan" nilai={lama} onUbah={ganti}
               opsi={[{ v: 'dinding', l: 'Pop-up' }, { v: 'hollow', l: 'Hollow' }, { v: 'standfloor', l: 'Standfloor' }]} />
-            <p className="text-[11px] text-slate-500 mt-1">{LABEL_PASANG[lama]}{lama === 'hollow' ? ' - rangka besi 40×40, tiang tiap ±0,6 m, plat siku ke dinding.' : lama === 'standfloor' ? ' - tiang & roda, bisa dipindah.' : ' - bracket gunting, display bisa ditarik keluar untuk servis.'}</p>
+            <Catatan>{LABEL_PASANG[lama]}{lama === 'hollow' ? ' - rangka besi 40×40, tiang tiap ±0,6 m, plat siku ke dinding.' : lama === 'standfloor' ? ' - tiang & roda, bisa dipindah.' : ' - bracket gunting, display bisa ditarik keluar untuk servis.'}</Catatan>
           </div>
         );
       })()}

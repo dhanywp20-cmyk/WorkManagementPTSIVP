@@ -32,7 +32,7 @@ export function PanelTambah({ a }: { a: AlatDesain }) {
               {galatProduk && <p className="text-[12px] font-semibold text-rose-700 mb-1">{galatProduk}</p>}
               {!produkTim ? <p className="text-[12px] text-slate-500">Memuat...</p>
                 : produkTim.daftar.length === 0 ? (
-                  <p className="text-[12px] text-slate-600 leading-relaxed">Belum ada. Atur ukuran/warna/spesifikasi sebuah benda, lalu di panel Atur pilih <b>Simpan ke Produk saya</b>.</p>
+                  <p className="text-[12px] text-slate-600" title="Atur sebuah benda, lalu di panel Atur pilih Simpan ke Produk saya">Belum ada</p>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-2">
                     {produkTim.daftar.filter(p => !cariProduk.trim() || `${p.label} ${p.ket} ${p.oleh}`.toLowerCase().includes(cariProduk.trim().toLowerCase())).map(p => (

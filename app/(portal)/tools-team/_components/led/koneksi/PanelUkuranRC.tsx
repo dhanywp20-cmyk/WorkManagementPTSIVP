@@ -1,6 +1,6 @@
 'use client';
 /** Ukuran receiving card: ikut kalkulator atau custom per kolom / baris (px), sel kosong. */
-import { Angka, Segmen } from '../../bersama/ui';
+import { Angka, Segmen, Catatan } from '../../bersama/ui';
 import { AngkaKecil, kelasJudul, kelasTombol } from './komponen';
 import { SquareDashed } from 'lucide-react';
 import type { AlatRuangKoneksi } from './useRuangKoneksi';
@@ -18,10 +18,10 @@ export function PanelUkuranRC({ a }: { a: AlatRuangKoneksi }) {
               <Angka label={`${nUnit} mendatar`} nilai={t.rcKol} step={1} onUbah={v => v >= 1 && ubah({ rcKol: Math.round(v) })} />
               <Angka label={`${nUnit} tegak`} nilai={t.rcBaris} step={1} onUbah={v => v >= 1 && ubah({ rcBaris: Math.round(v) })} />
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">
+            <Catatan>
               Per receiving card: {t.rcKol}×{t.rcBaris} {nUnit} = {t.rcKol * d.pxX}×{t.rcBaris * d.pxY} px{s.rcKol === null && s.rcBaris === null && ' (otomatis)'}
               {(s.rcKol !== null || s.rcBaris !== null) && <button type="button" onClick={() => ubah({ rcKol: null, rcBaris: null })} className="ml-1.5 font-semibold text-blue-700 hover:underline">Otomatis</button>}
-            </p>
+            </Catatan>
           </div>
         ) : (
           <div className="space-y-2.5">

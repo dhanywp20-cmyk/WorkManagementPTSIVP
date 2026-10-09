@@ -1,5 +1,5 @@
 'use client';
-import { Angka, f, Pilih, Segmen } from '../../bersama/ui';
+import { Angka, f, Pilih, Segmen, Catatan } from '../../bersama/ui';
 import { type Benda, type BentukObjek, LABEL_BENTUK_OBJEK } from '../inti';
 import { FAKTOR_SATUAN, LABEL_SATUAN, type Satuan, ukuranModel } from '../impor/berkas3d';
 
@@ -71,10 +71,10 @@ export function AturObjek({ b, set, adaFoto, onGambarBaru }: {
         )}
         {tinggiNyata}
       </div>
-      <p className="text-[11px] text-slate-500">
+      <Catatan>
         {b.ukuranFile ? `Ukuran di berkas ${b.ukuranFile.map(v => f(v, 1)).join(' × ')} (${b.satuanModel ?? 'm'}). ` : ''}
         Model rebah? pilih Tegakkan. Ukuran salah 10×/1000×? ganti satuan. Model tidak ikut ke server - simpan juga ke laptop.
-      </p>
+      </Catatan>
     </div>
   );
 }

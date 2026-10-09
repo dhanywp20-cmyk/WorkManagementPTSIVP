@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from '@/components/shared/Modal';
 import { Ikon } from '@/components/shared/Ikon';
-import { Angka, f, Segmen } from '../../bersama/ui';
+import { Angka, f, Segmen, Catatan } from '../../bersama/ui';
 import { type HasilKontur, type Kontur, konturDariPiksel, type ModeLatar } from '../impor/kontur';
 
 /**
@@ -161,10 +161,10 @@ export function ModalObjekGambar({ buka, onTutup, onJadi }: {
               <input type="checkbox" className="w-4 h-4" checked={foto} onChange={e => setFoto(e.target.checked)} />
               Tampilkan foto di permukaan depan (matikan untuk objek putih polos seperti saat dimapping)
             </label>
-            <p className="text-[11px] text-slate-500">
+            <Catatan>
               Ukuran jadi {f(lebar)} × {f(tinggi)} × {bentuk === 'panel' ? '0,02' : f(tebalCm / 100)} m. Siluet & foto ikut tersimpan
               (server & laptop). Untuk bentuk yang lebih rumit (patung utuh), impor model 3D dari SketchUp / Blender.
-            </p>
+            </Catatan>
             <div className="flex justify-end gap-2 pt-1">
               <button type="button" onClick={onTutup} className="px-3 py-2 rounded-lg text-[12.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">Batal</button>
               <button type="button" disabled={!hasil} onClick={buat}

@@ -1,6 +1,6 @@
 'use client';
 import { Copy } from 'lucide-react';
-import { Angka, f, Pilih, Segmen } from '../../bersama/ui';
+import { Angka, f, Pilih, Segmen, Catatan } from '../../bersama/ui';
 import { type Benda, type Bukaan, daftarRuang, JENDELA_AWAL, type Kotak, LUX_LUAR, luxBidangKerja, luxSiang, MAKS_RUANG, panjangDinding, pintuSekat, type Ruang, ruangDari, type RuangSambung, sambungan, sambunganKe, type Siang, type SisiDinding, sisiLuar, ukuranPintu } from '../inti';
 import { PilihWarna } from './ModalBuka';
 
@@ -46,7 +46,7 @@ export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tam
         <div>
           <Segmen label="Cahaya ruangan" nilai={ruang.cahaya ?? 'terang'} onUbah={v => setRuang(r => ({ ...r, cahaya: v }))}
             opsi={[{ v: 'terang', l: 'Terang' }, { v: 'redup', l: 'Redup' }, { v: 'gelap', l: 'Gelap' }]} />
-          <p className="text-[11px] text-slate-500 mt-1">Gelap = ruang mapping / immersive: cahaya proyektor & layar terlihat jelas.</p>
+          <Catatan>Gelap = ruang mapping / immersive: cahaya proyektor & layar terlihat jelas.</Catatan>
         </div>
         {(ruang.bukaan ?? []).some(b => b.jenis === 'jendela') && (
           <div className="rounded-xl border border-sky-200 bg-sky-50/50 p-3 space-y-2">
@@ -66,7 +66,7 @@ export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tam
                 </p>
               );
             })}
-            <p className="text-[11px] text-slate-500">Langit {ruang.siang ?? 'malam'} ±{LUX_LUAR[ruang.siang ?? 'malam'].toLocaleString('id-ID')} lux di luar (tanpa sinar matahari langsung). Ikut dihitung di kontras proyektor & lux meja.</p>
+            <Catatan>Langit {ruang.siang ?? 'malam'} ±{LUX_LUAR[ruang.siang ?? 'malam'].toLocaleString('id-ID')} lux di luar (tanpa sinar matahari langsung). Ikut dihitung di kontras proyektor & lux meja.</Catatan>
           </div>
         )}
         {benda.some(b => b.jenis === 'lampu') && (
@@ -94,12 +94,12 @@ export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tam
                 </p>
               );
             })}
-            <p className="text-[11px] text-slate-500">Acuan: rapat / kelas ±300–500 lux. Saat presentasi proyektor, lampu diredupkan supaya kontras gambar cukup (lihat panel proyektor).</p>
+            <Catatan>Acuan: rapat / kelas ±300–500 lux. Saat presentasi proyektor, lampu diredupkan supaya kontras gambar cukup (lihat panel proyektor).</Catatan>
           </div>
         )}
         <div className="rounded-xl border border-slate-200 p-3">
           <p className="text-[12.5px] font-bold text-slate-800">Pintu & jendela dinding luar</p>
-          <p className="text-[11.5px] text-slate-600 mt-0.5">Posisi = jarak dari ujung kiri dinding ke tengah bukaan, dilihat dari dalam ruang. Pintu/jendela di sekat antar ruang diatur di bagian ruang sebelahnya.</p>
+          <Catatan>Posisi = jarak dari ujung kiri dinding ke tengah bukaan, dilihat dari dalam ruang. Pintu/jendela di sekat antar ruang diatur di bagian ruang sebelahnya.</Catatan>
           <div className="mt-2 flex gap-2">
             <button type="button" onClick={() => tambahBukaan('pintu')} className="flex-1 px-3 py-1.5 rounded-lg text-[12.5px] font-bold text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100">+ Pintu</button>
             <button type="button" onClick={() => tambahBukaan('jendela')} className="flex-1 px-3 py-1.5 rounded-lg text-[12.5px] font-bold text-blue-800 bg-blue-50 border border-blue-200 hover:bg-blue-100">+ Jendela</button>
@@ -134,7 +134,7 @@ export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tam
                   {b.jenis === 'jendela' && <Angka label="Dari lantai" nilai={b.ambang} satuan="m" onUbah={v => v >= 0 && v <= 8 && ubahBukaan(b.id, { ambang: v })} />}
                 </div>
                 {!sah && <p className="text-[11.5px] font-semibold text-amber-700">{ruangAda ? 'Dinding ini sekarang sekat antar ruang - pilih dinding lain.' : `Ruang ${b.ruang + 1} tidak ada - bukaan ini tidak digambar.`}</p>}
-                {sah && kb && <p className="text-[11px] text-slate-500">Panjang dinding {f(panjangDinding(kb, b.sisi))} m.</p>}
+                {sah && kb && <Catatan>Panjang dinding {f(panjangDinding(kb, b.sisi))} m.</Catatan>}
               </div>
             );
           })}
@@ -168,11 +168,11 @@ export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tam
               <div className="mt-2">
                 <Pilih label={`Sekat dengan Ruang ${j}`} nilai={r2.sekat ?? 'tembok'} onUbah={(v: NonNullable<RuangSambung['sekat']>) => ubahSambungan(j, { sekat: v })}
                   opsi={[{ v: 'tembok', l: 'Tembok' }, { v: 'jendela', l: 'Tembok + jendela kaca' }, { v: 'kaca', l: 'Kaca penuh' }, { v: 'terbuka', l: 'Terbuka (menyatu / ruang bentuk L)' }]} />
-                <p className="text-[11px] text-slate-500 mt-1">
+                <Catatan>
                   {r2.sekat === 'terbuka' ? 'Tanpa sekat: kedua ruang menyatu. Bedakan lebar ruang untuk membuat ruang bentuk L - sisa dinding tetap tembok.'
                     : r2.sekat === 'jendela' ? 'Satu jendela kaca persegi di sekat untuk melihat ke ruang sebelah. Geser: + ke belakang, − ke depan; otomatis menghindari pintu.'
                       : r2.sekat === 'kaca' ? 'Kaca penuh: seluruh sekat tembus pandang.' : 'Sekat tembok biasa.'}
-                </p>
+                </Catatan>
               </div>
               {r2.sekat === 'jendela' && (
                 <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2">

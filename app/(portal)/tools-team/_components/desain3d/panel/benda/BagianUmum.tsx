@@ -1,6 +1,6 @@
 'use client';
 /** Bagian umum panel Atur benda: warna, ukuran produk, posisi, label, konten layar, simpan ke Produk saya. */
-import { Angka, Pilih } from '../../../bersama/ui';
+import { Angka, Pilih, Catatan } from '../../../bersama/ui';
 import { type Benda, DISPLAY, type KontenLayar, warnaSah } from '../../inti';
 import { Ikon } from '@/components/shared/Ikon';
 import type { KonteksAtur } from './konteks';
@@ -55,11 +55,11 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
             Kembalikan ukuran bawaan ({mm(bawaan.w)} × {mm(bawaan.h)} × {mm(bawaan.d)} mm)
           </button>
         )}
-        <p className="text-[11px] text-slate-500 mt-1">
+        <Catatan>
           {UKURAN_DARI_PILIHAN.includes(b.jenis)
             ? 'Terisi otomatis dari model/inci/U yang dipilih. Ganti dengan angka datasheet bila berbeda; memilih model/inci/U lagi mengembalikan ukuran bawaannya.'
             : 'Sesuaikan dengan datasheet / ukuran produk sebenarnya (presisi 1 mm).'}
-        </p>
+        </Catatan>
       </div>
 
       <div>
@@ -103,7 +103,7 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
                 aria-label="Nama produk" className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-base sm:text-sm" />
               <input value={formProduk.ket} maxLength={120} onChange={e => setFormProduk({ ...formProduk, ket: e.target.value })} placeholder="Keterangan (opsional, mis. merek / tipe)"
                 aria-label="Keterangan produk" className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-base sm:text-sm" />
-              <p className="text-[11px] text-slate-600">Disimpan: ukuran, model, warna, spesifikasi & tinggi pasang - muncul di Tambah → Produk saya untuk seluruh tim.</p>
+              <Catatan>Disimpan: ukuran, model, warna, spesifikasi &amp; tinggi pasang - muncul di Tambah → Produk saya untuk seluruh tim.</Catatan>
               {formProduk.status && <p className="text-[12px] font-semibold text-rose-700">{formProduk.status}</p>}
               <div className="flex gap-2">
                 <button type="button" disabled={formProduk.sibuk || !formProduk.label.trim()}

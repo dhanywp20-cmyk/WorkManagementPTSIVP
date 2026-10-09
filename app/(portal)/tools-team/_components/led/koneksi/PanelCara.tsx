@@ -1,6 +1,6 @@
 'use client';
 /** Pengaturan cara menyambung: template (pojok mulai, arah, pola, pembagian port) atau manual. */
-import { f, Segmen } from '../../bersama/ui';
+import { f, Segmen, Catatan } from '../../bersama/ui';
 import { SUDUT, warnaPort } from './data';
 import { IkonPola, kelasJudul, kelasTombol } from './komponen';
 import { Cable, Eraser, Plus, Trash2, Wand2 } from 'lucide-react';
@@ -29,7 +29,7 @@ export function PanelCara({ a }: { a: AlatRuangKoneksi }) {
                   );
                 }))}
               </div>
-              <p className="text-[11px] text-slate-500 mt-1">Titik hijau = receiving card pertama. Baris atas: kabel mendatar, baris bawah: kabel tegak.</p>
+              <Catatan>Titik hijau = receiving card pertama. Baris atas: kabel mendatar, baris bawah: kabel tegak.</Catatan>
             </div>
             <Segmen label="Pola" nilai={s.pola} onUbah={v => ubah({ pola: v })} opsi={[{ v: 'S', l: 'S · bolak-balik' }, { v: 'Z', l: 'Z · balik ke awal' }]} />
             <Segmen label="Pembagian port" nilai={s.bagi} onUbah={v => ubah({ bagi: v })}

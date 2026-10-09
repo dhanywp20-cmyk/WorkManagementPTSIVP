@@ -1,6 +1,6 @@
 'use client';
 /** Atur audio: mic, speaker (tipe, sebaran, jangkauan), line array (modul, sudut, tilt). */
-import { Angka, f, Segmen } from '../../../bersama/ui';
+import { Angka, f, Segmen, Catatan } from '../../../bersama/ui';
 import { bendaBaru, berkasLineArray, cakupanSpeakerPlafon, jangkauanDari, modulLA, sebaranSpeaker, sebaranVSpeaker, sudutModulLA, tiltLADari, TINGGI_DENGAR, type TipeSpeaker, tipeSpeakerDari } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
@@ -68,12 +68,12 @@ export function AturAudio({ c }: { c: KonteksAtur }) {
             <input type="checkbox" className="w-4 h-4" checked={!!b.tampilJangkauan} onChange={e => set({ tampilJangkauan: e.target.checked })} />
             Tampilkan jangkauan suara speaker ini
           </label>
-          <p className="text-[11px] text-slate-500 -mt-1">
+          <Catatan>
             {tipeSpeakerDari(b) === 'linearray' && b.jenis === 'speaker'
               ? 'Warna = modul: jingga (modul teratas, ke jauh) → hijau → biru (modul terbawah, ke dekat). Bola = titik jatuh sumbu modul di tinggi telinga 1,2 m.'
               : 'Kerucut jingga = sebaran suara (H × V) sampai jarak jangkauan.'}
             {' '}Centang "Jangkauan speaker" di kanvas untuk menampilkan semua speaker sekaligus.
-          </p>
+          </Catatan>
           <div className="grid grid-cols-3 gap-2">
             <Angka label="Sebaran H" nilai={sebaranSpeaker(b)} satuan="°" step={1} bantuan="horizontal (datasheet)"
               onUbah={v => v >= 10 && v <= 180 && set({ sebaran: v })} />

@@ -40,7 +40,7 @@ export function DaftarPustaka({ jenis }: { jenis: JenisPustaka }) {
     <div className="space-y-3">
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
       <div className="flex flex-wrap items-center gap-2">
-        <input value={cari} onChange={e => setCari(e.target.value)} placeholder={`Cari ${jenis.l.toLowerCase()}…`} aria-label={`Cari ${jenis.l}`}
+        <input value={cari} onChange={e => setCari(e.target.value)} placeholder={`Cari ${jenis.l.toLowerCase()}…`} aria-label={`Cari ${jenis.l}`} title={jenis.ket}
           className="flex-1 min-w-[200px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm" />
         {bolehAtur && (
           <button type="button" onClick={() => setUbah('baru')} className="px-3.5 py-2 rounded-xl bg-blue-700 text-white text-sm font-bold hover:bg-blue-800">
@@ -48,7 +48,6 @@ export function DaftarPustaka({ jenis }: { jenis: JenisPustaka }) {
           </button>
         )}
       </div>
-      <p className="text-[12px] text-slate-600">{jenis.ket}{!bolehAtur && ' Hanya Admin yang bisa mengubah isi.'}</p>
       {pesan && <p role="status" className="rounded-lg bg-slate-50 px-3 py-2 text-[12.5px] font-semibold text-slate-700">{pesan}</p>}
       {memuat ? <p className="text-sm text-slate-500 py-6 text-center">Memuat…</p>
         : gagal ? <p className="text-sm text-rose-700 py-6 text-center">Pustaka tidak bisa dimuat - kalkulator memakai nilai bawaan.</p>

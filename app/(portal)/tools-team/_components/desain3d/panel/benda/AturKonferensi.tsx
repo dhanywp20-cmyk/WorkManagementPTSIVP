@@ -1,6 +1,6 @@
 'use client';
 /** Atur kamera & paperless lift. */
-import { Segmen } from '../../../bersama/ui';
+import { Segmen, Catatan } from '../../../bersama/ui';
 import { bendaBaru, type TipeKamera } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
@@ -19,7 +19,7 @@ export function AturKonferensi({ c }: { c: KonteksAtur }) {
         <>
           <Segmen label="Layar" nilai={b.naik === false ? 'turun' : 'naik'} onUbah={v => set({ naik: v === 'naik' })}
             opsi={[{ v: 'naik', l: 'Naik' }, { v: 'turun', l: 'Turun (rata meja)' }]} />
-          <p className="text-[12px] text-slate-600">Letakkan di atas meja: "Dari lantai" = tinggi meja (umumnya 0,75 m).</p>
+          <Catatan>Di atas meja: &quot;Dari lantai&quot; = tinggi meja (umumnya 0,75 m).</Catatan>
         </>
       )}
     </>

@@ -63,7 +63,7 @@ export const JENIS_PUSTAKA: JenisPustaka[] = [
     { k: 'a', l: 'Koefisien serap (500 Hz)', tipe: 'angka', min: 0, maks: 1.2, wajib: true, kolom: true }, CATATAN] },
   { v: 'aliran-ip', l: 'Aliran AV-over-IP', ikon: '🌐', kelompok: 'data', ket: 'Bitrate per aliran untuk Sinyal › Jaringan AV.', bidang: [
     { k: 'mbps', l: 'Bitrate', tipe: 'angka', satuan: 'Mbps', min: 0.1, maks: 100000, wajib: true, kolom: true }, CATATAN] },
-  { v: 'artikel', l: 'Artikel panduan', ikon: '📘', kelompok: 'artikel', ket: 'Panduan & pengetahuan tim - bisa dibaca tanpa bantuan AI.', bidang: [
+  { v: 'artikel', l: 'Artikel panduan', ikon: '📘', kelompok: 'artikel', ket: 'Panduan & pengetahuan tim.', bidang: [
     { k: 'kategori', l: 'Kategori', tipe: 'pilih', wajib: true, kolom: true, opsi: [
       { v: 'layar', l: 'Layar & display' }, { v: 'proyektor', l: 'Proyektor' }, { v: 'led', l: 'LED videotron' }, { v: 'audio', l: 'Audio' },
       { v: 'jaringan', l: 'Sinyal & jaringan' }, { v: 'instalasi', l: 'Instalasi & daya' }, { v: 'produk', l: 'Pengetahuan produk' }, { v: 'umum', l: 'Umum' }] },

@@ -21,7 +21,7 @@ export function KartuKabel({ a }: { a: AlatDesain }) {
                   <div key={r.kabel.kunci} className="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
                     <p className="text-[11px] font-semibold text-slate-600 flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: `#${r.kabel.warna.toString(16).padStart(6, '0')}` }} />{r.kabel.nama}</p>
                     <p className="text-lg font-extrabold text-slate-900 tabular-nums">±{f(r.meter, 0)} m</p>
-                    <p className="text-[11px] text-slate-500">{r.tarikan} tarikan · {r.gulungan}</p>
+                    <Catatan>{r.tarikan} tarikan · {r.gulungan}</Catatan>
                   </div>
                 ))}
               </div>

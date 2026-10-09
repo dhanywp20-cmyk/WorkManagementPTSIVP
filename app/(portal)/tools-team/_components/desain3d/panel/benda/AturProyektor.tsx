@@ -1,6 +1,6 @@
 'use client';
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
-import { Angka, f, Segmen } from '../../../bersama/ui';
+import { Angka, f, Segmen, Catatan } from '../../../bersama/ui';
 import { bendaBaru, geserLensaDari, lumenDari, offsetLensaDari, type PasangProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
@@ -37,7 +37,7 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                   className="px-1 py-1.5 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">{x.l}</button>
               ))}
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Tilt negatif = menunduk; −90° = tegak lurus ke lantai (proyeksi lantai / immersive). Pan memutar proyektor ke kiri/kanan.</p>
+            <Catatan>Tilt negatif = menunduk; −90° = tegak lurus ke lantai (proyeksi lantai / immersive). Pan memutar proyektor ke kiri/kanan.</Catatan>
           </div>
           {(() => {
             const [zMin, zMax] = zoomLensa(b), tr = throwRatioDari(b), tetap = zMax - zMin < 0.005;
@@ -60,10 +60,10 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                       className="h-8 w-9 rounded-lg border border-slate-200 bg-white font-bold text-slate-700 hover:bg-slate-50">+</button>
                   </div>
                 )}
-                <p className="text-[11px] text-slate-500">
+                <Catatan>
                   {tetap ? 'Lensa tetap (tanpa zoom) - isi TR terlebar & terpanjang dari datasheet bila lensanya zoom.'
                     : `Zoom ${f(zMax / zMin, 2)}× (TR ${f(zMin, 2)} - ${f(zMax, 2)} : 1). − = gambar membesar (wide), + = gambar mengecil (tele).`}
-                </p>
+                </Catatan>
               </div>
             );
           })()}
@@ -81,10 +81,10 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 onUbah={v => v >= -60 && v <= 60 && set({ geserLensaH: v / 100 })} />
               <Angka label="Lumen" nilai={lumenDari(b)} satuan="lm" step={100} onUbah={v => v >= 100 && v <= 100000 && set({ lumen: Math.round(v) })} />
             </div>
-            <p className="text-[11px] text-slate-500">
+            <Catatan>
               Vertikal = geser pusat gambar dalam % tinggi gambar (relatif proyektor; gantung plafon = terbalik): 0% = tepat di sumbu lensa,
               50% = tepi gambar sejajar lensa (umum pada proyektor tanpa lens shift). Horizontal = % lebar gambar, + ke kanan.
-            </p>
+            </Catatan>
           </div>
           {/*  Warna sinar di kanvas: otomatis beda per proyektor (>= 2) supaya cakupan tiap bidang mudah dibedakan. */}
           <div>
@@ -98,7 +98,7 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                   className="ml-auto px-2 py-1 rounded-lg text-[11.5px] font-bold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50">Otomatis</button>
               )}
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">Hanya untuk tampilan rancangan: tiap proyektor beda warna supaya bidang yang disinarinya mudah dibedakan (area tumpang tindih tampak bercampur).</p>
+            <Catatan>Hanya untuk tampilan rancangan: tiap proyektor beda warna supaya bidang yang disinarinya mudah dibedakan (area tumpang tindih tampak bercampur).</Catatan>
           </div>
         </>
       )}

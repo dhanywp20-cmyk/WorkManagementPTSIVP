@@ -21,16 +21,17 @@ export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', ban
   }, [nilai]);
   return (
     <label className="block min-w-0">
-      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">{label}</span>
+      <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1" title={bantuan}>
+        {label}{bantuan && <span className="ml-1 normal-case font-semibold text-slate-400 cursor-help" aria-hidden="true">ⓘ</span>}
+      </span>
       <span className="relative block">
-        <input type="number" inputMode="decimal" min={min} step={step}
+        <input type="number" inputMode="decimal" min={min} step={step} title={bantuan}
           value={teks ?? (Number.isFinite(nilai) ? String(nilai) : '')}
           onChange={e => { setTeks(e.target.value); const v = parseFloat(e.target.value.replace(',', '.')); if (Number.isFinite(v)) { terkirim.current = v; onUbah(v); } }}
           onBlur={() => setTeks(null)}
           className={`${kelasInput} ${satuan ? (satuan.length <= 2 ? 'pr-7' : 'pr-12') : ''}`} />
         {satuan && <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 pointer-events-none">{satuan}</span>}
       </span>
-      {bantuan && <span className="block text-[11px] text-slate-500 mt-1">{bantuan}</span>}
     </label>
   );
 }
@@ -129,6 +130,19 @@ export function TombolSalin({ teks, onCetak, onPng }: {
   );
 }
 
+/**
+ * Keterangan tambahan: TIDAK ditampilkan sebagai paragraf (owner: layar tidak boleh penuh kalimat
+ * penjelasan) - cukup ikon ⓘ kecil; isinya muncul saat kursor di atasnya atau saat disentuh / difokus.
+ */
 export function Catatan({ children }: { children: React.ReactNode }) {
-  return <p className="text-[11.5px] text-slate-500 leading-relaxed mt-3">{children}</p>;
+  return (
+    <span className="group relative inline-flex align-middle mt-2 print:hidden">
+      <button type="button" aria-label="Keterangan"
+        className="w-5 h-5 grid place-items-center rounded-full border border-slate-300 bg-white text-[11px] font-bold text-slate-500 hover:text-slate-800 hover:border-slate-400">i</button>
+      <span role="tooltip"
+        className="pointer-events-none absolute left-0 top-6 z-40 hidden group-hover:block group-focus-within:block w-[min(18rem,80vw)] rounded-lg bg-slate-900/95 px-3 py-2 text-[11.5px] leading-relaxed text-white shadow-xl">
+        {children}
+      </span>
+    </span>
+  );
 }

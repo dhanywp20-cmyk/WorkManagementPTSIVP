@@ -1,4 +1,5 @@
 'use client';
+import { Catatan } from '../../bersama/ui';
 /** Modal "Buka desain tersimpan", pratinjau versi, pemilih warna & judul panel samping (dipisah dari Desain3D.tsx). */
 import { useEffect, useState } from 'react';
 import { HardDriveUpload, History } from 'lucide-react';
@@ -92,7 +93,7 @@ export function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-bold text-slate-900 truncate">{d.nama}{aktifId === d.id && <span className="ml-1 text-[11px] font-bold text-emerald-700">· terbuka</span>}</p>
                   <p className="text-[11.5px] text-slate-600 truncate">v{d.versi} · {d.ruang ? `${d.ruang.p}×${d.ruang.l} m${d.ruang.r2?.aktif ? ` + ${1 + (d.ruang.lain ?? []).filter(x => x?.aktif).length} ruang` : ''} · ` : ''}{d.jumlah_benda} benda</p>
-                  <p className="text-[11px] text-slate-500 truncate">{d.diubah_oleh_nama || d.dibuat_oleh_nama || '—'} · {tgl(d.updated_at)}</p>
+                  <Catatan>{d.diubah_oleh_nama || d.dibuat_oleh_nama || '—'} · {tgl(d.updated_at)}</Catatan>
                 </div>
               </div>
               <div className="mt-2 flex gap-1.5">

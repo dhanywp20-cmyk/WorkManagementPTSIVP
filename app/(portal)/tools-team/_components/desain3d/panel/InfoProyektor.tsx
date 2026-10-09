@@ -1,7 +1,7 @@
 'use client';
 /** Panel proyektor (Atur benda): jarak lempar, ukuran gambar, tombol mengepaskan ke layar, kontras vs lampu. */
 import { type Benda, kontrasProyektor, layarTerdekat, lumenDari, LUX_PRESET, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, throwRatioDari, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
-import { f } from '../../bersama/ui';
+import { f, Catatan } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 
 export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
@@ -20,7 +20,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           </p>
         );
       })}
-      <p className="text-[11px] text-slate-500">Isi persen ini di pengaturan edge blending (software / processor); umumnya 10-25% dari lebar / tinggi gambar.</p>
+      <Catatan>Isi persen ini di pengaturan edge blending (software / processor); umumnya 10-25% dari lebar / tinggi gambar.</Catatan>
     </div>
   ) : null;
   /** Panel proyektor: jarak lempar, ukuran gambar, & tombol mengepaskan ke layar. */
@@ -41,9 +41,9 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           {TARGET_KONTRAS.map(t => <option key={t.v} value={t.v}>Target {t.l} · {t.ket}</option>)}
         </select>
         <div className="grid grid-cols-3 gap-1.5 text-center">
-          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[11px] text-slate-500">Gambar</p><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luxGambar, 0)} lux</p></div>
-          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[11px] text-slate-500">Lampu di {kePermukaan ? 'permukaan' : 'layar'}</p><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.cahaya.total, 0)} lux</p></div>
-          <div className="rounded-md bg-slate-50 px-1 py-1"><p className="text-[11px] text-slate-500">Kontras</p><p className={`text-[13px] font-extrabold tabular-nums ${warna}`}>{f(kp.kontras, 1)} : 1</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Gambar</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luxGambar, 0)} lux</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Lampu di {kePermukaan ? 'permukaan' : 'layar'}</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.cahaya.total, 0)} lux</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Kontras</Catatan><p className={`text-[13px] font-extrabold tabular-nums ${warna}`}>{f(kp.kontras, 1)} : 1</p></div>
         </div>
         <p className="text-[11.5px] text-slate-600 leading-relaxed">
           {kp.cahaya.dariLampu
@@ -86,7 +86,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           </p>
           {dekat
             ? <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, dekat, k, ruang))}>Arahkan ke {dekat.nama}</button>
-            : <p className="text-[12px] text-slate-600">Tambahkan Layar proyektor (Tambah → Display) untuk menghitung jarak lempar.</p>}
+            : <p className="text-[12px] text-slate-600" title="Tambah → Display → Layar proyektor">Belum ada layar</p>}
           {blokKontras(p, true)}
           {blokBlending}
         </div>
