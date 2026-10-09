@@ -21,7 +21,7 @@ export function PanelKategori({ a }: { a: AlatDesain }) {
     <>
       <p className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-600"
         title="Isi template sama untuk semua pengguna. Perubahan di kanvas hanya mengubah salinan; Simpan membuat file baru milik Anda.">
-        <span aria-hidden="true">🔒</span> Template terkunci · Simpan = file baru
+        <span aria-hidden="true">🔒</span> Terkunci
       </p>
       {statusSimpan && (
         <p role="status" className={`mb-2 rounded-lg px-3 py-2 text-[12px] font-semibold ${statusSimpan.nada === 'galat' ? 'bg-rose-50 text-rose-700' : statusSimpan.nada === 'ok' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-50 text-slate-600'}`}>
