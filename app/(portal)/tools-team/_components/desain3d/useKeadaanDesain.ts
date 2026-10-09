@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useImporObjek } from './impor/useImporObjek';
-import { analisisDari, type Benda, contohAwal, daftarRuang, DISPLAY, golonganDipakai, jalurKabel, type OpsiKelas, type Ruang, ruangDari, tinggiAlasDi, titikPenonton, type Blending } from './inti';
+import { analisisDari, type Benda, contohAwal, daftarRuang, DISPLAY, golonganDipakai, jalurKabel, KATEGORI_RUANG, type OpsiKelas, type Ruang, ruangDari, tinggiAlasDi, titikPenonton, type Blending } from './inti';
 import { useRiwayat } from '../bersama/riwayat';
 import type { ConfirmState } from '@/components/shared/ConfirmDialog';
 import { getSession } from '@/lib/auth';
@@ -14,6 +14,7 @@ import { isPimpinan } from '@/lib/pimpinan';
 import type * as T from 'three';
 import type { Mesin, Sudut } from './mesin/tipe';
 import { batasDunia } from './mesin/kamera';
+import { bacaIngatanAwal, isiDariIngatan, KATEGORI_AWAL } from './simpan/templateAwal';
 
 
 export const KUNCI_SIMPAN = 'wm_desain3d';
@@ -40,8 +41,12 @@ export const ambilKunci = (r: Ruang, b: Benda[], n: string) => JSON.stringify({ 
 export type KeadaanDesain = ReturnType<typeof useKeadaanDesain>;
 
 export function useKeadaanDesain() {
-  const [ruang, setRuang] = useState<Ruang>(RUANG_AWAL);
-  const [benda, setBenda] = useState<Benda[]>(() => contohAwal(RUANG_AWAL));
+  //  Kanvas awal: default Admin yang diingat perangkat ini (simpan/templateAwal.ts), selain itu bawaan
+  //  pabrikan. Dibaca sekali saat dipasang - komponen ini hanya dirender di peramban (ssr: false).
+  const [ingatanAwal] = useState(bacaIngatanAwal);
+  const isiAwal = isiDariIngatan(ingatanAwal);
+  const [ruang, setRuang] = useState<Ruang>(() => (isiAwal ? { ...RUANG_AWAL, ...isiAwal.ruang } : RUANG_AWAL));
+  const [benda, setBenda] = useState<Benda[]>(() => (isiAwal ? isiAwal.benda : contohAwal(RUANG_AWAL)));
   const [pilih, setPilih] = useState<string | null>(null);
   /** Pilih banyak: benda lain yang ikut terpilih bersama `pilih` (utama). Shift / Ctrl + klik, atau mode pilih banyak (HP). */
   const [pilihLain, setPilihLain] = useState<string[]>([]);
@@ -134,13 +139,17 @@ export function useKeadaanDesain() {
   const [bukaKelas, setBukaKelas] = useState(false);
   const [opsiKelas, setOpsiKelas] = useState<OpsiKelas>({});
   const faktorPandang = jenisPandang === 'custom' ? faktorCustom : FAKTOR_PANDANG[jenisPandang];
-  const [namaDesain, setNamaDesain] = useState('Ruang Meeting');
+  //  Nama & asal mengikuti pasangKategoriYa() supaya kanvas awal dari ingatan sama persis dengan
+  //  kanvas yang dipasang dari server.
+  const [namaDesain, setNamaDesain] = useState(() => (isiAwal ? `${isiAwal.nama} (salinan)` : 'Ruang Meeting'));
   /**
    * Dari mana desain di kanvas berasal, untuk penanda "berkas yang sedang dibuka":
    * baru = belum pernah disimpan; laptop = dibuka dari/disimpan ke .glb; lokal = salinan di perangkat ini.
    * Desain server dikenali dari `desainAktif`. `dasar` = sidik isi saat terakhir dibuka/disimpan.
    */
-  const [asal, setAsal] = useState<{ jenis: 'baru' | 'laptop' | 'lokal' | 'template'; nama?: string }>({ jenis: 'baru' });
+  const [asal, setAsal] = useState<{ jenis: 'baru' | 'laptop' | 'lokal' | 'template'; nama?: string }>(() => (isiAwal
+    ? { jenis: 'template', nama: `${KATEGORI_RUANG.find(k => k.id === KATEGORI_AWAL)?.judul ?? isiAwal.nama} · default Admin` }
+    : { jenis: 'baru' }));
   const [dasar, setDasar] = useState<string | null>(null);
   const [tersimpan, setTersimpan] = useState<{ nama: string; ruang: Ruang; benda: Benda[] }[]>([]);
   /** Desain tim di server (/api/tools-team/desain) & desain server yang sedang dibuka. */
@@ -227,5 +236,5 @@ export function useKeadaanDesain() {
   const adaProyektor = benda.some(b => b.jenis === 'proyektor');
   const jumlahProyektor = benda.filter(b => b.jenis === 'proyektor').length;
 
-  return { setPilihan, pilihLain, setPilihLain, modeBanyak, setModeBanyak, layarPenuh, setLayarPenuh, pilihRef, pilihLainRef, modeBanyakRef, dariToggle, tampilShare, setTampilShare, adaPerubahan, adaProyektor, detailBlending, gridSinar, infoBlending, jumlahProyektor, setDetailBlending, setGridSinar, setInfoBlending, setTampilBlending, tampilBlending, an, analisis, asal, asideRef, batas, bayangan, benda, bendaRef, bukaKelas, bukaSisi, cariProduk, chipBuka, daftarTim, dasar, desainAktif, duaRuang, faktorCustom, faktorPandang, fokusRuang, galat, galatProduk, gambarLayar, gantiBenda, gantiIsi, garisUkur, hanyaLihat, impor, inputGambar, inputLaptop, inputModel, jangkau, jenisPandang, kabel, kabelPower, kameraSiap, kerucut, konfirmasi, kotakRuang, kunciKini, labelProduk, legendaKabel, lihatVersi, menuPusat, menuSudut, mesin, modal, modeGizmo, modeSeret, modelImpor, namaDesain, objekGambar, opsiKelas, panel, pasSetelahTemplate, pesan, pilih, plafonDi, potret, produkTim, riwayat, ruang, ruangRef, setAnalisis, setAsal, setBayangan, setBenda, setBukaKelas, setCariProduk, setChipBuka, setDaftarTim, setDasar, setDesainAktif, setFaktorCustom, setFokusRuang, setGalat, setGalatProduk, setGantiIsi, setGarisUkur, setJangkau, setJenisPandang, setKabelPower, setKerucut, setKonfirmasi, setLabelProduk, setLihatVersi, setMenuPusat, setMenuSudut, setModal, setModeGizmo, setModeSeret, setNamaDesain, setObjekGambar, setOpsiKelas, setPanel, setPesan, setPilih, setProdukTim, setRuang, setSiap, setSibukSimpan, setSinar, setSisi, setStatusSimpan, setSudutNyaman, setTampilKabel, setTampilan, setTargetKontras, setTargetRuang, setTersimpan, setUkur, setVersiGambar, siap, sibukSimpan, sinar, sisi, statusSimpan, sudutNyaman, sudutRef, tampilKabel, tampilan, targetKontras, targetRuang, teksturBayang, terpilih, tersimpan, ukur, versiGambar, wadahRef };
+  return { ingatanAwal, setPilihan, pilihLain, setPilihLain, modeBanyak, setModeBanyak, layarPenuh, setLayarPenuh, pilihRef, pilihLainRef, modeBanyakRef, dariToggle, tampilShare, setTampilShare, adaPerubahan, adaProyektor, detailBlending, gridSinar, infoBlending, jumlahProyektor, setDetailBlending, setGridSinar, setInfoBlending, setTampilBlending, tampilBlending, an, analisis, asal, asideRef, batas, bayangan, benda, bendaRef, bukaKelas, bukaSisi, cariProduk, chipBuka, daftarTim, dasar, desainAktif, duaRuang, faktorCustom, faktorPandang, fokusRuang, galat, galatProduk, gambarLayar, gantiBenda, gantiIsi, garisUkur, hanyaLihat, impor, inputGambar, inputLaptop, inputModel, jangkau, jenisPandang, kabel, kabelPower, kameraSiap, kerucut, konfirmasi, kotakRuang, kunciKini, labelProduk, legendaKabel, lihatVersi, menuPusat, menuSudut, mesin, modal, modeGizmo, modeSeret, modelImpor, namaDesain, objekGambar, opsiKelas, panel, pasSetelahTemplate, pesan, pilih, plafonDi, potret, produkTim, riwayat, ruang, ruangRef, setAnalisis, setAsal, setBayangan, setBenda, setBukaKelas, setCariProduk, setChipBuka, setDaftarTim, setDasar, setDesainAktif, setFaktorCustom, setFokusRuang, setGalat, setGalatProduk, setGantiIsi, setGarisUkur, setJangkau, setJenisPandang, setKabelPower, setKerucut, setKonfirmasi, setLabelProduk, setLihatVersi, setMenuPusat, setMenuSudut, setModal, setModeGizmo, setModeSeret, setNamaDesain, setObjekGambar, setOpsiKelas, setPanel, setPesan, setPilih, setProdukTim, setRuang, setSiap, setSibukSimpan, setSinar, setSisi, setStatusSimpan, setSudutNyaman, setTampilKabel, setTampilan, setTargetKontras, setTargetRuang, setTersimpan, setUkur, setVersiGambar, siap, sibukSimpan, sinar, sisi, statusSimpan, sudutNyaman, sudutRef, tampilKabel, tampilan, targetKontras, targetRuang, teksturBayang, terpilih, tersimpan, ukur, versiGambar, wadahRef };
 }

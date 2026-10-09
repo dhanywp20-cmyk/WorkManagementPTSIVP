@@ -1,7 +1,8 @@
 'use client';
 /**
  * Daftar entri satu jenis pustaka: cari, tabel (kolom dari registri) atau kartu artikel; Admin bisa
- * tambah / ubah / hapus. Artikel dibuka di modal baca.
+ * tambah / ubah / hapus semua entri, Team hanya entri buatannya (`bolehUbah` dari server).
+ * Artikel dibuka di modal baca.
  */
 import { useMemo, useState } from 'react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
@@ -26,10 +27,14 @@ export function DaftarPustaka({ jenis }: { jenis: JenisPustaka }) {
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const [pesan, setPesan] = useState('');
   const kolom = jenis.bidang.filter(b => b.kolom);
+  //  "Milik saya" hanya berarti bila sebagian entri boleh diubah akun ini (Team: entri buatannya sendiri).
+  const [milikSaya, setMilikSaya] = useState(false);
+  const adaMilik = entri.some(e => e.bolehUbah) && entri.some(e => !e.bolehUbah);
   const daftar = useMemo(() => {
     const q = cari.trim().toLowerCase();
-    return q ? entri.filter(e => `${e.nama} ${Object.values(e.data).join(' ')}`.toLowerCase().includes(q)) : entri;
-  }, [entri, cari]);
+    const sumber = milikSaya && adaMilik ? entri.filter(e => e.bolehUbah) : entri;
+    return q ? sumber.filter(e => `${e.nama} ${Object.values(e.data).join(' ')}`.toLowerCase().includes(q)) : sumber;
+  }, [entri, cari, milikSaya, adaMilik]);
   const hapus = (e: EntriPustaka) => setKonfirmasi({
     message: `Hapus "${e.nama}" dari Pustaka?`, danger: true, confirmLabel: 'Hapus',
     description: 'Kalkulator tidak bisa memilihnya lagi. Hasil hitung yang sudah dicetak tidak berubah.',
@@ -42,6 +47,12 @@ export function DaftarPustaka({ jenis }: { jenis: JenisPustaka }) {
       <div className="flex flex-wrap items-center gap-2">
         <input value={cari} onChange={e => setCari(e.target.value)} placeholder={`Cari ${jenis.l.toLowerCase()}…`} aria-label={`Cari ${jenis.l}`} title={jenis.ket}
           className="flex-1 min-w-[200px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm" />
+        {adaMilik && (
+          <button type="button" onClick={() => setMilikSaya(v => !v)} aria-pressed={milikSaya} title="Tampilkan hanya entri yang Anda buat (yang bisa Anda ubah / hapus)"
+            className={`px-3 py-2 rounded-xl border text-sm font-semibold ${milikSaya ? 'border-blue-300 bg-blue-50 text-blue-800' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}>
+            👤 Milik saya
+          </button>
+        )}
         {bolehAtur && (
           <button type="button" onClick={() => setUbah('baru')} className="px-3.5 py-2 rounded-xl bg-blue-700 text-white text-sm font-bold hover:bg-blue-800">
             + Tambah {artikel ? 'artikel' : jenis.l.toLowerCase()}
@@ -61,7 +72,7 @@ export function DaftarPustaka({ jenis }: { jenis: JenisPustaka }) {
                   <span className="block text-[14px] font-bold text-slate-900 mt-0.5">{e.nama}</span>
                   <span className="block text-[12.5px] text-slate-600 mt-1 leading-snug">{teksDari(e, 'ringkas')}</span>
                 </button>
-                {bolehAtur && (
+                {e.bolehUbah && (
                   <div className="flex gap-1.5 mt-2">
                     <button type="button" onClick={() => setUbah(e)} className="px-2 py-1 rounded-lg border border-slate-200 text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50">Ubah</button>
                     <button type="button" onClick={() => hapus(e)} className="px-2 py-1 rounded-lg border border-rose-200 text-[11.5px] font-semibold text-rose-700 hover:bg-rose-50">Hapus</button>
@@ -86,8 +97,10 @@ export function DaftarPustaka({ jenis }: { jenis: JenisPustaka }) {
                   <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{e.diubah_oleh_nama ?? '—'}</td>
                   {bolehAtur && (
                     <td className="px-3 py-2 whitespace-nowrap text-right">
-                      <button type="button" onClick={() => setUbah(e)} className="px-2 py-1 rounded-lg border border-slate-200 text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50">Ubah</button>{' '}
-                      <button type="button" onClick={() => hapus(e)} className="px-2 py-1 rounded-lg border border-rose-200 text-[11.5px] font-semibold text-rose-700 hover:bg-rose-50">Hapus</button>
+                      {e.bolehUbah && <>
+                        <button type="button" onClick={() => setUbah(e)} className="px-2 py-1 rounded-lg border border-slate-200 text-[11.5px] font-semibold text-slate-700 hover:bg-slate-50">Ubah</button>{' '}
+                        <button type="button" onClick={() => hapus(e)} className="px-2 py-1 rounded-lg border border-rose-200 text-[11.5px] font-semibold text-rose-700 hover:bg-rose-50">Hapus</button>
+                      </>}
                     </td>
                   )}
                 </tr>))}
