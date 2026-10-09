@@ -5,7 +5,7 @@
  * Jalankan: npx tsx uji/pustaka.ts
  */
 import { readFileSync } from 'node:fs';
-import { JENIS_PUSTAKA, periksaEntri, tapPertama } from '../lib/pustaka';
+import { bolehLihatPustaka, JENIS_PUSTAKA, KUNCI_MENU_PUSTAKA, periksaEntri, tapPertama } from '../lib/pustaka';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -34,6 +34,13 @@ const salah = baris.map(m => ({ j: m[1], n: m[2].replace(/''/g, "'"), h: periksa
   .filter(x => !x.h.ok);
 cek(`${baris.length} entri awal lolos validasi registri${salah.length ? ` (gagal: ${salah.map(s => `${s.j}/${s.n}: ${(s.h as { alasan: string }).alasan}`).join('; ')})` : ''}`, baris.length >= 40 && salah.length === 0);
 cek('setiap jenis punya isi awal', JENIS_PUSTAKA.every(j => baris.some(m => m[1] === j.v)));
+
+console.log('\nIzin melihat Pustaka');
+cek('Admin, superadmin & Team selalu boleh', ['admin', 'superadmin', 'team', 'team_pts'].every(role => bolehLihatPustaka({ role })));
+cek('pimpinan boleh walau role guest', bolehLihatPustaka({ role: 'guest', pimpinan: true }));
+cek('Marketing / Sales tanpa izin ditolak', !bolehLihatPustaka({ role: 'guest', allowed_menus: ['tools-team', 'dashboard'] }) && !bolehLihatPustaka({ role: 'guest' }));
+cek('Marketing / Sales dengan izin tools-pustaka boleh', bolehLihatPustaka({ role: 'guest', allowed_menus: ['tools-team', KUNCI_MENU_PUSTAKA] }));
+cek('tanpa akun ditolak', !bolehLihatPustaka(null));
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

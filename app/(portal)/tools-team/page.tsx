@@ -8,6 +8,7 @@ import { Ikon } from '@/components/shared/Ikon';
 import { KalkulatorLED, type SubLED } from './_components/KalkulatorLED';
 import { KalkulatorAV } from './_components/KalkulatorAV';
 import { Pustaka } from './_components/Pustaka';
+import { bolehLihatPustaka } from '@/lib/pustaka';
 
 //  three.js (~600 KB) hanya diunduh saat alat Desain 3D dibuka.
 const Desain3D = dynamic(() => import('./_components/Desain3D'), {
@@ -27,7 +28,9 @@ function ToolsKerjaInner() {
   const sp = useSearchParams();
   const [siap, setSiap] = useState(false);
   //  ?alat=koneksi (tautan lama) = LED Videotron, sub menu Screen Connection.
-  const [aktif, setAktif] = useState<string>(() => (sp.get('alat') === 'koneksi' ? 'led' : ALAT.some(a => a.k === sp.get('alat')) ? sp.get('alat')! : '3d'));
+  //  Pustaka hanya untuk Admin, Team, pimpinan & akun Marketing/Sales yang diberi izin (lib/pustaka.ts).
+  const [alat] = useState(() => ALAT.filter(x => x.k !== 'pustaka' || bolehLihatPustaka(getSession<Parameters<typeof bolehLihatPustaka>[0]>())));
+  const [aktif, setAktif] = useState<string>(() => (sp.get('alat') === 'koneksi' ? 'led' : alat.some(a => a.k === sp.get('alat')) ? sp.get('alat')! : '3d'));
   const subQ = sp.get('sub');
   const subAwal: SubLED = sp.get('alat') === 'koneksi' ? 'koneksi' : (['koneksi', 'daya', 'banding', 'konten'] as const).find(v => v === subQ) ?? 'led';
 
@@ -56,7 +59,7 @@ function ToolsKerjaInner() {
     <div className="min-h-screen" style={{ background: 'var(--latar-halaman, #f1f5f9)' }}>
       <PageHeader icon="🧮" title="Tools Team" subtitle="Kalkulator & desain untuk engineer Audio Visual" color="#1d4ed8" colorLight="#3b82f6">
         {/* Pilihan alat di header (pola tombol "Mapping Center" di Summary Project): yang aktif berisi gradien, yang lain putih. */}
-        {ALAT.map(a => {
+        {alat.map(a => {
           const on = a.k === aktif;
           return (
             <button key={a.k} type="button" onClick={() => pilih(a.k)} aria-pressed={on} title={a.ket}
