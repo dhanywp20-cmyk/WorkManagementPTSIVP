@@ -51,9 +51,9 @@ export function laptop({ THREE, g, b, W }: Konteks) {
   const lTp = w * 0.46, dTp = d * 0.34;
   g.add(papan(THREE, lTp, dTp, 0.0004, 0.008, aluGelap, 0.0001).translateY(tb - 0.0002).translateZ(d / 2 - 0.011 - dTp / 2));
 
-  //  Cekungan jempol di tepi depan tengah.
-  const cekung = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.0035, 0.034, 20, 1, false, 0, Math.PI), aluGelap);
-  cekung.rotation.z = Math.PI / 2; cekung.rotation.y = Math.PI / 2; cekung.position.set(0, tb, d / 2 - 0.0005); g.add(cekung);
+  //  Cekungan jempol di tepi depan tengah: lekukan tipis rata di muka depan (bukan tonjolan).
+  const cekung = bidangBulat(THREE, 0.034, 0.0042, 0.0021, mat(THREE, 0x9ea2a9, { metalness: 0.7, roughness: 0.35 }));
+  cekung.position.set(0, tb * 0.62, d / 2 + 0.0003); g.add(cekung);
 
   //  Engsel gelap di belakang.
   const engsel = new THREE.Mesh(new THREE.CylinderGeometry(0.0034, 0.0034, w * 0.8, 24), mat(THREE, 0x2a2b2f, { roughness: 0.4, metalness: 0.6 }));

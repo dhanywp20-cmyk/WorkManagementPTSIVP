@@ -27,3 +27,4 @@ export * from './rak';
 export * from './template';
 export * from './pustaka';
 export * from './perangkat';
+export * from './banyak';

@@ -43,6 +43,26 @@ export function useKeadaanDesain() {
   const [ruang, setRuang] = useState<Ruang>(RUANG_AWAL);
   const [benda, setBenda] = useState<Benda[]>(() => contohAwal(RUANG_AWAL));
   const [pilih, setPilih] = useState<string | null>(null);
+  /** Pilih banyak: benda lain yang ikut terpilih bersama `pilih` (utama). Shift / Ctrl + klik, atau mode pilih banyak (HP). */
+  const [pilihLain, setPilihLain] = useState<string[]>([]);
+  const [modeBanyak, setModeBanyak] = useState(false);
+  /** Kanvas layar penuh (menutupi seluruh jendela, fokus ke desain) - Esc / tombol untuk kembali. */
+  const [layarPenuh, setLayarPenuh] = useState(false);
+  //  Salinan terbaru untuk handler engine (klik kanvas, gizmo) yang dipasang sekali.
+  const pilihRef = useRef(pilih), pilihLainRef = useRef(pilihLain), modeBanyakRef = useRef(modeBanyak);
+  useEffect(() => { pilihRef.current = pilih; pilihLainRef.current = pilihLain; modeBanyakRef.current = modeBanyak; }, [pilih, pilihLain, modeBanyak]);
+  /** true = perubahan `pilih` berikut berasal dari toggle pilih banyak (pilihan lain tidak direset). */
+  const dariToggle = useRef(false);
+  /** Pasang pilihan banyak sekaligus (utama + lain) tanpa direset efek di bawah. */
+  const setPilihan = (utama: string | null, lain: string[]) => {
+    if (utama !== pilihRef.current) dariToggle.current = true;
+    setPilih(utama); setPilihLain(lain);
+  };
+  //  Pilih satu benda dari tempat lain (klik biasa, tambah benda, daftar) = pilihan lain dilepas.
+  useEffect(() => {
+    if (dariToggle.current) { dariToggle.current = false; return; }
+    setPilihLain(l => (l.length ? [] : l));
+  }, [pilih]);
   const [panel, setPanel] = useState(false);
   const [modal, setModal] = useState<'simpan' | 'buka' | null>(null);
   //  Panel kanan (menempel di samping kanvas, tidak menutupi tampilan 3D). Satu panel
@@ -95,6 +115,8 @@ export function useKeadaanDesain() {
   const setSudutNyaman = (v: number) => setAnalisis({ sudut: v });
   /** Tampilkan jangkauan suara semua speaker (per speaker: Benda.tampilJangkauan). */
   const [jangkau, setJangkau] = useState(false);
+  /** Garis share nirkabel (dongle / HP / tablet -> display) di kanvas. */
+  const [tampilShare, setTampilShare] = useState(true);
   /** Jalur kabel perangkat -> rack digambar di kanvas. */
   const [tampilKabel, setTampilKabel] = useState(false);
   /** Kabel power ke stop kontak terdekat (opsional - menambah banyak garis). */
@@ -205,5 +227,5 @@ export function useKeadaanDesain() {
   const adaProyektor = benda.some(b => b.jenis === 'proyektor');
   const jumlahProyektor = benda.filter(b => b.jenis === 'proyektor').length;
 
-  return { adaPerubahan, adaProyektor, detailBlending, gridSinar, infoBlending, jumlahProyektor, setDetailBlending, setGridSinar, setInfoBlending, setTampilBlending, tampilBlending, an, analisis, asal, asideRef, batas, bayangan, benda, bendaRef, bukaKelas, bukaSisi, cariProduk, chipBuka, daftarTim, dasar, desainAktif, duaRuang, faktorCustom, faktorPandang, fokusRuang, galat, galatProduk, gambarLayar, gantiBenda, gantiIsi, garisUkur, hanyaLihat, impor, inputGambar, inputLaptop, inputModel, jangkau, jenisPandang, kabel, kabelPower, kameraSiap, kerucut, konfirmasi, kotakRuang, kunciKini, labelProduk, legendaKabel, lihatVersi, menuPusat, menuSudut, mesin, modal, modeGizmo, modeSeret, modelImpor, namaDesain, objekGambar, opsiKelas, panel, pasSetelahTemplate, pesan, pilih, plafonDi, potret, produkTim, riwayat, ruang, ruangRef, setAnalisis, setAsal, setBayangan, setBenda, setBukaKelas, setCariProduk, setChipBuka, setDaftarTim, setDasar, setDesainAktif, setFaktorCustom, setFokusRuang, setGalat, setGalatProduk, setGantiIsi, setGarisUkur, setJangkau, setJenisPandang, setKabelPower, setKerucut, setKonfirmasi, setLabelProduk, setLihatVersi, setMenuPusat, setMenuSudut, setModal, setModeGizmo, setModeSeret, setNamaDesain, setObjekGambar, setOpsiKelas, setPanel, setPesan, setPilih, setProdukTim, setRuang, setSiap, setSibukSimpan, setSinar, setSisi, setStatusSimpan, setSudutNyaman, setTampilKabel, setTampilan, setTargetKontras, setTargetRuang, setTersimpan, setUkur, setVersiGambar, siap, sibukSimpan, sinar, sisi, statusSimpan, sudutNyaman, sudutRef, tampilKabel, tampilan, targetKontras, targetRuang, teksturBayang, terpilih, tersimpan, ukur, versiGambar, wadahRef };
+  return { setPilihan, pilihLain, setPilihLain, modeBanyak, setModeBanyak, layarPenuh, setLayarPenuh, pilihRef, pilihLainRef, modeBanyakRef, dariToggle, tampilShare, setTampilShare, adaPerubahan, adaProyektor, detailBlending, gridSinar, infoBlending, jumlahProyektor, setDetailBlending, setGridSinar, setInfoBlending, setTampilBlending, tampilBlending, an, analisis, asal, asideRef, batas, bayangan, benda, bendaRef, bukaKelas, bukaSisi, cariProduk, chipBuka, daftarTim, dasar, desainAktif, duaRuang, faktorCustom, faktorPandang, fokusRuang, galat, galatProduk, gambarLayar, gantiBenda, gantiIsi, garisUkur, hanyaLihat, impor, inputGambar, inputLaptop, inputModel, jangkau, jenisPandang, kabel, kabelPower, kameraSiap, kerucut, konfirmasi, kotakRuang, kunciKini, labelProduk, legendaKabel, lihatVersi, menuPusat, menuSudut, mesin, modal, modeGizmo, modeSeret, modelImpor, namaDesain, objekGambar, opsiKelas, panel, pasSetelahTemplate, pesan, pilih, plafonDi, potret, produkTim, riwayat, ruang, ruangRef, setAnalisis, setAsal, setBayangan, setBenda, setBukaKelas, setCariProduk, setChipBuka, setDaftarTim, setDasar, setDesainAktif, setFaktorCustom, setFokusRuang, setGalat, setGalatProduk, setGantiIsi, setGarisUkur, setJangkau, setJenisPandang, setKabelPower, setKerucut, setKonfirmasi, setLabelProduk, setLihatVersi, setMenuPusat, setMenuSudut, setModal, setModeGizmo, setModeSeret, setNamaDesain, setObjekGambar, setOpsiKelas, setPanel, setPesan, setPilih, setProdukTim, setRuang, setSiap, setSibukSimpan, setSinar, setSisi, setStatusSimpan, setSudutNyaman, setTampilKabel, setTampilan, setTargetKontras, setTargetRuang, setTersimpan, setUkur, setVersiGambar, siap, sibukSimpan, sinar, sisi, statusSimpan, sudutNyaman, sudutRef, tampilKabel, tampilan, targetKontras, targetRuang, teksturBayang, terpilih, tersimpan, ukur, versiGambar, wadahRef };
 }

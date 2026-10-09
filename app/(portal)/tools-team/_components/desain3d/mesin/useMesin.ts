@@ -5,7 +5,7 @@
  */
 import { useEffect } from 'react';
 import { sesuaikanTinggi } from '../bangun';
-import { daftarRuang, ruangDari } from '../inti';
+import { daftarRuang, ikutUtama, ruangDari, togglePilih } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import type { Mesin } from './tipe';
@@ -14,7 +14,7 @@ import { hindariTumpuk } from './label';
 
 
 export function useMesin(K: KeadaanDesain) {
-  const { bendaRef, gambarLayar, mesin, modeSeret, ruangRef, setBenda, setGalat, setPilih, setSiap, siap, wadahRef } = K;
+  const { bendaRef, dariToggle, gambarLayar, mesin, modeBanyakRef, modeSeret, pilihLainRef, pilihRef, ruangRef, setBenda, setGalat, setPilih, setPilihLain, setSiap, siap, wadahRef } = K;
   // ── Inisialisasi (sekali) ──
   useEffect(() => {
     let hidup = true;
@@ -95,7 +95,13 @@ export function useMesin(K: KeadaanDesain) {
           const rot = ((Math.round((o.rotation.y * 180) / Math.PI) % 360) + 360) % 360;
           o.position.set(x, elev, z);
           sesuaikanTinggi(o, { ...b0, elev }, plafon);
-          setBenda(bs => bs.map(b => (b.id === o.userData.id ? { ...b, x, z, rot, elev } : b)));
+          const id = o.userData.id as string;
+          setBenda(bs => {
+            const lama = bs.find(b => b.id === id); if (!lama) return bs;
+            const satu = bs.map(b => (b.id === id ? { ...b, x, z, rot, elev } : b));
+            //  Pilih banyak: benda lain ikut tergeser / berputar mengelilingi benda utama.
+            return pilihLainRef.current.length ? ikutUtama(satu, pilihLainRef.current, lama, { x, z, rot, elev }) : satu;
+          });
         });
         scene.add(gizmo.getHelper ? gizmo.getHelper() : (gizmo as unknown as T.Object3D));
 
@@ -135,7 +141,15 @@ export function useMesin(K: KeadaanDesain) {
           const kena = ray.intersectObjects(grupBenda.children.filter(o => !o.userData.sorot), true)[0];
           let o: T.Object3D | null = kena?.object ?? null;
           while (o && !o.userData.id) o = o.parent;
-          setPilih((o?.userData.id as string | undefined) ?? null);
+          const idKena = (o?.userData.id as string | undefined) ?? null;
+          if (e.shiftKey || e.ctrlKey || e.metaKey || modeBanyakRef.current) {
+            //  Tambah / lepas dari pilihan; klik ruang kosong tidak melepas pilihan.
+            if (idKena) {
+              const r = togglePilih(pilihRef.current, pilihLainRef.current, idKena);
+              if (r.pilih !== pilihRef.current) dariToggle.current = true;
+              setPilih(r.pilih); setPilihLain(r.lain);
+            }
+          } else setPilih(idKena);
           //  Klik/ketuk dua kali: titik itu menjadi pusat putaran kamera (fokus).
           const kini = performance.now();
           const ganda = !!ketukLalu && kini - ketukLalu.t < 350 && Math.hypot(e.clientX - ketukLalu.x, e.clientY - ketukLalu.y) < 30;

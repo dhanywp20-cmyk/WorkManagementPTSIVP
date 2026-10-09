@@ -9,6 +9,7 @@ import { AturFurnitur } from './benda/AturFurnitur';
 import { AturKonferensi } from './benda/AturKonferensi';
 import { AturBidang } from './benda/AturBidang';
 import { AturProyektor } from './benda/AturProyektor';
+import { AturPerangkat } from './benda/AturPerangkat';
 import { AturKabel } from './benda/AturKabel';
 import { BagianUmum } from './benda/BagianUmum';
 import { DariPustaka } from './benda/DariPustaka';
@@ -47,6 +48,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         <AturKonferensi c={c} />
         <AturBidang c={c} />
         <AturProyektor c={c} />
+        <AturPerangkat c={c} />
         {(b.jenis === 'model' || b.jenis === 'objek') && <AturObjek b={b} set={set} adaFoto={adaFoto} onGambarBaru={() => onGambarObjek?.()} />}
         {ekstra}
         <AturKabel c={c} />

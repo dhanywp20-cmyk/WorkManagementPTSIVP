@@ -5,17 +5,18 @@
 import { f } from '../../bersama/ui';
 import { type Benda, berkasLineArray, cakupanSpeakerPlafon, DISPLAY, jangkauanDari, modulLA, ruangDari, sebaranSpeaker, sebaranVSpeaker, TINGGI_DENGAR, tipeSpeakerDari } from '../inti';
 import { gambarJalurKabel } from './gambarKabel';
+import { gambarShare } from './garisShare';
 import { gambarSinar } from './sinar';
 import { gambarGarisUkurDisplay } from './garisUkurDisplay';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import type { Mesin } from './tipe';
 
-export type KeadaanAlatBantu = Pick<KeadaanDesain, 'analisis' | 'benda' | 'garisUkur' | 'jangkau' | 'kabel' | 'kerucut' | 'kotakRuang' | 'labelProduk' | 'plafonDi' | 'ruang' | 'sinar' | 'sudutNyaman' | 'tampilKabel' | 'ukur' | 'tampilBlending' | 'detailBlending' | 'gridSinar' | 'setInfoBlending'>;
+export type KeadaanAlatBantu = Pick<KeadaanDesain, 'analisis' | 'benda' | 'garisUkur' | 'jangkau' | 'kabel' | 'kerucut' | 'kotakRuang' | 'labelProduk' | 'plafonDi' | 'ruang' | 'sinar' | 'sudutNyaman' | 'tampilKabel' | 'tampilShare' | 'ukur' | 'tampilBlending' | 'detailBlending' | 'gridSinar' | 'setInfoBlending'>;
 
 export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
   const { THREE, grupBantu, CSS2DObject } = m;
-  const { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, ukur, tampilBlending, detailBlending, gridSinar, setInfoBlending } = k;
+  const { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, setInfoBlending } = k;
   //  Isi lama dibuang BESERTA geometri & materialnya: efek ini berjalan tiap
   //  frame selama benda diseret, jadi tanpa dispose memori GPU terus naik.
   grupBantu.traverse(o => {
@@ -158,6 +159,7 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
   }
   //  Jalur kabel ke rack (warna legend per jenis kabel).
   if (tampilKabel) gambarJalurKabel(THREE, grupBantu, kabel);
+  if (tampilShare) gambarShare(m, benda);
   //  Label produk: satu label per nama benda per ruang (kembar = "× jumlah"), di atas benda;
   //  benda di plafon (speaker plafon, proyektor gantung) labelnya di bawah benda.
   if (labelProduk) {

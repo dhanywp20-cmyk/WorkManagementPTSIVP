@@ -16,7 +16,7 @@ import { gambarBayangan } from './bayangan';
 
 
 export function useAdegan(K: KeadaanDesain) {
-  const { analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilan, teksturBayang, ukur, versiGambar } = K;
+  const { pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
   // ── Ruangan: lantai bertekstur + 4 dinding per ruang ──
   //  Dinding hanya terlihat dari sisi dalam (FrontSide), jadi dinding yang
   //  membelakangi kamera otomatis "tembus" seperti denah rumah boneka.
@@ -69,8 +69,12 @@ export function useAdegan(K: KeadaanDesain) {
     if (terpilih) {
       const s = new THREE.BoxHelper(terpilih, 0x2563eb); s.userData.sorot = true; grupBenda.add(s);
     }
+    for (const id of pilihLain) {
+      const o = cache.get(id)?.obj; if (!o) continue;
+      const s = new THREE.BoxHelper(o, 0x60a5fa); s.userData.sorot = true; grupBenda.add(s);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [benda, pilih, siap, ruang, versiGambar]);
+  }, [benda, pilih, pilihLain, siap, ruang, versiGambar]);
 
   // ── Gizmo menempel ke benda terpilih ──
   useEffect(() => {
@@ -86,9 +90,9 @@ export function useAdegan(K: KeadaanDesain) {
   // ── Alat bantu: label ukuran, garis jarak terjauh, kerucut sudut pandang ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    gambarAlatBantu(m, { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, ukur, tampilBlending, detailBlending, gridSinar, setInfoBlending });
+    gambarAlatBantu(m, { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, setInfoBlending });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, kabel, tampilBlending, detailBlending, gridSinar]);
+  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, tampilShare, kabel, tampilBlending, detailBlending, gridSinar]);
   // ── Tingkat cahaya ruangan ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;

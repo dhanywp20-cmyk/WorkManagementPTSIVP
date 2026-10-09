@@ -3,6 +3,8 @@ import { LegendaKabel } from './desain3d/panel/LegendaKabel';
 import { JUDUL_SISI, ModalBukaDesain } from './desain3d/panel/ModalBuka';
 import { ModalObjekGambar } from './desain3d/panel/ModalObjekGambar';
 import { PanelBenda } from './desain3d/panel/PanelBenda';
+import { PanelBanyak } from './desain3d/panel/PanelBanyak';
+import { useEffect } from 'react';
 import { PanelRuang } from './desain3d/panel/PanelRuang';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Ikon } from '@/components/shared/Ikon';
@@ -54,23 +56,32 @@ export default function Desain3D() {
   const ekspor = useEkspor(K, { ...kamera });
   const simpan = useSimpanDesain(K);
   const template = useTemplateKategori(K, aksi, simpan);
-  const { asideRef, batas, benda, desainAktif, duaRuang, galat, gambarLayar, gantiBenda, gantiIsi, hanyaLihat, impor, inputGambar, inputLaptop, konfirmasi, kotakRuang, legendaKabel, lihatVersi, modal, objekGambar, panel, pesan, plafonDi, produkTim, ruang, setGantiIsi, setKonfirmasi, setModal, setObjekGambar, setPanel, setRuang, setSisi, siap, sisi, terpilih, wadahRef } = K;
+  const { layarPenuh, setLayarPenuh, pilihLain, asideRef, batas, benda, desainAktif, duaRuang, galat, gambarLayar, gantiBenda, gantiIsi, hanyaLihat, impor, inputGambar, inputLaptop, konfirmasi, kotakRuang, legendaKabel, lihatVersi, modal, objekGambar, panel, pesan, plafonDi, produkTim, ruang, setGantiIsi, setKonfirmasi, setModal, setObjekGambar, setPanel, setRuang, setSisi, siap, sisi, terpilih, wadahRef } = K;
   const { hapusRuangTerakhir, pasangSambungan, salinIsiRuang, tambahBukaan, tambahRuang, ubahBukaan, ubahSambungan, ubahUkuran, unggahGambar } = aksi;
   const { simpanProduk } = produk;
   const { bukaDariLaptop, bukaTim } = simpan;
 
   const a: AlatDesain = { K, kamera, aksi, produk, ekspor, simpan, template };
+  //  Layar penuh: Esc kembali ke tampilan biasa; halaman di belakangnya tidak ikut tergulir.
+  useEffect(() => {
+    if (!layarPenuh) return;
+    const tekan = (e: KeyboardEvent) => { if (e.key === 'Escape' && !document.querySelector('[role=dialog]')) setLayarPenuh(false); };
+    const lama = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', tekan);
+    return () => { window.removeEventListener('keydown', tekan); document.body.style.overflow = lama; };
+  }, [layarPenuh, setLayarPenuh]);
   return (
     <div className="space-y-3">
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
-      <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white">
+      <div className={layarPenuh ? 'fixed inset-0 z-[950] flex flex-col bg-white' : 'rounded-2xl overflow-hidden border border-slate-200 bg-white'}>
         {/* Berkas yang sedang dibuka: nama (bisa diganti langsung) + dari mana asalnya + sudah/belum tersimpan.
             Dulu kanvas tidak memberi tahu desain mana yang sedang terbuka. */}
         <BilahBerkas a={a} />
         <BilahAlat a={a} />
 
-        <div className="flex flex-col lg:flex-row">
-        <div ref={wadahRef} className="relative w-full lg:w-auto lg:flex-1 min-w-0 h-[440px] sm:h-[620px] overflow-hidden">
+        <div className={`flex flex-col lg:flex-row ${layarPenuh ? 'flex-1 min-h-0' : ''}`}>
+        <div ref={wadahRef} className={`relative w-full lg:w-auto lg:flex-1 min-w-0 overflow-hidden ${layarPenuh ? 'flex-1 min-h-[300px]' : 'h-[440px] sm:h-[620px]'}`}>
           {!siap && !galat && <div className="absolute inset-0 grid place-items-center text-sm text-slate-500">Memuat tampilan 3D...</div>}
           {legendaKabel && <LegendaKabel dipakai={legendaKabel} />}
           <KontrolKanvas a={a} />
@@ -87,7 +98,7 @@ export default function Desain3D() {
         {/* Panel kanan: menempel di samping kanvas (layar lebar) atau di bawahnya (ponsel/tablet), jadi tampilan 3D tidak tertutup. */}
         {(sisi || (terpilih && panel)) && (
           <aside ref={asideRef} aria-label={sisi ? JUDUL_SISI[sisi].judul : 'Atur benda'}
-            className="flex flex-col min-h-0 border-t lg:border-t-0 lg:border-l border-slate-200 bg-white w-full lg:w-[360px] lg:shrink-0 max-h-[70vh] lg:max-h-none h-auto lg:h-[620px]">
+            className={`flex flex-col min-h-0 border-t lg:border-t-0 lg:border-l border-slate-200 bg-white w-full lg:w-[360px] lg:shrink-0 max-h-[70vh] lg:max-h-none h-auto ${layarPenuh ? 'lg:h-auto' : 'lg:h-[620px]'}`}>
             {sisi ? (
               <>
                 <div className="flex items-start gap-2 px-3 py-2.5 border-b border-slate-100">
@@ -108,6 +119,8 @@ export default function Desain3D() {
                   <DaftarBenda a={a} />
                 </div>
               </>
+            ) : terpilih && pilihLain.length > 0 ? (
+              <PanelBanyak a={a} />
             ) : terpilih && (
               <PanelBenda b={terpilih} semua={benda} plafon={plafonDi(terpilih.x)} batas={batas} onUbah={gantiBenda}
                 onGambar={() => inputGambar.current?.click()} onTutup={() => setPanel(false)}

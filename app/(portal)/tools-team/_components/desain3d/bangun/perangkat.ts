@@ -3,9 +3,8 @@
  * keyboard, mouse), HP & tablet; laptop di laptop.ts, dongle WyreStorm di dongle.ts. Bentuk membulat, bukan kotak.
  * Alas di y = 0, +z = arah hadap (sisi pengguna). Ukuran mengikuti b.w / b.h / b.d.
  */
-import type * as T from 'three';
 import { tipePerangkatDari } from '../inti';
-import { blok, type Konteks, mat, papan, persegiBulat } from './dasar';
+import { blok, type Konteks, mat, papan } from './dasar';
 import { modelDongle } from './dongle';
 import { bidangBulat, layar, tuts } from './bantuPerangkat';
 import { laptop } from './laptop';
