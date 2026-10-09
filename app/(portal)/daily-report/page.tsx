@@ -29,7 +29,8 @@ import { namaKelompokPTSDitugaskan, useKelompokPTSDitugaskan } from '@/lib/kelom
 
 import {
   FormField, SectionHeaderSmall, LoadingScreen, ListEmptyState, Username, ModalPortal, ConfirmDialog, type ConfirmState } from '@/components/shared';
-import { MiniPieChart, PageHeader, StatCardGrid, Paginasi, usePaginasi } from '@/components/shared';
+import { MiniPieChart, PageHeader, StatCardGrid, Paginasi, usePaginasi, TombolEkspor } from '@/components/shared';
+import type { Ekspor } from '@/lib/ekspor-tabel';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Toast as ToastBersama } from '@/components/shared/Toast';
 import { inp, inpCls, card, cardHdr, TH, TD, SB, sb, AVC, avc, ini, newManualKey, newTeamKey, emptyManual, emptyTeamEntry, PW, CatPicker, SalesDrop, Toast, type FlatRow } from './_components/bantu-halaman';
@@ -348,6 +349,21 @@ export default function DailyReportPage() {
       return true;
     });
   }, [allRows, searchProject, filterStatus, filterCategory, filterHandler, filterDivision, filterProduct]);
+
+  /** Ekspor Activity List sesuai filter yang aktif (Excel · Cetak · PNG). */
+  const dataEkspor = (): Ekspor<FlatRow> => ({
+    judul: `Daily Report${filterDate ? ` ${filterDate}` : ''}`, menu: 'Daily Report', warna: ['#059669', '#047857'],
+    baris: filteredRows,
+    filter: [['Tanggal', filterDate], ['Anggota', filterUser ? (teamUsers.find(u => u.id === filterUser)?.full_name ?? filterUser) : ''], ['Cari', searchProject],
+      ['Status', filterStatus], ['Sumber', filterSource], ['Kategori', filterCategory], ['Teknisi', filterHandler], ['Divisi', filterDivision], ['Produk', filterProduct]],
+    kolom: [
+      { judul: 'Tanggal', ambil: r => r.report_date }, { judul: 'Jam', ambil: r => r.jam },
+      { judul: 'Kegiatan', ambil: r => r.kegiatan_label }, { judul: 'Kategori', ambil: r => r.category },
+      { judul: 'Project', ambil: r => r.project_name }, { judul: 'Alamat', ambil: r => r.address }, { judul: 'Produk', ambil: r => r.product },
+      { judul: 'Sales', ambil: r => r.sales_name }, { judul: 'Divisi', ambil: r => r.sales_division },
+      { judul: 'Teknisi', ambil: r => r.handler_name || r.handler_username }, { judul: 'Status', ambil: r => r.status },
+    ],
+  });
 
   // Paginasi daftar - lihat components/shared/Paginasi.tsx.
   const hal = usePaginasi(filteredRows);
@@ -952,12 +968,15 @@ export default function DailyReportPage() {
               <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{filteredRows.length}</span>
               {liveLoading && <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />}
             </div>
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+            <TombolEkspor jumlah={filteredRows.length} data={dataEkspor} />
             <button onClick={() => { loadLiveData(); loadReports(); }} disabled={liveLoading}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all hover:bg-slate-100 disabled:opacity-50"
               style={{ background: 'rgba(0,0,0,0.04)', border: '1.5px solid rgba(0,0,0,0.09)', color: '#475569' }}>
               <svg aria-hidden="true" focusable="false" className={`w-3.5 h-3.5 ${liveLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               Refresh
             </button>
+            </div>
           </div>
 
           {/* Active filter chips from pie charts */}

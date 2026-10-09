@@ -1,4 +1,6 @@
 'use client';
+import { TombolEkspor } from '@/components/shared/TombolEkspor';
+import type { Ekspor } from '@/lib/ekspor-tabel';
 
 /** DaftarReview - dipecah dari app/(portal)/form-review/_components/FormReviewPageInner.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { StarRating, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, Paginasi, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState } from '@/components/shared';
@@ -225,8 +227,8 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
             </tbody>
           </table>
           <div className="flex items-center justify-between px-5 py-2.5 border-t border-gray-200" style={{ background: 'rgba(255,255,255,0.97)' }}>
-            <span className="text-[11px] text-gray-500">{tableReviews.length} review ditemukan ({switchTab})</span>
-            <span className="text-[11px] text-gray-500">dari {reviews.length} review keseluruhan</span>
+            <span className="text-[11px] text-gray-500">{tableReviews.length} review ditemukan ({switchTab}) · dari {reviews.length} review keseluruhan</span>
+            <TombolEkspor jumlah={tableReviews.length} data={() => dataEksporReview(tableReviews, switchTab, [['Project', searchProject], ['Teknisi', searchHandler], ['Sales', searchSalesName]])} />
           </div>
           <Paginasi {...hal} satuan="review" />
         </div>
@@ -234,4 +236,22 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
       )}
     </>
   );
+}
+
+/** Rekap nilai review untuk Excel / cetak - kolom mengikuti tab (Demo Product / BAST). */
+function dataEksporReview(baris: ReviewForm[], tab: string, filter: [string, string][]): Ekspor<ReviewForm> {
+  const demo = tab === 'Demo Product';
+  const umum: Ekspor<ReviewForm>['kolom'] = [
+    { judul: 'Tanggal', ambil: r => formatDatetime(r.created_at) }, { judul: 'Project', ambil: r => r.project_name },
+    { judul: 'Sales', ambil: r => [r.sales_name, r.sales_division].filter(Boolean).join(' · ') }, { judul: 'Engineer PTS', ambil: r => r.assign_name },
+  ];
+  return {
+    judul: `Rekap Review ${tab}`, menu: 'Form Review Demo & BAST', warna: demo ? ['#7c3aed', '#5b21b6'] : ['#0ea5e9', '#0284c7'], baris, filter,
+    kolom: demo
+      ? [...umum, { judul: 'Produk demo', ambil: r => r.product_demo }, { judul: 'Product knowledge', ambil: r => r.grade_product_knowledge, angka: true },
+        { judul: 'Catatan', ambil: r => r.catatan_grade_product_knowledge }]
+      : [...umum, { judul: 'Produk', ambil: r => r.product_bast }, { judul: 'Training customer', ambil: r => r.grade_training_customer, angka: true },
+        { judul: 'Product knowledge', ambil: r => r.grade_product_knowledge_bast, angka: true },
+        { judul: 'Catatan', ambil: r => [r.catatan_grade_training_customer, r.catatan_grade_product_knowledge_bast].filter(Boolean).join(' · ') }],
+  };
 }

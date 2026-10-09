@@ -16,6 +16,8 @@ import { ModalMappingCenter } from './_components/ModalMappingCenter';
 import { ModalDetailProject } from './_components/ModalDetailProject';
 import { TIPE_CFG, STATUS_PROJECT, STATUS_PROJECT_WARNA, fmtTgl, type AktivitasTipe } from './_components/tampilan';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { TombolEkspor } from '@/components/shared/TombolEkspor';
+import type { Ekspor } from '@/lib/ekspor-tabel';
 
 const THEME = { color: '#6366f1', colorLight: '#4f46e5' };
 const fontMono: CSSProperties = { fontFamily: "'JetBrains Mono', ui-monospace, monospace" };
@@ -112,6 +114,20 @@ export default function SummaryProjectPage() {
   }, [daftar, cari, filterStatus, filterTipe]);
 
   const hal = usePaginasi(tersaring);
+
+  /** Ekspor daftar project sesuai filter (Excel · Cetak · PNG). */
+  const dataEkspor = (): Ekspor<RingkasanProject> => ({
+    judul: 'Summary Project', menu: 'Summary Project', warna: [THEME.color, THEME.colorLight], baris: tersaring,
+    filter: [['Cari', cari], ['Status', filterStatus === 'semua' ? '' : STATUS_PROJECT[filterStatus]], ['Jenis', filterTipe === 'semua' ? '' : TIPE_CFG[filterTipe].pendek]],
+    kolom: [
+      { judul: 'Kode', ambil: p => p.code }, { judul: 'Project', ambil: p => p.name }, { judul: 'Customer', ambil: p => p.customer },
+      { judul: 'Lokasi', ambil: p => p.location }, { judul: 'Sales', ambil: p => [p.sales_name, p.sales_division].filter(Boolean).join(' · ') },
+      { judul: 'Status', ambil: p => STATUS_PROJECT[p.status] },
+      { judul: 'Schedule', ambil: p => p.schedule_count, angka: true }, { judul: 'Ticket', ambil: p => p.ticket_count, angka: true },
+      { judul: 'Design', ambil: p => p.design_count, angka: true }, { judul: 'Review', ambil: p => p.review_count, angka: true },
+      { judul: 'Aktivitas terakhir', ambil: p => fmtTgl(p.last_activity) },
+    ],
+  });
   const { setHalaman } = hal;
   useEffect(() => { setHalaman(1); }, [cari, filterStatus, filterTipe, setHalaman]);
 
@@ -172,6 +188,7 @@ export default function SummaryProjectPage() {
                   </button>
                 );
               })}
+              <TombolEkspor jumlah={tersaring.length} data={dataEkspor} />
             </div>
 
             {galat ? (

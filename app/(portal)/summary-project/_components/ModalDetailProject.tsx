@@ -9,6 +9,7 @@ import {
 import { PilihProject } from './PilihProject';
 import { TIPE_CFG, STATUS_PROJECT, fmtTgl, warnaStatus, type AktivitasTipe } from './tampilan';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { TombolEkspor } from '@/components/shared/TombolEkspor';
 
 interface Aktivitas {
   id: string; tipe: AktivitasTipe; tanggal: string | null;
@@ -172,6 +173,19 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
           </div>
         )}
 
+        {/* Linimasa - bisa diekspor / dicetak untuk dibagikan ke Sales / pimpinan */}
+        {linimasa.length > 0 && (
+          <div className="flex justify-end mb-3">
+            <TombolEkspor jumlah={linimasa.length} data={() => ({
+              judul: `${project.code} ${project.name}`, menu: 'Summary Project', warna: ['#4f46e5', '#6366f1'], baris: linimasa,
+              filter: [['Customer', project.customer], ['Lokasi', project.location], ['Sales', project.sales_name]],
+              kolom: [
+                { judul: 'Tanggal', ambil: a => fmtTgl(a.tanggal) }, { judul: 'Jenis', ambil: a => TIPE_CFG[a.tipe].pendek },
+                { judul: 'Aktivitas', ambil: a => a.judul }, { judul: 'Keterangan', ambil: a => a.meta }, { judul: 'Status', ambil: a => a.status },
+              ],
+            })} />
+          </div>
+        )}
         {/* Linimasa */}
         {!detail ? (
           <p className="py-10 text-center text-sm text-gray-500">Memuat riwayat...</p>
