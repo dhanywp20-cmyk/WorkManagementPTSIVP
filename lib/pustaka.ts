@@ -73,6 +73,20 @@ export const JENIS_PUSTAKA: JenisPustaka[] = [
 ];
 
 export const KODE_JENIS = JENIS_PUSTAKA.map(j => j.v);
+
+/** Kunci allowed_menus untuk izin Pustaka akun Marketing / Sales (dicentang Admin di akses menu akun). */
+export const KUNCI_MENU_PUSTAKA = 'tools-pustaka';
+
+/**
+ * Siapa yang boleh membuka Pustaka: Admin & akun Team (PTS) selalu, akun pimpinan (lihat-semua),
+ * selain itu (Marketing / Sales) hanya bila Admin mencentang izin Pustaka di akses menu akunnya.
+ */
+export function bolehLihatPustaka(u: { role?: string | null; allowed_menus?: string[] | null; pimpinan?: boolean | null } | null | undefined): boolean {
+  if (!u) return false;
+  const r = (u.role ?? '').toLowerCase();
+  if (['admin', 'superadmin', 'team', 'team_pts'].includes(r) || u.pimpinan) return true;
+  return Array.isArray(u.allowed_menus) && u.allowed_menus.includes(KUNCI_MENU_PUSTAKA);
+}
 export const jenisPustaka = (v: string) => JENIS_PUSTAKA.find(j => j.v === v);
 
 export interface EntriPustaka { id: string; jenis: string; nama: string; data: Record<string, string | number>; diubah_oleh_nama?: string | null; updated_at?: string }
