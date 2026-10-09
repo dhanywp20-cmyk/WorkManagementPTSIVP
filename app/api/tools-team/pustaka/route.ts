@@ -1,7 +1,7 @@
 /**
  * /api/tools-team/pustaka - Pustaka Tools Team (produk, data acuan, artikel). Lihat lib/pustaka.ts.
  *
- *   GET ?jenis=a,b      siapa pun yang masuk: entri jenis-jenis itu (urut nama) + `bolehAtur`.
+ *   GET ?jenis=a,b      Admin, Team, pimpinan, atau akun berizin 'tools-pustaka': entri jenis-jenis itu + `bolehAtur`.
  *                       Tanpa ?jenis = semua jenis kecuali isi artikel (ringkasan saja).
  *   POST {id?, jenis, nama, data}
  *                       Admin / Full Access: tambah (tanpa id) atau ubah entri. Data divalidasi
@@ -16,7 +16,7 @@ import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { pimpinanDiDb } from '@/lib/pimpinan';
-import { KODE_JENIS, periksaEntri } from '@/lib/pustaka';
+import { bolehLihatPustaka, KODE_JENIS, periksaEntri } from '@/lib/pustaka';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -37,6 +37,9 @@ export async function GET(req: NextRequest) {
   const jaga = await pastikanMasuk(req);
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
+  //  Pustaka: Admin, Team & pimpinan; Marketing / Sales hanya dengan izin 'tools-pustaka' (allowed_menus).
+  const { data: u } = await db.from('users').select('role, allowed_menus, pimpinan').eq('id', jaga.user.id).maybeSingle();
+  if (!bolehLihatPustaka(u as Parameters<typeof bolehLihatPustaka>[0])) return gagal('Pustaka hanya untuk akun yang diberi izin.', 403);
   const minta = (req.nextUrl.searchParams.get('jenis') ?? '').split(',').map(x => x.trim()).filter(Boolean);
   if (minta.some(j => !KODE_JENIS.includes(j))) return gagal('Jenis pustaka tidak dikenal.');
   //  Tanpa ?jenis: isi artikel (bisa panjang) tidak ikut - dibaca saat artikelnya dibuka.

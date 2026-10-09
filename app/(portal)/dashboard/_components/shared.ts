@@ -111,6 +111,7 @@ export const ALL_MENU_KEYS = [
   'database-pts',
   'unit-movement',
   'tools-team',
+  'tools-pustaka',
   'summary-project',
   'reminder-schedule',
   'picket-showroom',
@@ -128,7 +129,7 @@ export const ALL_MENU_KEYS = [
  * memutuskan siapa yang perlu melihat rekapan itu, bukan diberikan otomatis
  * ke semua akun baru.
  */
-export const RESTRICTED_MENU_KEYS = ['project-progress', 'summary-project'];
+export const RESTRICTED_MENU_KEYS = ['project-progress', 'summary-project', 'tools-pustaka'];
 
 /**
  * Default allowed_menus untuk user BARU. Sengaja dipisah dari ALL_MENU_KEYS:
@@ -179,6 +180,7 @@ export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = 
   'database-pts':           { label: 'Database PTS', icon: '💼' },
   'unit-movement':          { label: 'Unit Movement Log', icon: '🚚' },
   'tools-team':            { label: 'Tools Team', icon: '🧮' },
+  'tools-pustaka':         { label: 'Pustaka Tools Team', icon: '📚' },
   'reminder-schedule':      { label: 'Request Schedule', icon: '🗓️' },
   'picket-showroom':        { label: 'Piket Showroom', icon: '🏪' },
   'tech-note':              { label: 'Tech Note R&D', icon: '📝' },
