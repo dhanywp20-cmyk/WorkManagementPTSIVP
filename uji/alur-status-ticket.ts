@@ -1,4 +1,4 @@
-import { ALUR_STATUS_PTS, statusTerkunci, type StatusAlurPTS } from '@/app/ticketing/_components/alur-status';
+import { ALUR_STATUS_PTS, statusTerkunci, type StatusAlurPTS } from '@/app/(portal)/ticketing/_components/alur-status';
 
 // Aturan tombol status di panel "Update Status" Ticketing (Team PTS).
 

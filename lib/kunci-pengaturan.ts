@@ -51,6 +51,8 @@ export const KUNCI_PENGATURAN = {
   KELOMPOK: 'kelompok',
   /** Lingkup Manager per kelompok - lihat lib/kelompok.ts. */
   LINGKUP_MANAGER: 'lingkup_manager',
+  /** Daftar pilihan dropdown (merek, piket, unit movement) - lihat lib/daftar-pilihan-bawaan.ts. */
+  DAFTAR_PILIHAN: 'daftar_pilihan',
   /** Kanal notifikasi per event - lihat lib/notifikasi/pengaturan.ts. */
   NOTIFIKASI_KANAL: 'notifikasi.kanal',
 } as const;

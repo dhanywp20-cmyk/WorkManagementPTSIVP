@@ -25,13 +25,10 @@ jobs:
       - run: npm ci
       - name: Typecheck
         run: npx tsc --noEmit -p .
+      - name: Lint
+        run: npm run lint
       - name: Uji
-        run: |
-          for f in cari-reminder kelompok-daily-report kelompok-insentif kpi-lc-tahunan \
-                   lingkup-project peringkat-quiz supervisor-jadi-pic tahapan-installer \
-                   tahun-tahapan-kembar urutan-soal penugasan-manager av-hitung desain3d desain-request piket-akses pimpinan \
-                   bentuk-summary-nyata kesehatan eskalasi-tahap briefing-pagi olah-reminder objek-mapping blending-proyektor nav-bawah alur-status-ticket; do
-            echo "::group::uji/$f.ts"; npx --yes tsx@4 "uji/$f.ts"; echo "::endgroup::"
-          done
+        # Semua uji/*.ts (scripts/uji-semua.mjs) - daftar manual dulu tertinggal tiap ada uji baru.
+        run: npm test
       - name: Build
         run: npm run build

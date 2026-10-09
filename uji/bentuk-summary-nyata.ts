@@ -15,7 +15,7 @@
   --simpan menuliskan berkasnya ke path itu untuk diperiksa mata sendiri.
 */
 import ExcelJS from 'exceljs';
-import { bangunWorkbookSummary } from '../app/incentive-pts/_components/exportPengajuan';
+import { bangunWorkbookSummary } from '../app/(portal)/incentive-pts/_components/exportPengajuan';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';

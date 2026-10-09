@@ -11,6 +11,10 @@ export {
   FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
 } from './ActionIcons';
 export { Toast, InlineToast, type Notif } from './Toast';
+// Pemberitahuan simpan yang gagal - satu untuk semua modul, dipasang di app/layout.tsx.
+export { PenjagaGalatTulis } from './PenjagaGalatTulis';
+// Esc & fokus untuk semua popup, termasuk overlay manual - dipasang di app/layout.tsx.
+export { PenjagaDialog } from './PenjagaDialog';
 export { LoadingScreen, InlineSpinner } from './LoadingScreen';
 export { FormField, SectionHeader, SectionHeaderSmall, InfoRow, InfoLine } from './FormParts';
 export { StarRating } from './StarRating';
@@ -42,7 +46,11 @@ export { Modal, TombolModal, type ModalProps } from './Modal';
 // Paginasi daftar - satu mekanisme & satu angka baris/halaman untuk semua
 // modul. Lihat catatan di Paginasi.tsx.
 export { Paginasi, usePaginasi, BARIS_PER_HALAMAN, type HasilPaginasi } from './Paginasi';
-// Bootstrap PWA - daftar service worker + banner "Pasang aplikasi ke HP".
+// Ekspor daftar (Excel · Cetak · PNG) yang sama di semua menu - lib/ekspor-tabel.ts.
+export { TombolEkspor } from './TombolEkspor';
+// Keterangan tambahan sebagai ikon ⓘ + popover (bukan paragraf di layar).
+export { Keterangan } from './Keterangan';
+// Bootstrap PWA - daftar service worker (banner pasang aplikasi sudah dihapus).
 // Dipasang sekali di root layout, bukan per-modul.
 export { PwaBootstrap } from './PwaBootstrap';
 export { PembaruanAndroid } from './PembaruanAndroid';
@@ -52,3 +60,4 @@ export { ChipVersi } from './ChipVersi';
 export { FooterPlatform } from './FooterPlatform';
 export { Ikon, IkonTeks, ikonUntuk } from './Ikon';
 export { FilterLipat } from './FilterLipat';
+export { bisaDiklik } from './bisaDiklik';

@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { CalendarDays, ChevronDown, Eye, Lock, MapPin } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
 import {
   STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari,
   type ChecklistBagian, type ChecklistItem, type StatusProyek,
 } from '@/lib/checklist';
-import { BarProgres, CatatanTeks, KepingKendala, PanelBagian, TEMA, itemPerBagian, progresDariStat } from '../../_components/tampilan';
+import { BarProgres, CatatanTeks, KepingKendala, PanelBagian, TEMA, itemPerBagian, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
 
 interface DataShare {
   proyek: {
@@ -24,7 +25,9 @@ interface DataShare {
  * ditampilkan hanya-baca (untuk client / atasan). Token Project Progress lama
  * tetap berlaku karena ikut disalin ke proyek baru oleh migrasi 025.
  */
-export default function ProyekSharePage({ params }: { params: { token: string } }) {
+export default function ProyekSharePage() {
+  //  Next 15+: params halaman berupa Promise - di client component cukup useParams().
+  const params = useParams<{ token: string }>();
   const [data, setData] = useState<DataShare | null>(null);
   const [memuat, setMemuat] = useState(true);
   const [galat, setGalat] = useState('');
@@ -60,7 +63,7 @@ export default function ProyekSharePage({ params }: { params: { token: string } 
   const st = data ? (STATUS_PROYEK[data.proyek.status] ?? STATUS_PROYEK.in_progress) : null;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--halaman)' }}>
+    <div className="min-h-screen" style={{ background: 'var(--latar-halaman)' }}>
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -145,7 +148,7 @@ export default function ProyekSharePage({ params }: { params: { token: string } 
               );
             })}
 
-            <p className="text-center text-[10.5px] font-semibold py-4" style={{ color: TEMA.samar }}>
+            <p className="text-center text-[11px] font-semibold py-4" style={{ color: TEMA.samar }}>
               Work Management PTS IVP · Diperbarui {formatWaktu(data.proyek.updated_at)} · Halaman ini hanya menampilkan data.
             </p>
           </>

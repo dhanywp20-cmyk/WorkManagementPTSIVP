@@ -49,14 +49,14 @@ export function KartuPeringkat({
   return (
     <div className="rounded-xl p-2.5 sm:p-4 flex flex-col gap-2.5 sm:gap-3 min-w-0"
       style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}>
-      <p className="flex items-center gap-1.5 text-[10px] sm:text-[12.5px] font-semibold text-slate-700 leading-tight">
+      <p className="flex items-center gap-1.5 text-[11px] sm:text-[12.5px] font-semibold text-slate-700 leading-tight">
         <Ikon nama={icon} ukuran={14} className="text-slate-500" />
         <span className="truncate">{title}</span>
       </p>
 
       <div className="flex items-baseline gap-2">
         <span className="text-2xl sm:text-3xl font-bold text-slate-900 leading-none tabular-nums">{angka}</span>
-        <span className="text-[10px] sm:text-[11px] font-medium text-slate-500">{ketAngka}</span>
+        <span className="text-[11px] font-medium text-slate-500">{ketAngka}</span>
       </div>
 
       {segmen && totalSeg > 0 && (
@@ -71,7 +71,7 @@ export function KartuPeringkat({
           </div>
           <ul className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
             {segmen.map(s => (
-              <li key={s.label} className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-slate-600">
+              <li key={s.label} className="flex items-center gap-1.5 text-[11px] text-slate-600">
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} aria-hidden="true" />
                 {s.label} <span className="font-semibold text-slate-800 tabular-nums">{s.value}</span>
               </li>
@@ -89,7 +89,7 @@ export function KartuPeringkat({
               <button type="button" disabled={!bisaKlik} onClick={() => onPilih?.(b.label)}
                 title={`${b.label}: ${b.teks ?? b.value}`}
                 className={`w-full text-left group ${bisaKlik ? 'cursor-pointer' : 'cursor-default'}`}>
-                <div className="flex items-center justify-between gap-2 text-[10px] sm:text-[11.5px]">
+                <div className="flex items-center justify-between gap-2 text-[11px] sm:text-[11.5px]">
                   <span className={`truncate text-slate-600 font-medium ${bisaKlik ? 'group-hover:text-slate-900' : ''}`}>{b.label}</span>
                   <span className="font-semibold text-slate-800 tabular-nums flex-shrink-0">{b.teks ?? b.value}</span>
                 </div>
@@ -104,7 +104,7 @@ export function KartuPeringkat({
       )}
 
       {(lebih > 0 || lipatan) && (
-        <p className="text-[10px] sm:text-[11px] text-slate-500" title={lipatan?.rincian}>
+        <p className="text-[11px] text-slate-500" title={lipatan?.rincian}>
           {lebih > 0 && <>+{lebih} lainnya{lipatan ? ' · ' : ''}</>}
           {lipatan?.teks}
         </p>

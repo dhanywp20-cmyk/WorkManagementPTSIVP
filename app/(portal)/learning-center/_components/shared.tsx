@@ -1,0 +1,594 @@
+'use client';
+
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { ModalPortal } from '@/components/shared';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+
+// Types
+
+export interface User {
+  id: string;
+  full_name: string;
+  username: string;
+  role: string;
+  jabatan?: string | null;
+  sales_division?: string | null;
+  phone_number?: string | null;
+  team_type?: string | null;
+  access_level?: string | null;
+}
+
+export interface Material {
+  id: string;
+  materi_name: string;
+  content_text: string | null;
+  file_url: string | null;
+  file_name: string | null;
+  file_type: string | null;
+  folder_path: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export interface Question {
+  id: string;
+  material_id: string;
+  materi_name: string;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: 'A' | 'B' | 'C' | 'D';
+  difficulty: 'easy' | 'medium' | 'hard';
+  batch_name?: string | null;
+  created_at: string;
+  /**
+   * Urutan tampil di dalam satu (material_id, batch_name).
+   *
+   * `undefined` berarti kolomnya belum ada di database - berbeda dengan `null`
+   * yang berarti kolomnya ada tapi baris ini belum pernah diurutkan. Bedanya
+   * dipakai: yang pertama membuat tombol pengatur urutan disembunyikan, yang
+   * kedua tidak. Lihat sql/learning-center-urutan-soal.sql.
+   */
+  urutan?: number | null;
+  // Essay addition (non-breaking; defaults to 'abcd' for all existing rows)
+  question_type?: 'abcd' | 'essay';
+  model_answer?: string | null; // kunci/referensi jawaban essay, untuk bantu admin menilai manual
+  /**
+   * Bentuk jawaban yang diminta soal essay.
+   *   'text'  diketik peserta (bawaan, perilaku lama)
+   *   'image' peserta menggambar di kertas, difoto, lalu diunggah
+   * Diabaikan untuk soal abcd. Lihat sql/learning-center-essay-gambar.sql.
+   */
+  answer_format?: 'text' | 'image';
+}
+
+export interface QuizSession {
+  id: string;
+  session_name: string;
+  material_id: string;
+  materi_name: string;
+  question_ids: string[];
+  question_count: number;
+  timer_minutes: number | null;
+  passing_grade: number;
+  is_active: boolean;
+  allow_retake: boolean;
+  created_at: string;
+  scheduled_at: string | null;
+  closed_at: string | null;
+  target_user_ids: string[] | null;
+  open_at: string | null;
+  close_at: string | null;
+  // Essay addition
+  session_type?: 'abcd' | 'essay';
+  /**
+   * Urutan soal diacak per peserta (diatur admin per sesi).
+   *
+   * Opsional di tipe ini supaya sesi yang diambil sebelum migrasi kolomnya
+   * jalan tidak menjadi galat tipe; false/undefined = urutan apa adanya.
+   */
+  acak_soal?: boolean;
+}
+
+export interface QuizAttempt {
+  id: string;
+  user_id: string;
+  quiz_session_id: string;
+  started_at: string;
+  submitted_at: string | null;
+  score: number | null;
+  total_correct: number;
+  total_questions: number;
+  passed: boolean | null;
+  time_taken_sec: number | null;
+  is_submitted: boolean;
+  // Essay addition: attempt tetap is_submitted=true, tapi belum final sampai admin nilai
+  grading_status?: 'auto' | 'pending_review' | 'graded';
+  graded_by?: string | null;
+  graded_at?: string | null;
+}
+
+export interface AnswerRecord {
+  id: string;
+  attempt_id: string;
+  question_id: string;
+  answer: string;
+  is_correct: boolean;
+  // Essay addition
+  essay_text?: string | null;
+  /** Gambar jawaban ukuran penuh - hanya dimuat saat penilai membukanya. */
+  answer_image_url?: string | null;
+  /** Pratinjau kecil untuk daftar penilaian. Dipisah demi menekan egress. */
+  answer_thumb_url?: string | null;
+  manual_score?: number | null; // 0-100 per soal - SKOR FINAL, diisi/dikoreksi admin
+  // AI grading addition - SARAN saja, tidak pernah jadi skor final sendiri
+  ai_score?: number | null;
+  ai_feedback?: string | null;
+}
+
+export type AdminView = 'dashboard' | 'materi' | 'questions' | 'sessions' | 'team' | 'report' | 'analytics';
+export type TeamView = 'my-quiz' | 'materi' | 'history' | 'score';
+
+// Gemini (server-side proxy - API key tidak terekspos ke browser)
+
+export const GEMINI_URL = '/api/ai/generate';
+
+export const DIFF_COLOR: Record<string, string> = {
+  easy: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  medium: 'bg-amber-100 text-amber-700 border-amber-200',
+  hard: 'bg-rose-100 text-rose-700 border-rose-200',
+};
+
+// Helpers
+
+export const fmtDate = (d: string) =>
+  new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+
+export const fmtDateTime = (d: string) =>
+  new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+export function ScoreBadge({ score, passing }: { score: number | null; passing: number }) {
+  if (score === null) return <span className="text-slate-500 text-xs">—</span>;
+  const pass = score >= passing;
+  return (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold border ${pass ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+      {pass ? '✅' : '❌'} {score.toFixed(0)}
+    </span>
+  );
+}
+
+// Essay grading status badge (dipakai di HistoryPage, ScorePage, ReportPage)
+export function GradingStatusBadge({ attempt }: { attempt: { grading_status?: string | null; passed: boolean | null } }) {
+  if (attempt.grading_status === 'pending_review') {
+    return (
+      <span className="text-xs font-bold px-2 py-1 rounded-full border bg-amber-100 text-amber-700 border-amber-200">
+        <IkonTeks nama="⏳" />Menunggu Penilaian
+      </span>
+    );
+  }
+  return (
+    <span className={`text-xs font-bold px-2 py-1 rounded-full border ${attempt.passed ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-rose-100 text-rose-700 border-rose-200'}`}>
+      {attempt.passed ? '✅ LULUS' : '❌ TIDAK LULUS'}
+    </span>
+  );
+}
+
+/**
+ * Kotak pencarian. Mengisi baris sendiri di layar sempit dan baru memakai
+ * lebar tetap saat ruangnya ada - lebar tetap di ponsel menghimpit judul di
+ * sebelahnya sampai satu kata per baris.
+ */
+export function SearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <div className="relative w-full sm:w-auto">
+      <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder ?? 'Cari...'}
+        aria-label={placeholder ?? 'Cari'}
+        className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white w-full sm:w-64"
+      />
+    </div>
+  );
+}
+
+// Gemini helpers
+
+/**
+ * Batas ukuran PDF di sisi client, sebelum sempat di-upload.
+ *
+ * Base64 membengkakkan file biner ~1.33x (4/3). Route /api/ai/generate
+ * sendiri menolak body > 4.000.000 karakter JSON (lihat MAX_BODY_BYTES di
+ * route.ts) - jadi PDF biner harus di bawah ~3MB SUDAH supaya hasil base64
+ * + overhead JSON-nya tidak melewati batas itu. Platform hosting (mis.
+ * limit payload Vercel ~4.5MB) juga bisa menolak duluan SEBELUM request
+ * sampai ke route - dengan balasan teks polos macam "Request Entity Too
+ * Large", bukan JSON. Angka di bawah sengaja dikasih jarak dari kedua
+ * batas itu, supaya penolakannya terjadi di client dengan pesan yang
+ * jelas, bukan JSON.parse yang pecah di tengah jalan.
+ */
+export const MAX_PDF_BYTES = 2.5 * 1024 * 1024; // 2.5 MB biner (~3.4MB setelah base64)
+
+export async function fileToBase64(f: File): Promise<string> {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => res((e.target?.result as string).split(',')[1]);
+    reader.onerror = () => rej(new Error('Read failed'));
+    reader.readAsDataURL(f);
+  });
+}
+
+export async function generateWithGemini(
+  prompt: string, pdfFile?: File | null,
+  /** 'penilai' memakai token & model penilai; selain itu pembuat soal. */
+  profil?: 'penilai',
+  /**
+   * Paksa memakai model ini, mengabaikan yang tersimpan. Dipakai fitur
+   * "Bandingkan 2 model" - dua panggilan berbeda model tanpa satu pun mengubah
+   * pengaturan, supaya perbandingannya tidak meninggalkan jejak.
+   */
+  model?: string,
+): Promise<string> {
+  if (pdfFile && pdfFile.size > MAX_PDF_BYTES) {
+    throw new Error(
+      `PDF terlalu besar (${(pdfFile.size / 1_000_000).toFixed(1)} MB, maks ${(MAX_PDF_BYTES / 1_000_000).toFixed(1)} MB). Coba PDF yang lebih kecil atau kompres dulu.`
+    );
+  }
+  const parts: any[] = [];
+  if (pdfFile) {
+    const base64 = await fileToBase64(pdfFile);
+    parts.push({ inline_data: { mime_type: pdfFile.type || 'application/pdf', data: base64 } });
+  }
+  parts.push({ text: prompt });
+  const res = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      // Suhu sengaja TIDAK diisi di sini - server yang mengisinya dari
+      // pengaturan profil yang bersangkutan. Menilai butuh suhu rendah supaya
+      // taat pada kunci; membuat soal butuh sedikit variasi. Memaksakan satu
+      // angka dari sini membuat pengaturan itu tidak berlaku.
+      generationConfig: { maxOutputTokens: 8192 },
+      ...(profil ? { profil } : {}),
+      ...(model ? { model } : {}),
+    }),
+  });
+
+  /*
+    Dibaca sebagai teks dulu, BUKAN langsung res.json().
+    Kalau request ditolak oleh layer di depan route.ts (mis. limit payload
+    platform hosting), balasannya teks polos ("Request Entity Too Large"),
+    bukan JSON - res.json() akan melempar "Unexpected token" yang membingungkan.
+    Dengan raw text dulu, pesan errornya bisa dibuat jelas.
+  */
+  const raw = await res.text();
+  let data: any;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(
+      res.ok
+        ? 'Respons server tidak valid (bukan JSON). Coba ulangi, atau pakai PDF yang lebih kecil.'
+        : `Server menolak request (HTTP ${res.status}), kemungkinan karena file terlalu besar. Coba PDF yang lebih kecil.`
+    );
+  }
+  if (!res.ok) {
+    throw new Error(data?.error?.message ?? 'Gemini API error');
+  }
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+}
+
+export interface ModelAI { id: string; nama: string }
+
+/**
+ * Daftar model yang benar-benar tersedia untuk kunci yang terpasang.
+ *
+ * Ditanyakan ke Google, tidak ditulis di kode. Daftar tertutup di kode selalu
+ * berakhir sama: nama yang ditebak ternyata tidak ada pada kunci ini, dan
+ * kekeliruannya baru ketahuan saat seseorang menekan "Nilai" - dengan pesan
+ * 404 yang tidak menyebut nama mana yang salah.
+ */
+export async function ambilDaftarModel(profil?: 'penilai'): Promise<ModelAI[]> {
+  const res = await fetch(`/api/ai/model${profil ? `?profil=${profil}` : ''}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message ?? 'Gagal membaca daftar model.');
+  return (data?.model ?? []) as ModelAI[];
+}
+
+export interface SoalDinilai {
+  id: string;
+  question: string;
+  modelAnswer?: string | null;
+  studentAnswer: string;
+}
+
+/**
+ * Menilai SELURUH jawaban essay satu peserta dalam SATU panggilan.
+ *
+ * Sebelumnya tiap soal satu panggilan. Untuk satu peserta dengan 5 soal essay
+ * itu 5 permintaan; untuk satu sesi berisi 30 peserta, 150 - sementara jatah
+ * harian gratis Gemini 2.5 Flash hanya puluhan. Jadi penilaian borongan bukan
+ * "lebih cepat", melainkan satu-satunya bentuk yang muat di paket gratis sama
+ * sekali.
+ *
+ * Yang membuat penggabungan ini aman: tiap soal dinilai terhadap kunci
+ * referensinya masing-masing, dan AI diminta mengembalikan satu entri per id
+ * soal. Soal yang tidak terjawab AI - karena keluarannya terpotong atau
+ * idnya salah - dikembalikan sebagai tidak-ada, bukan sebagai nol. Nol berarti
+ * "sudah dinilai dan jawabannya salah"; itu keliru dan bisa terlanjur
+ * dikonfirmasi penilai yang buru-buru.
+ */
+export async function gradeEssaysBatchWithAI(
+  daftar: SoalDinilai[],
+): Promise<Record<string, { score: number; feedback: string }>> {
+  if (daftar.length === 0) return {};
+
+  const blok = daftar.map((d, i) => `--- SOAL ${i + 1} ---
+ID: ${d.id}
+PERTANYAAN: ${d.question}
+${d.modelAnswer ? `KUNCI REFERENSI: ${d.modelAnswer}` : '(Tidak ada kunci referensi - nilai berdasar kelayakan & kelengkapan secara umum.)'}
+JAWABAN PESERTA: ${d.studentAnswer || '(kosong / tidak dijawab)'}`).join('\n\n');
+
+  const prompt = `Kamu adalah asisten penilai kuis internal perusahaan. Nilai SETIAP jawaban essay berikut secara OBJEKTIF terhadap kunci referensinya masing-masing. Nilai kesesuaian ISI, bukan kemiripan kata demi kata - peserta yang memahami konsep yang sama dengan kalimatnya sendiri tetap dinilai benar.
+
+${blok}
+
+Balas HANYA dengan JSON array valid, tanpa markdown, tanpa teks lain. Satu entri untuk SETIAP id di atas, dengan urutan yang sama:
+[{"id":"<id soal persis seperti di atas>","score":<angka 0-100>,"feedback":"<1-2 kalimat alasan singkat dalam Bahasa Indonesia>"}]`;
+
+  const raw = await generateWithGemini(prompt, null, 'penilai');
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Keluaran AI tidak berupa JSON yang valid.');
+  }
+  if (!Array.isArray(parsed)) throw new Error('Keluaran AI bukan daftar penilaian.');
+
+  const sah = new Set(daftar.map(d => d.id));
+  const hasil: Record<string, { score: number; feedback: string }> = {};
+  for (const baris of parsed as { id?: unknown; score?: unknown; feedback?: unknown }[]) {
+    const id = typeof baris?.id === 'string' ? baris.id : '';
+    // Hanya id yang memang dikirim yang diterima. Tanpa saringan ini, id yang
+    // dikarang AI bisa menempelkan nilai pada soal yang tidak ikut dinilai.
+    if (!sah.has(id)) continue;
+    const skor = Number(baris.score);
+    if (!Number.isFinite(skor)) continue;
+    hasil[id] = {
+      score: Math.max(0, Math.min(100, Math.round(skor))),
+      feedback: typeof baris.feedback === 'string' ? baris.feedback : '',
+    };
+  }
+  return hasil;
+}
+
+/**
+ * Minta AI menilai SATU jawaban essay terhadap kunci referensi, dipakai
+ * TeamPage sebagai saran awal. Skor final tetap manual_score yang admin simpan
+ * sendiri. Melempar Error bila AI gagal; pemanggil wajib menangkapnya dan
+ * tetap membiarkan admin menilai manual - AI tidak boleh memblokir penilaian.
+ */
+export async function gradeEssayWithAI(
+  question: string, modelAnswer: string | null | undefined, studentAnswer: string,
+): Promise<{ score: number; feedback: string }> {
+  const prompt = `Kamu adalah asisten penilai kuis internal perusahaan. Nilai jawaban essay peserta berikut secara OBJEKTIF, dengan mempertimbangkan kesesuaian isi terhadap kunci referensi (bukan sekadar kemiripan kata demi kata — paham konsep yang sama tetap dinilai benar).
+
+SOAL:
+${question}
+
+${modelAnswer ? `KUNCI REFERENSI (acuan admin, bukan satu-satunya jawaban benar):\n${modelAnswer}\n` : '(Tidak ada kunci referensi — nilai berdasar kelayakan & kelengkapan jawaban secara umum.)\n'}
+JAWABAN PESERTA:
+${studentAnswer || '(kosong / tidak dijawab)'}
+
+Balas HANYA dengan JSON valid persis format ini, tanpa markdown, tanpa teks lain:
+{"score": <angka 0-100>, "feedback": "<1-2 kalimat alasan singkat dalam Bahasa Indonesia>"}`;
+
+  const raw = await generateWithGemini(prompt, null, 'penilai');
+  // Gemini kadang membungkus JSON dalam code fence ```json ... ``` walau
+  // sudah diminta "tanpa markdown" - dibersihkan dulu sebelum parse.
+  const cleaned = raw.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+  let parsed: { score?: unknown; feedback?: unknown };
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error('Keluaran AI tidak berupa JSON yang valid.');
+  }
+  const score = Number(parsed.score);
+  if (!Number.isFinite(score)) throw new Error('AI tidak mengembalikan skor yang valid.');
+  return {
+    score: Math.max(0, Math.min(100, Math.round(score))),
+    feedback: typeof parsed.feedback === 'string' ? parsed.feedback : '',
+  };
+}
+
+// Folder Tree
+
+export interface FolderNode {
+  name: string;
+  path: string;
+  children: Record<string, FolderNode>;
+  materials: Material[];
+}
+
+export function buildFolderTree(materials: Material[]): FolderNode {
+  const root: FolderNode = { name: 'root', path: '', children: {}, materials: [] };
+  materials.forEach(m => {
+    const rawPath = (m.folder_path ?? '').trim();
+    if (!rawPath) { root.materials.push(m); return; }
+    const parts = rawPath.split('/').map(p => p.trim()).filter(Boolean);
+    let node = root;
+    let currentPath = '';
+    parts.forEach(part => {
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+      if (!node.children[part]) {
+        node.children[part] = { name: part, path: currentPath, children: {}, materials: [] };
+      }
+      node = node.children[part];
+    });
+    node.materials.push(m);
+  });
+  return root;
+}
+
+export function countMaterials(node: FolderNode): number {
+  let count = node.materials.length;
+  for (const child of Object.values(node.children)) count += countMaterials(child);
+  return count;
+}
+
+// App Dialog
+
+export type DialogState = {
+  type: 'info' | 'success' | 'error' | 'warning' | 'confirm';
+  title?: string;
+  message: string;
+  confirmLabel?: string;
+  onConfirm?: () => void | Promise<void>;
+} | null;
+
+export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: () => void }) {
+  const [running, setRunning] = useState(false);
+  if (!dialog) return null;
+  const cfgMap = {
+    info:    { icon: 'ℹ️',  iconBg: 'bg-blue-50 border-blue-200',    btn: 'bg-blue-600 hover:bg-blue-700' },
+    success: { icon: '✅',  iconBg: 'bg-emerald-50 border-emerald-200', btn: 'bg-emerald-600 hover:bg-emerald-700' },
+    error:   { icon: '❌',  iconBg: 'bg-rose-50 border-rose-200',     btn: 'bg-rose-600 hover:bg-rose-700' },
+    warning: { icon: '⚠️', iconBg: 'bg-amber-50 border-amber-200',   btn: 'bg-amber-600 hover:bg-amber-700' },
+    confirm: { icon: '🗑️', iconBg: 'bg-slate-50 border-slate-200',   btn: 'bg-rose-600 hover:bg-rose-700' },
+  };
+  const cfg = cfgMap[dialog.type];
+  const isConfirm = dialog.type === 'confirm';
+  return (
+  <ModalPortal>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
+      style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
+      <div className="bg-white rounded-2xl shadow-2xl p-7 w-full max-w-sm border border-slate-200">
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className={`w-14 h-14 ${cfg.iconBg} border rounded-2xl flex items-center justify-center text-2xl mb-4`}>
+            <Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" />
+          </div>
+          {dialog.title && <h3 className="text-base font-bold text-slate-800 mb-2">{dialog.title}</h3>}
+          <p className="text-sm text-slate-600 leading-relaxed">{dialog.message}</p>
+        </div>
+        <div className={`flex gap-3 ${isConfirm ? '' : 'justify-center'}`}>
+          {isConfirm && (
+            <button onClick={onClose} disabled={running}
+              className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-50">
+              Batal
+            </button>
+          )}
+          <button
+            disabled={running}
+            onClick={async () => {
+              if (dialog.onConfirm) {
+                setRunning(true);
+                try { await dialog.onConfirm(); } catch (e) { console.error('onConfirm error:', e); }
+                setRunning(false);
+              }
+              onClose();
+            }}
+            className={`${isConfirm ? 'flex-1' : 'px-8'} py-2.5 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 ${cfg.btn}`}>
+            {running
+              ? <span className="flex items-center justify-center gap-2"><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Memproses...</span>
+              : isConfirm ? (dialog.confirmLabel ?? 'Konfirmasi') : 'OK'}
+          </button>
+        </div>
+      </div>
+    </div>
+  </ModalPortal>
+  );
+}
+
+// Icon SVGs
+
+export function IcoView({ size = 12 }: { size?: number }) {
+  return (
+    <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+    </svg>
+  );
+}
+
+export function IcoEdit({ size = 12 }: { size?: number }) {
+  return (
+    <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+    </svg>
+  );
+}
+
+export function IcoDelete({ size = 12 }: { size?: number }) {
+  return (
+    <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+      <line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+    </svg>
+  );
+}
+
+export function IcoOpen({ size = 12 }: { size?: number }) {
+  return (
+    <svg aria-hidden="true" focusable="false" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+    </svg>
+  );
+}
+
+// Action Button Components
+// Icon-only (w-7 h-7) when no children; text+icon when children provided (e.g. "Lihat Jawaban")
+
+const iconOnlyBase = 'inline-flex items-center justify-center w-7 h-7 rounded-lg border transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
+const textBase = 'inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-semibold rounded-lg border transition-all duration-150 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed';
+
+export function BtnView({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+  const hasText = !!children;
+  return (
+    <button aria-label={hasText ? undefined : 'Lihat'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Lihat'}
+      className={`${hasText ? textBase : iconOnlyBase} text-blue-600 bg-white border-slate-200 hover:bg-blue-50 hover:border-blue-200`}>
+      <IcoView size={hasText ? 12 : 13} />{hasText && children}
+    </button>
+  );
+}
+
+export function BtnEdit({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+  const hasText = !!children;
+  return (
+    <button data-tulis aria-label={hasText ? undefined : 'Edit'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Edit'}
+      className={`${hasText ? textBase : iconOnlyBase} text-emerald-700 bg-white border-slate-200 hover:bg-emerald-50 hover:border-emerald-200`}>
+      <IcoEdit size={hasText ? 12 : 13} />{hasText && children}
+    </button>
+  );
+}
+
+export function BtnDelete({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+  const hasText = !!children;
+  return (
+    <button data-tulis aria-label={hasText ? undefined : 'Hapus'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Hapus'}
+      className={`${hasText ? textBase : iconOnlyBase} text-rose-600 bg-white border-slate-200 hover:bg-rose-50 hover:border-rose-200`}>
+      <IcoDelete size={hasText ? 12 : 13} />{hasText && children}
+    </button>
+  );
+}
+
+export function BtnOpen({ onClick, children, disabled }: { onClick?: () => void; children?: React.ReactNode; disabled?: boolean }) {
+  const hasText = !!children;
+  return (
+    <button aria-label={hasText ? undefined : 'Buka'} onClick={onClick} disabled={disabled} title={hasText ? undefined : 'Buka'}
+      className={`${hasText ? textBase : iconOnlyBase} text-violet-600 bg-white border-slate-200 hover:bg-violet-50 hover:border-violet-200`}>
+      <IcoOpen size={hasText ? 12 : 13} />{hasText && children}
+    </button>
+  );
+}
+
+export { supabase };

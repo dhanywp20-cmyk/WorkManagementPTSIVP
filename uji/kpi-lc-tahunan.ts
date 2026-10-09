@@ -12,7 +12,7 @@
  *   npx tsx uji/kpi-lc-tahunan.ts
  */
 import { rekapLCTahunan, type SesiLC, type AttemptLC } from '../lib/kpi-lc-tahunan';
-import { hitungSkorKPI, DEFAULT_KPI_SETTINGS, type KPIMember } from '../app/kpi-team/_components/shared';
+import { hitungSkorKPI, DEFAULT_KPI_SETTINGS, type KPIMember } from '../app/(portal)/kpi-team/_components/shared';
 
 let lulus = 0, gagal = 0;
 function ok(nama: string, syarat: boolean, ket = '') {

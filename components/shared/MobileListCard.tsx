@@ -72,7 +72,7 @@ export function MobileListCard({
             {titlePrefix}
             <p className="font-bold text-[13px] text-gray-800 leading-tight break-words">{title}</p>
           </div>
-          {meta && <div className="text-[10.5px] text-gray-500 mt-0.5 space-y-0">{meta}</div>}
+          {meta && <div className="text-[11px] text-gray-500 mt-0.5 space-y-0">{meta}</div>}
         </div>
         {badges && <div className="flex flex-col items-end gap-1 shrink-0">{badges}</div>}
       </div>
@@ -102,7 +102,7 @@ export function MobileCardBadge({ children, className, style, title }: {
   children: React.ReactNode; className?: string; style?: React.CSSProperties; title?: string;
 }) {
   return (
-    <span className={`px-2 py-0.5 text-[10px] font-bold rounded whitespace-nowrap ${className ?? ''}`} style={style} title={title}>
+    <span className={`px-2 py-0.5 text-[11px] font-bold rounded whitespace-nowrap ${className ?? ''}`} style={style} title={title}>
       {children}
     </span>
   );

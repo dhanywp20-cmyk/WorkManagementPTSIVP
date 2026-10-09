@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic';
  * tim lapangan (multipart: itemId, full, thumb). Hanya ke item milik checklist
  * dari token itu; ukuran & jenis berkas diperiksa di simpanFoto.
  */
-export async function POST(request: NextRequest, { params }: { params: { token: string } }) {
+export async function POST(request: NextRequest, ctx: { params: Promise<{ token: string }> }) {
+  const params = await ctx.params;
   const ketemu = await cariChecklistShare((params.token ?? '').trim());
   if (!ketemu) return galat('Link tidak ditemukan atau sudah dinonaktifkan.', 404);
   let form: FormData;

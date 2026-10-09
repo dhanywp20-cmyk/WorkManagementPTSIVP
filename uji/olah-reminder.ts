@@ -7,8 +7,8 @@
  *
  * Jalankan: npx tsx uji/olah-reminder.ts
  */
-import { kelompokkanReminder, pieKategori, pieDivisiSales, pieTeamPts, pieProduk } from '../app/reminder-schedule/_components/olah-data';
-import { PIE_COLORS } from '../app/reminder-schedule/_components/shared';
+import { kelompokkanReminder, pieKategori, pieDivisiSales, pieTeamPts, pieProduk } from '../app/(portal)/reminder-schedule/_components/olah-data';
+import { PIE_COLORS } from '../app/(portal)/reminder-schedule/_components/shared';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {

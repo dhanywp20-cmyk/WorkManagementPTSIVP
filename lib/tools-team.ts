@@ -7,7 +7,7 @@
  * sama. Tanpa React / jaringan supaya aman diimpor dari mana saja.
  */
 import type { ModulLED, Hardware, BrandLED } from '@/lib/av-hitung';
-import { bersihkanIsiRak } from '@/app/tools-team/_components/desain3d/inti/rak';
+import { bersihkanIsiRak } from '@/app/(portal)/tools-team/_components/desain3d/inti/rak';
 
 export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[]; /** Daftar brand modul (boleh kosong untuk data lama). */ brand?: BrandLED[] }
 
@@ -131,13 +131,14 @@ export interface RingkasanDesain {
   jumlah: number;
 }
 
-const URUT_KATEGORI = ['Display', 'Kamera & konferensi', 'Audio & kontrol', 'Furnitur', 'Lainnya'];
+const URUT_KATEGORI = ['Display', 'Kamera & konferensi', 'Audio & kontrol', 'Perangkat & share nirkabel', 'Furnitur', 'Lainnya'];
 export function kategoriBenda(jenis: string): string {
   if (['videowall', 'led', 'layar', 'ifp', 'tv', 'proyektor'].includes(jenis)) return 'Display';
   if (jenis === 'kamera' || jenis === 'lift') return 'Kamera & konferensi';
   if (['speaker', 'speaker-plafon', 'mic', 'touchpanel', 'rak'].includes(jenis)) return 'Audio & kontrol';
   if (['meja', 'kursi', 'tribun', 'panggung'].includes(jenis)) return 'Furnitur';
   if (jenis === 'lampu') return 'Interior & pencahayaan';
+  if (jenis === 'perangkat') return 'Perangkat & share nirkabel';
   if (jenis === 'bidang') return 'Display';
   return 'Lainnya';
 }
@@ -235,7 +236,7 @@ export const MAKS_BYTE_PRODUK = 6_000;
 
 /** Jenis benda yang boleh dijadikan template ('model' = GLB impor tidak, geometrinya hanya di memori). */
 export const JENIS_PRODUK = ['videowall', 'led', 'layar', 'ifp', 'tv', 'meja', 'kursi', 'speaker', 'speaker-plafon', 'mic',
-  'touchpanel', 'kamera', 'proyektor', 'rak', 'lift', 'tribun', 'panggung', 'bidang', 'lampu'] as const;
+  'touchpanel', 'kamera', 'proyektor', 'rak', 'lift', 'tribun', 'panggung', 'bidang', 'lampu', 'perangkat'] as const;
 
 export interface ProdukTim {
   id: string; label: string; ket: string; jenis: (typeof JENIS_PRODUK)[number];
@@ -249,6 +250,7 @@ const ENUM_PRODUK: Record<string, readonly string[]> = {
   mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas', 'dosen', 'podium', 'kredensa', 'operator'], bentukBidang: ['datar', 'lengkung', 'cembung'], finish: ['walnut', 'oak', 'putih'],
   tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati', 'cctv', 'dashboard', 'campuran', 'desktop'], tipeRak: ['kaca', 'tertutup', 'open'], tipeLampu: ['downlight', 'spot', 'panel', 'linear', 'gantung'],
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
+  tipePerangkat: ['pc', 'laptop', 'dongle', 'hp', 'tablet'],
 };
 /** Angka yang boleh ada di template beserta batasnya. */
 const ANGKA_PRODUK: Record<string, [number, number]> = {
@@ -308,3 +310,14 @@ export function bacaDaftarProduk(v: unknown): ProdukTim[] {
     return [{ ...p.data, id: r.id, oleh: String(r.oleh ?? ''), olehId: String(r.olehId ?? ''), dibuat: String(r.dibuat ?? '') }];
   });
 }
+
+/**
+ * Id kategori ruangan Desain 3D yang boleh punya template default dari Admin
+ * (/api/tools-team/template-kategori). HARUS sama dengan KATEGORI_RUANG di
+ * desain3d/inti/template.ts - dijaga uji/template-kategori.ts.
+ */
+export const ID_KATEGORI_RUANG = [
+  'meeting', 'auditorium', 'control-room', 'kelas', 'mapping-lengkung', 'mapping-cembung', 'mapping-objek', 'immersive',
+] as const;
+export const kategoriRuangSah = (x: unknown): x is (typeof ID_KATEGORI_RUANG)[number] =>
+  typeof x === 'string' && (ID_KATEGORI_RUANG as readonly string[]).includes(x);

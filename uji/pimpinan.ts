@@ -4,7 +4,7 @@
  * Jalankan: npx tsx uji/pimpinan.ts
  */
 import { isPimpinan, muatIdPimpinan } from '../lib/pimpinan';
-import { canAccessAnalytics, canSeeTeamMonitoring, hasMenu } from '../app/dashboard/_components/widgets/permissions';
+import { canAccessAnalytics, canSeeTeamMonitoring, hasMenu } from '../app/(portal)/dashboard/_components/widgets/permissions';
 import { akunAdmin, akunBacaSemua, akunLihatSemua } from '../lib/checklist-server';
 
 let lulus = 0, gagal = 0;

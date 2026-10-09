@@ -6,7 +6,7 @@
  * Jalankan: npx tsx uji/desain-request.ts
  */
 import { periksaDesain, ringkasanDesain, bolehUbahTautan, statusRuangan, bersihkanGambar, kategoriBenda, periksaIsianLED, bersihkanRingkasanLED, bersihkanReferensiLED, urlGambarDesain, MAKS_BYTE_GAMBAR_HD } from '../lib/tools-team';
-import { htmlSeksiDesain3D, ukuranRuang, type TautanDesain3D } from '../app/form-require-project/_components/desain-3d-request';
+import { htmlSeksiDesain3D, ukuranRuang, type TautanDesain3D } from '../app/(portal)/form-require-project/_components/desain-3d-request';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean, catatan = '') {

@@ -61,7 +61,8 @@ async function catat(db: ReturnType<typeof getAdminClient>, r: Req, u: { id: str
   ]).catch(() => { /* catatan tidak boleh menggagalkan aksi utama */ });
 }
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const m = await muatRequest(req, params.id);
   if ('galat' in m) return m.galat;
   const { user, request } = m;
@@ -74,7 +75,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   return NextResponse.json({ ok: true, tautan: data ?? [], izin });
 }
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const m = await muatRequest(req, params.id);
   if ('galat' in m) return m.galat;
   const { user, request } = m;
@@ -120,7 +122,8 @@ async function tautanBolehDiubah(db: ReturnType<typeof getAdminClient>, request:
   return { t, sumber };
 }
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const m = await muatRequest(req, params.id);
   if ('galat' in m) return m.galat;
   const { user, request } = m;
@@ -147,7 +150,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   return NextResponse.json({ ok: true, versi: sumber.versi });
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+  const params = await ctx.params;
   const m = await muatRequest(req, params.id);
   if ('galat' in m) return m.galat;
   const { user, request } = m;

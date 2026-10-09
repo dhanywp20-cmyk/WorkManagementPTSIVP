@@ -1,9 +1,9 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { PwaBootstrap, PembaruanAndroid } from '@/components/shared';
+import { PwaBootstrap, PembaruanAndroid, PenjagaGalatTulis, PenjagaDialog } from '@/components/shared';
 
 export const metadata: Metadata = {
-  title: 'Dashboard PTS IVP - IndoVisual',
+  title: { default: 'Dashboard PTS IVP - IndoVisual', template: '%s · PTS IVP' },
   description: 'Portal Terpadu Support IndoVisual',
   // TIDAK perlu field `manifest` di sini - app/manifest.ts (konvensi khusus
   // Next.js App Router) sudah otomatis disajikan di /manifest.webmanifest
@@ -41,6 +41,8 @@ export default function RootLayout({
     <html lang="id">
       <body className="antialiased">
         <PwaBootstrap />
+        <PenjagaGalatTulis />
+        <PenjagaDialog />
         <PembaruanAndroid />
         {children}
         {/*

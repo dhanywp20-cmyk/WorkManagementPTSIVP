@@ -1,4 +1,4 @@
-import { calculateStandardScheme } from '@/app/incentive-pts/_components/calc';
+import { calculateStandardScheme } from '@/app/(portal)/incentive-pts/_components/calc';
 import { SKEMA_BAWAAN, type SkemaInsentif } from '@/lib/incentive-scheme';
 
 const POOL = 1_000_000;

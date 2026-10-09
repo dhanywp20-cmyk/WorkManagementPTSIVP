@@ -7,10 +7,10 @@
  */
 import {
   adaTransparansi, buatTopeng, bersihkanTopeng, konturDariPiksel, konturSah, luasPoligon, sederhanakan, telusuriTepi, warnaTepi,
-} from '../app/tools-team/_components/desain3d/impor/kontur';
-import { formatUtama, tebakSatuan, ukuranModel } from '../app/tools-team/_components/desain3d/impor/berkas3d';
-import { buatModel } from '../app/tools-team/_components/desain3d/bangun';
-import { bendaBaru, tandaBentuk, tinggiAlasDi, LABEL_BENTUK_OBJEK, type Benda, type BentukObjek } from '../app/tools-team/_components/desain3d/inti';
+} from '../app/(portal)/tools-team/_components/desain3d/impor/kontur';
+import { formatUtama, tebakSatuan, ukuranModel } from '../app/(portal)/tools-team/_components/desain3d/impor/berkas3d';
+import { buatModel } from '../app/(portal)/tools-team/_components/desain3d/bangun';
+import { bendaBaru, tandaBentuk, tinggiAlasDi, LABEL_BENTUK_OBJEK, type Benda, type BentukObjek } from '../app/(portal)/tools-team/_components/desain3d/inti';
 import * as THREE from 'three';
 
 let lulus = 0, gagal = 0;

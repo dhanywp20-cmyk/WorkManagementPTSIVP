@@ -487,3 +487,14 @@ html {
    diberi atribut data-tulis; di dalam wadah [data-hanya-lihat] ia disembunyikan. Penjaga sebenarnya
    tetap kebijakan RLS (migrasi 034), ini hanya agar tidak menampilkan tombol yang pasti ditolak. */
 [data-hanya-lihat] [data-tulis] { display: none !important; }
+
+/* ── Area modul di dalam KerangkaPortal (app/(portal)) ──
+   Modul dulu hidup di iframe, jadi h-screen/min-h-screen-nya berarti "setinggi iframe". Kini modul
+   dirender langsung di area isi portal: ukuran itu dibaca sebagai setinggi area tersebut, bukan
+   setinggi seluruh layar (yang akan menembus header & menu bawah). Modal yang di-portal ke <body>
+   tidak terpengaruh. --tinggi-isi diisi KerangkaPortal untuk calc(...) yang dulu memakai 100vh. */
+.isi-portal .h-screen { height: 100%; }
+.isi-portal .min-h-screen { min-height: 100%; }
+/* Materi Learning Center: tinggi = area isi dikurangi header+tab LC (dulu calc(100vh-…) di iframe). */
+.tinggi-materi-lc { height: calc(var(--tinggi-isi, 100vh) - 112px); }
+@media (min-width: 640px) { .tinggi-materi-lc { height: calc(var(--tinggi-isi, 100vh) - 60px); } }

@@ -14,7 +14,8 @@ export const revalidate = 0;
  *     sumber?: 'teks'|'excel', draft?            (isi = impor)
  *     salinDari?: checklistId }                  (isi = salin - centang dikosongkan)
  */
-export async function POST(request: NextRequest, { params }: { params: { proyekId: string } }) {
+export async function POST(request: NextRequest, ctx: { params: Promise<{ proyekId: string }> }) {
+  const params = await ctx.params;
   const s = await ambilAkun(request);
   if ('galat' in s) return s.galat;
   if (!akunAdmin(s.akun)) return galat('Hanya admin yang bisa membuat checklist.', 403);

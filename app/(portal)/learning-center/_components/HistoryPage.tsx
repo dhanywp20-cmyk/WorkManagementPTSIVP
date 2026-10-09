@@ -1,0 +1,107 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { ListEmptyState } from '@/components/shared';
+import { supabase, User, fmtDate, SearchInput, BtnView, GradingStatusBadge } from './shared';
+import { UserAnswerReview } from './TeamPage';
+import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { bolehSertifikat } from '@/lib/sertifikat';
+import { cetakSertifikat, unduhSertifikat } from './sertifikat';
+
+export function HistoryPage({ user }: { user: User }) {
+  const [history, setHistory] = useState<any[]>([]);
+  const [viewingAttempt, setViewingAttempt] = useState<any | null>(null);
+  const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    supabase.from('lc_quiz_attempts')
+      .select('*, lc_quiz_sessions(session_name, passing_grade, materi_name, question_ids)')
+      .eq('user_id', user.id).eq('is_submitted', true)
+      .order('submitted_at', { ascending: false })
+      .then(({ data }: { data: any[] | null }) => setHistory(data ?? []));
+  }, [user.id]);
+
+  if (viewingAttempt) {
+    //  autoOpenAttemptId: lihat catatan yang sama di ScorePage.tsx - tanpa
+    //  ini "Lihat Jawaban" pada satu baris membuka LIST attempt dari awal,
+    //  dan baris yang sama harus diklik SEKALI LAGI di dalamnya.
+    return <UserAnswerReview user={user} onBack={() => setViewingAttempt(null)} isAdminView={false} autoOpenAttemptId={viewingAttempt.id} />;
+  }
+
+  const filtered = search
+    ? history.filter(a =>
+        (a.lc_quiz_sessions?.session_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+        (a.lc_quiz_sessions?.materi_name ?? '').toLowerCase().includes(search.toLowerCase())
+      )
+    : history;
+
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-8 py-3 sm:py-5 border-b border-slate-200 sticky top-0 z-10"
+        style={{ background: '#ffffff' }}>
+        <div>
+          <h1 className="text-base sm:text-xl font-bold text-slate-800 tracking-tight"><IkonTeks nama="🕐" />Riwayat Quiz</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-0.5">Semua quiz yang pernah kamu ikuti</p>
+        </div>
+        <SearchInput value={search} onChange={setSearch} placeholder="Cari sesi atau materi..." />
+      </div>
+      <div className="p-4 sm:p-8">
+        <div className="space-y-4">
+          {filtered.length === 0 && (
+            <div className="flex justify-center py-4">
+              <div className="rounded-2xl w-full"
+                style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', boxShadow: '0 4px 24px rgba(0,0,0,0.10)' }}>
+                <ListEmptyState
+                  adaFilterAktif={search.trim() !== ''}
+                  onReset={() => setSearch('')}
+                  icon="🕐"
+                  judulKosong="Belum ada riwayat quiz"
+                  deskripsiKosong="Selesaikan quiz untuk melihat riwayatnya di sini."
+                />
+              </div>
+            </div>
+          )}
+          {filtered.map(a => (
+            <div key={a.id} className="stagger-item rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5"
+              style={{ background: '#ffffff' }}>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.grading_status === 'pending_review' ? 'bg-gradient-to-br from-amber-400 to-amber-600' : a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
+                {a.grading_status === 'pending_review' ? '⏳' : (a.score?.toFixed(0) ?? '—')}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-slate-800">{a.lc_quiz_sessions?.session_name ?? '-'}</h4>
+                <p className="text-sm text-slate-500">{a.lc_quiz_sessions?.materi_name ?? '-'}</p>
+                <div className="flex gap-3 mt-1.5 text-xs text-slate-500">
+                  {a.grading_status === 'pending_review' ? (
+                    <span><Ikon nama="📝" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_questions} soal essay dikirim</span>
+                  ) : (
+                    <span><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /> {a.total_correct}/{a.total_questions} benar</span>
+                  )}
+                  <span><IkonTeks nama="🎯" />Passing: {a.lc_quiz_sessions?.passing_grade ?? 70}%</span>
+                  {a.time_taken_sec && <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0 flex items-center gap-3">
+                <div>
+                  <GradingStatusBadge attempt={a} />
+                  <p className="text-xs text-slate-500 mt-1.5">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>
+                </div>
+                {bolehSertifikat(a) && (() => {
+                  const d = { nama: user.full_name, sesi: a.lc_quiz_sessions?.session_name ?? '-', materi: a.lc_quiz_sessions?.materi_name, passing: a.lc_quiz_sessions?.passing_grade, attempt: a };
+                  return (
+                    <div className="flex gap-1">
+                      <button type="button" title="Unduh sertifikat (PNG)" aria-label="Unduh sertifikat" onClick={() => void unduhSertifikat(d)}
+                        className="w-9 h-9 grid place-items-center rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100"><Ikon nama="🎓" ukuran={17} /></button>
+                      <button type="button" title="Cetak sertifikat" aria-label="Cetak sertifikat" onClick={() => cetakSertifikat(d)}
+                        className="w-9 h-9 grid place-items-center rounded-lg border border-slate-200 bg-white hover:bg-slate-50"><Ikon nama="🖨" ukuran={16} /></button>
+                    </div>
+                  );
+                })()}
+                <BtnView onClick={() => setViewingAttempt(a)}>Lihat Jawaban</BtnView>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
