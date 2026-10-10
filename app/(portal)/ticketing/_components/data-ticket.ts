@@ -273,55 +273,80 @@ export async function ambilTiketUntuk(
   } else {
     const { data: ticketsData } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
       .order("created_at", { ascending: false });
-    let mergedTickets: Ticket[] = ticketsData || [];
-    // Visibility (catatan spec): anggota tim biasa (bukan admin/superadmin,
-    // bukan Manager) TIDAK lihat ticket yg masih pending approval / belum
-    // di-assign. Yg di-route ke Supervisor hanya tampil ke Supervisor ybs.
-    // Admin & Manager tetap lihat semua.
-    const roleLc2 = (activeUser?.role ?? "").toLowerCase();
-    const isAdminUser2 = roleLc2 === "admin" || roleLc2 === "superadmin";
-    const isManagerUser2 = hasFullAccess(activeUser);
-    if (!isAdminUser2 && !isManagerUser2) {
-      mergedTickets = mergedTickets.filter((t) =>
-        t.status !== "Waiting Approval" &&
-        !(t.routing_status === "supervisor_assign" && t.assigned_supervisor_id !== activeUser?.id)
-      );
-    }
-    try {
-      // Ambil HANYA log milik ticket yang benar-benar tampil. Menarik
-      // seluruh activity_logs lalu menyaringnya di browser berarti log
-      // ticket organisasi lain ikut terunduh, dan ukurannya tumbuh terus.
-      const idTampil = mergedTickets.map((t: Ticket) => t.id).filter(Boolean);
-      const svcLogs: ActivityLog[] = [];
-      for (let i = 0; i < idTampil.length; i += 100) {
-        const { data } = await supabaseServices.from("activity_logs")
-          //  Ringkas juga: kueri ini ikut jalan pada SETIAP polling, jadi
-          //  kolom berat di sini sama mahalnya dengan yang di basis PTS.
-          .select(KOLOM_LOG_RINGKAS)
-          //  TANPA batas rentang: yang disaring di sini LOG, bukan tiket.
-          //  Log ditulis SESUDAH tiketnya dibuat - kadang jauh sesudahnya -
-          //  jadi memakai jendela tanggal milik tiket akan membuang catatan
-          //  terbaru pada tiket lama, tepat pada saat seseorang membuka
-          //  tahun lampau untuk membacanya. Pembatasnya sudah ticket_id:
-          //  daftarnya cuma berisi tiket yang memang sedang ditampilkan.
-          .in("ticket_id", idTampil.slice(i, i + 100))
-          .order("created_at", { ascending: false });
-        if (data) svcLogs.push(...(data as ActivityLog[]));
-      }
-      if (svcLogs.length > 0) {
-        mergedTickets = mergedTickets.map((ticket: Ticket) => {
-          const svcTicketLogs = svcLogs.filter((l: ActivityLog) => l.ticket_id === ticket.id);
-          if (svcTicketLogs.length === 0) return ticket;
-          const existingLogs = ticket.activity_logs || [];
-          const allLogs = [...existingLogs, ...svcTicketLogs].reduce((acc: ActivityLog[], log: ActivityLog) => {
-            if (!acc.find((l) => l.id === log.id)) acc.push(log);
-            return acc;
-          }, []);
-          allLogs.sort((a: ActivityLog, b: ActivityLog) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-          return { ...ticket, activity_logs: allLogs };
-        });
-      }
-    } catch { }
+    const mergedTickets = await gabungLogServices(saringTimBiasa(activeUser, ticketsData || []));
     return { tickets: mergedTickets, periksaPilihan: false };
   }
+}
+
+/**
+ * Visibility (catatan spec): anggota tim biasa (bukan admin/superadmin, bukan Manager) TIDAK lihat
+ * ticket yg masih pending approval / belum di-assign. Yg di-route ke Supervisor hanya tampil ke
+ * Supervisor ybs. Admin & Manager tetap lihat semua.
+ */
+function saringTimBiasa(activeUser: User | null | undefined, tickets: Ticket[]): Ticket[] {
+  const roleLc2 = (activeUser?.role ?? "").toLowerCase();
+  const isAdminUser2 = roleLc2 === "admin" || roleLc2 === "superadmin";
+  const isManagerUser2 = hasFullAccess(activeUser);
+  if (isAdminUser2 || isManagerUser2) return tickets;
+  return tickets.filter((t) =>
+    t.status !== "Waiting Approval" &&
+    !(t.routing_status === "supervisor_assign" && t.assigned_supervisor_id !== activeUser?.id)
+  );
+}
+
+/** Gabungkan log dari basis Services ke ticket yang tampil (cabang non-guest). */
+async function gabungLogServices(tickets: Ticket[]): Promise<Ticket[]> {
+  try {
+    // Ambil HANYA log milik ticket yang benar-benar tampil. Menarik
+    // seluruh activity_logs lalu menyaringnya di browser berarti log
+    // ticket organisasi lain ikut terunduh, dan ukurannya tumbuh terus.
+    const idTampil = tickets.map((t: Ticket) => t.id).filter(Boolean);
+    const svcLogs: ActivityLog[] = [];
+    for (let i = 0; i < idTampil.length; i += 100) {
+      const { data } = await supabaseServices.from("activity_logs")
+        //  Ringkas juga: kueri ini ikut jalan pada SETIAP polling, jadi
+        //  kolom berat di sini sama mahalnya dengan yang di basis PTS.
+        .select(KOLOM_LOG_RINGKAS)
+        //  TANPA batas rentang: yang disaring di sini LOG, bukan tiket.
+        //  Log ditulis SESUDAH tiketnya dibuat - kadang jauh sesudahnya -
+        //  jadi memakai jendela tanggal milik tiket akan membuang catatan
+        //  terbaru pada tiket lama, tepat pada saat seseorang membuka
+        //  tahun lampau untuk membacanya. Pembatasnya sudah ticket_id:
+        //  daftarnya cuma berisi tiket yang memang sedang ditampilkan.
+        .in("ticket_id", idTampil.slice(i, i + 100))
+        .order("created_at", { ascending: false });
+      if (data) svcLogs.push(...(data as ActivityLog[]));
+    }
+    if (svcLogs.length === 0) return tickets;
+    return tickets.map((ticket: Ticket) => {
+      const svcTicketLogs = svcLogs.filter((l: ActivityLog) => l.ticket_id === ticket.id);
+      if (svcTicketLogs.length === 0) return ticket;
+      const existingLogs = ticket.activity_logs || [];
+      const allLogs = [...existingLogs, ...svcTicketLogs].reduce((acc: ActivityLog[], log: ActivityLog) => {
+        if (!acc.find((l) => l.id === log.id)) acc.push(log);
+        return acc;
+      }, []);
+      allLogs.sort((a: ActivityLog, b: ActivityLog) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      return { ...ticket, activity_logs: allLogs };
+    });
+  } catch { return tickets; }
+}
+
+/**
+ * Muat ulang HANYA ticket `ids` - dipakai saat realtime melaporkan perubahan pada ticket yang SUDAH
+ * ada di daftar. Dulu setiap perubahan (satu ticket + satu log = 2-4 event) menarik ulang seluruh
+ * daftar beserta semua lognya di setiap tab yang terbuka; itu sumber terbesar beban basis data.
+ *
+ * Aturan tampil sama dengan ambilTiketUntuk: cabang non-guest disaring saringTimBiasa + log
+ * Services; ticket guest tidak berpindah pemilik saat diubah. Ticket yang tidak kembali (dihapus,
+ * atau kini tidak boleh dilihat) tidak ada di hasil - caller membuangnya dari daftar.
+ * Galat dilempar supaya caller jatuh ke muat ulang penuh.
+ */
+export async function ambilTiketTertentu(activeUser: User | null | undefined, ids: string[]): Promise<Ticket[]> {
+  if (!ids.length) return [];
+  const { data, error } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`).in("id", ids);
+  if (error) throw error;
+  const hasil: Ticket[] = data ?? [];
+  if (activeUser?.role === "guest" && !isPimpinan(activeUser)) return hasil;
+  return gabungLogServices(saringTimBiasa(activeUser, hasil));
 }
