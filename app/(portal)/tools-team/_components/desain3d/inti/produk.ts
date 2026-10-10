@@ -4,6 +4,7 @@
  */
 import { ukuranDariDiagonal } from '@/lib/av-hitung';
 import type { Benda, ModelVW, PanelVW, RasioLayar } from './tipe';
+import { terapkanUkuranTeks } from './teks';
 
 // ── Katalog produk ─────────────────────────────────────────────────────────
 
@@ -72,6 +73,7 @@ export function terapkanUkuran(b: Benda): Benda {
       const u = ukuranBidang(b);
       return { ...b, w: u.w, d: u.d };
     }
+    case 'teks': return terapkanUkuranTeks(b);
     default: return b;
   }
 }

@@ -16,16 +16,18 @@ import { RUANG_AWAL, type KeadaanDesain } from '../useKeadaanDesain';
 import type { IsiTemplateKategori, useAksiDesain } from '../aksi/useAksiDesain';
 import type { useSimpanDesain } from './useSimpanDesain';
 import { isiDariIngatan, KATEGORI_AWAL, tulisIngatanAwal } from './templateAwal';
+import { daftarkanTekstur, teksturUntukSimpan } from './teksturRuang';
+import { muatGambarLayar } from './aset';
 
 const API = '/api/tools-team/template-kategori';
 /** Batas tunggu lapisan "Memuat template" saat server lambat - sesudahnya kanvas dibuka apa adanya. */
 const BATAS_TUNGGU_MS = 12000;
 
 export interface InfoTemplateKategori { kategori: KategoriRuang; nama: string; ditetapkan_oleh_nama: string | null; updated_at: string }
-type BarisTemplate = InfoTemplateKategori & { data: { ruang: IsiTemplateKategori['ruang']; benda: IsiTemplateKategori['benda']; layar?: Record<string, string> } };
+type BarisTemplate = InfoTemplateKategori & { data: { ruang: IsiTemplateKategori['ruang']; benda: IsiTemplateKategori['benda']; layar?: Record<string, string>; tekstur?: Record<string, string> } };
 
 const judulKategori = (id: KategoriRuang) => KATEGORI_RUANG.find(k => k.id === id)?.judul ?? id;
-const isiDari = (t: BarisTemplate): IsiTemplateKategori => ({ nama: t.nama, ruang: t.data.ruang, benda: t.data.benda, layar: t.data.layar });
+const isiDari = (t: BarisTemplate): IsiTemplateKategori => ({ nama: t.nama, ruang: t.data.ruang, benda: t.data.benda, layar: t.data.layar, tekstur: t.data.tekstur });
 
 export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof useAksiDesain>, simpan: ReturnType<typeof useSimpanDesain>) {
   const { asal, benda, bendaRef, gambarLayar, hanyaLihat, ingatanAwal, mesin, namaDesain, potret, riwayat, ruang, ruangRef, setAsal, setBenda,
@@ -65,6 +67,9 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
   const mulaiRiwayat = useRef(false);
   /** Gambar konten layar template awal yang menunggu mesin 3D siap (tekstur butuh THREE). */
   const layarTertunda = useRef<Record<string, string> | null>(isiDariIngatan(ingatanAwal)?.layar ?? null);
+  //  Kanvas awal dari ingatan perangkat: gambar tekstur lantai / dinding-nya ikut didaftarkan.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { daftarkanTekstur(K, isiDariIngatan(ingatanAwal)?.tekstur); }, []);
   const belumDiubah = () => bendaRef.current === bendaAwal.current && asalRef.current === asalAwal.current;
 
   const terapkanAwal = (t: BarisTemplate | null) => {
@@ -127,7 +132,7 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
     if (!siap || !m || !layar) return;
     layarTertunda.current = null;
     for (const [idL, url] of Object.entries(layar)) {
-      new m.THREE.TextureLoader().load(url, tex => { tex.colorSpace = m.THREE.SRGBColorSpace; gambarLayar.current.set(idL, tex); setVersiGambar(v => v + 1); });
+      muatGambarLayar(m, idL, url, gambarLayar.current, () => setVersiGambar(v => v + 1));
     }
   }, [siap, menungguAwal, mesin, gambarLayar, setVersiGambar]);
 
@@ -178,7 +183,8 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
     try {
       const layar = simpan.gambarLayarServer(benda);
       const nama = namaDesain.replace(/\s*\(salinan\)\s*$/i, '').trim() || judulKategori(id);
-      const data = { ruang, benda: simpan.bendaBersih(benda, new Set(Object.keys(layar))), ...(Object.keys(layar).length ? { layar } : {}) };
+      const tekstur = teksturUntukSimpan(K, ruang);
+      const data = { ruang, benda: simpan.bendaBersih(benda, new Set(Object.keys(layar))), ...(Object.keys(layar).length ? { layar } : {}), ...(Object.keys(tekstur).length ? { tekstur } : {}) };
       const r = await fetch(API, {
         method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ kategori: id, nama, data }),

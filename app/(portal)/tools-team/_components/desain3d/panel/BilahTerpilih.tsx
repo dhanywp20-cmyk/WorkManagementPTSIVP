@@ -1,12 +1,11 @@
 'use client';
-/** Bilah benda terpilih: geser / putar, tempel ke dinding. */
-import { Segmen } from '../../bersama/ui';
+/** Bilah benda terpilih: nama & tempel ke dinding (geser / putar ada di bilah kiri kanvas). */
 import { BISA_TEMPEL } from '../inti';
 import type { Sisi } from '../mesin/tipe';
 import type { AlatDesain } from './alat';
 
 export function BilahTerpilih({ a }: { a: AlatDesain }) {
-  const { modeGizmo, pilihLain, setModeGizmo, terpilih } = a.K;
+  const { pilihLain, terpilih } = a.K;
   const { tempel } = a.aksi;
   return (
     <>
@@ -14,7 +13,6 @@ export function BilahTerpilih({ a }: { a: AlatDesain }) {
       {terpilih ? (
         <div className="flex items-center gap-2 px-3 py-2 border-t border-slate-100 flex-wrap bg-blue-50/50">
           <p className="text-[13px] font-bold text-slate-900 mr-1 truncate max-w-[200px]">{pilihLain.length ? `${pilihLain.length + 1} benda` : terpilih.nama}</p>
-          <Segmen nilai={modeGizmo} onUbah={setModeGizmo} opsi={[{ v: 'translate', l: 'Geser' }, { v: 'rotate', l: 'Putar' }]} />
           {BISA_TEMPEL.includes(terpilih.jenis) && (
             <div className="flex items-center gap-1" role="group" aria-label="Tempel ke dinding">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Dinding</span>

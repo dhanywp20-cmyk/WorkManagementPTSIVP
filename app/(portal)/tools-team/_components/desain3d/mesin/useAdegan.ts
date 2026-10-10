@@ -11,19 +11,22 @@ import type { KeadaanDesain } from '../useKeadaanDesain';
 import { useEffect } from 'react';
 import type * as T from 'three';
 import { bangunRuangan } from '../bangun/ruangan';
+import { aturSnapGizmo, gambarGridSnap, gambarPenggaris } from './presisi';
+import { penggarisSah } from '../inti';
 import { gambarAlatBantu } from './alatBantu';
 import { gambarBayangan } from './bayangan';
 
 
 export function useAdegan(K: KeadaanDesain) {
-  const { pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
+  const { snap, titikUkur, setRuang, gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
   // ── Ruangan: lantai bertekstur + 4 dinding per ruang ──
   //  Dinding hanya terlihat dari sisi dalam (FrontSide), jadi dinding yang
   //  membelakangi kamera otomatis "tembus" seperti denah rumah boneka.
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    bangunRuangan(m.THREE, m.grupRuang, ruang);
-  }, [ruang, siap]);
+    bangunRuangan(m.THREE, m.grupRuang, ruang, k => gambarTekstur.current.get(k));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ruang, siap, versiTekstur]);
 
   // ── Benda: bangun ulang hanya yang bentuknya berubah ──
   useEffect(() => {
@@ -85,7 +88,18 @@ export function useAdegan(K: KeadaanDesain) {
       m.gizmo.setMode(modeGizmo);
       m.gizmo.showX = modeGizmo === 'translate'; m.gizmo.showZ = modeGizmo === 'translate'; m.gizmo.showY = true;
     } else m.gizmo.detach();
-  }, [pilih, modeGizmo, siap, tampilan, benda]);
+    aturSnapGizmo(m, snap);
+  }, [pilih, modeGizmo, siap, tampilan, benda, snap]);
+
+  // ── Presisi: grid lantai saat snap aktif, garis penggaris ──
+  useEffect(() => {
+    const m = mesin.current; if (!m || !siap) return;
+    gambarGridSnap(m, kotakRuang, snap);
+  }, [kotakRuang, snap, siap, mesin]);
+  useEffect(() => {
+    const m = mesin.current; if (!m || !siap) return;
+    gambarPenggaris(m, penggarisSah(ruang.penggaris), titikUkur, id => setRuang(r => ({ ...r, penggaris: (r.penggaris ?? []).filter(g => g.id !== id) })));
+  }, [ruang.penggaris, titikUkur, siap, mesin, setRuang]);
 
   // ── Alat bantu: label ukuran, garis jarak terjauh, kerucut sudut pandang ──
   useEffect(() => {

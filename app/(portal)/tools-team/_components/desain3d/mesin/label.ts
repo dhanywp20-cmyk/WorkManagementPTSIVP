@@ -40,7 +40,8 @@ export function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h:
   m.scene.traverseVisible(o => {
     const el = (o as { element?: HTMLElement }).element;
     if (!(o as { isCSS2DObject?: boolean }).isCSS2DObject || !el || el.style.display === 'none' || el.style.visibility === 'hidden') return;
-    const teks = (el.innerText || el.textContent || '').trim(); if (!teks) return;
+    //  data-teks: label bertombol (mis. penggaris dengan ✕) - yang tercetak hanya teksnya.
+    const teks = (el.dataset.teks || el.innerText || el.textContent || '').trim(); if (!teks) return;
     v.setFromMatrixPosition(o.matrixWorld).project(m.kamera);
     if (v.z < -1 || v.z > 1) return;
     const x = ((v.x + 1) / 2) * w, y = ((1 - v.y) / 2) * h;
