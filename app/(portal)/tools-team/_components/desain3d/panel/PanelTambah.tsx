@@ -68,6 +68,7 @@ export function PanelTambah({ a }: { a: AlatDesain }) {
                       aria-expanded={it.kunci === 'set-kelas' ? bukaKelas : undefined} title={it.ket}
                       className={`text-left rounded-xl border px-3 py-2.5 hover:border-blue-400 hover:bg-blue-50/60 ${it.kunci === 'set-kelas' && bukaKelas ? 'border-blue-400 bg-blue-50/60' : 'border-slate-200'}`}>
                       <span className="block text-[13px] font-bold text-slate-900">{it.label}</span>
+                      <span className="block text-[11.5px] leading-snug text-slate-600">{it.ket}</span>
                     </button>
                   ))}
                 </div>
@@ -109,10 +110,12 @@ export function PanelTambah({ a }: { a: AlatDesain }) {
                   title={'.dae / .obj / .stl / .kmz (ekspor SketchUp), .glb, .fbx, .3ds, .ply, atau .zip model + tekstur · maks 60 MB\n.skp: SketchUp → File → Export → 3D Model → COLLADA (.dae)'}
                   className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-left hover:bg-violet-100 disabled:opacity-60">
                   <span className="block text-[13px] font-bold text-violet-900">{impor.sibuk ? 'Membaca berkas...' : 'Impor berkas 3D'}</span>
+                  <span className="block text-[11.5px] leading-snug text-violet-800">SketchUp (.dae / .obj / .stl / .kmz), .glb, .fbx, .3ds, .ply, .zip · maks 60 MB</span>
                 </button>
                 <button type="button" onClick={() => setObjekGambar({})} title="Foto patung / tampak gedung / logo / sketsa → siluet 3D atau panel"
                   className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-left hover:bg-violet-100">
                   <span className="block text-[13px] font-bold text-violet-900">Objek dari gambar</span>
+                  <span className="block text-[11.5px] leading-snug text-violet-800">Foto patung / tampak gedung / logo → siluet 3D atau panel</span>
                 </button>
               </div>
               <input ref={inputModel} type="file" multiple accept={TERIMA_3D} className="hidden"
