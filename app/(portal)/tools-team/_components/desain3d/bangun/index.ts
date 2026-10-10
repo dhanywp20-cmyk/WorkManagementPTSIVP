@@ -5,7 +5,7 @@
  *   dasar      primitif bersama & Konteks pembangun
  *   permukaan  tekstur bahan (kayu, kain, gril, logam berlubang)
  *   tekstur    tekstur kanvas (lantai, konten layar, isi rack, cahaya)
- *   display / audio / konferensi / furnitur / lampu / venue / mapping / perangkat  - pembangun per kelompok
+ *   display / audio / konferensi / furnitur / lampu / venue / mapping / perangkat / teks  - pembangun per kelompok
  *
  * THREE dioper sebagai parameter (bukan di-import) supaya three.js tidak ikut bundel halaman
  * lain - three dimuat dinamis oleh Desain3D.tsx. Model dibangun dengan alas di y = 0; bagian
@@ -22,6 +22,7 @@ import { bangunLampu } from './lampu';
 import { bangunBidang, bangunModel, bangunObjek } from './mapping';
 import { bangunPanggung, bangunTribun } from './venue';
 import { bangunPerangkat } from './perangkat';
+import { bangunTeks } from './teks';
 
 export { kotak, batang } from './dasar';
 export { sandaran } from './furnitur';
@@ -52,6 +53,7 @@ const PEMBANGUN: Record<Jenis, (k: Konteks) => void> = {
   objek: bangunObjek,
   model: bangunModel,
   perangkat: bangunPerangkat,
+  teks: bangunTeks,
 };
 
 /**
@@ -74,7 +76,7 @@ export function buatModel(b: Benda, bahan: Bahan): T.Group {
   const WS = (bawaan: string) => warnaB ?? bawaan;
 
   PEMBANGUN[b.jenis]({ THREE, g, b, bahan, muka, warnaB, W, WS });
-  g.traverse(o => { if ((o as T.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  g.traverse(o => { if ((o as T.Mesh).isMesh && !o.userData.tanpaBayangan) { o.castShadow = true; o.receiveShadow = true; } });
   return g;
 }
 

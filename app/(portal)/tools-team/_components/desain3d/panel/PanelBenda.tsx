@@ -11,6 +11,7 @@ import { AturBidang } from './benda/AturBidang';
 import { AturProyektor } from './benda/AturProyektor';
 import { AturPerangkat } from './benda/AturPerangkat';
 import { AturKabel } from './benda/AturKabel';
+import { AturTeks } from './benda/AturTeks';
 import { BagianUmum } from './benda/BagianUmum';
 import { DariPustaka } from './benda/DariPustaka';
 import { useKonteksAtur, type PropsPanelBenda } from './benda/konteks';
@@ -49,6 +50,7 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         <AturBidang c={c} />
         <AturProyektor c={c} />
         <AturPerangkat c={c} />
+        <AturTeks c={c} />
         {(b.jenis === 'model' || b.jenis === 'objek') && <AturObjek b={b} set={set} adaFoto={adaFoto} onGambarBaru={() => onGambarObjek?.()} />}
         {ekstra}
         <AturKabel c={c} />

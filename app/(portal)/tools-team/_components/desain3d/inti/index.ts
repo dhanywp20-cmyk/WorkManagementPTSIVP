@@ -13,6 +13,7 @@
  *   template   template kategori ruangan (terkunci)
  *   pustaka    isi proyektor / display / speaker dari Pustaka Tools Team
  *   perangkat  PC, laptop, dongle WyreStorm, HP, tablet & share layar nirkabel
+ *   teks       teks / keterangan manual (isi, ukuran kotak dari isi)
  */
 export * from './tipe';
 export * from './ruang';
@@ -28,3 +29,4 @@ export * from './template';
 export * from './pustaka';
 export * from './perangkat';
 export * from './banyak';
+export * from './teks';

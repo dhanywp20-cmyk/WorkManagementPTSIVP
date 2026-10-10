@@ -15,7 +15,9 @@ export type Jenis =
   | 'videowall' | 'led' | 'layar' | 'ifp' | 'tv'
   | 'meja' | 'kursi'
   | 'speaker' | 'speaker-plafon' | 'mic' | 'touchpanel' | 'kamera' | 'proyektor' | 'rak'
-  | 'lift' | 'model' | 'tribun' | 'panggung' | 'bidang' | 'lampu' | 'objek' | 'perangkat';
+  | 'lift' | 'model' | 'tribun' | 'panggung' | 'bidang' | 'lampu' | 'objek' | 'perangkat' | 'teks';
+/** Teks manual: berdiri (menempel dinding / tegak), rebah di lantai / meja, atau selalu menghadap kamera. */
+export type HadapTeks = 'berdiri' | 'lantai' | 'kamera';
 /** Perangkat sumber presentasi: PC (berkabel), laptop, dongle WyreStorm, HP, tablet (share nirkabel). */
 export type TipePerangkat = 'pc' | 'laptop' | 'dongle' | 'hp' | 'tablet';
 /** Objek mapping: bentuk dasar, atau siluet dari gambar (patung, tampak gedung, logo) setebal `d`. */
@@ -104,6 +106,9 @@ export interface Benda {
   /** Objek 'gambar': siluet ternormalisasi 0..1 (lihat desain3d/kontur.ts); foto permukaan depan = konten 'gambar'. */ kontur?: Kontur;
   /** Perangkat: jenisnya; laptop memakai dongle WyreStorm (share nirkabel, tanpa kabel video). */ tipePerangkat?: TipePerangkat; pakaiDongle?: boolean;
   /** Share nirkabel (dongle / laptop+dongle / HP / tablet): id display, LED, layar, bidang atau proyektor tujuan; kosong = terdekat. */ layarTujuan?: string;
+  /** Teks manual (inti/teks.ts): isi (boleh beberapa baris), tinggi huruf (m), arah hadap, warna latar (#rrggbb; kosong = transparan).
+   *  Warna tulisan = `warna`. w / h / d diturunkan dari isi (terapkanUkuranTeks). */
+  teks?: string; tinggiHuruf?: number; hadapTeks?: HadapTeks; latarTeks?: string;
 }
 export interface Ruang {
   p: number; l: number; t: number; lantai: 'kayu' | 'karpet' | 'keramik' | 'polos';
@@ -150,11 +155,11 @@ export const LABEL: Record<Jenis, string> = {
   speaker: 'Speaker', 'speaker-plafon': 'Speaker plafon', mic: 'Mic', touchpanel: 'Touch panel',
   kamera: 'Kamera', proyektor: 'Proyektor', rak: 'Rack server', lift: 'Display lift', model: 'Model 3D (GLB)',
   tribun: 'Tribun', panggung: 'Panggung', bidang: 'Bidang mapping', lampu: 'Lampu plafon', objek: 'Objek mapping',
-  perangkat: 'Perangkat',
+  perangkat: 'Perangkat', teks: 'Teks',
 };
 export const DISPLAY: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv'];
 /** Benda yang bisa ditempel ke dinding (sisi belakang menyentuh dinding). */
-export const BISA_TEMPEL: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv', 'speaker', 'kamera', 'rak', 'meja', 'model', 'tribun', 'panggung', 'bidang', 'objek'];
+export const BISA_TEMPEL: Jenis[] = ['videowall', 'led', 'layar', 'ifp', 'tv', 'speaker', 'kamera', 'rak', 'meja', 'model', 'tribun', 'panggung', 'bidang', 'objek', 'teks'];
 // ── Proyektor: lensa, sinar ke layar, jarak lempar ─────────────────────────
 
 export type Titik = [number, number, number];
