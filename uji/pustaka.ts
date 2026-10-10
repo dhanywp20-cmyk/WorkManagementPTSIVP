@@ -5,7 +5,7 @@
  * Jalankan: npx tsx uji/pustaka.ts
  */
 import { readFileSync } from 'node:fs';
-import { bolehLihatPustaka, JENIS_PUSTAKA, KUNCI_MENU_PUSTAKA, periksaEntri, tapPertama } from '../lib/pustaka';
+import { bolehLihatPustaka, bolehUbahEntri, JENIS_PUSTAKA, KUNCI_MENU_PUSTAKA, periksaEntri, tapPertama } from '../lib/pustaka';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -41,6 +41,14 @@ cek('pimpinan boleh walau role guest', bolehLihatPustaka({ role: 'guest', pimpin
 cek('Marketing / Sales tanpa izin ditolak', !bolehLihatPustaka({ role: 'guest', allowed_menus: ['tools-team', 'dashboard'] }) && !bolehLihatPustaka({ role: 'guest' }));
 cek('Marketing / Sales dengan izin tools-pustaka boleh', bolehLihatPustaka({ role: 'guest', allowed_menus: ['tools-team', KUNCI_MENU_PUSTAKA] }));
 cek('tanpa akun ditolak', !bolehLihatPustaka(null));
+
+console.log('\nSiapa boleh ubah / hapus satu entri');
+const SAYA = 'a1b2c3d4-0000-4000-8000-000000000001', ORANG = 'a1b2c3d4-0000-4000-8000-000000000002';
+cek('Team: entri buatan sendiri boleh', bolehUbahEntri({ id: SAYA, admin: false }, SAYA));
+cek('Team: entri buatan orang lain TIDAK boleh', !bolehUbahEntri({ id: SAYA, admin: false }, ORANG));
+cek('Team: isi awal migrasi (dibuat_oleh kosong) TIDAK boleh', !bolehUbahEntri({ id: SAYA, admin: false }, null) && !bolehUbahEntri({ id: SAYA, admin: false }, undefined));
+cek('Admin: semua entri boleh, termasuk isi awal', bolehUbahEntri({ id: SAYA, admin: true }, ORANG) && bolehUbahEntri({ id: SAYA, admin: true }, null));
+cek('id kosong tidak cocok dengan dibuat_oleh kosong', !bolehUbahEntri({ id: '', admin: false }, ''));
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

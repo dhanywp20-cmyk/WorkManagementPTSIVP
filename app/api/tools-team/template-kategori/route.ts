@@ -3,6 +3,7 @@
  *
  *   GET                 siapa pun yang masuk: daftar kategori yang punya template Admin (tanpa isi),
  *                       untuk penanda di panel Kategori. + `bolehAtur` untuk akun ini.
+ *   GET ?awal=          seperti GET, + `awal`: isi lengkap kategori kanvas awal (null = tidak ada).
  *   GET ?kategori=      isi lengkap template kategori itu (null = pakai bawaan kode).
  *   POST {kategori, nama, data}
  *                       Admin / Full Access: jadikan isi kanvas template default kategori.
@@ -46,12 +47,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, template: data ?? null });
   }
 
+  //  ?awal=<kategori>: isi lengkap kategori kanvas awal ikut dikirim, supaya halaman yang baru dibuka
+  //  cukup SATU permintaan sebelum menampilkan default Admin (bukan daftar lalu isi, berurutan).
+  const awal = req.nextUrl.searchParams.get('awal');
+  if (awal !== null && !kategoriRuangSah(awal)) return gagal('Kategori tidak dikenal.');
   const [{ data, error }, atur] = await Promise.all([
-    db.from(TABEL).select('kategori, nama, ditetapkan_oleh_nama, updated_at'),
+    db.from(TABEL).select(awal ? 'kategori, nama, ditetapkan_oleh_nama, updated_at, data' : 'kategori, nama, ditetapkan_oleh_nama, updated_at'),
     bolehAtur(db, jaga.user.id),
   ]);
   if (error) return gagal(error.message, 500);
-  return NextResponse.json({ ok: true, daftar: data ?? [], bolehAtur: atur });
+  const baris = (data ?? []) as unknown as ({ kategori: string; data?: unknown } & Record<string, unknown>)[];
+  const isiAwal = awal ? baris.find(b => b.kategori === awal) ?? null : undefined;
+  return NextResponse.json({
+    ok: true, daftar: baris.map(({ data: _isi, ...b }) => b), bolehAtur: atur,
+    ...(awal ? { awal: isiAwal } : {}),
+  });
 }
 
 export async function POST(req: NextRequest) {

@@ -89,7 +89,19 @@ export function bolehLihatPustaka(u: { role?: string | null; allowed_menus?: str
 }
 export const jenisPustaka = (v: string) => JENIS_PUSTAKA.find(j => j.v === v);
 
-export interface EntriPustaka { id: string; jenis: string; nama: string; data: Record<string, string | number>; diubah_oleh_nama?: string | null; updated_at?: string }
+export interface EntriPustaka {
+  id: string; jenis: string; nama: string; data: Record<string, string | number>; diubah_oleh_nama?: string | null; updated_at?: string;
+  /** Dihitung server: akun ini boleh mengubah / menghapus entri ini (lihat bolehUbahEntri). */
+  bolehUbah?: boolean;
+}
+
+/**
+ * Siapa boleh mengubah / menghapus SATU entri: Admin (admin / superadmin) semua entri; anggota Team
+ * berhak atur hanya entri buatannya sendiri. Isi awal migrasi 040 (dibuat_oleh kosong) = milik Admin.
+ */
+export function bolehUbahEntri(akun: { id: string; admin: boolean }, dibuatOleh: string | null | undefined): boolean {
+  return akun.admin || (!!dibuatOleh && dibuatOleh === akun.id);
+}
 
 export const MAKS_TEKS = 200, MAKS_PANJANG = 20000, MAKS_NAMA = 120;
 

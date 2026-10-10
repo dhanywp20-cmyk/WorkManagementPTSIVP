@@ -83,6 +83,16 @@ export default function Desain3D() {
         <div className={`flex flex-col lg:flex-row ${layarPenuh ? 'flex-1 min-h-0' : ''}`}>
         <div ref={wadahRef} className={`relative w-full lg:w-auto lg:flex-1 min-w-0 overflow-hidden ${layarPenuh ? 'flex-1 min-h-[300px]' : 'h-[440px] sm:h-[620px]'}`}>
           {!siap && !galat && <div className="absolute inset-0 grid place-items-center text-sm text-slate-500">Memuat tampilan 3D...</div>}
+          {/* Perangkat yang belum mengenal default Admin: tutup kanvas sampai template awal pasti,
+              supaya versi pabrikan tidak sempat tampil lalu melompat (simpan/useTemplateKategori.ts). */}
+          {template.menungguAwal && !galat && (
+            <div role="status" className="absolute inset-0 z-30 grid place-items-center bg-white">
+              <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
+                <span className="inline-block w-4 h-4 rounded-full border-2 border-slate-300 border-t-blue-600 animate-spin" aria-hidden="true" />
+                Memuat template…
+              </span>
+            </div>
+          )}
           {legendaKabel && <LegendaKabel dipakai={legendaKabel} />}
           <KontrolKanvas a={a} />
           {lihatVersi && (
