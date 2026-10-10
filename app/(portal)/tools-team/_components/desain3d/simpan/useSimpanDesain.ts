@@ -8,7 +8,8 @@ import { unduhUrl } from '../../bersama/cetak';
 import { type Benda, idBaru, type Ruang } from '../inti';
 import { denganLegendaSamping } from '../panel/LegendaKabel';
 import { bacaDesainGLB, dataDesainFile, KUNCI_DESAIN, namaFileDesain } from './file-glb';
-import { daftarkanTekstur, teksturUntukSimpan } from './teksturRuang';
+import { daftarkanTekstur, teksturUntukFile, teksturUntukSimpan } from './teksturRuang';
+import { muatGambarLayar } from './aset';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { ambilKunci, type DesainTim, KUNCI_SIMPAN, RUANG_AWAL } from '../useKeadaanDesain';
@@ -54,7 +55,7 @@ export function useSimpanDesain(K: KeadaanDesain) {
       const t = gambarLayar.current.get(b.id); const url = t ? gambarKeDataUrl(t) : null;
       if (url) gambar[b.id] = url;
     }
-    isi.userData = { [KUNCI_DESAIN]: dataDesainFile(namaDesain || 'Desain AV', ruang, benda, gambar, teksturUntukSimpan(K, ruang)) };
+    isi.userData = { [KUNCI_DESAIN]: dataDesainFile(namaDesain || 'Desain AV', ruang, benda, gambar, teksturUntukFile(K, ruang)) };
     new m.GLTFExporter().parse(isi, hasil => {
       const blob = new Blob([hasil as ArrayBuffer], { type: 'model/gltf-binary' });
       const url = URL.createObjectURL(blob);
@@ -132,6 +133,8 @@ export function useSimpanDesain(K: KeadaanDesain) {
     for (const b of bs) {
       if (b.konten !== 'gambar' || Object.keys(hasil).length >= 6) continue;
       const t = gambarLayar.current.get(b.id);
+      //  Gambar yang dibuka dari server (ref) dan tidak diganti: kirim ref-nya, jangan kompres & unggah ulang.
+      if (typeof t?.userData.ref === 'string') { hasil[b.id] = t.userData.ref; continue; }
       const img = t?.image as ({ width: number; height: number } & CanvasImageSource) | undefined;
       if (!img?.width) continue;
       try {
@@ -241,7 +244,7 @@ export function useSimpanDesain(K: KeadaanDesain) {
       //  Gambar konten layar yang ikut tersimpan di server dikembalikan sebagai tekstur.
       const m = mesin.current;
       if (m) for (const [idL, url] of Object.entries(d.data.layar ?? {})) {
-        new m.THREE.TextureLoader().load(url, tex => { tex.colorSpace = m.THREE.SRGBColorSpace; gambarLayar.current.set(idL, tex); setVersiGambar(v => v + 1); });
+        muatGambarLayar(m, idL, url, gambarLayar.current, () => setVersiGambar(v => v + 1));
       }
       setRuang(ruangBaru); setBenda(d.data.benda); setNamaDesain(d.nama);
       setAsal({ jenis: 'baru' }); setDasar(ambilKunci(ruangBaru, d.data.benda, d.nama));

@@ -6,6 +6,7 @@
  */
 import { kunciTeksturDipakai, POLA_KUNCI_TEKSTUR, type Ruang } from '../inti';
 import type { KeadaanDesain } from '../useKeadaanDesain';
+import { nilaiGambarSah, POLA_REF_ASET, urlAset } from './aset';
 
 type PetaTekstur = Pick<KeadaanDesain, 'sumberTekstur' | 'gambarTekstur' | 'setVersiTekstur'>;
 
@@ -16,12 +17,12 @@ const SISI_MAKS = 1024;
 /** Daftarkan gambar tekstur (dari desain yang dibuka / template / unggahan) lalu bangun ulang ruangan. */
 export function daftarkanTekstur(K: PetaTekstur, peta: Record<string, string> | null | undefined): void {
   for (const [kunci, url] of Object.entries(peta ?? {})) {
-    if (!POLA_KUNCI_TEKSTUR.test(kunci) || typeof url !== 'string' || !url.startsWith('data:image/')) continue;
+    if (!POLA_KUNCI_TEKSTUR.test(kunci) || !nilaiGambarSah(url)) continue;
     if (K.sumberTekstur.current.get(kunci) === url && K.gambarTekstur.current.has(kunci)) continue;
     K.sumberTekstur.current.set(kunci, url);
     const img = new Image();
     img.onload = () => { K.gambarTekstur.current.set(kunci, img); K.setVersiTekstur(v => v + 1); };
-    img.src = url;
+    img.src = urlAset(url);
   }
 }
 
@@ -29,6 +30,25 @@ export function daftarkanTekstur(K: PetaTekstur, peta: Record<string, string> | 
 export function teksturUntukSimpan(K: Pick<KeadaanDesain, 'sumberTekstur'>, ruang: Ruang): Record<string, string> {
   const hasil: Record<string, string> = {};
   for (const k of kunciTeksturDipakai(ruang)) { const url = K.sumberTekstur.current.get(k); if (url) hasil[k] = url; }
+  return hasil;
+}
+
+/**
+ * Untuk file .glb laptop (dibuka tanpa server): tekstur yang tersimpan sebagai ref diubah kembali ke data URL
+ * dari gambar yang sudah termuat.
+ */
+export function teksturUntukFile(K: Pick<KeadaanDesain, 'sumberTekstur' | 'gambarTekstur'>, ruang: Ruang): Record<string, string> {
+  const hasil: Record<string, string> = {};
+  for (const [k, v] of Object.entries(teksturUntukSimpan(K, ruang))) {
+    if (!POLA_REF_ASET.test(v)) { hasil[k] = v; continue; }
+    const img = K.gambarTekstur.current.get(k);
+    if (!img?.width) continue;
+    try {
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      cv.getContext('2d')?.drawImage(img, 0, 0);
+      hasil[k] = cv.toDataURL('image/jpeg', 0.85);
+    } catch { /* lewati */ }
+  }
   return hasil;
 }
 

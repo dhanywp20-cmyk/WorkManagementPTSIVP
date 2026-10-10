@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { kunciTeksturBaru, type Ruang, teksturSah, UBIN_AWAL_DINDING, UBIN_AWAL_LANTAI, UBIN_MAKS, UBIN_MIN } from '../inti';
 import { berkasKeTekstur, daftarkanTekstur } from '../simpan/teksturRuang';
+import { urlAset } from '../simpan/aset';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 
 export type PetaTeksturPanel = Pick<KeadaanDesain, 'sumberTekstur' | 'gambarTekstur' | 'setVersiTekstur' | 'setPesan'>;
@@ -13,7 +14,8 @@ export function PilihTekstur({ sasaran, ruang, setRuang, peta }: {
   const kolom = sasaran === 'lantai' ? 'teksturLantai' : 'teksturDinding';
   const awalUbin = sasaran === 'lantai' ? UBIN_AWAL_LANTAI : UBIN_AWAL_DINDING;
   const t = teksturSah(ruang[kolom], awalUbin);
-  const pratinjau = t ? peta.sumberTekstur.current.get(t.kunci) : undefined;
+  const sumber = t ? peta.sumberTekstur.current.get(t.kunci) : undefined;
+  const pratinjau = sumber ? urlAset(sumber) : undefined;
   const input = useRef<HTMLInputElement>(null);
   const [sibuk, setSibuk] = useState(false);
   const [ubinKetik, setUbinKetik] = useState<string | null>(null);

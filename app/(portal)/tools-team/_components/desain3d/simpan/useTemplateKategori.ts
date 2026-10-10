@@ -17,6 +17,7 @@ import type { IsiTemplateKategori, useAksiDesain } from '../aksi/useAksiDesain';
 import type { useSimpanDesain } from './useSimpanDesain';
 import { isiDariIngatan, KATEGORI_AWAL, tulisIngatanAwal } from './templateAwal';
 import { daftarkanTekstur, teksturUntukSimpan } from './teksturRuang';
+import { muatGambarLayar } from './aset';
 
 const API = '/api/tools-team/template-kategori';
 /** Batas tunggu lapisan "Memuat template" saat server lambat - sesudahnya kanvas dibuka apa adanya. */
@@ -127,7 +128,7 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
     if (!siap || !m || !layar) return;
     layarTertunda.current = null;
     for (const [idL, url] of Object.entries(layar)) {
-      new m.THREE.TextureLoader().load(url, tex => { tex.colorSpace = m.THREE.SRGBColorSpace; gambarLayar.current.set(idL, tex); setVersiGambar(v => v + 1); });
+      muatGambarLayar(m, idL, url, gambarLayar.current, () => setVersiGambar(v => v + 1));
     }
   }, [siap, menungguAwal, mesin, gambarLayar, setVersiGambar]);
 

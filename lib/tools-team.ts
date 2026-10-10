@@ -79,6 +79,9 @@ export const MAKS_BYTE_LAYAR = 200_000;
 /** Tekstur lantai / dinding (gambar sendiri) per desain: kunci 'tx-...', data URL JPEG kecil (sama dengan gambar layar). */
 export const MAKS_TEKSTUR_RUANG = 4;
 const POLA_KUNCI_TEKSTUR = /^tx-[a-z0-9]{6,32}$/;
+/** Rujukan gambar yang sudah tersimpan sekali di tools_gambar_desain (lib/gambar-desain-server.ts). */
+export const POLA_REF_GAMBAR = /^ref:[0-9a-f]{40}$/;
+const gambarAtauRef = (v: unknown, maks: number) => (typeof v === 'string' && POLA_REF_GAMBAR.test(v) ? v : bersihkanGambar(v, maks));
 
 type DataDesain = { ruang: unknown; benda: unknown[]; layar?: Record<string, string>; tekstur?: Record<string, string> };
 
@@ -101,7 +104,7 @@ export function periksaDesain(x: unknown): { ok: true; data: DataDesain; jumlah:
     if (masuk.length > MAKS_GAMBAR_LAYAR) return { ok: false, alasan: `Maksimal ${MAKS_GAMBAR_LAYAR} gambar layar per desain.` };
     const layar: Record<string, string> = {};
     for (const [id, url] of masuk) {
-      const g = bersihkanGambar(url, MAKS_BYTE_LAYAR);
+      const g = gambarAtauRef(url, MAKS_BYTE_LAYAR);
       if (!ids.has(id) || !g) return { ok: false, alasan: 'Gambar layar terlalu besar atau tidak sah.' };
       layar[id] = g;
     }
@@ -114,7 +117,7 @@ export function periksaDesain(x: unknown): { ok: true; data: DataDesain; jumlah:
     if (masuk.length > MAKS_TEKSTUR_RUANG) return { ok: false, alasan: `Maksimal ${MAKS_TEKSTUR_RUANG} tekstur per desain.` };
     const tekstur: Record<string, string> = {};
     for (const [kunci, url] of masuk) {
-      const g = bersihkanGambar(url, MAKS_BYTE_LAYAR);
+      const g = gambarAtauRef(url, MAKS_BYTE_LAYAR);
       if (!POLA_KUNCI_TEKSTUR.test(kunci) || !g) return { ok: false, alasan: 'Tekstur terlalu besar atau tidak sah.' };
       tekstur[kunci] = g;
     }

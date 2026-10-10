@@ -18,6 +18,7 @@ import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
 import { periksaDesain, kategoriRuangSah } from '@/lib/tools-team';
+import { bersihkanGambarDesain, rujukGambarDesain } from '@/lib/gambar-desain-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -79,9 +80,11 @@ export async function POST(req: NextRequest) {
   const cek = periksaDesain(b.data);
   if (!cek.ok) return gagal(cek.alasan);
 
+  const rujuk = await rujukGambarDesain(db, cek.data, jaga.user.id);
+  if (!rujuk.ok) return gagal(rujuk.alasan);
   const updated_at = new Date().toISOString();
   const { error } = await db.from(TABEL).upsert({
-    kategori: b.kategori, nama, data: cek.data,
+    kategori: b.kategori, nama, data: rujuk.data,
     ditetapkan_oleh: jaga.user.id, ditetapkan_oleh_nama: jaga.user.full_name ?? jaga.user.username ?? null, updated_at,
   }, { onConflict: 'kategori' });
   if (error) return gagal(error.message, 500);
@@ -97,5 +100,6 @@ export async function DELETE(req: NextRequest) {
   if (!kategoriRuangSah(kategori)) return gagal('Kategori tidak dikenal.');
   const { error } = await db.from(TABEL).delete().eq('kategori', kategori);
   if (error) return gagal(error.message, 500);
+  await bersihkanGambarDesain(db);
   return NextResponse.json({ ok: true });
 }

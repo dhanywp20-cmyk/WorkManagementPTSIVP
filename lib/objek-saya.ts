@@ -15,6 +15,8 @@ export const MAKS_OBJEK_PER_AKUN = 150;
 export const MAKS_MODEL_PER_AKUN = 5;
 /** Model 3D (GLB) sebagai data URL base64: ±1,5 MB berkas. Model lebih besar tetap bisa lewat .glb laptop. */
 export const MAKS_BYTE_MODEL = 2_000_000;
+/** Batas total model 3D di Objek saya SELURUH akun (byte data URL) - pengaman kuota basis data paket gratis. */
+export const MAKS_TOTAL_MODEL = 100_000_000;
 export const MAKS_BYTE_ATUR = 60_000;
 export const MAKS_IMPOR_SEKALI = 50;
 

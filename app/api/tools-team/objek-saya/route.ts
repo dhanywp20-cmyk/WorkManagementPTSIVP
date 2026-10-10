@@ -14,7 +14,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
-import { MAKS_IMPOR_SEKALI, MAKS_MODEL_PER_AKUN, MAKS_OBJEK_PER_AKUN, periksaObjekSaya, type IsiObjekSaya } from '@/lib/objek-saya';
+import { MAKS_IMPOR_SEKALI, MAKS_MODEL_PER_AKUN, MAKS_OBJEK_PER_AKUN, MAKS_TOTAL_MODEL, periksaObjekSaya, type IsiObjekSaya } from '@/lib/objek-saya';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -45,8 +45,8 @@ export async function GET(req: NextRequest) {
     if (error) return gagal(error.message, 500);
     const model = (data as { model: string | null } | null)?.model;
     if (!model) return gagal('Model tidak ditemukan.', 404);
-    //  Isi model tidak berubah selama objeknya ada - boleh di-cache peramban (hemat egress).
-    return NextResponse.json({ ok: true, model }, { headers: { 'Cache-Control': 'private, max-age=86400' } });
+    //  Isi model satu id tidak pernah berubah (tidak ada endpoint ubah) - cache permanen, cukup diunduh sekali.
+    return NextResponse.json({ ok: true, model }, { headers: { 'Cache-Control': 'private, max-age=31536000, immutable' } });
   }
   const [{ data, error }, k] = await Promise.all([
     db.from(TABEL).select(KOLOM_DAFTAR).eq('user_id', jaga.user.id).order('created_at', { ascending: false }).limit(MAKS_OBJEK_PER_AKUN),
@@ -74,6 +74,13 @@ export async function POST(req: NextRequest) {
   if (k.objek + sah.length > MAKS_OBJEK_PER_AKUN) return gagal(`Objek saya penuh (maks ${MAKS_OBJEK_PER_AKUN}) - hapus yang tidak dipakai dulu.`);
   const jumlahModel = sah.filter(o => o.model).length;
   if (k.model + jumlahModel > MAKS_MODEL_PER_AKUN) return gagal(`Model 3D di Objek saya maksimal ${MAKS_MODEL_PER_AKUN} - hapus model yang tidak dipakai dulu.`);
+  if (jumlahModel) {
+    //  Pengaman kuota paket gratis: total model seluruh akun dibatasi.
+    const { data: semuaModel } = await db.from(TABEL).select('ukuran_model').gt('ukuran_model', 0);
+    const terpakai = ((semuaModel ?? []) as { ukuran_model: number }[]).reduce((s, r) => s + r.ukuran_model, 0);
+    const tambahan = sah.reduce((s, o) => s + (o.model?.length ?? 0), 0);
+    if (terpakai + tambahan > MAKS_TOTAL_MODEL) return gagal('Ruang model 3D Objek saya untuk seluruh tim sudah penuh - simpan model lewat Simpan .glb laptop.');
+  }
   const sekarang = new Date().toISOString();
   const { data, error } = await db.from(TABEL).insert(sah.map(o => ({
     user_id: jaga.user.id, nama: o.nama, ket: o.ket, jenis: o.jenis, atur: o.atur,

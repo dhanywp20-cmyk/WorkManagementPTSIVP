@@ -8,6 +8,7 @@ import type { KeadaanDesain } from '../useKeadaanDesain';
 import { R2_AWAL, RUANG_AWAL } from '../useKeadaanDesain';
 import type { Sisi } from '../mesin/tipe';
 import { daftarkanTekstur } from '../simpan/teksturRuang';
+import { muatGambarLayar } from '../simpan/aset';
 
 
 /** Isi template default kategori yang ditetapkan Admin (format sama dengan data desain tim). */
@@ -34,7 +35,7 @@ export function useAksiDesain(K: KeadaanDesain) {
     //  Gambar konten layar milik template Admin dikembalikan sebagai tekstur (sama seperti membuka desain tim).
     const m = mesin.current;
     if (kustom?.layar && m) for (const [idL, url] of Object.entries(kustom.layar)) {
-      new m.THREE.TextureLoader().load(url, tex => { tex.colorSpace = m.THREE.SRGBColorSpace; gambarLayar.current.set(idL, tex); setVersiGambar(v => v + 1); });
+      muatGambarLayar(m, idL, url, gambarLayar.current, () => setVersiGambar(v => v + 1));
     }
     daftarkanTekstur(K, kustom?.tekstur);
     ruangRef.current = t.ruang;

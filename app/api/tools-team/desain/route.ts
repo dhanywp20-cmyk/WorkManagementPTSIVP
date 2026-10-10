@@ -27,6 +27,7 @@ import { getAdminClient } from '@/lib/supabase-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { pimpinanDiDb, PESAN_HANYA_LIHAT } from '@/lib/pimpinan';
 import { periksaDesain, ringkasanDesain, bersihkanGambar, MAKS_BYTE_GAMBAR_HD, SIMPAN_VERSI } from '@/lib/tools-team';
+import { bersihkanGambarDesain, rujukGambarDesain } from '@/lib/gambar-desain-server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -121,8 +122,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  //  Gambar layar & tekstur: disimpan sekali per isi, data desain hanya membawa ref:<hash>.
+  const rujuk = await rujukGambarDesain(db, cek.data, jaga.user.id);
+  if (!rujuk.ok) return gagal(rujuk.alasan);
   const { data, error } = await db.rpc('tools_simpan_desain', {
-    p_id: id, p_versi: versiLama, p_nama: nama, p_data: cek.data, p_jumlah: cek.jumlah,
+    p_id: id, p_versi: versiLama, p_nama: nama, p_data: rujuk.data, p_jumlah: cek.jumlah,
     p_ringkasan: ringkasanDesain(cek.data), p_gambar: gambar, p_user: jaga.user.id, p_user_nama: jaga.user.full_name,
   });
   if (error) {
@@ -149,7 +153,10 @@ async function pangkasRiwayat(db: Db, id: string, versiKini: number) {
     const kecuali = (q: ReturnType<ReturnType<Db['from']>['update']> | ReturnType<ReturnType<Db['from']>['delete']>) =>
       (dipakai.length ? q.not('versi', 'in', `(${dipakai.join(',')})`) : q);
     await kecuali(db.from(VERSI).update({ gambar_hd: null }).eq('desain_id', id).lt('versi', versiKini).not('gambar_hd', 'is', null));
-    if (versiKini > SIMPAN_VERSI) await kecuali(db.from(VERSI).delete().eq('desain_id', id).lte('versi', versiKini - SIMPAN_VERSI));
+    if (versiKini > SIMPAN_VERSI) {
+      await kecuali(db.from(VERSI).delete().eq('desain_id', id).lte('versi', versiKini - SIMPAN_VERSI));
+      await bersihkanGambarDesain(db);
+    }
   } catch { /* pemangkasan bukan bagian penting penyimpanan */ }
 }
 
@@ -173,5 +180,6 @@ export async function DELETE(req: NextRequest) {
   }
   const { error } = await db.from(TABEL).delete().eq('id', id);
   if (error) return gagal(error.message, 500);
+  await bersihkanGambarDesain(db);
   return NextResponse.json({ ok: true });
 }
