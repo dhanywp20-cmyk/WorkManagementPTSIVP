@@ -16,14 +16,15 @@ import { gambarBayangan } from './bayangan';
 
 
 export function useAdegan(K: KeadaanDesain) {
-  const { pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
+  const { gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
   // ── Ruangan: lantai bertekstur + 4 dinding per ruang ──
   //  Dinding hanya terlihat dari sisi dalam (FrontSide), jadi dinding yang
   //  membelakangi kamera otomatis "tembus" seperti denah rumah boneka.
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    bangunRuangan(m.THREE, m.grupRuang, ruang);
-  }, [ruang, siap]);
+    bangunRuangan(m.THREE, m.grupRuang, ruang, k => gambarTekstur.current.get(k));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ruang, siap, versiTekstur]);
 
   // ── Benda: bangun ulang hanya yang bentuknya berubah ──
   useEffect(() => {

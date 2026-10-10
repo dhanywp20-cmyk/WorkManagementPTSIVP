@@ -7,10 +7,11 @@ import { type Benda, bendaBaru, BISA_PASANG, type Bukaan, BUKAAN_AWAL, CELAH_PAS
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { R2_AWAL, RUANG_AWAL } from '../useKeadaanDesain';
 import type { Sisi } from '../mesin/tipe';
+import { daftarkanTekstur } from '../simpan/teksturRuang';
 
 
 /** Isi template default kategori yang ditetapkan Admin (format sama dengan data desain tim). */
-export interface IsiTemplateKategori { nama: string; ruang: Ruang; benda: Benda[]; layar?: Record<string, string> }
+export interface IsiTemplateKategori { nama: string; ruang: Ruang; benda: Benda[]; layar?: Record<string, string>; tekstur?: Record<string, string> }
 
 export function useAksiDesain(K: KeadaanDesain) {
   const { batas, benda, gambarLayar, gantiBenda, kotakRuang, mesin, opsiKelas, pasSetelahTemplate, ruang, ruangRef, setAsal, setBenda, setBukaKelas, setDasar, setDesainAktif, setFokusRuang, setKonfirmasi, setLihatVersi, setMenuPusat, setModal, setNamaDesain, setPesan, setPilih, setRuang, setTargetRuang, setVersiGambar, targetRuang, terpilih } = K;
@@ -35,6 +36,7 @@ export function useAksiDesain(K: KeadaanDesain) {
     if (kustom?.layar && m) for (const [idL, url] of Object.entries(kustom.layar)) {
       new m.THREE.TextureLoader().load(url, tex => { tex.colorSpace = m.THREE.SRGBColorSpace; gambarLayar.current.set(idL, tex); setVersiGambar(v => v + 1); });
     }
+    daftarkanTekstur(K, kustom?.tekstur);
     ruangRef.current = t.ruang;
     //  Template default dibuat ulang dari kode tiap kali dipasang (terkunci - tidak ada yang bisa mengubah
     //  aslinya). Yang diubah pengguna hanya salinan di kanvas; Simpan selalu membuat file baru miliknya.

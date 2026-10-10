@@ -14,6 +14,7 @@
  *   pustaka    isi proyektor / display / speaker dari Pustaka Tools Team
  *   perangkat  PC, laptop, dongle WyreStorm, HP, tablet & share layar nirkabel
  *   teks       teks / keterangan manual (isi, ukuran kotak dari isi)
+ *   teksturRuang  tekstur gambar sendiri untuk lantai & dinding
  */
 export * from './tipe';
 export * from './ruang';
@@ -30,3 +31,4 @@ export * from './pustaka';
 export * from './perangkat';
 export * from './banyak';
 export * from './teks';
+export * from './teksturRuang';

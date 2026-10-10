@@ -123,7 +123,7 @@ export default function Desain3D() {
                 <div className="flex-1 min-h-0 overflow-y-auto p-3">
                   <PanelTambah a={a} />
                   {sisi === 'ruang' && (
-                    <PanelRuang ruang={ruang} setRuang={setRuang} ubahUkuran={ubahUkuran} benda={benda} kotakRuang={kotakRuang} tambahBukaan={tambahBukaan} ubahBukaan={ubahBukaan} tambahRuang={tambahRuang} hapusRuangTerakhir={hapusRuangTerakhir} ubahSambungan={ubahSambungan} pasangSambungan={pasangSambungan} gantiIsi={gantiIsi} setGantiIsi={setGantiIsi} salinIsiRuang={salinIsiRuang} duaRuang={duaRuang} />
+                    <PanelRuang ruang={ruang} setRuang={setRuang} ubahUkuran={ubahUkuran} benda={benda} kotakRuang={kotakRuang} tambahBukaan={tambahBukaan} ubahBukaan={ubahBukaan} tambahRuang={tambahRuang} hapusRuangTerakhir={hapusRuangTerakhir} ubahSambungan={ubahSambungan} pasangSambungan={pasangSambungan} gantiIsi={gantiIsi} setGantiIsi={setGantiIsi} salinIsiRuang={salinIsiRuang} duaRuang={duaRuang} peta={K} />
                   )}
                   <PanelKategori a={a} />
                   <DaftarBenda a={a} />

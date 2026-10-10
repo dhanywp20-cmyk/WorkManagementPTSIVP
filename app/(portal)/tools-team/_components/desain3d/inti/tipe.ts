@@ -114,6 +114,9 @@ export interface Ruang {
   p: number; l: number; t: number; lantai: 'kayu' | 'karpet' | 'keramik' | 'polos';
   /** Warna lantai 'polos' ruang 1 (#rrggbb) */ warnaLantai?: string;
   /** Warna dinding semua ruang (#rrggbb), bawaan putih tulang */ warnaDinding?: string;
+  /** Tekstur gambar sendiri untuk lantai / dinding semua ruang (inti/teksturRuang.ts). Gambarnya disimpan terpisah
+   *  (data.tekstur[kunci]) supaya daftar desain yang membaca `ruang` tetap ringan. */
+  teksturLantai?: TeksturRuang; teksturDinding?: TeksturRuang;
   /** Finishing dinding depan (feature wall di belakang display) tiap ruang: polos (bawaan), marmer, atau panel kayu. */
   dindingDepan?: 'polos' | 'marmer' | 'kayu';
   /** Tingkat cahaya ruangan (bawaan terang). Gelap = ruang mapping / immersive, cahaya proyektor terlihat jelas. */ cahaya?: 'terang' | 'redup' | 'gelap';
@@ -146,6 +149,8 @@ export type SisiDinding = 'depan' | 'belakang' | 'kiri' | 'kanan';
  * Pintu / jendela di dinding luar. posisi = pusat bukaan diukur dari ujung KIRI
  * dinding dilihat dari dalam ruang (m); ambang = tinggi sisi bawah jendela dari lantai.
  */
+/** Tekstur gambar lantai / dinding: kunci gambar (data.tekstur) & ukuran satu ubin gambar di ruangan (m). */
+export interface TeksturRuang { kunci: string; ubin: number }
 export interface Bukaan { id: string; ruang: number; sisi: SisiDinding; jenis: 'pintu' | 'jendela'; posisi: number; lebar: number; tinggi: number; ambang: number }
 /** Kotak satu ruang dalam koordinat dunia. */
 export interface Kotak { x0: number; p: number; l: number; t: number }

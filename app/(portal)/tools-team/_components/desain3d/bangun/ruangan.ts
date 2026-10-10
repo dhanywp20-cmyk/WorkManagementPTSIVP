@@ -4,11 +4,14 @@
  */
 import { teksturDindingAksen } from '.';
 import { teksturLantai } from './tekstur';
-import { bukaanDinding, daftarRuang, jendelaSekat, type Kotak, pintuSekat, sambunganKe, type SisiDinding, ukuranPintu, warnaSah } from '../inti';
+import { bukaanDinding, daftarRuang, jendelaSekat, type Kotak, pintuSekat, sambunganKe, type SisiDinding, teksturSah, UBIN_AWAL_DINDING, UBIN_AWAL_LANTAI, ukuranPintu, ulangTekstur, warnaSah } from '../inti';
 import type * as T from 'three';
 import type { Ruang } from '../inti';
 
-export function bangunRuangan(THREE: typeof T, grupRuang: T.Group, ruang: Ruang) {
+/** Gambar tekstur lantai / dinding yang sudah termuat (kunci -> gambar); undefined = belum / tidak ada. */
+export type AmbilGambarTekstur = (kunci: string) => HTMLImageElement | undefined;
+
+export function bangunRuangan(THREE: typeof T, grupRuang: T.Group, ruang: Ruang, gambarTekstur?: AmbilGambarTekstur) {
   //  Lepas geometri, material & tekstur lantai lama (ukuran ruang bisa berubah tiap ketukan).
   grupRuang.traverse(o => {
     const mesh = o as T.Mesh; mesh.geometry?.dispose();
@@ -18,7 +21,19 @@ export function bangunRuangan(THREE: typeof T, grupRuang: T.Group, ruang: Ruang)
   grupRuang.clear();
   const daftar = daftarRuang(ruang);
   const lantaiDari = (i: number) => (i === 0 ? ruang.lantai : sambunganKe(ruang, i)?.lantai ?? 'kayu');
-  const bahanDinding = new THREE.MeshStandardMaterial({ color: warnaSah(ruang.warnaDinding) ?? 0xf5f5f4, roughness: 0.95, side: THREE.FrontSide });
+  //  Tekstur gambar sendiri (inti/teksturRuang.ts): diulang per ubin (m). Gambar dipakai ulang antar bangun ulang,
+  //  hanya objek Texture-nya yang dibuat baru (yang lama dilepas di atas).
+  const teksturGambar = (img: HTMLImageElement, rx: number, ry: number) => {
+    const t = new THREE.Texture(img);
+    t.needsUpdate = true; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry);
+    return t;
+  };
+  const tL = teksturSah(ruang.teksturLantai, UBIN_AWAL_LANTAI), gambarLantai = tL ? gambarTekstur?.(tL.kunci) : undefined;
+  const tD = teksturSah(ruang.teksturDinding, UBIN_AWAL_DINDING), gambarDinding = tD ? gambarTekstur?.(tD.kunci) : undefined;
+  const bahanDinding = gambarDinding && tD
+    ? new THREE.MeshStandardMaterial({ map: teksturGambar(gambarDinding, 1, 1), roughness: 0.9, side: THREE.FrontSide })
+    : new THREE.MeshStandardMaterial({ color: warnaSah(ruang.warnaDinding) ?? 0xf5f5f4, roughness: 0.95, side: THREE.FrontSide });
   //  Feature wall depan: marmer / panel kayu, UV dalam meter supaya slab tidak melar.
   const aksen = ruang.dindingDepan && ruang.dindingDepan !== 'polos' ? teksturDindingAksen(THREE, ruang.dindingDepan) : null;
   const bahanAksen = aksen ? new THREE.MeshStandardMaterial({ map: aksen.tex, roughness: ruang.dindingDepan === 'marmer' ? 0.25 : 0.7, metalness: ruang.dindingDepan === 'marmer' ? 0.05 : 0, side: THREE.FrontSide }) : null;
@@ -54,9 +69,11 @@ export function bangunRuangan(THREE: typeof T, grupRuang: T.Group, ruang: Ruang)
     const bidang = (x0: number, x1: number, y0: number, y1: number) => {
       if (x1 - x0 < 0.01 || y1 - y0 < 0.01) return;
       const geo = new THREE.PlaneGeometry(x1 - x0, y1 - y0);
-      if (opsi.aksen && aksen && !tembus) {
+      //  UV dalam meter (dibagi ukuran ubin) supaya slab / gambar tidak melar mengikuti lebar dinding.
+      const ubin = opsi.aksen && aksen && bahanAksen ? { w: aksen.ubinW, h: aksen.ubinH } : gambarDinding && tD ? { w: tD.ubin, h: tD.ubin } : null;
+      if (ubin && !tembus) {
         const uv = geo.attributes.uv as T.BufferAttribute;
-        for (let i = 0; i < uv.count; i++) uv.setXY(i, (x0 + uv.getX(i) * (x1 - x0) + panjang / 2) / aksen.ubinW, (y0 + uv.getY(i) * (y1 - y0)) / aksen.ubinH);
+        for (let i = 0; i < uv.count; i++) uv.setXY(i, (x0 + uv.getX(i) * (x1 - x0) + panjang / 2) / ubin.w, (y0 + uv.getY(i) * (y1 - y0)) / ubin.h);
       }
       const d = new THREE.Mesh(geo, tembus ? bahanKaca : opsi.aksen && bahanAksen ? bahanAksen : bahanDinding);
       d.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0); d.receiveShadow = !tembus; gw.add(d);
@@ -161,7 +178,9 @@ export function bangunRuangan(THREE: typeof T, grupRuang: T.Group, ruang: Ruang)
   daftar.forEach((k, i) => {
     const jenis = lantaiDari(i);
     const lantai = new THREE.Mesh(new THREE.PlaneGeometry(k.p, k.l),
-      new THREE.MeshStandardMaterial({ map: teksturLantai(THREE, jenis, k.p, k.l, i === 0 ? ruang.warnaLantai : sambunganKe(ruang, i)?.warnaLantai), roughness: jenis === 'keramik' ? 0.35 : 0.8 }));
+      gambarLantai && tL
+        ? new THREE.MeshStandardMaterial({ map: teksturGambar(gambarLantai, ...ulangTekstur(k.p, k.l, tL.ubin)), roughness: 0.7 })
+        : new THREE.MeshStandardMaterial({ map: teksturLantai(THREE, jenis, k.p, k.l, i === 0 ? ruang.warnaLantai : sambunganKe(ruang, i)?.warnaLantai), roughness: jenis === 'keramik' ? 0.35 : 0.8 }));
     lantai.rotation.x = -Math.PI / 2; lantai.position.set(k.x0 + k.p / 2, 0, k.l / 2); lantai.receiveShadow = true;
     grupRuang.add(lantai);
     dinding(k.p, k.t, k.x0 + k.p / 2, 0, 0, lubangLuar(i, 'depan', k.p), { aksen: true });  // depan (feature wall)
