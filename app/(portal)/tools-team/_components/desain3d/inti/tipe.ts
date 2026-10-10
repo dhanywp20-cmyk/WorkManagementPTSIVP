@@ -117,6 +117,8 @@ export interface Ruang {
   /** Tekstur gambar sendiri untuk lantai / dinding semua ruang (inti/teksturRuang.ts). Gambarnya disimpan terpisah
    *  (data.tekstur[kunci]) supaya daftar desain yang membaca `ruang` tetap ringan. */
   teksturLantai?: TeksturRuang; teksturDinding?: TeksturRuang;
+  /** Garis penggaris (ukur jarak bebas antar dua titik, inti/presisi.ts) - ikut tersimpan & tercetak. */
+  penggaris?: { id: string; a: Titik; b: Titik }[];
   /** Finishing dinding depan (feature wall di belakang display) tiap ruang: polos (bawaan), marmer, atau panel kayu. */
   dindingDepan?: 'polos' | 'marmer' | 'kayu';
   /** Tingkat cahaya ruangan (bawaan terang). Gelap = ruang mapping / immersive, cahaya proyektor terlihat jelas. */ cahaya?: 'terang' | 'redup' | 'gelap';

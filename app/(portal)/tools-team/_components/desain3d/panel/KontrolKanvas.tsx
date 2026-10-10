@@ -1,11 +1,12 @@
 'use client';
 /** Kontrol di atas kanvas 3D: centang tampilan, aksi benda terpilih, pesan, kontrol kamera & menu sudut. */
 import { DISPLAY, duplikatBanyak, nirkabel, ruangDari } from '../inti';
-import { BoxSelect, Copy, CopyPlus, Maximize2, Minimize2, Settings2, Trash2 } from 'lucide-react';
+import { Copy, CopyPlus, Maximize2, Minimize2, Settings2, Trash2 } from 'lucide-react';
+import { BilahKiri } from './BilahKiri';
 import type { AlatDesain } from './alat';
 
 export function KontrolKanvas({ a }: { a: AlatDesain }) {
-  const { adaProyektor, bayangan, benda, chipBuka, detailBlending, duaRuang, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, kotakRuang, labelProduk, panel, ruang, setBayangan, setBenda, setChipBuka, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setPanel, setPilih, setSinar, setSisi, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, pilihLain, setPilihan, modeBanyak, setModeBanyak, layarPenuh, setLayarPenuh, batas } = a.K;
+  const { adaProyektor, bayangan, benda, chipBuka, detailBlending, duaRuang, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, kotakRuang, labelProduk, panel, ruang, setBayangan, setBenda, setChipBuka, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setPanel, setPilih, setSinar, setSisi, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, pilihLain, setPilihan, layarPenuh, setLayarPenuh, batas } = a.K;
   const { duplikat, salinKeRuangLain } = a.aksi;
   return (
     <>
@@ -65,12 +66,8 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
             </button>
           </div>
         )}
-        {/*  Mode pilih banyak (layar sentuh tanpa Shift / Ctrl). */}
-        <button type="button" onClick={() => setModeBanyak(v => !v)} aria-pressed={modeBanyak}
-          title={modeBanyak ? 'Pilih banyak: aktif - ketuk benda untuk menambah / melepas' : 'Pilih banyak (atau Shift / Ctrl + klik)'} aria-label="Pilih banyak"
-          className={`inline-flex items-center justify-center w-9 h-9 rounded-xl border shadow-sm ${modeBanyak ? 'bg-blue-700 border-blue-700 text-white' : 'bg-white/95 border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
-          <BoxSelect size={16} />
-        </button>
+        {/* Bilah alat kiri: Tambah, teks, pilih banyak, penggaris, snap grid, geser / putar. */}
+        <BilahKiri a={a} />
       </div>
       <button type="button" onClick={() => setLayarPenuh(v => !v)} aria-pressed={layarPenuh}
         title={layarPenuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} aria-label={layarPenuh ? 'Keluar layar penuh' : 'Layar penuh'}

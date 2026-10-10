@@ -15,6 +15,7 @@
  *   perangkat  PC, laptop, dongle WyreStorm, HP, tablet & share layar nirkabel
  *   teks       teks / keterangan manual (isi, ukuran kotak dari isi)
  *   teksturRuang  tekstur gambar sendiri untuk lantai & dinding
+ *   presisi    snap grid geser / putar & penggaris (ukur jarak bebas)
  */
 export * from './tipe';
 export * from './ruang';
@@ -32,3 +33,4 @@ export * from './perangkat';
 export * from './banyak';
 export * from './teks';
 export * from './teksturRuang';
+export * from './presisi';

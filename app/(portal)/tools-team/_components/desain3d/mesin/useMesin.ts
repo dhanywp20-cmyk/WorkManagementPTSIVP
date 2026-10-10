@@ -14,7 +14,7 @@ import { hindariTumpuk } from './label';
 
 
 export function useMesin(K: KeadaanDesain) {
-  const { bendaRef, dariToggle, gambarLayar, mesin, modeBanyakRef, modeSeret, pilihLainRef, pilihRef, ruangRef, setBenda, setGalat, setPilih, setPilihLain, setSiap, siap, wadahRef } = K;
+  const { bendaRef, dariToggle, gambarLayar, klikUkurRef, mesin, modeBanyakRef, modeSeret, pilihLainRef, pilihRef, ruangRef, setBenda, setGalat, setPilih, setPilihLain, setSiap, siap, wadahRef } = K;
   // ── Inisialisasi (sekali) ──
   useEffect(() => {
     let hidup = true;
@@ -136,6 +136,12 @@ export function useMesin(K: KeadaanDesain) {
           const r = renderer.domElement.getBoundingClientRect();
           ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
           ray.setFromCamera(ptr, kamera);
+          //  Mode penggaris: klik = titik ukur di permukaan pertama yang kena (benda atau ruangan), bukan memilih benda.
+          if (klikUkurRef.current) {
+            const p = ray.intersectObjects([...grupBenda.children.filter(o => !o.userData.sorot), ...grupRuang.children], true)[0]?.point;
+            if (p) klikUkurRef.current([p.x, p.y, p.z]);
+            return;
+          }
           //  Kotak sorotan (garis) dikecualikan: ambang raycast garis 1 m membuat
           //  klik di dekat benda terpilih justru membatalkan pilihan.
           const kena = ray.intersectObjects(grupBenda.children.filter(o => !o.userData.sorot), true)[0];
