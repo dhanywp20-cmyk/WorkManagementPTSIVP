@@ -53,7 +53,8 @@ async function jalan() {
   cek('gambar yang sama dari desain lain tidak tersalin lagi', r3.ok && t.disisip.length === 2);
   const r4 = await rujukGambarDesain(t.db, { ruang: {}, benda: [], tekstur: { 'tx-lantai01': `ref:${'f'.repeat(40)}` } }, 'u1');
   cek('ref yang tidak ada di server ditolak', !r4.ok);
-  const kosong = await rujukGambarDesain(t.db, { ruang: {}, benda: [] }, 'u1');
+  const tanpaGambar: { ruang: object; benda: unknown[]; layar?: Record<string, string> } = { ruang: {}, benda: [] };
+  const kosong = await rujukGambarDesain(t.db, tanpaGambar, 'u1');
   cek('desain tanpa gambar tidak menyentuh tabel', kosong.ok);
 
   console.log('\n3. Kuota total');
