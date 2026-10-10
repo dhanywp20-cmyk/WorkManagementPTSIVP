@@ -28,7 +28,7 @@ jobs:
       - name: Lint
         run: npm run lint
       - name: Uji
-        # Semua uji/*.ts (scripts/uji-semua.mjs) - daftar manual dulu tertinggal tiap ada uji baru.
+        # Semua uji/*.ts + *.mjs (scripts/uji-semua.mjs) - daftar manual dulu tertinggal tiap ada uji baru.
         run: npm test
       - name: Build
         run: npm run build
