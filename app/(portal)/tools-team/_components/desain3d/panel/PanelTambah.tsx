@@ -1,10 +1,11 @@
 'use client';
-/** Panel Tambah benda: Produk saya (tim), katalog per grup, set ruang kelas, objek dari luar. */
+/** Panel Tambah benda: Objek saya (pribadi), Produk saya (tim), katalog per grup, set ruang kelas, objek dari luar. */
 import { Angka, Segmen } from '../../bersama/ui';
 import { TERIMA_3D } from '../impor/berkas3d';
 import { KATALOG, LABEL, type OpsiKelas, ukuranSetKelas } from '../inti';
 import { Trash2 } from 'lucide-react';
 import type { AlatDesain } from './alat';
+import { BagianObjekSaya } from './BagianObjekSaya';
 
 export function PanelTambah({ a }: { a: AlatDesain }) {
   const { bukaKelas, cariProduk, duaRuang, galatProduk, impor, inputModel, kotakRuang, opsiKelas, produkTim, setBukaKelas, setCariProduk, setObjekGambar, setOpsiKelas, setTargetRuang, sisi, targetRuang } = a.K;
@@ -20,6 +21,8 @@ export function PanelTambah({ a }: { a: AlatDesain }) {
             </div>
           )}
           <div className="space-y-4">
+            {/* Objek saya: objek pribadi akun ini (ekspor / impor antar akun). */}
+            <BagianObjekSaya a={a} />
             {/* Produk saya: template produk yang disimpan engineer, dipakai seluruh tim. */}
             <div>
               <div className="flex items-center justify-between gap-2 mb-1.5">

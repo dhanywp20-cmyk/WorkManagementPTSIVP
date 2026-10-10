@@ -13,7 +13,8 @@ desain3d/
   mesin/     engine kanvas: renderer, kamera, adegan, alat bantu, label
   impor/     objek dari luar: berkas 3D (glTF/OBJ/FBX/DAE/STL/...), siluet dari gambar
   aksi/      aksi edit desain (template, tambah, salin, tempel, ruang & bukaan)
-  simpan/    simpan & buka: server tim, laptop (.glb), produk tim, template default kategori (Admin)
+  simpan/    simpan & buka: server tim, laptop (.glb), produk tim, Objek saya (pribadi, ekspor/impor .json),
+             template default kategori (Admin) + ingatan kanvas awal, tekstur lantai/dinding
   ekspor/    foto kanvas, PNG, lembar cetak A4
   panel/     komponen React (bilah, panel samping, kartu hasil, modal)
   useKeadaanDesain.ts   seluruh state + nilai turunan (satu sumber kebenaran)
@@ -38,6 +39,8 @@ Arah ketergantungan **satu arah**: `panel → (aksi, simpan, ekspor, mesin) → 
 | `rak.ts` | isi rack (elevation) |
 | `template.ts` | template kategori ruangan (terkunci — selalu dibuat ulang dari kode) |
 | `pustaka.ts` | isi proyektor / display / speaker dari Pustaka Tools Team (katalog produk Admin) |
+| `teks.ts` | teks / keterangan manual: baris, tinggi huruf, ukuran kotak dari isi |
+| `teksturRuang.ts` | tekstur gambar sendiri lantai & dinding: kunci, ubin (m), gambar yang ikut disimpan |
 | `index.ts` | barrel: `import { ... } from '../inti'` |
 
 ## bangun/ — geometri three.js
@@ -56,6 +59,7 @@ satu baris di tabel (TypeScript menolak bila ada jenis yang terlewat).
 | `lampu.ts` | lampu plafon |
 | `venue.ts` | tribun, panggung |
 | `mapping.ts` | bidang mapping, objek mapping (bentuk dasar & siluet), model 3D impor |
+| `teks.ts` | teks manual: tulisan di kanvas 2D -> bidang (dinding / lantai) atau billboard menghadap kamera |
 | `ruangan.ts` | lantai & dinding tiap ruang, sekat, pintu & jendela |
 | `permukaan.ts` | tekstur bahan: kayu, kain, gril speaker, logam berlubang, dinding aksen |
 | `tekstur.ts` / `konten.ts` / `rak.ts` | tekstur kanvas: lantai & lampu · konten layar (pola, CCTV, dashboard, home screen) · muka perangkat rack |
@@ -83,9 +87,9 @@ satu baris di tabel (TypeScript menolak bila ada jenis yang terlewat).
 
 ```
 useKeadaanDesain()  ── K ──►  useMesin(K) · useKamera(K) · useAdegan(K)
-                              useAksiDesain(K) · useProdukTim(K) · useEkspor(K, kamera) · useSimpanDesain(K) · useTemplateKategori(K, aksi, simpan)
+                              useAksiDesain(K) · useProdukTim(K) · useEkspor(K, kamera) · useSimpanDesain(K) · useTemplateKategori(K, aksi, simpan) · useObjekSaya(K)
                                           │
-                     a = { K, kamera, aksi, produk, ekspor, simpan }  (panel/alat.ts)
+                     a = { K, kamera, aksi, produk, ekspor, simpan, template, objekSaya }  (panel/alat.ts)
                                           ▼
                      <BilahAlat a /> <KontrolKanvas a /> <PanelTambah a /> <KartuKabel a /> ...
 ```
