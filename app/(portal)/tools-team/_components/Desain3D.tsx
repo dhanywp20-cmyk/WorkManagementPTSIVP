@@ -88,7 +88,7 @@ export default function Desain3D() {
           {/* Perangkat yang belum mengenal default Admin: tutup kanvas sampai template awal pasti,
               supaya versi pabrikan tidak sempat tampil lalu melompat (simpan/useTemplateKategori.ts). */}
           {template.menungguAwal && !galat && (
-            <div role="status" className="absolute inset-0 z-30 grid place-items-center bg-white/90 backdrop-blur-sm">
+            <div role="status" className="absolute inset-0 z-30 grid place-items-center bg-white">
               <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
                 <span className="inline-block w-4 h-4 rounded-full border-2 border-slate-300 border-t-blue-600 animate-spin" aria-hidden="true" />
                 Memuat template…

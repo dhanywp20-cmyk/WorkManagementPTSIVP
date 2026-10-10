@@ -21,7 +21,7 @@ import { muatGambarLayar } from './aset';
 
 const API = '/api/tools-team/template-kategori';
 /** Batas tunggu lapisan "Memuat template" saat server lambat - sesudahnya kanvas dibuka apa adanya. */
-const BATAS_TUNGGU_MS = 6000;
+const BATAS_TUNGGU_MS = 12000;
 
 export interface InfoTemplateKategori { kategori: KategoriRuang; nama: string; ditetapkan_oleh_nama: string | null; updated_at: string }
 type BarisTemplate = InfoTemplateKategori & { data: { ruang: IsiTemplateKategori['ruang']; benda: IsiTemplateKategori['benda']; layar?: Record<string, string>; tekstur?: Record<string, string> } };
@@ -48,14 +48,18 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
     Sekarang:
       - Perangkat yang sudah pernah memuat ingat isi default Admin (simpan/templateAwal.ts):
         useKeadaanDesain langsung membuka kanvas dengan isi itu. Server hanya dicek di belakang.
-      - Perangkat yang belum pernah: kanvas ditutup lapisan "Memuat template" sampai server menjawab
+      - Perangkat yang belum pernah (atau terakhir ingat "tidak ada default"): kanvas ditutup lapisan
+        "Memuat template" (penuh, tidak tembus) sampai server menjawab
         (satu permintaan - daftar + isi kategori awal sekaligus lewat ?awal=), jadi versi pabrikan
         tidak pernah terlihat.
       - Admin mengubah / mengembalikan bawaan sejak kunjungan terakhir: kanvas mengikuti server,
         selama pengguna belum mengubah kanvas atau membuka berkas lain.
     Riwayat Undo dimulai dari isi awal itu (Undo tidak kembali ke versi pabrikan).
   */
-  const [menungguAwal, setMenungguAwal] = useState(ingatanAwal === null);
+  //  Ditutup kecuali perangkat sudah ingat ISI default Admin (langsung tampil). Ingatan "tidak ada default"
+  //  juga ditutup sampai server menjawab: Admin bisa saja baru menetapkan default sejak kunjungan terakhir,
+  //  dan tanpa ini versi pabrikan sempat tampil lalu melompat.
+  const [menungguAwal, setMenungguAwal] = useState(!isiDariIngatan(ingatanAwal));
   const awalSelesai = useRef(false);
   const bendaAwal = useRef(benda);
   const asalAwal = useRef(asal);
