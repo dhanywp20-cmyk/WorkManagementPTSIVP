@@ -26,7 +26,7 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
   }, [terpilih, geserAktif, alatKanvas]);
   return (
     <>
-      <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5 max-w-[calc(100%-16px)]">
+      <div className="kontrol-kanvas absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5 max-w-[calc(100%-16px)]">
         <button type="button" onClick={() => setChipBuka(v => !v)} aria-expanded={chipBuka}
           className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/95 border border-slate-200 text-[12px] font-bold text-slate-700 shadow-sm">
           <Settings2 size={14} /> Tampilan {chipBuka ? '▴' : '▾'}
@@ -60,7 +60,7 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
       </div>
       <button type="button" onClick={() => setLayarPenuh(v => !v)} aria-pressed={layarPenuh}
         title={layarPenuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} aria-label={layarPenuh ? 'Keluar layar penuh' : 'Layar penuh'}
-        className="absolute right-2 top-2 z-10 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 border border-slate-200 text-slate-700 shadow-sm hover:bg-slate-50">
+        className="kontrol-kanvas absolute right-2 top-2 z-10 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 border border-slate-200 text-slate-700 shadow-sm hover:bg-slate-50">
         {layarPenuh ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
     </>

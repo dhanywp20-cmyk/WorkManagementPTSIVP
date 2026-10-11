@@ -498,3 +498,7 @@ html {
 /* Materi Learning Center: tinggi = area isi dikurangi header+tab LC (dulu calc(100vh-…) di iframe). */
 .tinggi-materi-lc { height: calc(var(--tinggi-isi, 100vh) - 112px); }
 @media (min-width: 640px) { .tinggi-materi-lc { height: calc(var(--tinggi-isi, 100vh) - 60px); } }
+
+/* Desain 3D: selama benda diseret, kontrol di atas kanvas tidak menangkap kursor (lihat mesin/useMesin.ts). */
+[data-seret] .kontrol-kanvas,
+[data-seret] .kontrol-kanvas * { pointer-events: none !important; }

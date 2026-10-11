@@ -82,7 +82,12 @@ export function useMesin(K: KeadaanDesain) {
 
         const gizmo = new TransformControls(kamera, renderer.domElement);
         gizmo.setSize(0.8);
-        gizmo.addEventListener('dragging-changed', (e: { value: unknown }) => { orbit.enabled = !e.value; });
+        gizmo.addEventListener('dragging-changed', (e: { value: unknown }) => {
+          orbit.enabled = !e.value;
+          //  Selama benda diseret, kontrol di atas kanvas (.kontrol-kanvas) tidak menangkap kursor - kursor yang
+          //  lewat di atas chip / tombol tidak memblok teks atau "mencuri" seretan (globals.css).
+          wadah.toggleAttribute('data-seret', !!e.value);
+        });
         gizmo.addEventListener('objectChange', () => {
           const o = gizmo.object; if (!o?.userData.id) return;
           const r = ruangRef.current;
