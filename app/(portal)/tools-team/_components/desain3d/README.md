@@ -41,6 +41,8 @@ Arah ketergantungan **satu arah**: `panel → (aksi, simpan, ekspor, mesin) → 
 | `pustaka.ts` | isi proyektor / display / speaker dari Pustaka Tools Team (katalog produk Admin) |
 | `teks.ts` | teks / keterangan manual: baris, tinggi huruf, ukuran kotak dari isi |
 | `teksturRuang.ts` | tekstur gambar sendiri lantai & dinding: kunci, ubin (m), gambar yang ikut disimpan |
+| `presisi.ts` | snap grid geser / putar (+ magnet), penggaris: panjang, rincian datar / tinggi, format mm |
+| `tata.ts` | tapak ikut rotasi, ratakan & sebar, magnet ke tepi benda lain, larik, geser tepat, kelompok sembunyikan |
 | `index.ts` | barrel: `import { ... } from '../inti'` |
 
 ## bangun/ — geometri three.js

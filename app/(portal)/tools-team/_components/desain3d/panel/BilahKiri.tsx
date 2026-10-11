@@ -1,11 +1,12 @@
 'use client';
 /**
- * Bilah alat kiri di dalam kanvas: Tambah, Teks cepat, Pilih banyak, Penggaris, Snap grid, dan Geser / Putar
+ * Bilah alat kiri di dalam kanvas: Tambah, Teks cepat, Pilih banyak, Penggaris, Snap grid (+ magnet), Kelompok
+ * (sembunyikan / isolasi), dan Geser / Putar
  * untuk benda terpilih. Pintasan: A = Tambah, M = penggaris, G = snap, R = geser/putar, Esc = batal.
  */
 import { useEffect, useRef, useState } from 'react';
-import { BoxSelect, Grid3x3, Move3d, Plus, Rotate3d, Ruler, Type } from 'lucide-react';
-import { KATALOG, labelLangkah, LANGKAH_SNAP, MAKS_PENGGARIS, SUDUT_SNAP, titikSnap, type Titik } from '../inti';
+import { BoxSelect, Grid3x3, Layers, Magnet, Move3d, Plus, Rotate3d, Ruler, Type } from 'lucide-react';
+import { golonganDari, type Golongan, KATALOG, LABEL_GOLONGAN, labelLangkah, LANGKAH_SNAP, MAKS_PENGGARIS, SUDUT_SNAP, titikSnap, type Titik } from '../inti';
 import { grupNav } from './gaya';
 import { TombolNav } from './TombolNav';
 import type { AlatDesain } from './alat';
@@ -13,9 +14,12 @@ import type { AlatDesain } from './alat';
 const ITEM_TEKS = KATALOG.flatMap(g => g.item).find(i => i.kunci === 'teks-dinding');
 
 export function BilahKiri({ a }: { a: AlatDesain }) {
-  const { alatKanvas, bukaSisi, hanyaLihat, klikUkurRef, modeBanyak, modeGizmo, ruang, setAlatKanvas, setModeBanyak, setModeGizmo,
+  const { benda, sembunyiGolongan, setSembunyiGolongan, alatKanvas, bukaSisi, hanyaLihat, klikUkurRef, modeBanyak, modeGizmo, ruang, setAlatKanvas, setModeBanyak, setModeGizmo,
     setPilih, setRuang, setSnap, setTitikUkur, sisi, snap, terpilih, titikUkur } = a.K;
   const [menuSnap, setMenuSnap] = useState(false);
+  const [menuKelompok, setMenuKelompok] = useState(false);
+  //  Kelompok yang ada di desain ini (urutan tetap), untuk sembunyikan / isolasi.
+  const kelompok = (Object.keys(LABEL_GOLONGAN) as Golongan[]).filter(g => benda.some(b => golonganDari(b.jenis) === g));
   const titikRef = useRef<Titik | null>(titikUkur); titikRef.current = titikUkur;
   const snapRef = useRef(snap); snapRef.current = snap;
   const ukur = alatKanvas === 'ukur';
@@ -67,7 +71,9 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
         {!hanyaLihat && ITEM_TEKS && <TombolNav judul="Tambah teks / keterangan" onClick={() => a.aksi.tambah(ITEM_TEKS)}><Type size={17} /></TombolNav>}
         <TombolNav judul={modeBanyak ? 'Pilih banyak: aktif' : 'Pilih banyak (atau Shift / Ctrl + klik)'} aktif={modeBanyak} onClick={() => { keluarUkur(); setModeBanyak(!modeBanyak); }}><BoxSelect size={17} /></TombolNav>
         <TombolNav judul={ukur ? 'Penggaris: aktif - klik dua titik (M / Esc untuk selesai)' : 'Penggaris - ukur jarak dua titik (M)'} aktif={ukur} onClick={() => (ukur ? keluarUkur() : mulaiUkur())}><Ruler size={17} /></TombolNav>
-        <TombolNav judul={snap.aktif ? `Snap grid ${labelLangkah(snap.langkah)} · ${snap.sudut}° (G)` : 'Snap grid - geser & putar presisi (G)'} aktif={snap.aktif || menuSnap} onClick={() => setMenuSnap(v => !v)}><Grid3x3 size={17} /></TombolNav>
+        <TombolNav judul={snap.aktif ? `Snap grid ${labelLangkah(snap.langkah)} · ${snap.sudut}° (G)` : 'Snap grid - geser & putar presisi (G)'} aktif={snap.aktif || menuSnap} onClick={() => { setMenuKelompok(false); setMenuSnap(v => !v); }}><Grid3x3 size={17} /></TombolNav>
+        <TombolNav judul={sembunyiGolongan.length ? `Kelompok: ${sembunyiGolongan.length} disembunyikan` : 'Sembunyikan / isolasi kelompok benda'} aktif={sembunyiGolongan.length > 0 || menuKelompok}
+          onClick={() => { setMenuSnap(false); setMenuKelompok(v => !v); }}><Layers size={17} /></TombolNav>
       </div>
       {terpilih && !ukur && (
         <div className={`${grupNav} self-start`} role="group" aria-label="Geser atau putar benda">
@@ -84,6 +90,28 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
           )}
         </div>
       )}
+      {menuKelompok && (
+        <>
+          <div aria-hidden="true" className="fixed inset-0 z-20" onClick={() => setMenuKelompok(false)} />
+          <div className="absolute left-11 top-10 z-30 w-60 rounded-xl bg-white border border-slate-200 shadow-xl p-2.5 space-y-1">
+            <p className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 mb-1">Tampilkan kelompok</p>
+            {kelompok.map(g => (
+              <div key={g} className="flex items-center gap-2">
+                <label className="flex-1 flex items-center gap-2 text-[12.5px] text-slate-700">
+                  <input type="checkbox" className="w-4 h-4" checked={!sembunyiGolongan.includes(g)}
+                    onChange={e => setSembunyiGolongan(e.target.checked ? sembunyiGolongan.filter(x => x !== g) : [...sembunyiGolongan, g])} />
+                  {LABEL_GOLONGAN[g]}
+                </label>
+                <button type="button" onClick={() => setSembunyiGolongan(kelompok.filter(x => x !== g))} title={`Isolasi: tampilkan hanya ${LABEL_GOLONGAN[g]}`}
+                  className="px-1.5 py-0.5 rounded text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Hanya</button>
+              </div>
+            ))}
+            {sembunyiGolongan.length > 0 && (
+              <button type="button" onClick={() => setSembunyiGolongan([])} className="w-full mt-1 px-2 py-1 rounded-md text-[12px] font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">Tampilkan semua</button>
+            )}
+          </div>
+        </>
+      )}
       {menuSnap && (
         <>
           <div aria-hidden="true" className="fixed inset-0 z-20" onClick={() => setMenuSnap(false)} />
@@ -98,6 +126,10 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
                 {LANGKAH_SNAP.map(l => <button key={l} type="button" onClick={() => setSnap({ ...snap, aktif: true, langkah: l })} className={pilihan(snap.aktif && snap.langkah === l)}>{labelLangkah(l)}</button>)}
               </div>
             </div>
+            <label className="flex items-center justify-between gap-2 text-[12px] font-semibold text-slate-700" title="Saat digeser, benda menempel ke tepi / tengah benda lain dalam jarak 5 cm">
+              <span className="inline-flex items-center gap-1.5"><Magnet size={14} /> Magnet ke benda</span>
+              <input type="checkbox" className="w-4 h-4" checked={snap.magnet} onChange={e => setSnap({ ...snap, magnet: e.target.checked })} />
+            </label>
             <div>
               <p className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 mb-1">Putar</p>
               <div className="flex flex-wrap gap-1">

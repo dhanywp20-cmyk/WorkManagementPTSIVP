@@ -250,6 +250,7 @@ export function pusatkanIsi(benda: Benda[], ruang: Ruang, sumbu: SumbuPusat = 'x
     const dz = sumbu.includes('z') ? geser('z') : 0;
     if (!dx && !dz) return;
     const pindah = (b: Benda, gx: boolean, gz: boolean): Benda => {
+      if (b.terkunci) return b;   // benda terkunci tetap di tempatnya
       const { ex, ez } = jejak(b);
       const lx = Math.min(ex, k.p / 2 - 0.01), lz = Math.min(ez, k.l / 2 - 0.01);
       return {

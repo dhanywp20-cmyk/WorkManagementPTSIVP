@@ -5,7 +5,7 @@
  */
 import { useEffect } from 'react';
 import { sesuaikanTinggi } from '../bangun';
-import { daftarRuang, ikutUtama, ruangDari, togglePilih } from '../inti';
+import { daftarRuang, ikutUtama, magnet, ruangDari, tampilDi, togglePilih } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import type { Mesin } from './tipe';
@@ -14,7 +14,7 @@ import { hindariTumpuk } from './label';
 
 
 export function useMesin(K: KeadaanDesain) {
-  const { bendaRef, dariToggle, gambarLayar, klikUkurRef, mesin, modeBanyakRef, modeSeret, pilihLainRef, pilihRef, ruangRef, setBenda, setGalat, setPilih, setPilihLain, setSiap, siap, wadahRef } = K;
+  const { bendaRef, dariToggle, gambarLayar, klikUkurRef, sembunyiRef, snapRef, sumbuGeserRef, mesin, modeBanyakRef, modeSeret, pilihLainRef, pilihRef, ruangRef, setBenda, setGalat, setPilih, setPilihLain, setSiap, siap, wadahRef } = K;
   // ── Inisialisasi (sekali) ──
   useEffect(() => {
     let hidup = true;
@@ -88,8 +88,14 @@ export function useMesin(K: KeadaanDesain) {
           const r = ruangRef.current;
           const bt = batasDunia(r);
           const b0 = bendaRef.current.find(b => b.id === o.userData.id); if (!b0) return;
-          const x = Math.round(Math.min(bt.x, Math.max(0, o.position.x)) * 100) / 100;
-          const z = Math.round(Math.min(bt.z, Math.max(0, o.position.z)) * 100) / 100;
+          let x = Math.round(Math.min(bt.x, Math.max(0, o.position.x)) * 1000) / 1000;
+          let z = Math.round(Math.min(bt.z, Math.max(0, o.position.z)) * 1000) / 1000;
+          //  Magnet: tarik ke tepi / tengah benda lain (yang tidak ikut terpilih & tidak disembunyikan).
+          if ((gizmo as unknown as { mode: string }).mode === 'translate' && snapRef.current.magnet) {
+            const ikut = new Set([o.userData.id as string, ...pilihLainRef.current]);
+            const mg = magnet({ ...b0, x, z }, bendaRef.current.filter(b => !ikut.has(b.id) && tampilDi(b, sembunyiRef.current)));
+            x = Math.min(bt.x, Math.max(0, mg.x)); z = Math.min(bt.z, Math.max(0, mg.z));
+          }
           const plafon = daftarRuang(r)[ruangDari(r, x)]?.t ?? r.t;
           const elev = Math.round(Math.min(Math.max(0, plafon - b0.h), Math.max(0, o.position.y)) * 100) / 100;
           const rot = ((Math.round((o.rotation.y * 180) / Math.PI) % 360) + 360) % 360;
@@ -102,6 +108,11 @@ export function useMesin(K: KeadaanDesain) {
             //  Pilih banyak: benda lain ikut tergeser / berputar mengelilingi benda utama.
             return pilihLainRef.current.length ? ikutUtama(satu, pilihLainRef.current, lama, { x, z, rot, elev }) : satu;
           });
+        });
+        //  Sumbu terakhir yang diseret (X / Z) - arah bawaan "ketik jarak geser".
+        gizmo.addEventListener('mouseUp', () => {
+          const s = String((gizmo as unknown as { axis?: string | null }).axis ?? '');
+          if (s === 'X' || s === 'Z') sumbuGeserRef.current = s === 'X' ? 'x' : 'z';
         });
         scene.add(gizmo.getHelper ? gizmo.getHelper() : (gizmo as unknown as T.Object3D));
 
@@ -144,7 +155,7 @@ export function useMesin(K: KeadaanDesain) {
           }
           //  Kotak sorotan (garis) dikecualikan: ambang raycast garis 1 m membuat
           //  klik di dekat benda terpilih justru membatalkan pilihan.
-          const kena = ray.intersectObjects(grupBenda.children.filter(o => !o.userData.sorot), true)[0];
+          const kena = ray.intersectObjects(grupBenda.children.filter(o => !o.userData.sorot && o.visible), true)[0];
           let o: T.Object3D | null = kena?.object ?? null;
           while (o && !o.userData.id) o = o.parent;
           const idKena = (o?.userData.id as string | undefined) ?? null;

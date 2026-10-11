@@ -109,6 +109,7 @@ export interface Benda {
   /** Teks manual (inti/teks.ts): isi (boleh beberapa baris), tinggi huruf (m), arah hadap, warna latar (#rrggbb; kosong = transparan).
    *  Warna tulisan = `warna`. w / h / d diturunkan dari isi (terapkanUkuranTeks). */
   teks?: string; tinggiHuruf?: number; hadapTeks?: HadapTeks; latarTeks?: string;
+  /** Dikunci: tidak bisa digeser / diputar (gizmo tidak muncul), tidak ikut ratakan / sebar / geser tepat. */ terkunci?: boolean;
 }
 export interface Ruang {
   p: number; l: number; t: number; lantai: 'kayu' | 'karpet' | 'keramik' | 'polos';
