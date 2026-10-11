@@ -1,10 +1,10 @@
 /**
  * uji/desain3d-grid-proyektor.ts - grid cahaya proyektor (inti/gridProyektor.ts): jumlah kotak mengikuti
- * rasio gambar, ukuran satu kotak dalam mm, pilihan kolom yang sah.
+ * rasio gambar, ukuran satu kotak dalam mm, pilihan kolom yang sah, permukaan sasaran utama.
  *
  * Jalankan: npm test -- desain3d-grid-proyektor
  */
-import { gridKolomSah, KOLOM_GRID_AWAL, kotakGrid, labelKotakGrid } from '../app/(portal)/tools-team/_components/desain3d/inti';
+import { gridKolomSah, KOLOM_GRID_AWAL, kotakGrid, labelKotakGrid, permukaanUtama } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -21,6 +21,11 @@ cek('8 kolom di 6 m -> 750 mm per kotak', g8.kolom === 8 && labelKotakGrid(g8).s
 cek('pemisah ribuan untuk kotak besar', labelKotakGrid(kotakGrid(16, 10, 8)) === '1 kotak 2.000 × 2.000 mm');
 cek('kolom tidak sah -> bawaan', gridKolomSah(7) === KOLOM_GRID_AWAL && gridKolomSah('16') === KOLOM_GRID_AWAL && gridKolomSah(24) === 24);
 cek('gambar sangat pipih tetap minimal 1 baris', kotakGrid(10, 0.01, 16).baris === 1);
+
+const bidang = (id: string) => id.startsWith('bd');
+cek('permukaan utama = benda sasaran yang paling banyak disinari', permukaanUtama(['bd1', 'bd1', 'bd2', null, 'kursi'], bidang) === 'bd1');
+cek('kursi / dinding bukan permukaan mapping', permukaanUtama(['kursi', 'kursi', null, null], bidang) === null);
+cek('sasaran yang hanya kena sedikit diabaikan', permukaanUtama(['bd1', ...Array(9).fill(null)], bidang) === null);
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

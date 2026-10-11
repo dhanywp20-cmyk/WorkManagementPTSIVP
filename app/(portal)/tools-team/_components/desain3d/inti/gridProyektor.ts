@@ -23,3 +23,18 @@ export function kotakGrid(lebar: number, tinggi: number, kolom: unknown): KotakG
 
 /** "1 kotak 245 × 245 mm" - satuan gambar kerja AV. */
 export const labelKotakGrid = (g: KotakGrid) => `1 kotak ${Math.round(g.w * 1000).toLocaleString('id-ID')} × ${Math.round(g.h * 1000).toLocaleString('id-ID')} mm`;
+
+/** Ukuran gambar di permukaan yang benar-benar disinari + nama permukaan sasaran (null = dinding / ruangan). */
+export interface CahayaDiPermukaan { lebar: number; tinggi: number; permukaan: string | null }
+
+/**
+ * Permukaan sasaran utama sebuah proyektor dari id benda yang dikenai titik-titik sinarnya: benda yang
+ * paling sering dikenai di antara yang lolos `sasaran`, bila mencakup minimal `porsiMin` dari semua titik.
+ */
+export function permukaanUtama(kenaId: readonly (string | null)[], sasaran: (id: string) => boolean, porsiMin = 0.25): string | null {
+  const hitung = new Map<string, number>();
+  for (const id of kenaId) if (id && sasaran(id)) hitung.set(id, (hitung.get(id) ?? 0) + 1);
+  let terbaik: string | null = null, n = 0;
+  for (const [id, c] of hitung) if (c > n) { terbaik = id; n = c; }
+  return terbaik && n >= Math.max(1, kenaId.length * porsiMin) ? terbaik : null;
+}

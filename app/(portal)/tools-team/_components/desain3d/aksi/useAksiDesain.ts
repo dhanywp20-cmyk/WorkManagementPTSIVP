@@ -3,7 +3,7 @@
  * Aksi edit desain: template kategori, tambah / duplikat / salin / tempel benda, ruang & bukaan, gambar layar.
  * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
  */
-import { type Benda, bendaBaru, BISA_PASANG, type Bukaan, BUKAAN_AWAL, CELAH_PASANG, daftarRuang, idBaru, type ItemKatalog, KATEGORI_RUANG, type KategoriRuang, type Kotak, layarTerdekat, MAKS_RUANG, panjangDinding, pasangDari, proyektorKeLayar, pusatkanIsi, type Ruang, ruangDari, type RuangSambung, salinIsi, salinKeRuang, sambungan, sambunganKe, sesuaikanUkuranRuang, setRuangKelas, type SisiDinding, sisiLuar, type SumbuPusat, templateRuang, tinggiAlasDi } from '../inti';
+import { type Benda, bendaBaru, BISA_PASANG, type Bukaan, BUKAAN_AWAL, CELAH_PASANG, daftarRuang, idBaru, type ItemKatalog, KATEGORI_RUANG, type KategoriRuang, type Kotak, layarTerdekat, MAKS_RUANG, panjangDinding, pasangDari, proyektorKeLayar, pusatkanIsi, type Ruang, ruangDari, type RuangSambung, salinIsi, salinKeRuang, sambungan, sambunganKe, sesuaikanUkuranRuang, setRuangKelas, type SisiDinding, sisiLuar, type SumbuPusat, tempatTeksBebas, templateRuang, tinggiAlasDi } from '../inti';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { R2_AWAL, RUANG_AWAL } from '../useKeadaanDesain';
 import type { Sisi } from '../mesin/tipe';
@@ -80,7 +80,9 @@ export function useAksiDesain(K: KeadaanDesain) {
     const layar = b0.jenis === 'proyektor' ? layarTerdekat(b0, benda, ruang) : null;
     const b1 = layar ? proyektorKeLayar(b0, layar, k, ruang) : b0;
     //  Objek mapping berdiri di atas alas / panggung di bawahnya (template Mapping objek: alas di tengah).
-    const b = b1.jenis === 'objek' ? { ...b1, elev: tinggiAlasDi(benda, b1.x, b1.z) } : b1;
+    //  Teks baru di tempat yang tidak tertutup benda lain (mis. bukan di belakang videowall).
+    const b = b1.jenis === 'objek' ? { ...b1, elev: tinggiAlasDi(benda, b1.x, b1.z) }
+      : b1.jenis === 'teks' ? { ...b1, ...tempatTeksBebas(b1, benda, k) } : b1;
     setBenda(bs => [...bs, b]); setPilih(b.id); setModal(null);
   };
 

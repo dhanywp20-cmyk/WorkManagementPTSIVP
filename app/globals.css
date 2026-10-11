@@ -502,3 +502,7 @@ html {
 /* Desain 3D: selama benda diseret, kontrol di atas kanvas tidak menangkap kursor (lihat mesin/useMesin.ts). */
 [data-seret] .kontrol-kanvas,
 [data-seret] .kontrol-kanvas * { pointer-events: none !important; }
+/* Wadah kontrol di atas kanvas: hanya tombol / chip yang menangkap kursor; area kosong & sela di antaranya
+   tembus ke kanvas (pilih benda, putar kamera). Tanpa ini wadah kiri-atas menutupi sebagian besar kanvas. */
+.lapis-tembus { pointer-events: none; }
+.lapis-tembus > * { pointer-events: auto; }

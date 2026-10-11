@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useImporObjek } from './impor/useImporObjek';
-import { analisisDari, type Benda, contohAwal, daftarRuang, DISPLAY, golonganDipakai, jalurKabel, KATEGORI_RUANG, type OpsiKelas, type Snap, snapSah, type Titik, type Ruang, ruangDari, tinggiAlasDi, titikPenonton, type Blending } from './inti';
+import { analisisDari, type Benda, type CahayaDiPermukaan, contohAwal, daftarRuang, DISPLAY, golonganDipakai, jalurKabel, KATEGORI_RUANG, type OpsiKelas, type Snap, snapSah, type Titik, type Ruang, ruangDari, tinggiAlasDi, titikPenonton, type Blending } from './inti';
 import { useRiwayat } from '../bersama/riwayat';
 import type { ConfirmState } from '@/components/shared/ConfirmDialog';
 import { getSession } from '@/lib/auth';
@@ -99,7 +99,7 @@ export function useKeadaanDesain() {
   /** Hasil hitung blending terakhir dari kanvas (mesin/alatBantu.ts). */
   const [infoBlending, setInfoBlending] = useState<Blending[]>([]);
   /** Ukuran gambar tiap proyektor di permukaan yang benar-benar disinari (m, dari raycast kanvas) - untuk ukuran kotak grid di panel. */
-  const [ukuranCahaya, setUkuranCahaya] = useState<Record<string, [number, number]>>({});
+  const [ukuranCahaya, setUkuranCahaya] = useState<Record<string, CahayaDiPermukaan>>({});
   /** Seret satu jari / klik kiri: putar kamera atau geser bidang. */
   const [modeSeret, setModeSeret] = useState<'putar' | 'geser'>('putar');
   const [menuSudut, setMenuSudut] = useState(false);

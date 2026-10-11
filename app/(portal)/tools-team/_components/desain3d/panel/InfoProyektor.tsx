@@ -107,15 +107,16 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
     const lyr = sn.layar;
     if (!lyr) {
       const dekat = layarTerdekat(p, benda, ruang);
+      const cahaya = K.ukuranCahaya[p.id];
       return (
         <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-2.5 space-y-2">
-          <p className="text-[12px] text-slate-700 leading-relaxed">
-            Belum menghadap layar proyektor di ruang ini - cahaya jatuh di dinding sejauh {f(sn.jarak)} m (gambar {f(sn.lebar)} × {f(sn.tinggi)} m).
-          </p>
+          {cahaya?.permukaan
+            ? <p className="text-[12px] text-slate-700 leading-relaxed">Ke <b>{cahaya.permukaan}</b>: gambar ±{f(cahaya.lebar)} × {f(cahaya.tinggi)} m, tilt {f(tiltDari(p), 1)}°.</p>
+            : <p className="text-[12px] text-slate-700 leading-relaxed">Ke dinding: jarak {f(sn.jarak)} m, gambar {f(sn.lebar)} × {f(sn.tinggi)} m.</p>}
           {dekat
             ? <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, dekat, k, ruang))}>Arahkan ke {dekat.nama}</button>
-            : <p className="text-[12px] text-slate-600" title="Tambah → Display → Layar proyektor">Belum ada layar</p>}
-          {blokGrid(K.ukuranCahaya[p.id]?.[0] ?? sn.lebar, K.ukuranCahaya[p.id]?.[1] ?? sn.tinggi)}
+            : !cahaya?.permukaan && <p className="text-[12px] text-slate-600" title="Tambah → Display → Layar proyektor">Belum ada layar</p>}
+          {blokGrid(K.ukuranCahaya[p.id]?.lebar ?? sn.lebar, K.ukuranCahaya[p.id]?.tinggi ?? sn.tinggi)}
           {blokKontras(p, true)}
           {blokBlending}
         </div>
@@ -143,7 +144,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
             TR {f(trPas, 2)} di luar rentang zoom lensa ({f(zMin, 2)}–{f(zMax, 2)}): pindahkan lensa ke jarak {f(zMin * lyr.w)}–{f(zMax * lyr.w)} m dari layar, atau ganti lensa.
           </p>
         ))}
-        {blokGrid(K.ukuranCahaya[p.id]?.[0] ?? sn.lebar, K.ukuranCahaya[p.id]?.[1] ?? sn.tinggi)}
+        {blokGrid(K.ukuranCahaya[p.id]?.lebar ?? sn.lebar, K.ukuranCahaya[p.id]?.tinggi ?? sn.tinggi)}
         {blokKontras(p, false)}
         {blokBlending}
         <ul className="text-[12px] font-semibold space-y-0.5">

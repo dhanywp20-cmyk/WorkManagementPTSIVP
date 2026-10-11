@@ -26,12 +26,12 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
   }, [terpilih, geserAktif, alatKanvas]);
   return (
     <>
-      <div className="kontrol-kanvas absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5 max-w-[calc(100%-16px)]">
+      <div className="kontrol-kanvas lapis-tembus absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5 max-w-[calc(100%-16px)]">
         <button type="button" onClick={() => setChipBuka(v => !v)} aria-expanded={chipBuka}
           className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/95 border border-slate-200 text-[12px] font-bold text-slate-700 shadow-sm">
           <Settings2 size={14} /> Tampilan {chipBuka ? '▴' : '▾'}
         </button>
-        <div className={`${chipBuka ? 'flex' : 'hidden'} sm:flex gap-1.5 flex-wrap`}>
+        <div className={`${chipBuka ? 'flex' : 'hidden'} sm:flex gap-1.5 flex-wrap lapis-tembus`}>
           {[{ v: ukur, s: setUkur, l: 'Ukuran' },
             ...(benda.some(b => DISPLAY.includes(b.jenis)) ? [{ v: garisUkur, s: setGarisUkur, l: 'Garis ukuran (mm)' }] : []),
             { v: labelProduk, s: setLabelProduk, l: 'Label produk' },

@@ -15,7 +15,7 @@ const ITEM_TEKS = KATALOG.flatMap(g => g.item).find(i => i.kunci === 'teks-dindi
 
 export function BilahKiri({ a }: { a: AlatDesain }) {
   const { benda, sembunyiGolongan, setSembunyiGolongan, alatKanvas, bukaSisi, hanyaLihat, klikUkurRef, modeBanyak, modeGizmo, ruang, setAlatKanvas, setModeBanyak, setModeGizmo,
-    setPilih, setRuang, setSnap, setTitikUkur, sisi, snap, terpilih, titikUkur } = a.K;
+    setPilih, setPilihLain, setRuang, setSnap, setTitikUkur, sisi, snap, terpilih, titikUkur } = a.K;
   const [menuSnap, setMenuSnap] = useState(false);
   const [menuKelompok, setMenuKelompok] = useState(false);
   //  Kelompok yang ada di desain ini (urutan tetap), untuk sembunyikan / isolasi.
@@ -40,7 +40,7 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
   }, [ukur, klikUkurRef, setRuang, setTitikUkur]);
 
   const keluarUkur = () => { setAlatKanvas('pilih'); setTitikUkur(null); };
-  const mulaiUkur = () => { setPilih(null); setModeBanyak(false); setAlatKanvas('ukur'); };
+  const mulaiUkur = () => { setPilih(null); setPilihLain([]); setModeBanyak(false); setAlatKanvas('ukur'); };
 
   //  Pintasan papan ketik (diabaikan saat mengetik di isian).
   useEffect(() => {
@@ -60,7 +60,7 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
 
   const pilihan = (aktif: boolean) => `px-2 py-1 rounded-md text-[12px] font-semibold border ${aktif ? 'bg-blue-700 border-blue-700 text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`;
   return (
-    <div className="relative flex flex-col gap-1.5" role="toolbar" aria-label="Alat desain">
+    <div className="lapis-tembus relative flex flex-col gap-1.5" role="toolbar" aria-label="Alat desain">
       {!hanyaLihat && (
         <button type="button" onClick={() => bukaSisi('tambah')} aria-pressed={sisi === 'tambah'} title="Tambah benda (A)"
           className={`inline-flex items-center gap-1.5 h-9 px-2.5 rounded-xl text-[12.5px] font-bold text-white shadow-sm bg-blue-700 hover:bg-blue-800 ${sisi === 'tambah' ? 'ring-2 ring-offset-1 ring-blue-400' : ''}`}>

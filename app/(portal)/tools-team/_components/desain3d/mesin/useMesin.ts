@@ -147,8 +147,10 @@ export function useMesin(K: KeadaanDesain) {
         let ketukLalu: { t: number; x: number; y: number } | null = null;
         const turun = (e: PointerEvent) => { turunDi = { x: e.clientX, y: e.clientY }; };
         const naik = (e: PointerEvent) => {
-          if (!turunDi || Math.hypot(e.clientX - turunDi.x, e.clientY - turunDi.y) > 5 || (gizmo as unknown as { dragging: boolean }).dragging) { turunDi = null; return; }
+          const diam = !!turunDi && Math.hypot(e.clientX - turunDi.x, e.clientY - turunDi.y) <= 5;
           turunDi = null;
+          //  Gizmo diabaikan dalam mode penggaris: klik di dekat panah gizmo tetap menjadi titik ukur.
+          if (!diam || (!klikUkurRef.current && (gizmo as unknown as { dragging: boolean }).dragging)) return;
           const r = renderer.domElement.getBoundingClientRect();
           ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
           ray.setFromCamera(ptr, kamera);
