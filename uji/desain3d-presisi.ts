@@ -14,11 +14,11 @@ function cek(nama: string, syarat: boolean) {
 }
 
 console.log('\n1. Snap');
-cek('pengaturan rusak -> bawaan (mati, 10 cm, 15°)', JSON.stringify(snapSah({ aktif: 'ya', langkah: 0.07, sudut: 33 })) === JSON.stringify({ aktif: false, langkah: 0.1, sudut: 15 }));
+cek('pengaturan rusak -> bawaan (mati, 10 cm, 15°)', JSON.stringify(snapSah({ aktif: 'ya', langkah: 0.07, sudut: 33 })) === JSON.stringify({ aktif: false, langkah: 0.1, sudut: 15, magnet: true }));
 cek('pengaturan sah dipertahankan', snapSah({ aktif: true, langkah: 0.05, sudut: 45 }).langkah === 0.05);
 cek('bulatkan 1,234 ke 5 cm = 1,25 (tanpa sisa desimal aneh)', bulatkanKe(1.234, 0.05) === 1.25 && bulatkanKe(0.3, 0.1) === 0.3);
-cek('titik penggaris ikut grid saat snap aktif', titikSnap([1.234, 0.76, 2.01], { aktif: true, langkah: 0.1, sudut: 15 }).join() === '1.2,0.8,2');
-cek('snap mati -> dibulatkan ke mm saja', titikSnap([1.23456, 0, 0], { aktif: false, langkah: 0.1, sudut: 15 })[0] === 1.235);
+cek('titik penggaris ikut grid saat snap aktif', titikSnap([1.234, 0.76, 2.01], { aktif: true, langkah: 0.1, sudut: 15, magnet: true }).join() === '1.2,0.8,2');
+cek('snap mati -> dibulatkan ke mm saja', titikSnap([1.23456, 0, 0], { aktif: false, langkah: 0.1, sudut: 15, magnet: true })[0] === 1.235);
 
 console.log('\n2. Grid yang digambar');
 cek('ruang 8 m, langkah 10 cm -> tetap 10 cm (80 garis)', jarakGrid(0.1, 8) === 0.1);

@@ -5,10 +5,10 @@
 import type { Titik } from './tipe';
 
 /** Snap geser: langkah grid (m) & snap putar (derajat). */
-export interface Snap { aktif: boolean; langkah: number; sudut: number }
+export interface Snap { aktif: boolean; langkah: number; sudut: number; /** Tarik ke tepi / tengah benda lain saat digeser (inti/tata.ts magnet). */ magnet: boolean }
 export const LANGKAH_SNAP = [0.01, 0.05, 0.1, 0.25, 0.5, 1] as const;
 export const SUDUT_SNAP = [5, 15, 45, 90] as const;
-export const SNAP_AWAL: Snap = { aktif: false, langkah: 0.1, sudut: 15 };
+export const SNAP_AWAL: Snap = { aktif: false, langkah: 0.1, sudut: 15, magnet: true };
 
 export function snapSah(x: unknown): Snap {
   const o = (x ?? {}) as Partial<Snap>;
@@ -16,6 +16,7 @@ export function snapSah(x: unknown): Snap {
     aktif: o.aktif === true,
     langkah: (LANGKAH_SNAP as readonly number[]).includes(o.langkah as number) ? (o.langkah as number) : SNAP_AWAL.langkah,
     sudut: (SUDUT_SNAP as readonly number[]).includes(o.sudut as number) ? (o.sudut as number) : SNAP_AWAL.sudut,
+    magnet: o.magnet !== false,
   };
 }
 

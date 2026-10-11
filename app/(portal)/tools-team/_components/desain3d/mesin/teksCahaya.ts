@@ -69,11 +69,12 @@ export function gambarTeksCahaya(m: Mesin, pos: number[], uv: number[], blok: Bl
 }
 
 /**
- * Pola grid di seluruh gambar satu proyektor (uv 0..1): 16 x 9 kotak sama sisi untuk gambar 16:9, bingkai
+ * Pola grid di seluruh gambar satu proyektor (uv 0..1): kolom x baris kotak (bawaan 16 x 9, inti/gridProyektor.ts) + ukuran
+ * satu kotak (mm) di tengah-bawah, bingkai
  * tebal, dua diagonal & lingkaran pusat - warna proyektor itu. Campuran biasa (bukan aditif) supaya garis
  * tetap terlihat di permukaan putih. Tampil dari dua sisi (pola tanpa tulisan, tidak terbaca terbalik).
  */
-export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T.Color) {
+export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T.Color, kolom = 16, baris = 9, label = '') {
   const { THREE, grupBantu } = m;
   if (!pos.length) return;
   const W = 1024, H = 576;
@@ -82,14 +83,21 @@ export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T
   g.strokeStyle = `#${warna.getHexString()}`; g.lineCap = 'round';
   g.globalAlpha = 0.85; g.lineWidth = 2;
   g.beginPath();
-  for (let i = 1; i < 16; i++) { const x = (i / 16) * W; g.moveTo(x, 0); g.lineTo(x, H); }
-  for (let j = 1; j < 9; j++) { const y = (j / 9) * H; g.moveTo(0, y); g.lineTo(W, y); }
+  for (let i = 1; i < kolom; i++) { const x = (i / kolom) * W; g.moveTo(x, 0); g.lineTo(x, H); }
+  for (let j = 1; j < baris; j++) { const y = (j / baris) * H; g.moveTo(0, y); g.lineTo(W, y); }
   g.moveTo(0, 0); g.lineTo(W, H); g.moveTo(W, 0); g.lineTo(0, H);
   g.stroke();
   g.globalAlpha = 1; g.lineWidth = 6;
   g.strokeRect(3, 3, W - 6, H - 6);
   g.lineWidth = 3;
   g.beginPath(); g.arc(W / 2, H / 2, H * 0.12, 0, Math.PI * 2); g.stroke();
+  //  Ukuran satu kotak di permukaan (mm) di tengah-bawah gambar - pojok sudah dipakai keterangan & lux pojok.
+  if (label) {
+    g.font = '700 30px system-ui, sans-serif';
+    const lw = g.measureText(label).width + 24, x0 = (W - lw) / 2, y0 = H - 58;
+    g.fillStyle = 'rgba(255,255,255,0.94)'; g.fillRect(x0, y0, lw, 44);
+    g.fillStyle = `#${warna.getHexString()}`; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillText(label, W / 2, y0 + 23);
+  }
   const tx = new THREE.CanvasTexture(kv);
   tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;
   const geo = new THREE.BufferGeometry();

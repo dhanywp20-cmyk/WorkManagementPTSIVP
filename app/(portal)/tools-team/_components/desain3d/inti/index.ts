@@ -16,6 +16,7 @@
  *   teks       teks / keterangan manual (isi, ukuran kotak dari isi)
  *   teksturRuang  tekstur gambar sendiri untuk lantai & dinding
  *   presisi    snap grid geser / putar & penggaris (ukur jarak bebas)
+ *   tata       tapak, ratakan & sebar, magnet, larik, geser tepat, kelompok sembunyikan
  */
 export * from './tipe';
 export * from './ruang';
@@ -34,3 +35,5 @@ export * from './banyak';
 export * from './teks';
 export * from './teksturRuang';
 export * from './presisi';
+export * from './tata';
+export * from './gridProyektor';

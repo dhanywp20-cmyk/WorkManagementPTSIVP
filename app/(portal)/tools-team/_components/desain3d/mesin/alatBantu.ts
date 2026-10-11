@@ -12,11 +12,11 @@ import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import type { Mesin } from './tipe';
 
-export type KeadaanAlatBantu = Pick<KeadaanDesain, 'analisis' | 'benda' | 'garisUkur' | 'jangkau' | 'kabel' | 'kerucut' | 'kotakRuang' | 'labelProduk' | 'plafonDi' | 'ruang' | 'sinar' | 'sudutNyaman' | 'tampilKabel' | 'tampilShare' | 'ukur' | 'tampilBlending' | 'detailBlending' | 'gridSinar' | 'setInfoBlending'>;
+export type KeadaanAlatBantu = Pick<KeadaanDesain, 'analisis' | 'benda' | 'garisUkur' | 'jangkau' | 'kabel' | 'kerucut' | 'kotakRuang' | 'labelProduk' | 'plafonDi' | 'ruang' | 'sinar' | 'sudutNyaman' | 'tampilKabel' | 'tampilShare' | 'ukur' | 'tampilBlending' | 'detailBlending' | 'gridSinar' | 'setInfoBlending' | 'setUkuranCahaya'>;
 
 export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
   const { THREE, grupBantu, CSS2DObject } = m;
-  const { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, setInfoBlending } = k;
+  const { analisis, benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, setInfoBlending, setUkuranCahaya } = k;
   //  Isi lama dibuang BESERTA geometri & materialnya: efek ini berjalan tiap
   //  frame selama benda diseret, jadi tanpa dispose memori GPU terus naik.
   grupBantu.traverse(o => {
@@ -78,7 +78,7 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     }
   }
   //  Sinar proyektor, keterangan di bidang gambar, cahaya di benda & area blending - mesin/sinar.ts.
-  gambarSinar(m, { benda, ruang, sinar, ukur, labelProduk, plafonDi, tampilBlending, detailBlending, gridSinar, setInfoBlending }, labelP);
+  gambarSinar(m, { benda, ruang, sinar, ukur, labelProduk, plafonDi, tampilBlending, detailBlending, gridSinar, setInfoBlending, setUkuranCahaya }, labelP);
   //  Jangkauan suara speaker (kerucut sebaran H x V), dipotong di dinding, lantai & plafon ruangnya.
   //  Line array: satu berkas per modul + titik jatuh sumbunya di tinggi telinga. Tampil hanya bila
   //  dinyalakan: centang "Jangkauan speaker" (semua) atau "Tampilkan jangkauan" di panel Atur speaker itu.

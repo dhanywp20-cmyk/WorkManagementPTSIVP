@@ -83,7 +83,7 @@ export default function Desain3D() {
         <BilahAlat a={a} />
 
         <div className={`flex flex-col lg:flex-row ${layarPenuh ? 'flex-1 min-h-0' : ''}`}>
-        <div ref={wadahRef} className={`relative w-full lg:w-auto lg:flex-1 min-w-0 overflow-hidden ${layarPenuh ? 'flex-1 min-h-[300px]' : 'h-[440px] sm:h-[620px]'}`}>
+        <div ref={wadahRef} className={`relative w-full lg:w-auto lg:flex-1 min-w-0 overflow-hidden select-none ${layarPenuh ? 'flex-1 min-h-[300px]' : 'h-[440px] sm:h-[620px]'}`}>
           {!siap && !galat && <div className="absolute inset-0 grid place-items-center text-sm text-slate-500">Memuat tampilan 3D...</div>}
           {/* Perangkat yang belum mengenal default Admin: tutup kanvas sampai template awal pasti,
               supaya versi pabrikan tidak sempat tampil lalu melompat (simpan/useTemplateKategori.ts). */}

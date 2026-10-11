@@ -1,11 +1,39 @@
 'use client';
 /** Panel proyektor (Atur benda): jarak lempar, ukuran gambar, tombol mengepaskan ke layar, kontras vs lampu. */
-import { type Benda, kontrasProyektor, layarTerdekat, lumenDari, LUX_PRESET, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, throwRatioDari, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
+import { type Benda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, LUX_PRESET, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, throwRatioDari, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
 import { f, Catatan } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 
 export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
-  const { benda, gantiBenda, infoBlending, kotakRuang, ruang, setRuang, setTargetKontras, tampilBlending, targetKontras } = K;
+  const { benda, gantiBenda, gridSinar, infoBlending, kotakRuang, ruang, setGridSinar, setRuang, setTargetKontras, tampilBlending, targetKontras } = K;
+  /** Grid cahaya (seperti simulator proyektor): nyala/mati, jumlah kolom, warna garis, ukuran satu kotak (mm) di permukaan. */
+  const blokGrid = (lebar: number, tinggi: number) => {
+    const kg = kotakGrid(lebar, tinggi, p.gridKolom);
+    const semuaP = benda.filter(b => b.jenis === 'proyektor');
+    const warnaAwal = warnaSinarProyektor(p, Math.max(0, semuaP.findIndex(x => x.id === p.id)), semuaP.length);
+    return (
+      <div className="rounded-lg border border-slate-200 bg-white p-2 space-y-1.5">
+        <label className="flex items-center justify-between text-[12px] font-bold text-slate-800">
+          Grid cahaya
+          <input type="checkbox" className="w-4 h-4" checked={gridSinar} onChange={e => setGridSinar(e.target.checked)} />
+        </label>
+        <p className="text-[12.5px] font-bold tabular-nums" style={{ color: warnaSah(p.warnaGrid) ?? warnaAwal }}>{labelKotakGrid(kg)}</p>
+        <div className="flex flex-wrap items-center gap-1">
+          {PILIHAN_KOLOM_GRID.map(k => (
+            <button key={k} type="button" onClick={() => gantiBenda({ ...p, gridKolom: k })} title={`${k} kolom`}
+              className={`px-2 py-0.5 rounded-md text-[11.5px] font-semibold border ${kg.kolom === k ? 'bg-blue-700 border-blue-700 text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}>{k}</button>
+          ))}
+          <span className="text-[11px] text-slate-500 ml-0.5">kolom · {kg.kolom} × {kg.baris}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <input type="color" aria-label="Warna grid" value={warnaSah(p.warnaGrid) ?? warnaAwal} onChange={e => gantiBenda({ ...p, warnaGrid: e.target.value })}
+            className="h-7 w-10 rounded-md border border-slate-200 bg-white p-0.5 cursor-pointer" />
+          <span className="text-[11.5px] text-slate-600">{warnaSah(p.warnaGrid) ? 'Warna grid' : 'Warna grid = warna sinar'}</span>
+          {warnaSah(p.warnaGrid) && <button type="button" onClick={() => gantiBenda({ ...p, warnaGrid: undefined })} className="ml-auto text-[11px] font-semibold text-slate-500 hover:text-slate-800">Otomatis</button>}
+        </div>
+      </div>
+    );
+  };
   /** Area blending proyektor ini dengan proyektor lain (dihitung di kanvas, mesin/blending.ts). */
   const blend = tampilBlending ? infoBlending.filter(b => b.a === p.id || b.b === p.id) : [];
   const blokBlending = blend.length ? (
@@ -87,6 +115,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           {dekat
             ? <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, dekat, k, ruang))}>Arahkan ke {dekat.nama}</button>
             : <p className="text-[12px] text-slate-600" title="Tambah → Display → Layar proyektor">Belum ada layar</p>}
+          {blokGrid(K.ukuranCahaya[p.id]?.[0] ?? sn.lebar, K.ukuranCahaya[p.id]?.[1] ?? sn.tinggi)}
           {blokKontras(p, true)}
           {blokBlending}
         </div>
@@ -114,6 +143,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
             TR {f(trPas, 2)} di luar rentang zoom lensa ({f(zMin, 2)}–{f(zMax, 2)}): pindahkan lensa ke jarak {f(zMin * lyr.w)}–{f(zMax * lyr.w)} m dari layar, atau ganti lensa.
           </p>
         ))}
+        {blokGrid(K.ukuranCahaya[p.id]?.[0] ?? sn.lebar, K.ukuranCahaya[p.id]?.[1] ?? sn.tinggi)}
         {blokKontras(p, false)}
         {blokBlending}
         <ul className="text-[12px] font-semibold space-y-0.5">

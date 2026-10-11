@@ -5,7 +5,7 @@
  */
 import { useState } from 'react';
 import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG } from '../../bersama/cetak';
-import { type Benda, cakupanSpeakerPlafon, DISPLAY, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, throwRatioDari, tipeSpeakerDari } from '../inti';
+import { formatPanjang, penggarisSah, rincianGaris, type Benda, cakupanSpeakerPlafon, DISPLAY, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, throwRatioDari, tipeSpeakerDari } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
 import { f } from '../../bersama/ui';
 import { getSession } from '@/lib/auth';
@@ -130,6 +130,8 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
             const sekat = !s0 ? '—' : `${({ tembok: 'tembok', jendela: 'tembok + jendela kaca', kaca: 'kaca penuh', terbuka: 'terbuka (menyatu)' } as const)[s0.sekat ?? 'tembok']}${s0.pintu && s0.sekat !== 'terbuka' ? ', pintu penghubung' : ''}`;
             return [`Ruang ${i + 1}`, `${fm(k.p)} m`, `${fm(k.l)} m`, `${fm(k.t)} m`, `${fm(k.p * k.l)} m²`, ...(duaRuang ? [sekat] : [])];
           }) },
+        ...(penggarisSah(ruang.penggaris).length ? [{ judul: 'Garis ukur', jenis: 'tabel' as const, kepala: ['Garis', 'Panjang', 'Jarak datar', 'Beda tinggi'], rataKanan: [1, 2, 3],
+          isi: penggarisSah(ruang.penggaris).map((g, i) => { const r = rincianGaris(g); return [`Garis ${i + 1}`, formatPanjang(Math.hypot(r.datar, r.tinggi)), formatPanjang(r.datar), formatPanjang(r.tinggi)]; }) }] : []),
         { judul: 'Tampilan desain', jenis: 'html',
           html: `<div class="gambar dua">${foto.map(x => gambar(x.url, x.judul)).join('')}</div>` },
         ...(legendaKabel ? [{ judul: 'Legend kabel', jenis: 'html' as const, html: htmlLegendaKabel(legendaKabel) }] : []),
