@@ -106,7 +106,7 @@ export function geserTepat(benda: Benda[], idDipilih: string[], sumbu: 'x' | 'z'
   });
 }
 
-// ── Kelompok: sembunyikan / isolasi ─────────────────────────────────────────
+// ── Kelompok & benda: sembunyikan / isolasi ─────────────────────────────────
 
 export type Golongan = 'display' | 'proyeksi' | 'audio' | 'konferensi' | 'furnitur' | 'lampu' | 'rak' | 'objek';
 export const LABEL_GOLONGAN: Record<Golongan, string> = {
@@ -122,4 +122,10 @@ const GOLONGAN_JENIS: Record<Jenis, Golongan> = {
   lampu: 'lampu', rak: 'rak', model: 'objek', objek: 'objek', teks: 'objek',
 };
 export const golonganDari = (j: Jenis): Golongan => GOLONGAN_JENIS[j];
-export const tampilDi = (b: Pick<Benda, 'jenis'>, sembunyi: readonly string[]) => !sembunyi.includes(GOLONGAN_JENIS[b.jenis]);
+/** Kunci sembunyi satu benda di daftar sembunyi (daftar yang sama berisi nama kelompok). */
+export const kunciSembunyi = (id: string) => `#${id}`;
+/** Benda tampil bila kelompoknya maupun benda itu sendiri tidak disembunyikan. */
+export const tampilDi = (b: Pick<Benda, 'jenis' | 'id'>, sembunyi: readonly string[]) =>
+  !sembunyi.includes(GOLONGAN_JENIS[b.jenis]) && !sembunyi.includes(kunciSembunyi(b.id));
+/** Jumlah benda yang disembunyikan satu per satu (bukan lewat kelompok). */
+export const jumlahSembunyiSendiri = (sembunyi: readonly string[]) => sembunyi.filter(k => k.startsWith('#')).length;

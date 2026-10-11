@@ -14,8 +14,8 @@ import type { Mesin } from './tipe';
 /** Satu blok tulisan; x, y = pojok kiri atasnya, w, h = ukurannya - pecahan lebar / tinggi gambar (y dari atas). */
 export interface BlokTeks { x: number; y: number; w: number; h: number; baris: string[]; kanan?: boolean; tebalPertama?: boolean }
 
-/** Tinggi huruf = pecahan tinggi gambar (kecil: terbaca bila kamera didekatkan, seperti tulisan sungguhan). */
-export const TINGGI_HURUF = 0.032;
+/** Tinggi huruf = pecahan tinggi gambar (kecil & tidak mengganggu: terbaca bila kamera didekatkan). */
+export const TINGGI_HURUF = 0.018;
 
 function tekstur(THREE: Mesin['THREE'], b: BlokTeks): T.CanvasTexture {
   const W = b.baris.length > 1 ? 1024 : 512, H = Math.max(16, Math.round((W * b.h * 9) / (b.w * 16)));
@@ -69,12 +69,11 @@ export function gambarTeksCahaya(m: Mesin, pos: number[], uv: number[], blok: Bl
 }
 
 /**
- * Pola grid di seluruh gambar satu proyektor (uv 0..1): kolom x baris kotak (bawaan 16 x 9, inti/gridProyektor.ts) + ukuran
- * satu kotak (mm) di tengah-bawah, bingkai
+ * Pola grid di seluruh gambar satu proyektor (uv 0..1): kolom x baris kotak (bawaan 16 x 9, inti/gridProyektor.ts), bingkai
  * tebal, dua diagonal & lingkaran pusat - warna proyektor itu. Campuran biasa (bukan aditif) supaya garis
  * tetap terlihat di permukaan putih. Tampil dari dua sisi (pola tanpa tulisan, tidak terbaca terbalik).
  */
-export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T.Color, kolom = 16, baris = 9, label = '') {
+export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T.Color, kolom = 16, baris = 9) {
   const { THREE, grupBantu } = m;
   if (!pos.length) return;
   const W = 1024, H = 576;
@@ -91,13 +90,6 @@ export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T
   g.strokeRect(3, 3, W - 6, H - 6);
   g.lineWidth = 3;
   g.beginPath(); g.arc(W / 2, H / 2, H * 0.12, 0, Math.PI * 2); g.stroke();
-  //  Ukuran satu kotak di permukaan (mm) di tengah-bawah gambar - pojok sudah dipakai keterangan & lux pojok.
-  if (label) {
-    g.font = '700 30px system-ui, sans-serif';
-    const lw = g.measureText(label).width + 24, x0 = (W - lw) / 2, y0 = H - 58;
-    g.fillStyle = 'rgba(255,255,255,0.94)'; g.fillRect(x0, y0, lw, 44);
-    g.fillStyle = `#${warna.getHexString()}`; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillText(label, W / 2, y0 + 23);
-  }
   const tx = new THREE.CanvasTexture(kv);
   tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;
   const geo = new THREE.BufferGeometry();

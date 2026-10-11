@@ -1,19 +1,19 @@
 'use client';
 /**
- * Aksi benda terpilih di kiri-atas kanvas: Atur, Duplikat, Salin ke ruang lain, Kunci, Larik, Ratakan & sebar
+ * Aksi benda terpilih di kiri-atas kanvas: Atur, Duplikat, Salin ke ruang lain, Kunci, Sembunyikan, Larik, Ratakan & sebar
  * (pilih banyak), Geser tepat, Hapus. Aturan tata letak: inti/tata.ts. Satu baris mendatar (ponsel: ikon; layar lebar: berlabel),
  * supaya kolom kiri kanvas tidak memanjang sampai menabrak kontrol kamera.
  */
 import { useState } from 'react';
 import { AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignStartHorizontal, AlignStartVertical,
-  Copy, CopyPlus, Grid2x2Plus, Lock, LockOpen, MoveHorizontal, Ruler, Settings2, StretchHorizontal, StretchVertical, Trash2 } from 'lucide-react';
-import { duplikatBanyak, larik, MAKS_LARIK, ratakan, ruangDari, sebar } from '../inti';
+  Copy, CopyPlus, EyeOff, Grid2x2Plus, Lock, LockOpen, MoveHorizontal, Ruler, Settings2, StretchHorizontal, StretchVertical, Trash2 } from 'lucide-react';
+import { duplikatBanyak, kunciSembunyi, larik, MAKS_LARIK, ratakan, ruangDari, sebar } from '../inti';
 import type { AlatDesain } from './alat';
 
 const kelasAksi = 'inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-[12px] font-bold';
 
 export function AksiTerpilih({ a, onGeserTepat }: { a: AlatDesain; onGeserTepat: () => void }) {
-  const { batas, benda, duaRuang, kotakRuang, panel, pilihLain, ruang, setBenda, setPanel, setPesan, setPilih, setPilihan, setSisi, terpilih } = a.K;
+  const { batas, benda, duaRuang, kotakRuang, panel, pilihLain, ruang, sembunyiGolongan, setSembunyiGolongan, setBenda, setPanel, setPesan, setPilih, setPilihan, setSisi, terpilih } = a.K;
   const { duplikat, salinKeRuangLain } = a.aksi;
   const [menu, setMenu] = useState<'rata' | 'larik' | null>(null);
   const [isiLarik, setIsiLarik] = useState({ kolom: '4', baris: '2', jx: '900', jz: '1200' });
@@ -71,6 +71,9 @@ export function AksiTerpilih({ a, onGeserTepat }: { a: AlatDesain; onGeserTepat:
         className={ikon(kunci ? 'bg-amber-100 text-amber-900' : 'text-slate-700 hover:bg-slate-100')}>
         {kunci ? <Lock size={15} /> : <LockOpen size={15} />} <span className="sr-only sm:not-sr-only">{kunci ? 'Terkunci' : 'Kunci'}</span>
       </button>
+      <button type="button" onClick={() => { setSembunyiGolongan([...new Set([...sembunyiGolongan, ...ids.map(kunciSembunyi)])]); setPilihan(null, []); }}
+        title={banyak ? 'Sembunyikan yang terpilih (tampilkan lagi lewat daftar benda / Kelompok)' : 'Sembunyikan benda ini (tampilkan lagi lewat daftar benda / Kelompok)'}
+        className={ikon('text-slate-700 hover:bg-slate-100')}><EyeOff size={15} /> <span className="sr-only sm:not-sr-only">Sembunyikan</span></button>
       <button type="button" onClick={() => { const s = new Set(ids); setBenda(b => b.filter(x => !s.has(x.id))); setPilih(null); }} title={banyak ? 'Hapus semua yang terpilih' : 'Hapus benda ini'}
         className={ikon('text-rose-700 hover:bg-rose-50')}><Trash2 size={15} /> <span className="sr-only sm:not-sr-only">Hapus</span></button>
 

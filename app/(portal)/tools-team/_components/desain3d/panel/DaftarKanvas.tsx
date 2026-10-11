@@ -1,11 +1,11 @@
 'use client';
 /**
  * Daftar benda mengambang di kanvas (buka / tutup dari bilah kiri, tombol L): klik = pilih (Shift / Ctrl = pilih
- * banyak), klik dua kali = pilih & buka Atur. Mata per kelompok = tampil / sembunyikan. Panel Atur tetap terbuka.
+ * banyak), klik dua kali = pilih & buka Atur. Mata per kelompok & per benda = tampil / sembunyikan. Panel Atur tetap terbuka.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Eye, EyeOff, Lock, Search, X } from 'lucide-react';
-import { type Golongan, golonganDari, LABEL_GOLONGAN, togglePilih } from '../inti';
+import { type Golongan, golonganDari, kunciSembunyi, LABEL_GOLONGAN, togglePilih } from '../inti';
 import type { AlatDesain } from './alat';
 
 export function DaftarKanvas({ a }: { a: AlatDesain }) {
@@ -24,7 +24,7 @@ export function DaftarKanvas({ a }: { a: AlatDesain }) {
   if (!daftarKanvas) return null;
 
   const pilihBaris = (id: string, g: Golongan, banyak: boolean) => {
-    if (sembunyiGolongan.includes(g)) setSembunyiGolongan(sembunyiGolongan.filter(x => x !== g));
+    if (sembunyiGolongan.includes(g) || sembunyiGolongan.includes(kunciSembunyi(id))) setSembunyiGolongan(sembunyiGolongan.filter(x => x !== g && x !== kunciSembunyi(id)));
     if (!banyak) { setPilih(id); return; }
     const r = togglePilih(pilih, pilihLain, id);
     setPilihan(r.pilih, r.lain);
@@ -51,14 +51,27 @@ export function DaftarKanvas({ a }: { a: AlatDesain }) {
               </div>
               {isi.map(b => {
                 const aktif = b.id === pilih, ikut = pilihLain.includes(b.id);
+                const kunci = kunciSembunyi(b.id), sendiri = sembunyiGolongan.includes(kunci);
+                const redup = sembunyi || sendiri;
+                const ubahMata = () => {
+                  //  Benda yang disembunyikan dilepas dari pilihan (gizmo tidak menempel di benda tak terlihat).
+                  if (!sendiri && (aktif || ikut)) setPilihan(aktif ? null : pilih, aktif ? [] : pilihLain.filter(x => x !== b.id));
+                  setSembunyiGolongan(sendiri ? sembunyiGolongan.filter(x => x !== kunci) : [...sembunyiGolongan, kunci]);
+                };
                 return (
-                  <button key={b.id} type="button" data-id={b.id} title="Klik dua kali = Atur"
-                    onClick={e => pilihBaris(b.id, g, e.shiftKey || e.ctrlKey || e.metaKey)}
-                    onDoubleClick={() => { pilihBaris(b.id, g, false); setSisi(null); setPanel(true); }}
-                    className={`w-full flex items-center gap-1.5 px-2.5 py-1 text-left text-[12.5px] ${aktif ? 'bg-blue-600 text-white font-semibold' : ikut ? 'bg-blue-50 text-blue-800' : sembunyi ? 'text-slate-400 hover:bg-slate-50' : 'text-slate-800 hover:bg-slate-50'}`}>
-                    <span className="truncate flex-1">{b.nama}</span>
-                    {b.terkunci && <Lock size={11} className="shrink-0 opacity-70" />}
-                  </button>
+                  <div key={b.id} data-id={b.id} className={`group flex items-center ${aktif ? 'bg-blue-600 text-white font-semibold' : ikut ? 'bg-blue-50 text-blue-800' : redup ? 'text-slate-400 hover:bg-slate-50' : 'text-slate-800 hover:bg-slate-50'}`}>
+                    <button type="button" title="Klik dua kali = Atur"
+                      onClick={e => pilihBaris(b.id, g, e.shiftKey || e.ctrlKey || e.metaKey)}
+                      onDoubleClick={() => { pilihBaris(b.id, g, false); setSisi(null); setPanel(true); }}
+                      className="flex-1 min-w-0 flex items-center gap-1.5 pl-2.5 py-1 text-left text-[12.5px]">
+                      <span className="truncate flex-1">{b.nama}</span>
+                      {b.terkunci && <Lock size={11} className="shrink-0 opacity-70" />}
+                    </button>
+                    <button type="button" onClick={ubahMata} title={sendiri ? 'Tampilkan' : 'Sembunyikan'} aria-label={sendiri ? `Tampilkan ${b.nama}` : `Sembunyikan ${b.nama}`} aria-pressed={sendiri}
+                      className={`w-7 h-6 shrink-0 grid place-items-center rounded-md ${sendiri ? 'opacity-100' : 'opacity-40 sm:opacity-0 sm:group-hover:opacity-70 focus:opacity-100'}`}>
+                      {sendiri ? <EyeOff size={12} /> : <Eye size={12} />}
+                    </button>
+                  </div>
                 );
               })}
             </div>

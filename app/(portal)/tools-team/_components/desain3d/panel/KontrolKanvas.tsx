@@ -10,7 +10,7 @@ import { DaftarKanvas } from './DaftarKanvas';
 import type { AlatDesain } from './alat';
 
 export function KontrolKanvas({ a }: { a: AlatDesain }) {
-  const { adaProyektor, bayangan, benda, chipBuka, detailBlending, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, labelProduk, setBayangan, setChipBuka, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setSinar, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, layarPenuh, setLayarPenuh, alatKanvas } = a.K;
+  const { teksSinar, setTeksSinar, adaProyektor, bayangan, benda, chipBuka, detailBlending, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, labelProduk, setBayangan, setChipBuka, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setSinar, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, layarPenuh, setLayarPenuh, alatKanvas } = a.K;
   //  Geser tepat terikat ke benda yang terpilih saat dibuka - pilih benda lain = otomatis tertutup.
   const [geser, setGeser] = useState<{ id: string; teks: string } | null>(null);
   const geserAktif = geser && geser.id === terpilih?.id ? geser : null;
@@ -40,6 +40,7 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
             ...(adaProyektor ? [{ v: sinar, s: setSinar, l: 'Sinar proyektor' }] : []),
             //  Mode grid: gambar tiap proyektor sebagai pola garis 16 x 9 (bentuk & sambungan antar gambar terlihat).
             ...(adaProyektor && sinar ? [{ v: gridSinar, s: setGridSinar, l: 'Grid sinar' }] : []),
+            ...(adaProyektor && sinar ? [{ v: teksSinar, s: setTeksSinar, l: 'Keterangan sinar' }] : []),
             ...(jumlahProyektor >= 2 ? [{ v: tampilBlending, s: setTampilBlending, l: 'Area blending' }] : []),
             //  Garis ukur & angka cm ikut "Area blending"; kartu keterangan (persen & piksel) bisa disembunyikan sendiri.
             ...(jumlahProyektor >= 2 && tampilBlending ? [{ v: detailBlending, s: setDetailBlending, l: 'Detail blending' }] : []),
