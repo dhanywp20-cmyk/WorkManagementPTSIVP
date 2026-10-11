@@ -14,6 +14,7 @@
  *   pustaka    isi proyektor / display / speaker dari Pustaka Tools Team
  *   perangkat  PC, laptop, dongle WyreStorm, HP, tablet & share layar nirkabel
  *   teks       teks / keterangan manual (isi, ukuran kotak dari isi)
+ *   tempatTeks tempat teks baru yang tidak tertutup benda lain
  *   teksturRuang  tekstur gambar sendiri untuk lantai & dinding
  *   presisi    snap grid geser / putar & penggaris (ukur jarak bebas)
  *   tata       tapak, ratakan & sebar, magnet, larik, geser tepat, kelompok sembunyikan
@@ -33,6 +34,7 @@ export * from './pustaka';
 export * from './perangkat';
 export * from './banyak';
 export * from './teks';
+export * from './tempatTeks';
 export * from './teksturRuang';
 export * from './presisi';
 export * from './tata';

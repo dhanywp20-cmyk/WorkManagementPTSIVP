@@ -15,7 +15,7 @@ const ITEM_TEKS = KATALOG.flatMap(g => g.item).find(i => i.kunci === 'teks-dindi
 
 export function BilahKiri({ a }: { a: AlatDesain }) {
   const { benda, sembunyiGolongan, setSembunyiGolongan, alatKanvas, bukaSisi, hanyaLihat, klikUkurRef, modeBanyak, modeGizmo, ruang, setAlatKanvas, setModeBanyak, setModeGizmo,
-    setPilih, setRuang, setSnap, setTitikUkur, sisi, snap, terpilih, titikUkur } = a.K;
+    setPilih, setPilihLain, setRuang, setSnap, setTitikUkur, sisi, snap, terpilih, titikUkur } = a.K;
   const [menuSnap, setMenuSnap] = useState(false);
   const [menuKelompok, setMenuKelompok] = useState(false);
   //  Kelompok yang ada di desain ini (urutan tetap), untuk sembunyikan / isolasi.
@@ -40,7 +40,7 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
   }, [ukur, klikUkurRef, setRuang, setTitikUkur]);
 
   const keluarUkur = () => { setAlatKanvas('pilih'); setTitikUkur(null); };
-  const mulaiUkur = () => { setPilih(null); setModeBanyak(false); setAlatKanvas('ukur'); };
+  const mulaiUkur = () => { setPilih(null); setPilihLain([]); setModeBanyak(false); setAlatKanvas('ukur'); };
 
   //  Pintasan papan ketik (diabaikan saat mengetik di isian).
   useEffect(() => {

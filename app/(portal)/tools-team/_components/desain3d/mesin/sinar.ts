@@ -16,7 +16,7 @@
  *   - Area blending: mesin/blending.ts.
  */
 import { f } from '../../bersama/ui';
-import { arahProyektor, arahSinar, type Benda, kotakGrid, labelKotakGrid, warnaSah, type Blending, geserLensaDari, keGambar, lensaDari, type Lensa, lumenDari, offsetLensaDari, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
+import { arahProyektor, arahSinar, type Benda, kotakGrid, labelKotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, keGambar, lensaDari, type Lensa, lumenDari, offsetLensaDari, permukaanUtama, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { gambarBlending } from './blending';
@@ -77,12 +77,18 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const tembak = (O: T.Vector3, arah: T.Vector3, sasaran: T.Object3D[]) => tembakRinci(O, arah, sasaran)?.p ?? null;
   /** Titik terkena benda yang diterangi per titik (bukan bidang proyeksi). */
   const diBenda = (id: string | null) => !!id && !BIDANG_PROYEKSI.has(jenisDari.get(id) ?? 'objek');
+  /** Nama bidang mapping / objek / model yang paling banyak disinari (bukan dinding). */
+  const namaBenda = new Map(benda.map(b => [b.id, b.nama]));
+  const namaPermukaan = (kenaId: (string | null)[]) => {
+    const id = permukaanUtama(kenaId, x => BIDANG_TEKS.has(jenisDari.get(x) ?? 'kursi'));
+    return id ? namaBenda.get(id) ?? null : null;
+  };
 
   /** Data per proyektor untuk area blending (inti/blending.ts). */
   const dataBlend: { p: Benda; L: Lensa; O: T.Vector3; sasaran: T.Object3D[]; kena: (T.Vector3 | null)[]; baris: (Titik | null)[]; kolom: (Titik | null)[] }[] = [];
   const sumberCahaya: SumberCahaya[] = [];
   /** Bidang gambar tiap proyektor - dibuat SETELAH blending dihitung, supaya keterangan tidak jatuh di area tumpang tindih. */
-  const bidangGambar: { p: Benda; L: Lensa; pos: number[]; uv: number[]; opasitas: number; warna: T.Color; tepi: T.Color; lebar: number; tinggi: number; teks: { info: string[]; lux: (number | null)[]; pos: number[]; uv: number[] } | null }[] = [];
+  const bidangGambar: { p: Benda; L: Lensa; pos: number[]; uv: number[]; opasitas: number; warna: T.Color; tepi: T.Color; lebar: number; tinggi: number; permukaan: string | null; teks: { info: string[]; lux: (number | null)[]; pos: number[]; uv: number[] } | null }[] = [];
   const bendaTersinari = new Set<string>();
   daftarProj.forEach((p, idx) => {
     const sn = sinarProyektor(p, benda, ruang);
@@ -209,7 +215,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       return (E0 * cosT) / (cosA ** 3 * d * d);
     };
     const kg = kotakGrid(jarakSumbu * w1, jarakSumbu * h1, p.gridKolom);
-    bidangGambar.push({ p, L: lensaDari(p), pos, uv, warna, tepi: warnaTepi, lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
+    bidangGambar.push({ p, L: lensaDari(p), pos, uv, warna, tepi: warnaTepi, lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, permukaan: sn.layar ? null : namaPermukaan(kenaId), opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
       teks: tulis ? {
         info: [p.nama, `Jarak lensa → bidang ${f(jarakSumbu)} m`, `Ukuran gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`,
           `Pusat ${f(luxDi(0, 0) ?? E0 / (jarakSumbu * jarakSumbu), 0)} lx`, ...(gridSinar ? [`Grid ${kg.kolom} × ${kg.baris} · ${labelKotakGrid(kg)}`] : [])],
@@ -234,8 +240,8 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const grid = gridSinar && !kasar;
   //  Ukuran gambar di permukaan yang benar-benar disinari (layar mapping, benda, dinding) untuk panel proyektor.
   if (!kasar) {
-    const ukuran: Record<string, [number, number]> = {};
-    for (const bg of bidangGambar) ukuran[bg.p.id] = [Math.round(bg.lebar * 1000) / 1000, Math.round(bg.tinggi * 1000) / 1000];
+    const ukuran: Record<string, CahayaDiPermukaan> = {};
+    for (const bg of bidangGambar) ukuran[bg.p.id] = { lebar: Math.round(bg.lebar * 1000) / 1000, tinggi: Math.round(bg.tinggi * 1000) / 1000, permukaan: bg.permukaan };
     setUkuranCahaya(v => (JSON.stringify(v) === JSON.stringify(ukuran) ? v : ukuran));
   }
   for (const bg of bidangGambar) {
