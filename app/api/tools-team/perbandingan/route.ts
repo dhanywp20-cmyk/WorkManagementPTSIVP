@@ -20,7 +20,7 @@ import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { jatahAI, panggilGemini } from '@/lib/ai-server';
 import { bolehPerbandingan, periksaHasil } from '@/lib/perbandingan';
-import { ambilJson, periksaKiriman, promptPengguna, promptSistem, teksBertanda } from '@/lib/perbandingan-prompt';
+import { ambilJson, periksaKiriman, promptPengguna, promptSistem, SKEMA_GEMINI, teksBertanda } from '@/lib/perbandingan-prompt';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -50,12 +50,17 @@ export async function POST(req: NextRequest) {
   const pesan = promptPengguna(k.produk);
   const h = await panggilGemini({
     sistem: promptSistem(k.bahasa), isi: [{ role: 'user', parts: [{ text: pesan.teks }] }],
-    suhu: 0.1, maksToken: 16_000, json: true, batasMs: 52_000,
+    suhu: 0.1, maksToken: 16_000, json: true, skema: SKEMA_GEMINI, batasMs: 52_000,
   });
   if (!h.ok) return gagal(h.alasan ?? 'AI gagal menjawab.', 502);
   const jawaban = (h.parts ?? []).map(p => p.text ?? '').join('');
   const json = ambilJson(jawaban);
-  if (!json) return gagal('Jawaban AI tidak lengkap / bukan JSON. Coba lagi, atau pakai mode "AI chat lain".', 502);
+  if (!json) {
+    //  Alasan berhenti saja (tanpa isi) - cukup untuk tahu terpotong / diblokir / kosong.
+    const sebab = h.selesai === 'MAX_TOKENS' ? 'jawaban terpotong (brosur terlalu panjang - kurangi halaman / produk)'
+      : h.selesai && h.selesai !== 'STOP' ? `dihentikan Gemini (${h.selesai})` : jawaban.trim() ? 'bukan JSON yang sah' : 'jawaban kosong';
+    return gagal(`Jawaban AI tidak bisa dipakai: ${sebab}. Coba lagi, atau pakai mode "AI chat lain".`, 502);
+  }
   //  Kutipan diverifikasi terhadap teks yang SAMA dengan yang dikirim ke AI.
   const sumber = k.produk.map(p => teksBertanda(p).teks);
   const hasil = periksaHasil(json, sumber, k.bahasa);

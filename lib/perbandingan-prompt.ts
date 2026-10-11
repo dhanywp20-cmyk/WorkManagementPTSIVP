@@ -96,3 +96,27 @@ export function periksaKiriman(x: unknown): { ok: true; bahasa: Bahasa; produk: 
   if (total > MAKS_KARAKTER_TOTAL + 40_000) return { ok: false, alasan: 'Teks brosur terlalu panjang.' };
   return { ok: true, bahasa: b.bahasa === 'id' ? 'id' : 'en', produk };
 }
+
+/** responseSchema Gemini (subset OpenAPI): keluaran dijamin JSON sah berbentuk kartu template. */
+const S = (type: string, extra: Record<string, unknown> = {}) => ({ type, ...extra });
+export const SKEMA_GEMINI: Record<string, unknown> = S('OBJECT', {
+  properties: {
+    kategori: S('STRING'), judul: S('STRING'), pengantar: S('STRING'),
+    produk: S('ARRAY', { items: S('OBJECT', { properties: { merek: S('STRING'), nama: S('STRING'), judulKartu: S('STRING'), deskripsi: S('STRING') }, required: ['merek', 'nama', 'judulKartu', 'deskripsi'] }) }),
+    bagian: S('ARRAY', { items: S('OBJECT', { properties: {
+      judul: S('STRING'),
+      baris: S('ARRAY', { items: S('OBJECT', { properties: {
+        spesifikasi: S('STRING'),
+        nilai: S('ARRAY', { items: S('OBJECT', { properties: {
+          teks: S('STRING'), status: S('STRING', { enum: ['ada', 'tidak-disebut', 'tidak-tersedia', 'cek'] }), unggul: S('BOOLEAN'),
+          bukti: S('OBJECT', { properties: { halaman: S('INTEGER'), kutipan: S('STRING') } }), alasanCek: S('STRING'),
+        }, required: ['teks', 'status'] }) }),
+      }, required: ['spesifikasi', 'nilai'] }) }),
+    }, required: ['judul', 'baris'] }) }),
+    ringkasan: S('STRING'),
+    sorotan: S('ARRAY', { items: S('OBJECT', { properties: { judul: S('STRING'), teks: S('STRING') }, required: ['judul', 'teks'] }) }),
+    rekomendasi: S('STRING'), catatan: S('STRING'),
+  },
+  required: ['kategori', 'judul', 'pengantar', 'produk', 'bagian', 'ringkasan', 'sorotan', 'rekomendasi', 'catatan'],
+  propertyOrdering: ['kategori', 'judul', 'pengantar', 'produk', 'bagian', 'ringkasan', 'sorotan', 'rekomendasi', 'catatan'],
+});
