@@ -96,6 +96,9 @@ export function useKeadaanDesain() {
   const [detailBlending, setDetailBlending] = useState(true);
   /** Sinar proyektor ditampilkan sebagai pola grid (test pattern) - seperti mode grid simulator pabrikan. */
   const [gridSinar, setGridSinar] = useState(false);
+  /** Keterangan kecil di cahaya proyektor (nama, jarak, ukuran, lux) - bisa disembunyikan tanpa mematikan sinar; diingat per perangkat. */
+  const [teksSinar, setTeksSinarMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_teks_sinar') !== '0'; } catch { return true; } });
+  const setTeksSinar = (v: boolean) => { setTeksSinarMentah(v); try { localStorage.setItem('wm_desain3d_teks_sinar', v ? '1' : '0'); } catch { /* abaikan */ } };
   /** Hasil hitung blending terakhir dari kanvas (mesin/alatBantu.ts). */
   const [infoBlending, setInfoBlending] = useState<Blending[]>([]);
   /** Ukuran gambar tiap proyektor di permukaan yang benar-benar disinari (m, dari raycast kanvas) - untuk ukuran kotak grid di panel. */
@@ -167,7 +170,8 @@ export function useKeadaanDesain() {
   const wadahRef = useRef<HTMLDivElement>(null);
   const mesin = useRef<Mesin | null>(null);
   /** Kamera dipas ke ruangan baru setelah template kategori dipasang. */
-  const pasSetelahTemplate = useRef(false);
+  /** Kamera dipas ke ruangan setelah template dipasang: true = terbang (animasi), 'langsung' = tanpa animasi (pemuatan awal). */
+  const pasSetelahTemplate = useRef<boolean | 'langsung'>(false);
   /** Tekstur bayangan & cahaya (dibuat sekali, dipakai ulang tiap pembaruan). */
   const teksturBayang = useRef<{ bayang: T.Texture; cahaya: T.Texture } | null>(null);
   const gambarLayar = useRef(new Map<string, T.Texture>());
@@ -178,6 +182,9 @@ export function useKeadaanDesain() {
   /** Presisi (inti/presisi.ts): snap grid geser / putar - diingat per perangkat. */
   const [snap, setSnapMentah] = useState<Snap>(() => { try { return snapSah(JSON.parse(localStorage.getItem('wm_desain3d_snap') ?? 'null')); } catch { return snapSah(null); } });
   const setSnap = (s: Snap) => { setSnapMentah(s); try { localStorage.setItem('wm_desain3d_snap', JSON.stringify(s)); } catch { /* abaikan */ } };
+  /** Daftar benda mengambang di kanvas (pilih benda tanpa membuka panel samping) - diingat per perangkat. */
+  const [daftarKanvas, setDaftarKanvasMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_daftar') === '1'; } catch { return false; } });
+  const setDaftarKanvas = (v: boolean) => { setDaftarKanvasMentah(v); try { localStorage.setItem('wm_desain3d_daftar', v ? '1' : '0'); } catch { /* abaikan */ } };
   /** Alat kanvas: pilih benda (bawaan) atau penggaris; titik pertama penggaris yang sedang dibuat. */
   const [alatKanvas, setAlatKanvas] = useState<'pilih' | 'ukur'>('pilih');
   const [titikUkur, setTitikUkur] = useState<Titik | null>(null);
@@ -256,5 +263,5 @@ export function useKeadaanDesain() {
   const adaProyektor = benda.some(b => b.jenis === 'proyektor');
   const jumlahProyektor = benda.filter(b => b.jenis === 'proyektor').length;
 
-  return { ukuranCahaya, setUkuranCahaya, snapRef, sumbuGeserRef, sembunyiGolongan, setSembunyiGolongan, sembunyiRef, snap, setSnap, alatKanvas, setAlatKanvas, titikUkur, setTitikUkur, klikUkurRef, ingatanAwal, sumberTekstur, gambarTekstur, versiTekstur, setVersiTekstur, setPilihan, pilihLain, setPilihLain, modeBanyak, setModeBanyak, layarPenuh, setLayarPenuh, pilihRef, pilihLainRef, modeBanyakRef, dariToggle, tampilShare, setTampilShare, adaPerubahan, adaProyektor, detailBlending, gridSinar, infoBlending, jumlahProyektor, setDetailBlending, setGridSinar, setInfoBlending, setTampilBlending, tampilBlending, an, analisis, asal, asideRef, batas, bayangan, benda, bendaRef, bukaKelas, bukaSisi, cariProduk, chipBuka, daftarTim, dasar, desainAktif, duaRuang, faktorCustom, faktorPandang, fokusRuang, galat, galatProduk, gambarLayar, gantiBenda, gantiIsi, garisUkur, hanyaLihat, impor, inputGambar, inputLaptop, inputModel, jangkau, jenisPandang, kabel, kabelPower, kameraSiap, kerucut, konfirmasi, kotakRuang, kunciKini, labelProduk, legendaKabel, lihatVersi, menuPusat, menuSudut, mesin, modal, modeGizmo, modeSeret, modelImpor, namaDesain, objekGambar, opsiKelas, panel, pasSetelahTemplate, pesan, pilih, plafonDi, potret, produkTim, riwayat, ruang, ruangRef, setAnalisis, setAsal, setBayangan, setBenda, setBukaKelas, setCariProduk, setChipBuka, setDaftarTim, setDasar, setDesainAktif, setFaktorCustom, setFokusRuang, setGalat, setGalatProduk, setGantiIsi, setGarisUkur, setJangkau, setJenisPandang, setKabelPower, setKerucut, setKonfirmasi, setLabelProduk, setLihatVersi, setMenuPusat, setMenuSudut, setModal, setModeGizmo, setModeSeret, setNamaDesain, setObjekGambar, setOpsiKelas, setPanel, setPesan, setPilih, setProdukTim, setRuang, setSiap, setSibukSimpan, setSinar, setSisi, setStatusSimpan, setSudutNyaman, setTampilKabel, setTampilan, setTargetKontras, setTargetRuang, setTersimpan, setUkur, setVersiGambar, siap, sibukSimpan, sinar, sisi, statusSimpan, sudutNyaman, sudutRef, tampilKabel, tampilan, targetKontras, targetRuang, teksturBayang, terpilih, tersimpan, ukur, versiGambar, wadahRef };
+  return { teksSinar, setTeksSinar, daftarKanvas, setDaftarKanvas, ukuranCahaya, setUkuranCahaya, snapRef, sumbuGeserRef, sembunyiGolongan, setSembunyiGolongan, sembunyiRef, snap, setSnap, alatKanvas, setAlatKanvas, titikUkur, setTitikUkur, klikUkurRef, ingatanAwal, sumberTekstur, gambarTekstur, versiTekstur, setVersiTekstur, setPilihan, pilihLain, setPilihLain, modeBanyak, setModeBanyak, layarPenuh, setLayarPenuh, pilihRef, pilihLainRef, modeBanyakRef, dariToggle, tampilShare, setTampilShare, adaPerubahan, adaProyektor, detailBlending, gridSinar, infoBlending, jumlahProyektor, setDetailBlending, setGridSinar, setInfoBlending, setTampilBlending, tampilBlending, an, analisis, asal, asideRef, batas, bayangan, benda, bendaRef, bukaKelas, bukaSisi, cariProduk, chipBuka, daftarTim, dasar, desainAktif, duaRuang, faktorCustom, faktorPandang, fokusRuang, galat, galatProduk, gambarLayar, gantiBenda, gantiIsi, garisUkur, hanyaLihat, impor, inputGambar, inputLaptop, inputModel, jangkau, jenisPandang, kabel, kabelPower, kameraSiap, kerucut, konfirmasi, kotakRuang, kunciKini, labelProduk, legendaKabel, lihatVersi, menuPusat, menuSudut, mesin, modal, modeGizmo, modeSeret, modelImpor, namaDesain, objekGambar, opsiKelas, panel, pasSetelahTemplate, pesan, pilih, plafonDi, potret, produkTim, riwayat, ruang, ruangRef, setAnalisis, setAsal, setBayangan, setBenda, setBukaKelas, setCariProduk, setChipBuka, setDaftarTim, setDasar, setDesainAktif, setFaktorCustom, setFokusRuang, setGalat, setGalatProduk, setGantiIsi, setGarisUkur, setJangkau, setJenisPandang, setKabelPower, setKerucut, setKonfirmasi, setLabelProduk, setLihatVersi, setMenuPusat, setMenuSudut, setModal, setModeGizmo, setModeSeret, setNamaDesain, setObjekGambar, setOpsiKelas, setPanel, setPesan, setPilih, setProdukTim, setRuang, setSiap, setSibukSimpan, setSinar, setSisi, setStatusSimpan, setSudutNyaman, setTampilKabel, setTampilan, setTargetKontras, setTargetRuang, setTersimpan, setUkur, setVersiGambar, siap, sibukSimpan, sinar, sisi, statusSimpan, sudutNyaman, sudutRef, tampilKabel, tampilan, targetKontras, targetRuang, teksturBayang, terpilih, tersimpan, ukur, versiGambar, wadahRef };
 }

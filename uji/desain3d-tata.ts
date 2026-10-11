@@ -5,7 +5,7 @@
  * Jalankan: npm test -- desain3d-tata
  */
 import {
-  type Benda, bendaBaru, geserTepat, golonganDari, LABEL, larik, magnet, pusatkanIsi, ratakan, sebar, tampilDi, tapak,
+  type Benda, bendaBaru, geserTepat, golonganDari, LABEL, larik, magnet, pusatkanIsi, ratakan, sebar, tampilDi, tapak, kunciSembunyi, jumlahSembunyiSendiri,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 
 let lulus = 0, gagal = 0;
@@ -53,7 +53,9 @@ cek('geser tepat dijepit di dalam ruang', geserTepat([kursi('a', 7.5, 1)], ['a']
 
 console.log('\n5. Kelompok & pusatkan');
 cek('semua jenis punya kelompok', (Object.keys(LABEL) as Benda['jenis'][]).every(j => !!golonganDari(j)));
-cek('sembunyikan audio: speaker tersembunyi, kursi tetap', !tampilDi({ jenis: 'speaker' }, ['audio']) && tampilDi({ jenis: 'kursi' }, ['audio']));
+cek('sembunyikan audio: speaker tersembunyi, kursi tetap', !tampilDi({ id: 's', jenis: 'speaker' }, ['audio']) && tampilDi({ id: 'k', jenis: 'kursi' }, ['audio']));
+cek('sembunyikan satu benda: hanya benda itu', !tampilDi({ id: 'k1', jenis: 'kursi' }, [kunciSembunyi('k1')]) && tampilDi({ id: 'k2', jenis: 'kursi' }, [kunciSembunyi('k1')]));
+cek('hitung sembunyi satu per satu (bukan kelompok)', jumlahSembunyiSendiri(['audio', kunciSembunyi('a'), kunciSembunyi('b')]) === 2);
 const isi = [kursi('a', 1, 1), kursi('b', 1.6, 1, { terkunci: true })];
 const pusat = pusatkanIsi(isi, { p: 8, l: 6, t: 3, lantai: 'kayu', r2: null }, 'xz');
 cek('pusatkan isi: benda terkunci tetap di tempat', pusat.find(b => b.id === 'b')!.x === 1.6 && pusat.find(b => b.id === 'a')!.x !== 1);

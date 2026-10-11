@@ -2,11 +2,13 @@
 /**
  * Bilah alat kiri di dalam kanvas: Tambah, Teks cepat, Pilih banyak, Penggaris, Snap grid (+ magnet), Kelompok
  * (sembunyikan / isolasi), dan Geser / Putar
- * untuk benda terpilih. Pintasan: A = Tambah, M = penggaris, G = snap, R = geser/putar, Esc = batal.
+ * untuk benda terpilih (+ geser cepat), daftar benda di kanvas. Pintasan: A = Tambah, M = penggaris, G = snap,
+ * R = geser/putar, L = daftar benda, panah = geser, Esc = batal.
  */
 import { useEffect, useRef, useState } from 'react';
-import { BoxSelect, Grid3x3, Layers, Magnet, Move3d, Plus, Rotate3d, Ruler, Type } from 'lucide-react';
-import { golonganDari, type Golongan, KATALOG, LABEL_GOLONGAN, labelLangkah, LANGKAH_SNAP, MAKS_PENGGARIS, SUDUT_SNAP, titikSnap, type Titik } from '../inti';
+import { BoxSelect, Grid3x3, Layers, ListTree, Magnet, Move3d, Plus, Rotate3d, Ruler, Type } from 'lucide-react';
+import { GeserCepat } from './GeserCepat';
+import { golonganDari, jumlahSembunyiSendiri, type Golongan, KATALOG, LABEL_GOLONGAN, labelLangkah, LANGKAH_SNAP, MAKS_PENGGARIS, SUDUT_SNAP, titikSnap, type Titik } from '../inti';
 import { grupNav } from './gaya';
 import { TombolNav } from './TombolNav';
 import type { AlatDesain } from './alat';
@@ -14,7 +16,7 @@ import type { AlatDesain } from './alat';
 const ITEM_TEKS = KATALOG.flatMap(g => g.item).find(i => i.kunci === 'teks-dinding');
 
 export function BilahKiri({ a }: { a: AlatDesain }) {
-  const { benda, sembunyiGolongan, setSembunyiGolongan, alatKanvas, bukaSisi, hanyaLihat, klikUkurRef, modeBanyak, modeGizmo, ruang, setAlatKanvas, setModeBanyak, setModeGizmo,
+  const { benda, daftarKanvas, setDaftarKanvas, sembunyiGolongan, setSembunyiGolongan, alatKanvas, bukaSisi, hanyaLihat, klikUkurRef, modeBanyak, modeGizmo, ruang, setAlatKanvas, setModeBanyak, setModeGizmo,
     setPilih, setPilihLain, setRuang, setSnap, setTitikUkur, sisi, snap, terpilih, titikUkur } = a.K;
   const [menuSnap, setMenuSnap] = useState(false);
   const [menuKelompok, setMenuKelompok] = useState(false);
@@ -50,6 +52,7 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
       const k = e.key.toLowerCase();
       if (k === 'escape' && ukur) { if (titikRef.current) setTitikUkur(null); else keluarUkur(); }
       else if (k === 'm') { if (ukur) keluarUkur(); else mulaiUkur(); }
+      else if (k === 'l') setDaftarKanvas(!daftarKanvas);
       else if (k === 'g') setSnap({ ...snapRef.current, aktif: !snapRef.current.aktif });
       else if (k === 'a' && !hanyaLihat) bukaSisi('tambah');
       else if (k === 'r' && terpilih) setModeGizmo(modeGizmo === 'translate' ? 'rotate' : 'translate');
@@ -72,8 +75,9 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
         <TombolNav judul={modeBanyak ? 'Pilih banyak: aktif' : 'Pilih banyak (atau Shift / Ctrl + klik)'} aktif={modeBanyak} onClick={() => { keluarUkur(); setModeBanyak(!modeBanyak); }}><BoxSelect size={17} /></TombolNav>
         <TombolNav judul={ukur ? 'Penggaris: aktif - klik dua titik (M / Esc untuk selesai)' : 'Penggaris - ukur jarak dua titik (M)'} aktif={ukur} onClick={() => (ukur ? keluarUkur() : mulaiUkur())}><Ruler size={17} /></TombolNav>
         <TombolNav judul={snap.aktif ? `Snap grid ${labelLangkah(snap.langkah)} · ${snap.sudut}° (G)` : 'Snap grid - geser & putar presisi (G)'} aktif={snap.aktif || menuSnap} onClick={() => { setMenuKelompok(false); setMenuSnap(v => !v); }}><Grid3x3 size={17} /></TombolNav>
-        <TombolNav judul={sembunyiGolongan.length ? `Kelompok: ${sembunyiGolongan.length} disembunyikan` : 'Sembunyikan / isolasi kelompok benda'} aktif={sembunyiGolongan.length > 0 || menuKelompok}
+        <TombolNav judul={sembunyiGolongan.length ? `${sembunyiGolongan.length - jumlahSembunyiSendiri(sembunyiGolongan)} kelompok & ${jumlahSembunyiSendiri(sembunyiGolongan)} benda disembunyikan` : 'Sembunyikan / isolasi kelompok benda'} aktif={sembunyiGolongan.length > 0 || menuKelompok}
           onClick={() => { setMenuSnap(false); setMenuKelompok(v => !v); }}><Layers size={17} /></TombolNav>
+        <TombolNav judul={daftarKanvas ? 'Tutup daftar benda (L)' : 'Daftar benda - pilih dari nama (L)'} aktif={daftarKanvas} onClick={() => setDaftarKanvas(!daftarKanvas)}><ListTree size={17} /></TombolNav>
       </div>
       {terpilih && !ukur && (
         <div className={`${grupNav} self-start`} role="group" aria-label="Geser atau putar benda">
@@ -81,6 +85,7 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
           <TombolNav judul="Putar (R)" aktif={modeGizmo === 'rotate'} onClick={() => setModeGizmo('rotate')}><Rotate3d size={17} /></TombolNav>
         </div>
       )}
+      {!ukur && !hanyaLihat && <GeserCepat a={a} />}
       {ukur && (
         <div className="self-start flex items-center gap-1.5 rounded-lg bg-red-600 text-white px-2 py-1 text-[11.5px] font-bold shadow-sm">
           <Ruler size={13} /> {titikUkur ? 'Titik kedua' : 'Titik pertama'}

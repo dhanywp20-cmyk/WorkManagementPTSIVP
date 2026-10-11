@@ -15,8 +15,9 @@ export function useKamera(K: KeadaanDesain) {
   //  Setelah template dipasang: pas-kan kamera ke ruangan BARU (dipanggil dari efek supaya ukuran ruangnya sudah yang baru).
   useEffect(() => {
     if (!pasSetelahTemplate.current || !siap) return;
+    const langsung = pasSetelahTemplate.current === 'langsung';
     pasSetelahTemplate.current = false;
-    pasKeLayar('semua');
+    pasKeLayar('semua', langsung);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ruang, siap]);
   // ── Kamera ──
@@ -52,10 +53,10 @@ export function useKamera(K: KeadaanDesain) {
   };
 
   /** Pas seluruh ruangan (atau ruang terfokus) ke kanvas dari arah kamera sekarang. */
-  const pasKeLayar = (fk: 'semua' | number = fokusRuang) => {
+  const pasKeLayar = (fk: 'semua' | number = fokusRuang, langsung = false) => {
     const m = mesin.current; if (!m) return;
     const { target, kotak } = fokusKotak(fk);
-    terbangKe(m, posisiPas(m, target, m.kamera.position.clone().sub(m.orbit.target).normalize(), kotak), target);
+    terbangKe(m, posisiPas(m, target, m.kamera.position.clone().sub(m.orbit.target).normalize(), kotak), target, langsung);
   };
 
   const zoom = (faktor: number) => {

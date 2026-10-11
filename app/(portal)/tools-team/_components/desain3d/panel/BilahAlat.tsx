@@ -10,7 +10,7 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
   const { benda, bukaSisi, hanyaLihat, menuPusat, riwayat, setMenuPusat, setModal, sisi, tampilan } = a.K;
   const { pilihSudut } = a.kamera;
   const { pusatkan } = a.aksi;
-  const { cetak, jalankanPng, menuPng, pngLembar, ringkasan, setMenuPng, sibukPng, unduhEmpatTampak, unduhFoto } = a.ekspor;
+  const { denahCetak, setDenahCetak, cetak, jalankanPng, menuPng, pngLembar, ringkasan, setMenuPng, sibukPng, unduhDxf, unduhEmpatTampak, unduhFoto } = a.ekspor;
   const { unduhGLB } = a.simpan;
   return (
     <>
@@ -53,7 +53,7 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
             opsi={[{ v: '3d', l: '3D' }, { v: 'atas', l: 'Atas' }, { v: 'kursi', l: 'Dari kursi' }]} />
           <div className="relative">
             <button type="button" onClick={() => setMenuPng(v => !v)} aria-expanded={menuPng} disabled={sibukPng} className={menuPng ? tombolUtama : tombol}
-              title="Unduh gambar PNG (label ukuran ikut tergambar)"><Ikon nama="📷" ukuran={14} /> {sibukPng ? 'Membuat...' : 'PNG ▾'}</button>
+              title="Unduh gambar PNG atau denah CAD (.dxf)"><Ikon nama="📷" ukuran={14} /> {sibukPng ? 'Membuat...' : 'PNG / DXF ▾'}</button>
             {menuPng && (<>
               <div aria-hidden="true" className="fixed inset-0 z-20" onClick={() => setMenuPng(false)} />
               <div className="absolute right-0 top-full mt-1.5 z-30 w-64 rounded-xl bg-white border border-slate-200 shadow-xl p-1.5" role="menu">
@@ -64,12 +64,17 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
                   ['Tampak samping', 'Dari sisi kanan ruang', () => unduhFoto('kiri', 'tampak samping')],
                   ['4 tampak dalam 1 gambar', 'Perspektif, denah, depan, samping', unduhEmpatTampak],
                   ['Lembar lengkap', 'Sama dengan Cetak, sebagai gambar', () => jalankanPng(pngLembar)],
+                  ['Denah CAD (.dxf)', 'AutoCAD · ukuran mm, per lapis', unduhDxf],
                 ] as const).map(([l, k, aksi]) => (
                   <button key={l} type="button" role="menuitem" onClick={() => void aksi()} className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50">
                     <span className="block text-[13px] font-bold text-slate-900">{l}</span>
                     <span className="block text-[11.5px] text-slate-600">{k}</span>
                   </button>
                 ))}
+                <label className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-[13px] font-bold text-slate-900 hover:bg-blue-50 cursor-pointer" title="Sertakan denah 2D berskala di Cetak & Lembar lengkap">
+                  Denah 2D di Cetak
+                  <input type="checkbox" className="w-4 h-4" checked={denahCetak} onChange={e => setDenahCetak(e.target.checked)} />
+                </label>
                 <p className="px-3 pt-1.5 pb-1 text-[11px] text-slate-500 border-t border-slate-100 mt-1">Label yang sedang tampil (ukuran, sudut, sinar) ikut tergambar. Resolusi 2× layar.</p>
               </div>
             </>)}

@@ -30,7 +30,7 @@ const judulKategori = (id: KategoriRuang) => KATEGORI_RUANG.find(k => k.id === i
 const isiDari = (t: BarisTemplate): IsiTemplateKategori => ({ nama: t.nama, ruang: t.data.ruang, benda: t.data.benda, layar: t.data.layar, tekstur: t.data.tekstur });
 
 export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof useAksiDesain>, simpan: ReturnType<typeof useSimpanDesain>) {
-  const { asal, benda, bendaRef, gambarLayar, hanyaLihat, ingatanAwal, mesin, namaDesain, potret, riwayat, ruang, ruangRef, setAsal, setBenda,
+  const { asal, benda, bendaRef, gambarLayar, hanyaLihat, ingatanAwal, mesin, namaDesain, pasSetelahTemplate, potret, riwayat, ruang, ruangRef, setAsal, setBenda,
     setKonfirmasi, setNamaDesain, setPesan, setRuang, setStatusSimpan, setVersiGambar, siap } = K;
   const [daftar, setDaftar] = useState<Partial<Record<KategoriRuang, InfoTemplateKategori>>>({});
   const [bolehAtur, setBolehAtur] = useState(false);
@@ -82,6 +82,8 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
         mulaiRiwayat.current = true;
         if (!mesin.current) layarTertunda.current = isi.layar ?? null;
         aksi.pasangKategoriYa(KATEGORI_AWAL, isi);
+        //  Pemuatan awal: kamera langsung di posisi akhir (tanpa animasi terbang yang terlihat seperti "ganti").
+        pasSetelahTemplate.current = 'langsung';
       }
     } else {
       tulisIngatanAwal({ kosong: true });
@@ -94,7 +96,15 @@ export function useTemplateKategori(K: KeadaanDesain, aksi: ReturnType<typeof us
       }
     }
   };
-  const selesaiAwal = () => { awalSelesai.current = true; setMenungguAwal(false); };
+  /**
+   * Lapisan "Memuat" baru dibuka setelah adegan 3D dibangun ulang dengan isi Admin & tergambar: state baru
+   * di-commit, efek adegan berjalan sesudah frame dicat - tanpa jeda ini beberapa frame isi pabrikan sempat terlihat.
+   */
+  const selesaiAwal = () => {
+    if (awalSelesai.current) return;
+    awalSelesai.current = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => setMenungguAwal(false), 150)));
+  };
   useEffect(() => {
     if (!menungguAwal) return;
     const t = setTimeout(selesaiAwal, BATAS_TUNGGU_MS);

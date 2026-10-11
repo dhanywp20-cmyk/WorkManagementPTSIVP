@@ -1,15 +1,16 @@
 'use client';
-/** Kontrol di atas kanvas 3D: centang tampilan, aksi benda terpilih, geser tepat, bilah alat kiri, layar penuh. */
+/** Kontrol di atas kanvas 3D: centang tampilan, aksi benda terpilih, geser tepat, bilah alat kiri, daftar benda, layar penuh. */
 import { useEffect, useState } from 'react';
 import { DISPLAY, nirkabel } from '../inti';
 import { Maximize2, Minimize2, Settings2 } from 'lucide-react';
 import { AksiTerpilih } from './AksiTerpilih';
 import { GeserTepat } from './GeserTepat';
 import { BilahKiri } from './BilahKiri';
+import { DaftarKanvas } from './DaftarKanvas';
 import type { AlatDesain } from './alat';
 
 export function KontrolKanvas({ a }: { a: AlatDesain }) {
-  const { adaProyektor, bayangan, benda, chipBuka, detailBlending, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, labelProduk, setBayangan, setChipBuka, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setSinar, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, layarPenuh, setLayarPenuh, alatKanvas } = a.K;
+  const { teksSinar, setTeksSinar, adaProyektor, bayangan, benda, chipBuka, detailBlending, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, labelProduk, setBayangan, setChipBuka, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setSinar, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, layarPenuh, setLayarPenuh, alatKanvas } = a.K;
   //  Geser tepat terikat ke benda yang terpilih saat dibuka - pilih benda lain = otomatis tertutup.
   const [geser, setGeser] = useState<{ id: string; teks: string } | null>(null);
   const geserAktif = geser && geser.id === terpilih?.id ? geser : null;
@@ -39,6 +40,7 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
             ...(adaProyektor ? [{ v: sinar, s: setSinar, l: 'Sinar proyektor' }] : []),
             //  Mode grid: gambar tiap proyektor sebagai pola garis 16 x 9 (bentuk & sambungan antar gambar terlihat).
             ...(adaProyektor && sinar ? [{ v: gridSinar, s: setGridSinar, l: 'Grid sinar' }] : []),
+            ...(adaProyektor && sinar ? [{ v: teksSinar, s: setTeksSinar, l: 'Keterangan sinar' }] : []),
             ...(jumlahProyektor >= 2 ? [{ v: tampilBlending, s: setTampilBlending, l: 'Area blending' }] : []),
             //  Garis ukur & angka cm ikut "Area blending"; kartu keterangan (persen & piksel) bisa disembunyikan sendiri.
             ...(jumlahProyektor >= 2 && tampilBlending ? [{ v: detailBlending, s: setDetailBlending, l: 'Detail blending' }] : []),
@@ -58,6 +60,7 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
         {/* Bilah alat kiri: Tambah, teks, pilih banyak, penggaris, snap grid, geser / putar. */}
         <BilahKiri a={a} />
       </div>
+      <DaftarKanvas a={a} />
       <button type="button" onClick={() => setLayarPenuh(v => !v)} aria-pressed={layarPenuh}
         title={layarPenuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} aria-label={layarPenuh ? 'Keluar layar penuh' : 'Layar penuh'}
         className="kontrol-kanvas absolute right-2 top-2 z-10 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 border border-slate-200 text-slate-700 shadow-sm hover:bg-slate-50">

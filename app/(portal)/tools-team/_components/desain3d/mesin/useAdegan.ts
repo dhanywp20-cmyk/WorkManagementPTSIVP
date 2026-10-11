@@ -11,14 +11,14 @@ import type { KeadaanDesain } from '../useKeadaanDesain';
 import { useEffect } from 'react';
 import type * as T from 'three';
 import { bangunRuangan } from '../bangun/ruangan';
-import { aturSnapGizmo, gambarGridSnap, gambarPenggaris } from './presisi';
-import { penggarisSah, tampilDi } from '../inti';
+import { aturSnapGizmo, gambarGridSnap, gambarJarakDinding, gambarPenggaris } from './presisi';
+import { penggarisSah, ruangDari, tampilDi } from '../inti';
 import { gambarAlatBantu } from './alatBantu';
 import { gambarBayangan } from './bayangan';
 
 
 export function useAdegan(K: KeadaanDesain) {
-  const { setUkuranCahaya, sembunyiGolongan, snap, titikUkur, setRuang, gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
+  const { teksSinar, setUkuranCahaya, sembunyiGolongan, snap, titikUkur, setRuang, gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
   // ── Ruangan: lantai bertekstur + 4 dinding per ruang ──
   //  Dinding hanya terlihat dari sisi dalam (FrontSide), jadi dinding yang
   //  membelakangi kamera otomatis "tembus" seperti denah rumah boneka.
@@ -102,13 +102,19 @@ export function useAdegan(K: KeadaanDesain) {
     const m = mesin.current; if (!m || !siap) return;
     gambarPenggaris(m, penggarisSah(ruang.penggaris), titikUkur, id => setRuang(r => ({ ...r, penggaris: (r.penggaris ?? []).filter(g => g.id !== id) })));
   }, [ruang.penggaris, titikUkur, siap, mesin, setRuang]);
+  //  Jarak benda terpilih ke dinding (ikut centang "Garis ukuran"; tidak saat memilih banyak).
+  useEffect(() => {
+    const m = mesin.current; if (!m || !siap) return;
+    const b = ukur && !pilihLain.length ? benda.find(x => x.id === pilih) ?? null : null;
+    gambarJarakDinding(m, b, b ? kotakRuang[ruangDari(ruang, b.x)] ?? null : null);
+  }, [pilih, pilihLain, benda, kotakRuang, ruang, ukur, siap, mesin]);
 
   // ── Alat bantu: label ukuran, garis jarak terjauh, kerucut sudut pandang ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    gambarAlatBantu(m, { analisis, benda: sembunyiGolongan.length ? benda.filter(b => tampilDi(b, sembunyiGolongan)) : benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, setInfoBlending, setUkuranCahaya });
+    gambarAlatBantu(m, { analisis, benda: sembunyiGolongan.length ? benda.filter(b => tampilDi(b, sembunyiGolongan)) : benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, teksSinar, setInfoBlending, setUkuranCahaya });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, tampilShare, kabel, tampilBlending, detailBlending, gridSinar, sembunyiGolongan]);
+  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, tampilShare, kabel, tampilBlending, detailBlending, gridSinar, teksSinar, sembunyiGolongan]);
   // ── Tingkat cahaya ruangan ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
