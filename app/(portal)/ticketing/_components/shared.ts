@@ -142,6 +142,13 @@ export interface TeamMember {
  */
 export const JEDA_POLLING_MS = 120_000;
 
+/** Event realtime dikumpulkan selama ini sebelum diproses (1 perubahan = 2-4 event beruntun). */
+export const JEDA_GABUNG_REALTIME_MS = 800;
+/** Lebih dari sekian ticket berubah sekaligus -> satu muat ulang penuh lebih murah. */
+export const MAKS_SEGAR_SEBAGIAN = 10;
+/** Daftar akun & referensi garansi dimuat ulang paling sering sekali per jeda ini (kecuali muat ulang manual). */
+export const JEDA_DATA_PENDUKUNG_MS = 10 * 60_000;
+
 /**
  * Kolom activity_logs yang benar-benar dibutuhkan DAFTAR tiket.
  *

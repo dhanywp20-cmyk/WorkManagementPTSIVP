@@ -31,7 +31,7 @@ import {
   getOverdueSetting as getOverdueSettingShared,
   getWarrantyInfo as getWarrantyInfoShared,
   bolehUpdateTicket as bolehUpdateTicketShared,
-  JEDA_POLLING_MS, KOLOM_LOG_RINGKAS, TAHUN_TERBARU, rentangTiket, RENTANG_BULAN_TIKET,
+  JEDA_POLLING_MS, JEDA_GABUNG_REALTIME_MS, JEDA_DATA_PENDUKUNG_MS, MAKS_SEGAR_SEBAGIAN, KOLOM_LOG_RINGKAS, TAHUN_TERBARU, rentangTiket, RENTANG_BULAN_TIKET,
 } from "./_components/shared";
 import { NewTicketModal, type NewTicketForm } from "./_components/NewTicketModal";
 import {
@@ -50,7 +50,7 @@ import { TicketListBody } from "./_components/TicketListBody";
 import { TicketDetailPopup } from "./_components/TicketDetailPopup";
 import { appLink } from "@/lib/app-url";
 import { eksporExcel } from "./_components/ekspor-excel";
-import { ambilTiketUntuk } from "./_components/data-ticket";
+import { ambilTiketTertentu, ambilTiketUntuk } from "./_components/data-ticket";
 import { cetakTicket } from "./_components/cetak-ticket";
 import { Toast, PageHeader, ConfirmDialog, type ConfirmState } from "@/components/shared";
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -65,6 +65,8 @@ function TicketingSystemInner() {
   const [loginTime, setLoginTime] = useState<number | null>(null);
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
+  //  Salinan terbaru untuk handler realtime yang dipasang sekali (lihat efek realtime).
+  const ticketsRef = useRef(tickets); ticketsRef.current = tickets;
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [overdueSettings, setOverdueSettings] = useState<OverdueSetting[]>([]);
@@ -379,6 +381,8 @@ function TicketingSystemInner() {
     if (target) target.location.href = "/dashboard";
   };
 
+  /** Kapan daftar akun & referensi garansi terakhir dimuat (lihat perluPendukung di fetchData). */
+  const pendukungDimuat = useRef(0);
   const fetchData = async (userOverride?: User | null, silent = false) => {
     try {
       if (!silent) setTicketsLoading(true);
@@ -391,11 +395,17 @@ function TicketingSystemInner() {
         mengubah apa yang ditarik.
       */
       const rentang = rentangTiket(filterYearRef.current);
-      const [membersData, usersData] = await Promise.all([
+      /*
+        Daftar akun & referensi garansi jarang berubah, tapi dulu ikut ditarik ulang pada SETIAP
+        polling dan event realtime (tabel users terbaca ±670 ribu kali). Muat sekali, lalu hanya saat
+        pengguna sendiri memuat ulang (silent = false) atau sudah lebih dari JEDA_DATA_PENDUKUNG_MS.
+      */
+      const perluPendukung = !silent || Date.now() - pendukungDimuat.current > JEDA_DATA_PENDUKUNG_MS;
+      const [membersData, usersData] = perluPendukung ? await Promise.all([
         // team_members tidak ada - ambil dari users dengan role team
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, bisa_ditugaskan").in("role", ["team", "team_pts"]).order("full_name"),
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, is_internal_sales"),
-      ]);
+      ]) : [{ data: null }, { data: null }];
       // Map users ke format TeamMember agar kompatibel dengan kode existing
       if (membersData.data) {
         membersData.data = (membersData.data as any[]).map((u: any) => ({
@@ -421,8 +431,11 @@ function TicketingSystemInner() {
       if (usersData.data) setUsers(usersData.data);
       if (!silent) { setLoading(false); setTicketsLoading(false); }
       else { setLoading(false); }
-      // Fetch warranty/project reference data (fire-and-forget, non-blocking)
-      fetchProjectReminders();
+      if (perluPendukung) {
+        if (membersData.data && usersData.data) pendukungDimuat.current = Date.now();
+        // Fetch warranty/project reference data (fire-and-forget, non-blocking)
+        fetchProjectReminders();
+      }
     } catch (err: any) {
       setLoading(false);
       if (!silent) { setTicketsLoading(false); setFetchError(err?.message ?? 'Gagal memuat data. Coba refresh halaman.'); }
@@ -2082,23 +2095,49 @@ function TicketingSystemInner() {
   // Realtime subscription: auto-update tanpa refresh
   useEffect(() => {
     if (!currentUser) return;
+    /*
+      Event realtime TIDAK lagi memuat ulang seluruh daftar satu per satu.
+
+      Satu perubahan ticket biasanya = 2-4 event (baris tickets + baris activity_logs, di dua basis),
+      dan dulu tiap event menarik SEMUA ticket beserta lognya di setiap tab yang terbuka - query itu
+      jalan >127 ribu kali. Sekarang event dikumpulkan JEDA_GABUNG_REALTIME_MS, lalu:
+        - perubahan / hapus pada ticket yang sudah ada di daftar -> muat ulang ticket itu saja;
+        - ticket baru, event tanpa id, terlalu banyak sekaligus, atau galat -> satu muat ulang penuh.
+    */
+    const antre = { ids: new Set<string>(), penuh: false, timer: null as ReturnType<typeof setTimeout> | null };
+    const proses = async () => {
+      const ids = Array.from(antre.ids);
+      const penuh = antre.penuh || ids.length > MAKS_SEGAR_SEBAGIAN || ids.some(id => !ticketsRef.current.some(t => t.id === id));
+      antre.ids.clear(); antre.penuh = false; antre.timer = null;
+      if (penuh) { fetchData(currentUser, true); return; } // silent: tidak trigger loading spinner
+      try {
+        const segar = new Map((await ambilTiketTertentu(currentUser, ids)).map(t => [t.id, t] as const));
+        setTickets(prev => prev.flatMap(t => (!ids.includes(t.id) ? [t] : segar.has(t.id) ? [segar.get(t.id)!] : [])));
+        //  Ticket yang sedang dibuka ikut disegarkan, tapi log lengkapnya (muatLogPenuh) dipertahankan.
+        setSelectedTicket(prev => {
+          if (!prev || !ids.includes(prev.id)) return prev;
+          const baru = segar.get(prev.id);
+          return baru ? { ...baru, activity_logs: (prev.activity_logs?.length ?? 0) > (baru.activity_logs?.length ?? 0) ? prev.activity_logs : baru.activity_logs } : prev;
+        });
+      } catch { fetchData(currentUser, true); }
+    };
+    const jadwalkan = (id: unknown) => {
+      if (typeof id === "string" && id) antre.ids.add(id); else antre.penuh = true;
+      if (!antre.timer) antre.timer = setTimeout(() => void proses(), JEDA_GABUNG_REALTIME_MS);
+    };
+    type Muatan = { eventType?: string; new?: Record<string, unknown>; old?: Record<string, unknown> };
+    const dariTicket = (p: Muatan) => jadwalkan(p.eventType === "INSERT" ? null : (p.new?.id ?? p.old?.id));
+    const dariLog = (p: Muatan) => jadwalkan(p.new?.ticket_id ?? p.old?.ticket_id);
     // PTS DB realtime
     const ptsCh = supabase.channel("pts-tickets-rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => {
-        fetchData(currentUser, true); // silent: tidak trigger loading spinner
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
-        fetchData(currentUser, true);
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, dariTicket)
+      .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, dariLog)
       .subscribe();
-    // Services DB realtime (untuk update services_status dari platform Services)
+    // Services DB realtime (untuk update services_status dari platform Services). Baris tickets
+    // Services bukan baris daftar ini - perubahannya selalu lewat muat ulang penuh (tetap digabung).
     const svcCh = supabaseServices.channel("svc-tickets-rt")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => {
-        fetchData(currentUser, true);
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, () => {
-        fetchData(currentUser, true);
-      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "tickets" }, () => jadwalkan(null))
+      .on("postgres_changes", { event: "*", schema: "public", table: "activity_logs" }, dariLog)
       .subscribe();
     /*
       Polling cadangan - JARING PENGAMAN kalau realtime di atas meleset, bukan
@@ -2140,6 +2179,7 @@ function TicketingSystemInner() {
     document.addEventListener('visibilitychange', saatVisibilitasBerubah);
 
     return () => {
+      if (antre.timer) clearTimeout(antre.timer);
       supabase.removeChannel(ptsCh);
       supabaseServices.removeChannel(svcCh);
       document.removeEventListener('visibilitychange', saatVisibilitasBerubah);
