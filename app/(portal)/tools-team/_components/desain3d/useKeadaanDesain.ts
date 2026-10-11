@@ -170,7 +170,8 @@ export function useKeadaanDesain() {
   const wadahRef = useRef<HTMLDivElement>(null);
   const mesin = useRef<Mesin | null>(null);
   /** Kamera dipas ke ruangan baru setelah template kategori dipasang. */
-  const pasSetelahTemplate = useRef(false);
+  /** Kamera dipas ke ruangan setelah template dipasang: true = terbang (animasi), 'langsung' = tanpa animasi (pemuatan awal). */
+  const pasSetelahTemplate = useRef<boolean | 'langsung'>(false);
   /** Tekstur bayangan & cahaya (dibuat sekali, dipakai ulang tiap pembaruan). */
   const teksturBayang = useRef<{ bayang: T.Texture; cahaya: T.Texture } | null>(null);
   const gambarLayar = useRef(new Map<string, T.Texture>());
