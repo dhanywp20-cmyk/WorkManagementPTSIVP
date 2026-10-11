@@ -6,6 +6,7 @@ import type { useProdukTim } from '../simpan/useProdukTim';
 import type { useEkspor } from '../ekspor/useEkspor';
 import type { useSimpanDesain } from '../simpan/useSimpanDesain';
 import type { useTemplateKategori } from '../simpan/useTemplateKategori';
+import type { useObjekSaya } from '../simpan/useObjekSaya';
 
 export interface AlatDesain {
   K: KeadaanDesain;
@@ -15,4 +16,5 @@ export interface AlatDesain {
   ekspor: ReturnType<typeof useEkspor>;
   simpan: ReturnType<typeof useSimpanDesain>;
   template: ReturnType<typeof useTemplateKategori>;
+  objekSaya: ReturnType<typeof useObjekSaya>;
 }

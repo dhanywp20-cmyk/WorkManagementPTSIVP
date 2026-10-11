@@ -1,5 +1,5 @@
 'use client';
-/** Bilah alat: kategori, tambah, ruangan, daftar benda, pusatkan, buka/simpan, undo, sudut pandang, PNG, cetak. */
+/** Bilah alat: kategori, ruangan, daftar benda, pusatkan, buka/simpan, undo, sudut pandang, PNG, cetak. */
 import { Segmen, TombolSalin } from '../../bersama/ui';
 import { tombol, tombolAktif, tombolUtama } from './gaya';
 import { Ikon } from '@/components/shared/Ikon';
@@ -19,7 +19,6 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
         <div className="flex items-center gap-2 flex-wrap">
           <button type="button" onClick={() => bukaSisi('kategori')} aria-pressed={sisi === 'kategori'} className={sisi === 'kategori' ? tombolAktif : tombol}
             title="Template ruangan: meeting, auditorium, smart classroom, mapping, immersive"><LayoutTemplate size={14} /> <span className="sr-only sm:not-sr-only">Kategori</span></button>
-          <button type="button" onClick={() => bukaSisi('tambah')} aria-pressed={sisi === 'tambah'} className={`${tombolUtama} ${sisi === 'tambah' ? 'ring-2 ring-offset-1 ring-blue-400' : ''}`}><Ikon nama="➕" ukuran={14} /> Tambah</button>
           <button type="button" onClick={() => bukaSisi('ruang')} aria-pressed={sisi === 'ruang'} className={sisi === 'ruang' ? tombolAktif : tombol}><Ikon nama="🏠" ukuran={14} /> <span className="sr-only sm:not-sr-only">Ruangan</span></button>
           <button type="button" onClick={() => bukaSisi('daftar')} aria-pressed={sisi === 'daftar'} className={sisi === 'daftar' ? tombolAktif : tombol}><Ikon nama="📋" ukuran={14} /> <span className="sr-only sm:not-sr-only">Benda</span> ({benda.length})</button>
           <div className="relative">

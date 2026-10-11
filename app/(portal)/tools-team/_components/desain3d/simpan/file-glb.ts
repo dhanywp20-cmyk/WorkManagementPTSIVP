@@ -13,7 +13,7 @@
  * memuat seluruh geometri. Tanpa three / React, jadi bisa diuji di Node.
  */
 import { periksaDesain } from '@/lib/tools-team';
-import type { Benda, Ruang } from '../inti';
+import { type Benda, POLA_KUNCI_TEKSTUR, type Ruang } from '../inti';
 
 /** Kunci `userData` / `extras` tempat data desain disimpan. */
 export const KUNCI_DESAIN = 'desainPTS';
@@ -27,6 +27,8 @@ export interface DesainFile {
   benda: Benda[];
   /** Gambar layar unggahan per id benda (data URL) - di server tidak ikut disimpan. */
   gambar?: Record<string, string>;
+  /** Tekstur lantai / dinding (kunci 'tx-...' -> data URL), lihat inti/teksturRuang.ts. */
+  tekstur?: Record<string, string>;
   disimpan?: string;
 }
 
@@ -61,21 +63,23 @@ export function bacaDesainGLB(buf: ArrayBuffer): DesainFile | null {
   if (!mentah || mentah.format !== FORMAT_DESAIN) return null;
   const cek = periksaDesain({ ruang: mentah.ruang, benda: mentah.benda });
   if (!cek.ok) return null;
+  const sah = (url: unknown): url is string =>
+    typeof url === 'string' && url.length <= MAKS_GAMBAR && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(url);
   const gambar: Record<string, string> = {};
-  for (const [id, url] of Object.entries(mentah.gambar ?? {})) {
-    if (typeof url === 'string' && url.length <= MAKS_GAMBAR && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(url)) gambar[id] = url;
-  }
+  for (const [id, url] of Object.entries(mentah.gambar ?? {})) if (sah(url)) gambar[id] = url;
+  const tekstur: Record<string, string> = {};
+  for (const [k, url] of Object.entries(mentah.tekstur ?? {})) if (POLA_KUNCI_TEKSTUR.test(k) && sah(url)) tekstur[k] = url;
   return {
     format: FORMAT_DESAIN, versi: 1,
     nama: typeof mentah.nama === 'string' && mentah.nama.trim() ? mentah.nama.trim().slice(0, 120) : 'Desain dari laptop',
-    ruang: cek.data.ruang as Ruang, benda: cek.data.benda as Benda[], gambar,
+    ruang: cek.data.ruang as Ruang, benda: cek.data.benda as Benda[], gambar, tekstur,
     disimpan: typeof mentah.disimpan === 'string' ? mentah.disimpan : undefined,
   };
 }
 
 /** Isi `userData[KUNCI_DESAIN]` untuk node akar yang akan diekspor. */
-export function dataDesainFile(nama: string, ruang: Ruang, benda: Benda[], gambar: Record<string, string>): DesainFile {
-  return { format: FORMAT_DESAIN, versi: 1, nama, ruang, benda, gambar, disimpan: new Date().toISOString() };
+export function dataDesainFile(nama: string, ruang: Ruang, benda: Benda[], gambar: Record<string, string>, tekstur: Record<string, string> = {}): DesainFile {
+  return { format: FORMAT_DESAIN, versi: 1, nama, ruang, benda, gambar, ...(Object.keys(tekstur).length ? { tekstur } : {}), disimpan: new Date().toISOString() };
 }
 
 /** Nama file aman dari nama desain. */

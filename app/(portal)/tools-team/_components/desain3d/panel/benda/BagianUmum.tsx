@@ -22,7 +22,7 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
   const { UKURAN_DARI_PILIHAN, b, batas, bawaan, bedaBawaan, bundar, formProduk, label, mm, onGambar, onSimpanProduk, plafon, set, setFormProduk } = c;
   return (
     <>
-      {b.jenis !== 'model' && (
+      {b.jenis !== 'model' && b.jenis !== 'teks' && (
         <div>
           <span className={label}>Warna{BAGIAN_WARNA[b.jenis] ? ` · ${BAGIAN_WARNA[b.jenis]}` : ''}</span>
           <div className="flex items-center gap-2">
@@ -38,6 +38,7 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
         </div>
       )}
 
+      {b.jenis !== 'teks' && (
       <div>
         <span className={label}>Ukuran produk</span>
         <div className="grid grid-cols-3 gap-2">
@@ -61,6 +62,7 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
             : 'Sesuaikan dengan datasheet / ukuran produk sebenarnya (presisi 1 mm).'}
         </Catatan>
       </div>
+      )}
 
       <div>
         <span className={label}>Posisi</span>
@@ -72,10 +74,10 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-[12.5px] text-slate-700">
+      {b.jenis !== 'teks' && <label className="flex items-center gap-2 text-[12.5px] text-slate-700">
         <input type="checkbox" className="w-4 h-4" checked={!b.sembunyiLabel} onChange={e => set({ sembunyiLabel: e.target.checked ? undefined : true })} />
         Tampilkan label produk benda ini
-      </label>
+      </label>}
       {DISPLAY.includes(b.jenis) && (
         <div className="space-y-2">
           <Pilih label="Konten layar" nilai={b.konten ?? 'pola'} onUbah={(v: KontenLayar) => (v === 'gambar' ? onGambar() : set({ konten: v }))}
@@ -89,7 +91,7 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
           </label>
         </div>
       )}
-      {onSimpanProduk && b.jenis !== 'model' && b.jenis !== 'objek' && (
+      {onSimpanProduk && b.jenis !== 'model' && b.jenis !== 'objek' && b.jenis !== 'teks' && (
         <div className="rounded-xl border border-violet-200 bg-violet-50/60 p-2.5">
           {!formProduk ? (
             <button type="button" onClick={() => setFormProduk({ label: b.nama, ket: '', status: '', sibuk: false })}

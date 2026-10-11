@@ -11,7 +11,9 @@ import { AturBidang } from './benda/AturBidang';
 import { AturProyektor } from './benda/AturProyektor';
 import { AturPerangkat } from './benda/AturPerangkat';
 import { AturKabel } from './benda/AturKabel';
+import { AturTeks } from './benda/AturTeks';
 import { BagianUmum } from './benda/BagianUmum';
+import { SimpanObjekSaya } from './benda/SimpanObjekSaya';
 import { DariPustaka } from './benda/DariPustaka';
 import { useKonteksAtur, type PropsPanelBenda } from './benda/konteks';
 
@@ -19,8 +21,8 @@ import { useKonteksAtur, type PropsPanelBenda } from './benda/konteks';
  * Panel "Atur benda" - mengisi panel kanan di samping tampilan 3D, jadi
  * perubahan langsung terlihat tanpa menutupi kanvas. Bagian per jenis ada di panel/benda/.
  */
-export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, adaFoto = false, onGambarObjek, semua }: PropsPanelBenda) {
-  const c = useKonteksAtur({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, adaFoto, onGambarObjek, semua });
+export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, onSimpanObjek, adaFoto = false, onGambarObjek, semua }: PropsPanelBenda) {
+  const c = useKonteksAtur({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, onSimpanObjek, adaFoto, onGambarObjek, semua });
   const { label, set } = c;
 
   return (
@@ -49,11 +51,13 @@ export function PanelBenda({ b, plafon, batas, onUbah, onGambar, onTutup, ekstra
         <AturBidang c={c} />
         <AturProyektor c={c} />
         <AturPerangkat c={c} />
+        <AturTeks c={c} />
         {(b.jenis === 'model' || b.jenis === 'objek') && <AturObjek b={b} set={set} adaFoto={adaFoto} onGambarBaru={() => onGambarObjek?.()} />}
         {ekstra}
         <AturKabel c={c} />
 
         <BagianUmum c={c} />
+        <SimpanObjekSaya c={c} />
       </div>
     </div>
   );

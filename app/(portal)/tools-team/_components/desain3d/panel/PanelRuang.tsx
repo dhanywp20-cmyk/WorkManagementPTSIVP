@@ -3,9 +3,10 @@ import { Copy } from 'lucide-react';
 import { Angka, f, Pilih, Segmen, Catatan } from '../../bersama/ui';
 import { type Benda, type Bukaan, daftarRuang, JENDELA_AWAL, type Kotak, LUX_LUAR, luxBidangKerja, luxSiang, MAKS_RUANG, panjangDinding, pintuSekat, type Ruang, ruangDari, type RuangSambung, sambungan, sambunganKe, type Siang, type SisiDinding, sisiLuar, ukuranPintu } from '../inti';
 import { PilihWarna } from './ModalBuka';
+import { PilihTekstur, type PetaTeksturPanel } from './PilihTekstur';
 
 /** Panel samping "Ruangan": ukuran, lantai, dinding, cahaya, bukaan, ruang tambahan & salin isi (dipisah dari Desain3D.tsx). */
-export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tambahBukaan, ubahBukaan, tambahRuang, hapusRuangTerakhir, ubahSambungan, pasangSambungan, gantiIsi, setGantiIsi, salinIsiRuang, duaRuang }: {
+export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tambahBukaan, ubahBukaan, tambahRuang, hapusRuangTerakhir, ubahSambungan, pasangSambungan, gantiIsi, setGantiIsi, salinIsiRuang, duaRuang, peta }: {
   ruang: Ruang;
   setRuang: (fn: (r: Ruang) => Ruang) => void;
   ubahUkuran: (fn: (r: Ruang) => Ruang) => void;
@@ -21,6 +22,7 @@ export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tam
   setGantiIsi: (v: boolean) => void;
   salinIsiRuang: (asal: number, ganti: boolean, ke?: number) => void;
   duaRuang: boolean;
+  /** Tekstur gambar lantai / dinding (PilihTekstur). */ peta: PetaTeksturPanel;
 }) {
   return (
     <>
@@ -38,9 +40,13 @@ export function PanelRuang({ ruang, setRuang, ubahUkuran, benda, kotakRuang, tam
             {ruang.lantai === 'polos' && (
               <PilihWarna label="Warna lantai" nilai={ruang.warnaLantai} awal="#9ca3af" onUbah={w => setRuang(r => ({ ...r, warnaLantai: w }))} />
             )}
+            <PilihTekstur sasaran="lantai" ruang={ruang} setRuang={setRuang} peta={peta} />
           </div>
         </div>
-        <PilihWarna label="Warna dinding (semua ruang)" nilai={ruang.warnaDinding} awal="#f5f5f4" onUbah={w => setRuang(r => ({ ...r, warnaDinding: w }))} />
+        <div>
+          <PilihWarna label="Warna dinding (semua ruang)" nilai={ruang.warnaDinding} awal="#f5f5f4" onUbah={w => setRuang(r => ({ ...r, warnaDinding: w }))} />
+          <PilihTekstur sasaran="dinding" ruang={ruang} setRuang={setRuang} peta={peta} />
+        </div>
         <Segmen label="Dinding depan (feature wall)" nilai={ruang.dindingDepan ?? 'polos'} onUbah={(v: 'polos' | 'marmer' | 'kayu') => setRuang(r => ({ ...r, dindingDepan: v }))}
           opsi={[{ v: 'polos', l: 'Polos' }, { v: 'marmer', l: 'Marmer' }, { v: 'kayu', l: 'Panel kayu' }]} />
         <div>

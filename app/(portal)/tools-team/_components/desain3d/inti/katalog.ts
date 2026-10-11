@@ -6,6 +6,7 @@ import { setLampuGrid, SPEK_LAMPU } from './cahaya';
 import { SPEK_PERANGKAT } from './perangkat';
 import { kursiTribun, spekVideowall, terapkanUkuran } from './produk';
 import { daftarRuang } from './ruang';
+import { TINGGI_HURUF_AWAL } from './teks';
 import { type Benda, type BentukObjek, CELAH_PASANG, type Jenis, type Kotak, LABEL, LABEL_BENTUK_OBJEK, pasangDari, type Ruang } from './tipe';
 
 export interface ItemKatalog {
@@ -72,6 +73,13 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'lampu-linear', label: 'Lampu linear gantung', ket: 'Pendant linear 1,2 m, kabel gantung', jenis: 'lampu', atur: { tipeLampu: 'linear' } },
       { kunci: 'lampu-gantung', label: 'Lampu gantung dekoratif', ket: 'Pendant kap kubah 42 cm, 3000 K hangat (lobi, meja rapat)', jenis: 'lampu', atur: { tipeLampu: 'gantung' } },
       { kunci: 'set-lampu', label: 'Set downlight (grid)', ket: 'Downlight merata ±2,2 m di seluruh plafon', jenis: 'lampu', set: k => setLampuGrid(k) },
+    ],
+  },
+  {
+    grup: 'Teks & keterangan', item: [
+      { kunci: 'teks-dinding', label: 'Teks di dinding', ket: 'Tulisan tegak, bisa ditempel ke dinding', jenis: 'teks', atur: { hadapTeks: 'berdiri' } },
+      { kunci: 'teks-lantai', label: 'Teks di lantai', ket: 'Penanda area / jalur di lantai atau meja', jenis: 'teks', atur: { hadapTeks: 'lantai' } },
+      { kunci: 'teks-melayang', label: 'Teks melayang', ket: 'Selalu menghadap kamera, terbaca dari mana pun', jenis: 'teks', atur: { hadapTeks: 'kamera' } },
     ],
   },
   {
@@ -207,6 +215,13 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       : { ...dasar, nama: 'Proyektor plafon', z: Math.min(4, k.l * 0.65), w: 0.44, h: 0.14, d: 0.36, elev: Math.max(0.5, k.t - 0.5), rot: 180, pasangProyektor: 'plafon', throwRatio: 1.6, trMin: 1.39, trMax: 2.09, ...atur };
     case 'rak': { const b = jadi({ ...dasar, x: k.x0 + k.p - 0.45, z: 0.45, w: 0.6, h: 0, d: 0.8, elev: 0, rakU: 20, tipeRak: 'kaca', ...atur } as Benda); return { ...b, nama: `Rack ${b.rakU}U` }; }
     case 'model': return { ...dasar, w: 1, h: 1, d: 1, elev: 0, ...atur };
+    case 'teks': {
+      //  Teks dinding setinggi mata di dinding depan; teks lantai rebah di tengah; teks melayang di atas kepala.
+      const hadap = atur.hadapTeks ?? 'berdiri';
+      const elev = hadap === 'lantai' ? 0.002 : hadap === 'kamera' ? 2.2 : 1.6;
+      return terapkanUkuran({ ...dasar, nama: 'Keterangan', teks: 'Keterangan', tinggiHuruf: TINGGI_HURUF_AWAL, hadapTeks: hadap, warna: '#0f172a',
+        z: hadap === 'berdiri' ? 0.02 : k.l / 2, w: 1, h: 0.3, d: 0.01, elev, sembunyiLabel: true, ...atur } as Benda);
+    }
     case 'objek': {
       const bentuk = atur.bentukObjek ?? 'kotak';
       const [w, h, d] = UKURAN_OBJEK[bentuk];
@@ -307,4 +322,5 @@ export const tandaBentuk = (b: Benda) =>
   [b.jenis, b.w, b.h, b.d, b.pitch, b.cabW, b.cabH, b.vw, b.kol, b.bar, b.pasang, b.rakU, b.mic, b.konten, b.modelKunci,
     b.bentukMeja, b.finish, b.tipeKursi, b.tipeKamera, b.naik, b.pasangProyektor, b.tilt, b.warna, b.panel ? JSON.stringify(b.panel) : '', b.diag, b.tipeSpeaker, b.modul, b.sudutModul, b.tiltLA, b.gantung,
     b.baris, b.kursiBaris, b.tinggiAnak, b.bentukBidang, b.jariBidang, b.busur, b.monitorMeja, b.tipeRak, b.tipeLampu, b.sudutLampu, b.kelvin, b.lumen,
-    b.isiRak ? JSON.stringify(b.isiRak) : '', b.putarModel, b.bentukObjek, b.kontur ? JSON.stringify(b.kontur) : '', b.tipePerangkat, b.pakaiDongle].join('|');
+    b.isiRak ? JSON.stringify(b.isiRak) : '', b.putarModel, b.bentukObjek, b.kontur ? JSON.stringify(b.kontur) : '', b.tipePerangkat, b.pakaiDongle,
+    b.teks, b.tinggiHuruf, b.hadapTeks, b.latarTeks].join('|');

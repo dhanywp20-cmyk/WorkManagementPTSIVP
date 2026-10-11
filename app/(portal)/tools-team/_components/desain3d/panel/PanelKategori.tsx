@@ -35,20 +35,17 @@ export function PanelKategori({ a }: { a: AlatDesain }) {
           const aktif = terpasang === k.id;
           return (
             <div key={k.id}
-              className={`group rounded-2xl border bg-white overflow-hidden transition-all duration-150 hover:shadow-md hover:-translate-y-px ${aktif ? 'border-blue-400 ring-2 ring-blue-100' : t ? 'border-amber-200' : 'border-slate-200 hover:border-blue-200'}`}>
+              className={`rounded-xl border overflow-hidden transition-colors ${aktif ? 'border-blue-300 bg-blue-50/70' : t ? 'border-amber-300 bg-white' : 'border-slate-200 bg-white hover:border-blue-200'}`}>
+              {/* Ikon, judul tebal, keterangan isi ruangan di bawahnya - seperti tampilan awal Desain 3D. */}
               <button type="button" onClick={() => void pilihKategori(k.id)} disabled={memuat} aria-busy={memuat} aria-current={aktif || undefined}
-                className={`w-full flex items-start gap-3 text-left px-3 py-2.5 disabled:opacity-60 ${aktif ? 'bg-blue-50/50' : 'group-hover:bg-blue-50/30'}`}>
-                <span aria-hidden="true"
-                  className={`grid place-items-center w-11 h-11 shrink-0 rounded-xl text-[22px] leading-none ring-1 ${aktif ? 'bg-gradient-to-br from-blue-100 to-indigo-100 ring-blue-200' : 'bg-gradient-to-br from-slate-50 to-blue-50 ring-slate-200/80'}`}>
-                  {k.ikon}
-                </span>
+                className={`w-full flex items-start gap-3 text-left px-3 py-2.5 disabled:opacity-60 ${aktif ? '' : 'hover:bg-blue-50/50'}`}>
+                <span className="text-2xl leading-none mt-0.5 shrink-0" aria-hidden="true">{k.ikon}</span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
-                    <span className="text-[13.5px] font-bold text-slate-900 truncate">{k.judul}</span>
-                    {aktif && <span className="shrink-0 rounded-full bg-blue-600 px-1.5 py-px text-[10px] font-bold text-white">Dipakai</span>}
+                    <span className="text-[13.5px] font-bold text-slate-900">{k.judul}</span>
                     {memuat && <span className="shrink-0 inline-block w-3 h-3 rounded-full border-2 border-slate-300 border-t-blue-600 animate-spin" aria-label="Memuat" />}
                   </span>
-                  <span className="block mt-0.5 text-[12px] leading-snug text-slate-500">{k.ket}</span>
+                  <span className="block mt-0.5 text-[12px] leading-snug text-slate-600">{k.ket}</span>
                   {t && (
                     <span className="mt-1.5 inline-flex max-w-full items-center gap-1 rounded-full bg-gradient-to-r from-amber-100 to-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200"
                       title={`Default Admin: ${t.nama} · ${t.ditetapkan_oleh_nama ?? 'Admin'}, ${tanggal(t.updated_at)}`}>

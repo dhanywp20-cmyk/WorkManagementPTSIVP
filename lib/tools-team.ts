@@ -76,7 +76,16 @@ export function bersihkanReferensiLED(x: unknown): RefLED | null {
 export const MAKS_GAMBAR_LAYAR = 6;
 export const MAKS_BYTE_LAYAR = 200_000;
 
-export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; benda: unknown[]; layar?: Record<string, string> }; jumlah: number } | { ok: false; alasan: string } {
+/** Tekstur lantai / dinding (gambar sendiri) per desain: kunci 'tx-...', data URL JPEG kecil (sama dengan gambar layar). */
+export const MAKS_TEKSTUR_RUANG = 4;
+const POLA_KUNCI_TEKSTUR = /^tx-[a-z0-9]{6,32}$/;
+/** Rujukan gambar yang sudah tersimpan sekali di tools_gambar_desain (lib/gambar-desain-server.ts). */
+export const POLA_REF_GAMBAR = /^ref:[0-9a-f]{40}$/;
+const gambarAtauRef = (v: unknown, maks: number) => (typeof v === 'string' && POLA_REF_GAMBAR.test(v) ? v : bersihkanGambar(v, maks));
+
+type DataDesain = { ruang: unknown; benda: unknown[]; layar?: Record<string, string>; tekstur?: Record<string, string> };
+
+export function periksaDesain(x: unknown): { ok: true; data: DataDesain; jumlah: number } | { ok: false; alasan: string } {
   const d = x as Record<string, unknown>;
   if (!d || typeof d !== 'object' || !d.ruang || typeof d.ruang !== 'object' || !Array.isArray(d.benda)) {
     return { ok: false, alasan: 'Data desain tidak sah.' };
@@ -85,7 +94,7 @@ export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; b
   if (d.benda.some(b => !b || typeof b !== 'object' || typeof (b as { jenis?: unknown }).jenis !== 'string')) {
     return { ok: false, alasan: 'Data benda tidak sah.' };
   }
-  const data: { ruang: unknown; benda: unknown[]; layar?: Record<string, string> } = { ruang: d.ruang, benda: d.benda };
+  const data: DataDesain = { ruang: d.ruang, benda: d.benda };
   if (JSON.stringify(data).length > MAKS_BYTE_DESAIN) return { ok: false, alasan: 'Desain terlalu besar untuk disimpan.' };
   //  Gambar layar: hanya untuk benda yang ada, data URL JPEG/WebP kecil, jumlah dibatasi.
   if (d.layar !== undefined) {
@@ -95,11 +104,24 @@ export function periksaDesain(x: unknown): { ok: true; data: { ruang: unknown; b
     if (masuk.length > MAKS_GAMBAR_LAYAR) return { ok: false, alasan: `Maksimal ${MAKS_GAMBAR_LAYAR} gambar layar per desain.` };
     const layar: Record<string, string> = {};
     for (const [id, url] of masuk) {
-      const g = bersihkanGambar(url, MAKS_BYTE_LAYAR);
+      const g = gambarAtauRef(url, MAKS_BYTE_LAYAR);
       if (!ids.has(id) || !g) return { ok: false, alasan: 'Gambar layar terlalu besar atau tidak sah.' };
       layar[id] = g;
     }
     if (masuk.length) data.layar = layar;
+  }
+  //  Tekstur lantai / dinding: dihitung terpisah dari batas JSON desain (seperti gambar layar).
+  if (d.tekstur !== undefined) {
+    if (!d.tekstur || typeof d.tekstur !== 'object' || Array.isArray(d.tekstur)) return { ok: false, alasan: 'Tekstur tidak sah.' };
+    const masuk = Object.entries(d.tekstur as Record<string, unknown>);
+    if (masuk.length > MAKS_TEKSTUR_RUANG) return { ok: false, alasan: `Maksimal ${MAKS_TEKSTUR_RUANG} tekstur per desain.` };
+    const tekstur: Record<string, string> = {};
+    for (const [kunci, url] of masuk) {
+      const g = gambarAtauRef(url, MAKS_BYTE_LAYAR);
+      if (!POLA_KUNCI_TEKSTUR.test(kunci) || !g) return { ok: false, alasan: 'Tekstur terlalu besar atau tidak sah.' };
+      tekstur[kunci] = g;
+    }
+    if (masuk.length) data.tekstur = tekstur;
   }
   return { ok: true, data, jumlah: d.benda.length };
 }

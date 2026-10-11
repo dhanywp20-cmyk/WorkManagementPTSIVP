@@ -1,10 +1,11 @@
 'use client';
-/** Panel Tambah benda: Produk saya (tim), katalog per grup, set ruang kelas, objek dari luar. */
+/** Panel Tambah benda: Objek saya (pribadi), Produk saya (tim), katalog per grup, set ruang kelas, objek dari luar. */
 import { Angka, Segmen } from '../../bersama/ui';
 import { TERIMA_3D } from '../impor/berkas3d';
 import { KATALOG, LABEL, type OpsiKelas, ukuranSetKelas } from '../inti';
 import { Trash2 } from 'lucide-react';
 import type { AlatDesain } from './alat';
+import { BagianObjekSaya } from './BagianObjekSaya';
 
 export function PanelTambah({ a }: { a: AlatDesain }) {
   const { bukaKelas, cariProduk, duaRuang, galatProduk, impor, inputModel, kotakRuang, opsiKelas, produkTim, setBukaKelas, setCariProduk, setObjekGambar, setOpsiKelas, setTargetRuang, sisi, targetRuang } = a.K;
@@ -20,6 +21,8 @@ export function PanelTambah({ a }: { a: AlatDesain }) {
             </div>
           )}
           <div className="space-y-4">
+            {/* Objek saya: objek pribadi akun ini (ekspor / impor antar akun). */}
+            <BagianObjekSaya a={a} />
             {/* Produk saya: template produk yang disimpan engineer, dipakai seluruh tim. */}
             <div>
               <div className="flex items-center justify-between gap-2 mb-1.5">
@@ -65,6 +68,7 @@ export function PanelTambah({ a }: { a: AlatDesain }) {
                       aria-expanded={it.kunci === 'set-kelas' ? bukaKelas : undefined} title={it.ket}
                       className={`text-left rounded-xl border px-3 py-2.5 hover:border-blue-400 hover:bg-blue-50/60 ${it.kunci === 'set-kelas' && bukaKelas ? 'border-blue-400 bg-blue-50/60' : 'border-slate-200'}`}>
                       <span className="block text-[13px] font-bold text-slate-900">{it.label}</span>
+                      <span className="block text-[11.5px] leading-snug text-slate-600">{it.ket}</span>
                     </button>
                   ))}
                 </div>
@@ -106,10 +110,12 @@ export function PanelTambah({ a }: { a: AlatDesain }) {
                   title={'.dae / .obj / .stl / .kmz (ekspor SketchUp), .glb, .fbx, .3ds, .ply, atau .zip model + tekstur · maks 60 MB\n.skp: SketchUp → File → Export → 3D Model → COLLADA (.dae)'}
                   className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-left hover:bg-violet-100 disabled:opacity-60">
                   <span className="block text-[13px] font-bold text-violet-900">{impor.sibuk ? 'Membaca berkas...' : 'Impor berkas 3D'}</span>
+                  <span className="block text-[11.5px] leading-snug text-violet-800">SketchUp (.dae / .obj / .stl / .kmz), .glb, .fbx, .3ds, .ply, .zip · maks 60 MB</span>
                 </button>
                 <button type="button" onClick={() => setObjekGambar({})} title="Foto patung / tampak gedung / logo / sketsa → siluet 3D atau panel"
                   className="rounded-xl border border-violet-200 bg-violet-50 px-3 py-2.5 text-left hover:bg-violet-100">
                   <span className="block text-[13px] font-bold text-violet-900">Objek dari gambar</span>
+                  <span className="block text-[11.5px] leading-snug text-violet-800">Foto patung / tampak gedung / logo → siluet 3D atau panel</span>
                 </button>
               </div>
               <input ref={inputModel} type="file" multiple accept={TERIMA_3D} className="hidden"

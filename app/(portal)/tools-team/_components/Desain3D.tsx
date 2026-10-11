@@ -17,6 +17,7 @@ import { useProdukTim } from './desain3d/simpan/useProdukTim';
 import { useEkspor } from './desain3d/ekspor/useEkspor';
 import { useSimpanDesain } from './desain3d/simpan/useSimpanDesain';
 import { useTemplateKategori } from './desain3d/simpan/useTemplateKategori';
+import { useObjekSaya } from './desain3d/simpan/useObjekSaya';
 import { InfoProyektor } from './desain3d/panel/InfoProyektor';
 
 import { BilahBerkas } from './desain3d/panel/BilahBerkas';
@@ -56,12 +57,13 @@ export default function Desain3D() {
   const ekspor = useEkspor(K, { ...kamera });
   const simpan = useSimpanDesain(K);
   const template = useTemplateKategori(K, aksi, simpan);
+  const objekSaya = useObjekSaya(K);
   const { layarPenuh, setLayarPenuh, pilihLain, asideRef, batas, benda, desainAktif, duaRuang, galat, gambarLayar, gantiBenda, gantiIsi, hanyaLihat, impor, inputGambar, inputLaptop, konfirmasi, kotakRuang, legendaKabel, lihatVersi, modal, objekGambar, panel, pesan, plafonDi, produkTim, ruang, setGantiIsi, setKonfirmasi, setModal, setObjekGambar, setPanel, setRuang, setSisi, siap, sisi, terpilih, wadahRef } = K;
   const { hapusRuangTerakhir, pasangSambungan, salinIsiRuang, tambahBukaan, tambahRuang, ubahBukaan, ubahSambungan, ubahUkuran, unggahGambar } = aksi;
   const { simpanProduk } = produk;
   const { bukaDariLaptop, bukaTim } = simpan;
 
-  const a: AlatDesain = { K, kamera, aksi, produk, ekspor, simpan, template };
+  const a: AlatDesain = { K, kamera, aksi, produk, ekspor, simpan, template, objekSaya };
   //  Layar penuh: Esc kembali ke tampilan biasa; halaman di belakangnya tidak ikut tergulir.
   useEffect(() => {
     if (!layarPenuh) return;
@@ -123,7 +125,7 @@ export default function Desain3D() {
                 <div className="flex-1 min-h-0 overflow-y-auto p-3">
                   <PanelTambah a={a} />
                   {sisi === 'ruang' && (
-                    <PanelRuang ruang={ruang} setRuang={setRuang} ubahUkuran={ubahUkuran} benda={benda} kotakRuang={kotakRuang} tambahBukaan={tambahBukaan} ubahBukaan={ubahBukaan} tambahRuang={tambahRuang} hapusRuangTerakhir={hapusRuangTerakhir} ubahSambungan={ubahSambungan} pasangSambungan={pasangSambungan} gantiIsi={gantiIsi} setGantiIsi={setGantiIsi} salinIsiRuang={salinIsiRuang} duaRuang={duaRuang} />
+                    <PanelRuang ruang={ruang} setRuang={setRuang} ubahUkuran={ubahUkuran} benda={benda} kotakRuang={kotakRuang} tambahBukaan={tambahBukaan} ubahBukaan={ubahBukaan} tambahRuang={tambahRuang} hapusRuangTerakhir={hapusRuangTerakhir} ubahSambungan={ubahSambungan} pasangSambungan={pasangSambungan} gantiIsi={gantiIsi} setGantiIsi={setGantiIsi} salinIsiRuang={salinIsiRuang} duaRuang={duaRuang} peta={K} />
                   )}
                   <PanelKategori a={a} />
                   <DaftarBenda a={a} />
@@ -136,6 +138,7 @@ export default function Desain3D() {
                 onGambar={() => inputGambar.current?.click()} onTutup={() => setPanel(false)}
                 ekstra={terpilih.jenis === 'proyektor' ? <InfoProyektor p={terpilih} K={K} /> : undefined}
                 onSimpanProduk={hanyaLihat || produkTim?.bolehTambah === false ? undefined : (label, ket) => simpanProduk(terpilih, label, ket)}
+                onSimpanObjek={hanyaLihat ? undefined : (nama, ket) => objekSaya.simpan(terpilih, nama, ket)}
                 adaFoto={gambarLayar.current.has(terpilih.id)} onGambarObjek={() => setObjekGambar({ ganti: terpilih })} />
             )}
           </aside>
