@@ -69,6 +69,8 @@ export interface HasilGemini {
 
 export async function panggilGemini(opsi: {
   sistem: string; isi: IsiGemini[]; alat?: Record<string, unknown>[]; suhu?: number; maksToken?: number;
+  /** Paksa keluaran JSON (responseMimeType). */ json?: boolean;
+  /** Batas waktu permintaan ke Gemini (ms) - di bawah batas durasi fungsi Vercel. */ batasMs?: number;
 }): Promise<HasilGemini> {
   const [tAsisten, tUmum, setelan] = await Promise.all([
     bacaRahasia('ai.gemini_token_asisten'), bacaRahasia('ai.gemini_token'), ambilPengaturanAI(),
@@ -83,6 +85,7 @@ export async function panggilGemini(opsi: {
     generationConfig: { temperature: opsi.suhu ?? 0.3, maxOutputTokens: opsi.maksToken ?? 1024 },
   };
   if (opsi.alat?.length) payload.tools = [{ functionDeclarations: opsi.alat }];
+  if (opsi.json) (payload.generationConfig as Record<string, unknown>).responseMimeType = 'application/json';
   //  Model 2.5 "berpikir" dulu dan pikirannya memakan jatah maxOutputTokens -
   //  untuk tanya-jawab ringkas itu hanya menambah lambat & menghabiskan kuota.
   if (/2\.5-flash/.test(model)) {
@@ -94,6 +97,7 @@ export async function panggilGemini(opsi: {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': token },
       body: JSON.stringify(payload),
+      ...(opsi.batasMs ? { signal: AbortSignal.timeout(opsi.batasMs) } : {}),
     });
     const j = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -103,7 +107,8 @@ export async function panggilGemini(opsi: {
     const parts = j?.candidates?.[0]?.content?.parts;
     if (!Array.isArray(parts)) return { ok: false, alasan: 'AI tidak memberi jawaban. Coba ulangi pertanyaannya.' };
     return { ok: true, parts };
-  } catch {
+  } catch (e) {
+    if ((e as { name?: string })?.name === 'TimeoutError') return { ok: false, alasan: 'AI terlalu lama menjawab. Coba lagi, atau kurangi jumlah / panjang brosur.' };
     return { ok: false, alasan: 'Tidak bisa menghubungi layanan AI.' };
   }
 }
