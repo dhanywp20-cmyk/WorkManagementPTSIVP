@@ -1,9 +1,9 @@
 /**
  * desain3d/mesin/presisi.ts - efek presisi di kanvas: snap gizmo (geser per langkah grid, putar per sudut),
- * grid lantai saat snap aktif, dan garis penggaris + label jarak. Aturannya di inti/presisi.ts.
+ * grid lantai saat snap aktif, garis penggaris + label jarak, dan jarak benda terpilih ke dinding. Aturannya di inti/presisi.ts.
  */
 import type * as T from 'three';
-import { formatPanjang, type GarisPenggaris, jarakGrid, type Kotak, rincianGaris, type Snap, type Titik } from '../inti';
+import { type Benda, formatPanjang, type GarisPenggaris, jarakGrid, jarakKeDinding, type Kotak, mm, rincianGaris, type Snap, sudutTapak, type Titik } from '../inti';
 import type { Mesin } from './tipe';
 
 type GizmoSnap = { setTranslationSnap?: (v: number | null) => void; setRotationSnap?: (v: number | null) => void };
@@ -85,4 +85,34 @@ export function gambarPenggaris(m: Mesin, daftar: GarisPenggaris[], titikAwal: T
     g.add(lb);
   }
   if (titikAwal) titik(titikAwal);
+}
+
+/**
+ * Jarak otomatis benda terpilih ke keempat dinding ruangnya (dan tinggi sisi bawah dari lantai untuk benda
+ * dinding / gantung), seperti garis ukur software denah. Kosong bila tidak ada benda terpilih.
+ */
+export function gambarJarakDinding(m: Mesin, b: Benda | null, k: Kotak | null) {
+  const g = grup(m, 'presisi-jarak');
+  if (!b || !k || b.jenis === 'teks') return;
+  const { THREE } = m;
+  const bahan = new THREE.LineDashedMaterial({ color: 0x0369a1, dashSize: 0.06, gapSize: 0.04, depthTest: false });
+  const j = jarakKeDinding(b, k), s = sudutTapak(b);
+  const xs = s.map(p => p[0]), zs = s.map(p => p[1]);
+  const y = b.elev > 0.3 ? b.elev + b.h / 2 : 0.02;
+  const garis = (a: Titik, c: Titik, panjang: number) => {
+    if (panjang < 0.02) return;
+    const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...c)]);
+    const l = new THREE.Line(geo, bahan); l.computeLineDistances(); l.renderOrder = 5; g.add(l);
+    const el = document.createElement('div');
+    el.style.cssText = 'padding:1px 6px;border-radius:6px;background:#0369a1;color:#fff;font:700 11px system-ui,sans-serif;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25)';
+    el.textContent = el.dataset.teks = `${mm(panjang)} mm`;
+    const lb = new m.CSS2DObject(el);
+    lb.position.set((a[0] + c[0]) / 2, (a[1] + c[1]) / 2, (a[2] + c[2]) / 2);
+    g.add(lb);
+  };
+  garis([Math.min(...xs), y, b.z], [k.x0, y, b.z], j.kiri);
+  garis([Math.max(...xs), y, b.z], [k.x0 + k.p, y, b.z], j.kanan);
+  garis([b.x, y, Math.min(...zs)], [b.x, y, 0], j.depan);
+  garis([b.x, y, Math.max(...zs)], [b.x, y, k.l], j.belakang);
+  if (b.elev > 0.05) garis([b.x, 0, Math.max(...zs) + 0.01], [b.x, b.elev, Math.max(...zs) + 0.01], b.elev);
 }

@@ -11,8 +11,8 @@ import type { KeadaanDesain } from '../useKeadaanDesain';
 import { useEffect } from 'react';
 import type * as T from 'three';
 import { bangunRuangan } from '../bangun/ruangan';
-import { aturSnapGizmo, gambarGridSnap, gambarPenggaris } from './presisi';
-import { penggarisSah, tampilDi } from '../inti';
+import { aturSnapGizmo, gambarGridSnap, gambarJarakDinding, gambarPenggaris } from './presisi';
+import { penggarisSah, ruangDari, tampilDi } from '../inti';
 import { gambarAlatBantu } from './alatBantu';
 import { gambarBayangan } from './bayangan';
 
@@ -102,6 +102,12 @@ export function useAdegan(K: KeadaanDesain) {
     const m = mesin.current; if (!m || !siap) return;
     gambarPenggaris(m, penggarisSah(ruang.penggaris), titikUkur, id => setRuang(r => ({ ...r, penggaris: (r.penggaris ?? []).filter(g => g.id !== id) })));
   }, [ruang.penggaris, titikUkur, siap, mesin, setRuang]);
+  //  Jarak benda terpilih ke dinding (ikut centang "Garis ukuran"; tidak saat memilih banyak).
+  useEffect(() => {
+    const m = mesin.current; if (!m || !siap) return;
+    const b = ukur && !pilihLain.length ? benda.find(x => x.id === pilih) ?? null : null;
+    gambarJarakDinding(m, b, b ? kotakRuang[ruangDari(ruang, b.x)] ?? null : null);
+  }, [pilih, pilihLain, benda, kotakRuang, ruang, ukur, siap, mesin]);
 
   // ── Alat bantu: label ukuran, garis jarak terjauh, kerucut sudut pandang ──
   useEffect(() => {

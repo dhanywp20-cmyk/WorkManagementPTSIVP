@@ -1,11 +1,11 @@
 'use client';
 /**
- * Ekspor: foto kanvas, PNG (tampak, 4 tampak, lembar), lembar cetak A4, ringkasan teks.
+ * Ekspor: foto kanvas, PNG (tampak, 4 tampak, lembar), denah 2D berskala (cetak & DXF), lembar cetak A4, ringkasan teks.
  * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
  */
 import { useState } from 'react';
-import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG } from '../../bersama/cetak';
-import { formatPanjang, penggarisSah, rincianGaris, type Benda, cakupanSpeakerPlafon, DISPLAY, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, throwRatioDari, tipeSpeakerDari } from '../inti';
+import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl } from '../../bersama/cetak';
+import { cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, cakupanSpeakerPlafon, DISPLAY, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, throwRatioDari, tipeSpeakerDari } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
 import { f } from '../../bersama/ui';
 import { getSession } from '@/lib/auth';
@@ -118,6 +118,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     const proyektor = benda.filter(b => b.jenis === 'proyektor').map(p => ({ p, sn: sinarProyektor(p, benda, ruang) }));
     const gambar = (src: string, ket: string) => (src ? `<figure><img src="${src}" alt="${esc(ket)}"/><figcaption>${esc(ket)}</figcaption></figure>` : '');
     const speaker = benda.filter(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon');
+    const denah = denahDari(ruang, benda), ruangGerak = cekRuangGerak(benda, ruang);
     const NAMA_TIPE: Record<string, string> = { kotak: 'Speaker box', dinding6: 'Speaker dinding 6"', kolom: 'Portable aktif (kolom)', linearray: 'Line array' };
     return {
       judul: 'Desain 3D Ruang AV',
@@ -132,6 +133,8 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           }) },
         ...(penggarisSah(ruang.penggaris).length ? [{ judul: 'Garis ukur', jenis: 'tabel' as const, kepala: ['Garis', 'Panjang', 'Jarak datar', 'Beda tinggi'], rataKanan: [1, 2, 3],
           isi: penggarisSah(ruang.penggaris).map((g, i) => { const r = rincianGaris(g); return [`Garis ${i + 1}`, formatPanjang(Math.hypot(r.datar, r.tinggi)), formatPanjang(r.datar), formatPanjang(r.tinggi)]; }) }] : []),
+        { judul: `Denah · skala 1:${skalaDenah(denah)}`, jenis: 'html', html: `<div style="text-align:center">${svgDenah(denah)}</div>` },
+        ...(ruangGerak.length ? [{ judul: 'Cek ruang gerak', jenis: 'tabel' as const, kepala: ['Catatan'], isi: ruangGerak.map(c => [c.pesan]) }] : []),
         { judul: 'Tampilan desain', jenis: 'html',
           html: `<div class="gambar dua">${foto.map(x => gambar(x.url, x.judul)).join('')}</div>` },
         ...(legendaKabel ? [{ judul: 'Legend kabel', jenis: 'html' as const, html: htmlLegendaKabel(legendaKabel) }] : []),
@@ -199,6 +202,13 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     };
   };
   const cetak = () => bukaCetak(lembar3D());
+  /** Denah 2D untuk AutoCAD / software CAD (DXF R12, mm, lapis: dinding, bukaan, benda, plafon, teks, ukuran). */
+  const unduhDxf = () => {
+    setMenuPng(false);
+    const url = URL.createObjectURL(new Blob([dxfDenah(denahDari(ruang, benda))], { type: 'application/dxf' }));
+    unduhUrl(url, `${namaGambar('denah')}.dxf`);
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  };
   const pngLembar = () => unduhLembarPNG(lembar3D(), namaGambar('lembar'));
   const ringkasan = () => [
     `*Desain ruang: ${namaDesain}*`,
@@ -211,5 +221,5 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     }),
   ].join('\n');
 
-  return { cetak, fotoKanvas, jalankanPng, lembar3D, menuPng, namaGambar, pngLembar, ringkasan, setMenuPng, setSibukPng, sibukPng, unduhEmpatTampak, unduhFoto };
+  return { cetak, unduhDxf, fotoKanvas, jalankanPng, lembar3D, menuPng, namaGambar, pngLembar, ringkasan, setMenuPng, setSibukPng, sibukPng, unduhEmpatTampak, unduhFoto };
 }

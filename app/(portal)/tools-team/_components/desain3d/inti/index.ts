@@ -15,6 +15,8 @@
  *   perangkat  PC, laptop, dongle WyreStorm, HP, tablet & share layar nirkabel
  *   teks       teks / keterangan manual (isi, ukuran kotak dari isi)
  *   tempatTeks tempat teks baru yang tidak tertutup benda lain
+ *   denah      denah 2D tampak atas (dinding, pintu, tapak benda, garis ukur) + SVG berskala / DXF
+ *   ruangGerak cek benda bertumpuk / keluar ruangan, pintu terhalang, jarak meja & servis rack
  *   teksturRuang  tekstur gambar sendiri untuk lantai & dinding
  *   presisi    snap grid geser / putar & penggaris (ukur jarak bebas)
  *   tata       tapak, ratakan & sebar, magnet, larik, geser tepat, kelompok sembunyikan
@@ -35,6 +37,9 @@ export * from './perangkat';
 export * from './banyak';
 export * from './teks';
 export * from './tempatTeks';
+export * from './denah';
+export * from './denahFormat';
+export * from './ruangGerak';
 export * from './teksturRuang';
 export * from './presisi';
 export * from './tata';

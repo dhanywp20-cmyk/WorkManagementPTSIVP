@@ -29,6 +29,7 @@ import { DaftarBenda } from './desain3d/panel/DaftarBenda';
 import { BilahTerpilih } from './desain3d/panel/BilahTerpilih';
 import { KartuAnalisis } from './desain3d/panel/KartuAnalisis';
 import { KartuKabel } from './desain3d/panel/KartuKabel';
+import { KartuRuangGerak } from './desain3d/panel/KartuRuangGerak';
 import { ModalSimpan } from './desain3d/panel/ModalSimpan';
 import { NavKamera } from './desain3d/panel/NavKamera';
 import type { AlatDesain } from './desain3d/panel/alat';
@@ -152,6 +153,8 @@ export default function Desain3D() {
       </div>
 
       <KartuAnalisis a={a} />
+
+      <KartuRuangGerak a={a} />
 
       <KartuKabel a={a} />
 
