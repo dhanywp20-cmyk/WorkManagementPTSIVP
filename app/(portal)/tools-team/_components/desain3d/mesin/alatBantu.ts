@@ -63,7 +63,8 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
       const adaGaris = garisUkur && !d.sembunyiUkur;
       const naik = adaGaris ? Math.max(0.1, Math.min(0.3, Math.max(d.w, d.h) * 0.04)) + (d.jenis === 'layar' ? 0.22 : 0) + Math.max(0.1, Math.min(0.25, Math.max(d.w, d.h) * 0.035)) * 2.2 : 0.02;
       labelP(adaGaris || !ukur ? d.nama : `${d.nama}: ${f(d.w)} × ${f(d.h)} m`, new THREE.Vector3(d.x, d.elev + d.h + naik, d.z));
-      if (a.terjauhP) {
+      //  Garis & label penonton terjauh = bagian analisis sudut pandang: ikut centang "Sudut pandang".
+      if (kerucut && a.terjauhP) {
         const ujung = new THREE.Vector3(a.terjauhP.x, 1.2, a.terjauhP.z);
         const garis = new THREE.Line(new THREE.BufferGeometry().setFromPoints([pusat, ujung]),
           new THREE.LineDashedMaterial({ color: a.cukup ? 0x047857 : 0xb91c1c, dashSize: 0.15, gapSize: 0.08 }));
