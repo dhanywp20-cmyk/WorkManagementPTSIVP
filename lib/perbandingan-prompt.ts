@@ -27,8 +27,8 @@ Write every text field in ${bhs}. Output ONLY one JSON object (no markdown fence
 
 STRICT DATA RULES
 - Use ONLY facts found in the brochure texts provided. Never use outside knowledge, never guess, never "typically".
-- Every value with status "ada" MUST include bukti.kutipan: a SHORT verbatim excerpt (3-120 chars) copied exactly from that product's brochure text, plus bukti.halaman (the [Page N] number).
-- If a brochure does not mention a spec: status "tidak-disebut", teks "" (it is printed as "${L.tidakDisebut}").
+- Every value MUST include "bukti". For status "ada" / "tidak-tersedia", bukti.kutipan is REQUIRED and non-empty: a SHORT verbatim excerpt (3-120 chars) copied exactly from that product's brochure text, plus bukti.halaman (the [Page N] number).
+- If a brochure does not mention a spec: status "tidak-disebut", teks "", bukti {"halaman":0,"kutipan":""} (it is printed as "${L.tidakDisebut}").
 - If a brochure explicitly states the feature is absent: status "tidak-tersedia" with its own wording + kutipan.
 - If a brochure contradicts itself or the value is ambiguous: status "cek" + alasanCek.
 - Keep original units and technical context. Do not convert units unless the conversion is exact and you state both. Do not treat similarly named features as identical when their definitions differ.
@@ -109,8 +109,9 @@ export const SKEMA_GEMINI: Record<string, unknown> = S('OBJECT', {
         spesifikasi: S('STRING'),
         nilai: S('ARRAY', { items: S('OBJECT', { properties: {
           teks: S('STRING'), status: S('STRING', { enum: ['ada', 'tidak-disebut', 'tidak-tersedia', 'cek'] }), unggul: S('BOOLEAN'),
-          bukti: S('OBJECT', { properties: { halaman: S('INTEGER'), kutipan: S('STRING') } }), alasanCek: S('STRING'),
-        }, required: ['teks', 'status'] }) }),
+          //  bukti WAJIB di skema - tanpa ini Gemini cenderung melewatkannya dan semua nilai jatuh ke 'cek'.
+          bukti: S('OBJECT', { properties: { halaman: S('INTEGER'), kutipan: S('STRING') }, required: ['halaman', 'kutipan'] }), alasanCek: S('STRING'),
+        }, required: ['teks', 'status', 'bukti'] }) }),
       }, required: ['spesifikasi', 'nilai'] }) }),
     }, required: ['judul', 'baris'] }) }),
     ringkasan: S('STRING'),
