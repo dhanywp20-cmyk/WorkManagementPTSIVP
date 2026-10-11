@@ -115,7 +115,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           {dekat
             ? <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, dekat, k, ruang))}>Arahkan ke {dekat.nama}</button>
             : <p className="text-[12px] text-slate-600" title="Tambah → Display → Layar proyektor">Belum ada layar</p>}
-          {blokGrid(sn.lebar, sn.tinggi)}
+          {blokGrid(K.ukuranCahaya[p.id]?.[0] ?? sn.lebar, K.ukuranCahaya[p.id]?.[1] ?? sn.tinggi)}
           {blokKontras(p, true)}
           {blokBlending}
         </div>
@@ -143,7 +143,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
             TR {f(trPas, 2)} di luar rentang zoom lensa ({f(zMin, 2)}–{f(zMax, 2)}): pindahkan lensa ke jarak {f(zMin * lyr.w)}–{f(zMax * lyr.w)} m dari layar, atau ganti lensa.
           </p>
         ))}
-        {blokGrid(sn.lebar, sn.tinggi)}
+        {blokGrid(K.ukuranCahaya[p.id]?.[0] ?? sn.lebar, K.ukuranCahaya[p.id]?.[1] ?? sn.tinggi)}
         {blokKontras(p, false)}
         {blokBlending}
         <ul className="text-[12px] font-semibold space-y-0.5">

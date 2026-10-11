@@ -70,7 +70,7 @@ export function gambarTeksCahaya(m: Mesin, pos: number[], uv: number[], blok: Bl
 
 /**
  * Pola grid di seluruh gambar satu proyektor (uv 0..1): kolom x baris kotak (bawaan 16 x 9, inti/gridProyektor.ts) + ukuran
- * satu kotak (mm) di pojok kiri-atas, bingkai
+ * satu kotak (mm) di tengah-bawah, bingkai
  * tebal, dua diagonal & lingkaran pusat - warna proyektor itu. Campuran biasa (bukan aditif) supaya garis
  * tetap terlihat di permukaan putih. Tampil dari dua sisi (pola tanpa tulisan, tidak terbaca terbalik).
  */
@@ -91,12 +91,12 @@ export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T
   g.strokeRect(3, 3, W - 6, H - 6);
   g.lineWidth = 3;
   g.beginPath(); g.arc(W / 2, H / 2, H * 0.12, 0, Math.PI * 2); g.stroke();
-  //  Ukuran satu kotak di permukaan (mm), di kotak pertama kiri-atas - seperti simulator proyektor.
+  //  Ukuran satu kotak di permukaan (mm) di tengah-bawah gambar - pojok sudah dipakai keterangan & lux pojok.
   if (label) {
-    g.font = '700 22px system-ui, sans-serif';
-    const lw = g.measureText(label).width + 16, x0 = 10, y0 = 10;
-    g.fillStyle = 'rgba(255,255,255,0.92)'; g.fillRect(x0, y0, lw, 32);
-    g.fillStyle = `#${warna.getHexString()}`; g.textBaseline = 'middle'; g.fillText(label, x0 + 8, y0 + 17);
+    g.font = '700 30px system-ui, sans-serif';
+    const lw = g.measureText(label).width + 24, x0 = (W - lw) / 2, y0 = H - 58;
+    g.fillStyle = 'rgba(255,255,255,0.94)'; g.fillRect(x0, y0, lw, 44);
+    g.fillStyle = `#${warna.getHexString()}`; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillText(label, W / 2, y0 + 23);
   }
   const tx = new THREE.CanvasTexture(kv);
   tx.colorSpace = THREE.SRGBColorSpace; tx.anisotropy = 8;

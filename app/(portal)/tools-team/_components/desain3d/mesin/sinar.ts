@@ -24,7 +24,7 @@ import { gambarCahayaBenda, type SumberCahaya } from './cahayaBenda';
 import { gambarGridCahaya, gambarTeksCahaya, TINGGI_HURUF, type BlokTeks } from './teksCahaya';
 import type { Mesin } from './tipe';
 
-export type KeadaanSinar = Pick<KeadaanDesain, 'benda' | 'ruang' | 'sinar' | 'ukur' | 'labelProduk' | 'plafonDi' | 'tampilBlending' | 'detailBlending' | 'gridSinar' | 'setInfoBlending'>;
+export type KeadaanSinar = Pick<KeadaanDesain, 'benda' | 'ruang' | 'sinar' | 'ukur' | 'labelProduk' | 'plafonDi' | 'tampilBlending' | 'detailBlending' | 'gridSinar' | 'setInfoBlending' | 'setUkuranCahaya'>;
 
 /** Bidang proyeksi: gambar digambar sebagai sel grid. Benda lain diterangi per titik (cahayaBenda). */
 const BIDANG_PROYEKSI = new Set<Benda['jenis']>(['layar', 'bidang']);
@@ -37,7 +37,7 @@ const BIDANG_TEKS = new Set<Benda['jenis']>(['layar', 'bidang', 'objek', 'model'
 
 export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, pos: T.Vector3, dy?: -1 | 1) => void) {
   const { THREE, grupBantu } = m;
-  const { benda, ruang, sinar, ukur, labelProduk, plafonDi, tampilBlending, detailBlending, gridSinar, setInfoBlending } = k;
+  const { benda, ruang, sinar, ukur, labelProduk, plafonDi, tampilBlending, detailBlending, gridSinar, setInfoBlending, setUkuranCahaya } = k;
   const daftarProj = benda.filter(p => p.jenis === 'proyektor');
   const hitungBlend = tampilBlending && daftarProj.length >= 2;
   if (!hitungBlend) setInfoBlending(v => (v.length ? [] : v));
@@ -232,6 +232,12 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const blending: Blending[] = hitungBlend ? gambarBlending(m, dataBlend, NX, NY, setInfoBlending, detailBlending) : [];
   //  Mode grid (bukan saat menyeret - tekstur tidak dibuat ulang tiap frame): cahaya diredam, pola garis menonjol.
   const grid = gridSinar && !kasar;
+  //  Ukuran gambar di permukaan yang benar-benar disinari (layar mapping, benda, dinding) untuk panel proyektor.
+  if (!kasar) {
+    const ukuran: Record<string, [number, number]> = {};
+    for (const bg of bidangGambar) ukuran[bg.p.id] = [Math.round(bg.lebar * 1000) / 1000, Math.round(bg.tinggi * 1000) / 1000];
+    setUkuranCahaya(v => (JSON.stringify(v) === JSON.stringify(ukuran) ? v : ukuran));
+  }
   for (const bg of bidangGambar) {
     if (!bg.pos.length) continue;
     //  Sisi gambar yang bertumpuk dengan proyektor lain (area blending): keterangan digeser melewatinya &
