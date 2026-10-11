@@ -7,7 +7,7 @@ export interface RingkasPengajuan {
   id: string; judul: string; status: 'menunggu' | 'disetujui' | 'ditolak'; dibuat_oleh: string; dibuat_nama: string | null;
   catatan_verifikator: string | null; diverifikasi_nama: string | null; diverifikasi_at: string | null; created_at: string;
 }
-export interface Peran { verifikator: boolean; langsung: boolean }
+export interface Peran { verifikator: boolean; langsung: boolean; lolosSemua: boolean }
 
 const API = '/api/tools-team/perbandingan/pengajuan';
 const minta = async (url: string, init?: RequestInit) => {

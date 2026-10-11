@@ -5,8 +5,8 @@
  *   Supervisor Team PTS IVP & MVI dulu (lib/perbandingan.ts). Detail alur data: app/api/tools-team/perbandingan.
  */
 import { useState } from 'react';
-import { Bot, ClipboardCopy, Download, Info, Loader2, Send, ShieldCheck, Sparkles, X } from 'lucide-react';
-import { type Bahasa, jumlahCek, type KartuBanding } from '@/lib/perbandingan';
+import { Bot, CheckCheck, ClipboardCopy, Download, Info, Loader2, Send, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { type Bahasa, jumlahCek, type KartuBanding, loloskanSemua } from '@/lib/perbandingan';
 import { UnggahBrosur } from './perbandingan/UnggahBrosur';
 import { PratinjauKartu } from './perbandingan/PratinjauKartu';
 import { DaftarPengajuan } from './perbandingan/DaftarPengajuan';
@@ -107,7 +107,12 @@ export function ProductComparison() {
           {kartu && (
             <section className="space-y-3">
               <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white border border-slate-200 p-3">
-                {cek > 0 && <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-[12px] font-bold" title="Klik sel kuning untuk memutuskan isinya">{cek} nilai perlu dicek</span>}
+                {cek > 0 && <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-[12px] font-bold" title="Klik sel kuning untuk memutuskan satu per satu">{cek} nilai perlu dicek</span>}
+                {cek > 0 && p.peran?.lolosSemua && (mode.jenis === 'periksa' || (mode.jenis === 'baru' && p.peran.langsung)) && (
+                  <button type="button" onClick={() => { if (window.confirm(`Loloskan ${cek} nilai yang ditandai "cek" apa adanya?`)) setKartu(loloskanSemua(kartu)); }}
+                    title="Terima semua nilai bertanda cek sekaligus (berisi teks = disebut brosur, kosong = tidak dipublikasikan)"
+                    className={`${tombol} text-amber-900 border border-amber-300 bg-amber-50 hover:bg-amber-100`}><CheckCheck size={15} /> Loloskan semua</button>
+                )}
                 {mode.jenis === 'baru' && <button type="button" onClick={() => { setKartu(null); setPesan(null); }} className={`${tombol} text-slate-600 hover:bg-slate-100`}>Ulangi</button>}
                 {mode.jenis !== 'baru' && <button type="button" onClick={() => { setKartu(null); setMode({ jenis: 'baru' }); setTab('pengajuan'); }} className={`${tombol} text-slate-600 hover:bg-slate-100`}>Kembali</button>}
                 <div className="ml-auto flex flex-wrap items-center gap-2">

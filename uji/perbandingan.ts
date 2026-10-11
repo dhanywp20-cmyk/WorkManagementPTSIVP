@@ -8,9 +8,10 @@
 import { readFileSync } from 'fs';
 import PDFDocument from 'pdfkit';
 import {
-  bolehLangsungUnduh, bolehPerbandingan, bolehVerifikasi, jumlahCek, type KartuBanding, kutipanAda, MAKS_BYTE_BERKAS,
+  bolehPerbandingan, jumlahCek, type KartuBanding, kutipanAda, loloskanSemua, MAKS_BYTE_BERKAS,
   namaBerkasPdf, periksaBerkas, periksaDaftarBerkas, periksaHasil, periksaKartu,
 } from '../lib/perbandingan';
+import { ATURAN_BAWAAN, bolehLangsungUnduh, bolehVerifikasi, rapikanAturan } from '../lib/perbandingan-aturan';
 import { ambilJson, periksaKiriman, promptPengguna, promptSistem } from '../lib/perbandingan-prompt';
 import { type DokPenuh, gambarPerbandingan } from '../lib/perbandingan-pdf';
 import { CONTOH } from './data/perbandingan-contoh';
@@ -106,6 +107,22 @@ async function main() {
   cek('Team PTS & Admin unduh langsung', bolehLangsungUnduh({ role: 'team' }) && bolehLangsungUnduh({ role: 'admin' }));
   cek('verifikator: Admin, Supervisor / Manager PTS IVP & MVI', bolehVerifikasi({ role: 'admin' }) && bolehVerifikasi({ role: 'team', team_type: 'Team PTS MVI', jabatan: 'Supervisor' }) && bolehVerifikasi({ role: 'team', team_type: 'Team PTS IVP', jabatan: 'Manager' }));
   cek('bukan verifikator: staff PTS, tim lain, Supervisor Marketing', !bolehVerifikasi({ role: 'team', team_type: 'Team PTS IVP', jabatan: 'Staff' }) && !bolehVerifikasi({ role: 'team', team_type: 'Team PTS UMP', jabatan: 'Supervisor' }) && !bolehVerifikasi({ role: 'guest', team_type: 'Marketing', jabatan: 'Supervisor' }));
+  console.log('\n5b. Aturan dari Admin Panel (bukan hardcode)');
+  const kosong = rapikanAturan(null);
+  cek('belum diatur -> bawaan', JSON.stringify(kosong) === JSON.stringify(ATURAN_BAWAAN));
+  const atur = rapikanAturan({ wajibVerifikasi: true, langsungRole: ['admin', 'bukan-role'], verifikatorRole: [], verifikatorTim: ['Team PTS UMP'], verifikatorJabatan: ['Manager', 'Jabatan Palsu'], simpanHari: 9999, maksMenunggu: -5 });
+  cek('isian tak dikenal dibuang, angka dijepit', atur.langsungRole.join() === 'admin' && atur.verifikatorJabatan.join() === 'Manager' && atur.simpanHari === 365 && atur.maksMenunggu === 1);
+  cek('Admin selalu verifikator walau dihapus dari daftar', atur.verifikatorRole.includes('admin') && bolehVerifikasi({ role: 'admin' }, atur));
+  cek('kelompok & jabatan pilihan Admin dipakai', bolehVerifikasi({ role: 'team', team_type: 'Team PTS UMP', jabatan: 'Manager' }, atur) && !bolehVerifikasi({ role: 'team', team_type: 'Team PTS IVP', jabatan: 'Supervisor' }, atur));
+  cek('Team tidak lagi unduh langsung bila dicabut Admin', !bolehLangsungUnduh({ role: 'team' }, atur));
+  cek('verifikasi dimatikan -> semua unduh langsung', bolehLangsungUnduh({ role: 'guest' }, rapikanAturan({ wajibVerifikasi: false })));
+
+  console.log('\n5c. Loloskan semua');
+  if (h.ok) {
+    const lolos = loloskanSemua(h.data);
+    cek('semua "cek" selesai sekaligus', jumlahCek(lolos) === 0);
+    cek('nilai berteks -> "ada", nilai lain tidak disentuh', lolos.bagian[0].baris[1].nilai[0].status === 'ada' && lolos.bagian[0].baris[1].nilai[1].status === 'tidak-disebut' && lolos.bagian[0].baris[0].nilai[0].unggul === true);
+  }
   const simpan = periksaKartu(CONTOH);
   cek('kartu contoh lolos pemeriksaan simpan', simpan.ok && jumlahCek(simpan.data) === 0);
   cek('kartu rusak ditolak saat diajukan', !periksaKartu({ produk: [] }).ok);

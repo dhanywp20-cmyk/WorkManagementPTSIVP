@@ -65,19 +65,7 @@ export function bolehPerbandingan(u: { role?: string | null; allowed_menus?: str
   return Array.isArray(u.allowed_menus) && u.allowed_menus.includes('tools-team');
 }
 
-type AkunPeran = { role?: string | null; team_type?: string | null; jabatan?: string | null } | null | undefined;
-/** Orang produk (Admin & Team PTS): boleh langsung mengunduh PDF - memverifikasi sendiri. */
-export function bolehLangsungUnduh(u: AkunPeran): boolean {
-  return ['admin', 'superadmin', 'team', 'team_pts'].includes((u?.role ?? '').toLowerCase());
-}
-/** Tim yang memverifikasi pengajuan Sales / Marketing: Admin, Supervisor ke atas Team PTS IVP & PTS MVI. */
-export const TIM_VERIFIKASI = ['Team PTS IVP', 'Team PTS MVI'];
-const JABATAN_VERIFIKASI = ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'];
-export function bolehVerifikasi(u: AkunPeran): boolean {
-  const r = (u?.role ?? '').toLowerCase();
-  if (r === 'admin' || r === 'superadmin') return true;
-  return (r === 'team' || r === 'team_pts') && TIM_VERIFIKASI.includes(u?.team_type ?? '') && JABATAN_VERIFIKASI.includes(u?.jabatan ?? '');
-}
+//  Siapa mengunduh langsung / memverifikasi: lib/perbandingan-aturan.ts (diatur Admin Panel).
 
 // ── Berkas ────────────────────────────────────────────────────────────────────
 
@@ -229,4 +217,16 @@ export function periksaKartu(x: unknown): { ok: true; data: KartuBanding } | { o
   const sorotan = (Array.isArray(d.sorotan) ? d.sorotan : []).slice(0, 3).map(s0 => { const q = (s0 ?? {}) as Record<string, unknown>; return { judul: teks(q.judul, 60), teks: teks(q.teks, 320) }; });
   return { ok: true, data: { bahasa: d.bahasa === 'id' ? 'id' : 'en', kategori: teks(d.kategori, 90), judul: teks(d.judul, 140), pengantar: teks(d.pengantar, 900),
     produk, bagian, ringkasan: teks(d.ringkasan, 1400), sorotan, rekomendasi: teks(d.rekomendasi, 700), catatan: teks(d.catatan, 600) } };
+}
+
+/**
+ * "Loloskan semua": setiap nilai 'cek' diterima apa adanya - berisi teks = 'ada', kosong = 'tidak-disebut'.
+ * Hanya untuk verifikator / pengunduh langsung bila diizinkan Admin Panel (aturan.lolosSemua).
+ */
+export function loloskanSemua(k: KartuBanding): KartuBanding {
+  return { ...k, bagian: k.bagian.map(b => ({ ...b, baris: b.baris.map(r => ({ ...r, nilai: r.nilai.map(v => {
+    if (v.status !== 'cek') return v;
+    const { alasanCek, ...lain } = v; void alasanCek;
+    return lain.teks.trim() ? { ...lain, status: 'ada' as const } : { ...lain, teks: '', status: 'tidak-disebut' as const, unggul: undefined };
+  }) })) })) };
 }

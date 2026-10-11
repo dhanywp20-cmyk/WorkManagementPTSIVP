@@ -1,9 +1,9 @@
 /**
  * /api/tools-team/perbandingan/pengajuan - verifikasi Product Comparison oleh orang produk.
  *
- * Sales / Marketing bukan orang produk: PDF mereka baru boleh diunduh setelah diverifikasi Admin atau
- * Supervisor ke atas Team PTS IVP / PTS MVI (lib/perbandingan.ts bolehVerifikasi). Team PTS & Admin
- * mengunduh langsung (memverifikasi sendiri) dan tidak memakai rute ini.
+ * Sales / Marketing bukan orang produk: PDF mereka baru boleh diunduh setelah diverifikasi. Siapa verifikator,
+ * siapa mengunduh langsung, lama simpan & batas pengajuan diatur Admin Panel (app_settings 'tools.perbandingan',
+ * lib/perbandingan-aturan.ts) - dibaca ulang tiap permintaan, tanpa nilai tertanam di kode.
  *
  *   GET                 daftar ringkas: verifikator = semua (menunggu dulu); pengaju = miliknya. + peran.
  *   GET ?id=            satu pengajuan lengkap (pengaju itu sendiri atau verifikator).
@@ -19,29 +19,31 @@ import '@/lib/wa-server';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { sendWA } from '@/lib/wa';
-import { bolehLangsungUnduh, bolehPerbandingan, bolehVerifikasi, jumlahCek, periksaKartu, TIM_VERIFIKASI } from '@/lib/perbandingan';
+import { bolehPerbandingan, jumlahCek, periksaKartu } from '@/lib/perbandingan';
+import { type AturanPerbandingan, bolehLangsungUnduh, bolehVerifikasi, KUNCI_ATURAN_PERBANDINGAN, rapikanAturan } from '@/lib/perbandingan-aturan';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const TABEL = 'tools_perbandingan';
 const POLA_ID = /^[0-9a-f-]{36}$/i;
-const UMUR_HARI = 30, MAKS_MENUNGGU = 10;
 const URL_MENU = '/tools-team?alat=banding';
 const gagal = (alasan: string, status = 400) => NextResponse.json({ ok: false, alasan }, { status });
 type Db = ReturnType<typeof getAdminClient>;
 type Akun = { id: string; full_name: string | null; role: string | null; team_type: string | null; jabatan: string | null; allowed_menus: string[] | null; pimpinan: boolean | null };
 
-async function akun(req: NextRequest): Promise<{ db: Db; u: Akun } | NextResponse> {
+async function akun(req: NextRequest): Promise<{ db: Db; u: Akun; aturan: AturanPerbandingan } | NextResponse> {
   const jaga = await pastikanMasuk(req);
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const db = getAdminClient();
   const { data } = await db.from('users').select('id, full_name, role, team_type, jabatan, allowed_menus, pimpinan').eq('id', jaga.user.id).maybeSingle();
   const u = data as Akun | null;
   if (!u || !bolehPerbandingan(u)) return gagal('Product Comparison hanya untuk akun yang diberi akses Tools Team.', 403);
+  const { data: setel } = await db.from('app_settings').select('value').eq('key', KUNCI_ATURAN_PERBANDINGAN).maybeSingle();
+  const aturan = rapikanAturan(setel?.value);
   //  Bersihkan pengajuan kedaluwarsa (hemat kuota) - murah, berindeks created_at.
-  await db.from(TABEL).delete().lt('created_at', new Date(Date.now() - UMUR_HARI * 86_400_000).toISOString());
-  return { db, u };
+  await db.from(TABEL).delete().lt('created_at', new Date(Date.now() - aturan.simpanHari * 86_400_000).toISOString());
+  return { db, u, aturan };
 }
 
 /** Notifikasi in-app (+ push via trigger tabel) & WA - kegagalan satu kanal tidak menggagalkan permintaan. */
@@ -55,9 +57,9 @@ async function beritahu(db: Db, penerima: { id: string; phone_number?: string | 
 
 export async function GET(req: NextRequest) {
   const a = await akun(req); if (a instanceof NextResponse) return a;
-  const { db, u } = a;
-  const verifikator = bolehVerifikasi(u);
-  const peran = { verifikator, langsung: bolehLangsungUnduh(u) };
+  const { db, u, aturan } = a;
+  const verifikator = bolehVerifikasi(u, aturan);
+  const peran = { verifikator, langsung: bolehLangsungUnduh(u, aturan), lolosSemua: aturan.lolosSemua };
   const id = req.nextUrl.searchParams.get('id');
   if (id) {
     if (!POLA_ID.test(id)) return gagal('ID tidak sah.');
@@ -76,26 +78,28 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const a = await akun(req); if (a instanceof NextResponse) return a;
-  const { db, u } = a;
+  const { db, u, aturan } = a;
   const body = await req.json().catch(() => null) as { data?: unknown } | null;
   const k = periksaKartu(body?.data);
   if (!k.ok) return gagal(k.alasan);
   const { count } = await db.from(TABEL).select('id', { count: 'exact', head: true }).eq('dibuat_oleh', u.id).eq('status', 'menunggu');
-  if ((count ?? 0) >= MAKS_MENUNGGU) return gagal(`Masih ada ${count} pengajuan menunggu verifikasi - tunggu diproses dulu.`, 429);
+  if ((count ?? 0) >= aturan.maksMenunggu) return gagal(`Masih ada ${count} pengajuan menunggu verifikasi - tunggu diproses dulu.`, 429);
   const judul = k.data.judul || k.data.produk.map(p => p.nama).join(' vs ');
   const { data: baru, error } = await db.from(TABEL).insert({ dibuat_oleh: u.id, dibuat_nama: u.full_name, judul, data: k.data }).select('id').single();
   if (error || !baru) return gagal('Gagal menyimpan pengajuan.', 500);
-  //  Penerima: Admin + Supervisor ke atas Team PTS IVP / MVI (aturan sama dengan bolehVerifikasi).
-  const { data: calon } = await db.from('users').select('id, role, team_type, jabatan, phone_number').or(`role.in.(admin,superadmin),team_type.in.(${TIM_VERIFIKASI.map(t => `"${t}"`).join(',')})`);
-  const penerima = ((calon ?? []) as (Akun & { phone_number: string | null })[]).filter(x => bolehVerifikasi(x) && x.id !== u.id);
+  //  Penerima = semua yang lolos bolehVerifikasi menurut aturan Admin Panel.
+  const kutip = (xs: string[]) => xs.map(t => `"${t.replace(/"/g, '')}"`).join(',');
+  const filter = [`role.in.(${kutip(aturan.verifikatorRole)})`, ...(aturan.verifikatorTim.length ? [`team_type.in.(${kutip(aturan.verifikatorTim)})`] : [])].join(',');
+  const { data: calon } = await db.from('users').select('id, role, team_type, jabatan, phone_number').or(filter);
+  const penerima = ((calon ?? []) as (Akun & { phone_number: string | null })[]).filter(x => bolehVerifikasi(x, aturan) && x.id !== u.id);
   await beritahu(db, penerima, 'Product Comparison menunggu verifikasi', `${u.full_name ?? 'Sales'} mengajukan "${judul}". Periksa isinya sebelum boleh dibagikan ke customer.`, (baru as { id: string }).id, u.full_name ?? '');
   return NextResponse.json({ ok: true, id: (baru as { id: string }).id });
 }
 
 export async function PATCH(req: NextRequest) {
   const a = await akun(req); if (a instanceof NextResponse) return a;
-  const { db, u } = a;
-  if (!bolehVerifikasi(u)) return gagal('Hanya Admin & Supervisor Team PTS IVP / MVI yang boleh memverifikasi.', 403);
+  const { db, u, aturan } = a;
+  if (!bolehVerifikasi(u, aturan)) return gagal('Akun ini tidak termasuk verifikator Product Comparison (Admin Panel).', 403);
   const body = await req.json().catch(() => null) as { id?: string; aksi?: string; catatan?: string; data?: unknown } | null;
   if (!body?.id || !POLA_ID.test(body.id) || !['setujui', 'tolak'].includes(body.aksi ?? '')) return gagal('Permintaan tidak sah.');
   const { data: r0 } = await db.from(TABEL).select('id, judul, status, dibuat_oleh').eq('id', body.id).maybeSingle();
