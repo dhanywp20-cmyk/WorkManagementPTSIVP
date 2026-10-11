@@ -1,8 +1,8 @@
 /**
- * Label produk dengan garis penunjuk (callout): titik kecil di benda, garis tipis ke label. Posisi label
- * ditata ulang di layar tiap kali kamera / adegan berubah - dicari tempat terdekat (atas, samping, bawah)
- * yang tidak menutupi benda itu sendiri, benda lain, maupun label lain. Aturan pilih tempat: inti-nya di
- * `pilihTempatLabel` (murni, diuji di uji/desain3d-label.ts).
+ * Label produk menempel di tepi benda (titik kecil + garis sangat pendek): di atas benda (benda plafon: di
+ * bawah). Bila menumpuk label lain, digeser sedikit ke samping; tetap menumpuk = disembunyikan sementara.
+ * Boleh menutupi benda lain (permintaan owner: label harus dekat produknya, bukan jauh). Aturan pilih
+ * tempat: `pilihTempatLabel` (murni, diuji di uji/desain3d-label.ts).
  */
 import type * as T from 'three';
 import type { Mesin } from './tipe';
@@ -10,10 +10,8 @@ import type { Mesin } from './tipe';
 export interface KotakLayar { l: number; t: number; r: number; b: number }
 
 const WARNA_GARIS = '#64748b';
-/** Jarak label dari titik benda (px) yang dicoba, dari terdekat. */
-const JARAK = [14, 30, 52, 80];
-/** Benda yang menutupi lebih dari porsi kanvas ini (dinding LED, bidang mapping, panggung) dianggap latar. */
-const PORSI_LATAR = 0.25;
+/** Jarak label dari titik benda (px) yang dicoba, dari terdekat - tetap dekat supaya terasa menempel. */
+const JARAK = [3, 10, 18];
 
 const tumpang = (a: KotakLayar, b: KotakLayar) =>
   Math.max(0, Math.min(a.r, b.r) - Math.max(a.l, b.l)) * Math.max(0, Math.min(a.b, b.b) - Math.max(a.t, b.t));
@@ -50,32 +48,10 @@ export function buatLabelProduk(m: Mesin, teks: string, pos: T.Vector3, arah: -1
   svg.innerHTML = `<line x1="0" y1="0" x2="0" y2="0" stroke="${WARNA_GARIS}" stroke-width="1"/><circle cx="0" cy="0" r="1.8" fill="${WARNA_GARIS}"/>`;
   const isi = document.createElement('div');
   isi.dataset.isi = '1'; isi.textContent = teks;
-  isi.style.cssText = `position:absolute;left:0;top:${arah * 22}px;transform:translate(-50%,-50%);font:600 9.5px system-ui,sans-serif;line-height:1.25;padding:0 5px;border-radius:999px;white-space:nowrap;color:#0f172a;background:rgba(255,255,255,.92);border:1px solid #cbd5e1`;
+  isi.style.cssText = `position:absolute;left:0;top:${arah * 10}px;transform:translate(-50%,-50%);font:600 9.5px system-ui,sans-serif;line-height:1.25;padding:0 5px;border-radius:999px;white-space:nowrap;color:#0f172a;background:rgba(255,255,255,.92);border:1px solid #cbd5e1`;
   luar.append(svg, isi);
   const o = new m.CSS2DObject(luar); o.position.copy(pos);
   return o;
-}
-
-/** Kotak layar tiap benda yang tampil (proyeksi kotak batasnya); benda sebesar latar diabaikan. */
-function kotakBenda(m: Mesin): KotakLayar[] {
-  const kv = m.renderer.domElement.getBoundingClientRect();
-  const box = new m.THREE.Box3(), v = new m.THREE.Vector3();
-  const hasil: KotakLayar[] = [];
-  for (const { obj } of m.cache.values()) {
-    if (!obj.visible) continue;
-    box.setFromObject(obj);
-    if (box.isEmpty()) continue;
-    let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity, belakang = false;
-    for (let i = 0; i < 8 && !belakang; i++) {
-      v.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).project(m.kamera);
-      if (v.z > 1) { belakang = true; break; }
-      const x = kv.left + ((v.x + 1) / 2) * kv.width, y = kv.top + ((1 - v.y) / 2) * kv.height;
-      l = Math.min(l, x); r = Math.max(r, x); t = Math.min(t, y); b = Math.max(b, y);
-    }
-    if (belakang || (r - l) * (b - t) > kv.width * kv.height * PORSI_LATAR) continue;
-    hasil.push({ l, t, r, b });
-  }
-  return hasil;
 }
 
 let tandaLalu = '';
@@ -91,13 +67,13 @@ export function tataLabelProduk(m: Mesin, wadah: HTMLElement, terpakai: KotakLay
   const tanda = `${m.kamera.matrixWorld.elements.map(x => x.toFixed(3)).join()}|${kv.clientWidth}x${kv.clientHeight}|${daftar.length}|${m.cache.size}`;
   if (tanda === tandaLalu && daftar.every(el => tertata.has(el))) return;
   tandaLalu = tanda;
-  const benda = kotakBenda(m), label = [...terpakai];
+  const label = [...terpakai];
   for (const el of daftar) {
     const isi = el.querySelector<HTMLElement>('[data-isi]'), garis = el.querySelector('line');
     if (!isi || !garis) continue;
     tertata.add(el);
     const a = el.getBoundingClientRect(), w = isi.offsetWidth, h = isi.offsetHeight;
-    const t = pilihTempatLabel(a.left, a.top, w, h, el.dataset.arah === '1' ? 1 : -1, benda, label);
+    const t = pilihTempatLabel(a.left, a.top, w, h, el.dataset.arah === '1' ? 1 : -1, [], label);
     el.style.visibility = t ? 'visible' : 'hidden';
     if (!t) continue;
     isi.style.left = `${t.dx}px`; isi.style.top = `${t.dy}px`;
