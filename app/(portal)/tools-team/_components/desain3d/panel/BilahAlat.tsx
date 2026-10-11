@@ -10,7 +10,7 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
   const { benda, bukaSisi, hanyaLihat, menuPusat, riwayat, setMenuPusat, setModal, sisi, tampilan } = a.K;
   const { pilihSudut } = a.kamera;
   const { pusatkan } = a.aksi;
-  const { cetak, jalankanPng, menuPng, pngLembar, ringkasan, setMenuPng, sibukPng, unduhDxf, unduhEmpatTampak, unduhFoto } = a.ekspor;
+  const { denahCetak, setDenahCetak, cetak, jalankanPng, menuPng, pngLembar, ringkasan, setMenuPng, sibukPng, unduhDxf, unduhEmpatTampak, unduhFoto } = a.ekspor;
   const { unduhGLB } = a.simpan;
   return (
     <>
@@ -71,6 +71,10 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
                     <span className="block text-[11.5px] text-slate-600">{k}</span>
                   </button>
                 ))}
+                <label className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-[13px] font-bold text-slate-900 hover:bg-blue-50 cursor-pointer" title="Sertakan denah 2D berskala di Cetak & Lembar lengkap">
+                  Denah 2D di Cetak
+                  <input type="checkbox" className="w-4 h-4" checked={denahCetak} onChange={e => setDenahCetak(e.target.checked)} />
+                </label>
                 <p className="px-3 pt-1.5 pb-1 text-[11px] text-slate-500 border-t border-slate-100 mt-1">Label yang sedang tampil (ukuran, sudut, sinar) ikut tergambar. Resolusi 2× layar.</p>
               </div>
             </>)}
