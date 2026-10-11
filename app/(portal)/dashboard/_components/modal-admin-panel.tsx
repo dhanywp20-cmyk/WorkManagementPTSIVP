@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
+import { AturanPerbandinganInline } from './perbandingan-aturan';
 import { supabase } from '@/lib/supabase';
 
 import { User, AdminPanelModalProps } from './shared';
@@ -25,7 +26,7 @@ import { IkonTeks } from '@/components/shared/Ikon';
 // AdminPanelModal (unified: Settings + User Management + PIC Brand)
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
-  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan'>(initialTab);
+  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan'>(initialTab);
 
   /**
  * Kelompok navigasi - MENGIKUTI CARA ADMIN BERPIKIR, bukan urutan fitur
@@ -51,7 +52,7 @@ const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications' | 'system
   { key: 'system',        label: 'Sistem' },
 ];
 
-const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
+const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
     {
       key: 'settings',
       group: 'organization',
@@ -121,6 +122,13 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
       label: 'Aplikasi Android',
       icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>,
       color: '#047857', activeBg: 'rgba(16,185,129,0.1)', activeBorder: 'rgba(16,185,129,0.4)', activeText: '#047857',
+    },
+    {
+      key: 'perbandingan',
+      group: 'system',
+      label: 'Product Comparison',
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v18M5 7h14M7 7l-3 7a3 3 0 006 0L7 7zm10 0l-3 7a3 3 0 006 0l-3-7z" /></svg>,
+      color: '#1d4ed8', activeBg: 'rgba(29,78,216,0.1)', activeBorder: 'rgba(29,78,216,0.4)', activeText: '#1d4ed8',
     },
     {
       key: 'kesehatan',
@@ -261,6 +269,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             )}
             {activeSection === 'android' && <AplikasiAndroidInline />}
             {activeSection === 'kesehatan' && <KesehatanInline />}
+            {activeSection === 'perbandingan' && <AturanPerbandinganInline />}
           </div>
         </div>
       </div>

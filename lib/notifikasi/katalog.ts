@@ -69,6 +69,7 @@ export const EVENT_TERSAMBUNG: ReadonlySet<string> = new Set<string>([
   'system.digest',               // cron: ringkasan harian
   'system.overdue_escalation',   // cron: eskalasi tiket/jadwal terlambat
   'system.password_reset',       // forgot-password: kode OTP
+  'tools.perbandingan',          // Product Comparison: pengajuan verifikasi & hasilnya
 ]);
 
 /** Apakah saklar per-event untuk kunci ini benar-benar berpengaruh? */
@@ -97,6 +98,7 @@ export const KATALOG_EVENT: DefinisiEvent[] = [
   { key: 'system.user_registered',    label: 'Akun baru menunggu persetujuan',    kategori: 'system',      bawaanKanal: ['in_app'] },
   { key: 'system.account_created',    label: 'Akun baru dibuat Admin - WA selamat datang', kategori: 'system', bawaanKanal: ['whatsapp'] },
   { key: 'system.password_reset',     label: 'Kode OTP reset password',           kategori: 'system',      bawaanKanal: ['whatsapp'] },
+  { key: 'tools.perbandingan',        label: 'Product Comparison: pengajuan & hasil verifikasi', kategori: 'approval', bawaanKanal: ['in_app', 'whatsapp'] },
   { key: 'system.digest',             label: 'Ringkasan harian (digest)',         kategori: 'system',      bawaanKanal: ['whatsapp'] },
   { key: 'system.overdue_escalation', label: 'Eskalasi tiket/jadwal terlambat',   kategori: 'system',      bawaanKanal: ['whatsapp'] },
 ];

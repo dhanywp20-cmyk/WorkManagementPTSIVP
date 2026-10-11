@@ -1,0 +1,4 @@
+Arimo (Steve Matteson, Google) - Apache License, Version 2.0
+https://www.apache.org/licenses/LICENSE-2.0
+Sumber: paket npm @expo-google-fonts/arimo 0.2.3 (Google Fonts), di-subset ke huruf Latin
+untuk lembar Product Comparison Tools Team. Metrik setara Arial / Liberation Sans (font template asli).

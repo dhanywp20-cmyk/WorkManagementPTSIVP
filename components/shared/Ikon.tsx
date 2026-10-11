@@ -24,7 +24,7 @@ import {
   Bell, LockOpen, Disc, Satellite, Phone, Palette, SlidersHorizontal, Sparkles, Globe, Plus, Check,
   PenLine, Settings, Play, Pause, AlarmClock, Keyboard, Info, Banknote, Theater, Drama, CalendarCheck,
   MessageSquare, Inbox, Presentation, Shuffle, Plug, Zap, Lightbulb, Undo2, Timer, Bot, Hash, Download,
-  Flag, Mail, Eye, Image, Cloud, PartyPopper, Landmark, Paperclip, Laptop, SkipForward, Dices,
+  Flag, Mail, Eye, Image, Cloud, PartyPopper, Landmark, Paperclip, Laptop, SkipForward, Dices, Scale,
 } from 'lucide-react';
 
 const PETA: Record<string, LucideIcon> = {
@@ -47,7 +47,7 @@ const PETA: Record<string, LucideIcon> = {
   '📆': CalendarCheck, '📭': Inbox, '🔀': Shuffle, '🔌': Plug, '⚡': Zap, '✨': Sparkles, '💡': Lightbulb, '↩': Undo2,
   '⏱': Timer, '🤖': Bot, '🔢': Hash, '⬇': Download, '🎌': Flag, '📩': Mail, '🌏': Globe, '👁': Eye,
   '🖼': Image, '☁': Cloud, '🕘': Clock, '🎉': PartyPopper, '🏘': Building2, '🏛': Landmark, '🖐': Hand,
-  '📎': Paperclip, '💻': Laptop, '⏭': SkipForward, '🎲': Dices, '🗒': FileText, '📃': FileText, '🧾': FileText, '💬': MessageSquare, '📥': Inbox, '🎤': Presentation, '🎬': Theater,
+  '📎': Paperclip, '💻': Laptop, '⏭': SkipForward, '🎲': Dices, '🗒': FileText, '📃': FileText, '🧾': FileText, '💬': MessageSquare, '📥': Inbox, '🎤': Presentation, '🎬': Theater, '⚖': Scale,
 };
 
 /** Buang variation selector & zero-width joiner supaya '⚠️' dan '⚠' sama. */

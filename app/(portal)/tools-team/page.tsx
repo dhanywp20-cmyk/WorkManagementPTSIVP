@@ -8,6 +8,7 @@ import { Ikon } from '@/components/shared/Ikon';
 import { KalkulatorLED, type SubLED } from './_components/KalkulatorLED';
 import { KalkulatorAV } from './_components/KalkulatorAV';
 import { Pustaka } from './_components/Pustaka';
+import { ProductComparison } from './_components/ProductComparison';
 import { bolehLihatPustaka } from '@/lib/pustaka';
 
 //  three.js (~600 KB) hanya diunduh saat alat Desain 3D dibuka.
@@ -21,6 +22,7 @@ const ALAT = [
   { k: '3d', judul: 'Desain 3D Ruang', ket: 'Tata letak ruang AV + analisis jarak pandang', ikon: '🧊', C: Desain3D },
   { k: 'led', judul: 'LED Videotron', ket: 'Calculator LED, Screen & Power Connection, daftar material & penawaran', ikon: '📺', C: KalkulatorLED },
   { k: 'av', judul: 'Kalkulator AV', ket: 'Ukuran layar, proyektor, sinyal & jaringan AV, audio & akustik, daya, rak, PoE', ikon: '🧮', C: KalkulatorAV },
+  { k: 'banding', judul: 'Product Comparison', ket: 'Battle card perbandingan produk dari brosur PDF - template baku, diverifikasi Team PTS', ikon: '⚖️', C: ProductComparison },
   { k: 'pustaka', judul: 'Pustaka', ket: 'Katalog produk, data acuan & artikel panduan tim - diisi Admin, dipakai kalkulator', ikon: '📚', C: Pustaka },
 ] as const;
 
@@ -77,6 +79,7 @@ function ToolsKerjaInner() {
           {aktif === 'led' ? <KalkulatorLED subAwal={subAwal} onSub={pilihSub} />
             : aktif === 'av' ? <KalkulatorAV />
             : aktif === 'pustaka' ? <Pustaka />
+            : aktif === 'banding' ? <ProductComparison />
             : <Desain3D />}
         </main>
       </div>
