@@ -19,7 +19,9 @@ export function AturTeks({ c }: { c: KonteksAtur }) {
     <div className="space-y-2.5">
       <label className="block">
         <span className={label}>Teks</span>
-        <textarea value={b.teks ?? ''} maxLength={MAKS_TEKS} rows={3} placeholder="Tulis keterangan…"
+        {/* Fokus otomatis; isi bawaan "Keterangan" langsung terpilih supaya tinggal diketik ulang. */}
+        <textarea key={b.id} autoFocus onFocus={e => { if (e.target.value === 'Keterangan') e.target.select(); }}
+          value={b.teks ?? ''} maxLength={MAKS_TEKS} rows={3} placeholder="Tulis keterangan…"
           onChange={e => setUkuran({ teks: e.target.value, nama: b.nama === namaDari(b.teks) ? namaDari(e.target.value) : b.nama })}
           className="w-full rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm resize-y" />
       </label>

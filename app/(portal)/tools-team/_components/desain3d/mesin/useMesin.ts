@@ -8,6 +8,7 @@ import { sesuaikanTinggi } from '../bangun';
 import { daftarRuang, ikutUtama, magnet, ruangDari, tampilDi, togglePilih } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
+import { kenaPermukaan } from './kena';
 import type { Mesin } from './tipe';
 import { batasDunia, terbangKe } from './kamera';
 import { hindariTumpuk } from './label';
@@ -87,7 +88,21 @@ export function useMesin(K: KeadaanDesain) {
           //  Selama benda diseret, kontrol di atas kanvas (.kontrol-kanvas) tidak menangkap kursor - kursor yang
           //  lewat di atas chip / tombol tidak memblok teks atau "mencuri" seretan (globals.css).
           wadah.toggleAttribute('data-seret', !!e.value);
+          //  Lepas seret: posisi terakhir langsung disimpan (tidak menunggu frame berikutnya).
+          if (!e.value && frameSeret) { cancelAnimationFrame(frameSeret); kirimSeret(); }
         });
+        let tundaSeret: { id: string; x: number; z: number; rot: number; elev: number } | null = null, frameSeret = 0;
+        const kirimSeret = () => {
+          frameSeret = 0;
+          const t = tundaSeret; tundaSeret = null; if (!t) return;
+          setBenda(bs => {
+            const lama = bs.find(b => b.id === t.id); if (!lama) return bs;
+            const pos = { x: t.x, z: t.z, rot: t.rot, elev: t.elev };
+            const satu = bs.map(b => (b.id === t.id ? { ...b, ...pos } : b));
+            //  Pilih banyak: benda lain ikut tergeser / berputar mengelilingi benda utama.
+            return pilihLainRef.current.length ? ikutUtama(satu, pilihLainRef.current, lama, pos) : satu;
+          });
+        };
         gizmo.addEventListener('objectChange', () => {
           const o = gizmo.object; if (!o?.userData.id) return;
           const r = ruangRef.current;
@@ -106,13 +121,9 @@ export function useMesin(K: KeadaanDesain) {
           const rot = ((Math.round((o.rotation.y * 180) / Math.PI) % 360) + 360) % 360;
           o.position.set(x, elev, z);
           sesuaikanTinggi(o, { ...b0, elev }, plafon);
-          const id = o.userData.id as string;
-          setBenda(bs => {
-            const lama = bs.find(b => b.id === id); if (!lama) return bs;
-            const satu = bs.map(b => (b.id === id ? { ...b, x, z, rot, elev } : b));
-            //  Pilih banyak: benda lain ikut tergeser / berputar mengelilingi benda utama.
-            return pilihLainRef.current.length ? ikutUtama(satu, pilihLainRef.current, lama, { x, z, rot, elev }) : satu;
-          });
+          //  Mouse cepat mengirim ratusan objectChange per detik: state React cukup diperbarui sekali per frame layar.
+          tundaSeret = { id: o.userData.id as string, x, z, rot, elev };
+          if (!frameSeret) frameSeret = requestAnimationFrame(kirimSeret);
         });
         //  Sumbu terakhir yang diseret (X / Z) - arah bawaan "ketik jarak geser".
         gizmo.addEventListener('mouseUp', () => {
@@ -156,13 +167,13 @@ export function useMesin(K: KeadaanDesain) {
           ray.setFromCamera(ptr, kamera);
           //  Mode penggaris: klik = titik ukur di permukaan pertama yang kena (benda atau ruangan), bukan memilih benda.
           if (klikUkurRef.current) {
-            const p = ray.intersectObjects([...grupBenda.children.filter(o => !o.userData.sorot), ...grupRuang.children], true)[0]?.point;
+            const p = kenaPermukaan(ray, [...grupBenda.children, ...grupRuang.children])?.point;
             if (p) klikUkurRef.current([p.x, p.y, p.z]);
             return;
           }
           //  Kotak sorotan (garis) dikecualikan: ambang raycast garis 1 m membuat
           //  klik di dekat benda terpilih justru membatalkan pilihan.
-          const kena = ray.intersectObjects(grupBenda.children.filter(o => !o.userData.sorot && o.visible), true)[0];
+          const kena = kenaPermukaan(ray, grupBenda.children);
           let o: T.Object3D | null = kena?.object ?? null;
           while (o && !o.userData.id) o = o.parent;
           const idKena = (o?.userData.id as string | undefined) ?? null;
@@ -178,7 +189,7 @@ export function useMesin(K: KeadaanDesain) {
           const kini = performance.now();
           const ganda = !!ketukLalu && kini - ketukLalu.t < 350 && Math.hypot(e.clientX - ketukLalu.x, e.clientY - ketukLalu.y) < 30;
           ketukLalu = ganda ? null : { t: kini, x: e.clientX, y: e.clientY };
-          const titik = ganda ? (kena ?? ray.intersectObjects(grupRuang.children, true)[0])?.point : null;
+          const titik = ganda ? (kena ?? kenaPermukaan(ray, grupRuang.children))?.point : null;
           if (titik && mesin.current) {
             const target = titik.clone(); target.y = Math.min(2.2, Math.max(0.3, target.y));
             const jauh = kamera.position.clone().sub(orbit.target);

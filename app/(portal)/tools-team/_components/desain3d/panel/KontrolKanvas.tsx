@@ -1,11 +1,12 @@
 'use client';
-/** Kontrol di atas kanvas 3D: centang tampilan, aksi benda terpilih, geser tepat, bilah alat kiri, layar penuh. */
+/** Kontrol di atas kanvas 3D: centang tampilan, aksi benda terpilih, geser tepat, bilah alat kiri, daftar benda, layar penuh. */
 import { useEffect, useState } from 'react';
 import { DISPLAY, nirkabel } from '../inti';
 import { Maximize2, Minimize2, Settings2 } from 'lucide-react';
 import { AksiTerpilih } from './AksiTerpilih';
 import { GeserTepat } from './GeserTepat';
 import { BilahKiri } from './BilahKiri';
+import { DaftarKanvas } from './DaftarKanvas';
 import type { AlatDesain } from './alat';
 
 export function KontrolKanvas({ a }: { a: AlatDesain }) {
@@ -58,6 +59,7 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
         {/* Bilah alat kiri: Tambah, teks, pilih banyak, penggaris, snap grid, geser / putar. */}
         <BilahKiri a={a} />
       </div>
+      <DaftarKanvas a={a} />
       <button type="button" onClick={() => setLayarPenuh(v => !v)} aria-pressed={layarPenuh}
         title={layarPenuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} aria-label={layarPenuh ? 'Keluar layar penuh' : 'Layar penuh'}
         className="kontrol-kanvas absolute right-2 top-2 z-10 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 border border-slate-200 text-slate-700 shadow-sm hover:bg-slate-50">

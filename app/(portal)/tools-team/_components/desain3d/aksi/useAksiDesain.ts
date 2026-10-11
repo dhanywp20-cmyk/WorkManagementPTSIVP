@@ -15,7 +15,7 @@ import { muatGambarLayar } from '../simpan/aset';
 export interface IsiTemplateKategori { nama: string; ruang: Ruang; benda: Benda[]; layar?: Record<string, string>; tekstur?: Record<string, string> }
 
 export function useAksiDesain(K: KeadaanDesain) {
-  const { batas, benda, gambarLayar, gantiBenda, kotakRuang, mesin, opsiKelas, pasSetelahTemplate, ruang, ruangRef, setAsal, setBenda, setBukaKelas, setDasar, setDesainAktif, setFokusRuang, setKonfirmasi, setLihatVersi, setMenuPusat, setModal, setNamaDesain, setPesan, setPilih, setRuang, setTargetRuang, setVersiGambar, targetRuang, terpilih } = K;
+  const { batas, benda, gambarLayar, gantiBenda, kotakRuang, mesin, opsiKelas, pasSetelahTemplate, ruang, ruangRef, setAsal, setBenda, setBukaKelas, setDasar, setDesainAktif, setFokusRuang, setKonfirmasi, setLihatVersi, setMenuPusat, setModal, setNamaDesain, setPanel, setPesan, setPilih, setRuang, setSisi, setTargetRuang, setVersiGambar, targetRuang, terpilih } = K;
   /**
    * Pasang template kategori ruangan (mengganti isi kanvas; tercatat di undo). `kustom` = template default
    * yang ditetapkan Admin untuk kategori ini (simpan/useTemplateKategori.ts); tanpa itu = bawaan kode.
@@ -84,6 +84,8 @@ export function useAksiDesain(K: KeadaanDesain) {
     const b = b1.jenis === 'objek' ? { ...b1, elev: tinggiAlasDi(benda, b1.x, b1.z) }
       : b1.jenis === 'teks' ? { ...b1, ...tempatTeksBebas(b1, benda, k) } : b1;
     setBenda(bs => [...bs, b]); setPilih(b.id); setModal(null);
+    //  Teks baru: panel Atur langsung terbuka dengan kotak teks siap diketik.
+    if (b.jenis === 'teks') { setSisi(null); setPanel(true); }
   };
 
   /** Gambar unggahan ikut ke salinan (tekstur dipakai bersama, tidak diunggah ulang). */

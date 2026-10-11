@@ -1,6 +1,6 @@
 'use client';
 /** Kartu cek ruang gerak (inti/ruangGerak.ts): klik catatan = pilih bendanya di kanvas. */
-import { useMemo } from 'react';
+import { useDeferredValue, useMemo } from 'react';
 import { AlertTriangle, CheckCircle2, DoorOpen, Layers, Maximize2, Server, Table2 } from 'lucide-react';
 import { cekRuangGerak, JARAK_MEJA_MIN, type KodeRuangGerak, SERVIS_RAK_MIN } from '../inti';
 import { Kartu } from '../../bersama/ui';
@@ -11,7 +11,9 @@ const ATURAN = `Benda bertumpuk · menembus dinding / plafon · ayunan pintu · 
 
 export function KartuRuangGerak({ a }: { a: AlatDesain }) {
   const { benda, ruang, pilih, setPilih } = a.K;
-  const catatan = useMemo(() => cekRuangGerak(benda, ruang), [benda, ruang]);
+  //  Ditunda (prioritas rendah): saat benda diseret, kanvas tetap lancar - kartu menyusul.
+  const bendaTunda = useDeferredValue(benda), ruangTunda = useDeferredValue(ruang);
+  const catatan = useMemo(() => cekRuangGerak(bendaTunda, ruangTunda), [bendaTunda, ruangTunda]);
   return (
     <Kartu judul={`Cek ruang gerak${catatan.length ? ` · ${catatan.length}` : ''}`}>
       {catatan.length === 0
