@@ -18,12 +18,17 @@ export interface DokPdf {
 /** Pecah potongan menjadi baris selebar `lebar` (pt) pada ukuran `uk`. */
 export function tataBaris(doc: DokPdf, potong: Potong[], lebar: number, uk: number, jarak = 0): BarisTeks[] {
   const kata: Kata[] = [];
+  //  Spasi di akhir potongan sebelumnya ("the " + "**LG**") tetap menjadi spasi sebelum kata berikutnya.
+  let sisaSpasi = false;
   for (const p of potong) {
     doc.font(p.f).fontSize(uk);
-    //  Pertahankan spasi sebelum kata (kata pertama potongan bisa menempel ke potongan sebelumnya).
-    for (const m of p.t.matchAll(/(\s*)(\S+)/g)) kata.push({ t: m[2], f: p.f, c: p.c, w: doc.widthOfString(m[2], { characterSpacing: jarak }), spasi: m[1].length > 0 });
+    for (const m of p.t.matchAll(/(\s*)(\S+)/g)) {
+      kata.push({ t: m[2], f: p.f, c: p.c, w: doc.widthOfString(m[2], { characterSpacing: jarak }), spasi: m[1].length > 0 || sisaSpasi });
+      sisaSpasi = false;
+    }
+    if (/\s$/.test(p.t)) sisaSpasi = true;
   }
-  const spasiW = (f: Huruf) => { doc.font(f === 'Centang' ? 'Sans' : f).fontSize(uk); return doc.widthOfString(' '); };
+  const spasiW = (f: Huruf) => { doc.font(f === 'Centang' ? 'Sans' : f).fontSize(uk); return doc.widthOfString(' ') + jarak; };
   const baris: BarisTeks[] = [];
   let kini: BarisTeks = { kata: [], w: 0 };
   for (const k of kata) {
@@ -43,7 +48,7 @@ export function gambarBaris(doc: DokPdf, baris: BarisTeks[], x: number, y: numbe
     //  Huruf diletakkan di tengah tinggi baris (tinggi glyph Arimo ±1,15 × ukuran).
     const cy = y + i * tinggi + (tinggi - uk * 1.15) / 2;
     for (const k of b.kata) {
-      if (k.spasi) { doc.font(k.f === 'Centang' ? 'Sans' : k.f).fontSize(uk); cx += doc.widthOfString(' '); }
+      if (k.spasi) { doc.font(k.f === 'Centang' ? 'Sans' : k.f).fontSize(uk); cx += doc.widthOfString(' ') + (opsi.jarak ?? 0); }
       doc.font(k.f).fontSize(uk).fillColor(k.c).text(k.t, cx, cy, { lineBreak: false, characterSpacing: opsi.jarak ?? 0 });
       cx += k.w;
     }

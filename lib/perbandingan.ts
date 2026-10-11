@@ -65,6 +65,20 @@ export function bolehPerbandingan(u: { role?: string | null; allowed_menus?: str
   return Array.isArray(u.allowed_menus) && u.allowed_menus.includes('tools-team');
 }
 
+type AkunPeran = { role?: string | null; team_type?: string | null; jabatan?: string | null } | null | undefined;
+/** Orang produk (Admin & Team PTS): boleh langsung mengunduh PDF - memverifikasi sendiri. */
+export function bolehLangsungUnduh(u: AkunPeran): boolean {
+  return ['admin', 'superadmin', 'team', 'team_pts'].includes((u?.role ?? '').toLowerCase());
+}
+/** Tim yang memverifikasi pengajuan Sales / Marketing: Admin, Supervisor ke atas Team PTS IVP & PTS MVI. */
+export const TIM_VERIFIKASI = ['Team PTS IVP', 'Team PTS MVI'];
+const JABATAN_VERIFIKASI = ['Supervisor', 'Manager', 'Deputy General Manager', 'General Manager', 'Direktur'];
+export function bolehVerifikasi(u: AkunPeran): boolean {
+  const r = (u?.role ?? '').toLowerCase();
+  if (r === 'admin' || r === 'superadmin') return true;
+  return (r === 'team' || r === 'team_pts') && TIM_VERIFIKASI.includes(u?.team_type ?? '') && JABATAN_VERIFIKASI.includes(u?.jabatan ?? '');
+}
+
 // ── Berkas ────────────────────────────────────────────────────────────────────
 
 /** null = berkas boleh; string = alasan ditolak. `kepala` = beberapa byte pertama berkas. */
@@ -180,4 +194,39 @@ export const jumlahCek = (k: KartuBanding) => k.bagian.reduce((s, b) => s + b.ba
 /** Pecah teks "**tebal**" menjadi potongan biasa / tebal (untuk HTML & PDF). */
 export function potongTebal(s: string): { t: string; tebal: boolean }[] {
   return s.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map(p => (p.startsWith('**') && p.endsWith('**') ? { t: p.slice(2, -2), tebal: true } : { t: p, tebal: false }));
+}
+
+/**
+ * Periksa bentuk kartu yang disimpan untuk verifikasi (dari peramban): batas ukuran & tipe, status dipertahankan
+ * (nilai hasil koreksi manual boleh tanpa kutipan). Bukan pengganti verifikasi manusia.
+ */
+export function periksaKartu(x: unknown): { ok: true; data: KartuBanding } | { ok: false; alasan: string } {
+  const d = x as Record<string, unknown>;
+  if (!d || typeof d !== 'object' || !Array.isArray(d.produk) || !Array.isArray(d.bagian)) return { ok: false, alasan: 'Data perbandingan tidak sah.' };
+  const n = d.produk.length;
+  if (n < MIN_PRODUK || n > MAKS_PRODUK) return { ok: false, alasan: `Jumlah produk harus ${MIN_PRODUK}-${MAKS_PRODUK}.` };
+  if (JSON.stringify(d).length > 250_000) return { ok: false, alasan: 'Data perbandingan terlalu besar.' };
+  const produk = d.produk.map(p => { const q = (p ?? {}) as Record<string, unknown>; return { merek: teks(q.merek, 60), nama: teks(q.nama, 80), judulKartu: teks(q.judulKartu, 100), deskripsi: teks(q.deskripsi, 420) }; });
+  if (produk.some(p => !p.nama)) return { ok: false, alasan: 'Nama produk kosong.' };
+  const bagian: BagianSpek[] = [];
+  for (const b0 of d.bagian.slice(0, 10)) {
+    const b = (b0 ?? {}) as Record<string, unknown>;
+    if (!Array.isArray(b.baris)) return { ok: false, alasan: 'Bagian tanpa baris.' };
+    bagian.push({ judul: teks(b.judul, 80), baris: b.baris.slice(0, 40).map(r0 => {
+      const r = (r0 ?? {}) as Record<string, unknown>;
+      const nilai = Array.isArray(r.nilai) ? r.nilai : [];
+      return { spesifikasi: teks(r.spesifikasi, 80), nilai: Array.from({ length: n }, (_, i) => {
+        const v = (nilai[i] ?? {}) as Record<string, unknown>;
+        const status = STATUS.includes(v.status as StatusNilai) ? (v.status as StatusNilai) : 'cek';
+        const bk = (v.bukti ?? {}) as Record<string, unknown>;
+        const kutipan = teks(bk.kutipan, 300);
+        return { teks: teks(v.teks, 220), status, ...(status === 'ada' && v.unggul === true ? { unggul: true } : {}),
+          ...(kutipan ? { bukti: { kutipan, ...(typeof bk.halaman === 'number' ? { halaman: Math.round(bk.halaman) } : {}) } } : {}),
+          ...(status === 'cek' ? { alasanCek: teks(v.alasanCek, 200) } : {}) };
+      }) };
+    }) });
+  }
+  const sorotan = (Array.isArray(d.sorotan) ? d.sorotan : []).slice(0, 3).map(s0 => { const q = (s0 ?? {}) as Record<string, unknown>; return { judul: teks(q.judul, 60), teks: teks(q.teks, 320) }; });
+  return { ok: true, data: { bahasa: d.bahasa === 'id' ? 'id' : 'en', kategori: teks(d.kategori, 90), judul: teks(d.judul, 140), pengantar: teks(d.pengantar, 900),
+    produk, bagian, ringkasan: teks(d.ringkasan, 1400), sorotan, rekomendasi: teks(d.rekomendasi, 700), catatan: teks(d.catatan, 600) } };
 }
