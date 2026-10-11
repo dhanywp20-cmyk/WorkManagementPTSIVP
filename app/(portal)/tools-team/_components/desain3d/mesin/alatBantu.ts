@@ -7,6 +7,7 @@ import { type Benda, berkasLineArray, cakupanSpeakerPlafon, DISPLAY, jangkauanDa
 import { gambarJalurKabel } from './gambarKabel';
 import { gambarShare } from './garisShare';
 import { gambarSinar } from './sinar';
+import { buatLabelProduk } from './labelProduk';
 import { gambarGarisUkurDisplay } from './garisUkurDisplay';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
@@ -35,14 +36,9 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     const o = new CSS2DObject(el); o.position.copy(pos); grupBantu.add(o);
     return el;
   };
-  /** Label produk: kecil, menempel di tepi benda (dy -1 = tepat di atas titik, 1 = tepat di bawah). */
-  const labelP = (teks: string, pos: T.Vector3, dy: -1 | 1 = -1) => {
-    const el = document.createElement('div');
-    el.textContent = teks;
-    el.dataset.produk = '1'; el.dataset.dy = String(dy);
-    el.style.cssText = `font:600 9.5px system-ui,sans-serif;line-height:1.25;padding:0 5px;border-radius:999px;white-space:nowrap;color:#0f172a;background:rgba(255,255,255,.9);border:1px solid #cbd5e1;margin-top:${dy * 7}px`;
-    const o = new CSS2DObject(el); o.position.copy(pos); grupBantu.add(o);
-  };
+  /** Label produk: kecil, bergaris penunjuk dari titik benda (dy -1 = utamakan di atas, 1 = di bawah). */
+  //  Garis penunjuk ke label yang ditata di tempat kosong di sekitar benda (mesin/labelProduk.ts).
+  const labelP = (teks: string, pos: T.Vector3, dy: -1 | 1 = -1) => { grupBantu.add(buatLabelProduk(m, teks, pos, dy)); };
   for (const a of analisis) {
     const d = a.d;
     const r = (d.rot * Math.PI) / 180;

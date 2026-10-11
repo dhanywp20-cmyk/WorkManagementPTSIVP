@@ -223,7 +223,7 @@ export function useMesin(K: KeadaanDesain) {
           }
           orbit.update(); renderer.render(scene, kamera); labelRenderer.render(scene, kamera);
           const kini = performance.now();
-          if (kini - tumpukTerakhir > 150) { tumpukTerakhir = kini; hindariTumpuk(labelRenderer.domElement); }
+          if (kini - tumpukTerakhir > 150) { tumpukTerakhir = kini; if (mesin.current) hindariTumpuk(labelRenderer.domElement, mesin.current); }
           requestAnimationFrame(putar);
         };
         putar();

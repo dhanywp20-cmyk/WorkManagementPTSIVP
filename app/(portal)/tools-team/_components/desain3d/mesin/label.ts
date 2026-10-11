@@ -1,4 +1,5 @@
-/** Label CSS2D: cegah tumpang-tindih label produk & gambar label ke kanvas foto (PNG / cetak). */
+/** Label CSS2D: cegah tumpang-tindih label & gambar label ke kanvas foto (PNG / cetak). */
+import { type KotakLayar, tataLabelProduk } from './labelProduk';
 import type { Mesin } from './tipe';
 
 /**
@@ -7,13 +8,13 @@ import type { Mesin } from './tipe';
  * elemennya sendiri (warna, huruf), diperbesar sesuai resolusi foto.
  */
 /**
- * Label produk tidak boleh bertumpuk: label yang menabrak label lain (urutan = prioritas) disembunyikan
+ * Label tidak boleh bertumpuk: label yang menabrak label lain (urutan = prioritas) disembunyikan
  * sementara, dan muncul lagi saat kamera di-zoom / diputar sampai ada ruang.
  *   - [data-penting]  (keterangan area blending) selalu tampil & menang atas label lain
  *   - [data-mengalah] disembunyikan bila menabrak label penting atau label mengalah lain yang sudah tampil
- *   - [data-produk]   disembunyikan bila menabrak label penting atau label produk sebelumnya
+ *   - [data-produk]   ditata dengan garis penunjuk di tempat kosong sekitar bendanya (mesin/labelProduk.ts)
  */
-export function hindariTumpuk(wadah: HTMLElement) {
+export function hindariTumpuk(wadah: HTMLElement, m: Mesin) {
   const penting: DOMRect[] = [];
   wadah.querySelectorAll<HTMLElement>('[data-penting]').forEach(el => {
     const r = el.style.display === 'none' ? null : el.getBoundingClientRect();
@@ -28,8 +29,9 @@ export function hindariTumpuk(wadah: HTMLElement) {
     if (!r.width) return;
     if (tabrak(r, ambil)) el.style.visibility = 'hidden'; else ambil.push(r);
   });
-  atur('[data-mengalah]', [...penting]);
-  atur('[data-produk]', [...penting]);
+  const mengalah = [...penting];
+  atur('[data-mengalah]', mengalah);
+  tataLabelProduk(m, wadah, mengalah.map((r): KotakLayar => ({ l: r.left, t: r.top, r: r.right, b: r.bottom })));
 }
 
 export function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h: number) {
@@ -44,8 +46,17 @@ export function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h:
     const teks = (el.dataset.teks || el.innerText || el.textContent || '').trim(); if (!teks) return;
     v.setFromMatrixPosition(o.matrixWorld).project(m.kamera);
     if (v.z < -1 || v.z > 1) return;
-    const x = ((v.x + 1) / 2) * w, y = ((1 - v.y) / 2) * h;
-    const cs = getComputedStyle(el);
+    let x = ((v.x + 1) / 2) * w, y = ((1 - v.y) / 2) * h;
+    //  Label produk bergaris penunjuk: titik & garis dari benda, pil di tempat hasil penataan di layar.
+    const isi = el.dataset.produk ? el.querySelector<HTMLElement>('[data-isi]') : null;
+    if (isi && el.dataset.ox !== undefined) {
+      const px = skala / 1.35, ox = Number(el.dataset.ox) * px, oy = Number(el.dataset.oy) * px;
+      g.save(); g.strokeStyle = '#64748b'; g.fillStyle = '#64748b'; g.lineWidth = Math.max(1, px);
+      g.beginPath(); g.moveTo(x, y); g.lineTo(x + ox, y + oy); g.stroke();
+      g.beginPath(); g.arc(x, y, 2 * px, 0, Math.PI * 2); g.fill(); g.restore();
+      x += ox; y += oy;
+    }
+    const cs = getComputedStyle(isi ?? el);
     const uk = (parseFloat(cs.fontSize) || 11) * skala;
     g.font = `${cs.fontWeight || '600'} ${uk}px ${cs.fontFamily || 'system-ui, sans-serif'}`;
     const baris = teks.split('\n').map(b => b.trim()).filter(Boolean);
@@ -56,7 +67,7 @@ export function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h:
     //  Titik tumpu CSS2D (center, bawaan 0,5 ; 0,5 = tengah) ikut: (0,5 ; 0) = tepi atas di titiknya.
     const c = (o as { center?: { x: number; y: number } }).center;
     const dx = c ? (0.5 - c.x) * kw : 0;
-    const dy = Number(el.dataset.dy || 0) * (kh / 2 + 1 * skala) + (c ? (0.5 - c.y) * kh : 0);
+    const dy = isi ? 0 : Number(el.dataset.dy || 0) * (kh / 2 + 1 * skala) + (c ? (0.5 - c.y) * kh : 0);
     const latar = cs.backgroundColor && cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent' ? cs.backgroundColor : 'rgba(15,23,42,0.85)';
     g.save();
     g.translate(x + dx, y + dy);
