@@ -11,7 +11,7 @@ export function NavKamera({ a }: { a: AlatDesain }) {
   return (
     <>
       {siap && (
-        <div className="kontrol-kanvas absolute left-2 bottom-2 z-10 flex flex-row flex-wrap items-end gap-1.5 max-w-[calc(100%-16px)]" role="toolbar" aria-label="Kontrol kamera">
+        <div className="kontrol-kanvas lapis-tembus absolute left-2 bottom-2 z-10 flex flex-row flex-wrap items-end gap-1.5 max-w-[calc(100%-16px)]" role="toolbar" aria-label="Kontrol kamera">
           <div className={grupNavMendatar}>
             <TombolNav judul={modeSeret === 'geser' ? 'Seret = geser bidang (ketuk: ganti ke putar)' : 'Seret = putar kamera (ketuk: ganti ke geser)'}
               aktif={modeSeret === 'geser'} onClick={() => setModeSeret(v => (v === 'geser' ? 'putar' : 'geser'))}>
