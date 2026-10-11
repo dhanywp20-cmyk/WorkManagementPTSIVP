@@ -104,7 +104,7 @@ export default function Desain3D() {
             </div>
           )}
           {pesan && (
-            <div role="status" className="absolute left-1/2 -translate-x-1/2 top-12 z-20 max-w-[calc(100%-32px)] px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-[12px] font-semibold shadow-lg text-center">{pesan}</div>
+            <div role="status" className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-12 z-20 max-w-[calc(100%-32px)] px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-[12px] font-semibold shadow-lg text-center">{pesan}</div>
           )}
           <NavKamera a={a} />
         </div>
