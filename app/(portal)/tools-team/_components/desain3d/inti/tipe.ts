@@ -77,6 +77,8 @@ export interface Benda {
   /** Proyektor: lens shift horizontal (pecahan lebar gambar, + = ke kanan dilihat dari proyektor) */ geserLensaH?: number;
   /** Proyektor: warna sinar di kanvas (#rrggbb) - tanpa = otomatis (inti/proyektor.ts warnaSinarProyektor). */ warnaSinar?: string;
   /** Proyektor: kecerahan (ANSI lumen) */ lumen?: number;
+  /** Proyektor, mode Grid sinar (inti/gridProyektor.ts): jumlah kolom grid & warna garisnya (kosong = warna sinar). */
+  gridKolom?: number; warnaGrid?: string;
   /** Display: bracket pop-up, wall bracket + struktur hollow, atau standfloor beroda */ pasang?: Pasang;
   /** Rak: tinggi dalam U */ rakU?: number;
   /** Rak: isi per U dari atas (rack elevation); kosong = isi bawaan. */ isiRak?: PerangkatRak[];
