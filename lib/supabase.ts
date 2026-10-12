@@ -130,10 +130,28 @@ const fetchWithToken: typeof fetch = async (input, init) => {
   }
 };
 
+/**
+ * Sumber token untuk supabase-js (opsi `accessToken`). WAJIB sejak supabase-js 2.117.
+ *
+ * Versi baru memanggil sumber token ini di SETIAP heartbeat Realtime (~25 dtk). Tanpa opsi ini
+ * klien tidak punya sumber selain sesi Supabase Auth - yang tidak kita pakai - sehingga ia jatuh ke
+ * anon key dan MENIMPA token login yang dipasang setDbToken(). Akibatnya RLS menolak semua perubahan
+ * dan seluruh halaman berhenti menyegarkan diri tanpa satu pun galat (terbukti di uji pembanding,
+ * lihat uji/supabase-klien.ts). Token yang hampir kedaluwarsa diperbarui di sini juga, jadi soket
+ * Realtime ikut mendapat token segar - sebelumnya hanya PostgREST yang diperbarui.
+ */
+async function tokenAkses(): Promise<string | null> {
+  if (dbToken) {
+    const exp = dbTokenExpiryMs();
+    if (exp !== null && exp - Date.now() < 60_000) await refreshDbToken();
+  }
+  return dbToken;
+}
+
 export const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  { global: { fetch: fetchWithToken } },
+  { accessToken: tokenAkses, global: { fetch: fetchWithToken } },
 );
 
 // Token yang dipulihkan dari sessionStorage di atas belum lewat setDbToken,

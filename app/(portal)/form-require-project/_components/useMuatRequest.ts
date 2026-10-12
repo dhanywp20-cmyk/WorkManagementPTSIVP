@@ -105,8 +105,8 @@ export function useMuatRequest(k: MuatRequestKonteks) {
         let allReqsRes = await supabase.from('project_requests')
           .select(`${KOLOM_DASAR}, ${KOLOM_BRAND}`).order('created_at', { ascending: false });
         if (allReqsRes.error) {
-          allReqsRes = await supabase.from('project_requests')
-            .select(KOLOM_DASAR).order('created_at', { ascending: false });
+          allReqsRes = (await supabase.from('project_requests')
+            .select(KOLOM_DASAR).order('created_at', { ascending: false })) as unknown as typeof allReqsRes;
         }
         const allReqs = allReqsRes.data;
         (allReqs ?? []).forEach((r: any) => {

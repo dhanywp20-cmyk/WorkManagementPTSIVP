@@ -70,7 +70,8 @@ export function AssignPTSModal({
     supabase.from('users')
       .select('id, full_name, role, team_type, phone_number, sales_division, jabatan, bisa_ditugaskan')
       .in('role', ['team_pts', 'team'])
-      .then(({ data }: { data: User[] | null }) => {
+      .then(({ data: baris }) => {
+        const data = baris as unknown as User[] | null;
         if (!data) return;
         // Manager hanya ditawarkan bila penugasnya Admin murni.
         const penugasAdmin = adalahAdminMurni(currentUser);

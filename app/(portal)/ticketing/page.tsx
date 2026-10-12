@@ -413,8 +413,9 @@ function TicketingSystemInner() {
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, is_internal_sales"),
       ]) : [{ data: null }, { data: null }];
       // Map users ke format TeamMember agar kompatibel dengan kode existing
+      let anggotaTim: TeamMember[] | null = null;
       if (membersData.data) {
-        membersData.data = (membersData.data as any[]).map((u: any) => ({
+        anggotaTim = (membersData.data as any[]).map((u: any) => ({
           id: u.id,
           name: u.full_name,      // name = full_name
           username: u.username,
@@ -433,7 +434,7 @@ function TicketingSystemInner() {
       const { tickets: daftarTiket, periksaPilihan } = await ambilTiketUntuk(activeUser, rentang);
       setTickets(daftarTiket);
       if (periksaPilihan && selectedTicket && !daftarTiket.find((t: Ticket) => t.id === selectedTicket.id)) setSelectedTicket(null);
-      if (membersData.data) setTeamMembers(membersData.data);
+      if (anggotaTim) setTeamMembers(anggotaTim);
       if (usersData.data) setUsers(usersData.data);
       if (!silent) { setLoading(false); setTicketsLoading(false); }
       else { setLoading(false); }
@@ -1443,7 +1444,7 @@ function TicketingSystemInner() {
     );
     if (!toEscalate.length) return;
     const ids = toEscalate.map(t => t.id);
-    supabase.from('tickets').update({ status: 'Overdue' }).in('id', ids)
+    Promise.resolve(supabase.from('tickets').update({ status: 'Overdue' }).in('id', ids))
       .then(() => { if (currentUser) fetchData(currentUser, true); })
       .catch((e: unknown) => console.warn('[SLA] auto-escalation error:', e));
   // eslint-disable-next-line react-hooks/exhaustive-deps
