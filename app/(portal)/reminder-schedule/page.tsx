@@ -59,6 +59,14 @@ import { useSimpanJadwal } from './_components/useSimpanJadwal';
 import { useTurunanJadwal } from './_components/useTurunanJadwal';
 import { useMuatPengguna } from './_components/useMuatPengguna';
 import { useMuatJadwal } from './_components/useMuatJadwal';
+import { useAksiJadwal } from './_components/useAksiJadwal';
+import { useAksiMassalJadwal } from './_components/useAksiMassalJadwal';
+import { useProyekLama } from './_components/useProyekLama';
+import { IsiJadwal } from './_components/IsiJadwal';
+import { KepalaJadwal } from './_components/KepalaJadwal';
+import { PopupDetailJadwal } from './_components/PopupDetailJadwal';
+import { useStateApproval } from './_components/useStateApproval';
+import { useStateModePenyelesaian } from './_components/useStateModePenyelesaian';
 
 
 function ReminderSchedulePageInner() {
@@ -191,34 +199,7 @@ function ReminderSchedulePageInner() {
   const statusPhotoRef = useRef<HTMLInputElement>(null);
 
   // Onsite / Remote Mode Modal
-  const [showModeModal, setShowModeModal]             = useState(false);
-  const [modePenyelesaian, setModePenyelesaian]       = useState<'onsite' | 'remote' | null>(null);
-  const [installerName, setInstallerName]             = useState('');
-  const [installerUserId, setInstallerUserId]         = useState<string | null>(null);
-  const [ptsCabangUsers, setPtsCabangUsers]           = useState<{ id: string; full_name: string; pts_daerah: string | null }[]>([]);
-  const [installerDaerah, setInstallerDaerah]         = useState('');
-  const [bastDate, setBastDate]                       = useState<string>('');
-  const [displayType, setDisplayType]                 = useState<'led' | 'lcd' | 'mix' | null>(null);
-  const [requiresMiddleware, setRequiresMiddleware]   = useState(false);
-  const [requiresControllerAuto, setRequiresControllerAuto] = useState(false);
-  const [controllerBrand, setControllerBrand]         = useState<'cue' | 'extron' | 'wyrestorm' | null>(null);
-  const [pendingPhotoUrl, setPendingPhotoUrl]         = useState<string | undefined>(undefined);
-  const [savingMode, setSavingMode]                   = useState(false);
-  /**
-   * true = panel Mode dibuka untuk MENGISI/MENGUBAH detail jadwal yang sudah
-   * Completed, bukan sebagai syarat sebelum menyelesaikannya.
-   *
-   * Kenapa perlu: dulu detail pelaksanaan HANYA bisa diisi tepat pada saat
-   * menekan Completed. Begitu statusnya jadi Completed tombol statusnya
-   * hilang ("tidak dapat diubah kembali"), jadi jadwal yang terlanjur selesai
-   * tanpa detail - mis. diselesaikan sebelum fitur ini ada - tidak punya
-   * jalan sama sekali untuk dilengkapi. Padahal jadwal itu tetap ikut ke
-   * Incentive PTS, dan di sana tampil sebagai "Mode belum diset".
-   */
-  const [modeEditSaja, setModeEditSaja]               = useState(false);
-
-  // Resend Form Review
-  const [resendingFormReview, setResendingFormReview] = useState(false);
+  const { showModeModal, setShowModeModal, modePenyelesaian, setModePenyelesaian, installerName, setInstallerName, installerUserId, setInstallerUserId, ptsCabangUsers, setPtsCabangUsers, installerDaerah, setInstallerDaerah, bastDate, setBastDate, displayType, setDisplayType, requiresMiddleware, setRequiresMiddleware, requiresControllerAuto, setRequiresControllerAuto, controllerBrand, setControllerBrand, pendingPhotoUrl, setPendingPhotoUrl, savingMode, setSavingMode, modeEditSaja, setModeEditSaja, resendingFormReview, setResendingFormReview } = useStateModePenyelesaian({  });
 
   // Guest Request Jadwal State
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -229,36 +210,7 @@ function ReminderSchedulePageInner() {
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
 
   // Approve & Assign State (admin only)
-  const [approveTarget, setApproveTarget] = useState<Reminder | null>(null);
-  const [approveBatchSiblings, setApproveBatchSiblings] = useState<Reminder[]>([]); // tanggal lain di batch yang sama, ikut di-approve bareng
-  const [approveAssignTo, setApproveAssignTo] = useState('');
-  const [approveDate, setApproveDate] = useState('');
-  const [approveTime, setApproveTime] = useState('');
-  /** Panel riwayat di samping modal detail. Default terbuka supaya langsung terlihat. */
-  const [showRiwayat, setShowRiwayat] = useState(true);
-  // Timeline pengerjaan saat approve - terisi dari usulan Sales, boleh diubah.
-  const [approveStart,  setApproveStart]  = useState('');
-  const [approveTarget2, setApproveTarget2] = useState('');
-  const [approveSaving, setApproveSaving] = useState(false);
-  const [internalRejectTarget, setInternalRejectTarget] = useState<Reminder | null>(null); // request yg mau di-Tolak Sales Internal
-  const [internalApproveTarget, setInternalApproveTarget] = useState<Reminder | null>(null); // konfirmasi Approve Sales Internal (detail dulu, jangan instan)
-  const [internalApproveSaving, setInternalApproveSaving] = useState(false);
-  const [internalRejectReason, setInternalRejectReason] = useState('');
-  const [internalRejectSaving, setInternalRejectSaving] = useState(false);
-  // M4 (docs/UX-WORKFLOW-AUDIT.md): dulu tahap admin_review cuma punya Approve
-  // atau Hapus permanen (tanpa alasan tercatat, tanpa notif ke Sales) - tidak
-  // ada jalur Tolak resmi seperti yang sudah ada di tahap internal_review.
-  const [adminRejectTarget, setAdminRejectTarget] = useState<Reminder | null>(null);
-  const [adminRejectReason, setAdminRejectReason] = useState('');
-  const [adminRejectSaving, setAdminRejectSaving] = useState(false);
-  // Admin/Manager approve  route ke Supervisor tim (by tipe produk, product_team_map)
-  const [approveSupervisors, setApproveSupervisors] = useState<SupervisorCandidate[]>([]);
-  const [approveRouteSaving, setApproveRouteSaving] = useState(false);
-  // Supervisor assign ke anggota tim ATAU diri sendiri (tim penuh - keputusan manual)
-  const [supervisorAssignTarget, setSupervisorAssignTarget] = useState<Reminder | null>(null);
-  const [supervisorAssignBatchSiblings, setSupervisorAssignBatchSiblings] = useState<Reminder[]>([]);
-  const [supervisorAssignTo, setSupervisorAssignTo] = useState(''); // username anggota, atau 'SELF'
-  const [supervisorAssignSaving, setSupervisorAssignSaving] = useState(false);
+  const { approveTarget, setApproveTarget, approveBatchSiblings, setApproveBatchSiblings, approveAssignTo, setApproveAssignTo, approveDate, setApproveDate, approveTime, setApproveTime, showRiwayat, setShowRiwayat, approveStart, setApproveStart, approveTarget2, setApproveTarget2, approveSaving, setApproveSaving, internalRejectTarget, setInternalRejectTarget, internalApproveTarget, setInternalApproveTarget, internalApproveSaving, setInternalApproveSaving, internalRejectReason, setInternalRejectReason, internalRejectSaving, setInternalRejectSaving, adminRejectTarget, setAdminRejectTarget, adminRejectReason, setAdminRejectReason, adminRejectSaving, setAdminRejectSaving, approveSupervisors, setApproveSupervisors, approveRouteSaving, setApproveRouteSaving, supervisorAssignTarget, setSupervisorAssignTarget, supervisorAssignBatchSiblings, setSupervisorAssignBatchSiblings, supervisorAssignTo, setSupervisorAssignTo, supervisorAssignSaving, setSupervisorAssignSaving } = useStateApproval({  });
 
   /**
    * Buat draft Project Progress dari reminder yang BARU dibuat. Tidak ada
@@ -315,87 +267,7 @@ function ReminderSchedulePageInner() {
   const [formData, setFormData] = useState(emptyForm);
   const fd = (patch: Partial<typeof emptyForm>) => setFormData(prev => ({ ...prev, ...patch }));
 
-  const daftarProyekLama = useMemo(() => {
-    const peta = new Map<string, Reminder>();
-    for (const r of reminders) {
-      const n = normalkanNama(r.project_name);
-      if (!n) continue;
-      const ada = peta.get(n);
-      if (!ada || (r.created_at ?? '') > (ada.created_at ?? '')) peta.set(n, r);
-    }
-    return [...peta.values()].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
-  }, [reminders]);
-
-  const hasilCarianProyek = useMemo(() => {
-    const q = carianProyek.trim().toLowerCase();
-    if (!q) return daftarProyekLama.slice(0, 20);
-    return daftarProyekLama
-      .filter(r => (r.project_name ?? '').toLowerCase().includes(q))
-      .slice(0, 20);
-  }, [daftarProyekLama, carianProyek]);
-
-  const mulaiBuatReminder = () => {
-    setBuatUntukGuest(false);
-    setEditingReminder(null); setFormData(emptyForm); setExtraDates([]);
-    setProyekLamaTerpilih(null); setPraFillGuest(null); setPraPilihProyek(null); setCarianProyek('');
-    setLangkahBuat('pilih');
-  };
-
-  /**
-   * Pemicu untuk role Sales/Guest - sebelumnya "Request Jadwal" langsung
-   * membuka RequestJadwalModal kosong, tanpa lewat pemilihan tipe project
-   * sama sekali. Sekarang memakai DUA LANGKAH YANG SAMA dengan jalur admin;
-   * yang membedakan hanya `buatUntukGuest`, dipakai di 'pilih' untuk teks dan
-   * di konfirmasiProyekLama untuk menentukan form mana yang dibuka.
-   */
-  const mulaiRequestJadwal = () => {
-    setBuatUntukGuest(true);
-    setProyekLamaTerpilih(null); setPraFillGuest(null); setPraPilihProyek(null); setCarianProyek('');
-    setLangkahBuat('pilih');
-  };
-
-  const konfirmasiProyekLama = () => {
-    if (!praPilihProyek) return;
-    const n = normalkanNama(praPilihProyek.project_name);
-    // Sengaja dari `reminders` yang SUDAH termuat di halaman ini, bukan kueri
-    // baru. Untuk akun Sales/Guest, fetchRemindersForUser hanya memuat baris
-    // miliknya sendiri (lihat catatan di sana) - jadi daftar ini otomatis
-    // tidak pernah memuat project sales lain, tanpa saringan tambahan di sini.
-    const sebatch = reminders.filter(r => normalkanNama(r.project_name) === n);
-    setProyekLamaTerpilih(sebatch);
-    setLangkahBuat(null);
-
-    if (buatUntukGuest) {
-      // JadwalRequest tidak punya sales_name/assign_name - pelakunya sudah
-      // pasti currentUser, jadi tidak perlu (dan tidak boleh) disalin dari
-      // baris lama, yang bisa saja milik Sales External lain yang sedang
-      // di-CC-kan (SBU) ke akun ini.
-      setPraFillGuest({
-        project_name: praPilihProyek.project_name || '',
-        address: praPilihProyek.address ?? '',
-        product: praPilihProyek.product ?? '',
-        pic_name: praPilihProyek.pic_name ?? '',
-        pic_phone: praPilihProyek.pic_phone ?? '',
-        sales_division: praPilihProyek.sales_division || undefined,
-        brand: (praPilihProyek.brand as JadwalRequest['brand']) ?? undefined,
-      });
-      setShowRequestModal(true);
-      return;
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      project_name: praPilihProyek.project_name || '',
-      address: praPilihProyek.address ?? '',
-      sales_name: praPilihProyek.sales_name ?? '',
-      sales_division: praPilihProyek.sales_division ?? '',
-      product: praPilihProyek.product ?? '',
-      pic_name: praPilihProyek.pic_name ?? '',
-      pic_phone: praPilihProyek.pic_phone ?? '',
-      brand: praPilihProyek.brand ?? prev.brand,
-    }));
-    setShowFormModal(true);
-  };
+  const { daftarProyekLama, hasilCarianProyek, mulaiBuatReminder, mulaiRequestJadwal, konfirmasiProyekLama } = useProyekLama({ buatUntukGuest, carianProyek, emptyForm, praPilihProyek, reminders, setBuatUntukGuest, setCarianProyek, setEditingReminder, setExtraDates, setFormData, setLangkahBuat, setPraFillGuest, setPraPilihProyek, setProyekLamaTerpilih, setShowFormModal, setShowRequestModal });
 
   // Filters - extended with team handler & category
   const [filterStatus, setFilterStatus]     = useState<Status | 'all'>('all');
@@ -596,214 +468,10 @@ function ReminderSchedulePageInner() {
 
   const { availableYears, filteredReminders, groupedReminders, todayCount, pendingCount, doneCount, totalCount, sourceReminders, projectPieData, salesPieData, teamPtsPieData, productPieData, isAdmin, teamUsersDitawarkan, isManager, canApproveAssign, isMyReviewStage, bolehEditReminder, canInternalApprove, canAddReminder, isGuest } = useTurunanJadwal({ currentUser, filterCategory, filterStatus, filterYear, managerUserId, productFilter, reminders, searchDivisionSales, searchProduct, searchProject, searchSales, searchTeamHandler, selectedCalDay, teamUsers });
 
-  const jalankanBulkDelete = async () => {
-    setBulkConfirm(false); setBulkDeleting(true);
-    const { error } = await supabase.from('reminders').delete().in('id', Array.from(selectedIds));
-    if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
-    else notify('error', 'Gagal: ' + error.message);
-    setBulkDeleting(false);
-  };
-
-  const toggleSelectId = (id: string) => setSelectedIds(prev => {
-    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
-  });
-
-  const toggleSelectAll = () => setSelectedIds(prev =>
-    prev.size === filteredReminders.length ? new Set() : new Set(filteredReminders.map(r => r.id))
-  );
+  const { jalankanBulkDelete, toggleSelectId, toggleSelectAll } = useAksiMassalJadwal({ filteredReminders, notify, selectedIds, setBulkConfirm, setBulkDeleting, setReminders, setSelectMode, setSelectedIds });
 
   //  Aturan siapa melihat jadwal apa: _components/data-reminder.ts
-  const openEdit = (r: Reminder) => {
-    setEditingReminder(r);
-    /*
-      Tanggal sebatch ikut dimuat ke pemilih multi-tanggal.
-
-      Jadwal 5 hari tersimpan sebagai lima baris ber-batch_id sama. Dulu form
-      sunting hanya membawa tanggal baris yang diklik, jadi jadwal lima hari
-      tampil seolah sehari - dan menyimpannya diam-diam meninggalkan empat
-      baris lain dengan data lama. Yang tampil sekarang seluruh rentangnya,
-      dan tanggalnya memang bisa ditambah atau dikurangi dari sini.
-    */
-    const sebatch = r.batch_id ? reminders.filter(x => x.batch_id === r.batch_id) : [r];
-    const tanggal = Array.from(new Set(sebatch.map(x => x.due_date).filter(Boolean))).sort();
-    setExtraDates(tanggal.slice(1));
-    setFormData({ project_name: r.project_name || (r as any).title || '', description: r.description, assigned_to: r.assigned_to, assign_name: r.assign_name ?? '',
-      // Tanggal utama = yang PALING AWAL di batch, bukan baris yang kebetulan
-      // diklik - supaya rentangnya terbaca urut di pemilih tanggal.
-      due_date: (r.batch_id
-        ? [...new Set(reminders.filter(x => x.batch_id === r.batch_id).map(x => x.due_date).filter(Boolean))].sort()[0]
-        : r.due_date) || r.due_date,
-      due_time: r.due_time, priority: r.priority, status: r.status, repeat: r.repeat, category: r.category,
-      sales_name: r.sales_name ?? '', sales_division: r.sales_division ?? '', address: r.address ?? '',
-      /*
-        brand DULU tidak ikut dimuat, jadi tiap kali jadwal disunting pilihan
-        Brand kembali kosong - dan karena ia wajib, penyunting terpaksa
-        memilihnya lagi dari ingatan. Salah pilih di situ memindahkan proyeknya
-        ke petugas Finance yang lain.
-      */
-      brand: r.brand ?? undefined,
-      pic_name: r.pic_name ?? '', pic_phone: r.pic_phone ?? '', notes: r.notes ?? '', product: r.product ?? '',
-      warranty_years: r.warranty_years ?? null, mode_penyelesaian: r.mode_penyelesaian ?? null,
-      installer_name: r.installer_name ?? null, installer_daerah: r.installer_daerah ?? null,
-      requires_controller_automation: r.requires_controller_automation ?? false,
-      controller_automation_brand: r.controller_automation_brand ?? null,
-      pic_type: r.pic_type ?? 'standard', pic_id: r.pic_id ?? null,
-      incentive_value: r.incentive_value ?? 0, bast_date: r.bast_date ?? null,
-      // Tiga field ini PUNYA input di form, tapi dulu tidak pernah dimuat saat
-      // menyunting: rentang pengerjaan tampil kosong padahal terisi, dan tipe
-      // produk harus dipilih ulang hanya untuk lolos validasi simpan. Catatan
-      // auditnya pun ikut salah - lihat komentar di lib/admin-edit.ts.
-      progress_start_date: r.progress_start_date ?? '',
-      progress_target_date: r.progress_target_date ?? '',
-      product_type: r.product_type ?? '',
-    });
-    setDetailReminder(null);
-    setShowFormModal(true);
-  };
-
-  // Re-Schedule
-
-  const handleReschedule = async (newDate: string, newTime: string, reason: string) => {
-    if (!rescheduleTarget) return;
-    const noteAdd = reason ? `\n[Re-Schedule ${formatDate(newDate)}: ${reason}]` : '';
-    const { error } = await supabase.from('reminders').update({
-      due_date: newDate,
-      due_time: newTime,
-      updated_at: new Date().toISOString(),
-      notes: (rescheduleTarget.notes ?? '') + noteAdd,
-    }).eq('id', rescheduleTarget.id);
-    if (error) {
-      notify('error', `Gagal re-schedule: ${error.message}`);
-      return;
-    }
-    logAudit({
-      user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
-      action: 'update', module: 'reminder',
-      target_id: rescheduleTarget!.id, target_name: rescheduleTarget!.project_name,
-      old_value: `${formatDate(rescheduleTarget!.due_date)} ${rescheduleTarget!.due_time ?? ''}`.trim(),
-      new_value: `${formatDate(newDate)} ${newTime}`.trim(),
-      notes: reason ? `Re-schedule: ${reason}` : 'Re-schedule',
-    }).catch(() => {});
-    notify('success', `Jadwal berhasil dipindah ke ${formatDate(newDate)}!`);
-    // WA ke handler tentang reschedule
-    try {
-      const { data: handlerUser } = await supabase
-        .from('users').select('phone_number, full_name')
-        .eq('username', rescheduleTarget.assigned_to)
-        .maybeSingle();
-      if (handlerUser?.phone_number) {
-        const msg =
-          `📅 *JADWAL DIUBAH*\n\n` +
-          `Halo *${handlerUser.full_name}*, jadwal kamu telah di-reschedule:\n\n` +
-          `*Project: ${rescheduleTarget.project_name}*\n` +
-          `*Kategori: ${rescheduleTarget.category}*\n` +
-          `📦 *Product: ${rescheduleTarget.product ?? '-'}*\n` +
-          `📌 Jadwal Lama: ${formatDate(rescheduleTarget.due_date)} ${rescheduleTarget.due_time}\n` +
-          `📅 Jadwal Baru: *${formatDate(newDate)} ${newTime}*\n` +
-          (rescheduleTarget.pic_name ? `🙋 PIC: ${rescheduleTarget.pic_name}\n` : '') +
-          (rescheduleTarget.pic_phone ? `📱 No. PIC: ${rescheduleTarget.pic_phone}\n` : '') +
-          (rescheduleTarget.notes ? `📝 Catatan: ${rescheduleTarget.notes}\n` : '') +
-          (reason ? `📝 Alasan: ${reason}\n` : '') +
-          `\n🔗 ${appLink()}`;
-        await sendFonnteWA(handlerUser.phone_number, msg, undefined, 'reminder.rescheduled');
-      }
-    } catch { }
-    setRescheduleTarget(null);
-    setDetailReminder(null);
-    fetchRemindersQuiet();
-  };
-
-  // Manual WA send
-
-  const handleSendWA = async (r: Reminder) => {
-    if (!r.assigned_to) { notify('error', 'Reminder belum di-assign ke handler.'); return; }
-    setSendingWA(r.id);
-
-    // Ambil phone_number handler dari tabel users. JANGAN filter team_type:
-    // handler bisa dari Team PTS IVP/UMP/MVI mana pun, dan menyaring ke satu
-    // tim membuat tombol ini selalu gagal untuk handler tim lain.
-    const { data: handlerData, error: handlerErr } = await supabase
-      .from('users')
-      .select('phone_number, full_name')
-      .eq('username', r.assigned_to)
-      .maybeSingle();
-
-    if (handlerErr || !handlerData?.phone_number) {
-      setSendingWA(null);
-      notify('error', `Nomor WA handler (${r.assign_name || r.assigned_to}) tidak tersedia di database.`);
-      return;
-    }
-
-    const msg =
-      `📋 *REMINDER JADWAL*\n\n` +
-      `Halo *${handlerData.full_name}*, ada jadwal yang perlu kamu kerjakan:\n\n` +
-      `*Nama Project: ${r.project_name}*\n` +
-      `*Deskripsi: ${r.description}*\n` +
-      `*Kategori: ${r.category}*\n` +
-      `📦 *Product: ${r.product ?? '-'}*\n` +
-      `📍 Lokasi: ${r.address || '-'}\n` +
-      `👤 Sales: ${r.sales_name || '-'}\n` +
-      `    Divisi Sales: ${r.sales_division || '-'}\n` +
-      `🕐 Jadwal: *${formatDate(r.due_date)} · ${r.due_time}*\n` +
-      (r.pic_name ? `🙋 PIC: ${r.pic_name}\n` : '') +
-      (r.pic_phone ? `📱 No. PIC: ${r.pic_phone}\n` : '') +
-      (r.notes ? `📝 Catatan: ${r.notes}\n` : '') +
-      `\n_Pesan dari Request Schedule PTS IVP_`;
-
-    const result = await sendFonnteWA(handlerData.phone_number, msg, { reminderType: 'manual', reminderId: r.id }, 'reminder.new_schedule');
-    setSendingWA(null);
-    if (result.ok) notify('success', `WA berhasil dikirim ke ${handlerData.full_name}!`);
-    else notify('error', `Gagal kirim WA: ${result.reason ?? 'Unknown error'}`);
-  };
-
-  // Export Excel
-
-  const handleExportExcel = () => {
-    const runExport = (XLSX: any) => {
-      const exportDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-      const border = { top:{style:'thin',color:{rgb:'E2E8F0'}},bottom:{style:'thin',color:{rgb:'E2E8F0'}},left:{style:'thin',color:{rgb:'E2E8F0'}},right:{style:'thin',color:{rgb:'E2E8F0'}} };
-      const boldBorder = { top:{style:'thin',color:{rgb:'000000'}},bottom:{style:'thin',color:{rgb:'000000'}},left:{style:'thin',color:{rgb:'000000'}},right:{style:'thin',color:{rgb:'000000'}} };
-      const hdr = { font:{name:'Arial',bold:true,sz:10,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'0E7490'},patternType:'solid'}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border: boldBorder };
-      const cell = (v: any) => ({ v: v ?? '', t: 's', s: { font:{name:'Arial',sz:10}, alignment:{vertical:'center',wrapText:true}, border } });
-      const titleStyle = { font:{name:'Arial',bold:true,sz:14,color:{rgb:'0E7490'}}, alignment:{horizontal:'left',vertical:'center'} };
-      const COLS = 14;
-      const data: any[][] = [
-        [{ v:'\uD83D\uDDD3\uFE0F Request Schedule \u2014 PTS IVP', t:'s', s:titleStyle }, ...Array(COLS-1).fill({v:'',t:'s',s:{}})],
-        [{ v:`Tanggal Export: ${exportDate} | Total: ${filteredReminders.length} data`, t:'s', s:{font:{name:'Arial',sz:10,color:{rgb:'6B7280'}}} }, ...Array(COLS-1).fill({v:'',t:'s',s:{}})],
-        Array(COLS).fill({v:'',t:'s',s:{}}),
-        ['No','Project','Product','Kategori','Sales','Divisi','Assign To','Status','Prioritas','Tanggal','Waktu','PIC','Telepon PIC','Catatan'].map(h=>({v:h,t:'s',s:hdr})),
-        ...filteredReminders.map((r,i) => {
-          const status = STATUS_CONFIG[r.status];
-          const statusCell = { v: status.label, t:'s', s:{ font:{name:'Arial',sz:10,bold:true}, fill:{fgColor:{rgb: r.status==='done'?'DCFCE7':r.status==='cancelled'?'F3F4F6':'FEF3C7'},patternType:'solid'}, alignment:{horizontal:'center',vertical:'center'}, border } };
-          return [
-            {v:i+1, t:'n', s:{font:{name:'Arial',sz:10},alignment:{horizontal:'center',vertical:'center'},border}},
-            cell(r.project_name), cell(r.product), cell(r.category),
-            cell(r.sales_name), cell(r.sales_division), cell(r.assign_name),
-            statusCell,
-            cell(PRIORITY_CONFIG[r.priority].label),
-            cell(r.due_date), cell(r.due_time ?? '-'), cell(r.pic_name ?? '-'),
-            cell(r.pic_phone ?? '-'), cell(r.notes ?? '-'),
-          ];
-        }),
-      ];
-      const ws = XLSX.utils.aoa_to_sheet(data);
-      ws['!merges'] = [{ s:{r:0,c:0}, e:{r:0,c:COLS-1} }, { s:{r:1,c:0}, e:{r:1,c:COLS-1} }];
-      ws['!cols'] = [5,28,18,16,20,12,20,14,12,12,10,20,16,30].map(w=>({wch:w}));
-      ws['!rows'] = [{hpt:28},{hpt:16},{hpt:6},{hpt:26}];
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, '\uD83D\uDDD3\uFE0F Request Schedule');
-      XLSX.writeFile(wb, `ReminderSchedule_PTS_${new Date().toISOString().split('T')[0]}.xlsx`, { bookType:'xlsx', type:'binary', cellStyles:true });
-      notify('success', 'Export Excel berhasil!');
-    };
-    if ((window as any).XLSX) runExport((window as any).XLSX);
-    else {
-      const s = document.createElement('script');
-      s.src = URL_XLSX;
-      s.onload = () => runExport((window as any).XLSX);
-      s.onerror = () => notify('error', 'Gagal memuat library Excel.');
-      document.head.appendChild(s);
-    }
-  };
+  const { openEdit, handleReschedule, handleSendWA, handleExportExcel } = useAksiJadwal({ currentUser, fetchRemindersQuiet, filteredReminders, notify, reminders, rescheduleTarget, setDetailReminder, setEditingReminder, setExtraDates, setFormData, setRescheduleTarget, setSendingWA, setShowFormModal });
 
   // Filters
 
@@ -1168,97 +836,14 @@ function ReminderSchedulePageInner() {
             menjaga modeEditSaja tidak tertinggal menyala. Kalau panel edit
             ditutup/dibatalkan lalu jadwal LAIN ditandai Completed, flag yang
             tertinggal akan membuat statusnya tidak pernah ikut tersimpan. */}
-        {detailReminder && (
-          <ReminderDetailPopup
-            detailReminder={detailReminder} setDetailReminder={setDetailReminder}
-            showModeModal={showModeModal}
-            setShowModeModal={(v: boolean) => { setShowModeModal(v); if (!v) setModeEditSaja(false); }}
-            modeEditSaja={modeEditSaja} bukaEditDetailPelaksanaan={bukaEditDetailPelaksanaan}
-            pendingStatus={pendingStatus}
-            setPendingStatus={(v: Status | null) => { setPendingStatus(v); if (v) setModeEditSaja(false); }}
-            statusPhoto={statusPhoto} setStatusPhoto={setStatusPhoto}
-            statusPhotoPreview={statusPhotoPreview} setStatusPhotoPreview={setStatusPhotoPreview}
-            showRiwayat={showRiwayat} setShowRiwayat={setShowRiwayat}
-            isAdmin={isAdmin} isManager={isManager} currentUser={currentUser}
-            isMyReviewStage={isMyReviewStage}
-            canInternalApprove={canInternalApprove} setInternalApproveTarget={setInternalApproveTarget} handleInternalReject={handleInternalReject}
-            canApproveAssign={canApproveAssign} setApproveTarget={setApproveTarget} setApproveBatchSiblings={setApproveBatchSiblings} reminders={reminders}
-            setApproveAssignTo={setApproveAssignTo} setApproveDate={setApproveDate} setApproveTime={setApproveTime}
-            handleAdminReject={handleAdminReject}
-            openSupervisorAssign={openSupervisorAssign}
-            bolehEditReminder={bolehEditReminder} setRescheduleTarget={setRescheduleTarget}
-            resendingFormReview={resendingFormReview} handleResendFormReview={handleResendFormReview}
-            sendingWA={sendingWA} handleSendWA={handleSendWA}
-            openEdit={openEdit}
-            statusPhotoRef={statusPhotoRef}
-            handleConfirmStatusUpdate={handleConfirmStatusUpdate} updatingStatus={updatingStatus}
-            guestUsers={guestUsers}
-            modePenyelesaian={modePenyelesaian} setModePenyelesaian={setModePenyelesaian}
-            installerName={installerName} setInstallerName={setInstallerName}
-            installerUserId={installerUserId} setInstallerUserId={setInstallerUserId}
-            daftarCabang={ptsCabangUsers}
-            installerDaerah={installerDaerah} setInstallerDaerah={setInstallerDaerah}
-            bastDate={bastDate} setBastDate={setBastDate}
-            displayType={displayType} setDisplayType={setDisplayType}
-            requiresMiddleware={requiresMiddleware} setRequiresMiddleware={setRequiresMiddleware}
-            requiresControllerAuto={requiresControllerAuto} setRequiresControllerAuto={setRequiresControllerAuto}
-            controllerBrand={controllerBrand} setControllerBrand={setControllerBrand}
-            setPendingPhotoUrl={setPendingPhotoUrl}
-            savingMode={savingMode} handleModeConfirm={handleModeConfirm}
-          />
-        )}
+        <PopupDetailJadwal
+          bastDate={bastDate} bolehEditReminder={bolehEditReminder} bukaEditDetailPelaksanaan={bukaEditDetailPelaksanaan} canApproveAssign={canApproveAssign} canInternalApprove={canInternalApprove} controllerBrand={controllerBrand} currentUser={currentUser} detailReminder={detailReminder} displayType={displayType} guestUsers={guestUsers} handleAdminReject={handleAdminReject} handleConfirmStatusUpdate={handleConfirmStatusUpdate} handleInternalReject={handleInternalReject} handleModeConfirm={handleModeConfirm} handleResendFormReview={handleResendFormReview} handleSendWA={handleSendWA} installerDaerah={installerDaerah} installerName={installerName} installerUserId={installerUserId} isAdmin={isAdmin} isManager={isManager} isMyReviewStage={isMyReviewStage} modeEditSaja={modeEditSaja} modePenyelesaian={modePenyelesaian} openEdit={openEdit} openSupervisorAssign={openSupervisorAssign} pendingStatus={pendingStatus} ptsCabangUsers={ptsCabangUsers} reminders={reminders} requiresControllerAuto={requiresControllerAuto} requiresMiddleware={requiresMiddleware} resendingFormReview={resendingFormReview} savingMode={savingMode} sendingWA={sendingWA} setApproveAssignTo={setApproveAssignTo} setApproveBatchSiblings={setApproveBatchSiblings} setApproveDate={setApproveDate} setApproveTarget={setApproveTarget} setApproveTime={setApproveTime} setBastDate={setBastDate} setControllerBrand={setControllerBrand} setDetailReminder={setDetailReminder} setDisplayType={setDisplayType} setInstallerDaerah={setInstallerDaerah} setInstallerName={setInstallerName} setInstallerUserId={setInstallerUserId} setInternalApproveTarget={setInternalApproveTarget} setModeEditSaja={setModeEditSaja} setModePenyelesaian={setModePenyelesaian} setPendingPhotoUrl={setPendingPhotoUrl} setPendingStatus={setPendingStatus} setRequiresControllerAuto={setRequiresControllerAuto} setRequiresMiddleware={setRequiresMiddleware} setRescheduleTarget={setRescheduleTarget} setShowModeModal={setShowModeModal} setShowRiwayat={setShowRiwayat} setStatusPhoto={setStatusPhoto} setStatusPhotoPreview={setStatusPhotoPreview} showModeModal={showModeModal} showRiwayat={showRiwayat} statusPhoto={statusPhoto} statusPhotoPreview={statusPhotoPreview} statusPhotoRef={statusPhotoRef} updatingStatus={updatingStatus}
+        />
 
         {/* ── HEADER ── */}
-        <PageHeader icon="🗓️" title="Request Schedule" color="#0891b2" colorLight="#0e7490">
-          <button aria-label={`Notifikasi jadwal${myActiveReminders.length ? ` (${myActiveReminders.length} aktif)` : ''}`} onClick={() => setShowBellPopup(true)}
-            className="relative p-2 rounded-xl transition-all hover:bg-cyan-50 border-2 border-transparent hover:border-cyan-200">
-            <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            {myActiveReminders.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold text-white"
-                style={{ background: '#f59e0b' }}>
-                {myActiveReminders.length}
-              </span>
-            )}
-          </button>
-
-          {canAddReminder && view === 'list' && (
-            <button onClick={mulaiBuatReminder}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.4)' }}>
-              <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-              Tambah Reminder
-            </button>
-          )}
-
-          {/* ── Tombol Request Jadwal — hanya untuk role Guest/Sales ── */}
-          {isGuest && view === 'list' && (
-            <div className="flex flex-col items-end gap-1">
-              <button
-                onClick={() => { if (pendingReviewCount === 0) mulaiRequestJadwal(); }}
-                disabled={pendingReviewCount > 0}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all"
-                style={pendingReviewCount > 0
-                  ? { background: 'linear-gradient(135deg,#9ca3af,#6b7280)', boxShadow: 'none', cursor: 'not-allowed', opacity: 0.7 }
-                  : { background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', boxShadow: '0 4px 14px rgba(37,99,235,0.4)', cursor: 'pointer' }
-                }
-                title={pendingReviewCount > 0 ? `Ada ${pendingReviewCount} form review belum dinilai` : ''}
-              >
-                {pendingReviewCount > 0
-                  ? <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
-                  : <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
-                }
-                <IkonTeks nama="📩" />Request Jadwal
-              </button>
-              {pendingReviewCount > 0 && (
-                <span className="text-[11px] font-semibold text-amber-700 flex items-center gap-1">
-                  <IkonTeks nama="⚠" />Selesaikan {pendingReviewCount} form review dulu
-                </span>
-              )}
-            </div>
-          )}
-        </PageHeader>
+        <KepalaJadwal
+          canAddReminder={canAddReminder} isGuest={isGuest} mulaiBuatReminder={mulaiBuatReminder} mulaiRequestJadwal={mulaiRequestJadwal} myActiveReminders={myActiveReminders} pendingReviewCount={pendingReviewCount} setShowBellPopup={setShowBellPopup} view={view}
+        />
 
         {/*
           overflow-x-hidden SEMPAT dicoba di sini sebagai jaring pengaman,
@@ -1270,131 +855,9 @@ function ReminderSchedulePageInner() {
           yang benar adalah membetulkan elemen yang melebar itu sendiri
           (truncate/min-w-0 di sumbernya), bukan menyembunyikan gejalanya.
         */}
-        <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-2.5 py-3 space-y-3 sm:px-5 sm:py-5 sm:space-y-4">
-          {view === 'list' && (
-            <>
-              <StatsSection
-                totalCount={totalCount}
-                pendingCount={pendingCount}
-                doneCount={doneCount}
-                todayCount={todayCount}
-                filterStatus={filterStatus}
-                setFilterStatus={setFilterStatus}
-                selectedCalDay={selectedCalDay}
-                setSelectedCalDay={setSelectedCalDay}
-                projectPieData={projectPieData}
-                salesPieData={salesPieData}
-                teamPtsPieData={teamPtsPieData}
-                productPieData={productPieData}
-                filterCategory={filterCategory}
-                setFilterCategory={setFilterCategory}
-                searchDivisionSales={searchDivisionSales}
-                setSearchDivisionSales={setSearchDivisionSales}
-                searchTeamHandler={searchTeamHandler}
-                setSearchTeamHandler={setSearchTeamHandler}
-                productFilter={productFilter}
-                setProductFilter={setProductFilter}
-              />
-
-              {/* Active filter chips */}
-              {/* Main area: list + calendar (di HP stack; kalender hanya di desktop).
-                  items-start SEBELUMNYA berlaku di kedua mode (HP maupun desktop).
-                  Di flex-col (HP), align-items mengatur SUMBU SILANG yaitu
-                  LEBAR - items-start berarti kartu daftar TIDAK dipaksa selebar
-                  layar, melainkan menyusut/melebar mengikuti kontennya sendiri.
-                  Itu sebabnya berbagai perbaikan truncate/grid sebelumnya di
-                  dalam kartu ini terlihat "hampir benar" tapi halamannya tetap
-                  bisa digeser - akar soalnya di sini, bukan di kontennya.
-                  items-start cuma dibutuhkan di lg: (top-align list & kalender
-                  berdampingan tanpa saling menyamakan tinggi); di HP dibalik ke
-                  items-stretch (bawaan) supaya kartu daftar dipatok 100% lebar. */}
-              <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-start">
-
-                {/* ── TICKET LIST ── */}
-                <div className="flex-1 min-w-0 rounded-2xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
-
-                  <FilterBar
-                    filteredReminders={filteredReminders}
-                    isAdmin={isAdmin}
-                    isManager={isManager}
-                    selectMode={selectMode}
-                    setSelectMode={setSelectMode}
-                    setSelectedIds={setSelectedIds}
-                    fetchReminders={fetchReminders}
-                    listLoading={listLoading}
-                    handleExportExcel={handleExportExcel}
-                    searchProject={searchProject}
-                    setSearchProject={setSearchProject}
-                    searchSales={searchSales}
-                    setSearchSales={setSearchSales}
-                    searchProduct={searchProduct}
-                    setSearchProduct={setSearchProduct}
-                    setProductFilter={setProductFilter}
-                    searchTeamHandler={searchTeamHandler}
-                    setSearchTeamHandler={setSearchTeamHandler}
-                    filterStatus={filterStatus}
-                    setFilterStatus={setFilterStatus}
-                    filterYear={filterYear}
-                    setFilterYear={setFilterYear}
-                    availableYears={availableYears}
-                    selectedIds={selectedIds}
-                    bulkDeleting={bulkDeleting}
-                    setBulkConfirm={setBulkConfirm}
-                    filterCategory={filterCategory}
-                    setFilterCategory={setFilterCategory}
-                    searchDivisionSales={searchDivisionSales}
-                    setSearchDivisionSales={setSearchDivisionSales}
-                    selectedCalDay={selectedCalDay}
-                    setSelectedCalDay={setSelectedCalDay}
-                    productFilter={productFilter}
-                  />
-
-                  <ReminderListBody
-                    fetchError={fetchError} setFetchError={setFetchError} fetchReminders={fetchReminders} listLoading={listLoading}
-                    filteredReminders={filteredReminders} reminders={reminders} groupedReminders={groupedReminders}
-                    filterStatus={filterStatus} filterYear={filterYear} filterCategory={filterCategory}
-                    productFilter={productFilter} setProductFilter={setProductFilter}
-                    searchProject={searchProject} searchSales={searchSales} searchDivisionSales={searchDivisionSales}
-                    searchTeamHandler={searchTeamHandler} searchProduct={searchProduct}
-                    setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setFilterCategory={setFilterCategory}
-                    setSearchProject={setSearchProject} setSearchSales={setSearchSales} setSearchDivisionSales={setSearchDivisionSales}
-                    setSearchTeamHandler={setSearchTeamHandler} setSearchProduct={setSearchProduct}
-                    setDetailReminder={setDetailReminder}
-                    bolehEditReminder={bolehEditReminder} setRescheduleTarget={setRescheduleTarget}
-                    canInternalApprove={canInternalApprove} setInternalApproveTarget={setInternalApproveTarget} handleInternalReject={handleInternalReject}
-                    canApproveAssign={canApproveAssign} setApproveTarget={setApproveTarget} setApproveBatchSiblings={setApproveBatchSiblings}
-                    setApproveAssignTo={setApproveAssignTo} setApproveDate={setApproveDate} setApproveTime={setApproveTime}
-                    handleAdminReject={handleAdminReject}
-                    currentUser={currentUser} openSupervisorAssign={openSupervisorAssign}
-                    isAdmin={isAdmin} isManager={isManager}
-                    syncKeIncentive={syncKeIncentive} syncing={syncing}
-                    openDeleteModal={openDeleteModal}
-                    selectMode={selectMode} selectedIds={selectedIds} setSelectedIds={setSelectedIds} toggleSelectAll={toggleSelectAll}
-                    guestUsers={guestUsers}
-                  />
-                </div>
-
-                {/* ── MINI CALENDAR SIDEBAR — admin & team saja, disembunyikan utk guest/sales.
-                     Di HP juga DISEMBUNYIKAN (hidden lg:block) — sebelumnya kalender
-                     mendominasi layar & daftar terhimpit hilang. Hanya muncul di desktop. ── */}
-                {!isGuest && (
-                  <div className="hidden lg:block flex-shrink-0">
-                    <MiniCalendar
-                      reminders={reminders}
-                      calendarMonth={calendarMonth}
-                      setCalendarMonth={setCalendarMonth}
-                      selectedCalDay={calOnlyDay}
-                      setSelectedCalDay={setCalOnlyDay}
-                    />
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {/* ─── FORM VIEW ── (digantikan oleh showFormModal popup) */}
-
-        </div>
+        <IsiJadwal
+          availableYears={availableYears} bolehEditReminder={bolehEditReminder} bulkDeleting={bulkDeleting} calOnlyDay={calOnlyDay} calendarMonth={calendarMonth} canApproveAssign={canApproveAssign} canInternalApprove={canInternalApprove} currentUser={currentUser} doneCount={doneCount} fetchError={fetchError} fetchReminders={fetchReminders} filterCategory={filterCategory} filterStatus={filterStatus} filterYear={filterYear} filteredReminders={filteredReminders} groupedReminders={groupedReminders} guestUsers={guestUsers} handleAdminReject={handleAdminReject} handleExportExcel={handleExportExcel} handleInternalReject={handleInternalReject} isAdmin={isAdmin} isGuest={isGuest} isManager={isManager} listLoading={listLoading} openDeleteModal={openDeleteModal} openSupervisorAssign={openSupervisorAssign} pendingCount={pendingCount} productFilter={productFilter} productPieData={productPieData} projectPieData={projectPieData} reminders={reminders} salesPieData={salesPieData} searchDivisionSales={searchDivisionSales} searchProduct={searchProduct} searchProject={searchProject} searchSales={searchSales} searchTeamHandler={searchTeamHandler} selectMode={selectMode} selectedCalDay={selectedCalDay} selectedIds={selectedIds} setApproveAssignTo={setApproveAssignTo} setApproveBatchSiblings={setApproveBatchSiblings} setApproveDate={setApproveDate} setApproveTarget={setApproveTarget} setApproveTime={setApproveTime} setBulkConfirm={setBulkConfirm} setCalOnlyDay={setCalOnlyDay} setCalendarMonth={setCalendarMonth} setDetailReminder={setDetailReminder} setFetchError={setFetchError} setFilterCategory={setFilterCategory} setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setInternalApproveTarget={setInternalApproveTarget} setProductFilter={setProductFilter} setRescheduleTarget={setRescheduleTarget} setSearchDivisionSales={setSearchDivisionSales} setSearchProduct={setSearchProduct} setSearchProject={setSearchProject} setSearchSales={setSearchSales} setSearchTeamHandler={setSearchTeamHandler} setSelectMode={setSelectMode} setSelectedCalDay={setSelectedCalDay} setSelectedIds={setSelectedIds} syncKeIncentive={syncKeIncentive} syncing={syncing} teamPtsPieData={teamPtsPieData} todayCount={todayCount} toggleSelectAll={toggleSelectAll} totalCount={totalCount} view={view}
+        />
 
       </div>
 
