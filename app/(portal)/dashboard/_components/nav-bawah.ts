@@ -32,7 +32,7 @@ export const PRIORITAS_MENU = [
 export const LABEL_PENDEK: Record<string, string> = {
   'reminder-schedule': 'Schedule', 'ticket-troubleshooting': 'Ticketing', 'project-progress': 'Progress',
   'request-design-project': 'Design', 'summary-project': 'Summary', 'daily-report': 'Daily Report',
-  'picket-showroom': 'Piket', 'form-bast': 'Review & BAST', 'incentive-pts': 'Incentive', 'tools-team': 'AV Solutions Studio',
+  'picket-showroom': 'Piket', 'form-bast': 'Review & BAST', 'incentive-pts': 'Incentive', 'tools-team': 'AV Studio',
   'kpi-team': 'KPI', 'learning-center': 'Learning', 'tech-note': 'Tech Note', 'unit-movement': 'Unit Log',
   'database-pts': 'Database',
 };
