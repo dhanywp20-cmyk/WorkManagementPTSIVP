@@ -106,7 +106,7 @@ tr:last-child td { border-bottom: none; }
 ${l.seksi.map(seksiHtml).join('\n')}
 ${l.catatan ? `<p class="catatan">${esc(l.catatan)}</p>` : ''}
 ${l.tandaTangan?.length ? `<div class="ttd">${l.tandaTangan.map(t => `<div><div class="l">${esc(t.label)}</div><div class="n">${esc(t.nama ?? '')}</div></div>`).join('')}</div>` : ''}
-<div class="footer"><div>${esc(l.kaki ?? 'IndoVisual Professional Tools — AV Solutions Studio')}</div><div>Dicetak: ${esc(dicetak)}</div></div>
+<div class="footer"><div>${esc(l.kaki ?? 'IndoVisual Professional Tools — AV Solution Tools')}</div><div>Dicetak: ${esc(dicetak)}</div></div>
 </div></body></html>`;
   return html;
 }

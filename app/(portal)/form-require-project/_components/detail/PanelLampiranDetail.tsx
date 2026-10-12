@@ -95,7 +95,7 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                     <button onClick={() => { setShowUploadChoice(false); setActiveAttachTab(t => (t === 'all' || t === 'design3d' ? t : 'design3d')); setMintaPilih3D(n => n + 1); }}
                       className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-gray-700 hover:bg-violet-50 flex items-start gap-2 border-t border-gray-100">
                       <span className="text-base leading-none"><Ikon nama="🧊" ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-                      <span>Design 3D dari AV Solutions Studio<br /><span className="font-normal text-gray-500">Tautkan desain dari Desain 3D Ruang (opsional)</span></span>
+                      <span>Design 3D dari AV Solution Tools<br /><span className="font-normal text-gray-500">Tautkan desain dari Desain 3D Ruang (opsional)</span></span>
                     </button>
                   </div>
                 </>)}

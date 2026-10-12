@@ -85,7 +85,7 @@ export const ALL_MENU_LABELS: Record<string, { label: string; icon: string }> = 
   'daily-report':           { label: 'Daily Report', icon: '📈' },
   'database-pts':           { label: 'Database PTS', icon: '💼' },
   'unit-movement':          { label: 'Unit Movement Log', icon: '🚚' },
-  'tools-team':            { label: 'AV Solutions Studio', icon: '🧮' },
+  'tools-team':            { label: 'AV Solution Tools', icon: '🧮' },
   'reminder-schedule':      { label: 'Reminder Schedule', icon: '🗓️' },
   'picket-showroom':        { label: 'Piket Showroom', icon: '🏪' },
   'tech-note':              { label: 'Tech Note R&D', icon: '📝' },

@@ -38,7 +38,7 @@ async function akun(req: NextRequest): Promise<{ db: Db; u: Akun; aturan: Aturan
   const db = getAdminClient();
   const { data } = await db.from('users').select('id, full_name, role, team_type, jabatan, allowed_menus, pimpinan').eq('id', jaga.user.id).maybeSingle();
   const u = data as Akun | null;
-  if (!u || !bolehPerbandingan(u)) return gagal('Product Comparison hanya untuk akun yang diberi akses AV Solutions Studio.', 403);
+  if (!u || !bolehPerbandingan(u)) return gagal('Product Comparison hanya untuk akun yang diberi akses AV Solution Tools.', 403);
   const { data: setel } = await db.from('app_settings').select('value').eq('key', KUNCI_ATURAN_PERBANDINGAN).maybeSingle();
   const aturan = rapikanAturan(setel?.value);
   //  Bersihkan pengajuan kedaluwarsa (hemat kuota) - murah, berindeks created_at.
@@ -52,7 +52,7 @@ async function beritahu(db: Db, penerima: { id: string; phone_number?: string | 
   await db.from('notifications').insert(penerima.map(p => ({
     user_id: p.id, type: 'system', title: judul, body: isi, action_url: URL_MENU, ref_id: refId, created_by: oleh, is_read: false, created_at: new Date().toISOString(),
   })));
-  await Promise.all(penerima.filter(p => p.phone_number).map(p => sendWA(p.phone_number!, `*${judul}*\n${isi}\n\nBuka: AV Solutions Studio → Product Comparison`, 'tools_perbandingan', 'tools.perbandingan').catch(() => null)));
+  await Promise.all(penerima.filter(p => p.phone_number).map(p => sendWA(p.phone_number!, `*${judul}*\n${isi}\n\nBuka: AV Solution Tools → Product Comparison`, 'tools_perbandingan', 'tools.perbandingan').catch(() => null)));
 }
 
 export async function GET(req: NextRequest) {

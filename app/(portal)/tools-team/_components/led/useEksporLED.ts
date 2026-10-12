@@ -115,7 +115,7 @@ export function useEksporLED(K: KeadaanLED) {
           ] : []),
         ] },
     ],
-    catatan: 'Jumlah power supply, kabel, dan rangka adalah perkiraan lapangan dari AV Solutions Studio. Cadangan (spare) disarankan 2-3% untuk modul & receiving card. Harga dapat berubah; verifikasi stok & datasheet sebelum penawaran resmi.',
+    catatan: 'Jumlah power supply, kabel, dan rangka adalah perkiraan lapangan dari AV Solution Tools. Cadangan (spare) disarankan 2-3% untuk modul & receiving card. Harga dapat berubah; verifikasi stok & datasheet sebelum penawaran resmi.',
     tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Disetujui' }],
   });
   const teksBom = () => [
@@ -141,7 +141,7 @@ export function useEksporLED(K: KeadaanLED) {
         ] },
       ...seksiCetakDaya(dataDaya, dayaLED),
     ],
-    catatan: 'Rencana sirkuit dari AV Solutions Studio (daya maksimum putih penuh). Ukuran kabel, grounding, dan panel diverifikasi instalatir listrik sebelum instalasi.',
+    catatan: 'Rencana sirkuit dari AV Solution Tools (daya maksimum putih penuh). Ukuran kabel, grounding, dan panel diverifikasi instalatir listrik sebelum instalasi.',
     tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
   });
   const teksDaya = () => [
@@ -168,7 +168,7 @@ export function useEksporLED(K: KeadaanLED) {
         ] },
       ...seksiCetakKoneksi(dataKoneksi, koneksi),
     ],
-    catatan: 'Diagram dari AV Solutions Studio. Samakan dengan konfigurasi NovaLCT (Screen Configuration → Screen Connection) dan datasheet receiving card sebelum instalasi.',
+    catatan: 'Diagram dari AV Solution Tools. Samakan dengan konfigurasi NovaLCT (Screen Configuration → Screen Connection) dan datasheet receiving card sebelum instalasi.',
     tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Diperiksa' }],
   });
   const cetakKoneksi = () => bukaCetak(lembarKoneksi());
