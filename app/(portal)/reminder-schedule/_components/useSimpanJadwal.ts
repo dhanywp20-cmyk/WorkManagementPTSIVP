@@ -314,7 +314,7 @@ export function useSimpanJadwal(k: SimpanJadwalKonteks) {
         }));
         const r = await cobaIdentitas(async pakaiUuid =>
           await supabase.from('reminders')
-            .insert(pakaiUuid ? tambahan : tambahan.map(x => tanpaIdentitas(x as typeof payload))));
+            .insert((pakaiUuid ? tambahan : tambahan.map(x => tanpaIdentitas(x as typeof payload))) as typeof tambahan));
         if (r.error) galatSunting.push(r.error.message);
       }
       error = galatSunting.length > 0 ? { message: galatSunting[0] } : null;

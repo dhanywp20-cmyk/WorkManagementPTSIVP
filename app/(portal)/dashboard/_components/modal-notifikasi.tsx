@@ -888,7 +888,8 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
   const handleClick = (item: NotificationItem) => {
     // Mark personal notification as read if it came from the `notifications` table
     if (personalNotifs.find(n => n.id === item.id)) {
-      supabase.from('notifications').update({ is_read: true }).eq('id', item.id)
+      //  Promise.resolve: builder supabase-js kini PromiseLike (tanpa .catch).
+      Promise.resolve(supabase.from('notifications').update({ is_read: true }).eq('id', item.id))
         .then(() => setPersonalNotifs(p => p.filter(n => n.id !== item.id)))
         .catch(() => {});
     }
