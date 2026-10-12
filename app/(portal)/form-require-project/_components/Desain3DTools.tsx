@@ -79,7 +79,7 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
     <div className="rounded-xl border-2 border-violet-200 overflow-hidden">
       <div className="px-3 py-1.5 flex items-center justify-between gap-2 bg-violet-50 flex-wrap">
         <span className="text-[11px] font-bold text-violet-700 uppercase tracking-widest">
-          Design 3D dari Tools Team <span className="normal-case font-semibold text-violet-500">· tambahan, opsional</span>
+          Design 3D dari AV Solutions Studio <span className="normal-case font-semibold text-violet-500">· tambahan, opsional</span>
         </span>
         {bolehUbah && (
           <button type="button" onClick={() => setPilih(true)} disabled={sibuk}
@@ -91,7 +91,7 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
       {galat && <p className="px-3 py-2 text-[11.5px] text-rose-700">{galat}</p>}
       {!tautan.length ? (
         <p className="px-3 py-3 text-[11.5px] text-gray-500">
-          Belum ada desain dari Tools Team untuk {namaRuang}. File Design 3D (PDF) tetap bisa diunggah seperti biasa; tautan ini tidak wajib.
+          Belum ada desain dari AV Solutions Studio untuk {namaRuang}. File Design 3D (PDF) tetap bisa diunggah seperti biasa; tautan ini tidak wajib.
         </p>
       ) : (
         <ul className="divide-y divide-gray-100">
@@ -112,7 +112,7 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
                     <p className="text-[11px] text-gray-500">ditautkan {t.dilampirkan_oleh_nama || '—'} · {tgl(t.updated_at)}</p>
                     {terbaru && (
                       <p className="mt-1 text-[11px] font-semibold text-amber-700">
-                        Versi terbaru v{terbaru} tersedia di Tools Team - request ini tetap memakai v{t.versi}.
+                        Versi terbaru v{terbaru} tersedia di AV Solutions Studio - request ini tetap memakai v{t.versi}.
                         {bolehUbah && (
                           <button type="button" disabled={sibuk} onClick={() => setKonfirmasi({
                             message: `Pakai v${terbaru} untuk ${namaRuang}?`, description: `Versi v${t.versi} tetap tercatat di riwayat percakapan.`,
@@ -131,12 +131,12 @@ export function Desain3DTools({ requestId, roomIdx, namaRuang, projectName, mint
                   </button>
                   <a href={tautanKeTools(t)} target="_blank" rel="noopener noreferrer"
                     className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-violet-200 text-violet-800 bg-violet-50 hover:bg-violet-100">
-                    Buka di Tools Team
+                    Buka di AV Solutions Studio
                   </a>
                   {bolehUbah && (
                     <button type="button" disabled={sibuk} onClick={() => setKonfirmasi({
-                      message: `Lepas "${s?.nama ?? 'desain'}" dari ${namaRuang}?`, description: 'Desainnya tetap ada di Tools Team.',
-                      confirmLabel: 'Lepas', danger: true, onConfirm: () => { void panggil('DELETE', { tautan: t.id }, 'Tautan dilepas. Desain tetap ada di Tools Team.'); },
+                      message: `Lepas "${s?.nama ?? 'desain'}" dari ${namaRuang}?`, description: 'Desainnya tetap ada di AV Solutions Studio.',
+                      confirmLabel: 'Lepas', danger: true, onConfirm: () => { void panggil('DELETE', { tautan: t.id }, 'Tautan dilepas. Desain tetap ada di AV Solutions Studio.'); },
                     })} className="text-[11px] font-bold px-2.5 py-1 rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-50">
                       Lepas
                     </button>
@@ -207,14 +207,14 @@ function PemilihDesain({ buka, onTutup, projectName, namaRuang, sudah, sibuk, on
   const urut = [...(daftar ?? [])].sort((a, b) => Number(cocok(b.nama)) - Number(cocok(a.nama)));
 
   return (
-    <Modal buka={buka} onTutup={onTutup} judul="Tautkan Design 3D dari Tools Team" ukuran="md" ikon={<Ikon nama="🧊" ukuran={18} />}
+    <Modal buka={buka} onTutup={onTutup} judul="Tautkan Design 3D dari AV Solutions Studio" ukuran="md" ikon={<Ikon nama="🧊" ukuran={18} />}
       keterangan={`Untuk ${namaRuang}. Yang ditautkan adalah versi saat ini - perubahan desain berikutnya tidak mengubah request ini kecuali Anda memilih "Pakai versi terbaru".`}>
       <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cari nama desain atau pembuat" aria-label="Cari desain"
         className="w-full rounded-xl border border-gray-200 px-3 py-2 text-base sm:text-sm mb-3" />
       {galat && <p className="text-[12px] text-rose-700 mb-2">{galat}</p>}
       {daftar === null ? <p className="text-sm text-gray-500">Memuat...</p> : urut.length === 0 ? (
         <p className="text-sm text-gray-500">
-          {q ? 'Tidak ada desain yang cocok.' : 'Belum ada desain tersimpan.'} Buat & simpan desain di Tools Team → Desain 3D Ruang.
+          {q ? 'Tidak ada desain yang cocok.' : 'Belum ada desain tersimpan.'} Buat & simpan desain di AV Solutions Studio → Desain 3D Ruang.
         </p>
       ) : (
         <ul className="space-y-2">

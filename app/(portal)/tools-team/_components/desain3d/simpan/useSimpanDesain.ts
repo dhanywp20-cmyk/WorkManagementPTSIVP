@@ -75,7 +75,7 @@ export function useSimpanDesain(K: KeadaanDesain) {
     try { buf = await file.arrayBuffer(); } catch { setGalat('File tidak bisa dibaca.'); return; }
     const d = bacaDesainGLB(buf);
     if (!d) {
-      setKonfirmasi({ message: 'File ini bukan desain dari Tools Team.', confirmLabel: 'Tambahkan',
+      setKonfirmasi({ message: 'File ini bukan desain dari AV Solutions Studio.', confirmLabel: 'Tambahkan',
         description: 'Mungkin model produk. Tambahkan sebagai model 3D ke ruangan?', onConfirm: () => void impor.imporBerkas([file]) });
       return;
     }

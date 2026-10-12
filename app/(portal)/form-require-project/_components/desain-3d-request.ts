@@ -50,7 +50,7 @@ export function htmlSeksiDesain3D(tautan: TautanDesain3D[], namaRuang: (idx: num
     const s = t.snapshot, rs = s?.ringkasan;
     const perangkat = (rs?.perangkat ?? []).map(p => `<tr><td style="padding:3px 8px;color:#64748b">${esc(p.kategori)}</td><td style="padding:3px 8px">${esc(p.nama)}</td><td style="padding:3px 8px;text-align:right;font-weight:700">${p.jumlah}</td></tr>`).join('');
     const baru = t.sumber && !t.sumber.diarsipkan_at && t.sumber.versi > t.versi
-      ? `<div style="margin-top:4px;font-size:10px;color:#b45309">Versi terbaru di Tools Team: v${t.sumber.versi} (dokumen ini memakai v${t.versi}).</div>` : '';
+      ? `<div style="margin-top:4px;font-size:10px;color:#b45309">Versi terbaru di AV Solutions Studio: v${t.sumber.versi} (dokumen ini memakai v${t.versi}).</div>` : '';
     return `<div style="padding:10px 14px;border-bottom:1px solid #e2e8f0;page-break-inside:avoid">
   <div style="flex:1;min-width:0">
     <div style="font-size:13px;font-weight:800">${esc(s?.nama ?? t.sumber?.nama ?? 'Design 3D')} <span style="font-size:10px;font-weight:700;color:#7c3aed">v${t.versi}</span></div>
@@ -61,7 +61,7 @@ export function htmlSeksiDesain3D(tautan: TautanDesain3D[], namaRuang: (idx: num
   </div>
 </div>`;
   }).join('');
-  return `<div class="section"><div class="section-title" style="background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe">🧊 Design 3D (Tools Team)</div>${kartu}
+  return `<div class="section"><div class="section-title" style="background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe">🧊 Design 3D (AV Solutions Studio)</div>${kartu}
 <div style="padding:6px 14px;font-size:10px;color:#94a3b8">Daftar perangkat dari desain 3D adalah estimasi tata letak; verifikasi dengan datasheet dan kondisi lokasi sebelum penawaran/instalasi.</div></div>`;
 }
 

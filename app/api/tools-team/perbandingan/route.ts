@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const jaga = await pastikanMasuk(req);
   if (!jaga.ok) return gagal(jaga.alasan, jaga.status);
   const { data: u } = await getAdminClient().from('users').select('role, allowed_menus, pimpinan').eq('id', jaga.user.id).maybeSingle();
-  if (!bolehPerbandingan(u as Parameters<typeof bolehPerbandingan>[0])) return gagal('Product Comparison hanya untuk akun yang diberi akses Tools Team.', 403);
+  if (!bolehPerbandingan(u as Parameters<typeof bolehPerbandingan>[0])) return gagal('Product Comparison hanya untuk akun yang diberi akses AV Solutions Studio.', 403);
 
   const mentah = await req.text();
   if (mentah.length > MAKS_BODY) return gagal('Teks brosur terlalu besar untuk diproses sekaligus.', 413);

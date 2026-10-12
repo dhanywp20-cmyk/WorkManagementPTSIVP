@@ -64,7 +64,7 @@ console.log('\n4. Cetak & ZIP: seksi Design 3D hanya bila ada tautan');
   };
   const html = htmlSeksiDesain3D([t], nama);
   cek('memuat nama, versi yang ditautkan, ruangan & ukuran', html.includes('Boardroom') && html.includes('v2') && html.includes('Ruang 2') && html.includes(ukuranRuang(t.snapshot!.ringkasan)));
-  cek('menyebut versi terbaru tanpa menggantinya', html.includes('Versi terbaru di Tools Team: v3') && html.includes('memakai v2'));
+  cek('menyebut versi terbaru tanpa menggantinya', html.includes('Versi terbaru di AV Solutions Studio: v3') && html.includes('memakai v2'));
   cek('teks pengguna di-escape', !html.includes('<script>') && html.includes('&lt;script&gt;'));
   cek('label estimasi engineering', /estimasi/.test(html));
   cek('tanpa asal URL: tidak ada gambar (tidak ada data gambar di JSON)', !html.includes('<img'));

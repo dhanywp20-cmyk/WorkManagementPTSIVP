@@ -122,7 +122,7 @@ export function berkasObjekSaya(objek: IsiObjekSaya[], oleh?: string): BerkasObj
 export function bacaBerkasObjekSaya(json: unknown): { ok: true; objek: IsiObjekSaya[]; ditolak: string[] } | { ok: false; alasan: string } {
   const b = json as Partial<BerkasObjekSaya> | null;
   if (!b || typeof b !== 'object' || b.format !== FORMAT_OBJEK_SAYA || !Array.isArray(b.objek)) {
-    return { ok: false, alasan: 'Berkas ini bukan ekspor Objek saya dari Tools Team.' };
+    return { ok: false, alasan: 'Berkas ini bukan ekspor Objek saya dari AV Solutions Studio.' };
   }
   if (b.objek.length > MAKS_IMPOR_SEKALI) return { ok: false, alasan: `Maksimal ${MAKS_IMPOR_SEKALI} objek per impor.` };
   const objek: IsiObjekSaya[] = [], ditolak: string[] = [];
