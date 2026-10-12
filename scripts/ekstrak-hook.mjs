@@ -53,6 +53,13 @@ const pernyataan = fungsi.body.statements.filter(s => barisDari(s.getStart(sf)) 
 if (!pernyataan.length) { console.error('tidak ada pernyataan di rentang itu'); process.exit(1); }
 const blokAwal = pernyataan[0].getFullStart(), blokAkhir = pernyataan[pernyataan.length - 1].end;
 for (const s of pernyataan) if (ts.isReturnStatement(s)) { console.error('rentang memuat return komponen'); process.exit(1); }
+//  Return BERSYARAT milik komponen (mis. `if (!siap) return <Loading/>`) juga harus ditolak: ia akan ikut
+//  pindah ke dalam hook dan diam-diam berhenti menjadi early return komponen.
+for (const s of pernyataan) (function cari(n) {
+  if (ts.isFunctionLike(n)) return;            // return di dalam fungsi lain (handler, callback) bukan masalah
+  if (ts.isReturnStatement(n)) { console.error('rentang memuat return bersyarat milik komponen:', s.getText(sf).slice(0, 60)); process.exit(1); }
+  ts.forEachChild(n, cari);
+})(s);
 
 // 2. Nama yang dideklarasikan blok (dikembalikan hook).
 const dideklarasi = [];
@@ -138,20 +145,30 @@ for (const [d, nama2] of perImpor) {
 // 5. Tulis hook & ganti blok di induk dengan pemanggilan hook di posisi yang sama.
 const isiBlok = teks.slice(pernyataan[0].getStart(sf), blokAkhir);
 const indentAsal = teks.slice(teks.lastIndexOf('\n', pernyataan[0].getStart(sf)) + 1, pernyataan[0].getStart(sf));
-const badan = isiBlok.split('\n').map((l, i) => (i === 0 ? '  ' + l : (l.startsWith(indentAsal) ? '  ' + l.slice(indentAsal.length) : l))).join('\n');
+const badan = isiBlok.split('\n').map((l, i) => (i === 0 ? '  ' + l : (l.startsWith(indentAsal) ? '  ' + l.slice(indentAsal.length) : l))).join('\n')
+  //  import('./x') relatif terhadap berkas INDUK - sesuaikan dengan letak berkas hook.
+  .replace(/import\((['"])(\.{1,2}\/[^'"]+)\1\)/g, (_, q, spes) => {
+    let baru = path.relative(dirTujuan, path.resolve(path.dirname(absBerkas), spes)).split(path.sep).join('/');
+    if (!baru.startsWith('.')) baru = './' + baru;
+    return `import(${q}${baru}${q})`;
+  });
 const kunci = [...konteks.keys()].sort();
 const namaTipe = nama.replace(/^use/, '') + 'Konteks';
+//  Tanpa konteks (mis. kumpulan useState saja): tanpa parameter - interface kosong ditolak ESLint.
+const kepalaFungsi = kunci.length
+  ? `export interface ${namaTipe} {
+${kunci.map(k => `  ${k}: ${keAlias(konteks.get(k))};`).join('\n')}
+}
+
+export function ${nama}(k: ${namaTipe}) {
+  const { ${kunci.join(', ')} } = k;`
+  : `export function ${nama}() {`;
 const out = `'use client';
 
 /** ${nama} - dipecah dari ${path.relative(akar, absBerkas).split(path.sep).join('/')} (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 ${barisImpor.join('\n')}
 
-export interface ${namaTipe} {
-${kunci.map(k => `  ${k}: ${keAlias(konteks.get(k))};`).join('\n')}
-}
-
-export function ${nama}(k: ${namaTipe}) {
-  const { ${kunci.join(', ')} } = k;
+${kepalaFungsi}
 ${badan}
   return { ${dideklarasi.join(', ')} };
 }
@@ -161,7 +178,7 @@ fs.writeFileSync(tujuan, out);
 
 let relImpor = path.relative(path.dirname(absBerkas), path.resolve(tujuan)).split(path.sep).join('/').replace(/\.tsx?$/, '');
 if (!relImpor.startsWith('.')) relImpor = './' + relImpor;
-const panggil = `${dideklarasi.length ? `const { ${dideklarasi.join(', ')} } = ` : ''}${nama}({ ${kunci.join(', ')} });`;
+const panggil = `${dideklarasi.length ? `const { ${dideklarasi.join(', ')} } = ` : ''}${nama}(${kunci.length ? `{ ${kunci.join(', ')} }` : ''});`;
 const terakhirImpor = [...sf.statements].filter(ts.isImportDeclaration).pop();
 const suntingan = [
   { awal: pernyataan[0].getStart(sf), akhir: blokAkhir, isi: panggil },

@@ -5,7 +5,7 @@
  * dipertahankan sebagai penerus ekspor supaya tidak ada satu pun pemanggil
  * yang perlu diubah.
  */
-export { AccountSettingsModal, AccountSettingsInline } from './modal-akun';
+export { AccountSettingsInline } from './modal-akun';
 export { UserProfileModal } from './modal-profil';
 export { UserManagementModal, UserManagementInline } from './modal-user';
 export { BrandPicSettingModal, BrandPicSettingContent, BrandPicSettingInline } from './modal-brand-pic';
