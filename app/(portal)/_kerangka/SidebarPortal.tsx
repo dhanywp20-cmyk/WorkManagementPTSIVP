@@ -364,7 +364,7 @@ export function SidebarPortal({
             {/* Admin */}
             {isAdmin && (
               <button
-                onClick={() => onAdminPanel}
+                onClick={onAdminPanel}
                 className="relative w-9 h-9 rounded-lg flex items-center justify-center transition-all"
                 style={{ color: '#94a3b8' }}
                 title={pendingUsers > 0 ? `Admin Panel — ${pendingUsers} user menunggu persetujuan` : 'Admin Panel'}
@@ -427,7 +427,7 @@ export function SidebarPortal({
             {/* Admin Panel */}
             {isAdmin && (
               <button
-                onClick={() => onAdminPanel}
+                onClick={onAdminPanel}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-all"
                 style={{ color: '#64748b', border: '1px solid transparent' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.07)'; (e.currentTarget as HTMLButtonElement).style.color = '#4338ca'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(99,102,241,0.18)'; }}
