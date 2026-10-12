@@ -84,6 +84,6 @@ export function svgPosterDaya(d: DataDaya, s: PengaturanDaya, judul: string, sub
 ${diagram.replace(/ style="[^"]*"/, '').replace('<svg ', `<svg x="${Math.round((W - dw) / 2)}" y="${yD}" `)}
 <text x="20" y="${yL + 12}" font-size="11" font-weight="800" fill="#92400e" letter-spacing="0.6" ${huruf}>FASE &amp; SIRKUIT</text>
 ${legenda}
-<text x="20" y="${H - 12}" font-size="10" fill="#94a3b8" ${huruf}>IndoVisual Professional Tools — AV Solutions Studio · angka daya = maksimum (putih penuh); verifikasi dengan datasheet &amp; instalatir listrik</text>
+<text x="20" y="${H - 12}" font-size="10" fill="#94a3b8" ${huruf}>IndoVisual Professional Tools — AV Solution Tools · angka daya = maksimum (putih penuh); verifikasi dengan datasheet &amp; instalatir listrik</text>
 </svg>`;
 }

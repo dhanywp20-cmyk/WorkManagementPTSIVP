@@ -26,6 +26,12 @@ export const DAFTAR_MENU: MenuItem[] = [
     items: [{ name: 'Summary Project', url: '/summary-project', icon: '🗂️', internal: true, embed: true }]
   },
   {
+    title: 'AV Solution Tools', icon: '🧮', key: 'tools-team',
+    gradient: 'from-blue-700 via-blue-600 to-sky-500',
+    description: 'Kalkulator LED, desain 3D ruang, layar, proyektor, sinyal, audio & daya',
+    items: [{ name: 'AV Solution Tools', url: '/tools-team', icon: '🧮', internal: true, embed: true }]
+  },
+  {
     title: 'Request Schedule', icon: '🗓️', key: 'reminder-schedule',
     gradient: 'from-cyan-700 via-cyan-600 to-teal-500',
     description: 'Jadwal & request pekerjaan team PTS',
@@ -84,12 +90,6 @@ export const DAFTAR_MENU: MenuItem[] = [
     gradient: 'from-cyan-700 via-cyan-600 to-teal-500',
     description: 'Checklist instalasi per proyek & lokasi, dicentang tim dari lapangan',
     items: [{ name: 'Project Progress', url: '/project-progress', icon: '📊', internal: true, embed: true }]
-  },
-  {
-    title: 'AV Solutions Studio', icon: '🧮', key: 'tools-team',
-    gradient: 'from-blue-700 via-blue-600 to-sky-500',
-    description: 'Kalkulator LED, desain 3D ruang, layar, proyektor, sinyal, audio & daya',
-    items: [{ name: 'AV Solutions Studio', url: '/tools-team', icon: '🧮', internal: true, embed: true }]
   },
   {
     title: 'KPI Team', icon: '📊', key: 'kpi-team',

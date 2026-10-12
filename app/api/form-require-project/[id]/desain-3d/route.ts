@@ -93,7 +93,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
   if (!d) return gagal('Desain tidak ditemukan.', 404);
   if (d.diarsipkan_at) return gagal('Desain ini sudah diarsipkan.', 409);
   const { data: v } = await db.from('tools_desain_ruang_versi').select('id').eq('desain_id', d.id).eq('versi', d.versi).maybeSingle();
-  if (!v) return gagal('Versi desain tidak ditemukan. Simpan ulang desainnya di AV Solutions Studio.', 409);
+  if (!v) return gagal('Versi desain tidak ditemukan. Simpan ulang desainnya di AV Solution Tools.', 409);
 
   const { data: baru, error } = await db.from('request_desain_ruang').insert({
     request_id: request.id, room_idx: roomIdx, desain_id: d.id, versi_id: v.id, versi: d.versi,
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ id: string
     return gagal('Gagal menautkan Design 3D. Coba lagi.', 500);
   }
   const ruang = namaRuang(request, roomIdx);
-  await catat(db, request, user, `${awalan(request, roomIdx)}🧊 Design 3D (AV Solutions Studio) ditautkan: ${d.nama} v${d.versi}`, 'create',
+  await catat(db, request, user, `${awalan(request, roomIdx)}🧊 Design 3D (AV Solution Tools) ditautkan: ${d.nama} v${d.versi}`, 'create',
     `Design 3D ditautkan: ${d.nama} v${d.versi} (${ruang})`);
   return NextResponse.json({ ok: true, id: baru.id });
 }
@@ -163,6 +163,6 @@ export async function DELETE(req: NextRequest, ctx: { params: Promise<{ id: stri
   if (error) return gagal(error.message, 500);
   const ruang = namaRuang(request, t.room_idx);
   await catat(db, request, user, `${awalan(request, t.room_idx)}🧊 Tautan Design 3D dilepas: ${sumber?.nama ?? 'desain'} v${t.versi}`, 'delete',
-    `Tautan Design 3D dilepas: ${sumber?.nama ?? t.desain_id} v${t.versi} (${ruang}); desain tetap di AV Solutions Studio`);
+    `Tautan Design 3D dilepas: ${sumber?.nama ?? t.desain_id} v${t.versi} (${ruang}); desain tetap di AV Solution Tools`);
   return NextResponse.json({ ok: true });
 }

@@ -192,6 +192,6 @@ ${diagram.replace(/ style="[^"]*"/, '').replace('<svg ', `<svg x="${Math.round((
 <text x="20" y="${yLegenda + 12}" font-size="11" font-weight="800" fill="#1e3a8a" letter-spacing="0.6" ${huruf}>PEMBAGIAN PORT LAN</text>
 ${legenda}
 ${peringatan ? `<text x="20" y="${H - 30}" font-size="11" fill="#b91c1c" ${huruf}>${esc(peringatan)}</text>` : ''}
-<text x="20" y="${H - 12}" font-size="10" fill="#94a3b8" ${huruf}>IndoVisual Professional Tools — AV Solutions Studio · label sel = port-urutan, angka kecil = ukuran receiving card (px)</text>
+<text x="20" y="${H - 12}" font-size="10" fill="#94a3b8" ${huruf}>IndoVisual Professional Tools — AV Solution Tools · label sel = port-urutan, angka kecil = ukuran receiving card (px)</text>
 </svg>`;
 }
