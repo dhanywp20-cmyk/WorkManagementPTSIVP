@@ -1,5 +1,6 @@
 'use client';
 
+import { appBaseUrl } from '@/lib/app-url';
 import { useState } from 'react';
 import { Copy, RefreshCw, ExternalLink } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
@@ -17,8 +18,7 @@ export interface TargetShare {
 function urlShare(t: TargetShare): string {
   if (!t.share_token) return '';
   if (t.jenis === 'checklist') return urlShareChecklist(t.share_token);
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${origin}/project-progress/share/${t.share_token}`;
+  return `${appBaseUrl()}/project-progress/share/${t.share_token}`;
 }
 
 /**

@@ -1,5 +1,6 @@
 'use client';
 
+import { appBaseUrl } from '@/lib/app-url';
 import { useState, useEffect, useCallback } from 'react';
 import QRCode from 'qrcode';
 import { supabase } from '@/lib/supabase';
@@ -79,10 +80,10 @@ export function KodeAcaraInline() {
   const [asalUrl, setAsalUrl] = useState('');
   const [gambarQr, setGambarQr] = useState<string | null>(null);
   const [disalin, setDisalin] = useState(false);
-  //  Dibaca dari window.location.origin, BUKAN ditulis di kode - domain
-  //  produksi bisa beda (custom domain, staging, dst) dan platform ini dijual
-  //  ke banyak company, jadi tidak boleh ada satu domain yang di-hardcode.
-  useEffect(() => { setAsalUrl(window.location.origin); }, []);
+  //  Dari appBaseUrl(), BUKAN ditulis di kode - domain produksi bisa beda (custom domain, dst) dan
+  //  platform ini dijual ke banyak company. Dari Preview Vercel tetap ke domain produksi, karena
+  //  link pendaftaran ini dibuka orang yang tidak punya akun Vercel.
+  useEffect(() => { setAsalUrl(appBaseUrl()); }, []);
 
   const ambil = useCallback(async () => {
     setMuat(true);
