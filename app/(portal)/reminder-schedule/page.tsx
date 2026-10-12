@@ -57,6 +57,8 @@ import { useAlurPersetujuan } from './_components/useAlurPersetujuan';
 import { useAksiStatus } from './_components/useAksiStatus';
 import { useSimpanJadwal } from './_components/useSimpanJadwal';
 import { useTurunanJadwal } from './_components/useTurunanJadwal';
+import { useMuatPengguna } from './_components/useMuatPengguna';
+import { useMuatJadwal } from './_components/useMuatJadwal';
 
 
 function ReminderSchedulePageInner() {
@@ -138,95 +140,6 @@ function ReminderSchedulePageInner() {
   const [praFillGuest, setPraFillGuest] = useState<Partial<JadwalRequest> | null>(null);
 
   /** Daftar project yang pernah tercatat, satu baris wakil (terbaru) per nama. */
-  const daftarProyekLama = useMemo(() => {
-    const peta = new Map<string, Reminder>();
-    for (const r of reminders) {
-      const n = normalkanNama(r.project_name);
-      if (!n) continue;
-      const ada = peta.get(n);
-      if (!ada || (r.created_at ?? '') > (ada.created_at ?? '')) peta.set(n, r);
-    }
-    return [...peta.values()].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
-  }, [reminders]);
-
-  const hasilCarianProyek = useMemo(() => {
-    const q = carianProyek.trim().toLowerCase();
-    if (!q) return daftarProyekLama.slice(0, 20);
-    return daftarProyekLama
-      .filter(r => (r.project_name ?? '').toLowerCase().includes(q))
-      .slice(0, 20);
-  }, [daftarProyekLama, carianProyek]);
-
-  const mulaiBuatReminder = () => {
-    setBuatUntukGuest(false);
-    setEditingReminder(null); setFormData(emptyForm); setExtraDates([]);
-    setProyekLamaTerpilih(null); setPraFillGuest(null); setPraPilihProyek(null); setCarianProyek('');
-    setLangkahBuat('pilih');
-  };
-
-  /**
-   * Pemicu untuk role Sales/Guest - sebelumnya "Request Jadwal" langsung
-   * membuka RequestJadwalModal kosong, tanpa lewat pemilihan tipe project
-   * sama sekali. Sekarang memakai DUA LANGKAH YANG SAMA dengan jalur admin;
-   * yang membedakan hanya `buatUntukGuest`, dipakai di 'pilih' untuk teks dan
-   * di konfirmasiProyekLama untuk menentukan form mana yang dibuka.
-   */
-  const mulaiRequestJadwal = () => {
-    setBuatUntukGuest(true);
-    setProyekLamaTerpilih(null); setPraFillGuest(null); setPraPilihProyek(null); setCarianProyek('');
-    setLangkahBuat('pilih');
-  };
-
-  const konfirmasiProyekLama = () => {
-    if (!praPilihProyek) return;
-    const n = normalkanNama(praPilihProyek.project_name);
-    // Sengaja dari `reminders` yang SUDAH termuat di halaman ini, bukan kueri
-    // baru. Untuk akun Sales/Guest, fetchRemindersForUser hanya memuat baris
-    // miliknya sendiri (lihat catatan di sana) - jadi daftar ini otomatis
-    // tidak pernah memuat project sales lain, tanpa saringan tambahan di sini.
-    const sebatch = reminders.filter(r => normalkanNama(r.project_name) === n);
-    setProyekLamaTerpilih(sebatch);
-    setLangkahBuat(null);
-
-    if (buatUntukGuest) {
-      // JadwalRequest tidak punya sales_name/assign_name - pelakunya sudah
-      // pasti currentUser, jadi tidak perlu (dan tidak boleh) disalin dari
-      // baris lama, yang bisa saja milik Sales External lain yang sedang
-      // di-CC-kan (SBU) ke akun ini.
-      setPraFillGuest({
-        project_name: praPilihProyek.project_name || '',
-        address: praPilihProyek.address ?? '',
-        product: praPilihProyek.product ?? '',
-        pic_name: praPilihProyek.pic_name ?? '',
-        pic_phone: praPilihProyek.pic_phone ?? '',
-        sales_division: praPilihProyek.sales_division || undefined,
-        brand: (praPilihProyek.brand as JadwalRequest['brand']) ?? undefined,
-      });
-      setShowRequestModal(true);
-      return;
-    }
-
-    setFormData(prev => ({
-      ...prev,
-      project_name: praPilihProyek.project_name || '',
-      address: praPilihProyek.address ?? '',
-      sales_name: praPilihProyek.sales_name ?? '',
-      sales_division: praPilihProyek.sales_division ?? '',
-      product: praPilihProyek.product ?? '',
-      pic_name: praPilihProyek.pic_name ?? '',
-      pic_phone: praPilihProyek.pic_phone ?? '',
-      brand: praPilihProyek.brand ?? prev.brand,
-    }));
-    setShowFormModal(true);
-  };
-
-  // Filters - extended with team handler & category
-  const [filterStatus, setFilterStatus]     = useState<Status | 'all'>('all');
-  const [filterYear, setFilterYear]         = useState<string>('all');
-  const [searchProject, setSearchProject]   = useState('');
-  const [searchSales, setSearchSales]       = useState('');
-
-  // Auto-apply filter dari Global Search (?q=...)
   useEffect(() => {
     const q = searchParams.get('q');
     if (q) setSearchProject(q);
@@ -402,6 +315,96 @@ function ReminderSchedulePageInner() {
   const [formData, setFormData] = useState(emptyForm);
   const fd = (patch: Partial<typeof emptyForm>) => setFormData(prev => ({ ...prev, ...patch }));
 
+  const daftarProyekLama = useMemo(() => {
+    const peta = new Map<string, Reminder>();
+    for (const r of reminders) {
+      const n = normalkanNama(r.project_name);
+      if (!n) continue;
+      const ada = peta.get(n);
+      if (!ada || (r.created_at ?? '') > (ada.created_at ?? '')) peta.set(n, r);
+    }
+    return [...peta.values()].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
+  }, [reminders]);
+
+  const hasilCarianProyek = useMemo(() => {
+    const q = carianProyek.trim().toLowerCase();
+    if (!q) return daftarProyekLama.slice(0, 20);
+    return daftarProyekLama
+      .filter(r => (r.project_name ?? '').toLowerCase().includes(q))
+      .slice(0, 20);
+  }, [daftarProyekLama, carianProyek]);
+
+  const mulaiBuatReminder = () => {
+    setBuatUntukGuest(false);
+    setEditingReminder(null); setFormData(emptyForm); setExtraDates([]);
+    setProyekLamaTerpilih(null); setPraFillGuest(null); setPraPilihProyek(null); setCarianProyek('');
+    setLangkahBuat('pilih');
+  };
+
+  /**
+   * Pemicu untuk role Sales/Guest - sebelumnya "Request Jadwal" langsung
+   * membuka RequestJadwalModal kosong, tanpa lewat pemilihan tipe project
+   * sama sekali. Sekarang memakai DUA LANGKAH YANG SAMA dengan jalur admin;
+   * yang membedakan hanya `buatUntukGuest`, dipakai di 'pilih' untuk teks dan
+   * di konfirmasiProyekLama untuk menentukan form mana yang dibuka.
+   */
+  const mulaiRequestJadwal = () => {
+    setBuatUntukGuest(true);
+    setProyekLamaTerpilih(null); setPraFillGuest(null); setPraPilihProyek(null); setCarianProyek('');
+    setLangkahBuat('pilih');
+  };
+
+  const konfirmasiProyekLama = () => {
+    if (!praPilihProyek) return;
+    const n = normalkanNama(praPilihProyek.project_name);
+    // Sengaja dari `reminders` yang SUDAH termuat di halaman ini, bukan kueri
+    // baru. Untuk akun Sales/Guest, fetchRemindersForUser hanya memuat baris
+    // miliknya sendiri (lihat catatan di sana) - jadi daftar ini otomatis
+    // tidak pernah memuat project sales lain, tanpa saringan tambahan di sini.
+    const sebatch = reminders.filter(r => normalkanNama(r.project_name) === n);
+    setProyekLamaTerpilih(sebatch);
+    setLangkahBuat(null);
+
+    if (buatUntukGuest) {
+      // JadwalRequest tidak punya sales_name/assign_name - pelakunya sudah
+      // pasti currentUser, jadi tidak perlu (dan tidak boleh) disalin dari
+      // baris lama, yang bisa saja milik Sales External lain yang sedang
+      // di-CC-kan (SBU) ke akun ini.
+      setPraFillGuest({
+        project_name: praPilihProyek.project_name || '',
+        address: praPilihProyek.address ?? '',
+        product: praPilihProyek.product ?? '',
+        pic_name: praPilihProyek.pic_name ?? '',
+        pic_phone: praPilihProyek.pic_phone ?? '',
+        sales_division: praPilihProyek.sales_division || undefined,
+        brand: (praPilihProyek.brand as JadwalRequest['brand']) ?? undefined,
+      });
+      setShowRequestModal(true);
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      project_name: praPilihProyek.project_name || '',
+      address: praPilihProyek.address ?? '',
+      sales_name: praPilihProyek.sales_name ?? '',
+      sales_division: praPilihProyek.sales_division ?? '',
+      product: praPilihProyek.product ?? '',
+      pic_name: praPilihProyek.pic_name ?? '',
+      pic_phone: praPilihProyek.pic_phone ?? '',
+      brand: praPilihProyek.brand ?? prev.brand,
+    }));
+    setShowFormModal(true);
+  };
+
+  // Filters - extended with team handler & category
+  const [filterStatus, setFilterStatus]     = useState<Status | 'all'>('all');
+  const [filterYear, setFilterYear]         = useState<string>('all');
+  const [searchProject, setSearchProject]   = useState('');
+  const [searchSales, setSearchSales]       = useState('');
+
+  // Auto-apply filter dari Global Search (?q=...)
+
   // Init
 
   useEffect(() => {
@@ -491,79 +494,9 @@ function ReminderSchedulePageInner() {
   // Ditangani oleh Supabase Edge Function: daily-reminder (pg_cron)
   // Berjalan otomatis setiap hari tanpa perlu buka halaman
 
-  const fetchTeamUsers = async () => {
-    const { data } = await supabase.from('users').select('id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, telegram_chat_id, bisa_ditugaskan').order('full_name');
-    // Hanya team assignable (IVP/MVI - UMP dikecualikan, lihat lib/teams.ts). Ubah di satu tempat itu utk tambah/kurangi team.
-    // Manager IKUT dimuat (bolehDitugaskanOleh(u, true)) - dibutuhkan untuk
-    // lookup WA saat Admin meng-assign Manager. Siapa yang DITAWARKAN di
-    // dropdown disaring terpisah lewat teamUsersDitawarkan di bawah.
-    if (data) setTeamUsers(data.filter((u: TeamUser) => bolehDitugaskanOleh(u, true) && u.role !== 'admin' && u.role !== 'superadmin'));
-  };
+  const { fetchTeamUsers, fetchGuestUsers, fetchPTSCabangUsers } = useMuatPengguna({ setGuestUsers, setPtsCabangUsers, setTeamUsers });
 
-  const fetchGuestUsers = async () => {
-    const { data } = await supabase
-      .from('users')
-      .select('id, username, full_name, role, phone_number, sales_division, is_internal_sales')
-      .eq('role', 'guest')
-      .order('full_name');
-    if (data) {
-      const idPim = await muatIdPimpinan(supabase);
-      setGuestUsers((data as GuestUser[]).filter(u => !idPim.has(u.id)));
-    }
-  };
-
-  /**
-   * Akun kelompok "PTS Cabang" - dipakai dropdown Installer di panel Mode
-   * Penyelesaian (menggantikan isian nama installer manual). Lihat catatan
-   * field `cabang` di lib/kelompok.ts.
-   */
-  const fetchPTSCabangUsers = async () => {
-    const cabang = namaKelompokCabang();
-    if (cabang.length === 0) { setPtsCabangUsers([]); return; }
-    const { data } = await supabase.from('users').select('id, full_name, pts_daerah')
-      .in('team_type', cabang).order('full_name');
-    if (data) setPtsCabangUsers(data as { id: string; full_name: string; pts_daerah: string | null }[]);
-  };
-
-  const jalankanBulkDelete = async () => {
-    setBulkConfirm(false); setBulkDeleting(true);
-    const { error } = await supabase.from('reminders').delete().in('id', Array.from(selectedIds));
-    if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
-    else notify('error', 'Gagal: ' + error.message);
-    setBulkDeleting(false);
-  };
-
-  const toggleSelectId = (id: string) => setSelectedIds(prev => {
-    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
-  });
-
-  const toggleSelectAll = () => setSelectedIds(prev =>
-    prev.size === filteredReminders.length ? new Set() : new Set(filteredReminders.map(r => r.id))
-  );
-
-  //  Aturan siapa melihat jadwal apa: _components/data-reminder.ts
-  const fetchRemindersForUser = (activeUser: TeamUser | null): Promise<Reminder[]> => ambilReminderUntuk(activeUser, managerUserId);
-
-  const fetchRemindersQuiet = async (user?: TeamUser | null) => {
-    let activeUser: TeamUser | null = user ?? currentUser;
-    if (!activeUser) activeUser = getSession<TeamUser>();
-    const data = await fetchRemindersForUser(activeUser);
-    setReminders(data);
-  };
-
-  const fetchReminders = async () => {
-    setListLoading(true);
-    setFetchError(null);
-    let activeUser: TeamUser | null = currentUser;
-    if (!activeUser) activeUser = getSession<TeamUser>();
-    try {
-      const data = await fetchRemindersForUser(activeUser);
-      setReminders(data);
-    } catch (err: any) {
-      setFetchError(err?.message ?? 'Gagal memuat data');
-    }
-    setTimeout(() => setListLoading(false), 400);
-  };
+  const { fetchRemindersForUser, fetchRemindersQuiet, fetchReminders } = useMuatJadwal({ currentUser, managerUserId, setFetchError, setListLoading, setReminders });
 
   // CRUD
 
@@ -661,6 +594,25 @@ function ReminderSchedulePageInner() {
    * menyebut APA yang berubah - bukan sekadar "Detail reminder disunting".
    */
 
+  const { availableYears, filteredReminders, groupedReminders, todayCount, pendingCount, doneCount, totalCount, sourceReminders, projectPieData, salesPieData, teamPtsPieData, productPieData, isAdmin, teamUsersDitawarkan, isManager, canApproveAssign, isMyReviewStage, bolehEditReminder, canInternalApprove, canAddReminder, isGuest } = useTurunanJadwal({ currentUser, filterCategory, filterStatus, filterYear, managerUserId, productFilter, reminders, searchDivisionSales, searchProduct, searchProject, searchSales, searchTeamHandler, selectedCalDay, teamUsers });
+
+  const jalankanBulkDelete = async () => {
+    setBulkConfirm(false); setBulkDeleting(true);
+    const { error } = await supabase.from('reminders').delete().in('id', Array.from(selectedIds));
+    if (!error) { setReminders(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
+    else notify('error', 'Gagal: ' + error.message);
+    setBulkDeleting(false);
+  };
+
+  const toggleSelectId = (id: string) => setSelectedIds(prev => {
+    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+
+  const toggleSelectAll = () => setSelectedIds(prev =>
+    prev.size === filteredReminders.length ? new Set() : new Set(filteredReminders.map(r => r.id))
+  );
+
+  //  Aturan siapa melihat jadwal apa: _components/data-reminder.ts
   const openEdit = (r: Reminder) => {
     setEditingReminder(r);
     /*
@@ -855,7 +807,6 @@ function ReminderSchedulePageInner() {
 
   // Filters
 
-  const { availableYears, filteredReminders, groupedReminders, todayCount, pendingCount, doneCount, totalCount, sourceReminders, projectPieData, salesPieData, teamPtsPieData, productPieData, isAdmin, teamUsersDitawarkan, isManager, canApproveAssign, isMyReviewStage, bolehEditReminder, canInternalApprove, canAddReminder, isGuest } = useTurunanJadwal({ currentUser, filterCategory, filterStatus, filterYear, managerUserId, productFilter, reminders, searchDivisionSales, searchProduct, searchProject, searchSales, searchTeamHandler, selectedCalDay, teamUsers });
 
   // Cek Form Review menggantung (guest/sales)
   // Kriterianya ada di lib/form-review-gate.ts, bukan di sini, karena pintasan
