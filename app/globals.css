@@ -506,3 +506,12 @@ html {
    tembus ke kanvas (pilih benda, putar kamera). Tanpa ini wadah kiri-atas menutupi sebagian besar kanvas. */
 .lapis-tembus { pointer-events: none; }
 .lapis-tembus > * { pointer-events: auto; }
+
+/* Pindah menu (app/(portal)/_kerangka/KerangkaPortal.tsx): bilah tipis berjalan di atas area modul,
+   dan isi lama meredup - redupnya ditunda 150 ms supaya perpindahan cepat tidak berkedip. */
+.bilah-pindah-menu { position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 60; overflow: hidden; pointer-events: none; }
+.bilah-pindah-menu::before { content: ''; position: absolute; top: 0; bottom: 0; width: 35%; background: var(--warna-pindah, #e11d48); border-radius: 2px; animation: bilahPindahMenu 0.9s ease-in-out infinite; }
+@keyframes bilahPindahMenu { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
+.isi-sedang-pindah > :not(.bilah-pindah-menu) { animation: redupPindahMenu 0.2s ease 0.15s forwards; }
+@keyframes redupPindahMenu { to { opacity: 0.55; } }
+@media (prefers-reduced-motion: reduce) { .bilah-pindah-menu::before { animation-duration: 2s; } }
