@@ -164,7 +164,11 @@ export function TabelProyekInsentif({ bolehHapus, brandEditFor, currentUser, fil
                   <td className={`${cellCls} text-right`}>
                     {hasNominal
                       ? <p className="text-sm font-black text-emerald-700">{formatRupiah(p.incentive_value || 0)}</p>
-                      : <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><IkonTeks nama="⏳" />Belum</span>}
+                      : bisaInput(currentUser)
+                        ? <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200"><IkonTeks nama="⏳" />Belum</span>
+                        //  Nominal terkunci di server: orang yang tidak berhak melihatnya tidak boleh
+                        //  dibuat mengira proyeknya "belum diisi".
+                        : <span className="text-xs text-gray-400">—</span>}
                   </td>
                   {bisaInput(currentUser) && (
                     <td className={`${cellCls} text-right`}>
@@ -267,7 +271,10 @@ export function TabelProyekInsentif({ bolehHapus, brandEditFor, currentUser, fil
               <tr style={{ background: 'rgba(99,102,241,0.06)' }}>
                 <td colSpan={6} className="px-3 py-2.5 border border-gray-200 text-xs font-bold text-gray-600 text-right">TOTAL (project saya)</td>
                 <td className="px-3 py-2.5 border border-gray-200 text-right text-sm font-black text-emerald-700">
-                  {formatRupiah(filteredProjects.filter(p => (p.incentive_value || 0) > 0).reduce((s, p) => s + (p.incentive_value || 0), 0))}
+                  {(() => {
+                    const jumlah = filteredProjects.reduce((s, p) => s + (p.incentive_value || 0), 0);
+                    return jumlah > 0 ? formatRupiah(jumlah) : '—';
+                  })()}
                 </td>
                 <td colSpan={2} className="border border-gray-200" />
               </tr>

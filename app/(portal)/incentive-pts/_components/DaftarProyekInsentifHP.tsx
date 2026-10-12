@@ -62,7 +62,9 @@ export function DaftarProyekInsentifHP({ currentUser, filteredProjects, hal, ope
                 */}
                 {hasNominal
                   ? <span className="text-sm font-black text-emerald-700 whitespace-nowrap">{formatRupiah(p.incentive_value || 0)}</span>
-                  : <span className="text-[11px] font-bold text-amber-700 whitespace-nowrap"><IkonTeks nama="⏳" />Belum nominal</span>}
+                  : showNominal
+                    ? <span className="text-[11px] font-bold text-amber-700 whitespace-nowrap"><IkonTeks nama="⏳" />Belum nominal</span>
+                    : null}
               </>}
               fields={[
                 { label: 'Mode', value: p.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : p.mode_penyelesaian === 'remote' ? '💻 Remote' : '—' },

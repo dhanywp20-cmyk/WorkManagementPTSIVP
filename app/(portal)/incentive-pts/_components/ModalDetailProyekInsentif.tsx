@@ -137,7 +137,7 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                       <h3 className="text-sm font-bold text-gray-700">{privileged ? '💰 Pembagian Incentive' : '💰 Bagian Saya'}</h3>
                       <div className="flex items-center gap-1.5">
                         {privileged && <span className="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{schemeLabel} · {modeLabel}</span>}
-                        {isEstimate && <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Estimasi</span>}
+                        {isEstimate && (privileged || pool > 0) && <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">Estimasi</span>}
                       </div>
                     </div>
                     {!privileged && visibleSplits.length === 0 && (
@@ -171,7 +171,7 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                         );
                       })}
                     </div>
-                    {isEstimate && (
+                    {isEstimate && (privileged || pool > 0) && (
                       <p className="text-[11px] text-amber-700 mt-1.5 italic">
                         {!pool
                           ? '* Belum ada nominal — angka Rp akan muncul setelah input nominal.'

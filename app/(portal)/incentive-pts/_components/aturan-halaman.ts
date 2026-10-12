@@ -8,23 +8,8 @@ import { bisaKonfigPenuh, bisaInputNominal } from '@/lib/incentive-akses';
 
 export interface CurrentUser { id?: string; username?: string; full_name?: string; role?: string; team_type?: string; incentive_akses?: string | null; allow_incentive_input?: boolean; incentive_brand_scope?: string | null; [k: string]: unknown; }
 
-/**
- * Proyek ini boleh dilihat oleh petugas dengan lingkup brand tertentu?
- *
- * Lingkup kosong = tanpa batas (admin, dan petugas yang belum ditetapkan
- * lingkupnya). Proyek "BOTH" terlihat oleh KEDUA petugas - ia memang milik
- * bersama, dan menyembunyikannya dari salah satu justru membuat proyeknya
- * tidak terinput sama sekali.
- *
- * Proyek tanpa brand juga ditampilkan, bukan disembunyikan: kalau ada yang
- * lolos tanpa brand, itu harus KELIHATAN supaya bisa dibetulkan - bukan
- * lenyap dari kedua daftar tanpa ada yang tahu.
- */
-export function bolehLihatBrand(lingkup: string | null | undefined, brandProyek: string | null | undefined): boolean {
-  if (!lingkup) return true;
-  if (!brandProyek) return true;
-  return brandProyek === lingkup || brandProyek === 'BOTH';
-}
+/** Lingkup brand petugas - aturannya ada di lib/incentive-nominal.ts (dipakai juga oleh server). */
+export { bolehLihatBrand } from '@/lib/incentive-nominal';
 
 /*
   SIAPA BOLEH APA — DATA, BUKAN KODE.

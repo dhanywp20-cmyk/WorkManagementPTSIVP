@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { gabungkanProyek } from '@/lib/kelompok-insentif';
+import { ambilPetaNominal, lengkapiNominal } from '@/lib/incentive-nominal-api';
+import { tempelkanNominal } from '@/lib/incentive-nominal';
 import { createNotification } from '@/lib/notifications';
 import {
   SkemaInsentif, PenerimaPeran, hitungPembagian, hitungManagerSebagaiPic, ambilSkema,
@@ -475,7 +477,7 @@ export async function fetchIncentiveProjects() {
     const r = await dasar().not('incentive_excluded', 'is', true);
     if (!r.error) {
       kolomKeluarkanAda = true;
-      return { data: gabungkanProyek((r.data || []) as IncentiveProjectRow[]), error: r.error };
+      return { data: await lengkapiNominal(gabungkanProyek((r.data || []) as IncentiveProjectRow[])), error: r.error };
     }
     if (!/does not exist/i.test(r.error.message)) {
       // Galat lain - jangan disembunyikan di balik percobaan kedua.
@@ -488,7 +490,7 @@ export async function fetchIncentiveProjects() {
   }
 
   const r2 = await dasar();
-  return { data: gabungkanProyek((r2.data || []) as IncentiveProjectRow[]), error: r2.error };
+  return { data: await lengkapiNominal(gabungkanProyek((r2.data || []) as IncentiveProjectRow[])), error: r2.error };
 }
 
 /**
@@ -570,7 +572,13 @@ export async function fetchTranches(filters?: { payment_year?: number; status?: 
   if (filters?.payment_year) q = q.eq('payment_year', filters.payment_year);
   if (filters?.status) q = q.eq('status', filters.status);
   const { data, error } = await q;
-  return { data: (data || []) as (IncentiveTranche & { project: IncentiveProjectRow })[], error };
+  const baris = (data || []) as (IncentiveTranche & { project: IncentiveProjectRow })[];
+  //  Nominal tidak lagi di kolom reminders (terkunci) - ditempel dari server.
+  const { peta } = baris.length ? await ambilPetaNominal() : { peta: {} as Record<string, number> };
+  return {
+    data: baris.map(t => (t.project ? { ...t, project: tempelkanNominal([t.project], peta)[0] } : t)),
+    error,
+  };
 }
 
 export async function fetchSplits(projectId?: string) {
@@ -953,6 +961,19 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
   if (fetchErr || !dueTranches) return { error: fetchErr, processed: 0 };
 
   /*
+    Nominal proyek terkunci di server - bukan lagi kolom reminders. Tanpa peta
+    ini setiap pool terbaca 0, dan tahapan akan "diproses" dengan baris bagian
+    bernilai Rp 0 yang tidak bisa dikoreksi kecuali dibatalkan satu per satu.
+    Karena itu gagal-memuat atau tidak-berhak DIHENTIKAN di sini, bukan
+    diteruskan dengan angka nol.
+  */
+  const nominal = await ambilPetaNominal();
+  if (nominal.error) return { error: nominal.error, processed: 0 };
+  if (!nominal.terbuka) {
+    return { error: { message: 'Hanya pemegang akses input/penuh Incentive PTS yang boleh memproses tahapan.' }, processed: 0 };
+  }
+
+  /*
     Skema TERKINI dibaca sekali di depan, TAPI ia hanya cadangan.
 
     Yang dipakai menghitung tiap tahapan adalah salinan skema yang dibekukan
@@ -979,6 +1000,11 @@ export async function processYearlyBatch(processingYear: number, managerUserId: 
   for (const tranche of dueTranches) {
     const project = tranche.project as unknown as IncentiveProjectRow;
     if (!project) { errors.push(`Tranche ${tranche.id}: project not found`); continue; }
+    project.incentive_value = nominal.peta[project.id] ?? 0;
+    if (!(project.incentive_value > 0)) {
+      errors.push(`Project "${project.project_name}" tahap ${tranche.tranche_number}: nominal belum diisi - dilewati.`);
+      continue;
+    }
 
     //  Skema yang membayar tahapan ini = yang dibekukan saat tahapan dibuat.
     const sk = (tranche.scheme_snapshot as SkemaInsentif | null) ?? skTerkini;
