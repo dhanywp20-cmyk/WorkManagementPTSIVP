@@ -7,7 +7,7 @@
  *
  * Jalankan: npm test -- incentive-nominal
  */
-import { readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import {
   ATURAN_NOMINAL_BAWAAN, bolehLihatBrand, nominalTerbuka, rapikanAturanNominal, tempelkanNominal, terlibatDiProyek,
 } from '../lib/incentive-nominal';
@@ -69,7 +69,9 @@ console.log('\n5. Tidak ada tulis nominal ke reminders dari peramban');
 const page = readFileSync('app/(portal)/incentive-pts/page.tsx', 'utf8');
 cek('layar menyimpan lewat server (simpanNominal)', /simpanNominal\(/.test(page));
 cek('tidak ada update reminders berisi incentive_value', !/from\('reminders'\)\s*\.update\(\s*\{[^}]*incentive_value/.test(page) && !/incentive_value:\s*Number\(nominalValue\)/.test(page));
-const calc = readFileSync('app/(portal)/incentive-pts/_components/calc.ts', 'utf8');
+//  calc.ts dipecah menjadi calc-*.ts (calc.ts tinggal barrel) - periksa gabungan semuanya.
+const DIR_CALC = 'app/(portal)/incentive-pts/_components/';
+const calc = readdirSync(DIR_CALC).filter(f => /^calc(-[a-z]+)?\.ts$/.test(f)).map(f => readFileSync(DIR_CALC + f, 'utf8')).join('\n');
 cek('daftar proyek ditempeli nominal dari server', /lengkapiNominal\(gabungkanProyek/.test(calc));
 cek('jadwal tahapan ditempeli nominal dari server', /tempelkanNominal\(\[t\.project\]/.test(calc));
 cek('Process Batch berhenti bila nominal tidak terbuka', /if \(!nominal\.terbuka\)/.test(calc) && /nominal belum diisi - dilewati/.test(calc));
