@@ -4,12 +4,7 @@
 import { useState } from 'react';
 import { Reminder, type SupervisorCandidate } from './shared';
 
-export interface StateApprovalKonteks {
-
-}
-
-export function useStateApproval(k: StateApprovalKonteks) {
-  const {  } = k;
+export function useStateApproval() {
   const [approveTarget, setApproveTarget] = useState<Reminder | null>(null);
   const [approveBatchSiblings, setApproveBatchSiblings] = useState<Reminder[]>([]); // tanggal lain di batch yang sama, ikut di-approve bareng
   const [approveAssignTo, setApproveAssignTo] = useState('');

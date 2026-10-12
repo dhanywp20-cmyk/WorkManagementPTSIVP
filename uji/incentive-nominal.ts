@@ -66,7 +66,10 @@ cek('nilai bukan angka dianggap 0', tempelkanNominal([{ id: 'z', incentive_value
 cek('bolehLihatBrand tanpa lingkup = bebas', bolehLihatBrand(null, 'IVP'));
 
 console.log('\n5. Tidak ada tulis nominal ke reminders dari peramban');
-const page = readFileSync('app/(portal)/incentive-pts/page.tsx', 'utf8');
+//  Halaman dipecah: handler simpan kini di hook _components/use*.ts - periksa halaman + semua hook-nya.
+const DIR_HAL = 'app/(portal)/incentive-pts/';
+const page = [readFileSync(DIR_HAL + 'page.tsx', 'utf8'),
+  ...readdirSync(DIR_HAL + '_components').filter(f => /^use[A-Z]\w*\.ts$/.test(f)).map(f => readFileSync(DIR_HAL + '_components/' + f, 'utf8'))].join('\n');
 cek('layar menyimpan lewat server (simpanNominal)', /simpanNominal\(/.test(page));
 cek('tidak ada update reminders berisi incentive_value', !/from\('reminders'\)\s*\.update\(\s*\{[^}]*incentive_value/.test(page) && !/incentive_value:\s*Number\(nominalValue\)/.test(page));
 //  calc.ts dipecah menjadi calc-*.ts (calc.ts tinggal barrel) - periksa gabungan semuanya.

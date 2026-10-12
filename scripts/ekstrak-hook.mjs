@@ -154,17 +154,21 @@ const badan = isiBlok.split('\n').map((l, i) => (i === 0 ? '  ' + l : (l.startsW
   });
 const kunci = [...konteks.keys()].sort();
 const namaTipe = nama.replace(/^use/, '') + 'Konteks';
+//  Tanpa konteks (mis. kumpulan useState saja): tanpa parameter - interface kosong ditolak ESLint.
+const kepalaFungsi = kunci.length
+  ? `export interface ${namaTipe} {
+${kunci.map(k => `  ${k}: ${keAlias(konteks.get(k))};`).join('\n')}
+}
+
+export function ${nama}(k: ${namaTipe}) {
+  const { ${kunci.join(', ')} } = k;`
+  : `export function ${nama}() {`;
 const out = `'use client';
 
 /** ${nama} - dipecah dari ${path.relative(akar, absBerkas).split(path.sep).join('/')} (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 ${barisImpor.join('\n')}
 
-export interface ${namaTipe} {
-${kunci.map(k => `  ${k}: ${keAlias(konteks.get(k))};`).join('\n')}
-}
-
-export function ${nama}(k: ${namaTipe}) {
-  const { ${kunci.join(', ')} } = k;
+${kepalaFungsi}
 ${badan}
   return { ${dideklarasi.join(', ')} };
 }
@@ -174,7 +178,7 @@ fs.writeFileSync(tujuan, out);
 
 let relImpor = path.relative(path.dirname(absBerkas), path.resolve(tujuan)).split(path.sep).join('/').replace(/\.tsx?$/, '');
 if (!relImpor.startsWith('.')) relImpor = './' + relImpor;
-const panggil = `${dideklarasi.length ? `const { ${dideklarasi.join(', ')} } = ` : ''}${nama}({ ${kunci.join(', ')} });`;
+const panggil = `${dideklarasi.length ? `const { ${dideklarasi.join(', ')} } = ` : ''}${nama}(${kunci.length ? `{ ${kunci.join(', ')} }` : ''});`;
 const terakhirImpor = [...sf.statements].filter(ts.isImportDeclaration).pop();
 const suntingan = [
   { awal: pernyataan[0].getStart(sf), akhir: blokAkhir, isi: panggil },
