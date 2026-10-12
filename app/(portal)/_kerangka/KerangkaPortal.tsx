@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase, setDbToken } from '@/lib/supabase';
 import { setSession, clearSession, getSession, verifySessionFromCookie } from '@/lib/auth';
@@ -36,8 +36,34 @@ import { Ikon } from '@/components/shared/Ikon';
 export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname() ?? '/dashboard';
-  /** Menu yang alamatnya sedang dibuka (termasuk sub-halamannya). */
-  const aktifUrl = (url: string) => pathname === url || pathname.startsWith(url + '/');
+  /*
+    PINDAH MENU HARUS TERASA LANGSUNG.
+
+    Sorotan menu dulu dibaca dari alamat halaman (pathname), yang baru berganti SESUDAH kode
+    halaman tujuan selesai diunduh & dirender - jadi tombol yang diklik baru menyala belakangan
+    dan layar lama terlihat macet tanpa tanda apa pun. Sekarang tujuan dicatat saat diklik
+    (`tujuanMenu`): tombolnya langsung tersorot, bilah tipis berjalan di atas area modul selama
+    perpindahan (`sedangPindah`), lalu catatan itu dilepas begitu alamatnya benar-benar berganti.
+    Isi halaman tetap ditentukan pathname - yang dipercepat hanya umpan baliknya.
+  */
+  const [tujuanMenu, setTujuanMenu] = useState<string | null>(null);
+  const [sedangPindah, mulaiPindah] = useTransition();
+  const jalurSorot = tujuanMenu ?? pathname;
+  /** Menu yang alamatnya sedang dibuka / sedang dituju (termasuk sub-halamannya). */
+  const aktifUrl = (url: string) => jalurSorot === url || jalurSorot.startsWith(url + '/');
+  const berandaTersorot = jalurSorot === '/dashboard';
+  const pindahKe = useCallback((url: string) => {
+    const jalur = url.split('?')[0];
+    if (jalur !== pathname) setTujuanMenu(jalur);
+    mulaiPindah(() => router.push(url));
+  }, [pathname, router]);
+  useEffect(() => { setTujuanMenu(null); }, [pathname]);
+  //  Jaring pengaman: perpindahan yang batal/tertolak tidak boleh meninggalkan sorotan palsu.
+  useEffect(() => {
+    if (!tujuanMenu) return;
+    const t = setTimeout(() => setTujuanMenu(null), 10_000);
+    return () => clearTimeout(t);
+  }, [tujuanMenu]);
   const merek = useMerek();
   // Guard: ensure auto-navigation to first menu only happens ONCE per login session
   // (prevents race-condition re-fires when currentUser/showSidebar update multiple times)
@@ -201,7 +227,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   const handleMenuClick = (item: MenuItem['items'][0], _menuTitle?: string) => {
     if (item.external && !item.embed) { window.open(item.url, '_blank'); return; }
     setShowSidebar(true);
-    router.push(item.url);
+    pindahKe(item.url);
   };
 
   // Buka menu berdasarkan key (dipakai widget dashboard: Quick Action, "Lihat semua").
@@ -230,7 +256,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
       : navInternalUrl;
     void title;
     setShowSidebar(true);
-    router.push(urlDenganTarget);
+    pindahKe(urlDenganTarget);
   };
 
   /*
@@ -239,6 +265,45 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     notifikasi). Tanpa penurunan di sini layar penuh menempel ke halaman berikutnya.
   */
   useEffect(() => { setLayarPenuh(false); }, [pathname]);
+
+  /*
+    Unduh lebih dulu kode menu-menu yang boleh dibuka akun ini, satu per satu saat peramban
+    menganggur. Tombol menu memakai router.push (bukan <Link>), jadi Next tidak pernah
+    melakukannya sendiri - kode halaman tujuan baru diunduh sesudah diklik, itulah jeda
+    "macet" saat pindah menu. Hanya berkas kode statis (di-cache CDN & peramban, sekali per
+    rilis); tidak menyentuh basis data. Dilewati bila pengguna menyalakan mode hemat data.
+  */
+  const daftarPrefetch = visibleMenuItems.flatMap(m => m.items)
+    .filter(it => it.internal || (it.embed && !it.external)).map(it => it.url.split('?')[0]);
+  const kunciPrefetch = [...new Set(daftarPrefetch)].join('|');
+  useEffect(() => {
+    if (!currentUser || menuLoading || !kunciPrefetch) return;
+    const hemat = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+    if (hemat) return;
+    //  Sekali per 30 menit per tab: tiap prefetch dihitung sebagai permintaan ke CDN Vercel (kuota
+    //  Hobby), dan cache router Next menyimpan hasilnya beberapa menit - mengulang lebih sering sia-sia.
+    const KUNCI = 'prefetch-menu-terakhir';
+    try {
+      const terakhir = Number(sessionStorage.getItem(KUNCI) || 0);
+      if (Date.now() - terakhir < 30 * 60 * 1000) return;
+      sessionStorage.setItem(KUNCI, String(Date.now()));
+    } catch { /* sessionStorage ditolak - tetap prefetch sekali */ }
+    const urls = ['/dashboard', ...kunciPrefetch.split('|')];
+    let batal = false, i = 0;
+    const tunda = (fn: () => void) => ('requestIdleCallback' in window
+      ? window.requestIdleCallback(fn, { timeout: 3000 })
+      : setTimeout(fn, 300));
+    const lanjut = () => {
+      if (batal || i >= urls.length) return;
+      try { router.prefetch(urls[i]); } catch { /* prefetch hanya upaya - gagal tidak apa-apa */ }
+      i++;
+      tunda(lanjut);
+    };
+    //  Ditunda sebentar supaya tidak berebut jaringan dengan muatan awal halaman yang sedang dibuka.
+    const awal = setTimeout(() => tunda(lanjut), 2000);
+    return () => { batal = true; clearTimeout(awal); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id, menuLoading, kunciPrefetch]);
 
   // postMessage bridge
   // Receives CC_NAVIGATE messages from Command Center iframe and routes to the
@@ -263,7 +328,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
       if (match) {
         handleMenuClick(match.it, match.menu.title);
       } else {
-        router.push(url);
+        pindahKe(url);
       }
     };
     window.addEventListener('message', handleMsg);
@@ -483,7 +548,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
             {currentUser && (
               <GlobalSearch
                 currentUser={currentUser}
-                onNavigate={(url) => { setShowSidebar(true); router.push(url); }}
+                onNavigate={(url) => { setShowSidebar(true); pindahKe(url); }}
               />
             )}
             {/* NotificationBar — selalu di kanan */}
@@ -549,17 +614,17 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
 
   // MENU BAWAH HP / APK (shared) - pengganti sidebar di layar < md: semua menu, digeser kiri-kanan.
   //  Profil dibuka dari avatar di header.
-  const bukaDashboard = () => { setShowSidebar(true); router.push('/dashboard'); };
+  const bukaDashboard = () => { setShowSidebar(true); pindahKe('/dashboard'); };
   const renderNavBawah = () => (!menuLoading && !layarPenuh && currentUser ? (
     <NavBawahMobile
       aksen={merek.warnaAksen}
-      beranda={{ key: '__dashboard', label: 'Dashboard', aktif: showSidebar ? showDashboardPanel : true, onPilih: bukaDashboard }}
+      beranda={{ key: '__dashboard', label: 'Dashboard', aktif: showSidebar ? berandaTersorot : true, onPilih: bukaDashboard }}
       menu={visibleMenuItems.filter(m => m.items.length).map(menu => {
         const it = menu.items[0];
         return {
           key: menu.key, label: menu.title, pendek: LABEL_PENDEK[menu.key],
           ikon: MENU_ICONS[menu.key] ?? <Ikon nama={menu.icon} ukuran="1em" className="inline-block align-[-0.12em]" />,
-          aktif: showSidebar && !showDashboardPanel && menu.items.some(x => aktifUrl(x.url)),
+          aktif: showSidebar && !berandaTersorot && menu.items.some(x => aktifUrl(x.url)),
           badge: menu.key === 'reminder-schedule' && isFullAccess ? pendingRequests : 0,
           onPilih: () => handleMenuClick(it, menu.title),
         };
@@ -698,10 +763,10 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
         <SidebarPortal
           sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed}
           tourVisible={tourVisible} tourHighlightKey={tourHighlightKey} menuLoading={menuLoading}
-          visibleMenuItems={visibleMenuItems} showDashboardPanel={showDashboardPanel} aktifUrl={aktifUrl}
+          visibleMenuItems={visibleMenuItems} showDashboardPanel={berandaTersorot} aktifUrl={aktifUrl}
           currentUser={currentUser} isAdmin={isAdmin} isFullAccess={isFullAccess}
           pendingUsers={pendingUsers} pendingRequests={pendingRequests}
-          onMenu={handleMenuClick} onBeranda={() => router.push('/dashboard')}
+          onMenu={handleMenuClick} onBeranda={() => pindahKe('/dashboard')}
           onProfil={() => setShowUserProfile(true)}
           onAdminPanel={() => { setAdminPanelTab(pendingUsers > 0 ? 'userManagement' : 'settings'); setShowAdminPanel(true); }}
           onKeluar={handleLogout}
@@ -721,7 +786,9 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
             min-h-0 wajib: tanpa itu flex-1 menolak menyusut di bawah tinggi
             kontennya dan penguncian ini tidak berlaku. */}
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-          <div className="flex-1 min-h-0 overflow-hidden relative">
+          <div className={`flex-1 min-h-0 overflow-hidden relative ${sedangPindah ? 'isi-sedang-pindah' : ''}`}
+            style={{ ['--warna-pindah' as string]: merek.warnaAksen }}>
+            {sedangPindah && <div aria-hidden="true" className="bilah-pindah-menu" />}
             {showDashboardPanel && currentUser ? (
               /* Permission-Aware Dashboard - widget adaptif per permission.
                  Background transparan (IVP bg tembus); hanya card yg opaque.
