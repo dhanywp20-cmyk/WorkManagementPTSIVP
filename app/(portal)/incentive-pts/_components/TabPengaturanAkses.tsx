@@ -3,6 +3,7 @@
 /** TabPengaturanAkses - dipecah dari app/(portal)/incentive-pts/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { bisaKonfig, type CurrentUser, type TabKey } from './aturan-halaman';
 import { IkonTeks } from '@/components/shared/Ikon';
+import { KartuAturanNominal } from './KartuAturanNominal';
 import { tingkatAkses, LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES, type TingkatAkses } from '@/lib/incentive-akses';
 
 export interface TabPengaturanAksesProps {
@@ -49,6 +50,7 @@ export function TabPengaturanAkses({ allUsers, cariUser, currentUser, handleSetA
               placeholder="Cari nama atau username…" aria-label="Cari pengguna"
               className="mt-3 w-full sm:max-w-xs text-xs px-3 py-2 rounded-lg border border-gray-200 bg-white outline-none focus:ring-2 focus:ring-indigo-300" />
           </div>
+          <KartuAturanNominal />
           <div className="divide-y divide-gray-100">
             {(() => {
               const q = cariUser.trim().toLowerCase();

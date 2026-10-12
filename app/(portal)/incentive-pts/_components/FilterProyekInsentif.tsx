@@ -184,10 +184,12 @@ export function FilterProyekInsentif({ bastYearsProjects, bolehHapus, currentUse
             (sudah tersaring ke project sendiri utk non-privileged),
             BUKAN dari totalPool (total seluruh platform).
           */}
-          &nbsp;·&nbsp;Total:&nbsp;
-          <span className="font-bold text-emerald-700">
-            {formatRupiah(filteredProjects.filter(p => (p.incentive_value || 0) > 0).reduce((s, p) => s + (p.incentive_value || 0), 0))}
-          </span>
+          {(() => {
+            const jumlah = filteredProjects.reduce((s, p) => s + (p.incentive_value || 0), 0);
+            //  Tanpa hak melihat nominal, jumlahnya 0 - bukan "Rp 0", jadi tidak ditampilkan.
+            if (jumlah <= 0 && !bisaInput(currentUser)) return null;
+            return (<>&nbsp;·&nbsp;Total:&nbsp;<span className="font-bold text-emerald-700">{formatRupiah(jumlah)}</span></>);
+          })()}
         </p>
       </div>
     </>

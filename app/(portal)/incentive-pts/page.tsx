@@ -18,6 +18,7 @@ import {
   ROLE_LABELS, TRANCHE_STATUS,
 } from './_components/calc';
 import { setAksesIncentive, setBrandScopeIncentive } from '@/lib/incentive-akses-api';
+import { simpanNominal } from '@/lib/incentive-nominal-api';
 import {
   bisaKonfigPenuh, bisaInputNominal, tingkatAkses,
   LABEL_AKSES, JELAS_AKSES, URUTAN_AKSES, type TingkatAkses,
@@ -358,28 +359,15 @@ export default function IncentivePTSPage() {
     setSavingNominal(true);
 
     /*
-      Nominal DIKUNCI begitu tahapan pencairan dibuat.
-
-      Tahapan menyimpan persentase, bukan rupiah - nominalnya dihitung dari
-      incentive_value pada saat pencairan. Jadi mengubah nominal sesudah Tahap 1
-      cair membuat Tahap 2 & 3 dihitung dari pool yang BERBEDA dengan yang
-      dipakai Tahap 1, dan jumlah seluruh tahapan tidak lagi sama dengan pool
-      mana pun. Tidak ada galat yang muncul; yang terjadi cuma rekap tahun
-      berikutnya tidak bisa dicocokkan dengan rekap tahun sebelumnya.
-
-      Diperiksa ke database, bukan ke state layar, karena tahapan bisa saja
-      baru dibuat orang lain sesudah layar ini dimuat.
+      Nominal TIDAK lagi ditulis ke tabel jadwal (reminders): tabel itu terbaca
+      siapa pun yang boleh melihat jadwalnya, sedangkan nominal proyek hanya
+      untuk petugas. Ia disimpan lewat /api/incentive/nominal ke tabel
+      terkunci - dan server pula yang menolak bila tahapan pencairan proyek
+      ini sudah dibuat (nominal terkunci begitu tahapan ada, sebab tahap
+      berikutnya akan dihitung dari pool yang berbeda dengan yang sudah cair).
     */
-    const { data: adaTahapan } = await supabase
-      .from('incentive_tranches').select('id').eq('project_id', nominalProject.id).limit(1);
-    if (adaTahapan && adaTahapan.length > 0) {
-      notify('error',
-        'Nominal terkunci — tahapan pencairan untuk proyek ini sudah dibuat. '
-        + 'Mengubahnya membuat tahapan berikutnya dihitung dari pool yang berbeda dengan tahap yang sudah cair. '
-        + 'Hapus tahapannya lebih dulu bila nominalnya memang keliru.');
-      setSavingNominal(false);
-      return;
-    }
+    const simpan = await simpanNominal(nominalProject.id, Number(nominalValue));
+    if (simpan.error) { notify('error', simpan.error.message); setSavingNominal(false); return; }
 
     /*
       BAST ikut disimpan bila diubah - dan ke SELURUH baris sebatch, sama
@@ -389,16 +377,13 @@ export default function IncentivePTSPage() {
       paling akhir) belum tentu baris yang barusan diperbaiki.
     */
     const bastBerubah = (nominalProject.bast_date ?? '') !== nominalBast;
-    const isiSimpan: Record<string, unknown> = {
-      incentive_value: Number(nominalValue),
-      updated_at: new Date().toISOString(),
-    };
-    if (bastBerubah) isiSimpan.bast_date = nominalBast || null;
-
-    const { error } = await (nominalProject.batch_id
-      ? supabase.from('reminders').update(isiSimpan).eq('batch_id', nominalProject.batch_id)
-      : supabase.from('reminders').update(isiSimpan).eq('id', nominalProject.id));
-    if (error) { notify('error', 'Gagal: ' + error.message); setSavingNominal(false); return; }
+    if (bastBerubah) {
+      const isiBast = { bast_date: nominalBast || null, updated_at: new Date().toISOString() };
+      const { error } = await (nominalProject.batch_id
+        ? supabase.from('reminders').update(isiBast).eq('batch_id', nominalProject.batch_id)
+        : supabase.from('reminders').update(isiBast).eq('id', nominalProject.id));
+      if (error) { notify('error', 'Nominal tersimpan, tetapi tanggal BAST gagal: ' + error.message); setSavingNominal(false); return; }
+    }
 
     if (bastBerubah) {
       logAudit({
