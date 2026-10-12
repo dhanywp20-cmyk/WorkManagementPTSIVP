@@ -42,6 +42,8 @@ const PUBLIC_EXACT = [
   // diam-diam menganggap app tidak installable (menu "Install app" tak muncul).
   '/manifest.webmanifest',
   '/sw.js',
+  // Pemantau uptime - tidak menyentuh basis data (lihat route-nya).
+  '/api/health',
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/forgot-password',

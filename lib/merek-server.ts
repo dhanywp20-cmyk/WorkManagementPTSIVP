@@ -18,19 +18,33 @@ export interface MerekManifest {
   warnaUtama: string;
 }
 
+/*
+  Disimpan sebentar di memori instans server. Manifest diminta peramban di setiap
+  muat halaman, dan tiap permintaan dulu menunggu satu kueri Supabase (0,6-1,1 dtk
+  terukur di produksi). Nama & warna merek jarang berubah; perubahan dari Admin Panel
+  terlihat paling lambat 5 menit kemudian. Hanya hasil baca yang BERHASIL yang disimpan,
+  jadi galat sesaat tidak membekukan nilai bawaan.
+*/
+const UMUR_SIMPAN_MS = 5 * 60 * 1000;
+let simpanan: { nilai: MerekManifest; sampai: number } | null = null;
+
 export async function bacaMerekUntukManifest(): Promise<MerekManifest> {
+  if (simpanan && simpanan.sampai > Date.now()) return simpanan.nilai;
   try {
     const db = getAdminClient();
-    const { data } = await db.from('app_settings').select('value').eq('key', KUNCI_MEREK).maybeSingle();
+    const { data, error } = await db.from('app_settings').select('value').eq('key', KUNCI_MEREK).maybeSingle();
+    if (error) throw error;
     const mentah = data?.value;
     // Kolomnya jsonb - biasanya sudah berupa objek, tapi jaga-jaga kalau
     // tersimpan sebagai string JSON (lihat uraikan() di lib/merek.ts).
     const isi = (typeof mentah === 'string' ? JSON.parse(mentah) : mentah ?? {}) as Partial<MerekManifest>;
-    return {
+    const nilai = {
       namaPlatform: isi.namaPlatform || MEREK_BAWAAN.namaPlatform,
       namaPlatformSingkat: isi.namaPlatformSingkat || MEREK_BAWAAN.namaPlatformSingkat,
       warnaUtama: isi.warnaUtama || MEREK_BAWAAN.warnaUtama,
     };
+    simpanan = { nilai, sampai: Date.now() + UMUR_SIMPAN_MS };
+    return nilai;
   } catch {
     return {
       namaPlatform: MEREK_BAWAAN.namaPlatform,
