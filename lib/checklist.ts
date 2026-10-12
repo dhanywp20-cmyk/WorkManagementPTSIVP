@@ -20,6 +20,8 @@
  *     (+ Status opsional). Hasil Ekspor Excel dari modul ini bisa diimpor balik.
  */
 
+import { appBaseUrl } from './app-url';
+
 export interface DraftItem {
   kelompok: string;
   teks: string;
@@ -540,10 +542,9 @@ export function validasiNama(v: unknown): string | null {
 
 // ── Lain-lain ──────────────────────────────────────────────────────────────
 
-/** URL absolut halaman share - aman dipanggil hanya di browser. */
+/** URL absolut halaman share. Domain dari appBaseUrl(): dari Preview Vercel tetap ke domain produksi. */
 export function urlShareChecklist(token: string): string {
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${origin}/checklist/share/${token}`;
+  return `${appBaseUrl()}/checklist/share/${token}`;
 }
 
 export function formatWaktu(iso: string | null | undefined): string {

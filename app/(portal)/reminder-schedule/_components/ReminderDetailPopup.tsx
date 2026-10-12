@@ -1,4 +1,5 @@
 'use client';
+import { appBaseUrl } from '@/lib/app-url';
 import { useRouter } from 'next/navigation';
 import type { RefObject, Dispatch, SetStateAction } from 'react';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
@@ -241,7 +242,7 @@ export function ReminderDetailPopup({
                     const r = detailReminder;
                     const ics = buatIcs({
                       uid: r.id, judul: `${r.category} - ${r.project_name}`, tanggal: r.due_date, jam: r.due_time,
-                      lokasi: r.address, url: `${location.origin}/reminder-schedule?open=${encodeURIComponent(r.id)}`,
+                      lokasi: r.address, url: `${appBaseUrl()}/reminder-schedule?open=${encodeURIComponent(r.id)}`,
                       keterangan: [r.assign_name && `PTS: ${r.assign_name}`, r.sales_name && `Sales: ${r.sales_name}`, r.pic_name && `PIC: ${r.pic_name}${r.pic_phone ? ` (${r.pic_phone})` : ''}`, r.description].filter(Boolean).join('\n'),
                     });
                     const url = URL.createObjectURL(new Blob([ics], { type: 'text/calendar;charset=utf-8' }));
