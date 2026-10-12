@@ -138,7 +138,13 @@ for (const [d, nama2] of perImpor) {
 // 5. Tulis hook & ganti blok di induk dengan pemanggilan hook di posisi yang sama.
 const isiBlok = teks.slice(pernyataan[0].getStart(sf), blokAkhir);
 const indentAsal = teks.slice(teks.lastIndexOf('\n', pernyataan[0].getStart(sf)) + 1, pernyataan[0].getStart(sf));
-const badan = isiBlok.split('\n').map((l, i) => (i === 0 ? '  ' + l : (l.startsWith(indentAsal) ? '  ' + l.slice(indentAsal.length) : l))).join('\n');
+const badan = isiBlok.split('\n').map((l, i) => (i === 0 ? '  ' + l : (l.startsWith(indentAsal) ? '  ' + l.slice(indentAsal.length) : l))).join('\n')
+  //  import('./x') relatif terhadap berkas INDUK - sesuaikan dengan letak berkas hook.
+  .replace(/import\((['"])(\.{1,2}\/[^'"]+)\1\)/g, (_, q, spes) => {
+    let baru = path.relative(dirTujuan, path.resolve(path.dirname(absBerkas), spes)).split(path.sep).join('/');
+    if (!baru.startsWith('.')) baru = './' + baru;
+    return `import(${q}${baru}${q})`;
+  });
 const kunci = [...konteks.keys()].sort();
 const namaTipe = nama.replace(/^use/, '') + 'Konteks';
 const out = `'use client';
