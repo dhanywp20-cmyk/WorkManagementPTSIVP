@@ -188,7 +188,7 @@ export const PANDUAN: Panduan[] = [
   },
   {
     kunci: 'tools-team',
-    judul: 'Tools Team',
+    judul: 'AV Solutions Studio',
     guna: 'Kalkulator & desain untuk engineer AV: LED videotron dan desain 3D ruang.',
     langkah: [
       'Pilih alat di kolom kiri (di HP: deretan di atas).',

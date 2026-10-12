@@ -86,10 +86,10 @@ export const DAFTAR_MENU: MenuItem[] = [
     items: [{ name: 'Project Progress', url: '/project-progress', icon: '📊', internal: true, embed: true }]
   },
   {
-    title: 'Tools Team', icon: '🧮', key: 'tools-team',
+    title: 'AV Solutions Studio', icon: '🧮', key: 'tools-team',
     gradient: 'from-blue-700 via-blue-600 to-sky-500',
     description: 'Kalkulator LED, desain 3D ruang, layar, proyektor, sinyal, audio & daya',
-    items: [{ name: 'Tools Team', url: '/tools-team', icon: '🧮', internal: true, embed: true }]
+    items: [{ name: 'AV Solutions Studio', url: '/tools-team', icon: '🧮', internal: true, embed: true }]
   },
   {
     title: 'KPI Team', icon: '📊', key: 'kpi-team',

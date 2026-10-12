@@ -8,7 +8,7 @@ const info = (b: Baris[]) => b.map(([label, nilai, sorot]) => ({ label, nilai, s
 /** Lembar cetak sederhana: masukan | hasil, plus seksi tambahan (tabel). */
 export function lembarAV(judul: string, masukan: Baris[], hasil: Baris[], catatan: string, tambahan: Seksi[] = []): Lembar {
   return {
-    judul, subjudul: 'Kalkulator AV · Tools Team',
+    judul, subjudul: 'Kalkulator AV · AV Solutions Studio',
     kepala: [['Tanggal', new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })]],
     seksi: [{ judul: 'Masukan & hasil', jenis: 'info', kiri: info(masukan), kanan: info(hasil) }, ...tambahan],
     catatan,
