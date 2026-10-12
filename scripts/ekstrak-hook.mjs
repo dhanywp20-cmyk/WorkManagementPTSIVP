@@ -53,6 +53,13 @@ const pernyataan = fungsi.body.statements.filter(s => barisDari(s.getStart(sf)) 
 if (!pernyataan.length) { console.error('tidak ada pernyataan di rentang itu'); process.exit(1); }
 const blokAwal = pernyataan[0].getFullStart(), blokAkhir = pernyataan[pernyataan.length - 1].end;
 for (const s of pernyataan) if (ts.isReturnStatement(s)) { console.error('rentang memuat return komponen'); process.exit(1); }
+//  Return BERSYARAT milik komponen (mis. `if (!siap) return <Loading/>`) juga harus ditolak: ia akan ikut
+//  pindah ke dalam hook dan diam-diam berhenti menjadi early return komponen.
+for (const s of pernyataan) (function cari(n) {
+  if (ts.isFunctionLike(n)) return;            // return di dalam fungsi lain (handler, callback) bukan masalah
+  if (ts.isReturnStatement(n)) { console.error('rentang memuat return bersyarat milik komponen:', s.getText(sf).slice(0, 60)); process.exit(1); }
+  ts.forEachChild(n, cari);
+})(s);
 
 // 2. Nama yang dideklarasikan blok (dikembalikan hook).
 const dideklarasi = [];
