@@ -1,15 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { CalendarDays, ChevronDown, Eye, Lock, MapPin } from 'lucide-react';
+import { BarProgres, CatatanTeks, KepingKendala, TEMA, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
+import { STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari, type ChecklistBagian, type ChecklistItem, type StatusProyek } from '@/lib/checklist';
 import { NETRAL } from '@/lib/desain';
-import {
-  STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari,
-  type ChecklistBagian, type ChecklistItem, type StatusProyek,
-} from '@/lib/checklist';
-import { BarProgres, CatatanTeks, KepingKendala, PanelBagian, TEMA, itemPerBagian, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
+import { CalendarDays, ChevronRight, Eye, Lock, MapPin } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { hitungRingkasan } from './_bagian/hitung-ringkasan';
+import { PanelLokasi } from './_bagian/PanelLokasi';
 import { RingkasanProyek } from './_bagian/RingkasanProyek';
 
 interface DataShare {
@@ -62,6 +60,7 @@ export default function ProyekSharePage() {
   }, [data]);
 
   const total = data ? statDari(data.items) : null;
+  const lokasiBuka = data?.daftar.find(d => d.id === buka) ?? null;
   const ringkasan = useMemo(() => data ? hitungRingkasan(data.proyek, data.daftar, data.items) : null, [data]);
   const st = data ? (STATUS_PROYEK[data.proyek.status] ?? STATUS_PROYEK.in_progress) : null;
 
@@ -129,17 +128,16 @@ export default function ProyekSharePage() {
               const isi = perDaftar.get(d.id) ?? { bagian: [], items: [] };
               const s = statDari(isi.items);
               const j = keadaanJadwal(d.target_date, s.total > 0 && s.selesai === s.total);
-              const terbuka = buka === d.id;
-              const peta = itemPerBagian(isi.bagian, isi.items);
+              const dipilih = buka === d.id;
               return (
-                <section key={d.id} className={`rounded-xl overflow-hidden ${terbuka ? 'lg:col-span-2' : ''}`} style={{ background: NETRAL.permukaan, border: `1px solid ${s.kendala ? TEMA.kendalaGaris : NETRAL.garis}` }}>
-                  <button type="button" onClick={() => setBuka(terbuka ? null : d.id)} aria-expanded={terbuka}
+                <section key={d.id} className="rounded-xl overflow-hidden transition-shadow hover:shadow-md" style={{ background: NETRAL.permukaan, border: `1px solid ${dipilih ? TEMA.warna : s.kendala ? TEMA.kendalaGaris : NETRAL.garis}` }}>
+                  <button type="button" onClick={() => setBuka(d.id)} aria-haspopup="dialog"
                     className="w-full text-left px-4 py-3 space-y-2">
                     <div className="flex items-center gap-2">
-                      <ChevronDown size={16} className="flex-shrink-0 transition-transform" style={{ transform: terbuka ? 'none' : 'rotate(-90deg)', color: TEMA.samar }} />
                       <MapPin size={15} style={{ color: TEMA.warna }} />
                       <span className="font-bold text-[14px] flex-1 min-w-0 truncate" style={{ color: NETRAL.tinta }}>{d.judul}</span>
                       <KepingKendala jumlah={s.kendala} />
+                      <ChevronRight size={16} className="flex-shrink-0" style={{ color: TEMA.samar }} />
                     </div>
                     <div className="pl-6 flex items-center gap-3 flex-wrap">
                       <div className="flex-1 min-w-[180px]">
@@ -148,18 +146,20 @@ export default function ProyekSharePage() {
                       <span className="text-[11.5px] font-bold" style={{ color: j.keadaan === 'terlambat' ? TEMA.bahaya : j.keadaan === 'selesai' ? TEMA.selesai : TEMA.samar }}>{j.label}</span>
                     </div>
                   </button>
-                  {terbuka && (
-                    <div className="px-3 pb-3 space-y-2" style={{ borderTop: `1px solid ${NETRAL.garis}`, paddingTop: 12 }}>
-                      {d.keterangan && <div className="px-1"><CatatanTeks teks={d.keterangan} /></div>}
-                      {isi.bagian.map(b => (
-                        <PanelBagian key={b.id} bagian={b} items={peta.get(b.id) ?? []} sedangId={null} aksi={{}} terbukaAwal={false} />
-                      ))}
-                    </div>
-                  )}
                 </section>
               );
             })}
             </div>
+
+            {lokasiBuka && ringkasan && (() => {
+              const i = data.daftar.findIndex(d => d.id === lokasiBuka.id);
+              const isi = perDaftar.get(lokasiBuka.id) ?? { bagian: [], items: [] };
+              return (
+                <PanelLokasi key={lokasiBuka.id} lokasi={ringkasan.lokasi[i]} keterangan={lokasiBuka.keterangan}
+                  bagian={isi.bagian} items={isi.items} urutan={i} jumlah={data.daftar.length}
+                  onPindah={arah => setBuka(data.daftar[i + arah]?.id ?? lokasiBuka.id)} onTutup={() => setBuka(null)} />
+              );
+            })()}
 
             <p className="text-center text-[11px] font-semibold py-4" style={{ color: TEMA.samar }}>
               Work Management PTS IVP · Diperbarui {formatWaktu(data.proyek.updated_at)} · Halaman ini hanya menampilkan data.

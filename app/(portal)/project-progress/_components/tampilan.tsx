@@ -181,11 +181,8 @@ export function BarisItem({ item, sedang, aksi }: { item: ChecklistItem; sedang:
       </button>
 
       <div className="flex-1 min-w-0">
-        <p className="text-[13.5px] leading-snug" style={{
-          color: item.selesai ? NETRAL.tinta2 : NETRAL.tinta,
-          textDecoration: item.selesai ? 'line-through' : 'none',
-          textDecorationColor: TEMA.samar,
-        }}>{item.teks}</p>
+        {/* Selesai ditandai centang hijau + latar hijau muda + nama & waktu - tanpa coretan (sulit dibaca). */}
+        <p className="text-[13.5px] leading-snug" style={{ color: NETRAL.tinta }}>{item.teks}</p>
         {item.tertunda && (
           <p className="text-[11px] font-bold uppercase tracking-wide mt-0.5" style={{ color: TEMA.warna }}>Belum disimpan</p>
         )}

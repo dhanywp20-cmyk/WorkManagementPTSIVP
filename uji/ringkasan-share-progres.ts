@@ -63,6 +63,8 @@ console.log('\n4. Halaman');
 const hal = readFileSync('app/project-progress/share/[token]/page.tsx', 'utf8');
 cek('halaman memakai ringkasan', /<RingkasanProyek r=\{ringkasan\} \/>/.test(hal));
 cek('desktop: lokasi grid 2 kolom', /lg:grid-cols-2/.test(hal));
+cek('detail lokasi di panel samping, bukan menumpuk ke bawah', /<PanelLokasi /.test(hal) && !/lg:col-span-2/.test(hal));
+cek('item selesai tanpa coretan', !/line-through/.test(readFileSync('app/(portal)/project-progress/_components/tampilan.tsx', 'utf8')));
 cek('tanpa kueri tambahan (hanya route share yang sama)', (hal.match(/fetch\(/g) ?? []).length === 1);
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
