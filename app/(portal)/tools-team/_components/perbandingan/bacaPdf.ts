@@ -27,9 +27,10 @@ export async function bacaTeksPdf(berkas: File, sinyal?: AbortSignal): Promise<H
   if (salah) throw new Error(salah);
   const lib = await pdfjs();
   let dok: Awaited<ReturnType<PdfJs['getDocument']>['promise']>;
+  //  Tanpa font sistem: brosur hanya dibaca teksnya (pdf.js 5+ tidak lagi memakai eval sama sekali).
+  const tugas = lib.getDocument({ data: new Uint8Array(await berkas.arrayBuffer()), disableFontFace: true, useSystemFonts: false });
   try {
-    //  Tanpa skrip / font sistem: brosur tidak menjalankan apa pun, hanya dibaca teksnya.
-    dok = await lib.getDocument({ data: new Uint8Array(await berkas.arrayBuffer()), isEvalSupported: false, disableFontFace: true, useSystemFonts: false }).promise;
+    dok = await tugas.promise;
   } catch (e) {
     const nama = (e as { name?: string })?.name;
     if (nama === 'PasswordException') throw new Error(`${berkas.name}: PDF terkunci kata sandi - buka kuncinya dulu.`);
@@ -50,7 +51,8 @@ export async function bacaTeksPdf(berkas: File, sinyal?: AbortSignal): Promise<H
       p.cleanup();
     }
   } finally {
-    void dok.destroy();
+    //  pdf.js 6: dokumen tidak punya destroy() lagi - tutup lewat tugas pemuatnya.
+    void tugas.destroy();
   }
   const karakter = halaman.join('').replace(/\s/g, '').length;
   if (karakter < MIN_KARAKTER_TEKS) {
