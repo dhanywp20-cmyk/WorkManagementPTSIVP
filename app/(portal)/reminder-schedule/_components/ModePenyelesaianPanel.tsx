@@ -60,7 +60,7 @@ export function ModePenyelesaianPanel({
   const batalkan = () => { setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); setPendingPhotoUrl(undefined); };
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 overflow-hidden flex flex-col"
+    <div className="bg-white rounded-2xl shadow-2xl fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 overflow-hidden flex flex-col"
       style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', height: '100%' }}>
       <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
         <h3 className="text-white font-bold text-base"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {modeEditSaja ? 'Detail Pelaksanaan' : 'Mode Penyelesaian'}</h3>

@@ -11,7 +11,9 @@ export function useStateApproval() {
   const [approveDate, setApproveDate] = useState('');
   const [approveTime, setApproveTime] = useState('');
   /** Panel riwayat di samping modal detail. Default terbuka supaya langsung terlihat. */
-  const [showRiwayat, setShowRiwayat] = useState(true);
+  //  Terbuka bawaan hanya di layar lebar (berdampingan dengan detail). Di HP panelnya menutupi detail,
+  //  jadi dibuka lewat tombol jam saja.
+  const [showRiwayat, setShowRiwayat] = useState(() => typeof window === 'undefined' || window.matchMedia('(min-width: 768px)').matches);
   // Timeline pengerjaan saat approve - terisi dari usulan Sales, boleh diubah.
   const [approveStart,  setApproveStart]  = useState('');
   const [approveTarget2, setApproveTarget2] = useState('');
