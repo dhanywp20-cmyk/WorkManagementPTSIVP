@@ -143,7 +143,8 @@ export function ReminderDetailPopup({
             className="absolute top-4 right-14 h-7 px-2.5 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center gap-1 text-[11px] font-bold">
             <Ikon nama="🕘" ukuran="1em" className="inline-block align-[-0.12em]" /> <span className="hidden sm:inline">Riwayat</span>
           </button>
-          <div className="flex flex-wrap gap-2 mb-3">
+          {/* pr: ruang untuk tombol Riwayat & Tutup (absolute di kanan atas) supaya lencana tidak tertimpa. */}
+          <div className="flex flex-wrap gap-2 mb-3 pr-24 sm:pr-40">
             <PriorityBadge priority={detailReminder.priority} onHeader />
             <StatusBadge status={detailReminder.status} onHeader />
             <CategoryBadge category={detailReminder.category} onHeader />
@@ -281,9 +282,9 @@ export function ReminderDetailPopup({
                     style={{ background: 'rgba(220,38,38,0.2)', color: '#dc2626' }}>
                     {detailReminder.assign_name.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">{detailReminder.assign_name}</p>
-                    <p className="text-xs" style={{ color: '#64748b' }}><Username value={detailReminder.assigned_to} /></p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-800 break-words">{detailReminder.assign_name}</p>
+                    <p className="text-xs truncate" title={detailReminder.assigned_to ?? ''} style={{ color: '#64748b' }}><Username value={detailReminder.assigned_to} /></p>
                   </div>
                 </div>
               </div>
@@ -697,8 +698,10 @@ export function ReminderDetailPopup({
           detailnya, bukan tersembunyi di balik tombol di dalam. Mode
           Penyelesaian punya prioritas: ia bagian dari alur menyelesaikan
           pekerjaan, sedangkan riwayat hanya rujukan. */}
+      {/* HP: panel ini menjadi lapisan penuh di atas detail (fixed inset-3) - berdampingan di layar
+          sempit membuat popup detail terjepit menjadi garis tipis di kiri. */}
       {showRiwayat && !showModeModal && (
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex-shrink-0 self-start overflow-hidden flex flex-col"
+        <div className="bg-white rounded-2xl shadow-2xl fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 md:self-start overflow-hidden flex flex-col"
           style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '100%' }}>
           <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
             <h3 className="text-white font-bold text-base"><IkonTeks nama="🕘" />Riwayat Perubahan</h3>

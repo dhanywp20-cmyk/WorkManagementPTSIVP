@@ -66,23 +66,28 @@ export function FlowSteps({
           sama rata dan labelnya boleh melipat. Lebar minimum per tahap memaksa
           scroll di panel sempit, dan tahap terakhir - yang paling ingin
           dilihat - justru yang tersembunyi di luar layar. */}
-      <div>
+      {/* overflow-x-auto hanya jaring pengaman: dalam keadaan normal semua tahap muat. */}
+      <div className="overflow-x-auto">
         <div className="flex items-start">
           {steps.map((s, i) => {
             const k = keadaan(i);
             const w = WARNA[k];
             return (
-              <div key={i} className="flex-1 min-w-0 flex flex-col items-center relative">
+              /* Lebar dibagi rata, TETAPI tidak lebih sempit dari kata terpanjang label (tanpa
+                 min-w-0): di HP huruf dinaikkan ke 11px dan label seperti "Diteruskan" dulu
+                 terpotong di tengah kata ("Diteruska / n"). */
+              <div key={i} className="flex-1 flex flex-col items-center relative">
 
-                {/* Garis penghubung ke tahap sebelumnya. Digambar di belakang
-                    bulatan, dan warnanya mengikuti tahap KIRI supaya jalur yang
-                    sudah dilalui terbaca menyambung. */}
+                {/* Garis penghubung digambar per SISI (separuh kiri & kanan tiap tahap), bukan
+                    satu garis selebar tahap: kolom kini boleh tidak sama lebar, dan garis tetap
+                    menyambung dari pusat ke pusat. Warnanya mengikuti tahap KIRI. */}
                 {i > 0 && (
                   <span className="absolute h-0.5" aria-hidden="true"
-                    style={{
-                      top: '0.6875rem', right: '50%', width: '100%',
-                      background: WARNA[keadaan(i - 1)].garis,
-                    }} />
+                    style={{ top: '0.6875rem', left: 0, right: '50%', background: WARNA[keadaan(i - 1)].garis }} />
+                )}
+                {i < steps.length - 1 && (
+                  <span className="absolute h-0.5" aria-hidden="true"
+                    style={{ top: '0.6875rem', left: '50%', right: 0, background: w.garis }} />
                 )}
 
                 <span className="relative flex items-center justify-center rounded-full flex-shrink-0"
@@ -97,12 +102,12 @@ export function FlowSteps({
                   {k === 'sekarang' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
                 </span>
 
-                <p className="text-[10px] font-bold text-center mt-1.5 leading-tight px-0.5 w-full break-words"
+                <p className="text-[10px] font-bold text-center mt-1.5 leading-tight px-1 w-full"
                   style={{ color: w.teks }}>
                   {s.label}
                 </p>
                 {s.pelaku && (
-                  <p className="text-[10px] text-center leading-tight text-slate-500 px-0.5 w-full break-words">
+                  <p className="text-[10px] text-center leading-tight text-slate-500 px-1 w-full [overflow-wrap:anywhere]">
                     {s.pelaku}
                   </p>
                 )}
