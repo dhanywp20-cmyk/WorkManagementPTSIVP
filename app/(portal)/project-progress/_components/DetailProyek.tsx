@@ -11,6 +11,8 @@ import { BarProgres, CatatanTeks, KepingKendala, TEMA, progresDariStat } from '.
 import { ModalShare } from './ModalShare';
 import { ModalChecklistBaru, ModalProyek, type IsianProyek } from './FormProyek';
 import type { CalonAnggota } from './PilihAnggota';
+import { ringkasDariLokasi } from './ringkasan/hitung';
+import { LipatRingkasan, RingkasanProyek } from './ringkasan/Ringkasan';
 import { panggil, pesanGalat } from './api';
 
 const kecil = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold transition-colors';
@@ -168,6 +170,12 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
         </div>
         {proyek.deskripsi && <CatatanTeks teks={proyek.deskripsi} />}
       </div>
+
+      {checklist.length > 0 && (
+        <LipatRingkasan>
+          <RingkasanProyek r={ringkasDariLokasi(proyek, checklist.map(c => ({ id: c.id, judul: c.judul, target_date: c.target_date, stat: c.stat })))} />
+        </LipatRingkasan>
+      )}
 
       {/* Berpanel: latar halaman bisa berupa foto (Admin Panel > Merek). */}
       <div className="flex items-center justify-between gap-2 rounded-xl px-4 py-2.5 shadow-sm"

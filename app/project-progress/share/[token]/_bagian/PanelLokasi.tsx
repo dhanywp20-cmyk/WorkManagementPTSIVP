@@ -10,7 +10,7 @@ import { ChevronLeft, ChevronRight, MapPin, X } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
 import type { ChecklistBagian, ChecklistItem } from '@/lib/checklist';
 import { BarProgres, CatatanTeks, KepingKendala, PanelBagian, TEMA, itemPerBagian, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
-import type { RingkasLokasi } from './hitung-ringkasan';
+import type { RingkasLokasi } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
 
 const DURASI = 220;
 

@@ -6,9 +6,9 @@ import { NETRAL } from '@/lib/desain';
 import { CalendarDays, ChevronRight, Eye, Lock, MapPin } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { hitungRingkasan } from './_bagian/hitung-ringkasan';
 import { PanelLokasi } from './_bagian/PanelLokasi';
-import { RingkasanProyek } from './_bagian/RingkasanProyek';
+import { hitungRingkasan } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
+import { RingkasanProyek } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';
 
 interface DataShare {
   proyek: {
