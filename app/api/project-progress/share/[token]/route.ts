@@ -34,17 +34,22 @@ export async function GET(_request: NextRequest, ctx: { params: Promise<{ token:
 
   let bagian: unknown[] = [];
   let items: unknown[] = [];
+  //  Nama handler (anggota checklist) - hanya untuk ringkasan "Dikerjakan Oleh"; nama yang sama
+  //  sudah tampil di item yang mereka centang.
+  let anggota: unknown[] = [];
   if (ids.length) {
-    const [bRes, iRes] = await Promise.all([
+    const [bRes, iRes, aRes] = await Promise.all([
       db.from('checklist_bagian').select('id,daftar_id,judul,catatan,urutan').in('daftar_id', ids).order('urutan'),
       db.from('checklist_item').select(KOLOM_ITEM).in('daftar_id', ids).order('urutan').limit(5000),
+      db.from('checklist_anggota').select('daftar_id,nama').in('daftar_id', ids),
     ]);
     // Kegagalan query JANGAN ditelan jadi array kosong - halaman publik akan
     // tampak "proyek kosong" padahal datanya ada.
     if (bRes.error || iRes.error) return galat(bRes.error?.message ?? iRes.error?.message ?? 'Gagal memuat.', 500);
     bagian = bRes.data ?? [];
     items = iRes.data ?? [];
+    anggota = aRes.error ? [] : aRes.data ?? [];
   }
 
-  return NextResponse.json({ proyek, daftar: daftar ?? [], bagian, items }, { headers: NO_STORE });
+  return NextResponse.json({ proyek, daftar: daftar ?? [], bagian, items, anggota }, { headers: NO_STORE });
 }

@@ -183,6 +183,8 @@ export interface ProyekRingkas extends ChecklistProyek {
 export interface ProyekDetail {
   proyek: ChecklistProyek;
   checklist: ChecklistRingkas[];
+  /** Handler & jumlah selesai per hari (WIB) untuk ringkasan - diagregasi di server, bukan daftar item. */
+  aktivitas?: { kontribusi: { nama: string; jumlah: number }[]; perHari: Record<string, number> };
   /** Admin: ubah/hapus proyek, buat checklist, link proyek. */
   admin: boolean;
 }

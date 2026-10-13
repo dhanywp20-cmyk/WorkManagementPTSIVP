@@ -3,14 +3,18 @@
 /**
  * Ringkasan & grafik Project Progress - satu tampilan untuk semua tempat: daftar proyek, detail
  * proyek, checklist lokasi, link View-Only, dan link checklist tim. Angka dari ./hitung.ts.
+ *
+ * Aturan: tiap fakta tampil SEKALI di halaman. Progres per lokasi / per bagian sudah ada di kartu
+ * di bawahnya, jumlah per status proyek di kartu filter - tidak diulang di sini.
  */
 import { useState } from 'react';
-import { AlertTriangle, BarChart3, CalendarClock, CheckCircle2, ChevronDown, Layers, ListChecks, MapPin, Timer } from 'lucide-react';
+import { BarChart3, ChevronDown, ListChecks } from 'lucide-react';
 import { MiniPieChart } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
-import { STATUS_PROYEK } from '@/lib/checklist';
-import { TEMA, fontAngka } from '../tampilan';
-import type { Ringkasan, RingkasanChecklist as DataChecklist, RingkasanDaftar, TitikLaju } from './hitung';
+import type { StatChecklist } from '@/lib/checklist';
+import type { Kontribusi } from '@/lib/checklist-ringkasan';
+import { KepingKendala, TEMA, fontAngka } from '../tampilan';
+import type { Ringkasan, RingkasanChecklist as DataChecklist, RingkasanDaftar, TitikLaju, Waktu } from './hitung';
 
 const kartu = { background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' };
 
@@ -18,7 +22,7 @@ function Cincin({ persen }: { persen: number }) {
   const r = 42, k = 2 * Math.PI * r;
   const warna = persen >= 100 ? TEMA.selesai : TEMA.warna;
   return (
-    <svg viewBox="0 0 100 100" className="w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0" role="img" aria-label={`Progres ${persen}%`}>
+    <svg viewBox="0 0 100 100" className="w-28 h-28 flex-shrink-0" role="img" aria-label={`Progres ${persen}%`}>
       <circle cx="50" cy="50" r={r} fill="none" stroke={NETRAL.garis} strokeWidth="9" />
       <circle cx="50" cy="50" r={r} fill="none" stroke={warna} strokeWidth="9" strokeLinecap="round"
         strokeDasharray={`${(persen / 100) * k} ${k}`} transform="rotate(-90 50 50)" style={{ transition: 'stroke-dasharray .6s' }} />
@@ -27,25 +31,63 @@ function Cincin({ persen }: { persen: number }) {
   );
 }
 
-function Kpi({ ikon, label, nilai, sub, warna }: { ikon: React.ReactNode; label: string; nilai: string; sub?: string; warna?: string }) {
+function Angka({ label, nilai, sub, warna }: { label: string; nilai: string; sub?: string; warna?: string }) {
   return (
-    <div className="rounded-xl px-3 py-2.5 min-w-0" style={{ background: NETRAL.permukaanRedam, border: `1px solid ${NETRAL.garis}` }}>
-      <p className="text-[10.5px] font-bold uppercase tracking-wide flex items-center gap-1.5 truncate" style={{ color: TEMA.samar }}>{ikon}{label}</p>
-      <p className="text-[19px] font-extrabold leading-tight mt-0.5" style={{ ...fontAngka, color: warna ?? NETRAL.tinta }}>{nilai}</p>
+    <div className="min-w-0">
+      <p className="text-[10.5px] font-bold uppercase tracking-wide truncate" style={{ color: TEMA.samar }}>{label}</p>
+      <p className="text-[19px] font-extrabold leading-tight" style={{ ...fontAngka, color: warna ?? NETRAL.tinta }}>{nilai}</p>
       {sub && <p className="text-[11px] font-semibold truncate" style={{ color: TEMA.samar }}>{sub}</p>}
     </div>
   );
 }
 
-function Meter({ label, persen, warna }: { label: string; persen: number; warna: string }) {
+/** Waktu: hari berjalan, sisa, waktu terpakai + vonis terhadap pekerjaan (persennya sendiri tampil di tempat lain). */
+function BlokWaktu({ w, persen }: { w: Waktu; persen: number }) {
+  if (w.hariBerjalan === null && w.sisaHari === null) return null;
+  const lewat = w.sisaHari !== null && w.sisaHari < 0;
   return (
-    <div>
-      <div className="flex justify-between text-[11px] font-bold mb-1">
-        <span className="uppercase tracking-wide" style={{ color: TEMA.samar }}>{label}</span>
-        <span style={{ ...fontAngka, color: warna }}>{persen}%</span>
+    <div className="space-y-2.5 min-w-0">
+      <div className="grid grid-cols-2 gap-3">
+        <Angka label="Hari berjalan" nilai={w.hariBerjalan === null ? '-' : String(w.hariBerjalan)} />
+        <Angka label={lewat ? 'Lewat target' : 'Sisa waktu'} nilai={w.sisaHari === null ? '-' : `${Math.abs(w.sisaHari)} hari`}
+          warna={lewat && persen < 100 ? TEMA.bahaya : undefined} />
       </div>
-      <div className="h-2 rounded-full overflow-hidden" style={{ background: NETRAL.garis }}>
-        <div className="h-full rounded-full" style={{ width: `${persen}%`, background: warna, transition: 'width .6s' }} />
+      {w.waktuPersen !== null && (
+        <div>
+          <div className="flex justify-between text-[11px] font-bold mb-1">
+            <span className="uppercase tracking-wide" style={{ color: TEMA.samar }}>Waktu terpakai</span>
+            <span style={{ ...fontAngka, color: NETRAL.tinta2 }}>{w.waktuPersen}%</span>
+          </div>
+          {/* Penanda biru = posisi pekerjaan: di kanan batang abu-abu berarti di depan jadwal. */}
+          <div className="relative h-2 rounded-full" style={{ background: NETRAL.garis }}>
+            <div className="h-full rounded-full" style={{ width: `${w.waktuPersen}%`, background: '#94a3b8' }} />
+            <span className="absolute -top-1 w-1 h-4 rounded-full" style={{ left: `calc(${Math.min(persen, 100)}% - 2px)`, background: persen >= 100 ? TEMA.selesai : TEMA.warna }}
+              title={`Pekerjaan ${persen}%`} />
+          </div>
+          <p className="text-[12px] font-bold mt-1.5" style={{ color: persen >= w.waktuPersen ? TEMA.selesai : TEMA.kendala }}>
+            {persen >= 100 ? 'Seluruh pekerjaan selesai'
+              : persen >= w.waktuPersen ? `Sesuai jadwal · ${persen - w.waktuPersen}% di depan`
+              : `Tertinggal ${w.waktuPersen - persen}% dari jadwal`}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Progres keseluruhan + waktu - satu-satunya tempat angka progres proyek tampil. */
+function KartuProgres({ persen, stat, w }: { persen: number; stat: StatChecklist; w: Waktu }) {
+  return (
+    <div className="rounded-xl p-4 flex flex-col sm:flex-row lg:flex-col gap-4" style={kartu}>
+      <div className="flex items-center gap-4">
+        <Cincin persen={persen} />
+        <div className="space-y-1.5">
+          <Angka label="Item selesai" nilai={`${stat.selesai}/${stat.total}`} />
+          <KepingKendala jumlah={stat.kendala} />
+        </div>
+      </div>
+      <div className="flex-1 sm:pl-4 sm:border-l lg:pl-0 lg:border-l-0 lg:pt-4 lg:border-t" style={{ borderColor: NETRAL.garis }}>
+        <BlokWaktu w={w} persen={persen} />
       </div>
     </div>
   );
@@ -91,25 +133,14 @@ function GrafikLaju({ laju }: { laju: TitikLaju[] }) {
   );
 }
 
-const WARNA_ORANG = ['#2563eb', '#0891b2', '#7c3aed', '#db2777', '#ea580c', '#16a34a', '#64748b'];
-const pieOrang = (o: { nama: string; jumlah: number }[]) => o.map((x, i) => ({ label: x.nama, value: x.jumlah, color: WARNA_ORANG[i % WARNA_ORANG.length] }));
-const warnaPersen = (p: number) => (p >= 100 ? TEMA.selesai : p >= 50 ? TEMA.warna : p > 0 ? '#d97706' : '#94a3b8');
+const PALET = ['#2563eb', '#0891b2', '#7c3aed', '#db2777', '#ea580c', '#16a34a', '#64748b', '#ca8a04'];
+const berwarna = (d: { label: string; value: number }[]) => d.map((x, i) => ({ ...x, color: PALET[i % PALET.length] }));
+const pieOrang = (o: Kontribusi[]) => berwarna(o.map(x => ({ label: x.nama, value: x.jumlah })));
 const pie = (data: { label: string; value: number; color: string }[]) => data.filter(d => d.value > 0);
 
-function WaktuVsPekerjaan({ waktuPersen, persen }: { waktuPersen: number | null; persen: number }) {
-  if (waktuPersen === null) return null;
-  const sesuai = persen >= waktuPersen;
-  return (
-    <div className="rounded-xl p-4 space-y-2.5" style={kartu}>
-      <Meter label="Waktu terpakai" persen={waktuPersen} warna={TEMA.samar} />
-      <Meter label="Pekerjaan selesai" persen={persen} warna={persen >= 100 ? TEMA.selesai : TEMA.warna} />
-      <p className="text-[12px] font-bold" style={{ color: sesuai ? TEMA.selesai : TEMA.kendala }}>
-        {persen >= 100 ? 'Seluruh pekerjaan selesai'
-          : sesuai ? `Sesuai jadwal · pekerjaan ${persen - waktuPersen}% di depan waktu`
-          : `Tertinggal ${waktuPersen - persen}% dari jadwal`}
-      </p>
-    </div>
-  );
+/** Donat "Dikerjakan Oleh" - handler (anggota checklist) saja. */
+function DikerjakanOleh({ orang }: { orang: Kontribusi[] }) {
+  return <MiniPieChart title="Dikerjakan Oleh (Handler)" icon="👷" data={pieOrang(orang)} />;
 }
 
 /** Bungkus yang bisa dilipat - untuk halaman kerja (checklist) supaya ringkasan tidak menghalangi. */
@@ -129,104 +160,67 @@ export function LipatRingkasan({ children, hpTerlipat = false }: { children: Rea
   );
 }
 
+/** Detail proyek & link View-Only. Progres per lokasi ada di kartu lokasi di bawahnya. */
 export function RingkasanProyek({ r }: { r: Ringkasan }) {
-  const nLokasi = r.lokasi.length;
+  const tenggat = pie([
+    { label: 'Aman', value: r.perTenggat.aman, color: TEMA.warna },
+    { label: '≤ 3 hari lagi', value: r.perTenggat.dekat, color: '#d97706' },
+    { label: 'Terlambat', value: r.perTenggat.terlambat, color: TEMA.bahaya },
+    { label: 'Tanpa target', value: r.perTenggat.tanpa, color: '#cbd5e1' },
+  ]);
   return (
     <div className="space-y-3">
-      <div className="rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-center" style={kartu}>
-        <Cincin persen={r.persen} />
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 w-full">
-          <Kpi ikon={<MapPin size={12} />} label="Lokasi selesai" nilai={`${r.lokasiSelesai}/${nLokasi}`} warna={r.lokasiSelesai === nLokasi && nLokasi ? TEMA.selesai : undefined} />
-          <Kpi ikon={<CheckCircle2 size={12} />} label="Item selesai" nilai={`${r.total.selesai}/${r.total.total}`} />
-          <Kpi ikon={<AlertTriangle size={12} />} label="Kendala aktif" nilai={String(r.total.kendala)} warna={r.total.kendala ? TEMA.kendala : undefined} />
-          <Kpi ikon={<CalendarClock size={12} />} label="Lokasi terlambat" nilai={String(r.lokasiTerlambat)} warna={r.lokasiTerlambat ? TEMA.bahaya : undefined} />
-          <Kpi ikon={<Timer size={12} />} label="Hari berjalan" nilai={r.hariBerjalan === null ? '-' : String(r.hariBerjalan)} />
-          <Kpi ikon={<Timer size={12} />} label="Sisa waktu" nilai={r.sisaHari === null ? '-' : r.sisaHari < 0 ? `+${-r.sisaHari}` : String(r.sisaHari)}
-            sub={r.sisaHari === null ? undefined : r.sisaHari < 0 ? 'hari lewat target' : 'hari ke target'} warna={r.sisaHari !== null && r.sisaHari < 0 && r.persen < 100 ? TEMA.bahaya : undefined} />
+      <div className="grid gap-3 lg:grid-cols-[minmax(280px,1fr)_minmax(0,2.2fr)] items-stretch">
+        <KartuProgres persen={r.persen} stat={r.total} w={r} />
+        <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5 content-start">
+          <MiniPieChart title="Status Lokasi" icon="📍" data={pie([
+            { label: 'Selesai', value: r.perStatus.selesai, color: TEMA.selesai },
+            { label: 'Berjalan', value: r.perStatus.berjalan, color: TEMA.warna },
+            { label: 'Belum mulai', value: r.perStatus.belum, color: '#94a3b8' },
+            { label: 'Belum ada item', value: r.perStatus.kosong, color: '#e2e8f0' },
+          ])} />
+          {tenggat.length > 0 && <MiniPieChart title="Tenggat Lokasi Berjalan" icon="🗓️" data={tenggat} />}
+          {r.perOrang.length > 0 && <DikerjakanOleh orang={r.perOrang} />}
         </div>
       </div>
-
-      <WaktuVsPekerjaan waktuPersen={r.waktuPersen} persen={r.persen} />
-
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5">
-        <MiniPieChart title="Status Lokasi" icon="📍" data={pie([
-          { label: 'Selesai', value: r.perStatus.selesai, color: TEMA.selesai },
-          { label: 'Berjalan', value: r.perStatus.berjalan, color: TEMA.warna },
-          { label: 'Belum mulai', value: r.perStatus.belum, color: '#94a3b8' },
-          { label: 'Belum ada item', value: r.perStatus.kosong, color: '#e2e8f0' },
-        ])} />
-        <MiniPieChart title="Jadwal Lokasi" icon="🗓️" data={pie([
-          { label: 'Selesai', value: r.perJadwal.selesai, color: TEMA.selesai },
-          { label: 'Aman', value: r.perJadwal.aman, color: TEMA.warna },
-          { label: '≤ 3 hari lagi', value: r.perJadwal.dekat, color: '#d97706' },
-          { label: 'Terlambat', value: r.perJadwal.terlambat, color: TEMA.bahaya },
-          { label: 'Tanpa target', value: r.perJadwal.tanpa, color: '#cbd5e1' },
-        ])} />
-        <MiniPieChart title="Item Checklist" icon="✅" data={pie([
-          { label: 'Selesai', value: r.total.selesai, color: TEMA.selesai },
-          { label: 'Kendala', value: r.total.kendala, color: TEMA.kendala },
-          { label: 'Belum', value: r.total.total - r.total.selesai - r.total.kendala, color: '#cbd5e1' },
-        ])} />
-        {r.perOrang.length > 0
-          ? <MiniPieChart title="Dikerjakan Oleh" icon="👷" data={pieOrang(r.perOrang)} />
-          : <MiniPieChart title="Progres per Lokasi" icon="📊" valueSuffix="%" data={r.lokasi.filter(l => l.stat.total > 0).map(l => ({ label: l.judul, value: l.persen, color: warnaPersen(l.persen) }))} />}
-      </div>
-
       {r.laju.length > 1 && <GrafikLaju laju={r.laju} />}
     </div>
   );
 }
 
-/** Tampilan depan: komposisi seluruh proyek (kartu angka sudah ada di atasnya). */
+/** Tampilan depan: hanya yang belum tampil di kartu filter & daftar proyek. */
 export function RingkasanDaftarProyek({ r }: { r: RingkasanDaftar }) {
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-2.5">
-      <MiniPieChart title="Status Proyek" icon="🗂️" data={pie((Object.keys(STATUS_PROYEK) as (keyof typeof STATUS_PROYEK)[]).map(k => ({
-        label: STATUS_PROYEK[k].label, value: r.perStatus[k], color: k === 'done' ? TEMA.selesai : k === 'blocked' ? TEMA.bahaya : TEMA.warna,
-      })))} />
-      <MiniPieChart title="Jadwal Proyek" icon="🗓️" data={pie([
-        { label: 'Selesai', value: r.perJadwal.selesai, color: TEMA.selesai },
-        { label: 'Aman', value: r.perJadwal.aman, color: TEMA.warna },
-        { label: '≤ 3 hari lagi', value: r.perJadwal.dekat, color: '#d97706' },
-        { label: 'Terlambat', value: r.perJadwal.terlambat, color: TEMA.bahaya },
-        { label: 'Tanpa target', value: r.perJadwal.tanpa, color: '#cbd5e1' },
-      ])} />
-      <MiniPieChart title="Item Checklist" icon="✅" data={pie([
+    <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5">
+      <MiniPieChart title="Item Checklist Semua Proyek" icon="✅" data={pie([
         { label: 'Selesai', value: r.item.selesai, color: TEMA.selesai },
         { label: 'Kendala', value: r.item.kendala, color: TEMA.kendala },
         { label: 'Belum', value: r.item.total - r.item.selesai - r.item.kendala, color: '#cbd5e1' },
       ])} />
-      <MiniPieChart title="Progres Proyek Berjalan" icon="📊" valueSuffix="%" data={r.progres.map(p => ({ ...p, color: warnaPersen(p.value) }))} />
+      <MiniPieChart title="Proyek per Divisi" icon="🏢" data={berwarna(r.perDivisi)} />
+      <div className="col-span-2 xl:col-span-1">
+        <MiniPieChart title="Proyek per Sales" icon="🤝" data={berwarna(r.perSales)} />
+      </div>
     </div>
   );
 }
 
-/** Satu lokasi (detail checklist & link checklist tim). */
+/** Ada isi yang layak ditampilkan untuk satu checklist (progres & kendala sudah di header halaman). */
+export function adaRingkasanChecklist(r: DataChecklist): boolean {
+  return r.hariBerjalan !== null || r.sisaHari !== null || r.perOrang.length > 0 || r.laju.length > 1;
+}
+
+/** Satu lokasi (detail checklist & link checklist tim): waktu, handler, laju harian. */
 export function RingkasanChecklist({ r }: { r: DataChecklist }) {
+  const adaWaktu = r.hariBerjalan !== null || r.sisaHari !== null;
   return (
     <div className="space-y-3">
-      <div className="rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-center" style={kartu}>
-        <Cincin persen={r.persen} />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full">
-          <Kpi ikon={<CheckCircle2 size={12} />} label="Item selesai" nilai={`${r.total.selesai}/${r.total.total}`} warna={r.persen === 100 ? TEMA.selesai : undefined} />
-          <Kpi ikon={<Layers size={12} />} label="Bagian selesai" nilai={`${r.bagianSelesai}/${r.jumlahBagian}`} />
-          <Kpi ikon={<AlertTriangle size={12} />} label="Kendala aktif" nilai={String(r.total.kendala)} warna={r.total.kendala ? TEMA.kendala : undefined} />
-          <Kpi ikon={<Timer size={12} />} label="Sisa waktu" nilai={r.sisaHari === null ? '-' : r.sisaHari < 0 ? `+${-r.sisaHari}` : String(r.sisaHari)}
-            sub={r.sisaHari === null ? undefined : r.sisaHari < 0 ? 'hari lewat target' : 'hari ke target'} warna={r.sisaHari !== null && r.sisaHari < 0 && r.persen < 100 ? TEMA.bahaya : undefined} />
+      {(adaWaktu || r.perOrang.length > 0) && (
+        <div className={`grid gap-3 ${adaWaktu && r.perOrang.length ? 'md:grid-cols-2' : ''}`}>
+          {adaWaktu && <div className="rounded-xl p-4" style={kartu}><BlokWaktu w={r} persen={r.persen} /></div>}
+          {r.perOrang.length > 0 && <DikerjakanOleh orang={r.perOrang} />}
         </div>
-      </div>
-      <WaktuVsPekerjaan waktuPersen={r.waktuPersen} persen={r.persen} />
-      <div className="grid grid-cols-2 xl:grid-cols-3 gap-2.5">
-        <MiniPieChart title="Item Checklist" icon="✅" data={pie([
-          { label: 'Selesai', value: r.total.selesai, color: TEMA.selesai },
-          { label: 'Kendala', value: r.total.kendala, color: TEMA.kendala },
-          { label: 'Belum', value: r.total.total - r.total.selesai - r.total.kendala, color: '#cbd5e1' },
-        ])} />
-        <MiniPieChart title="Progres per Bagian" icon="📊" valueSuffix="%" data={r.perBagian.map(b => ({ ...b, color: warnaPersen(b.value) }))} />
-        <div className="col-span-2 xl:col-span-1">
-          <MiniPieChart title="Dikerjakan Oleh" icon="👷" data={pieOrang(r.perOrang)} />
-        </div>
-      </div>
+      )}
       {r.laju.length > 1 && <GrafikLaju laju={r.laju} />}
     </div>
   );
