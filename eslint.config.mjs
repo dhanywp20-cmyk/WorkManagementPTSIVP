@@ -9,7 +9,7 @@ export default [
   ...nextVitals,
   ...nextTs,
   {
-    ignores: ['.next/**', 'node_modules/**', 'android/**', 'public/**', 'hasil/**', 'scripts/**', 'uji/**', 'next-env.d.ts', 'next.config.js'],
+    ignores: ['.next/**', 'node_modules/**', 'android/**', 'public/**', 'hasil/**', 'scripts/**', 'uji/**', 'e2e/**', 'next-env.d.ts', 'next.config.js'],
   },
   {
     rules: {
