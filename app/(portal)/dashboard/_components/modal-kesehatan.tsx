@@ -139,6 +139,25 @@ export function KesehatanInline() {
               </ul>
             </Kartu>
           )}
+          <div className="md:col-span-2">
+            <Kartu judul="Galat di layar pengguna (7 hari)">
+              {data.galatKlien === null
+                ? <p className="text-[12.5px] text-slate-600">Belum aktif (migrasi 048).</p>
+                : data.galatKlien.length === 0
+                  ? <p className="text-[12.5px] text-emerald-700 font-semibold">Tidak ada galat tercatat.</p>
+                  : <ul className="text-[12px] divide-y divide-slate-100">
+                      {data.galatKlien.map((g, i) => (
+                        <li key={i} className="py-1.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="font-semibold text-slate-800 break-words">{g.pesan}</span>
+                            <b className="shrink-0 text-rose-700" title="Jumlah kejadian hari itu">{g.jumlah}×</b>
+                          </div>
+                          <p className="text-[11px] text-slate-500">{g.jalur || '—'} · {g.sumber ?? '—'} · terakhir {waktu(g.terakhir)}</p>
+                        </li>
+                      ))}
+                    </ul>}
+            </Kartu>
+          </div>
           {s && (
             <Kartu judul="Jadwal pg_cron (basis data)">
               {s.cron.length === 0

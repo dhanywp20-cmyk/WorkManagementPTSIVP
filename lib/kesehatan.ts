@@ -31,6 +31,8 @@ export interface DataKesehatan {
   apkTerakhir: { versi: string; diunggah_pada: string } | null;
   kanal: Record<string, boolean> | null;
   env: { serviceRole: boolean; cronSecret: boolean };
+  /** Galat di layar pengguna 7 hari terakhir (migrasi 048), terbaru dulu. null = tabel belum ada. */
+  galatKlien: { pesan: string; jalur: string | null; sumber: string | null; jumlah: number; terakhir: string; hari: string }[] | null;
 }
 
 export interface Peringatan { tingkat: 'merah' | 'kuning'; teks: string }
@@ -41,6 +43,8 @@ export function ringkasKesehatan(d: DataKesehatan, sekarang: number): Peringatan
   if (!d.env.serviceRole) p.push({ tingkat: 'merah', teks: 'SUPABASE_SERVICE_ROLE_KEY belum diisi di Vercel - cron & route server berjalan tanpa hak penuh.' });
   if (!d.env.cronSecret) p.push({ tingkat: 'merah', teks: 'CRON_SECRET belum diisi di Vercel - cron eskalasi & briefing pagi menolak semua panggilan.' });
   if (d.sqlBelum) p.push({ tingkat: 'kuning', teks: 'Migrasi 036_kesehatan_sistem.sql belum dijalankan - ukuran DB/storage & pemeriksaan keamanan belum tampil.' });
+  const galat24 = (d.galatKlien ?? []).filter(g => sekarang - Date.parse(g.terakhir) < 86_400_000).reduce((n, g) => n + g.jumlah, 0);
+  if (galat24 >= 20) p.push({ tingkat: 'kuning', teks: `${galat24} galat di layar pengguna dalam 24 jam - lihat kartu "Galat di layar pengguna".` });
   const s = d.sistem;
   if (s) {
     if (s.fungsi_berahasia.length) p.push({ tingkat: 'merah', teks: `Fungsi DB masih menyimpan token/kunci tertulis: ${s.fungsi_berahasia.join(', ')}. Jalankan migrasi 035 lalu rotate token.` });

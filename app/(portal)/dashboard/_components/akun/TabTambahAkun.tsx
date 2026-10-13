@@ -1,7 +1,7 @@
 'use client';
 
 /** TabTambahAkun - dipecah dari app/(portal)/dashboard/_components/modal-akun.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { JABATAN_LIST, JABATAN_CONFIG } from '../shared';
+import { JABATAN_LIST, JABATAN_CONFIG, ALL_MENU_KEYS, DEFAULT_MENU_KEYS } from '../shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import React from 'react';
 import { paketMenuKelompok } from '../modal-akun';
@@ -37,12 +37,19 @@ export function TabTambahAkun({ MenuPermissionSelector, activeTab, daftarDivisi,
             </div>
             <div className="formulir:col-span-3">
               <label htmlFor="f-dashboard-components-modal-akun-33" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi *</label>
-              <select id="f-dashboard-components-modal-akun-33" value={newUser.divisi} onChange={e => setNewUser({ ...newUser, divisi: e.target.value, pts_type: '', pts_daerah: '', sales_division: '' })}
+              <select id="f-dashboard-components-modal-akun-33" value={newUser.divisi} onChange={e => {
+                const divisi = e.target.value;
+                //  Administrator & Viewer melihat semua menu - dicentang semua (masih bisa dikurangi di bawah).
+                const semua = divisi === 'Administrator' || divisi === 'Viewer';
+                setNewUser({ ...newUser, divisi, pts_type: '', pts_daerah: '', sales_division: '', allowed_menus: semua ? [...ALL_MENU_KEYS] : (newUser.divisi === 'Administrator' || newUser.divisi === 'Viewer' ? DEFAULT_MENU_KEYS : newUser.allowed_menus) });
+              }}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                 <option value="">-- Pilih Divisi --</option>
                 <option value="PTS">PTS</option>
                 <option value="Sales">Sales</option>
                 <option value="Marketing">Marketing</option>
+                <option value="Administrator">Administrator</option>
+                <option value="Viewer">Viewer (lihat semua, hanya baca)</option>
               </select>
             </div>
             {newUser.divisi === 'PTS' && (

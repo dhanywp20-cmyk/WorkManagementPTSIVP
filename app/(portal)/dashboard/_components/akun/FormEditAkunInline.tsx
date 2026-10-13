@@ -43,7 +43,8 @@ export function FormEditAkunInline({ MenuPermissionSelector, daftarDivisi, editA
         <div>
           <label htmlFor="f-dashboard-components-modal-akun-23" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Role</label>
           <select id="f-dashboard-components-modal-akun-23" value={editingUser.role} onChange={e => setEditingUser({ ...editingUser, role: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
-            <option value="superadmin">Superadmin</option><option value="admin">Admin</option><option value="team">Team</option><option value="guest">Guest</option>
+            {/* "superadmin" tidak ada: basis data hanya menerima admin, team, guest (users_role_check). */}
+            <option value="admin">Administrator</option><option value="team">Team</option><option value="guest">Guest / Sales</option>
           </select>
         </div>
         <div className="formulir:col-span-3">
@@ -220,11 +221,11 @@ export function FormEditAkunInline({ MenuPermissionSelector, daftarDivisi, editA
             (migrasi 034), bukan hanya menyembunyikan tombol. */}
         {editingUser.role !== 'team' && (
           <div className="formulir:col-span-3">
-            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="👔" />Pimpinan</label>
+            <label className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="👔" />Viewer</label>
             <div className="flex gap-2">
               {([
                 { v: false, icon: '👤', label: 'Akun biasa',   desc: 'Melihat sesuai peran & divisinya' },
-                { v: true,  icon: '👔', label: 'Pimpinan — lihat semua', desc: 'Semua daftar terlihat, hanya baca (tanpa tambah/ubah/hapus)' },
+                { v: true,  icon: '👔', label: 'Viewer — lihat semua', desc: 'Semua daftar terlihat, hanya baca (tanpa tambah/ubah/hapus)' },
               ]).map(o => {
                 const aktif = (editingUser.pimpinan === true) === o.v;
                 return (

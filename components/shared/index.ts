@@ -13,6 +13,8 @@ export {
 export { Toast, InlineToast, type Notif } from './Toast';
 // Pemberitahuan simpan yang gagal - satu untuk semua modul, dipasang di app/layout.tsx.
 export { PenjagaGalatTulis } from './PenjagaGalatTulis';
+// Galat skrip & promise di layar pengguna -> Admin Panel -> Kesehatan Sistem (dipasang di app/layout.tsx).
+export { PelaporGalat } from './PelaporGalat';
 // Esc & fokus untuk semua popup, termasuk overlay manual - dipasang di app/layout.tsx.
 export { PenjagaDialog } from './PenjagaDialog';
 export { LoadingScreen, InlineSpinner } from './LoadingScreen';
