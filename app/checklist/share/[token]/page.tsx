@@ -12,6 +12,8 @@ import {
   BarProgres, CatatanTeks, KepingKendala, ModalKendala, PanelBagian, TEMA, itemPerBagian, kirimFoto, progresDariStat,
 } from '@/app/(portal)/project-progress/_components/tampilan';
 import { BilahSimpan, useTertunda } from '@/app/(portal)/project-progress/_components/tertunda';
+import { ringkasChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
+import { LipatRingkasan, RingkasanChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';
 
 /**
  * Halaman link checklist untuk tim lapangan - PUBLIK, tanpa login.
@@ -156,7 +158,7 @@ export default function ChecklistSharePage() {
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
 
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
-        <div className="max-w-3xl mx-auto px-4 py-3 space-y-2">
+        <div className="max-w-5xl mx-auto px-4 py-3 space-y-2">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               {detail && (
@@ -193,7 +195,7 @@ export default function ChecklistSharePage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-3 sm:px-4 pt-4 pb-28 space-y-3">
+      <main className="max-w-5xl mx-auto px-3 sm:px-4 pt-4 pb-28 space-y-3">
         {memuat && <p className="py-16 text-center text-sm font-semibold" style={{ color: TEMA.samar }}>Memuat checklist…</p>}
 
         {!memuat && galat && !detail && (
@@ -210,6 +212,12 @@ export default function ChecklistSharePage() {
               <div className="rounded-xl px-4 py-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
                 <CatatanTeks teks={detail.daftar.keterangan} />
               </div>
+            )}
+
+            {itemsTampil.length > 0 && (
+              <LipatRingkasan hpTerlipat>
+                <RingkasanChecklist r={ringkasChecklist(detail.daftar, detail.bagian, itemsTampil)} />
+              </LipatRingkasan>
             )}
 
             <div className="flex items-center justify-between gap-2 px-1">

@@ -5,7 +5,7 @@
  * Jalankan: npm test -- ringkasan-share-progres
  */
 import { readFileSync } from 'fs';
-import { hitungRingkasan, MAKS_HARI_LAJU } from '../app/project-progress/share/[token]/_bagian/hitung-ringkasan';
+import { hitungRingkasan, MAKS_HARI_LAJU, ringkasChecklist, ringkasDaftarProyek, ringkasDariLokasi } from '../app/(portal)/project-progress/_components/ringkasan/hitung';
 import type { ChecklistItem } from '../lib/checklist';
 
 let lulus = 0, gagal = 0;
@@ -59,7 +59,32 @@ cek(`laju dibatasi ${MAKS_HARI_LAJU} hari, kumulatif tetap membawa yang lama`, l
 const kosong = hitungRingkasan({ start_date: null, target_date: null }, [], [], HARI);
 cek('proyek kosong tidak meledak', kosong.persen === 0 && kosong.laju.length === 0 && kosong.lokasi.length === 0);
 
-console.log('\n4. Halaman');
+console.log('\n4. Detail proyek, daftar proyek, checklist');
+const dl = ringkasDariLokasi({ start_date: '2026-09-25', target_date: '2026-10-23' },
+  r.lokasi.map(l => ({ id: l.id, judul: l.judul, target_date: daftar.find(d => d.id === l.id)!.target_date, stat: l.stat })), null, HARI);
+cek('dari angka per lokasi = hasil dari item (total, status, jadwal)', dl.persen === r.persen && JSON.stringify(dl.perStatus) === JSON.stringify(r.perStatus) && dl.lokasiTerlambat === r.lokasiTerlambat);
+cek('tanpa item: tanpa "dikerjakan oleh" & laju', dl.perOrang.length === 0 && dl.laju.length === 0);
+const pr = (id: string, status: 'in_progress' | 'done' | 'blocked', target: string | null, total: number, selesai: number, kendala = 0) =>
+  ({ id, nama: id, status, target_date: target, target_terdekat: null, stat: { total, selesai, kendala } }) as unknown as Parameters<typeof ringkasDaftarProyek>[0][number];
+const rd = ringkasDaftarProyek([pr('A', 'in_progress', '2026-10-01', 10, 5, 1), pr('B', 'done', null, 4, 4), pr('C', 'blocked', '2026-12-01', 0, 0)], HARI);
+cek('daftar: per status', rd.perStatus.in_progress === 1 && rd.perStatus.done === 1 && rd.perStatus.blocked === 1);
+cek('daftar: A terlambat, B selesai, C aman', rd.perJadwal.terlambat === 1 && rd.perJadwal.selesai === 1 && rd.perJadwal.aman === 1);
+cek('daftar: item dijumlah', rd.item.total === 14 && rd.item.selesai === 9 && rd.item.kendala === 1);
+cek('daftar: progres hanya proyek berjalan yang ada item', rd.progres.length === 1 && rd.progres[0].label === 'A' && rd.progres[0].value === 50);
+const bag = [{ id: 'b1', daftar_id: 'a', judul: 'Instalasi', catatan: '', urutan: 0 }, { id: 'b2', daftar_id: 'a', judul: 'Uji', catatan: '', urutan: 1 }, { id: 'b3', daftar_id: 'a', judul: 'Catatan', catatan: 'x', urutan: 2 }];
+const its = [item('a', { bagian_id: 'b1', selesai: true, selesai_oleh: 'Ade', selesai_pada: '2026-10-12T03:00:00Z' }), item('a', { bagian_id: 'b1', selesai: true, selesai_oleh: 'Ade', selesai_pada: '2026-10-13T03:00:00Z' }), item('a', { bagian_id: 'b2' })];
+const rc = ringkasChecklist({ start_date: '2026-10-01', target_date: '2026-10-20' }, bag, its, HARI);
+cek('checklist: 2/3 = 67%', rc.persen === 67 && rc.total.total === 3);
+cek('checklist: bagian tanpa item tidak dihitung', rc.jumlahBagian === 2 && rc.bagianSelesai === 1);
+cek('checklist: per bagian %', rc.perBagian[0].value === 100 && rc.perBagian[1].value === 0);
+cek('checklist: orang & laju', rc.perOrang[0].nama === 'Ade' && rc.laju.length === 2 && rc.sisaHari === 7);
+
+console.log('\n5. Halaman');
+const depan = readFileSync('app/(portal)/project-progress/page.tsx', 'utf8');
+cek('tampilan depan: donat & progres proyek', /<RingkasanDaftarProyek r=\{ringkasanDaftar\} \/>/.test(depan));
+cek('detail proyek: ringkasan', /<RingkasanProyek r=\{ringkasDariLokasi\(/.test(readFileSync('app/(portal)/project-progress/_components/DetailProyek.tsx', 'utf8')));
+cek('detail checklist: ringkasan (terlipat di HP)', /<LipatRingkasan hpTerlipat>\s*<RingkasanChecklist/.test(readFileSync('app/(portal)/project-progress/_components/DetailChecklist.tsx', 'utf8')));
+cek('link checklist tim: ringkasan (terlipat di HP)', /<LipatRingkasan hpTerlipat>\s*<RingkasanChecklist/.test(readFileSync('app/checklist/share/[token]/page.tsx', 'utf8')));
 const hal = readFileSync('app/project-progress/share/[token]/page.tsx', 'utf8');
 cek('halaman memakai ringkasan', /<RingkasanProyek r=\{ringkasan\} \/>/.test(hal));
 cek('desktop: lokasi grid 2 kolom', /lg:grid-cols-2/.test(hal));

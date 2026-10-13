@@ -16,6 +16,8 @@ import {
   BarProgres, CatatanTeks, KepingKendala, ModalKendala, PanelBagian, TEMA, fontAngka,
   itemPerBagian, kirimFoto, progresDariStat,
 } from './tampilan';
+import { ringkasChecklist } from './ringkasan/hitung';
+import { LipatRingkasan, RingkasanChecklist } from './ringkasan/Ringkasan';
 import { ModalImpor } from './ModalImpor';
 import { ModalShare } from './ModalShare';
 import { PilihAnggota, type CalonAnggota } from './PilihAnggota';
@@ -346,6 +348,12 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
         </div>
         {daftar.keterangan && <CatatanTeks teks={daftar.keterangan} />}
       </div>
+
+      {itemsTampil.length > 0 && (
+        <LipatRingkasan hpTerlipat>
+          <RingkasanChecklist r={ringkasChecklist(daftar, detail.bagian, itemsTampil)} />
+        </LipatRingkasan>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
         <div className="space-y-3 min-w-0">
