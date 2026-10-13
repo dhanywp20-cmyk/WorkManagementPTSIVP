@@ -9,6 +9,8 @@ import {
   type ChecklistBagian, type ChecklistItem, type StatusProyek,
 } from '@/lib/checklist';
 import { BarProgres, CatatanTeks, KepingKendala, PanelBagian, TEMA, itemPerBagian, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
+import { hitungRingkasan } from './_bagian/hitung-ringkasan';
+import { RingkasanProyek } from './_bagian/RingkasanProyek';
 
 interface DataShare {
   proyek: {
@@ -60,12 +62,13 @@ export default function ProyekSharePage() {
   }, [data]);
 
   const total = data ? statDari(data.items) : null;
+  const ringkasan = useMemo(() => data ? hitungRingkasan(data.proyek, data.daftar, data.items) : null, [data]);
   const st = data ? (STATUS_PROYEK[data.proyek.status] ?? STATUS_PROYEK.in_progress) : null;
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--latar-halaman)' }}>
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-[15.5px] font-bold leading-tight truncate" style={{ color: NETRAL.tinta }}>{data?.proyek.nama ?? 'Project Progress'}</h1>
             <p className="text-[11px] font-semibold" style={{ color: TEMA.samar }}>
@@ -79,7 +82,7 @@ export default function ProyekSharePage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 space-y-3">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 space-y-3">
         {memuat && <p className="py-16 text-center text-sm font-semibold" style={{ color: TEMA.samar }}>Memuat progres proyek…</p>}
 
         {!memuat && galat && (
@@ -107,12 +110,21 @@ export default function ProyekSharePage() {
               {data.proyek.deskripsi && <CatatanTeks teks={data.proyek.deskripsi} />}
             </div>
 
+            {ringkasan && <RingkasanProyek r={ringkasan} />}
+
+            {data.daftar.length > 0 && (
+              <h2 className="pt-2 px-1 text-[12px] font-bold uppercase tracking-wider" style={{ color: TEMA.samar }}>
+                Progres per Lokasi · {data.daftar.length}
+              </h2>
+            )}
+
             {data.daftar.length === 0 && (
               <p className="rounded-xl p-8 text-center text-[13px]" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
                 Belum ada checklist lokasi.
               </p>
             )}
 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
             {data.daftar.map(d => {
               const isi = perDaftar.get(d.id) ?? { bagian: [], items: [] };
               const s = statDari(isi.items);
@@ -120,7 +132,7 @@ export default function ProyekSharePage() {
               const terbuka = buka === d.id;
               const peta = itemPerBagian(isi.bagian, isi.items);
               return (
-                <section key={d.id} className="rounded-xl overflow-hidden" style={{ background: NETRAL.permukaan, border: `1px solid ${s.kendala ? TEMA.kendalaGaris : NETRAL.garis}` }}>
+                <section key={d.id} className={`rounded-xl overflow-hidden ${terbuka ? 'lg:col-span-2' : ''}`} style={{ background: NETRAL.permukaan, border: `1px solid ${s.kendala ? TEMA.kendalaGaris : NETRAL.garis}` }}>
                   <button type="button" onClick={() => setBuka(terbuka ? null : d.id)} aria-expanded={terbuka}
                     className="w-full text-left px-4 py-3 space-y-2">
                     <div className="flex items-center gap-2">
@@ -147,6 +159,7 @@ export default function ProyekSharePage() {
                 </section>
               );
             })}
+            </div>
 
             <p className="text-center text-[11px] font-semibold py-4" style={{ color: TEMA.samar }}>
               Work Management PTS IVP · Diperbarui {formatWaktu(data.proyek.updated_at)} · Halaman ini hanya menampilkan data.
