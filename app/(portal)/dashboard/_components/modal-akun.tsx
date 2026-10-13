@@ -40,7 +40,7 @@ export function paketMenuKelompok(labelPTS: string, daftar: { label: string; das
 }
 
 const LABEL_ROLE: Record<string, string> = {
-  superadmin: 'Superadmin', admin: 'Admin', team: 'Team', guest: 'Guest',
+  superadmin: 'Superadmin', admin: 'Administrator', team: 'Team', guest: 'Guest',
 };
 function labelRole(role: string): string {
   return LABEL_ROLE[role] ?? role;
@@ -167,7 +167,20 @@ export function AccountSettingsInline() {
 
     let role = 'guest';
     let team_type: string | null = null;
-    if (newUser.divisi === 'PTS') {
+    /*
+      Administrator = peran admin + Full Access. Viewer = akun pimpinan (lib/pimpinan.ts): melihat
+      semua, HANYA BACA - penolakan tulisnya ditegakkan basis data (migrasi 034), bukan cuma tombol
+      yang disembunyikan. /api/admin/users juga melepas atasan, KPI & penugasan untuk pimpinan.
+    */
+    const peranKhusus: Record<string, unknown> =
+      newUser.divisi === 'Administrator' ? { access_level: 'full', kpi_enabled: false }
+      : newUser.divisi === 'Viewer' ? { pimpinan: true }
+      : {};
+    if (newUser.divisi === 'Administrator') {
+      role = 'admin';
+    } else if (newUser.divisi === 'Viewer') {
+      role = 'guest'; team_type = 'Guest';
+    } else if (newUser.divisi === 'PTS') {
       role = 'team';
       team_type = teamTypeDariLabelPTS(newUser.pts_type);
     } else if (newUser.divisi === 'Sales') {
@@ -181,7 +194,7 @@ export function AccountSettingsInline() {
     // request mereka sendiri (project direct ke user) tidak boleh kena gerbang
     // review internal. Auto-set di sini supaya admin tidak perlu toggle manual.
     const isInternalSales = newUser.divisi === 'Marketing' || (newUser.divisi === 'Sales' && ['IVP', 'MVI', 'MLDS'].includes(newUser.sales_division));
-    const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null, is_internal_sales: isInternalSales, pts_daerah: isCabangBaru2 ? newUser.pts_daerah.trim() : null };
+    const insertPayload: Record<string, unknown> = { username: newUser.username, full_name: newUser.full_name, role, team_type, allowed_menus: newUser.allowed_menus, jabatan: newUser.jabatan || null, phone_number: newUser.phone_number || null, sales_division: (newUser.divisi === 'Sales' || newUser.divisi === 'Marketing') ? (newUser.sales_division || null) : null, is_internal_sales: isInternalSales, pts_daerah: isCabangBaru2 ? newUser.pts_daerah.trim() : null, ...peranKhusus };
     const { id: createdId, error } = await adminCreateUser(insertPayload);
     // Simpan password via server route (hash + insert ke user_credentials di server).
     if (!error && createdId && newUser.password) {
@@ -383,7 +396,7 @@ export function AccountSettingsInline() {
                         <tr key={user.id} className="border-b border-slate-100 hover:bg-rose-50/30 transition-colors" style={{ background: rowBg }}>
                           <td className="px-4 py-2.5 font-semibold text-slate-800 whitespace-nowrap">{user.full_name}</td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap"><Username value={user.username} /></td>
-                          <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{labelRole(user.role)}</span></td>
+                          <td className="px-4 py-2.5"><span className="px-2 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-widest bg-slate-200 text-slate-600">{user.pimpinan ? 'Viewer' : labelRole(user.role)}</span></td>
                           <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{divisi}</td>
                           <td className="px-4 py-2.5 whitespace-nowrap">{user.phone_number ? <span className="text-emerald-700"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span> : <span className="text-slate-400">—</span>}</td>
                           <td className="md:sticky md:right-0 px-4 py-2.5" style={{ background: rowBg }}>

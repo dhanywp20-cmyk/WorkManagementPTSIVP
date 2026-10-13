@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { RefreshCw, TriangleAlert, House } from 'lucide-react';
 import { galatBerkasTidakTermuat, KUNCI_MUAT_ULANG } from '@/lib/galat-berkas';
+import { laporGalat } from '@/lib/lapor-galat';
 
 /**
  * Layar galat yang dipakai app/error.tsx, app/global-error.tsx, dan app/(portal)/error.tsx.
@@ -19,6 +20,7 @@ export function LayarGalat({ error, reset, penuh = false }: {
 }) {
   useEffect(() => {
     console.error('[galat-halaman]', error);
+    laporGalat({ pesan: `${error.name && error.name !== 'Error' ? `${error.name}: ` : ''}${error.message}`, sumber: 'halaman', digest: error.digest });
     //  Galat berkas lama sesudah deploy: muat ulang sekali, diam-diam.
     if (galatBerkasTidakTermuat(error)) {
       try {

@@ -18,6 +18,7 @@ const sehat: DataKesehatan = {
   cronVercel: { escalate: { waktu: jamLalu(19), ok: true, ringkas: '0 ticket' }, digest: { waktu: jamLalu(21), ok: true, ringkas: '5 penerima' } },
   ai: { jam24: 3, hari7: 20 }, waJam24: 2, apkTerakhir: null, kanal: { in_app: true, whatsapp: true, telegram: true },
   env: { serviceRole: true, cronSecret: true },
+  galatKlien: [],
 };
 
 console.log('\nKesehatan sistem');
@@ -29,6 +30,9 @@ cek('cron gagal -> merah dengan alasannya', gagalJalan[0]?.tingkat === 'merah' &
 cek('cron belum pernah tercatat -> kuning', ringkasKesehatan({ ...sehat, cronVercel: {} }, sekarang).filter(p => p.tingkat === 'kuning').length === 2);
 const rahasia = ringkasKesehatan({ ...sehat, sistem: { ...sehat.sistem!, fungsi_berahasia: ['check_pending_tickets'], pemicu_http: [{ trigger: 'on_ticket_assigned', tabel: 'tickets', fungsi: 'handle_ticket_assignment' }] } }, sekarang);
 cek('fungsi berahasia & trigger HTTP -> dua peringatan merah', rahasia.filter(p => p.tingkat === 'merah').length === 2);
+const galatRamai = ringkasKesehatan({ ...sehat, galatKlien: [{ pesan: 'TypeError: x', jalur: '/ticketing', sumber: 'halaman', jumlah: 25, terakhir: jamLalu(2), hari: '2026-10-07' }] }, sekarang);
+cek('galat di layar >= 20 dalam 24 jam -> kuning', galatRamai.length === 1 && galatRamai[0].tingkat === 'kuning');
+cek('galat lama (> 24 jam) tidak memicu peringatan', ringkasKesehatan({ ...sehat, galatKlien: [{ pesan: 'x', jalur: null, sumber: null, jumlah: 99, terakhir: jamLalu(30), hari: '2026-10-06' }] }, sekarang).length === 0);
 const penuh = ringkasKesehatan({ ...sehat, sistem: { ...sehat.sistem!, db_bytes: BATAS_DB * 0.9 } }, sekarang);
 cek('DB 90% -> kuning; 96% -> merah', penuh[0]?.tingkat === 'kuning' && ringkasKesehatan({ ...sehat, sistem: { ...sehat.sistem!, db_bytes: BATAS_DB * 0.96 } }, sekarang)[0]?.tingkat === 'merah');
 cek('migrasi 036 belum -> kuning', ringkasKesehatan({ ...sehat, sistem: null, sqlBelum: true }, sekarang).some(p => p.teks.includes('036')));

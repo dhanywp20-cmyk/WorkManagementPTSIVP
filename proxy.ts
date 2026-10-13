@@ -44,6 +44,8 @@ const PUBLIC_EXACT = [
   '/sw.js',
   // Pemantau uptime - tidak menyentuh basis data (lihat route-nya).
   '/api/health',
+  // Laporan galat dari layar pengguna (juga dari layar login) - dibatasi ukuran & jumlah di route-nya.
+  '/api/galat',
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/forgot-password',
