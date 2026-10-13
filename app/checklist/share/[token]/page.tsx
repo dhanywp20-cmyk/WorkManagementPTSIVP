@@ -13,7 +13,7 @@ import {
 } from '@/app/(portal)/project-progress/_components/tampilan';
 import { BilahSimpan, useTertunda } from '@/app/(portal)/project-progress/_components/tertunda';
 import { ringkasChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
-import { LipatRingkasan, RingkasanChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';
+import { LipatRingkasan, RingkasanChecklist, adaRingkasanChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';
 
 /**
  * Halaman link checklist untuk tim lapangan - PUBLIK, tanpa login.
@@ -150,6 +150,7 @@ export default function ChecklistSharePage() {
   const itemsTampil = useMemo(() => (detail ? detail.items.map(t.tampil) : []), [detail, t.tampil]);
   const peta = useMemo(() => (detail ? itemPerBagian(detail.bagian, itemsTampil) : new Map<string, ChecklistItem[]>()), [detail, itemsTampil]);
   const stat = detail ? statDari(itemsTampil) : null;
+  const ringkasan = useMemo(() => ringkasChecklist(detail?.daftar ?? { start_date: null, target_date: null }, itemsTampil, detail?.anggota ?? []), [detail, itemsTampil]);
   const namaSah = !!validasiNama(isianNama);
 
   return (
@@ -214,9 +215,9 @@ export default function ChecklistSharePage() {
               </div>
             )}
 
-            {itemsTampil.length > 0 && (
+            {adaRingkasanChecklist(ringkasan) && (
               <LipatRingkasan hpTerlipat>
-                <RingkasanChecklist r={ringkasChecklist(detail.daftar, detail.bagian, itemsTampil)} />
+                <RingkasanChecklist r={ringkasan} />
               </LipatRingkasan>
             )}
 

@@ -17,7 +17,7 @@ import {
   itemPerBagian, kirimFoto, progresDariStat,
 } from './tampilan';
 import { ringkasChecklist } from './ringkasan/hitung';
-import { LipatRingkasan, RingkasanChecklist } from './ringkasan/Ringkasan';
+import { LipatRingkasan, RingkasanChecklist, adaRingkasanChecklist } from './ringkasan/Ringkasan';
 import { ModalImpor } from './ModalImpor';
 import { ModalShare } from './ModalShare';
 import { PilihAnggota, type CalonAnggota } from './PilihAnggota';
@@ -96,6 +96,7 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
   const itemsTampil = useMemo(() => (detail ? detail.items.map(t.tampil) : []), [detail, t.tampil]);
   const peta = useMemo(() => (detail ? itemPerBagian(detail.bagian, itemsTampil) : new Map<string, ChecklistItem[]>()), [detail, itemsTampil]);
   const stat = detail ? statDari(itemsTampil) : null;
+  const ringkasan = useMemo(() => ringkasChecklist(detail?.daftar ?? { start_date: null, target_date: null }, itemsTampil, detail?.anggota ?? []), [detail, itemsTampil]);
 
   const toggle = (item: ChecklistItem) => t.toggle(item);
 
@@ -349,9 +350,9 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
         {daftar.keterangan && <CatatanTeks teks={daftar.keterangan} />}
       </div>
 
-      {itemsTampil.length > 0 && (
+      {adaRingkasanChecklist(ringkasan) && (
         <LipatRingkasan hpTerlipat>
-          <RingkasanChecklist r={ringkasChecklist(daftar, detail.bagian, itemsTampil)} />
+          <RingkasanChecklist r={ringkasan} />
         </LipatRingkasan>
       )}
 

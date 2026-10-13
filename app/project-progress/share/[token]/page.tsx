@@ -18,6 +18,8 @@ interface DataShare {
   daftar: { id: string; judul: string; keterangan: string; start_date: string | null; target_date: string | null; updated_at: string }[];
   bagian: ChecklistBagian[];
   items: ChecklistItem[];
+  /** Handler per checklist - hanya untuk ringkasan "Dikerjakan Oleh". */
+  anggota?: { daftar_id: string; nama: string }[];
 }
 
 /**
@@ -61,7 +63,7 @@ export default function ProyekSharePage() {
 
   const total = data ? statDari(data.items) : null;
   const lokasiBuka = data?.daftar.find(d => d.id === buka) ?? null;
-  const ringkasan = useMemo(() => data ? hitungRingkasan(data.proyek, data.daftar, data.items) : null, [data]);
+  const ringkasan = useMemo(() => data ? hitungRingkasan(data.proyek, data.daftar, data.items, data.anggota ?? []) : null, [data]);
   const st = data ? (STATUS_PROYEK[data.proyek.status] ?? STATUS_PROYEK.in_progress) : null;
 
   return (
@@ -101,10 +103,6 @@ export default function ProyekSharePage() {
                   <CalendarDays size={13} /> {formatTanggal(data.proyek.start_date)} – {formatTanggal(data.proyek.target_date)}
                 </span>
                 {data.proyek.sales_name && <span className="text-[12px]" style={{ color: NETRAL.tinta2 }}>· Sales {data.proyek.sales_name}</span>}
-              </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex-1 min-w-[200px]"><BarProgres progres={progresDariStat(total)} tebal={10} /></div>
-                <KepingKendala jumlah={total.kendala} />
               </div>
               {data.proyek.deskripsi && <CatatanTeks teks={data.proyek.deskripsi} />}
             </div>
@@ -151,15 +149,11 @@ export default function ProyekSharePage() {
             })}
             </div>
 
-            {lokasiBuka && ringkasan && (() => {
-              const i = data.daftar.findIndex(d => d.id === lokasiBuka.id);
-              const isi = perDaftar.get(lokasiBuka.id) ?? { bagian: [], items: [] };
-              return (
-                <PanelLokasi key={lokasiBuka.id} lokasi={ringkasan.lokasi[i]} keterangan={lokasiBuka.keterangan}
-                  bagian={isi.bagian} items={isi.items} urutan={i} jumlah={data.daftar.length}
-                  onPindah={arah => setBuka(data.daftar[i + arah]?.id ?? lokasiBuka.id)} onTutup={() => setBuka(null)} />
-              );
-            })()}
+            {lokasiBuka && ringkasan && (
+              <PanelLokasi lokasi={ringkasan.lokasi.find(l => l.id === lokasiBuka.id)!} semua={ringkasan.lokasi} keterangan={lokasiBuka.keterangan}
+                bagian={perDaftar.get(lokasiBuka.id)?.bagian ?? []} items={perDaftar.get(lokasiBuka.id)?.items ?? []}
+                onPilih={setBuka} onTutup={() => setBuka(null)} />
+            )}
 
             <p className="text-center text-[11px] font-semibold py-4" style={{ color: TEMA.samar }}>
               Work Management PTS IVP · Diperbarui {formatWaktu(data.proyek.updated_at)} · Halaman ini hanya menampilkan data.
