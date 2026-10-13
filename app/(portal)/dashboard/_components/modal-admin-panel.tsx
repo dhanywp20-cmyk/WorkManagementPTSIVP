@@ -19,6 +19,7 @@ import { KartuSuaraNotif } from './kartu-suara-notif';
 import { IntegrasiInline } from './modal-integrasi';
 import { AplikasiAndroidInline } from './modal-aplikasi-android';
 import { KesehatanInline } from './modal-kesehatan';
+import { KeamananInline } from './modal-keamanan';
 import { BriefingPagiKartu } from './modal-briefing';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
@@ -26,7 +27,7 @@ import { IkonTeks } from '@/components/shared/Ikon';
 // AdminPanelModal (unified: Settings + User Management + PIC Brand)
 
 export function AdminPanelModal({ initialTab, onClose }: AdminPanelModalProps) {
-  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan'>(initialTab);
+  const [activeSection, setActiveSection] = useState<'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan'>(initialTab);
 
   /**
  * Kelompok navigasi - MENGIKUTI CARA ADMIN BERPIKIR, bukan urutan fitur
@@ -52,7 +53,7 @@ const GRUP_NAV: { key: 'organization' | 'appearance' | 'notifications' | 'system
   { key: 'system',        label: 'Sistem' },
 ];
 
-const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
+const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' | 'merek' | 'kelompok' | 'integrasi' | 'kodeAcara' | 'daftarPilihan' | 'android' | 'kesehatan' | 'perbandingan' | 'keamanan'; group: typeof GRUP_NAV[number]['key']; label: string; icon: React.ReactElement; color: string; activeBg: string; activeBorder: string; activeText: string }[] = [
     {
       key: 'settings',
       group: 'organization',
@@ -129,6 +130,13 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
       label: 'Product Comparison',
       icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v18M5 7h14M7 7l-3 7a3 3 0 006 0L7 7zm10 0l-3 7a3 3 0 006 0l-3-7z" /></svg>,
       color: '#1d4ed8', activeBg: 'rgba(29,78,216,0.1)', activeBorder: 'rgba(29,78,216,0.4)', activeText: '#1d4ed8',
+    },
+    {
+      key: 'keamanan',
+      group: 'system',
+      label: 'Keamanan Login',
+      icon: <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3zm-2.5 9l1.8 1.8L15 10" /></svg>,
+      color: '#0f766e', activeBg: 'rgba(15,118,110,0.1)', activeBorder: 'rgba(15,118,110,0.4)', activeText: '#0f766e',
     },
     {
       key: 'kesehatan',
@@ -228,6 +236,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
                 {activeSection === 'integrasi' && 'Kanal notifikasi (In-App, WhatsApp, Telegram) & event mana lewat kanal mana'}
                 {activeSection === 'android' && 'Unggah APK baru - langsung tampil di Profil untuk diunduh'}
                 {activeSection === 'kesehatan' && 'Cron, kuota paket Free, keamanan basis data, pemakaian AI & WA'}
+                {activeSection === 'keamanan' && 'Verifikasi 2 langkah (authenticator)'}
               </p>
             </div>
             <button aria-label="Tutup" onClick={onClose}
@@ -269,6 +278,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
             )}
             {activeSection === 'android' && <AplikasiAndroidInline />}
             {activeSection === 'kesehatan' && <KesehatanInline />}
+            {activeSection === 'keamanan' && <KeamananInline />}
             {activeSection === 'perbandingan' && <AturanPerbandinganInline />}
           </div>
         </div>

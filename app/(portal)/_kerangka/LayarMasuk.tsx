@@ -14,6 +14,7 @@ import { useDivisiSales, useMerek, gradasiPanelLogin, angkaTembus } from '@/lib/
 import { useKelompokPTS } from '@/lib/kelompok';
 import { ModalPortal, LogoMerek, ChipVersi } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
+import { LangkahDuaFaktor, type HasilMasuk } from './LangkahDuaFaktor';
 
 export function LayarMasuk({ onMasuk, onSelesai }: {
   /** Password benar: pasang sesi, token & pengguna. */
@@ -27,6 +28,8 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginErr, setLoginErr] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  /** Password benar tapi akun ber-2FA (atau admin wajib 2FA): tiket untuk langkah kedua. */
+  const [langkah2fa, setLangkah2fa] = useState<{ tahap: 'kode_2fa' | 'daftar_2fa'; tantangan: string } | null>(null);
   const [registerErr, setRegisterErr] = useState('');
   const [showRegister, setShowRegister] = useState(false);
   const [showRegPwd, setShowRegPwd] = useState(false);
@@ -133,25 +136,35 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
         body: JSON.stringify({ username: loginForm.username, password: loginForm.password }),
       });
       const result = await res.json();
-      if (!res.ok || !result.user) { setLoginErr(result.error || 'Email atau password salah!'); return; }
-      const data = result.user;
-      if (data.team_type === 'Pending Approval') {
-        setLoginErr('Akun kamu masih menunggu persetujuan admin. Kamu akan dihubungi setelah akun diaktifkan.');
+      if (res.ok && (result.tahap === 'kode_2fa' || result.tahap === 'daftar_2fa') && result.tantangan) {
+        setLangkah2fa({ tahap: result.tahap, tantangan: result.tantangan });
         return;
       }
-      onMasuk(data, result.db_token ?? null);
-
-      /* Perpindahan ke dashboard ditunda supaya animasi penutup (lc-bongkar di
-         globals.css) sempat jalan sampai habis. 1500ms = jeda 270ms + durasi
-         1230ms milik animasi terakhir; angka ini WAJIB ikut berubah setiap
-         durasi di globals.css diubah, kalau tidak halaman login dilepas dari
-         DOM di tengah gerakan. Penundaan ini hanya dibayar saat orang benar
-         benar menekan tombol login. */
-      setMasukBerhasil(true);
-      const pakaiAnimasi = typeof window !== 'undefined'
-        && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      window.setTimeout(onSelesai, pakaiAnimasi ? 1500 : 0);
+      if (!res.ok || !result.user) { setLoginErr(result.error || 'Email atau password salah!'); return; }
+      lanjutMasuk(result);
     } catch { setLoginErr('Login gagal. Coba lagi.'); } finally { setLoginLoading(false); }
+  };
+
+  /** Sesi sudah dibuat server (lewat password, atau password + kode 2FA). */
+  const lanjutMasuk = (result: HasilMasuk) => {
+    setLangkah2fa(null);
+    const data = result.user as unknown as User;
+    if (data.team_type === 'Pending Approval') {
+      setLoginErr('Akun kamu masih menunggu persetujuan admin. Kamu akan dihubungi setelah akun diaktifkan.');
+      return;
+    }
+    onMasuk(data, result.db_token ?? null);
+
+    /* Perpindahan ke dashboard ditunda supaya animasi penutup (lc-bongkar di
+       globals.css) sempat jalan sampai habis. 1500ms = jeda 270ms + durasi
+       1230ms milik animasi terakhir; angka ini WAJIB ikut berubah setiap
+       durasi di globals.css diubah, kalau tidak halaman login dilepas dari
+       DOM di tengah gerakan. Penundaan ini hanya dibayar saat orang benar
+       benar menekan tombol login. */
+    setMasukBerhasil(true);
+    const pakaiAnimasi = typeof window !== 'undefined'
+      && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.setTimeout(onSelesai, pakaiAnimasi ? 1500 : 0);
   };
 
   const handleForgotRequest = async () => {
@@ -319,7 +332,12 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
               <p className="text-slate-500 text-sm mt-1.5">{showRegister ? 'Lengkapi data untuk mendaftar. Akun akan diverifikasi admin.' : 'Masuk ke akun Anda untuk melanjutkan'}</p>
             </div>
 
-            {!showRegister && (
+            {!showRegister && langkah2fa && (
+              <LangkahDuaFaktor tahap={langkah2fa.tahap} tantangan={langkah2fa.tantangan}
+                onBerhasil={lanjutMasuk} onBatal={() => { setLangkah2fa(null); setLoginForm(f => ({ ...f, password: '' })); }} />
+            )}
+
+            {!showRegister && !langkah2fa && (
               <div className="space-y-4">
                 <div>
                   <label htmlFor="f-dashboard-page-1" className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Email</label>

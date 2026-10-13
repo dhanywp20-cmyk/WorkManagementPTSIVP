@@ -47,6 +47,8 @@ const PUBLIC_EXACT = [
   // Laporan galat dari layar pengguna (juga dari layar login) - dibatasi ukuran & jumlah di route-nya.
   '/api/galat',
   '/api/auth/login',
+  // Langkah kedua login (kode authenticator) - tiketnya ditandatangani server, 5 menit.
+  '/api/auth/login-2fa',
   '/api/auth/logout',
   '/api/auth/forgot-password',
   '/api/auth/verify-otp',
