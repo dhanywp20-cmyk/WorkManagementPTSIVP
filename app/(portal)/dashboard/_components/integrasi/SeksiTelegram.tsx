@@ -36,7 +36,7 @@ export function SeksiTelegram({ belumTG, chatTerdeteksi, deteksiChat, deteksiJal
                   <h3 className="text-sm font-bold text-slate-700">Bot Telegram</h3>
                   <p className="text-[11.5px] text-slate-500 mt-0.5">Satu bot melayani seluruh notifikasi platform.</p>
                 </div>
-                <span className="ml-auto flex-shrink-0"><LencanaStatus status={koneksi.telegram} /></span>
+                <span className="ml-auto shrink-0"><LencanaStatus status={koneksi.telegram} /></span>
               </div>
               <div className="p-3 space-y-3">
                 <BlokToken
@@ -52,7 +52,7 @@ export function SeksiTelegram({ belumTG, chatTerdeteksi, deteksiChat, deteksiJal
                   </label>
                   <input id="f-dashboard-components-modal-integrasi-2" value={p.telegramChatId} placeholder="mis. -1001234567890"
                     onChange={e => ubah(x => ({ ...x, telegramChatId: e.target.value }))}
-                    className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400 font-mono" />
+                    className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-hidden focus:border-sky-400 font-mono" />
                   <div className="flex flex-wrap gap-2 mt-2">
                     <button type="button" onClick={deteksiChat}
                       disabled={deteksiJalan || koneksi.telegram.keadaan !== 'terhubung'}
@@ -76,13 +76,13 @@ export function SeksiTelegram({ belumTG, chatTerdeteksi, deteksiChat, deteksiJal
                         <button key={c.id} type="button"
                           onClick={() => ubah(x => ({ ...x, telegramChatId: c.id }))}
                           className="w-full text-left px-2.5 py-1.5 border-t border-slate-100 hover:bg-sky-50 transition-colors flex items-center gap-2">
-                          <span className="text-[11px] flex-shrink-0">{c.jenis === 'private' ? '👤' : '👥'}</span>
+                          <span className="text-[11px] shrink-0">{c.jenis === 'private' ? '👤' : '👥'}</span>
                           <span className="min-w-0 flex-1">
                             <span className="block text-[11px] font-semibold text-slate-700 truncate">{c.nama}</span>
                             <span className="block text-[10px] font-mono text-slate-500">{c.id}</span>
                           </span>
                           {p.telegramChatId === c.id && (
-                            <span className="text-[10px] font-bold text-sky-700 flex-shrink-0">dipakai</span>
+                            <span className="text-[10px] font-bold text-sky-700 shrink-0">dipakai</span>
                           )}
                         </button>
                       ))}

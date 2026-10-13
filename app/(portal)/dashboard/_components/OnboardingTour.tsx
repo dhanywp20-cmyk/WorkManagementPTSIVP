@@ -509,7 +509,7 @@ export function JelajahiButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={() => { if (melebar) onClick(); else setMelebar(true); }}
-      className={`fixed bottom-6 z-[1504] flex items-center gap-2 py-2.5 text-xs font-bold text-white shadow-xl active:scale-95 ${
+      className={`fixed bottom-6 z-1504 flex items-center gap-2 py-2.5 text-xs font-bold text-white shadow-xl active:scale-95 ${
         melebar
           ? 'right-6 px-4 rounded-2xl hover:scale-105'
           : 'right-0 pl-3 pr-2 rounded-l-2xl opacity-60 hover:opacity-100'

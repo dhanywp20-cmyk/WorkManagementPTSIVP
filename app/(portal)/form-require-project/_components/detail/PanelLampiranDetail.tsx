@@ -40,7 +40,7 @@ export interface PanelLampiranDetailProps {
 export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRequest, boqFileRef, desain3d, desain3dTools, design3dFileRef, detailRoomIdx, detailRoomStatus, displayFileName, fileInputRef, formatFileSize, getFileRoomIdx, handleCategoryUpload, handleDeleteAttachment, handleFileUpload, isPTS, mintaPilih3D, muatDesain3D, notify, selectedRequest, setActiveAttachTab, setMintaPilih3D, setShowUploadChoice, showUploadChoice, sldFileRef, uploadingCategory, uploadingFile }: PanelLampiranDetailProps) {
   return (
     <>
-      <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm satulayar:col-span-2">
+      <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-xs satulayar:col-span-2">
         {(() => {
           // Scope file ke room tab yang lagi aktif - pakai konvensi prefix
           // "[roomN]" yang sudah ada di nama file (lihat getFileRoomIdx).
@@ -48,7 +48,7 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
           return (<>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
-            <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📎" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+            <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow-sm"><Ikon nama="📎" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             Dokumen & File Attachment
             {detailRoomIdx > 0 && <span className="text-[11px] font-bold text-teal-500 normal-case bg-teal-50 px-2 py-0.5 rounded-full">{(selectedRequest.rooms||[])[detailRoomIdx - 1]?.room_name || `Ruangan ${detailRoomIdx + 1}`}</span>}
           </h3>
@@ -167,7 +167,7 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                   <div className="flex items-center gap-1 border-b border-gray-100">
                   <a href={latest.file_url} target="_blank" rel="noopener noreferrer"
                     className="flex-1 min-w-0 flex items-center gap-3 p-3 hover:bg-teal-50 transition-all cursor-pointer">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl bg-${catColor}-100`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 text-xl bg-${catColor}-100`}>
                       {latest.file_type?.includes('pdf') ? '📄' : latest.file_type?.startsWith('image') ? '🖼️' : '📊'}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -179,11 +179,11 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                       </div>
                       <p className="text-[11px] text-gray-500 mt-0.5">{formatFileSize(latest.file_size)} · {new Date(latest.uploaded_at).toLocaleDateString('id-ID')}</p>
                     </div>
-                    <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-teal-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-teal-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                   </a>
                   {bisaKelolaRequest && (
                     <button onClick={() => handleDeleteAttachment(latest)} title="Hapus file"
-                      className="flex-shrink-0 mr-2 w-7 h-7 rounded-lg flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50 transition-all">
+                      className="shrink-0 mr-2 w-7 h-7 rounded-lg flex items-center justify-center text-red-600 hover:text-red-700 hover:bg-red-50 transition-all">
                       <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                   )}
@@ -193,18 +193,18 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                     <div key={att.id} className="flex items-center gap-1 border-b border-gray-50 opacity-60">
                     <a href={att.file_url} target="_blank" rel="noopener noreferrer"
                       className="flex-1 min-w-0 flex items-center gap-3 px-3 py-2 hover:bg-gray-50 transition-all cursor-pointer">
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 text-sm bg-gray-100">
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-sm bg-gray-100">
                         {att.file_type?.includes('pdf') ? '📄' : att.file_type?.startsWith('image') ? '🖼️' : '📊'}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[11px] font-semibold text-gray-500 truncate">{displayFileName(att.file_name)}</p>
                         <p className="text-[10px] text-gray-500">{att.revision_version ? `Rev ${att.revision_version}` : ''} · {new Date(att.uploaded_at).toLocaleDateString('id-ID')}</p>
                       </div>
-                      <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                      <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                     </a>
                     {bisaKelolaRequest && (
                       <button onClick={() => handleDeleteAttachment(att)} title="Hapus file"
-                        className="flex-shrink-0 mr-2 w-6 h-6 rounded-lg flex items-center justify-center text-red-300 hover:text-red-600 hover:bg-red-50 transition-all">
+                        className="shrink-0 mr-2 w-6 h-6 rounded-lg flex items-center justify-center text-red-300 hover:text-red-600 hover:bg-red-50 transition-all">
                         <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     )}
@@ -219,7 +219,7 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                 {roomAttachments.filter(a => a.attachment_category === 'general' || !a.attachment_category).map(att => (
                   <div key={att.id} className="group relative flex items-center gap-2 p-2.5 rounded-xl border border-gray-200 hover:border-teal-300 hover:bg-teal-50 transition-all">
                     <a href={att.file_url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 flex items-center gap-2 cursor-pointer">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-lg bg-gray-50">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-lg bg-gray-50">
                         {att.file_type?.startsWith('image') ? '🖼️' : att.file_type?.includes('pdf') ? '📄' : '📎'}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -229,7 +229,7 @@ export function PanelLampiranDetail({ activeAttachTab, attachments, bisaKelolaRe
                     </a>
                     {bisaKelolaRequest && (
                       <button onClick={() => handleDeleteAttachment(att)} title="Hapus file"
-                        className="flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-red-300 hover:text-red-600 hover:bg-red-50 transition-all">
+                        className="shrink-0 w-6 h-6 rounded-lg flex items-center justify-center text-red-300 hover:text-red-600 hover:bg-red-50 transition-all">
                         <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     )}

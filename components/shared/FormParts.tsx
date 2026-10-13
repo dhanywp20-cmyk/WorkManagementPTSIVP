@@ -58,7 +58,7 @@ export function InfoRow({ icon, label, value }: { icon: string; label: string; v
       <Ikon nama={icon} ukuran={16} className="text-slate-500" />
       <div className="min-w-0">
         <p className="text-[11px] font-bold tracking-widest uppercase" style={{ color: '#64748b' }}>{label}</p>
-        <p className="text-sm font-semibold text-slate-800 break-words">{value}</p>
+        <p className="text-sm font-semibold text-slate-800 wrap-break-word">{value}</p>
       </div>
     </div>
   );

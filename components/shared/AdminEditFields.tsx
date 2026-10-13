@@ -18,7 +18,7 @@ export function AdminEditFields({
   disabled?: boolean;
 }) {
   const kelasIsian =
-    'w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none ' +
+    'w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden ' +
     'focus:ring-2 focus:ring-rose-200 focus:border-rose-400 disabled:bg-slate-50 disabled:text-slate-400';
 
   return (

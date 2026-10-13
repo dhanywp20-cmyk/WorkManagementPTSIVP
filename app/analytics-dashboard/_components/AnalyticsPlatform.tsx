@@ -56,7 +56,7 @@ function Panel({ title, icon, color, borderClr, count, children }: {
   return (
     <div className="rounded-2xl overflow-hidden flex flex-col"
       style={{ background: 'rgba(255,255,255,0.97)', border: `1px solid ${borderClr}`, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
-      <div className="flex items-center gap-2 px-4 py-3 flex-shrink-0"
+      <div className="flex items-center gap-2 px-4 py-3 shrink-0"
         style={{ background: `${color}10`, borderBottom: `1px solid ${borderClr}` }}>
         <span className="text-base select-none"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
         <span className="font-bold text-sm flex-1" style={{ color }}>{title}</span>
@@ -87,13 +87,13 @@ function Row({ dot, title, sub, badge, badgeBg, badgeColor, badgeBorder }: {
   return (
     <div className="flex items-start gap-3 px-3 py-2 rounded-xl"
       style={{ background: `${dot}0C`, border: `1px solid ${dot}20` }}>
-      <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ background: dot }} />
+      <div className="w-1.5 h-1.5 rounded-full mt-2 shrink-0" style={{ background: dot }} />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-gray-800 truncate">{title}</p>
         <p className="text-xs text-gray-500 truncate mt-0.5">{sub}</p>
       </div>
       {badge && (
-        <span className="text-[11px] font-black px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0 mt-0.5"
+        <span className="text-[11px] font-black px-1.5 py-0.5 rounded-sm whitespace-nowrap shrink-0 mt-0.5"
           style={{ background: badgeBg ?? '#f3f4f6', color: badgeColor ?? '#374151', border: `1px solid ${badgeBorder ?? '#d1d5db'}` }}>
           {badge}
         </span>
@@ -134,7 +134,7 @@ export function TabBtn({ label, icon, active, onClick, badge }: {
 }) {
   return (
     <button onClick={onClick}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all relative whitespace-nowrap flex-shrink-0"
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition-all relative whitespace-nowrap shrink-0"
       style={active
         ? { background: '#0f172a', color: 'white' }
         : { background: '#ffffff', color: '#475569', border: '1px solid #e2e8f0' }}>
@@ -422,7 +422,7 @@ export function AnalyticsPlatform({
 
       {/* ── HEADER — full width, same style as PageHeader used in other platforms ── */}
       {!embedded && (
-      <header className="flex-shrink-0 z-50"
+      <header className="shrink-0 z-50"
         style={{background:'#ffffff',borderBottom:'1px solid #e2e8f0',boxShadow:'inset 0 2px 0 #d97706'}}>
         <div className="max-w-[1600px] mx-auto px-6 py-3.5">
           <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -431,7 +431,7 @@ export function AnalyticsPlatform({
               onClick={() => setTab('kpi')}
               title="Kembali ke Dashboard Analytics"
             >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                 style={{background:'#d9770614',color:'#b45309',border:'1px solid #d9770626'}}>
                 <Ikon nama="📊" ukuran={18} />
               </div>
@@ -440,7 +440,7 @@ export function AnalyticsPlatform({
                 <p className="text-[11px] text-slate-500 font-medium">Work Management PTS · {greeting()}, {user.full_name}</p>
               </div>
             </button>
-            <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
               {totalAlerts > 0
                 ? <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'#fee2e2',border:'1px solid #fca5a5'}}>
                     <span className="text-base animate-pulse select-none"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -535,12 +535,12 @@ export function AnalyticsPlatform({
                     ? <Empty emoji="📭" msg="Belum ada aktivitas" />
                     : (stats?.activity ?? []).map(a => (
                         <div key={a.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
-                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{background:a.dot}} />
+                          <div className="w-2 h-2 rounded-full shrink-0" style={{background:a.dot}} />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-800 truncate">{a.label}</p>
                             <p className="text-xs text-gray-500 truncate">{a.sub}</p>
                           </div>
-                          <span className="text-[11px] text-gray-500 flex-shrink-0 tabular-nums">{rel(a.time)}</span>
+                          <span className="text-[11px] text-gray-500 shrink-0 tabular-nums">{rel(a.time)}</span>
                         </div>
                       ))
                   }
@@ -559,14 +559,14 @@ export function AnalyticsPlatform({
             {/* Filters */}
             <div className="flex flex-wrap items-center gap-2 px-5 py-4 border-b border-gray-100">
               <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mr-1">Audit Trail</span>
-              <input className="px-3 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 focus:bg-white w-44"
+              <input className="px-3 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 focus:bg-white w-44"
                 placeholder="User / Target / Aksi..." value={auditSearch}
                 onChange={e => { setAuditSearch(e.target.value); setAuditPage(0); }} />
-              <select aria-label="Filter modul" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
+              <select aria-label="Filter modul" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 cursor-pointer"
                 value={auditModule} onChange={e => { setAuditModule(e.target.value); setAuditPage(0); }}>
                 {AUDIT_MODULES.map(m => <option key={m} value={m}>{m === 'All' ? 'Semua Modul' : m}</option>)}
               </select>
-              <select aria-label="Filter aksi" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-none focus:border-amber-400 cursor-pointer"
+              <select aria-label="Filter aksi" className="px-2.5 py-1.5 rounded-lg text-base sm:text-xs border border-gray-200 bg-gray-50 outline-hidden focus:border-amber-400 cursor-pointer"
                 value={auditAction} onChange={e => { setAuditAction(e.target.value); setAuditPage(0); }}>
                 {AUDIT_ACTIONS.map(a => <option key={a} value={a}>{a === 'All' ? 'Semua Aksi' : a}</option>)}
               </select>
@@ -578,8 +578,8 @@ export function AnalyticsPlatform({
               <div className="ml-auto flex items-center gap-2">
                 <span className="text-[11px] text-gray-500">{auditFiltered.length} log</span>
                 {/* Source legend */}
-                <span className="text-[11px] px-1.5 py-0.5 rounded" style={{background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}}>audit_trail</span>
-                <span className="text-[11px] px-1.5 py-0.5 rounded" style={{background:'#dbeafe',color:'#1e40af',border:'1px solid #93c5fd'}}>activity_logs</span>
+                <span className="text-[11px] px-1.5 py-0.5 rounded-sm" style={{background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}}>audit_trail</span>
+                <span className="text-[11px] px-1.5 py-0.5 rounded-sm" style={{background:'#dbeafe',color:'#1e40af',border:'1px solid #93c5fd'}}>activity_logs</span>
               </div>
             </div>
 
@@ -613,7 +613,7 @@ export function AnalyticsPlatform({
                               <span className="text-xs font-semibold text-gray-800">{a.user_name || '—'}</span>
                             </td>
                             <td className="px-4 py-2.5">
-                              <span className="text-[11px] font-black px-2 py-0.5 rounded whitespace-nowrap"
+                              <span className="text-[11px] font-black px-2 py-0.5 rounded-sm whitespace-nowrap"
                                 style={{background:as.bg,color:as.color,border:`1px solid ${as.border}`}}>
                                 {a.action}
                               </span>
@@ -630,9 +630,9 @@ export function AnalyticsPlatform({
                             <td className="px-4 py-2.5 max-w-[180px]">
                               {(a.old_value || a.new_value)
                                 ? <div className="flex items-center gap-1 flex-wrap">
-                                    {a.old_value && <span className="text-[11px] px-1.5 py-0.5 rounded bg-red-50 text-red-600 border border-red-100 line-through">{a.old_value}</span>}
+                                    {a.old_value && <span className="text-[11px] px-1.5 py-0.5 rounded-sm bg-red-50 text-red-600 border border-red-100 line-through">{a.old_value}</span>}
                                     {a.old_value && a.new_value && <span className="text-[11px] text-gray-400">→</span>}
-                                    {a.new_value && <span className="text-[11px] px-1.5 py-0.5 rounded bg-green-50 text-green-700 border border-green-100">{a.new_value}</span>}
+                                    {a.new_value && <span className="text-[11px] px-1.5 py-0.5 rounded-sm bg-green-50 text-green-700 border border-green-100">{a.new_value}</span>}
                                   </div>
                                 : <span className="text-[11px] text-gray-400">—</span>}
                             </td>
@@ -640,7 +640,7 @@ export function AnalyticsPlatform({
                               <span className="text-[11px] text-gray-500 truncate block" title={a.notes ?? ''}>{a.notes || '—'}</span>
                             </td>
                             <td className="px-4 py-2.5">
-                              <span className="text-[11px] px-1.5 py-0.5 rounded whitespace-nowrap"
+                              <span className="text-[11px] px-1.5 py-0.5 rounded-sm whitespace-nowrap"
                                 style={isLegacy
                                   ? {background:'#dbeafe',color:'#1e40af',border:'1px solid #93c5fd'}
                                   : {background:'#ede9fe',color:'#5b21b6',border:'1px solid #c4b5fd'}}>
@@ -671,7 +671,7 @@ export function AnalyticsPlatform({
         )}
 
         <p className="text-center select-none pb-2">
-          <span className="inline-block text-[11px] text-slate-500 bg-white/90 rounded-full px-3 py-1 shadow-sm">
+          <span className="inline-block text-[11px] text-slate-500 bg-white/90 rounded-full px-3 py-1 shadow-xs">
             Analytics Platform — IndoVisual PTS · Work Management
           </span>
         </p>

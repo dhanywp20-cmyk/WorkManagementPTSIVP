@@ -53,11 +53,11 @@ export default function SessionExpiryBanner() {
       <ModalPortal>
         {/* Overlay blok semua interaksi saat sesi expired */}
         <div role="dialog" aria-modal="true"
-          className="fixed inset-0 z-[2400] bg-black/30 cursor-not-allowed"
+          className="fixed inset-0 z-2400 bg-black/30 cursor-not-allowed"
           onClick={e => e.stopPropagation()}
           style={{ pointerEvents: 'all' }}
         />
-        <div className="fixed top-0 left-0 right-0 z-[2450] bg-red-600 text-white px-4 py-3 flex items-center justify-center gap-3 text-sm font-semibold shadow-lg">
+        <div className="fixed top-0 left-0 right-0 z-2450 bg-red-600 text-white px-4 py-3 flex items-center justify-center gap-3 text-sm font-semibold shadow-lg">
           <span><IkonTeks nama="⏰" />Sesi Anda telah berakhir. Silakan login ulang.</span>
           <button
             onClick={() => {
@@ -75,7 +75,7 @@ export default function SessionExpiryBanner() {
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[2450] bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-3 text-sm font-semibold shadow-lg">
+    <div className="fixed top-0 left-0 right-0 z-2450 bg-amber-500 text-white px-4 py-2 flex items-center justify-center gap-3 text-sm font-semibold shadow-lg">
       {extended ? (
         <span><IkonTeks nama="✅" />Sesi berhasil diperpanjang!</span>
       ) : (

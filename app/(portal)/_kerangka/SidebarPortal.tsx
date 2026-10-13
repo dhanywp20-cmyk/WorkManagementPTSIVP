@@ -38,7 +38,7 @@ export function SidebarPortal({
   return (
         <div
       className={`
-        hidden md:flex flex-col relative transition-all duration-300 ease-in-out flex-shrink-0
+        hidden md:flex flex-col relative transition-all duration-300 ease-in-out shrink-0
         ${sidebarCollapsed ? 'w-[64px]' : 'w-[272px]'}
       `}
       style={{
@@ -69,11 +69,11 @@ export function SidebarPortal({
         menggantung di kanan tanpa penjelasan apa yang diciutkan.
       */}
       {!sidebarCollapsed && (
-        <div className="flex items-center justify-between gap-2 flex-shrink-0 pl-3.5 pr-2 pt-2.5 pb-1">
+        <div className="flex items-center justify-between gap-2 shrink-0 pl-3.5 pr-2 pt-2.5 pb-1">
           <span className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-500 truncate">Menu</span>
           <button aria-label="Ciutkan menu samping" aria-expanded={!sidebarCollapsed}
             onClick={() => setSidebarCollapsed(true)}
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all flex-shrink-0"
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition-all shrink-0"
             style={{ color: '#94a3b8' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#334155'; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#94a3b8'; }}
@@ -169,9 +169,9 @@ export function SidebarPortal({
                 onMouseEnter={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.04)'; } }}
                 onMouseLeave={e => { if (!showDashboardPanel) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; } }}
               >
-                <span className="w-5 h-5 text-sm flex items-center justify-center flex-shrink-0"><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="w-5 h-5 text-sm flex items-center justify-center shrink-0"><Ikon nama="🏠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <span className="text-sm font-semibold truncate">Dashboard</span>
-                {showDashboardPanel && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
+                {showDashboardPanel && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
               </button>
             </div>
 
@@ -206,7 +206,7 @@ export function SidebarPortal({
                           onMouseLeave={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
                         >
                           <span
-                            className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
+                            className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors"
                             style={{
                               background: isActive ? 'rgba(67,56,202,0.15)' : 'rgba(0,0,0,0.06)',
                               color: isActive ? '#3730a3' : '#64748b',
@@ -216,7 +216,7 @@ export function SidebarPortal({
                           </span>
                           <span className="flex-1 truncate text-sm font-medium">{menu.title}</span>
                           {isActive && (
-                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#4338ca' }} />
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#4338ca' }} />
                           )}
                         </button>
                       );
@@ -258,7 +258,7 @@ export function SidebarPortal({
                           onMouseLeave={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
                         >
                           <span
-                            className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
+                            className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors"
                             style={{
                               background: isActive ? 'rgba(200,134,29,0.18)' : 'rgba(0,0,0,0.06)',
                               color: isActive ? '#92600a' : '#64748b',
@@ -268,7 +268,7 @@ export function SidebarPortal({
                           </span>
                           <span className="flex-1 truncate text-sm font-medium">{menu.title}</span>
                           {isActive && (
-                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#c8861d' }} />
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#c8861d' }} />
                           )}
                         </button>
                       );
@@ -309,7 +309,7 @@ export function SidebarPortal({
                           onMouseLeave={e => { if (!isActive && !isTourHL) { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; } }}
                         >
                           <span
-                            className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors"
+                            className="w-7 h-7 rounded-md flex items-center justify-center shrink-0 transition-colors"
                             style={{
                               background: isActive ? 'rgba(200,134,29,0.18)' : 'rgba(0,0,0,0.06)',
                               color: isActive ? '#92600a' : '#64748b',
@@ -321,17 +321,17 @@ export function SidebarPortal({
                       {/* Antrean request jadwal muncul DI SINI — di menu yang
                           benar-benar memuatnya, bukan di ikon Admin Panel. */}
                           {menu.key === 'reminder-schedule' && isFullAccess && pendingRequests > 0 && (
-                            <span className="text-[11px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none flex-shrink-0">
+                            <span className="text-[11px] font-black bg-red-500 text-white rounded-full px-1.5 py-0.5 leading-none shrink-0">
                               {pendingRequests}
                             </span>
                           )}
                           {item.external && !item.embed && (
-                            <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                             </svg>
                           )}
                           {isActive && !item.external && (
-                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#c8861d' }} />
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: '#c8861d' }} />
                           )}
                         </button>
                       );
@@ -347,14 +347,14 @@ export function SidebarPortal({
       </div>
 
       {/* ── SIDEBAR FOOTER: User + Admin + Sign Out ── */}
-      <div className="flex-shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+      <div className="shrink-0" style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
         {sidebarCollapsed ? (
           /* Collapsed footer */
           <div className="py-2 px-1.5 flex flex-col items-center gap-1.5">
             {/* Avatar */}
             <button aria-label={currentUser?.full_name ?? ''}
               onClick={() => onProfil()}
-              className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition-all"
+              className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs shrink-0 transition-all"
               style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}
               title={currentUser?.full_name ?? ''}
             >
@@ -408,7 +408,7 @@ export function SidebarPortal({
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.03)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(0,0,0,0.06)'; }}
             >
               <div
-                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0"
+                className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0"
                 style={{ background: 'linear-gradient(135deg, #fde68a, #f59e0b)', color: '#78350f' }}
               >
                 {currentUser?.full_name?.charAt(0)?.toUpperCase() ?? 'U'}
@@ -417,7 +417,7 @@ export function SidebarPortal({
                 <p className="text-sm font-semibold truncate leading-tight" style={{ color: '#1e293b' }}>{currentUser?.full_name ?? '-'}</p>
                 <p className="text-[11px] font-bold tracking-widest uppercase mt-0.5" style={{ color: '#c8861d' }}>{currentUser?.role ?? '-'}</p>
               </div>
-              <div className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0" style={{ color: '#94a3b8' }}>
+              <div className="w-5 h-5 rounded-sm flex items-center justify-center shrink-0" style={{ color: '#94a3b8' }}>
                 <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                 </svg>
@@ -433,7 +433,7 @@ export function SidebarPortal({
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(99,102,241,0.07)'; (e.currentTarget as HTMLButtonElement).style.color = '#4338ca'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(99,102,241,0.18)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
               >
-                <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" focusable="false" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -452,7 +452,7 @@ export function SidebarPortal({
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.06)'; (e.currentTarget as HTMLButtonElement).style.color = '#b91c1c'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.15)'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'transparent'; }}
             >
-              <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg aria-hidden="true" focusable="false" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               Sign out

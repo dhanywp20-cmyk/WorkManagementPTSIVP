@@ -120,7 +120,7 @@ export function AplikasiAndroidInline() {
     }
   };
 
-  const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 disabled:bg-slate-50';
+  const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-emerald-200 focus:border-emerald-400 disabled:bg-slate-50';
 
   return (
     <div className="p-4 sm:p-6 grid gap-4 lg:grid-cols-2 items-start">
@@ -183,7 +183,7 @@ export function AplikasiAndroidInline() {
             </label>
             <label className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
               <input type="checkbox" checked={wajib} onChange={e => setWajib(e.target.checked)} disabled={sibuk}
-                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-500" />
+                className="mt-0.5 w-4 h-4 rounded-sm border-slate-300 text-emerald-700 focus:ring-emerald-500" />
               <span><strong>Wajib</strong> <span className="text-slate-500">- pengguna aplikasi versi lama tidak bisa lanjut sebelum update</span></span>
             </label>
 
@@ -231,8 +231,8 @@ export function AplikasiAndroidInline() {
                     <span className="block text-[11px] text-slate-500">{formatTanggal(r.diunggah_pada)} · {formatUkuran(r.ukuran)}</span>
                   </span>
                   {r.tersedia
-                    ? <a href={`${URL_UNDUH_APK}?kode=${r.kode_versi}`} className="text-xs font-bold text-emerald-700 hover:underline flex-shrink-0">Unduh</a>
-                    : <span className="text-[11px] text-slate-500 flex-shrink-0">berkas dihapus</span>}
+                    ? <a href={`${URL_UNDUH_APK}?kode=${r.kode_versi}`} className="text-xs font-bold text-emerald-700 hover:underline shrink-0">Unduh</a>
+                    : <span className="text-[11px] text-slate-500 shrink-0">berkas dihapus</span>}
                 </li>
               ))}
             </ul>

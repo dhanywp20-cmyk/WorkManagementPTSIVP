@@ -21,12 +21,12 @@ export function ModalMulaiKPI({ kpiMembers, kpiPeriodLabel, kpiSettings, kpiYear
   return (
     <>
       {showStartKPI && typeof document !== 'undefined' && createPortal(
-        <div role="dialog" aria-modal="true" aria-label="Mulai periode KPI" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" aria-label="Mulai periode KPI" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowStartKPI(false); }}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl flex-shrink-0"
+              <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0"
                 style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}><Ikon nama="🚀" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
               <div>
                 <div className="font-bold text-slate-800 text-base">Mulai KPI {kpiYear}</div>

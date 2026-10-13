@@ -34,7 +34,7 @@ export function BilahBerkas({ a }: { a: AlatDesain }) {
             <span title="Nama desain" className="inline-flex items-center text-slate-500"><Ikon nama="🧊" ukuran={15} /></span>
             <label className="relative min-w-[160px] flex-1 max-w-[360px]" title="Klik untuk mengganti nama desain">
               <input value={namaDesain} onChange={e => setNamaDesain(e.target.value)} maxLength={80} placeholder="Ketik nama desain..." aria-label="Nama desain"
-                className="w-full rounded-lg border border-slate-300 bg-white pl-2.5 pr-8 py-1.5 text-[14px] font-bold text-slate-900 shadow-sm hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none" />
+                className="w-full rounded-lg border border-slate-300 bg-white pl-2.5 pr-8 py-1.5 text-[14px] font-bold text-slate-900 shadow-xs hover:border-blue-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-hidden" />
               <Pencil size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden />
             </label>
             <span title={rinci.judul} aria-label={rinci.judul} className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[12px] font-semibold cursor-help ${kelas}`}>{rinci.isi}</span>

@@ -61,29 +61,29 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
     const key = `${type}:${brand}`;
     return (
       <div className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
-        <span className="w-36 text-sm font-semibold text-slate-700 flex-shrink-0">{brand}</span>
+        <span className="w-36 text-sm font-semibold text-slate-700 shrink-0">{brand}</span>
         <select aria-label="— Belum ada PIC —" value={mappings[key]||''} onChange={e=>setMappings(p=>({...p,[key]:e.target.value}))}
-          className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400 appearance-none">
+          className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400 appearance-none">
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
         </select>
-        {mappings[key] && <span className="text-[11px] text-teal-700 font-bold flex-shrink-0"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
+        {mappings[key] && <span className="text-[11px] text-teal-700 font-bold shrink-0"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
       </div>
     );
   };
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-full flex flex-col border border-slate-200">
-        <div className="bg-gradient-to-r from-amber-600 to-amber-500 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
+        <div className="bg-linear-to-r from-amber-600 to-amber-500 px-6 py-5 flex items-center justify-between shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-lg"><Ikon nama="⚙" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
             <div><h2 className="text-base font-bold text-white">Setting PIC Brand</h2><p className="text-white/70 text-xs">Mapping brand ke PIC penanggung jawab (Request Design Project)</p></div>
           </div>
           <button aria-label="Tutup" onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">✕</button>
         </div>
-        {notif && <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex-shrink-0 ${notif.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>{notif.type==='success'?'✅':'❌'} {notif.msg}</div>}
+        {notif && <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold shrink-0 ${notif.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>{notif.type==='success'?'✅':'❌'} {notif.msg}</div>}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {loading ? <div className="flex justify-center py-10"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin"/></div> : (
             <>
@@ -102,7 +102,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
             </>
           )}
         </div>
-        <div className="px-5 py-4 border-t border-slate-100 flex gap-3 flex-shrink-0">
+        <div className="px-5 py-4 border-t border-slate-100 flex gap-3 shrink-0">
           <button onClick={onClose} className="flex-1 border-2 border-slate-300 text-slate-600 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all">Batal</button>
           <button onClick={handleSave} disabled={saving||loading} className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-50" style={{background:'linear-gradient(135deg,#d97706,#b45309)'}}>
             {saving?'⏳ Menyimpan...':'💾 Simpan Semua'}
@@ -167,13 +167,13 @@ export function BrandPicSettingContent() {
     const key = `${type}:${brand}`;
     return (
       <div className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
-        <span className="w-36 text-sm font-semibold text-slate-700 flex-shrink-0">{brand}</span>
+        <span className="w-36 text-sm font-semibold text-slate-700 shrink-0">{brand}</span>
         <select aria-label="— Belum ada PIC —" value={mappings[key]||''} onChange={e=>setMappings(p=>({...p,[key]:e.target.value}))}
-          className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400 appearance-none">
+          className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-amber-400 appearance-none">
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
         </select>
-        {mappings[key] && <span className="text-[11px] text-amber-700 font-bold flex-shrink-0"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
+        {mappings[key] && <span className="text-[11px] text-amber-700 font-bold shrink-0"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
       </div>
     );
   };
@@ -181,13 +181,13 @@ export function BrandPicSettingContent() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       {notif && (
-        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex-shrink-0 ${notif.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>
+        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold shrink-0 ${notif.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>
           {notif.type==='success'?'✅':'❌'} {notif.msg}
         </div>
       )}
       {/* Kartu putih di atas latar slate — sama dengan Kartu di Profil. */}
       <div className="flex-1 min-h-0 p-4">
-        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
         {loading ? (
           <div className="flex justify-center py-16"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin"/></div>
@@ -212,7 +212,7 @@ export function BrandPicSettingContent() {
         </div>
         </div>
       </div>
-      <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0">
+      <div className="px-5 py-4 border-t border-slate-100 shrink-0">
         <button onClick={handleSave} disabled={saving||loading}
           className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-50"
           style={{background:'linear-gradient(135deg,#d97706,#b45309)'}}>

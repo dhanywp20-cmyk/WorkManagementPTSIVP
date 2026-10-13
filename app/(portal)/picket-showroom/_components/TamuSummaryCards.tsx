@@ -97,7 +97,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
         <div className="flex items-center gap-2">
           {/* Year dropdown */}
           <select value={selectedYear} onChange={e=>onYearChange(Number(e.target.value))} aria-label="Tahun"
-            className="rounded-lg px-2 py-1 text-[11px] font-bold outline-none cursor-pointer"
+            className="rounded-lg px-2 py-1 text-[11px] font-bold outline-hidden cursor-pointer"
             style={{background:'#ffffff',color:'#334155',border:'1px solid rgba(15,23,42,0.12)'}}>
             {yearOptions.map(y=><option key={y} value={y} style={{background:'#1e293b',color:'white'}}>{y}</option>)}
           </select>
@@ -121,7 +121,7 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
       {/* Single stats row */}
       <div className="flex divide-x divide-slate-100 overflow-x-auto">
         {highlights.map((s,i)=>(
-          <div key={i} className="flex-[2] min-w-[168px] px-3 py-3 flex flex-col gap-0.5 flex-shrink-0">
+          <div key={i} className="flex-2 min-w-[168px] px-3 py-3 flex flex-col gap-0.5 shrink-0">
             <div className="flex items-center gap-1 mb-0.5">
               <span className="text-[11px]"><Ikon nama={s.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-none whitespace-nowrap">{s.label}</span>
@@ -130,15 +130,15 @@ export function TamuSummaryCards({allRows,kegiatanList,selectedYear,selectedMont
             <span className="text-[10px] text-slate-500 leading-none">{s.hint}</span>
           </div>
         ))}
-        <div className="flex-shrink-0 px-1 py-3 flex items-center">
+        <div className="shrink-0 px-1 py-3 flex items-center">
         
         </div>
         {PRODUK_KATEGORI.map((p,i)=>(
-          <div key={p} className="flex-1 min-w-[104px] px-2.5 py-3 flex flex-col gap-0.5 flex-shrink-0">
+          <div key={p} className="flex-1 min-w-[104px] px-2.5 py-3 flex flex-col gap-0.5 shrink-0">
             {/* Nama produk utuh (dulu terpotong "VIDEOW..." / "AUDIO S...") dan
                 ikon garis yang sama dengan kolom di kirinya, bukan emoji. */}
             <div className="flex items-center gap-1 mb-0.5 text-slate-500">
-              <Ikon nama={PRODUK_ICONS[p]??'📦'} ukuran={12} className="flex-shrink-0" />
+              <Ikon nama={PRODUK_ICONS[p]??'📦'} ukuran={12} className="shrink-0" />
               <span className="text-[10px] font-bold uppercase tracking-normal leading-none whitespace-nowrap" title={p}>{p === 'Audio System' ? 'Audio' : p}</span>
             </div>
             <span className="text-sm font-black leading-tight" style={{color:warnaProduk(p,i)}}>{fmtJam(jamPerProduk[p]||0)}</span>

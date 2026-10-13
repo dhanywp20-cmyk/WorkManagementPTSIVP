@@ -56,10 +56,10 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
         {/* '‹' dan '›' tidak punya arti apa pun saat dibacakan; namanya harus
             ditulis terpisah dari lambangnya. */}
         <button type="button" onClick={() => changeMonth(-1)} aria-label="Bulan sebelumnya"
-          className="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all text-xs"><span aria-hidden="true">‹</span></button>
+          className="w-5 h-5 rounded-sm flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all text-xs"><span aria-hidden="true">‹</span></button>
         <span className="text-xs font-bold text-slate-700" aria-live="polite">{MONTH_NAMES[viewMonth]} {viewYear}</span>
         <button type="button" onClick={() => changeMonth(1)} aria-label="Bulan berikutnya"
-          className="w-5 h-5 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all text-xs"><span aria-hidden="true">›</span></button>
+          className="w-5 h-5 rounded-sm flex items-center justify-center text-slate-500 hover:bg-slate-100 transition-all text-xs"><span aria-hidden="true">›</span></button>
       </div>
 
       <div className="grid grid-cols-7 gap-0.5 mb-0.5">
@@ -76,7 +76,7 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
             <button key={iso} type="button" onClick={() => toggle(iso)}
               aria-pressed={selected}
               aria-label={`${day} ${MONTH_NAMES[viewMonth]} ${viewYear}${isToday ? ' (hari ini)' : ''}`}
-              className="aspect-square rounded text-[11px] font-semibold transition-all flex items-center justify-center"
+              className="aspect-square rounded-sm text-[11px] font-semibold transition-all flex items-center justify-center"
               style={selected
                 ? { background: accentColor, color: 'white' }
                 : isToday
@@ -91,7 +91,7 @@ export function MultiDatePicker({ dates, onChange, accentColor = '#e11d48' }: Mu
       {dates.length > 0 && (
         <div className="flex flex-wrap items-center gap-1 mt-2 pt-2" style={{ borderTop: '1px solid rgba(0,0,0,0.08)' }}>
           {dates.map(d => (
-            <div key={d} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-semibold"
+            <div key={d} className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[11px] font-semibold"
               style={{ background: `${accentColor}18`, border: `1px solid ${accentColor}40`, color: accentColor }}>
               {fmtChip(d)}
               <button type="button" onClick={() => toggle(d)} className="hover:opacity-60 transition-opacity"

@@ -25,26 +25,26 @@ export function ModalDetailSnapshot({ kpiSnapshots, selectedSnapMember, setSelec
         const tc  = warnaTim(m.team_type);
         const sc  = (v: number) => v >= 80 ? '#10b981' : v >= 60 ? '#f59e0b' : '#ef4444';
         return createPortal(
-          <div role="dialog" aria-modal="true" aria-label="Detail anggota" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+          <div role="dialog" aria-modal="true" aria-label="Detail anggota" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
             onClick={e => { if (e.target === e.currentTarget) setSelectedSnapMember(null); }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-y-auto" style={{ maxHeight: '100%' }}>
               <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-2xl">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-base text-white flex-shrink-0"
+                <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-base text-white shrink-0"
                   style={{ background: `linear-gradient(135deg,${tc},${tc}cc)` }}>{m.name.charAt(0)}</div>
                 <div className="flex-1 min-w-0">
                   <div className="font-bold text-slate-800 text-sm truncate">{m.name}</div>
                   <div className="text-xs text-slate-500 flex items-center gap-1.5">
                     {m.jabatan} · {m.team_type}
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}><IkonTeks nama="🔒" />Snapshot</span>
+                    <span className="px-1.5 py-0.5 rounded-sm text-[10px] font-bold" style={{ background: '#f0f9ff', color: '#0369a1', border: '1px solid #bae6fd' }}><IkonTeks nama="🔒" />Snapshot</span>
                   </div>
                 </div>
-                <div className="flex flex-col items-end mr-1 flex-shrink-0">
+                <div className="flex flex-col items-end mr-1 shrink-0">
                   <div className="text-lg sm:text-2xl font-black" style={{ color: c }}>{m.finalKPI}%</div>
                   <div className="text-[10px] font-bold uppercase tracking-wide" style={{ color: c }}>{lbl}</div>
                 </div>
                 <button aria-label="Tutup" onClick={() => setSelectedSnapMember(null)}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all flex-shrink-0">
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all shrink-0">
                   <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               </div>

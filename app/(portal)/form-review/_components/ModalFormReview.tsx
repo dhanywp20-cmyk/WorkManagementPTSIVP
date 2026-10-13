@@ -11,7 +11,7 @@ export interface ModalFormReviewProps {
   fotoPreview: string | null;
   fotoRef: import("react").RefObject<HTMLInputElement | null>;
   handleSaveReview: () => Promise<void>;
-  inputCls: "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
+  inputCls: "w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
   inputStyle: { background: string; border: string; };
   reviewFormData: { product_demo: string; grade_product_knowledge: number; catatan_grade_product_knowledge: string; product_bast: string; grade_training_customer: number; catatan_grade_training_customer: string; grade_product_knowledge_bast: number; catatan_grade_product_knowledge_bast: string; foto_dokumentasi_url: string; };
   rfd: (patch: Partial<{ product_demo: string; grade_product_knowledge: number; catatan_grade_product_knowledge: string; product_bast: string; grade_training_customer: number; catatan_grade_training_customer: string; grade_product_knowledge_bast: number; catatan_grade_product_knowledge_bast: string; foto_dokumentasi_url: string; }>) => void;
@@ -29,12 +29,12 @@ export function ModalFormReview({ editingReview, emptyReviewForm, fotoPreview, f
     <>
       {showFormModal && editingReview && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4 overflow-y-auto"
           onClick={e => { if (e.target === e.currentTarget) { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); } }}>
           <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
             style={{ animation: 'scale-in 0.25s ease-out', border: '1.5px solid rgba(124,58,237,0.25)' }}>
             {/* Header */}
-            <div className="px-8 py-6 rounded-t-2xl flex-shrink-0" style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+            <div className="px-8 py-6 rounded-t-2xl shrink-0" style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-white"><IkonTeks nama="✏" />Isi Review</h2>

@@ -192,7 +192,7 @@ export function IsiJadwal({ availableYears, bolehEditReminder, bulkDeleting, cal
                    Di HP juga DISEMBUNYIKAN (hidden lg:block) — sebelumnya kalender
                    mendominasi layar & daftar terhimpit hilang. Hanya muncul di desktop. ── */}
               {!isGuest && (
-                <div className="hidden lg:block flex-shrink-0">
+                <div className="hidden lg:block shrink-0">
                   <MiniCalendar
                     reminders={reminders}
                     calendarMonth={calendarMonth}

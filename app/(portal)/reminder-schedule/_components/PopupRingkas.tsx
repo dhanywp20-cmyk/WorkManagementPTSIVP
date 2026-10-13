@@ -30,7 +30,7 @@ export function KonfirmasiApproveInternal({
   if (!(internalApproveTarget)) return null;
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4"
         onClick={e => { if (e.target === e.currentTarget) setInternalApproveTarget(null); }}>
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
@@ -69,7 +69,7 @@ export function KonfirmasiApproveInternal({
                 className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
                 style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>Batal</button>
               <button onClick={() => handleInternalApprove(internalApproveTarget)} disabled={internalApproveSaving}
-                className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                className="flex-2 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                 style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
                 {internalApproveSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 <IkonTeks nama="✅" />Ya, Approve &amp; Teruskan
@@ -97,7 +97,7 @@ export function ModalHapus({
   if (!(showDeleteModal && deleteTarget)) return null;
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4">
+      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4">
         <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6"
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.5)' }}>
           <div className="flex items-center gap-3 mb-4">
@@ -114,14 +114,14 @@ export function ModalHapus({
           </div>
           <div className="mb-4">
             <label htmlFor="f-reminder-schedule-components-popupringkas-1" className="block text-sm font-bold mb-1 text-gray-700">
-              Ketik <span className="font-mono bg-red-100 text-red-700 px-1.5 py-0.5 rounded">HAPUS</span> untuk konfirmasi
+              Ketik <span className="font-mono bg-red-100 text-red-700 px-1.5 py-0.5 rounded-sm">HAPUS</span> untuk konfirmasi
             </label>
             <input id="f-reminder-schedule-components-popupringkas-1"
               type="text"
               value={deleteConfirmText}
               onChange={e => setDeleteConfirmText(e.target.value)}
               placeholder="Ketik HAPUS di sini..."
-              className="w-full rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-none"
+              className="w-full rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500 outline-hidden"
               style={{ border: '2px solid rgba(220,38,38,0.3)', background: 'white' }}
             />
           </div>
@@ -129,7 +129,7 @@ export function ModalHapus({
             <button
               onClick={handleDelete}
               disabled={deleteConfirmText !== 'HAPUS'}
-              className="bg-gradient-to-r from-red-600 to-red-800 text-white py-2.5 rounded-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:from-red-700 hover:to-red-900">
+              className="bg-linear-to-r from-red-600 to-red-800 text-white py-2.5 rounded-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:from-red-700 hover:to-red-900">
               <IkonTeks nama="🗑" />Hapus Permanen
             </button>
             <button
@@ -156,10 +156,10 @@ export function PopupNotifikasi({
   if (!(showNotificationPopup)) return null;
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-4">
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
           style={{ animation: 'scale-in 0.3s ease-out' }}>
-          <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+          <div className="p-5 border-b-2 border-yellow-300 shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <span className="text-3xl animate-bounce"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -185,7 +185,7 @@ export function PopupNotifikasi({
                     <p className="font-bold text-sm text-gray-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
                     {r.address && <p className="text-xs text-gray-500 mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</p>}
                   </div>
-                  <div className="flex-shrink-0 text-right">
+                  <div className="shrink-0 text-right">
                     <StatusBadge status={r.status} />
                     <p className="text-[11px] text-gray-500 mt-1">{formatDate(r.due_date)}</p>
                   </div>
@@ -193,9 +193,9 @@ export function PopupNotifikasi({
               </div>
             ))}
           </div>
-          <div className="p-4 border-t-2 border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="p-4 border-t-2 border-gray-200 bg-gray-50 shrink-0">
             <button onClick={() => setShowNotificationPopup(false)}
-              className="w-full bg-gradient-to-r from-red-600 to-red-800 text-white py-3 rounded-xl font-bold transition-all">
+              className="w-full bg-linear-to-r from-red-600 to-red-800 text-white py-3 rounded-xl font-bold transition-all">
               ✕ Tutup
             </button>
           </div>
@@ -218,10 +218,10 @@ export function PopupLonceng({
   if (!(showBellPopup)) return null;
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-4">
         <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
           style={{ animation: 'scale-in 0.3s ease-out' }}>
-          <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+          <div className="p-5 border-b-2 border-yellow-300 shrink-0" style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-3">
                 <span className="text-3xl"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
@@ -271,7 +271,7 @@ export function PopupLonceng({
                     <p className="font-bold text-sm text-gray-800 truncate">{(r.project_name || '').trim() || ((r as any).title || '').trim() || '—'}</p>
                     {r.address && <p className="text-xs text-gray-500 mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</p>}
                   </div>
-                  <div className="flex-shrink-0 text-right">
+                  <div className="shrink-0 text-right">
                     <StatusBadge status={r.status} />
                     <p className="text-[11px] text-gray-500 mt-1">{formatDate(r.due_date)}</p>
                   </div>
@@ -279,9 +279,9 @@ export function PopupLonceng({
               </div>
             ))}
           </div>
-          <div className="p-4 border-t-2 border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="p-4 border-t-2 border-gray-200 bg-gray-50 shrink-0">
             <button onClick={() => setShowBellPopup(false)}
-              className="w-full bg-gradient-to-r from-red-600 to-red-800 text-white py-3 rounded-xl font-bold transition-all">
+              className="w-full bg-linear-to-r from-red-600 to-red-800 text-white py-3 rounded-xl font-bold transition-all">
               ✕ Tutup
             </button>
           </div>

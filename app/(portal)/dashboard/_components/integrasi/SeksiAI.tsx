@@ -43,7 +43,7 @@ export function SeksiAI({ ai, hapusRahasia, penilai, rahasia, seksi, setAi, setP
                 </label>
                 <textarea id="f-dashboard-components-modal-integrasi-3" value={ai.arahan} rows={3} onChange={e => setAi(x => ({ ...x, arahan: e.target.value }))}
                   placeholder={'Contoh:\nUtamakan topik konfigurasi videowall dan troubleshooting sinyal HDMI/HDBaseT.\nHindari pertanyaan tentang sejarah merek atau harga.'}
-                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400 leading-relaxed" />
+                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-hidden focus:border-sky-400 leading-relaxed" />
                 <p className="text-[11px] text-slate-500 mt-1">
                   Ditambahkan pada instruksi AI, bukan menggantinya — aturan bentuk soal tetap dipegang platform.
                 </p>
@@ -103,7 +103,7 @@ export function SeksiAI({ ai, hapusRahasia, penilai, rahasia, seksi, setAi, setP
                 </label>
                 <textarea id="f-dashboard-components-modal-integrasi-5" value={penilai.arahan} rows={3} onChange={e => setPenilai(x => ({ ...x, arahan: e.target.value }))}
                   placeholder={'Contoh:\nHargai jawaban yang benar secara konsep walau istilahnya tidak baku.\nJangan mengurangi nilai karena ejaan.'}
-                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-violet-400 leading-relaxed" />
+                  className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-hidden focus:border-violet-400 leading-relaxed" />
               </div>
               <div>
                 <label htmlFor="f-dashboard-components-modal-integrasi-6" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
@@ -119,7 +119,7 @@ export function SeksiAI({ ai, hapusRahasia, penilai, rahasia, seksi, setAi, setP
               <label className="flex items-start gap-2 cursor-pointer">
                 <input type="checkbox" checked={penilai.otomatis}
                   onChange={e => setPenilai(x => ({ ...x, otomatis: e.target.checked }))}
-                  className="mt-0.5 w-4 h-4 rounded accent-violet-600 flex-shrink-0" />
+                  className="mt-0.5 w-4 h-4 rounded-sm accent-violet-600 shrink-0" />
                 <span className="text-[11.5px] leading-snug text-slate-600">
                   <b>Nilai otomatis saat halaman penilaian dibuka</b>
                   <span className="block text-[11px] text-slate-500 mt-0.5">

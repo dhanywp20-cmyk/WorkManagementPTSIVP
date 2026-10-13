@@ -110,7 +110,7 @@ export function Kartu({ icon, judul, hitung, children }: {
   icon: string; judul: string; hitung?: string; children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
       <div className="px-4 py-3 flex items-center justify-between border-b border-slate-100 bg-slate-50/60">
         <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-1.5">
           <span className="text-sm"><Ikon nama={icon} ukuran={14} /></span> {judul}
@@ -132,7 +132,7 @@ export function Baris({ icon, label, value, children }: {
 }) {
   return (
     <div className="px-4 py-2.5 flex items-center justify-between gap-4">
-      <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 flex-shrink-0">
+      <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2 shrink-0">
         <span className="w-4 text-center text-slate-400"><Ikon nama={icon} ukuran={14} /></span> {label}
       </span>
       <div className="min-w-0 text-right">
@@ -179,14 +179,14 @@ export function StripInfo({ icon, judul, keterangan, angka, satuan }: {
   angka?: number | string; satuan?: string;
 }) {
   return (
-    <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-sm mb-4">
-      <div className="text-2xl flex-shrink-0"><Ikon nama={icon} ukuran={24} /></div>
+    <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white border border-slate-200 shadow-xs mb-4">
+      <div className="text-2xl shrink-0"><Ikon nama={icon} ukuran={24} /></div>
       <div className="flex-1 min-w-0">
         <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">{judul}</p>
         <p className="text-xs text-slate-500 mt-0.5 leading-snug">{keterangan}</p>
       </div>
       {angka !== undefined && (
-        <div className="text-right flex-shrink-0 pl-2">
+        <div className="text-right shrink-0 pl-2">
           <p className="text-xl font-black text-slate-800 leading-none">{angka}</p>
           {satuan && <p className="text-[11px] text-slate-500 mt-1">{satuan}</p>}
         </div>

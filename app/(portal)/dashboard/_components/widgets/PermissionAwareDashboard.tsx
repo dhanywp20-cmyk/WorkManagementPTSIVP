@@ -47,7 +47,7 @@ function HeaderTabBtn({ label, icon, active, onClick, badge }: {
 }) {
   return (
     <button type="button" onClick={onClick}
-      className="flex items-center gap-1 text-[11px] md:text-[11px] font-bold px-2 py-1 md:px-2.5 md:py-1.5 rounded-full transition-all flex-shrink-0"
+      className="flex items-center gap-1 text-[11px] md:text-[11px] font-bold px-2 py-1 md:px-2.5 md:py-1.5 rounded-full transition-all shrink-0"
       style={active
         ? { background: AKSEN_UTAMA, color: 'white', border: `1px solid ${AKSEN_UTAMA}` }
         : { background: 'white', color: '#475569', border: '1px solid #e2e8f0' }}>
@@ -207,7 +207,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         {ajakTelegram && !tutupAjakan && (
           <div className="lg:col-span-12 rounded-xl flex items-center gap-3 md:gap-4 px-4 py-3.5 flex-wrap"
             style={{ background: '#fffbeb', border: '1px solid #fcd34d' }}>
-            <span className="w-9 h-9 rounded-lg grid place-items-center flex-shrink-0 text-white text-base"
+            <span className="w-9 h-9 rounded-lg grid place-items-center shrink-0 text-white text-base"
               style={{ background: '#f59e0b' }}>➤</span>
             <span className="flex-1 min-w-[220px]">
               <span className="block text-[13.5px] font-bold text-slate-800">Telegram Anda belum terhubung</span>
@@ -217,11 +217,11 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
               </span>
             </span>
             <button type="button" onClick={() => setTutupAjakan(true)}
-              className="text-[11.5px] font-bold px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 hover:bg-amber-50 flex-shrink-0">
+              className="text-[11.5px] font-bold px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 hover:bg-amber-50 shrink-0">
               Nanti saja
             </button>
             <button type="button" onClick={onHubungkanTelegram}
-              className="text-[11.5px] font-bold px-3 py-1.5 rounded-lg text-white flex-shrink-0"
+              className="text-[11.5px] font-bold px-3 py-1.5 rounded-lg text-white shrink-0"
               style={{ background: '#f59e0b' }}>
               Hubungkan sekarang →
             </button>

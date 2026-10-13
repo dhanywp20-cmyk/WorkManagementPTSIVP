@@ -169,7 +169,7 @@ export function BarisItem({ item, sedang, aksi }: { item: ChecklistItem; sedang:
       style={{ background: latar, boxShadow: item.tertunda ? `inset 3px 0 0 ${TEMA.warna}` : undefined }}>
       <button type="button" onClick={() => aksi.onToggle?.(item)} disabled={sedang || !bisaCentang}
         aria-pressed={item.selesai} aria-label={item.selesai ? `Batalkan centang: ${item.teks}` : `Centang: ${item.teks}`}
-        className="mt-0.5 w-6 h-6 sm:w-5 sm:h-5 rounded-md flex items-center justify-center flex-shrink-0 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-default"
+        className="mt-0.5 w-6 h-6 sm:w-5 sm:h-5 rounded-md flex items-center justify-center shrink-0 transition-all focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-default"
         style={{
           background: item.selesai ? TEMA.selesai : NETRAL.permukaan,
           border: `1.5px solid ${item.selesai ? TEMA.selesai : item.kendala ? TEMA.kendala : NETRAL.garisKuat}`,
@@ -218,7 +218,7 @@ export function BarisItem({ item, sedang, aksi }: { item: ChecklistItem; sedang:
       </div>
 
       {(aksi.onKendala || aksi.onFoto || aksi.aksiTambahan) && (
-        <div className="flex items-center gap-0.5 flex-shrink-0">
+        <div className="flex items-center gap-0.5 shrink-0">
           {aksi.onKendala && (
             <button type="button" onClick={() => aksi.onKendala?.(item)} aria-label={`Kendala: ${item.teks}`} title="Tandai / ubah kendala"
               className="p-1.5 rounded-md hover:bg-amber-50" style={{ color: item.kendala && !item.selesai ? TEMA.kendala : TEMA.samar }}>
@@ -267,7 +267,7 @@ export function PanelBagian({
         <button type="button" onClick={() => setTerbuka(v => !v)} aria-expanded={terbuka}
           className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 text-left">
           <span className="flex items-center gap-2 min-w-0 sm:w-[45%]">
-            <ChevronDown size={16} className="flex-shrink-0 transition-transform" style={{ transform: terbuka ? 'none' : 'rotate(-90deg)', color: TEMA.samar }} />
+            <ChevronDown size={16} className="shrink-0 transition-transform" style={{ transform: terbuka ? 'none' : 'rotate(-90deg)', color: TEMA.samar }} />
             <span className="font-bold text-[14px] truncate" style={{ color: NETRAL.tinta }}>{bagian.judul}</span>
             <KepingKendala jumlah={stat.kendala} />
           </span>
@@ -376,7 +376,7 @@ export function ModalKendala({ item, onTutup, onSimpan }: {
         <span className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>Apa kendalanya?</span>
         <textarea value={catatan} onChange={e => setCatatan(e.target.value)} rows={4} maxLength={BATAS.catatan} autoFocus
           placeholder="mis. Kabel HDMI 10 m belum datang, menunggu kiriman vendor"
-          className="mt-1 w-full rounded-xl px-3 py-2 text-[14px] outline-none focus:ring-2"
+          className="mt-1 w-full rounded-xl px-3 py-2 text-[14px] outline-hidden focus:ring-2"
           style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta }} />
       </label>
       {item.selesai && (

@@ -129,13 +129,13 @@ export function ReminderDetailPopup({
 
   return (
     <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex justify-center z-[1000] p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex justify-center z-1000 p-4"
       onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
       <div className="flex gap-3 w-full justify-center min-h-0"
         style={{ maxWidth: showModeModal ? '1140px' : showRiwayat ? '1060px' : '672px', transition: 'max-width 0.25s ease' }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full flex-1 min-w-0 overflow-hidden flex flex-col"
         style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', height: '100%' }}>
-        <div className="px-6 py-5 flex-shrink-0 sticky top-0 z-30 relative" style={{
+        <div className="px-6 py-5 shrink-0 sticky top-0 z-30 relative" style={{
           background: (() => { const c = CATEGORY_CONFIG[detailReminder.category]; const base = c ? `linear-gradient(135deg,${c.accent}dd,${c.accent}88)` : 'linear-gradient(135deg,#1d4ed8,#1e40af)'; return `linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.15)),${base}`; })()
         }}>
           <button onClick={() => setShowRiwayat(v => !v)}
@@ -187,7 +187,7 @@ export function ReminderDetailPopup({
         <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Action bar — sticky di atas, menempel header detail */}
           {(isAdmin || currentUser?.role === 'team' || isMyReviewStage(detailReminder)) && (
-            <div className="flex gap-2 flex-wrap sticky top-0 z-20 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-gray-100">
+            <div className="flex gap-2 flex-wrap sticky top-0 z-20 bg-white/95 backdrop-blur-xs -mx-5 px-5 py-2.5 border-b border-gray-100">
               {canInternalApprove(detailReminder) && (
                 <>
                   <button onClick={() => setInternalApproveTarget(detailReminder)}
@@ -264,7 +264,7 @@ export function ReminderDetailPopup({
 
           {detailReminder.status === 'cancelled' && detailReminder.rejection_reason && (
             <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)' }}>
-              <span className="text-base flex-shrink-0"><Ikon nama="❌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="text-base shrink-0"><Ikon nama="❌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div>
                 <p className="text-xs font-bold text-red-700">Request Ditolak</p>
                 <p className="text-xs text-red-600 mt-0.5">{detailReminder.rejection_reason}</p>
@@ -283,7 +283,7 @@ export function ReminderDetailPopup({
                     {detailReminder.assign_name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-800 break-words">{detailReminder.assign_name}</p>
+                    <p className="text-sm font-bold text-slate-800 wrap-break-word">{detailReminder.assign_name}</p>
                     <p className="text-xs truncate" title={detailReminder.assigned_to ?? ''} style={{ color: '#64748b' }}><Username value={detailReminder.assigned_to} /></p>
                   </div>
                 </div>
@@ -304,7 +304,7 @@ export function ReminderDetailPopup({
               <InfoRow icon="👤" label="Nama Sales & Divisi" value={[detailReminder.sales_name, detailReminder.sales_division].filter(Boolean).join(' / ')} />
               {detailReminder.sales_name && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && (
                 <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)', background: 'rgba(124,58,237,0.04)' }}>
-                  <span className="text-base flex-shrink-0"><Ikon nama="⭐" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="text-base shrink-0"><Ikon nama="⭐" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-bold tracking-widest uppercase" style={{ color: '#7c3aed' }}>Guest Review (Sales)</p>
                     <p className="text-sm font-semibold text-violet-700">{detailReminder.sales_name}</p>
@@ -326,7 +326,7 @@ export function ReminderDetailPopup({
               {detailReminder.pic_name && <InfoRow icon="🙋" label="Nama PIC Project" value={detailReminder.pic_name} />}
               {detailReminder.pic_phone && (
                 <div className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
-                  <span className="text-base flex-shrink-0"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="text-base shrink-0"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="min-w-0 flex-1">
                     <p className="text-[11px] font-bold tracking-widest uppercase" style={{ color: '#64748b' }}>No. Telepon PIC</p>
                     <a href={`tel:${detailReminder.pic_phone}`} className="text-sm font-semibold hover:underline" style={{ color: '#60a5fa' }}
@@ -701,9 +701,9 @@ export function ReminderDetailPopup({
       {/* HP: panel ini menjadi lapisan penuh di atas detail (fixed inset-3) - berdampingan di layar
           sempit membuat popup detail terjepit menjadi garis tipis di kiri. */}
       {showRiwayat && !showModeModal && (
-        <div className="bg-white rounded-2xl shadow-2xl fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 md:self-start overflow-hidden flex flex-col"
+        <div className="bg-white rounded-2xl shadow-2xl fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full shrink-0 md:self-start overflow-hidden flex flex-col"
           style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '100%' }}>
-          <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
+          <div className="px-5 py-4 shrink-0 relative" style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
             <h3 className="text-white font-bold text-base"><IkonTeks nama="🕘" />Riwayat Perubahan</h3>
             <p className="text-slate-500 text-[11px] mt-0.5 truncate">{detailReminder.project_name}</p>
             <button aria-label="Tutup" onClick={() => setShowRiwayat(false)}

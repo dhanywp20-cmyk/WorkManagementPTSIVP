@@ -47,7 +47,7 @@ export function PanelKategori({ a }: { a: AlatDesain }) {
                   </span>
                   <span className="block mt-0.5 text-[12px] leading-snug text-slate-600">{k.ket}</span>
                   {t && (
-                    <span className="mt-1.5 inline-flex max-w-full items-center gap-1 rounded-full bg-gradient-to-r from-amber-100 to-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200"
+                    <span className="mt-1.5 inline-flex max-w-full items-center gap-1 rounded-full bg-linear-to-r from-amber-100 to-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200"
                       title={`Default Admin: ${t.nama} · ${t.ditetapkan_oleh_nama ?? 'Admin'}, ${tanggal(t.updated_at)}`}>
                       <span aria-hidden="true">⭐</span>
                       <span className="truncate">Default Admin · {t.ditetapkan_oleh_nama ?? 'Admin'}, {tanggal(t.updated_at)}</span>

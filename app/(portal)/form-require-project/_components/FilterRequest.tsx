@@ -32,7 +32,7 @@ export function FilterRequest({ availableYears, filterHandler, filterMonth, filt
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Search project / lokasi..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Cari project / lokasi..."
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
             </div>
           </div>
           <div>
@@ -41,7 +41,7 @@ export function FilterRequest({ availableYears, filterHandler, filterMonth, filt
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Search sales / requester..." value={searchSales} onChange={e => setSearchSales(e.target.value)}
                 placeholder="Cari sales / requester..."
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300" />
             </div>
           </div>
           <div>
@@ -49,7 +49,7 @@ export function FilterRequest({ availableYears, filterHandler, filterMonth, filt
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <select aria-label="All Handlers" value={filterHandler} onChange={e => setFilterHandler(e.target.value)}
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                 <option value="all">All Handlers</option>
                 {ptsMembersList.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
@@ -61,7 +61,7 @@ export function FilterRequest({ availableYears, filterHandler, filterMonth, filt
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <select aria-label="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
                 <option value="approved">Approved</option>
@@ -77,7 +77,7 @@ export function FilterRequest({ availableYears, filterHandler, filterMonth, filt
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <select aria-label="All Years" value={filterYear} onChange={e => setFilterYear(e.target.value)}
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                 <option value="all">All Years</option>
                 {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
@@ -89,7 +89,7 @@ export function FilterRequest({ availableYears, filterHandler, filterMonth, filt
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-xs"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <select aria-label="All Months" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-teal-300 appearance-none cursor-pointer">
                 <option value="all">All Months</option>
                 <option value="01">Januari</option>
                 <option value="02">Februari</option>

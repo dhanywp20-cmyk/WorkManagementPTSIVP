@@ -19,13 +19,13 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
     <>
       {detailReview && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-4"
           onClick={e => { if (e.target === e.currentTarget) setDetailReview(null); }}>
           <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden flex flex-col"
             style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96dvh' }}>
 
             {/* Header */}
-            <div className="px-6 py-5 flex-shrink-0 relative"
+            <div className="px-6 py-5 shrink-0 relative"
               style={{ background: detailReview.review_category === 'Demo Product' ? 'linear-gradient(135deg,#7c3aeddd,#5b21b688)' : 'linear-gradient(135deg,#0ea5e9dd,#0284c788)' }}>
               <div className="flex flex-wrap gap-2 mb-3">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
@@ -80,7 +80,7 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
                 ].filter(x => x.value).map((item, i) => (
                   <div key={i} className="rounded-xl px-4 py-3" style={{ background: 'rgba(248,250,252,0.9)', border: '1px solid rgba(0,0,0,0.07)' }}>
                     <p className="text-[10px] font-bold tracking-widest uppercase text-gray-500"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {item.label}</p>
-                    <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{item.value}</p>
+                    <p className="text-sm font-bold text-gray-800 mt-0.5 wrap-break-word">{item.value}</p>
                   </div>
                 ))}
               </div>

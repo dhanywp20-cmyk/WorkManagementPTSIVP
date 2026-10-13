@@ -24,7 +24,7 @@ export function ModalUpdateStatus({ bisaKelolaRequest, canSetInProgress, current
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
           <div className="bg-white/90 rounded-2xl shadow-2xl max-w-sm w-full border border-gray-200 animate-scale-in overflow-hidden">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-4 flex items-center justify-between">
+            <div className="bg-linear-to-r from-blue-600 to-blue-800 px-6 py-4 flex items-center justify-between">
               <div>
                 <h3 className="font-bold text-white text-base flex items-center gap-2">
                   <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
@@ -55,8 +55,8 @@ export function ModalUpdateStatus({ bisaKelolaRequest, canSetInProgress, current
                   return true;
                 }).map(s => (
                   <button key={s.value} type="button" onClick={() => setSelectedNewStatus(s.value)}
-                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all font-semibold text-sm ${selectedNewStatus === s.value ? s.active + ' shadow-sm' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}>
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${selectedNewStatus === s.value ? 'border-current' : 'border-gray-300'}`}>
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all font-semibold text-sm ${selectedNewStatus === s.value ? s.active + ' shadow-xs' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'}`}>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${selectedNewStatus === s.value ? 'border-current' : 'border-gray-300'}`}>
                       {selectedNewStatus === s.value && <div className="w-2 h-2 rounded-full bg-current" />}
                     </div>
                     {s.label}
@@ -73,7 +73,7 @@ export function ModalUpdateStatus({ bisaKelolaRequest, canSetInProgress, current
                     setStatusUpdateModal({ open: false, req: null, roomIdx: 0 });
                     setSelectedNewStatus('');
                   }}
-                  className="flex-[2] bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white py-2.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2">
+                  className="flex-2 bg-linear-to-r from-blue-600 to-blue-800 hover:from-blue-700 hover:to-blue-900 text-white py-2.5 rounded-xl font-bold shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2">
                   <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                   Update Status
                 </button>

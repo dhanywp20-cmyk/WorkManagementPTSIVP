@@ -29,11 +29,11 @@ export function AdminEditModal({
 }) {
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4"
         onClick={e => { if (e.target === e.currentTarget && !adminEditSaving) onClose(); }}>
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-full flex flex-col overflow-hidden"
           style={{ animation: 'scale-in 0.25s ease-out' }}>
-          <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
+          <div className="px-6 py-4 flex items-center justify-between shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
             <div className="min-w-0">
               <h3 className="text-lg font-bold text-white"><IkonTeks nama="🛠" />Edit Detail &amp; Re-route</h3>
               <p className="text-indigo-100/90 text-xs mt-0.5 truncate">{adminEditTicket.project_name}</p>
@@ -49,7 +49,7 @@ export function AdminEditModal({
               {bolehReroute(adminEditTicket) ? (
                 <>
                   <select aria-label="— Biarkan seperti sekarang —" value={adminRerouteTo} onChange={e => setAdminRerouteTo(e.target.value)}
-                    className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-amber-200">
+                    className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:ring-2 focus:ring-amber-200">
                     <option value="">— Biarkan seperti sekarang —</option>
                     <option value="SELF">Saya kerjakan sendiri</option>
                     {supervisorMembers.length > 0 && (
@@ -89,13 +89,13 @@ export function AdminEditModal({
             </p>
           </div>
 
-          <div className="px-6 py-4 flex gap-3 flex-shrink-0 border-t border-slate-100">
+          <div className="px-6 py-4 flex gap-3 shrink-0 border-t border-slate-100">
             <button onClick={onClose} disabled={adminEditSaving}
               className="flex-1 py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40">
               Batal
             </button>
             <button onClick={simpanAdminEdit} disabled={adminEditSaving}
-              className="flex-[2] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+              className="flex-2 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
               style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
               {adminEditSaving
                 ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>

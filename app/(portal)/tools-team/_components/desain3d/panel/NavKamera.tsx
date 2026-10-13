@@ -34,7 +34,7 @@ export function NavKamera({ a }: { a: AlatDesain }) {
         </div>
       )}
       {siap && menuSudut && (
-        <div className="kontrol-kanvas absolute left-2 bottom-14 z-20 w-[236px] max-w-[calc(100%-16px)] rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-xl p-2.5">
+        <div className="kontrol-kanvas absolute left-2 bottom-14 z-20 w-[236px] max-w-[calc(100%-16px)] rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-xl p-2.5">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Arah pandang</p>
           <div className="grid grid-cols-3 gap-1">
             {([['iso', '3D'], ['atas', 'Atas'], ['kursi', 'Dari kursi']] as const).map(([v, l]) => (

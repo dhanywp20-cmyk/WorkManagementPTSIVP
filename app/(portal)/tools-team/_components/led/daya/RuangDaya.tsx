@@ -88,7 +88,7 @@ export function RuangDaya({ d, s, onUbah, namaFile }: { d: DataDaya; s: Pengatur
               </tr></thead>
               <tbody>{h.perFase.map(p => (
                 <tr key={p.fase} className="border-t border-slate-100">
-                  <td className="px-3 py-1.5 font-semibold"><span className="inline-block w-2.5 h-2.5 rounded-sm mr-2 align-middle" style={{ background: WARNA_FASE[p.fase] }} />{p.fase}</td>
+                  <td className="px-3 py-1.5 font-semibold"><span className="inline-block w-2.5 h-2.5 rounded-xs mr-2 align-middle" style={{ background: WARNA_FASE[p.fase] }} />{p.fase}</td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{p.sirkuit}</td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{f(p.arus, 1)} A</td>
                   <td className="px-3 py-1.5 text-right tabular-nums font-semibold">{p.mcb} A</td>
@@ -104,7 +104,7 @@ export function RuangDaya({ d, s, onUbah, namaFile }: { d: DataDaya; s: Pengatur
               </tr></thead>
               <tbody>{h.sirkuit.map(c => (
                 <tr key={c.no} className="border-t border-slate-100">
-                  <td className="px-3 py-1.5 font-semibold whitespace-nowrap"><span className="inline-block w-2.5 h-2.5 rounded-sm mr-2 align-middle" style={{ background: warnaPort(c.no) }} />C{c.no} · {c.fase}</td>
+                  <td className="px-3 py-1.5 font-semibold whitespace-nowrap"><span className="inline-block w-2.5 h-2.5 rounded-xs mr-2 align-middle" style={{ background: warnaPort(c.no) }} />C{c.no} · {c.fase}</td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{c.unit}</td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{f(c.watt, 0)} W</td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{f(c.arus, 1)} A</td>

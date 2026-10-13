@@ -79,18 +79,18 @@ export function FilterBar({
               membesar saat disentuh — sehingga barisnya terlihat tidak rapi. */}
           {canManageTickets && (
             <button onClick={() => { setSelectMode(m => !m); setSelectedIds(new Set()); }}
-              className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400 ${selectMode ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+              className={`inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold border transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400 ${selectMode ? 'bg-rose-50 border-rose-300 text-rose-700 hover:bg-rose-100' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
               <Ico name={selectMode ? "close" : "check"} className="w-3.5 h-3.5" />
               {selectMode ? 'Batal' : 'Select'}
             </button>
           )}
           <button onClick={() => fetchData()} disabled={loading}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400">
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-60 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-slate-400">
             <Ico name="refresh" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </button>
           <button onClick={onExport} disabled={uploading}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-white border border-transparent transition-colors disabled:opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-semibold text-white border border-transparent transition-colors disabled:opacity-60 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-1"
             style={{ background: '#be123c' }}>
             {uploading
               ? <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -112,7 +112,7 @@ export function FilterBar({
                 value={searchProject}
                 onChange={(e) => setSearchProject(e.target.value)}
                 placeholder="Cari project / lokasi..."
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
               />
             </div>
           </div>
@@ -125,7 +125,7 @@ export function FilterBar({
                 value={searchSalesName}
                 onChange={(e) => setSearchSalesName(e.target.value)}
                 placeholder="Cari sales name..."
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
               />
             </div>
           </div>
@@ -138,7 +138,7 @@ export function FilterBar({
                 value={searchProduct}
                 onChange={(e) => { setSearchProduct(e.target.value); setProductFilter(null); }}
                 placeholder="Cari product..."
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300"
               />
             </div>
           </div>
@@ -149,7 +149,7 @@ export function FilterBar({
               <select aria-label="All Handlers"
                 value={handlerFilter || ""}
                 onChange={(e) => setHandlerFilter(e.target.value || null)}
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
                 <option value="">All Handlers</option>
                 {teamMembers.filter(m => m.team_type?.startsWith(`Team ${selectedHandlerTeam}`)).map((m) => (
@@ -166,7 +166,7 @@ export function FilterBar({
               <select aria-label="All Status"
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
                 <option value="All">All Status</option>
                 <option value="Waiting Approval">Waiting Approval</option>
@@ -192,7 +192,7 @@ export function FilterBar({
               <select aria-label="All Years"
                 value={filterYear}
                 onChange={(e) => setFilterYear(e.target.value)}
-                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-none transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
+                className="w-full rounded-xl pl-8 pr-4 py-1 sm:py-2 text-sm outline-hidden transition-all bg-gray-50 border border-gray-200 focus:bg-white focus:border-red-300 appearance-none cursor-pointer"
               >
                 {/*  Label jujur: pilihan ini TIDAK memuat semua tahun - server
                      membatasinya 12 bulan terakhir (lihat rentangTiket). Menyebutnya

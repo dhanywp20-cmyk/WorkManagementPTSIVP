@@ -67,7 +67,7 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                 style={{ background: isExpanded ? bc.hdr : '#f8fafc' }}
               >
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: bc.dot }} />
+                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: bc.dot }} />
                   {batchKey
                     ? <span className="text-xs font-bold" style={{ color: bc.text }}><Ikon nama="📌" ukuran="1em" className="inline-block align-[-0.12em]" /> {batchKey}</span>
                     : <span className="text-xs font-semibold text-slate-500 italic">Tanpa Grup</span>
@@ -89,7 +89,7 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                     {hardN > 0  && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: DIFF_BG.hard,   color: DIFF_TEXT.hard,   border: `1px solid ${DIFF_BORDER.hard}` }}>  Sulit {hardN}</span>}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     data-tulis onClick={e => { e.stopPropagation(); handleDeleteBatch(batchKey); }}
@@ -103,7 +103,7 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                   {/* Chevron */}
                   <svg aria-hidden="true" focusable="false"
                     width="16" height="16" fill="none" stroke={bc.text} viewBox="0 0 24 24"
-                    className="transition-transform duration-200 flex-shrink-0"
+                    className="transition-transform duration-200 shrink-0"
                     style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
@@ -134,7 +134,7 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                       </button>
                       <button type="button" disabled={sedangMenyimpan}
                         onClick={() => simpanUrutan(expandKey, batchQs)}
-                        className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow transition-all disabled:opacity-60 flex items-center gap-1.5">
+                        className="px-3 py-1.5 rounded-lg text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-all disabled:opacity-60 flex items-center gap-1.5">
                         {sedangMenyimpan
                           ? <><span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />Menyimpan...</>
                           : <>💾 Simpan Urutan</>}
@@ -142,7 +142,7 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                     </div>
                   )}
                   {batchQs.map((q, idx) => (
-                    <div key={q.id} className="flex rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm hover:shadow-md transition-all">
+                    <div key={q.id} className="flex rounded-xl overflow-hidden border border-slate-200 bg-white shadow-xs hover:shadow-md transition-all">
                       <div style={{
                         width: 48, background: DIFF_BG[q.difficulty] ?? '#f8fafc',
                         borderRight: `1px solid ${DIFF_BORDER[q.difficulty] ?? '#e2e8f0'}`,
@@ -172,7 +172,7 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                             <button type="button" aria-label={`Naikkan soal ${idx + 1}`}
                               title="Naikkan" disabled={idx === 0}
                               onClick={() => geserSoal(expandKey, batchQs, idx, -1)}
-                              className="w-6 h-5 rounded flex items-center justify-center text-slate-500 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
+                              className="w-6 h-5 rounded-sm flex items-center justify-center text-slate-500 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
                               <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 15l7-7 7 7" />
                               </svg>
@@ -180,7 +180,7 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                             <button type="button" aria-label={`Turunkan soal ${idx + 1}`}
                               title="Turunkan" disabled={idx === batchQs.length - 1}
                               onClick={() => geserSoal(expandKey, batchQs, idx, 1)}
-                              className="w-6 h-5 rounded flex items-center justify-center text-slate-500 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
+                              className="w-6 h-5 rounded-sm flex items-center justify-center text-slate-500 bg-white/70 border border-slate-200 transition-all enabled:hover:text-slate-700 enabled:hover:bg-white disabled:opacity-25 disabled:cursor-not-allowed">
                               <svg aria-hidden="true" focusable="false" width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
                               </svg>
@@ -207,7 +207,7 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                             const isCorrect = q.correct_answer === opt.toUpperCase();
                             return (
                               <div key={opt} className={`flex items-start gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${isCorrect ? 'border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold' : 'border-slate-200 bg-white text-slate-600'}`}>
-                                <span className={`w-4 h-4 rounded flex items-center justify-center text-[10px] font-black flex-shrink-0 mt-0.5 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{opt.toUpperCase()}</span>
+                                <span className={`w-4 h-4 rounded-sm flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 ${isCorrect ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'}`}>{opt.toUpperCase()}</span>
                                 <span className="leading-snug">{(q as any)[`option_${opt}`]}</span>
                               </div>
                             );

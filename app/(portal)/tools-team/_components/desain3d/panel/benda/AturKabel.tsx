@@ -25,7 +25,7 @@ export function AturKabel({ c }: { c: KonteksAtur }) {
   return (
     <div className="rounded-xl border border-slate-200 p-2.5 space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <span className={label + ' !mb-0'}>Kabel ke rack</span>
+        <span className={label + ' mb-0!'}>Kabel ke rack</span>
         <div className="flex rounded-lg border border-slate-200 overflow-hidden text-[12px] font-semibold" role="radiogroup" aria-label="Pengaturan kabel">
           {([['Otomatis', !custom], ['Atur sendiri', !!custom]] as const).map(([l, aktif]) => (
             <button key={l} type="button" role="radio" aria-checked={aktif}
@@ -41,7 +41,7 @@ export function AturKabel({ c }: { c: KonteksAtur }) {
         <>
           {custom.map((k, i) => (
             <div key={i} className="flex items-center gap-1.5">
-              <span aria-hidden="true" className="w-3 h-3 rounded-full flex-shrink-0 ring-1 ring-black/10"
+              <span aria-hidden="true" className="w-3 h-3 rounded-full shrink-0 ring-1 ring-black/10"
                 style={{ background: hex(GOLONGAN_SINYAL.find(g => g.golongan === k.golongan)?.warna ?? 0) }} />
               <select value={k.golongan} onChange={e => ubah(i, { golongan: e.target.value as GolonganKabelSinyal })} aria-label={`Jenis kabel ${i + 1}`}
                 className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-base sm:text-[13px]">

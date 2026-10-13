@@ -19,10 +19,10 @@ export function PopupNotifikasiReview({ isTeam, myPendingReviews, setDetailRevie
     <>
       {showNotificationPopup && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-4">
           <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
             style={{ animation: 'scale-in 0.3s ease-out' }}>
-            <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: isTeam ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+            <div className="p-5 border-b-2 border-yellow-300 shrink-0" style={{ background: isTeam ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl animate-bounce">{isTeam ? '⭐' : '🔔'}</span>
@@ -59,7 +59,7 @@ export function PopupNotifikasiReview({ isTeam, myPendingReviews, setDetailRevie
                         <p className="text-xs text-violet-600 font-semibold mt-0.5"><IkonTeks nama="👤" />Guest: {r.sales_name}</p>
                       )}
                     </div>
-                    <div className="flex-shrink-0 text-right">
+                    <div className="shrink-0 text-right">
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold text-amber-700"
                         style={{ background: '#fef3c7', border: '1px solid #f59e0b' }}><IkonTeks nama="⏳" />Belum Diisi</span>
                       <p className="text-[11px] text-gray-500 mt-1">{isTeam ? r.sales_name : r.assign_name}</p>
@@ -68,7 +68,7 @@ export function PopupNotifikasiReview({ isTeam, myPendingReviews, setDetailRevie
                 </div>
               ))}
             </div>
-            <div className="p-4 border-t-2 border-gray-200 bg-gray-50 flex-shrink-0">
+            <div className="p-4 border-t-2 border-gray-200 bg-gray-50 shrink-0">
               <button onClick={() => setShowNotificationPopup(false)}
                 className="w-full text-white py-3 rounded-xl font-bold transition-all"
                 style={{ background: isTeam ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}>

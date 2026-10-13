@@ -56,7 +56,7 @@ interface RequestJadwalModalProps {
 }
 
 const inputCls =
-  'w-full rounded-lg px-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500/40';
+  'w-full rounded-lg px-3 py-2 text-xs outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-blue-500/40';
 const inputStyle = {
   background: '#ffffff',
   border: '1px solid rgba(0,0,0,0.12)',
@@ -120,7 +120,7 @@ export function RequestJadwalModal({
   return (
     <ModalPortal>
     <div role="dialog" aria-modal="true"
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-3 sm:p-4"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-3 sm:p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
@@ -129,7 +129,7 @@ export function RequestJadwalModal({
       >
         {/* Header */}
         <div
-          className="px-8 py-6 rounded-t-2xl flex items-center justify-between flex-shrink-0"
+          className="px-8 py-6 rounded-t-2xl flex items-center justify-between shrink-0"
           style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
         >
           <div>
@@ -161,7 +161,7 @@ export function RequestJadwalModal({
             style={{ background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)' }}
           >
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white flex-shrink-0"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white shrink-0"
               style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)' }}
             >
               {salesName.charAt(0).toUpperCase()}
@@ -321,7 +321,7 @@ export function RequestJadwalModal({
                     <span className="text-xl"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                     <span className="text-sm font-bold leading-tight flex-1">{cat}</span>
                     {sel && (
-                      <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg aria-hidden="true" focusable="false" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -492,7 +492,7 @@ export function RequestJadwalModal({
             className="rounded-xl p-3 flex items-start gap-3"
             style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)' }}
           >
-            <span className="text-lg flex-shrink-0"><Ikon nama="ℹ" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+            <span className="text-lg shrink-0"><Ikon nama="ℹ" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div>
               <p className="text-xs font-bold text-amber-700">Alur Approval</p>
               <p className="text-[11px] text-amber-700 leading-relaxed mt-0.5">
@@ -508,7 +508,7 @@ export function RequestJadwalModal({
         </div>
 
         {/* Footer tetap — tombol kirim tidak boleh ikut tergulir bersama kolom. */}
-        <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70">
+        <div className="px-6 py-4 shrink-0 border-t border-slate-200 bg-white/70">
           {formErr && (
             <div className="px-3 py-2 rounded-lg text-xs font-medium text-red-700 bg-red-50 border border-red-200 mb-2">{formErr}</div>
           )}

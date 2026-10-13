@@ -38,7 +38,7 @@ export function PembaruanAndroid() {
   const isi = (
     <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 w-full max-w-sm">
       <div className="flex items-start gap-3">
-        <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center flex-shrink-0">
+        <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
           <Ikon nama="📲" ukuran={20} />
         </span>
         <div className="min-w-0 flex-1">
@@ -68,11 +68,11 @@ export function PembaruanAndroid() {
 
   return rilis.wajib ? (
     <div role="alertdialog" aria-modal="true" aria-label="Update aplikasi wajib"
-      className="fixed inset-0 z-[3000] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+      className="fixed inset-0 z-3000 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
       {isi}
     </div>
   ) : (
-    <div role="dialog" aria-label="Update aplikasi" className="fixed inset-x-0 bottom-0 z-[2500] p-3 flex justify-center pointer-events-none">
+    <div role="dialog" aria-label="Update aplikasi" className="fixed inset-x-0 bottom-0 z-2500 p-3 flex justify-center pointer-events-none">
       <div className="pointer-events-auto w-full max-w-sm">{isi}</div>
     </div>
   );

@@ -107,8 +107,8 @@ export function ReminderListBody({
         <div className="space-y-2 p-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="animate-pulse flex gap-3 items-center bg-white/60 rounded-xl p-3 border border-gray-200">
-              <div className="flex-1 space-y-2"><div className="h-3 bg-gray-200 rounded w-2/5"></div><div className="h-2 bg-gray-100 rounded w-1/4"></div></div>
-              <div className="h-3 bg-gray-200 rounded w-1/6"></div><div className="h-3 bg-gray-200 rounded w-1/5"></div>
+              <div className="flex-1 space-y-2"><div className="h-3 bg-gray-200 rounded-sm w-2/5"></div><div className="h-2 bg-gray-100 rounded-sm w-1/4"></div></div>
+              <div className="h-3 bg-gray-200 rounded-sm w-1/6"></div><div className="h-3 bg-gray-200 rounded-sm w-1/5"></div>
               <div className="h-5 bg-gray-200 rounded-full w-16"></div><div className="h-6 bg-gray-200 rounded-lg w-14"></div>
             </div>
           ))}
@@ -283,7 +283,7 @@ export function ReminderListBody({
           {selectMode && (isAdmin || isManager)
             ? <input type="checkbox"
                 checked={selectedIds.size === filteredReminders.length && filteredReminders.length > 0}
-                onChange={toggleSelectAll} className="w-4 h-4 rounded accent-red-600 cursor-pointer" title="Pilih Semua" />
+                onChange={toggleSelectAll} className="w-4 h-4 rounded-sm accent-red-600 cursor-pointer" title="Pilih Semua" />
             : 'No'}
         </th>
                 <th className="px-3 py-2.5 text-left text-[11px] font-bold text-gray-500 uppercase tracking-wide border-r border-gray-200">Project</th>
@@ -325,12 +325,12 @@ export function ReminderListBody({
                           return next;
                         });
                       }}
-                      className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
+                      className="w-4 h-4 rounded-sm accent-red-600 cursor-pointer" />
                   : <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>}
               </td>
                     {/* Project */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                      <div className="font-bold text-gray-800 text-xs leading-tight break-words">{(r.project_name || '').trim() || (r.title || '').trim() || '—'}</div>
+                      <div className="font-bold text-gray-800 text-xs leading-tight wrap-break-word">{(r.project_name || '').trim() || (r.title || '').trim() || '—'}</div>
                       {r.address && <div className="text-[11px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.split(',')[0]}</div>}
                       <div className="text-[11px] text-gray-500 mt-0.5">{formatDatetime(r.created_at).split(',')[0]}</div>
                     </td>
@@ -339,7 +339,7 @@ export function ReminderListBody({
                       {r.product ? (
                         <button
                           onClick={e => { e.stopPropagation(); setProductFilter(productFilter === r.product ? null : (r.product ?? null)); }}
-                          className="text-[11px] font-semibold px-1.5 py-0.5 rounded text-left break-words leading-tight transition-all"
+                          className="text-[11px] font-semibold px-1.5 py-0.5 rounded-sm text-left wrap-break-word leading-tight transition-all"
                           style={{ background: productFilter === r.product ? '#6366f1' : '#eef2ff', color: productFilter === r.product ? 'white' : '#4338ca' }}>
                           {r.product}
                         </button>
@@ -348,7 +348,7 @@ export function ReminderListBody({
                           request, dipakai utk routing tim tapi sebelumnya tidak pernah
                           ditampilkan di mana pun (list maupun detail). */}
                       {r.product_type && (
-                        <div className="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded inline-block"
+                        <div className="mt-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm inline-block"
                           style={{ background: '#fef3c7', color: '#92400e' }}>
                           <Ikon nama="🏷" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.product_type}
                         </div>
@@ -358,7 +358,7 @@ export function ReminderListBody({
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="flex items-center gap-1">
                         <span className="text-sm"><Ikon nama={(CATEGORY_CONFIG[r.category] ?? { icon: '📁' }).icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-                        <span className="text-[11px] font-semibold text-gray-700 leading-tight break-words">{r.category}</span>
+                        <span className="text-[11px] font-semibold text-gray-700 leading-tight wrap-break-word">{r.category}</span>
                         {r.sales_name && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(r.category) && (
                         <div className="inline-flex items-center gap-1 mt-1 px-1.5 py-1"
                           >
@@ -372,7 +372,7 @@ export function ReminderListBody({
                           saja yg tampil; detail lengkapnya (BAST, tipe display,
                           controller automation, middleware) ada di halaman Detail. */}
                       {(INCENTIVE_TRIGGER_CATEGORIES as readonly string[]).includes(r.category) && r.mode_penyelesaian && (
-                        <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded"
+                        <div className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm"
                           style={r.mode_penyelesaian === 'onsite'
                             ? { background: '#d1fae5', color: '#047857' }
                             : { background: '#dbeafe', color: '#1d4ed8' }}>
@@ -382,7 +382,7 @@ export function ReminderListBody({
                       {r.category === 'Troubleshooting' && (
                         <button
                           onClick={e => { e.stopPropagation(); router.push('/ticketing'); }}
-                          className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded text-blue-600 hover:text-blue-800 transition-colors"
+                          className="mt-1 inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm text-blue-600 hover:text-blue-800 transition-colors"
                           style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
                           <IkonTeks nama="🎫" />Ticketing
                         </button>
@@ -402,13 +402,13 @@ export function ReminderListBody({
                       <div className="flex flex-nowrap gap-0.5">
                         {uniqueAssignNames.slice(0, 3).map(name => (
                           <div key={name} title={name}
-                            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
                             style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
                             {name?.charAt(0)?.toUpperCase() || '?'}
                           </div>
                         ))}
                         {uniqueAssignNames.length > 3 && (
-                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-100 text-gray-600 flex-shrink-0">+{uniqueAssignNames.length - 3}</div>
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-100 text-gray-600 shrink-0">+{uniqueAssignNames.length - 3}</div>
                         )}
                       </div>
                       {uniqueAssignNames.length === 1

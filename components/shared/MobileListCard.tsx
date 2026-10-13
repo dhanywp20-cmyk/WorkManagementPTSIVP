@@ -61,7 +61,7 @@ export function MobileListCard({
           onClick();
         }
       } : undefined}
-      className={`rounded-xl px-3 py-2 border shadow-sm transition-all ${
+      className={`rounded-xl px-3 py-2 border shadow-xs transition-all ${
         highlight ? 'bg-red-50/70 border-red-100' : 'bg-white border-gray-100'
       } ${onClick ? 'active:scale-[0.985] active:shadow-none cursor-pointer' : ''}`}
       style={accent ? { borderLeftWidth: 3, borderLeftColor: accent } : undefined}
@@ -70,7 +70,7 @@ export function MobileListCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
             {titlePrefix}
-            <p className="font-bold text-[13px] text-gray-800 leading-tight break-words">{title}</p>
+            <p className="font-bold text-[13px] text-gray-800 leading-tight wrap-break-word">{title}</p>
           </div>
           {meta && <div className="text-[11px] text-gray-500 mt-0.5 space-y-0">{meta}</div>}
         </div>
@@ -102,7 +102,7 @@ export function MobileCardBadge({ children, className, style, title }: {
   children: React.ReactNode; className?: string; style?: React.CSSProperties; title?: string;
 }) {
   return (
-    <span className={`px-2 py-0.5 text-[11px] font-bold rounded whitespace-nowrap ${className ?? ''}`} style={style} title={title}>
+    <span className={`px-2 py-0.5 text-[11px] font-bold rounded-sm whitespace-nowrap ${className ?? ''}`} style={style} title={title}>
       {children}
     </span>
   );

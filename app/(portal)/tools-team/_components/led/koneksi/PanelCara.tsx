@@ -52,7 +52,7 @@ export function PanelCara({ a }: { a: AlatRuangKoneksi }) {
                     <button key={i} type="button" onClick={() => setPortAktif(i + 1)} aria-pressed={on}
                       className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-bold border ${on ? 'text-white border-transparent' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}
                       style={on ? { background: warnaPort(i + 1) } : undefined}>
-                      {!on && <span className="w-2 h-2 rounded-sm" style={{ background: warnaPort(i + 1) }} />}P{i + 1}<span className={`font-semibold ${on ? 'text-white/85' : 'text-slate-500'}`}>{rt.length}</span>
+                      {!on && <span className="w-2 h-2 rounded-xs" style={{ background: warnaPort(i + 1) }} />}P{i + 1}<span className={`font-semibold ${on ? 'text-white/85' : 'text-slate-500'}`}>{rt.length}</span>
                     </button>
                   );
                 })}

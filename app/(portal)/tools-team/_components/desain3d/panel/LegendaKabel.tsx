@@ -15,13 +15,13 @@ const HURUF = 'Segoe UI, Arial, sans-serif';
 /** Overlay di sisi kanan bawah kanvas 3D. */
 export function LegendaKabel({ dipakai }: { dipakai: Set<GolonganKabel> }) {
   return (
-    <div className="kontrol-kanvas absolute right-2 bottom-2 z-10 rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-md px-2.5 py-2 max-w-[calc(100%-120px)]"
+    <div className="kontrol-kanvas absolute right-2 bottom-2 z-10 rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md px-2.5 py-2 max-w-[calc(100%-120px)]"
       role="note" aria-label="Legend warna kabel">
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Legend kabel</p>
       <ul className="space-y-0.5">
         {LEGENDA_KABEL.map(l => (
           <li key={l.golongan} className={`flex items-center gap-1.5 text-[11px] leading-tight ${dipakai.has(l.golongan) ? 'text-slate-800 font-semibold' : 'text-slate-400'}`}>
-            <span className="inline-block w-5 h-[3px] rounded-full flex-shrink-0" style={{ background: hex(l.warna), opacity: dipakai.has(l.golongan) ? 1 : 0.45 }} />
+            <span className="inline-block w-5 h-[3px] rounded-full shrink-0" style={{ background: hex(l.warna), opacity: dipakai.has(l.golongan) ? 1 : 0.45 }} />
             <span className="truncate">{teks(l)}</span>
           </li>
         ))}

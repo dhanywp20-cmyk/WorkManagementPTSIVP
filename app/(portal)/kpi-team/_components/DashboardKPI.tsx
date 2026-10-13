@@ -217,7 +217,7 @@ export default function DashboardKPI({ currentUser: userProp }: DashboardKPIProp
   // LC-style design helpers
   function SectionPill({ icon, children }: { icon: string; children: React.ReactNode }) {
     return (
-      <h3 className="text-sm font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm border border-slate-200">
+      <h3 className="text-sm font-bold uppercase tracking-widest mb-4 inline-flex items-center gap-1.5 bg-white text-slate-700 px-3 py-1.5 rounded-full shadow-xs backdrop-blur-xs border border-slate-200">
         <span><Ikon nama={icon} ukuran={14} /></span>{children}
       </h3>
     );

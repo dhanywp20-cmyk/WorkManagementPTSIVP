@@ -251,7 +251,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
   if (langkah === 'pilih') return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      <div className="fixed inset-0 z-200 flex items-center justify-center p-4"
         style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
         <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
           role="dialog" aria-modal="true" aria-labelledby="judul-tipe-project">
@@ -264,7 +264,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               onClick={() => { switchProjectType('existing'); setLangkah('cari'); }}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-red-400 hover:bg-red-50/50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">Project yang sudah ada</p>
                   <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
@@ -281,7 +281,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               onClick={() => { switchProjectType('new'); setLangkah('form'); }}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">Project baru</p>
                   <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
@@ -305,14 +305,14 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
   if (langkah === 'cari') return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      <div className="fixed inset-0 z-200 flex items-center justify-center p-4"
         style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
         <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
           style={{ maxHeight: '85vh' }} role="dialog" aria-modal="true" aria-labelledby="judul-cari-project">
           <div className="px-5 py-4 text-white flex items-center gap-3" style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}>
             <button type="button" aria-label="Kembali"
               onClick={() => { setLangkah('pilih'); setPraPilih(null); setReminderQuery(''); setReminderResults([]); }}
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-white/10">
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 hover:bg-white/10">
               <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
               </svg>
@@ -332,7 +332,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 value={reminderQuery}
                 onChange={e => handleQueryChange(e.target.value)}
                 placeholder="Ketik nama project untuk mencari..."
-                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 border border-slate-200"
+                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 border border-slate-200"
               />
               {reminderSearching && (
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">mencari...</span>
@@ -383,7 +383,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                         background: disorot ? 'rgba(220,38,38,0.08)' : 'white',
                       }}>
                       <span className="flex items-center gap-2">
-                        {disorot && <span className="text-red-600 flex-shrink-0">✓</span>}
+                        {disorot && <span className="text-red-600 shrink-0">✓</span>}
                         <span className="text-sm font-bold text-slate-800">{r.project_name || r.title}</span>
                       </span>
                       <span className="text-xs text-slate-500 flex gap-3 flex-wrap pl-0">
@@ -402,7 +402,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             )}
           </div>
 
-          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center flex-shrink-0">
+          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center shrink-0">
             <span className="text-[11px] text-slate-500">
               {praPilih ? `Dipilih: ${praPilih.project_name || praPilih.title}` : 'Belum ada yang dipilih'}
             </span>
@@ -425,13 +425,13 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-3 sm:p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-3 sm:p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-[1500px] max-h-full flex flex-col overflow-hidden"
         style={{ animation: "scale-in 0.25s ease-out", border: "1.5px solid rgba(220,38,38,0.25)" }}>
 
         {/* Header */}
-        <div className="px-8 py-6 rounded-t-2xl flex-shrink-0"
+        <div className="px-8 py-6 rounded-t-2xl shrink-0"
           style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
           <div className="flex items-center justify-between">
             <div>
@@ -524,7 +524,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   value={reminderQuery}
                   onChange={e => handleQueryChange(e.target.value)}
                   placeholder="Ketik nama project untuk mencari..."
-                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
                 />
                 {reminderSearching && (
@@ -607,7 +607,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   </div>
                   <button aria-label="Tutup" type="button"
                     onClick={() => { setSelectedReminder(null); set({ project_name: '' }); }}
-                    className="text-xs text-red-600 hover:text-red-700 font-bold flex-shrink-0">✕</button>
+                    className="text-xs text-red-600 hover:text-red-700 font-bold shrink-0">✕</button>
                 </div>
               )}
             </div>
@@ -637,7 +637,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   onChange={e => projectType === 'new' || !selectedReminder ? set({ project_name: e.target.value }) : undefined}
                   readOnly={projectType === 'existing' && !!selectedReminder}
                   placeholder={projectType === 'existing' ? 'Pilih project dari pencarian di atas' : 'Example: BCA Cibitung Project'}
-                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                   style={{
                     background: projectType === 'existing' && selectedReminder ? "rgba(220,38,38,0.05)" : "rgba(255,255,255,0.95)",
                     border: projectType === 'existing' && selectedReminder ? "1px solid rgba(220,38,38,0.3)" : "1px solid rgba(0,0,0,0.12)",
@@ -651,7 +651,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <span className="absolute left-3 top-3"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <textarea value={form.address} onChange={e => set({ address: e.target.value })}
                   rows={2} placeholder="Example: Jl. Jend. Sudirman No. 1..."
-                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
               </div>
             </div>
@@ -666,7 +666,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input type="text" value={form.customer_phone} onChange={e => set({ customer_phone: e.target.value })}
                   placeholder="Adi - 08xx-xxxx-xxxx"
-                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
               </div>
             </div>
@@ -689,7 +689,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input type="text" value={form.product} onChange={e => set({ product: e.target.value })}
                   placeholder="Panasonic PT-MZ682, LG 75UL3Q, dll"
-                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
               </div>
             </div>
@@ -701,7 +701,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                 <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="🔢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input type="text" value={form.sn_unit} onChange={e => set({ sn_unit: e.target.value })}
                   placeholder="SN12345678 (opsional)"
-                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                   style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
               </div>
             </div>
@@ -738,7 +738,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                     set({ issue_case: val });
                 }}
                 placeholder="Maks. 4 kata, contoh: Videowall Not Working"
-                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
                 style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
             </div>
             <div className="flex justify-between items-center mt-1.5 px-1">
@@ -754,7 +754,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             <label htmlFor="f-ticketing-components-newticketmodal-1" className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}><IkonTeks nama="📝" />Detailed Description</label>
             <textarea id="f-ticketing-components-newticketmodal-1" value={form.description} onChange={e => set({ description: e.target.value })}
               rows={3} placeholder="Explain the problem details..."
-              className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
+              className="w-full rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
           </div>
 
@@ -821,7 +821,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2">👨‍💼</span>
                 <select aria-label="— Pilih penanganan —" value={form.assign_name} onChange={e => set({ assign_name: e.target.value })}
-                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
+                  className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
                   style={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}>
                   <option value="">— Pilih penanganan —</option>
                   <option value="SELF">Saya kerjakan sendiri</option>
@@ -876,7 +876,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
                   <button aria-label="Tutup" type="button" onClick={() => set({ photo: null })} className="text-red-600 hover:text-red-700 font-bold text-xs ml-1">✕</button>
                 </div>
                 <img src={URL.createObjectURL(form.photo)} alt="Preview"
-                  className="w-full max-h-48 object-cover rounded-lg border-2 shadow-sm"
+                  className="w-full max-h-48 object-cover rounded-lg border-2 shadow-xs"
                   style={{ borderColor: "rgba(220,38,38,0.3)" }} />
               </div>
             )}
@@ -889,7 +889,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
         {/* Footer dipisah supaya tombol Buat Ticket tidak ikut tergulir bersama
             kolom dan berada di luar layar justru saat form siap dikirim. */}
-        <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70">
+        <div className="px-6 py-4 shrink-0 border-t border-slate-200 bg-white/70">
           {/* Tombol rata KANAN dan seukuran isinya, bukan melebar penuh.
               Tombol selebar frame membuat aksi terasa seberat isinya sendiri,
               padahal ia cuma penutup; dan dua tombol sama besar tidak

@@ -23,7 +23,7 @@ export function ModalReroute({ isAdmin, isSuperAdmin, rerouteSaving, rerouteTarg
     <>
       {rerouteTarget && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-1100"
           onClick={e => { if (e.target === e.currentTarget && !rerouteSaving) setRerouteTarget(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             <div className="px-6 py-4" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
@@ -37,7 +37,7 @@ export function ModalReroute({ isAdmin, isSuperAdmin, rerouteSaving, rerouteTarg
               <div>
                 <label htmlFor="f-form-require-project-page-2" className="block text-[11px] font-bold mb-1 text-slate-600 uppercase tracking-widest">Alihkan ke</label>
                 <select id="f-form-require-project-page-2" value={rerouteTo} onChange={e => setRerouteTo(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-indigo-200">
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:ring-2 focus:ring-indigo-200">
                   <option value="">— pilih tujuan —</option>
                   {rosterPTS.filter(u => u.jabatan === 'Supervisor').length > 0 && (
                     <optgroup label="🎯 Supervisor">
@@ -66,7 +66,7 @@ export function ModalReroute({ isAdmin, isSuperAdmin, rerouteSaving, rerouteTarg
                 Batal
               </button>
               <button onClick={simpanReroute} disabled={rerouteSaving || !rerouteTo}
-                className="flex-[2] text-white py-2.5 rounded-xl font-bold text-sm disabled:opacity-50"
+                className="flex-2 text-white py-2.5 rounded-xl font-bold text-sm disabled:opacity-50"
                 style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
                 {rerouteSaving ? 'Mengalihkan...' : '🔀 Alihkan Sekarang'}
               </button>

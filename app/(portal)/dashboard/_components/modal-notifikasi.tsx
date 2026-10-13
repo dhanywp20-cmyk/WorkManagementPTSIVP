@@ -286,7 +286,7 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
           per bagian (di HP inilah satu-satunya jalan melihat rinciannya). */}
       <button type="button" onClick={() => setPanelBuka(true)}
         aria-label={`Notifikasi: ${totalCount} - lihat rincian per bagian`} title="Lihat rincian notifikasi"
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg flex-shrink-0 mr-1 min-h-[28px] transition-transform active:scale-95"
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg shrink-0 mr-1 min-h-[28px] transition-transform active:scale-95"
         style={totalCount > 0
           ? { background: 'linear-gradient(135deg, #dc2626, #b91c1c)', boxShadow: '0 1px 4px rgba(220,38,38,0.35)' }
           : { background: 'rgba(0,0,0,0.05)' }}>
@@ -310,7 +310,7 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
               ? `Notifikasi (suara & HP): ${soundMuted ? 'MATI' : 'AKTIF'} - klik untuk ${soundMuted ? 'aktifkan' : 'matikan'}`
               : `Alarm suara: ${soundMuted ? 'MATI' : 'AKTIF'} - klik untuk ${soundMuted ? 'aktifkan' : 'matikan'}`
           }
-          className="flex items-center justify-center w-7 h-7 rounded-lg flex-shrink-0 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+          className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
           style={{ background: soundMuted ? 'rgba(0,0,0,0.05)' : 'rgba(79,70,229,0.12)', border: `1px solid ${soundMuted ? 'rgba(0,0,0,0.1)' : 'rgba(79,70,229,0.3)'}` }}>
           {pushProses ? (
             <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 border-t-slate-600 animate-spin" aria-hidden="true" />
@@ -319,14 +319,14 @@ export function NotificationBar({ currentUser: userProp, onNavigate }: Notificat
           )}
         </button>
         {pushGalat && (
-          <div className="absolute top-full mt-2 right-0 z-[50] w-56 px-3 py-2 rounded-xl text-[11px] font-medium text-white shadow-xl"
+          <div className="absolute top-full mt-2 right-0 z-50 w-56 px-3 py-2 rounded-xl text-[11px] font-medium text-white shadow-xl"
             style={{ background: '#991b1b' }}>
             {pushGalat}
           </div>
         )}
       </div>
       {/* Separator — hidden on small mobile */}
-      <div className="hidden sm:block w-px h-5 flex-shrink-0" style={{ background: 'rgba(0,0,0,0.09)' }} />
+      <div className="hidden sm:block w-px h-5 shrink-0" style={{ background: 'rgba(0,0,0,0.09)' }} />
       {/* Individual bells — hidden on small mobile (summary badge is enough) */}
       <div className="hidden sm:flex items-center gap-1">
         {/* Ticket */}

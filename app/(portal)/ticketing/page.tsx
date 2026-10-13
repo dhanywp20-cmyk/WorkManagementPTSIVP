@@ -625,15 +625,15 @@ function TicketingSystemInner() {
       {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
           stacking context, sehingga z-index SEMUA modal di dalamnya cuma
           dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
-          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
-          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          di-portal ke <body>. Akibatnya modal z-1100 bisa tampil DI BELAKANG
+          modal z-1000 yang di-portal. Urutan cat terhadap tint di atas tetap
           aman karena elemen ini datang belakangan di DOM. */}
       <div className="relative flex flex-col flex-1 overflow-hidden">
 
         {/* ── LOADING POPUP (Redesigned) ── */}
         {showLoadingPopup && (
         <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100]">
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100">
             <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(220,38,38,0.3)" }}>
               <div className="flex flex-col items-center">
                 {loadingMessage.includes("✅") ? (
@@ -654,7 +654,7 @@ function TicketingSystemInner() {
         {/* ── UPLOAD PROGRESS BAR ── */}
         {uploading && !showLoadingPopup && (
           <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-gray-200">
-            <div className="h-full bg-gradient-to-r from-red-500 to-red-700 animate-pulse" style={{ width: "100%", transition: "width 0.3s" }}></div>
+            <div className="h-full bg-linear-to-r from-red-500 to-red-700 animate-pulse" style={{ width: "100%", transition: "width 0.3s" }}></div>
           </div>
         )}
 

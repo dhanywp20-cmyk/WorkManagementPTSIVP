@@ -30,7 +30,7 @@ export function TabIVP({ activeTab, getUserById, handleAddIvp, handleDeleteIvp, 
     <>
       {activeTab === 'ivp' && (
         <>
-          <div className="p-5 border-b border-slate-100 bg-violet-50/60 space-y-3 flex-shrink-0">
+          <div className="p-5 border-b border-slate-100 bg-violet-50/60 space-y-3 shrink-0">
             <p className="text-xs font-bold text-violet-800 uppercase tracking-widest"><IkonTeks nama="🔗" />Tambah Mapping IVP & MVI Account</p>
             <p className="text-[11px] text-violet-700 leading-relaxed">
               Mapping divisi external ke IVP & MVI Account yang handle-nya, <strong>per brand</strong>.
@@ -52,7 +52,7 @@ export function TabIVP({ activeTab, getUserById, handleAddIvp, handleDeleteIvp, 
               <div>
                 <label htmlFor="f-dashboard-components-modal-user-2" className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division (External)</label>
                 <select id="f-dashboard-components-modal-user-2" value={ivpDiv} onChange={e => setIvpDiv(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-hidden focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
                   <option value="">— Pilih Divisi —</option>
                   {nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -63,7 +63,7 @@ export function TabIVP({ activeTab, getUserById, handleAddIvp, handleDeleteIvp, 
                   <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200"><IkonTeks nama="⚠" />Tidak ada akun Sales Internal.</div>
                 ) : (
                   <select aria-label="— Pilih Sales Internal —" value={ivpUserId} onChange={e => setIvpUserId(e.target.value)}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-hidden focus:border-violet-400 focus:ring-2 focus:ring-violet-100 bg-white">
                     <option value="">— Pilih Sales Internal —</option>
                     {ivpUsers.map(u => (
                       <option key={u.id} value={u.id}>{u.full_name}{!u.phone_number ? ' ⚠️' : ''}</option>
@@ -97,7 +97,7 @@ export function TabIVP({ activeTab, getUserById, handleAddIvp, handleDeleteIvp, 
                         const ivp = getUserById(m.ivp_id);
                         return (
                           <div key={m.id} className="flex items-center gap-3 px-4 py-3">
-                            <div className="w-8 h-8 rounded-lg bg-violet-100 border border-violet-200 flex items-center justify-center text-lg flex-shrink-0">{(m.brand_type ?? '') === 'IVP' ? '🌐' : '🏠'}</div>
+                            <div className="w-8 h-8 rounded-lg bg-violet-100 border border-violet-200 flex items-center justify-center text-lg shrink-0">{(m.brand_type ?? '') === 'IVP' ? '🌐' : '🏠'}</div>
                             <div className="flex-1 min-w-0">
                               <p className="font-bold text-sm text-violet-800 flex items-center gap-1.5">{ivp?.full_name ?? m.ivp_id}
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border" style={(m.brand_type ?? '') === 'IVP' ? { background: '#dbeafe', color: '#1e40af', borderColor: '#93c5fd' } : { background: '#fef3c7', color: '#92400e', borderColor: '#fcd34d' }}>{(m.brand_type ?? 'MVI') === 'IVP' ? 'IVP · Global' : 'MVI · House'}</span>
@@ -110,7 +110,7 @@ export function TabIVP({ activeTab, getUserById, handleAddIvp, handleDeleteIvp, 
                               </div>
                             </div>
                             <button aria-label="Tutup" onClick={() => handleDeleteIvp(m.id)}
-                              className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all flex-shrink-0">
+                              className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all shrink-0">
                               <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                           </div>

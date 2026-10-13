@@ -376,7 +376,7 @@ export function SessionsPage({ user, onViewResults }: { user: User; onViewResult
         <div className="flex items-center gap-2 flex-wrap">
           <SearchInput value={search} onChange={setSearch} placeholder="Cari sesi..." />
           <button data-tulis onClick={() => setShowForm(true)}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow transition-all flex items-center gap-2">
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all flex items-center gap-2">
             + Buat Sesi Quiz
           </button>
         </div>

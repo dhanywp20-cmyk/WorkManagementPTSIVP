@@ -60,9 +60,9 @@ export function ModePenyelesaianPanel({
   const batalkan = () => { setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); setPendingPhotoUrl(undefined); };
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 overflow-hidden flex flex-col"
+    <div className="bg-white rounded-2xl shadow-2xl fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full shrink-0 overflow-hidden flex flex-col"
       style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', height: '100%' }}>
-      <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
+      <div className="px-5 py-4 shrink-0 relative" style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
         <h3 className="text-white font-bold text-base"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {modeEditSaja ? 'Detail Pelaksanaan' : 'Mode Penyelesaian'}</h3>
         <p className="text-emerald-100 text-[11px] mt-0.5">
           {modeEditSaja ? 'Status tetap Completed — hanya detailnya yang disimpan' : 'Lengkapi data sebelum status jadi Completed'}
@@ -88,7 +88,7 @@ export function ModePenyelesaianPanel({
         <div>
           <label htmlFor="f-reminder-schedule-components-modepenyelesaianpanel-1" className="block text-xs font-bold text-gray-600 mb-2"><IkonTeks nama="📅" />Tanggal BAST <span className="text-red-500">*</span></label>
           <input id="f-reminder-schedule-components-modepenyelesaianpanel-1" type="date" value={bastDate} onChange={e => setBastDate(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-white" />
+            className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-400 bg-white" />
           {bastDate && (
             <p className="text-[11px] text-gray-500 mt-1">Tranche T1 bayar {new Date(bastDate).getFullYear()+1} · T2 bayar {new Date(bastDate).getFullYear()+2} · T3 bayar {new Date(bastDate).getFullYear()+3}</p>
           )}
@@ -172,7 +172,7 @@ export function ModePenyelesaianPanel({
               <label htmlFor="f-reminder-schedule-components-modepenyelesaianpanel-2" className="block text-xs font-semibold text-gray-600 mb-1">Daerah / Kota <span className="text-red-500">*</span></label>
               <input id="f-reminder-schedule-components-modepenyelesaianpanel-2" value={installerDaerah} onChange={e => setInstallerDaerah(e.target.value)}
                 placeholder="Contoh: Surabaya, Bandung, Medan..."
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" />
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-400" />
             </div>
           </div>
         )}
@@ -183,7 +183,7 @@ export function ModePenyelesaianPanel({
             Batal
           </button>
           <button onClick={handleModeConfirm} disabled={savingMode || !modePenyelesaian}
-            className="flex-[2] py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
+            className="flex-2 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
             style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
             {savingMode ? 'Menyimpan...' : (modeEditSaja ? '💾 Simpan Detail' : '✅ Konfirmasi & Selesaikan')}
           </button>

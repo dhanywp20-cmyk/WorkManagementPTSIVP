@@ -81,7 +81,7 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
 
   return (
     <button type="button" onClick={onClick} aria-pressed={active} title={`Filter: ${label}`}
-      className={`${kelasDasar} text-left cursor-pointer select-none transition-all duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
+      className={`${kelasDasar} text-left cursor-pointer select-none transition-all duration-200 hover:-translate-y-0.5 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2`}
       style={gaya}>
       {isi}
     </button>

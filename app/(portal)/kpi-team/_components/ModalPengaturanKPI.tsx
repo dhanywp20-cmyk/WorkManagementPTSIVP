@@ -18,7 +18,7 @@ export function ModalPengaturanKPI({ kpiSettings, saveKpiSettings, setKpiSetting
   return (
     <>
       {showSettings && typeof document !== 'undefined' && createPortal(
-        <div role="dialog" aria-modal="true" aria-label="Pengaturan KPI" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" aria-label="Pengaturan KPI" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowSettings(false); }}>
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -63,7 +63,7 @@ export function ModalPengaturanKPI({ kpiSettings, saveKpiSettings, setKpiSetting
                     { key: 'rndWeight'            as keyof KPISettings, label: '📝 R&D Tech Note',  color: '#ec4899' },
                   ]).map(item => (
                     <div key={item.key} className="flex items-center gap-3">
-                      <span className="text-xs font-semibold text-slate-600 w-36 flex-shrink-0">{item.label}</span>
+                      <span className="text-xs font-semibold text-slate-600 w-36 shrink-0">{item.label}</span>
                       <input aria-label="Bobot KPI" type="range" min={5} max={60} step={5}
                         value={Math.round((kpiSettings[item.key] as number) * 100)}
                         onChange={e => setKpiSettings(p => ({ ...p, [item.key]: Number(e.target.value) / 100 }))}

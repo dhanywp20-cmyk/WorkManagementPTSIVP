@@ -14,9 +14,9 @@ interface DesainTim {
 /** Pratinjau versi: dimuat malas, di-cache peramban (versi tidak berubah) - hemat egress. */
 function Pratinjau({ id, versi, alt, className }: { id: string; versi: number; alt: string; className: string }) {
   const [gagal, setGagal] = useState(false);
-  if (gagal) return <div className={`${className} rounded-lg border border-gray-200 bg-violet-50 grid place-items-center flex-shrink-0 text-violet-400`}><Ikon nama="🧊" ukuran={20} /></div>;
+  if (gagal) return <div className={`${className} rounded-lg border border-gray-200 bg-violet-50 grid place-items-center shrink-0 text-violet-400`}><Ikon nama="🧊" ukuran={20} /></div>;
   return <img src={urlGambarDesain(id, versi)} alt={alt} loading="lazy" decoding="async" onError={() => setGagal(true)}
-    className={`${className} object-cover rounded-lg border border-gray-200 flex-shrink-0 bg-gray-50`} />;
+    className={`${className} object-cover rounded-lg border border-gray-200 shrink-0 bg-gray-50`} />;
 }
 
 const tgl = (s: string) => new Date(s).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -233,7 +233,7 @@ function PemilihDesain({ buka, onTutup, projectName, namaRuang, sudah, sibuk, on
                   </p>
                 </div>
                 <button type="button" disabled={dipakai || sibuk} onClick={() => onPilih(d)}
-                  className="flex-shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-bold text-white bg-violet-700 hover:bg-violet-800 disabled:bg-gray-300 disabled:text-gray-600">
+                  className="shrink-0 px-3 py-1.5 rounded-lg text-[12px] font-bold text-white bg-violet-700 hover:bg-violet-800 disabled:bg-gray-300 disabled:text-gray-600">
                   {dipakai ? 'Sudah ditautkan' : 'Tautkan'}
                 </button>
               </li>

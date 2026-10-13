@@ -21,7 +21,7 @@ function aksenDariGradien(kelas: string): string {
 
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+    <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-xs backdrop-blur-xs">
       {children}
     </h3>
   );
@@ -158,7 +158,7 @@ export function ScorePage({ user }: { user: User }) {
                 <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: aksen }} />
                 <div className="flex items-start justify-between gap-2">
                   <div className="text-xl sm:text-[28px] font-bold tracking-tight text-slate-900 leading-none">{c.value}</div>
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: `${aksen}14`, color: aksen }}>
+                  <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: `${aksen}14`, color: aksen }}>
                     <Ikon nama={c.icon} ukuran={16} />
                   </span>
                 </div>
@@ -177,7 +177,7 @@ export function ScorePage({ user }: { user: User }) {
               <SectionHeader><IkonTeks nama="🥧" />Analytics Saya</SectionHeader>
               <div className="grid grid-cols-2 gap-3">
                 {miniPies.map(c => (
-                  <div key={c.title} className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col items-center gap-2.5">
+                  <div key={c.title} className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs p-4 flex flex-col items-center gap-2.5">
                     <DonutChart segments={c.segments} size={68} strokeWidth={9} label={c.label} />
                     <div className="text-center">
                       <p className="text-xs font-bold text-slate-700">{c.title}</p>
@@ -214,7 +214,7 @@ export function ScorePage({ user }: { user: User }) {
               </p>
 
               <div className={`grid grid-cols-1 ${pakaiDivisi ? 'sm:grid-cols-2' : ''} gap-3 mb-3`}>
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs p-4 text-center">
                   <div className="text-xl mb-0.5"><Ikon nama="🏆" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                   <div className="text-lg sm:text-2xl font-black text-indigo-700">{myRank > 0 ? `#${myRank}` : '—'}</div>
                   <p className="text-xs text-slate-500 mt-1">
@@ -233,7 +233,7 @@ export function ScorePage({ user }: { user: User }) {
                   globalnya sendiri sudah menjawab pertanyaan mereka.
                 */}
                 {pakaiDivisi && (
-                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm p-4 text-center">
+                <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs p-4 text-center">
                   <div className="text-xl mb-0.5"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                   <div className="text-lg sm:text-2xl font-black text-indigo-700">
                     {peringkat?.divisiRank ? `#${peringkat.divisiRank}` : '—'}
@@ -247,7 +247,7 @@ export function ScorePage({ user }: { user: User }) {
                 )}
               </div>
 
-              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+              <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto">
                 <table className="w-full text-sm table-zebra" style={{ minWidth: '340px' }}>
                   <thead className="border-b border-slate-200 bg-slate-50">
                     <tr>
@@ -329,14 +329,14 @@ export function ScorePage({ user }: { user: User }) {
         {attempts.length > 0 && (
           <section>
             <SectionHeader><IkonTeks nama="🕐" />Aktivitas Terbaru Saya</SectionHeader>
-            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100 overflow-hidden">
+            <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs divide-y divide-slate-100 overflow-hidden">
               {attempts.slice(0, 5).map((a: any) => {
                 const pending = a.grading_status === 'pending_review';
                 const score   = a.score ?? 0;
                 const passing = a.lc_quiz_sessions?.passing_grade ?? 70;
                 return (
                   <div key={a.id} className="flex items-center gap-4 px-6 py-3.5">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black flex-shrink-0
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shrink-0
                       ${pending ? 'bg-amber-100 text-amber-700' : score >= passing ? (score >= 80 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700') : 'bg-rose-100 text-rose-600'}`}>
                       {pending ? '⏳' : score.toFixed(0)}
                     </div>
@@ -345,7 +345,7 @@ export function ScorePage({ user }: { user: User }) {
                       <p className="text-xs text-slate-500 truncate">{a.lc_quiz_sessions?.materi_name ?? ''}</p>
                     </div>
                     <GradingStatusBadge attempt={a} />
-                    <span className="text-xs text-slate-500 flex-shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
+                    <span className="text-xs text-slate-500 shrink-0">{a.submitted_at ? fmtDate(a.submitted_at) : '—'}</span>
                   </div>
                 );
               })}
@@ -356,7 +356,7 @@ export function ScorePage({ user }: { user: User }) {
         {/* ── Full Rekap Table ── */}
         <section>
           <SectionHeader><IkonTeks nama="📋" />Rekap Nilai Per Quiz</SectionHeader>
-          <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+          <div className="bg-white/90 rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto">
             <table className="w-full text-sm table-zebra" style={{ minWidth: '520px' }}>
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>

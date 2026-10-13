@@ -16,15 +16,15 @@ function ActionRow({ item, onClick, showUrgencyDot = true, tanggal }: {
     <button onClick={onClick}
       className="flex items-start gap-2.5 py-2.5 px-1.5 w-full text-left rounded-lg hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
       {showUrgencyDot && (
-        <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: URGENCY_DOT[item.urgency] }}
+        <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: URGENCY_DOT[item.urgency] }}
           aria-label={item.urgency} title={item.urgency} />
       )}
-      <span className="text-sm flex-shrink-0 leading-tight" aria-hidden="true"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
+      <span className="text-sm shrink-0 leading-tight" aria-hidden="true"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-semibold text-slate-800 truncate leading-snug">{item.title}</div>
         <div className="text-[11px] text-slate-500 truncate">{item.subtitle}</div>
       </div>
-      {tanggal && <span className="text-[11px] font-semibold text-slate-600 flex-shrink-0 mt-0.5 tabular-nums">{tanggal}</span>}
+      {tanggal && <span className="text-[11px] font-semibold text-slate-600 shrink-0 mt-0.5 tabular-nums">{tanggal}</span>}
     </button>
   );
 }
@@ -50,7 +50,7 @@ function TeamActionChips({ user, openMenu, openUrl }: {
   const aksi = AKSI_TEAM.filter(a => hasMenu(user, a.key)).slice(0, 6);
   if (aksi.length === 0) return null;
   return (
-    <div className="flex gap-2 mt-auto pt-3 border-t border-slate-100 overflow-x-auto -mx-1 px-1 pb-0.5 [scrollbar-width:none]">
+    <div className="flex gap-2 mt-auto pt-3 border-t border-slate-100 overflow-x-auto -mx-1 px-1 pb-0.5 scrollbar-none">
       {aksi.map(a => (
         <QuickActionChip key={a.key} label={a.label} icon={a.icon} warna={a.warna} onClick={() => a.run(openMenu, openUrl)} />
       ))}
@@ -113,7 +113,7 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
   if (kosongSemua && !isTeamSide) {
     return (
       <div className="h-full flex items-center gap-2.5 rounded-2xl bg-white border border-slate-200/80 px-4 py-3">
-        <span className="text-lg flex-shrink-0 text-emerald-700"><Ikon nama="🎉" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+        <span className="text-lg shrink-0 text-emerald-700"><Ikon nama="🎉" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
         <span className="text-sm font-semibold text-emerald-700">Tidak ada tugas aktif yang butuh tindakan saat ini.</span>
       </div>
     );
@@ -141,10 +141,10 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
                 const on = t.k === aktif;
                 return (
                   <button key={t.k} type="button" role="tab" aria-selected={on} onClick={() => setTab(t.k)}
-                    className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[12px] font-semibold transition-colors ${on ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+                    className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[12px] font-semibold transition-colors ${on ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>
                     <span className="truncate sm:hidden">{t.pendek}</span>
                     <span className="truncate hidden sm:inline">{t.label}</span>
-                    <span className="min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0"
+                    <span className="min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center shrink-0"
                       style={t.n > 0 ? { background: t.warna, color: '#fff' } : { background: '#e2e8f0', color: '#475569' }}>{t.n}</span>
                   </button>
                 );

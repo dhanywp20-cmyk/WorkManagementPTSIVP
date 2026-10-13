@@ -25,7 +25,7 @@ export function ModalHapusTahapan({ hapusTahapan, jalankanHapusTahapan, ketikHap
         return (
         <ModalPortal>
           <div role="dialog" aria-modal="true" aria-labelledby="judul-hapus-tahapan"
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-1200 p-4"
             onClick={e => { if (e.target === e.currentTarget) { setHapusTahapan(null); setKetikHapusTahapan(''); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-amber-200">
               <h3 id="judul-hapus-tahapan" className="text-lg font-bold text-gray-800 mb-2"><IkonTeks nama="↩" />Hapus Tahapan Pencairan</h3>
@@ -55,7 +55,7 @@ export function ModalHapusTahapan({ hapusTahapan, jalankanHapusTahapan, ketikHap
                   <input type="text" value={ketikHapusTahapan} autoFocus
                     onChange={e => setKetikHapusTahapan(e.target.value)}
                     placeholder={kunci}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-4 focus:outline-hidden focus:ring-2 focus:ring-amber-400" />
                 </>
               )}
               <div className="flex gap-3">

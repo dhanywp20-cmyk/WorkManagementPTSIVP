@@ -52,7 +52,7 @@ function bangunLinimasa(detail: DetailProject): Aktivitas[] {
   });
 }
 
-const INPUT = 'w-full px-3 py-2 rounded-lg text-sm outline-none bg-white border border-gray-200 focus:ring-2 focus:ring-indigo-400';
+const INPUT = 'w-full px-3 py-2 rounded-lg text-sm outline-hidden bg-white border border-gray-200 focus:ring-2 focus:ring-indigo-400';
 
 export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName, onTutup, onBerubah, beritahu }: {
   project: RingkasanProject;
@@ -199,7 +199,7 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
                 const cfg = TIPE_CFG[a.tipe];
                 return (
                   <div key={a.id} className="relative">
-                    <span className="absolute -left-5 top-1 w-3 h-3 rounded-full border-2 border-white shadow-sm"
+                    <span className="absolute -left-5 top-1 w-3 h-3 rounded-full border-2 border-white shadow-xs"
                       style={{ background: cfg.color }} aria-hidden="true" />
                     <p className="text-[11px] font-black tracking-wider" style={{ color: cfg.color }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}</p>
                     <p className="text-sm font-bold text-gray-800 mt-0.5">{a.judul}</p>

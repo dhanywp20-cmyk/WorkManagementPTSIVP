@@ -26,7 +26,7 @@ export function BarisTicketKPI({ kpi, loading, scope }: BarisTicketKPIProps) {
             ? <KakiUbin kiri="Avg resolusi" warna={BAIK} kanan={`${kpi.tickets.avgResolutionDays} hari`}/>
             : undefined}>
           {loading
-            ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
+            ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded-sm bg-slate-100 animate-pulse"/>)
             : batasDenganLainnya(kpi?.tickets.byStatus??[], 4, count=>({status:'Lainnya',count,color:'#94a3b8'}))
                 .map(s=>(
                   <BarisRincian key={s.status} label={s.status} value={s.count}
@@ -45,7 +45,7 @@ export function BarisTicketKPI({ kpi, loading, scope }: BarisTicketKPIProps) {
                 kanan={`${kpi.reminders.total>0?Math.round((kpi.reminders.done/kpi.reminders.total)*100):0}%`}/>
             : undefined}>
           {loading
-            ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
+            ? [0,1,2].map(i=><div key={i} className="h-1.5 rounded-sm bg-slate-100 animate-pulse"/>)
             : <>
                 <BarisRincian label="Done"    value={kpi?.reminders.done??0}         total={kpi?.reminders.total??0} warna={BAIK}/>
                 <BarisRincian label="Pending" value={kpi?.reminders.pending??0}      total={kpi?.reminders.total??0} warna={HATI}/>
@@ -71,10 +71,10 @@ export function BarisTicketKPI({ kpi, loading, scope }: BarisTicketKPIProps) {
                 {team:'UMP', person:kpi?.piket.todayUMP},
                 {team:'MVI', person:kpi?.piket.todayMvi},
               ].map(p=>(
-                <div key={p.team} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-[10px] bg-slate-50 border border-black/[0.05]">
-                  <span className="text-[11px] font-black tracking-[0.08em] flex-shrink-0" style={{color:'#0e7490'}}>{p.team}</span>
+                <div key={p.team} className="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-[10px] bg-slate-50 border border-black/5">
+                  <span className="text-[11px] font-black tracking-[0.08em] shrink-0" style={{color:'#0e7490'}}>{p.team}</span>
                   {loading
-                    ? <span className="inline-block h-2.5 w-16 rounded bg-slate-100 animate-pulse"/>
+                    ? <span className="inline-block h-2.5 w-16 rounded-sm bg-slate-100 animate-pulse"/>
                     : p.person
                       ? <span className="text-[11px] font-bold text-slate-600 truncate">{p.person}</span>
                       : <span className="text-[11px] font-semibold text-slate-500 italic truncate">Belum diisi</span>}
@@ -99,7 +99,7 @@ export function BarisTicketKPI({ kpi, loading, scope }: BarisTicketKPIProps) {
                 kanan={`${kpi.units.masukThisMonth-kpi.units.keluarThisMonth>0?'+':''}${kpi.units.masukThisMonth-kpi.units.keluarThisMonth} unit`}/>
             : undefined}>
           {loading
-            ? [0,1].map(i=><div key={i} className="h-1.5 rounded bg-slate-100 animate-pulse"/>)
+            ? [0,1].map(i=><div key={i} className="h-1.5 rounded-sm bg-slate-100 animate-pulse"/>)
             : <>
                 <BarisRincian label="Keluar" value={kpi?.units.keluarThisMonth??0} total={kpi?.units.totalLogs??0} warna={HATI}/>
                 <BarisRincian label="Masuk"  value={kpi?.units.masukThisMonth??0}  total={kpi?.units.totalLogs??0} warna={BAIK}/>

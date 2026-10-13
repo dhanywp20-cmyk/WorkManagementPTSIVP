@@ -101,7 +101,7 @@ export function BilahSimpan({ jumlah, sibuk, onSimpan, onBatal }: {
 }) {
   if (!jumlah) return null;
   return (
-    <div className="fixed inset-x-0 z-[60] px-3 pb-3 pt-2 pointer-events-none" style={{ bottom: 'var(--jarak-bawah-isi, 0px)', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+    <div className="fixed inset-x-0 z-60 px-3 pb-3 pt-2 pointer-events-none" style={{ bottom: 'var(--jarak-bawah-isi, 0px)', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
       <div className="pointer-events-auto max-w-3xl mx-auto rounded-2xl px-4 py-3 flex items-center gap-3"
         style={{ background: NETRAL.tinta, color: '#fff', boxShadow: '0 10px 30px rgba(15,23,42,0.35)' }}>
         <p className="flex-1 min-w-0 text-[13px] font-semibold">

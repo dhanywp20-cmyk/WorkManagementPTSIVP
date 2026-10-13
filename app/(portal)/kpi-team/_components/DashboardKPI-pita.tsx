@@ -13,7 +13,7 @@ export function PitaRingkas({ kpi, loading, catatan }: { kpi: KPIData | null; lo
   const pTot  = kpi?.piket.weekTotal ?? 0;
   const open  = kpi?.tickets.open ?? 0;
   const solvedHariIni = kpi?.tickets.resolvedToday ?? 0;
-  const kosong = <span className="inline-block h-6 w-12 rounded bg-slate-100 animate-pulse"/>;
+  const kosong = <span className="inline-block h-6 w-12 rounded-sm bg-slate-100 animate-pulse"/>;
   const pctPiket = pTot ? Math.round(((kpi?.piket.weekFilled ?? 0) / pTot) * 100) : 0;
   return (
     <section className="lg:col-span-12" aria-label="Ringkasan Platform">

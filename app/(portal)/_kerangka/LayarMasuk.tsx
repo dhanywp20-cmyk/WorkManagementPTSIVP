@@ -282,7 +282,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
             <p className="text-white/85 text-base leading-relaxed mb-8">{merek.subjudulLogin}</p>
             <div className="flex flex-wrap gap-2.5">
               {[['🗓️', 'Request Schedule'], ['🎫', 'Ticket Troubleshooting'], ['🏗️', 'Design Project'], ['🏪', 'Piket Showroom']].map(([ic, l]) => (
-                <span key={l} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/12 backdrop-blur text-sm font-semibold border border-white/15">{ic} {l}</span>
+                <span key={l} className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/12 backdrop-blur-sm text-sm font-semibold border border-white/15">{ic} {l}</span>
               ))}
             </div>
           </div>
@@ -324,14 +324,14 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                 <div>
                   <label htmlFor="f-dashboard-page-1" className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Email</label>
                   <input id="f-dashboard-page-1" type="text" autoComplete="username" value={loginForm.username} onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-none"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-hidden"
                     placeholder="email@perusahaan.com" onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
                 </div>
                 <div>
                   <label htmlFor="f-dashboard-login-pwd" className="block text-xs font-bold mb-2 text-slate-600 tracking-widest uppercase">Password</label>
                   <div className="relative">
                     <input id="f-dashboard-login-pwd" autoComplete="current-password" type={showLoginPwd ? 'text' : 'password'} value={loginForm.password} onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                      className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-none"
+                      className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 focus:border-rose-500 focus:ring-2 focus:ring-rose-100 transition-all bg-white text-slate-800 font-medium text-sm outline-hidden"
                       placeholder="Masukkan password" onKeyDown={(e) => { if (e.key === 'Enter') { setLoginErr(''); handleLogin(); } }} />
                     <button type="button" onClick={() => setShowLoginPwd(v => !v)} tabIndex={-1}
                       aria-label={showLoginPwd ? 'Sembunyikan password' : 'Tampilkan password'}
@@ -396,18 +396,18 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                         <div>
                           <label htmlFor="f-dashboard-page-2" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Nama Lengkap *</label>
                           <input id="f-dashboard-page-2" type="text" value={registerForm.full_name} onChange={e => setRegisterForm({ ...registerForm, full_name: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Nama lengkap" />
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Nama lengkap" />
                         </div>
                         <div>
                           <label htmlFor="f-dashboard-page-3" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Email *</label>
                           <input id="f-dashboard-page-3" type="email" value={registerForm.username} onChange={e => setRegisterForm({ ...registerForm, username: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="email@perusahaan.com" />
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="email@perusahaan.com" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Password *</label>
                           <div className="relative">
                             <input type={showRegPwd ? 'text' : 'password'} value={registerForm.password} onChange={e => setRegisterForm({ ...registerForm, password: e.target.value })}
-                              className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="min. 8 karakter, ada kapital & angka" />
+                              className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="min. 8 karakter, ada kapital & angka" />
                             <button type="button" onClick={() => setShowRegPwd(v => !v)} tabIndex={-1}
                               aria-label={showRegPwd ? 'Sembunyikan password' : 'Tampilkan password'}
                               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 transition-colors">
@@ -423,7 +423,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                           <label className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Konfirmasi Password *</label>
                           <div className="relative">
                             <input type={showRegConfirmPwd ? 'text' : 'password'} value={registerForm.confirm_password} onChange={e => setRegisterForm({ ...registerForm, confirm_password: e.target.value })}
-                              className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="ulangi password" />
+                              className="w-full border border-slate-200 rounded-xl pl-4 pr-11 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="ulangi password" />
                             <button type="button" onClick={() => setShowRegConfirmPwd(v => !v)} tabIndex={-1}
                               aria-label={showRegConfirmPwd ? 'Sembunyikan password' : 'Tampilkan password'}
                               className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 transition-colors">
@@ -441,7 +441,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                         <div>
                           <label htmlFor="f-dashboard-page-4" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Divisi *</label>
                           <select id="f-dashboard-page-4" value={registerForm.divisi} onChange={e => setRegisterForm({ ...registerForm, divisi: e.target.value, pts_type: '', sales_division: '' })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                             <option value="">-- Pilih Divisi --</option>
                             <option value="PTS">PTS</option>
                             <option value="Sales">Sales</option>
@@ -452,7 +452,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                           <div>
                             <label htmlFor="f-dashboard-page-5" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widests uppercase">Tipe PTS *</label>
                             <select id="f-dashboard-page-5" value={registerForm.pts_type} onChange={e => setRegisterForm({ ...registerForm, pts_type: e.target.value })}
-                              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
+                              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                               <option value="">-- Pilih Tipe PTS --</option>
                               {daftarKelompokPTS.map(k => <option key={k.nama} value={k.label}>{k.label}</option>)}
                             </select>
@@ -464,7 +464,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                               {registerForm.divisi === 'Marketing' ? 'Marketing Division *' : 'Sales Division *'}
                             </label>
                             <select id="f-dashboard-page-6" value={registerForm.sales_division} onChange={e => setRegisterForm({ ...registerForm, sales_division: e.target.value })}
-                              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
+                              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                               <option value="">-- Pilih {registerForm.divisi} Division --</option>
                               {daftarDivisi.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
@@ -473,7 +473,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                         <div>
                           <label htmlFor="f-dashboard-page-7" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Jabatan / Posisi</label>
                           <select id="f-dashboard-page-7" value={registerForm.jabatan} onChange={e => setRegisterForm({ ...registerForm, jabatan: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all bg-white">
                             <option value="">— Pilih Jabatan —</option>
                             {JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
                           </select>
@@ -481,7 +481,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                         <div>
                           <label htmlFor="f-dashboard-page-8" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">No. HP</label>
                           <input id="f-dashboard-page-8" type="text" value={registerForm.phone_number} onChange={e => setRegisterForm({ ...registerForm, phone_number: e.target.value })}
-                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="08xx..." />
+                            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="08xx..." />
                         </div>
                       </div>
                     </div>
@@ -491,13 +491,13 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                     <div>
                       <label htmlFor="f-dashboard-page-9" className="block text-xs font-bold mb-1.5 text-slate-600 tracking-widest uppercase">Kode Acara (opsional)</label>
                       <input id="f-dashboard-page-9" type="text" value={registerForm.event_code} onChange={e => setRegisterForm({ ...registerForm, event_code: e.target.value })}
-                        className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Isi hanya jika diberikan admin" />
+                        className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all" placeholder="Isi hanya jika diberikan admin" />
                     </div>
                     {registerErr && (
                       <div className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200">{registerErr}</div>
                     )}
                     <button onClick={() => { setRegisterErr(''); handleRegister(); }} disabled={registerLoading}
-                      className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
+                      className="w-full bg-linear-to-r from-indigo-600 to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                       {registerLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                       <IkonTeks nama="📝" />Daftar Akun
                     </button>
@@ -512,7 +512,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
         {/* ── Forgot Password Modal (login page) ── */}
         {showForgot && (
         <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-base font-bold text-slate-800"><IkonTeks nama="🔐" />Reset Password</h3>
@@ -528,7 +528,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                   <p className="text-xs text-slate-500">Kode OTP dikirim ke WhatsApp terdaftar.</p>
                   <input type="text" value={forgotUsername} onChange={e => setForgotUsername(e.target.value)}
                     placeholder="Email / Username" onKeyDown={e => e.key === 'Enter' && handleForgotRequest()}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-hidden" />
                   <button onClick={handleForgotRequest} disabled={forgotLoading}
                     className="w-full text-white py-2.5 rounded-xl font-bold text-sm disabled:opacity-60 transition-all hover:opacity-90" style={{ background: merek.warnaUtama }}>
                     {forgotLoading ? 'Mengirim...' : 'Kirim Kode OTP'}
@@ -539,13 +539,13 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                   <p className="text-xs text-slate-500">Masukkan kode 6-digit yang dikirim ke WA <strong>{forgotMaskedPhone}</strong>, lalu buat password baru.</p>
                   <input type="text" value={forgotOtp} onChange={e => setForgotOtp(e.target.value)}
                     placeholder="Kode OTP (6 digit)" maxLength={6}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-center tracking-widest font-bold focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-center tracking-widest font-bold focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-hidden" />
                   <input type="password" value={forgotNewPwd} onChange={e => setForgotNewPwd(e.target.value)}
                     placeholder="Password baru (min. 8, ada kapital & angka)"
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-hidden" />
                   <input type="password" value={forgotConfirmPwd} onChange={e => setForgotConfirmPwd(e.target.value)}
                     placeholder="Konfirmasi password baru"
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-none" />
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:border-rose-400 focus:ring-2 focus:ring-rose-100 outline-hidden" />
                   <div className="flex gap-2">
                     <button onClick={() => { setForgotStep('request'); setForgotMsg(null); }}
                       className="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 text-sm font-semibold hover:bg-slate-200 transition-all">Kembali</button>
