@@ -14,7 +14,6 @@ export interface SidebarPortalProps {
   setSidebarCollapsed: (v: boolean) => void;
   tourVisible: boolean;
   tourHighlightKey: string | null;
-  menuLoading: boolean;
   visibleMenuItems: MenuItem[];
   showDashboardPanel: boolean;
   aktifUrl: (url: string) => boolean;
@@ -31,7 +30,7 @@ export interface SidebarPortalProps {
 }
 
 export function SidebarPortal({
-  sidebarCollapsed, setSidebarCollapsed, tourVisible, tourHighlightKey, menuLoading, visibleMenuItems,
+  sidebarCollapsed, setSidebarCollapsed, tourVisible, tourHighlightKey, visibleMenuItems,
   showDashboardPanel, aktifUrl, currentUser, isAdmin, isFullAccess, pendingUsers, pendingRequests,
   onMenu, onBeranda, onProfil, onAdminPanel, onKeluar,
 }: SidebarPortalProps) {
@@ -91,11 +90,7 @@ export function SidebarPortal({
            sudah memberi jarak, jadi py-3 penuh akan menggandakannya. */}
       <div className={`flex-1 overflow-y-auto px-2.5 pb-3 ${sidebarCollapsed ? 'pt-3' : 'pt-0.5'}`} style={{ scrollbarWidth: 'none' }}>
 
-        {menuLoading ? (
-          <div className="flex items-center justify-center py-10">
-            <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.35)', borderTopColor: '#e2a84b' }} />
-          </div>
-        ) : sidebarCollapsed ? (
+        {sidebarCollapsed ? (
           /* Collapsed: icon-only */
           <div className="space-y-1">
             {/* Expand button - top */}
