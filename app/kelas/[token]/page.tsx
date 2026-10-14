@@ -2,14 +2,19 @@
 
 /**
  * Kelas Eksternal Learning Center - halaman CUSTOMER (publik, tanpa login, tanpa header platform).
- * Alur: isi nama -> kerjakan quiz -> nilai. Perangkat yang sama dikenali (token di localStorage),
+ * Alur: isi nama -> (mode admin: ruang tunggu sampai pengajar menekan Mulai) -> kerjakan quiz -> nilai.
+ * Perangkat yang sama dikenali (token di localStorage),
  * jadi membuka link lagi melanjutkan / menampilkan nilai, bukan mendaftar ulang.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Clock, FileQuestion, Loader2, Lock, RotateCcw, Target } from 'lucide-react';
+import { Clock, FileQuestion, Loader2, Lock, RotateCcw, ShieldAlert, Target, Users } from 'lucide-react';
+import type { AlasanKirimOtomatis } from '@/lib/kelas-eksternal';
 import { hapusDraf, panggilKelas, simpanTokenPeserta, type Hasil, type InfoKelas, type Percobaan } from './_bagian/api';
 import { LayarQuiz } from './_bagian/LayarQuiz';
+
+/** Ruang tunggu mode admin: cek tiap 4 dtk apakah pengajar sudah menekan Mulai. */
+const CEK_MULAI_MS = 4000;
 
 function Kartu({ children }: { children: React.ReactNode }) {
   return (
@@ -44,12 +49,27 @@ export default function HalamanKelas() {
   }, [token]);
   useEffect(() => { void muat(); }, [muat]);
 
+  const menungguDiRuang = !!info?.menunggu && !!info.peserta && !percobaan && !hasil;
+  useEffect(() => {
+    if (!menungguDiRuang) return;
+    const t = window.setInterval(async () => {
+      const r = await panggilKelas<InfoKelas>(token);
+      if (!r.ok) return;
+      setInfo(r.data);
+      if (!r.data.menunggu) { window.clearInterval(t); void mulai(); }
+    }, CEK_MULAI_MS);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menungguDiRuang, token]);
+
   const mulai = async () => {
     setSibuk(true); setPesan('');
-    const r = await panggilKelas<Percobaan & { hasil?: Hasil }>(token, { aksi: 'mulai' });
+    const r = await panggilKelas<Percobaan & { hasil?: Hasil; menunggu?: boolean }>(token, { aksi: 'mulai' });
     setSibuk(false);
     if (r.ok) { setPercobaan(r.data); setHasil(null); return; }
     if (r.data.hasil) { setHasil(r.data.hasil); return; }
+    //  Masuk ruang tunggu: muat ulang info supaya jumlah peserta hadir langsung termasuk diri sendiri.
+    if (r.data.menunggu) { setInfo(i => (i ? { ...i, menunggu: true } : i)); void muat(); return; }
     setPesan(r.data.error || 'Gagal memulai.');
   };
 
@@ -62,10 +82,10 @@ export default function HalamanKelas() {
     await mulai();
   };
 
-  const kirim = useCallback(async (jawaban: Record<string, string>) => {
+  const kirim = useCallback(async (jawaban: Record<string, string>, alasan?: AlasanKirimOtomatis) => {
     if (!percobaan) return;
     for (let coba = 0; coba < 3; coba++) {
-      const r = await panggilKelas<{ hasil: Hasil; bolehUlang: boolean }>(token, { aksi: 'kirim', jawaban });
+      const r = await panggilKelas<{ hasil: Hasil; bolehUlang: boolean }>(token, { aksi: 'kirim', jawaban, alasan });
       if (r.ok && r.data.hasil) {
         hapusDraf(token, percobaan.percobaan);
         setHasil(r.data.hasil); setBolehUlang(r.data.bolehUlang); setPercobaan(null);
@@ -85,7 +105,7 @@ export default function HalamanKelas() {
   if (percobaan) {
     return (
       <>
-        <LayarQuiz kelas={token} judul={info.kelas.judul} data={percobaan} onKirim={kirim} />
+        <LayarQuiz kelas={token} judul={info.kelas.judul} data={percobaan} modeAdmin={info.kelas.modeMulai === 'admin'} onKirim={kirim} />
         {pesan && <p className="fixed bottom-20 inset-x-4 mx-auto max-w-md z-30 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-[13px] font-semibold text-red-700">{pesan}</p>}
       </>
     );
@@ -117,6 +137,23 @@ export default function HalamanKelas() {
     );
   }
 
+  if (menungguDiRuang) {
+    return (
+      <Kartu>
+        <div className="text-center space-y-4">
+          <p className="text-[13px] font-semibold text-slate-500">{k.judul}</p>
+          <p className="text-[15px] text-slate-700">Halo, <span className="font-bold">{info.peserta!.nama}</span></p>
+          <div className="mx-auto w-14 h-14 rounded-full border-4 border-indigo-100 border-t-indigo-600 animate-spin" aria-hidden="true" />
+          <p className="text-[17px] font-bold text-slate-900">Menunggu pengajar memulai</p>
+          {typeof info.jumlahPeserta === 'number' && (
+            <p className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-slate-500"><Users size={14} />{info.jumlahPeserta} peserta hadir</p>
+          )}
+          <p className="text-[12px] text-slate-500">Biarkan halaman ini terbuka - quiz dimulai otomatis.</p>
+        </div>
+      </Kartu>
+    );
+  }
+
   const terdaftar = !!info.peserta;
   const bisaDaftar = info.status === 'buka';
   return (
@@ -128,6 +165,10 @@ export default function HalamanKelas() {
         <Info ikon={<Clock size={13} />} teks={k.timerMenit ? `${k.timerMenit} menit` : 'Tanpa batas waktu'} />
         <Info ikon={<Target size={13} />} teks={`Lulus ≥ ${k.passingGrade}`} />
       </div>
+      <p className="mt-3 flex items-start gap-1.5 text-[12px] text-slate-500">
+        <ShieldAlert size={14} className="flex-shrink-0 mt-px" />
+        <span>Pindah tab/aplikasi, keluar jendela, dan salin-tempel dicatat{k.batasPelanggaran ? ` · ${k.batasPelanggaran}× = jawaban terkirim otomatis` : ''}.</span>
+      </p>
 
       <div className="mt-6 space-y-3">
         {terdaftar ? (
@@ -152,10 +193,10 @@ export default function HalamanKelas() {
             disabled={sibuk || (!terdaftar && nama.trim().length < 2)}
             className="w-full py-3.5 rounded-xl bg-indigo-600 text-white text-[15px] font-bold disabled:opacity-50 flex items-center justify-center gap-2">
             {sibuk && <Loader2 size={16} className="animate-spin" />}
-            {info.berjalan ? 'Lanjutkan quiz' : 'Mulai quiz'}
+            {info.berjalan ? 'Lanjutkan quiz' : info.menunggu ? 'Masuk ruang tunggu' : 'Mulai quiz'}
           </button>
         )}
-        {k.timerMenit && !info.berjalan && (terdaftar || bisaDaftar) && (
+        {k.timerMenit && !info.berjalan && !info.menunggu && (terdaftar || bisaDaftar) && (
           <p className="text-center text-[12px] text-slate-500">Waktu berjalan sejak tombol ditekan.</p>
         )}
       </div>

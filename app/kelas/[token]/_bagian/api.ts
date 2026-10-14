@@ -2,7 +2,13 @@
 import { kunciPeserta } from '@/lib/kelas-eksternal';
 
 export interface InfoKelas {
-  kelas: { judul: string; keterangan: string; jumlahSoal: number; timerMenit: number | null; passingGrade: number; satuKali: boolean };
+  kelas: {
+    judul: string; keterangan: string; jumlahSoal: number; timerMenit: number | null; passingGrade: number; satuKali: boolean;
+    modeMulai: 'auto' | 'admin'; batasPelanggaran: number | null;
+  };
+  /** Mode admin & belum dimulai: peserta terdaftar menunggu di ruang tunggu. */
+  menunggu: boolean;
+  jumlahPeserta?: number;
   status: 'buka' | 'nonaktif' | 'belum' | 'selesai' | 'penuh';
   pesan: string | null;
   peserta: { nama: string } | null;
@@ -11,7 +17,7 @@ export interface InfoKelas {
 }
 export interface Hasil { skor: number; benar: number; jumlah: number; lulus: boolean; selesai_pada: string; percobaan: number }
 export interface Soal { id: string; teks: string; pilihan: Record<'A' | 'B' | 'C' | 'D', string> }
-export interface Percobaan { percobaan: number; mulai_pada: string; sisaMs: number | null; soal: Soal[] }
+export interface Percobaan { percobaan: number; mulai_pada: string; sisaMs: number | null; batasPelanggaran: number | null; soal: Soal[] }
 
 const simpan = {
   baca(k: string): string | null { try { return localStorage.getItem(k); } catch { return null; } },
@@ -42,4 +48,20 @@ export async function panggilKelas<T>(kelas: string, body?: Record<string, unkno
   } catch {
     return { ok: false, status: 0, data: { error: 'Koneksi terputus. Periksa internet lalu coba lagi.' } as T & { error?: string } };
   }
+}
+
+export interface HasilLapor { total: number | null; batas: number | null; kirimOtomatis: boolean }
+
+/** Laporkan satu pelanggaran. keepalive: tetap terkirim walau halaman sedang disembunyikan. */
+export async function laporPelanggaran(kelas: string, jenis: string): Promise<HasilLapor | null> {
+  const t = tokenPeserta(kelas);
+  if (!t) return null;
+  try {
+    const res = await fetch(`/api/kelas/${encodeURIComponent(kelas)}`, {
+      method: 'POST', keepalive: true, cache: 'no-store',
+      headers: { 'Content-Type': 'application/json', 'x-peserta': t },
+      body: JSON.stringify({ aksi: 'pelanggaran', jenis }),
+    });
+    return res.ok ? (await res.json()) as HasilLapor : null;
+  } catch { return null; }
 }

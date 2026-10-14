@@ -4,6 +4,9 @@
  *  GET ?id=<kelas>     -> satu kelas + peserta & nilai terakhir
  *  POST { aksi:'simpan', id?, ...isian }  -> buat / ubah (token link dibuat sekali)
  *  POST { aksi:'hapus', id }              -> hapus kelas (peserta & hasil ikut terhapus)
+ *  POST { aksi:'mulai', id }              -> mode admin: semua peserta mulai sekarang (batas waktu serentak)
+ *  POST { aksi:'akhiri', id }             -> tutup sekarang; yang masih mengerjakan mengirim otomatis
+ *  POST { aksi:'buka_lagi', id }          -> buka lagi (mode admin kembali ke ruang tunggu)
  * Ubah: admin / Full Access. Lihat: juga pimpinan (hanya baca).
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -41,7 +44,7 @@ export async function GET(req: NextRequest) {
     const [{ data: kelas }, { data: peserta }, { data: hasil }] = await Promise.all([
       db.from('lc_eks_kelas').select('*').eq('id', id).maybeSingle(),
       db.from('lc_eks_peserta').select('id,nama,created_at').eq('kelas_id', id).order('created_at'),
-      db.from('lc_eks_hasil').select('peserta_id,percobaan,mulai_pada,selesai_pada,benar,jumlah,skor,lulus,durasi_detik,lewat_waktu')
+      db.from('lc_eks_hasil').select('peserta_id,percobaan,mulai_pada,selesai_pada,benar,jumlah,skor,lulus,durasi_detik,lewat_waktu,pindah_tab,keluar_jendela,salin_tempel,log_pelanggaran,dikirim_otomatis')
         .eq('kelas_id', id).order('percobaan', { ascending: false }),
     ]);
     if (!kelas) return jawab({ error: 'Kelas tidak ditemukan.' }, 404);
@@ -106,6 +109,21 @@ export async function POST(req: NextRequest) {
     const { error } = await db.from('lc_eks_kelas').delete().eq('id', id);
     if (error) return jawab({ error: error.message }, 500);
     return jawab({ ok: true });
+  }
+
+  if (body.aksi === 'mulai' || body.aksi === 'akhiri' || body.aksi === 'buka_lagi') {
+    const id = String(body.id ?? '');
+    if (!UUID.test(id)) return jawab({ error: 'Kelas tidak dikenal.' }, 400);
+    const sekarang = new Date().toISOString();
+    const ubahan = body.aksi === 'mulai'
+      //  Mulai = juga pastikan kelas aktif & tidak berjadwal tutup di masa lalu.
+      ? { dimulai_pada: sekarang, aktif: true, tutup_pada: null }
+      : body.aksi === 'akhiri'
+        ? { tutup_pada: sekarang }
+        : { tutup_pada: null, dimulai_pada: null, aktif: true };
+    const { data, error } = await db.from('lc_eks_kelas').update({ ...ubahan, updated_at: sekarang }).eq('id', id).select('*').maybeSingle();
+    if (error || !data) return jawab({ error: error?.message ?? 'Kelas tidak ditemukan.' }, error ? 500 : 404);
+    return jawab({ kelas: data });
   }
 
   return jawab({ error: 'Permintaan tidak dikenal.' }, 400);

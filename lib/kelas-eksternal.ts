@@ -17,7 +17,39 @@ export interface KelasEksternal {
   question_ids: string[]; timer_menit: number | null; passing_grade: number;
   acak_soal: boolean; satu_kali: boolean; aktif: boolean;
   buka_pada: string | null; tutup_pada: string | null; maks_peserta: number;
+  /** 'auto': peserta mulai sendiri. 'admin': menunggu admin menekan Mulai (semua serentak). */
+  mode_mulai: ModeMulai; dimulai_pada: string | null;
+  /** Kirim otomatis bila jumlah pelanggaran mencapai ini; null = hanya dicatat. */
+  batas_pelanggaran: number | null;
   dibuat_nama?: string | null; created_at?: string; updated_at?: string;
+}
+
+export type ModeMulai = 'auto' | 'admin';
+
+// ── Pelanggaran ─────────────────────────────────────────────────────────────
+export const JENIS_PELANGGARAN = ['pindah_tab', 'keluar_jendela', 'salin_tempel'] as const;
+export type JenisPelanggaran = typeof JENIS_PELANGGARAN[number];
+export const LABEL_PELANGGARAN: Record<JenisPelanggaran, string> = {
+  pindah_tab: 'Pindah tab / aplikasi',
+  keluar_jendela: 'Keluar jendela',
+  salin_tempel: 'Salin / tempel / klik kanan',
+};
+export const jenisPelanggaranSah = (j: unknown): j is JenisPelanggaran => (JENIS_PELANGGARAN as readonly string[]).includes(String(j));
+
+export const ALASAN_KIRIM_OTOMATIS = ['waktu', 'pelanggaran', 'diakhiri'] as const;
+export type AlasanKirimOtomatis = typeof ALASAN_KIRIM_OTOMATIS[number];
+export const alasanKirimSah = (a: unknown): AlasanKirimOtomatis | null =>
+  ((ALASAN_KIRIM_OTOMATIS as readonly string[]).includes(String(a)) ? (a as AlasanKirimOtomatis) : null);
+
+/** Mode admin & belum ditekan Mulai: peserta yang sudah terdaftar menunggu di ruang tunggu. */
+export const menungguAdmin = (k: Pick<KelasEksternal, 'mode_mulai' | 'dimulai_pada'>) => k.mode_mulai === 'admin' && !k.dimulai_pada;
+
+/**
+ * Acuan batas waktu sebuah percobaan. Mode admin: saat admin menekan Mulai - semua peserta selesai
+ * serentak, termasuk yang telat masuk. Mode auto: saat peserta itu sendiri mulai.
+ */
+export function acuanWaktu(k: Pick<KelasEksternal, 'mode_mulai' | 'dimulai_pada'>, mulaiPercobaan: string): string {
+  return k.mode_mulai === 'admin' && k.dimulai_pada ? k.dimulai_pada : mulaiPercobaan;
 }
 
 /** Nama tampil + bentuk pembanding (huruf kecil, spasi tunggal) - atau pesan galat. */
@@ -95,7 +127,7 @@ export function lewatWaktu(mulaiIso: string, timerMenit: number | null, sekarang
 }
 
 /** Rapikan isian admin (simpan kelas). */
-export function rapikanKelas(m: Record<string, unknown>): { galat: string } | Omit<KelasEksternal, 'id' | 'token'> {
+export function rapikanKelas(m: Record<string, unknown>): { galat: string } | Omit<KelasEksternal, 'id' | 'token' | 'dimulai_pada'> {
   const judul = String(m.judul ?? '').replace(/\s+/g, ' ').trim();
   if (!judul) return { galat: 'Judul kelas wajib diisi.' };
   if (judul.length > 120) return { galat: 'Judul maksimal 120 karakter.' };
@@ -121,6 +153,8 @@ export function rapikanKelas(m: Record<string, unknown>): { galat: string } | Om
     aktif: m.aktif !== false,
     buka_pada: buka, tutup_pada: tutup,
     maks_peserta: angka(m.maks_peserta, 1, 2000, 200) as number,
+    mode_mulai: m.mode_mulai === 'admin' ? 'admin' : 'auto',
+    batas_pelanggaran: angka(m.batas_pelanggaran, 1, 50, null),
   };
 }
 
