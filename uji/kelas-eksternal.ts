@@ -7,7 +7,8 @@
  */
 import { readFileSync } from 'fs';
 import {
-  acakUrutan, lewatWaktu, nilaiJawaban, rapikanKelas, rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
+  acakUrutan, acuanWaktu, alasanKirimSah, jenisPelanggaranSah, lewatWaktu, menungguAdmin, nilaiJawaban, rapikanKelas,
+  rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
 } from '../lib/kelas-eksternal';
 
 let lulus = 0, gagal = 0;
@@ -74,6 +75,31 @@ cek('050: nama unik per kelas', /UNIQUE \(kelas_id, nama_norm\)/.test(sql));
 const hal = readFileSync('app/kelas/[token]/page.tsx', 'utf8') + readFileSync('app/kelas/[token]/_bagian/LayarQuiz.tsx', 'utf8');
 cek('halaman customer tanpa header/logo platform', !/LogoMerek|useMerek|Indovisual|PTS IVP|KerangkaPortal/.test(hal));
 cek('menu Kelas Eksternal di Learning Center', /key: 'eksternal', icon: '🌐', label: 'Kelas Eksternal'/.test(readFileSync('app/(portal)/learning-center/page.tsx', 'utf8')));
+
+console.log('\n7. Mode mulai & pelanggaran');
+cek('mode admin belum dimulai = menunggu', menungguAdmin({ mode_mulai: 'admin', dimulai_pada: null }) && !menungguAdmin({ mode_mulai: 'admin', dimulai_pada: '2026-10-14T10:00:00Z' }) && !menungguAdmin({ mode_mulai: 'auto', dimulai_pada: null }));
+cek('mode admin: batas waktu dari saat admin menekan Mulai (serentak)', acuanWaktu({ mode_mulai: 'admin', dimulai_pada: '2026-10-14T10:00:00Z' }, '2026-10-14T10:07:00Z') === '2026-10-14T10:00:00Z');
+cek('mode auto: batas waktu dari mulai peserta sendiri', acuanWaktu({ mode_mulai: 'auto', dimulai_pada: null }, '2026-10-14T10:07:00Z') === '2026-10-14T10:07:00Z');
+cek('peserta telat di mode admin mendapat sisa waktu yang sama', sisaWaktuMs(acuanWaktu({ mode_mulai: 'admin', dimulai_pada: '2026-10-14T10:00:00Z' }, '2026-10-14T10:07:00Z'), 10, T + 7 * 60_000) === 3 * 60_000);
+cek('jenis pelanggaran dikenali, selain itu ditolak', jenisPelanggaranSah('pindah_tab') && jenisPelanggaranSah('salin_tempel') && !jenisPelanggaranSah('lain') && !jenisPelanggaranSah(undefined));
+cek('alasan kirim otomatis disaring', alasanKirimSah('pelanggaran') === 'pelanggaran' && alasanKirimSah('diakhiri') === 'diakhiri' && alasanKirimSah('hack') === null);
+const rk = rapikanKelas({ judul: 'A', question_ids: [id], mode_mulai: 'admin', batas_pelanggaran: '99' });
+cek('isian: mode admin & batas pelanggaran dibatasi 50', !('galat' in rk) && rk.mode_mulai === 'admin' && rk.batas_pelanggaran === 50);
+const rk2 = rapikanKelas({ judul: 'A', question_ids: [id], mode_mulai: 'aneh' });
+cek('isian: mode tak dikenal -> auto, batas kosong -> hanya dicatat', !('galat' in rk2) && rk2.mode_mulai === 'auto' && rk2.batas_pelanggaran === null);
+cek('route: mulai ditahan saat menunggu admin', /if \(menungguAdmin\(kelas\)\) return jawab\(\{ error: 'Menunggu pengajar memulai\.', menunggu: true \}, 409\)/.test(route));
+cek('route: pelanggaran dicatat atomik lewat fungsi DB', /db\.rpc\('lc_eks_catat_pelanggaran', \{ p_hasil: terbuka\.id, p_jenis: body\.jenis \}\)/.test(route));
+cek('route: batas waktu & lewat waktu memakai acuan serentak', /sisaWaktuMs\(acuanWaktu\(kelas, h\.mulai_pada\)/.test(route) && /lewatWaktu\(acuanWaktu\(kelas, terbuka\.mulai_pada\)/.test(route));
+const sql51 = readFileSync('supabase/migrations/051_lc_eks_mulai_pelanggaran.sql', 'utf8');
+cek('051: fungsi pelanggaran tidak bisa dipanggil peramban', /REVOKE EXECUTE ON FUNCTION public\.lc_eks_catat_pelanggaran\(uuid, text\) FROM PUBLIC, anon, authenticated/.test(sql51));
+cek('051: hanya percobaan terbuka & log dibatasi 100', /WHERE id = p_hasil AND selesai_pada IS NULL/.test(sql51) && />= 100 THEN log_pelanggaran/.test(sql51));
+const pengawas = readFileSync('app/kelas/[token]/_bagian/usePengawas.ts', 'utf8');
+cek('pengawas: pindah tab, keluar jendela, salin/tempel/klik kanan', /visibilitychange/.test(pengawas) && /'blur'/.test(pengawas) && /\['copy', 'cut', 'paste', 'contextmenu'\]/.test(pengawas) && /e\.preventDefault\(\)/.test(pengawas));
+cek('pengawas: laporan tetap terkirim saat halaman disembunyikan (keepalive)', /keepalive: true/.test(readFileSync('app/kelas/[token]/_bagian/api.ts', 'utf8')));
+const quiz = readFileSync('app/kelas/[token]/_bagian/LayarQuiz.tsx', 'utf8');
+cek('quiz: kirim otomatis waktu / pelanggaran / diakhiri', /kirim\('waktu'\)/.test(quiz) && /kirim\('pelanggaran'\)/.test(quiz) && /kirim\('diakhiri'\)/.test(quiz));
+const adminR = readFileSync('app/api/admin/kelas-eksternal/route.ts', 'utf8');
+cek('admin: Mulai sekarang / Akhiri / Buka lagi', /aksi === 'mulai' \|\| body\.aksi === 'akhiri' \|\| body\.aksi === 'buka_lagi'/.test(adminR) && /dimulai_pada: sekarang/.test(adminR));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

@@ -4,7 +4,12 @@
  *  GET                              -> info kelas + status peserta (header x-peserta: token perangkat)
  *  POST { aksi:'daftar', nama }     -> { token }   (cukup nama; perangkat sama = peserta sama)
  *  POST { aksi:'mulai' }            -> soal TANPA kunci jawaban (melanjutkan percobaan yang terbuka)
- *  POST { aksi:'kirim', jawaban }   -> { skor, benar, jumlah, lulus } - dinilai di server
+ *  POST { aksi:'kirim', jawaban, alasan? } -> { skor, benar, jumlah, lulus } - dinilai di server
+ *  POST { aksi:'pelanggaran', jenis }        -> { total, batas, kirimOtomatis }
+ *
+ * Mode 'admin': peserta terdaftar menunggu (GET -> menunggu:true) sampai admin menekan Mulai; batas
+ * waktu semua peserta = dimulai_pada + timer. Admin menekan Akhiri -> peserta yang masih mengerjakan
+ * mengirim otomatis (alasan 'diakhiri').
  *
  * Kunci jawaban tidak pernah keluar dari server. Tabel lc_eks_* terkunci dari peramban (migrasi 050).
  */
@@ -12,8 +17,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
 import {
-  PESAN_STATUS, acakUrutan, lewatWaktu, nilaiJawaban, rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
-  type KelasEksternal,
+  PESAN_STATUS, acakUrutan, acuanWaktu, alasanKirimSah, jenisPelanggaranSah, lewatWaktu, menungguAdmin, nilaiJawaban,
+  rapikanNama, saringJawaban, sisaWaktuMs, statusKelas, type KelasEksternal,
 } from '@/lib/kelas-eksternal';
 
 export const dynamic = 'force-dynamic';
@@ -72,7 +77,10 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
     kelas: {
       judul: kelas.judul, keterangan: kelas.keterangan, jumlahSoal: kelas.question_ids.length,
       timerMenit: kelas.timer_menit, passingGrade: kelas.passing_grade, satuKali: kelas.satu_kali,
+      modeMulai: kelas.mode_mulai, batasPelanggaran: kelas.batas_pelanggaran,
     },
+    menunggu: menungguAdmin(kelas),
+    jumlahPeserta: kelas.mode_mulai === 'admin' ? jumlah : undefined,
     status, pesan: status === 'buka' ? null : PESAN_STATUS[status],
     peserta: peserta ? { nama: peserta.nama } : null,
     hasil: ringkasHasil(daftarHasil.find(h => h.selesai_pada)),
@@ -117,6 +125,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
       if (!h) {
         const selesai = daftarHasil.find(x => x.selesai_pada);
         if (selesai && kelas.satu_kali) return jawab({ error: 'Anda sudah mengerjakan quiz ini.', hasil: ringkasHasil(selesai) }, 409);
+        if (menungguAdmin(kelas)) return jawab({ error: 'Menunggu pengajar memulai.', menunggu: true }, 409);
         //  Peserta lama boleh mulai walau kuota penuh; selain itu kelas harus buka.
         const status = statusKelas(kelas, 0);
         if (status !== 'buka') return galat(PESAN_STATUS[status], 403);
@@ -136,7 +145,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
       return jawab({
         percobaan: h.percobaan,
         mulai_pada: h.mulai_pada,
-        sisaMs: sisaWaktuMs(h.mulai_pada, kelas.timer_menit),
+        sisaMs: sisaWaktuMs(acuanWaktu(kelas, h.mulai_pada), kelas.timer_menit),
+        batasPelanggaran: kelas.batas_pelanggaran,
         soal: h.urutan_soal.filter(id => peta.has(id)).map(id => {
           const s = peta.get(id)!;
           return { id, teks: s.question, pilihan: { A: s.option_a, B: s.option_b, C: s.option_c, D: s.option_d } };
@@ -160,10 +170,21 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
         jawaban, ...nilai,
         selesai_pada: new Date(sekarang).toISOString(),
         durasi_detik: Math.round((sekarang - new Date(terbuka.mulai_pada).getTime()) / 1000),
-        lewat_waktu: lewatWaktu(terbuka.mulai_pada, kelas.timer_menit, sekarang),
+        lewat_waktu: lewatWaktu(acuanWaktu(kelas, terbuka.mulai_pada), kelas.timer_menit, sekarang),
+        dikirim_otomatis: alasanKirimSah(body.alasan),
       }).eq('id', terbuka.id).is('selesai_pada', null).select('id,percobaan,urutan_soal,mulai_pada,selesai_pada,benar,jumlah,skor,lulus');
       const h = ((tersimpan ?? []) as Hasil[])[0] ?? (await hasilPeserta(db, peserta.id)).find(x => x.selesai_pada);
       return jawab({ hasil: ringkasHasil(h), bolehUlang: !kelas.satu_kali });
+    }
+
+    // ── Pelanggaran: dicatat atomik di basis data (lc_eks_catat_pelanggaran, migrasi 051) ──
+    if (aksi === 'pelanggaran') {
+      if (!terbuka) return jawab({ total: null });
+      if (!jenisPelanggaranSah(body.jenis)) return galat('Jenis pelanggaran tidak dikenal.');
+      const { data: total } = await db.rpc('lc_eks_catat_pelanggaran', { p_hasil: terbuka.id, p_jenis: body.jenis });
+      const n = typeof total === 'number' ? total : null;
+      const batas = kelas.batas_pelanggaran;
+      return jawab({ total: n, batas, kirimOtomatis: !!batas && n !== null && n >= batas });
     }
 
     return galat('Permintaan tidak dikenal.');

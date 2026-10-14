@@ -1,9 +1,17 @@
 'use client';
 
-/** Mengerjakan quiz: satu soal per layar, daftar nomor, waktu mundur, draf jawaban di perangkat. */
+/**
+ * Mengerjakan quiz: satu soal per layar, daftar nomor, waktu mundur, draf jawaban di perangkat.
+ * Dikirim otomatis bila waktu habis, batas pelanggaran tercapai, atau admin mengakhiri kelas.
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, ChevronLeft, ChevronRight, Grid3x3, Timer } from 'lucide-react';
-import { bacaDraf, tulisDraf, type Percobaan } from './api';
+import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Grid3x3, Timer } from 'lucide-react';
+import type { AlasanKirimOtomatis } from '@/lib/kelas-eksternal';
+import { bacaDraf, panggilKelas, tulisDraf, type InfoKelas, type Percobaan } from './api';
+import { usePengawas } from './usePengawas';
+
+/** Mode admin: cek tiap 15 dtk apakah kelas diakhiri pengajar. */
+const CEK_DIAKHIRI_MS = 15_000;
 
 const fmtWaktu = (ms: number) => {
   const d = Math.ceil(ms / 1000);
@@ -11,9 +19,9 @@ const fmtWaktu = (ms: number) => {
   return `${j ? `${j}:` : ''}${String(m).padStart(j ? 2 : 1, '0')}:${String(s).padStart(2, '0')}`;
 };
 
-export function LayarQuiz({ kelas, judul, data, onKirim }: {
-  kelas: string; judul: string; data: Percobaan;
-  onKirim: (jawaban: Record<string, string>) => Promise<void>;
+export function LayarQuiz({ kelas, judul, data, modeAdmin, onKirim }: {
+  kelas: string; judul: string; data: Percobaan; modeAdmin: boolean;
+  onKirim: (jawaban: Record<string, string>, alasan?: AlasanKirimOtomatis) => Promise<void>;
 }) {
   const [jawaban, setJawaban] = useState<Record<string, string>>(() => bacaDraf(kelas, data.percobaan));
   const [i, setI] = useState(0);
@@ -27,11 +35,11 @@ export function LayarQuiz({ kelas, judul, data, onKirim }: {
   const [sisa, setSisa] = useState<number | null>(data.sisaMs);
   const terkirim = useRef(false);
 
-  const kirim = useCallback(async () => {
+  const kirim = useCallback(async (alasan?: AlasanKirimOtomatis) => {
     if (terkirim.current) return;
     terkirim.current = true;
     setMengirim(true);
-    await onKirim(jawaban);
+    await onKirim(jawaban, alasan);
     terkirim.current = false;
     setMengirim(false);
   }, [jawaban, onKirim]);
@@ -43,10 +51,21 @@ export function LayarQuiz({ kelas, judul, data, onKirim }: {
     const t = window.setInterval(() => {
       const s = Math.max(0, (batas.current ?? 0) - Date.now());
       setSisa(s);
-      if (s === 0) { window.clearInterval(t); void kirim(); }
+      if (s === 0) { window.clearInterval(t); void kirim('waktu'); }
     }, 500);
     return () => window.clearInterval(t);
   }, [kirim]);
+
+  const { peringatan, tutupPeringatan } = usePengawas({ kelas, aktif: !mengirim, onBatasTercapai: () => void kirim('pelanggaran') });
+
+  useEffect(() => {
+    if (!modeAdmin) return;
+    const t = window.setInterval(async () => {
+      const r = await panggilKelas<InfoKelas>(kelas);
+      if (r.ok && r.data.status === 'selesai') void kirim('diakhiri');
+    }, CEK_DIAKHIRI_MS);
+    return () => window.clearInterval(t);
+  }, [modeAdmin, kelas, kirim]);
 
   useEffect(() => {
     const cegah = (e: BeforeUnloadEvent) => { e.preventDefault(); };
@@ -90,7 +109,20 @@ export function LayarQuiz({ kelas, judul, data, onKirim }: {
         )}
       </header>
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-5 sm:py-8">
+      {peringatan && (
+        <div className="sticky top-[72px] z-10 max-w-3xl w-full mx-auto px-4 pt-3" role="alert">
+          <button type="button" onClick={tutupPeringatan}
+            className="w-full flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-left text-[13px] font-semibold text-red-700">
+            <AlertTriangle size={16} className="flex-shrink-0" />
+            <span className="flex-1">{peringatan.label} tercatat</span>
+            {peringatan.total !== null && (
+              <span className="tabular-nums font-bold">{peringatan.batas ? `${peringatan.total}/${peringatan.batas}` : `${peringatan.total}×`}</span>
+            )}
+          </button>
+        </div>
+      )}
+
+      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-5 sm:py-8 select-none">
         <p className="text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-2">Soal {i + 1} dari {data.soal.length}</p>
         <h2 className="text-[16px] sm:text-[18px] font-semibold text-slate-900 leading-relaxed whitespace-pre-line">{soal.teks}</h2>
         <div className="mt-5 space-y-2.5" role="radiogroup" aria-label={`Pilihan jawaban soal ${i + 1}`}>

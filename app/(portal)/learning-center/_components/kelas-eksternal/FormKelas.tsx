@@ -21,6 +21,7 @@ export function FormKelas({ awal, onTutup, onSimpan }: {
     timer_menit: awal?.timer_menit ? String(awal.timer_menit) : '', passing_grade: String(awal?.passing_grade ?? 70),
     maks_peserta: String(awal?.maks_peserta ?? 200), buka_pada: keLokal(awal?.buka_pada ?? null), tutup_pada: keLokal(awal?.tutup_pada ?? null),
     acak_soal: awal?.acak_soal ?? true, satu_kali: awal?.satu_kali ?? true, aktif: awal?.aktif ?? true,
+    mode_mulai: awal?.mode_mulai ?? 'auto', batas_pelanggaran: awal?.batas_pelanggaran ? String(awal.batas_pelanggaran) : '',
   }));
   const [pilih, setPilih] = useState<Set<string>>(() => new Set(awal?.question_ids ?? []));
   const [soal, setSoal] = useState<SoalRingkas[] | null>(null);
@@ -94,6 +95,20 @@ export function FormKelas({ awal, onTutup, onSimpan }: {
             <div><label className={label} htmlFor="kx-tutup">Ditutup</label>
               <input id="kx-tutup" type="datetime-local" className={isian} value={f.tutup_pada} onChange={set('tutup_pada')} /></div>
           </div>
+          <div>
+            <p className={label}>Mulai</p>
+            <div className="grid grid-cols-2 gap-1.5" role="radiogroup" aria-label="Mode mulai">
+              {([['auto', 'Auto', 'Peserta mulai sendiri'], ['admin', 'Dimulai admin', 'Semua mulai serentak saat admin menekan Mulai']] as const).map(([v, t, ket]) => (
+                <button key={v} type="button" role="radio" aria-checked={f.mode_mulai === v} title={ket}
+                  onClick={() => setF(x => ({ ...x, mode_mulai: v }))}
+                  className={`rounded-lg border-2 px-3 py-2 text-[13px] font-bold ${f.mode_mulai === v ? 'border-indigo-600 bg-indigo-50 text-indigo-700' : 'border-slate-200 text-slate-600'}`}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div><label className={label} htmlFor="kx-langgar" title="Pindah tab, keluar jendela, salin/tempel. Kosong = hanya dicatat.">Kirim otomatis setelah … pelanggaran</label>
+            <input id="kx-langgar" type="number" min={1} max={50} className={isian} value={f.batas_pelanggaran} onChange={set('batas_pelanggaran')} placeholder="Hanya dicatat" /></div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
             {([['acak_soal', 'Acak urutan soal'], ['satu_kali', 'Hanya sekali kerja'], ['aktif', 'Aktif']] as const).map(([k, t]) => (
               <label key={k} className="flex items-center gap-2 text-[13px] font-semibold text-slate-700 cursor-pointer">

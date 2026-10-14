@@ -5,7 +5,7 @@
  * Bank Soal), membagikan link/QR, lalu melihat nilai. Halaman customer: /kelas/<token>.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { BarChart3, Copy, ExternalLink, Pencil, Plus, QrCode, Trash2, Users } from 'lucide-react';
+import { BarChart3, Copy, ExternalLink, Pencil, Play, Plus, QrCode, RotateCcw, Square, Trash2, Users } from 'lucide-react';
 import { ConfirmDialog, Modal, TombolModal, type ConfirmState } from '@/components/shared';
 import { appBaseUrl } from '@/lib/app-url';
 import { statusKelas, type KelasEksternal, type StatusKelas } from '@/lib/kelas-eksternal';
@@ -33,6 +33,7 @@ export function KelasEksternalPage() {
   const [qr, setQr] = useState<{ judul: string; url: string; gambar: string } | null>(null);
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const [kabar, setKabar] = useState('');
+  const [sibukId, setSibukId] = useState<string | null>(null);
 
   const muat = useCallback(async () => {
     try {
@@ -54,6 +55,22 @@ export function KelasEksternalPage() {
     await muat();
     return null;
   };
+
+  const aksiKelas = async (aksi: 'mulai' | 'akhiri' | 'buka_lagi', k: KelasEksternal) => {
+    setSibukId(k.id);
+    const g = await panggil({ aksi, id: k.id });
+    setSibukId(null);
+    if (g) setGalat(g);
+    else kabarkan(aksi === 'mulai' ? 'Quiz dimulai - peserta di ruang tunggu langsung masuk.' : aksi === 'akhiri' ? 'Kelas diakhiri.' : 'Kelas dibuka lagi.');
+  };
+
+  //  Ruang tunggu: jumlah peserta hadir disegarkan tiap 10 dtk selama ada kelas mode admin yang menunggu.
+  const adaMenunggu = (daftar ?? []).some(k => k.mode_mulai === 'admin' && !k.dimulai_pada && k.aktif);
+  useEffect(() => {
+    if (!adaMenunggu) return;
+    const t = window.setInterval(() => { void muat(); }, 10_000);
+    return () => window.clearInterval(t);
+  }, [adaMenunggu, muat]);
 
   const salin = async (k: KelasEksternal) => {
     try { await navigator.clipboard.writeText(linkKelas(k)); kabarkan('Link disalin.'); } catch { kabarkan(linkKelas(k)); }
@@ -100,8 +117,34 @@ export function KelasEksternalPage() {
                 <div className="rounded-lg bg-slate-50 py-2"><p className="text-[17px] font-extrabold tabular-nums text-slate-900">{k.jumlahSelesai}</p><p className="text-[10.5px] font-bold uppercase text-slate-500">Selesai</p></div>
                 <div className="rounded-lg bg-slate-50 py-2"><p className="text-[17px] font-extrabold tabular-nums text-slate-900">{k.rataRata ?? '-'}</p><p className="text-[10.5px] font-bold uppercase text-slate-500">Rata-rata</p></div>
               </div>
+              {k.mode_mulai === 'admin' && (() => {
+                const ditutup = !!k.tutup_pada && new Date(k.tutup_pada).getTime() <= Date.now();
+                const jam = (iso: string) => new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                return (
+                  <div className="flex items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-2">
+                    <span className="flex-1 min-w-0 text-[12.5px] font-semibold text-indigo-900">
+                      {ditutup ? 'Diakhiri' : k.dimulai_pada ? `Berjalan sejak ${jam(k.dimulai_pada)}` : `Ruang tunggu · ${k.jumlahPeserta} hadir`}
+                    </span>
+                    {ubah && !k.dimulai_pada && !ditutup && (
+                      <button type="button" onClick={() => void aksiKelas('mulai', k)} disabled={!!sibukId}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-[12.5px] font-bold disabled:opacity-50"><Play size={13} />Mulai sekarang</button>
+                    )}
+                    {ubah && k.dimulai_pada && !ditutup && (
+                      <button type="button" onClick={() => setKonfirmasi({
+                        message: `Akhiri "${k.judul}" sekarang?`, description: 'Peserta yang masih mengerjakan akan mengirim jawabannya otomatis.',
+                        confirmLabel: 'Akhiri', danger: true, onConfirm: async () => { setKonfirmasi(null); await aksiKelas('akhiri', k); },
+                      })} disabled={!!sibukId}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-600 text-white text-[12.5px] font-bold disabled:opacity-50"><Square size={12} />Akhiri</button>
+                    )}
+                    {ubah && ditutup && (
+                      <button type="button" onClick={() => void aksiKelas('buka_lagi', k)} disabled={!!sibukId}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-indigo-200 bg-white text-indigo-700 text-[12.5px] font-bold disabled:opacity-50"><RotateCcw size={13} />Buka lagi</button>
+                    )}
+                  </div>
+                );
+              })()}
               <p className="text-[12px] text-slate-500">
-                {k.question_ids.length} soal · {k.timer_menit ? `${k.timer_menit} mnt` : 'tanpa batas waktu'} · lulus ≥ {k.passing_grade} · maks {k.maks_peserta}
+                {k.mode_mulai === 'admin' ? 'Dimulai admin · ' : ''}{k.question_ids.length} soal · {k.timer_menit ? `${k.timer_menit} mnt` : 'tanpa batas waktu'} · lulus ≥ {k.passing_grade} · maks {k.maks_peserta}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 <button type="button" className={tombol} onClick={() => void salin(k)} title="Salin link untuk customer"><Copy size={13} />Link</button>
