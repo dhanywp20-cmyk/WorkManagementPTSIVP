@@ -1,12 +1,20 @@
 /**
- * lib/kuis-live-server.ts - bagian SERVER Kuis Live: baca/tulis basis data & kabar realtime.
+ * lib/kuis-live-server.ts - bagian SERVER Kuis Live: baca/tulis basis data.
  * Dipakai /api/kelas/<token> (peserta) dan /api/admin/kelas-eksternal (layar host). Aturannya
  * sendiri ada di lib/kuis-live.ts (murni, teruji).
+ *
+ * Tanpa Supabase Realtime: kuis berjalan menurut jadwal (jam), HP cukup menyegarkan berkala.
+ * Siaran ke 100+ HP sekaligus melewati batas 100 pesan/detik paket Free, dan Supabase lalu
+ * memutus SEMUA koneksi realtime proyek - termasuk dashboard internal platform.
+ *
+ * Data yang sama bagi semua peserta (soal, papan skor) disimpan sebentar di memori
+ * (lib/simpan-sebentar.ts): 100 HP yang menyegarkan bersamaan = satu query, bukan seratus.
  *
  * JANGAN diimpor dari komponen klien.
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { acakUrutan, type KelasEksternal, type Pilihan } from './kelas-eksternal';
+import { simpanSebentar } from './simpan-sebentar';
 import {
   distribusi, indeksTerhitung, jadwalLive, posisiSaya, semuaMenjawab, susunPapan, transisiLive, wujudkanLive,
   type AksiLive, type BarisPapan, type RekapPeserta, type StatusLive, type Tahap,
@@ -15,40 +23,25 @@ import {
 export type KelasLive = KelasEksternal & StatusLive;
 type Db = SupabaseClient;
 
-/** Topik kabar realtime satu kuis. Isinya hanya colekan - data tetap diambil lewat route server. */
-export const topikKuis = (token: string) => `kuis-live:${token}`;
-
-/**
- * Colek semua layar peserta supaya langsung mengambil status terbaru (Supabase Realtime Broadcast
- * lewat REST). Gagal = diam: layar peserta tetap menyegarkan diri berkala.
- */
-export async function siarkanKuis(token: string): Promise<void> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const kunci = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !kunci) return;
-  try {
-    await fetch(`${url}/realtime/v1/api/broadcast`, {
-      method: 'POST', cache: 'no-store',
-      headers: { apikey: kunci, Authorization: `Bearer ${kunci}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages: [{ topic: topikKuis(token), event: 'ubah', payload: { t: Date.now() } }] }),
-      signal: AbortSignal.timeout(1500),
-    });
-  } catch { /* abaikan - ada penyegaran berkala */ }
-}
-
 export interface SoalLive { teks: string; pilihan: Record<Pilihan, string>; kunci: Pilihan }
 
-export async function muatSoalLive(db: Db, id: string | undefined): Promise<SoalLive | null> {
-  if (!id) return null;
-  const { data } = await db.from('lc_questions').select('question,option_a,option_b,option_c,option_d,correct_answer').eq('id', id).maybeSingle();
-  if (!data) return null;
-  const s = data as { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string };
-  return { teks: s.question, pilihan: { A: s.option_a, B: s.option_b, C: s.option_c, D: s.option_d }, kunci: String(s.correct_answer).toUpperCase() as Pilihan };
+/** Isi soal + kunci. Disimpan 30 dtk: dibaca semua HP di tiap tahap, isinya hampir tidak pernah berubah. */
+export function muatSoalLive(db: Db, id: string | undefined): Promise<SoalLive | null> {
+  if (!id) return Promise.resolve(null);
+  return simpanSebentar(`soal:${id}`, 30_000, async () => {
+    const { data } = await db.from('lc_questions').select('question,option_a,option_b,option_c,option_d,correct_answer').eq('id', id).maybeSingle();
+    if (!data) return null;
+    const s = data as { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string };
+    return { teks: s.question, pilihan: { A: s.option_a, B: s.option_b, C: s.option_c, D: s.option_d }, kunci: String(s.correct_answer).toUpperCase() as Pilihan };
+  });
 }
 
-export async function muatPapan(db: Db, kelasId: string, sesi: number, sampai: number): Promise<BarisPapan[]> {
-  const { data } = await db.rpc('lc_eks_live_papan', { p_kelas: kelasId, p_sesi: sesi, p_sampai: sampai });
-  return susunPapan((data ?? []) as RekapPeserta[]);
+/** Papan skor (rekap semua peserta). Disimpan 1 dtk - penyumbang egress terbesar bila dibaca tiap HP. */
+export function muatPapan(db: Db, kelasId: string, sesi: number, sampai: number): Promise<BarisPapan[]> {
+  return simpanSebentar(`papan:${kelasId}:${sesi}:${sampai}`, 1000, async () => {
+    const { data } = await db.rpc('lc_eks_live_papan', { p_kelas: kelasId, p_sesi: sesi, p_sampai: sampai });
+    return susunPapan((data ?? []) as RekapPeserta[]);
+  });
 }
 
 /** Soal yang sah (pilihan ganda & masih ada di Bank Soal) dalam urutan sesi baru. */
@@ -85,9 +78,7 @@ export async function jalankanAksiLive(db: Db, k: KelasLive, aksi: AksiLive, dar
   //  Bersyarat pada status yang tadi dibaca: dua permintaan bersamaan, hanya satu yang berlaku.
   const { data, error } = await updateBersyarat(db, k, { ...ubahan, ...tambahan, updated_at: new Date(sekarang).toISOString() });
   if (error) return { ok: false, galat: 'Gagal menyimpan. Coba lagi.' };
-  const berubah = ((data ?? []) as unknown[]).length > 0;
-  if (berubah) await siarkanKuis(k.token);
-  return { ok: true, berubah };
+  return { ok: true, berubah: ((data ?? []) as unknown[]).length > 0 };
 }
 
 /**
@@ -103,8 +94,7 @@ export async function tutupBilaSemuaMenjawab(db: Db, k: KelasLive, jumlahPemain:
   if (!semuaMenjawab(count ?? 0, jumlahPemain)) return;
   const ubahan = transisiLive(k, 'live_lewati', sekarang);
   if ('galat' in ubahan) return;
-  const { data } = await updateBersyarat(db, k, ubahan);
-  if (((data ?? []) as unknown[]).length) await siarkanKuis(k.token);
+  await updateBersyarat(db, k, ubahan);
 }
 
 const msAtauNull = (iso: string | null) => (iso ? new Date(iso).getTime() : null);

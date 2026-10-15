@@ -6,13 +6,13 @@
  * papan skor -> podium. Semua yang menentukan (soal aktif, waktu, poin) datang dari server; jam
  * perangkat dikoreksi ke jam server supaya semua HP serentak.
  *
- * Kuis berjalan sendiri mengikuti waktu (lib/kuis-live.ts jadwalLive). Pembaruan: colekan Supabase
- * Realtime (siarkanKuis, saat admin menekan Lewati / semua sudah menjawab) + penyegaran berkala
- * sebagai cadangan, + penyegaran terjadwal tepat di akhir tiap tahap.
+ * Kuis berjalan sendiri mengikuti waktu (lib/kuis-live.ts jadwalLive). Pembaruan: penyegaran berkala
+ * tiap 2,5 dtk (menangkap Mulai / Lewati / semua sudah menjawab) + penyegaran terjadwal tepat di akhir
+ * tiap tahap. Sengaja TANPA Supabase Realtime: 100+ HP melewati batas pesan/detik paket Free dan
+ * Supabase lalu memutus semua koneksi realtime proyek (lihat lib/kuis-live-server.ts).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Loader2, Lock, Trophy, Users, X } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import type { Pilihan } from '@/lib/kelas-eksternal';
 import {
   BilahSoal, BilahWaktu, HIJAU, HitungMundur, LatarKuis, LogoEvent, MERAH, PILIHAN_KUIS, Podium,
@@ -28,7 +28,6 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState('');
   const [lokal, setLokal] = useState<JawabanLokal | null>(null);
-  const [realtime, setRealtime] = useState(false);
   const { catat, sekarang } = useJamServer();
   const sedangMuat = useRef(false);
   const muatLagi = useRef(false);
@@ -50,22 +49,14 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
   //  Ukur jam server segera (data awal belum terkalibrasi).
   useEffect(() => { void segarkan(); }, [segarkan]);
 
-  //  Colekan realtime: disebar acak 0-0,5 dtk supaya ratusan HP tidak memukul server di milidetik yang sama.
-  useEffect(() => {
-    const ch = supabase.channel(`kuis-live:${token}`)
-      .on('broadcast', { event: 'ubah' }, () => { window.setTimeout(() => void segarkan(), Math.random() * 500); })
-      .subscribe(st => setRealtime(st === 'SUBSCRIBED'));
-    return () => { void supabase.removeChannel(ch); };
-  }, [token, segarkan]);
-
   const live = info.live;
   useEffect(() => {
-    const jeda = live.tahap === 'selesai' ? 10_000 : realtime ? 5_000 : 2_500;
+    const jeda = live.tahap === 'selesai' ? 10_000 : 2_500;
     const t = window.setInterval(() => { if (document.visibilityState === 'visible') void segarkan(); }, jeda);
     const kembali = () => { if (document.visibilityState === 'visible') void segarkan(); };
     document.addEventListener('visibilitychange', kembali);
     return () => { window.clearInterval(t); document.removeEventListener('visibilitychange', kembali); };
-  }, [live.tahap, realtime, segarkan]);
+  }, [live.tahap, segarkan]);
 
   //  Tepat setelah waktu soal habis: ambil hasil (benar/salah, poin, peringkat).
   useEffect(() => {

@@ -23,7 +23,7 @@ import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { rapikanKelas, type KelasEksternal } from '@/lib/kelas-eksternal';
 import { AKSI_LIVE, jadwalLive, type AksiLive } from '@/lib/kuis-live';
-import { jalankanAksiLive, keadaanHost, muatPapan, siarkanKuis, type KelasLive } from '@/lib/kuis-live-server';
+import { jalankanAksiLive, keadaanHost, muatPapan, type KelasLive } from '@/lib/kuis-live-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -169,7 +169,6 @@ export async function POST(req: NextRequest) {
       if (!UUID.test(pid)) return jawab({ error: 'Peserta tidak dikenal.' }, 400);
       const { error } = await db.from('lc_eks_peserta').delete().eq('id', pid).eq('kelas_id', id);
       if (error) return jawab({ error: error.message }, 500);
-      await siarkanKuis(k.token);
     } else {
       const dari = (body.dari && typeof body.dari === 'object' ? body.dari : {}) as { tahap?: unknown; indeks?: unknown };
       const r = await jalankanAksiLive(db, k, body.aksi as AksiLive, dari);

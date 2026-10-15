@@ -27,6 +27,7 @@ import {
 } from '@/lib/kelas-eksternal';
 import { PESAN_LIVE, periksaJawab, poinKahoot, statusLive } from '@/lib/kuis-live';
 import { keadaanPeserta, muatSoalLive, tutupBilaSemuaMenjawab, type KelasLive } from '@/lib/kuis-live-server';
+import { simpanSebentar } from '@/lib/simpan-sebentar';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,6 +49,13 @@ async function muatKelas(db: Db, token: string): Promise<KelasLive | null> {
   const { data } = await db.from('lc_eks_kelas').select('*').eq('token', token).maybeSingle();
   return (data as KelasLive | null) ?? null;
 }
+
+/**
+ * GET (dibaca 100+ HP tiap 2,5 dtk): kelas & jumlah peserta disimpan sebentar di memori, jadi
+ * HP yang menyegarkan bersamaan berbagi satu query. POST (daftar, jawab) selalu membaca langsung.
+ */
+const muatKelasSebentar = (db: Db, token: string) => simpanSebentar(`kelas:${token}`, 1000, () => muatKelas(db, token));
+const jumlahPesertaSebentar = (db: Db, kelasId: string) => simpanSebentar(`jumlah:${kelasId}`, 2000, () => jumlahPeserta(db, kelasId));
 
 /** Status pendaftaran menurut format kelas. */
 function statusDaftar(kelas: KelasLive, jumlah: number): { status: string; pesan: string | null } {
@@ -84,9 +92,9 @@ const ringkasHasil = (h: Hasil | undefined) => (h && h.selesai_pada
 export async function GET(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
   const { token } = await ctx.params;
   const db = getAdminClient();
-  const kelas = await muatKelas(db, token);
+  const kelas = await muatKelasSebentar(db, token);
   if (!kelas) return galat('Link kelas tidak ditemukan.', 404);
-  const [peserta, jumlah] = await Promise.all([muatPeserta(db, kelas.id, req), jumlahPeserta(db, kelas.id)]);
+  const [peserta, jumlah] = await Promise.all([muatPeserta(db, kelas.id, req), jumlahPesertaSebentar(db, kelas.id)]);
   if (kelas.jenis === 'live') {
     return jawab({
       kelas: {
