@@ -10,10 +10,10 @@ import { BarChart3, Copy, ExternalLink, MonitorPlay, Pencil, Play, Plus, QrCode,
 import { ConfirmDialog, Modal, TombolModal, type ConfirmState } from '@/components/shared';
 import { appBaseUrl } from '@/lib/app-url';
 import { statusKelas, type KelasEksternal, type StatusKelas } from '@/lib/kelas-eksternal';
-import { WARNA_BAWAAN, labelTahap, statusLive, tahapEfektif, type StatusLive } from '@/lib/kuis-live';
+import { WARNA_BAWAAN, jadwalLive, labelTahap, statusLive, type StatusLive } from '@/lib/kuis-live';
 import { FormKelas } from './FormKelas';
 import { HasilKelas } from './HasilKelas';
-import { LayarHost } from './LayarHost';
+import { LayarHost, masukLayarPenuh } from './LayarHost';
 
 type Baris = KelasEksternal & StatusLive & { jumlahPeserta: number; jumlahSelesai: number; rataRata: number | null };
 
@@ -110,7 +110,7 @@ export function KelasEksternalPage() {
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {(daftar ?? []).map(k => {
           if (k.jenis === 'live') return (
-            <KartuLive key={k.id} k={k} ubah={ubah} onHost={() => setHost(k)} onHasil={() => setHasil(k)} onUbah={() => setForm(k)}
+            <KartuLive key={k.id} k={k} ubah={ubah} onHost={() => { masukLayarPenuh(); setHost(k); }} onHasil={() => setHasil(k)} onUbah={() => setForm(k)}
               onSalin={() => void salin(k)} onQr={() => void bukaQr(k)}
               onHapus={() => setKonfirmasi({
                 message: `Hapus "${k.judul}"?`, description: `${k.jumlahPeserta} pemain beserta skornya ikut terhapus permanen.`,
@@ -198,7 +198,6 @@ export function KelasEksternalPage() {
           <div className="text-center space-y-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={qr.gambar} alt={`QR ${qr.judul}`} width={260} height={260} className="mx-auto rounded-lg border border-slate-200" />
-            <p className="text-[11.5px] text-slate-500 break-all">{qr.url}</p>
           </div>
         </Modal>
       )}
@@ -213,7 +212,8 @@ const LABEL_LIVE: Record<ReturnType<typeof statusLive>, string> = { buka: 'Dibuk
 function KartuLive({ k, ubah, onHost, onHasil, onUbah, onSalin, onQr, onHapus }: {
   k: Baris; ubah: boolean; onHost: () => void; onHasil: () => void; onUbah: () => void; onSalin: () => void; onQr: () => void; onHapus: () => void;
 }) {
-  const t = tahapEfektif(k);
+  const j = jadwalLive(k);
+  const t = j.tahap;
   const st = statusLive(k, k.jumlahPeserta);
   const warna = k.tema_warna ?? WARNA_BAWAAN;
   return (
@@ -243,7 +243,7 @@ function KartuLive({ k, ubah, onHost, onHasil, onUbah, onSalin, onQr, onHapus }:
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-violet-100 bg-violet-50/70 px-3 py-2">
           <span className="flex-1 min-w-0 text-[12.5px] font-semibold text-violet-900 truncate">
-            {labelTahap(t, k.live_indeks, t === 'lobi' ? k.question_ids.length : k.live_urutan.length)}{k.live_sesi > 0 ? ` · sesi ${k.live_sesi}` : ''}
+            {labelTahap(t, j.indeks, t === 'lobi' ? k.question_ids.length : k.live_urutan.length)}{k.live_sesi > 0 ? ` · sesi ${k.live_sesi}` : ''}
           </span>
           {ubah && (
             <button type="button" onClick={onHost}

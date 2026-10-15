@@ -4,8 +4,9 @@
  *   npx tsx uji/kuis-live.ts
  */
 import {
-  HITUNG_MUNDUR_MS, TOLERANSI_MS, distribusi, indeksTerhitung, periksaJawab, poinKahoot, posisiSaya, rapikanDetik,
-  semuaMenjawab, statusLive, susunPapan, tahapEfektif, transisiLive, type StatusLive, type UbahanLive,
+  HASIL_MS, HITUNG_MUNDUR_MS, PAPAN_MS, TOLERANSI_MS, distribusi, indeksTerhitung, jadwalLive, periksaJawab, poinKahoot,
+  posisiSaya, rapikanDetik, rapikanUrlGambar, rapikanWarna, semuaMenjawab, statusLive, susunPapan, tahapEfektif, transisiLive,
+  wujudkanLive, type StatusLive, type UbahanLive,
 } from '../lib/kuis-live';
 import { rapikanKelas } from '../lib/kelas-eksternal';
 
@@ -35,17 +36,35 @@ console.log('\n1. Peserta tidak bisa mulai sebelum admin menekan Mulai');
   cek('Mulai tanpa soal sah ditolak', 'galat' in transisiLive(lobi, 'live_mulai', T0, []));
 }
 
-console.log('\n2. Mulai -> hitung mundur -> soal -> hasil (dari jam, tanpa penjadwal)');
+//  Jadwal satu soal (20 dtk): siap 4 dtk -> soal 20 dtk (+toleransi) -> hasil -> papan -> soal berikutnya.
+const S = 20_000;
+const MULAI0 = T0 + HITUNG_MUNDUR_MS, HABIS0 = MULAI0 + S + TOLERANSI_MS;
+const AKHIR_HASIL0 = HABIS0 + HASIL_MS, AKHIR_PAPAN0 = AKHIR_HASIL0 + PAPAN_MS;
+const MULAI1 = AKHIR_PAPAN0 + HITUNG_MUNDUR_MS;
+
+console.log('\n2. Mulai lalu berjalan SENDIRI mengikuti waktu (tanpa klik admin)');
 const s1 = terapkan(lobi, transisiLive(lobi, 'live_mulai', T0, ['q1', 'q2', 'q3']));
 {
   cek('sesi naik jadi 1', s1.live_sesi === 1);
   cek('mulai di soal pertama', s1.live_tahap === 'soal' && s1.live_indeks === 0);
   cek('urutan soal disimpan', s1.live_urutan.join() === 'q1,q2,q3');
-  cek('hitung mundur dulu (siap)', tahapEfektif(s1, T0 + 1000) === 'siap');
-  cek('jawaban saat hitung mundur ditolak', !periksaJawab(s1, 0, 'A', T0 + 1000).ok);
-  cek('pilihan terbuka setelah hitung mundur', tahapEfektif(s1, T0 + HITUNG_MUNDUR_MS) === 'soal');
-  cek('masih soal tepat di batas waktu (toleransi jaringan)', tahapEfektif(s1, T0 + HITUNG_MUNDUR_MS + 20_000 + TOLERANSI_MS - 1) === 'soal');
-  cek('hasil setelah batas + toleransi', tahapEfektif(s1, T0 + HITUNG_MUNDUR_MS + 20_000 + TOLERANSI_MS) === 'hasil');
+  const t = (x: number) => { const j = jadwalLive(s1, x); return `${j.tahap}:${j.indeks}`; };
+  cek('hitung mundur dulu (siap)', t(T0 + 1000) === 'siap:0');
+  cek('pilihan terbuka setelah hitung mundur', t(MULAI0) === 'soal:0');
+  cek('masih soal sampai batas + toleransi', t(HABIS0 - 1) === 'soal:0');
+  cek('lalu hasil (kunci & distribusi)', t(HABIS0) === 'hasil:0');
+  cek('lalu papan skor', t(AKHIR_HASIL0) === 'papan:0');
+  cek('lalu otomatis soal 2 dengan hitung mundur', t(AKHIR_PAPAN0) === 'siap:1');
+  cek('soal 2 terbuka', t(MULAI1) === 'soal:1');
+  const j1 = jadwalLive(s1, MULAI1 + 1000);
+  cek('soal 2 waktu penuh lagi', j1.tutupMs! - j1.mulaiMs! === S);
+  cek('akhir tahap dilaporkan (untuk hitung mundur di layar)', jadwalLive(s1, HABIS0 + 10).akhirMs === AKHIR_HASIL0);
+  //  Soal ke-3 (terakhir): sesudah papan-nya -> selesai (podium).
+  const satuPutaran = AKHIR_PAPAN0 - T0;
+  const akhirSemua = T0 + 3 * satuPutaran;
+  cek('papan soal terakhir', t(akhirSemua - 1) === 'papan:2');
+  cek('setelah soal terakhir otomatis selesai', t(akhirSemua) === 'selesai:2');
+  cek('selesai tidak punya akhir otomatis', jadwalLive(s1, akhirSemua + 999_999).akhirMs === null);
   cek('Mulai dua kali ditolak', 'galat' in transisiLive(s1, 'live_mulai', T0 + 5000, ['q1']));
 }
 
@@ -66,42 +85,65 @@ console.log('\n3. Poin ala Kahoot (tanpa nilai lulus)');
   cek('setelah toleransi ditolak', !periksaJawab(s1, 0, 'A', T0 + HITUNG_MUNDUR_MS + 21_000).ok);
 }
 
-console.log('\n4. Skor soal berjalan tidak bocor sebelum waktu habis');
+console.log('\n4. Jawaban mengikuti soal yang sedang berjalan menurut jadwal');
 {
-  cek('saat soal 1 berjalan belum ada yang dihitung', indeksTerhitung(s1, T0 + 6000) === -1);
-  cek('setelah waktu habis soal 1 dihitung', indeksTerhitung(s1, T0 + 30_000) === 0);
+  const a = periksaJawab(s1, 1, 'D', MULAI1 + 3000);
+  cek('soal 2 (sudah maju otomatis) menerima jawaban', a.ok);
+  cek('waktu jawab dihitung dari pilihan soal 2 dibuka', a.ok && a.waktuMs === 3000, a.ok ? String(a.waktuMs) : '');
+  cek('indeks soal 1 ditolak saat soal 2', !periksaJawab(s1, 0, 'D', MULAI1 + 3000).ok);
+  cek('saat hasil ditolak (waktu habis)', !periksaJawab(s1, 0, 'A', HABIS0 + 100).ok);
+  cek('saat soal 1 berjalan belum ada yang dihitung', indeksTerhitung(s1, MULAI0 + 1000) === -1);
+  cek('setelah waktu soal 1 habis, soal 1 dihitung', indeksTerhitung(s1, HABIS0 + 1) === 0);
+  cek('saat soal 2 berjalan hanya soal 1 yang dihitung', indeksTerhitung(s1, MULAI1 + 1000) === 0);
 }
 
-console.log('\n5. Tombol admin: Lewati, Lanjut, papan, soal berikut, selesai');
+console.log('\n5. Lewati: maju satu tahap sekarang juga');
 {
-  cek('Lanjut saat soal masih berjalan ditolak', 'galat' in transisiLive(s1, 'live_lanjut', T0 + 6000));
-  const lewat = terapkan(s1, transisiLive(s1, 'live_tutup_soal', T0 + 6000));
-  cek('Lewati: langsung hasil', tahapEfektif(lewat, T0 + 6000) === 'hasil');
-  cek('Lewati: jawaban sesudahnya ditolak', !periksaJawab(lewat, 0, 'A', T0 + 6000).ok);
-  const lewatSiap = terapkan(s1, transisiLive(s1, 'live_tutup_soal', T0 + 1000));
+  const x = MULAI0 + 2000;
+  const lewat = terapkan(s1, transisiLive(s1, 'live_lewati', x));
+  cek('soal -> hasil sekarang', tahapEfektif(lewat, x) === 'hasil');
+  cek('jawaban sesudahnya ditolak', !periksaJawab(lewat, 0, 'A', x).ok);
+  cek('jadwal sesudahnya ikut maju (papan tepat setelah hasil)', tahapEfektif(lewat, x + HASIL_MS) === 'papan');
+  const lewatSiap = terapkan(s1, transisiLive(s1, 'live_lewati', T0 + 1000));
   cek('Lewati saat hitung mundur: mulai <= tutup', Date.parse(lewatSiap.live_soal_mulai!) <= Date.parse(lewatSiap.live_soal_tutup!));
-  const papan = terapkan(lewat, transisiLive(lewat, 'live_lanjut', T0 + 8000));
-  cek('hasil -> papan skor', papan.live_tahap === 'papan');
-  const s2 = terapkan(papan, transisiLive(papan, 'live_lanjut', T0 + 10_000));
-  cek('papan -> soal 2', s2.live_tahap === 'soal' && s2.live_indeks === 1);
-  cek('soal 2 dengan hitung mundur baru', tahapEfektif(s2, T0 + 11_000) === 'siap');
-  cek('soal 2 batas waktu penuh lagi', Date.parse(s2.live_soal_tutup!) - Date.parse(s2.live_soal_mulai!) === 20_000);
-  //  Lompat ke soal terakhir.
-  const s3hasil = { ...s2, live_indeks: 2, live_soal_tutup: iso(T0), live_soal_mulai: iso(T0 - 1000) };
-  const papanAkhir = terapkan(s3hasil, transisiLive(s3hasil, 'live_lanjut', T0 + 60_000));
-  const akhir = terapkan(papanAkhir, transisiLive(papanAkhir, 'live_lanjut', T0 + 61_000));
+  const kePapan = terapkan(lewat, transisiLive(lewat, 'live_lewati', x + 1000));
+  cek('hasil -> papan sekarang', tahapEfektif(kePapan, x + 1000) === 'papan');
+  const keSoal2 = terapkan(kePapan, transisiLive(kePapan, 'live_lewati', x + 2000));
+  cek('papan -> soal berikutnya (hitung mundur)', jadwalLive(keSoal2, x + 2000).tahap === 'siap' && keSoal2.live_indeks === 1);
+  cek('soal berikutnya mulai 4 dtk lagi', Date.parse(keSoal2.live_soal_mulai!) === x + 2000 + HITUNG_MUNDUR_MS);
+  //  Jadwal sudah maju otomatis ke soal 2 tapi basis data masih mencatat soal 1.
+  const y = MULAI1 + 1000;
+  const lewat2 = terapkan(s1, transisiLive(s1, 'live_lewati', y));
+  cek('Lewati memakai soal menurut jadwal (soal 2), bukan catatan lama', lewat2.live_indeks === 1 && tahapEfektif(lewat2, y) === 'hasil');
+  //  Papan soal terakhir -> selesai.
+  const terakhir: StatusLive = { ...s1, live_indeks: 2, live_soal_mulai: iso(T0), live_soal_tutup: iso(T0 + S) };
+  const zPapan = T0 + S + TOLERANSI_MS + HASIL_MS + 10;
+  const akhir = terapkan(terakhir, transisiLive(terakhir, 'live_lewati', zPapan));
   cek('papan soal terakhir -> selesai (podium)', akhir.live_tahap === 'selesai');
-  cek('Lanjut setelah selesai ditolak', 'galat' in transisiLive(akhir, 'live_lanjut', T0 + 62_000));
-  const ulang = terapkan(akhir, transisiLive(akhir, 'live_ulang', T0 + 63_000));
-  cek('Main lagi -> lobi', tahapEfektif(ulang, T0 + 63_000) === 'lobi');
-  const sesi2 = terapkan(ulang, transisiLive(ulang, 'live_mulai', T0 + 64_000, ['q1']));
+  cek('Lewati setelah selesai ditolak', 'galat' in transisiLive(akhir, 'live_lewati', zPapan + 1));
+  const ulang = terapkan(akhir, transisiLive(akhir, 'live_ulang', zPapan + 2));
+  cek('Main lagi -> lobi', tahapEfektif(ulang, zPapan + 2) === 'lobi');
+  const sesi2 = terapkan(ulang, transisiLive(ulang, 'live_mulai', zPapan + 3, ['q1']));
   cek('Mulai lagi = sesi baru (skor lama tetap tersimpan)', sesi2.live_sesi === 2 && sesi2.live_indeks === 0);
+  cek('nama lama live_lanjut tetap bekerja', !('galat' in transisiLive(s1, 'live_lanjut', x)));
 }
 {
-  const akhiri = terapkan(s1, transisiLive(s1, 'live_akhiri', T0 + 6000));
-  cek('Akhiri di tengah soal -> selesai', akhiri.live_tahap === 'selesai');
-  cek('Akhiri di tengah soal: jawaban berikutnya ditolak', !periksaJawab(akhiri, 0, 'A', T0 + 6000).ok);
+  const akhiri = terapkan(s1, transisiLive(s1, 'live_akhiri', MULAI0 + 2000));
+  cek('Akhiri di tengah soal -> selesai', tahapEfektif(akhiri, MULAI0 + 2000) === 'selesai');
+  cek('Akhiri di tengah soal: jawaban berikutnya ditolak', !periksaJawab(akhiri, 0, 'A', MULAI0 + 2000).ok);
   cek('Akhiri dari lobi ditolak', 'galat' in transisiLive(lobi, 'live_akhiri', T0));
+  const selesaiOtomatis = T0 + 3 * (AKHIR_PAPAN0 - T0);
+  cek('Main lagi dari selesai otomatis (catatan masih "soal")', !('galat' in transisiLive(s1, 'live_ulang', selesaiOtomatis)));
+}
+{
+  cek('wujudkan: belum maju = tidak ada yang ditulis', wujudkanLive(s1, MULAI0) === null);
+  const w = wujudkanLive(s1, MULAI1 + 10);
+  cek('wujudkan: catat soal 2 beserta waktunya', !!w && w.live_indeks === 1 && Date.parse(w.live_soal_mulai!) === MULAI1);
+  const w2 = wujudkanLive(s1, T0 + 3 * (AKHIR_PAPAN0 - T0));
+  cek('wujudkan: catat selesai', !!w2 && w2.live_tahap === 'selesai' && w2.live_indeks === 2);
+  const lama: StatusLive = { ...s1, live_tahap: 'papan' };
+  cek('papan tersimpan (versi lama) menunggu admin', jadwalLive(lama, T0 + 9_999_999).tahap === 'papan');
+  cek('papan tersimpan + Lewati -> soal berikutnya', terapkan(lama, transisiLive(lama, 'live_lewati', T0)).live_indeks === 1);
 }
 
 console.log('\n6. Semua sudah menjawab -> soal ditutup lebih awal');
@@ -140,11 +182,16 @@ console.log('\n8. Distribusi, waktu per soal, status pendaftaran');
   cek('distribusi A=2 C=1, sampah dibuang', d.A === 2 && d.B === 0 && d.C === 1 && d.D === 0);
   cek('detik dibulatkan ke pilihan terdekat', rapikanDetik(25) === 20 && rapikanDetik(1000) === 240 && rapikanDetik(1) === 5);
   cek('detik kosong = 20', rapikanDetik('') === 20 && rapikanDetik(undefined) === 20);
-  cek('lobi terbuka', statusLive({ aktif: true, maks_peserta: 10, live_tahap: 'lobi' }, 3) === 'buka');
-  cek('masuk di tengah permainan tetap boleh', statusLive({ aktif: true, maks_peserta: 10, live_tahap: 'soal' }, 3) === 'buka');
-  cek('setelah selesai tertutup', statusLive({ aktif: true, maks_peserta: 10, live_tahap: 'selesai' }, 3) === 'selesai');
-  cek('penuh', statusLive({ aktif: true, maks_peserta: 3, live_tahap: 'lobi' }, 3) === 'penuh');
-  cek('nonaktif', statusLive({ aktif: false, maks_peserta: 10, live_tahap: 'lobi' }, 0) === 'nonaktif');
+  const st = (k: Partial<StatusLive>, aktif: boolean, maks: number, n: number, t = T0) => statusLive({ ...lobi, ...k, aktif, maks_peserta: maks }, n, t);
+  cek('lobi terbuka', st({}, true, 10, 3) === 'buka');
+  cek('masuk di tengah permainan tetap boleh', st(s1, true, 10, 3, MULAI0) === 'buka');
+  cek('setelah selesai tertutup', st({ live_tahap: 'selesai' }, true, 10, 3) === 'selesai');
+  cek('selesai otomatis juga tertutup', st(s1, true, 10, 3, T0 + 3 * (AKHIR_PAPAN0 - T0)) === 'selesai');
+  cek('penuh', st({}, true, 3, 3) === 'penuh');
+  cek('nonaktif', st({}, false, 10, 0) === 'nonaktif');
+  cek('warna tema dirapikan', rapikanWarna('#46178F') === '#46178f' && rapikanWarna('merah') === null);
+  cek('gambar hanya dari folder unggahan kuis', rapikanUrlGambar('https://x.supabase.co/storage/v1/object/public/merek-files/kuis-live/logo-1.png') !== null
+    && rapikanUrlGambar('https://situs-lain.com/a.png') === null);
 }
 
 console.log('\n9. Isian admin');

@@ -8,7 +8,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { acakUrutan, type KelasEksternal, type Pilihan } from './kelas-eksternal';
 import {
-  distribusi, indeksTerhitung, posisiSaya, susunPapan, tahapEfektif, transisiLive,
+  distribusi, indeksTerhitung, jadwalLive, posisiSaya, semuaMenjawab, susunPapan, transisiLive, wujudkanLive,
   type AksiLive, type BarisPapan, type RekapPeserta, type StatusLive, type Tahap,
 } from './kuis-live';
 
@@ -59,51 +59,81 @@ async function urutanBaru(db: Db, k: KelasLive): Promise<string[]> {
   return k.acak_soal ? acakUrutan(urut) : urut;
 }
 
+/** UPDATE bersyarat: hanya berlaku bila titik acuan di basis data masih yang tadi dibaca. */
+function updateBersyarat(db: Db, k: KelasLive, ubahan: Record<string, unknown>) {
+  let q = db.from('lc_eks_kelas').update(ubahan)
+    .eq('id', k.id).eq('live_tahap', k.live_tahap).eq('live_indeks', k.live_indeks).eq('live_sesi', k.live_sesi);
+  q = k.live_soal_tutup ? q.eq('live_soal_tutup', k.live_soal_tutup) : q.is('live_soal_tutup', null);
+  return q.select('id');
+}
+
 /**
  * Jalankan satu tombol admin. `dari` = tahap & soal yang terlihat di layar host saat tombol
  * ditekan: kalau sudah tidak cocok (klik ganda, dua layar host), tidak ada yang berubah - jadi
- * satu klik tidak pernah melompati dua soal.
+ * satu klik tidak pernah melompati dua tahap.
  */
 export async function jalankanAksiLive(db: Db, k: KelasLive, aksi: AksiLive, dari: { tahap?: unknown; indeks?: unknown }):
   Promise<{ ok: true; berubah: boolean } | { ok: false; galat: string }> {
   const sekarang = Date.now();
-  if (dari.tahap !== undefined && (dari.tahap !== tahapEfektif(k, sekarang) || Number(dari.indeks) !== k.live_indeks)) {
+  const j = jadwalLive(k, sekarang);
+  if (dari.tahap !== undefined && (dari.tahap !== j.tahap || Number(dari.indeks) !== j.indeks)) {
     return { ok: true, berubah: false };
   }
   const ubahan = transisiLive(k, aksi, sekarang, aksi === 'live_mulai' ? await urutanBaru(db, k) : []);
   if ('galat' in ubahan) return { ok: false, galat: ubahan.galat };
   const tambahan = aksi === 'live_mulai' ? { aktif: true, dimulai_pada: new Date(sekarang).toISOString() } : {};
   //  Bersyarat pada status yang tadi dibaca: dua permintaan bersamaan, hanya satu yang berlaku.
-  const { data, error } = await db.from('lc_eks_kelas')
-    .update({ ...ubahan, ...tambahan, updated_at: new Date(sekarang).toISOString() })
-    .eq('id', k.id).eq('live_tahap', k.live_tahap).eq('live_indeks', k.live_indeks).eq('live_sesi', k.live_sesi)
-    .select('id');
+  const { data, error } = await updateBersyarat(db, k, { ...ubahan, ...tambahan, updated_at: new Date(sekarang).toISOString() });
   if (error) return { ok: false, galat: 'Gagal menyimpan. Coba lagi.' };
   const berubah = ((data ?? []) as unknown[]).length > 0;
   if (berubah) await siarkanKuis(k.token);
   return { ok: true, berubah };
 }
 
+/**
+ * Semua peserta sudah menjawab soal yang sedang berjalan -> tutup sekarang (hasil langsung tampil,
+ * jadwal sesudahnya ikut maju). Dipanggil setelah jawaban masuk.
+ */
+export async function tutupBilaSemuaMenjawab(db: Db, k: KelasLive, jumlahPemain: number): Promise<void> {
+  const sekarang = Date.now();
+  const j = jadwalLive(k, sekarang);
+  if (j.tahap !== 'soal') return;
+  const { count } = await db.from('lc_eks_live_jawaban').select('id', { count: 'exact', head: true })
+    .eq('kelas_id', k.id).eq('sesi', k.live_sesi).eq('indeks', j.indeks);
+  if (!semuaMenjawab(count ?? 0, jumlahPemain)) return;
+  const ubahan = transisiLive(k, 'live_lewati', sekarang);
+  if ('galat' in ubahan) return;
+  const { data } = await updateBersyarat(db, k, ubahan);
+  if (((data ?? []) as unknown[]).length) await siarkanKuis(k.token);
+}
+
+const msAtauNull = (iso: string | null) => (iso ? new Date(iso).getTime() : null);
+
 /** Status lengkap untuk LAYAR HOST admin (termasuk kunci setelah waktu habis). */
 export async function keadaanHost(db: Db, k: KelasLive) {
   const sekarang = Date.now();
-  const tahap = tahapEfektif(k, sekarang);
+  //  Rapikan titik acuan di basis data bila jadwal sudah melewati beberapa tahap (tidak terlihat bedanya).
+  const rapi = wujudkanLive(k, sekarang);
+  if (rapi) void updateBersyarat(db, k, rapi).then(() => {}, () => {});
+  const j = jadwalLive(k, sekarang);
+  const tahap = j.tahap;
   const adaSoal = tahap === 'siap' || tahap === 'soal' || tahap === 'hasil';
   const [{ data: pemain }, soal, jawaban, papan] = await Promise.all([
     db.from('lc_eks_peserta').select('id,nama').eq('kelas_id', k.id).order('created_at'),
-    adaSoal ? muatSoalLive(db, k.live_urutan[k.live_indeks]) : Promise.resolve(null),
+    adaSoal ? muatSoalLive(db, k.live_urutan[j.indeks]) : Promise.resolve(null),
     adaSoal
-      ? db.from('lc_eks_live_jawaban').select('pilihan').eq('kelas_id', k.id).eq('sesi', k.live_sesi).eq('indeks', k.live_indeks)
+      ? db.from('lc_eks_live_jawaban').select('pilihan').eq('kelas_id', k.id).eq('sesi', k.live_sesi).eq('indeks', j.indeks)
         .then(r => (r.data ?? []) as { pilihan: string }[])
       : Promise.resolve([] as { pilihan: string }[]),
     tahap === 'papan' || tahap === 'selesai' ? muatPapan(db, k.id, k.live_sesi, indeksTerhitung(k, sekarang)) : Promise.resolve(null),
   ]);
   return {
-    sekarang, tahap, sesi: k.live_sesi, indeks: k.live_indeks,
+    sekarang, tahap, sesi: k.live_sesi, indeks: j.indeks,
     total: tahap === 'lobi' ? k.question_ids.length : k.live_urutan.length,
     detik: k.detik_per_soal,
-    mulaiMs: k.live_soal_mulai ? new Date(k.live_soal_mulai).getTime() : null,
-    tutupMs: k.live_soal_tutup ? new Date(k.live_soal_tutup).getTime() : null,
+    mulaiMs: j.mulaiMs ?? msAtauNull(k.live_soal_mulai),
+    tutupMs: j.tutupMs ?? msAtauNull(k.live_soal_tutup),
+    akhirMs: j.akhirMs,
     pemain: (pemain ?? []) as { id: string; nama: string }[],
     soal: soal ? { teks: soal.teks, pilihan: soal.pilihan } : null,
     //  Layar host biasanya diproyeksikan: kunci baru dikirim setelah waktu habis.
@@ -118,23 +148,23 @@ export type KeadaanHost = Awaited<ReturnType<typeof keadaanHost>>;
 /** Status untuk LAYAR PESERTA. Soal & skor hanya untuk peserta terdaftar; kunci hanya setelah waktu habis. */
 export async function keadaanPeserta(db: Db, k: KelasLive, pesertaId: string | null, jumlahPemain: number) {
   const sekarang = Date.now();
-  const tahap: Tahap = tahapEfektif(k, sekarang);
+  const j = jadwalLive(k, sekarang);
+  const tahap: Tahap = j.tahap;
   const adaSoal = !!pesertaId && (tahap === 'siap' || tahap === 'soal' || tahap === 'hasil');
   const [soal, milikSaya, papan] = await Promise.all([
-    adaSoal ? muatSoalLive(db, k.live_urutan[k.live_indeks]) : Promise.resolve(null),
+    adaSoal ? muatSoalLive(db, k.live_urutan[j.indeks]) : Promise.resolve(null),
     pesertaId && tahap !== 'lobi'
-      ? db.from('lc_eks_live_jawaban').select('pilihan,benar,poin').eq('peserta_id', pesertaId).eq('sesi', k.live_sesi).eq('indeks', k.live_indeks).maybeSingle()
+      ? db.from('lc_eks_live_jawaban').select('pilihan,benar,poin').eq('peserta_id', pesertaId).eq('sesi', k.live_sesi).eq('indeks', j.indeks).maybeSingle()
         .then(r => r.data as { pilihan: Pilihan; benar: boolean; poin: number } | null)
       : Promise.resolve(null),
     pesertaId && tahap !== 'lobi' ? muatPapan(db, k.id, k.live_sesi, indeksTerhitung(k, sekarang)) : Promise.resolve(null),
   ]);
   const terbuka = tahap === 'hasil' || tahap === 'papan' || tahap === 'selesai';
   return {
-    sekarang, tahap, sesi: k.live_sesi, indeks: k.live_indeks,
+    sekarang, tahap, sesi: k.live_sesi, indeks: j.indeks,
     total: tahap === 'lobi' ? k.question_ids.length : k.live_urutan.length,
     detik: k.detik_per_soal,
-    mulaiMs: k.live_soal_mulai ? new Date(k.live_soal_mulai).getTime() : null,
-    tutupMs: k.live_soal_tutup ? new Date(k.live_soal_tutup).getTime() : null,
+    mulaiMs: j.mulaiMs, tutupMs: j.tutupMs, akhirMs: j.akhirMs,
     jumlahPemain,
     soal: soal ? { teks: soal.teks, pilihan: soal.pilihan } : null,
     kunci: tahap === 'hasil' && soal ? soal.kunci : null,

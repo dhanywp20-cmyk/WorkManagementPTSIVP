@@ -6,17 +6,17 @@
  * papan skor -> podium. Semua yang menentukan (soal aktif, waktu, poin) datang dari server; jam
  * perangkat dikoreksi ke jam server supaya semua HP serentak.
  *
- * Pembaruan: colekan Supabase Realtime (lib/kuis-live-server.ts siarkanKuis) + penyegaran berkala
- * sebagai cadangan, + satu penyegaran terjadwal tepat setelah waktu soal habis.
+ * Kuis berjalan sendiri mengikuti waktu (lib/kuis-live.ts jadwalLive). Pembaruan: colekan Supabase
+ * Realtime (siarkanKuis, saat admin menekan Lewati / semua sudah menjawab) + penyegaran berkala
+ * sebagai cadangan, + penyegaran terjadwal tepat di akhir tiap tahap.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Loader2, Lock, Trophy, Users, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Pilihan } from '@/lib/kelas-eksternal';
-import { TOLERANSI_MS } from '@/lib/kuis-live';
 import {
-  BentukPilihan, BilahSoal, BilahWaktu, HIJAU, HitungMundur, LatarKuis, LogoEvent, MERAH, PILIHAN_KUIS, Podium,
-  WARNA_PILIHAN, formatPoin, useDetak, useJamServer,
+  BilahSoal, BilahWaktu, HIJAU, HitungMundur, LatarKuis, LogoEvent, MERAH, PILIHAN_KUIS, Podium,
+  WARNA_PILIHAN, formatPoin, ukuranTeks, useDetak, useJamServer,
 } from '@/components/kuis-live/tema';
 import { panggilKelas, simpanTokenPeserta, type InfoLive } from './api';
 
@@ -69,11 +69,12 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
 
   //  Tepat setelah waktu soal habis: ambil hasil (benar/salah, poin, peringkat).
   useEffect(() => {
-    if ((live.tahap !== 'siap' && live.tahap !== 'soal') || !live.tutupMs) return;
-    const tunggu = live.tutupMs + TOLERANSI_MS + 200 + Math.random() * 600 - sekarang();
+    //  Kuis berjalan sendiri: tiap tahap punya waktu akhir (soal -> hasil -> papan -> soal berikutnya).
+    if (!live.akhirMs || live.tahap === 'siap') return;
+    const tunggu = live.akhirMs + 200 + Math.random() * 600 - sekarang();
     const t = window.setTimeout(() => void segarkan(), Math.max(0, tunggu));
     return () => window.clearTimeout(t);
-  }, [live.tahap, live.tutupMs, live.indeks, segarkan, sekarang]);
+  }, [live.tahap, live.akhirMs, live.indeks, segarkan, sekarang]);
 
   useDetak(live.tahap === 'siap' || live.tahap === 'soal', 200);
 
@@ -199,10 +200,10 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
               <div className="flex-1 grid grid-cols-2 gap-2.5 sm:gap-3 auto-rows-fr min-h-[48vh]">
                 {PILIHAN_KUIS.map(p => (
                   <button key={p} type="button" onClick={() => void jawab(p)} aria-label={`Pilihan ${p}: ${live.soal!.pilihan[p]}`}
-                    className="rounded-2xl p-3 flex flex-col items-center justify-center gap-2 text-center shadow-[0_6px_0_rgba(0,0,0,.25)] active:translate-y-1 active:shadow-[0_2px_0_rgba(0,0,0,.25)] transition-transform"
+                    className="rounded-2xl p-3 flex items-center justify-center text-center shadow-[0_6px_0_rgba(0,0,0,.25)] active:translate-y-1 active:shadow-[0_2px_0_rgba(0,0,0,.25)] transition-transform"
                     style={{ backgroundColor: WARNA_PILIHAN[p] }}>
-                    <BentukPilihan p={p} ukuran={40} />
-                    <span className="text-[14.5px] sm:text-[16px] font-extrabold leading-snug line-clamp-4 break-words">{live.soal!.pilihan[p]}</span>
+                    <span className="font-extrabold leading-snug line-clamp-5 break-words"
+                      style={{ fontSize: ukuranTeks(live.soal!.pilihan[p], [[25, 20], [60, 17], [9999, 15]]) }}>{live.soal!.pilihan[p]}</span>
                   </button>
                 ))}
               </div>
@@ -214,8 +215,8 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
             <div className="m-auto text-center space-y-5 max-w-sm">
               {pilihanku ? (
                 <>
-                  <div className="mx-auto w-28 h-28 rounded-3xl flex items-center justify-center shadow-xl" style={{ backgroundColor: WARNA_PILIHAN[pilihanku] }}>
-                    <BentukPilihan p={pilihanku} ukuran={56} />
+                  <div className="mx-auto max-w-xs rounded-2xl px-5 py-5 shadow-xl" style={{ backgroundColor: WARNA_PILIHAN[pilihanku] }}>
+                    <p className="text-[18px] font-extrabold leading-snug break-words">{live.soal?.pilihan[pilihanku]}</p>
                   </div>
                   <p className="text-[26px] font-black drop-shadow">Jawaban terkirim!</p>
                   <p className="text-[14px] font-bold text-white/85">Cepat juga kamu… tunggu hasilnya.</p>
@@ -241,9 +242,8 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
                 : kunci && live.soal && (
                   <div className="rounded-2xl bg-black/25 p-3 space-y-2">
                     <p className="text-[12px] font-black uppercase tracking-wider text-white/80">Jawaban benar</p>
-                    <div className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left" style={{ backgroundColor: WARNA_PILIHAN[kunci] }}>
-                      <BentukPilihan p={kunci} ukuran={26} />
-                      <span className="text-[15px] font-extrabold leading-snug">{live.soal.pilihan[kunci]}</span>
+                    <div className="rounded-xl px-4 py-3 text-center" style={{ backgroundColor: WARNA_PILIHAN[kunci] }}>
+                      <span className="text-[16px] font-extrabold leading-snug break-words">{live.soal.pilihan[kunci]}</span>
                     </div>
                   </div>
                 )}

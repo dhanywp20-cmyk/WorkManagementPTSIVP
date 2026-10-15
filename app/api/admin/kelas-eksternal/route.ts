@@ -11,7 +11,8 @@
  * Kuis Live (lib/kuis-live.ts):
  *  GET ?live=<kelas>                       -> status layar host (lobi, soal, jumlah menjawab, distribusi, papan)
  *  GET ?id=<kelas>&sesi=<n>                -> papan skor sesi itu (bawaan: sesi terakhir)
- *  POST { aksi:'live_mulai'|'live_tutup_soal'|'live_lanjut'|'live_akhiri'|'live_ulang', id, dari:{tahap,indeks} }
+ *  POST { aksi:'live_mulai'|'live_lewati'|'live_akhiri'|'live_ulang', id, dari:{tahap,indeks} }
+ *       (kuis berjalan sendiri mengikuti waktu; Lewati = maju satu tahap sekarang)
  *  POST { aksi:'live_keluarkan', id, peserta_id }  -> keluarkan pemain dari lobi (nama tidak pantas, salah masuk)
  * Ubah: admin / Full Access. Lihat: juga pimpinan (hanya baca).
  */
@@ -21,7 +22,7 @@ import { getAdminClient } from '@/lib/supabase-admin';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { hasFullAccess } from '@/lib/constants';
 import { rapikanKelas, type KelasEksternal } from '@/lib/kelas-eksternal';
-import { AKSI_LIVE, type AksiLive } from '@/lib/kuis-live';
+import { AKSI_LIVE, jadwalLive, type AksiLive } from '@/lib/kuis-live';
 import { jalankanAksiLive, keadaanHost, muatPapan, siarkanKuis, type KelasLive } from '@/lib/kuis-live-server';
 
 export const dynamic = 'force-dynamic';
@@ -73,7 +74,7 @@ export async function GET(req: NextRequest) {
         : { data: [] };
       //  Jumlah soal yang sempat dimainkan di sesi itu (bisa kurang dari total bila diakhiri lebih awal).
       const dimainkan = sesi === k.live_sesi && k.live_tahap !== 'lobi'
-        ? k.live_indeks + 1
+        ? jadwalLive(k).indeks + 1
         : (((jml ?? []) as { indeks: number }[])[0]?.indeks ?? -1) + 1;
       return jawab({ kelas, ubah: h.ubah, live: { sesi, jumlahSesi: k.live_sesi, dimainkan, papan } });
     }

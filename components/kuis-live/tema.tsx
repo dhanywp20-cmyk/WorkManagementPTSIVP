@@ -2,8 +2,8 @@
 
 /**
  * Tema Kuis Live (ala Kahoot) - dipakai layar peserta (/kelas/<token>) dan layar host admin.
- * Warna & bentuk tiap pilihan sama persis di kedua layar, supaya peserta yang melihat proyektor
- * cukup mencocokkan warna/bentuk.
+ * Warna tiap pilihan sama persis di kedua layar, supaya peserta yang melihat proyektor cukup
+ * mencocokkan warna (tanpa simbol - permintaan admin).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Pilihan } from '@/lib/kelas-eksternal';
@@ -16,18 +16,11 @@ export const MERAH = '#e21b3c';
 
 export const PILIHAN_KUIS: readonly Pilihan[] = ['A', 'B', 'C', 'D'];
 export const WARNA_PILIHAN: Record<Pilihan, string> = { A: '#e21b3c', B: '#1368ce', C: '#d89e00', D: '#26890c' };
-const NAMA_BENTUK: Record<Pilihan, string> = { A: 'segitiga', B: 'belah ketupat', C: 'lingkaran', D: 'kotak' };
 
-/** Bentuk putih tiap pilihan: A segitiga, B belah ketupat, C lingkaran, D kotak. */
-export function BentukPilihan({ p, ukuran = 28, className = '' }: { p: Pilihan; ukuran?: number; className?: string }) {
-  return (
-    <svg width={ukuran} height={ukuran} viewBox="0 0 32 32" className={`flex-shrink-0 ${className}`} role="img" aria-label={NAMA_BENTUK[p]}>
-      {p === 'A' && <path d="M16 3 L30 28 H2 Z" fill="white" />}
-      {p === 'B' && <path d="M16 2 L30 16 L16 30 L2 16 Z" fill="white" />}
-      {p === 'C' && <circle cx="16" cy="16" r="13" fill="white" />}
-      {p === 'D' && <rect x="4" y="4" width="24" height="24" rx="2" fill="white" />}
-    </svg>
-  );
+/** Ukuran huruf menyesuaikan panjang teks, supaya soal/jawaban panjang tetap muat tanpa terpotong. */
+export function ukuranTeks(teks: string, tangga: [number, number][]): number {
+  for (const [batas, px] of tangga) if (teks.length <= batas) return px;
+  return tangga[tangga.length - 1][1];
 }
 
 /** Tampilan per kuis yang diatur admin: warna tema, logo event, gambar latar. */

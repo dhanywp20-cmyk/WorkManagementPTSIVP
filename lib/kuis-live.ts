@@ -16,10 +16,15 @@ const PILIHAN: readonly Pilihan[] = ['A', 'B', 'C', 'D'];
 export const HITUNG_MUNDUR_MS = 4000;
 /** Jawaban yang berangkat tepat sebelum waktu habis tetap diterima selama jeda jaringan ini. */
 export const TOLERANSI_MS = 800;
+/** Lama layar jawaban benar + distribusi tampil sebelum otomatis ke papan skor. */
+export const HASIL_MS = 6000;
+/** Lama papan skor tampil sebelum otomatis ke soal berikutnya (atau podium setelah soal terakhir). */
+export const PAPAN_MS = 6000;
 export const POIN_MAKS = 1000;
 export const PILIHAN_DETIK = [5, 10, 20, 30, 60, 90, 120, 240] as const;
 export const MAKS_PESERTA_LIVE = 500;
 
+/** 'papan' tersimpan hanya dari versi lama yang dipandu manual - kini papan diturunkan dari waktu. */
 export type TahapSimpan = 'lobi' | 'soal' | 'papan' | 'selesai';
 export type Tahap = 'lobi' | 'siap' | 'soal' | 'hasil' | 'papan' | 'selesai';
 
@@ -32,13 +37,53 @@ export interface StatusLive {
 const ms = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
 const iso = (t: number) => new Date(t).toISOString();
 
-/** Tahap yang sedang berlaku menurut jam. */
-export function tahapEfektif(k: Pick<StatusLive, 'live_tahap' | 'live_soal_mulai' | 'live_soal_tutup'>, sekarang = Date.now()): Tahap {
-  if (k.live_tahap !== 'soal') return k.live_tahap;
-  if (sekarang < ms(k.live_soal_mulai)) return 'siap';
-  if (sekarang < ms(k.live_soal_tutup) + TOLERANSI_MS) return 'soal';
-  return 'hasil';
+/** Posisi permainan saat ini menurut jam. */
+export interface Jadwal {
+  tahap: Tahap;
+  indeks: number;
+  mulaiMs: number | null;
+  tutupMs: number | null;
+  /** Kapan tahap ini berganti otomatis; null = menunggu admin (lobi, selesai). */
+  akhirMs: number | null;
 }
+
+type DasarJadwal = Pick<StatusLive, 'live_tahap' | 'live_indeks' | 'live_urutan' | 'live_soal_mulai' | 'live_soal_tutup' | 'detik_per_soal'>;
+
+/**
+ * Kuis berjalan sendiri mengikuti waktu: siap (hitung mundur) -> soal -> hasil -> papan -> soal
+ * berikutnya -> ... -> selesai (podium). Basis data hanya menyimpan satu titik acuan (soal ke-i dan
+ * waktunya); semua tahap sesudahnya dihitung dari situ, jadi tidak perlu penjadwal di server dan
+ * semua layar - host maupun HP - sampai pada jawaban yang sama. Tombol Lewati / semua sudah
+ * menjawab cukup menggeser titik acuan itu.
+ */
+export function jadwalLive(k: DasarJadwal, sekarang = Date.now()): Jadwal {
+  if (k.live_tahap === 'lobi' || k.live_tahap === 'selesai') {
+    return { tahap: k.live_tahap, indeks: k.live_indeks, mulaiMs: null, tutupMs: null, akhirMs: null };
+  }
+  if (k.live_tahap === 'papan') {
+    return { tahap: 'papan', indeks: k.live_indeks, mulaiMs: ms(k.live_soal_mulai), tutupMs: ms(k.live_soal_tutup), akhirMs: null };
+  }
+  const total = Math.max(1, k.live_urutan.length);
+  const durasi = k.detik_per_soal * 1000;
+  let i = k.live_indeks, mulai = ms(k.live_soal_mulai), tutup = ms(k.live_soal_tutup);
+  for (;;) {
+    const j = (tahap: Tahap, akhirMs: number | null): Jadwal => ({ tahap, indeks: i, mulaiMs: mulai, tutupMs: tutup, akhirMs });
+    if (sekarang < mulai) return j('siap', mulai);
+    const habis = tutup + TOLERANSI_MS;
+    if (sekarang < habis) return j('soal', habis);
+    const akhirHasil = habis + HASIL_MS;
+    if (sekarang < akhirHasil) return j('hasil', akhirHasil);
+    const akhirPapan = akhirHasil + PAPAN_MS;
+    if (sekarang < akhirPapan) return j('papan', akhirPapan);
+    if (i + 1 >= total) return j('selesai', null);
+    i += 1;
+    mulai = akhirPapan + HITUNG_MUNDUR_MS;
+    tutup = mulai + durasi;
+  }
+}
+
+/** Tahap yang sedang berlaku menurut jam. */
+export const tahapEfektif = (k: DasarJadwal, sekarang = Date.now()): Tahap => jadwalLive(k, sekarang).tahap;
 
 /**
  * Poin ala Kahoot: benar seketika = 1000, benar tepat di detik terakhir = 500, salah = 0.
@@ -53,68 +98,88 @@ export function poinKahoot(benar: boolean, waktuMs: number, durasiMs: number): n
 
 /** Pemeriksaan jawaban masuk: masih soal yang sama & masih dalam waktu. */
 export function periksaJawab(k: StatusLive, indeks: unknown, pilihan: unknown, sekarang = Date.now()):
-  { ok: true; pilihan: Pilihan; waktuMs: number } | { ok: false; alasan: string } {
+  { ok: true; pilihan: Pilihan; waktuMs: number; jadwal: Jadwal } | { ok: false; alasan: string } {
   const p = String(pilihan ?? '').toUpperCase();
   if (!(PILIHAN as readonly string[]).includes(p)) return { ok: false, alasan: 'Pilihan tidak dikenal.' };
-  const t = tahapEfektif(k, sekarang);
-  if (t === 'lobi') return { ok: false, alasan: 'Kuis belum dimulai.' };
-  if (Number(indeks) !== k.live_indeks || (t !== 'soal' && t !== 'siap' && t !== 'hasil')) return { ok: false, alasan: 'Soal sudah berganti.' };
-  if (t === 'siap') return { ok: false, alasan: 'Pilihan belum dibuka.' };
-  if (t === 'hasil') return { ok: false, alasan: 'Waktu habis.' };
+  const j = jadwalLive(k, sekarang);
+  if (j.tahap === 'lobi') return { ok: false, alasan: 'Kuis belum dimulai.' };
+  if (Number(indeks) !== j.indeks || (j.tahap !== 'soal' && j.tahap !== 'siap' && j.tahap !== 'hasil')) return { ok: false, alasan: 'Soal sudah berganti.' };
+  if (j.tahap === 'siap') return { ok: false, alasan: 'Pilihan belum dibuka.' };
+  if (j.tahap === 'hasil') return { ok: false, alasan: 'Waktu habis.' };
   const durasi = k.detik_per_soal * 1000;
-  return { ok: true, pilihan: p as Pilihan, waktuMs: Math.min(durasi, Math.max(0, sekarang - ms(k.live_soal_mulai))) };
+  return { ok: true, pilihan: p as Pilihan, waktuMs: Math.min(durasi, Math.max(0, sekarang - (j.mulaiMs ?? sekarang))), jadwal: j };
 }
 
 /**
  * Soal terakhir yang poinnya SUDAH boleh terlihat. Selama soal berjalan, poin soal itu belum
  * dihitung - kalau tidak, skor yang naik membocorkan benar/salah sebelum kunci dibuka.
  */
-export function indeksTerhitung(k: Pick<StatusLive, 'live_tahap' | 'live_indeks' | 'live_soal_mulai' | 'live_soal_tutup'>, sekarang = Date.now()): number {
-  const t = tahapEfektif(k, sekarang);
-  if (t === 'lobi') return -1;
-  if (t === 'siap' || t === 'soal') return k.live_indeks - 1;
-  return k.live_indeks;
+export function indeksTerhitung(k: DasarJadwal, sekarang = Date.now()): number {
+  const j = jadwalLive(k, sekarang);
+  if (j.tahap === 'lobi') return -1;
+  if (j.tahap === 'siap' || j.tahap === 'soal') return j.indeks - 1;
+  return j.indeks;
 }
 
-export type AksiLive = 'live_mulai' | 'live_tutup_soal' | 'live_lanjut' | 'live_akhiri' | 'live_ulang';
-export const AKSI_LIVE: readonly AksiLive[] = ['live_mulai', 'live_tutup_soal', 'live_lanjut', 'live_akhiri', 'live_ulang'];
+/** 'live_tutup_soal' & 'live_lanjut' = nama lama 'live_lewati' (layar host versi sebelumnya). */
+export type AksiLive = 'live_mulai' | 'live_lewati' | 'live_tutup_soal' | 'live_lanjut' | 'live_akhiri' | 'live_ulang';
+export const AKSI_LIVE: readonly AksiLive[] = ['live_mulai', 'live_lewati', 'live_tutup_soal', 'live_lanjut', 'live_akhiri', 'live_ulang'];
 export type UbahanLive = Partial<Omit<StatusLive, 'detik_per_soal'>>;
 
 /**
  * Perubahan status untuk satu tombol admin, atau galat bila tombol itu tidak berlaku di tahap ini.
  * `urutanBaru` (soal yang sah, sudah diacak bila perlu) hanya dipakai saat Mulai.
+ * Lewati = maju satu tahap sekarang juga: soal -> hasil -> papan -> soal berikutnya / podium.
  */
 export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(), urutanBaru: string[] = []): UbahanLive | { galat: string } {
-  const t = tahapEfektif(k, sekarang);
+  const j = jadwalLive(k, sekarang);
   const durasi = k.detik_per_soal * 1000;
   const soalBaru = (indeks: number): UbahanLive => ({
     live_tahap: 'soal', live_indeks: indeks,
     live_soal_mulai: iso(sekarang + HITUNG_MUNDUR_MS), live_soal_tutup: iso(sekarang + HITUNG_MUNDUR_MS + durasi),
   });
+  /** Soal j.indeks dengan batas jawab digeser ke `tutup` (mulai tidak boleh sesudah tutup). */
+  const geser = (tutup: number): UbahanLive => ({
+    live_tahap: 'soal', live_indeks: j.indeks,
+    live_soal_tutup: iso(tutup), live_soal_mulai: iso(Math.min(j.mulaiMs ?? tutup, tutup)),
+  });
   switch (aksi) {
     case 'live_mulai':
-      if (t !== 'lobi') return { galat: 'Kuis sudah berjalan.' };
+      if (j.tahap !== 'lobi') return { galat: 'Kuis sudah berjalan.' };
       if (!urutanBaru.length) return { galat: 'Soal kuis ini belum tersedia.' };
       return { ...soalBaru(0), live_urutan: urutanBaru, live_sesi: k.live_sesi + 1 };
-    case 'live_tutup_soal': {
-      if (t !== 'siap' && t !== 'soal') return { galat: 'Tidak ada soal yang sedang berjalan.' };
-      //  Mundurkan batas sejauh toleransi: kunci langsung terbuka, jawaban yang datang sesudahnya ditolak.
-      const tutup = sekarang - TOLERANSI_MS;
-      return { live_soal_tutup: iso(tutup), live_soal_mulai: iso(Math.min(ms(k.live_soal_mulai), tutup)) };
-    }
+    case 'live_lewati':
+    case 'live_tutup_soal':
     case 'live_lanjut':
-      if (t === 'hasil') return { live_tahap: 'papan' };
-      if (t === 'papan') return k.live_indeks + 1 < k.live_urutan.length ? soalBaru(k.live_indeks + 1) : { live_tahap: 'selesai' };
-      return { galat: t === 'siap' || t === 'soal' ? 'Tunggu waktu habis atau tekan Lewati.' : 'Belum bisa lanjut.' };
+      //  Tutup soal: kunci langsung terbuka, jawaban yang datang sesudahnya ditolak.
+      if (j.tahap === 'siap' || j.tahap === 'soal') return geser(sekarang - TOLERANSI_MS);
+      //  Hasil -> papan: mundurkan acuan sejauh lama layar hasil.
+      if (j.tahap === 'hasil') return geser(sekarang - TOLERANSI_MS - HASIL_MS);
+      if (j.tahap === 'papan') {
+        return j.indeks + 1 < k.live_urutan.length ? soalBaru(j.indeks + 1) : { live_tahap: 'selesai', live_indeks: j.indeks };
+      }
+      return { galat: j.tahap === 'lobi' ? 'Kuis belum dimulai.' : 'Kuis sudah selesai.' };
     case 'live_akhiri':
-      if (t === 'lobi' || t === 'selesai') return { galat: 'Kuis tidak sedang berjalan.' };
-      return t === 'siap' || t === 'soal'
-        ? { live_tahap: 'selesai', live_soal_tutup: iso(sekarang - TOLERANSI_MS), live_soal_mulai: iso(Math.min(ms(k.live_soal_mulai), sekarang - TOLERANSI_MS)) }
-        : { live_tahap: 'selesai' };
+      if (j.tahap === 'lobi' || j.tahap === 'selesai') return { galat: 'Kuis tidak sedang berjalan.' };
+      return j.tahap === 'siap' || j.tahap === 'soal'
+        ? { ...geser(sekarang - TOLERANSI_MS), live_tahap: 'selesai' }
+        : { live_tahap: 'selesai', live_indeks: j.indeks };
     case 'live_ulang':
-      if (t !== 'selesai') return { galat: 'Kuis belum selesai.' };
+      if (j.tahap !== 'selesai') return { galat: 'Kuis belum selesai.' };
       return { live_tahap: 'lobi', live_indeks: 0, live_soal_mulai: null, live_soal_tutup: null };
   }
+}
+
+/**
+ * Tulis ulang titik acuan ke posisi sekarang (soal yang berjalan / selesai) supaya basis data
+ * tidak tertinggal jauh dari jadwal. Tidak mengubah apa pun yang terlihat; null = sudah sama.
+ */
+export function wujudkanLive(k: StatusLive, sekarang = Date.now()): UbahanLive | null {
+  if (k.live_tahap !== 'soal') return null;
+  const j = jadwalLive(k, sekarang);
+  if (j.tahap === 'selesai') return { live_tahap: 'selesai', live_indeks: j.indeks };
+  if (j.indeks === k.live_indeks) return null;
+  return { live_indeks: j.indeks, live_soal_mulai: iso(j.mulaiMs!), live_soal_tutup: iso(j.tutupMs!) };
 }
 
 /** Semua peserta sudah menjawab soal ini -> soal boleh ditutup lebih awal. */
@@ -208,9 +273,9 @@ export function labelTahap(t: Tahap, indeks: number, total: number): string {
 }
 
 /** Status pendaftaran Kuis Live (tanpa jadwal buka/tutup - admin yang memandu). */
-export function statusLive(k: { aktif: boolean; maks_peserta: number; live_tahap: TahapSimpan }, jumlahPeserta: number): 'buka' | 'nonaktif' | 'selesai' | 'penuh' {
+export function statusLive(k: DasarJadwal & { aktif: boolean; maks_peserta: number }, jumlahPeserta: number, sekarang = Date.now()): 'buka' | 'nonaktif' | 'selesai' | 'penuh' {
   if (!k.aktif) return 'nonaktif';
-  if (k.live_tahap === 'selesai') return 'selesai';
+  if (tahapEfektif(k, sekarang) === 'selesai') return 'selesai';
   if (jumlahPeserta >= k.maks_peserta) return 'penuh';
   return 'buka';
 }

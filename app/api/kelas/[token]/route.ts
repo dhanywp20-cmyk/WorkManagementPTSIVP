@@ -25,8 +25,8 @@ import {
   PESAN_STATUS, acakUrutan, acuanWaktu, alasanKirimSah, jenisPelanggaranSah, lewatWaktu, menungguAdmin, nilaiJawaban,
   rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
 } from '@/lib/kelas-eksternal';
-import { PESAN_LIVE, TOLERANSI_MS, periksaJawab, poinKahoot, semuaMenjawab, statusLive } from '@/lib/kuis-live';
-import { keadaanPeserta, muatSoalLive, siarkanKuis, type KelasLive } from '@/lib/kuis-live-server';
+import { PESAN_LIVE, periksaJawab, poinKahoot, statusLive } from '@/lib/kuis-live';
+import { keadaanPeserta, muatSoalLive, tutupBilaSemuaMenjawab, type KelasLive } from '@/lib/kuis-live-server';
 
 export const dynamic = 'force-dynamic';
 
@@ -231,37 +231,28 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
 
 /**
  * Kuis Live: satu jawaban per soal, dikunci begitu terkirim (seperti Kahoot). Poin dihitung dari
- * waktu server sejak pilihan dibuka. Bila semua peserta sudah menjawab, soal ditutup lebih awal.
+ * waktu server sejak pilihan dibuka. Bila semua peserta sudah menjawab, soal ditutup lebih awal
+ * dan jadwal sesudahnya (hasil, papan, soal berikutnya) ikut maju.
  */
 async function jawabLive(db: Db, kelas: KelasLive, peserta: Peserta, body: Record<string, unknown>) {
   const cek = periksaJawab(kelas, body.indeks, body.pilihan);
   if (!cek.ok) return galat(cek.alasan, 409);
-  const soalId = kelas.live_urutan[kelas.live_indeks];
+  const indeks = cek.jadwal.indeks;
+  const soalId = kelas.live_urutan[indeks];
   const soal = await muatSoalLive(db, soalId);
   if (!soal) return galat('Soal tidak tersedia.', 409);
   const benar = cek.pilihan === soal.kunci;
   const { error } = await db.from('lc_eks_live_jawaban').insert({
-    kelas_id: kelas.id, peserta_id: peserta.id, sesi: kelas.live_sesi, indeks: kelas.live_indeks, soal_id: soalId,
+    kelas_id: kelas.id, peserta_id: peserta.id, sesi: kelas.live_sesi, indeks, soal_id: soalId,
     pilihan: cek.pilihan, benar, poin: poinKahoot(benar, cek.waktuMs, kelas.detik_per_soal * 1000), waktu_ms: cek.waktuMs,
   });
   if (error) {
     if (error.code !== '23505') return galat('Jawaban belum terkirim. Coba lagi.', 500);
     //  Sudah menjawab (klik ganda / kirim ulang): jawaban pertama yang berlaku.
     const { data: lama } = await db.from('lc_eks_live_jawaban').select('pilihan')
-      .eq('peserta_id', peserta.id).eq('sesi', kelas.live_sesi).eq('indeks', kelas.live_indeks).maybeSingle();
+      .eq('peserta_id', peserta.id).eq('sesi', kelas.live_sesi).eq('indeks', indeks).maybeSingle();
     return jawab({ pilihan: (lama as { pilihan: string } | null)?.pilihan ?? cek.pilihan });
   }
-  const [{ count: menjawab }, pemain] = await Promise.all([
-    db.from('lc_eks_live_jawaban').select('id', { count: 'exact', head: true })
-      .eq('kelas_id', kelas.id).eq('sesi', kelas.live_sesi).eq('indeks', kelas.live_indeks),
-    jumlahPeserta(db, kelas.id),
-  ]);
-  if (semuaMenjawab(menjawab ?? 0, pemain)) {
-    const tutup = new Date(Date.now() - TOLERANSI_MS).toISOString();
-    const { data: ditutup } = await db.from('lc_eks_kelas').update({ live_soal_tutup: tutup })
-      .eq('id', kelas.id).eq('live_tahap', 'soal').eq('live_sesi', kelas.live_sesi).eq('live_indeks', kelas.live_indeks)
-      .gt('live_soal_tutup', tutup).select('id');
-    if (((ditutup ?? []) as unknown[]).length) await siarkanKuis(kelas.token);
-  }
+  await tutupBilaSemuaMenjawab(db, kelas, await jumlahPeserta(db, kelas.id));
   return jawab({ pilihan: cek.pilihan });
 }
