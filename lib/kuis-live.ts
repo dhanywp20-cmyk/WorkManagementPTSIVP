@@ -57,6 +57,7 @@ export function periksaJawab(k: StatusLive, indeks: unknown, pilihan: unknown, s
   const p = String(pilihan ?? '').toUpperCase();
   if (!(PILIHAN as readonly string[]).includes(p)) return { ok: false, alasan: 'Pilihan tidak dikenal.' };
   const t = tahapEfektif(k, sekarang);
+  if (t === 'lobi') return { ok: false, alasan: 'Kuis belum dimulai.' };
   if (Number(indeks) !== k.live_indeks || (t !== 'soal' && t !== 'siap' && t !== 'hasil')) return { ok: false, alasan: 'Soal sudah berganti.' };
   if (t === 'siap') return { ok: false, alasan: 'Pilihan belum dibuka.' };
   if (t === 'hasil') return { ok: false, alasan: 'Waktu habis.' };

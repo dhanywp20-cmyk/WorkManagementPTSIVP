@@ -31,7 +31,9 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const { catat, sekarang } = useJamServer();
   const sedangMuat = useRef(false);
-  const url = `${appBaseUrl()}/kelas/${kelas.token}`;
+  //  Domain yang sedang dibuka, bukan appBaseUrl(): peserta harus masuk ke deployment yang sama
+  //  dengan layar host (di Preview, domain produksi belum tentu punya versi kuis yang sama).
+  const url = `${typeof window !== 'undefined' ? window.location.origin : appBaseUrl()}/kelas/${kelas.token}`;
 
   const muat = useCallback(async () => {
     if (sedangMuat.current) return;

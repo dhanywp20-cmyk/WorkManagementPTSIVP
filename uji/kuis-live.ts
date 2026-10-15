@@ -31,7 +31,7 @@ console.log('\n1. Peserta tidak bisa mulai sebelum admin menekan Mulai');
 {
   cek('lobi tetap lobi selama apa pun', tahapEfektif(lobi, T0 + 3_600_000) === 'lobi');
   const j = periksaJawab(lobi, 0, 'A', T0);
-  cek('jawaban di lobi ditolak', !j.ok);
+  cek('jawaban di lobi ditolak', !j.ok && j.alasan === 'Kuis belum dimulai.');
   cek('Mulai tanpa soal sah ditolak', 'galat' in transisiLive(lobi, 'live_mulai', T0, []));
 }
 
