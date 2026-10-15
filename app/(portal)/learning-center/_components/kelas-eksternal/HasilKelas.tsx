@@ -1,6 +1,6 @@
 'use client';
 
-/** Peserta & nilai satu Kelas Eksternal (nilai terakhir tiap peserta) + unduh CSV. */
+/** Peserta & nilai satu Kelas Eksternal (nilai terakhir tiap peserta) + unduh CSV. Kuis Live: papan skor per sesi. */
 import { useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
@@ -23,16 +23,25 @@ const durasi = (d: number | null | undefined) => (d == null ? '-' : `${Math.floo
 
 export function HasilKelas({ id, judul, onTutup }: { id: string; judul: string; onTutup: () => void }) {
   const [baris, setBaris] = useState<BarisHasil[] | null>(null);
+  const [live, setLive] = useState<HasilLive | null>(null);
+  const [sesi, setSesi] = useState<number | null>(null);
   const [galat, setGalat] = useState('');
 
   useEffect(() => {
     let batal = false;
-    fetch(`/api/admin/kelas-eksternal?id=${id}`, { cache: 'no-store' })
+    fetch(`/api/admin/kelas-eksternal?id=${id}${sesi ? `&sesi=${sesi}` : ''}`, { cache: 'no-store' })
       .then(r => r.json().then(j => ({ ok: r.ok, j })))
-      .then(({ ok, j }) => { if (batal) return; if (!ok) setGalat(j.error || 'Gagal memuat.'); else setBaris(j.peserta); })
+      .then(({ ok, j }) => {
+        if (batal) return;
+        if (!ok) setGalat(j.error || 'Gagal memuat.');
+        else if (j.live) setLive(j.live);
+        else setBaris(j.peserta);
+      })
       .catch(() => { if (!batal) setGalat('Gagal memuat.'); });
     return () => { batal = true; };
-  }, [id]);
+  }, [id, sesi]);
+
+  if (live) return <PapanLive judul={judul} live={live} onSesi={setSesi} onTutup={onTutup} />;
 
   const unduh = () => {
     const kepala = ['Nama', 'Terdaftar', 'Selesai', 'Nilai', 'Benar', 'Jumlah soal', 'Lulus', 'Durasi (detik)', 'Lewat waktu', 'Pindah tab', 'Keluar jendela', 'Salin/tempel', 'Dikirim otomatis', 'Percobaan'];
@@ -95,6 +104,68 @@ export function HasilKelas({ id, judul, onTutup }: { id: string; judul: string; 
                     ) : <span className="text-[12px] text-slate-400">-</span>}
                   </td>
                   <td className="px-2 py-2 text-right tabular-nums text-slate-600">{durasi(b.hasil?.durasi_detik)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+interface HasilLive {
+  sesi: number; jumlahSesi: number; dimainkan: number;
+  papan: { peserta_id: string; nama: string; poin: number; benar: number; dijawab: number; waktuBenarMs: number; peringkat: number }[];
+}
+
+/** Kuis Live: peringkat akhir satu sesi (tanpa nilai lulus) + CSV. */
+function PapanLive({ judul, live, onSesi, onTutup }: { judul: string; live: HasilLive; onSesi: (s: number) => void; onTutup: () => void }) {
+  const rata = (b: HasilLive['papan'][number]) => (b.benar ? (b.waktuBenarMs / b.benar / 1000).toFixed(1) : '-');
+  const unduh = () => {
+    const sel = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+    const kepala = ['Peringkat', 'Nama', 'Poin', 'Benar', 'Dijawab', 'Soal dimainkan', 'Rata-rata waktu benar (detik)'];
+    const isi = live.papan.map(b => [b.peringkat, b.nama, b.poin, b.benar, b.dijawab, live.dimainkan, rata(b)].map(sel).join(','));
+    const blob = new Blob(['\ufeff' + [kepala.map(sel).join(','), ...isi].join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Kuis-${judul.replace(/[^\w-]+/g, '-').slice(0, 60)}-sesi${live.sesi}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  return (
+    <Modal buka onTutup={onTutup} judul={judul} ukuran="xl"
+      keterangan={live.jumlahSesi ? `Sesi ${live.sesi} · ${live.papan.length} pemain · ${live.dimainkan} soal dimainkan` : 'Belum pernah dimainkan'}
+      footer={<>
+        <TombolModal onClick={onTutup}>Tutup</TombolModal>
+        <TombolModal jenis="utama" onClick={unduh} disabled={!live.papan.length}><Download size={14} className="inline mr-1" />CSV</TombolModal>
+      </>}>
+      {live.jumlahSesi > 1 && (
+        <div className="mb-3 flex items-center gap-2">
+          <label htmlFor="hk-sesi" className="text-[12px] font-bold uppercase tracking-wider text-slate-500">Sesi</label>
+          <select id="hk-sesi" value={live.sesi} onChange={e => onSesi(Number(e.target.value))}
+            className="rounded-lg border border-slate-300 px-2 py-1 text-[13px] font-semibold">
+            {Array.from({ length: live.jumlahSesi }, (_, i) => live.jumlahSesi - i).map(n => <option key={n} value={n}>Sesi {n}{n === live.jumlahSesi ? ' (terakhir)' : ''}</option>)}
+          </select>
+        </div>
+      )}
+      {live.papan.length === 0 ? <p className="py-8 text-center text-[13px] text-slate-500">Belum ada pemain.</p> : (
+        <div className="overflow-x-auto -mx-1">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="text-left text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200">
+                <th className="px-2 py-2 w-12">#</th><th className="px-2 py-2">Nama</th><th className="px-2 py-2 text-right">Poin</th>
+                <th className="px-2 py-2 text-right">Benar</th><th className="px-2 py-2 text-right" title="Rata-rata waktu menjawab benar">Rata-rata</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {live.papan.map(b => (
+                <tr key={b.peserta_id}>
+                  <td className="px-2 py-2 font-black tabular-nums text-slate-700">{b.peringkat <= 3 ? ['🥇', '🥈', '🥉'][b.peringkat - 1] : b.peringkat}</td>
+                  <td className="px-2 py-2 font-semibold text-slate-800">{b.nama}</td>
+                  <td className="px-2 py-2 text-right font-bold tabular-nums text-slate-900">{b.poin.toLocaleString('id-ID')}</td>
+                  <td className="px-2 py-2 text-right tabular-nums text-slate-600">{b.benar}/{live.dimainkan}</td>
+                  <td className="px-2 py-2 text-right tabular-nums text-slate-600">{rata(b)}{b.benar ? ' dtk' : ''}</td>
                 </tr>
               ))}
             </tbody>

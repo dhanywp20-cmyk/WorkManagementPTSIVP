@@ -6,6 +6,8 @@
  * menyimpan hash-nya - jadi kembali dari HP yang sama melanjutkan, bukan mendaftar ulang.
  */
 
+import { MAKS_PESERTA_LIVE, rapikanDetik, rapikanUrlGambar, rapikanWarna } from './kuis-live';
+
 export const MAKS_NAMA = 80;
 export const PILIHAN = ['A', 'B', 'C', 'D'] as const;
 export type Pilihan = typeof PILIHAN[number];
@@ -21,10 +23,17 @@ export interface KelasEksternal {
   mode_mulai: ModeMulai; dimulai_pada: string | null;
   /** Kirim otomatis bila jumlah pelanggaran mencapai ini; null = hanya dicatat. */
   batas_pelanggaran: number | null;
+  /** 'mandiri': ujian dikerjakan sendiri-sendiri (nilai & KKM). 'live': kuis ala Kahoot dipandu admin (lib/kuis-live.ts). */
+  jenis: JenisKelas;
+  /** Kuis Live: waktu tiap soal (detik). */
+  detik_per_soal: number;
+  /** Tampilan: warna tema (#rrggbb; null = ungu bawaan), logo event & gambar latar (unggahan admin). */
+  tema_warna: string | null; logo_url: string | null; latar_url: string | null;
   dibuat_nama?: string | null; created_at?: string; updated_at?: string;
 }
 
 export type ModeMulai = 'auto' | 'admin';
+export type JenisKelas = 'mandiri' | 'live';
 
 // ── Pelanggaran ─────────────────────────────────────────────────────────────
 export const JENIS_PELANGGARAN = ['pindah_tab', 'keluar_jendela', 'salin_tempel'] as const;
@@ -140,9 +149,16 @@ export function rapikanKelas(m: Record<string, unknown>): { galat: string } | Om
     return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : bawaan;
   };
   const tgl = (v: unknown) => { const s = String(v ?? '').trim(); if (!s) return null; const d = new Date(s); return Number.isNaN(d.getTime()) ? null : d.toISOString(); };
-  const buka = tgl(m.buka_pada), tutup = tgl(m.tutup_pada);
+  const jenis: JenisKelas = m.jenis === 'live' ? 'live' : 'mandiri';
+  //  Kuis Live dibuka-tutup oleh admin dari layar host, bukan jadwal - jadwal lama diabaikan.
+  const buka = jenis === 'live' ? null : tgl(m.buka_pada), tutup = jenis === 'live' ? null : tgl(m.tutup_pada);
   if (buka && tutup && new Date(tutup) <= new Date(buka)) return { galat: 'Waktu tutup harus sesudah waktu buka.' };
   return {
+    jenis,
+    detik_per_soal: rapikanDetik(m.detik_per_soal),
+    tema_warna: rapikanWarna(m.tema_warna),
+    logo_url: rapikanUrlGambar(m.logo_url),
+    latar_url: rapikanUrlGambar(m.latar_url),
     judul,
     keterangan: String(m.keterangan ?? '').trim().slice(0, 1000),
     question_ids: ids,
@@ -152,7 +168,7 @@ export function rapikanKelas(m: Record<string, unknown>): { galat: string } | Om
     satu_kali: m.satu_kali !== false,
     aktif: m.aktif !== false,
     buka_pada: buka, tutup_pada: tutup,
-    maks_peserta: angka(m.maks_peserta, 1, 2000, 200) as number,
+    maks_peserta: angka(m.maks_peserta, 1, jenis === 'live' ? MAKS_PESERTA_LIVE : 2000, 200) as number,
     mode_mulai: m.mode_mulai === 'admin' ? 'admin' : 'auto',
     batas_pelanggaran: angka(m.batas_pelanggaran, 1, 50, null),
   };

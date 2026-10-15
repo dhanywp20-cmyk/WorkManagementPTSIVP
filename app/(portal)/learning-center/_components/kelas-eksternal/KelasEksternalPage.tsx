@@ -3,16 +3,19 @@
 /**
  * Learning Center -> Kelas Eksternal: quiz untuk customer tanpa akun. Admin membuat kelas (soal dari
  * Bank Soal), membagikan link/QR, lalu melihat nilai. Halaman customer: /kelas/<token>.
+ * Dua format: Kuis Live (ala Kahoot, dipandu dari LayarHost) dan Ujian mandiri (nilai & KKM).
  */
 import { useCallback, useEffect, useState } from 'react';
-import { BarChart3, Copy, ExternalLink, Pencil, Play, Plus, QrCode, RotateCcw, Square, Trash2, Users } from 'lucide-react';
+import { BarChart3, Copy, ExternalLink, MonitorPlay, Pencil, Play, Plus, QrCode, RotateCcw, Square, Trash2, Users } from 'lucide-react';
 import { ConfirmDialog, Modal, TombolModal, type ConfirmState } from '@/components/shared';
 import { appBaseUrl } from '@/lib/app-url';
 import { statusKelas, type KelasEksternal, type StatusKelas } from '@/lib/kelas-eksternal';
+import { WARNA_BAWAAN, labelTahap, statusLive, tahapEfektif, type StatusLive } from '@/lib/kuis-live';
 import { FormKelas } from './FormKelas';
 import { HasilKelas } from './HasilKelas';
+import { LayarHost } from './LayarHost';
 
-type Baris = KelasEksternal & { jumlahPeserta: number; jumlahSelesai: number; rataRata: number | null };
+type Baris = KelasEksternal & StatusLive & { jumlahPeserta: number; jumlahSelesai: number; rataRata: number | null };
 
 const LABEL_STATUS: Record<StatusKelas, { teks: string; kelas: string }> = {
   buka: { teks: 'Dibuka', kelas: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
@@ -30,6 +33,7 @@ export function KelasEksternalPage() {
   const [galat, setGalat] = useState('');
   const [form, setForm] = useState<KelasEksternal | 'baru' | null>(null);
   const [hasil, setHasil] = useState<Baris | null>(null);
+  const [host, setHost] = useState<Baris | null>(null);
   const [qr, setQr] = useState<{ judul: string; url: string; gambar: string } | null>(null);
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const [kabar, setKabar] = useState('');
@@ -86,11 +90,11 @@ export function KelasEksternalPage() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex-1 min-w-0">
           <h2 className="text-[16px] font-bold text-slate-900">Kelas Eksternal</h2>
-          <p className="text-[12px] text-slate-500">Quiz untuk customer · cukup isi nama · tanpa akun</p>
+          <p className="text-[12px] text-slate-500">Kuis live ala Kahoot & ujian untuk customer · cukup isi nama · tanpa akun</p>
         </div>
         {ubah && (
           <button type="button" onClick={() => setForm('baru')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-[13px] font-bold"><Plus size={15} />Kelas baru</button>
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-[13px] font-bold"><Plus size={15} />Buat baru</button>
         )}
       </div>
 
@@ -105,6 +109,15 @@ export function KelasEksternalPage() {
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {(daftar ?? []).map(k => {
+          if (k.jenis === 'live') return (
+            <KartuLive key={k.id} k={k} ubah={ubah} onHost={() => setHost(k)} onHasil={() => setHasil(k)} onUbah={() => setForm(k)}
+              onSalin={() => void salin(k)} onQr={() => void bukaQr(k)}
+              onHapus={() => setKonfirmasi({
+                message: `Hapus "${k.judul}"?`, description: `${k.jumlahPeserta} pemain beserta skornya ikut terhapus permanen.`,
+                confirmLabel: 'Hapus', danger: true,
+                onConfirm: async () => { setKonfirmasi(null); const g = await panggil({ aksi: 'hapus', id: k.id }); if (g) setGalat(g); },
+              })} />
+          );
           const st = LABEL_STATUS[statusKelas(k, k.jumlahPeserta)];
           return (
             <section key={k.id} className="rounded-2xl bg-white border border-slate-200 p-4 space-y-3 shadow-sm">
@@ -177,6 +190,7 @@ export function KelasEksternalPage() {
             return g;
           }} />
       )}
+      {host && <LayarHost kelas={host} onTutup={() => { setHost(null); void muat(); }} onHasil={() => setHasil(host)} />}
       {hasil && <HasilKelas id={hasil.id} judul={hasil.judul} onTutup={() => setHasil(null)} />}
       {qr && (
         <Modal buka onTutup={() => setQr(null)} judul={qr.judul} ukuran="sm"
@@ -190,5 +204,63 @@ export function KelasEksternalPage() {
       )}
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     </div>
+  );
+}
+
+const LABEL_LIVE: Record<ReturnType<typeof statusLive>, string> = { buka: 'Dibuka', nonaktif: 'Nonaktif', selesai: 'Selesai', penuh: 'Penuh' };
+
+/** Kartu Kuis Live: tombol utama membuka layar host (proyektor). */
+function KartuLive({ k, ubah, onHost, onHasil, onUbah, onSalin, onQr, onHapus }: {
+  k: Baris; ubah: boolean; onHost: () => void; onHasil: () => void; onUbah: () => void; onSalin: () => void; onQr: () => void; onHapus: () => void;
+}) {
+  const t = tahapEfektif(k);
+  const st = statusLive(k, k.jumlahPeserta);
+  const warna = k.tema_warna ?? WARNA_BAWAAN;
+  return (
+    <section className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+      <div className="relative h-20 px-4 py-3 flex items-start gap-2 text-white"
+        style={{
+          backgroundColor: warna,
+          ...(k.latar_url ? { backgroundImage: `linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.6)), url("${k.latar_url}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
+        }}>
+        {k.logo_url && (
+          <span className="flex-shrink-0 rounded-lg bg-white/95 px-1.5 py-1">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={k.logo_url} alt="" className="h-7 w-auto max-w-[90px] object-contain" />
+          </span>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="text-[10.5px] font-black uppercase tracking-[0.18em] text-white/80">Kuis Live</p>
+          <h3 className="text-[14.5px] font-black leading-snug line-clamp-2">{k.judul}</h3>
+        </div>
+        <span className="px-2 py-0.5 rounded-full bg-black/30 text-[11px] font-bold whitespace-nowrap">{LABEL_LIVE[st]}</span>
+      </div>
+      <div className="p-4 space-y-3">
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <div className="rounded-lg bg-slate-50 py-2"><p className="text-[17px] font-extrabold tabular-nums text-slate-900">{k.jumlahPeserta}</p><p className="text-[10.5px] font-bold uppercase text-slate-500">Pemain</p></div>
+          <div className="rounded-lg bg-slate-50 py-2"><p className="text-[17px] font-extrabold tabular-nums text-slate-900">{k.question_ids.length}</p><p className="text-[10.5px] font-bold uppercase text-slate-500">Soal</p></div>
+          <div className="rounded-lg bg-slate-50 py-2"><p className="text-[17px] font-extrabold tabular-nums text-slate-900">{k.detik_per_soal}<span className="text-[11px]">dtk</span></p><p className="text-[10.5px] font-bold uppercase text-slate-500">Per soal</p></div>
+        </div>
+        <div className="flex items-center gap-2 rounded-xl border border-violet-100 bg-violet-50/70 px-3 py-2">
+          <span className="flex-1 min-w-0 text-[12.5px] font-semibold text-violet-900 truncate">
+            {labelTahap(t, k.live_indeks, t === 'lobi' ? k.question_ids.length : k.live_urutan.length)}{k.live_sesi > 0 ? ` · sesi ${k.live_sesi}` : ''}
+          </span>
+          {ubah && (
+            <button type="button" onClick={onHost}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-[12.5px] font-bold" style={{ backgroundColor: warna }}>
+              <MonitorPlay size={14} />{t === 'lobi' ? 'Buka layar host' : 'Lanjutkan host'}
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <button type="button" className={tombol} onClick={onSalin} title="Salin link untuk peserta"><Copy size={13} />Link</button>
+          <button type="button" className={tombol} onClick={onQr} title="QR untuk dipindai peserta"><QrCode size={13} />QR</button>
+          <a className={tombol} href={`/kelas/${k.token}`} target="_blank" rel="noopener noreferrer" title="Buka halaman peserta"><ExternalLink size={13} />Uji</a>
+          <button type="button" className={tombol} onClick={onHasil}><BarChart3 size={13} />Hasil</button>
+          {ubah && <button type="button" className={tombol} onClick={onUbah}><Pencil size={13} />Ubah</button>}
+          {ubah && <button type="button" className={`${tombol} text-red-600`} aria-label={`Hapus ${k.judul}`} title="Hapus" onClick={onHapus}><Trash2 size={13} /></button>}
+        </div>
+      </div>
+    </section>
   );
 }

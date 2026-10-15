@@ -10,7 +10,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Clock, FileQuestion, Loader2, Lock, RotateCcw, ShieldAlert, Target, Users } from 'lucide-react';
 import type { AlasanKirimOtomatis } from '@/lib/kelas-eksternal';
-import { hapusDraf, panggilKelas, simpanTokenPeserta, type Hasil, type InfoKelas, type Percobaan } from './_bagian/api';
+import { adalahLive, hapusDraf, panggilKelas, simpanTokenPeserta, type Hasil, type InfoKelas, type InfoLive, type Percobaan } from './_bagian/api';
+import { KuisLive } from './_bagian/KuisLive';
 import { LayarQuiz } from './_bagian/LayarQuiz';
 
 /** Ruang tunggu mode admin: cek tiap 4 dtk apakah pengajar sudah menekan Mulai. */
@@ -31,6 +32,7 @@ function Info({ ikon, teks }: { ikon: React.ReactNode; teks: string }) {
 export default function HalamanKelas() {
   const { token } = useParams<{ token: string }>();
   const [info, setInfo] = useState<InfoKelas | null>(null);
+  const [live, setLive] = useState<InfoLive | null>(null);
   const [galat, setGalat] = useState('');
   const [nama, setNama] = useState('');
   const [sibuk, setSibuk] = useState(false);
@@ -40,12 +42,14 @@ export default function HalamanKelas() {
   const [bolehUlang, setBolehUlang] = useState(false);
 
   const muat = useCallback(async () => {
-    const r = await panggilKelas<InfoKelas>(token);
+    const r = await panggilKelas<InfoKelas | InfoLive>(token);
     if (!r.ok) { setGalat(r.data.error || 'Link kelas tidak ditemukan.'); return; }
+    document.title = r.data.kelas.judul;
+    //  Kuis Live punya alurnya sendiri (KuisLive) - halaman ini hanya meneruskan.
+    if (adalahLive(r.data)) { setLive(r.data); return; }
     setInfo(r.data);
     setHasil(r.data.hasil);
     setBolehUlang(!r.data.kelas.satuKali);
-    document.title = r.data.kelas.judul;
   }, [token]);
   useEffect(() => { void muat(); }, [muat]);
 
@@ -96,6 +100,7 @@ export default function HalamanKelas() {
     setPesan('Jawaban belum terkirim. Periksa internet lalu tekan Kirim lagi - jawaban Anda tersimpan di perangkat ini.');
   }, [percobaan, token]);
 
+  if (live) return <KuisLive token={token} awal={live} />;
   if (galat) {
     return <Kartu><div className="text-center space-y-3"><Lock size={32} className="mx-auto text-slate-400" /><p className="text-[15px] font-bold text-slate-800">{galat}</p></div></Kartu>;
   }
