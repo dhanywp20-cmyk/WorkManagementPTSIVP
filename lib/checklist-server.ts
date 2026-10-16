@@ -1,4 +1,5 @@
 import type { NextRequest } from 'next/server';
+import { aktivitasProyek, type ItemSelesai } from '@/lib/checklist-ringkasan';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from './supabase-admin';
@@ -213,7 +214,16 @@ export async function muatProyek(db: Db, akun: Akun, proyekId: string): Promise<
   const terlihat = lihatSemua ? ringkas : ringkas.filter(c => c.saya);
   if (!terlihat.length && !lihatSemua) return 'terlarang';
 
-  return { proyek: { ...proyek, share_token: admin ? proyek.share_token : null }, checklist: terlihat, admin };
+  //  Ringkasan "Dikerjakan Oleh" (handler saja) & laju harian. Hanya item selesai, 4 kolom kecil,
+  //  lalu diagregasi di sini - yang dikirim ke peramban cuma angka per orang & per hari.
+  const idTerlihat = terlihat.map(c => c.id);
+  const selesai = idTerlihat.length
+    ? await semuaBaris<ItemSelesai>((a, b) => db.from('checklist_item').select('daftar_id,selesai,selesai_oleh,selesai_pada')
+        .in('daftar_id', idTerlihat).eq('selesai', true).order('id').range(a, b))
+    : [];
+  const aktivitas = aktivitasProyek(selesai, anggota.filter(a => idTerlihat.includes(a.daftar_id)));
+
+  return { proyek: { ...proyek, share_token: admin ? proyek.share_token : null }, checklist: terlihat, admin, aktivitas };
 }
 
 /** Hak akun terhadap satu checklist; null = tidak boleh melihat sama sekali. */
@@ -232,7 +242,7 @@ export async function hakAtas(db: Db, akun: Akun, daftarId: string):
 }
 
 /**
- * Isi lengkap satu checklist. `publik` (link share) membuang token, anggota,
+ * Isi lengkap satu checklist. `publik` (link share) membuang token, id anggota,
  * dan riwayat: halaman share tidak perlu tahu token-nya sendiri, dan riwayat
  * adalah bahan pantauan di dalam aplikasi.
  */
@@ -260,7 +270,10 @@ export async function muatChecklist(db: Db, daftarId: string, opsi: { publik: bo
   return {
     proyek: pRes.data,
     daftar: { ...daftar, share_token: tampilToken ? daftar.share_token : null },
-    anggota: opsi.publik ? [] : (aRes.data ?? []),
+    //  Publik: nama handler saja (tanpa user_id) - untuk ringkasan "Dikerjakan Oleh".
+    anggota: opsi.publik
+      ? ((aRes.data ?? []) as ChecklistAnggota[]).map(x => ({ daftar_id: x.daftar_id, user_id: '', nama: x.nama }))
+      : (aRes.data ?? []),
     bagian: bRes.data ?? [],
     items,
     riwayat: rRes.error ? [] : (rRes.data ?? []),

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useTransition } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase, setDbToken } from '@/lib/supabase';
 import { setSession, clearSession, getSession, verifySessionFromCookie } from '@/lib/auth';
@@ -88,10 +88,9 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     //  Datang dari tautan langsung tanpa sesi (proxy.ts membawa ?lanjut=): kembali ke halaman itu.
     const lanjut = tujuanLanjutAman(new URLSearchParams(window.location.search).get('lanjut'));
     if (lanjut) router.replace(lanjut);
-    window.setTimeout(() => setDasborMuncul(false), 700);
+    window.setTimeout(() => setDasborMuncul(false), 520);
   }, [router]);
   const [loading, setLoading] = useState(true);
-  const [menuLoading, setMenuLoading] = useState(false);
   const [showTour, setShowTour] = useState(false);
   const [tourVisible, setTourVisible] = useState(false);
   const [tourHighlightKey, setTourHighlightKey] = useState<string | null>(null);
@@ -147,42 +146,34 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     return () => ro.disconnect();
   });
 
-  const [visibleMenuItems, setVisibleMenuItems] = useState<MenuItem[]>([]);
+  /*
+    Daftar menu dihitung langsung dari akun, BUKAN lewat timer "memuat menu". Dulu ada setTimeout
+    400 ms yang menyalakan penanda memuat setiap kali objek `currentUser` berganti - dan saat
+    refresh objek itu diganti dua kali (sesi, lalu data segar dari DB) - sehingga menu berkedip
+    hilang-muncul dan terasa macet padahal datanya sudah ada. Bergantung pada ISI (menu yang
+    diizinkan), bukan identitas objek, jadi pembaruan profil yang tidak mengubah menu tidak
+    menyentuh sidebar sama sekali.
 
-
-  useEffect(() => {
-    if (!currentUser) return;
-    setMenuLoading(true);
-    const timer = setTimeout(() => {
-      const allowed = currentUser.allowed_menus;
-      /*
-        Yang melewati saringan allowed_menus bukan cuma admin/superadmin,
-        tapi juga akun Team yang diberi toggle "Full Access" di Admin Panel.
-        Full Access artinya SELURUH menu tampil tanpa ada yang disembunyikan -
-        kalau di sini hanya role admin yang dilewatkan, pemegang Full Access
-        tetap kehilangan menu yang tidak tercentang di allowed_menus-nya, dan
-        satu-satunya cara membukanya jadi mencentang menu satu per satu.
-      */
-      if (!allowed || hasFullAccess(currentUser)) {
-        setVisibleMenuItems(DAFTAR_MENU);
-      } else {
-        // Always use DAFTAR_MENU order (code order), not allowed_menus DB order
-        setVisibleMenuItems(DAFTAR_MENU.filter(m => allowed.includes(m.key)));
-      }
-      setMenuLoading(false);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [currentUser]);
+    Yang melewati saringan allowed_menus bukan cuma admin/superadmin, tapi juga akun Team dengan
+    toggle "Full Access" (seluruh menu tampil, lihat lib/constants.ts hasFullAccess). Urutan
+    selalu urutan DAFTAR_MENU (kode), bukan urutan allowed_menus di DB.
+  */
+  const allowedMenus = currentUser?.allowed_menus ?? null;
+  const semuaMenu = !!currentUser && (!allowedMenus || hasFullAccess(currentUser));
+  const kunciMenu = !currentUser ? '' : semuaMenu ? '*' : (allowedMenus ?? []).join(',');
+  const visibleMenuItems: MenuItem[] = useMemo(() => {
+    if (!kunciMenu) return [];
+    if (kunciMenu === '*') return DAFTAR_MENU;
+    const izin = kunciMenu.split(',');
+    return DAFTAR_MENU.filter(m => izin.includes(m.key));
+  }, [kunciMenu]);
 
   const handleLogout = () => {
     autoNavigatedRef.current = false; // reset so next login re-navigates correctly
     setIsLoggedIn(false); setCurrentUser(null);
-    /* Wajib: tanpa ini `masukBerhasil` tetap true selamanya, dan begitu
-       halaman login dirender ulang setelah logout, kelas .lc-bongkar terpasang
-       lagi dari awal. Animasinya `forwards`, jadi halaman yang baru saja muncul
-       langsung terbongkar dan menyisakan layar kosong - persis bug yang dulu
-       dilaporkan. sudahMasukRef juga direset supaya login BERIKUTNYA bisa
-       memicu urutan keluar lagi, bukan cuma yang pertama. */
+    /* Wajib: dasborMuncul direset, dan sudahMasukRef juga supaya login BERIKUTNYA bisa memicu
+       urutan masuk lagi, bukan cuma yang pertama. (Animasi login memakai fill `forwards`, tapi
+       hanya pada halaman login yang dilepas dari DOM - state-nya baru lagi tiap login.) */
     setDasborMuncul(false);
     sudahMasukRef.current = false;
     clearSession();
@@ -277,7 +268,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     .filter(it => it.internal || (it.embed && !it.external)).map(it => it.url.split('?')[0]);
   const kunciPrefetch = [...new Set(daftarPrefetch)].join('|');
   useEffect(() => {
-    if (!currentUser || menuLoading || !kunciPrefetch) return;
+    if (!currentUser || !kunciPrefetch) return;
     const hemat = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
     if (hemat) return;
     //  Sekali per 30 menit per tab: tiap prefetch dihitung sebagai permintaan ke CDN Vercel (kuota
@@ -303,7 +294,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     const awal = setTimeout(() => tunda(lanjut), 2000);
     return () => { batal = true; clearTimeout(awal); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.id, menuLoading, kunciPrefetch]);
+  }, [currentUser?.id, kunciPrefetch]);
 
   // postMessage bridge
   // Receives CC_NAVIGATE messages from Command Center iframe and routes to the
@@ -337,42 +328,60 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    let batal = false;
     const load = async () => {
       /*
         sessionStorage kosong bukan berarti sesinya sudah habis - itu cuma
         berarti tab/proses ini baru (refresh yang mendaur ulang proses tab,
         PWA yang dibuka lagi setelah OS membekukan/menutupnya di HP, dst).
         Cookie httpOnly (umurnya 6 jam, sama dengan SESSION_DURATION_MS) yang
-        jadi sumber kebenaran sebenarnya - verifySessionFromCookie() sudah
-        ada persis untuk kasus ini tapi sebelumnya tidak pernah dipanggil,
-        jadi orang selalu dilempar ke layar login walau cookie-nya masih sah.
+        jadi sumber kebenaran sebenarnya - verifySessionFromCookie() dipanggil
+        untuk kasus ini, jadi orang tidak dilempar ke layar login walau
+        cookie-nya masih sah.
+
+        Urutan sengaja: portal TAMPIL begitu identitas diketahui (sesi tab, atau cookie). Data
+        segar dari DB (peran, menu, penanda pimpinan) dimuat sesudahnya di latar belakang dan hanya
+        menyentuh layar bila ada yang BERUBAH. Dulu layar "Memuat portal" menunggu tiga permintaan
+        berantai (cookie -> profil -> pimpinan) padahal isinya hampir selalu sama dengan sesi.
       */
       let parsed = getSession<User>();
       if (!parsed) parsed = await verifySessionFromCookie<User>();
+      if (batal) return;
       if (!parsed) { setLoading(false); return; }
-      try {
-        setCurrentUser(parsed);
-        setIsLoggedIn(true);
-        const { data, error } = await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').eq('id', parsed.id).single();
-        const userData: User = (!error && data) ? data : parsed;
-        if (!error && data) {
-          //  Penanda pimpinan dibaca ulang dari DB lewat kueri terpisah & toleran (kolom baru tidak
-          //  dimasukkan ke select utama, lihat lib/auth.ts). Tanpa ini, sesi yang dibuat SEBELUM
-          //  akun dijadikan pimpinan tetap "bukan pimpinan" sampai logout - datanya tersaring.
-          const { data: pim, error: galatPim } = await supabase.from('users').select('pimpinan').eq('id', parsed.id).maybeSingle();
-          const pimpinanDb = !galatPim && pim ? (pim as { pimpinan?: unknown }).pimpinan === true : (parsed as { pimpinan?: unknown }).pimpinan === true;
-          const segar = { ...data, pimpinan: pimpinanDb };
-          setCurrentUser(segar);
-          setSession(segar);
-        }
-        // Permission-Aware Dashboard = homepage utk SEMUA role. Semua mendarat di
-        // dashboard home saat reload; tidak lagi auto-lompat ke menu pertama.
-        autoNavigatedRef.current = true; // matikan auto-navigate useEffect
-        setShowSidebar(true);
-      } catch { /* ignore */ }
+      // Permission-Aware Dashboard = homepage utk SEMUA role. Semua mendarat di
+      // dashboard home saat reload; tidak lagi auto-lompat ke menu pertama.
+      autoNavigatedRef.current = true; // matikan auto-navigate useEffect
+      setCurrentUser(parsed);
+      setIsLoggedIn(true);
+      setShowSidebar(true);
       setLoading(false);
+
+      try {
+        //  Dua kueri bersamaan. Penanda pimpinan (lib/auth.ts) kueri terpisah & toleran: kolom baru
+        //  tidak dimasukkan ke select utama; tanpa ini sesi yang dibuat SEBELUM akun dijadikan
+        //  pimpinan tetap "bukan pimpinan" sampai logout - datanya tersaring.
+        const [profil, pim] = await Promise.all([
+          supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').eq('id', parsed.id).single(),
+          supabase.from('users').select('pimpinan').eq('id', parsed.id).maybeSingle(),
+        ]);
+        if (batal || profil.error || !profil.data) return;
+        const pimpinanDb = !pim.error && pim.data
+          ? (pim.data as { pimpinan?: unknown }).pimpinan === true
+          : (parsed as { pimpinan?: unknown }).pimpinan === true;
+        const segar = { ...profil.data, pimpinan: pimpinanDb } as User;
+        setSession(segar);
+        //  Hanya ganti objek bila isinya memang berbeda - mengganti identitas objek yang sama
+        //  isinya membuat setiap efek bergantung-currentUser (notifikasi, prefetch, dst) jalan ulang.
+        setCurrentUser(lama => {
+          if (!lama) return segar;
+          const a = lama as unknown as Record<string, unknown>, b = segar as unknown as Record<string, unknown>;
+          const beda = Object.keys(b).some(k => JSON.stringify(a[k]) !== JSON.stringify(b[k]));
+          return beda ? { ...lama, ...segar } : lama;
+        });
+      } catch { /* data segar hanya penyempurna - gagal tidak apa-apa, sesi tab tetap dipakai */ }
     };
     load();
+    return () => { batal = true; };
   }, []);
 
   // isAdmin TETAP admin/superadmin murni - khusus tombol Admin Panel (kelola
@@ -484,13 +493,16 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     );
   };
 
-  // LOADING
+  // LOADING - hanya terlihat bila sesi tab kosong dan cookie harus diperiksa ke server (refresh pertama,
+  // PWA dibuka lagi). Muncul 200 ms kemudian: pemuatan cepat tidak berkedip, dan tanpa kartu/pemintal.
   if (loading) {
     return (
-      <div className="flex items-center justify-center bg-cover bg-center bg-fixed" style={{ background: 'var(--latar-halaman)', minHeight: '100dvh' }}>
-        <div className="flex flex-col items-center gap-4 px-10 py-8 rounded-2xl" style={{ background: 'rgba(255,255,255,0.92)', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
-          <div className="w-12 h-12 rounded-full border-4 border-t-rose-600 border-rose-200 animate-spin" />
-          <p className="text-slate-700 font-semibold">Memuat portal...</p>
+      <div className="flex items-center justify-center" style={{ background: 'var(--latar-halaman)', minHeight: '100dvh' }} aria-busy="true">
+        <div className="flex flex-col items-center gap-5" style={{ animation: 'fadeIn 400ms ease 200ms both' }}>
+          <LogoMerek ukuran="lg" />
+          <div className="w-28 h-1 rounded-full overflow-hidden" style={{ background: 'rgba(15,23,42,0.1)' }}>
+            <div className="h-full w-1/2 rounded-full" style={{ background: merek.warnaUtama, animation: 'loadingBar 1.1s ease-in-out infinite' }} />
+          </div>
         </div>
       </div>
     );
@@ -615,7 +627,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   // MENU BAWAH HP / APK (shared) - pengganti sidebar di layar < md: semua menu, digeser kiri-kanan.
   //  Profil dibuka dari avatar di header.
   const bukaDashboard = () => { setShowSidebar(true); pindahKe('/dashboard'); };
-  const renderNavBawah = () => (!menuLoading && !layarPenuh && currentUser ? (
+  const renderNavBawah = () => (!layarPenuh && currentUser ? (
     <NavBawahMobile
       aksen={merek.warnaAksen}
       beranda={{ key: '__dashboard', label: 'Dashboard', aktif: showSidebar ? berandaTersorot : true, onPilih: bukaDashboard }}
@@ -648,7 +660,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   // VIEW: NO SIDEBAR (main dashboard)
   if (!showSidebar) {
     return (
-      <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
+      <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
         {renderModals()}
         {/* ── Jelajahi Button (always visible while logged-in, before sidebar loads) ── */}
         {currentUser && !tourVisible && (
@@ -658,7 +670,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
 
         <div className="flex-1 overflow-y-auto py-6 px-4 md:px-8">
           <div className="max-w-[1600px] mx-auto space-y-8">
-            {menuLoading ? <MenuLoadingOverlay /> : (
+            {(
               <>
                 {/* ── Analytics Dashboard — admin, PTS sup, sales sup ── */}
                 {canAccessKPI && currentUser && (
@@ -736,7 +748,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
 
   // VIEW: SIDEBAR
   return (
-    <div className={`${dasborMuncul ? 'lc-dasbor-muncul' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
+    <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
       {isLoggedIn && <SessionExpiryBanner />}
       {renderModals()}
 
@@ -762,7 +774,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
         {/* SIDEBAR - lihat SidebarPortal.tsx */}
         <SidebarPortal
           sidebarCollapsed={sidebarCollapsed} setSidebarCollapsed={setSidebarCollapsed}
-          tourVisible={tourVisible} tourHighlightKey={tourHighlightKey} menuLoading={menuLoading}
+          tourVisible={tourVisible} tourHighlightKey={tourHighlightKey}
           visibleMenuItems={visibleMenuItems} showDashboardPanel={berandaTersorot} aktifUrl={aktifUrl}
           currentUser={currentUser} isAdmin={isAdmin} isFullAccess={isFullAccess}
           pendingUsers={pendingUsers} pendingRequests={pendingRequests}
@@ -833,18 +845,6 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
           100% { transform: translateX(200%); }
         }
       `}</style>
-    </div>
-  );
-}
-
-/** Penanda memuat menu (tingkat modul: komponen di dalam render dipasang ulang tiap render). */
-function MenuLoadingOverlay() {
-  return (
-    <div className="flex items-center justify-center py-20">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: 'rgba(226,168,75,0.3)', borderTopColor: '#e2a84b' }} />
-        <p className="text-white/70 text-sm font-medium tracking-wide">Memuat menu...</p>
-      </div>
     </div>
   );
 }

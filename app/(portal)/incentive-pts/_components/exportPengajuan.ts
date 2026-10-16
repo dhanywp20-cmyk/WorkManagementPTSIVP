@@ -1,191 +1,9 @@
 'use client';
-
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
-import {
-  IncentiveProjectRow, IncentiveSplit, IncentiveTranche,
-  SplitResult, formatRupiah, formatPct,
-  calculateIncentiveSplits, findUpline, resolveUserId, OrgUser, ambilSkema, TRANCHE_STATUS,
-  type SkemaInsentif,
-} from './calc';
-
-const NAVY = '1B3A6B';
-const LIGHT_GRAY = 'F5F5F5';
-const BORDER_COLOR = 'CCCCCC';
-
-function thinBorder(): Partial<ExcelJS.Borders> {
-  const side: Partial<ExcelJS.Border> = { style: 'thin', color: { argb: BORDER_COLOR } };
-  return { top: side, bottom: side, left: side, right: side };
-}
-
-function headerFont(size = 10): Partial<ExcelJS.Font> {
-  return { bold: true, color: { argb: 'FFFFFF' }, size, name: 'Arial' };
-}
-
-function headerFill(): ExcelJS.Fill {
-  return { type: 'pattern', pattern: 'solid', fgColor: { argb: NAVY } };
-}
-
-function dataFont(size = 10): Partial<ExcelJS.Font> {
-  return { name: 'Arial', size };
-}
-
-/**
- * Sel `SUM()` yang MEMBAWA hasilnya sendiri, bukan formula kosong.
- *
- * Baris Total sebelumnya cuma menulis `{ formula: 'SUM(...)' }`, tanpa nilai
- * cache. Itu sah menurut format .xlsx - Excel dan Google Sheets menghitung
- * ulang begitu berkas dibuka - tapi banyak pembaca .xlsx ringan (pratinjau di
- * aplikasi file manager, viewer di dalam aplikasi chat, sebagian aplikasi
- * mobile) hanya menampilkan CACHE-nya apa adanya tanpa menjalankan mesin
- * formula. Tanpa cache, itu berarti sel yang tampak kosong - persis keluhan
- * "TOTAL dan GRAND TOTAL masih kosong".
- *
- * `result` di sini dihitung di JavaScript dari angka yang SAMA yang menulisi
- * baris-baris di atasnya, jadi formula-nya tetap ada untuk diperiksa manual
- * di Excel/Sheets, sementara viewer yang tidak menghitung ulang pun langsung
- * menampilkan angka yang benar.
- */
-function sumCell(formula: string, result: number): { formula: string; result: number } {
-  return { formula, result };
-}
-
-/** Nama peran seperti yang dibaca Finance, bukan kunci teknisnya. */
-const ROLE_JUDUL: Record<string, string> = {
-  pic: 'PIC', support: 'Support', supervisor: 'Supervisor',
-  manager: 'Manager', installer: 'PTS Daerah',
-};
-
-/*
-  TEMA & KERANGKA KOLOM BERSAMA untuk KEDUA berkas ekspor.
-
-  "Pengajuan Incentive" (per tahun tahapan) dan "Summary Incentive" (seluruh
-  proyek) adalah dokumen yang sama bentuknya, beda cakupannya saja - jadi
-  warna, lebar kolom, dan susunan kepala tabelnya ditulis SEKALI di sini.
-  Sebelumnya keduanya punya salinan sendiri dan sudah terlanjur menyimpang
-  jauh: yang satu memakai satu pasang kolom per ORANG (melebar tak terkendali
-  begitu timnya bertambah), yang satu lagi per PERAN. Dua salinan aturan
-  tampilan yang sama adalah cara paling mudah membuat dua berkas yang
-  seharusnya kembar jadi tidak bisa dibandingkan.
-*/
-const NAVY_HDR = '1F3864';
-const SUB_HDR = '2E5395';
-const TOTAL_FILL = 'D9E1F2';
-const INSTALLER_FILL = 'FFF2CC';
-const RUPIAH_FMT = '#,##0;(#,##0);"-"';   // dash untuk nol - bukan sekadar kosong
-
-const putih = (): Partial<ExcelJS.Font> => ({ bold: true, color: { argb: 'FFFFFF' }, size: 10, name: 'Arial' });
-const fillWarna = (hex: string): ExcelJS.Fill => ({ type: 'pattern', pattern: 'solid', fgColor: { argb: hex } });
-
-/**
- * Kolom A sengaja dibiarkan sempit sebagai spasi tepi - isi mulai kolom B,
- * menyamai contoh yang dipakai Finance, bukan menempel ke tepi kertas.
- *
- * Hanya kolom DASAR (sama untuk semua export) yang tetap di sini. Kolom
- * per-orang di Tabel 1 dan kolom per-tahun di Tabel 3 jumlahnya BERUBAH
- * tergantung berapa orang/tahun yang tercatat - keduanya dihitung di dalam
- * bangunWorkbookSummary begitu daftar orang & tahunnya sudah diketahui,
- * bukan angka tetap di sini. Lihat KOL_ORANG_AWAL.
- */
-const KOL = { no: 2, project: 3, mode: 4, bast: 5, nominal: 6 };
-/** Kolom pertama tempat grup per-orang (Posisi/%/Rp) mulai ditulis di Tabel 1. */
-const KOL_ORANG_AWAL = 7;
-
-function aturLebarKolom(
-  ws: ExcelJS.Worksheet,
-  kolOrang: { posisi: number; pct: number; rp: number }[],
-  kolInst: { nama: number; lokasi: number; pct: number; rp: number },
-) {
-  ws.getColumn(1).width = 3;
-  ws.getColumn(KOL.no).width = 5;
-  ws.getColumn(KOL.project).width = 30;
-  ws.getColumn(KOL.mode).width = 10;
-  ws.getColumn(KOL.bast).width = 13;
-  ws.getColumn(KOL.nominal).width = 15;
-  for (const ko of kolOrang) {
-    ws.getColumn(ko.posisi).width = 12;
-    ws.getColumn(ko.pct).width = 7;
-    ws.getColumn(ko.rp).width = 14;
-  }
-  ws.getColumn(kolInst.nama).width = 17;
-  ws.getColumn(kolInst.lokasi).width = 12;
-  ws.getColumn(kolInst.pct).width = 7;
-  ws.getColumn(kolInst.rp).width = 14;
-}
-
-/**
- * Kepala tabel rekap per orang.
- *
- * Kolom Nama & Peran DIGABUNG melintasi beberapa kolom, dan itu bukan hiasan:
- * tabel ini berbagi kisi kolom dengan Tabel 1 di atasnya, yang kolom B-nya
- * selebar 5 karakter karena di sana isinya cuma nomor urut. Tanpa penggabungan,
- * nama seperti "Ade Rachmatullah" terlipat satu-dua huruf per baris - persis
- * keluhan "nama jadi tertumpuk, tidak proporsional" - dan tinggi barisnya ikut
- * membengkak. Melebarkan kolom B bukan jalan keluar: itu akan membuat kolom
- * "No" Tabel 1 jadi lebar tanpa alasan.
- */
-function tulisKepalaPerOrang(ws: ExcelJS.Worksheet, baris: number, judulKolom: [string, number, number][]) {
-  for (const [teks, awal, akhir] of judulKolom) {
-    const c = ws.getCell(baris, awal);
-    c.value = teks; c.font = putih(); c.fill = fillWarna(NAVY_HDR);
-    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    for (let k = awal; k <= akhir; k++) {
-      const x = ws.getCell(baris, k);
-      x.fill = fillWarna(NAVY_HDR); x.border = thinBorder();
-    }
-    if (akhir > awal) ws.mergeCells(baris, awal, baris, akhir);
-  }
-}
-
-/**
- * Lebarkan kolom TANPA PERNAH MENGECILKANNYA.
- *
- * Tabel 3 (Nilai Pengajuan per Tahun) menaruh kolom tahun-nya di kisi kolom
- * yang SAMA dengan kolom peran Tabel 1 di atasnya - keduanya berbagi satu
- * grid kolom worksheet, cuma dipakai di rentang baris yang berbeda. Menimpa
- * lebar kolom di sana dengan `.width = angka` langsung akan MENGECILKAN
- * kolom yang sudah diset lebih lebar oleh Tabel 1 (mis. kolom Nominal 15
- * ditimpa jadi 8) - persis penyebab nominal tampil "########" dan nama
- * peran tumpang tindih ke baris berikutnya. Fungsi ini hanya boleh melebarkan.
- */
-function perbesarKolom(ws: ExcelJS.Worksheet, kolom: number, minimal: number) {
-  const c = ws.getColumn(kolom);
-  c.width = Math.max(c.width ?? 0, minimal);
-}
-
-/** Berapa baris yang dibutuhkan sebuah teks kalau dibungkus pada lebar kolom (karakter). */
-function hitungBarisTerbungkus(teks: string, lebarKarakter: number): number {
-  return teks.split('\n').reduce((n, baris) => n + Math.max(1, Math.ceil(baris.length / lebarKarakter)), 0);
-}
-
-/** Rentang kolom rekap per orang - dipakai kedua berkas supaya bentuknya sama. */
-const KOL_REKAP = {
-  nama:   [KOL.no, KOL.project] as [number, number],        // B:C - cukup untuk nama panjang
-  peran:  [KOL.mode, KOL.bast] as [number, number],         // D:E
-  jumlah: [KOL.nominal, KOL.nominal] as [number, number],   // F
-  //  G:I - dipinjam dari kisi kolom grup orang pertama Tabel 1 (KOL_ORANG_AWAL),
-  //  lihat komentar tulisKepalaPerOrang soal berbagi kisi kolom antar tabel.
-  total: [KOL_ORANG_AWAL, KOL_ORANG_AWAL + 2] as [number, number],
-};
-
-/** Tulis satu sel gabungan berisi teks, dengan garis tepi di seluruh rentangnya. */
-function selGabung(
-  ws: ExcelJS.Worksheet, baris: number, rentang: [number, number],
-  nilai: ExcelJS.CellValue, gaya?: { font?: Partial<ExcelJS.Font>; isi?: string; rata?: 'left' | 'right' | 'center' },
-) {
-  const [awal, akhir] = rentang;
-  for (let k = awal; k <= akhir; k++) {
-    const x = ws.getCell(baris, k);
-    x.border = thinBorder();
-    if (gaya?.isi) x.fill = fillWarna(gaya.isi);
-  }
-  if (akhir > awal) ws.mergeCells(baris, awal, baris, akhir);
-  const c = ws.getCell(baris, awal);
-  c.value = nilai;
-  c.font = gaya?.font ?? dataFont();
-  c.alignment = { vertical: 'middle', horizontal: gaya?.rata ?? 'left', wrapText: true };
-  return c;
-}
+import { IncentiveProjectRow, OrgUser, ambilSkema, type SkemaInsentif } from './calc';
+import { siapkanDataSummary, type Peran, type Proyek } from './exportPengajuan-data';
+import { INSTALLER_FILL, KOL, KOL_ORANG_AWAL, KOL_REKAP, NAVY_HDR, RUPIAH_FMT, SUB_HDR, TOTAL_FILL, aturLebarKolom, dataFont, fillWarna, hitungBarisTerbungkus, perbesarKolom, putih, selGabung, sumCell, thinBorder, tulisKepalaPerOrang } from './exportPengajuan-gaya';
 
 // Summary Export (semua project, split dihitung on-the-fly)
 
@@ -301,115 +119,9 @@ export async function bangunWorkbookSummary(data: DataSummary, sk: SkemaInsentif
 
   let row = 2;
 
-  /*
-    Data proyek diproses SEKALI di sini, sebelum satu sel pun ditulis -
-    supaya rentang tahun (untuk judul & Tabel 3) sudah diketahui lebih dulu,
-    dan Tabel 1/2/3 semuanya membaca dari struktur yang sama persis, bukan
-    dihitung ulang tiga kali dengan risiko saling menyimpang.
-  */
-  type Peran = { user_id: string; user_name: string; role: string; percentage: number; amount: number };
-  type Proyek = {
-    p: IncentiveProjectRow;
-    hasNominal: boolean; isEstimate: boolean; pool: number; mode: 'onsite' | 'remote';
-    pic: Peran[]; support: Peran[]; supervisor: Peran[]; manager: Peran[]; installer: Peran[];
-    bastYear: number | null;
-  };
-
-  const daftarProyek: Proyek[] = projects.map(p => {
-    const projectSupports = supportsMap.get(p.project_name) || [];
-    const picId = resolveUserId((p.pic_id || p.assigned_to) as string, p.assign_name, orgList);
-    const supUp = findUpline(picId, 'Supervisor', orgList);
-    const mgrUp = findUpline(picId, 'Manager', orgList);
-    const supervisorId   = (supUp?.id        || '') as string;
-    const supervisorName = (supUp?.full_name || 'Supervisor') as string;
-    const projManagerId   = mgrUp?.id || managerUserId;
-    const projManagerName = mgrUp?.full_name || managerName;
-
-    const hasNominal = (p.incentive_value || 0) > 0;
-    const isEstimate = !hasNominal || !p.mode_penyelesaian;
-    const pool = hasNominal ? p.incentive_value : 1_000_000;
-    const mode: 'onsite' | 'remote' = p.mode_penyelesaian === 'remote' ? 'remote' : 'onsite';
-    const displayProject = { ...p, incentive_value: pool, mode_penyelesaian: mode };
-    const splits = calculateIncentiveSplits(sk, displayProject, projManagerId, projManagerName, supervisorId, supervisorName, projectSupports, picId) as Peran[];
-
-    return {
-      p, hasNominal, isEstimate, pool, mode,
-      pic: splits.filter(s => s.role === 'pic'),
-      support: splits.filter(s => s.role === 'support'),
-      supervisor: splits.filter(s => s.role === 'supervisor'),
-      manager: splits.filter(s => s.role === 'manager'),
-      installer: splits.filter(s => s.role === 'installer'),
-      bastYear: p.bast_date ? new Date(p.bast_date).getFullYear() : null,
-    };
+  const { daftarProyek, akumulasi, namaBelumFinal, orangUrut, perOrangTahun, installerList, tahunUrut, sufiksTahun, urutPeran } = siapkanDataSummary({
+    projects, supportsMap, orgList, managerUserId, managerName, sk, tahapUrut, totalPersenTahap,
   });
-
-  //  Akumulasi UANG SUNGGUHAN per orang - hanya proyek final (bukan estimasi),
-  //  dipakai Tabel 2 & 3. Nama SETIAP orang dicatat terpisah (semuaNama),
-  //  supaya yang seluruh proyeknya masih "belum input" tetap muncul di Tabel
-  //  2 dengan total Rp 0 - bukan hilang begitu saja dari rekap.
-  const akumulasi: { nama: string; peran: string; jumlah: number; bastYear: number }[] = [];
-  const semuaNamaTim = new Map<string, Set<string>>();
-  for (const pr of daftarProyek) {
-    for (const s of [...pr.pic, ...pr.support, ...pr.supervisor, ...pr.manager]) {
-      const nm = s.user_name || '—';
-      const set = semuaNamaTim.get(nm) ?? new Set<string>();
-      set.add(s.role);
-      semuaNamaTim.set(nm, set);
-      if (!pr.isEstimate && pr.bastYear) akumulasi.push({ nama: nm, peran: s.role, jumlah: s.amount, bastYear: pr.bastYear });
-    }
-  }
-
-  const urutPeran: Record<string, number> = { manager: 0, supervisor: 1, pic: 2, support: 3 };
-  //  `total`/`jumlah` di sini HANYA dipakai untuk pengurutan (orangUrut) dan
-  //  sebagai cache angka `result` di sumCell (lihat selRpByNama di dekat
-  //  Tabel 1 untuk RUMUS sungguhan yang dirujuk Tabel 2 - dibangun belakangan
-  //  dari alamat sel asli, bukan dari array ini).
-  const perOrang = new Map<string, { nama: string; peran: Set<string>; total: number; jumlah: number }>();
-  for (const { nama, peran, jumlah } of akumulasi) {
-    const e = perOrang.get(nama) ?? { nama, peran: new Set<string>(), total: 0, jumlah: 0 };
-    e.peran.add(peran); e.total += jumlah; e.jumlah += 1;
-    perOrang.set(nama, e);
-  }
-  const namaBelumFinal = new Set<string>();
-  for (const [nama, peranSet] of semuaNamaTim) {
-    if (perOrang.has(nama)) continue;
-    perOrang.set(nama, { nama, peran: new Set(peranSet), total: 0, jumlah: 0 });
-    namaBelumFinal.add(nama);
-  }
-  const orangUrut = [...perOrang.values()].sort((a, b) => {
-    const pa = Math.min(...[...a.peran].map(r => urutPeran[r] ?? 9));
-    const pb = Math.min(...[...b.peran].map(r => urutPeran[r] ?? 9));
-    return pa - pb || a.nama.localeCompare(b.nama, 'id');
-  });
-
-  //  Uang per orang per TAHUN PEMBAYARAN (Tim PTS) + Installer (lunas tahun pertama).
-  const perOrangTahun = new Map<string, Map<number, number>>();
-  const tahunSet = new Set<number>();
-  for (const { nama, jumlah, bastYear } of akumulasi) {
-    const ember = perOrangTahun.get(nama) ?? new Map<number, number>();
-    for (const t of tahapUrut) {
-      const th = bastYear + t.tahunKe;
-      tahunSet.add(th);
-      ember.set(th, (ember.get(th) ?? 0) + Math.round((jumlah * (t.persen || 0)) / totalPersenTahap));
-    }
-    perOrangTahun.set(nama, ember);
-  }
-  //  Installer: baris TERSENDIRI (bukan digabung ke perOrangTahun Tim PTS -
-  //  perannya beda skema, disatukan nanti hanya saat dicetak).
-  type BarisInstaller = { nama: string; lokasi: string; tahun: number; jumlah: number };
-  const installerList: BarisInstaller[] = [];
-  for (const pr of daftarProyek) {
-    if (pr.isEstimate || !pr.bastYear) continue;
-    for (const s of pr.installer) {
-      const th = sk.installerBayarDiMuka ? pr.bastYear + (tahapUrut[0]?.tahunKe ?? 1) : pr.bastYear;
-      tahunSet.add(th);
-      installerList.push({ nama: s.user_name || '—', lokasi: pr.p.installer_daerah || '', tahun: th, jumlah: s.amount });
-    }
-  }
-  const tahunUrut = [...tahunSet].sort((a, b) => a - b);
-  const sufiksTahun = tahunUrut.length === 0 ? ''
-    : tahunUrut.length === 1 ? ` Tahun ${tahunUrut[0]}`
-    : ` Tahun ${tahunUrut[0]}–${tahunUrut[tahunUrut.length - 1]}`;
 
   /*
     Kisi kolom Tabel 1 (per-orang) & lebar keseluruhan berkas - dihitung DI
@@ -947,6 +659,7 @@ export async function exportSummaryIncentive(data: DataSummary) {
     : data.year != null ? String(data.year) : 'SemuaTahun';
   saveAs(blob, `Summary_Incentive_PTS_IVP_${labelTahun}_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
+
 function getColLetter(colNum: number): string {
   let letter = '';
   let n = colNum;
@@ -957,3 +670,4 @@ function getColLetter(colNum: number): string {
   }
   return letter;
 }
+export * from './exportPengajuan-gaya';

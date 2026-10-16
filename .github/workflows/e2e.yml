@@ -1,0 +1,38 @@
+name: E2E
+
+# Manual saja (Actions -> E2E -> Run workflow). Tidak jalan otomatis: Preview & produksi berbagi
+# basis data, dan setiap putaran memakai kuota Vercel/Supabase paket gratis.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'Alamat yang diuji (produksi atau URL Preview yang bisa diakses publik)'
+        required: true
+        default: 'https://work-management-ptsivp.vercel.app'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      E2E_BASE_URL: ${{ inputs.base_url }}
+      E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
+      E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
+      CI: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pasang Playwright + Chromium
+        working-directory: e2e
+        run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+      - name: Uji
+        working-directory: e2e
+        run: npx playwright test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: laporan-e2e
+          path: e2e/playwright-report/
+          retention-days: 7

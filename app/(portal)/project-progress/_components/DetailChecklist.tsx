@@ -16,6 +16,8 @@ import {
   BarProgres, CatatanTeks, KepingKendala, ModalKendala, PanelBagian, TEMA, fontAngka,
   itemPerBagian, kirimFoto, progresDariStat,
 } from './tampilan';
+import { ringkasChecklist } from './ringkasan/hitung';
+import { LipatRingkasan, RingkasanChecklist, adaRingkasanChecklist } from './ringkasan/Ringkasan';
 import { ModalImpor } from './ModalImpor';
 import { ModalShare } from './ModalShare';
 import { PilihAnggota, type CalonAnggota } from './PilihAnggota';
@@ -94,6 +96,7 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
   const itemsTampil = useMemo(() => (detail ? detail.items.map(t.tampil) : []), [detail, t.tampil]);
   const peta = useMemo(() => (detail ? itemPerBagian(detail.bagian, itemsTampil) : new Map<string, ChecklistItem[]>()), [detail, itemsTampil]);
   const stat = detail ? statDari(itemsTampil) : null;
+  const ringkasan = useMemo(() => ringkasChecklist(detail?.daftar ?? { start_date: null, target_date: null }, itemsTampil, detail?.anggota ?? []), [detail, itemsTampil]);
 
   const toggle = (item: ChecklistItem) => t.toggle(item);
 
@@ -346,6 +349,12 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
         </div>
         {daftar.keterangan && <CatatanTeks teks={daftar.keterangan} />}
       </div>
+
+      {adaRingkasanChecklist(ringkasan) && (
+        <LipatRingkasan hpTerlipat>
+          <RingkasanChecklist r={ringkasan} />
+        </LipatRingkasan>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
         <div className="space-y-3 min-w-0">

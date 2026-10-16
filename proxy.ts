@@ -30,6 +30,10 @@ const PUBLIC_PREFIXES = [
   // login. Route-nya memeriksa token sendiri dan hanya bisa mencentang item.
   '/checklist/share/',
   '/api/checklist/share/',
+  // Kelas Eksternal Learning Center: quiz untuk customer tanpa akun. Route-nya memeriksa token
+  // kelas & token peserta sendiri; kunci jawaban tidak pernah dikirim.
+  '/kelas/',
+  '/api/kelas/',
   '/icons/',
 ];
 

@@ -44,6 +44,8 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
      jadi tanda centang dan koper menutup kembali. Lihat catatan di handleLogin
      soal kenapa perpindahannya sengaja ditunda. */
   const [masukBerhasil, setMasukBerhasil] = useState(false);
+  /** Nama depan untuk sapaan di animasi sukses. */
+  const [namaSapa, setNamaSapa] = useState('');
   /* Naik tiap kali animasi kartu perlu diulang. Dipakai sebagai key React
      supaya animasi CSS benar-benar dijalankan lagi, bukan diabaikan karena
      elemennya dianggap sama. */
@@ -155,16 +157,16 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
     }
     onMasuk(data, result.db_token ?? null);
 
-    /* Perpindahan ke dashboard ditunda supaya animasi penutup (lc-bongkar di
-       globals.css) sempat jalan sampai habis. 1500ms = jeda 270ms + durasi
-       1230ms milik animasi terakhir; angka ini WAJIB ikut berubah setiap
-       durasi di globals.css diubah, kalau tidak halaman login dilepas dari
-       DOM di tengah gerakan. Penundaan ini hanya dibayar saat orang benar
-       benar menekan tombol login. */
+    /* Perpindahan ke dashboard ditunda sebentar supaya tanda berhasil + sapaan terbaca, lalu halaman
+       login memudar (lc-masuk-pudar di globals.css: jeda 640ms + 260ms) dan dashboard memudar masuk.
+       900ms = akhir pemudaran itu; angka ini WAJIB ikut berubah bila durasi di globals.css diubah,
+       kalau tidak halaman login dilepas dari DOM di tengah gerakan. Hanya dibayar saat orang benar-benar
+       menekan tombol login (atau memasukkan kode 2FA). */
+    setNamaSapa(((data.full_name as string | undefined) ?? '').trim().split(/\s+/)[0] ?? '');
     setMasukBerhasil(true);
     const pakaiAnimasi = typeof window !== 'undefined'
       && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.setTimeout(onSelesai, pakaiAnimasi ? 1500 : 0);
+    window.setTimeout(onSelesai, pakaiAnimasi ? 900 : 0);
   };
 
   const handleForgotRequest = async () => {
@@ -282,9 +284,9 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
       {/* Seluruh isi halaman login ada di dalam bungkus ini supaya bisa dihisap
           masuk ke koper sebagai satu benda. Lapisan kopernya SENGAJA di luar —
           kalau ikut di dalam, kopernya akan menghisap dirinya sendiri. */}
-      <div className={`${masukBerhasil ? 'lc-bongkar' : ''} flex bg-cover bg-center bg-fixed`} style={{ minHeight: '100dvh', backgroundImage: `url(${merek.gambarLatar})` }}>
+      <div className={`${masukBerhasil ? 'lc-masuk-pudar' : ''} flex bg-cover bg-center bg-fixed`} style={{ minHeight: '100dvh', backgroundImage: `url(${merek.gambarLatar})` }}>
         {/* ── LEFT: panel branding (desktop) — overlay merah transparan, gambar tembus dari bg penuh ── */}
-        <div className={`hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 text-white overflow-hidden ${masukBerhasil ? 'lc-bongkar-kiri' : ''}`}
+        <div className={`hidden lg:flex lg:w-1/2 relative flex-col justify-between p-12 text-white overflow-hidden`}
           style={{ background: gradasiPanelLogin(merek) }}>
           <div className="flex items-center gap-2.5">
             <LogoMerek ukuran="lg" gaya="tembus" />
@@ -313,7 +315,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
 
         {/* ── RIGHT: panel form — overlay PUTIH transparan di atas bg penuh (biar tidak
             contrast), form dlm kartu frosted ── */}
-        <div className={`relative overflow-hidden flex-1 flex items-center justify-center p-4 sm:p-8 ${masukBerhasil ? 'lc-bongkar-kanan' : ''}`}
+        <div className={`relative overflow-hidden flex-1 flex items-center justify-center p-4 sm:p-8`}
           style={{ background: `rgba(255,255,255,${angkaTembus(merek.tembusKanan, 0.55)})` }}>
           <div
             key={putaranAnim}
@@ -322,6 +324,20 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                 : animKartu === 'tukarKeluar' ? 'lc-tukar-keluar' : 'lc-tukar-masuk'
             } w-full ${showRegister ? 'max-w-2xl' : 'max-w-md'} bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 sm:p-8`}
           >
+            {/* Berhasil masuk: tanda centang digambar + sapaan, menutupi form di tempat (tinggi kartu tidak
+                berubah, jadi tidak ada loncatan tata letak). */}
+            {masukBerhasil && (
+              <div className="lc-sukses absolute inset-0 z-10 rounded-3xl bg-white flex flex-col items-center justify-center text-center px-6" role="status" aria-live="polite">
+                <svg viewBox="0 0 52 52" width="80" height="80" aria-hidden="true" focusable="false">
+                  <circle cx="26" cy="26" r="23" fill="none" stroke={merek.warnaUtama} strokeWidth="3" strokeLinecap="round" className="lc-sukses-lingkar" />
+                  <path d="M15 27l8 8 14-16" fill="none" stroke={merek.warnaUtama} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="lc-sukses-centang" />
+                </svg>
+                <p className="lc-sukses-teks mt-5 text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
+                  Selamat datang{namaSapa ? `, ${namaSapa}` : ''}
+                </p>
+                <p className="lc-sukses-teks mt-1 text-sm text-slate-500" style={{ animationDelay: '380ms' }}>Menyiapkan portal…</p>
+              </div>
+            )}
             <div className="mb-8">
               {/* Logo kecil — hanya mobile (di desktop logo ada di panel kiri) */}
               <div className="flex lg:hidden items-center gap-2.5 mb-6">
