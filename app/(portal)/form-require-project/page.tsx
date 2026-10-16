@@ -53,6 +53,13 @@ import { useUbahStatusRequest } from './_components/useUbahStatusRequest';
 import { useEditRequest } from './_components/useEditRequest';
 import { usePesanLampiran } from './_components/usePesanLampiran';
 import { useMuatRequest } from './_components/useMuatRequest';
+import { ModalTolakRequest } from './_components/halaman/ModalTolakRequest';
+import { ModalHapusMassal } from './_components/halaman/ModalHapusMassal';
+import { KontenHalamanRequest } from './_components/halaman/KontenHalamanRequest';
+import { BlokAssignPTS } from './_components/halaman/BlokAssignPTS';
+import { BlokFormBaru } from './_components/halaman/BlokFormBaru';
+import { useStatistikRequest } from './_components/halaman/useStatistikRequest';
+import { useEfekHalamanRequest } from './_components/halaman/useEfekHalamanRequest';
 
 function FormRequireProject({ currentUser }: { currentUser: User }) {
   const searchParams = useSearchParams();
@@ -369,97 +376,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
 
   const { fetchRequests, fetchMessages, fetchAttachments } = useMuatRequest({ currentUser, isIVPGuest, isPTS, isTeamPTS, notify, pimpinan, setAppReady, setAttachments, setLastSeenMap, setLoading, setMessages, setPtsMembersList, setRequests, setUnreadMsgMap });
 
-  useEffect(() => { fetchRequests(); }, [fetchRequests]);
-
-  // Popup tiket pending/in_progress - muncul sekali saat masuk platform
-  useEffect(() => {
-    if (!appReady || ticketPopupShown) return;
-    const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
-    if (activeTickets.length > 0) {
-      setShowTicketPopup(true);
-      setTicketPopupShown(true);
-    }
-  }, [appReady, requests, ticketPopupShown]);
-
-  useEffect(() => {
-    const channel = supabase.channel('global_messages_notif')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'project_messages' },
-        (payload) => {
-          const msg = payload.new as ProjectMessage;
-          if (msg.sender_role === 'system') return;
-          setUnreadMsgMap(prev => {
-            if (!selectedRequest || selectedRequest.id !== msg.request_id) {
-              return { ...prev, [msg.request_id]: (prev[msg.request_id] || 0) + 1 };
-            }
-            return prev;
-          });
-        })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [selectedRequest]);
-
-  useEffect(() => {
-    if (!isPTS) return;
-    // For IVP guest: count approved requests linked to them (new assignments)
-    // For PTS/admin: count pending requests needing action
-    // For non-IVP guest: count own pending requests
-    const pendingCount = isIVPGuest
-      ? requests.filter(r => r.ivp_assignee === currentUser.full_name && (r.status === 'approved' || r.status === 'in_progress')).length
-      : requests.filter(r => r.status === 'pending').length;
-    setUnreadCount(pendingCount);
-  }, [requests, isPTS]);
-
-  useEffect(() => {
-    if (!selectedRequest) { activeRequestIdRef.current = null; return; }
-    const reqId = selectedRequest.id;
-    activeRequestIdRef.current = reqId;
-    const channelName = `detail_chat:${reqId}_${Date.now()}`;
-    // fetchAttachments di-debounce: tanpa itu, mengunggah enam berkas sekaligus
-    // memicu enam kali penarikan ulang daftar lampiran.
-    let attachDebounce: ReturnType<typeof setTimeout> | null = null;
-    const channel = supabase.channel(channelName)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'project_messages', filter: `request_id=eq.${reqId}` },
-        (payload) => {
-          if (activeRequestIdRef.current !== reqId) return;
-          setMessages(prev => {
-            const exists = prev.some(m => m.id === (payload.new as ProjectMessage).id);
-            if (exists) return prev;
-            return [...prev, payload.new as ProjectMessage];
-          });
-          const stored = JSON.parse(localStorage.getItem('pts_last_seen') || '{}');
-          stored[reqId] = Date.now();
-          localStorage.setItem('pts_last_seen', JSON.stringify(stored));
-        })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'project_attachments', filter: `request_id=eq.${reqId}` },
-        () => {
-          if (activeRequestIdRef.current !== reqId) return;
-          if (attachDebounce) clearTimeout(attachDebounce);
-          attachDebounce = setTimeout(() => fetchAttachments(reqId), 800);
-        })
-      .subscribe();
-
-    // EGRESS FIX: polling fallback dinaikkan dari 3 DETIK  60 detik. Realtime
-    // di atas sudah append pesan baru langsung ke state (tanpa refetch), jadi
-    // polling 3 detik ini sepenuhnya redundant - full refetch pesan tiap 3
-    // detik selama modal detail terbuka adalah kontributor egress yang berat.
-    // Sekarang murni jaring pengaman kalau koneksi Realtime putus.
-    const pollInterval = setInterval(async () => {
-      if (activeRequestIdRef.current !== reqId) return;
-      const { data } = await supabase.from('project_messages').select('id,request_id,sender_id,sender_name,sender_role,message,created_at').eq('request_id', reqId).order('created_at', { ascending: true });
-      if (data && activeRequestIdRef.current === reqId) {
-        setMessages(prev => { if (data.length === prev.length) return prev; return data as ProjectMessage[]; });
-      }
-    }, 60000);
-
-    return () => {
-      activeRequestIdRef.current = null;
-      if (attachDebounce) clearTimeout(attachDebounce);
-      clearInterval(pollInterval);
-      supabase.removeChannel(channel);
-    };
-  }, [selectedRequest?.id, fetchAttachments]);
-
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+  useEfekHalamanRequest({ activeRequestIdRef, appReady, currentUser, fetchAttachments, fetchRequests, isIVPGuest, isPTS, messages, messagesEndRef, requests, selectedRequest, setMessages, setShowTicketPopup, setTicketPopupShown, setUnreadCount, setUnreadMsgMap, ticketPopupShown });
 
 
   const formatFileSize = (bytes: number) =>
@@ -547,64 +464,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     return { type: 'ok', label: `${diffDays} hari lagi`, days: diffDays };
   };
 
-  const availableYears = [...new Set(requests.map(r => new Date(r.created_at).getFullYear().toString()))].sort((a, b) => b.localeCompare(a));
-
-  // Paginasi daftar - lihat components/shared/Paginasi.tsx.
-  const filteredRequests = requests.filter(r => {
-    const matchStatus = filterStatus === 'all' || r.status === filterStatus;
-    const matchYear = filterYear === 'all' || new Date(r.created_at).getFullYear().toString() === filterYear;
-    const matchMonth = filterMonth === 'all' || (new Date(r.created_at).getMonth() + 1).toString().padStart(2, '0') === filterMonth;
-    const matchHandler = filterHandler === 'all' || (r.assign_name || '') === filterHandler;
-    const matchDivision = filterDivision === 'all' || (r.sales_division || 'Lainnya') === filterDivision;
-    const matchKebutuhan = filterKebutuhan === 'all' || daftarKebutuhan(r).includes(filterKebutuhan);
-    const matchProject = !searchQuery || r.project_name.toLowerCase().includes(searchQuery.toLowerCase())
-      || (r.project_location || '').toLowerCase().includes(searchQuery.toLowerCase())
-      || (r.room_name || '').toLowerCase().includes(searchQuery.toLowerCase());
-    const matchSales = !searchSales || (r.sales_name || '').toLowerCase().includes(searchSales.toLowerCase())
-      || (r.requester_name || '').toLowerCase().includes(searchSales.toLowerCase())
-      || (r.sales_division || '').toLowerCase().includes(searchSales.toLowerCase());
-    return matchStatus && matchYear && matchMonth && matchHandler && matchDivision && matchKebutuhan && matchProject && matchSales;
-  });
-
-  const hal = usePaginasi(filteredRequests);
-
-  const stats = {
-    total: requests.length,
-    pending: requests.filter(r => r.status === 'pending').length,
-    approved: requests.filter(r => r.status === 'approved').length,
-    in_progress: requests.filter(r => r.status === 'in_progress').length,
-    completed: requests.filter(r => r.status === 'completed').length,
-    rejected: requests.filter(r => r.status === 'rejected').length,
-  };
-
-  const statusPieData = [
-    { label: 'Pending', value: stats.pending, color: '#f59e0b' },
-    { label: 'Approved', value: stats.approved, color: '#10b981' },
-    { label: 'In Progress', value: stats.in_progress, color: '#3b82f6' },
-    { label: 'Completed', value: stats.completed, color: '#8b5cf6' },
-    { label: 'Rejected', value: stats.rejected, color: '#ef4444' },
-  ].filter(d => d.value > 0);
-
-  const divisionCounts: Record<string, number> = {};
-  for (const r of requests) { const d = r.sales_division || 'Lainnya'; divisionCounts[d] = (divisionCounts[d] || 0) + 1; }
-  const divisionPieData = Object.entries(divisionCounts).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
-
-  const assignedCounts: Record<string, number> = {};
-  for (const r of requests) { const a = r.assign_name || 'Unassigned'; assignedCounts[a] = (assignedCounts[a] || 0) + 1; }
-  const assignedPieData = Object.entries(assignedCounts).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
-
-  const productCounts: Record<string, number> = {};
-  for (const r of requests) {
-    const prods = r.solution_product?.length ? r.solution_product : (r.solution_other ? [r.solution_other] : ['Lainnya']);
-    for (const p of prods) { productCounts[p] = (productCounts[p] || 0) + 1; }
-  }
-  const productPieData = Object.entries(productCounts).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
-
-  const kebutuhanCounts: Record<string, number> = {};
-  for (const r of requests) for (const k of daftarKebutuhan(r)) kebutuhanCounts[k] = (kebutuhanCounts[k] || 0) + 1;
-  const kebutuhanPieData = Object.entries(kebutuhanCounts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+  const { availableYears, filteredRequests, hal, stats, statusPieData, divisionCounts, divisionPieData, assignedCounts, assignedPieData, productCounts, productPieData, kebutuhanCounts, kebutuhanPieData } = useStatistikRequest({ filterDivision, filterHandler, filterKebutuhan, filterMonth, filterStatus, filterYear, requests, searchQuery, searchSales });
 
   // Toast bersama (components/shared/Toast) - satu gaya untuk seluruh platform.
   const NotifToast = () => <ToastBersama notif={notification} />;
@@ -643,237 +503,27 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       {NotifToast()}
 
 
-      {showNewFormModal && (
-        <NewFormModal
-          currentUser={currentUser}
-          form={form}
-          setForm={setForm}
-          initialForm={initialForm}
-          salesGuestUsers={salesGuestUsers}
-          isInternalSalesGuest={role === 'guest' && myIsInternalSales}
-          rooms={rooms} setRooms={setRooms}
-          brandPicMappings={brandPicMappings}
-          roomPhotoMap={roomPhotoMap} setRoomPhotoMap={setRoomPhotoMap}
-          boqRoomMap={boqRoomMap} setBoqRoomMap={setBoqRoomMap}
-          dueDateForm={dueDateForm}
-          setDueDateForm={setDueDateForm}
-          surveyPhotos={surveyPhotos}
-          setSurveyPhotos={setSurveyPhotos}
-          surveyPhotosPreviews={surveyPhotosPreviews}
-          setSurveyPhotosPreviews={setSurveyPhotosPreviews}
-          boqFormFile={boqFormFile}
-          setBoqFormFile={setBoqFormFile}
-          submitting={submitting}
-          onClose={() => { setShowNewFormModal(false); setForm(initialForm); setDueDateForm(''); setSurveyPhotos([]); setSurveyPhotosPreviews([]); setBoqFormFile(null); setRooms([]); setRoomPhotoMap({}); setBoqRoomMap({}); }}
-          onSubmit={handleSubmitForm}
-        />
-      )}
+      <BlokFormBaru
+        boqFormFile={boqFormFile} boqRoomMap={boqRoomMap} brandPicMappings={brandPicMappings} currentUser={currentUser} dueDateForm={dueDateForm} form={form} handleSubmitForm={handleSubmitForm} initialForm={initialForm} myIsInternalSales={myIsInternalSales} role={role} roomPhotoMap={roomPhotoMap} rooms={rooms} salesGuestUsers={salesGuestUsers} setBoqFormFile={setBoqFormFile} setBoqRoomMap={setBoqRoomMap} setDueDateForm={setDueDateForm} setForm={setForm} setRoomPhotoMap={setRoomPhotoMap} setRooms={setRooms} setShowNewFormModal={setShowNewFormModal} setSurveyPhotos={setSurveyPhotos} setSurveyPhotosPreviews={setSurveyPhotosPreviews} showNewFormModal={showNewFormModal} submitting={submitting} surveyPhotos={surveyPhotos} surveyPhotosPreviews={surveyPhotosPreviews}
+      />
 
-      {assignModal.open && assignModal.req && (
-        <AssignPTSModal
-          req={assignModal.req}
-          // Opsi "Route ke Supervisor" hanya saat approve awal (belum di-route)
-          // DAN untuk ruangan pertama - tahap routing itu milik seluruh request,
-          // bukan satu ruangan, jadi re-assign ruangan 2+ tidak pernah menawarkannya.
-          // Kalau Supervisor yg buka utk assign final (routing_status='supervisor_assign'),
-          // opsi route disembunyikan - dia langsung pilih Tim PTS.
-          allowSupervisorRoute={assignModal.roomIdx === 0 && assignModal.req.routing_status !== 'supervisor_assign'}
-          roomIdx={assignModal.roomIdx}
-          onClose={() => setAssignModal({ open: false, req: null, roomIdx: 0 })}
-          onAssigned={() => {
-            setAssignModal({ open: false, req: null, roomIdx: 0 });
-            notify('success', `Request diproses!`);
-            fetchRequests();
-            if (selectedRequest?.id === assignModal.req?.id) {
-              if (assignModal.roomIdx === 0) {
-                setSelectedRequest(prev => prev ? { ...prev, status: 'approved' } : null);
-              } else {
-                // Ruangan 1+ ditulis di dalam JSONB `rooms` - ambil ulang kolom itu
-                // supaya tab ruangan yang sedang dilihat langsung terlihat approved,
-                // tanpa harus menutup & buka lagi detailnya.
-                supabase.from('project_requests').select('rooms').eq('id', assignModal.req!.id).maybeSingle()
-                  .then(({ data }: { data: { rooms: RoomDetail[] } | null }) => {
-                    if (data) setSelectedRequest(prev => prev ? { ...prev, rooms: data.rooms } : null);
-                  });
-              }
-              fetchMessages(assignModal.req!.id);
-            }
-          }}
-          currentUser={currentUser}
-        />
-      )}
+      <BlokAssignPTS
+        assignModal={assignModal} currentUser={currentUser} fetchMessages={fetchMessages} fetchRequests={fetchRequests} notify={notify} selectedRequest={selectedRequest} setAssignModal={setAssignModal} setSelectedRequest={setSelectedRequest}
+      />
 
       {/* STICKY HEADER */}
       <HeaderFormRequire
         bellDropdownOpen={bellDropdownOpen} handleOpenDetail={handleOpenDetail} pimpinan={pimpinan} requests={requests} setBellDropdownOpen={setBellDropdownOpen} setShowNewFormModal={setShowNewFormModal}
       />
 
-      <div className="flex-1 overflow-y-auto max-w-[1600px] mx-auto w-full px-5 py-5 space-y-4">
-
-        {/* Stat Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 sm:gap-3 animate-slide-up anim-d80">
-          {[
-            { label: 'Total', value: stats.total, sub: 'Semua request', accent: '#4f46e5', onClick: () => setFilterStatus('all'), active: filterStatus === 'all' },
-            { label: 'Pending', value: stats.pending, sub: 'Menunggu approval', accent: '#b45309', onClick: () => setFilterStatus(filterStatus === 'pending' ? 'all' : 'pending'), active: filterStatus === 'pending' },
-            { label: 'In Progress', value: stats.in_progress, sub: 'Sedang dikerjakan', accent: '#1d4ed8', onClick: () => setFilterStatus(filterStatus === 'in_progress' ? 'all' : 'in_progress'), active: filterStatus === 'in_progress' },
-            { label: 'Completed', value: stats.completed, sub: 'Selesai ditangani', accent: '#047857', onClick: () => setFilterStatus(filterStatus === 'completed' ? 'all' : 'completed'), active: filterStatus === 'completed' },
-            { label: 'Rejected', value: stats.rejected, sub: 'Ditolak', accent: '#b91c1c', onClick: () => setFilterStatus(filterStatus === 'rejected' ? 'all' : 'rejected'), active: filterStatus === 'rejected' },
-          ].map((card, i) => <StatCard key={i} {...card} />)}
-        </div>
-
-        {/* Charts - guest sees handler + product, PTS sees all 3 */}
-        <div className="grid grid-cols-2 xl:grid-cols-4 gap-1.5 sm:gap-4 animate-zoom-in anim-d160">
-          {isPTS ? (
-            <>
-              <MiniPieChart data={statusPieData} title="Status Distribution" icon="🥧"
-                activeFilter={filterStatus !== 'all' ? (() => { const rev: Record<string,string> = { pending:'Pending', approved:'Approved', in_progress:'In Progress', completed:'Completed', rejected:'Rejected' }; return rev[filterStatus]; })() : undefined}
-                onSliceClick={label => {
-                  const map: Record<string, string> = { Pending: 'pending', Approved: 'approved', 'In Progress': 'in_progress', Completed: 'completed', Rejected: 'rejected' };
-                  setFilterStatus(prev => prev === (map[label] || label) ? 'all' : (map[label] || label));
-                }} />
-              <MiniPieChart data={divisionPieData} title="Divisi Sales" icon="🥧"
-                activeFilter={filterDivision !== 'all' ? filterDivision : undefined}
-                onSliceClick={label => { setFilterDivision(prev => prev === label ? 'all' : label); }} />
-              <MiniPieChart data={assignedPieData} title="Team PTS Handler" icon="👥"
-                activeFilter={filterHandler !== 'all' ? filterHandler : undefined}
-                onSliceClick={label => setFilterHandler(prev => prev === label ? 'all' : label)} />
-              <MiniPieChart data={kebutuhanPieData} title="Kebutuhan" icon="🎯"
-                centerValue={requests.length} centerLabel="REQUEST"
-                activeFilter={filterKebutuhan !== 'all' ? filterKebutuhan : undefined}
-                onSliceClick={label => setFilterKebutuhan(prev => prev === label ? 'all' : label)} />
-            </>
-          ) : (
-            <>
-              <MiniPieChart data={statusPieData} title="Status Request Saya" icon="🥧" />
-              <MiniPieChart data={assignedPieData} title="Team PTS Handler" icon="👥"
-                activeFilter={filterHandler !== 'all' ? filterHandler : undefined}
-                onSliceClick={label => setFilterHandler(prev => prev === label ? 'all' : label)} />
-              <MiniPieChart data={productPieData} title="Product" icon="📦" />
-              <MiniPieChart data={kebutuhanPieData} title="Kebutuhan" icon="🎯"
-                centerValue={requests.length} centerLabel="REQUEST"
-                activeFilter={filterKebutuhan !== 'all' ? filterKebutuhan : undefined}
-                onSliceClick={label => setFilterKebutuhan(prev => prev === label ? 'all' : label)} />
-            </>
-          )}
-        </div>
-
-        
-
-        {/* TICKET LIST — matching reference style */}
-        <div className="rounded-2xl overflow-hidden animate-slide-up anim-d320" style={{ background: 'rgba(255,255,255,0.97)', border: '1px solid rgba(200,200,200,0.6)', backdropFilter: 'blur(12px)' }}>
-
-          {/* Header with title + actions — same as reference */}
-          <div className="flex flex-wrap items-center justify-between px-3 py-2 sm:px-6 sm:py-4" style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Ticket List</span>
-              <span className="bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">{loading ? '…' : filteredRequests.length}</span>
-            </div>
-            <div className="flex items-center gap-2 mt-2 sm:mt-0">
-              {bisaKelolaRequest && (
-                <button onClick={() => { setSelectMode(m => !m); setSelectedIds(new Set()); }}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border ${selectMode ? 'bg-red-50 border-red-300 text-red-600' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
-                  {selectMode ? '✕ Batal' : '☑ Select'}
-                </button>
-              )}
-              <button onClick={fetchRequests} disabled={loading}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all hover:bg-gray-100 border border-gray-200 text-gray-600 disabled:opacity-60" style={{ background: 'white' }}>
-                <svg aria-hidden="true" focusable="false" className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                Refresh
-              </button>
-            </div>
-          </div>
-
-          {/* Search + filter grid — labeled like reference */}
-          <FilterRequest
-            availableYears={availableYears} filterHandler={filterHandler} filterMonth={filterMonth} filterStatus={filterStatus} filterYear={filterYear} ptsMembersList={ptsMembersList} searchQuery={searchQuery} searchSales={searchSales} setFilterHandler={setFilterHandler} setFilterMonth={setFilterMonth} setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setSearchQuery={setSearchQuery} setSearchSales={setSearchSales}
-          />
-
-          {/* Active filter chips — inside table */}
-          {/* Bulk delete bar — admin only, selectMode only */}
-          {selectMode && bisaKelolaRequest && selectedIds.size > 0 && (
-            <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 flex items-center justify-between border-b border-gray-200" style={{ background: 'rgba(13,148,136,0.07)' }}>
-              <span className="text-sm font-bold text-teal-700">{selectedIds.size} request dipilih</span>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setSelectedIds(new Set())} className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Batal Pilih</button>
-                <button onClick={() => setBulkConfirm(true)} disabled={bulkDeleting}
-                  className="text-xs font-bold text-white px-4 py-1.5 rounded-lg disabled:opacity-50 flex items-center gap-1"
-                  style={{ background: 'linear-gradient(135deg,#0d9488,#0f766e)' }}>
-                  {bulkDeleting ? '⏳ Menghapus...' : `🗑️ Hapus ${selectedIds.size}`}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {(filterStatus !== 'all' || filterYear !== 'all' || filterMonth !== 'all' || filterHandler !== 'all' || filterDivision !== 'all' || filterKebutuhan !== 'all' || searchQuery || searchSales) && (
-            <div className="px-3 py-1.5 sm:px-6 sm:py-2.5 border-b border-gray-100 flex flex-wrap gap-1.5 sm:gap-2 items-center" style={{ background: 'rgba(255,255,255,0.97)' }}>
-              <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest">Filter Aktif:</span>
-              {filterStatus !== 'all' && (
-                <button onClick={() => setFilterStatus('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#d97706' }}>Status: {filterStatus} ✕</button>
-              )}
-              {filterYear !== 'all' && (
-                <button onClick={() => setFilterYear('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0891b2' }}>Year: {filterYear} ✕</button>
-              )}
-              {filterMonth !== 'all' && (
-                <button onClick={() => setFilterMonth('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0e7490' }}>Bulan: {filterMonth} ✕</button>
-              )}
-              {filterHandler !== 'all' && (
-                <button onClick={() => setFilterHandler('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#7c3aed' }}>Handler: {filterHandler} ✕</button>
-              )}
-              {filterDivision !== 'all' && (
-                <button onClick={() => setFilterDivision('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#ec4899' }}>Division: {filterDivision} ✕</button>
-              )}
-              {filterKebutuhan !== 'all' && (
-                <button onClick={() => setFilterKebutuhan('all')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#0d9488' }}>Kebutuhan: {filterKebutuhan} ✕</button>
-              )}
-              {searchQuery && (
-                <button onClick={() => setSearchQuery('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}>Search: {searchQuery} ✕</button>
-              )}
-              {searchSales && (
-                <button onClick={() => setSearchSales('')} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white transition-all hover:opacity-80" style={{ background: '#475569' }}>Sales: {searchSales} ✕</button>
-              )}
-              <button onClick={() => { 
-                setFilterStatus('all'); setFilterYear('all'); setFilterMonth('all'); 
-                setFilterHandler('all'); setFilterDivision('all'); setFilterKebutuhan('all'); setSearchQuery(''); setSearchSales('');
-                try { ['frp_filterStatus','frp_filterYear','frp_filterMonth','frp_filterHandler','frp_filterDivision','frp_filterKebutuhan','frp_searchQuery','frp_searchSales'].forEach(k => sessionStorage.removeItem(k)); } catch {}
-              }}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all hover:opacity-80" style={{ background: 'rgba(220,38,38,0.12)', color: '#dc2626', border: '1px solid rgba(220,38,38,0.25)' }}><IkonTeks nama="🗑" />Reset Semua</button>
-            </div>
-          )}
-          <DaftarRequest
-            bisaKelolaRequest={bisaKelolaRequest} currentUser={currentUser} filterMonth={filterMonth} filterStatus={filterStatus} filterYear={filterYear} filteredRequests={filteredRequests} formatDate={formatDate} formatDueDate={formatDueDate} getDueStatus={getDueStatus} hal={hal} handleOpenDetail={handleOpenDetail} isIVPGuest={isIVPGuest} isPTS={isPTS} isTeamPTS={isTeamPTS} loading={loading} pimpinan={pimpinan} renderRequestActions={renderRequestActions} requests={requests} searchQuery={searchQuery} searchSales={searchSales} selectMode={selectMode} selectedIds={selectedIds} setFilterMonth={setFilterMonth} setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setSearchQuery={setSearchQuery} setSearchSales={setSearchSales} setShowNewFormModal={setShowNewFormModal} toggleSelectAll={toggleSelectAll} toggleSelectId={toggleSelectId} unreadMsgMap={unreadMsgMap}
-          />
-        </div>
-      </div>
+      <KontenHalamanRequest
+        assignedPieData={assignedPieData} availableYears={availableYears} bisaKelolaRequest={bisaKelolaRequest} bulkDeleting={bulkDeleting} currentUser={currentUser} divisionPieData={divisionPieData} fetchRequests={fetchRequests} filterDivision={filterDivision} filterHandler={filterHandler} filterKebutuhan={filterKebutuhan} filterMonth={filterMonth} filterStatus={filterStatus} filterYear={filterYear} filteredRequests={filteredRequests} formatDate={formatDate} formatDueDate={formatDueDate} getDueStatus={getDueStatus} hal={hal} handleOpenDetail={handleOpenDetail} isIVPGuest={isIVPGuest} isPTS={isPTS} isTeamPTS={isTeamPTS} kebutuhanPieData={kebutuhanPieData} loading={loading} pimpinan={pimpinan} productPieData={productPieData} ptsMembersList={ptsMembersList} renderRequestActions={renderRequestActions} requests={requests} searchQuery={searchQuery} searchSales={searchSales} selectMode={selectMode} selectedIds={selectedIds} setBulkConfirm={setBulkConfirm} setFilterDivision={setFilterDivision} setFilterHandler={setFilterHandler} setFilterKebutuhan={setFilterKebutuhan} setFilterMonth={setFilterMonth} setFilterStatus={setFilterStatus} setFilterYear={setFilterYear} setSearchQuery={setSearchQuery} setSearchSales={setSearchSales} setSelectMode={setSelectMode} setSelectedIds={setSelectedIds} setShowNewFormModal={setShowNewFormModal} stats={stats} statusPieData={statusPieData} toggleSelectAll={toggleSelectAll} toggleSelectId={toggleSelectId} unreadMsgMap={unreadMsgMap}
+      />
 
       {/* Bulk Delete Confirm Modal */}
-      {bulkConfirm && (
-      <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlay }}>
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
-            <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
-              <span className="text-2xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-              <div><h3 className="font-bold text-white">Hapus {selectedIds.size} Request?</h3>
-              <p className="text-red-100 text-xs mt-0.5">Tindakan ini tidak dapat dibatalkan</p></div>
-            </div>
-            <div className="p-6">
-              <p className="text-sm text-gray-600 mb-5">Kamu akan menghapus <strong>{selectedIds.size} request project</strong> yang dipilih secara permanen.</p>
-              <div className="flex gap-3">
-                <button onClick={() => setBulkConfirm(false)} className="flex-1 border-2 border-gray-300 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm">Batal</button>
-                <button onClick={async () => {
-                  setBulkConfirm(false); setBulkDeleting(true);
-                  const { error } = await supabase.from('project_requests').delete().in('id', Array.from(selectedIds));
-                  if (!error) { setRequests(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
-                  else notify('error', 'Gagal: ' + error.message);
-                  setBulkDeleting(false);
-                }} className="flex-[2] bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm hover:from-red-700 hover:to-red-800">
-                  <IkonTeks nama="🗑" />Ya, Hapus Permanen
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </ModalPortal>
-      )}
+      <ModalHapusMassal
+        bulkConfirm={bulkConfirm} notify={notify} selectedIds={selectedIds} setBulkConfirm={setBulkConfirm} setBulkDeleting={setBulkDeleting} setRequests={setRequests} setSelectMode={setSelectMode} setSelectedIds={setSelectedIds}
+      />
 
       {/* Reject Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       {/* ── KONFIRMASI APPROVE Sales Internal (detail dulu, jangan instan) ──
@@ -883,27 +533,9 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
         formatDate={formatDate} handleInternalApproveProject={handleInternalApproveProject} internalApproveSaving={internalApproveSaving} internalApproveTarget={internalApproveTarget} setInternalApproveTarget={setInternalApproveTarget}
       />
 
-      {rejectModal.open && rejectModal.req && (
-      <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
-          <div className="bg-white/90 rounded-2xl shadow-2xl max-w-md w-full border-2 border-red-400 animate-scale-in overflow-hidden">
-            <div className="bg-gradient-to-r from-red-500 to-red-700 px-6 py-4">
-              <h3 className="font-bold text-white text-lg"><IkonTeks nama="❌" />Tolak Request</h3>
-              <p className="text-red-100 text-xs mt-0.5">{rejectModal.req.project_name}</p>
-            </div>
-            <div className="p-6">
-              <label htmlFor="f-form-require-project-page-1" className="block text-sm font-bold text-gray-700 mb-2">Alasan penolakan <span className="text-red-500">*</span></label>
-              <textarea id="f-form-require-project-page-1" value={rejectNote} onChange={e => setRejectNote(e.target.value)} rows={3} placeholder="Tuliskan alasan penolakan..."
-                className="w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:border-red-400 transition-all outline-none resize-none mb-4" />
-              <div className="flex gap-3">
-                <button onClick={() => setRejectModal({ open: false, req: null })} className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-all">Batal</button>
-                <button onClick={handleRejectConfirm} disabled={rejectSaving} className="flex-[2] bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white py-3 rounded-xl font-bold shadow-lg transition-all disabled:opacity-50">{rejectSaving ? '⏳...' : '❌ Ya, Tolak'}</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </ModalPortal>
-      )}
+      <ModalTolakRequest
+        handleRejectConfirm={handleRejectConfirm} rejectModal={rejectModal} rejectNote={rejectNote} rejectSaving={rejectSaving} setRejectModal={setRejectModal} setRejectNote={setRejectNote}
+      />
 
       {/* Status Update Modal — muncul di atas detail modal (lihat lib/z-index.ts) */}
       <ModalUpdateStatus
