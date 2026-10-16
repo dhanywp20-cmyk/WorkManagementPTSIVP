@@ -2,6 +2,7 @@
 
 /** useTambahAktivitas - dipecah dari app/(portal)/ticketing/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { SERVICES_STATUSES, User, TeamMember, Ticket, OverdueSetting } from './shared';
+import { updateSah, wajibCatatan } from './alur-status';
 import { supabase, supabaseServices } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compress';
 
@@ -28,14 +29,19 @@ export interface TambahAktivitasKonteks {
 export function useTambahAktivitas(k: TambahAktivitasKonteks) {
   const { currentUser, fetchData, fetchOverdueSettings, getOverdueSetting, kabarkanTicketSelesai, newActivity, notify, selectedTicket, setLoadingMessage, setNewActivity, setSelectedTicket, setShowLoadingPopup, setShowUpdateForm, setTickets, setUploading, teamMembers, tutupJadwalTicket } = k;
   const addActivity = async () => {
-    const SERVICES_SIMPLE = ["Warranty", "Out Of Warranty", "Waiting PO from Sales", "Submit RMA", "Waiting sparepart"];
-    const isSimpleStatus = newActivity.new_status === "Call" || newActivity.new_status === "Onsite";
-    const isSvcSimple = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser?.username || "").toLowerCase())?.team_type === "Team Services" && SERVICES_SIMPLE.includes(newActivity.new_status);
-    // "In Progress" boleh tanpa notes/action/foto (ganti status saja). "Pending
-    // Action" TETAP wajib notes (alasan kendala).
-    const noteOptional = isSimpleStatus || isSvcSimple || newActivity.new_status === "In Progress";
-    if (!noteOptional && !newActivity.notes) { notify("error", "Notes must be filled!"); return; }
     if (!selectedTicket) { notify("error", "No ticket selected!"); return; }
+    if (!newActivity.new_status) { notify("error", "Pilih status dulu."); return; }
+    const SERVICES_SIMPLE = ["Warranty", "Out Of Warranty", "Waiting PO from Sales", "Submit RMA", "Waiting sparepart"];
+    const isSvcSimple = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser?.username || "").toLowerCase())?.team_type === "Team Services" && SERVICES_SIMPLE.includes(newActivity.new_status);
+    const timServices = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser?.username || "").toLowerCase())?.team_type === "Team Services";
+    //  Team PTS: aturan pindah status & notes wajib ada di alur-status.ts. "Tambah catatan saja"
+    //  = status sama dengan sekarang.
+    const catatanSaja = !timServices && newActivity.new_status === selectedTicket.status;
+    const noteOptional = timServices ? isSvcSimple : !wajibCatatan(selectedTicket.status, newActivity.new_status);
+    if (!noteOptional && !newActivity.notes.trim()) { notify("error", catatanSaja ? "Isi catatannya dulu." : "Notes must be filled!"); return; }
+    if (!timServices && !updateSah(selectedTicket.status, newActivity.new_status)) {
+      notify("error", `Status tidak bisa diubah dari ${selectedTicket.status} ke ${newActivity.new_status}.`); return;
+    }
     const member = teamMembers.find((m) => (m.username || "").toLowerCase() === (currentUser?.username || "").toLowerCase());
     const teamType = member?.team_type || "Team PTS IVP";
     const isServicesTeam = teamType === "Team Services";
@@ -82,7 +88,8 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
       }
       setLoadingMessage("Saving activity log...");
       const SVCSS = ["Warranty", "Out Of Warranty", "Waiting PO from Sales", "Submit RMA", "Waiting sparepart"];
-      const isSimpleStatusCalc = newActivity.new_status === "Call" || newActivity.new_status === "Onsite";
+      //  Catatan otomatis Call/Onsite hanya saat BERPINDAH ke status itu; "tambah catatan saja" memakai teks pengguna.
+      const isSimpleStatusCalc = !catatanSaja && (newActivity.new_status === "Call" || newActivity.new_status === "Onsite");
       const isSvcSimpleCalc = isServicesTeam && SVCSS.includes(newActivity.new_status);
       const onsiteHasSchedule = newActivity.new_status === "Onsite" && newActivity.onsite_use_schedule && newActivity.onsite_schedule_date;
       const svcSimpleNotes: Record<string, string> = {
@@ -258,7 +265,7 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
         // reminders sebagai kategori Troubleshooting.
         // Jika ada jadwal (onsite_use_schedule + date), gunakan tanggal tersebut.
         // Jika tidak ada jadwal, gunakan tanggal hari ini.
-        if (newActivity.new_status === "Onsite") {
+        if (newActivity.new_status === "Onsite" && !catatanSaja) {
           try {
             /*
               Penjaga duplikat. Sebelum ini tidak ada: setiap kali status
@@ -342,7 +349,7 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
         handler_name: newActivity.handler_name,
         action_taken: "",
         notes: "",
-        new_status: isServicesTeam ? "Pending" : "Pending",
+        new_status: "",
         sn_unit: "",
         file: null,
         photo: null,

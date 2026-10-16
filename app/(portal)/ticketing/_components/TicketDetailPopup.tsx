@@ -8,7 +8,8 @@ import type { Ticket, User } from './shared';
 import { formatDateTime, statusColors, ringkasPenanganan, bolehReroute, adalahPending } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { SolusiSerupa } from './SolusiSerupa';
-import { ALUR_STATUS_PTS, statusTerkunci } from './alur-status';
+import { wajibCatatan } from './alur-status';
+import { PilihStatusPTS } from './PilihStatusPTS';
 
 /** Bentuk state form "Update Status" di page.tsx - dioper ke sini apa adanya. */
 export type NewActivityForm = {
@@ -61,6 +62,16 @@ export function TicketDetailPopup({
   uploading: boolean;
 }) {
   const router = useRouter();
+  //  "Tambah catatan saja" = status yang dipilih sama dengan status sekarang (alur Team PTS).
+  const catatanSaja = currentUserTeamType !== "Team Services" && newActivity.new_status !== "" && newActivity.new_status === selectedTicket.status;
+  const notesWajib = currentUserTeamType === "Team Services"
+    ? !["Pending","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart","Process Repair"].includes(newActivity.new_status)
+    : wajibCatatan(selectedTicket.status, newActivity.new_status);
+  //  Form update selalu dibuka TANPA pilihan bawaan - dulu selalu "Pending", apa pun status ticketnya.
+  const bukaTutupUpdate = () => {
+    if (!showUpdateForm) setNewActivity(a => ({ ...a, new_status: "", action_taken: "", notes: "" }));
+    setShowUpdateForm(!showUpdateForm);
+  };
 
   return (
     <ModalPortal>
@@ -319,7 +330,7 @@ export function TicketDetailPopup({
                   <button onClick={() => setReopenServicesTarget(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}><IkonTeks nama="🔓" />Re-open Services</button>
                 )}
                 {bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
-                  <button onClick={() => setShowUpdateForm(!showUpdateForm)}
+                  <button onClick={bukaTutupUpdate}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${showUpdateForm ? 'bg-gray-200 text-gray-700' : 'text-white'}`}
                     style={showUpdateForm ? {} : { background: "linear-gradient(135deg,#dc2626,#b91c1c)" }}>
                     {showUpdateForm ? '✕ Tutup' : '➕ Update Status'}
@@ -370,7 +381,7 @@ export function TicketDetailPopup({
 
                 {/* Status flowchart buttons */}
                 <div>
-                  <label className="block text-[10px] font-bold mb-2 tracking-widest uppercase text-gray-500">Pilih Status *</label>
+                  {currentUserTeamType === "Team Services" && <label className="block text-[10px] font-bold mb-2 tracking-widest uppercase text-gray-500">Pilih Status *</label>}
                   {currentUserTeamType === "Team Services" ? (
                     <div className="flex flex-col gap-1.5">
                       {(["Pending","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart","Process Repair","Solved"] as const).map(s => (
@@ -382,33 +393,9 @@ export function TicketDetailPopup({
                       ))}
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-1.5">
-                      {(() => {
-                        const riwayatStatus = (selectedTicket.activity_logs ?? []).map(l => l.new_status);
-                        const styleMap: Record<string,{icon:string;sel:string;unsel:string}> = {
-                          Pending:      { icon:'🟡', sel:'bg-amber-500 text-white border-amber-500',    unsel:'bg-white text-amber-700 border-amber-200 hover:bg-amber-50' },
-                          Call:         { icon:'📞', sel:'bg-cyan-600 text-white border-cyan-600',      unsel:'bg-white text-cyan-700 border-cyan-200 hover:bg-cyan-50' },
-                          Onsite:       { icon:'🚗', sel:'bg-purple-600 text-white border-purple-600',  unsel:'bg-white text-purple-700 border-purple-200 hover:bg-purple-50' },
-                          'In Progress':{ icon:'🔵', sel:'bg-blue-600 text-white border-blue-600',      unsel:'bg-white text-blue-700 border-blue-200 hover:bg-blue-50' },
-                          'Pending Action':{ icon:'⏸️', sel:'bg-orange-600 text-white border-orange-600', unsel:'bg-white text-orange-700 border-orange-200 hover:bg-orange-50' },
-                          Solved:       { icon:'✅', sel:'bg-emerald-500 text-white border-emerald-500',unsel:'bg-white text-emerald-700 border-emerald-200 hover:bg-emerald-50' },
-                        };
-                        return ALUR_STATUS_PTS.map(step => {
-                          const disabled = statusTerkunci(step, selectedTicket.status, riwayatStatus);
-                          const st = styleMap[step];
-                          const isSelected = newActivity.new_status === step;
-                          return (
-                            <div key={step}>
-                              <button disabled={disabled}
-                                onClick={() => setNewActivity({ ...newActivity, new_status: step, action_taken: "", notes: "", onsite_use_schedule: false })}
-                                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg border-2 font-semibold text-xs transition-all ${isSelected ? st.sel : disabled ? 'bg-gray-50 text-gray-500 border-gray-100 cursor-not-allowed' : st.unsel}`}>
-                                <span><Ikon nama={st.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
-                                <span className="flex-1 text-left">{step}</span>
-                                {disabled && <span className="text-[10px]"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></span>}
-                                {isSelected && <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>}
-                              </button>
-                              {/* Onsite schedule */}
-                              {step === 'Onsite' && isSelected && (
+                    <PilihStatusPTS sekarang={selectedTicket.status} dipilih={newActivity.new_status}
+                      onPilih={st => setNewActivity({ ...newActivity, new_status: st, action_taken: "", notes: "", onsite_use_schedule: false })}
+                      jadwalOnsite={
                                 <div className="mt-1.5 p-2.5 rounded-lg border" style={{ background: 'rgba(124,58,237,0.06)', borderColor: 'rgba(124,58,237,0.25)' }}>
                                   <div className="flex items-center gap-1.5 mb-1.5">
                                     <input type="checkbox" id="onsite-sched-r" checked={newActivity.onsite_use_schedule}
@@ -443,17 +430,12 @@ export function TicketDetailPopup({
                                     </div>
                                   )}
                                 </div>
-                              )}
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
+                      } />
                   )}
                 </div>
 
                 {/* Notes/Action for statuses that need detail */}
-                {!["Call","Onsite","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart"].includes(newActivity.new_status) && (
+                {newActivity.new_status !== "" && (catatanSaja || !["Call","Onsite","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart"].includes(newActivity.new_status)) && (
                   <>
                     <div>
                       <label htmlFor="f-ticketing-components-ticketdetailpopup-2" className="block text-[10px] font-bold mb-1 tracking-widest uppercase text-gray-500"><IkonTeks nama="🔧" />Action Taken</label>
@@ -464,10 +446,10 @@ export function TicketDetailPopup({
                     </div>
                     <div>
                       <label htmlFor="f-ticketing-components-ticketdetailpopup-3" className="block text-[10px] font-bold mb-1 tracking-widest uppercase text-gray-500">
-                        <IkonTeks nama="📝" />Notes {newActivity.new_status === "In Progress" ? <span className="text-gray-500 normal-case">(opsional)</span> : "*"}
+                        <IkonTeks nama="📝" />Notes {notesWajib ? "*" : <span className="text-gray-500 normal-case">(opsional)</span>}
                       </label>
                       <textarea id="f-ticketing-components-ticketdetailpopup-3" value={newActivity.notes} onChange={e => setNewActivity({ ...newActivity, notes: e.target.value })}
-                        placeholder={newActivity.new_status === "Pending Action" ? "Kendala apa? (mis. menunggu konfirmasi user, akses lokasi belum tersedia)" : "Detail penanganan..."} rows={3}
+                        placeholder={newActivity.new_status === "Pending Action" ? "Kendala apa? (mis. menunggu konfirmasi user, akses lokasi belum tersedia)" : catatanSaja ? "Perkembangan terbaru..." : "Detail penanganan..."} rows={3}
                         className="w-full rounded-lg px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-red-500/40 resize-none"
                         style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
                     </div>
@@ -515,10 +497,10 @@ export function TicketDetailPopup({
                 </div>
 
                 <button onClick={addActivity}
-                  disabled={uploading || (!newActivity.notes && !["Pending","Call","Onsite","In Progress","Warranty","Out Of Warranty","Waiting PO from Sales","Submit RMA","Waiting sparepart","Process Repair"].includes(newActivity.new_status))}
+                  disabled={uploading || newActivity.new_status === "" || (notesWajib && !newActivity.notes.trim())}
                   className="w-full text-white py-2.5 rounded-xl font-bold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 4px 14px rgba(220,38,38,0.35)" }}>
-                  {uploading ? "⏳ Menyimpan..." : "💾 Simpan Activity"}
+                  {uploading ? "⏳ Menyimpan..." : newActivity.new_status === "" ? "Pilih status dulu" : "💾 Simpan Activity"}
                 </button>
               </div>
             </div>
