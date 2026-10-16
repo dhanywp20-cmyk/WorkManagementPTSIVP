@@ -39,7 +39,7 @@ function pdfKe(k: KartuBanding | ((d: DokPenuh) => void)): Promise<Uint8Array> {
 }
 async function bacaPdf(data: Uint8Array): Promise<{ halaman: string[]; lebarMaks: number }> {
   const lib = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  const dok = await lib.getDocument({ data, isEvalSupported: false, disableFontFace: true }).promise;
+  const dok = await lib.getDocument({ data, disableFontFace: true }).promise;
   const halaman: string[] = []; let lebarMaks = 0;
   for (let i = 1; i <= dok.numPages; i++) {
     const p = await dok.getPage(i);
