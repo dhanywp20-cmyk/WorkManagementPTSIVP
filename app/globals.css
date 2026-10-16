@@ -474,20 +474,21 @@
       dan tidak pernah menyisakan ruang kosong pada modal yang sudah pas.
 
    overflow-y ikut disetel karena batas tinggi tanpa gulir hanya memindahkan
-   masalah: isinya terpotong dan tidak bisa dijangkau. */
-:where(.fixed.inset-0:not(.pointer-events-none)) > :where(*) {
-  max-height: 100dvh;
-  overflow-y: auto;
+   masalah: isinya terpotong dan tidak bisa dijangkau.
+
+   Tailwind 4: aturan di luar @layer SELALU menang atas utilitas (utilitas kini di @layer
+   utilities), berapa pun kekhususannya - :where() tidak lagi cukup. Karena itu aturan ini
+   ditaruh di @layer base: max-h-[90vh] dkk. di komponen kembali menang seperti di v3. */
+@layer base {
+  :where(.fixed.inset-0:not(.pointer-events-none)) > :where(*) {
+    max-height: 100dvh;
+    overflow-y: auto;
+  }
 }
 
 /* ── Animasi masuk halaman login ───────────────────────────────────────────
    Lapisan ini hanya hidup di panel putih sebelah kanan. Panel merah, foto
    latar, tata letak, logo, tipografi, tombol, dan isian form tidak disentuh. */
-
-/* Titik anchor animasi login berhasil (lc-dasbor-muncul di bawah).
-   Tengah layar — dulu dipatok ke posisi mulut koper 3D, sekarang cukup titik
-   tetap karena tidak ada lagi objek yang posisinya perlu diikuti. */
-:root { --lc-mulut-x: 50vw; --lc-mulut-y: 50vh; }
 
 /* ── Kartu login ── */
 .lc-kartu { position: relative; z-index: 5; }
@@ -520,107 +521,33 @@
   from { opacity: 0; transform: scale(.92) translateY(10px); }
 }
 
-/* ── Login berhasil: halaman DIBONGKAR, dashboard keluar dari satu titik ──
-   Keduanya sengaja animasi CSS murni, bukan digerakkan JavaScript per bingkai.
-   Sebabnya keselamatan: transform/clip-path yang tertinggal pada akar
-   dashboard akan menjadikannya containing block bagi seluruh modal
-   `fixed inset-0` di platform ini — persis akar bug modal yang dulu sudah
-   dicabut. Animasi di bawah memang berakhir dengan transform (`forwards`),
-   tapi HANYA pada halaman login, yang dilepas dari DOM begitu animasinya
-   selesai. Akar dashboard tidak pernah memakainya.
+/* ── Login berhasil: tanda centang digambar + sapaan, lalu pudar ke dashboard ──
+   Dulu halaman login "dibongkar" jadi potongan yang terbelah dan dashboard terungkap lewat
+   clip-path lingkaran (1500 ms) - terasa berat dan menahan orang di layar login. Sekarang tiga
+   langkah pendek, total 900 ms:
+     0-640 ms  overlay sukses memudar masuk di dalam kartu; lingkaran lalu centang digambar,
+               sapaan naik sedikit;
+     640-900   seluruh halaman login memudar;
+     900+      dashboard memudar masuk (420 ms).
+   Semuanya OPACITY (dan stroke-dashoffset pada SVG): tidak ada transform/clip-path yang menetap
+   di akar dashboard, yang akan menjadikannya containing block bagi modal `fixed` (akar bug modal
+   yang dulu sudah dicabut). Durasi 900 ms dicerminkan di LayarMasuk.tsx (setTimeout onSelesai) -
+   ubah keduanya bersamaan. */
+.lc-sukses { animation: lcSuksesMuncul 240ms ease-out both; }
+@keyframes lcSuksesMuncul { from { opacity: 0; } to { opacity: 1; } }
+.lc-sukses-lingkar { stroke-dasharray: 145; stroke-dashoffset: 145; animation: lcGambarGaris 420ms ease-out 60ms forwards; }
+.lc-sukses-centang { stroke-dasharray: 40;  stroke-dashoffset: 40;  animation: lcGambarGaris 260ms ease-out 360ms forwards; }
+@keyframes lcGambarGaris { to { stroke-dashoffset: 0; } }
+.lc-sukses-teks { animation: lcSuksesNaik 320ms cubic-bezier(.22, 1, .36, 1) 240ms both; }
+@keyframes lcSuksesNaik { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-   Yang lama menyusutkan seluruh halaman jadi satu titik ("dihisap"). Masalahnya
-   bukan cuma selera: menskalakan kotak SELUAS SATU LAYAR ke 3,5% membuat semua
-   teks di dalamnya melewati puluhan ukuran font dalam setengah detik, dan yang
-   terlihat adalah gumpalan yang meleot — bukan gerakan yang punya bentuk.
+/* Halaman login memudar (dilepas dari DOM begitu selesai - lihat catatan di atas). */
+.lc-masuk-pudar { animation: lcMasukPudar 260ms ease-in 640ms forwards; }
+@keyframes lcMasukPudar { to { opacity: 0; } }
 
-   Gantinya: halamannya DIBONGKAR jadi bagian-bagiannya, berurutan seperti
-   membongkar sesuatu yang tadinya tersusun. Kartu form diangkat lebih dulu
-   (bagian yang paling atas), isi panel kiri lepas satu per satu, lalu kedua
-   panel terbelah ke arah berlawanan. Tiap bagian bergerak dalam ukuran
-   aslinya, jadi tidak ada yang meleot.
-
-   Total 1500ms, ditutup oleh panel yang terbelah (jeda 270ms + 1230ms).
-   Angka itu dicerminkan di setTimeout pada app/dashboard/page.tsx — kalau
-   durasi di sini diubah, angka di sana WAJIB ikut, kalau tidak halaman login
-   dilepas dari DOM di tengah gerakan. */
-
-/* Latar hanya memudar di ujung — kalau ikut memudar sejak awal, potongan-
-   potongannya sudah transparan sebelum sempat terlihat bergerak. */
-.lc-bongkar { animation: lcBongkarLatar 1500ms ease-in forwards; }
-@keyframes lcBongkarLatar {
-  0%, 62% { opacity: 1; }
-  100%    { opacity: 0; }
-}
-
-/* Kartu form — bagian teratas, dilepas duluan. */
-.lc-bongkar .lc-kartu {
-  animation: lcBongkarKartu 620ms cubic-bezier(.55, .06, .68, .19) forwards;
-}
-/* Kartu login MENYINGKIR KE KANAN, bukan ikut terbelah bersama panelnya.
-   Kartu itu bukan bagian dari bangunan halaman — ia benda yang diletakkan di
-   atasnya. Membiarkannya ikut terbelah membuat pembongkarannya kehilangan
-   makna: yang dibongkar seharusnya panelnya, bukan formulirnya.
-   Karena itu ia keluar DULUAN (620ms), baru panel mulai bergerak. */
-@keyframes lcBongkarKartu {
-  from { transform: none; opacity: 1; }
-  to   { transform: translateX(120%) rotate(3deg); opacity: 0; }
-}
-
-/* Isi panel kiri lepas satu per satu, sebelum panelnya sendiri bergeser. */
-.lc-bongkar-kiri > * {
-  animation: lcBongkarKeping 700ms cubic-bezier(.55, .06, .68, .19) both;
-}
-.lc-bongkar-kiri > *:nth-child(1) { animation-delay: 560ms; }
-.lc-bongkar-kiri > *:nth-child(2) { animation-delay: 680ms; }
-.lc-bongkar-kiri > *:nth-child(3) { animation-delay: 800ms; }
-@keyframes lcBongkarKeping {
-  from { transform: none; opacity: 1; }
-  to   { transform: translateX(-30px) translateY(12px); opacity: 0; }
-}
-
-/* Terakhir: kedua panel terbelah ke arah berlawanan. */
-.lc-bongkar-kiri  { animation: lcBongkarKiri   940ms cubic-bezier(.55, .06, .68, .19) 560ms forwards; }
-.lc-bongkar-kanan { animation: lcBongkarKanan  940ms cubic-bezier(.55, .06, .68, .19) 560ms forwards; }
-@keyframes lcBongkarKiri {
-  from { transform: none; }
-  to   { transform: translateX(-58%) skewX(7deg); opacity: 0; }
-}
-@keyframes lcBongkarKanan {
-  from { transform: none; }
-  to   { transform: translateX(58%) skewX(-7deg); opacity: 0; }
-}
-
-/* Dashboard tumbuh keluar dari mulut koper.
-   BUKAN transform: scale — itu percobaan pertama, dan hasilnya salah. Men-
-   scale kotak SELUAS SATU LAYAR dari titik di pinggir tidak terbaca sebagai
-   "tumbuh dari sebuah titik": yang terlihat mata adalah tepi-tepi kotak
-   berlari masuk dari arah titik itu, persis seperti "muncul dari kanan" —
-   bukan "keluar dari koper yang terbuka".
-   clip-path lingkaran yang melebar dari radius 0 di titik yang sama adalah
-   teknik yang benar untuk "terungkap dari satu titik": isi dashboard sudah
-   ada di tempatnya sejak bingkai pertama, hanya jendela bundar di sekitar
-   mulut koper yang membesar untuk menyingkapkannya — seperti cahaya yang
-   meluas dari lubang koper, bukan kotak yang melayang masuk. */
-.lc-dasbor-muncul {
-  /* BUKAN cubic-bezier(.22,1,.36,1) — kurva itu dipakai di tempat lain untuk
-     elemen kecil (kartu bergeser 14px) dan sangat "melesat di awal": diukur,
-     radius lingkaran ini sudah mencapai 52% diagonal layar dalam 21 milidetik
-     pertama. Mata tidak sempat melihatnya membesar — yang terlihat cuma
-     "tiba-tiba semua muncul", masih terbaca sebagai pop, bukan terungkap.
-     cubic-bezier(.4,0,.2,1) adalah kurva "standard easing" Material Design —
-     kurva yang sama dipakai Android untuk circular reveal transition, pola
-     yang persis ini. Naiknya lebih rata, jadi lingkarannya benar-benar
-     terlihat melebar selama animasi berjalan. */
-  animation: lcDasborMuncul 720ms cubic-bezier(.4, 0, .2, 1) backwards;
-}
-@keyframes lcDasborMuncul {
-  from { clip-path: circle(0 at var(--lc-mulut-x) var(--lc-mulut-y)); }
-  /* 150vmax: lebih besar dari jarak sudut manapun ke titik manapun di layar
-     (jarak terjauh yang mungkin ≈ 141vmax), jadi lingkarannya menutup seluruh
-     layar sampai ke ujung sekalipun mulut kopernya dekat sebuah sudut. */
-  to   { clip-path: circle(150vmax at var(--lc-mulut-x) var(--lc-mulut-y)); }
-}
+/* Dashboard memudar masuk. `backwards`: tidak ada fill setelah selesai, kelasnya juga dilepas. */
+.lc-dasbor-pudar { animation: lcDasborPudar 420ms ease-out backwards; }
+@keyframes lcDasborPudar { from { opacity: 0; } }
 
 /* ── Hormati setelan perangkat ──
    Gerak dikurangi: kartu langsung ada di tempatnya, tanpa animasi apa pun. */
@@ -628,12 +555,12 @@
   .lc-kartu-masuk,
   .lc-tukar-keluar,
   .lc-tukar-masuk,
-  .lc-bongkar,
-  .lc-bongkar .lc-kartu,
-  .lc-bongkar-kiri,
-  .lc-bongkar-kiri > *,
-  .lc-bongkar-kanan,
-  .lc-dasbor-muncul { animation: none; clip-path: none; }
+  .lc-sukses,
+  .lc-sukses-teks,
+  .lc-masuk-pudar,
+  .lc-dasbor-pudar { animation: none; }
+  .lc-sukses-lingkar,
+  .lc-sukses-centang { animation: none; stroke-dashoffset: 0; }
 }
 
 /* Panel geser dari kanan - dipakai panel "Event → Kanal" di Integrations.

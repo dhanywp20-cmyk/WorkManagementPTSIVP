@@ -16,6 +16,7 @@ import { AnalyticsPage } from './_components/AnalyticsPage';
 import { MyQuizPage } from './_components/MyQuizPage';
 import { HistoryPage } from './_components/HistoryPage';
 import { ScorePage } from './_components/ScorePage';
+import { KelasEksternalPage } from './_components/kelas-eksternal/KelasEksternalPage';
 import { Ikon } from '@/components/shared/Ikon';
 
 export default function LearningCenterPage() {
@@ -163,6 +164,7 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
                   {adminView === 'materi'     && <MateriPage user={currentUser} isAdmin={true} readOnly={hanyaLihat} />}
                   {adminView === 'questions'  && <QuestionsPage user={currentUser} />}
                   {adminView === 'sessions'   && <SessionsPage user={currentUser} onViewResults={viewSessionResults} />}
+                  {adminView === 'eksternal'  && <KelasEksternalPage />}
                   {adminView === 'team'       && <TeamPage />}
                   {adminView === 'report'     && <ReportPage currentUser={currentUser} initialSessionId={reportSessionId} onSessionConsumed={() => setReportSessionId(null)} />}
                   {adminView === 'analytics'  && <AnalyticsPage />}
@@ -203,6 +205,7 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
     { key: 'materi', icon: '📚', label: 'Materi' },
     { key: 'questions', icon: '🧩', label: 'Bank Soal' },
     { key: 'sessions', icon: '🎯', label: 'Sesi Quiz' },
+    { key: 'eksternal', icon: '🌐', label: 'Kelas Eksternal' },
     { key: 'team', icon: '👥', label: 'Team' },
     { key: 'report', icon: '📋', label: 'Laporan' },
     { key: 'analytics', icon: '📈', label: 'Analytics' },

@@ -1,6 +1,7 @@
 {
   "buildCommand": "npm run build",
   "framework": "nextjs",
+  "regions": ["bom1"],
   "functions": {
     "app/api/project-progress/ai-checklist/route.ts": {
       "maxDuration": 60

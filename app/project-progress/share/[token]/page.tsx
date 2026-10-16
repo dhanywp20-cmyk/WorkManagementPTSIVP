@@ -1,14 +1,14 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { CalendarDays, ChevronDown, Eye, Lock, MapPin } from 'lucide-react';
+import { BarProgres, CatatanTeks, KepingKendala, TEMA, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
+import { STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari, type ChecklistBagian, type ChecklistItem, type StatusProyek } from '@/lib/checklist';
 import { NETRAL } from '@/lib/desain';
-import {
-  STATUS_PROYEK, formatTanggal, formatWaktu, keadaanJadwal, statDari,
-  type ChecklistBagian, type ChecklistItem, type StatusProyek,
-} from '@/lib/checklist';
-import { BarProgres, CatatanTeks, KepingKendala, PanelBagian, TEMA, itemPerBagian, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
+import { CalendarDays, ChevronRight, Eye, Lock, MapPin } from 'lucide-react';
+import { useParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
+import { PanelLokasi } from './_bagian/PanelLokasi';
+import { hitungRingkasan } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
+import { RingkasanProyek } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';
 
 interface DataShare {
   proyek: {
@@ -18,6 +18,8 @@ interface DataShare {
   daftar: { id: string; judul: string; keterangan: string; start_date: string | null; target_date: string | null; updated_at: string }[];
   bagian: ChecklistBagian[];
   items: ChecklistItem[];
+  /** Handler per checklist - hanya untuk ringkasan "Dikerjakan Oleh". */
+  anggota?: { daftar_id: string; nama: string }[];
 }
 
 /**
@@ -60,12 +62,14 @@ export default function ProyekSharePage() {
   }, [data]);
 
   const total = data ? statDari(data.items) : null;
+  const lokasiBuka = data?.daftar.find(d => d.id === buka) ?? null;
+  const ringkasan = useMemo(() => data ? hitungRingkasan(data.proyek, data.daftar, data.items, data.anggota ?? []) : null, [data]);
   const st = data ? (STATUS_PROYEK[data.proyek.status] ?? STATUS_PROYEK.in_progress) : null;
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--latar-halaman)' }}>
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <h1 className="text-[15.5px] font-bold leading-tight truncate" style={{ color: NETRAL.tinta }}>{data?.proyek.nama ?? 'Project Progress'}</h1>
             <p className="text-[11px] font-semibold" style={{ color: TEMA.samar }}>
@@ -79,7 +83,7 @@ export default function ProyekSharePage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 space-y-3">
+      <main className="max-w-6xl mx-auto px-3 sm:px-4 py-4 space-y-3">
         {memuat && <p className="py-16 text-center text-sm font-semibold" style={{ color: TEMA.samar }}>Memuat progres proyek…</p>}
 
         {!memuat && galat && (
@@ -100,12 +104,16 @@ export default function ProyekSharePage() {
                 </span>
                 {data.proyek.sales_name && <span className="text-[12px]" style={{ color: NETRAL.tinta2 }}>· Sales {data.proyek.sales_name}</span>}
               </div>
-              <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex-1 min-w-[200px]"><BarProgres progres={progresDariStat(total)} tebal={10} /></div>
-                <KepingKendala jumlah={total.kendala} />
-              </div>
               {data.proyek.deskripsi && <CatatanTeks teks={data.proyek.deskripsi} />}
             </div>
+
+            {ringkasan && <RingkasanProyek r={ringkasan} />}
+
+            {data.daftar.length > 0 && (
+              <h2 className="pt-2 px-1 text-[12px] font-bold uppercase tracking-wider" style={{ color: TEMA.samar }}>
+                Progres per Lokasi · {data.daftar.length}
+              </h2>
+            )}
 
             {data.daftar.length === 0 && (
               <p className="rounded-xl p-8 text-center text-[13px]" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
@@ -113,21 +121,21 @@ export default function ProyekSharePage() {
               </p>
             )}
 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
             {data.daftar.map(d => {
               const isi = perDaftar.get(d.id) ?? { bagian: [], items: [] };
               const s = statDari(isi.items);
               const j = keadaanJadwal(d.target_date, s.total > 0 && s.selesai === s.total);
-              const terbuka = buka === d.id;
-              const peta = itemPerBagian(isi.bagian, isi.items);
+              const dipilih = buka === d.id;
               return (
-                <section key={d.id} className="rounded-xl overflow-hidden" style={{ background: NETRAL.permukaan, border: `1px solid ${s.kendala ? TEMA.kendalaGaris : NETRAL.garis}` }}>
-                  <button type="button" onClick={() => setBuka(terbuka ? null : d.id)} aria-expanded={terbuka}
+                <section key={d.id} className="rounded-xl overflow-hidden transition-shadow hover:shadow-md" style={{ background: NETRAL.permukaan, border: `1px solid ${dipilih ? TEMA.warna : s.kendala ? TEMA.kendalaGaris : NETRAL.garis}` }}>
+                  <button type="button" onClick={() => setBuka(d.id)} aria-haspopup="dialog"
                     className="w-full text-left px-4 py-3 space-y-2">
                     <div className="flex items-center gap-2">
-                      <ChevronDown size={16} className="shrink-0 transition-transform" style={{ transform: terbuka ? 'none' : 'rotate(-90deg)', color: TEMA.samar }} />
                       <MapPin size={15} style={{ color: TEMA.warna }} />
                       <span className="font-bold text-[14px] flex-1 min-w-0 truncate" style={{ color: NETRAL.tinta }}>{d.judul}</span>
                       <KepingKendala jumlah={s.kendala} />
+                      <ChevronRight size={16} className="shrink-0" style={{ color: TEMA.samar }} />
                     </div>
                     <div className="pl-6 flex items-center gap-3 flex-wrap">
                       <div className="flex-1 min-w-[180px]">
@@ -136,17 +144,16 @@ export default function ProyekSharePage() {
                       <span className="text-[11.5px] font-bold" style={{ color: j.keadaan === 'terlambat' ? TEMA.bahaya : j.keadaan === 'selesai' ? TEMA.selesai : TEMA.samar }}>{j.label}</span>
                     </div>
                   </button>
-                  {terbuka && (
-                    <div className="px-3 pb-3 space-y-2" style={{ borderTop: `1px solid ${NETRAL.garis}`, paddingTop: 12 }}>
-                      {d.keterangan && <div className="px-1"><CatatanTeks teks={d.keterangan} /></div>}
-                      {isi.bagian.map(b => (
-                        <PanelBagian key={b.id} bagian={b} items={peta.get(b.id) ?? []} sedangId={null} aksi={{}} terbukaAwal={false} />
-                      ))}
-                    </div>
-                  )}
                 </section>
               );
             })}
+            </div>
+
+            {lokasiBuka && ringkasan && (
+              <PanelLokasi lokasi={ringkasan.lokasi.find(l => l.id === lokasiBuka.id)!} semua={ringkasan.lokasi} keterangan={lokasiBuka.keterangan}
+                bagian={perDaftar.get(lokasiBuka.id)?.bagian ?? []} items={perDaftar.get(lokasiBuka.id)?.items ?? []}
+                onPilih={setBuka} onTutup={() => setBuka(null)} />
+            )}
 
             <p className="text-center text-[11px] font-semibold py-4" style={{ color: TEMA.samar }}>
               Work Management PTS IVP · Diperbarui {formatWaktu(data.proyek.updated_at)} · Halaman ini hanya menampilkan data.

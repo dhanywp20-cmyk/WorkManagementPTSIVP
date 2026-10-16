@@ -60,6 +60,12 @@ export const Z = {
   tourMenuItem: 1510,
 
   /**
+   * Layar host Kuis Live (untuk proyektor): menutup SELURUH platform termasuk tour & sidebar,
+   * tapi tetap di bawah dialog konfirmasi (Akhiri, Keluarkan pemain).
+   */
+  layarHost: 1900,
+
+  /**
    * Dialog konfirmasi yang MEMBLOKIR. Dipanggil dari mana saja, termasuk dari
    * dalam modal bertingkat, jadi harus di atas seluruh lapisan overlay -
    * kalau tidak, dialognya ter-render tapi tertutup dan klik user jatuh ke

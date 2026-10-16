@@ -293,7 +293,7 @@ export function RequestJadwalModal({
           </div>
 
           {/* ── Kolom 2: jenis pekerjaan & waktu ── */}
-          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
+          <div className="flex flex-col gap-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           {/* Kategori */}
           <div>
             <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>

@@ -1,0 +1,11 @@
+{
+  "name": "e2e-work-management",
+  "private": true,
+  "description": "Uji ujung-ke-ujung terpisah dari aplikasi - lihat playwright.config.ts",
+  "scripts": {
+    "uji": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.49.1"
+  }
+}

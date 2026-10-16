@@ -12,6 +12,8 @@ import {
   BarProgres, CatatanTeks, KepingKendala, ModalKendala, PanelBagian, TEMA, itemPerBagian, kirimFoto, progresDariStat,
 } from '@/app/(portal)/project-progress/_components/tampilan';
 import { BilahSimpan, useTertunda } from '@/app/(portal)/project-progress/_components/tertunda';
+import { ringkasChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
+import { LipatRingkasan, RingkasanChecklist, adaRingkasanChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';
 
 /**
  * Halaman link checklist untuk tim lapangan - PUBLIK, tanpa login.
@@ -148,6 +150,7 @@ export default function ChecklistSharePage() {
   const itemsTampil = useMemo(() => (detail ? detail.items.map(t.tampil) : []), [detail, t.tampil]);
   const peta = useMemo(() => (detail ? itemPerBagian(detail.bagian, itemsTampil) : new Map<string, ChecklistItem[]>()), [detail, itemsTampil]);
   const stat = detail ? statDari(itemsTampil) : null;
+  const ringkasan = useMemo(() => ringkasChecklist(detail?.daftar ?? { start_date: null, target_date: null }, itemsTampil, detail?.anggota ?? []), [detail, itemsTampil]);
   const namaSah = !!validasiNama(isianNama);
 
   return (
@@ -156,7 +159,7 @@ export default function ChecklistSharePage() {
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
 
       <header className="sticky top-0 z-40" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
-        <div className="max-w-3xl mx-auto px-4 py-3 space-y-2">
+        <div className="max-w-5xl mx-auto px-4 py-3 space-y-2">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               {detail && (
@@ -193,7 +196,7 @@ export default function ChecklistSharePage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-3 sm:px-4 pt-4 pb-28 space-y-3">
+      <main className="max-w-5xl mx-auto px-3 sm:px-4 pt-4 pb-28 space-y-3">
         {memuat && <p className="py-16 text-center text-sm font-semibold" style={{ color: TEMA.samar }}>Memuat checklist…</p>}
 
         {!memuat && galat && !detail && (
@@ -210,6 +213,12 @@ export default function ChecklistSharePage() {
               <div className="rounded-xl px-4 py-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
                 <CatatanTeks teks={detail.daftar.keterangan} />
               </div>
+            )}
+
+            {adaRingkasanChecklist(ringkasan) && (
+              <LipatRingkasan hpTerlipat>
+                <RingkasanChecklist r={ringkasan} />
+              </LipatRingkasan>
             )}
 
             <div className="flex items-center justify-between gap-2 px-1">

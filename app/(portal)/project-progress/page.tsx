@@ -10,6 +10,8 @@ import type { User } from '@/app/(portal)/dashboard/_components/shared';
 import { PageHeader, StatCardGrid, Toast, type Notif, type SalesPickerUser } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import { STATUS_PROYEK, keadaanJadwal, type ProyekRingkas } from '@/lib/checklist';
+import { ringkasDaftarProyek } from './_components/ringkasan/hitung';
+import { RingkasanDaftarProyek } from './_components/ringkasan/Ringkasan';
 import { BarProgres, KepingKendala, TEMA, progresDariStat } from './_components/tampilan';
 import { DetailProyek } from './_components/DetailProyek';
 import { DetailChecklist } from './_components/DetailChecklist';
@@ -107,6 +109,7 @@ export default function ProjectProgressPage() {
     })();
   }, [admin]);
 
+  const ringkasanDaftar = useMemo(() => ringkasDaftarProyek(proyek), [proyek]);
   const statistik = useMemo(() => ({
     berjalan: proyek.filter(p => p.status !== 'done').length,
     kendala: proyek.filter(p => p.stat.kendala > 0).length,
@@ -179,6 +182,8 @@ export default function ProjectProgressPage() {
               { label: 'Tugas saya', value: statistik.saya, sub: 'checklist yang di-assign', accent: '#0891b2', onClick: saringKartu('saya'), active: saring === 'saya' },
               { label: 'Selesai', value: statistik.selesai, accent: '#16a34a', onClick: saringKartu('selesai'), active: saring === 'selesai' },
             ]} />
+
+            {proyek.length > 0 && <RingkasanDaftarProyek r={ringkasanDaftar} />}
 
             <div className="rounded-xl overflow-hidden" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
               <div className="flex items-center gap-2 px-3 sm:px-4 py-3" style={{ borderBottom: `1px solid ${NETRAL.garis}` }}>

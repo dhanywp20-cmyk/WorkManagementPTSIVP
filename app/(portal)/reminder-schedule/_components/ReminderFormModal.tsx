@@ -313,7 +313,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           </div>
 
           {/* ── Kolom 2: kapan ── */}
-          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
+          <div className="flex flex-col gap-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <SectionHeader icon="🗓️" title="Waktu & Jadwal" />
 
           <FormField label="Pengulangan">
