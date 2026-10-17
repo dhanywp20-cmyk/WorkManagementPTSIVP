@@ -1,6 +1,8 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { Ikon } from '@/components/shared/Ikon';
+import type { Lembar } from '@/lib/lembar-cetak';
+import { SimpanKeProyek } from './SimpanKeProyek';
 
 /** Komponen form & hasil bersama untuk semua alat di Tools Team. */
 
@@ -96,12 +98,14 @@ export function Nilai({ label, nilai, satuan, ket, nada }: { label: string; nila
 export const f = (n: number, d = 2) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { maximumFractionDigits: d }) : '-');
 
 /** Tombol salin ringkasan hasil (untuk ditempel ke WA / penawaran). */
-export function TombolSalin({ teks, onCetak, onPng }: {
+export function TombolSalin({ teks, onCetak, onPng, simpan }: {
   teks: () => string;
   /** Lembar cetak tersendiri (lihat cetak.ts), bukan window.print(). */ onCetak?: () => void;
   /** Lembar yang sama sebagai gambar PNG. */ onPng?: () => Promise<void> | void;
+  /** Simpan potret hasil (ringkasan + lembar) ke proyek Project Progress - Kalkulator AV. */ simpan?: { judul: string; lembar: () => Lembar };
 }) {
   const [ok, setOk] = useState(false);
+  const [simpanBuka, setSimpanBuka] = useState(false);
   const [png, setPng] = useState<'siap' | 'proses' | 'gagal'>('siap');
   return (
     <div className="flex gap-2 flex-wrap">
@@ -126,6 +130,13 @@ export function TombolSalin({ teks, onCetak, onPng }: {
           <Ikon nama="🖼" ukuran={14} /> {png === 'proses' ? '...' : png === 'gagal' ? 'Gagal' : 'PNG'}
         </button>
       )}
+      {simpan && (
+        <button type="button" onClick={() => setSimpanBuka(true)} title="Simpan hasil ini ke proyek Project Progress"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100 print:hidden">
+          <Ikon nama="📁" ukuran={14} /> <span className="sr-only sm:not-sr-only">Simpan ke proyek</span>
+        </button>
+      )}
+      {simpan && simpanBuka && <SimpanKeProyek judulAwal={simpan.judul} ringkasan={teks} lembar={simpan.lembar} onTutup={() => setSimpanBuka(false)} />}
     </div>
   );
 }
