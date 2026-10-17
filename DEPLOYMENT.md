@@ -80,6 +80,8 @@ project Supabase dan deployment Vercel yang benar-benar terpisah dari yang sekar
      untuk "services" — cek `lib/supabase.ts` untuk detail kapan ini dibutuhkan)
    - `SUPABASE_SECRET_KEY`, `REQUIRE_SERVICE_ROLE` (kalau dipakai di setup Anda)
    - `CRON_SECRET` (dicocokkan dengan cron job di `vercel.json`)
+   - `MONITOR_TOKEN` (opsional) — token pemantau eksternal untuk `/api/monitor`, lihat bagian
+     [Pemantauan](#pemantauan-apihealth--apimonitor). Kosong = endpoint menolak semua panggilan.
    - `FONNTE_TOKEN` (WA gateway, akun Fonnte milik company baru — jangan pakai token lama)
    - `GEMINI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `ICEBERG_TOKEN` — isi kalau fitur terkait dipakai
 3. Deploy. Vercel akan build otomatis dari branch `main` repo tersebut.
@@ -107,6 +109,54 @@ mempengaruhi company lain.
   hardcoded di database function (lihat detail di `sql/full-schema/README.md` bagian
   "Kenapa ada placeholder"). Ini bukan bug yang saya buat — ini ditemukan saat introspeksi
   skema, dan sebaiknya dirotate karena sempat bisa dibaca lewat source function di database.
+
+## Pemantauan (`/api/health` & `/api/monitor`)
+
+| Endpoint | Akses | Isi |
+|---|---|---|
+| `GET /api/health` | Publik | `{ ok, waktu }` — hanya bukti fungsi serverless jalan, **tidak** menyentuh basis data |
+| `GET /api/monitor` | `Authorization: Bearer <MONITOR_TOKEN>` | Kesehatan dependensi untuk pemantau eksternal (JARVIS Sentinel) |
+
+`/api/monitor` baca-saja dan tidak memakai akun admin. Tanpa token yang cocok jawabannya `401`
+sebelum basis data disentuh. Dengan token, jawabannya (selalu `200`, `Cache-Control: no-store`):
+
+```json
+{
+  "ok": true,
+  "waktu": "2026-10-17T03:00:00.000Z",
+  "db": { "ok": true, "latency_ms": 42 },
+  "cron": {
+    "escalate": { "last_success_at": "…", "last_run_at": "…", "last_ok": true },
+    "digest":   { "last_success_at": "…", "last_run_at": "…", "last_ok": false }
+  },
+  "errors": { "last_24h": 5 },
+  "version": "fac7dfb"
+}
+```
+
+- `ok` = `db.ok`: basis data menjawab satu bacaan kecil (`HEAD app_settings limit 1`, batas 5 detik).
+- `cron`: dari jejak `app_settings.cron_terakhir` yang ditulis cron Vercel (`lib/cron-catat.ts`).
+  `null` per kolom = belum tercatat; `cron: null` = jejak tidak terbaca. pg_cron di Supabase tidak
+  termasuk (hanya terlihat di Admin Panel → Kesehatan Sistem).
+- `errors.last_24h`: jumlah kejadian galat **di layar pengguna** (tabel `galat_klien`) yang terjadi
+  24 jam terakhir — bukan galat server. `null` = tidak terbaca / migrasi 048 belum dijalankan.
+- `version`: 7 karakter pertama `VERCEL_GIT_COMMIT_SHA`, `null` di luar Vercel.
+- Tidak pernah mengirim isi baris: tanpa data pribadi, ticket, insentif, pesan galat, ringkasan cron.
+
+Memasang token:
+
+1. Buat token acak (minimal 32 karakter; lebih pendek = endpoint tetap tertutup):
+   ```bash
+   openssl rand -hex 32
+   ```
+2. Isi `MONITOR_TOKEN` di Vercel → Project Settings → Environment Variables (Production), lalu
+   redeploy. Jangan tulis nilainya di repo, chat, atau tiket.
+3. Simpan token yang sama di sisi pemantau (JARVIS: Windows Credential Manager).
+4. Rotasi: ganti nilai di Vercel + pemantau, redeploy. Token lama langsung tidak berlaku.
+
+Tidak ada batas laju per-IP di route ini (kodebase belum punya pola batas laju di memori, dan
+di serverless memori hanya berlaku per instans). Panggilan tanpa token tidak menyentuh basis
+data. Bila perlu, tambahkan aturan rate limit Vercel Firewall untuk jalur `/api/monitor`.
 
 ## Rilis APK Android
 
