@@ -122,6 +122,17 @@ async function semuaBaris<T>(buat: (dari: number, sampai: number) => PromiseLike
   return hasil;
 }
 
+/**
+ * "Support di lokasi" per checklist (migrasi 053). Kueri terpisah & toleran, seperti penanda pimpinan:
+ * sebelum migrasi dijalankan kolomnya belum ada -> peta kosong, halaman tetap terbuka.
+ */
+export async function supportPerDaftar(db: Db, ids: string[]): Promise<Map<string, string>> {
+  if (!ids.length) return new Map();
+  const { data, error } = await db.from('checklist_daftar').select('id,support_lokasi').in('id', ids);
+  if (error) return new Map();
+  return new Map(((data ?? []) as { id: string; support_lokasi: string | null }[]).map(r => [r.id, (r.support_lokasi ?? '').trim()]));
+}
+
 type BarisDaftar = Omit<ChecklistRingkas, 'anggota' | 'stat' | 'saya'>;
 type BarisStat = StatChecklist & { daftar_id: string };
 
@@ -193,10 +204,11 @@ export async function muatProyek(db: Db, akun: Akun, proyekId: string): Promise<
   const daftar = (dRows ?? []) as BarisDaftar[];
   const ids = daftar.map(d => d.id);
 
-  const [anggota, stat] = ids.length ? await Promise.all([
+  const [anggota, stat, support] = ids.length ? await Promise.all([
     semuaBaris<ChecklistAnggota>((a, b) => db.from('checklist_anggota').select('daftar_id,user_id,nama').in('daftar_id', ids).order('nama').range(a, b)),
     statPerDaftar(db, ids),
-  ]) : [[], new Map()] as [ChecklistAnggota[], Map<string, StatChecklist>];
+    supportPerDaftar(db, ids),
+  ]) : [[], new Map(), new Map()] as [ChecklistAnggota[], Map<string, StatChecklist>, Map<string, string>];
 
   const admin = akunAdmin(akun);
   const lihatSemua = akunBacaSemua(akun) || samaNama(proyek.sales_name, akun.nama);
@@ -205,6 +217,7 @@ export async function muatProyek(db: Db, akun: Akun, proyekId: string): Promise<
     const saya = ang.some(a => a.user_id === akun.id);
     return {
       ...d,
+      support_lokasi: support.get(d.id) ?? '',
       share_token: admin || saya ? d.share_token ?? null : null,
       anggota: ang,
       stat: stat.get(d.id) ?? STAT_KOSONG,
@@ -251,7 +264,7 @@ export async function muatChecklist(db: Db, daftarId: string, opsi: { publik: bo
   if (error) throw new Error(error.message);
   if (!daftar) return null;
 
-  const [pRes, aRes, bRes, items, rRes] = await Promise.all([
+  const [pRes, aRes, bRes, items, rRes, support] = await Promise.all([
     db.from('checklist_proyek').select('id,nama,client,sales_name,sales_division,status').eq('id', daftar.proyek_id).single(),
     db.from('checklist_anggota').select('daftar_id,user_id,nama').eq('daftar_id', daftarId).order('nama'),
     db.from('checklist_bagian').select('id,daftar_id,judul,catatan,urutan').eq('daftar_id', daftarId).order('urutan'),
@@ -260,6 +273,7 @@ export async function muatChecklist(db: Db, daftarId: string, opsi: { publik: bo
       ? Promise.resolve({ data: [], error: null })
       : db.from('checklist_riwayat').select('id,item_id,teks_item,aksi,nama,lewat,created_at')
           .eq('daftar_id', daftarId).order('created_at', { ascending: false }).limit(80),
+    supportPerDaftar(db, [daftarId]),
   ]);
   // Kegagalan query JANGAN ditelan jadi array kosong: checklist akan tampak
   // kosong padahal itemnya ada.
@@ -269,7 +283,7 @@ export async function muatChecklist(db: Db, daftarId: string, opsi: { publik: bo
   const tampilToken = !opsi.publik && !!opsi.hak?.edit;
   return {
     proyek: pRes.data,
-    daftar: { ...daftar, share_token: tampilToken ? daftar.share_token : null },
+    daftar: { ...daftar, support_lokasi: support.get(daftarId) ?? '', share_token: tampilToken ? daftar.share_token : null },
     //  Publik: nama handler saja (tanpa user_id) - untuk ringkasan "Dikerjakan Oleh".
     anggota: opsi.publik
       ? ((aRes.data ?? []) as ChecklistAnggota[]).map(x => ({ daftar_id: x.daftar_id, user_id: '', nama: x.nama }))

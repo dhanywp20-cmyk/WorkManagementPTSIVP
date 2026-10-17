@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowLeft, CalendarDays, Copy, Download, Link2, Pencil, Plus, RefreshCw, Trash2, Upload, Users,
+  ArrowLeft, CalendarDays, Copy, Download, HardHat, Link2, Pencil, Plus, RefreshCw, Trash2, Upload, Users,
 } from 'lucide-react';
 import { ConfirmDialog, Modal, TombolModal, type ConfirmState } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
@@ -27,7 +27,7 @@ import { panggil, pesanGalat } from './api';
 
 type FormItem = { mode: 'tambah' | 'ubah'; bagianId: string; item?: ChecklistItem; teks: string; kelompok: string; catatan: string };
 type FormBagian = { bagian: ChecklistBagian | null; judul: string; catatan: string };
-type FormInfo = { judul: string; keterangan: string; start_date: string; target_date: string };
+type FormInfo = { judul: string; keterangan: string; support_lokasi: string; start_date: string; target_date: string };
 
 const LABEL_AKSI: Record<string, string> = {
   centang: 'mencentang', batal: 'membatalkan centang', kendala: 'menandai kendala', kendala_selesai: 'menyelesaikan kendala',
@@ -311,7 +311,7 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
             )}
             {hak.admin && (
               <>
-                <button onClick={() => setFormInfo({ judul: daftar.judul, keterangan: daftar.keterangan, start_date: daftar.start_date ?? '', target_date: daftar.target_date ?? '' })}
+                <button onClick={() => setFormInfo({ judul: daftar.judul, keterangan: daftar.keterangan, support_lokasi: daftar.support_lokasi ?? '', start_date: daftar.start_date ?? '', target_date: daftar.target_date ?? '' })}
                   aria-label="Ubah nama, keterangan & jadwal" title="Ubah info & jadwal" className={kecil} style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
                   <Pencil size={14} />
                 </button>
@@ -347,6 +347,12 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
             </span>
           )}
         </div>
+        {daftar.support_lokasi && (
+          <p className="flex items-center gap-2 text-[12px]" style={{ color: NETRAL.tinta2 }}>
+            <HardHat size={14} style={{ color: TEMA.samar }} />
+            <span>Support di lokasi: <b style={{ color: NETRAL.tinta }}>{daftar.support_lokasi}</b></span>
+          </p>
+        )}
         {daftar.keterangan && <CatatanTeks teks={daftar.keterangan} />}
       </div>
 
@@ -522,7 +528,7 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
           <TombolModal jenis="utama" disabled={menyimpan || !formInfo?.judul.trim()}
             onClick={() => formInfo && jalankan({ aksi: 'ubahInfo', ...formInfo }, 'Info checklist diperbarui.', () => setFormInfo(null),
               () => setDetail(d => d && { ...d, daftar: {
-                ...d.daftar, judul: formInfo.judul.trim(), keterangan: formInfo.keterangan,
+                ...d.daftar, judul: formInfo.judul.trim(), keterangan: formInfo.keterangan, support_lokasi: formInfo.support_lokasi.trim(),
                 start_date: formInfo.start_date || null, target_date: formInfo.target_date || null,
               } }))}>
             {menyimpan ? 'Menyimpan…' : 'Simpan'}
@@ -539,6 +545,12 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
               <label className="block">{label('Target selesai')}
                 <input type="date" value={formInfo.target_date} onChange={e => setFormInfo({ ...formInfo, target_date: e.target.value })} className={isian} style={gayaIsian} /></label>
             </div>
+            <label className="block">{label('Support di lokasi (opsional)')}
+              <input value={formInfo.support_lokasi} maxLength={BATAS.support} placeholder="mis. Budi (teknisi lokal), Andi"
+                onChange={e => setFormInfo({ ...formInfo, support_lokasi: e.target.value })} className={isian} style={gayaIsian} />
+              <span className="block mt-1 text-[11px]" style={{ color: TEMA.samar }}>
+                Diketik manual. Isi bila handler bekerja remote atau orang di lokasi tidak punya akun. Tampil di link View-Only.
+              </span></label>
             <label className="block">{label('Keterangan')}
               <textarea value={formInfo.keterangan} rows={5} maxLength={BATAS.keterangan}
                 onChange={e => setFormInfo({ ...formInfo, keterangan: e.target.value })} className={isian} style={gayaIsian} /></label>
