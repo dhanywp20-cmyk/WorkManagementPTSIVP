@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ImagePlus, Search, Trash2, Upload } from 'lucide-react';
 import { Modal, TombolModal } from '@/components/shared';
 import { supabase } from '@/lib/supabase';
-import type { JenisKelas, KelasEksternal } from '@/lib/kelas-eksternal';
+import { ISIAN_PESERTA, type IsianPeserta, type JenisKelas, type KelasEksternal } from '@/lib/kelas-eksternal';
 import { PALET_TEMA, PILIHAN_DETIK, WARNA_BAWAAN, teksDiAtas } from '@/lib/kuis-live';
 
 interface SoalRingkas { id: string; materi_name: string | null; batch_name: string | null; question: string }
@@ -28,6 +28,7 @@ export function FormKelas({ awal, onTutup, onSimpan }: {
     maks_peserta: String(awal?.maks_peserta ?? 200), buka_pada: keLokal(awal?.buka_pada ?? null), tutup_pada: keLokal(awal?.tutup_pada ?? null),
     acak_soal: awal?.acak_soal ?? true, satu_kali: awal?.satu_kali ?? true, aktif: awal?.aktif ?? true,
     mode_mulai: awal?.mode_mulai ?? 'auto', batas_pelanggaran: awal?.batas_pelanggaran ? String(awal.batas_pelanggaran) : '',
+    isian_peserta: (awal?.isian_peserta ?? 'nama') as IsianPeserta,
   }));
   const [pilih, setPilih] = useState<Set<string>>(() => new Set(awal?.question_ids ?? []));
   const [soal, setSoal] = useState<SoalRingkas[] | null>(null);
@@ -181,6 +182,22 @@ export function FormKelas({ awal, onTutup, onSimpan }: {
             ))}
           </div>
           </>}
+          <div>
+            <p className={label}>Data peserta</p>
+            <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label="Data peserta">
+              {ISIAN_PESERTA.map(o => (
+                <button key={o.nilai} type="button" role="radio" aria-checked={f.isian_peserta === o.nilai} title={o.ket}
+                  onClick={() => setF(x => ({ ...x, isian_peserta: o.nilai }))}
+                  className={`rounded-lg border-2 px-2 py-1.5 text-left ${f.isian_peserta === o.nilai ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200'}`}>
+                  <span className={`block text-[12.5px] font-bold leading-tight ${f.isian_peserta === o.nilai ? 'text-indigo-700' : 'text-slate-700'}`}>{o.label}</span>
+                  <span className="block text-[11px] text-slate-500 leading-snug mt-0.5">{o.ket}</span>
+                </button>
+              ))}
+            </div>
+            {f.isian_peserta !== 'nama' && (
+              <p className="mt-1 text-[11.5px] text-slate-500">Muncul di daftar hasil &amp; CSV. Untuk acara customer: tahu siapa yang hadir dan siapa yang mau dihubungi Sales.</p>
+            )}
+          </div>
           {galat && <p className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-[13px] font-semibold text-red-700">{galat}</p>}
         </div>
 

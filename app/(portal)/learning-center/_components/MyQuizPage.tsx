@@ -10,6 +10,7 @@ import { DaftarSesiKuis } from './kuis/DaftarSesiKuis';
 import { BilahNavigasiSoal } from './kuis/BilahNavigasiSoal';
 import { IsiSoalKuis } from './kuis/IsiSoalKuis';
 import { BilahAtasKuis } from './kuis/BilahAtasKuis';
+import { GambarSoal } from '@/components/shared/GambarSoal';
 
 /*
   Menerjemahkan galat unggah Supabase jadi kalimat yang bisa ditindaklanjuti.
@@ -147,7 +148,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
       // Kolom ini yang dulu membocorkan kunci jawaban ke browser sebelum
       // soal dijawab.
       const { data } = await supabase.from('lc_questions')
-        .select('id, material_id, materi_name, question, option_a, option_b, option_c, option_d, difficulty, batch_name, created_at, urutan, question_type, answer_format')
+        .select('id, material_id, materi_name, question, option_a, option_b, option_c, option_d, difficulty, batch_name, created_at, urutan, question_type, answer_format, gambar_url')
         .in('id', session.question_ids);
       const ordered = session.question_ids.map(id => data?.find((q: any) => q.id === id)).filter(Boolean) as QuizQuestion[];
       setQuestions(session.acak_soal ? acakDenganBenih(ordered, attempt.id) : ordered);
@@ -424,6 +425,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                     <div className="flex-1">
                       <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1}</p>
                       <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
+                      <GambarSoal url={q.gambar_url} tinggi="max-h-48" className="!mx-0 mt-2 border border-slate-200" />
                     </div>
                   </div>
                   {/* 1 kolom di ponsel - lihat catatan yang sama di TeamPage.tsx */}

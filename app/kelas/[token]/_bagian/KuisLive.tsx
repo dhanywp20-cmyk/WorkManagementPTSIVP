@@ -19,12 +19,15 @@ import {
   WARNA_PILIHAN, formatPoin, ukuranTeks, useDetak, useJamServer,
 } from '@/components/kuis-live/tema';
 import { panggilKelas, simpanTokenPeserta, type InfoLive } from './api';
+import { ISIAN_KOSONG, IsianTambahan, isianLengkap, type NilaiIsian } from './IsianPeserta';
+import { GambarSoal } from '@/components/shared/GambarSoal';
 
 type JawabanLokal = { sesi: number; indeks: number; pilihan: Pilihan; galat?: string };
 
 export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
   const [info, setInfo] = useState(awal);
   const [nama, setNama] = useState('');
+  const [isian, setIsian] = useState<NilaiIsian>(ISIAN_KOSONG);
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState('');
   const [lokal, setLokal] = useState<JawabanLokal | null>(null);
@@ -94,7 +97,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
 
   const masuk = async () => {
     setSibuk(true); setPesan('');
-    const r = await panggilKelas<{ token: string; nama: string }>(token, { aksi: 'daftar', nama });
+    const r = await panggilKelas<{ token: string; nama: string }>(token, { aksi: 'daftar', nama, ...isian });
     if (!r.ok) { setSibuk(false); setPesan(r.data.error || 'Gagal masuk.'); return; }
     simpanTokenPeserta(token, r.data.token);
     await segarkan();
@@ -104,6 +107,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
   // ── Belum masuk ────────────────────────────────────────────────────────────
   if (!info.peserta) {
     const buka = info.status === 'buka';
+    const bisaMasuk = nama.trim().length >= 2 && isianLengkap(info.kelas.isianPeserta, isian);
     return (
       <LatarKuis tema={tema}>
         <main className="min-h-dvh flex flex-col items-center justify-center px-4 py-10 gap-5">
@@ -115,12 +119,13 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
           </div>
           {buka ? (
             <form className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-2xl space-y-3 text-slate-900"
-              onSubmit={e => { e.preventDefault(); if (nama.trim().length >= 2 && !sibuk) void masuk(); }}>
+              onSubmit={e => { e.preventDefault(); if (bisaMasuk && !sibuk) void masuk(); }}>
               <label htmlFor="nama-kuis" className="sr-only">Nama kamu</label>
               <input id="nama-kuis" value={nama} onChange={e => setNama(e.target.value)} maxLength={80} autoComplete="name" autoFocus
                 placeholder="Nama kamu"
                 className="w-full h-14 rounded-xl border-2 border-slate-300 px-4 text-center text-[20px] font-extrabold outline-none focus:border-slate-900" />
-              <button type="submit" disabled={sibuk || nama.trim().length < 2}
+              <IsianTambahan isian={info.kelas.isianPeserta} nilai={isian} ubah={setIsian} gaya="kuis" />
+              <button type="submit" disabled={sibuk || !bisaMasuk}
                 className="w-full h-14 rounded-xl bg-slate-900 text-white text-[18px] font-black disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
                 {sibuk && <Loader2 size={18} className="animate-spin" />}Masuk
               </button>
@@ -179,6 +184,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
             <div className="m-auto text-center space-y-5 max-w-lg">
               <p className="text-[14px] font-black uppercase tracking-[0.2em] text-white/80">Soal {live.indeks + 1}</p>
               {live.soal && <p className="text-[22px] sm:text-[26px] font-black leading-snug drop-shadow">{live.soal.teks}</p>}
+              <GambarSoal url={live.soal?.gambar} tinggi="max-h-56" />
               <HitungMundur sisaMs={(live.mulaiMs ?? 0) - kini} />
               <p className="text-[13px] font-bold text-white/80">Siap-siap…</p>
             </div>
@@ -188,6 +194,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
             <div className="flex-1 flex flex-col gap-3">
               <BilahWaktu sisaMs={(live.tutupMs ?? 0) - kini} durasiMs={live.detik * 1000} />
               <p className="rounded-2xl bg-white text-slate-900 px-4 py-3.5 text-center text-[17px] sm:text-[20px] font-extrabold leading-snug shadow-lg">{live.soal.teks}</p>
+              <GambarSoal url={live.soal.gambar} tinggi="max-h-40 sm:max-h-56" />
               <div className="flex-1 grid grid-cols-2 gap-2.5 sm:gap-3 auto-rows-fr min-h-[48vh]">
                 {PILIHAN_KUIS.map(p => (
                   <button key={p} type="button" onClick={() => void jawab(p)} aria-label={`Pilihan ${p}: ${live.soal!.pilihan[p]}`}

@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { BarChart3, Check, Maximize, Minimize, Play, RotateCcw, SkipForward, Square, Users, X } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { ModalPortal } from '@/components/shared/ModalPortal';
+import { GambarSoal } from '@/components/shared/GambarSoal';
 import { appBaseUrl } from '@/lib/app-url';
 import type { KelasEksternal, Pilihan } from '@/lib/kelas-eksternal';
 import type { AksiLive, Tahap } from '@/lib/kuis-live';
@@ -223,6 +224,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
               <p className="rounded-3xl bg-white text-slate-900 px-8 py-6 font-black leading-tight shadow-2xl"
                 style={{ fontSize: huruf(h.soal.teks, [[70, 44], [130, 36], [220, 30], [9999, 24]]) }}>{h.soal.teks}</p>
             )}
+            <GambarSoal url={h.soal?.gambar} tinggi="max-h-[38vh]" className="shadow-2xl" />
             <HitungMundur sisaMs={(h.mulaiMs ?? 0) - kini} />
           </div>
         )}
@@ -231,6 +233,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
           <div className="flex-1 min-h-0 flex flex-col gap-4">
             <p className={`flex-shrink-0 rounded-3xl bg-white text-slate-900 px-8 py-4 text-center font-black leading-tight shadow-2xl ${potong}`}
               style={{ fontSize: huruf(h.soal.teks, [[70, 34], [130, 28], [220, 24], [9999, 20]]) }}>{h.soal.teks}</p>
+            <GambarSoal url={h.soal.gambar} tinggi="max-h-[30vh]" className="flex-shrink-0 shadow-2xl" />
 
             {tahap === 'soal' ? (
               <div className="flex-1 min-h-0 grid grid-cols-[auto_1fr_auto] items-center gap-8">

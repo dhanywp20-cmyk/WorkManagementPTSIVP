@@ -2,14 +2,17 @@
 
 /**
  * Kelas Eksternal Learning Center - halaman CUSTOMER (publik, tanpa login, tanpa header platform).
- * Alur: isi nama -> (mode admin: ruang tunggu sampai pengajar menekan Mulai) -> kerjakan quiz -> nilai.
+ * Alur: isi nama (+ perusahaan/kontak bila diminta) -> (mode admin: ruang tunggu sampai pengajar menekan
+ * Mulai) -> kerjakan quiz -> nilai (+ sertifikat bila lulus).
  * Perangkat yang sama dikenali (token di localStorage),
  * jadi membuka link lagi melanjutkan / menampilkan nilai, bukan mendaftar ulang.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Clock, FileQuestion, Loader2, Lock, RotateCcw, ShieldAlert, Target, Users } from 'lucide-react';
+import { Award, Clock, FileQuestion, Loader2, Lock, Printer, RotateCcw, ShieldAlert, Target, Users } from 'lucide-react';
 import type { AlasanKirimOtomatis } from '@/lib/kelas-eksternal';
+import { cetakSertifikat, unduhSertifikat, type DataSertifikat } from '@/app/(portal)/learning-center/_components/sertifikat';
+import { ISIAN_KOSONG, IsianTambahan, isianLengkap, type NilaiIsian } from './_bagian/IsianPeserta';
 import { adalahLive, hapusDraf, panggilKelas, simpanTokenPeserta, type Hasil, type InfoKelas, type InfoLive, type Percobaan } from './_bagian/api';
 import { KuisLive } from './_bagian/KuisLive';
 import { LayarQuiz } from './_bagian/LayarQuiz';
@@ -35,6 +38,7 @@ export default function HalamanKelas() {
   const [live, setLive] = useState<InfoLive | null>(null);
   const [galat, setGalat] = useState('');
   const [nama, setNama] = useState('');
+  const [isian, setIsian] = useState<NilaiIsian>(ISIAN_KOSONG);
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState('');
   const [percobaan, setPercobaan] = useState<Percobaan | null>(null);
@@ -79,10 +83,10 @@ export default function HalamanKelas() {
 
   const daftarLaluMulai = async () => {
     setSibuk(true); setPesan('');
-    const r = await panggilKelas<{ token: string; nama: string }>(token, { aksi: 'daftar', nama });
+    const r = await panggilKelas<{ token: string; nama: string }>(token, { aksi: 'daftar', nama, ...isian });
     if (!r.ok) { setSibuk(false); setPesan(r.data.error || 'Pendaftaran gagal.'); return; }
     simpanTokenPeserta(token, r.data.token);
-    setInfo(i => (i ? { ...i, peserta: { nama: r.data.nama } } : i));
+    setInfo(i => (i ? { ...i, peserta: { nama: r.data.nama, instansi: isian.instansi.trim() || null } } : i));
     await mulai();
   };
 
@@ -119,6 +123,10 @@ export default function HalamanKelas() {
   const k = info.kelas;
 
   if (hasil) {
+    const sertifikat: DataSertifikat | null = hasil.lulus && info.peserta && hasil.id ? {
+      nama: info.peserta.nama, instansi: info.peserta.instansi, sesi: k.judul, passing: k.passingGrade,
+      attempt: { id: hasil.id, passed: true, is_submitted: true, score: hasil.skor, submitted_at: hasil.selesai_pada },
+    } : null;
     return (
       <Kartu>
         <div className="text-center space-y-4">
@@ -130,6 +138,18 @@ export default function HalamanKelas() {
           </div>
           <p className={`text-[15px] font-bold ${hasil.lulus ? 'text-emerald-700' : 'text-amber-700'}`}>{hasil.lulus ? 'Lulus' : 'Belum lulus'}</p>
           <p className="text-[13px] text-slate-600 tabular-nums">{hasil.benar} dari {hasil.jumlah} benar · nilai lulus {k.passingGrade}</p>
+          {sertifikat && (
+            <div className="flex flex-wrap justify-center gap-2">
+              <button type="button" onClick={() => void unduhSertifikat(sertifikat)}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-[13.5px] font-bold">
+                <Award size={15} />Unduh sertifikat
+              </button>
+              <button type="button" onClick={() => cetakSertifikat(sertifikat)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 text-[13.5px] font-semibold text-slate-700">
+                <Printer size={15} />Cetak
+              </button>
+            </div>
+          )}
           {bolehUlang && info.status === 'buka' && (
             <button type="button" onClick={() => void mulai()} disabled={sibuk}
               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl border border-slate-200 text-[13.5px] font-semibold text-slate-700 disabled:opacity-60">
@@ -161,6 +181,7 @@ export default function HalamanKelas() {
 
   const terdaftar = !!info.peserta;
   const bisaDaftar = info.status === 'buka';
+  const bisaKirimDaftar = nama.trim().length >= 2 && isianLengkap(k.isianPeserta, isian);
   return (
     <Kartu>
       <h1 className="text-[20px] sm:text-[22px] font-bold text-slate-900 leading-tight">{k.judul}</h1>
@@ -182,9 +203,10 @@ export default function HalamanKelas() {
           <div>
             <label htmlFor="nama-peserta" className="block text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Nama lengkap</label>
             <input id="nama-peserta" value={nama} onChange={e => setNama(e.target.value)} maxLength={80} autoComplete="name" autoFocus
-              onKeyDown={e => { if (e.key === 'Enter' && nama.trim().length >= 2) void daftarLaluMulai(); }}
+              onKeyDown={e => { if (e.key === 'Enter' && bisaKirimDaftar) void daftarLaluMulai(); }}
               className="w-full rounded-xl border border-slate-300 px-4 py-3 text-[15px] outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               placeholder="Nama Anda" />
+            <div className="mt-3"><IsianTambahan isian={k.isianPeserta} nilai={isian} ubah={setIsian} gaya="terang" /></div>
           </div>
         ) : null}
 
@@ -195,7 +217,7 @@ export default function HalamanKelas() {
 
         {(terdaftar || bisaDaftar) && (
           <button type="button" onClick={() => void (terdaftar ? mulai() : daftarLaluMulai())}
-            disabled={sibuk || (!terdaftar && nama.trim().length < 2)}
+            disabled={sibuk || (!terdaftar && !bisaKirimDaftar)}
             className="w-full py-3.5 rounded-xl bg-indigo-600 text-white text-[15px] font-bold disabled:opacity-50 flex items-center justify-center gap-2">
             {sibuk && <Loader2 size={16} className="animate-spin" />}
             {info.berjalan ? 'Lanjutkan quiz' : info.menunggu ? 'Masuk ruang tunggu' : 'Mulai quiz'}
