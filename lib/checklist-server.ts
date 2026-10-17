@@ -239,6 +239,21 @@ export async function muatProyek(db: Db, akun: Akun, proyekId: string): Promise<
   return { proyek: { ...proyek, share_token: admin ? proyek.share_token : null }, checklist: terlihat, admin, aktivitas };
 }
 
+/**
+ * Boleh melihat proyek ini? Aturan sama dengan muatProyek (baca semua / Sales proyek / anggota salah
+ * satu checklist-nya), tanpa memuat isi proyek - dipakai data yang menempel ke proyek (hasil Kalkulator AV).
+ */
+export async function bolehLihatProyek(db: Db, akun: Akun, proyekId: string): Promise<boolean | 'tidak-ada'> {
+  const { data: p } = await db.from('checklist_proyek').select('id,sales_name').eq('id', proyekId).maybeSingle();
+  if (!p) return 'tidak-ada';
+  if (akunBacaSemua(akun) || samaNama(p.sales_name, akun.nama)) return true;
+  const { data: d } = await db.from('checklist_daftar').select('id').eq('proyek_id', proyekId);
+  const ids = ((d ?? []) as { id: string }[]).map(x => x.id);
+  if (!ids.length) return false;
+  const { count } = await db.from('checklist_anggota').select('daftar_id', { count: 'exact', head: true }).in('daftar_id', ids).eq('user_id', akun.id);
+  return (count ?? 0) > 0;
+}
+
 /** Hak akun terhadap satu checklist; null = tidak boleh melihat sama sekali. */
 export async function hakAtas(db: Db, akun: Akun, daftarId: string):
   Promise<{ hak: HakChecklist; proyekId: string } | null> {
