@@ -13,6 +13,7 @@ import { statusInstalasiPWA, subscribeInstallPWA, pasangAplikasiPWA, type Status
 import { useMerek } from '@/lib/merek';
 import { InstallGuideModal } from './InstallGuideModal';
 import { UnduhApk } from './UnduhApk';
+import { Profil2FA } from './profil-2fa';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // UserProfileModal
@@ -563,6 +564,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       <IkonTeks nama="🔑" />Ubah Password
                     </button>
                   )}
+                  <Profil2FA />
                 </div>
               </Kartu>
             </div>

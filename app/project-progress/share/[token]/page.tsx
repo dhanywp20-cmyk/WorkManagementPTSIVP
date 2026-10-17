@@ -6,7 +6,7 @@ import { NETRAL } from '@/lib/desain';
 import { CalendarDays, ChevronRight, Eye, Lock, MapPin } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { PanelLokasi } from './_bagian/PanelLokasi';
+import { PanelLokasi, TimLokasi } from './_bagian/PanelLokasi';
 import { hitungRingkasan } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
 import { RingkasanProyek } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';
 
@@ -15,12 +15,18 @@ interface DataShare {
     id: string; nama: string; client: string | null; deskripsi: string; sales_name: string | null;
     sales_division: string | null; status: StatusProyek; start_date: string | null; target_date: string | null; updated_at: string;
   };
-  daftar: { id: string; judul: string; keterangan: string; start_date: string | null; target_date: string | null; updated_at: string }[];
+  daftar: {
+    id: string; judul: string; keterangan: string; start_date: string | null; target_date: string | null; updated_at: string;
+    /** Nama orang di lokasi, diketik manual admin (migrasi 053). */
+    support_lokasi?: string;
+  }[];
   bagian: ChecklistBagian[];
   items: ChecklistItem[];
-  /** Handler per checklist - hanya untuk ringkasan "Dikerjakan Oleh". */
+  /** Handler per checklist - ringkasan "Dikerjakan Oleh" & nama Handler per lokasi. */
   anggota?: { daftar_id: string; nama: string }[];
 }
+
+const TANPA_ANGGOTA: { daftar_id: string; nama: string }[] = [];
 
 /**
  * Link View-Only satu proyek - PUBLIK, tanpa login. Seluruh checklist lokasi
@@ -60,6 +66,12 @@ export default function ProyekSharePage() {
     for (const it of data?.items ?? []) m.get(it.daftar_id)?.items.push(it);
     return m;
   }, [data]);
+  const anggotaPer = useMemo(() => {
+    const m = new Map<string, { daftar_id: string; nama: string }[]>();
+    for (const a of data?.anggota ?? []) m.set(a.daftar_id, [...(m.get(a.daftar_id) ?? []), a]);
+    return m;
+  }, [data]);
+  const handlerDari = (id: string) => [...new Set((anggotaPer.get(id) ?? []).map(a => a.nama.trim()).filter(Boolean))];
 
   const total = data ? statDari(data.items) : null;
   const lokasiBuka = data?.daftar.find(d => d.id === buka) ?? null;
@@ -143,6 +155,7 @@ export default function ProyekSharePage() {
                       </div>
                       <span className="text-[11.5px] font-bold" style={{ color: j.keadaan === 'terlambat' ? TEMA.bahaya : j.keadaan === 'selesai' ? TEMA.selesai : TEMA.samar }}>{j.label}</span>
                     </div>
+                    <div className="pl-6"><TimLokasi handler={handlerDari(d.id)} support={d.support_lokasi ?? ''} kecil /></div>
                   </button>
                 </section>
               );
@@ -151,6 +164,7 @@ export default function ProyekSharePage() {
 
             {lokasiBuka && ringkasan && (
               <PanelLokasi lokasi={ringkasan.lokasi.find(l => l.id === lokasiBuka.id)!} semua={ringkasan.lokasi} keterangan={lokasiBuka.keterangan}
+                jadwal={lokasiBuka} anggota={anggotaPer.get(lokasiBuka.id) ?? TANPA_ANGGOTA} support={lokasiBuka.support_lokasi ?? ''}
                 bagian={perDaftar.get(lokasiBuka.id)?.bagian ?? []} items={perDaftar.get(lokasiBuka.id)?.items ?? []}
                 onPilih={setBuka} onTutup={() => setBuka(null)} />
             )}

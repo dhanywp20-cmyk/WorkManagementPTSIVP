@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { KOLOM_ITEM, NO_STORE, galat, tokenSah } from '@/lib/checklist-server';
+import { KOLOM_ITEM, NO_STORE, galat, supportPerDaftar, tokenSah } from '@/lib/checklist-server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -34,15 +34,18 @@ export async function GET(_request: NextRequest, ctx: { params: Promise<{ token:
 
   let bagian: unknown[] = [];
   let items: unknown[] = [];
-  //  Nama handler (anggota checklist) - hanya untuk ringkasan "Dikerjakan Oleh"; nama yang sama
-  //  sudah tampil di item yang mereka centang.
+  //  Nama handler (anggota checklist) - untuk ringkasan "Dikerjakan Oleh" & nama Handler per lokasi;
+  //  nama yang sama sudah tampil di item yang mereka centang. Tanpa user_id.
   let anggota: unknown[] = [];
+  let support = new Map<string, string>();
   if (ids.length) {
-    const [bRes, iRes, aRes] = await Promise.all([
+    const [bRes, iRes, aRes, sMap] = await Promise.all([
       db.from('checklist_bagian').select('id,daftar_id,judul,catatan,urutan').in('daftar_id', ids).order('urutan'),
       db.from('checklist_item').select(KOLOM_ITEM).in('daftar_id', ids).order('urutan').limit(5000),
       db.from('checklist_anggota').select('daftar_id,nama').in('daftar_id', ids),
+      supportPerDaftar(db, ids),
     ]);
+    support = sMap;
     // Kegagalan query JANGAN ditelan jadi array kosong - halaman publik akan
     // tampak "proyek kosong" padahal datanya ada.
     if (bRes.error || iRes.error) return galat(bRes.error?.message ?? iRes.error?.message ?? 'Gagal memuat.', 500);
@@ -51,5 +54,6 @@ export async function GET(_request: NextRequest, ctx: { params: Promise<{ token:
     anggota = aRes.error ? [] : aRes.data ?? [];
   }
 
-  return NextResponse.json({ proyek, daftar: daftar ?? [], bagian, items, anggota }, { headers: NO_STORE });
+  const daftarKeluar = (daftar ?? []).map((d: { id: string }) => ({ ...d, support_lokasi: support.get(d.id) ?? '' }));
+  return NextResponse.json({ proyek, daftar: daftarKeluar, bagian, items, anggota }, { headers: NO_STORE });
 }

@@ -83,6 +83,8 @@ export interface ChecklistDaftar {
   proyek_id: string;
   judul: string;
   keterangan: string;
+  /** Nama orang di lokasi, diketik manual (handler remote / tanpa akun). '' = tidak diisi. Migrasi 053. */
+  support_lokasi?: string;
   sumber: SumberChecklist;
   share_aktif: boolean;
   /** Hanya dikirim ke admin & anggota. Halaman share tidak pernah menerimanya. */
@@ -199,6 +201,8 @@ export const BATAS = {
   catatan: 5000,
   keterangan: 5000,
   nama: 60,
+  /** Nama "Support di lokasi" (boleh beberapa, dipisah koma). */
+  support: 200,
   /** Perubahan (centang/kendala) per satu kali Simpan. */
   perubahan: 500,
 } as const;

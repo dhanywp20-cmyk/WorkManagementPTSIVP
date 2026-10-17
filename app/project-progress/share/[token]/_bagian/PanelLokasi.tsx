@@ -5,25 +5,64 @@
  *  - Desktop (>= 1024px): panel lebar hampir layar penuh, dua kolom: kiri daftar semua lokasi untuk
  *    berpindah, kanan isi checklist dengan bagian disusun 2 kolom (layar lebar tidak terbuang).
  *  - Tablet: panel dari kanan tanpa daftar; HP: lembar dari bawah. ‹ › pindah lokasi.
+ * Isi kanan: tim (Handler + Support di lokasi), ringkasan lokasi (waktu, Dikerjakan Oleh, laju
+ * harian - sama dengan detail checklist di aplikasi), lalu bagian. Bagian yang belum selesai terbuka.
  * Esc ditangani PenjagaDialog lewat tombol "Tutup".
  */
-import { useEffect, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, MapPin, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronLeft, ChevronRight, ChevronsDownUp, ChevronsUpDown, HardHat, MapPin, Users, X } from 'lucide-react';
 import { NETRAL } from '@/lib/desain';
-import type { ChecklistBagian, ChecklistItem } from '@/lib/checklist';
+import { statDari, type ChecklistBagian, type ChecklistItem } from '@/lib/checklist';
+import type { AnggotaNama } from '@/lib/checklist-ringkasan';
 import { BarProgres, CatatanTeks, KepingKendala, PanelBagian, TEMA, itemPerBagian, progresDariStat } from '@/app/(portal)/project-progress/_components/tampilan';
-import type { RingkasLokasi } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
+import { ringkasChecklist, type RingkasLokasi } from '@/app/(portal)/project-progress/_components/ringkasan/hitung';
+import { RingkasanChecklist, adaRingkasanChecklist } from '@/app/(portal)/project-progress/_components/ringkasan/Ringkasan';
 
 const DURASI = 220;
 
 const warnaJadwal = (l: RingkasLokasi) => (l.jadwal === 'terlambat' ? TEMA.bahaya : l.jadwal === 'selesai' ? TEMA.selesai : TEMA.samar);
 
-export function PanelLokasi({ lokasi, semua, keterangan, bagian, items, onPilih, onTutup }: {
+/** Handler & Support di lokasi - satu baris chip, dipakai panel dan kartu lokasi. */
+export function TimLokasi({ handler, support, kecil = false }: { handler: string[]; support: string; kecil?: boolean }) {
+  if (!handler.length && !support) return null;
+  const ukuran = kecil ? 'text-[11px]' : 'text-[12px]';
+  const chip = (nama: string) => (
+    <span key={nama} className={`px-2 py-0.5 rounded-full font-semibold ${ukuran}`}
+      style={{ background: NETRAL.permukaanRedam, color: NETRAL.tinta2, border: `1px solid ${NETRAL.garis}` }}>{nama}</span>
+  );
+  return (
+    <div className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 ${ukuran}`}>
+      {handler.length > 0 && (
+        <span className="flex flex-wrap items-center gap-1.5">
+          <Users size={kecil ? 12 : 14} style={{ color: TEMA.samar }} />
+          <span className="font-semibold" style={{ color: TEMA.samar }}>Handler</span>
+          {handler.map(chip)}
+        </span>
+      )}
+      {support && (
+        <span className="flex flex-wrap items-center gap-1.5">
+          <HardHat size={kecil ? 12 : 14} style={{ color: TEMA.samar }} />
+          <span className="font-semibold" style={{ color: TEMA.samar }}>Support di lokasi</span>
+          {chip(support)}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function PanelLokasi({ lokasi, semua, keterangan, jadwal, anggota, support, bagian, items, onPilih, onTutup }: {
   lokasi: RingkasLokasi; semua: RingkasLokasi[]; keterangan: string;
+  jadwal: { start_date: string | null; target_date: string | null };
+  /** Handler checklist ini (nama saja). */
+  anggota: AnggotaNama[]; support: string;
   bagian: ChecklistBagian[]; items: ChecklistItem[];
   onPilih: (id: string) => void; onTutup: () => void;
 }) {
   const [masuk, setMasuk] = useState(false);
+  //  Buka/Tutup semua, berlaku untuk lokasi tempat tombolnya ditekan. Pindah lokasi -> kembali ke
+  //  bawaan (null: bagian yang belum selesai terbuka).
+  const [pilihanBuka, setPilihanBuka] = useState<{ id: string; buka: boolean } | null>(null);
+  const semuaBuka = pilihanBuka?.id === lokasi.id ? pilihanBuka.buka : null;
   //  Desktop/tablet: geser dari kanan. HP: naik dari bawah. Panel dipasang sesudah diklik, jadi window ada.
   const [geser] = useState(() => window.matchMedia('(min-width: 768px)').matches ? 'translate3d(100%,0,0)' : 'translate3d(0,100%,0)');
   const isi = useRef<HTMLDivElement>(null);
@@ -39,6 +78,13 @@ export function PanelLokasi({ lokasi, semua, keterangan, bagian, items, onPilih,
 
   const tutup = () => { setMasuk(false); window.setTimeout(onTutup, DURASI); };
   const peta = itemPerBagian(bagian, items);
+  const ringkasan = useMemo(() => ringkasChecklist(jadwal, items, anggota), [jadwal, items, anggota]);
+  const handler = [...new Set(anggota.map(a => a.nama.trim()).filter(Boolean))];
+  const bukaAwal = (b: ChecklistBagian) => {
+    if (semuaBuka !== null) return semuaBuka;
+    const s = statDari(peta.get(b.id) ?? []);
+    return s.kendala > 0 || s.selesai < s.total;
+  };
   const urutan = semua.findIndex(l => l.id === lokasi.id);
   const pindah = (arah: -1 | 1) => { const l = semua[urutan + arah]; if (l) onPilih(l.id); };
 
@@ -103,16 +149,28 @@ export function PanelLokasi({ lokasi, semua, keterangan, bagian, items, onPilih,
               </div>
               <span className="text-[12px] font-bold whitespace-nowrap lg:ml-auto" style={{ color: warnaJadwal(lokasi) }}>{lokasi.labelJadwal}</span>
             </div>
+            <TimLokasi handler={handler} support={support} />
           </header>
 
-          <div ref={isi} className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 lg:p-5">
-            {keterangan && <div className="mb-3"><CatatanTeks teks={keterangan} /></div>}
+          <div ref={isi} className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 lg:p-5 space-y-3">
+            {keterangan && <CatatanTeks teks={keterangan} />}
+            {adaRingkasanChecklist(ringkasan) && <RingkasanChecklist r={ringkasan} />}
             {bagian.length === 0 && <p className="py-10 text-center text-[13px]" style={{ color: TEMA.samar }}>Belum ada checklist.</p>}
-            {/* Layar lebar: bagian mengalir dalam 2 kolom, bukan satu kolom panjang. */}
+            {bagian.length > 0 && (
+              <div className="flex items-center justify-between gap-2 px-1">
+                <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: TEMA.samar }}>Bagian · {bagian.length}</p>
+                <button type="button" onClick={() => setPilihanBuka({ id: lokasi.id, buka: !semuaBuka })}
+                  className="inline-flex items-center gap-1 text-[12px] font-bold rounded-lg px-2.5 py-1 hover:bg-white" style={{ color: TEMA.warna }}>
+                  {semuaBuka ? <><ChevronsDownUp size={14} /> Tutup semua</> : <><ChevronsUpDown size={14} /> Buka semua</>}
+                </button>
+              </div>
+            )}
+            {/* Layar lebar: bagian mengalir dalam 2 kolom, bukan satu kolom panjang. Kunci ikut
+                semuaBuka supaya Buka/Tutup semua memasang ulang panel dengan keadaan awal baru. */}
             <div className="xl:columns-2 xl:gap-4">
               {bagian.map(b => (
-                <div key={b.id} className="mb-3 break-inside-avoid">
-                  <PanelBagian bagian={b} items={peta.get(b.id) ?? []} sedangId={null} aksi={{}} terbukaAwal={bagian.length <= 4} />
+                <div key={`${b.id}-${semuaBuka}`} className="mb-3 break-inside-avoid">
+                  <PanelBagian bagian={b} items={peta.get(b.id) ?? []} sedangId={null} aksi={{}} terbukaAwal={bukaAwal(b)} />
                 </div>
               ))}
             </div>

@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
-import { issueDbToken } from '@/lib/db-token';
+import {
+  catatPercobaan, getClientIp, muatUserMasuk, PESAN_TERKUNCI, sedangTerkunci, selesaikanMasuk,
+} from '@/lib/masuk-server';
+import { adalahAdmin, baca2FA, bacaPengaturan2FA } from '@/lib/dua-faktor-server';
+import { buatTantangan } from '@/lib/tantangan-2fa';
 
 export const dynamic = 'force-dynamic';
-
-const SESSION_HOURS  = 6;
-
-function hashToken(token: string): string {
-  return crypto.createHash('sha256').update(token).digest('hex');
-}
-
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip') ||
-    'unknown'
-  );
-}
 
 export async function POST(request: NextRequest) {
   const supabase = getAdminClient();
@@ -31,46 +20,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Username dan password wajib diisi.' }, { status: 400 });
     }
 
-    // Lockout brute-force
-    // Kunci per-username (threshold ketat) supaya 1 akun yang dibrute-force
-    // diblok, tapi threshold IP dibuat longgar karena 1 kantor biasanya
-    // berbagi 1 IP publik (NAT) - jangan sampai 1 IP mengunci semua orang.
-    const windowStart = new Date(Date.now() - 15 * 60 * 1000).toISOString();
-    const [byUser, byIp] = await Promise.all([
-      supabase.from('login_attempts').select('*', { count: 'exact', head: true })
-        .eq('success', false).eq('username', username).gte('attempted_at', windowStart),
-      (ip && ip !== 'unknown')
-        ? supabase.from('login_attempts').select('*', { count: 'exact', head: true })
-            .eq('success', false).eq('ip_address', ip).gte('attempted_at', windowStart)
-        : Promise.resolve({ count: 0 } as { count: number | null }),
-    ]);
-    if ((byUser.count ?? 0) >= 5 || (byIp.count ?? 0) >= 30) {
-      return NextResponse.json(
-        { error: 'Terlalu banyak percobaan login gagal. Coba lagi dalam 15 menit.' },
-        { status: 429 },
-      );
+    // Lockout brute-force (lib/masuk-server.ts): ketat per username, longgar per IP (NAT kantor).
+    if (await sedangTerkunci(supabase, username, ip)) {
+      return NextResponse.json({ error: PESAN_TERKUNCI }, { status: 429 });
     }
 
-    // Ambil user
-    // access_level (toggle Full Access) & piket_akses opsional - kolom baru, belum tentu
-    // sudah ada di database (sql/user-full-access-toggle.sql belum dijalankan).
-    // Coba sertakan dulu; kalau gagal (kolom belum ada), jatuh balik TANPA
-    // kolom itu supaya login tidak pernah ikut gagal gara-gara ini.
-    let { data: user, error: userErr } = await supabase
-      .from('users')
-      .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled, access_level, piket_akses')
-      .eq('username', username)
-      .single();
-    if (userErr) {
-      ({ data: user, error: userErr } = await supabase
-        .from('users')
-        .select('id, username, full_name, role, team_type, sales_division, jabatan, phone_number, allowed_menus, kpi_enabled')
-        .eq('username', username)
-        .single());
-    }
-
-    if (userErr || !user) {
-      await supabase.from('login_attempts').insert({ username, ip_address: ip, success: false });
+    const user = await muatUserMasuk(supabase, { username });
+    if (!user) {
+      await catatPercobaan(supabase, username, ip, false);
       return NextResponse.json({ error: 'Username atau password salah!' }, { status: 401 });
     }
 
@@ -83,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     if (!cred?.password_hash) {
       // Tidak ada credential - akun belum dimigrasi atau tidak punya password
-      await supabase.from('login_attempts').insert({ username, ip_address: ip, success: false });
+      await catatPercobaan(supabase, username, ip, false);
       return NextResponse.json({ error: 'Akun belum aktif. Hubungi admin.' }, { status: 401 });
     }
 
@@ -106,44 +63,27 @@ export async function POST(request: NextRequest) {
     }
 
     if (!valid) {
-      await supabase.from('login_attempts').insert({ username, ip_address: ip, success: false });
+      await catatPercobaan(supabase, username, ip, false);
       return NextResponse.json({ error: 'Username atau password salah!' }, { status: 401 });
     }
 
-    // Login berhasil
-    await supabase.from('login_attempts').insert({ username, ip_address: ip, success: true });
+    // Verifikasi dua langkah (migrasi 049). Password benar belum berarti masuk: akun ber-2FA,
+    // atau admin saat "wajib 2FA admin" menyala, menerima tiket 5 menit untuk /api/auth/login-2fa.
+    // Gagal membaca status 2FA = tolak (jangan sampai galat basis data melewatkan 2FA).
+    if (process.env.SUPABASE_JWT_SECRET) {
+      let baris;
+      try { baris = await baca2FA(supabase, user.id); } catch {
+        return NextResponse.json({ error: 'Login gagal. Coba lagi.' }, { status: 503 });
+      }
+      if (baris?.aktif) {
+        return NextResponse.json({ tahap: 'kode_2fa', tantangan: buatTantangan(user.id, 'kode_2fa') });
+      }
+      if (adalahAdmin(user.role) && (await bacaPengaturan2FA(supabase)).wajibAdmin) {
+        return NextResponse.json({ tahap: 'daftar_2fa', tantangan: buatTantangan(user.id, 'daftar_2fa') });
+      }
+    }
 
-    // Cleanup expired sessions (housekeeping)
-    supabase.from('user_sessions').delete().lt('expires_at', new Date().toISOString()).then(() => {});
-
-    const sessionToken = crypto.randomUUID() + '-' + crypto.randomUUID();
-    const tokenHash    = hashToken(sessionToken);
-    const expiresAt    = new Date(Date.now() + SESSION_HOURS * 3600 * 1000).toISOString();
-
-    await supabase.from('user_sessions').insert({
-      user_id: user.id,
-      token_hash: tokenHash,
-      ip_address: ip,
-      user_agent: request.headers.get('user-agent') ?? '',
-      expires_at: expiresAt,
-    });
-
-    // Token PostgREST - memberi basis data cara mengenali user ini, sehingga
-    // policy RLS bisa menyaring berdasarkan identitas alih-alih USING (true).
-    // Bernilai null bila SUPABASE_JWT_SECRET belum diset; login tetap berhasil.
-    //  Penanda akun pimpinan (lib/pimpinan.ts) - kueri terpisah & toleran: bila kolom
-    //  belum ada (migrasi 034 belum dijalankan) hasilnya null = bukan pimpinan.
-    const { data: pim } = await supabase.from('users').select('pimpinan').eq('id', user.id).maybeSingle();
-    const userKeluar = { ...user, pimpinan: pim?.pimpinan === true };
-    const response = NextResponse.json({ user: userKeluar, db_token: issueDbToken(user) });
-    response.cookies.set('ivp_session', sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: SESSION_HOURS * 3600,
-      path: '/',
-    });
-    return response;
+    return await selesaikanMasuk(supabase, user, request, ip);
 
   } catch {
     return NextResponse.json({ error: 'Login gagal. Coba lagi.' }, { status: 500 });

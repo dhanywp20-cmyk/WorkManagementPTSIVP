@@ -51,6 +51,8 @@ const PUBLIC_EXACT = [
   // Laporan galat dari layar pengguna (juga dari layar login) - dibatasi ukuran & jumlah di route-nya.
   '/api/galat',
   '/api/auth/login',
+  // Langkah kedua login (kode authenticator) - tiketnya ditandatangani server, 5 menit.
+  '/api/auth/login-2fa',
   '/api/auth/logout',
   '/api/auth/forgot-password',
   '/api/auth/verify-otp',
@@ -62,6 +64,9 @@ const PUBLIC_EXACT = [
 
 // Cron jobs are called by Vercel scheduler with CRON_SECRET, not a user session
 const CRON_PREFIX = '/api/cron/';
+// Pemantau eksternal (JARVIS Sentinel) memanggil dengan MONITOR_TOKEN, bukan sesi pengguna -
+// route-nya memeriksa token sendiri (lib/monitor.ts). Jalur persis, bukan awalan.
+const MONITOR_PATH = '/api/monitor';
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -72,6 +77,7 @@ export function proxy(request: NextRequest) {
   //  jalurnya kebetulan berakhiran seperti nama berkas.
   if (!pathname.startsWith('/api/') && BERKAS_STATIS.test(pathname)) return NextResponse.next();
   if (pathname.startsWith(CRON_PREFIX)) return NextResponse.next();
+  if (pathname === MONITOR_PATH) return NextResponse.next();
 
   const session = request.cookies.get('ivp_session');
   if (!session?.value) {

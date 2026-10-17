@@ -240,7 +240,7 @@ function TicketingSystemInner() {
     handler_name: "",
     action_taken: "",
     notes: "",
-    new_status: "Pending",
+    new_status: "",
     sn_unit: "",
     file: null as File | null,
     photo: null as File | null,
