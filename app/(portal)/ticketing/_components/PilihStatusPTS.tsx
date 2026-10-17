@@ -36,7 +36,9 @@ export function PilihStatusPTS({ sekarang, dipilih, onPilih, jadwalOnsite }: {
 }) {
   const pilihan = statusBerikutnya(sekarang);
   const alasan = alasanBelumBisa(sekarang);
-  const gayaSekarang = GAYA[sekarang as StatusAlurPTS];
+  const gayaSekarang = sekarang === 'Overdue'
+    ? { ikon: '🚨', chip: 'bg-red-100 text-red-800' }
+    : GAYA[sekarang as StatusAlurPTS];
   const catatanSaja = dipilih !== '' && dipilih === sekarang;
 
   return (
@@ -48,7 +50,7 @@ export function PilihStatusPTS({ sekarang, dipilih, onPilih, jadwalOnsite }: {
         </span>
       </div>
 
-      <p className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mt-1">Ubah status ke *</p>
+      {pilihan.length > 0 && <p className="text-[10px] font-bold tracking-widest uppercase text-gray-500 mt-1">Ubah status ke *</p>}
       <div className="flex flex-col gap-1.5" role="radiogroup" aria-label="Ubah status ke">
         {pilihan.map(s => {
           const g = GAYA[s];

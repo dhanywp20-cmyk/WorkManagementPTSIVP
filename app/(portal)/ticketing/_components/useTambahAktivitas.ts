@@ -225,8 +225,13 @@ export function useTambahAktivitas(k: TambahAktivitasKonteks) {
           }
         }
 
-        const { error: updateError } = await supabase.from("tickets").update(updateData).eq("id", selectedTicket.id);
+        //  .select + cek baris: update yang ditolak RLS mengembalikan 0 baris
+        //  TANPA error. Dulu itu lolos sebagai "berhasil" - activity log
+        //  tercatat Solved, tapi status ticket tetap Pending (kasus BCA
+        //  sentul BLBI, 15 Okt 2026).
+        const { data: terubah, error: updateError } = await supabase.from("tickets").update(updateData).eq("id", selectedTicket.id).select("id");
         if (updateError) throw new Error(`Failed to update ticket: ${updateError.message}`);
+        if (!terubah || terubah.length === 0) throw new Error("Catatan tersimpan, tapi status ticket TIDAK berubah (ditolak sistem). Refresh lalu ulangi, atau hubungi admin.");
 
         //  Kabar penyelesaian - baru dikirim SESUDAH ticketnya benar-benar
         //  tersimpan sebagai Solved, bukan sebelum. Mengabari lebih dulu lalu

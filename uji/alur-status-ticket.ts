@@ -28,6 +28,13 @@ cek(updateSah('Call', 'Solved'), 'Solved langsung dari Call (selesai lewat telep
 cek(boleh('Solved') === '', 'Solved: tidak ada pindah status (Buka Ulang lewat tombol khusus)');
 cek(!bolehCatatanSaja('Solved'), 'Solved: tidak bisa tambah catatan dari panel ini');
 cek(boleh('Waiting Approval') === '', 'Waiting Approval: belum bisa diupdate (menunggu persetujuan)');
+cek(['Rejected', 'Cancelled'].every(s => boleh(s) === '' && !bolehCatatanSaja(s) && alasanBelumBisa(s) !== null), 'Rejected / Cancelled: tertutup, dengan keterangan');
+cek(boleh('toString') === 'Call,Onsite,In Progress,Solved', 'Nama status aneh tidak dianggap tertutup (cek own-property)');
+
+// ── Overdue (dipasang otomatis oleh SLA, menimpa status kerja) ────────────
+cek(boleh('Overdue') === 'Call,Onsite,In Progress,Pending Action,Solved', `Overdue -> semua kecuali Pending (${boleh('Overdue')})`);
+cek(updateSah('Overdue', 'Pending Action'), 'Overdue -> Pending Action (perpanjang deadline) boleh');
+cek(updateSah('Overdue', 'Overdue') && alasanBelumBisa('Overdue') === null, 'Overdue: catatan saja boleh, tidak ada yang terkunci');
 
 // ── Catatan saja (status tetap) ───────────────────────────────────────────
 cek(['Pending', 'Call', 'Onsite', 'In Progress', 'Pending Action'].every(s => updateSah(s, s)), 'Tambah catatan saja boleh di semua status selain Solved');

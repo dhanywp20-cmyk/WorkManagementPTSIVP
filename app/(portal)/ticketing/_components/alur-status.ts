@@ -15,6 +15,8 @@
  *     tidak perlu mengarang Onsite/In Progress dulu hanya supaya bisa
  *     menutup ticket. Setelah Solved, status terkunci - membuka lagi lewat
  *     tombol Buka Ulang.
+ * Overdue (dipasang SLA) diperlakukan seperti aturan 2. Waiting Approval,
+ * Rejected, dan Cancelled tertutup seperti Solved.
  * Selain pindah status, selalu bisa "tambah catatan saja" (status tetap).
  *
  * Versi sebelumnya memakai urutan maju-saja + riwayat tersembunyi (tombol
@@ -26,7 +28,21 @@ export type StatusAlurPTS = (typeof ALUR_STATUS_PTS)[number];
 
 /** Status penanganan: ticket sudah benar-benar ditangani. */
 const PENANGANAN: readonly StatusAlurPTS[] = ['Call', 'Onsite', 'In Progress'];
-const SUDAH_DITANGANI: readonly string[] = [...PENANGANAN, 'Pending Action'];
+/**
+ * Status yang boleh pindah ke mana saja (kecuali Pending). Overdue ikut di
+ * sini: status itu dipasang otomatis oleh SLA dan MENIMPA status kerja,
+ * jadi tidak diketahui apakah ticket sudah ditangani - dan Pending Action
+ * (perpanjang deadline) adalah satu-satunya jalan keluar selain Solved.
+ */
+const SUDAH_DITANGANI: readonly string[] = [...PENANGANAN, 'Pending Action', 'Overdue'];
+/** Status tertutup: tidak bisa diupdate dari panel ini. */
+const TERTUTUP: Record<string, string> = {
+  Solved: 'Ticket sudah Solved. Gunakan Buka Ulang bila masalah muncul lagi.',
+  'Waiting Approval': 'Ticket masih menunggu persetujuan admin.',
+  Rejected: 'Ticket sudah ditolak.',
+  Cancelled: 'Ticket sudah dibatalkan.',
+};
+const tertutup = (s: string) => Object.prototype.hasOwnProperty.call(TERTUTUP, s);
 
 /** Arti tiap status, tampil di bawah namanya di panel. */
 export const ARTI_STATUS: Record<StatusAlurPTS, string> = {
@@ -42,18 +58,18 @@ export const sudahDitangani = (sekarang: string) => SUDAH_DITANGANI.includes(sek
 
 /** Status tujuan yang boleh dipilih dari status sekarang (tidak termasuk status sekarang itu sendiri). */
 export function statusBerikutnya(sekarang: string): StatusAlurPTS[] {
-  if (sekarang === 'Solved' || sekarang === 'Waiting Approval') return [];
+  if (tertutup(sekarang)) return [];
   if (!sudahDitangani(sekarang)) return [...PENANGANAN, 'Solved'];
   return ALUR_STATUS_PTS.filter(s => s !== 'Pending' && s !== sekarang);
 }
 
 /** Boleh menambah catatan tanpa mengganti status? */
 export const bolehCatatanSaja = (sekarang: string) =>
-  (ALUR_STATUS_PTS as readonly string[]).includes(sekarang) && sekarang !== 'Solved';
+  sekarang === 'Pending' || sudahDitangani(sekarang);
 
 /** Keterangan untuk status yang belum bisa dipilih (null = semua tersedia). */
 export function alasanBelumBisa(sekarang: string): string | null {
-  if (sekarang === 'Solved') return 'Ticket sudah Solved. Gunakan Buka Ulang bila masalah muncul lagi.';
+  if (tertutup(sekarang)) return TERTUTUP[sekarang];
   if (!sudahDitangani(sekarang)) return 'Pending Action bisa dipilih setelah ticket ditangani (Call, Onsite, atau In Progress).';
   return null;
 }
