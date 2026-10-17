@@ -52,7 +52,7 @@ export function SolusiSerupa({ ticketId, teks }: { ticketId: string; teks: strin
           {data.techNote.map(n => (
             <a key={n.id} href={`/tech-note?open=${n.id}`}
               className="flex items-center gap-2 rounded-lg border border-sky-100 bg-sky-50/60 p-2.5 hover:bg-sky-50">
-              <Ikon nama="📄" ukuran={14} className="text-sky-700 flex-shrink-0" />
+              <Ikon nama="📄" ukuran={14} className="text-sky-700 shrink-0" />
               <span className="min-w-0">
                 <span className="block text-[12.5px] font-semibold text-slate-800 truncate">Tech Note: {n.title}</span>
                 <span className="block text-[11px] text-slate-500">cocok: {n.cocok.join(', ')}</span>

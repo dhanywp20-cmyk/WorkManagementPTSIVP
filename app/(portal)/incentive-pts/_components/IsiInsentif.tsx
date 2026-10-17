@@ -92,7 +92,7 @@ export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEdit
         {/* ─── Projects tab ─── */}
         {tab === 'projects' && !loading && (<>
           {currentUser && (
-            <div className="mb-4 rounded-xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-purple-50 p-4 shadow-sm">
+            <div className="mb-4 rounded-xl border border-rose-200 bg-linear-to-br from-rose-50 via-white to-purple-50 p-4 shadow-xs">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-black text-gray-700 flex items-center gap-1.5"><IkonTeks nama="💰" />Insentif Saya
                   <span className="text-[11px] font-semibold text-gray-500">
@@ -130,7 +130,7 @@ export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEdit
               )}
             </div>
           )}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
             <FilterProyekInsentif
               bastYearsProjects={bastYearsProjects} bolehHapus={bolehHapus} currentUser={currentUser} exporting={exporting} filterBastYear={filterBastYear} filteredProjects={filteredProjects} handleExportSummary={handleExportSummary} kandidatBulkGenerate={kandidatBulkGenerate} kandidatGabung={kandidatGabung} mintaKonfirmasiHapus={mintaKonfirmasiHapus} pilihHapus={pilihHapus} searchProject={searchProject} setBulkGenerateConfirm={setBulkGenerateConfirm} setFilterBastYear={setFilterBastYear} setKonfirmGabung={setKonfirmGabung} setPilihHapus={setPilihHapus} setSearchProject={setSearchProject} setSummaryExportYear={setSummaryExportYear} summaryExportYear={summaryExportYear}
             />
@@ -153,7 +153,7 @@ export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEdit
 
         {/* ─── Late Ticket Queue tab ─── */}
         {tab === 'late' && bisaInput(currentUser) && !loading && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200" style={{ background: 'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(234,88,12,0.05))' }}>
               <h2 className="font-bold text-gray-800"><IkonTeks nama="🕐" />Late Ticket Queue</h2>
               <p className="text-xs text-gray-500 mt-0.5">Ticket Troubleshooting yang masuk setelah cutoff project induk — dilampirkan ke tranche berikutnya yang belum dibayar.</p>
@@ -175,7 +175,7 @@ export function IsiInsentif({ allUsers, bastYearsProjects, bolehHapus, brandEdit
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="text-sm font-bold text-amber-700">{formatRupiah(lt.ticket_value || 0)}</span>
-                        {lt.is_sunset && <span className="px-2 py-0.5 rounded text-[11px] font-bold text-orange-600 bg-orange-50 border border-orange-200">Sunset</span>}
+                        {lt.is_sunset && <span className="px-2 py-0.5 rounded-sm text-[11px] font-bold text-orange-600 bg-orange-50 border border-orange-200">Sunset</span>}
                       </div>
                     </div>
                   ))}

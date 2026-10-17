@@ -22,7 +22,7 @@ export interface HeaderBankSoalProps {
 export function HeaderBankSoal({ easyCount, filteredQuestions, goBack, hardCount, mediumCount, search, selectedFolder, selectedSubFolder, setSearch, setShowAddManual, setShowGenerate }: HeaderBankSoalProps) {
   return (
     <>
-      <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-slate-200">
+      <div className="sticky top-0 z-10 bg-white shadow-xs border-b border-slate-200">
         <div className="flex items-center justify-between px-6 py-4 gap-4">
           <div className="min-w-0">
             {/* Breadcrumb */}
@@ -53,7 +53,7 @@ export function HeaderBankSoal({ easyCount, filteredQuestions, goBack, hardCount
             </div>
             <h1 className="text-lg font-bold text-slate-800 tracking-tight"><IkonTeks nama="🧩" />Bank Soal</h1>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <SearchInput value={search} onChange={setSearch} placeholder="Cari soal..." />
             <button
               onClick={goBack}
@@ -66,7 +66,7 @@ export function HeaderBankSoal({ easyCount, filteredQuestions, goBack, hardCount
             </button>
             <button
               data-tulis onClick={() => setShowAddManual(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
+              className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
             >
               <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -76,7 +76,7 @@ export function HeaderBankSoal({ easyCount, filteredQuestions, goBack, hardCount
             </button>
             <button
               data-tulis onClick={() => setShowGenerate(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
+              className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:opacity-90"
               style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}
             >
               <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,18 +88,18 @@ export function HeaderBankSoal({ easyCount, filteredQuestions, goBack, hardCount
         </div>
         {/* Stats bar */}
         <div className="flex items-center gap-2 px-6 py-2.5 bg-slate-50 border-t border-slate-100 flex-wrap">
-          <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-sm">
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-1 rounded-full shadow-xs">
             Total: {filteredQuestions.length}
           </span>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-xs"
             style={{ background: DIFF_BG.easy, color: DIFF_TEXT.easy, border: `1px solid ${DIFF_BORDER.easy}` }}>
             Mudah: {easyCount}
           </span>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-xs"
             style={{ background: DIFF_BG.medium, color: DIFF_TEXT.medium, border: `1px solid ${DIFF_BORDER.medium}` }}>
             Sedang: {mediumCount}
           </span>
-          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-sm"
+          <span className="inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full shadow-xs"
             style={{ background: DIFF_BG.hard, color: DIFF_TEXT.hard, border: `1px solid ${DIFF_BORDER.hard}` }}>
             Sulit: {hardCount}
           </span>

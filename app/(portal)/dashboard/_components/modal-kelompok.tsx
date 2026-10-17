@@ -243,7 +243,7 @@ export function KelompokSettingInline() {
                       <div className="flex items-center justify-center gap-1.5">
                         <select aria-label={`Tampilan dashboard ${k.label}`} value={k.dashboard}
                           onChange={e => ubah(k.nama, { dashboard: e.target.value as 'team' | 'sales' })}
-                          className="border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-semibold bg-white outline-none focus:border-slate-400">
+                          className="border border-slate-200 rounded-lg px-2 py-1 text-[11px] font-semibold bg-white outline-hidden focus:border-slate-400">
                           <option value="team">Seperti Team</option>
                           <option value="sales">Seperti Sales</option>
                         </select>
@@ -294,9 +294,9 @@ export function KelompokSettingInline() {
               <input value={namaBaru} onChange={e => setNamaBaru(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); tambah(); } }}
                 placeholder="mis. SBY — jadi &quot;Team PTS SBY&quot;"
-                className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-slate-400 bg-white" />
+                className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-hidden focus:border-slate-400 bg-white" />
               <button type="button" onClick={tambah}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0 hover:opacity-90 transition-all"
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-white shrink-0 hover:opacity-90 transition-all"
                 style={{ background: 'linear-gradient(135deg,#7e22ce,#6b21a8)' }}>
                 Tambah
               </button>

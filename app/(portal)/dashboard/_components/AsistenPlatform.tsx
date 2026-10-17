@@ -50,7 +50,7 @@ function KartuPanduan({ p }: { p: Panduan }) {
       <ol className="space-y-2">
         {p.langkah.map((l, i) => (
           <li key={i} className="flex gap-2.5 text-[12.5px] text-slate-700 leading-relaxed">
-            <span className="w-5 h-5 rounded-full bg-blue-700 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+            <span className="w-5 h-5 rounded-full bg-blue-700 text-white text-[11px] font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
             <span>{l}</span>
           </li>
         ))}
@@ -153,7 +153,7 @@ export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
     <>
       <button
         onClick={() => { if (melebar) { setBuka(true); } else setMelebar(true); }}
-        className={`fixed bottom-28 md:bottom-6 z-[1504] flex items-center gap-2 py-2.5 text-xs font-bold text-white shadow-xl active:scale-95 ${
+        className={`fixed bottom-28 md:bottom-6 z-1504 flex items-center gap-2 py-2.5 text-xs font-bold text-white shadow-xl active:scale-95 ${
           melebar ? 'right-6 px-4 rounded-2xl hover:scale-105' : 'right-0 pl-3 pr-2 rounded-l-2xl opacity-70 hover:opacity-100'}`}
         style={{ background: 'linear-gradient(135deg,#1d4ed8,#1e3a8a)', boxShadow: '0 4px 20px rgba(29,78,216,0.4)',
           transition: 'right 0.35s ease, opacity 0.25s ease, padding 0.35s ease, border-radius 0.35s ease' }}
@@ -165,28 +165,28 @@ export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
 
       {buka && (
         <ModalPortal>
-          <div className="fixed inset-0 z-[1600] bg-slate-900/30 sm:bg-transparent" onClick={() => setBuka(false)} aria-hidden="true" />
+          <div className="fixed inset-0 z-1600 bg-slate-900/30 sm:bg-transparent" onClick={() => setBuka(false)} aria-hidden="true" />
           <div role="dialog" aria-modal="true" aria-label="Asisten Platform"
-            className="fixed z-[1601] inset-x-0 bottom-0 h-[85dvh] rounded-t-2xl sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[400px] sm:h-[min(640px,calc(100dvh-110px))] sm:rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
+            className="fixed z-1601 inset-x-0 bottom-0 h-[85dvh] rounded-t-2xl sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[400px] sm:h-[min(640px,calc(100dvh-110px))] sm:rounded-2xl bg-white shadow-2xl border border-slate-200 flex flex-col overflow-hidden"
             style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             <div className="px-4 pt-3 pb-2 border-b border-slate-100">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center flex-shrink-0"><Ikon nama="✨" ukuran={16} /></span>
+                  <span className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center shrink-0"><Ikon nama="✨" ukuran={16} /></span>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-900 leading-tight">Asisten Platform</p>
                     <p className="text-[11px] text-slate-500 truncate">Tanya data kerja Anda atau cara pakai menu</p>
                   </div>
                 </div>
                 <button type="button" onClick={() => setBuka(false)} aria-label="Tutup"
-                  className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 flex-shrink-0">
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 shrink-0">
                   <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
               <div role="tablist" className="flex gap-1 p-1 rounded-xl bg-slate-100 mt-3">
                 {([['tanya', 'Tanya'], ['panduan', 'Panduan']] as const).map(([k, l]) => (
                   <button key={k} type="button" role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
-                    className={`flex-1 py-1.5 rounded-lg text-[12.5px] font-semibold ${tab === k ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>{l}</button>
+                    className={`flex-1 py-1.5 rounded-lg text-[12.5px] font-semibold ${tab === k ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>{l}</button>
                 ))}
               </div>
             </div>
@@ -239,9 +239,9 @@ export function AsistenPlatform({ modul, atasan, onMulaiTur }: {
                   <textarea value={isian} onChange={e => setIsian(e.target.value)} rows={1} maxLength={1000}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void kirim(isian); } }}
                     placeholder="Tulis pertanyaan..." aria-label="Pertanyaan untuk asisten"
-                    className="flex-1 resize-none max-h-28 rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400" />
+                    className="flex-1 resize-none max-h-28 rounded-xl border border-slate-200 px-3 py-2 text-base sm:text-sm text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-blue-200 focus:border-blue-400" />
                   <button type="submit" disabled={sibuk || !isian.trim()} aria-label="Kirim"
-                    className="w-10 h-10 rounded-xl bg-blue-700 text-white flex items-center justify-center disabled:opacity-40 flex-shrink-0">
+                    className="w-10 h-10 rounded-xl bg-blue-700 text-white flex items-center justify-center disabled:opacity-40 shrink-0">
                     <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M13 6l6 6-6 6" /></svg>
                   </button>
                 </form>

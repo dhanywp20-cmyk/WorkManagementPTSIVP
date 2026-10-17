@@ -91,7 +91,7 @@ export function WidgetCard({ title, icon, accent, children, onSeeAll, seeAllLabe
         <h3 className={`${LABEL_UBIN} truncate flex-1`}>{title}</h3>
         {onSeeAll && (
           <button onClick={onSeeAll}
-            className="text-[12px] font-semibold flex-shrink-0 hover:underline underline-offset-2"
+            className="text-[12px] font-semibold shrink-0 hover:underline underline-offset-2"
             style={{ color: AKSEN_UTAMA }}>
             {seeAllLabel ?? 'Lihat'} →
           </button>

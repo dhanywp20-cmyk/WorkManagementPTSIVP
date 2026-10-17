@@ -93,7 +93,7 @@ export function EditorReferensiLED({ data: r, ubah, reset, diubah, sumber, infoT
     <>
     <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     <Modal buka={buka} onTutup={onTutup} ukuran="penuh" ikon={<Ikon nama="⚙" ukuran={18} />}
-      judul={<>Referensi brand, modul & hardware {diubah && <span className="ml-2 align-middle text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800">diubah</span>}</>}
+      judul={<>Referensi brand, modul & hardware {diubah && <span className="ml-2 align-middle text-[11px] font-bold px-1.5 py-0.5 rounded-sm bg-amber-50 text-amber-800">diubah</span>}</>}
       keterangan={`Isi sesuai datasheet produk yang ditawarkan, dipilah per brand. Pilihan brand, pitch dan hardware di kalkulator langsung memakai tabel ini. ${keteranganSumber}`}
       footer={
         <div className="flex items-center justify-between gap-2 w-full flex-wrap">

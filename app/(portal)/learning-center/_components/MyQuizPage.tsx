@@ -418,7 +418,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
               return (
                 <div key={q.id} className={`rounded-2xl border-2 p-5 bg-white ${notAnswered ? 'border-slate-200' : isCorrect ? 'border-emerald-300' : 'border-rose-300'}`}>
                   <div className="flex items-start gap-3 mb-3">
-                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 text-white ${notAnswered ? 'bg-slate-400' : isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
+                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 text-white ${notAnswered ? 'bg-slate-400' : isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`}>
                       {notAnswered ? '—' : isCorrect ? '✓' : '✗'}
                     </span>
                     <div className="flex-1">
@@ -437,7 +437,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                       if (isUserChoice && !isCorrectOpt) cls = 'bg-rose-50 border-rose-400 text-rose-800 font-bold';
                       return (
                         <div key={opt} className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-xs ${cls}`}>
-                          <span className={`w-5 h-5 rounded flex items-center justify-center text-[11px] font-black flex-shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
+                          <span className={`w-5 h-5 rounded-sm flex items-center justify-center text-[11px] font-black shrink-0 ${isCorrectOpt ? 'bg-emerald-500 text-white' : isUserChoice ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{opt}</span>
                           <span className="flex-1">{optVal}</span>
                           {isCorrectOpt && <span className="text-emerald-700">✓</span>}
                           {isUserChoice && !isCorrectOpt && <span className="text-rose-600">←</span>}
@@ -465,7 +465,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
                 Skor akan muncul di halaman Riwayat &amp; Nilai Saya setelah admin selesai menilai.
               </p>
               <button onClick={onDone}
-                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow transition-all text-sm">
+                className="px-6 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-sm transition-all text-sm">
                 Selesai
               </button>
             </>
@@ -484,12 +484,12 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           </div>
           <div className="flex gap-3 justify-center flex-wrap">
             <button onClick={() => setShowReview(true)}
-              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold rounded-xl shadow-sm transition-all text-sm">
+              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold rounded-xl shadow-xs transition-all text-sm">
               <IkonTeks nama="📋" />Review Jawaban
             </button>
             {!result.passed && session.allow_retake && onRetake && (
               <button onClick={() => onRetake(session)}
-                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all text-sm">
+                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-sm transition-all text-sm">
                 <IkonTeks nama="🔄" />Coba Lagi
               </button>
             )}
@@ -499,14 +499,14 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
               return (
                 <>
                   <button onClick={() => void unduhSertifikat(d)} title="Unduh sertifikat (PNG)"
-                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow transition-all text-sm"><IkonTeks nama="🎓" />Sertifikat</button>
+                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-sm transition-all text-sm"><IkonTeks nama="🎓" />Sertifikat</button>
                   <button onClick={() => cetakSertifikat(d)} title="Cetak sertifikat" aria-label="Cetak sertifikat"
-                    className="px-3 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-sm transition-all text-sm"><Ikon nama="🖨" ukuran={16} /></button>
+                    className="px-3 py-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-xs transition-all text-sm"><Ikon nama="🖨" ukuran={16} /></button>
                 </>
               );
             })()}
             <button onClick={onDone}
-              className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow transition-all text-sm">
+              className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-sm transition-all text-sm">
               Selesai
             </button>
           </div>
@@ -565,7 +565,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
   //  yang bisa berisi 50 tombol, itu pekerjaan sia-sia tiap kali detik timer
   //  berdetak.
   const relSoal = () => (
-    <div className="flex gap-[3px] px-4 sm:px-6 py-3 overflow-x-auto flex-shrink-0 bg-white border-b border-slate-200"
+    <div className="flex gap-[3px] px-4 sm:px-6 py-3 overflow-x-auto shrink-0 bg-white border-b border-slate-200"
       role="group" aria-label="Navigasi soal">
       {questions.map((qq, i) => {
         const sudah = !!(answers[qq.id] ?? savedAnswers[qq.id]);
@@ -574,7 +574,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
           <button key={qq.id} onClick={() => setCurrent(i)}
             aria-label={`Soal ${i + 1}${sudah ? ' (sudah dijawab)' : ' (belum dijawab)'}`}
             aria-current={kini ? 'true' : undefined}
-            className="flex-1 min-w-[14px] rounded p-0 border-0 cursor-pointer transition-all hover:scale-y-150"
+            className="flex-1 min-w-[14px] rounded-sm p-0 border-0 cursor-pointer transition-all hover:scale-y-150"
             style={{
               height: kini ? 12 : 7,
               alignSelf: 'center',
@@ -599,7 +599,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
       postMessage (lihat useEffect di atas); lapisan di sini yang menutup
       sisanya bila halaman dibuka langsung.
     */}
-    <div className="fixed inset-0 z-[250] flex bg-slate-100">
+    <div className="fixed inset-0 z-250 flex bg-slate-100">
       <div className="flex-1 flex flex-col overflow-hidden">
 
         {/*
@@ -636,7 +636,7 @@ function QuizPlayer({ session, user, attempt, onDone, onRetake }: {
         mengira semuanya hilang, lalu memaksakan diri melanjutkan padahal
         keadaannya tidak memungkinkan. */}
     {konfirmasiKeluar && (
-      <div className="fixed inset-0 z-[260] flex items-center justify-center p-4"
+      <div className="fixed inset-0 z-260 flex items-center justify-center p-4"
         style={{ background: 'rgba(15,23,42,0.6)' }}
         onClick={() => setKonfirmasiKeluar(false)}>
         <div className="w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden"

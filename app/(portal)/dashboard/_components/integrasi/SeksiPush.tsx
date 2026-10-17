@@ -32,7 +32,7 @@ export function SeksiPush({ aktifkanPushServer, hapusRahasia, pushInfo, pushMemu
                     Notifikasi sistem asli + bunyi di HP, walau aplikasi/tab sedang tertutup - seperti WhatsApp.
                   </p>
                 </div>
-                <span className={`ml-auto flex-shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                <span className={`ml-auto shrink-0 text-[11px] font-bold px-2 py-0.5 rounded-full ${
                   pushInfo?.aktif ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                   {pushInfo === null ? 'Memuat…' : pushInfo.aktif ? 'Aktif' : 'Belum aktif'}
                 </span>

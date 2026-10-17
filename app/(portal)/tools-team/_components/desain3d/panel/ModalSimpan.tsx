@@ -21,7 +21,7 @@ export function ModalSimpan({ a }: { a: AlatDesain }) {
         )}
         <button type="button" onClick={() => { simpanKeLaptop(); }}
           className="w-full mb-3 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left hover:bg-emerald-100">
-          <HardDriveDownload size={20} className="text-emerald-700 flex-shrink-0" />
+          <HardDriveDownload size={20} className="text-emerald-700 shrink-0" />
           <span className="min-w-0">
             <span className="block text-[13px] font-bold text-emerald-900">Simpan ke laptop (.glb)</span>
             <span className="block text-[11.5px] text-emerald-800">Termasuk gambar layar & model impor. Buka lagi lewat Buka → Dari laptop; juga bisa dibuka di SketchUp/Blender.</span>
@@ -68,7 +68,7 @@ export function ModalSimpan({ a }: { a: AlatDesain }) {
                 </span>
                 {d.bolehUbah && (
                   <button type="button" aria-label={`Hapus ${d.nama}`} onClick={() => void hapusTim(d)}
-                    className="w-7 h-7 flex-shrink-0 grid place-items-center rounded-md text-slate-500 hover:text-rose-700 hover:bg-rose-50"><Ikon nama="🗑" ukuran={14} /></button>
+                    className="w-7 h-7 shrink-0 grid place-items-center rounded-md text-slate-500 hover:text-rose-700 hover:bg-rose-50"><Ikon nama="🗑" ukuran={14} /></button>
                 )}
               </li>
             ))}
@@ -83,7 +83,7 @@ export function ModalSimpan({ a }: { a: AlatDesain }) {
                 <li key={t.nama} className="flex items-center justify-between gap-2 py-2 text-[13px]">
                   <button type="button" onClick={() => { const rb = { ...RUANG_AWAL, ...t.ruang }; setRuang(rb); setBenda(t.benda); riwayat.mulaiBaru({ ruang: rb, benda: t.benda }); setNamaDesain(t.nama); setDesainAktif(null); setLihatVersi(null); setAsal({ jenis: 'lokal', nama: t.nama }); setDasar(ambilKunci(rb, t.benda, t.nama)); setPilih(null); setModal(null); }}
                     className="text-blue-700 font-semibold hover:underline truncate text-left">{t.nama}</button>
-                  <span className="flex items-center gap-2 flex-shrink-0 text-slate-600">
+                  <span className="flex items-center gap-2 shrink-0 text-slate-600">
                     <button type="button" disabled={sibukSimpan} onClick={() => void unggahLokal(t)}
                       className="text-[12px] font-bold text-blue-800 px-2 py-1 rounded-md bg-blue-50 hover:bg-blue-100 disabled:opacity-50">Unggah ke server</button>
                     <button type="button" aria-label={`Hapus ${t.nama}`} onClick={() => tulisSimpanan(tersimpan.filter(x => x.nama !== t.nama))}

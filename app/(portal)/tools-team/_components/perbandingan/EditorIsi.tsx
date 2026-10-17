@@ -26,7 +26,7 @@ export function EditorIsi({ s, tutup }: { s: Sunting; tutup: () => void }) {
     tutup();
   };
   return (
-    <div className="fixed inset-0 z-[1000] grid place-items-center bg-slate-900/40 p-3" onClick={tutup}>
+    <div className="fixed inset-0 z-1000 grid place-items-center bg-slate-900/40 p-3" onClick={tutup}>
       <div role="dialog" aria-label={s.judul} className="w-full max-w-md rounded-2xl bg-white shadow-2xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
         <p className="text-[14px] font-bold text-slate-900">{s.judul}{s.jenis === 'nilai' && <span className="font-semibold text-slate-500"> · {s.produk}</span>}</p>
         {s.jenis === 'nilai' && (

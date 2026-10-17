@@ -43,7 +43,7 @@ export function ApproveAssignModal({
 }) {
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4"
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(34,197,94,0.4)' }}>
@@ -74,7 +74,7 @@ export function ApproveAssignModal({
             {approveBatchSiblings.length > 0 && (
               <div className="rounded-xl p-3 flex items-start gap-2"
                 style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                <span className="text-base flex-shrink-0"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-base shrink-0"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-xs text-indigo-700 leading-relaxed">
                   Request ini bagian dari <strong>{approveBatchSiblings.length + 1} hari</strong> yang diminta sekaligus
                   ({[approveTarget.due_date, ...approveBatchSiblings.map(s => s.due_date)].sort().map(formatDate).join(', ')}).
@@ -110,7 +110,7 @@ export function ApproveAssignModal({
               <select id="f-reminder-schedule-components-approveassignmodals-1"
                 value={approveAssignTo}
                 onChange={e => setApproveAssignTo(e.target.value)}
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-green-500/40"
+                className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all text-slate-800 focus:ring-2 focus:ring-green-500/40"
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                 <option value="">-- Pilih Anggota Team PTS --</option>
                 <option value="SELF_MANAGER">Saya (Manager) kerjakan sendiri — Supervisor &amp; tim penuh</option>
@@ -128,7 +128,7 @@ export function ApproveAssignModal({
                 <input id="f-reminder-schedule-components-approveassignmodals-2" type="date"
                   value={approveDate || approveTarget.due_date}
                   onChange={e => setApproveDate(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500/40 text-slate-800"
+                  className="w-full rounded-xl px-4 py-3 text-sm outline-hidden focus:ring-2 focus:ring-green-500/40 text-slate-800"
                   style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
               </div>
               <div>
@@ -138,7 +138,7 @@ export function ApproveAssignModal({
                 <input id="f-reminder-schedule-components-approveassignmodals-3" type="time"
                   value={approveTime || approveTarget.due_time}
                   onChange={e => setApproveTime(e.target.value)}
-                  className="w-full rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-green-500/40 text-slate-800"
+                  className="w-full rounded-xl px-4 py-3 text-sm outline-hidden focus:ring-2 focus:ring-green-500/40 text-slate-800"
                   style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
               </div>
             </div>
@@ -163,7 +163,7 @@ export function ApproveAssignModal({
                     </label>
                     <input id="f-reminder-schedule-components-approveassignmodals-4" type="date" value={approveStart}
                       onChange={e => setApproveStart(e.target.value)}
-                      className="w-full rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-800"
+                      className="w-full rounded-xl px-3 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-cyan-500/40 text-slate-800"
                       style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
                   </div>
                   <div>
@@ -172,7 +172,7 @@ export function ApproveAssignModal({
                     </label>
                     <input id="f-reminder-schedule-components-approveassignmodals-5" type="date" value={approveTarget2} min={approveStart || undefined}
                       onChange={e => setApproveTarget2(e.target.value)}
-                      className="w-full rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-cyan-500/40 text-slate-800"
+                      className="w-full rounded-xl px-3 py-2.5 text-sm outline-hidden focus:ring-2 focus:ring-cyan-500/40 text-slate-800"
                       style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export function ApproveAssignModal({
             {/* Info WA */}
             <div className="rounded-xl p-3 flex items-start gap-2"
               style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
-              <span className="text-base flex-shrink-0"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="text-base shrink-0"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <p className="text-[11px] text-green-700 leading-relaxed">
                 WA notifikasi akan otomatis dikirim ke <strong>Team PTS IVP</strong> yang di-assign dan ke <strong>Sales</strong> yang request bahwa jadwalnya sudah disetujui.
               </p>
@@ -198,7 +198,7 @@ export function ApproveAssignModal({
               <button
                 onClick={handleApproveAssign}
                 disabled={approveSaving || !approveAssignTo}
-                className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-2 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', boxShadow: '0 4px 14px rgba(22,163,74,0.35)' }}>
                 {approveSaving
                   ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
@@ -232,7 +232,7 @@ export function SupervisorAssignModal({
 }) {
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4"
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(245,158,11,0.4)' }}>
@@ -256,7 +256,7 @@ export function SupervisorAssignModal({
 
             {supervisorAssignBatchSiblings.length > 0 && (
               <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                <span className="text-base flex-shrink-0"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-base shrink-0"><Ikon nama="🗓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <p className="text-xs text-indigo-700 leading-relaxed">
                   Bagian dari <strong>{supervisorAssignBatchSiblings.length + 1} hari</strong> yang diminta sekaligus — semua tanggal akan ikut di-assign ke orang yang sama.
                 </p>
@@ -266,7 +266,7 @@ export function SupervisorAssignModal({
             <div>
               <label htmlFor="f-reminder-schedule-components-approveassignmodals-6" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Assign ke *</label>
               <select id="f-reminder-schedule-components-approveassignmodals-6" value={supervisorAssignTo} onChange={e => setSupervisorAssignTo(e.target.value)}
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-amber-500/40"
+                className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all text-slate-800 focus:ring-2 focus:ring-amber-500/40"
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                 <option value="">-- Pilih --</option>
                 <option value="SELF">Saya kerjakan sendiri (tim penuh/sibuk)</option>
@@ -280,7 +280,7 @@ export function SupervisorAssignModal({
             </div>
 
             <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
-              <span className="text-base flex-shrink-0"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="text-base shrink-0"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <p className="text-[11px] text-green-700 leading-relaxed">
                 WA notifikasi otomatis dikirim ke yang di-assign (kecuali kamu sendiri) dan ke Sales yang request.
               </p>
@@ -291,7 +291,7 @@ export function SupervisorAssignModal({
                 className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
                 style={{ background: '#f8fafc', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>Batal</button>
               <button onClick={handleSupervisorAssignConfirm} disabled={supervisorAssignSaving || !supervisorAssignTo}
-                className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-2 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                 style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', boxShadow: '0 4px 14px rgba(245,158,11,0.35)' }}>
                 {supervisorAssignSaving
                   ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>

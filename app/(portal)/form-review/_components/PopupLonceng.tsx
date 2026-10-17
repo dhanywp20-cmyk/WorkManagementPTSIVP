@@ -19,10 +19,10 @@ export function PopupLonceng({ isTeam, myActivePendingReviews, setDetailReview, 
     <>
       {showBellPopup && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-4">
           <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-lg w-full max-h-full overflow-hidden flex flex-col border-4 border-yellow-400"
             style={{ animation: 'scale-in 0.3s ease-out' }}>
-            <div className="p-5 border-b-2 border-yellow-300 flex-shrink-0" style={{ background: isTeam ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
+            <div className="p-5 border-b-2 border-yellow-300 shrink-0" style={{ background: isTeam ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{isTeam ? '⭐' : '🔔'}</span>
@@ -68,7 +68,7 @@ export function PopupLonceng({ isTeam, myActivePendingReviews, setDetailReview, 
                 </div>
               ))}
             </div>
-            <div className="p-4 border-t-2 border-gray-200 bg-gray-50 flex-shrink-0">
+            <div className="p-4 border-t-2 border-gray-200 bg-gray-50 shrink-0">
               <button onClick={() => setShowBellPopup(false)}
                 className="w-full text-white py-3 rounded-xl font-bold transition-all"
                 style={{ background: isTeam ? 'linear-gradient(135deg,#7c3aed,#5b21b6)' : 'linear-gradient(135deg,#f59e0b,#d97706)' }}>

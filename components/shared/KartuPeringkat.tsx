@@ -72,7 +72,7 @@ export function KartuPeringkat({
           <ul className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5">
             {segmen.map(s => (
               <li key={s.label} className="flex items-center gap-1.5 text-[11px] text-slate-600">
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color }} aria-hidden="true" />
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} aria-hidden="true" />
                 {s.label} <span className="font-semibold text-slate-800 tabular-nums">{s.value}</span>
               </li>
             ))}
@@ -91,7 +91,7 @@ export function KartuPeringkat({
                 className={`w-full text-left group ${bisaKlik ? 'cursor-pointer' : 'cursor-default'}`}>
                 <div className="flex items-center justify-between gap-2 text-[11px] sm:text-[11.5px]">
                   <span className={`truncate text-slate-600 font-medium ${bisaKlik ? 'group-hover:text-slate-900' : ''}`}>{b.label}</span>
-                  <span className="font-semibold text-slate-800 tabular-nums flex-shrink-0">{b.teks ?? b.value}</span>
+                  <span className="font-semibold text-slate-800 tabular-nums shrink-0">{b.teks ?? b.value}</span>
                 </div>
                 <div className="mt-1 h-1.5 rounded-full overflow-hidden" style={{ background: NETRAL.garis }}>
                   <div className="h-full rounded-full transition-[width] duration-500"

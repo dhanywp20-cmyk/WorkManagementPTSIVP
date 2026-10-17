@@ -26,7 +26,7 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
             <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <input type="text" value={form.product} onChange={e => set({ product: e.target.value })}
               placeholder="Panasonic PT-MZ682, LG 75UL3Q, dll"
-              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
           </div>
         </div>
@@ -38,7 +38,7 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
             <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="🔢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <input type="text" value={form.sn_unit} onChange={e => set({ sn_unit: e.target.value })}
               placeholder="SN12345678 (opsional)"
-              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
           </div>
         </div>
@@ -75,7 +75,7 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
                 set({ issue_case: val });
             }}
             placeholder="Maks. 4 kata, contoh: Videowall Not Working"
-            className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+            className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
             style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
         </div>
         <div className="flex justify-between items-center mt-1.5 px-1">
@@ -91,7 +91,7 @@ export function KolomBarangKeluhan({ form, set }: KolomBarangKeluhanProps) {
         <label htmlFor="f-ticketing-components-newticketmodal-1" className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}><IkonTeks nama="📝" />Detailed Description</label>
         <textarea id="f-ticketing-components-newticketmodal-1" value={form.description} onChange={e => set({ description: e.target.value })}
           rows={3} placeholder="Explain the problem details..."
-          className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
+          className="w-full rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
           style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
       </div>
 

@@ -81,10 +81,10 @@ export function IsiTechNote({ canManage, currentUser, fetchError, fetchNotes, fi
                 <div className="relative flex-1 sm:flex-initial min-w-0">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Cari judul, produk, tag..." value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari judul, produk, tag..."
-                    className="pl-8 pr-3 py-2 text-[13px] rounded-xl outline-none w-full sm:w-52 text-slate-700 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 placeholder-slate-400" style={{ background: 'rgba(255,255,255,0.95)' }} />
+                    className="pl-8 pr-3 py-2 text-[13px] rounded-xl outline-hidden w-full sm:w-52 text-slate-700 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100 placeholder-slate-400" style={{ background: 'rgba(255,255,255,0.95)' }} />
                 </div>
                 <select aria-label="Semua Status" value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}
-                  className="px-3 py-2 text-[13px] rounded-xl outline-none text-slate-700 border border-gray-200 focus:border-rose-400" style={{ background: 'rgba(255,255,255,0.95)' }}>
+                  className="px-3 py-2 text-[13px] rounded-xl outline-hidden text-slate-700 border border-gray-200 focus:border-rose-400" style={{ background: 'rgba(255,255,255,0.95)' }}>
                   <option value="all">Semua Status</option>
                   <option value="approved">Approved</option>
                   {/* Team user hanya bisa filter approved & pending (note milik sendiri) */}
@@ -99,7 +99,7 @@ export function IsiTechNote({ canManage, currentUser, fetchError, fetchNotes, fi
             {loading ? <Spinner /> : fetchError ? (
               <ErrorState message={`Gagal memuat Tech Note: ${fetchError}`} onRetry={fetchNotes} />
             ) : filtered.length === 0 ? (
-              <div className="rounded-2xl shadow-sm" style={{ background: 'rgba(255,255,255,0.90)' }}>
+              <div className="rounded-2xl shadow-xs" style={{ background: 'rgba(255,255,255,0.90)' }}>
                 <ListEmptyState
                   adaFilterAktif={search.trim() !== '' || filterStatus !== 'all' || tab !== 'all' || selectedFolder !== null}
                   onReset={() => { setSearch(''); setFilterStatus('all'); setTab('all'); setSelectedFolder(null); }}

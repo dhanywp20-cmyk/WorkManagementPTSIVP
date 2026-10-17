@@ -29,7 +29,7 @@ export function PilihProject({ kecuali, onPilih, sibuk, placeholder = 'Cari proj
   return (
     <div className="space-y-1.5">
       <input autoFocus aria-label={placeholder} value={kata} onChange={e => setKata(e.target.value)} placeholder={placeholder}
-        className="w-full px-3 py-2 rounded-lg text-sm outline-none bg-white border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
+        className="w-full px-3 py-2 rounded-lg text-sm outline-hidden bg-white border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
       {mencari && <p className="text-[11px] text-gray-500 px-1">Mencari...</p>}
       {!mencari && kata.trim() && hasil.length === 0 && <p className="text-[11px] text-gray-500 px-1">Tidak ada project cocok.</p>}
       {hasil.map(p => (

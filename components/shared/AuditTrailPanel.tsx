@@ -260,7 +260,7 @@ export function AuditTrailPanel({
           type="button"
           onClick={() => setTerbuka(o => !o)}
           aria-expanded={terbuka}
-          className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-black/[0.03]">
+          className="w-full flex items-center gap-2 px-4 py-3 text-left transition-colors hover:bg-black/3">
           <span className="text-sm"><Ikon nama="🕘" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
           <span className="text-xs font-bold uppercase tracking-wide text-slate-600 flex-1">{judul}</span>
           <span className="text-[11px] font-bold text-slate-500 tabular-nums">
@@ -280,16 +280,16 @@ export function AuditTrailPanel({
             {[...semua].reverse().map((e, i, arr) => {
               const cfg = AKSI[e.action] ?? { label: e.action, warna: '#94a3b8' };
               return (
-                <div key={e.id} className="flex items-start flex-shrink-0">
+                <div key={e.id} className="flex items-start shrink-0">
                   {i > 0 && (
-                    <span className="h-px flex-shrink-0 mt-[7px]" style={{ width: 20, background: 'rgba(100,116,139,0.25)' }} />
+                    <span className="h-px shrink-0 mt-[7px]" style={{ width: 20, background: 'rgba(100,116,139,0.25)' }} />
                   )}
                   <div className="flex flex-col items-center gap-0.5" style={{ width: 62 }}>
-                    <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center flex-shrink-0"
+                    <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0"
                       style={{ background: cfg.warna }}>
                       <span className="text-white leading-none" style={{ fontSize: 8 }}>✓</span>
                     </span>
-                    <span className="text-[10px] font-bold text-center leading-tight break-words" style={{ color: cfg.warna }}>
+                    <span className="text-[10px] font-bold text-center leading-tight wrap-break-word" style={{ color: cfg.warna }}>
                       {labelLangkah(e)}
                     </span>
                     <span className="text-[10px] text-slate-500 text-center leading-tight"
@@ -319,7 +319,7 @@ export function AuditTrailPanel({
               <div key={e.id} className={kompak ? "flex gap-2 py-1" : "flex gap-3 py-2"}
                 style={{ borderTop: i === 0 ? 'none' : '1px solid rgba(100,116,139,0.12)' }}>
                 {/* Garis waktu: titik + batang penghubung */}
-                <div className="flex flex-col items-center pt-1 flex-shrink-0">
+                <div className="flex flex-col items-center pt-1 shrink-0">
                   <span className={kompak ? "w-1.5 h-1.5 rounded-full" : "w-2 h-2 rounded-full"} style={{ background: cfg.warna }} />
                   {i < semua.length - 1 && (
                     <span className="w-px flex-1 mt-1" style={{ background: 'rgba(100,116,139,0.2)' }} />
@@ -334,7 +334,7 @@ export function AuditTrailPanel({
                   </p>
 
                   {adaPerubahanNilai && (
-                    <p className={kompak ? "text-[10px] text-slate-500 mt-0.5 break-words" : "text-[11px] text-slate-500 mt-0.5 break-words"}>
+                    <p className={kompak ? "text-[10px] text-slate-500 mt-0.5 wrap-break-word" : "text-[11px] text-slate-500 mt-0.5 wrap-break-word"}>
                       {e.old_value && <span className="line-through opacity-60">{bersihkanPenandaSupervisor(e.old_value)}</span>}
                       {e.old_value && e.new_value && <span className="mx-1 text-slate-400">→</span>}
                       {e.new_value && <span className="font-medium text-slate-700">{bersihkanPenandaSupervisor(e.new_value)}</span>}
@@ -351,7 +351,7 @@ export function AuditTrailPanel({
                     pengaman untuk jalur tulis lain yang belum ketahuan.
                   */}
                   {e.notes && !kompak && (
-                    <p className="text-[11px] text-slate-500 mt-0.5 break-words">{bersihkanPenandaSupervisor(e.notes)}</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5 wrap-break-word">{bersihkanPenandaSupervisor(e.notes)}</p>
                   )}
 
                   <p className={kompak ? "text-[10px] text-slate-500 mt-0.5" : "text-[11px] text-slate-500 mt-0.5"}

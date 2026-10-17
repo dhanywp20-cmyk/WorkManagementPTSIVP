@@ -16,7 +16,7 @@ export function ModalKonfirmGabung({ jalankanGabung, konfirmGabung, menggabung, 
     <>
       {konfirmGabung && (
         <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+          <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
             style={{ background: 'rgba(15,23,42,0.55)' }} onClick={() => !menggabung && setKonfirmGabung(null)}>
             <div onClick={e => e.stopPropagation()}
               className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">

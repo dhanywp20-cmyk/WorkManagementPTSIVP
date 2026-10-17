@@ -607,7 +607,7 @@ export default function KPITeamPage() {
         />
 
         {/* ── Period Selector Bar ── berpanel: latar halaman bisa foto (Admin Panel > Merek) */}
-        <div className="flex items-center gap-2 flex-wrap rounded-2xl px-3 py-2 border border-slate-200 shadow-sm"
+        <div className="flex items-center gap-2 flex-wrap rounded-2xl px-3 py-2 border border-slate-200 shadow-xs"
           style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(8px)' }}>
           <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Periode</span>
           {PERIODS.map(p => (
@@ -625,13 +625,13 @@ export default function KPITeamPage() {
           <span className="ml-2 text-[11px] text-slate-500">{periodLabel}</span>
 
           {loading && (
-            <div className="ml-2 w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />
+            <div className="ml-2 w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin shrink-0" />
           )}
 
           {/* Team filter — admin only */}
           {scope.kind === 'admin' && allTeamTypes.length > 1 && (
             <select aria-label="Semua Tim" value={filterTeam} onChange={e => setFilterTeam(e.target.value)}
-              className="ml-auto text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 font-medium focus:outline-none focus:ring-2 focus:ring-sky-200">
+              className="ml-auto text-[11px] border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-600 font-medium focus:outline-hidden focus:ring-2 focus:ring-sky-200">
               <option value="all">Semua Tim</option>
               {allTeamTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>

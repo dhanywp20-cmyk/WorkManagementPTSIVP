@@ -93,7 +93,7 @@ export function TabStrukturOrganisasi({ ORG_GROUP_STYLE, activeTab, allUsers, ha
               <div className="relative flex-1 min-w-[160px]">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <input aria-label="Cari nama / username..." type="text" value={orgSearch} onChange={e => setOrgSearch(e.target.value)} placeholder="Cari nama / username..."
-                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-hidden focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 transition-all" />
               </div>
             </div>
 
@@ -118,21 +118,21 @@ export function TabStrukturOrganisasi({ ORG_GROUP_STYLE, activeTab, allUsers, ha
                   <div key={u.id}>
                     <div className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
                       style={{ marginLeft: depth * 18 }} onClick={() => setOrgSelectedId(isSel ? '' : u.id)}>
-                      {depth > 0 && <span className="text-slate-400 text-xs flex-shrink-0">└</span>}
-                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0" style={{ background: gs.bg, color: gs.color }}>
+                      {depth > 0 && <span className="text-slate-400 text-xs shrink-0">└</span>}
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0" style={{ background: gs.bg, color: gs.color }}>
                         {u.full_name?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
                       <span className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</span>
                       {jabatanBadge(u)}
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ background: gs.bg, color: gs.color }}>{grp}</span>
-                      {directCount > 0 && <span className="text-[11px] text-slate-500 flex-shrink-0">· {directCount} bawahan</span>}
-                      <span className="ml-auto text-slate-400 text-xs flex-shrink-0">{isSel ? '▲' : '▼'}</span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm shrink-0" style={{ background: gs.bg, color: gs.color }}>{grp}</span>
+                      {directCount > 0 && <span className="text-[11px] text-slate-500 shrink-0">· {directCount} bawahan</span>}
+                      <span className="ml-auto text-slate-400 text-xs shrink-0">{isSel ? '▲' : '▼'}</span>
                     </div>
                     {isSel && (
                       <div style={{ marginLeft: depth * 18 + 30 }} className="my-1 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
                         <p className="text-[11px] font-bold text-emerald-700 uppercase tracking-widest mb-1.5">Atur atasan langsung — {u.full_name}</p>
                         <select aria-label="— Tidak ada (puncak / Direktur) —" value={u.atasan_id || ''} onChange={e => { handleSetAtasan(u.id, e.target.value); setOrgSelectedId(''); }} disabled={saving}
-                          className="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-200 bg-white">
+                          className="w-full border border-emerald-200 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-emerald-200 bg-white">
                           <option value="">— Tidak ada (puncak / Direktur) —</option>
                           {allUsers.filter(c => c.id !== u.id).slice().sort((a, b) => orgTierOf(b) - orgTierOf(a) || a.full_name.localeCompare(b.full_name, 'id')).map(c => (
                             <option key={c.id} value={c.id}>{c.full_name}{c.jabatan ? ` · ${c.jabatan}` : ''} ({orgGroupOf(c)})</option>

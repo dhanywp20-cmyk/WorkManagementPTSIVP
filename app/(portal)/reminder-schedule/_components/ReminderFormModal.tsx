@@ -65,18 +65,18 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
     onSubmit();
   }
 
-  const inputCls = "w-full rounded-lg px-3 py-2 text-xs outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40";
+  const inputCls = "w-full rounded-lg px-3 py-2 text-xs outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40";
   const inputStyle = { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.12)' };
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-3 sm:p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-3 sm:p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden"
         style={{ animation: 'scale-in 0.25s ease-out', border: '1.5px solid rgba(220,38,38,0.25)' }}>
 
         {/* Header */}
-        <div className="px-6 py-4 rounded-t-2xl flex-shrink-0"
+        <div className="px-6 py-4 rounded-t-2xl shrink-0"
           style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
           <div className="flex items-center justify-between">
             <div>
@@ -166,9 +166,9 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                     style={sel
                       ? { borderColor: c.color, background: c.bg, color: c.color }
                       : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
-                    <span className="text-base leading-none flex-shrink-0"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
+                    <span className="text-base leading-none shrink-0"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                     <span className="text-[11px] font-bold leading-tight flex-1 min-w-0">{cat}</span>
-                    {sel && <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.5} d="M5 13l4 4L19 7" /></svg>}
+                    {sel && <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3.5} d="M5 13l4 4L19 7" /></svg>}
                   </button>
                 );
               })}
@@ -313,7 +313,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
           </div>
 
           {/* ── Kolom 2: kapan ── */}
-          <div className="space-y-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
+          <div className="flex flex-col gap-3 satulayar:overflow-y-auto satulayar:pr-2 satulayar:min-h-0">
           <SectionHeader icon="🗓️" title="Waktu & Jadwal" />
 
           <FormField label="Pengulangan">
@@ -524,7 +524,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                         ? <span className="font-semibold text-slate-800">{formData.sales_name} <span className={`font-normal ${isTrigger ? 'text-violet-500' : 'text-slate-500'}`}>{formData.sales_division ? `· ${formData.sales_division}` : ''}</span></span>
                         : <span className="text-slate-500">-- Pilih Sales --</span>
                       }
-                      <svg aria-hidden="true" focusable="false" className={`w-4 h-4 flex-shrink-0 transition-transform ${guestDropdownOpen ? 'rotate-180' : ''} ${isTrigger ? 'text-violet-400' : 'text-slate-500'}`}
+                      <svg aria-hidden="true" focusable="false" className={`w-4 h-4 shrink-0 transition-transform ${guestDropdownOpen ? 'rotate-180' : ''} ${isTrigger ? 'text-violet-400' : 'text-slate-500'}`}
                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
@@ -539,7 +539,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                             <input aria-label="Cari nama sales / guest..." autoFocus type="text" value={guestSearch}
                               onChange={e => setGuestSearch(e.target.value)}
                               placeholder="Cari nama sales / guest..."
-                              className="w-full pl-8 pr-3 py-2 rounded-lg text-sm outline-none"
+                              className="w-full pl-8 pr-3 py-2 rounded-lg text-sm outline-hidden"
                               style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.2)', color: '#1e293b' }}
                               onClick={e => e.stopPropagation()}
                             />
@@ -655,7 +655,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
         {/* Footer dipisah dari area isian: tombol Simpan tidak boleh ikut
             tergulir bersama kolom, kalau tidak ia bisa berada di luar layar
             justru saat form sudah siap dikirim. */}
-        <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70 space-y-3">
+        <div className="px-6 py-4 shrink-0 border-t border-slate-200 bg-white/70 space-y-3">
           {err && (
             <div className="rounded-xl px-4 py-3 text-sm font-semibold flex items-center gap-2"
               style={{ background: 'rgba(225,29,72,0.08)', border: '1px solid rgba(225,29,72,0.3)', color: '#e11d48' }}>

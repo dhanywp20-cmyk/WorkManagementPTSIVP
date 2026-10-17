@@ -18,7 +18,7 @@ export function PratinjauKartu({ k, ubah, bolehEdit = true }: { k: KartuBanding;
   const [sunting, setSunting] = useState<Sunting | null>(null);
   const L = LABEL[k.bahasa], n = k.produk.length;
   const ed = (judul: string, nilai: string, simpan: (v: string) => void, panjang = false, hapus?: () => void) =>
-    bolehEdit ? { onClick: () => setSunting({ jenis: 'teks', judul, nilai, panjang, simpan, hapus }), className: 'cursor-text hover:outline hover:outline-1 hover:outline-blue-400 rounded-sm' } : {};
+    bolehEdit ? { onClick: () => setSunting({ jenis: 'teks', judul, nilai, panjang, simpan, hapus }), className: 'cursor-text hover:outline-solid hover:outline-1 hover:outline-blue-400 rounded-xs' } : {};
   const ganti = (f: (d: KartuBanding) => void) => { const d = structuredClone(k); f(d); ubah(d); };
   const sel = (v: NilaiSpek, j: number) => {
     const t = teksNilai(v, k.bahasa);
@@ -28,7 +28,7 @@ export function PratinjauKartu({ k, ubah, bolehEdit = true }: { k: KartuBanding;
   };
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-slate-100 p-3">
-      <div className="mx-auto bg-white shadow-sm" style={{ width: pt(595.28), padding: `${pt(51)} ${pt(45.68)} ${pt(34)}`, fontFamily: F, color: '#1c2733' }}>
+      <div className="mx-auto bg-white shadow-xs" style={{ width: pt(595.28), padding: `${pt(51)} ${pt(45.68)} ${pt(34)}`, fontFamily: F, color: '#1c2733' }}>
         <header style={{ background: 'linear-gradient(135deg,#0a1f38,#1b4972)', borderRadius: pt(7), padding: `${pt(15)} ${pt(18)} ${pt(18)}` }}>
           <p {...ed('Kategori', k.kategori, v => ganti(d => { d.kategori = v; }))} style={{ color: '#7fd0ff', fontWeight: 700, fontSize: pt(8.3), letterSpacing: pt(1), textTransform: 'uppercase' }}>{k.kategori || '—'}</p>
           <h3 {...ed('Judul', k.judul, v => ganti(d => { d.judul = v; }))} style={{ color: '#fff', fontWeight: 700, fontSize: pt(18.5), marginTop: pt(5) }}>{k.judul}</h3>
@@ -66,7 +66,7 @@ export function PratinjauKartu({ k, ubah, bolehEdit = true }: { k: KartuBanding;
                   {r.nilai.map((v, j) => (
                     <td key={j} title={v.bukti?.kutipan ? `Sumber${v.bukti.halaman ? ` hal. ${v.bukti.halaman}` : ''}: ${v.bukti.kutipan}` : v.alasanCek}
                       onClick={bolehEdit ? () => setSunting({ jenis: 'nilai', judul: r.spesifikasi, nilai: v, produk: k.produk[j].nama, bahasa: k.bahasa, bolehUnggul: true, simpan: x => ganti(d => { d.bagian[bi].baris[ri].nilai[j] = x; }) }) : undefined}
-                      className={bolehEdit ? 'cursor-pointer hover:outline hover:outline-1 hover:outline-blue-400' : ''}
+                      className={bolehEdit ? 'cursor-pointer hover:outline-solid hover:outline-1 hover:outline-blue-400' : ''}
                       style={{ background: v.status === 'cek' ? '#fef3c7' : j === 0 ? (ri % 2 ? '#fbe6e8' : '#fdf0f2') : ri % 2 ? '#f4f6f9' : '#fff', padding: `${pt(4.4)} ${pt(6.7)}`, verticalAlign: 'top', lineHeight: 1.45 }}>
                       {sel(v, j)}{v.status === 'cek' && <span className="block text-[11px] font-semibold text-amber-700">Perlu dicek</span>}
                     </td>

@@ -405,7 +405,7 @@ export default function IncentivePTSPage() {
       </PageHeader>
 
       {/* Tabs */}
-      <div className="flex-shrink-0 z-40"
+      <div className="shrink-0 z-40"
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(99,102,241,0.12)' }}>
         <div className="w-full px-4 flex gap-1 overflow-x-auto">
           {([

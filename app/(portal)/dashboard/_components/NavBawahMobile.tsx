@@ -59,7 +59,7 @@ export function NavBawahMobile({ beranda, menu, akun, aksen = '#b45309' }: {
   }, [kunciAktif]);
 
   return (
-    <nav aria-label="Menu utama" className="md:hidden flex-shrink-0 relative"
+    <nav aria-label="Menu utama" className="md:hidden shrink-0 relative"
       style={{
         background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(18px) saturate(170%)', WebkitBackdropFilter: 'blur(18px) saturate(170%)',
         borderTop: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 -4px 18px rgba(15,23,42,0.06)',
@@ -71,7 +71,7 @@ export function NavBawahMobile({ beranda, menu, akun, aksen = '#b45309' }: {
           const warna = m.bahaya ? '#dc2626' : m.aktif ? aksen : '#64748b';
           return (
             <button key={m.key} type="button" onClick={m.onPilih} aria-current={m.aktif ? 'page' : undefined}
-              className="relative snap-start flex-shrink-0 flex flex-col items-center justify-center gap-1 pt-2 pb-1.5 active:scale-95 transition-transform"
+              className="relative snap-start shrink-0 flex flex-col items-center justify-center gap-1 pt-2 pb-1.5 active:scale-95 transition-transform"
               style={{ width: `${100 / TOMBOL_TERLIHAT}%`, minWidth: 64, color: warna }}>
               {/*  Garis penanda di atas tombol aktif. */}
               {m.aktif && <span aria-hidden="true" className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-[3px] rounded-b-full" style={{ background: aksen }} />}

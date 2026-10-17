@@ -38,7 +38,7 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
           <input aria-label="Cari nama..."
             value={searchQ} onChange={e => setSearchQ(e.target.value)}
             placeholder="Cari nama..."
-            className="text-[11px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-100 w-40"
+            className="text-[11px] border border-slate-200 rounded-lg px-3 py-1.5 bg-white text-slate-600 focus:outline-hidden focus:ring-2 focus:ring-sky-100 w-40"
           />
         </div>
 
@@ -135,7 +135,7 @@ export function TabelKinerjaHandler({ SortIcon, filterTeam, handleSort, loading,
                     {/* Name */}
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black text-white flex-shrink-0"
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0"
                           style={{ background: `linear-gradient(135deg,${teamCol},${teamCol}cc)` }}>
                           {m.name.charAt(0)}
                         </div>

@@ -42,7 +42,7 @@ export interface FormLaporanProps {
 export function FormLaporan({ autoCount, currentUser, editingId, formDate, formLoading, formReminders, formTickets, formUserId, galatSusun, guestUsers, handleSave, hapusDraf, isAdmin, manualActs, menyusun, reminderNotes, saving, setEditingId, setFormDate, setFormOpen, setFormUserId, setManualActs, setReminderNotes, susunDenganAI, targetUser, teamEntries, teamUsers, updM, updT }: FormLaporanProps) {
   return (
     <>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-start justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', paddingTop: '20px', paddingBottom: '40px' }}>
+      <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-start justify-center overflow-y-auto" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)', paddingTop: '20px', paddingBottom: '40px' }}>
         <div className="w-full max-w-2xl mx-4" style={{ ...card, overflow: 'visible' }}>
           {/* Modal header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -83,7 +83,7 @@ export function FormLaporan({ autoCount, currentUser, editingId, formDate, formL
             {(formReminders.length > 0 || formTickets.length > 0 || formLoading) && (
               <div className="px-4 py-3 rounded-xl flex items-center gap-3" style={{ background: 'rgba(14,165,233,0.06)', border: '1px solid rgba(14,165,233,0.18)' }}>
                 {formLoading
-                  ? <><div className="w-4 h-4 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin flex-shrink-0" /><span className="text-xs text-sky-700 font-semibold">Memuat aktivitas otomatis...</span></>
+                  ? <><div className="w-4 h-4 border-2 border-sky-300 border-t-sky-600 rounded-full animate-spin shrink-0" /><span className="text-xs text-sky-700 font-semibold">Memuat aktivitas otomatis...</span></>
                   : <><span className="text-base"><Ikon nama="🔔" ukuran="1em" className="inline-block align-[-0.12em]" /></span><span className="text-xs text-sky-700 font-semibold">{formReminders.length} reminder &amp; {formTickets.length} ticket ter-insert otomatis dari platform</span><span className="ml-auto text-[11px] font-bold px-2 py-1 rounded-full" style={{ background: 'rgba(14,165,233,0.12)', color: '#0ea5e9' }}>Auto-insert</span></>
                 }
               </div>

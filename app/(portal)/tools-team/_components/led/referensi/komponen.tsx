@@ -4,7 +4,7 @@ import { Ikon } from '@/components/shared/Ikon';
 import { BRAND_UMUM } from '@/lib/av-hitung';
 import { useState } from 'react';
 
-export const sel = 'rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
+export const sel = 'rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-900 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
 
 export function SelAngka({ nilai, onUbah, lebar = 'w-20', label }: { nilai: number; onUbah: (v: number) => void; lebar?: string; label: string }) {
   const [teks, setTeks] = useState<string | null>(null);

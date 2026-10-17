@@ -12,7 +12,7 @@ export interface LangkahPilihJenisProps {
 export function LangkahPilihJenis({ onClose, setLangkah, switchProjectType }: LangkahPilihJenisProps) {
   return (
     <>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      <div className="fixed inset-0 z-200 flex items-center justify-center p-4"
         style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
         <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
           role="dialog" aria-modal="true" aria-labelledby="judul-tipe-project">
@@ -25,7 +25,7 @@ export function LangkahPilihJenis({ onClose, setLangkah, switchProjectType }: La
               onClick={() => { switchProjectType('existing'); setLangkah('cari'); }}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-red-400 hover:bg-red-50/50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">Project yang sudah ada</p>
                   <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
@@ -42,7 +42,7 @@ export function LangkahPilihJenis({ onClose, setLangkah, switchProjectType }: La
               onClick={() => { switchProjectType('new'); setLangkah('form'); }}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">Project baru</p>
                   <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">

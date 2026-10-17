@@ -73,8 +73,8 @@ export function PW({ children }: { children: React.ReactNode }) {
       {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
           stacking context, sehingga z-index SEMUA modal di dalamnya cuma
           dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
-          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
-          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          di-portal ke <body>. Akibatnya modal z-1100 bisa tampil DI BELAKANG
+          modal z-1000 yang di-portal. Urutan cat terhadap tint di atas tetap
           aman karena elemen ini datang belakangan di DOM. */}
       <div className="relative flex flex-col flex-1 overflow-hidden">{children}</div>
     </div>
@@ -93,7 +93,7 @@ export function CatPicker({ value, onChange }: { value: string; onChange: (v: st
             style={sel ? { borderColor: c.accent, background: c.bg, color: c.color } : { borderColor: 'rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.5)', color: '#64748b' }}>
             <span className="text-lg"><Ikon nama={c.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
             <span className="text-xs font-bold leading-tight flex-1">{cat}</span>
-            {sel && <svg aria-hidden="true" focusable="false" className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+            {sel && <svg aria-hidden="true" focusable="false" className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
           </button>
         );
       })}
@@ -119,7 +119,7 @@ export function SalesDrop({ value, division, guests, onChange }: { value: string
           <div className="absolute z-50 mt-1 w-full rounded-xl shadow-xl overflow-hidden" style={{ background: 'white', border: '1.5px solid rgba(220,38,38,0.25)', maxHeight: '240px' }}>
             <div className="p-2 border-b" style={{ borderColor: 'rgba(220,38,38,0.1)' }}>
               <input aria-label="Cari sales..." autoFocus type="text" value={q} onChange={e => setQ(e.target.value)} placeholder="Cari sales..." onClick={e => e.stopPropagation()}
-                className="w-full px-3 py-2 rounded-lg text-sm outline-none" style={{ background: 'rgba(220,38,38,0.04)', border: '1px solid rgba(220,38,38,0.15)', color: '#1e293b' }} />
+                className="w-full px-3 py-2 rounded-lg text-sm outline-hidden" style={{ background: 'rgba(220,38,38,0.04)', border: '1px solid rgba(220,38,38,0.15)', color: '#1e293b' }} />
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: '180px' }}>
               <div className="px-4 py-2.5 text-sm cursor-pointer hover:bg-red-50 text-slate-500 italic" {...bisaDiklik(() => { onChange('', ''); setOpen(false); })}>-- Kosongkan --</div>

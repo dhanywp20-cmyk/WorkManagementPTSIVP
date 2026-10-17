@@ -93,9 +93,9 @@ export function DivisiSalesInline() {
           <input value={baru} onChange={e => setBaru(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); tambah(); } }}
             placeholder="Nama divisi baru…"
-            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-slate-400 bg-white" />
+            className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-hidden focus:border-slate-400 bg-white" />
           <button type="button" onClick={tambah}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0 transition-all hover:opacity-90"
+            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white shrink-0 transition-all hover:opacity-90"
             style={{ background: 'linear-gradient(135deg,#0f766e,#115e59)' }}>
             Tambah
           </button>

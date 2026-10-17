@@ -120,7 +120,7 @@ export function KelasEksternalPage() {
           );
           const st = LABEL_STATUS[statusKelas(k, k.jumlahPeserta)];
           return (
-            <section key={k.id} className="rounded-2xl bg-white border border-slate-200 p-4 space-y-3 shadow-sm">
+            <section key={k.id} className="rounded-2xl bg-white border border-slate-200 p-4 space-y-3 shadow-xs">
               <div className="flex items-start gap-2">
                 <h3 className="flex-1 min-w-0 text-[14.5px] font-bold text-slate-900 leading-snug">{k.judul}</h3>
                 <span className={`px-2 py-0.5 rounded-full border text-[11px] font-bold whitespace-nowrap ${st.kelas}`}>{st.teks}</span>
@@ -217,14 +217,14 @@ function KartuLive({ k, ubah, onHost, onHasil, onUbah, onSalin, onQr, onHapus }:
   const st = statusLive(k, k.jumlahPeserta);
   const warna = k.tema_warna ?? WARNA_BAWAAN;
   return (
-    <section className="rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden">
+    <section className="rounded-2xl bg-white border border-slate-200 shadow-xs overflow-hidden">
       <div className="relative h-20 px-4 py-3 flex items-start gap-2 text-white"
         style={{
           backgroundColor: warna,
           ...(k.latar_url ? { backgroundImage: `linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.6)), url("${k.latar_url}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}),
         }}>
         {k.logo_url && (
-          <span className="flex-shrink-0 rounded-lg bg-white/95 px-1.5 py-1">
+          <span className="shrink-0 rounded-lg bg-white/95 px-1.5 py-1">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={k.logo_url} alt="" className="h-7 w-auto max-w-[90px] object-contain" />
           </span>

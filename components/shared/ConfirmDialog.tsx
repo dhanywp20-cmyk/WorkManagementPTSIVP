@@ -89,7 +89,7 @@ export function ConfirmDialog({
       // Progress di Z.overlay, assign di Z.overlayTop). Kalau lebih rendah,
       // konfirmasinya ter-render tapi tertutup total: klik user jatuh ke modal
       // di belakangnya dan terasa seperti tombolnya tidak berfungsi.
-      className="fixed inset-0 z-[2000] flex items-center justify-center"
+      className="fixed inset-0 z-2000 flex items-center justify-center"
       style={{ background: 'rgba(0,0,0,0.45)' }}
       onClick={onCancel}
     >
@@ -103,7 +103,7 @@ export function ConfirmDialog({
         aria-labelledby={idJudul}
         aria-describedby={state.description ? `${idJudul}-rincian` : undefined}
         tabIndex={-1}
-        className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 outline-none"
+        className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 outline-hidden"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-start gap-3 mb-4">

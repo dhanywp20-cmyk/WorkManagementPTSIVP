@@ -7,7 +7,7 @@
  */
 import React, { useEffect, useState } from 'react';
 
-const kelasInput = 'w-full border border-slate-200 rounded-xl px-4 py-3 bg-white text-slate-800 font-mono text-lg tracking-[0.3em] text-center outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100';
+const kelasInput = 'w-full border border-slate-200 rounded-xl px-4 py-3 bg-white text-slate-800 font-mono text-lg tracking-[0.3em] text-center outline-hidden focus:border-rose-500 focus:ring-2 focus:ring-rose-100';
 const kelasTombol = 'w-full py-3 rounded-xl font-bold text-sm text-white bg-slate-800 hover:bg-slate-700 disabled:opacity-50 flex items-center justify-center gap-2';
 
 /** Kotak kode 6 digit (atau kode cadangan bila `cadangan`). */

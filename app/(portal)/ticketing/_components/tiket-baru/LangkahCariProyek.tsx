@@ -24,14 +24,14 @@ export interface LangkahCariProyekProps {
 export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPilihan, onClose, pencarianDibatasi, praPilih, reminderQuery, reminderResults, reminderSearching, setLangkah, setPraPilih, setReminderQuery, setReminderResults, sorotPilihan }: LangkahCariProyekProps) {
   return (
     <>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      <div className="fixed inset-0 z-200 flex items-center justify-center p-4"
         style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
         <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
           style={{ maxHeight: '85vh' }} role="dialog" aria-modal="true" aria-labelledby="judul-cari-project">
           <div className="px-5 py-4 text-white flex items-center gap-3" style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}>
             <button type="button" aria-label="Kembali"
               onClick={() => { setLangkah('pilih'); setPraPilih(null); setReminderQuery(''); setReminderResults([]); }}
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-white/10">
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 hover:bg-white/10">
               <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
               </svg>
@@ -51,7 +51,7 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
                 value={reminderQuery}
                 onChange={e => handleQueryChange(e.target.value)}
                 placeholder="Ketik nama project untuk mencari..."
-                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 border border-slate-200"
+                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 border border-slate-200"
               />
               {reminderSearching && (
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">mencari...</span>
@@ -102,7 +102,7 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
                         background: disorot ? 'rgba(220,38,38,0.08)' : 'white',
                       }}>
                       <span className="flex items-center gap-2">
-                        {disorot && <span className="text-red-600 flex-shrink-0">✓</span>}
+                        {disorot && <span className="text-red-600 shrink-0">✓</span>}
                         <span className="text-sm font-bold text-slate-800">{r.project_name || r.title}</span>
                       </span>
                       <span className="text-xs text-slate-500 flex gap-3 flex-wrap pl-0">
@@ -121,7 +121,7 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
             )}
           </div>
 
-          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center flex-shrink-0">
+          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center shrink-0">
             <span className="text-[11px] text-slate-500">
               {praPilih ? `Dipilih: ${praPilih.project_name || praPilih.title}` : 'Belum ada yang dipilih'}
             </span>

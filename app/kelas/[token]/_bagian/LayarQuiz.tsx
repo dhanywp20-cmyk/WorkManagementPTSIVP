@@ -113,7 +113,7 @@ export function LayarQuiz({ kelas, judul, data, modeAdmin, onKirim }: {
         <div className="sticky top-[72px] z-10 max-w-3xl w-full mx-auto px-4 pt-3" role="alert">
           <button type="button" onClick={tutupPeringatan}
             className="w-full flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-left text-[13px] font-semibold text-red-700">
-            <AlertTriangle size={16} className="flex-shrink-0" />
+            <AlertTriangle size={16} className="shrink-0" />
             <span className="flex-1">{peringatan.label} tercatat</span>
             {peringatan.total !== null && (
               <span className="tabular-nums font-bold">{peringatan.batas ? `${peringatan.total}/${peringatan.batas}` : `${peringatan.total}×`}</span>
@@ -131,7 +131,7 @@ export function LayarQuiz({ kelas, judul, data, modeAdmin, onKirim }: {
             return (
               <button key={p} type="button" role="radio" aria-checked={aktif} onClick={() => pilih(p)}
                 className={`w-full text-left flex items-start gap-3 px-4 py-3.5 rounded-xl border-2 transition-colors ${aktif ? 'border-indigo-600 bg-indigo-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-bold flex-shrink-0 ${aktif ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{p}</span>
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 ${aktif ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`}>{p}</span>
                 <span className="text-[14.5px] text-slate-800 leading-snug pt-0.5">{soal.pilihan[p]}</span>
               </button>
             );

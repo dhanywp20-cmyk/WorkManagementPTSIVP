@@ -29,9 +29,9 @@ export function ApprovalModal({
 }) {
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-4">
         <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full max-h-full overflow-hidden flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
-          <div className="p-6 flex-shrink-0" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
+          <div className="p-6 shrink-0" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
             <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-3xl"><Ikon nama="⏳" ukuran="1em" className="inline-block align-[-0.12em]" /></span><div><h3 className="text-xl font-bold text-white">Ticket Approval</h3><p className="text-sm text-white/90">{pendingApprovalTickets.length} ticket menunggu persetujuan</p></div></div><button aria-label="Tutup" onClick={onClose} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all">✕</button></div>
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
@@ -131,10 +131,10 @@ export function ApprovalModal({
                       )}
                     </select>
                     <button onClick={() => jalankanApproveTicket(ticket)}
-                      disabled={uploading || !approvalAssignees[ticket.id]} className="bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">
+                      disabled={uploading || !approvalAssignees[ticket.id]} className="bg-linear-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-lg font-bold hover:from-green-700 hover:to-green-800 transition-all disabled:opacity-40 disabled:cursor-not-allowed text-sm">
                       {approvingId === ticket.id ? "⏳ Memproses..." : "✅ Approve"}
                     </button>
-                    <button onClick={() => rejectTicket(ticket)} disabled={uploading} className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm"><IkonTeks nama="❌" />Reject</button>
+                    <button onClick={() => rejectTicket(ticket)} disabled={uploading} className="bg-linear-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-bold hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-40 text-sm"><IkonTeks nama="❌" />Reject</button>
                   </div>
                 </div>
               </div>

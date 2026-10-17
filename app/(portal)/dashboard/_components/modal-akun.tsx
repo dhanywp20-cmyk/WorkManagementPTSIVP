@@ -293,7 +293,7 @@ export function AccountSettingsInline() {
             return (
               <button key={key} type="button" onClick={() => toggle(key)}
                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all text-left text-xs ${checked ? 'border-rose-400 bg-rose-50 text-rose-700' : 'border-slate-200 bg-slate-50 text-slate-500 hover:border-slate-300'}`}>
-                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-rose-500 bg-rose-500' : 'border-slate-300 bg-white'}`}>
+                <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 transition-all ${checked ? 'border-rose-500 bg-rose-500' : 'border-slate-300 bg-white'}`}>
                   {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                 </div>
                 <span><Ikon nama={m.icon} ukuran={14} /></span>
@@ -312,7 +312,7 @@ export function AccountSettingsInline() {
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {notification && (
-        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
           {notification.type === 'success' ? '✅' : '❌'} {notification.msg}
         </div>
       )}
@@ -322,9 +322,9 @@ export function AccountSettingsInline() {
           langsung ke latar tanpa bidang sendiri, jadi bagian ini terlihat
           belum jadi dibanding bagian lain. */}
       <div className="flex-1 min-h-0 p-4">
-        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
       {/* Tab bar */}
-      <div className="flex border-b border-slate-100 px-5 pt-3 flex-shrink-0 bg-slate-50/60">
+      <div className="flex border-b border-slate-100 px-5 pt-3 shrink-0 bg-slate-50/60">
         <button onClick={() => { setActiveTab('list'); setEditingUser(null); setEditDivisi(''); setEditPtsType(''); setEditPtsDaerah(''); }}
           className={`px-4 py-2 text-sm font-bold border-b-2 transition-all mr-1 ${activeTab === 'list' ? 'border-rose-500 text-rose-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="👥" />Daftar Akun ({users.length})
@@ -346,7 +346,7 @@ export function AccountSettingsInline() {
             <div className="relative mb-4">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Cari nama, username, atau role..." type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Cari nama, username, atau role..."
-                className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all" />
+                className="w-full pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm outline-hidden focus:border-rose-400 focus:ring-2 focus:ring-rose-100 transition-all" />
             </div>
 
             {loadingUsers ? (
@@ -361,7 +361,7 @@ export function AccountSettingsInline() {
                   MenuPermissionSelector={MenuPermissionSelector} daftarDivisi={daftarDivisi} editAccessLevel={editAccessLevel} editBisaDitugaskan={editBisaDitugaskan} editDivisi={editDivisi} editPtsDaerah={editPtsDaerah} editPtsType={editPtsType} editingUser={editingUser} kelompokPTSList={kelompokPTSList} setEditAccessLevel={setEditAccessLevel} setEditBisaDitugaskan={setEditBisaDitugaskan} setEditDivisi={setEditDivisi} setEditPtsDaerah={setEditPtsDaerah} setEditPtsType={setEditPtsType} setEditingUser={setEditingUser}
                 />
                 <div className="flex gap-3 pt-1">
-                  <button onClick={handleSaveEdit} disabled={saving} className="flex-1 bg-gradient-to-r from-rose-600 to-rose-700 text-white py-2.5 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
+                  <button onClick={handleSaveEdit} disabled={saving} className="flex-1 bg-linear-to-r from-rose-600 to-rose-700 text-white py-2.5 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                     {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                     <IkonTeks nama="💾" />Simpan Perubahan
                   </button>

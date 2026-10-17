@@ -33,7 +33,7 @@ export function IsianGenerateSoal({ batchName, genCount, genDiff, genExtraPrompt
             <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
           </label>
           <input id="f-learning-center-components-questionspage-1" value={batchName} onChange={e => setBatchName(e.target.value)}
-            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white"
+            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-violet-400 bg-white"
             placeholder="contoh: Instalasi Dasar, Troubleshooting Level 1, Quiz Minggu ke-3..." />
         </div>
         <div className="col-span-2">
@@ -42,13 +42,13 @@ export function IsianGenerateSoal({ batchName, genCount, genDiff, genExtraPrompt
             <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
           </label>
           <textarea id="f-learning-center-components-questionspage-2" value={genExtraPrompt} onChange={e => setGenExtraPrompt(e.target.value)} rows={2}
-            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white resize-none"
+            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-violet-400 bg-white resize-none"
             placeholder="contoh: Fokus pada cara pemasangan LED indoor P2.5, atau khusus troubleshooting sinyal HDMI..." />
         </div>
         <div>
           <label htmlFor="f-learning-center-components-questionspage-3" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
           <select id="f-learning-center-components-questionspage-3" value={selectedMat} onChange={e => setSelectedMat(e.target.value)}
-            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
+            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-violet-400 bg-white">
             <option value="">-- Pilih Materi --</option>
             {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
               <option key={m.id} value={m.id}>{m.materi_name}{m.content_text ? ' ✅' : ''}</option>
@@ -58,12 +58,12 @@ export function IsianGenerateSoal({ batchName, genCount, genDiff, genExtraPrompt
         <div>
           <label htmlFor="f-learning-center-components-questionspage-4" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
           <input id="f-learning-center-components-questionspage-4" type="number" min={1} max={50} value={genCount} onChange={e => setGenCount(+e.target.value)}
-            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white" />
+            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-violet-400 bg-white" />
         </div>
         <div>
           <label htmlFor="f-learning-center-components-questionspage-5" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
           <select id="f-learning-center-components-questionspage-5" value={genDiff} onChange={e => setGenDiff(e.target.value as any)}
-            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-violet-400 bg-white">
+            className="w-full border border-violet-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-violet-400 bg-white">
             <option value="mixed">Mixed (Campuran)</option>
             <option value="easy">Easy — Mudah</option>
             <option value="medium">Medium — Sedang</option>

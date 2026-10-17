@@ -25,7 +25,7 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
     <>
       {detailProject && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-1100 p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden border border-gray-200">
             <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
               <div className="flex items-center justify-between">
@@ -153,7 +153,7 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                           <div key={i} className="flex items-center justify-between rounded-xl px-4 py-2.5"
                             style={{ background: isInstaller ? 'rgba(245,158,11,0.07)' : 'rgba(99,102,241,0.05)', border: `1px solid ${isInstaller ? 'rgba(245,158,11,0.2)' : 'rgba(99,102,241,0.12)'}` }}>
                             <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: rl.bg, color: rl.color }}>{rl.label}</span>
+                              <span className="px-2 py-0.5 rounded-sm text-[11px] font-bold" style={{ background: rl.bg, color: rl.color }}>{rl.label}</span>
                               <div>
                                 <p className="text-sm font-semibold text-gray-800">{s.user_name || '—'}</p>
                                 {isInstaller && detailProject.installer_daerah && (
@@ -201,7 +201,7 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                           {t.status === 'processed' && bisaKonfig(currentUser) && (
                             <button onClick={() => konfirmasiMarkPaid(t.id, detailProject.project_name || '—', t.tranche_number)}
                               disabled={markingPaid === t.id}
-                              className="px-2 py-1 rounded text-[11px] font-bold text-emerald-700 hover:bg-emerald-50 border border-emerald-200 disabled:opacity-50">
+                              className="px-2 py-1 rounded-sm text-[11px] font-bold text-emerald-700 hover:bg-emerald-50 border border-emerald-200 disabled:opacity-50">
                               {markingPaid === t.id ? '⏳...' : 'Tandai Paid'}
                             </button>
                           )}
@@ -224,7 +224,7 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                     return (
                       <div key={s.id} className="flex items-center justify-between rounded-lg px-4 py-2.5 bg-gray-50 mb-1.5">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: rl.bg, color: rl.color }}>{rl.label}</span>
+                          <span className="px-2 py-0.5 rounded-sm text-[11px] font-bold" style={{ background: rl.bg, color: rl.color }}>{rl.label}</span>
                           <span className="text-sm text-gray-700">{s.user_name || '—'}</span>
                         </div>
                         <div className="text-right">
@@ -268,7 +268,7 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
                         ) : th.orang.map(s => (
                           <div key={`${th.tahunKe}-${s.user_id}`} className="flex items-center justify-between px-3 py-1.5 border-t border-gray-50">
                             <span className="text-sm text-gray-700">{s.user_name || s.user_id}</span>
-                            <span className="px-2 py-0.5 rounded text-[11px] font-bold text-violet-700 bg-violet-50 border border-violet-200">Troubleshooting</span>
+                            <span className="px-2 py-0.5 rounded-sm text-[11px] font-bold text-violet-700 bg-violet-50 border border-violet-200">Troubleshooting</span>
                           </div>
                         ))}
                       </div>

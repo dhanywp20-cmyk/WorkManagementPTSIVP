@@ -61,7 +61,7 @@ export function SalesPicker({
             : <span className="text-slate-500">{placeholder}</span>
           }
         </span>
-        <svg aria-hidden="true" focusable="false" className={`w-4 h-4 text-slate-500 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg aria-hidden="true" focusable="false" className={`w-4 h-4 text-slate-500 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -81,7 +81,7 @@ export function SalesPicker({
                 placeholder="Cari nama sales..."
                 aria-label="Cari nama sales"
                 onClick={e => e.stopPropagation()}
-                className="w-full px-3 py-1.5 rounded-lg text-sm outline-none border border-slate-200 bg-slate-50 placeholder-slate-400 focus:border-blue-300 text-slate-800"
+                className="w-full px-3 py-1.5 rounded-lg text-sm outline-hidden border border-slate-200 bg-slate-50 placeholder-slate-400 focus:border-blue-300 text-slate-800"
               />
             </div>
             <div role="listbox" aria-label="Daftar sales" className="overflow-y-auto" style={{ maxHeight: 196 }}>
@@ -117,7 +117,7 @@ export function SalesPicker({
                     <p className="text-sm font-semibold text-slate-800 truncate">{u.full_name}</p>
                     {u.sales_division && <p className="text-xs text-slate-500">{u.sales_division}</p>}
                   </div>
-                  {value === u.full_name && <span aria-hidden="true" className="text-blue-500 text-xs flex-shrink-0">✓</span>}
+                  {value === u.full_name && <span aria-hidden="true" className="text-blue-500 text-xs shrink-0">✓</span>}
                 </div>
               ))}
             </div>

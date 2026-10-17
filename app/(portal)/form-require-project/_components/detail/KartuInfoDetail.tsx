@@ -17,9 +17,9 @@ export interface KartuInfoDetailProps {
 export function KartuInfoDetail({ detailDueStatus, detailRoomAssignName, detailSc, dr, formatDueDate, getCCLabel, selectedRequest }: KartuInfoDetailProps) {
   return (
     <>
-      <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm satulayar:col-span-2">
+      <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-xs satulayar:col-span-2">
         <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-          <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+          <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow-sm"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
           Informasi Project
         </h3>
         <div className="space-y-4">
@@ -32,7 +32,7 @@ export function KartuInfoDetail({ detailDueStatus, detailRoomAssignName, detailS
           {selectedRequest.project_location && (
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Lokasi Project</label>
-              <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 break-words whitespace-pre-wrap">{selectedRequest.project_location}</p>
+              <p className="text-sm font-semibold text-gray-800 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 wrap-break-word whitespace-pre-wrap">{selectedRequest.project_location}</p>
             </div>
           )}
           {/* Row: Nama Ruangan, Sales/Account */}

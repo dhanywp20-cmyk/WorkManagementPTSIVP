@@ -222,7 +222,7 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
     });
   };
 
-  const isian = 'mt-1 w-full rounded-xl px-3 py-2 text-[13px] outline-none focus:ring-2';
+  const isian = 'mt-1 w-full rounded-xl px-3 py-2 text-[13px] outline-hidden focus:ring-2';
   const gayaIsian = { border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta, background: NETRAL.permukaan };
   const label = (t: string) => <span className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>{t}</span>;
 
@@ -270,7 +270,7 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
       <div className="rounded-xl p-4 space-y-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
         <div className="flex items-start gap-3 flex-wrap">
           <button onClick={kembali} aria-label="Kembali ke proyek"
-            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
             style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
             <ArrowLeft size={16} />
           </button>
@@ -365,7 +365,7 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px] items-start">
         <div className="space-y-3 min-w-0">
           {/* Berpanel: latar halaman bisa berupa foto (Admin Panel > Merek), teks lepas tidak terbaca di atasnya. */}
-          <div className="flex items-center justify-between gap-2 flex-wrap rounded-xl px-4 py-2.5 shadow-sm"
+          <div className="flex items-center justify-between gap-2 flex-wrap rounded-xl px-4 py-2.5 shadow-xs"
             style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
             <p className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>
               <span style={fontAngka}>{detail.bagian.length}</span> bagian · <span style={fontAngka}>{stat.total - stat.selesai}</span> item belum selesai
@@ -423,7 +423,7 @@ export function DetailChecklist({ id, onKembali, beritahu, onBerubah, calonAnggo
 
           {hak.edit && detail.bagian.length > 0 && (
             <button onClick={() => setFormBagian({ bagian: null, judul: '', catatan: '' })}
-              className="inline-flex items-center gap-1 text-[12px] font-bold rounded-lg px-3 py-1.5 shadow-sm"
+              className="inline-flex items-center gap-1 text-[12px] font-bold rounded-lg px-3 py-1.5 shadow-xs"
               style={{ color: TEMA.warna, background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
               <Plus size={14} /> Tambah bagian
             </button>

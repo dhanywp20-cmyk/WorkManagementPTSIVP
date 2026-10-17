@@ -37,7 +37,7 @@ export function AksiTerpilih({ a, onGeserTepat }: { a: AlatDesain; onGeserTepat:
   const isian = 'w-full rounded-md border border-slate-200 px-2 py-1 text-base sm:text-[12.5px] tabular-nums';
 
   return (
-    <div className="relative flex flex-row flex-wrap gap-1 rounded-xl bg-white/95 border border-slate-200 shadow-sm p-1" role="toolbar" aria-label={`Aksi ${terpilih.nama}`}>
+    <div className="relative flex flex-row flex-wrap gap-1 rounded-xl bg-white/95 border border-slate-200 shadow-xs p-1" role="toolbar" aria-label={`Aksi ${terpilih.nama}`}>
       {banyak && <span className="self-center px-2 py-0.5 rounded-full bg-blue-700 text-white text-[11.5px] font-bold" title="Benda terpilih">{ids.length}</span>}
       <button type="button" onClick={() => { setSisi(null); setPanel(p => !p); }} aria-pressed={panel} title="Atur ukuran, posisi & pilihan benda"
         className={ikon(panel ? 'bg-blue-700 text-white' : 'text-slate-700 hover:bg-slate-100')}><Settings2 size={15} /> <span className="sr-only sm:not-sr-only">Atur</span></button>

@@ -135,7 +135,7 @@ export function FileLED({ mode, onTutup, isian, ringkasan, namaAwal, fileAktif, 
                 </button>
                 {d.bolehUbah && (
                   <button type="button" aria-label={`Hapus ${d.nama}`} onClick={() => void hapus(d)}
-                    className="w-7 h-7 flex-shrink-0 grid place-items-center rounded-md text-slate-500 hover:text-rose-700 hover:bg-rose-50"><Ikon nama="🗑" ukuran={14} /></button>
+                    className="w-7 h-7 shrink-0 grid place-items-center rounded-md text-slate-500 hover:text-rose-700 hover:bg-rose-50"><Ikon nama="🗑" ukuran={14} /></button>
                 )}
               </li>
             );

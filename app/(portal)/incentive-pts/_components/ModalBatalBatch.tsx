@@ -25,7 +25,7 @@ export function ModalBatalBatch({ batalBatch, jalankanBatalBatch, ketikBatalBatc
         return (
         <ModalPortal>
           <div role="dialog" aria-modal="true" aria-labelledby="judul-batal-batch"
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-1200 p-4"
             onClick={e => { if (e.target === e.currentTarget) { setBatalBatch(null); setKetikBatalBatch(''); } }}>
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-amber-200">
               <h3 id="judul-batal-batch" className="text-lg font-bold text-gray-800 mb-2"><IkonTeks nama="↩" />Batalkan Batch {batalBatch}</h3>
@@ -53,7 +53,7 @@ export function ModalBatalBatch({ batalBatch, jalankanBatalBatch, ketikBatalBatc
               <input id="f-incentive-pts-page-2" type="text" value={ketikBatalBatch} autoFocus
                 onChange={e => setKetikBatalBatch(e.target.value)}
                 placeholder={kunci}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-amber-400" />
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm mb-4 focus:outline-hidden focus:ring-2 focus:ring-amber-400" />
               <div className="flex gap-3">
                 <button onClick={() => { setBatalBatch(null); setKetikBatalBatch(''); }}
                   className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Tutup</button>

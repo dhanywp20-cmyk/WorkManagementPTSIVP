@@ -110,16 +110,16 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
           <LogoEvent url={tema.logo} tinggi={64} />
           <div className="text-center max-w-md">
             <p className="text-[12px] font-black uppercase tracking-[0.2em] text-white/75">Kuis Live</p>
-            <h1 className="mt-1 text-[26px] sm:text-[30px] font-black leading-tight drop-shadow">{info.kelas.judul}</h1>
+            <h1 className="mt-1 text-[26px] sm:text-[30px] font-black leading-tight drop-shadow-sm">{info.kelas.judul}</h1>
             {info.kelas.keterangan && <p className="mt-2 text-[14px] text-white/85 whitespace-pre-line">{info.kelas.keterangan}</p>}
           </div>
           {buka ? (
-            <form className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-2xl space-y-3 text-slate-900"
+            <form className="w-full max-w-sm rounded-2xl bg-white p-4 shadow-2xl flex flex-col gap-3 text-slate-900"
               onSubmit={e => { e.preventDefault(); if (nama.trim().length >= 2 && !sibuk) void masuk(); }}>
               <label htmlFor="nama-kuis" className="sr-only">Nama kamu</label>
               <input id="nama-kuis" value={nama} onChange={e => setNama(e.target.value)} maxLength={80} autoComplete="name" autoFocus
                 placeholder="Nama kamu"
-                className="w-full h-14 rounded-xl border-2 border-slate-300 px-4 text-center text-[20px] font-extrabold outline-none focus:border-slate-900" />
+                className="w-full h-14 rounded-xl border-2 border-slate-300 px-4 text-center text-[20px] font-extrabold outline-hidden focus:border-slate-900" />
               <button type="submit" disabled={sibuk || nama.trim().length < 2}
                 className="w-full h-14 rounded-xl bg-slate-900 text-white text-[18px] font-black disabled:opacity-40 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
                 {sibuk && <Loader2 size={18} className="animate-spin" />}Masuk
@@ -154,7 +154,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
     <LatarKuis tema={tema} warna={warnaLatar}>
       <div className="min-h-dvh flex flex-col">
         <header className="flex items-center gap-2 px-3 pt-3">
-          <LogoEvent url={tema.logo} tinggi={22} className="!px-2 !py-1 !rounded-lg" />
+          <LogoEvent url={tema.logo} tinggi={22} className="px-2! py-1! rounded-lg!" />
           <p className="flex-1 min-w-0 truncate text-[13px] font-extrabold text-white/90">{info.kelas.judul}</p>
           <span className="inline-flex items-center gap-1 rounded-full bg-black/25 px-2.5 py-1 text-[12px] font-bold"><Users size={12} />{live.jumlahPemain}</span>
         </header>
@@ -167,7 +167,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
         <main className="flex-1 flex flex-col px-3 pt-4 pb-24">
           {tahap === 'lobi' && (
             <div className="m-auto text-center space-y-4 max-w-sm">
-              <p className="text-[30px] font-black leading-tight drop-shadow">Kamu sudah masuk!</p>
+              <p className="text-[30px] font-black leading-tight drop-shadow-sm">Kamu sudah masuk!</p>
               <p className="text-[15px] font-bold text-white/85">Lihat namamu di layar</p>
               <div className="mx-auto w-14 h-14 rounded-full border-[5px] border-white/25 border-t-white animate-spin" aria-hidden="true" />
               <p className="text-[14px] font-bold text-white/85">Menunggu admin menekan <span className="font-black text-white">Mulai</span>…</p>
@@ -178,7 +178,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
           {tahap === 'siap' && (
             <div className="m-auto text-center space-y-5 max-w-lg">
               <p className="text-[14px] font-black uppercase tracking-[0.2em] text-white/80">Soal {live.indeks + 1}</p>
-              {live.soal && <p className="text-[22px] sm:text-[26px] font-black leading-snug drop-shadow">{live.soal.teks}</p>}
+              {live.soal && <p className="text-[22px] sm:text-[26px] font-black leading-snug drop-shadow-sm">{live.soal.teks}</p>}
               <HitungMundur sisaMs={(live.mulaiMs ?? 0) - kini} />
               <p className="text-[13px] font-bold text-white/80">Siap-siap…</p>
             </div>
@@ -193,7 +193,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
                   <button key={p} type="button" onClick={() => void jawab(p)} aria-label={`Pilihan ${p}: ${live.soal!.pilihan[p]}`}
                     className="rounded-2xl p-3 flex items-center justify-center text-center shadow-[0_6px_0_rgba(0,0,0,.25)] active:translate-y-1 active:shadow-[0_2px_0_rgba(0,0,0,.25)] transition-transform"
                     style={{ backgroundColor: WARNA_PILIHAN[p] }}>
-                    <span className="font-extrabold leading-snug line-clamp-5 break-words"
+                    <span className="font-extrabold leading-snug line-clamp-5 wrap-break-word"
                       style={{ fontSize: ukuranTeks(live.soal!.pilihan[p], [[25, 20], [60, 17], [9999, 15]]) }}>{live.soal!.pilihan[p]}</span>
                   </button>
                 ))}
@@ -207,14 +207,14 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
               {pilihanku ? (
                 <>
                   <div className="mx-auto max-w-xs rounded-2xl px-5 py-5 shadow-xl" style={{ backgroundColor: WARNA_PILIHAN[pilihanku] }}>
-                    <p className="text-[18px] font-extrabold leading-snug break-words">{live.soal?.pilihan[pilihanku]}</p>
+                    <p className="text-[18px] font-extrabold leading-snug wrap-break-word">{live.soal?.pilihan[pilihanku]}</p>
                   </div>
-                  <p className="text-[26px] font-black drop-shadow">Jawaban terkirim!</p>
+                  <p className="text-[26px] font-black drop-shadow-sm">Jawaban terkirim!</p>
                   <p className="text-[14px] font-bold text-white/85">Cepat juga kamu… tunggu hasilnya.</p>
                 </>
               ) : (
                 <>
-                  <p className="text-[28px] font-black drop-shadow">{lokalIni?.galat ?? 'Waktu habis!'}</p>
+                  <p className="text-[28px] font-black drop-shadow-sm">{lokalIni?.galat ?? 'Waktu habis!'}</p>
                   <p className="text-[14px] font-bold text-white/85">Menunggu hasil…</p>
                 </>
               )}
@@ -227,14 +227,14 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
               <div className="mx-auto w-24 h-24 rounded-full bg-white/20 border-4 border-white flex items-center justify-center">
                 {benar ? <Check size={56} strokeWidth={3.5} /> : <X size={56} strokeWidth={3.5} />}
               </div>
-              <p className="text-[34px] font-black drop-shadow">{benar ? 'Benar!' : live.jawabanSaya ? 'Salah' : 'Waktu habis'}</p>
+              <p className="text-[34px] font-black drop-shadow-sm">{benar ? 'Benar!' : live.jawabanSaya ? 'Salah' : 'Waktu habis'}</p>
               {benar
                 ? <p className="inline-block rounded-xl bg-black/30 px-5 py-2 text-[24px] font-black tabular-nums">+{formatPoin(live.jawabanSaya && 'poin' in live.jawabanSaya ? live.jawabanSaya.poin : 0)}</p>
                 : kunci && live.soal && (
                   <div className="rounded-2xl bg-black/25 p-3 space-y-2">
                     <p className="text-[12px] font-black uppercase tracking-wider text-white/80">Jawaban benar</p>
                     <div className="rounded-xl px-4 py-3 text-center" style={{ backgroundColor: WARNA_PILIHAN[kunci] }}>
-                      <span className="text-[16px] font-extrabold leading-snug break-words">{live.soal.pilihan[kunci]}</span>
+                      <span className="text-[16px] font-extrabold leading-snug wrap-break-word">{live.soal.pilihan[kunci]}</span>
                     </div>
                   </div>
                 )}
@@ -244,7 +244,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
 
           {tahap === 'papan' && (
             <div className="m-auto w-full max-w-md space-y-4">
-              <p className="text-center text-[26px] font-black drop-shadow">Papan Skor</p>
+              <p className="text-center text-[26px] font-black drop-shadow-sm">Papan Skor</p>
               <ol className="space-y-2">
                 {(live.papan ?? []).map((b, i) => (
                   <li key={i} className="flex items-center gap-3 rounded-xl bg-white text-slate-900 px-3 py-2.5 shadow-md">
@@ -262,11 +262,11 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
             <div className="m-auto w-full max-w-md space-y-6 text-center">
               {posisi && posisi.peringkat <= 3 && posisi.poin > 0 ? (
                 <div className="space-y-1">
-                  <Trophy size={48} className="mx-auto text-[#ffd34d] drop-shadow" />
-                  <p className="text-[30px] font-black drop-shadow">Juara {posisi.peringkat}!</p>
+                  <Trophy size={48} className="mx-auto text-[#ffd34d] drop-shadow-sm" />
+                  <p className="text-[30px] font-black drop-shadow-sm">Juara {posisi.peringkat}!</p>
                 </div>
               ) : (
-                <p className="text-[26px] font-black drop-shadow">Kuis selesai!</p>
+                <p className="text-[26px] font-black drop-shadow-sm">Kuis selesai!</p>
               )}
               {(live.papan ?? []).length > 0 && <Podium juara={(live.papan ?? []).slice(0, 3)} />}
               {posisi && (

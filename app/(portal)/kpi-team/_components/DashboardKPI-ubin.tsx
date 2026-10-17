@@ -36,7 +36,7 @@ export function HBarChart({ data, color, maxItems=6, lebarLabel='7rem' }: { data
     <div className="flex flex-col gap-[7px]">
       {top.map((d,i) => (
         <div key={i} className="flex items-center gap-2">
-          <span title={d.label} className="text-[11px] font-semibold flex-shrink-0 text-right" style={{ color:'rgba(0,0,0,0.55)', width:lebarLabel, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.label}</span>
+          <span title={d.label} className="text-[11px] font-semibold shrink-0 text-right" style={{ color:'rgba(0,0,0,0.55)', width:lebarLabel, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.label}</span>
           <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background:'rgba(15,23,42,0.07)' }}>
             {/*  Opacity TETAP. Versi lama memudarkan tiap batang menurut
                 peringkatnya (0.85 - i*0.07), jadi warna ikut menyandikan
@@ -45,7 +45,7 @@ export function HBarChart({ data, color, maxItems=6, lebarLabel='7rem' }: { data
             <div className="h-full rounded-full transition-all duration-700"
               style={{ width:`${(d.value/max)*100}%`, background: color ?? AKSEN }}/>
           </div>
-          <span className="text-[11px] font-bold w-5 text-right flex-shrink-0 tabular-nums" style={{ color:'rgba(0,0,0,0.6)' }}>{d.value}</span>
+          <span className="text-[11px] font-bold w-5 text-right shrink-0 tabular-nums" style={{ color:'rgba(0,0,0,0.6)' }}>{d.value}</span>
         </div>
       ))}
     </div>
@@ -119,7 +119,7 @@ export function Percik({ nilai, warna, lebar = 88, tinggi = 30 }: {
   const gid = `pk${warna.replace('#', '')}${lebar}x${tinggi}`;
   return (
     <svg aria-hidden="true" focusable="false" width={lebar} height={tinggi}
-      viewBox={`0 0 ${lebar} ${tinggi}`} className="flex-shrink-0">
+      viewBox={`0 0 ${lebar} ${tinggi}`} className="shrink-0">
       <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stopColor={warna} stopOpacity="0.30"/>
         <stop offset="1" stopColor={warna} stopOpacity="0"/>
@@ -143,7 +143,7 @@ export function Cincin({ nilai, dari, warna, ukuran = 84, teks }: {
   const pct = dari > 0 ? Math.min(1, nilai / dari) : 0;
   const r = ukuran / 2 - 7, kel = 2 * Math.PI * r;
   return (
-    <div className="relative flex-shrink-0" style={{ width: ukuran, height: ukuran }}>
+    <div className="relative shrink-0" style={{ width: ukuran, height: ukuran }}>
       <svg aria-hidden="true" focusable="false" width={ukuran} height={ukuran} viewBox={`0 0 ${ukuran} ${ukuran}`}>
         <circle cx={ukuran/2} cy={ukuran/2} r={r} fill="none" stroke="rgba(15,23,42,0.07)" strokeWidth={9}/>
         <circle cx={ukuran/2} cy={ukuran/2} r={r} fill="none" stroke={warna} strokeWidth={9} strokeLinecap="round"
@@ -178,7 +178,7 @@ export function RelSeksi({ judul }: { judul: string }) {
       {/* Keping putih tipis tetap dipakai: latar beranda bisa berupa foto
           (setelan "Latar Dashboard" = Gambar), dan teks polos di atas foto
           tidak terbaca. Di latar netral keping ini nyaris tak terlihat. */}
-      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 flex-shrink-0 px-2.5 py-1 rounded-full bg-white/85 backdrop-blur-sm">{judul}</span>
+      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600 shrink-0 px-2.5 py-1 rounded-full bg-white/85 backdrop-blur-xs">{judul}</span>
       <span aria-hidden="true" className="flex-1 h-px bg-slate-200"/>
     </div>
   );
@@ -191,7 +191,7 @@ export function KepalaUbin({ ikon, judul, warna, catatan }: {
   return (
     <div className="flex items-center gap-2 mb-4">
       <h3 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500 flex-1 truncate">{judul}</h3>
-      {catatan && <span className="text-[11px] font-semibold text-slate-500 flex-shrink-0">{catatan}</span>}
+      {catatan && <span className="text-[11px] font-semibold text-slate-500 shrink-0">{catatan}</span>}
     </div>
   );
 }
@@ -228,10 +228,10 @@ export function PitaItem({ label, angka, satuan, ikon, warna, visual, children }
     /*  Tiap angka kini ubin sendiri (dulu enam kolom bergaris dalam satu
         kartu - terbaca seperti tabel). Ikon berwarna lembut memberi
         identitas cepat; angka tetap tinta gelap supaya kontrasnya aman. */
-    <div className={`${UBIN} !p-4 !flex-row !items-center gap-3 text-left`} style={{ boxShadow: BAYANG_UBIN }}>
+    <div className={`${UBIN} p-4! flex-row! items-center! gap-3 text-left`} style={{ boxShadow: BAYANG_UBIN }}>
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-slate-500 truncate">
-          <span className="w-6 h-6 rounded-lg grid place-items-center flex-shrink-0" style={{ background: `${warna}14`, color: warna }}>
+          <span className="w-6 h-6 rounded-lg grid place-items-center shrink-0" style={{ background: `${warna}14`, color: warna }}>
             <Ikon nama={ikon} ukuran={13} />
           </span>
           <span className="truncate">{label}</span>
@@ -241,7 +241,7 @@ export function PitaItem({ label, angka, satuan, ikon, warna, visual, children }
         </p>
         <div className="flex items-center gap-2 mt-2 min-h-[18px]">{children}</div>
       </div>
-      {visual && <div className="flex-shrink-0">{visual}</div>}
+      {visual && <div className="shrink-0">{visual}</div>}
     </div>
   );
 }

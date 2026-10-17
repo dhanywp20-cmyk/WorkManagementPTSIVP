@@ -272,13 +272,13 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-3 sm:p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-3 sm:p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-[1500px] max-h-full flex flex-col overflow-hidden"
         style={{ animation: "scale-in 0.25s ease-out", border: "1.5px solid rgba(220,38,38,0.25)" }}>
 
         {/* Header */}
-        <div className="px-8 py-6 rounded-t-2xl flex-shrink-0"
+        <div className="px-8 py-6 rounded-t-2xl shrink-0"
           style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
           <div className="flex items-center justify-between">
             <div>
@@ -323,7 +323,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
 
         {/* Footer dipisah supaya tombol Buat Ticket tidak ikut tergulir bersama
             kolom dan berada di luar layar justru saat form siap dikirim. */}
-        <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70">
+        <div className="px-6 py-4 shrink-0 border-t border-slate-200 bg-white/70">
           {/* Tombol rata KANAN dan seukuran isinya, bukan melebar penuh.
               Tombol selebar frame membuat aksi terasa seberat isinya sendiri,
               padahal ia cuma penutup; dan dua tombol sama besar tidak

@@ -22,7 +22,7 @@ export function RejectReasonModal({
 }) {
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4"
         onClick={e => { if (e.target === e.currentTarget) onCancel(); }}>
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
           style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(220,38,38,0.35)' }}>
@@ -35,7 +35,7 @@ export function RejectReasonModal({
               <label htmlFor="f-reminder-schedule-components-rejectreasonmodal-1" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Alasan Penolakan *</label>
               <textarea id="f-reminder-schedule-components-rejectreasonmodal-1" value={reason} onChange={e => setReason(e.target.value)}
                 rows={3} placeholder="Tuliskan alasan penolakan..."
-                className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all resize-none focus:ring-2 focus:ring-red-500/40"
+                className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all resize-none focus:ring-2 focus:ring-red-500/40"
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }} />
             </div>
             <div className="flex gap-3">
@@ -43,7 +43,7 @@ export function RejectReasonModal({
                 className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
                 style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>Batal</button>
               <button onClick={onConfirm} disabled={saving}
-                className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                className="flex-2 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                 style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
                 {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 <IkonTeks nama="❌" />Ya, Tolak
