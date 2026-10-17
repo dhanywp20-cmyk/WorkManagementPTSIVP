@@ -1,14 +1,16 @@
 'use client';
 /**
- * Ekspor: foto kanvas, PNG (tampak, 4 tampak, lembar), denah 2D berskala (cetak & DXF), lembar cetak A4, ringkasan teks.
+ * Ekspor: foto kanvas, PNG (tampak, 4 tampak, lembar), denah 2D berskala (cetak & DXF), lembar cetak A4, ringkasan teks,
+ * BOM Excel (inti/bom.ts) dan draf checklist instalasi dari BOM.
  * Bagian dari Desain3D.tsx (Tools Team) - lihat struktur di desain3d/README.md.
  */
 import { useState } from 'react';
 import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl } from '../../bersama/cetak';
-import { cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, cakupanSpeakerPlafon, DISPLAY, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, throwRatioDari, tipeSpeakerDari } from '../inti';
+import { cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, throwRatioDari, tipeSpeakerDari } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
 import { f } from '../../bersama/ui';
 import { getSession } from '@/lib/auth';
+import { loadXLSX } from '@/lib/xlsx-loader';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import type { useKamera } from '../mesin/useKamera';
 import { ARAH_SUDUT, type Sudut, TAMPAK } from '../mesin/tipe';
@@ -101,22 +103,9 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
   const lembar3D = (): Lembar => {
     const foto = TAMPAK.map(t => ({ ...t, url: fotoKanvas(t.arah, 1.5)?.toDataURL('image/jpeg', 0.86) ?? '' }));
     const fm = (n: number, d = 2) => f(n, d);
-    //  Daftar perangkat: dikelompokkan per kategori, benda bernama sama dijumlah.
-    const kategori = (j: Benda['jenis']) =>
-      j === 'lampu' ? 'Interior & pencahayaan'
-        : DISPLAY.includes(j) || j === 'proyektor' || j === 'bidang' ? 'Display' : j === 'kamera' || j === 'lift' ? 'Kamera & konferensi'
-        : ['speaker', 'speaker-plafon', 'mic', 'touchpanel', 'rak'].includes(j) ? 'Audio & kontrol'
-          : j === 'meja' || j === 'kursi' || j === 'tribun' || j === 'panggung' ? 'Furnitur' : 'Lainnya';
-    const urutKat = ['Display', 'Kamera & konferensi', 'Audio & kontrol', 'Furnitur', 'Interior & pencahayaan', 'Lainnya'];
-    const grup = new Map<string, { kat: string; nama: string; ukuran: string; jumlah: number }>();
-    for (const b of benda) {
-      const nama = b.nama.replace(/\s+\d+\.\d+$/, '');   // "Meja kelas 2.3" -> "Meja kelas"
-      const kunci = `${kategori(b.jenis)}|${nama}|${fm(b.w)}x${fm(b.d)}`;
-      const ada = grup.get(kunci);
-      if (ada) ada.jumlah++;
-      else grup.set(kunci, { kat: kategori(b.jenis), nama, ukuran: `${fm(b.w)} × ${fm(b.h)} × ${fm(b.d)} m`, jumlah: 1 });
-    }
-    const baris = [...grup.values()].sort((a, b) => urutKat.indexOf(a.kat) - urutKat.indexOf(b.kat) || a.nama.localeCompare(b.nama));
+    //  Daftar perangkat: dikelompokkan per kategori, benda bernama sama dijumlah (inti/bom.ts, sama dengan BOM Excel).
+    const baris = daftarBenda(benda);
+    const jumlahItem = baris.reduce((n, r) => n + r.jumlah, 0);
     const label = jenisPandang === 'custom' ? `Custom (${faktorCustom}×)` : { detail: 'Detail (4×)', analitis: 'Analitis (6×)', umum: 'Umum (8×)' }[jenisPandang];
     const proyektor = benda.filter(b => b.jenis === 'proyektor').map(p => ({ p, sn: sinarProyektor(p, benda, ruang) }));
     const gambar = (src: string, ket: string) => (src ? `<figure><img src="${src}" alt="${esc(ket)}"/><figcaption>${esc(ket)}</figcaption></figure>` : '');
@@ -146,8 +135,8 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
             ...rekapKabel(kabel).map(r => ['TOTAL', '', r.kabel.nama, `±${fm(r.meter)} m`, r.gulungan])] }] : []),
         ...(benda.some(b => b.jenis === 'rak') ? [{ judul: 'Rack elevation', jenis: 'html' as const,
           html: `<div class="gambar dua">${benda.filter(b => b.jenis === 'rak').map(b => `<div>${svgElevasiRak(b)}</div>`).join('')}</div>` }] : []),
-        { judul: `Daftar perangkat & furnitur (${benda.length} item)`, jenis: 'tabel', kepala: ['Kategori', 'Item', 'Ukuran (L × T × P)', 'Jumlah'], rataKanan: [3],
-          isi: baris.map(r => [r.kat, r.nama, r.ukuran, String(r.jumlah)]) },
+        { judul: `Daftar perangkat & furnitur (${jumlahItem} item)`, jenis: 'tabel', kepala: ['Kategori', 'Item', 'Ukuran (L × T × P)', 'Jumlah'], rataKanan: [3],
+          isi: baris.map(r => [r.kategori, r.item, r.ukuran, String(r.jumlah)]) },
         ...(analisis.length ? [{
           judul: `Analisis jarak pandang · konten ${label}`, jenis: 'tabel' as const,
           kepala: ['Display', ...(duaRuang ? ['Ruang'] : []), 'Ukuran gambar', 'Penonton terjauh', 'Tinggi minimal', 'Sudut maks', 'Status'],
@@ -213,6 +202,26 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   };
   const pngLembar = () => unduhLembarPNG(lembar3D(), namaGambar('lembar'));
+  /** BOM Excel: perangkat & furnitur, aksesori pemasangan, isi rack, kabel (total meter + gulungan). */
+  const unduhBomExcel = () => {
+    setMenuPng(false);
+    const bom = bomDesain(benda, kabel);
+    loadXLSX(XLSX => {
+      const rows: (string | number)[][] = [
+        [`BOM - ${namaDesain || 'Desain AV'}`], [`Desain 3D Ruang AV · ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}`], [],
+        ['No', 'Kategori', 'Item', 'Ukuran / panjang', 'Jumlah', 'Satuan', 'Catatan'],
+        ...bom.map((b, i) => [i + 1, b.kategori, b.item, b.ukuran, b.jumlah, b.satuan, b.catatan]),
+        [], ['Ukuran produk mengikuti katalog bawaan; sesuaikan dengan datasheet sebelum penawaran. Panjang kabel sudah termasuk lekukan & service loop.'],
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{ wch: 5 }, { wch: 22 }, { wch: 40 }, { wch: 20 }, { wch: 8 }, { wch: 8 }, { wch: 46 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'BOM');
+      XLSX.writeFile(wb, `${namaGambar('BOM')}.xlsx`);
+    }, () => setGalat('Excel gagal dibuat - periksa koneksi.'));
+  };
+  /** Draf checklist instalasi (Project Progress) dari BOM - satu bagian per perangkat yang dipasang. */
+  const draftChecklist = (judul: string) => checklistDariBom(judul, bomDesain(benda, kabel));
   const ringkasan = () => [
     `*Desain ruang: ${namaDesain}*`,
     ...kotakRuang.map((k, i) => `Ruang ${i + 1}: ${f(k.p)} × ${f(k.l)} m, plafon ${f(k.t)} m`),
@@ -224,5 +233,5 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     }),
   ].join('\n');
 
-  return { denahCetak, setDenahCetak, cetak, unduhDxf, fotoKanvas, jalankanPng, lembar3D, menuPng, namaGambar, pngLembar, ringkasan, setMenuPng, setSibukPng, sibukPng, unduhEmpatTampak, unduhFoto };
+  return { denahCetak, setDenahCetak, cetak, draftChecklist, unduhBomExcel, unduhDxf, fotoKanvas, jalankanPng, lembar3D, menuPng, namaGambar, pngLembar, ringkasan, setMenuPng, setSibukPng, sibukPng, unduhEmpatTampak, unduhFoto };
 }
