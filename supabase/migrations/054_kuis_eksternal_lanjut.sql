@@ -1,4 +1,4 @@
--- 054 - Kelas Eksternal: data peserta tambahan (perusahaan & kontak) + gambar soal.
+-- 054 - Kelas Eksternal: data peserta tambahan (perusahaan & kontak), gambar soal, jeda Kuis Live.
 --
 -- 1. lc_eks_kelas.isian_peserta - yang diminta saat peserta masuk:
 --      'nama'     : nama saja (bawaan, perilaku lama)
@@ -9,9 +9,12 @@
 -- 3. lc_questions.gambar_url - gambar opsional per soal (foto perangkat, diagram). Hanya URL unggahan
 --    sendiri (bucket merek-files/kuis-live/, lihat rapikanUrlGambar di lib/kuis-live.ts). Grant tabel
 --    lc_questions berlaku per tabel, jadi kolom baru ikut aturan baca/tulis yang sudah ada.
+-- 4. lc_eks_kelas.live_jeda_pada - Kuis Live dijeda presenter sejak kapan (jam kuis beku; null = berjalan).
+--    Lihat lib/kuis-live.ts (live_jeda / live_lanjutkan). Ulang soal / mundur / dari awal tidak butuh kolom baru.
 
 ALTER TABLE public.lc_eks_kelas
-  ADD COLUMN IF NOT EXISTS isian_peserta text NOT NULL DEFAULT 'nama';
+  ADD COLUMN IF NOT EXISTS isian_peserta text NOT NULL DEFAULT 'nama',
+  ADD COLUMN IF NOT EXISTS live_jeda_pada timestamptz;
 DO $$ BEGIN
   ALTER TABLE public.lc_eks_kelas ADD CONSTRAINT lc_eks_kelas_isian_peserta_check CHECK (isian_peserta IN ('nama', 'instansi', 'kontak'));
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;

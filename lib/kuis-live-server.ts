@@ -16,7 +16,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { acakUrutan, type KelasEksternal, type Pilihan } from './kelas-eksternal';
 import { simpanSebentar } from './simpan-sebentar';
 import {
-  distribusi, indeksTerhitung, jadwalLive, posisiSaya, rapikanUrlGambar, semuaMenjawab, susunPapan, transisiLive, wujudkanLive,
+  anulirDari, distribusi, indeksTerhitung, jadwalLive, posisiSaya, rapikanUrlGambar, semuaMenjawab, susunPapan, transisiLive, wujudkanLive,
   type AksiLive, type BarisPapan, type RekapPeserta, type StatusLive, type Tahap,
 } from './kuis-live';
 
@@ -81,7 +81,16 @@ export async function jalankanAksiLive(db: Db, k: KelasLive, aksi: AksiLive, dar
   //  Bersyarat pada status yang tadi dibaca: dua permintaan bersamaan, hanya satu yang berlaku.
   const { data, error } = await updateBersyarat(db, k, { ...ubahan, ...tambahan, updated_at: new Date(sekarang).toISOString() });
   if (error) return { ok: false, galat: 'Gagal menyimpan. Coba lagi.' };
-  return { ok: true, berubah: ((data ?? []) as unknown[]).length > 0 };
+  const berubah = ((data ?? []) as unknown[]).length > 0;
+  //  Ulang soal / mundur: jawaban soal itu dan sesudahnya di sesi ini dianulir, supaya peserta bisa
+  //  menjawab lagi (satu jawaban per soal) dan papan skor ikut mundur. Soal baru baru membuka pilihan
+  //  sesudah hitung mundur, jadi penghapusan ini selesai sebelum jawaban baru bisa masuk.
+  const anulir = anulirDari(aksi, j);
+  if (berubah && anulir !== null) {
+    const { error: hapus } = await db.from('lc_eks_live_jawaban').delete().eq('kelas_id', k.id).eq('sesi', k.live_sesi).gte('indeks', anulir);
+    if (hapus) return { ok: false, galat: 'Soal diulang, tetapi jawaban lama gagal dianulir - tekan "Ulang soal ini" sekali lagi.' };
+  }
+  return { ok: true, berubah };
 }
 
 /**
@@ -127,6 +136,7 @@ export async function keadaanHost(db: Db, k: KelasLive) {
     mulaiMs: j.mulaiMs ?? msAtauNull(k.live_soal_mulai),
     tutupMs: j.tutupMs ?? msAtauNull(k.live_soal_tutup),
     akhirMs: j.akhirMs,
+    jedaMs: j.jedaMs,
     pemain: (pemain ?? []) as { id: string; nama: string }[],
     soal: soal ? { teks: soal.teks, gambar: soal.gambar, pilihan: soal.pilihan } : null,
     //  Layar host biasanya diproyeksikan: kunci baru dikirim setelah waktu habis.
@@ -157,7 +167,7 @@ export async function keadaanPeserta(db: Db, k: KelasLive, pesertaId: string | n
     sekarang, tahap, sesi: k.live_sesi, indeks: j.indeks,
     total: tahap === 'lobi' ? k.question_ids.length : k.live_urutan.length,
     detik: k.detik_per_soal,
-    mulaiMs: j.mulaiMs, tutupMs: j.tutupMs, akhirMs: j.akhirMs,
+    mulaiMs: j.mulaiMs, tutupMs: j.tutupMs, akhirMs: j.akhirMs, jedaMs: j.jedaMs,
     jumlahPemain,
     soal: soal ? { teks: soal.teks, gambar: soal.gambar, pilihan: soal.pilihan } : null,
     kunci: tahap === 'hasil' && soal ? soal.kunci : null,

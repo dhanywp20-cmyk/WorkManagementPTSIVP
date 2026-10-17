@@ -10,9 +10,11 @@
  * tiap 2,5 dtk (menangkap Mulai / Lewati / semua sudah menjawab) + penyegaran terjadwal tepat di akhir
  * tiap tahap. Sengaja TANPA Supabase Realtime: 100+ HP melewati batas pesan/detik paket Free dan
  * Supabase lalu memutus semua koneksi realtime proyek (lihat lib/kuis-live-server.ts).
+ *
+ * Dijeda presenter (live.jedaMs): jam ikut beku di titik jeda, penanda tampil, jawaban ditahan.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, Loader2, Lock, Trophy, Users, X } from 'lucide-react';
+import { Check, Loader2, Lock, Pause, Trophy, Users, X } from 'lucide-react';
 import type { Pilihan } from '@/lib/kelas-eksternal';
 import {
   BilahSoal, BilahWaktu, HIJAU, HitungMundur, LatarKuis, LogoEvent, MERAH, PILIHAN_KUIS, Podium,
@@ -22,7 +24,8 @@ import { panggilKelas, simpanTokenPeserta, type InfoLive } from './api';
 import { ISIAN_KOSONG, IsianTambahan, isianLengkap, type NilaiIsian } from './IsianPeserta';
 import { GambarSoal } from '@/components/shared/GambarSoal';
 
-type JawabanLokal = { sesi: number; indeks: number; pilihan: Pilihan; galat?: string };
+/** `mulai` = waktu soal dibuka: berubah bila presenter mengulang soal yang sama, jadi peserta bisa menjawab lagi. */
+type JawabanLokal = { sesi: number; indeks: number; mulai: number | null; pilihan: Pilihan; galat?: string };
 
 export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
   const [info, setInfo] = useState(awal);
@@ -72,16 +75,17 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
 
   useDetak(live.tahap === 'siap' || live.tahap === 'soal', 200);
 
-  const kini = sekarang();
+  const kini = live.jedaMs ?? sekarang();
+  const dijeda = !!live.jedaMs;
   const tahap = live.tahap === 'siap' && live.mulaiMs && kini >= live.mulaiMs ? 'soal' : live.tahap;
   const waktuHabis = tahap === 'soal' && !!live.tutupMs && kini >= live.tutupMs;
-  const lokalIni = lokal && lokal.sesi === live.sesi && lokal.indeks === live.indeks ? lokal : null;
+  const lokalIni = lokal && lokal.sesi === live.sesi && lokal.indeks === live.indeks && lokal.mulai === live.mulaiMs ? lokal : null;
   const pilihanku: Pilihan | null = live.jawabanSaya?.pilihan ?? (lokalIni && !lokalIni.galat ? lokalIni.pilihan : null);
   const tema = info.kelas.tema;
 
   const jawab = async (p: Pilihan) => {
-    if (pilihanku || lokalIni || waktuHabis) return;
-    const k: JawabanLokal = { sesi: live.sesi, indeks: live.indeks, pilihan: p };
+    if (pilihanku || lokalIni || waktuHabis || dijeda) return;
+    const k: JawabanLokal = { sesi: live.sesi, indeks: live.indeks, mulai: live.mulaiMs, pilihan: p };
     setLokal(k); setPesan('');
     try { navigator.vibrate?.(30); } catch { /* tidak semua perangkat */ }
     for (let coba = 0; coba < 3; coba++) {
@@ -163,6 +167,11 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
           <p className="flex-1 min-w-0 truncate text-[13px] font-extrabold text-white/90">{info.kelas.judul}</p>
           <span className="inline-flex items-center gap-1 rounded-full bg-black/25 px-2.5 py-1 text-[12px] font-bold"><Users size={12} />{live.jumlahPemain}</span>
         </header>
+        {dijeda && (
+          <p className="mx-3 mt-3 self-center inline-flex items-center gap-2 rounded-full bg-amber-400 px-4 py-1.5 text-[14px] font-black text-slate-900 shadow-lg">
+            <Pause size={15} fill="currentColor" />Dijeda presenter
+          </p>
+        )}
         {tampilBilah && (
           <div className="px-3 pt-3">
             <BilahSoal indeks={live.indeks} total={live.total} selesai={tahap === 'selesai' || ((tahap === 'hasil' || tahap === 'papan') && live.indeks + 1 >= live.total)} />
@@ -197,8 +206,8 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
               <GambarSoal url={live.soal.gambar} tinggi="max-h-40 sm:max-h-56" />
               <div className="flex-1 grid grid-cols-2 gap-2.5 sm:gap-3 auto-rows-fr min-h-[48vh]">
                 {PILIHAN_KUIS.map(p => (
-                  <button key={p} type="button" onClick={() => void jawab(p)} aria-label={`Pilihan ${p}: ${live.soal!.pilihan[p]}`}
-                    className="rounded-2xl p-3 flex items-center justify-center text-center shadow-[0_6px_0_rgba(0,0,0,.25)] active:translate-y-1 active:shadow-[0_2px_0_rgba(0,0,0,.25)] transition-transform"
+                  <button key={p} type="button" onClick={() => void jawab(p)} aria-label={`Pilihan ${p}: ${live.soal!.pilihan[p]}`} disabled={dijeda}
+                    className="rounded-2xl p-3 flex items-center justify-center text-center shadow-[0_6px_0_rgba(0,0,0,.25)] active:translate-y-1 active:shadow-[0_2px_0_rgba(0,0,0,.25)] transition-transform disabled:opacity-45 disabled:active:translate-y-0"
                     style={{ backgroundColor: WARNA_PILIHAN[p] }}>
                     <span className="font-extrabold leading-snug line-clamp-5 break-words"
                       style={{ fontSize: ukuranTeks(live.soal!.pilihan[p], [[25, 20], [60, 17], [9999, 15]]) }}>{live.soal!.pilihan[p]}</span>
