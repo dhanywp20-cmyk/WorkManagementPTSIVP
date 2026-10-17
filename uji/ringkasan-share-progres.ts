@@ -11,6 +11,7 @@ import {
 } from '../app/(portal)/project-progress/_components/ringkasan/hitung';
 import { aktivitasProyek, kontribusiHandler, selesaiPerHari, tanggalWIB } from '../lib/checklist-ringkasan';
 import type { ChecklistItem } from '../lib/checklist';
+import { supportPerDaftar } from '../lib/checklist-server';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean) => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}`); } };
@@ -96,6 +97,24 @@ const panel = readFileSync('app/project-progress/share/[token]/_bagian/PanelLoka
 cek('desktop lebar dengan daftar lokasi', /lg:w-\[min\(1480px,96vw\)\]/.test(panel) && /hidden lg:flex flex-col w-72/.test(panel));
 cek('bagian 2 kolom di layar lebar', /xl:columns-2/.test(panel) && /break-inside-avoid/.test(panel));
 cek('item selesai tanpa coretan', !/line-through/.test(readFileSync('app/(portal)/project-progress/_components/tampilan.tsx', 'utf8')));
+cek('panel: grafik lokasi (waktu, handler, laju)', /ringkasChecklist\(jadwal, items, anggota\)/.test(panel) && /<RingkasanChecklist r=\{ringkasan\}/.test(panel));
+cek('panel: nama Handler & Support di lokasi', /<TimLokasi handler=\{handler\} support=\{support\}/.test(panel));
+cek('panel: bagian belum selesai terbuka + Buka semua', /s\.selesai < s\.total/.test(panel) && /Buka semua/.test(panel));
+cek('kartu lokasi: Handler & Support', /<TimLokasi handler=\{handlerDari\(d\.id\)\} support=\{d\.support_lokasi/.test(share));
 
-console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
-process.exit(gagal ? 1 : 0);
+(async () => {
+  console.log('\n7. Support di lokasi (migrasi 053)');
+  const tiruan = (hasil: { data: unknown; error: unknown }) => ({ from: () => ({ select: () => ({ in: async () => hasil }) }) });
+  const petaOk = await supportPerDaftar(tiruan({ data: [{ id: 'a', support_lokasi: ' Budi ' }, { id: 'b', support_lokasi: null }], error: null }) as never, ['a', 'b']);
+  cek('dibaca & dirapikan', petaOk.get('a') === 'Budi' && petaOk.get('b') === '');
+  const petaBelum = await supportPerDaftar(tiruan({ data: null, error: { code: '42703', message: 'column checklist_daftar.support_lokasi does not exist' } }) as never, ['a']);
+  cek('kolom belum ada -> peta kosong, tidak melempar', petaBelum.size === 0);
+  cek('tanpa id -> tanpa kueri', (await supportPerDaftar({ from: () => { throw new Error('tidak boleh'); } } as never, [])).size === 0);
+  const rute = readFileSync('app/api/project-progress/checklist/[id]/route.ts', 'utf8');
+  cek('simpan support terpisah dari info lain', /update\(\{ judul, keterangan: [^}]*start_date, target_date \}\)/.test(rute) && /update\(\{ support_lokasi: teks\(body\.support_lokasi, BATAS\.support\) \}\)/.test(rute));
+  const ruteShare = readFileSync('app/api/project-progress/share/[token]/route.ts', 'utf8');
+  cek('link View-Only: support ikut, share_token tidak dipilih', /support_lokasi: support\.get\(d\.id\)/.test(ruteShare) && !/select\('[^']*share_token/.test(ruteShare));
+
+  console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
+  process.exit(gagal ? 1 : 0);
+})();

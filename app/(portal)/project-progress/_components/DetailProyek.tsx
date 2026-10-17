@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { ArrowLeft, CalendarDays, Link2, MapPin, Pencil, Plus, Trash2, Users } from 'lucide-react';
+import { ArrowLeft, CalendarDays, HardHat, Link2, MapPin, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState, type SalesPickerUser } from '@/components/shared';
 import { NETRAL } from '@/lib/desain';
 import {
@@ -48,6 +48,11 @@ function KartuChecklist({ c, onBuka }: { c: ChecklistRingkas; onBuka: () => void
         <Users size={12} className="flex-shrink-0" />
         {c.anggota.length ? c.anggota.map(a => a.nama).join(', ') : 'Belum di-assign'}
       </p>
+      {c.support_lokasi && (
+        <p className="text-[11.5px] flex items-center gap-1.5 truncate" style={{ color: NETRAL.tinta2 }} title="Support di lokasi">
+          <HardHat size={12} className="flex-shrink-0" /> {c.support_lokasi}
+        </p>
+      )}
     </button>
   );
 }

@@ -66,6 +66,11 @@ export async function PATCH(request: NextRequest, ctx: { params: Promise<{ id: s
       const { error } = await db.from('checklist_daftar')
         .update({ judul, keterangan: teks(body.keterangan, BATAS.keterangan), start_date, target_date }).eq('id', id);
       if (error) return galat(error.message, 500);
+      //  Terpisah: sebelum migrasi 053 kolomnya belum ada - info lain tetap tersimpan.
+      if (body.support_lokasi !== undefined) {
+        const { error: sErr } = await db.from('checklist_daftar').update({ support_lokasi: teks(body.support_lokasi, BATAS.support) }).eq('id', id);
+        if (sErr) return galat('Info tersimpan, tetapi "Support di lokasi" belum: kolomnya belum ada di basis data (jalankan migrasi 053).', 500);
+      }
       await sentuh(db, id, akses.proyekId);
       return ok();
     }
