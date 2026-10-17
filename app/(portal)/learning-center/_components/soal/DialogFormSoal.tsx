@@ -3,13 +3,14 @@
 /** DialogFormSoal - dipecah dari app/(portal)/learning-center/_components/QuestionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Material } from '../shared';
+import { UnggahGambarSoal } from './UnggahGambarSoal';
 
 export interface DialogFormSoalProps {
   handleAddManual: () => Promise<void>;
   materials: Material[];
   modeGrup: boolean;
-  newQ: { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string; difficulty: "easy" | "medium" | "hard"; material_id: string; batch_name: string; question_type: "abcd" | "essay"; model_answer: string; answer_format: "text" | "image"; };
-  setNewQ: import("react").Dispatch<import("react").SetStateAction<{ question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string; difficulty: "easy" | "medium" | "hard"; material_id: string; batch_name: string; question_type: "abcd" | "essay"; model_answer: string; answer_format: "text" | "image"; }>>;
+  newQ: { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string; difficulty: "easy" | "medium" | "hard"; material_id: string; batch_name: string; question_type: "abcd" | "essay"; model_answer: string; answer_format: "text" | "image"; gambar_url: string; };
+  setNewQ: import("react").Dispatch<import("react").SetStateAction<{ question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string; difficulty: "easy" | "medium" | "hard"; material_id: string; batch_name: string; question_type: "abcd" | "essay"; model_answer: string; answer_format: "text" | "image"; gambar_url: string; }>>;
   tutupTambahManual: () => void;
   viewMaterials: Material[];
 }
@@ -74,6 +75,7 @@ export function DialogFormSoal({ handleAddManual, materials, modeGrup, newQ, set
                 rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
                 placeholder="Tulis pertanyaan di sini..." />
             </div>
+            <UnggahGambarSoal url={newQ.gambar_url} ubah={u => setNewQ(p => ({ ...p, gambar_url: u }))} />
             {newQ.question_type === 'essay' ? (
               <>
               <div>

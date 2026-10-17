@@ -42,6 +42,8 @@ async function hak(req: NextRequest) {
   return { ok: true as const, ubah, user: jaga.user, db };
 }
 
+interface DataPesertaAdmin { id: string; nama: string; created_at: string; instansi: string | null; kontak: string | null; izin_kontak: boolean }
+
 export async function GET(req: NextRequest) {
   const h = await hak(req);
   if (!h.ok) return jawab({ error: h.alasan }, h.status);
@@ -60,7 +62,7 @@ export async function GET(req: NextRequest) {
     if (!UUID.test(id)) return jawab({ error: 'Kelas tidak dikenal.' }, 400);
     const [{ data: kelas }, { data: peserta }, { data: hasil }] = await Promise.all([
       db.from('lc_eks_kelas').select('*').eq('id', id).maybeSingle(),
-      db.from('lc_eks_peserta').select('id,nama,created_at').eq('kelas_id', id).order('created_at'),
+      db.from('lc_eks_peserta').select('id,nama,created_at,instansi,kontak,izin_kontak').eq('kelas_id', id).order('created_at'),
       db.from('lc_eks_hasil').select('peserta_id,percobaan,mulai_pada,selesai_pada,benar,jumlah,skor,lulus,durasi_detik,lewat_waktu,pindah_tab,keluar_jendela,salin_tempel,log_pelanggaran,dikirim_otomatis')
         .eq('kelas_id', id).order('percobaan', { ascending: false }),
     ]);
@@ -76,7 +78,13 @@ export async function GET(req: NextRequest) {
       const dimainkan = sesi === k.live_sesi && k.live_tahap !== 'lobi'
         ? jadwalLive(k).indeks + 1
         : (((jml ?? []) as { indeks: number }[])[0]?.indeks ?? -1) + 1;
-      return jawab({ kelas, ubah: h.ubah, live: { sesi, jumlahSesi: k.live_sesi, dimainkan, papan } });
+      //  Perusahaan & kontak (migrasi 054) ikut di papan supaya CSV Kuis Live lengkap untuk Sales.
+      const data = new Map(((peserta ?? []) as DataPesertaAdmin[]).map(p => [p.id, p]));
+      const papanLengkap = papan.map(b => {
+        const d = data.get(b.peserta_id);
+        return { ...b, instansi: d?.instansi ?? null, kontak: d?.kontak ?? null, izin_kontak: d?.izin_kontak ?? false };
+      });
+      return jawab({ kelas, ubah: h.ubah, live: { sesi, jumlahSesi: k.live_sesi, dimainkan, papan: papanLengkap } });
     }
     const terakhir = new Map<string, Record<string, unknown>>();
     const percobaan = new Map<string, number>();
@@ -87,7 +95,7 @@ export async function GET(req: NextRequest) {
     }
     return jawab({
       kelas, ubah: h.ubah,
-      peserta: ((peserta ?? []) as { id: string; nama: string; created_at: string }[]).map(p => ({ ...p, percobaan: percobaan.get(p.id) ?? 0, hasil: terakhir.get(p.id) ?? null })),
+      peserta: ((peserta ?? []) as DataPesertaAdmin[]).map(p => ({ ...p, percobaan: percobaan.get(p.id) ?? 0, hasil: terakhir.get(p.id) ?? null })),
     });
   }
 

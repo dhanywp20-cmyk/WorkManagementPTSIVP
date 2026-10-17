@@ -16,23 +16,26 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { acakUrutan, type KelasEksternal, type Pilihan } from './kelas-eksternal';
 import { simpanSebentar } from './simpan-sebentar';
 import {
-  distribusi, indeksTerhitung, jadwalLive, posisiSaya, semuaMenjawab, susunPapan, transisiLive, wujudkanLive,
+  anulirDari, distribusi, indeksTerhitung, jadwalLive, posisiSaya, rapikanUrlGambar, semuaMenjawab, susunPapan, transisiLive, wujudkanLive,
   type AksiLive, type BarisPapan, type RekapPeserta, type StatusLive, type Tahap,
 } from './kuis-live';
 
 export type KelasLive = KelasEksternal & StatusLive;
 type Db = SupabaseClient;
 
-export interface SoalLive { teks: string; pilihan: Record<Pilihan, string>; kunci: Pilihan }
+export interface SoalLive { teks: string; gambar: string | null; pilihan: Record<Pilihan, string>; kunci: Pilihan }
 
 /** Isi soal + kunci. Disimpan 30 dtk: dibaca semua HP di tiap tahap, isinya hampir tidak pernah berubah. */
 export function muatSoalLive(db: Db, id: string | undefined): Promise<SoalLive | null> {
   if (!id) return Promise.resolve(null);
   return simpanSebentar(`soal:${id}`, 30_000, async () => {
-    const { data } = await db.from('lc_questions').select('question,option_a,option_b,option_c,option_d,correct_answer').eq('id', id).maybeSingle();
+    const { data } = await db.from('lc_questions').select('question,option_a,option_b,option_c,option_d,correct_answer,gambar_url').eq('id', id).maybeSingle();
     if (!data) return null;
-    const s = data as { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string };
-    return { teks: s.question, pilihan: { A: s.option_a, B: s.option_b, C: s.option_c, D: s.option_d }, kunci: String(s.correct_answer).toUpperCase() as Pilihan };
+    const s = data as { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string; gambar_url: string | null };
+    return {
+      teks: s.question, gambar: rapikanUrlGambar(s.gambar_url),
+      pilihan: { A: s.option_a, B: s.option_b, C: s.option_c, D: s.option_d }, kunci: String(s.correct_answer).toUpperCase() as Pilihan,
+    };
   });
 }
 
@@ -78,7 +81,16 @@ export async function jalankanAksiLive(db: Db, k: KelasLive, aksi: AksiLive, dar
   //  Bersyarat pada status yang tadi dibaca: dua permintaan bersamaan, hanya satu yang berlaku.
   const { data, error } = await updateBersyarat(db, k, { ...ubahan, ...tambahan, updated_at: new Date(sekarang).toISOString() });
   if (error) return { ok: false, galat: 'Gagal menyimpan. Coba lagi.' };
-  return { ok: true, berubah: ((data ?? []) as unknown[]).length > 0 };
+  const berubah = ((data ?? []) as unknown[]).length > 0;
+  //  Ulang soal / mundur: jawaban soal itu dan sesudahnya di sesi ini dianulir, supaya peserta bisa
+  //  menjawab lagi (satu jawaban per soal) dan papan skor ikut mundur. Soal baru baru membuka pilihan
+  //  sesudah hitung mundur, jadi penghapusan ini selesai sebelum jawaban baru bisa masuk.
+  const anulir = anulirDari(aksi, j);
+  if (berubah && anulir !== null) {
+    const { error: hapus } = await db.from('lc_eks_live_jawaban').delete().eq('kelas_id', k.id).eq('sesi', k.live_sesi).gte('indeks', anulir);
+    if (hapus) return { ok: false, galat: 'Soal diulang, tetapi jawaban lama gagal dianulir - tekan "Ulang soal ini" sekali lagi.' };
+  }
+  return { ok: true, berubah };
 }
 
 /**
@@ -124,8 +136,9 @@ export async function keadaanHost(db: Db, k: KelasLive) {
     mulaiMs: j.mulaiMs ?? msAtauNull(k.live_soal_mulai),
     tutupMs: j.tutupMs ?? msAtauNull(k.live_soal_tutup),
     akhirMs: j.akhirMs,
+    jedaMs: j.jedaMs,
     pemain: (pemain ?? []) as { id: string; nama: string }[],
-    soal: soal ? { teks: soal.teks, pilihan: soal.pilihan } : null,
+    soal: soal ? { teks: soal.teks, gambar: soal.gambar, pilihan: soal.pilihan } : null,
     //  Layar host biasanya diproyeksikan: kunci baru dikirim setelah waktu habis.
     kunci: tahap === 'hasil' && soal ? soal.kunci : null,
     jumlahMenjawab: jawaban.length,
@@ -154,9 +167,9 @@ export async function keadaanPeserta(db: Db, k: KelasLive, pesertaId: string | n
     sekarang, tahap, sesi: k.live_sesi, indeks: j.indeks,
     total: tahap === 'lobi' ? k.question_ids.length : k.live_urutan.length,
     detik: k.detik_per_soal,
-    mulaiMs: j.mulaiMs, tutupMs: j.tutupMs, akhirMs: j.akhirMs,
+    mulaiMs: j.mulaiMs, tutupMs: j.tutupMs, akhirMs: j.akhirMs, jedaMs: j.jedaMs,
     jumlahPemain,
-    soal: soal ? { teks: soal.teks, pilihan: soal.pilihan } : null,
+    soal: soal ? { teks: soal.teks, gambar: soal.gambar, pilihan: soal.pilihan } : null,
     kunci: tahap === 'hasil' && soal ? soal.kunci : null,
     //  Benar/salah & poin soal yang sedang berjalan baru dibuka setelah waktu habis.
     jawabanSaya: milikSaya ? (terbuka ? milikSaya : { pilihan: milikSaya.pilihan }) : null,

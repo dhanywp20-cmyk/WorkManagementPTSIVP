@@ -6,15 +6,20 @@
  * distribusi -> papan skor -> soal berikutnya -> podium). Lewati = maju satu tahap sekarang juga.
  * Peserta tidak bisa mulai sebelum Mulai ditekan.
  *
+ * Kendali presenter: Jeda / Lanjutkan (jam kuis beku - waktu membaca soal atau diskusi), Ulang soal ini,
+ * Mundur ke soal sebelumnya (jawaban soal itu dianulir), dan Dari awal (kembali ke lobi kapan saja;
+ * Mulai berikutnya = sesi baru, skor sesi lama tetap ada di Hasil).
+ *
  * Tampil di atas SELURUH platform (portal ke <body>, lapisan Z.layarHost) dan isinya disusun di
  * panggung 16:9 yang diskalakan memenuhi layar, jadi di proyektor/monitor mana pun tidak ada yang
  * terpotong. Layar tegak (HP) memakai tata letak biasa yang bisa digulir.
  * Status dibaca dari /api/admin/kelas-eksternal?live=<id> (berkala) dan tombol mengirim aksi live_*.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BarChart3, Check, Maximize, Minimize, Play, RotateCcw, SkipForward, Square, Users, X } from 'lucide-react';
+import { BarChart3, Check, Maximize, Minimize, Pause, Play, RefreshCcw, RotateCcw, SkipBack, SkipForward, Square, Users, X } from 'lucide-react';
 import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 import { ModalPortal } from '@/components/shared/ModalPortal';
+import { GambarSoal } from '@/components/shared/GambarSoal';
 import { appBaseUrl } from '@/lib/app-url';
 import type { KelasEksternal, Pilihan } from '@/lib/kelas-eksternal';
 import type { AksiLive, Tahap } from '@/lib/kuis-live';
@@ -115,8 +120,10 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
     return () => document.removeEventListener('fullscreenchange', ubah);
   }, []);
 
-  const kini = sekarang();
   const h = host;
+  //  Dijeda: jam kuis beku di titik jeda - hitung mundur & bilah waktu berhenti di layar.
+  const kini = h?.jedaMs ?? sekarang();
+  const dijeda = !!h?.jedaMs;
   //  Layar tegak (admin memegang HP): huruf diperkecil dan teks tidak dipotong - halaman bisa digulir.
   const huruf = (teks: string, tangga: [number, number][]) => Math.round(ukuranTeks(teks, tangga) * (skala ? 1 : 0.6));
   const potong = skala ? 'line-clamp-3' : '';
@@ -145,8 +152,18 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
     confirmLabel: 'Akhiri', danger: true, onConfirm: async () => { setKonfirmasi(null); await aksi('live_akhiri'); },
   });
   const tutup = () => { keluarLayarPenuh(); onTutup(); };
+  const pastikan = (message: string, description: string, confirmLabel: string, a: AksiLive) => setKonfirmasi({
+    message, description, confirmLabel, danger: true, onConfirm: async () => { setKonfirmasi(null); await aksi(a); },
+  });
+  const ulangSoal = () => pastikan(`Ulang soal ${(h?.indeks ?? 0) + 1}?`,
+    'Soal ini dimainkan lagi dari hitung mundur. Jawaban yang sudah masuk untuk soal ini dianulir dan poinnya dihapus.', 'Ulang soal', 'live_ulang_soal');
+  const mundur = () => pastikan(`Kembali ke soal ${h?.indeks ?? 0}?`,
+    'Soal sebelumnya dimainkan lagi. Jawaban soal itu dan soal sesudahnya dianulir, papan skor ikut mundur.', 'Mundur', 'live_mundur');
+  const dariAwal = () => pastikan('Ulang kuis dari awal?',
+    'Kembali ke lobi, pemain tetap terdaftar. Tekan Mulai untuk sesi baru - skor sesi ini tetap tersimpan di Hasil (pilih sesi).', 'Dari awal', 'live_ulang');
 
-  const keteranganOtomatis = !h || sisaOtomatis === null ? null
+  const keteranganOtomatis = dijeda ? 'Dijeda - tekan Lanjutkan bila sudah siap'
+    : !h || sisaOtomatis === null ? null
     : tahap === 'siap' ? `Pilihan muncul dalam ${sisaOtomatis}`
       : tahap === 'hasil' ? `Papan skor dalam ${sisaOtomatis}`
         : tahap === 'papan' ? `${terakhir ? 'Podium' : 'Soal berikutnya'} dalam ${sisaOtomatis}`
@@ -161,7 +178,14 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
           <p className="truncate text-[17px] font-black">{kelas.judul}</p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-black/25 px-3 py-1.5 text-[14px] font-black tabular-nums"><Users size={15} />{h?.pemain.length ?? 0}</span>
-        {berjalan && <button type="button" className={tombolKecil} onClick={akhiri} disabled={sibuk}><Square size={13} />Akhiri</button>}
+        {berjalan && (
+          <>
+            {h!.indeks > 0 && <button type="button" className={tombolKecil} onClick={mundur} disabled={sibuk} title="Mainkan lagi soal sebelumnya"><SkipBack size={13} />Mundur</button>}
+            <button type="button" className={tombolKecil} onClick={ulangSoal} disabled={sibuk} title="Mainkan lagi soal ini"><RotateCcw size={13} />Ulang soal</button>
+            <button type="button" className={tombolKecil} onClick={dariAwal} disabled={sibuk} title="Kembali ke lobi - sesi baru"><RefreshCcw size={13} />Dari awal</button>
+            <button type="button" className={tombolKecil} onClick={akhiri} disabled={sibuk}><Square size={13} />Akhiri</button>
+          </>
+        )}
         <button type="button" className={tombolKecil} onClick={() => (penuh ? keluarLayarPenuh() : masukLayarPenuh())} title="Layar penuh">
           {penuh ? <Minimize size={15} /> : <Maximize size={15} />}
         </button>
@@ -174,6 +198,11 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
         </div>
       )}
       {galat && <p className="mx-6 mt-3 rounded-xl bg-red-600/90 px-4 py-2 text-[14px] font-bold flex-shrink-0">{galat}</p>}
+      {dijeda && (
+        <p className="mx-6 mt-3 self-center inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2 text-[18px] font-black text-slate-900 shadow-lg flex-shrink-0">
+          <Pause size={18} fill="currentColor" />DIJEDA
+        </p>
+      )}
 
       <main className="flex-1 min-h-0 flex flex-col px-6 py-4">
         {!h && <div className="m-auto w-12 h-12 rounded-full border-[5px] border-white/25 border-t-white animate-spin" aria-label="Memuat" />}
@@ -223,6 +252,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
               <p className="rounded-3xl bg-white text-slate-900 px-8 py-6 font-black leading-tight shadow-2xl"
                 style={{ fontSize: huruf(h.soal.teks, [[70, 44], [130, 36], [220, 30], [9999, 24]]) }}>{h.soal.teks}</p>
             )}
+            <GambarSoal url={h.soal?.gambar} tinggi="max-h-[38vh]" className="shadow-2xl" />
             <HitungMundur sisaMs={(h.mulaiMs ?? 0) - kini} />
           </div>
         )}
@@ -231,6 +261,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
           <div className="flex-1 min-h-0 flex flex-col gap-4">
             <p className={`flex-shrink-0 rounded-3xl bg-white text-slate-900 px-8 py-4 text-center font-black leading-tight shadow-2xl ${potong}`}
               style={{ fontSize: huruf(h.soal.teks, [[70, 34], [130, 28], [220, 24], [9999, 20]]) }}>{h.soal.teks}</p>
+            <GambarSoal url={h.soal.gambar} tinggi="max-h-[30vh]" className="flex-shrink-0 shadow-2xl" />
 
             {tahap === 'soal' ? (
               <div className="flex-1 min-h-0 grid grid-cols-[auto_1fr_auto] items-center gap-8">
@@ -321,7 +352,19 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
             <span className="mr-auto rounded-full bg-black/25 px-4 py-2 text-[14px] font-bold tabular-nums">{keteranganOtomatis}</span>
           )}
           {berjalan && (
-            <button type="button" className={tombolUtama} disabled={sibuk} onClick={() => void aksi('live_lewati')}>
+            dijeda ? (
+              <button type="button" className={tombolUtama} disabled={sibuk} onClick={() => void aksi('live_lanjutkan')}>
+                <Play size={19} fill="currentColor" />Lanjutkan
+              </button>
+            ) : (
+              <button type="button" className={`${tombolKecil} !text-[15px] !px-4 !py-3`} disabled={sibuk} onClick={() => void aksi('live_jeda')}
+                title="Bekukan waktu - untuk membaca soal atau diskusi">
+                <Pause size={16} fill="currentColor" />Jeda
+              </button>
+            )
+          )}
+          {berjalan && (
+            <button type="button" className={tombolUtama} disabled={sibuk || dijeda} onClick={() => void aksi('live_lewati')}>
               <SkipForward size={19} />Lewati
             </button>
           )}
