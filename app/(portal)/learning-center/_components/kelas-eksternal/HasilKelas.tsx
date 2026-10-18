@@ -9,7 +9,21 @@ import { LABEL_PELANGGARAN, type JenisPelanggaran } from '@/lib/kelas-eksternal'
 const LABEL_OTOMATIS: Record<string, string> = { waktu: 'Waktu habis', pelanggaran: 'Batas pelanggaran', diakhiri: 'Diakhiri admin' };
 const SINGKAT: Record<JenisPelanggaran, string> = { pindah_tab: 'Tab', keluar_jendela: 'Jendela', salin_tempel: 'Salin' };
 
-interface BarisHasil {
+/** Perusahaan & kontak peserta (migrasi 054) - kosong untuk kelas "Nama saja". */
+interface DataPeserta { instansi?: string | null; kontak?: string | null; izin_kontak?: boolean }
+const kolomData = ['Perusahaan', 'Kontak', 'Bersedia dihubungi'];
+const isiData = (d: DataPeserta) => [d.instansi ?? '', d.kontak ?? '', d.kontak ? (d.izin_kontak ? 'Ya' : 'Tidak') : ''];
+
+function SubNama({ d }: { d: DataPeserta }) {
+  if (!d.instansi && !d.kontak) return null;
+  return (
+    <span className="block text-[11.5px] font-normal text-slate-500">
+      {d.instansi}{d.kontak && <> · {d.kontak}{d.izin_kontak && <span className="ml-1 text-emerald-700 font-semibold" title="Bersedia dihubungi">✓ boleh dihubungi</span>}</>}
+    </span>
+  );
+}
+
+interface BarisHasil extends DataPeserta {
   id: string; nama: string; created_at: string; percobaan: number;
   hasil: {
     mulai_pada: string; selesai_pada: string | null; benar: number | null; jumlah: number | null; skor: number | null; lulus: boolean | null;
@@ -44,9 +58,9 @@ export function HasilKelas({ id, judul, onTutup }: { id: string; judul: string; 
   if (live) return <PapanLive judul={judul} live={live} onSesi={setSesi} onTutup={onTutup} />;
 
   const unduh = () => {
-    const kepala = ['Nama', 'Terdaftar', 'Selesai', 'Nilai', 'Benar', 'Jumlah soal', 'Lulus', 'Durasi (detik)', 'Lewat waktu', 'Pindah tab', 'Keluar jendela', 'Salin/tempel', 'Dikirim otomatis', 'Percobaan'];
+    const kepala = ['Nama', ...kolomData, 'Terdaftar', 'Selesai', 'Nilai', 'Benar', 'Jumlah soal', 'Lulus', 'Durasi (detik)', 'Lewat waktu', 'Pindah tab', 'Keluar jendela', 'Salin/tempel', 'Dikirim otomatis', 'Percobaan'];
     const sel = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const isi = (baris ?? []).map(b => [b.nama, b.created_at, b.hasil?.selesai_pada ?? '', b.hasil?.skor ?? '', b.hasil?.benar ?? '', b.hasil?.jumlah ?? '',
+    const isi = (baris ?? []).map(b => [b.nama, ...isiData(b), b.created_at, b.hasil?.selesai_pada ?? '', b.hasil?.skor ?? '', b.hasil?.benar ?? '', b.hasil?.jumlah ?? '',
       b.hasil?.selesai_pada ? (b.hasil.lulus ? 'Ya' : 'Tidak') : '', b.hasil?.durasi_detik ?? '', b.hasil?.lewat_waktu ? 'Ya' : '',
       b.hasil?.pindah_tab ?? '', b.hasil?.keluar_jendela ?? '', b.hasil?.salin_tempel ?? '', b.hasil?.dikirim_otomatis ? LABEL_OTOMATIS[b.hasil.dikirim_otomatis] ?? '' : '', b.percobaan].map(sel).join(','));
     const blob = new Blob(['﻿' + [kepala.map(sel).join(','), ...isi].join('\r\n')], { type: 'text/csv;charset=utf-8' });
@@ -82,7 +96,7 @@ export function HasilKelas({ id, judul, onTutup }: { id: string; judul: string; 
             <tbody className="divide-y divide-slate-100">
               {[...baris].sort((a, b) => (b.hasil?.skor ?? -1) - (a.hasil?.skor ?? -1)).map(b => (
                 <tr key={b.id}>
-                  <td className="px-2 py-2 font-semibold text-slate-800">{b.nama}{b.percobaan > 1 && <span className="ml-1.5 text-[11px] font-bold text-slate-400">×{b.percobaan}</span>}</td>
+                  <td className="px-2 py-2 font-semibold text-slate-800">{b.nama}{b.percobaan > 1 && <span className="ml-1.5 text-[11px] font-bold text-slate-400">×{b.percobaan}</span>}<SubNama d={b} /></td>
                   <td className="px-2 py-2 text-slate-600 whitespace-nowrap">{b.hasil?.selesai_pada ? waktu(b.hasil.selesai_pada) : b.hasil ? 'Mengerjakan' : 'Belum mulai'}</td>
                   <td className="px-2 py-2 text-right font-bold tabular-nums text-slate-900">{b.hasil?.skor ?? '-'}</td>
                   <td className="px-2 py-2 text-right tabular-nums text-slate-600">{b.hasil?.selesai_pada ? `${b.hasil.benar}/${b.hasil.jumlah}` : '-'}</td>
@@ -116,7 +130,7 @@ export function HasilKelas({ id, judul, onTutup }: { id: string; judul: string; 
 
 interface HasilLive {
   sesi: number; jumlahSesi: number; dimainkan: number;
-  papan: { peserta_id: string; nama: string; poin: number; benar: number; dijawab: number; waktuBenarMs: number; peringkat: number }[];
+  papan: ({ peserta_id: string; nama: string; poin: number; benar: number; dijawab: number; waktuBenarMs: number; peringkat: number } & DataPeserta)[];
 }
 
 /** Kuis Live: peringkat akhir satu sesi (tanpa nilai lulus) + CSV. */
@@ -124,8 +138,8 @@ function PapanLive({ judul, live, onSesi, onTutup }: { judul: string; live: Hasi
   const rata = (b: HasilLive['papan'][number]) => (b.benar ? (b.waktuBenarMs / b.benar / 1000).toFixed(1) : '-');
   const unduh = () => {
     const sel = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const kepala = ['Peringkat', 'Nama', 'Poin', 'Benar', 'Dijawab', 'Soal dimainkan', 'Rata-rata waktu benar (detik)'];
-    const isi = live.papan.map(b => [b.peringkat, b.nama, b.poin, b.benar, b.dijawab, live.dimainkan, rata(b)].map(sel).join(','));
+    const kepala = ['Peringkat', 'Nama', ...kolomData, 'Poin', 'Benar', 'Dijawab', 'Soal dimainkan', 'Rata-rata waktu benar (detik)'];
+    const isi = live.papan.map(b => [b.peringkat, b.nama, ...isiData(b), b.poin, b.benar, b.dijawab, live.dimainkan, rata(b)].map(sel).join(','));
     const blob = new Blob(['\ufeff' + [kepala.map(sel).join(','), ...isi].join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -162,7 +176,7 @@ function PapanLive({ judul, live, onSesi, onTutup }: { judul: string; live: Hasi
               {live.papan.map(b => (
                 <tr key={b.peserta_id}>
                   <td className="px-2 py-2 font-black tabular-nums text-slate-700">{b.peringkat <= 3 ? ['🥇', '🥈', '🥉'][b.peringkat - 1] : b.peringkat}</td>
-                  <td className="px-2 py-2 font-semibold text-slate-800">{b.nama}</td>
+                  <td className="px-2 py-2 font-semibold text-slate-800">{b.nama}<SubNama d={b} /></td>
                   <td className="px-2 py-2 text-right font-bold tabular-nums text-slate-900">{b.poin.toLocaleString('id-ID')}</td>
                   <td className="px-2 py-2 text-right tabular-nums text-slate-600">{b.benar}/{live.dimainkan}</td>
                   <td className="px-2 py-2 text-right tabular-nums text-slate-600">{rata(b)}{b.benar ? ' dtk' : ''}</td>

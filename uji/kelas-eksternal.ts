@@ -7,8 +7,8 @@
  */
 import { readFileSync } from 'fs';
 import {
-  acakUrutan, acuanWaktu, alasanKirimSah, jenisPelanggaranSah, lewatWaktu, menungguAdmin, nilaiJawaban, rapikanKelas,
-  rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
+  acakUrutan, acuanWaktu, alasanKirimSah, jenisPelanggaranSah, lewatWaktu, menungguAdmin, nilaiJawaban, rapikanDataPeserta,
+  rapikanIsianPeserta, rapikanKelas, rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
 } from '../lib/kelas-eksternal';
 
 let lulus = 0, gagal = 0;
@@ -59,7 +59,7 @@ cek('angka dibatasi & duplikat soal dibuang', !('galat' in r) && r.timer_menit =
 console.log('\n6. Pengaman');
 const route = readFileSync('app/api/kelas/[token]/route.ts', 'utf8');
 const mulai = route.slice(route.indexOf("if (aksi === 'mulai')"), route.indexOf("if (aksi === 'kirim')"));
-cek('soal untuk customer TANPA kunci jawaban', /select\('id,question,option_a,option_b,option_c,option_d'\)/.test(mulai) && !/correct_answer/.test(mulai));
+cek('soal untuk customer TANPA kunci jawaban', /select\('id,question,option_a,option_b,option_c,option_d,gambar_url'\)/.test(mulai) && !/correct_answer/.test(mulai));
 cek('kunci jawaban hanya dibaca saat menilai', !/correct_answer/.test(route.slice(0, route.indexOf("if (aksi === 'kirim')"))) && /correct_answer/.test(route.slice(route.indexOf("if (aksi === 'kirim')"))));
 cek('hanya soal ABCD dipakai', /\.eq\('question_type', 'abcd'\)/.test(route));
 cek('token peserta disimpan sebagai hash', /token_hash: hash\(tokenPeserta\)/.test(route) && /\.eq\('token_hash', hash\(t\)\)/.test(route));
@@ -100,6 +100,31 @@ const quiz = readFileSync('app/kelas/[token]/_bagian/LayarQuiz.tsx', 'utf8');
 cek('quiz: kirim otomatis waktu / pelanggaran / diakhiri', /kirim\('waktu'\)/.test(quiz) && /kirim\('pelanggaran'\)/.test(quiz) && /kirim\('diakhiri'\)/.test(quiz));
 const adminR = readFileSync('app/api/admin/kelas-eksternal/route.ts', 'utf8');
 cek('admin: Mulai sekarang / Akhiri / Buka lagi', /aksi === 'mulai' \|\| body\.aksi === 'akhiri' \|\| body\.aksi === 'buka_lagi'/.test(adminR) && /dimulai_pada: sekarang/.test(adminR));
+
+console.log('\n8. Data peserta (perusahaan & kontak, migrasi 054)');
+cek('isian: nilai tak dikenal -> nama saja', rapikanIsianPeserta('aneh') === 'nama' && rapikanIsianPeserta('kontak') === 'kontak');
+cek('kelas: isian_peserta disimpan, bawaan nama', !('galat' in rk2) && rk2.isian_peserta === 'nama'
+  && (rapikanKelas({ judul: 'A', question_ids: [id], isian_peserta: 'instansi' }) as { isian_peserta: string }).isian_peserta === 'instansi');
+const dNama = rapikanDataPeserta('nama', { instansi: 'PT Selundupan', kontak: 'x@y.co', izin_kontak: true });
+cek('nama saja: data yang tidak diminta dibuang', !('galat' in dNama) && dNama.instansi === null && dNama.kontak === null && dNama.izin_kontak === false);
+cek('instansi: wajib diisi', 'galat' in rapikanDataPeserta('instansi', { instansi: ' ' }));
+const dIns = rapikanDataPeserta('instansi', { instansi: '  PT   Maju <b>Jaya</b> ', kontak: 'a@b.co' });
+cek('instansi: dirapikan, kontak tidak diminta -> dibuang', !('galat' in dIns) && dIns.instansi === 'PT Maju bJaya/b' && dIns.kontak === null);
+const dKosong = rapikanDataPeserta('kontak', { instansi: 'PT A', kontak: '', izin_kontak: true });
+cek('kontak opsional: kosong boleh, izin ikut kosong', !('galat' in dKosong) && dKosong.kontak === null && dKosong.izin_kontak === false);
+const dEmail = rapikanDataPeserta('kontak', { instansi: 'PT A', kontak: 'budi@ptA.co.id', izin_kontak: true });
+cek('kontak: email + izin', !('galat' in dEmail) && dEmail.kontak === 'budi@ptA.co.id' && dEmail.izin_kontak === true);
+const dHp = rapikanDataPeserta('kontak', { instansi: 'PT A', kontak: '+62 812-3456-7890', izin_kontak: 'ya' });
+cek('kontak: nomor HP diterima, izin harus boolean true', !('galat' in dHp) && dHp.kontak === '+62 812-3456-7890' && dHp.izin_kontak === false);
+cek('kontak: bukan email/HP ditolak', 'galat' in rapikanDataPeserta('kontak', { instansi: 'PT A', kontak: 'hubungi saya' }));
+cek('route: daftar menyimpan data sesuai pengaturan kelas', /rapikanDataPeserta\(rapikanIsianPeserta\(kelas\.isian_peserta\), body\)/.test(route) && /token_hash: hash\(tokenPeserta\), \.\.\.data \}/.test(route));
+cek('route: data kontak TIDAK dikirim ke peramban peserta', !/kontak: peserta\.kontak/.test(route) && /select\('id,nama,instansi'\)/.test(route));
+cek('route: gambar soal hanya URL unggahan sendiri', /gambar: rapikanUrlGambar\(s\.gambar_url\)/.test(route));
+cek('admin: perusahaan & kontak di hasil + CSV live', /select\('id,nama,created_at,instansi,kontak,izin_kontak'\)/.test(adminR) && /papan: papanLengkap/.test(adminR));
+const sql54 = readFileSync('supabase/migrations/054_kuis_eksternal_lanjut.sql', 'utf8');
+cek('054: kolom & batas panjang', /isian_peserta IN \('nama', 'instansi', 'kontak'\)/.test(sql54) && /char_length\(instansi\) BETWEEN 2 AND 120/.test(sql54) && /ADD COLUMN IF NOT EXISTS gambar_url text/.test(sql54));
+const halaman = readFileSync('app/kelas/[token]/page.tsx', 'utf8');
+cek('sertifikat: hanya bila lulus, nomor dari id hasil', /hasil\.lulus && info\.peserta && hasil\.id \?/.test(halaman) && /attempt: \{ id: hasil\.id, passed: true/.test(halaman));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

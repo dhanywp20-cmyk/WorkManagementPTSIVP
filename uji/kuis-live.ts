@@ -4,7 +4,7 @@
  *   npx tsx uji/kuis-live.ts
  */
 import {
-  HASIL_MS, HITUNG_MUNDUR_MS, PAPAN_MS, TOLERANSI_MS, distribusi, indeksTerhitung, jadwalLive, periksaJawab, poinKahoot,
+  HASIL_MS, HITUNG_MUNDUR_MS, PAPAN_MS, TOLERANSI_MS, anulirDari, distribusi, indeksTerhitung, jadwalLive, periksaJawab, poinKahoot,
   posisiSaya, rapikanDetik, rapikanUrlGambar, rapikanWarna, semuaMenjawab, statusLive, susunPapan, tahapEfektif, transisiLive,
   wujudkanLive, type StatusLive, type UbahanLive,
 } from '../lib/kuis-live';
@@ -204,6 +204,66 @@ console.log('\n9. Isian admin');
   cek('maks peserta live dibatasi 500', !('galat' in live) && live.maks_peserta === 500);
   const lama = rapikanKelas({ judul: 'Ujian', question_ids: [id] });
   cek('tanpa jenis = mandiri (kelas lama tidak berubah)', !('galat' in lama) && lama.jenis === 'mandiri');
+}
+
+console.log('\n10. Jeda / Lanjutkan (momen membaca & diskusi)');
+{
+  //  Jeda di tengah soal 1: 5 dtk setelah pilihan terbuka -> sisa 15 dtk.
+  const tJeda = MULAI0 + 5_000;
+  const beku = terapkan(s1, transisiLive(s1, 'live_jeda', tJeda));
+  cek('jeda tercatat', beku.live_jeda_pada === iso(tJeda));
+  const jb = jadwalLive(beku, tJeda + 600_000);
+  cek('10 menit kemudian tetap di soal yang sama (jam beku)', jb.tahap === 'soal' && jb.indeks === 0 && jb.jedaMs === tJeda);
+  cek('tanpa pergantian otomatis selama dijeda', jb.akhirMs === null);
+  const tolak = periksaJawab(beku, 0, 'A', tJeda + 1000);
+  cek('jawaban ditahan selama dijeda', !tolak.ok && /dijeda/.test(tolak.alasan));
+  cek('Lewati ditolak selama dijeda', 'galat' in transisiLive(beku, 'live_lewati', tJeda + 1000));
+  cek('jeda dua kali ditolak', 'galat' in transisiLive(beku, 'live_jeda', tJeda + 1000));
+  cek('rapikan acuan tidak menyentuh kuis yang dijeda', wujudkanLive(beku, tJeda + 600_000) === null);
+  cek('indeks terhitung ikut jam beku (poin soal ini belum dibuka)', indeksTerhitung(beku, tJeda + 600_000) === -1);
+
+  const tLanjut = tJeda + 600_000;
+  const jalan = terapkan(beku, transisiLive(beku, 'live_lanjutkan', tLanjut));
+  cek('lanjutkan menghapus jeda', jalan.live_jeda_pada === null);
+  const jl = jadwalLive(jalan, tLanjut);
+  cek('sisa waktu sama persis seperti saat dijeda (15 dtk)', jl.tahap === 'soal' && jl.tutupMs! - tLanjut === 15_000);
+  const ok = periksaJawab(jalan, 0, 'B', tLanjut + 1000);
+  cek('waktu jawab tidak menghitung lama jeda (6 dtk, bukan 10 menit)', ok.ok && ok.waktuMs === 6_000);
+  cek('lanjutkan tanpa jeda ditolak', 'galat' in transisiLive(jalan, 'live_lanjutkan', tLanjut + 1));
+  cek('jeda di lobi ditolak', 'galat' in transisiLive(lobi, 'live_jeda', T0));
+
+  //  Jeda saat jawaban dibuka (diskusi) lalu lanjut: papan skor tampil penuh 6 dtk sesudahnya.
+  const tHasil = HABIS0 + 2_000;
+  const bekuHasil = terapkan(s1, transisiLive(s1, 'live_jeda', tHasil));
+  cek('jeda di layar hasil tetap di hasil', jadwalLive(bekuHasil, tHasil + 900_000).tahap === 'hasil');
+  const lanjutHasil = terapkan(bekuHasil, transisiLive(bekuHasil, 'live_lanjutkan', tHasil + 900_000));
+  const jh = jadwalLive(lanjutHasil, tHasil + 900_000);
+  cek('lanjut dari hasil: sisa layar hasil 4 dtk lalu papan', jh.tahap === 'hasil' && jh.akhirMs! - (tHasil + 900_000) === HASIL_MS - 2_000);
+  cek('Akhiri saat dijeda menghapus jeda', terapkan(bekuHasil, transisiLive(bekuHasil, 'live_akhiri', tHasil + 1)).live_jeda_pada === null);
+}
+
+console.log('\n11. Ulang soal / mundur / dari awal (sesi dianulir)');
+{
+  const tSoal2 = MULAI1 + 3_000;
+  const ulang = transisiLive(s1, 'live_ulang_soal', tSoal2);
+  const sUlang = terapkan(s1, ulang);
+  const ju = jadwalLive(sUlang, tSoal2 + 1);
+  cek('ulang soal: soal yang sama dari hitung mundur', ju.tahap === 'siap' && ju.indeks === 1 && ju.mulaiMs === tSoal2 + HITUNG_MUNDUR_MS);
+  cek('ulang soal: waktu soal penuh lagi', ju.tutupMs! - ju.mulaiMs! === S);
+  cek('ulang soal: jawaban soal ini dianulir', anulirDari('live_ulang_soal', jadwalLive(s1, tSoal2)) === 1);
+  const sMundur = terapkan(s1, transisiLive(s1, 'live_mundur', tSoal2));
+  cek('mundur: kembali ke soal sebelumnya', jadwalLive(sMundur, tSoal2 + 1).indeks === 0);
+  cek('mundur: jawaban soal itu & sesudahnya dianulir', anulirDari('live_mundur', jadwalLive(s1, tSoal2)) === 0);
+  cek('mundur dari soal pertama ditolak', 'galat' in transisiLive(s1, 'live_mundur', MULAI0 + 1000));
+  cek('aksi lain tidak menganulir apa pun', anulirDari('live_lewati', jadwalLive(s1, tSoal2)) === null && anulirDari('live_jeda', jadwalLive(s1, tSoal2)) === null);
+  const bekuLalu = terapkan(s1, transisiLive(s1, 'live_jeda', tSoal2));
+  cek('ulang soal saat dijeda: jalan lagi tanpa jeda', terapkan(bekuLalu, transisiLive(bekuLalu, 'live_ulang_soal', tSoal2 + 5000)).live_jeda_pada === null);
+
+  const awal = terapkan(s1, transisiLive(s1, 'live_ulang', tSoal2));
+  cek('dari awal kapan saja (soal 2 berjalan) -> lobi', awal.live_tahap === 'lobi' && awal.live_indeks === 0 && awal.live_jeda_pada === null);
+  const sesiBaru = terapkan(awal, transisiLive(awal, 'live_mulai', tSoal2 + 10_000, ['q1', 'q2', 'q3']));
+  cek('Mulai lagi = sesi baru (skor sesi lama tetap terpisah)', sesiBaru.live_sesi === s1.live_sesi + 1);
+  cek('dari awal di lobi ditolak', 'galat' in transisiLive(lobi, 'live_ulang', T0));
 }
 
 console.log(`\n${gagal === 0 ? 'SEMUA LULUS' : 'ADA YANG GAGAL'} - ${lulus} lulus, ${gagal} gagal\n`);

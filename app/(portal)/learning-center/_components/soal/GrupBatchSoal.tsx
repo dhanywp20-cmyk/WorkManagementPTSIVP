@@ -4,6 +4,7 @@
 import { bandingkanUrutan } from '@/lib/urutan-soal';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Material, Question, BtnEdit, BtnDelete } from '../shared';
+import { GambarSoal } from '@/components/shared/GambarSoal';
 import { DIFF_BG, DIFF_BORDER, DIFF_LABEL, DIFF_NUM_BG, DIFF_TEXT } from '../QuestionsPage';
 
 export interface GrupBatchSoalProps {
@@ -193,6 +194,7 @@ export function GrupBatchSoal({ batchKeys, buangDraf, bukaTambahDiGrup, expanded
                           <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-200 mb-1.5"><IkonTeks nama="📝" />ESSAY</span>
                         )}
                         <p style={{ fontSize: 13, fontWeight: 600, color: '#0f172a', lineHeight: 1.6, marginBottom: 10 }}>{q.question}</p>
+                        <GambarSoal url={q.gambar_url} tinggi="max-h-32" className="!mx-0 mb-2.5 border border-slate-200" />
                         {q.question_type === 'essay' ? (
                           q.model_answer ? (
                             <div className="px-2.5 py-2 rounded-lg border border-indigo-100 bg-indigo-50/60 text-xs text-indigo-800 mb-2.5">

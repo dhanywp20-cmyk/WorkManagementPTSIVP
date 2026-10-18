@@ -6,6 +6,10 @@
  * data hanya lobi/soal/papan/selesai; 'siap' (hitung mundur sebelum pilihan muncul) dan 'hasil'
  * (waktu habis, kunci dibuka) diturunkan dari live_soal_mulai/live_soal_tutup - jadi pergantian
  * karena waktu tidak butuh penjadwal di server, cukup jam.
+ *
+ * Jeda (live_jeda_pada): jam kuis DIBEKUKAN - semua tahap dihitung pada saat jeda ditekan, hitung
+ * mundur berhenti, jawaban ditahan. Lanjutkan menggeser titik acuan sejauh lama jeda, jadi sisa
+ * waktu soal persis sama seperti saat dijeda. Untuk momen membaca soal / diskusi dengan presenter.
  */
 import type { Pilihan } from './kelas-eksternal';
 
@@ -32,6 +36,8 @@ export interface StatusLive {
   detik_per_soal: number;
   live_tahap: TahapSimpan; live_indeks: number; live_urutan: string[];
   live_soal_mulai: string | null; live_soal_tutup: string | null; live_sesi: number;
+  /** Saat Jeda ditekan; null = berjalan (migrasi 054). */
+  live_jeda_pada?: string | null;
 }
 
 const ms = (iso: string | null) => (iso ? new Date(iso).getTime() : 0);
@@ -43,11 +49,13 @@ export interface Jadwal {
   indeks: number;
   mulaiMs: number | null;
   tutupMs: number | null;
-  /** Kapan tahap ini berganti otomatis; null = menunggu admin (lobi, selesai). */
+  /** Kapan tahap ini berganti otomatis; null = menunggu admin (lobi, selesai, atau sedang dijeda). */
   akhirMs: number | null;
+  /** Dijeda sejak kapan (jam kuis beku di titik ini); null = berjalan. */
+  jedaMs: number | null;
 }
 
-type DasarJadwal = Pick<StatusLive, 'live_tahap' | 'live_indeks' | 'live_urutan' | 'live_soal_mulai' | 'live_soal_tutup' | 'detik_per_soal'>;
+type DasarJadwal = Pick<StatusLive, 'live_tahap' | 'live_indeks' | 'live_urutan' | 'live_soal_mulai' | 'live_soal_tutup' | 'detik_per_soal' | 'live_jeda_pada'>;
 
 /**
  * Kuis berjalan sendiri mengikuti waktu: siap (hitung mundur) -> soal -> hasil -> papan -> soal
@@ -58,16 +66,25 @@ type DasarJadwal = Pick<StatusLive, 'live_tahap' | 'live_indeks' | 'live_urutan'
  */
 export function jadwalLive(k: DasarJadwal, sekarang = Date.now()): Jadwal {
   if (k.live_tahap === 'lobi' || k.live_tahap === 'selesai') {
-    return { tahap: k.live_tahap, indeks: k.live_indeks, mulaiMs: null, tutupMs: null, akhirMs: null };
+    return { tahap: k.live_tahap, indeks: k.live_indeks, mulaiMs: null, tutupMs: null, akhirMs: null, jedaMs: null };
   }
   if (k.live_tahap === 'papan') {
-    return { tahap: 'papan', indeks: k.live_indeks, mulaiMs: ms(k.live_soal_mulai), tutupMs: ms(k.live_soal_tutup), akhirMs: null };
+    return { tahap: 'papan', indeks: k.live_indeks, mulaiMs: ms(k.live_soal_mulai), tutupMs: ms(k.live_soal_tutup), akhirMs: null, jedaMs: null };
   }
+  //  Dijeda: hitung pada saat jeda ditekan, tanpa pergantian otomatis.
+  if (k.live_jeda_pada) {
+    const jedaMs = ms(k.live_jeda_pada);
+    return { ...jalankanJadwal(k, jedaMs), akhirMs: null, jedaMs };
+  }
+  return { ...jalankanJadwal(k, sekarang), jedaMs: null };
+}
+
+function jalankanJadwal(k: DasarJadwal, sekarang: number): Omit<Jadwal, 'jedaMs'> {
   const total = Math.max(1, k.live_urutan.length);
   const durasi = k.detik_per_soal * 1000;
   let i = k.live_indeks, mulai = ms(k.live_soal_mulai), tutup = ms(k.live_soal_tutup);
   for (;;) {
-    const j = (tahap: Tahap, akhirMs: number | null): Jadwal => ({ tahap, indeks: i, mulaiMs: mulai, tutupMs: tutup, akhirMs });
+    const j = (tahap: Tahap, akhirMs: number | null): Omit<Jadwal, 'jedaMs'> => ({ tahap, indeks: i, mulaiMs: mulai, tutupMs: tutup, akhirMs });
     if (sekarang < mulai) return j('siap', mulai);
     const habis = tutup + TOLERANSI_MS;
     if (sekarang < habis) return j('soal', habis);
@@ -103,6 +120,7 @@ export function periksaJawab(k: StatusLive, indeks: unknown, pilihan: unknown, s
   if (!(PILIHAN as readonly string[]).includes(p)) return { ok: false, alasan: 'Pilihan tidak dikenal.' };
   const j = jadwalLive(k, sekarang);
   if (j.tahap === 'lobi') return { ok: false, alasan: 'Kuis belum dimulai.' };
+  if (j.jedaMs) return { ok: false, alasan: 'Kuis sedang dijeda presenter.' };
   if (Number(indeks) !== j.indeks || (j.tahap !== 'soal' && j.tahap !== 'siap' && j.tahap !== 'hasil')) return { ok: false, alasan: 'Soal sudah berganti.' };
   if (j.tahap === 'siap') return { ok: false, alasan: 'Pilihan belum dibuka.' };
   if (j.tahap === 'hasil') return { ok: false, alasan: 'Waktu habis.' };
@@ -121,9 +139,25 @@ export function indeksTerhitung(k: DasarJadwal, sekarang = Date.now()): number {
   return j.indeks;
 }
 
-/** 'live_tutup_soal' & 'live_lanjut' = nama lama 'live_lewati' (layar host versi sebelumnya). */
-export type AksiLive = 'live_mulai' | 'live_lewati' | 'live_tutup_soal' | 'live_lanjut' | 'live_akhiri' | 'live_ulang';
-export const AKSI_LIVE: readonly AksiLive[] = ['live_mulai', 'live_lewati', 'live_tutup_soal', 'live_lanjut', 'live_akhiri', 'live_ulang'];
+/**
+ * 'live_tutup_soal' & 'live_lanjut' = nama lama 'live_lewati' (layar host versi sebelumnya).
+ * live_jeda / live_lanjutkan  : bekukan / jalankan lagi jam kuis.
+ * live_ulang_soal / live_mundur: mainkan ulang soal ini / soal sebelumnya - jawaban soal itu dan
+ *                                sesudahnya di sesi ini dianulir (dihapus server, lihat anulirDari).
+ * live_ulang                   : kembali ke lobi kapan saja; Mulai berikutnya = sesi baru, skor sesi
+ *                                lama tetap tersimpan (Hasil -> pilih sesi).
+ */
+export type AksiLive = 'live_mulai' | 'live_lewati' | 'live_tutup_soal' | 'live_lanjut' | 'live_akhiri' | 'live_ulang'
+  | 'live_jeda' | 'live_lanjutkan' | 'live_ulang_soal' | 'live_mundur';
+export const AKSI_LIVE: readonly AksiLive[] = ['live_mulai', 'live_lewati', 'live_tutup_soal', 'live_lanjut', 'live_akhiri', 'live_ulang',
+  'live_jeda', 'live_lanjutkan', 'live_ulang_soal', 'live_mundur'];
+
+/** Aksi yang menganulir jawaban: jawaban sesi ini dengan indeks >= nilai ini dihapus sesudah status berubah. */
+export function anulirDari(aksi: AksiLive, j: Pick<Jadwal, 'indeks'>): number | null {
+  if (aksi === 'live_ulang_soal') return j.indeks;
+  if (aksi === 'live_mundur') return Math.max(0, j.indeks - 1);
+  return null;
+}
 export type UbahanLive = Partial<Omit<StatusLive, 'detik_per_soal'>>;
 
 /**
@@ -135,9 +169,11 @@ export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(
   const j = jadwalLive(k, sekarang);
   const durasi = k.detik_per_soal * 1000;
   const soalBaru = (indeks: number): UbahanLive => ({
-    live_tahap: 'soal', live_indeks: indeks,
+    live_tahap: 'soal', live_indeks: indeks, live_jeda_pada: null,
     live_soal_mulai: iso(sekarang + HITUNG_MUNDUR_MS), live_soal_tutup: iso(sekarang + HITUNG_MUNDUR_MS + durasi),
   });
+  const berjalan = j.tahap !== 'lobi' && j.tahap !== 'selesai';
+  const dijeda = !!j.jedaMs;
   /** Soal j.indeks dengan batas jawab digeser ke `tutup` (mulai tidak boleh sesudah tutup). */
   const geser = (tutup: number): UbahanLive => ({
     live_tahap: 'soal', live_indeks: j.indeks,
@@ -151,6 +187,7 @@ export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(
     case 'live_lewati':
     case 'live_tutup_soal':
     case 'live_lanjut':
+      if (dijeda) return { galat: 'Kuis sedang dijeda - tekan Lanjutkan dulu.' };
       //  Tutup soal: kunci langsung terbuka, jawaban yang datang sesudahnya ditolak.
       if (j.tahap === 'siap' || j.tahap === 'soal') return geser(sekarang - TOLERANSI_MS);
       //  Hasil -> papan: mundurkan acuan sejauh lama layar hasil.
@@ -160,13 +197,34 @@ export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(
       }
       return { galat: j.tahap === 'lobi' ? 'Kuis belum dimulai.' : 'Kuis sudah selesai.' };
     case 'live_akhiri':
-      if (j.tahap === 'lobi' || j.tahap === 'selesai') return { galat: 'Kuis tidak sedang berjalan.' };
+      if (!berjalan) return { galat: 'Kuis tidak sedang berjalan.' };
       return j.tahap === 'siap' || j.tahap === 'soal'
-        ? { ...geser(sekarang - TOLERANSI_MS), live_tahap: 'selesai' }
-        : { live_tahap: 'selesai', live_indeks: j.indeks };
+        ? { ...geser(sekarang - TOLERANSI_MS), live_tahap: 'selesai', live_jeda_pada: null }
+        : { live_tahap: 'selesai', live_indeks: j.indeks, live_jeda_pada: null };
     case 'live_ulang':
-      if (j.tahap !== 'selesai') return { galat: 'Kuis belum selesai.' };
-      return { live_tahap: 'lobi', live_indeks: 0, live_soal_mulai: null, live_soal_tutup: null };
+      //  Kapan saja (sesi bermasalah / dianulir): kembali ke lobi, peserta tetap terdaftar.
+      if (j.tahap === 'lobi') return { galat: 'Kuis belum dimulai.' };
+      return { live_tahap: 'lobi', live_indeks: 0, live_soal_mulai: null, live_soal_tutup: null, live_jeda_pada: null };
+    case 'live_jeda':
+      if (!berjalan || k.live_tahap !== 'soal') return { galat: 'Jeda hanya saat kuis berjalan.' };
+      if (dijeda) return { galat: 'Kuis sudah dijeda.' };
+      return { live_jeda_pada: iso(sekarang) };
+    case 'live_lanjutkan': {
+      if (!k.live_jeda_pada) return { galat: 'Kuis tidak sedang dijeda.' };
+      //  Geser titik acuan sejauh lama jeda: sisa waktu sama persis seperti saat dijeda.
+      const lama = Math.max(0, sekarang - ms(k.live_jeda_pada));
+      return {
+        live_jeda_pada: null,
+        live_soal_mulai: iso(ms(k.live_soal_mulai) + lama), live_soal_tutup: iso(ms(k.live_soal_tutup) + lama),
+      };
+    }
+    case 'live_ulang_soal':
+      if (!berjalan) return { galat: 'Kuis tidak sedang berjalan.' };
+      return soalBaru(j.indeks);
+    case 'live_mundur':
+      if (!berjalan) return { galat: 'Kuis tidak sedang berjalan.' };
+      if (j.indeks <= 0) return { galat: 'Ini sudah soal pertama.' };
+      return soalBaru(j.indeks - 1);
   }
 }
 
@@ -175,7 +233,7 @@ export function transisiLive(k: StatusLive, aksi: AksiLive, sekarang = Date.now(
  * tidak tertinggal jauh dari jadwal. Tidak mengubah apa pun yang terlihat; null = sudah sama.
  */
 export function wujudkanLive(k: StatusLive, sekarang = Date.now()): UbahanLive | null {
-  if (k.live_tahap !== 'soal') return null;
+  if (k.live_tahap !== 'soal' || k.live_jeda_pada) return null;
   const j = jadwalLive(k, sekarang);
   if (j.tahap === 'selesai') return { live_tahap: 'selesai', live_indeks: j.indeks };
   if (j.indeks === k.live_indeks) return null;

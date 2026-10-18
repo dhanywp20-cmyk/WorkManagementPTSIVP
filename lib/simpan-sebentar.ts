@@ -7,8 +7,12 @@
  * (fluid compute) melayani banyak permintaan dalam satu instance, jadi simpanan ini benar-benar
  * terpakai; instance lain punya simpanannya sendiri (paling lama `ttlMs` berbeda).
  *
- * Hanya untuk data yang boleh basi sebentar. Data milik satu orang (jawaban sendiri, token)
- * dan semua penulisan JANGAN lewat sini.
+ * Hanya untuk data yang boleh basi sebentar. Semua penulisan JANGAN lewat sini. Data milik satu orang
+ * (peserta dari tokennya, jawabannya sendiri, sesi admin) hanya boleh dengan kunci yang memuat
+ * identitasnya (hash token / id) - tidak pernah kunci bersama.
+ *
+ * Tiap query Supabase = satu baris log API (±2 KB). Hari Kuis Live 15 Okt 2026: ±80 ribu baris = ±164 MB
+ * Log Ingestion (kuota Free 1 GB/bulan) - simpanan ini yang menahannya.
  */
 
 interface Isi { sampai: number; nilai: Promise<unknown> }
@@ -29,6 +33,9 @@ export function simpanSebentar<T>(kunci: string, ttlMs: number, ambil: () => Pro
   }
   return nilai;
 }
+
+/** Buang satu isi (mis. hasil kosong yang tidak boleh ikut disimpan). */
+export const hapusSimpanan = (kunci: string) => { simpanan.delete(kunci); };
 
 /** Untuk uji. */
 export const kosongkanSimpanan = () => simpanan.clear();

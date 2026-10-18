@@ -2,7 +2,8 @@
  * /api/kelas/<token> - Kelas Eksternal Learning Center untuk customer (PUBLIK, tanpa login).
  *
  *  GET                              -> info kelas + status peserta (header x-peserta: token perangkat)
- *  POST { aksi:'daftar', nama }     -> { token }   (cukup nama; perangkat sama = peserta sama)
+ *  POST { aksi:'daftar', nama, instansi?, kontak?, izin_kontak? } -> { token }
+ *                                   (isian sesuai kelas.isian_peserta; perangkat sama = peserta sama)
  *  POST { aksi:'mulai' }            -> soal TANPA kunci jawaban (melanjutkan percobaan yang terbuka)
  *  POST { aksi:'kirim', jawaban, alasan? } -> { skor, benar, jumlah, lulus } - dinilai di server
  *  POST { aksi:'pelanggaran', jenis }        -> { total, batas, kirimOtomatis }
@@ -23,11 +24,11 @@ import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
 import {
   PESAN_STATUS, acakUrutan, acuanWaktu, alasanKirimSah, jenisPelanggaranSah, lewatWaktu, menungguAdmin, nilaiJawaban,
-  rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
+  rapikanDataPeserta, rapikanIsianPeserta, rapikanNama, saringJawaban, sisaWaktuMs, statusKelas,
 } from '@/lib/kelas-eksternal';
-import { PESAN_LIVE, periksaJawab, poinKahoot, statusLive } from '@/lib/kuis-live';
+import { PESAN_LIVE, periksaJawab, poinKahoot, rapikanUrlGambar, statusLive } from '@/lib/kuis-live';
 import { keadaanPeserta, muatSoalLive, tutupBilaSemuaMenjawab, type KelasLive } from '@/lib/kuis-live-server';
-import { simpanSebentar } from '@/lib/simpan-sebentar';
+import { hapusSimpanan, simpanSebentar } from '@/lib/simpan-sebentar';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,7 +39,7 @@ const hash = (t: string) => crypto.createHash('sha256').update(t).digest('hex');
 const TOKEN_SAH = /^[A-Za-z0-9_-]{16,64}$/;
 
 type Db = ReturnType<typeof getAdminClient>;
-interface Peserta { id: string; nama: string }
+interface Peserta { id: string; nama: string; instansi: string | null }
 interface Hasil {
   id: string; percobaan: number; urutan_soal: string[]; mulai_pada: string; selesai_pada: string | null;
   benar: number | null; jumlah: number | null; skor: number | null; lulus: boolean | null;
@@ -51,11 +52,21 @@ async function muatKelas(db: Db, token: string): Promise<KelasLive | null> {
 }
 
 /**
- * GET (dibaca 100+ HP tiap 2,5 dtk): kelas & jumlah peserta disimpan sebentar di memori, jadi
- * HP yang menyegarkan bersamaan berbagi satu query. POST (daftar, jawab) selalu membaca langsung.
+ * GET (dibaca 100+ HP berkala): kelas & jumlah peserta disimpan sebentar di memori, jadi HP yang
+ * menyegarkan bersamaan berbagi satu query; peserta dari tokennya disimpan 60 dtk per token (hanya bila
+ * ditemukan - yang baru mendaftar langsung dikenali). POST (daftar, jawab) selalu membaca langsung.
+ * Tiap query = satu baris log Supabase (kuota Log Ingestion Free 1 GB) - lihat lib/simpan-sebentar.ts.
  */
-const muatKelasSebentar = (db: Db, token: string) => simpanSebentar(`kelas:${token}`, 1000, () => muatKelas(db, token));
-const jumlahPesertaSebentar = (db: Db, kelasId: string) => simpanSebentar(`jumlah:${kelasId}`, 2000, () => jumlahPeserta(db, kelasId));
+const muatKelasSebentar = (db: Db, token: string) => simpanSebentar(`kelas:${token}`, 2000, () => muatKelas(db, token));
+const jumlahPesertaSebentar = (db: Db, kelasId: string) => simpanSebentar(`jumlah:${kelasId}`, 5000, () => jumlahPeserta(db, kelasId));
+async function muatPesertaSebentar(db: Db, kelasId: string, req: NextRequest): Promise<Peserta | null> {
+  const t = req.headers.get('x-peserta') ?? '';
+  if (!TOKEN_SAH.test(t)) return null;
+  const kunci = `peserta:${kelasId}:${hash(t)}`;
+  const p = await simpanSebentar(kunci, 60_000, () => muatPeserta(db, kelasId, req));
+  if (!p) hapusSimpanan(kunci);
+  return p;
+}
 
 /** Status pendaftaran menurut format kelas. */
 function statusDaftar(kelas: KelasLive, jumlah: number): { status: string; pesan: string | null } {
@@ -70,7 +81,7 @@ function statusDaftar(kelas: KelasLive, jumlah: number): { status: string; pesan
 async function muatPeserta(db: Db, kelasId: string, req: NextRequest): Promise<Peserta | null> {
   const t = req.headers.get('x-peserta') ?? '';
   if (!TOKEN_SAH.test(t)) return null;
-  const { data } = await db.from('lc_eks_peserta').select('id,nama').eq('kelas_id', kelasId).eq('token_hash', hash(t)).maybeSingle();
+  const { data } = await db.from('lc_eks_peserta').select('id,nama,instansi').eq('kelas_id', kelasId).eq('token_hash', hash(t)).maybeSingle();
   return (data as Peserta | null) ?? null;
 }
 
@@ -85,8 +96,9 @@ async function hasilPeserta(db: Db, pesertaId: string): Promise<Hasil[]> {
   return (data ?? []) as Hasil[];
 }
 
+//  id ikut dikirim: dasar nomor sertifikat peserta yang lulus (tetap sama tiap diunduh).
 const ringkasHasil = (h: Hasil | undefined) => (h && h.selesai_pada
-  ? { skor: h.skor, benar: h.benar, jumlah: h.jumlah, lulus: h.lulus, selesai_pada: h.selesai_pada, percobaan: h.percobaan }
+  ? { id: h.id, skor: h.skor, benar: h.benar, jumlah: h.jumlah, lulus: h.lulus, selesai_pada: h.selesai_pada, percobaan: h.percobaan }
   : null);
 
 export async function GET(req: NextRequest, ctx: { params: Promise<{ token: string }> }) {
@@ -94,16 +106,16 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
   const db = getAdminClient();
   const kelas = await muatKelasSebentar(db, token);
   if (!kelas) return galat('Link kelas tidak ditemukan.', 404);
-  const [peserta, jumlah] = await Promise.all([muatPeserta(db, kelas.id, req), jumlahPesertaSebentar(db, kelas.id)]);
+  const [peserta, jumlah] = await Promise.all([muatPesertaSebentar(db, kelas.id, req), jumlahPesertaSebentar(db, kelas.id)]);
   if (kelas.jenis === 'live') {
     return jawab({
       kelas: {
         judul: kelas.judul, keterangan: kelas.keterangan, jumlahSoal: kelas.question_ids.length,
-        jenis: 'live', detikPerSoal: kelas.detik_per_soal,
+        jenis: 'live', detikPerSoal: kelas.detik_per_soal, isianPeserta: rapikanIsianPeserta(kelas.isian_peserta),
         tema: { warna: kelas.tema_warna, logo: kelas.logo_url, latar: kelas.latar_url },
       },
       ...statusDaftar(kelas, jumlah),
-      peserta: peserta ? { nama: peserta.nama } : null,
+      peserta: peserta ? { nama: peserta.nama, instansi: peserta.instansi } : null,
       live: await keadaanPeserta(db, kelas, peserta?.id ?? null, jumlah),
     });
   }
@@ -115,11 +127,12 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
       judul: kelas.judul, keterangan: kelas.keterangan, jumlahSoal: kelas.question_ids.length,
       timerMenit: kelas.timer_menit, passingGrade: kelas.passing_grade, satuKali: kelas.satu_kali,
       modeMulai: kelas.mode_mulai, batasPelanggaran: kelas.batas_pelanggaran, jenis: 'mandiri',
+      isianPeserta: rapikanIsianPeserta(kelas.isian_peserta),
     },
     menunggu: menungguAdmin(kelas),
     jumlahPeserta: kelas.mode_mulai === 'admin' ? jumlah : undefined,
     status, pesan: status === 'buka' ? null : PESAN_STATUS[status],
-    peserta: peserta ? { nama: peserta.nama } : null,
+    peserta: peserta ? { nama: peserta.nama, instansi: peserta.instansi } : null,
     hasil: ringkasHasil(daftarHasil.find(h => h.selesai_pada)),
     berjalan: !!terbuka,
   });
@@ -142,8 +155,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
       if (status !== 'buka') return galat(pesan ?? 'Pendaftaran ditutup.', 403);
       const n = rapikanNama(body.nama);
       if ('galat' in n) return galat(n.galat);
+      const data = rapikanDataPeserta(rapikanIsianPeserta(kelas.isian_peserta), body);
+      if ('galat' in data) return galat(data.galat);
       const tokenPeserta = crypto.randomBytes(24).toString('base64url');
-      const { error } = await db.from('lc_eks_peserta').insert({ kelas_id: kelas.id, nama: n.nama, nama_norm: n.norm, token_hash: hash(tokenPeserta) });
+      const { error } = await db.from('lc_eks_peserta').insert({ kelas_id: kelas.id, nama: n.nama, nama_norm: n.norm, token_hash: hash(tokenPeserta), ...data });
       if (error) {
         if (error.code === '23505') return galat('Nama ini sudah terdaftar di kelas ini. Tambahkan inisial atau nama perusahaan Anda.', 409);
         return galat('Pendaftaran gagal. Coba lagi.', 500);
@@ -183,8 +198,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
         if (error || !baru) return galat('Gagal memulai. Coba lagi.', 500);
         h = baru as Hasil;
       }
-      const { data: soal } = await db.from('lc_questions').select('id,question,option_a,option_b,option_c,option_d').in('id', h.urutan_soal);
-      const peta = new Map(((soal ?? []) as { id: string; question: string; option_a: string; option_b: string; option_c: string; option_d: string }[]).map(s => [s.id, s]));
+      const { data: soal } = await db.from('lc_questions').select('id,question,option_a,option_b,option_c,option_d,gambar_url').in('id', h.urutan_soal);
+      const peta = new Map(((soal ?? []) as { id: string; question: string; option_a: string; option_b: string; option_c: string; option_d: string; gambar_url: string | null }[]).map(s => [s.id, s]));
       return jawab({
         percobaan: h.percobaan,
         mulai_pada: h.mulai_pada,
@@ -192,7 +207,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ token: str
         batasPelanggaran: kelas.batas_pelanggaran,
         soal: h.urutan_soal.filter(id => peta.has(id)).map(id => {
           const s = peta.get(id)!;
-          return { id, teks: s.question, pilihan: { A: s.option_a, B: s.option_b, C: s.option_c, D: s.option_d } };
+          return { id, teks: s.question, gambar: rapikanUrlGambar(s.gambar_url), pilihan: { A: s.option_a, B: s.option_b, C: s.option_c, D: s.option_d } };
         }),
       });
     }
