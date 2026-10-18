@@ -147,6 +147,13 @@ export function gambarAlatBantu(m: Mesin, k: KeadaanAlatBantu) {
     kotakRuang.forEach((k, i) => {
       label(`${f(k.p)} m`, new THREE.Vector3(k.x0 + k.p / 2, 0.05, k.l + 0.25));
       label(`${f(k.l)} m`, new THREE.Vector3(k.x0 + k.p + (i === kotakRuang.length - 1 ? 0.3 : -0.3), 0.05, k.l / 2));
+      //  Tinggi plafon: garis tegak lantai -> plafon di pojok depan-kanan (sudut dinding display, selalu
+      //  terlihat dari kamera depan) + angkanya di tengah garis. Tiap ruang bisa beda tinggi.
+      const xt = k.x0 + k.p - 0.04, zt = 0.04;
+      const tegak = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(xt, 0, zt), new THREE.Vector3(xt, k.t, zt)]),
+        new THREE.LineDashedMaterial({ color: 0x1d4ed8, dashSize: 0.12, gapSize: 0.06 }));
+      tegak.computeLineDistances(); grupBantu.add(tegak);
+      label(`plafon ${f(k.t)} m`, new THREE.Vector3(xt - 0.1, k.t / 2, zt + 0.1));
       //  Di lantai pojok depan-kiri, bukan di tengah setinggi plafon: dari
       //  sudut kamera mana pun posisi itu jatuh tepat di atas display yang
       //  menempel di dinding, sehingga label "Ruang N" menutupi label ukuran

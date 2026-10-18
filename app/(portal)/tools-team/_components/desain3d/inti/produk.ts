@@ -52,6 +52,18 @@ export function ukuranLayar(diag: number, rasio: RasioLayar | string) {
   const u = ukuranDariDiagonal(diag, a, b);
   return { w: u.lebarM, h: u.tinggiM };
 }
+/**
+ * Ukuran GAMBAR (area aktif) display - bukan bodinya. TV & IFP: w/h benda = bodi + bezel (IFP 65" 0,898 m,
+ * gambarnya 0,809 m), jadi aturan jarak pandang 4-6-8 memakai ini, bukan d.h. Layar proyektor = area
+ * tayang; videowall & LED = seluruh permukaan.
+ */
+export function ukuranGambarDisplay(d: Pick<Benda, 'jenis' | 'diag' | 'w' | 'h'>): { w: number; h: number } {
+  if (d.jenis === 'tv' || d.jenis === 'ifp') {
+    const u = ukuranDariDiagonal(d.diag ?? (d.jenis === 'tv' ? 65 : 75));
+    return { w: Math.round(u.lebarM * 1000) / 1000, h: Math.round(u.tinggiM * 1000) / 1000 };
+  }
+  return { w: d.w, h: d.h };
+}
 /** Hitung ulang w/h/d dari properti produk (videowall, layar, IFP, TV, rak). */
 export function terapkanUkuran(b: Benda): Benda {
   switch (b.jenis) {

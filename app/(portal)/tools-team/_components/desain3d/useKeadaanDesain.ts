@@ -5,7 +5,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useImporObjek } from './impor/useImporObjek';
-import { analisisDari, type Benda, type CahayaDiPermukaan, contohAwal, daftarRuang, DISPLAY, golonganDipakai, jalurKabel, KATEGORI_RUANG, type OpsiKelas, type Snap, snapSah, type Titik, type Ruang, ruangDari, tinggiAlasDi, titikPenonton, type Blending } from './inti';
+import { analisisDari, ukuranGambarDisplay, type Benda, type CahayaDiPermukaan, contohAwal, daftarRuang, DISPLAY, golonganDipakai, jalurKabel, KATEGORI_RUANG, type OpsiKelas, type Snap, snapSah, type Titik, type Ruang, ruangDari, tinggiAlasDi, titikPenonton, type Blending } from './inti';
 import { useRiwayat } from '../bersama/riwayat';
 import type { ConfirmState } from '@/components/shared/ConfirmDialog';
 import { getSession } from '@/lib/auth';
@@ -254,7 +254,9 @@ export function useKeadaanDesain() {
       const terdekat = data.reduce((m, x) => Math.min(m, x.jarak), Infinity);
       const sudutMaks = data.reduce((m, x) => Math.max(m, x.sudut), 0);
       const tinggiPerlu = terjauh / faktorPandang;
-      return { d, ri, jumlah: data.length, terjauh, terjauhP, terdekat, sudutMaks, tinggiPerlu, cukup: d.h >= tinggiPerlu };
+      //  Dibandingkan dengan tinggi GAMBAR (tanpa bezel TV / IFP), bukan tinggi bodi.
+      const gambar = ukuranGambarDisplay(d);
+      return { d, ri, gambar, jumlah: data.length, terjauh, terjauhP, terdekat, sudutMaks, tinggiPerlu, cukup: gambar.h >= tinggiPerlu };
     });
   }, [benda, faktorPandang, ruang]);
   const terpilih = benda.find(b => b.id === pilih) ?? null;

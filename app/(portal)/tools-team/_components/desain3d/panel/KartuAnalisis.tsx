@@ -25,12 +25,12 @@ export function KartuAnalisis({ a }: { a: AlatDesain }) {
         {analisis.length === 0 ? <p className="text-sm text-slate-600">Tambahkan display (videowall/LED/layar/interactive) untuk dianalisis.</p>
           : analisis.map(a => (
             <div key={a.d.id} className="mb-3 last:mb-0">
-              <p className="text-sm font-semibold text-slate-800 mb-1.5">{a.d.nama}{duaRuang ? ` · Ruang ${a.ri + 1}` : ''} · {f(a.d.w)} × {f(a.d.h)} m</p>
+              <p className="text-sm font-semibold text-slate-800 mb-1.5">{a.d.nama}{duaRuang ? ` · Ruang ${a.ri + 1}` : ''} · gambar {f(a.gambar.w)} × {f(a.gambar.h)} m</p>
               {a.jumlah === 0 ? <p className="text-[12.5px] text-slate-600">Tambahkan meja atau kursi di ruang ini sebagai posisi penonton.</p> : (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <Nilai label="Penonton terjauh" nilai={f(a.terjauh, 1)} satuan="m" />
                   <Nilai label="Tinggi layar perlu" nilai={f(a.tinggiPerlu)} satuan="m"
-                    ket={a.cukup ? 'ukuran layar cukup' : `kurang ${f((a.tinggiPerlu - a.d.h) * 100, 0)} cm`} nada={a.cukup ? 'baik' : 'buruk'} />
+                    ket={a.cukup ? 'ukuran layar cukup' : `kurang ${f((a.tinggiPerlu - a.gambar.h) * 100, 0)} cm`} nada={a.cukup ? 'baik' : 'buruk'} />
                   <Nilai label="Sudut pandang maks" nilai={f(a.sudutMaks, 0)} satuan="°" ket={a.sudutMaks > sudutNyaman ? 'ada kursi terlalu menyamping' : `nyaman (≤${sudutNyaman}°)`} nada={a.sudutMaks > sudutNyaman ? 'awas' : 'baik'} />
                   {a.d.jenis === 'led' && a.d.pitch
                     ? <Nilai label="Penonton terdekat" nilai={f(a.terdekat, 1)} satuan="m" ket={a.terdekat < a.d.pitch ? `di bawah jarak min P${a.d.pitch} (${a.d.pitch} m)` : 'aman untuk pitch ini'} nada={a.terdekat < a.d.pitch ? 'buruk' : 'baik'} />

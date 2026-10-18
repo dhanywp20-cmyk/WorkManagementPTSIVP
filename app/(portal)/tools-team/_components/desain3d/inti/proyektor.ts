@@ -75,7 +75,7 @@ export interface Sinar {
   /** Layar sasaran; null = gambar jatuh di dinding/lantai/plafon. */ layar: Benda | null;
   /** Jarak lempar lensa ke bidang gambar sepanjang sumbu lensa (m). */ jarak: number;
   lebar: number; tinggi: number;
-  /** Throw ratio agar gambar tepat selebar layar sasaran. */ trPas: number | null;
+  /** Throw ratio agar gambar 16:9 tepat menutup layar sasaran (selebar layar; layar 4:3 / 16:10: setinggi layar). */ trPas: number | null;
   /** Pusat gambar - pusat layar: + = terlalu tinggi / terlalu ke kanan (m). null tanpa layar. */
   selisihV: number | null; selisihH: number | null;
 }
@@ -145,7 +145,10 @@ export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
   if (sasaran) {
     const { l, t, pusat: S } = sasaran;
     const rl = (l.rot * Math.PI) / 180;
-    const lebar = t / tr, tinggi = lebar * (l.h / Math.max(0.01, l.w));
+    //  Gambar proyektor selalu 16:9 (panel aslinya), BUKAN mengikuti rasio layar - sama dengan sinar yang
+    //  digambar (mesin/sinar.ts) & cakupanProyektor. Dulu mengikuti layar: di layar 4:3 gambar dianggap
+    //  2,71 x 2,03 m padahal 2,71 x 1,52 m - lux, kontras, & Pasang ke layar (tilt keliru, 80% tertutup) meleset.
+    const lebar = t / tr, tinggi = (lebar * 9) / 16;
     const kanan: Titik = [Math.cos(rl), 0, -Math.sin(rl)];
     //  Sedikit di depan kain layar supaya tidak berkedip (z-fighting).
     const pusat: Titik = [
@@ -156,7 +159,7 @@ export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
     const selisihH = (pusat[0] - S[0]) * kanan[0] + (pusat[2] - S[2]) * kanan[2];
     return {
       asal, sudut: persegi(pusat, kanan, lebar, tinggi), layar: l, jarak: t, lebar, tinggi,
-      trPas: t / Math.max(0.01, l.w), selisihV: pusat[1] - S[1], selisihH,
+      trPas: t / Math.max(0.01, l.w, (l.h * 16) / 9), selisihV: pusat[1] - S[1], selisihH,
     };
   }
   const k = daftarRuang(ruang)[ri] ?? daftarRuang(ruang)[0];

@@ -3,7 +3,7 @@
  * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
  */
 import { idBaru } from './katalog';
-import { keDunia, sinarProyektor } from './proyektor';
+import { keDunia, proyektorKeLayar, sinarProyektor } from './proyektor';
 import type { Benda, Bukaan, Kotak, Ruang, RuangSambung, SisiDinding } from './tipe';
 
 export const MAKS_RUANG = 4;
@@ -138,12 +138,14 @@ export function petakanKeKotak(b: Benda, asal: Kotak, tujuan: Kotak): Benda {
     return bulat2(Math.min(t0 + tP - m, Math.max(t0 + m, baru)));
   };
   const diPlafon = b.jenis === 'speaker-plafon' || (b.jenis === 'proyektor' && b.pasangProyektor !== 'meja') || b.elev + b.h >= asal.t - 0.05;
-  const elev = diPlafon ? tujuan.t - (asal.t - b.elev) : Math.min(b.elev, tujuan.t - b.h);
+  //  Yang diturunkan karena plafon lebih rendah dibulatkan KE BAWAH: bulat biasa bisa membuat puncaknya
+  //  menembus plafon beberapa mm (TV 86" di plafon 2,2 m: puncak 2,203 m).
+  const elev = diPlafon ? bulat2(tujuan.t - (asal.t - b.elev)) : b.elev + b.h > tujuan.t ? Math.floor((tujuan.t - b.h) * 100) / 100 : bulat2(b.elev);
   return {
     ...b,
     x: peta(b.x, asal.x0, asal.p, tujuan.x0, tujuan.p, ex),
     z: peta(b.z, 0, asal.l, 0, tujuan.l, ez),
-    elev: bulat2(Math.max(0, elev)),
+    elev: Math.max(0, elev),
   };
 }
 /**
@@ -156,7 +158,7 @@ export function salinIsi(isi: Benda[], ruang: Ruang, asal: Kotak, tujuan: Kotak)
   return petakanIsi(isi, ruang, asal, tujuan).map(b => ({ ...b, id: idBaru() }));
 }
 /** Seperti salinIsi, tapi id tetap (dipakai saat ukuran ruang diubah). */
-function petakanIsi(isi: Benda[], ruang: Ruang, asal: Kotak, tujuan: Kotak): Benda[] {
+function petakanIsi(isi: Benda[], ruang: Ruang, asal: Kotak, tujuan: Kotak, ruangTujuan: Ruang = ruang): Benda[] {
   const baru = isi.map(b => petakanKeKotak(b, asal, tujuan));
   const indeks = new Map(isi.map((b, i) => [b.id, i]));
   isi.forEach((p, i) => {
@@ -168,11 +170,18 @@ function petakanIsi(isi: Benda[], ruang: Ruang, asal: Kotak, tujuan: Kotak): Ben
     //  Posisi proyektor dalam koordinat lokal layar asal (kebalikan keDunia), lalu ke layar salinan.
     const r0 = (layar.rot * Math.PI) / 180, dx = p.x - layar.x, dz = p.z - layar.z;
     const [x, , z] = keDunia(ke, [dx * Math.cos(r0) - dz * Math.sin(r0), 0, dx * Math.sin(r0) + dz * Math.cos(r0)]);
-    baru[i] = {
+    //  Tinggi juga relatif terhadap layar, BUKAN ikut plafon: proyektor yang menembak layar digantung
+    //  dengan drop pole setinggi gambarnya - plafon naik/turun cukup mengubah panjang pipanya. Dulu ikut
+    //  plafon: plafon 3 -> 4,5 m membuat gambar naik 1,5 m dan layar 0% tertutup.
+    const elev = p.elev + (ke.elev - layar.elev), atas = tujuan.t - p.h - 0.06;
+    const q: Benda = {
       ...baru[i], rot: (((p.rot - layar.rot + ke.rot) % 360) + 360) % 360,
       x: bulat2(Math.min(tujuan.x0 + tujuan.p - 0.1, Math.max(tujuan.x0 + 0.1, x))),
       z: bulat2(Math.min(tujuan.l - 0.1, Math.max(0.1, z))),
+      elev: bulat2(Math.max(0.3, Math.min(atas, elev))),
     };
+    //  Plafon terlalu rendah untuk tinggi itu: pasang ulang ke layar (lens shift, sisanya tilt).
+    baru[i] = elev > atas + 0.005 ? proyektorKeLayar(q, ke, tujuan, ruangTujuan) : q;
   });
   return baru;
 }
@@ -191,7 +200,7 @@ export function sesuaikanUkuranRuang(benda: Benda[], lama: Ruang, baru: Ruang): 
     const tujuan = kBaru[i];
     if (!tujuan || (asal.x0 === tujuan.x0 && asal.p === tujuan.p && asal.l === tujuan.l && asal.t === tujuan.t)) return;
     const isi = benda.filter(b => ruangDari(lama, b.x) === i);
-    petakanIsi(isi, lama, asal, tujuan).forEach(b => hasil.set(b.id, b));
+    petakanIsi(isi, lama, asal, tujuan, baru).forEach(b => hasil.set(b.id, b));
   });
   return hasil.size ? benda.map(b => hasil.get(b.id) ?? b) : benda;
 }
