@@ -79,6 +79,8 @@ export interface Benda {
   /** Proyektor: kecerahan (ANSI lumen) */ lumen?: number;
   /** Proyektor, mode Grid sinar (inti/gridProyektor.ts): jumlah kolom grid & warna garisnya (kosong = warna sinar). */
   gridKolom?: number; warnaGrid?: string;
+  /** Proyektor: tampilkan cahaya hanya di layar / bidang mapping (masking di media server); sisanya tidak digambar. */
+  maskBidang?: boolean;
   /** Display: bracket pop-up, wall bracket + struktur hollow, atau standfloor beroda */ pasang?: Pasang;
   /** Rak: tinggi dalam U */ rakU?: number;
   /** Rak: isi per U dari atas (rack elevation); kosong = isi bawaan. */ isiRak?: PerangkatRak[];

@@ -35,6 +35,19 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
       </p>
     );
   };
+  /**
+   * Mask ke bidang: tampilkan cahaya hanya di layar / bidang mapping - seperti hasil masking & warping di media
+   * server. Mati = sinar mentah proyektor (termasuk yang tumpah ke dinding), untuk merencanakan posisi & masking.
+   */
+  const blokMask = () => {
+    if (!benda.some(b => (b.jenis === 'bidang' || b.jenis === 'layar') && ruangDari(ruang, b.x) === ruangDari(ruang, p.x))) return null;
+    return (
+      <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-2 text-[12px] text-slate-700 cursor-pointer">
+        <input type="checkbox" className="w-4 h-4 mt-0.5" checked={!!p.maskBidang} onChange={e => gantiBenda({ ...p, maskBidang: e.target.checked || undefined })} />
+        <span><b className="text-slate-800">Mask ke bidang</b> - tampilkan cahaya hanya di layar / bidang mapping, seperti hasil masking di media server. Matikan untuk melihat sinar mentah yang tumpah.</span>
+      </label>
+    );
+  };
   /** Grid cahaya (seperti simulator proyektor): nyala/mati, jumlah kolom, warna garis, ukuran satu kotak (mm) di permukaan. */
   const blokGrid = (lebar: number, tinggi: number) => {
     const kg = kotakGrid(lebar, tinggi, p.gridKolom);
@@ -146,6 +159,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           {dekat
             ? <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, dekat, k, ruang))}>Arahkan ke {dekat.nama}</button>
             : !cahaya?.permukaan && <p className="text-[12px] text-slate-600" title="Tambah → Display → Layar proyektor">Belum ada layar</p>}
+          {blokMask()}
           {blokGrid(K.ukuranCahaya[p.id]?.lebar ?? sn.lebar, K.ukuranCahaya[p.id]?.tinggi ?? sn.tinggi)}
           {blokKontras(p, true)}
           {blokBlending}
@@ -175,7 +189,8 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
             TR {f(trPas, 2)} di luar rentang zoom lensa ({f(zMin, 2)}–{f(zMax, 2)}): pindahkan lensa ke jarak {f(zMin * lyr.w)}–{f(zMax * lyr.w)} m dari layar, atau ganti lensa.
           </p>
         ))}
-        {blokGrid(K.ukuranCahaya[p.id]?.lebar ?? sn.lebar, K.ukuranCahaya[p.id]?.tinggi ?? sn.tinggi)}
+        {blokMask()}
+          {blokGrid(K.ukuranCahaya[p.id]?.lebar ?? sn.lebar, K.ukuranCahaya[p.id]?.tinggi ?? sn.tinggi)}
         {blokKontras(p, false)}
         {blokBlending}
         <ul className="text-[12px] font-semibold space-y-0.5">
