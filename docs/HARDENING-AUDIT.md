@@ -105,6 +105,17 @@ membaca kode saja. **Kalau mau dipastikan**: jalankan
 di repo) dan lihat bagian C (RLS) - itu menjawab tabel mana yang RLS-nya
 betul-betul menyala di database yang sesungguhnya.
 
+## Supabase Advisor "SECURITY DEFINER bisa dijalankan anon" - JANGAN dicabut (17 Okt 2026)
+
+Advisor 0028/0029 menandai 11 fungsi `public` (akses_insentif, boleh_atur_kpi, checklist_boleh_lihat_*,
+checklist_saya_anggota, pernah_dapat_bagian_insentif, piket_*, pimpinan_lihat_semua, rekap_lc_tahunan,
+tutup_jadwal_ticket). **Mencabut EXECUTE dari `anon` akan merusak aplikasi**, karena:
+- Pengguna yang SUDAH login pun menjalankan query sebagai peran Postgres `anon` - JWT aplikasi sengaja
+  berklaim `role: 'anon'` (`lib/db-token.ts`); identitasnya ada di klaim `sub`/`user_role`.
+- Sembilan dari fungsi itu dipanggil di dalam RLS policy untuk anon/public.
+Pengamannya ada di dalam fungsi: masing-masing memeriksa `jwt_claim('sub')` / hak pengguna (mis.
+`tutup_jadwal_ticket` & `rekap_lc_tahunan` -> 'Harus login' + cek hak). Peringatan ini diterima.
+
 ## Lanjutkan dari sini
 
 Belum diperiksa malam ini (urutan berikutnya yang disarankan):
