@@ -42,8 +42,9 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
             ...(adaProyektor && sinar ? [{ v: gridSinar, s: setGridSinar, l: 'Grid sinar' }] : []),
             ...(adaProyektor && sinar ? [{ v: teksSinar, s: setTeksSinar, l: 'Keterangan sinar' }] : []),
             ...(jumlahProyektor >= 2 ? [{ v: tampilBlending, s: setTampilBlending, l: 'Area blending' }] : []),
-            //  Garis ukur & angka cm ikut "Area blending"; kartu keterangan (persen & piksel) bisa disembunyikan sendiri.
-            ...(jumlahProyektor >= 2 && tampilBlending ? [{ v: detailBlending, s: setDetailBlending, l: 'Detail blending' }] : []),
+            //  Zona ungu, garis ukur & angka cm ikut "Area blending"; kartu keterangan (persen & piksel) bawaannya
+            //  tersembunyi - centang ini untuk semua, atau klik ⓘ di angka cm untuk satu area.
+            ...(jumlahProyektor >= 2 && tampilBlending ? [{ v: detailBlending, s: setDetailBlending, l: 'Keterangan blending' }] : []),
             ...(benda.some(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon') ? [{ v: jangkau, s: setJangkau, l: 'Jangkauan speaker' }] : []),
             ...(kabel.length ? [{ v: tampilKabel, s: setTampilKabel, l: 'Jalur kabel' }] : []),
             ...(benda.some(nirkabel) ? [{ v: tampilShare, s: setTampilShare, l: 'Share nirkabel' }] : []),

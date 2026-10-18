@@ -4,6 +4,7 @@
  *            |                lengkung layar), panah di kedua ujung tepat di tepi gambar, kaki ukur
  *            .                tegak di kedua ujung, angka lebar di atas garis, lalu (centang "Detail
  *   [ kartu keterangan ]      blending") garis penunjuk tipis ke kartu detail (persen & piksel).
+ * Kartu bisa dibuka / ditutup sendiri-sendiri di kanvas: klik ⓘ di angka lebar, atau klik kartunya.
  * Penanda dibuat tipis & kecil supaya tidak menutupi gambar proyeksi.
  * Garis & panah berupa mesh (ikut ke PNG / cetak), angka & kartu berupa label CSS2D (mesin/label.ts).
  */
@@ -12,6 +13,15 @@ import { barisKeterangan, type Blending, type Lensa } from '../inti';
 import type { Mesin } from './tipe';
 
 const UNGU = 0x6d28d9;
+
+/**
+ * Kartu yang dibuka / ditutup sendiri lewat klik, per area blending - menang atas centang "Keterangan
+ * blending" dan bertahan saat kanvas digambar ulang (efek alat bantu jalan tiap benda berubah).
+ */
+const pilihanKartu = new Map<string, boolean>();
+const kunciKartu = (b: Blending) => `${[b.a, b.b].sort().join('|')}|${b.arah}`;
+/** Centang "Keterangan blending" diubah: semua kartu kembali mengikuti centang. */
+export const lupakanPilihanKartu = () => pilihanKartu.clear();
 const batas = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x));
 
 export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa, nama: (n: string) => string, detail = true) {
@@ -83,24 +93,31 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
       if (k > 1e-6) o.center.set(0.5 - (0.5 * sx) / k, 0.5 - (0.5 * sy) / k);
     }) as unknown as T.Object3D['onBeforeRender'];
     grupBantu.add(o);
+    return o;
   };
 
-  //  Angka lebar di luar kaki ukur, seperti garis ukur gambar kerja.
+  //  Angka lebar di luar kaki ukur, seperti garis ukur gambar kerja. ⓘ = buka / tutup kartu keterangan area ini.
+  const cm = `${Math.round(b.lebarM * 100)} cm`;
   const angka = document.createElement('div');
-  angka.textContent = `${Math.round(b.lebarM * 100)} cm`;
-  angka.style.cssText = 'font:700 12px system-ui,sans-serif;color:#6d28d9;background:rgba(255,255,255,.92);border:1px solid #c4b5fd;padding:0 5px;border-radius:4px;white-space:nowrap';
+  angka.dataset.teks = cm;
+  angka.style.cssText = 'font:700 12px system-ui,sans-serif;color:#6d28d9;background:rgba(255,255,255,.92);border:1px solid #c4b5fd;padding:0 5px;border-radius:4px;white-space:nowrap;cursor:pointer;pointer-events:auto;user-select:none';
+  const ikon = document.createElement('span');
+  ikon.textContent = ' ⓘ';
+  ikon.style.cssText = 'font-weight:600;opacity:.8';
+  angka.append(cm, ikon);
   css(angka, tengah.clone().addScaledVector(kaki, panjangKaki / 2 + 0.03), tengah);
 
-  if (!detail) return;
   //  Garis penunjuk setipis rambut (1 px, tidak ikut membesar saat di-zoom) dari titik kecil di garis
-  //  ukur ke kartu keterangan detail di sisi seberang angka.
+  //  ukur ke kartu keterangan detail di sisi seberang angka. Selalu dibuat; tampil sesuai pilihan.
   const ujungPenunjuk = tengah.clone().addScaledVector(kaki, -batas(sisiTegak * 0.15, 0.2, 0.9));
-  tambah(new THREE.SphereGeometry(r * 1.4, 10, 6), tengah);
+  const titikTengah = new THREE.Mesh(new THREE.SphereGeometry(r * 1.4, 10, 6), bahan);
+  titikTengah.position.copy(tengah); titikTengah.renderOrder = 4; grupBantu.add(titikTengah);
   const penunjuk = new THREE.Line(new THREE.BufferGeometry().setFromPoints([tengah, ujungPenunjuk]),
     new THREE.LineBasicMaterial({ color: UNGU, transparent: true, opacity: 0.85, toneMapped: false }));
   penunjuk.renderOrder = 4; grupBantu.add(penunjuk);
   const kartu = document.createElement('div');
-  kartu.style.cssText = 'font:500 11px system-ui,sans-serif;line-height:1.35;padding:4px 8px;border-radius:8px;white-space:nowrap;color:#fff;background:#7c3aed;box-shadow:0 2px 6px rgba(0,0,0,.3)';
+  kartu.title = 'Klik untuk menyembunyikan keterangan';
+  kartu.style.cssText = 'font:500 11px system-ui,sans-serif;line-height:1.35;padding:4px 8px;border-radius:8px;white-space:nowrap;color:#fff;background:#7c3aed;box-shadow:0 2px 6px rgba(0,0,0,.3);cursor:pointer;pointer-events:auto;user-select:none';
   barisKeterangan(b, nama).forEach((teks, i, semua) => {
     const baris = document.createElement('div');
     baris.textContent = teks;
@@ -108,5 +125,20 @@ export function gambarUkurBlending(m: Mesin, b: Blending, O: T.Vector3, L: Lensa
     if (i === semua.length - 1) { baris.style.fontSize = '10px'; baris.style.opacity = '0.85'; }
     kartu.appendChild(baris);
   });
-  css(kartu, ujungPenunjuk, tengah);
+  //  Disembunyikan lewat .visible objeknya: CSS2DRenderer menimpa style.display tiap frame dari .visible.
+  const objKartu = css(kartu, ujungPenunjuk, tengah);
+
+  const kunci = kunciKartu(b);
+  const tampilkan = (buka: boolean) => {
+    objKartu.visible = buka; penunjuk.visible = buka; titikTengah.visible = buka;
+    angka.title = buka ? 'Sembunyikan keterangan blending' : 'Tampilkan keterangan blending';
+  };
+  tampilkan(pilihanKartu.get(kunci) ?? detail);
+  const balik = (e: Event) => {
+    e.stopPropagation(); e.preventDefault();
+    const buka = !objKartu.visible;
+    pilihanKartu.set(kunci, buka); tampilkan(buka);
+  };
+  //  pointerdown tidak diteruskan ke kanvas (memilih benda / memutar kamera).
+  for (const el of [angka, kartu]) { el.addEventListener('pointerdown', e => e.stopPropagation()); el.addEventListener('click', balik); }
 }
