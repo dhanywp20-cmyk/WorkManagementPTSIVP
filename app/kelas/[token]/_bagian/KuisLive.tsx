@@ -6,9 +6,10 @@
  * papan skor -> podium. Semua yang menentukan (soal aktif, waktu, poin) datang dari server; jam
  * perangkat dikoreksi ke jam server supaya semua HP serentak.
  *
- * Kuis berjalan sendiri mengikuti waktu (lib/kuis-live.ts jadwalLive). Pembaruan: penyegaran berkala
- * tiap 2,5 dtk (menangkap Mulai / Lewati / semua sudah menjawab) + penyegaran terjadwal tepat di akhir
- * tiap tahap. Sengaja TANPA Supabase Realtime: 100+ HP melewati batas pesan/detik paket Free dan
+ * Kuis berjalan sendiri mengikuti waktu (lib/kuis-live.ts jadwalLive). Pembaruan: penyegaran terjadwal
+ * tepat di akhir tiap tahap (yang membuat semua HP serentak) + penyegaran berkala untuk menangkap aksi
+ * admin (Mulai, Lewati, Jeda, semua sudah menjawab): lobi 3 dtk, saat berjalan 5 dtk, selesai 15 dtk.
+ * Tiap penyegaran = query Supabase = baris log (kuota Free) - jangan dirapatkan tanpa alasan. Sengaja TANPA Supabase Realtime: 100+ HP melewati batas pesan/detik paket Free dan
  * Supabase lalu memutus semua koneksi realtime proyek (lihat lib/kuis-live-server.ts).
  *
  * Dijeda presenter (live.jedaMs): jam ikut beku di titik jeda, penanda tampil, jawaban ditahan.
@@ -57,7 +58,7 @@ export function KuisLive({ token, awal }: { token: string; awal: InfoLive }) {
 
   const live = info.live;
   useEffect(() => {
-    const jeda = live.tahap === 'selesai' ? 10_000 : 2_500;
+    const jeda = live.tahap === 'selesai' ? 15_000 : live.tahap === 'lobi' ? 3_000 : 5_000;
     const t = window.setInterval(() => { if (document.visibilityState === 'visible') void segarkan(); }, jeda);
     const kembali = () => { if (document.visibilityState === 'visible') void segarkan(); };
     document.addEventListener('visibilitychange', kembali);

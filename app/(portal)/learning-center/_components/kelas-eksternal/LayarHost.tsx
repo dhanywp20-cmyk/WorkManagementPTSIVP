@@ -98,7 +98,8 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
 
   const tahapServer = host?.tahap;
   useEffect(() => {
-    const jeda = tahapServer === 'selesai' ? 5000 : tahapServer === 'lobi' ? 2000 : 1500;
+    //  Pergantian tahap ditangkap penyegaran terjadwal di bawah; berkala ini untuk jumlah menjawab & pemain baru.
+    const jeda = tahapServer === 'selesai' ? 10_000 : 3000;
     const t = window.setInterval(() => void muat(), jeda);
     return () => window.clearInterval(t);
   }, [tahapServer, muat]);

@@ -14,7 +14,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { acakUrutan, type KelasEksternal, type Pilihan } from './kelas-eksternal';
-import { simpanSebentar } from './simpan-sebentar';
+import { hapusSimpanan, simpanSebentar } from './simpan-sebentar';
 import {
   anulirDari, distribusi, indeksTerhitung, jadwalLive, posisiSaya, rapikanUrlGambar, semuaMenjawab, susunPapan, transisiLive, wujudkanLive,
   type AksiLive, type BarisPapan, type RekapPeserta, type StatusLive, type Tahap,
@@ -148,6 +148,21 @@ export async function keadaanHost(db: Db, k: KelasLive) {
 }
 export type KeadaanHost = Awaited<ReturnType<typeof keadaanHost>>;
 
+type JawabanSaya = { pilihan: Pilihan; benar: boolean; poin: number };
+/**
+ * Jawaban peserta untuk soal ini. Sekali terkirim tidak berubah, jadi yang SUDAH ada disimpan 10 menit per
+ * peserta; kuncinya memuat waktu mulai soal, sehingga Ulang soal / Mundur (jawaban dianulir, waktu mulai
+ * baru) tidak membaca jawaban lama. Belum menjawab -> tidak disimpan (dicek lagi tiap penyegaran).
+ */
+async function jawabanSaya(db: Db, k: KelasLive, pesertaId: string, indeks: number): Promise<JawabanSaya | null> {
+  const kunci = `jwb:${pesertaId}:${k.live_sesi}:${indeks}:${k.live_soal_mulai}`;
+  const j = await simpanSebentar(kunci, 600_000, () => Promise.resolve(
+    db.from('lc_eks_live_jawaban').select('pilihan,benar,poin').eq('peserta_id', pesertaId).eq('sesi', k.live_sesi).eq('indeks', indeks).maybeSingle(),
+  ).then(r => r.data as JawabanSaya | null));
+  if (!j) hapusSimpanan(kunci);
+  return j;
+}
+
 /** Status untuk LAYAR PESERTA. Soal & skor hanya untuk peserta terdaftar; kunci hanya setelah waktu habis. */
 export async function keadaanPeserta(db: Db, k: KelasLive, pesertaId: string | null, jumlahPemain: number) {
   const sekarang = Date.now();
@@ -156,10 +171,7 @@ export async function keadaanPeserta(db: Db, k: KelasLive, pesertaId: string | n
   const adaSoal = !!pesertaId && (tahap === 'siap' || tahap === 'soal' || tahap === 'hasil');
   const [soal, milikSaya, papan] = await Promise.all([
     adaSoal ? muatSoalLive(db, k.live_urutan[j.indeks]) : Promise.resolve(null),
-    pesertaId && tahap !== 'lobi'
-      ? db.from('lc_eks_live_jawaban').select('pilihan,benar,poin').eq('peserta_id', pesertaId).eq('sesi', k.live_sesi).eq('indeks', j.indeks).maybeSingle()
-        .then(r => r.data as { pilihan: Pilihan; benar: boolean; poin: number } | null)
-      : Promise.resolve(null),
+    pesertaId && tahap !== 'lobi' ? jawabanSaya(db, k, pesertaId, j.indeks) : Promise.resolve(null),
     pesertaId && tahap !== 'lobi' ? muatPapan(db, k.id, k.live_sesi, indeksTerhitung(k, sekarang)) : Promise.resolve(null),
   ]);
   const terbuka = tahap === 'hasil' || tahap === 'papan' || tahap === 'selesai';

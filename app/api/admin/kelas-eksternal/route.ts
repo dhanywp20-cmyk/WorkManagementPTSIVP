@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { simpanSebentar } from '@/lib/simpan-sebentar';
 import { hasFullAccess } from '@/lib/constants';
 import { rapikanKelas, type KelasEksternal } from '@/lib/kelas-eksternal';
 import { AKSI_LIVE, jadwalLive, type AksiLive } from '@/lib/kuis-live';
@@ -30,16 +31,24 @@ export const dynamic = 'force-dynamic';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const jawab = (b: unknown, status = 200) => NextResponse.json(b, { status, headers: { 'Cache-Control': 'no-store' } });
 
+/**
+ * Hak akun. Layar host Kuis Live membaca status berkala, jadi hasil cek sesi + peran disimpan 30 dtk per
+ * token sesi (kunci = hash token - tidak pernah tertukar antar akun). Logout / ganti peran berlaku
+ * paling lambat 30 dtk di endpoint ini. Tanpa ini: ±27 ribu query sesi & users di satu hari Kuis Live.
+ */
 async function hak(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
-  if (!jaga.ok) return { ok: false as const, status: jaga.status, alasan: jaga.alasan };
-  const db = getAdminClient();
-  const { data } = await db.from('users').select('role,access_level').eq('id', jaga.user.id).maybeSingle();
-  const { data: pim } = await db.from('users').select('pimpinan').eq('id', jaga.user.id).maybeSingle();
-  const ubah = hasFullAccess((data ?? {}) as { role?: string; access_level?: string });
-  const lihat = ubah || (pim as { pimpinan?: boolean } | null)?.pimpinan === true;
-  if (!lihat) return { ok: false as const, status: 403, alasan: 'Hanya admin Learning Center.' };
-  return { ok: true as const, ubah, user: jaga.user, db };
+  const token = req.cookies.get('ivp_session')?.value ?? '';
+  const ambil = async () => {
+    const jaga = await pastikanMasuk(req);
+    if (!jaga.ok) return { ok: false as const, status: jaga.status, alasan: jaga.alasan };
+    const { data } = await getAdminClient().from('users').select('role,access_level,pimpinan').eq('id', jaga.user.id).maybeSingle();
+    const u = (data ?? {}) as { role?: string; access_level?: string; pimpinan?: boolean };
+    const ubah = hasFullAccess(u);
+    if (!ubah && u.pimpinan !== true) return { ok: false as const, status: 403, alasan: 'Hanya admin Learning Center.' };
+    return { ok: true as const, ubah, user: jaga.user };
+  };
+  const h = token ? await simpanSebentar(`hak-kelas:${crypto.createHash('sha256').update(token).digest('hex')}`, 30_000, ambil) : await ambil();
+  return h.ok ? { ...h, db: getAdminClient() } : h;
 }
 
 interface DataPesertaAdmin { id: string; nama: string; created_at: string; instansi: string | null; kontak: string | null; izin_kontak: boolean }

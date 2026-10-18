@@ -28,7 +28,7 @@ import {
 } from '@/lib/kelas-eksternal';
 import { PESAN_LIVE, periksaJawab, poinKahoot, rapikanUrlGambar, statusLive } from '@/lib/kuis-live';
 import { keadaanPeserta, muatSoalLive, tutupBilaSemuaMenjawab, type KelasLive } from '@/lib/kuis-live-server';
-import { simpanSebentar } from '@/lib/simpan-sebentar';
+import { hapusSimpanan, simpanSebentar } from '@/lib/simpan-sebentar';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,11 +52,21 @@ async function muatKelas(db: Db, token: string): Promise<KelasLive | null> {
 }
 
 /**
- * GET (dibaca 100+ HP tiap 2,5 dtk): kelas & jumlah peserta disimpan sebentar di memori, jadi
- * HP yang menyegarkan bersamaan berbagi satu query. POST (daftar, jawab) selalu membaca langsung.
+ * GET (dibaca 100+ HP berkala): kelas & jumlah peserta disimpan sebentar di memori, jadi HP yang
+ * menyegarkan bersamaan berbagi satu query; peserta dari tokennya disimpan 60 dtk per token (hanya bila
+ * ditemukan - yang baru mendaftar langsung dikenali). POST (daftar, jawab) selalu membaca langsung.
+ * Tiap query = satu baris log Supabase (kuota Log Ingestion Free 1 GB) - lihat lib/simpan-sebentar.ts.
  */
-const muatKelasSebentar = (db: Db, token: string) => simpanSebentar(`kelas:${token}`, 1000, () => muatKelas(db, token));
-const jumlahPesertaSebentar = (db: Db, kelasId: string) => simpanSebentar(`jumlah:${kelasId}`, 2000, () => jumlahPeserta(db, kelasId));
+const muatKelasSebentar = (db: Db, token: string) => simpanSebentar(`kelas:${token}`, 2000, () => muatKelas(db, token));
+const jumlahPesertaSebentar = (db: Db, kelasId: string) => simpanSebentar(`jumlah:${kelasId}`, 5000, () => jumlahPeserta(db, kelasId));
+async function muatPesertaSebentar(db: Db, kelasId: string, req: NextRequest): Promise<Peserta | null> {
+  const t = req.headers.get('x-peserta') ?? '';
+  if (!TOKEN_SAH.test(t)) return null;
+  const kunci = `peserta:${kelasId}:${hash(t)}`;
+  const p = await simpanSebentar(kunci, 60_000, () => muatPeserta(db, kelasId, req));
+  if (!p) hapusSimpanan(kunci);
+  return p;
+}
 
 /** Status pendaftaran menurut format kelas. */
 function statusDaftar(kelas: KelasLive, jumlah: number): { status: string; pesan: string | null } {
@@ -96,7 +106,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ token: stri
   const db = getAdminClient();
   const kelas = await muatKelasSebentar(db, token);
   if (!kelas) return galat('Link kelas tidak ditemukan.', 404);
-  const [peserta, jumlah] = await Promise.all([muatPeserta(db, kelas.id, req), jumlahPesertaSebentar(db, kelas.id)]);
+  const [peserta, jumlah] = await Promise.all([muatPesertaSebentar(db, kelas.id, req), jumlahPesertaSebentar(db, kelas.id)]);
   if (kelas.jenis === 'live') {
     return jawab({
       kelas: {
