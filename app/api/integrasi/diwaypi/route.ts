@@ -13,7 +13,7 @@ import { klienSebagaiUser, muatUser } from '@/lib/ai-server';
 import { ambilBearer, verifikasiToken } from '@/lib/token-integrasi';
 import { AKSI_BACA, AKSI_TULIS, jalankanAksi } from '@/lib/integrasi-aksi';
 import { buatEfekServer } from '@/lib/efek-server';
-import { muatKelompok } from '@/lib/kelompok';
+import { muatKelompok } from '@/lib/kelompok-inti';
 import { muatKategoriInsentif } from '@/lib/incentive-scheme';
 
 export const runtime = 'nodejs';
