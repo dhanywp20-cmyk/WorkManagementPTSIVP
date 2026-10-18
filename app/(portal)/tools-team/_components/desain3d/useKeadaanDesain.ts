@@ -14,6 +14,7 @@ import { isPimpinan } from '@/lib/pimpinan';
 import type * as T from 'three';
 import type { Mesin, Sudut } from './mesin/tipe';
 import { batasDunia } from './mesin/kamera';
+import { lupakanPilihanKartu } from './mesin/ukurBlending';
 import { bacaIngatanAwal, isiDariIngatan, KATEGORI_AWAL } from './simpan/templateAwal';
 
 
@@ -92,8 +93,16 @@ export function useKeadaanDesain() {
   const [sinar, setSinar] = useState(true);
   /** Area blending antar proyektor (lebar cm & persen) - label & zona di kanvas, panel proyektor, lembar cetak. */
   const [tampilBlending, setTampilBlending] = useState(true);
-  /** Kartu keterangan detail blending (persen & piksel) - garis ukur & angka cm tetap ikut tampilBlending. */
-  const [detailBlending, setDetailBlending] = useState(true);
+  /**
+   * Kartu keterangan blending (persen & piksel) - garis ukur & angka cm tetap ikut tampilBlending. Bawaan
+   * TERSEMBUNYI (kartunya besar & menutupi gambar); diingat per perangkat. Satu kartu bisa dibuka / ditutup
+   * sendiri lewat ⓘ di angka cm (mesin/ukurBlending.ts).
+   */
+  const [detailBlending, setDetailBlendingMentah] = useState(() => { try { return localStorage.getItem('wm_desain3d_detail_blending') === '1'; } catch { return false; } });
+  const setDetailBlending = (v: boolean) => {
+    lupakanPilihanKartu(); setDetailBlendingMentah(v);
+    try { localStorage.setItem('wm_desain3d_detail_blending', v ? '1' : '0'); } catch { /* abaikan */ }
+  };
   /** Sinar proyektor ditampilkan sebagai pola grid (test pattern) - seperti mode grid simulator pabrikan. */
   const [gridSinar, setGridSinar] = useState(false);
   /** Keterangan kecil di cahaya proyektor (nama, jarak, ukuran, lux) - bisa disembunyikan tanpa mematikan sinar; diingat per perangkat. */

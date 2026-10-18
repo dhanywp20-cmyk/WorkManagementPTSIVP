@@ -47,6 +47,20 @@ export function arahProyektor(b: Benda): Titik {
   const r = (b.rot * Math.PI) / 180, t = (tiltDari(b) * Math.PI) / 180;
   return [Math.sin(r) * Math.cos(t), Math.sin(t), Math.cos(r) * Math.cos(t)];
 }
+/** Jarak minimum lensa dari dinding / plafon / lantai (m). */
+export const JARAK_LENSA_PERMUKAAN = 0.03;
+/**
+ * Posisi proyektor yang sah: yang wajib di dalam ruang hanya LENSANYA - badan boleh tertanam di plafon
+ * atau dinding (instalasi tersembunyi / recessed, yang keluar hanya lensa). Lensa (ikut putar & tilt)
+ * dijaga >= 3 cm dari dinding luar 0..X, depan-belakang 0..Z, lantai & plafon; posisi badan digeser
+ * seperlunya. Benda lain tetap dijepit utuh di dalam ruang oleh pemanggil.
+ */
+export function jepitProyektor(b: Benda, X: number, Z: number, plafon: number): { x: number; z: number; elev: number } {
+  const [lx, ly, lz] = keDunia(b, lensaProyektor(b));
+  const m = JARAK_LENSA_PERMUKAAN;
+  const geser = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v)) - v;
+  return { x: b.x + geser(lx, m, X - m), z: b.z + geser(lz, m, Z - m), elev: Math.max(0, b.elev + geser(ly, m, plafon - m)) };
+}
 export const throwRatioDari = (b: Benda) => Math.max(0.1, b.throwRatio ?? 1.5);
 /** Offset vertikal lensa proyektor (pecahan tinggi gambar). */
 export const offsetLensaDari = (p: Benda) => Math.min(1.5, Math.max(-0.5, p.offsetLensa ?? OFFSET_GAMBAR));

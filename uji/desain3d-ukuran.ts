@@ -4,13 +4,16 @@
  *  2. ubah tinggi plafon / salin ke ruang lain tidak merusak arah proyektor ke layar;
  *  3. gambar proyektor selalu 16:9 (layar 4:3 / 16:10 / 21:9 tetap tertutup, angka lux benar);
  *  4. aturan jarak pandang 4-6-8 memakai tinggi GAMBAR, bukan bodi TV / IFP;
- *  5. benda yang diturunkan karena plafon lebih rendah tidak menembus plafon.
+ *  5. benda yang diturunkan karena plafon lebih rendah tidak menembus plafon;
+ *  7. proyektor boleh tertanam di plafon / dinding (hanya lensa di dalam ruang);
+ *  8. kartu keterangan blending bisa disembunyikan (bawaan) & dibuka per area.
  *
  * Jalankan: npm test -- desain3d-ukuran
  */
 import { readFileSync } from 'fs';
 import {
-  bendaBaru, cakupanProyektor, daftarRuang, denahDari, KATEGORI_RUANG, permukaanBenda, proyektorKeLayar, salinIsi,
+  bendaBaru, cakupanProyektor, daftarRuang, denahDari, JARAK_LENSA_PERMUKAAN, jepitProyektor, KATEGORI_RUANG, keDunia, lensaProyektor,
+  permukaanBenda, proyektorKeLayar, salinIsi,
   sesuaikanUkuranRuang, sinarProyektor, templateRuang, throwRatioDari, ukuranGambarDisplay, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 import { ukuranDariDiagonal } from '../lib/av-hitung';
@@ -107,6 +110,47 @@ for (const kat of KATEGORI_RUANG) {
     return b.elev < -0.01 || b.elev + b.h > k.t + 0.01;
   });
   cek(`${kat.id}: tidak ada benda menembus lantai / plafon (${ks.map(k => `${k.t} m`).join(' + ')})`, keluar.length === 0, keluar.map(b => b.nama).join(', '));
+}
+
+console.log('\n7. Proyektor tertanam di plafon / dinding (hanya lensa di dalam ruang)');
+{
+  const p0 = bendaBaru('proyektor', k3, { pasangProyektor: 'plafon' });
+  const lensa = (b: Benda) => keDunia(b, lensaProyektor(b));
+  const m = JARAK_LENSA_PERMUKAAN;
+  //  Diangkat jauh ke atas plafon: badan menembus plafon, lensa berhenti 3 cm di bawah plafon.
+  const naik = { ...p0, ...jepitProyektor({ ...p0, elev: 9 }, k3.p, k3.l, k3.t) };
+  cek(`plafon 3 m: badan tertanam (puncak ${(naik.elev + naik.h).toFixed(2)} m), lensa ${lensa(naik)[1].toFixed(3)} m = 3 cm di bawah plafon`,
+    naik.elev + naik.h > k3.t && Math.abs(lensa(naik)[1] - (k3.t - m)) < 1e-9);
+  //  Didorong menembus dinding belakang (menghadap layar di depan): lensa tetap 3 cm di dalam ruang.
+  const mundur = { ...p0, rot: 180, z: 20 };
+  const j = { ...mundur, ...jepitProyektor(mundur, k3.p, k3.l, k3.t) };
+  cek(`dinding belakang: badan masuk dinding (tepi ${(j.z + j.d / 2).toFixed(2)} > ${k3.l} m), lensa ${lensa(j)[2].toFixed(3)} m`,
+    j.z + j.d / 2 > k3.l && Math.abs(lensa(j)[2] - (k3.l - m)) < 1e-9);
+  const dlm = jepitProyektor({ ...p0, x: 4, z: 3, elev: 2 }, k3.p, k3.l, k3.t);
+  cek('posisi di dalam ruang tidak diubah', dlm.x === 4 && dlm.z === 3 && dlm.elev === 2);
+  const mesin = readFileSync(`${D3}/mesin/useMesin.ts`, 'utf8');
+  cek('seret (gizmo): proyektor dijepit lewat lensanya, benda lain tetap utuh di dalam ruang',
+    /jepitProyektor\(\{ \.\.\.b0, x, z, rot, elev: Math\.max\(0, o\.position\.y\) \}, bt\.x, bt\.z, plafon\)/.test(mesin) && /proyektor \? v : Math\.min\(bt\.x, Math\.max\(0, v\)\)/.test(mesin));
+  cek('geser cepat & input angka (X, Z, Dari lantai) memakai aturan yang sama',
+    /jepitProyektor\(/.test(readFileSync(`${D3}/panel/GeserCepat.tsx`, 'utf8')) && (readFileSync(`${D3}/panel/benda/BagianUmum.tsx`, 'utf8').match(/posisiProyektor\(\{/g) ?? []).length === 3);
+  //  Ubah ukuran ruang: proyektor tertanam yang menembak layar tetap tertanam (tidak dipasang ulang ke drop pole).
+  const layar = bendaBaru('layar', k3, { diag: 100 });
+  const pas = proyektorKeLayar(p0, layar, k3, r3);
+  const tanam = { ...pas, elev: Math.round((k3.t - pas.h + 0.03) * 100) / 100 }; //  badan menembus 3 cm, lensa tetap di bawah plafon
+  const r4 = { ...r3, p: 9 };
+  const hasil = sesuaikanUkuranRuang([layar, tanam], r3, r4).find(b => b.jenis === 'proyektor')!;
+  cek('ruang dipanjangkan: proyektor tertanam tetap tertanam & lensanya di bawah plafon', hasil.elev === tanam.elev && lensa(hasil)[1] <= r4.t - m + 1e-9, `elev ${hasil.elev}`);
+}
+
+console.log('\n8. Keterangan blending tidak mengganggu');
+{
+  const ukur = readFileSync(`${D3}/mesin/ukurBlending.ts`, 'utf8');
+  const keadaan = readFileSync(`${D3}/useKeadaanDesain.ts`, 'utf8');
+  cek('bawaan tersembunyi & diingat per perangkat', /localStorage\.getItem\('wm_desain3d_detail_blending'\) === '1'/.test(keadaan));
+  cek('zona & angka cm tetap tampil; kartu, garis penunjuk & titiknya disembunyikan lewat .visible', !/if \(!detail\) return;/.test(ukur) && /objKartu\.visible = buka; penunjuk\.visible = buka; titikTengah\.visible = buka;/.test(ukur));
+  cek('klik ⓘ di angka cm / klik kartu = buka / tutup satu area (bertahan saat digambar ulang)', /angka\.append\(cm, ikon\)/.test(ukur) && /pilihanKartu\.set\(kunci, buka\)/.test(ukur) && /for \(const el of \[angka, kartu\]\)/.test(ukur));
+  cek('lembar cetak menulis angka tanpa ⓘ', /angka\.dataset\.teks = cm/.test(ukur));
+  cek('centang bernama "Keterangan blending"', /l: 'Keterangan blending'/.test(readFileSync(`${D3}/panel/KontrolKanvas.tsx`, 'utf8')));
 }
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
