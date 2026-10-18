@@ -11,7 +11,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { klienSebagaiUser, muatUser } from '@/lib/ai-server';
 import { ambilBearer, verifikasiToken } from '@/lib/token-integrasi';
-import { AKSI_BACA, AKSI_TAHAP_2, AKSI_TULIS, jalankanAksi } from '@/lib/integrasi-aksi';
+import { AKSI_BACA, AKSI_TULIS, jalankanAksi } from '@/lib/integrasi-aksi';
+import { buatEfekServer } from '@/lib/efek-server';
+import { muatKelompok } from '@/lib/kelompok';
+import { muatKategoriInsentif } from '@/lib/incentive-scheme';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -32,7 +35,7 @@ export async function GET(req: NextRequest) {
   if ('galat' in s) return s.galat;
   return NextResponse.json({
     ok: true, nama: s.u.full_name ?? s.u.username, username: s.u.username, peran: s.u.role, cakupan: s.p.cakupan,
-    aksi: { baca: AKSI_BACA, tulis: s.p.cakupan.includes('tulis') ? AKSI_TULIS : [], belum: Object.keys(AKSI_TAHAP_2) },
+    aksi: { baca: AKSI_BACA, tulis: s.p.cakupan.includes('tulis') ? AKSI_TULIS : [] },
   }, { headers: KEPALA });
 }
 
@@ -44,7 +47,14 @@ export async function POST(req: NextRequest) {
   const aksi = String(body.aksi ?? '').trim();
   const args = body.args && typeof body.args === 'object' && !Array.isArray(body.args) ? body.args as Record<string, unknown> : {};
   try {
-    const hasil = await jalankanAksi(aksi, args, { db: klienSebagaiUser(s.u), admin: s.admin, u: s.u, cakupan: s.p.cakupan });
+    const db = klienSebagaiUser(s.u);
+    const hasil = await jalankanAksi(aksi, args, {
+      db, admin: s.admin, u: s.u, cakupan: s.p.cakupan,
+      //  WA/Telegram, in-app + push, audit: padanan server dari fungsi peramban (lib/efek-server.ts).
+      efek: buatEfekServer(db, s.admin, s.u.id),
+      //  Yang di peramban dimuat saat halaman Reminder Schedule dibuka.
+      muatAturan: async () => { await Promise.all([muatKelompok(), muatKategoriInsentif()]); },
+    });
     return NextResponse.json(hasil, { status: hasil.ok ? 200 : 400, headers: KEPALA });
   } catch (e) {
     console.error('[integrasi/diwaypi]', aksi, e);

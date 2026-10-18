@@ -3,6 +3,7 @@
 /** useModePenyelesaian - dipecah dari app/(portal)/reminder-schedule/_components/useAksiStatus.ts (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
 import { Status, Reminder, TeamUser } from './shared';
 import { supabase } from '@/lib/supabase';
+import { galatPelaksanaan, simpanDetailPelaksanaan, type IsianPelaksanaan } from '@/lib/jadwal-status';
 
 export interface ModePenyelesaianKonteks {
   bastDate: string;
@@ -58,74 +59,29 @@ export function useModePenyelesaian(k: ModePenyelesaianKonteks) {
   };
 
   const handleModeConfirm = async () => {
-    if (!detailReminder || !modePenyelesaian) {
-      notify('error', 'Pilih mode penyelesaian terlebih dahulu!');
-      return;
-    }
-    if (!bastDate) { notify('error', 'Tanggal BAST wajib diisi!'); return; }
-    if (!displayType) { notify('error', 'Tipe Display wajib dipilih (LED / LCD / Mix)!'); return; }
-    if (requiresControllerAuto && !controllerBrand) { notify('error', 'Pilih brand Controller Automation (Cue / Extron / Wyrestorm)!'); return; }
-    if (modePenyelesaian === 'remote') {
-      if (!installerName.trim()) { notify('error', 'PTS Daerah wajib diisi untuk mode Remote!'); return; }
-      if (!installerDaerah.trim()) { notify('error', 'Daerah wajib diisi untuk mode Remote!'); return; }
-    }
+    if (!detailReminder) { notify('error', 'Pilih mode penyelesaian terlebih dahulu!'); return; }
+    const isian: IsianPelaksanaan = {
+      mode: modePenyelesaian, installerName, installerUserId, installerDaerah, bastDate,
+      displayType, requiresMiddleware, requiresControllerAuto, controllerBrand,
+    };
+    //  Validasi dulu (panel tetap terbuka, tanpa spinner) - pesannya dari lib/jadwal-status.ts.
+    const salah = galatPelaksanaan(isian);
+    if (salah) { notify('error', salah); return; }
     const snap = detailReminder;
     const reminderId = snap.id;
-    const modeVal = modePenyelesaian;
-    const installerNameVal = installerName.trim();
-    const installerDaerahVal = installerDaerah.trim();
-    const bastDateVal = bastDate || null;
 
     setSavingMode(true);
-    // Auto: kalau handler ber-jabatan Manager (dari Struktur Organisasi), skema
-    // Manager-as-PIC berlaku otomatis - tidak perlu dipilih manual.
-    const { data: handlerUser } = await supabase.from('users').select('jabatan').eq('username', snap.assigned_to).maybeSingle();
-    const autoPicType: 'standard' | 'manager_pic' = handlerUser?.jabatan === 'Manager' ? 'manager_pic' : 'standard';
-    const isiPenyelesaian = {
-      mode_penyelesaian: modeVal,
-      installer_name: modeVal === 'remote' ? installerNameVal : null,
-      installer_daerah: modeVal === 'remote' ? installerDaerahVal : null,
-      installer_user_id: modeVal === 'remote' ? installerUserId : null,
-      bast_date: bastDateVal,
-      display_type: displayType,
-      requires_middleware: requiresMiddleware,
-      requires_controller_automation: requiresControllerAuto,
-      controller_automation_brand: requiresControllerAuto ? controllerBrand : null,
-      pic_type: autoPicType,
-    };
     /*
-      Ditulis ke SELURUH baris sebatch, bukan hanya baris yang sedang dibuka.
-
-      Jadwal berhari-hari tersimpan sebagai beberapa baris yang diikat batch_id,
-      dan penandaan statusnya memang sudah mengenai semuanya (lihat
-      handleStatusChange). Tapi BAST/mode/installer dulu hanya menempel di SATU
-      baris - baris yang kebetulan dibuka dari daftar, yaitu tanggal paling
-      AWAL. Sementara itu layar Incentive memilih wakil proyeknya lewat
-      gabungkanProyek(), yang sengaja mengambil tanggal paling AKHIR (lihat
-      lib/kelompok-insentif.ts) - baris yang justru tidak pernah diisi.
-
-      Akibatnya proyek dari jadwal multi-tanggal muncul di Incentive dengan
-      BAST "Belum diisi" walau formulirnya sudah diisi lengkap, dan tombol
-      Generate Tahapan tidak pernah muncul karena syaratnya adalah adanya BAST.
-      Satu pekerjaan = satu tanggal BAST, jadi seluruh barisnya harus membawa
-      keterangan yang sama - bukan hanya salah satunya.
+      Ditulis ke SELURUH baris sebatch, bukan hanya baris yang sedang dibuka -
+      satu pekerjaan = satu tanggal BAST. pic_type Manager otomatis, cek 0 baris
+      (RLS menolak diam-diam): semuanya di lib/jadwal-status.ts, dipakai juga DIWAYPI.
     */
-    const { data: barisTerisi, error: galatIsi } = await (snap.batch_id
-      ? supabase.from('reminders').update(isiPenyelesaian).eq('batch_id', snap.batch_id).select('id')
-      : supabase.from('reminders').update(isiPenyelesaian).eq('id', reminderId).select('id'));
+    const simpan = await simpanDetailPelaksanaan(supabase, snap, isian);
     setSavingMode(false);
-    //  select('id') + cek baris: RLS yang menolak diam-diam (0 baris, tanpa
-    //  galat) dulu tidak terlihat sama sekali di sini - panel tertutup, semua
-    //  tampak berhasil, padahal detailnya tidak pernah tersimpan. Persis
-    //  kejadian yang membuat jadwal Completed berakhir tanpa detail.
     //  Panel sengaja TIDAK ditutup saat gagal: isian yang sudah diketik tidak
     //  boleh ikut hilang hanya karena penyimpanannya ditolak.
-    if (galatIsi || !barisTerisi || barisTerisi.length === 0) {
-      notify('error', galatIsi
-        ? 'Gagal menyimpan detail pelaksanaan: ' + galatIsi.message
-        : 'Gagal menyimpan detail pelaksanaan: akun ini bukan aktor pada jadwal ini (RLS menolak).');
-      return;
-    }
+    if (!simpan.ok) { notify('error', simpan.galat); return; }
+    const isiPenyelesaian = simpan.isi;
     setShowModeModal(false);
 
     if (modeEditSaja) {

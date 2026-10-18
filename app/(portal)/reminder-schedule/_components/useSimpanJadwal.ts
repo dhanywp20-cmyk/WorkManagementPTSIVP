@@ -1,10 +1,12 @@
 'use client';
 
 /** useSimpanJadwal - dipecah dari app/(portal)/reminder-schedule/page.tsx (scripts/ekstrak-hook.mjs). Keadaan tetap milik komponen; hook dipanggil di posisi yang sama. */
-import { Reminder, TeamUser, GuestUser, REVIEW_TRIGGER_CATEGORIES, formatDate, newBatchId, sendFonnteWA, REMINDER_FIELDS } from './shared';
+import { Reminder, TeamUser, GuestUser, newBatchId, sendFonnteWA, REMINDER_FIELDS } from './shared';
 import { supabase } from '@/lib/supabase';
 import { adalahKategoriInsentif } from '@/lib/incentive-scheme';
-import { normalkanNama } from '@/lib/kelompok-insentif';
+import { barisJadwalWA, galatIsianJadwal, pesanJadwalBaru, proyekSerupa } from '@/lib/jadwal-aturan';
+import { buatJadwal, tandaiGrupInsentif } from '@/lib/jadwal-buat';
+import { efekPeramban } from '@/lib/efek-peramban';
 import { idDariNama, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { type ReminderSnapshot } from '@/lib/project-progress-sync';
 import { appLink } from '@/lib/app-url';
@@ -40,34 +42,17 @@ export interface SimpanJadwalKonteks {
 
 export function useSimpanJadwal(k: SimpanJadwalKonteks) {
   const { bulkTarget, currentUser, editingReminder, emptyForm, extraDates, fetchRemindersQuiet, formData, guestUsers, notify, progressTimelinePayload, proyekLamaTerpilih, reminders, setBulkTarget, setEditingReminder, setExtraDates, setFormData, setProyekLamaTerpilih, setSaving, setShowFormModal, setTanyaLanjutan, setView, syncNewRemindersToProgress, teamUsers } = k;
+  //  Penandaan kelompok & pencarian proyek serupa: lib/jadwal-buat.ts & lib/jadwal-aturan.ts
+  //  (dipakai juga DIWAYPI).
   const resolveGrupInsentif = async (sumber: Reminder[]): Promise<string> => {
-    const adaGrup = sumber.find(r => r.incentive_group_id)?.incentive_group_id;
-    const grup = adaGrup ?? crypto.randomUUID();
-    if (!adaGrup) {
-      const idLama = sumber.map(r => r.id);
-      //  Diperiksa: baris LAMA harus benar-benar ikut ditandai grup baru ini,
-      //  atau ia tetap berdiri sendiri di Incentive PTS sementara jadwal baru
-      //  yang memakai `grup` ini justru terhitung sebagai proyek terpisah -
-      //  persis pola "dua pool insentif untuk satu proyek" yang jadi alasan
-      //  seluruh berkas lib/kelompok-insentif.ts ditulis.
-      const { data: terubah, error } = await supabase.from('reminders')
-        .update({ incentive_group_id: grup }).in('id', idLama).select('id');
-      if (error || !terubah || terubah.length < idLama.length) {
-        notify('error', 'Sebagian jadwal lama gagal ditandai satu proyek yang sama - periksa manual di Incentive PTS.');
-      }
+    const { grup, sebagianGagal } = await tandaiGrupInsentif(supabase, sumber);
+    if (sebagianGagal) {
+      notify('error', 'Sebagian jadwal lama gagal ditandai satu proyek yang sama - periksa manual di Incentive PTS.');
     }
     return grup;
   };
 
-  const cariProyekSerupa = (nama: string, kategori: string): Reminder[] => {
-    if (!adalahKategoriInsentif(kategori)) return [];
-    const n = normalkanNama(nama);
-    if (!n) return [];
-    return reminders.filter(r =>
-      normalkanNama(r.project_name) === n
-      && adalahKategoriInsentif(r.category)
-      && r.status !== 'cancelled');
-  };
+  const cariProyekSerupa = (nama: string, kategori: string): Reminder[] => proyekSerupa(reminders, nama, kategori);
 
   const handleSave = async (argGrup?: string | null) => {
     /*
@@ -80,20 +65,8 @@ export function useSimpanJadwal(k: SimpanJadwalKonteks) {
     */
     const grupInsentif = (typeof argGrup === 'string' || argGrup === null) ? argGrup : undefined;
 
-    if (!formData.project_name.trim())            { notify('error', 'Nama project wajib diisi!');  return; }
-    if (bulkTarget === 'none' && !formData.assigned_to) { notify('error', 'Pilih anggota team!'); return; }
-    if (!formData.due_date)                { notify('error', 'Tanggal wajib diisi!');          return; }
-    if (!formData.address.trim()) { notify('error', 'Lokasi Project wajib diisi!');  return; }
-
-    const isTriggerCat = (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(formData.category);
-    if (!formData.sales_name?.trim()) {
-      notify('error', 'Pilih Sales wajib diisi!');
-      return;
-    }
-    if (isTriggerCat && !formData.sales_name?.trim()) {
-      notify('error', `Kategori "${formData.category}" memerlukan pilihan Guest / Sales untuk form review!`);
-      return;
-    }
+    const salahIsian = galatIsianJadwal(formData, bulkTarget === 'none');
+    if (salahIsian) { notify('error', salahIsian); return; }
 
     // Identitas uuid dicatat berdampingan dengan namanya - uuid menjawab SIAPA,
     // nama tetap menjawab TERCATAT SEBAGAI SIAPA. Sales dicari di antara akun
@@ -144,9 +117,7 @@ export function useSimpanJadwal(k: SimpanJadwalKonteks) {
     // Grup semua baris dari 1 submission multi-tanggal - supaya Schedule List
     // menampilkannya sbg 1 baris (bukan N baris identik per tanggal).
     const batchId = (!editingReminder && allDates.length > 1) ? newBatchId() : null;
-    const jadwalLine = allDates.length > 1
-      ? `🕐 *Jadwal (${allDates.length} hari):* ${allDates.map(d => formatDate(d)).join(', ')}${formData.due_time ? ' · ' + formData.due_time : ''}`
-      : `🕐 Jadwal: *${formatDate(formData.due_date)}${formData.due_time ? ' · ' + formData.due_time : ''}*`;
+    const jadwalLine = barisJadwalWA(allDates, formData.due_time);
 
     // BULK ASSIGN
     if (bulkTarget !== 'none') {
@@ -178,21 +149,7 @@ export function useSimpanJadwal(k: SimpanJadwalKonteks) {
       notify('success', `${payloads.length} reminder dibuat untuk Tim ${bulkLabelMap[bulkTarget]}${allDates.length > 1 ? ` (${allDates.length} hari)` : ''}!`);
       for (const u of targets) {
         if (u.phone_number) {
-          const msg =
-            `🗓️ *JADWAL BARU — PTS IVP*\n\n` +
-            `Halo *${u.full_name}*, kamu mendapat jadwal baru:\n\n` +
-            `*Nama Project: ${formData.project_name}*\n` +
-            `*Deskripsi: ${formData.description}*\n` +
-            `📦 *Product: ${formData.product}*\n` +
-            `🏷️ Kategori: ${formData.category}\n` +
-            `📍 Lokasi: ${formData.address || '-'}\n` +
-            `👤 Sales: ${formData.sales_name}${formData.sales_division ? ' - ' + formData.sales_division : ''}\n` +
-            `${jadwalLine}\n` +
-            (formData.pic_name  ? `🙋 PIC: ${formData.pic_name}${formData.pic_phone ? ' - ' + formData.pic_phone : ''}\n\n` : '') +
-            (formData.notes     ? `📝 Catatan: ${formData.notes}\n\n` : '') +
-            `-\n` +
-            `Link Dashboard: ${appLink()}\n` +
-            `jangan lupa peralatan & Semangat💪🏼`;
+          const msg = pesanJadwalBaru(u.full_name, formData, jadwalLine, appLink());
           await sendFonnteWA(u.phone_number, msg, { reminderType: 'new_schedule' }, 'reminder.assigned');
         }
       }
@@ -212,8 +169,6 @@ export function useSimpanJadwal(k: SimpanJadwalKonteks) {
 
     setSaving(true);
     let error: { message: string } | null = null;
-    /** Baris yang benar-benar tersimpan - dipakai mencatat riwayat pembuatan. */
-    let barisBaru: { id: string; project_name: string | null }[] = [];
     // Tujuan "SUP::id::nama" berarti dialihkan ke Supervisor, bukan ke anggota
     // tim. Bedanya: assigned_to dikosongkan dan reminder masuk kembali ke tahap
     // supervisor_assign, sehingga Supervisor itulah yang menentukan siapa yang
@@ -221,6 +176,31 @@ export function useSimpanJadwal(k: SimpanJadwalKonteks) {
     const alihKeSupervisor = formData.assigned_to.startsWith('SUP::')
       ? formData.assigned_to.split('::')
       : null;
+
+    if (!editingReminder) {
+      //  Jalur BUAT BARU: baris, batch, kelompok insentif, sinkron Project Progress,
+      //  audit, kabar Supervisor & pelaksana - semuanya lib/jadwal-buat.ts (dipakai juga DIWAYPI).
+      const hasil = await buatJadwal(supabase, efekPeramban, {
+        isian: formData, tanggal: allDates, timeline: progressTimelinePayload(), grupInsentif,
+        pelaksana: assignee, alihKeSupervisor,
+        supervisor: alihKeSupervisor ? teamUsers.find(u => u.id === alihKeSupervisor[1]) : null,
+        salesUserId, pelaku: currentUser,
+        //  Tidak ditunggu, sama seperti dulu: draft Project Progress hanya pelengkap.
+        sinkronProgress: async rows => { void syncNewRemindersToProgress(rows); },
+        lapor: { tersimpan: n => notify('success', n > 1 ? `${n} reminder dibuat!` : 'Reminder ditambahkan!') },
+      });
+      if (!hasil.ok) { notify('error', hasil.galat); setSaving(false); return; }
+      if (hasil.waPelaksana?.ok) notify('success', `WA notifikasi terkirim ke ${hasil.waPelaksana.nama}!`);
+      setSaving(false);
+      setShowFormModal(false);
+      setView('list');
+      setEditingReminder(null);
+      setFormData(emptyForm);
+      setExtraDates([]);
+      setProyekLamaTerpilih(null);
+      fetchRemindersQuiet();
+      return;
+    }
 
     if (editingReminder) {
       // Saat menyunting, uuid lama TIDAK boleh ditimpa null hanya karena nama
@@ -318,34 +298,6 @@ export function useSimpanJadwal(k: SimpanJadwalKonteks) {
         if (r.error) galatSunting.push(r.error.message);
       }
       error = galatSunting.length > 0 ? { message: galatSunting[0] } : null;
-    } else {
-      const payloads = allDates.map(d => ({
-        ...formData,
-        due_date: d,
-        ...progressTimelinePayload(),
-        batch_id: batchId,
-        // Hanya ditulis bila memang dijawab "kelanjutan" - kolomnya boleh NULL,
-        // dan NULL di sini berarti "berdiri sendiri", bukan "belum tahu".
-        ...(grupInsentif ? { incentive_group_id: grupInsentif } : {}),
-        assign_name: assignee?.full_name ?? formData.assigned_to,
-        sales_user_id: salesUserId,
-        assign_user_id: assignee?.id ?? null,
-        created_by: currentUser?.username ?? 'system',
-        // Dibuat langsung ke Supervisor: jadwal masuk ke tahap supervisor_assign
-        // dengan pelaksana masih kosong, jadi Supervisor itu yang menentukan
-        // siapa yang mengerjakan - alurnya sama dengan ticket Troubleshooting.
-        ...(alihKeSupervisor ? {
-          assigned_to: '', assign_name: '', assign_user_id: null,
-          routing_status: 'supervisor_assign',
-          assigned_supervisor_id: alihKeSupervisor[1],
-        } : {}),
-      }));
-      const insRes = await cobaIdentitas(async pakaiUuid =>
-        await supabase.from('reminders').insert(pakaiUuid ? payloads : payloads.map(tanpaIdentitas))
-          .select('id, project_name, address, sales_name, sales_division, assign_name, due_date, category, progress_start_date, progress_target_date'));
-      error = insRes.error;
-      barisBaru = (insRes.data ?? []) as { id: string; project_name: string | null }[];
-      if (!insRes.error) void syncNewRemindersToProgress((insRes.data ?? []) as ReminderSnapshot[]);
     }
 
     if (error) {
@@ -434,75 +386,8 @@ export function useSimpanJadwal(k: SimpanJadwalKonteks) {
           );
         }
       }
-    } else {
-      for (const row of barisBaru) {
-        logAudit({
-          user_id: currentUser?.id ?? '', user_name: currentUser?.full_name ?? '',
-          action: 'create', module: 'reminder',
-          target_id: row.id, target_name: row.project_name ?? formData.project_name,
-          notes: `Dibuat langsung oleh admin — kategori ${formData.category}`,
-        }).catch(() => {});
-      }
     }
-    notify('success', editingReminder ? 'Reminder diperbarui!' : (allDates.length > 1 ? `${allDates.length} reminder dibuat!` : 'Reminder ditambahkan!'));
-
-    // Kirim WA notifikasi ke assignee saat reminder BARU dibuat
-    // Dibuat langsung ke Supervisor: yang dikabari Supervisor-nya, bukan
-    // pelaksana - pelaksananya memang belum ada, dia yang akan menentukan.
-    if (!editingReminder && alihKeSupervisor) {
-      const supUser = teamUsers.find(u => u.id === alihKeSupervisor[1]);
-      if (supUser?.phone_number) {
-        void sendFonnteWA(supUser.phone_number, [
-          '🎯 *Jadwal Perlu Di-assign ke Tim*',
-          '━━━━━━━━━━━━━━━━━━',
-          `Halo *${supUser.full_name}*, kamu dapat jadwal dari *${currentUser?.full_name ?? 'Admin'}*:`,
-          `📌 *Project :* ${formData.project_name}`,
-          `🏷️ *Kategori:* ${formData.category}`,
-          `📍 *Lokasi  :* ${formData.address || '-'}`,
-          `🗓️ *Tanggal :* ${formatDate(formData.due_date)} ${formData.due_time || ''}`,
-          '━━━━━━━━━━━━━━━━━━',
-          'Mohon tentukan anggota tim yang mengerjakan.',
-          `🔗 ${appLink('/reminder-schedule')}`,
-        ].join('\n'), undefined, 'reminder.routed_supervisor');
-      }
-      if (supUser?.id) {
-        void createNotification({
-          user_id: supUser.id, type: 'reminder',
-          title: '🎯 Jadwal perlu kamu assign',
-          body: `${formData.project_name} — dari ${currentUser?.full_name ?? 'Admin'}`,
-          action_url: '/reminder-schedule',
-          //  ref_id membuat notifikasi ini membuka jadwalnya langsung
-          //  (?open=<id>), bukan cuma daftar - lihat deep-link di page ini.
-          ref_id: barisBaru[0]?.id,
-          created_by: currentUser?.full_name ?? 'Admin',
-        });
-      }
-    }
-
-    if (!editingReminder && assignee?.phone_number) {
-      const assigneeName = assignee.full_name ?? formData.assigned_to;
-      const msg =
-        `🗓️ *JADWAL BARU — PTS IVP*\n\n` +
-        `Halo *${assigneeName}*, kamu mendapat jadwal baru:\n\n` +
-        `*Nama Project: ${formData.project_name}*\n` +
-        `*Deskripsi: ${formData.description}*\n` +
-        `📦 *Product: ${formData.product}*\n` +
-        `🏷️ Kategori: ${formData.category}\n` +
-        `📍 Lokasi: ${formData.address || '-'}\n` +
-        `👤 Sales: ${formData.sales_name}${formData.sales_division ? ' - ' + formData.sales_division : ''}\n` +
-        `${jadwalLine}\n` +
-        (formData.pic_name  ? `🙋 PIC: ${formData.pic_name}${formData.pic_phone ? ' - ' + formData.pic_phone : ''}\n\n`    : '') +
-        (formData.notes     ? `📝 Catatan: ${formData.notes}\n\n`    : '') +
-        `-\n` +
-       `Link Dashboard: ${appLink()}\n` +
-        `jangan lupa peralatan & Semangat💪🏼`;
-
-      //  Telegram TIDAK dipanggil di sini lagi: sejak lib/wa.ts mengirim ke
-      //  dua kanal sekaligus, memanggilnya terpisah di sini membuat orang yang
-      //  sama menerima pesan Telegram dua kali untuk satu jadwal.
-      const waResult = await sendFonnteWA(assignee.phone_number, msg, { reminderType: 'new_schedule' }, 'reminder.assigned');
-      if (waResult.ok) notify('success', `WA notifikasi terkirim ke ${assigneeName}!`);
-    }
+    notify('success', 'Reminder diperbarui!');
 
     setSaving(false);
     setShowFormModal(false);
