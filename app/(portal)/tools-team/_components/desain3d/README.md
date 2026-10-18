@@ -37,6 +37,7 @@ Arah ketergantungan **satu arah**: `panel → (aksi, simpan, ekspor, mesin) → 
 | `blending.ts` | area blending antar proyektor: lebar (cm) menyusuri permukaan & persen gambar |
 | `kabel.ts` | jalur & panjang kabel ke rack, **legend warna standar** |
 | `rak.ts` | isi rack (elevation) |
+| `bom.ts` | BOM: perangkat & furnitur (dijumlah), aksesori pemasangan, isi rack, kabel; draf checklist instalasi Project Progress |
 | `template.ts` | template kategori ruangan (terkunci — selalu dibuat ulang dari kode) |
 | `pustaka.ts` | isi proyektor / display / speaker dari Pustaka Tools Team (katalog produk Admin) |
 | `teks.ts` | teks / keterangan manual: baris, tinggi huruf, ukuran kotak dari isi |

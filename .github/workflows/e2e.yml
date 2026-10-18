@@ -1,8 +1,12 @@
 name: E2E
 
-# Manual saja (Actions -> E2E -> Run workflow). Tidak jalan otomatis: Preview & produksi berbagi
-# basis data, dan setiap putaran memakai kuota Vercel/Supabase paket gratis.
+# Manual (Actions -> E2E -> Run workflow) + otomatis SEMINGGU SEKALI ke produksi. Tidak per PR:
+# Preview & produksi berbagi basis data, dan setiap putaran memakai kuota Vercel/Supabase paket
+# gratis. Akun E2E adalah Viewer (hanya baca), jadi putaran terjadwal tidak mengubah data.
+# Gagal -> GitHub mengirim email ke pemilik repo.
 on:
+  schedule:
+    - cron: '0 1 * * 1'   # Senin 08.00 WIB
   workflow_dispatch:
     inputs:
       base_url:
@@ -15,7 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      E2E_BASE_URL: ${{ inputs.base_url }}
+      #  Putaran terjadwal tidak punya inputs -> produksi.
+      E2E_BASE_URL: ${{ inputs.base_url || 'https://work-management-ptsivp.vercel.app' }}
       E2E_USERNAME: ${{ secrets.E2E_USERNAME }}
       E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}
       CI: 1

@@ -1,6 +1,8 @@
 'use client';
 /** Bilah alat: kategori, ruangan, daftar benda, pusatkan, buka/simpan, undo, sudut pandang, PNG, cetak. */
+import { useState } from 'react';
 import { Segmen, TombolSalin } from '../../bersama/ui';
+import { ModalChecklistBom } from './ModalChecklistBom';
 import { tombol, tombolAktif, tombolUtama } from './gaya';
 import { Ikon } from '@/components/shared/Ikon';
 import { AlignCenterVertical, FolderOpen, HardDriveDownload, LayoutTemplate, Redo2, Undo2 } from 'lucide-react';
@@ -10,7 +12,9 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
   const { benda, bukaSisi, hanyaLihat, menuPusat, riwayat, setMenuPusat, setModal, sisi, tampilan } = a.K;
   const { pilihSudut } = a.kamera;
   const { pusatkan } = a.aksi;
-  const { denahCetak, setDenahCetak, cetak, jalankanPng, menuPng, pngLembar, ringkasan, setMenuPng, sibukPng, unduhDxf, unduhEmpatTampak, unduhFoto } = a.ekspor;
+  const { denahCetak, setDenahCetak, cetak, draftChecklist, jalankanPng, menuPng, pngLembar, ringkasan, setMenuPng, sibukPng, unduhBomExcel, unduhDxf, unduhEmpatTampak, unduhFoto } = a.ekspor;
+  const { namaDesain } = a.K;
+  const [checklistBuka, setChecklistBuka] = useState(false);
   const { unduhGLB } = a.simpan;
   return (
     <>
@@ -53,7 +57,7 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
             opsi={[{ v: '3d', l: '3D' }, { v: 'atas', l: 'Atas' }, { v: 'kursi', l: 'Dari kursi' }]} />
           <div className="relative">
             <button type="button" onClick={() => setMenuPng(v => !v)} aria-expanded={menuPng} disabled={sibukPng} className={menuPng ? tombolUtama : tombol}
-              title="Unduh gambar PNG atau denah CAD (.dxf)"><Ikon nama="📷" ukuran={14} /> {sibukPng ? 'Membuat...' : 'PNG / DXF ▾'}</button>
+              title="Unduh gambar PNG, denah CAD (.dxf), atau BOM Excel"><Ikon nama="📷" ukuran={14} /> {sibukPng ? 'Membuat...' : 'PNG / DXF / BOM ▾'}</button>
             {menuPng && (<>
               <div aria-hidden="true" className="fixed inset-0 z-20" onClick={() => setMenuPng(false)} />
               <div className="absolute right-0 top-full mt-1.5 z-30 w-64 rounded-xl bg-white border border-slate-200 shadow-xl p-1.5" role="menu">
@@ -65,6 +69,8 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
                   ['4 tampak dalam 1 gambar', 'Perspektif, denah, depan, samping', unduhEmpatTampak],
                   ['Lembar lengkap', 'Sama dengan Cetak, sebagai gambar', () => jalankanPng(pngLembar)],
                   ['Denah CAD (.dxf)', 'AutoCAD · ukuran mm, per lapis', unduhDxf],
+                  ['BOM Excel (.xlsx)', 'Perangkat, aksesori, isi rack, kabel', unduhBomExcel],
+                  ['Jadikan checklist proyek', 'Checklist instalasi di Project Progress', () => { setMenuPng(false); setChecklistBuka(true); }],
                 ] as const).map(([l, k, aksi]) => (
                   <button key={l} type="button" role="menuitem" onClick={() => void aksi()} className="w-full text-left px-3 py-2 rounded-lg hover:bg-blue-50">
                     <span className="block text-[13px] font-bold text-slate-900">{l}</span>
@@ -85,6 +91,7 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
           <TombolSalin teks={ringkasan} onCetak={cetak} />
         </div>
       </div>
+      {checklistBuka && <ModalChecklistBom judulAwal={namaDesain || 'Ruang AV'} buatDraft={draftChecklist} onTutup={() => setChecklistBuka(false)} />}
     </>
   );
 }

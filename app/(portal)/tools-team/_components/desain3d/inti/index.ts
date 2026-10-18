@@ -44,3 +44,4 @@ export * from './teksturRuang';
 export * from './presisi';
 export * from './tata';
 export * from './gridProyektor';
+export * from './bom';
