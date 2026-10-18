@@ -22,10 +22,21 @@ export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ik
 /** Warna bawaan ruang mapping: abu-abu netral (bukan hitam) supaya ruang & sinar tetap terlihat. */
 const ABU_DINDING = '#9ca3af', ABU_LANTAI = '#6b7280';
 
-/** Proyektor gantung plafon tanpa lens shift (pusat gambar = sumbu), diarahkan ke `target`. */
-function proyektorKe(k: Kotak, x: number, z: number, elev: number, target: Titik, tr: number, nama: string, zoom: [number, number] = [tr, tr]): Benda {
+/**
+ * Proyektor gantung plafon tanpa lens shift (pusat gambar = sumbu) dengan LENSA tepat di `lensa`, dibidik ke
+ * `target`. Posisi badan dihitung balik dari lensa (badan ikut miring saat menunduk), jadi setelan hasil uji
+ * cakupan (inti/cakupanProyektor.ts, uji/desain3d-cakupan.ts) terpasang persis.
+ */
+function proyektorKe(k: Kotak, lensa: Titik, target: Titik, tr: number, nama: string, zoom: [number, number] = [tr, tr]): Benda {
   const p0 = bendaBaru('proyektor', k, { pasangProyektor: 'plafon' });
-  return arahkanKe({ ...p0, x, z, elev, offsetLensa: 0, throwRatio: tr, trMin: zoom[0], trMax: zoom[1], nama }, target);
+  let p: Benda = { ...p0, x: lensa[0], z: lensa[2], elev: lensa[1] - p0.h / 2, offsetLensa: 0, throwRatio: tr, trMin: zoom[0], trMax: zoom[1], nama };
+  for (let i = 0; i < 4; i++) {
+    p = arahkanKe(p, target);
+    const l = keDunia(p, lensaProyektor(p));
+    p = { ...p, x: p.x + lensa[0] - l[0], z: p.z + lensa[2] - l[2], elev: p.elev + lensa[1] - l[1] };
+  }
+  p = arahkanKe(p, target);
+  return { ...p, x: Math.round(p.x * 1000) / 1000, z: Math.round(p.z * 1000) / 1000, elev: Math.round(p.elev * 1000) / 1000 };
 }
 
 /** Ruangan + isi untuk satu kategori. Semuanya tetap bisa diubah setelah dipasang. */
@@ -78,9 +89,12 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     const k = daftarRuang(ruang)[0];
     const bidang = { ...bendaBaru('bidang', k, { bentukBidang: 'lengkung', jariBidang: 7, busur: 100 }), x: 7, h: 3.5, elev: 0.3 };
     bidang.z = bidang.d / 2 + 0.2;
-    const pusatZ = bidang.z + (7 - bidang.d / 2), yT = bidang.elev + bidang.h / 2;
+    const pusatZ = bidang.z + (7 - bidang.d / 2), yT = bidang.elev + bidang.h / 2 + 0.15;
     const titik = (deg: number): Titik => { const a = (deg * Math.PI) / 180; return [7 + 7 * Math.sin(a), yT, pusatZ - 7 * Math.cos(a)]; };
-    const proj = [-33, 0, 33].map((deg, i) => proyektorKe(k, 7 + (i - 1) * 1.2, pusatZ, 4.3, titik(deg), 1.5, `Proyektor ${i + 1} (blending)`, [1.39, 2.09]));
+    //  Layar 3,5 m tinggi: gambar 16:9 harus >= 3,5 m tinggi di jarak ±6 m -> lensa throw pendek (TR 1,0, zoom 0,9-1,1).
+    //  Dengan lensa standar 1,39-2,09 tinggi gambar maks 2,8 m (layar hanya tertutup ±75%). Hasil uji: tertutup >= 99%,
+    //  tumpang blending ±33% (tiap sambungan).
+    const proj = [-30, 0, 30].map((deg, i) => proyektorKe(k, [7 + (i - 1) * 0.8, 4.3, pusatZ - 1], titik(deg), 1, `Proyektor ${i + 1} (blending)`, [0.9, 1.1]));
     return { nama: 'Mapping layar cekung', ruang, benda: [bidang, ...proj] };
   }
   if (id === 'mapping-cembung') {
@@ -90,26 +104,29 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     const bidang = { ...bendaBaru('bidang', k, { bentukBidang: 'cembung', ...lengkungDari(6, 0.6) }), x: 6, h: 2.2, elev: 0.8 };
     bidang.z = bidang.d / 2 + 0.5;
     const R = bidang.jariBidang ?? 5, pusatZ = bidang.z + bidang.d / 2 - R, yT = bidang.elev + bidang.h / 2;
-    const titik = (deg: number): Titik => { const a = (deg * Math.PI) / 180; return [6 + R * Math.sin(a), yT, pusatZ + R * Math.cos(a)]; };
-    //  Tiap proyektor membidik tengah separuh layarnya (seperempat busur), gambar ±3,5 m (separuh + blending).
-    const seperempat = (bidang.busur ?? 60) / 4;
-    const proj = [-seperempat, seperempat].map((deg, i) => proyektorKe(k, 6 + (i ? 1.5 : -1.5), 6.2, 4.3, titik(deg), 1.65, `Proyektor ${i + 1} (blending)`, [1.39, 2.09]));
+    const titik = (deg: number, y = yT): Titik => { const a = (deg * Math.PI) / 180; return [6 + R * Math.sin(a), y, pusatZ + R * Math.cos(a)]; };
+    //  Tiap proyektor membidik separuh layarnya (±10° busur), sedikit di atas tengah: proyektor plafon menunduk
+    //  -> gambar trapesium & ujung layar cembung lebih jauh, jadi tanpa ini pita atas layar tidak tersinari.
+    //  Hasil uji: tertutup >= 99%, tumpang ±17%; ±15% cahaya jatuh di luar layar (wajib di-mask di media server).
+    const proj = [-1, 1].map((s, i) => proyektorKe(k, [6 + s * 1.9, 4.3, 6.2], titik(s * 10, yT + 0.1), 1.55, `Proyektor ${i + 1} (blending)`, [1.39, 2.09]));
     return { nama: 'Mapping layar cembung', ruang, benda: [bidang, ...proj] };
   }
   if (id === 'mapping-objek') {
     const ruang: Ruang = { p: 12, l: 10, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'redup', r2: null };
     const k = daftarRuang(ruang)[0];
     const alas = { ...bendaBaru('panggung', k), nama: 'Alas objek', x: 6, z: 5, w: 1.8, d: 1.8, h: 0.4 };
+    //  Tiga proyektor melingkar 4 m dari objek, lensa 3,6 m, membidik 1,0 m: sisi objek setinggi 1,6 m di atas alas
+    //  tersinari sampai bawah (dari 4,2 m & bidik 1,2 m bagian bawah sisi objek tidak kena).
     const proj = [0, 120, 240].map((deg, i) => {
       const a = (deg * Math.PI) / 180;
-      return proyektorKe(k, 6 + 4 * Math.sin(a), 5 + 3.5 * Math.cos(a), 4.2, [6, 1.2, 5], 1.6, `Proyektor ${i + 1}`, [1.39, 2.09]);
+      return proyektorKe(k, [6 + 4 * Math.sin(a), 3.6, 5 + 4 * Math.cos(a)], [6, 1, 5], 1.39, `Proyektor ${i + 1}`, [1.39, 2.09]);
     });
     return { nama: 'Mapping objek', ruang, benda: [alas, ...proj] };
   }
   if (id === 'immersive') {
     //  Ruang 6 x 6 x 3,5 m. Tiap dinding disorot satu proyektor ultra short throw (TR 0,25) yang
-    //  digantung 1,5 m dari dinding itu sendiri - gambar 6 x 3,375 m dari plafon sampai lantai dan
-    //  tidak terhalang proyektor lain. Lantai: dua proyektor tegak ke bawah, lens shift 12% ke luar
+    //  digantung 1,5 m dari dinding itu sendiri - gambar 6 x 3,375 m dan tidak terhalang proyektor lain.
+    //  Offset 46%: gambar naik sedikit sampai plafon (offset 50% menyisakan pita ±13 cm di atas yang gelap). Lantai: dua proyektor tegak ke bawah, lens shift 12% ke luar
     //  supaya keduanya menutup lantai dengan area blending di tengah.
     const ruang: Ruang = { p: 6, l: 6, t: 3.5, lantai: 'polos', warnaLantai: '#e5e7eb', warnaDinding: '#f8fafc', cahaya: 'gelap', r2: null };
     const k = daftarRuang(ruang)[0];
@@ -120,7 +137,7 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
       return { ...p0, x: Math.round((x - l[0]) * 1000) / 1000, z: Math.round((z - l[2]) * 1000) / 1000 };
     };
     const ust = (rot: number, x: number, z: number, nama: string) =>
-      diLensa({ elev: 3.3, rot, tilt: 0, offsetLensa: 0.5, throwRatio: 0.25, trMin: 0.25, trMax: 0.25, nama: `UST ${nama}` }, x, z);
+      diLensa({ elev: 3.3, rot, tilt: 0, offsetLensa: 0.46, throwRatio: 0.25, trMin: 0.25, trMax: 0.25, nama: `UST ${nama}` }, x, z);
     const lantai = (rot: number, z: number) =>
       diLensa({ elev: 3.3, rot, tilt: -90, offsetLensa: 0.12, throwRatio: 0.54, trMin: 0.5, trMax: 0.65, nama: 'Lantai' }, 3, z);
     const hasil: Benda[] = [
