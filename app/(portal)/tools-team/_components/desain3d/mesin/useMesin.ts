@@ -254,6 +254,10 @@ export function useMesin(K: KeadaanDesain) {
           gambarLayar.current.forEach(t => t.dispose()); gambarLayar.current.clear();
           if (scene.environment instanceof THREE.Texture) scene.environment.dispose();
           renderer.dispose();
+          //  dispose() TIDAK menutup konteks WebGL-nya. Chrome hanya mengizinkan ±16 konteks hidup per tab:
+          //  tanpa ini, bolak-balik membuka Desain 3D di sesi yang lama menumpuk konteks (memori GPU naik,
+          //  peringatan "Too many active WebGL contexts", tab makin berat).
+          renderer.forceContextLoss();
           renderer.domElement.remove(); labelRenderer.domElement.remove();
         };
       } catch (e) {
