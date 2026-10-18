@@ -16,5 +16,19 @@ export function galatBerkasTidakTermuat(e: { name?: string; message?: string } |
   return POLA.test(`${e.name ?? ''} ${e.message ?? ''}`);
 }
 
-/** Kunci sessionStorage: muat ulang otomatis hanya SEKALI per tab agar tidak berulang tanpa henti. */
+/** Kunci sessionStorage: waktu (ms) muat ulang otomatis terakhir di tab ini. */
 export const KUNCI_MUAT_ULANG = 'galat-berkas-muat-ulang';
+
+/** Jarak minimum antar muat ulang otomatis - cukup untuk mencegah putaran tanpa henti. */
+export const JEDA_MUAT_ULANG_MS = 60_000;
+
+/**
+ * Bolehkah memuat ulang otomatis sekarang? Dulu penandanya '1' dan tidak pernah dihapus: tab yang dibuka
+ * seharian hanya sembuh sendiri di deploy PERTAMA - deploy berikutnya meninggalkan layar galat / menu
+ * macet. Sekarang yang disimpan waktunya: boleh lagi bila muat ulang terakhir sudah lewat 1 menit
+ * (berkas yang tetap gagal sesudah dimuat ulang tidak membuat tab memuat ulang tanpa henti).
+ */
+export function bolehMuatUlang(terakhir: string | null, kini: number): boolean {
+  const t = Number(terakhir);
+  return !terakhir || !Number.isFinite(t) || kini - t > JEDA_MUAT_ULANG_MS;
+}

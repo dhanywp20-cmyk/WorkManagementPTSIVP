@@ -8,7 +8,7 @@
  * Jalankan: npm test -- batas-galat
  */
 import { existsSync, readFileSync } from 'fs';
-import { galatBerkasTidakTermuat } from '../lib/galat-berkas';
+import { bolehMuatUlang, galatBerkasTidakTermuat, JEDA_MUAT_ULANG_MS } from '../lib/galat-berkas';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -31,6 +31,18 @@ cek('dynamic import gagal (Chrome)', galatBerkasTidakTermuat({ message: 'Failed 
 cek('dynamic import gagal (Safari)', galatBerkasTidakTermuat({ message: 'Importing a module script failed.' }));
 cek('galat biasa TIDAK dianggap galat berkas', !galatBerkasTidakTermuat({ name: 'TypeError', message: "Cannot read properties of undefined (reading 'map')" }));
 cek('null aman', !galatBerkasTidakTermuat(null));
+const kini = 1_800_000_000_000;
+cek('muat ulang otomatis: pertama kali boleh', bolehMuatUlang(null, kini));
+cek('muat ulang otomatis: < 1 menit sesudah yang terakhir TIDAK (cegah putaran)', !bolehMuatUlang(String(kini - 5_000), kini));
+cek('muat ulang otomatis: deploy berikutnya di tab yang sama boleh lagi', bolehMuatUlang(String(kini - JEDA_MUAT_ULANG_MS - 1), kini));
+cek("muat ulang otomatis: penanda lama '1' tidak mengunci selamanya", bolehMuatUlang('1', kini));
+cek('LayarGalat menyimpan waktu, bukan penanda sekali-seumur-tab', /bolehMuatUlang\(sessionStorage\.getItem\(KUNCI_MUAT_ULANG\), Date\.now\(\)\)/.test(readFileSync('components/shared/LayarGalat.tsx', 'utf8')));
+
+console.log('\n2b. Sesi panjang di Chrome: pindah menu tidak macet, tidak menumpuk');
+const kerangka = readFileSync('app/(portal)/_kerangka/KerangkaPortal.tsx', 'utf8');
+cek('perpindahan menu yang menggantung 12 dtk -> muat penuh ke alamat tujuan', /window\.location\.assign\(url\)/.test(kerangka) && /\}, 12_000\);/.test(kerangka) && /urlTujuan\.current = url/.test(kerangka));
+cek('ResizeObserver area isi dipasang sekali per elemen (bukan tiap render)', /\}, \[isiEl\]\);/.test(kerangka) && /ref=\{setIsiEl\}/.test(kerangka) && !/isiRef/.test(kerangka));
+cek('Desain 3D melepas konteks WebGL saat ditutup (batas ±16 konteks per tab)', /renderer\.forceContextLoss\(\)/.test(readFileSync('app/(portal)/tools-team/_components/desain3d/mesin/useMesin.ts', 'utf8')));
 
 console.log('\n3. /api/health publik dan ringan');
 const proxy = readFileSync('proxy.ts', 'utf8');
