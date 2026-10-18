@@ -13,10 +13,10 @@
 import { readFileSync } from 'fs';
 import {
   bendaBaru, cakupanProyektor, daftarRuang, denahDari, JARAK_LENSA_PERMUKAAN, jepitProyektor, KATEGORI_RUANG, keDunia, lensaProyektor,
-  permukaanBenda, proyektorKeLayar, salinIsi,
-  sesuaikanUkuranRuang, sinarProyektor, templateRuang, throwRatioDari, ukuranGambarDisplay, type Benda, type Ruang,
+  permukaanBenda, proyektorKeLayar, salinIsi, barisKeterangan, bomDesain, contohAwal, daftarBenda, lensaDari, rapikanLED, susunanLED,
+  sesuaikanUkuranRuang, sinarProyektor, templateRuang, throwRatioDari, ukuranGambarDisplay, type Benda, type Blending, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
-import { ukuranDariDiagonal } from '../lib/av-hitung';
+import { hitungLED, MODUL_LED, ukuranDariDiagonal } from '../lib/av-hitung';
 
 let lulus = 0, gagal = 0;
 const cek = (n: string, s: boolean, ket = '') => { if (s) { lulus++; console.log(`  ok   ${n}`); } else { gagal++; console.log(`  GAGAL ${n}${ket ? ` - ${ket}` : ''}`); } };
@@ -151,6 +151,62 @@ console.log('\n8. Keterangan blending tidak mengganggu');
   cek('klik ⓘ di angka cm / klik kartu = buka / tutup satu area (bertahan saat digambar ulang)', /angka\.append\(cm, ikon\)/.test(ukur) && /pilihanKartu\.set\(kunci, buka\)/.test(ukur) && /for \(const el of \[angka, kartu\]\)/.test(ukur));
   cek('lembar cetak menulis angka tanpa ⓘ', /angka\.dataset\.teks = cm/.test(ukur));
   cek('centang bernama "Keterangan blending"', /l: 'Keterangan blending'/.test(readFileSync(`${D3}/panel/KontrolKanvas.tsx`, 'utf8')));
+}
+
+console.log('\n9. Resolusi asli proyektor (16:9 / 16:10 / 4:3)');
+{
+  const r: Ruang = { p: 8, l: 8, t: 3.2, lantai: 'kayu', r2: null };
+  const k = daftarRuang(r)[0];
+  for (const [res, rasio] of [['FHD', 9 / 16], ['WUXGA', 10 / 16], ['4K', 9 / 16], ['XGA', 3 / 4]] as const) {
+    const l = bendaBaru('layar', k, { diag: 100, rasio: '16:10' } as Partial<Benda>);
+    const p = proyektorKeLayar({ ...bendaBaru('proyektor', k, { pasangProyektor: 'plafon' }), resolusiProyektor: res }, l, k, r);
+    const sn = sinarProyektor(p, [l, p], r);
+    const c = cakupanProyektor([p], permukaanBenda(l));
+    cek(`${res}: tinggi gambar = lebar x ${rasio.toFixed(4)} (sinar, lensa blending), layar 16:10 tertutup ${pr(c.tertutup)}`,
+      Math.abs(sn.tinggi / sn.lebar - rasio) < 1e-9 && Math.abs(lensaDari(p).h1 / lensaDari(p).w1 - rasio) < 1e-9 && c.tertutup >= 0.99,
+      `${sn.lebar.toFixed(2)} x ${sn.tinggi.toFixed(2)}`);
+  }
+  const b: Blending = { a: 'a', b: 'b', namaA: 'P1', namaB: 'P2', arah: 'atas-bawah', lebarM: 0.5, persenA: 10, persenB: 10, tengah: [0, 0, 0], garis: [], pxA: 1200, pxB: 1080 };
+  cek('piksel blending dari resolusi tiap proyektor (WUXGA 10% tinggi = 120 px, Full HD = 108 px)', barisKeterangan(b)[2] === 'P1: 10% ≈ 120 px · P2: 10% ≈ 108 px' && barisKeterangan(b)[3] === 'dari tinggi gambar (1200 / 1080 px)');
+}
+
+console.log('\n10. LED: unit utuh & referensi menu LED Videotron');
+{
+  const led = bendaBaru('led', k3);
+  const s = susunanLED(led);
+  cek(`bawaan: ${s.kolom} x ${s.baris} cabinet 500 mm = ${led.w} x ${led.h} m (kelipatan cabinet utuh)`, led.w === s.kolom * 0.5 && led.h === s.baris * 0.5);
+  const lama = rapikanLED([{ ...led, w: 4, h: 2.25 }])[0];
+  cek(`desain lama 4 x 2,25 m (4,5 baris) dirapikan saat dibuka -> ${lama.w} x ${lama.h} m`, Number.isInteger(Math.round(lama.h / 0.5 * 1e6) / 1e6) && Number.isInteger(Math.round(lama.w / 0.5 * 1e6) / 1e6));
+  //  Sama persis dengan hitungLED alat LED Videotron untuk modul referensi (piksel dari datasheet, bukan ukuran/pitch).
+  const m = MODUL_LED.find(x => x.kode === 'P1.86')!;
+  const ref = { ...led, satuanLED: 'referensi' as const, unitLED: 'modul' as const, pitch: m.pitch, cabW: m.w, cabH: m.h, pxUnitX: m.pxW, pxUnitY: m.pxH, w: 4.5, h: 2.5 };
+  const sr = susunanLED(ref);
+  const h = hitungLED({ pitch: m.pitch, cabLebar: m.w, cabTinggi: m.h, kolom: sr.kolom, baris: sr.baris, pxX: m.pxW, pxY: m.pxH, dayaMaksCab: 1, faktorRata: 0.3, beratCab: 1, refresh: 60, bit: 8, tegangan: 220 });
+  cek(`modul P1.86 320 x 160 (172 x 86 px): ${sr.kolom} x ${sr.baris} modul, ${sr.resX} x ${sr.resY} px = hitungLED alat LED Videotron`,
+    sr.resX === h.resX && sr.resY === h.resY && Math.abs(sr.lebarM - h.lebarM) < 1e-9 && Math.abs(sr.tinggiM - h.tinggiM) < 1e-9 && sr.unit === 'modul');
+  const src = readFileSync(`${D3}/panel/benda/AturLED.tsx`, 'utf8');
+  cek('panel LED memakai referensi & daftar cabinet / pitch menu LED Videotron', /useReferensiLED\(\)/.test(src) && /from '\.\.\/\.\.\/\.\.\/led\/data'/.test(src) && /'referensi'/.test(src));
+}
+
+console.log('\n11. BOM: videowall per panel, LED per unit');
+{
+  const vw = bendaBaru('videowall', k3);
+  const led = bendaBaru('led', k3);
+  const d = daftarBenda([vw, led]);
+  const bVw = d.find(x => x.item === vw.nama)!, bLed = d.find(x => x.item === led.nama)!;
+  cek(`videowall 2 x 2 = ${bVw.jumlah} ${bVw.satuan} (dulu "1 unit")`, bVw.jumlah === 4 && bVw.satuan === 'panel');
+  cek(`LED 9 x 5 = ${bLed.jumlah} ${bLed.satuan} (dulu "1 unit")`, bLed.jumlah === 45 && bLed.satuan === 'cabinet' && /1800 × 1000 px/.test(bLed.catatan));
+  cek('BOM lengkap memakai jumlah yang sama', bomDesain([vw, led], []).find(x => x.item === vw.nama)!.jumlah === 4);
+}
+
+console.log('\n12. Objek lain: tinggi pasang kamera');
+{
+  for (const t of ['ptz', 'ptz-ai', 'xbar'] as const) {
+    const kam = bendaBaru('kamera', k3, { tipeKamera: t });
+    cek(`kamera ${t}: ${kam.elev} m dari lantai (dekat tinggi mata, bukan 0,4 m)`, kam.elev >= 0.8 && kam.elev <= 2.2);
+  }
+  const contoh = contohAwal(r3), vw = contoh.find(b => b.jenis === 'videowall')!, kam = contoh.find(b => b.jenis === 'kamera')!;
+  cek(`ruang meeting contoh: kamera di atas videowall (${kam.elev} m >= ${(vw.elev + vw.h).toFixed(2)} m), bukan di bawahnya`, kam.elev >= vw.elev + vw.h);
 }
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);

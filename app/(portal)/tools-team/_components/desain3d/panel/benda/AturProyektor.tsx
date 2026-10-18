@@ -1,7 +1,7 @@
 'use client';
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
-import { Angka, f, Segmen, Catatan } from '../../../bersama/ui';
-import { bendaBaru, geserLensaDari, lumenDari, offsetLensaDari, type PasangProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
+import { bendaBaru, geserLensaDari, lumenDari, offsetLensaDari, type PasangProyektor, RESOLUSI_PROYEKTOR, type ResolusiProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
 export function AturProyektor({ c }: { c: KonteksAtur }) {
@@ -81,6 +81,9 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 onUbah={v => v >= -60 && v <= 60 && set({ geserLensaH: v / 100 })} />
               <Angka label="Lumen" nilai={lumenDari(b)} satuan="lm" step={100} onUbah={v => v >= 100 && v <= 100000 && set({ lumen: Math.round(v) })} />
             </div>
+            {/*  Resolusi asli panel: rasio gambar (16:9 / 16:10 / 4:3), cakupan layar, lux & piksel blending mengikuti. */}
+            <Pilih label="Resolusi asli" nilai={b.resolusiProyektor ?? 'FHD'} onUbah={(v: ResolusiProyektor) => set({ resolusiProyektor: v })}
+              opsi={(Object.keys(RESOLUSI_PROYEKTOR) as ResolusiProyektor[]).map(k => ({ v: k, l: RESOLUSI_PROYEKTOR[k].label }))} />
             <Catatan>
               Vertikal = geser pusat gambar dalam % tinggi gambar (relatif proyektor; gantung plafon = terbalik): 0% = tepat di sumbu lensa,
               50% = tepi gambar sejajar lensa (umum pada proyektor tanpa lens shift). Horizontal = % lebar gambar, + ke kanan.

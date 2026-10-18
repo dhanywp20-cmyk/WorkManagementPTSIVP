@@ -165,7 +165,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           judul: 'Area blending proyektor', jenis: 'tabel' as const,
           kepala: ['Proyektor', 'Bertumpuk dengan', 'Arah', 'Lebar / tinggi area', '% gambar pertama', '% gambar kedua'], rataKanan: [3, 4, 5],
           isi: infoBlending.map(b => [b.namaA, b.namaB, b.arah, `${Math.round(b.lebarM * 100)} cm`,
-            `${fm(b.persenA, 1)}% ≈ ${pikselBlending(b.persenA, b.arah)} px`, `${fm(b.persenB, 1)}% ≈ ${pikselBlending(b.persenB, b.arah)} px`]),
+            `${fm(b.persenA, 1)}% ≈ ${pikselBlending(b.persenA, b.arah, b.pxA)} px`, `${fm(b.persenB, 1)}% ≈ ${pikselBlending(b.persenB, b.arah, b.pxB)} px`]),
         }] : []),
         ...(benda.some(b => b.jenis === 'lampu') ? [{
           judul: `Pencahayaan · dimmer semua lampu ${ruang.dimmer ?? 100}%`, jenis: 'tabel' as const,

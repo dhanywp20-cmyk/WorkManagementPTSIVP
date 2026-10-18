@@ -9,6 +9,7 @@
  */
 import { BISA_PASANG, DISPLAY, LABEL_PASANG, pasangDari, type Benda } from './tipe';
 import { isiRakDari } from './rak';
+import { spekVideowall, susunanLED } from './produk';
 import { rekapKabel, type JalurKabel } from './kabel';
 import type { DraftBagian, DraftChecklist } from '@/lib/checklist';
 
@@ -51,10 +52,20 @@ export function daftarBenda(benda: Benda[]): BarisBom[] {
     if (BUKAN_BARANG.includes(b.jenis)) continue;
     const item = b.nama.replace(/\s+\d+\.\d+$/, '');   // "Meja kelas 2.3" -> "Meja kelas"
     const kategori = kategoriBenda(b.jenis);
-    const kunci = `${kategori}|${item}|${fm(b.w)}x${fm(b.d)}`;
+    //  Videowall & LED dibeli per panel / unit, bukan "1 unit layar": videowall 2x2 = 4 panel, LED 9x5 = 45 cabinet.
+    let jumlah = 1, satuan = 'unit', ukuran = `${fm(b.w)} × ${fm(b.h)} × ${fm(b.d)} m`, catatan = '';
+    if (b.jenis === 'videowall') {
+      const sp = spekVideowall(b), kol = Math.max(1, b.kol ?? 2), bar = Math.max(1, b.bar ?? 2);
+      jumlah = kol * bar; satuan = 'panel'; ukuran = `${fm(sp.w)} × ${fm(sp.h)} m / panel`; catatan = `Susunan ${kol} × ${bar} = ${fm(b.w)} × ${fm(b.h)} m`;
+    } else if (b.jenis === 'led') {
+      const s = susunanLED(b);
+      jumlah = s.kolom * s.baris; satuan = s.unit; ukuran = `${s.cabW} × ${s.cabH} mm / ${s.unit}`;
+      catatan = `P${s.pitch} · susunan ${s.kolom} × ${s.baris} = ${fm(s.lebarM)} × ${fm(s.tinggiM)} m · ${s.resX} × ${s.resY} px`;
+    }
+    const kunci = `${kategori}|${item}|${fm(b.w)}x${fm(b.d)}|${satuan}`;
     const ada = grup.get(kunci);
-    if (ada) ada.jumlah++;
-    else grup.set(kunci, { kategori, item, ukuran: `${fm(b.w)} × ${fm(b.h)} × ${fm(b.d)} m`, jumlah: 1, satuan: 'unit', catatan: '', pasang: DIPASANG.includes(b.jenis) });
+    if (ada) ada.jumlah += jumlah;
+    else grup.set(kunci, { kategori, item, ukuran, jumlah, satuan, catatan, pasang: DIPASANG.includes(b.jenis) });
   }
   return [...grup.values()].sort(urutkan);
 }

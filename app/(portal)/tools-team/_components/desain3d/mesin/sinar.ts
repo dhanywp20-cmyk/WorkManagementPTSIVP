@@ -16,7 +16,7 @@
  *   - Area blending: mesin/blending.ts.
  */
 import { f } from '../../bersama/ui';
-import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, keGambar, lensaDari, type Lensa, lumenDari, offsetLensaDari, permukaanUtama, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
+import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, keGambar, lensaDari, type Lensa, lumenDari, offsetLensaDari, permukaanUtama, rasioGambarProyektor, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { gambarBlending } from './blending';
@@ -101,7 +101,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const D = new THREE.Vector3(...arahProyektor(p)).normalize();
     const kanan = new THREE.Vector3(-Math.cos(r), 0, Math.sin(r));
     const atas = new THREE.Vector3().crossVectors(kanan, D).normalize();
-    const w1 = 1 / throwRatioDari(p), h1 = (w1 * 9) / 16, arahV = p.pasangProyektor === 'meja' ? 1 : -1;
+    const w1 = 1 / throwRatioDari(p), h1 = w1 * rasioGambarProyektor(p), arahV = p.pasangProyektor === 'meja' ? 1 : -1;
     const offV = offsetLensaDari(p), gH = geserLensaDari(p);
     const arah = new THREE.Vector3();
     /** Arah sinar ke titik gambar (u, v), -0,5..0,5 - rumus yang sama dengan inti/blending.ts. */
