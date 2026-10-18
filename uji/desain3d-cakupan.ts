@@ -5,6 +5,7 @@
  *
  * Jalankan: npm test -- desain3d-cakupan
  */
+import { readFileSync } from 'fs';
 import {
   bendaBaru, cakupanProyektor, daftarRuang, KATEGORI_RUANG, permukaanBenda, permukaanPersegi, permukaanRuang, proyektorKeLayar,
   templateRuang, type Benda, type Ruang,
@@ -106,6 +107,19 @@ for (const [nama, ruang] of RUANG) {
   //  Proyektor meja (portabel): tinggi meja tetap, gambar diangkat dengan offset/tilt - tetap mengenai layar.
   const pm = proyektorKeLayar(bendaBaru('proyektor', k, { pasangProyektor: 'meja' }), bendaBaru('layar', k, { diag: 100 }), k, ruang);
   cek('proyektor meja: tinggi meja tidak diubah', pm.elev === bendaBaru('proyektor', k, { pasangProyektor: 'meja' }).elev);
+}
+
+console.log('\n4. Tepi cahaya & Mask ke bidang');
+{
+  const sinar = readFileSync('app/(portal)/tools-team/_components/desain3d/mesin/sinar.ts', 'utf8');
+  cek('sel di tepi layar / bidang (sudut di permukaan berbeda) dipecah halus, bukan dibuang (zigzag)',
+    /const satuPermukaan = ids\.every\(id => id === ids\[0\]\)/.test(sinar) && /x\.id !== q\[0\]!\.id/.test(sinar));
+  cek('Mask ke bidang: hanya cahaya di layar / bidang yang digambar', /const bolehId = \(id: string \| null\) => !diBenda\(id\) && \(!mask \|\| diBidang\(id\)\)/.test(sinar));
+  cek('template layar cekung & cembung: Mask menyala (tampilan akhir seperti di media server)',
+    (['mapping-lengkung', 'mapping-cembung'] as const).every(id => proyektorDi(templateRuang(id).benda).every(p => p.maskBidang === true)));
+  cek('template objek & immersive: sinar mentah (sasarannya bukan layar / bidang)',
+    (['mapping-objek', 'immersive'] as const).every(id => proyektorDi(templateRuang(id).benda).every(p => !p.maskBidang)));
+  cek('Objek Saya ikut menyimpan pilihan Mask', /maskBidang: 'bool'/.test(readFileSync('lib/objek-saya.ts', 'utf8')));
 }
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);

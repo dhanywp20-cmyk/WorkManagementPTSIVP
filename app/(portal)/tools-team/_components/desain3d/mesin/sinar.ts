@@ -77,6 +77,8 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const tembak = (O: T.Vector3, arah: T.Vector3, sasaran: T.Object3D[]) => tembakRinci(O, arah, sasaran)?.p ?? null;
   /** Titik terkena benda yang diterangi per titik (bukan bidang proyeksi). */
   const diBenda = (id: string | null) => !!id && !BIDANG_PROYEKSI.has(jenisDari.get(id) ?? 'objek');
+  /** Titik terkena layar / bidang mapping (sasaran "Mask ke bidang"). */
+  const diBidang = (id: string | null) => !!id && BIDANG_PROYEKSI.has(jenisDari.get(id) ?? 'objek');
   /** Nama bidang mapping / objek / model yang paling banyak disinari (bukan dinding). */
   const namaBenda = new Map(benda.map(b => [b.id, b.nama]));
   const namaPermukaan = (kenaId: (string | null)[]) => {
@@ -127,9 +129,16 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     sumberCahaya.push({ O, L: lensaDari(p), sasaran, kuat: (sn.layar ? 0.8 : 1) * (banyak ? 0.6 : 1), warna: [warna.r, warna.g, warna.b] });
 
     //  Bidang gambar: sel grid yang keempat sudutnya kena permukaan ruang / bidang proyeksi & tidak
-    //  "melompat" (tepi objek ke dinding di belakangnya). Sel yang sebagian mengenai benda dipecah 8x8
-    //  dengan sinar tambahan -> tepi bayangan benda tajam. Sel yang seluruhnya di benda: cahayaBenda.
+    //  "melompat" (tepi objek ke dinding di belakangnya). Sel CAMPURAN - sebagian mengenai benda, ATAU
+    //  sudut-sudutnya di permukaan berbeda (tepi layar / bidang mapping -> dinding di belakangnya) - dipecah
+    //  8x8 dengan sinar tambahan, sehingga tepi cahaya di tepi layar & bayangan benda tajam, bukan zigzag
+    //  selebar sel grid. Sel yang seluruhnya di benda: cahayaBenda.
+    //  Mask ke bidang (p.maskBidang): hanya bagian yang jatuh di layar / bidang mapping yang digambar - seperti
+    //  masking di media server; cahaya di luar bidang (dinding, lantai) tidak tampil.
     //  uv = koordinat gambar (0..1) tiap titik - tekstur cahaya (& keterangannya) jatuh tepat di bidang.
+    const mask = !!p.maskBidang;
+    /** Boleh digambar: bukan benda (benda diterangi lewat cahayaBenda) & - bila di-mask - di layar / bidang. */
+    const bolehId = (id: string | null) => !diBenda(id) && (!mask || diBidang(id));
     const pos: number[] = [], uv: number[] = [];
     const quadKe = (P: number[], U: number[]) => (A: T.Vector3, B: T.Vector3, C: T.Vector3, Dd: T.Vector3, batas: number, u0: number, v0: number, u1: number, v1: number) => {
       if (A.distanceTo(B) > batas || B.distanceTo(C) > batas || C.distanceTo(Dd) > batas || Dd.distanceTo(A) > batas) return;
@@ -144,10 +153,11 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       if (sudut.some(n => !kena[n])) continue;
       const jarak = (kena[sudut[0]]!.distanceTo(O) + kena[sudut[2]]!.distanceTo(O)) / 2;
       const batas = ((jarak * w1) / (NX - 1)) * 6 + 0.05;
-      const diB = sudut.filter(n => diBenda(kenaId[n])).length;
-      if (!diB) { quad(kena[sudut[0]]!, kena[sudut[1]]!, kena[sudut[2]]!, kena[sudut[3]]!, batas, gu(i), gv(j), gu(i + 1), gv(j + 1)); continue; }
-      if (diB === 4 || kasar) continue;
-      //  Sel campuran (tepi benda / bayangannya): grid (S+1)x(S+1) sinar di dalam sel ini.
+      const ids = sudut.map(n => kenaId[n]);
+      const satuPermukaan = ids.every(id => id === ids[0]);
+      if (satuPermukaan && bolehId(ids[0])) { quad(kena[sudut[0]]!, kena[sudut[1]]!, kena[sudut[2]]!, kena[sudut[3]]!, batas, gu(i), gv(j), gu(i + 1), gv(j + 1)); continue; }
+      if (satuPermukaan || kasar) continue;
+      //  Sel campuran (tepi benda / bayangannya, tepi layar / bidang): grid (S+1)x(S+1) sinar di dalam sel ini.
       const sub: ({ p: T.Vector3; id: string | null } | null)[] = [];
       for (let b = 0; b <= S; b++) for (let a = 0; a <= S; a++) {
         sub.push(tembakRinci(O, arahUV((i + a / S) / (NX - 1) - 0.5, (j + b / S) / (NY - 1) - 0.5), sasaran));
@@ -155,16 +165,27 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const t = (a: number, b: number) => sub[b * (S + 1) + a];
       for (let b = 0; b < S; b++) for (let a = 0; a < S; a++) {
         const q = [t(a, b), t(a + 1, b), t(a + 1, b + 1), t(a, b + 1)];
-        if (q.some(x => !x || diBenda(x.id))) continue;
+        //  Satu permukaan per sub-sel: tidak ada segi empat yang merentang dari tepi layar ke dinding di belakangnya.
+        if (q.some(x => !x || x.id !== q[0]!.id || !bolehId(x.id))) continue;
         quad(q[0]!.p, q[1]!.p, q[2]!.p, q[3]!.p, batas / S + 0.05, gu(i + a / S), gv(j + b / S), gu(i + (a + 1) / S), gv(j + (b + 1) / S));
       }
     }
-    //  Tepi gambar (warna per proyektor) + kerucut cahaya dari lensa ke tepi itu.
-    const tepi: T.Vector3[] = [];
-    for (let i = 0; i < NX; i++) tepi.push(sel(i, 0)!);
-    for (let j = 1; j < NY; j++) tepi.push(sel(NX - 1, j)!);
-    for (let i = NX - 2; i >= 0; i--) tepi.push(sel(i, NY - 1)!);
-    for (let j = NY - 2; j > 0; j--) tepi.push(sel(0, j)!);
+    //  Tepi gambar (warna per proyektor) + kerucut cahaya dari lensa ke tepi itu. Di-mask: tiap titik tepi
+    //  ditarik ke arah pusat gambar sampai mengenai layar / bidang - kerucut berakhir di tepi area yang tampil.
+    const ci = (NX - 1) / 2, cj = (NY - 1) / 2;
+    const titikTepi = (i: number, j: number): T.Vector3 | null => {
+      if (!mask) return sel(i, j);
+      for (let n = 0; n <= 24; n++) {
+        const ii = Math.round(i + ((ci - i) * n) / 24), jj = Math.round(j + ((cj - j) * n) / 24);
+        if (diBidang(kenaId[jj * NX + ii])) return kena[jj * NX + ii];
+      }
+      return null;
+    };
+    const tepi: (T.Vector3 | null)[] = [];
+    for (let i = 0; i < NX; i++) tepi.push(titikTepi(i, 0));
+    for (let j = 1; j < NY; j++) tepi.push(titikTepi(NX - 1, j));
+    for (let i = NX - 2; i >= 0; i--) tepi.push(titikTepi(i, NY - 1));
+    for (let j = NY - 2; j > 0; j--) tepi.push(titikTepi(0, j));
     //  Garis tepi: warna sinar yang lebih pekat (pilihan engineer) atau rona otomatis proyektor ini.
     const warnaTepi = p.warnaSinar ? warna.clone().offsetHSL(0, 0.1, -0.18) : new THREE.Color().setHSL(ronaProyektor(idx), 0.9, 0.55);
     const garis: number[] = [], kerucut: number[] = [], alfa: number[] = [];
