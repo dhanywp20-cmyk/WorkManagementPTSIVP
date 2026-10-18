@@ -44,7 +44,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
     return (
       <label className="flex items-start gap-2 rounded-lg border border-slate-200 bg-white p-2 text-[12px] text-slate-700 cursor-pointer">
         <input type="checkbox" className="w-4 h-4 mt-0.5" checked={!!p.maskBidang} onChange={e => gantiBenda({ ...p, maskBidang: e.target.checked || undefined })} />
-        <span><b className="text-slate-800">Mask ke bidang</b> - tampilkan cahaya hanya di layar / bidang mapping, seperti hasil masking di media server. Matikan untuk melihat sinar mentah yang tumpah.</span>
+        <span><b className="text-slate-800">Mask ke bidang</b> - simulasi masking konten di media server: piksel di luar layar / bidang dihitamkan. Mati (bawaan) = cahaya nyata, termasuk yang tumpah ke dinding & lantai. Proyektor yang digeser perlu di-mask ulang di lokasi.</span>
       </label>
     );
   };

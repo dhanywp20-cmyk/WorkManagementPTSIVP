@@ -115,10 +115,10 @@ console.log('\n4. Tepi cahaya & Mask ke bidang');
   cek('sel di tepi layar / bidang (sudut di permukaan berbeda) dipecah halus, bukan dibuang (zigzag)',
     /const satuPermukaan = ids\.every\(id => id === ids\[0\]\)/.test(sinar) && /x\.id !== q\[0\]!\.id/.test(sinar));
   cek('Mask ke bidang: hanya cahaya di layar / bidang yang digambar', /const bolehId = \(id: string \| null\) => !diBenda\(id\) && \(!mask \|\| diBidang\(id\)\)/.test(sinar));
-  cek('template layar cekung & cembung: Mask menyala (tampilan akhir seperti di media server)',
-    (['mapping-lengkung', 'mapping-cembung'] as const).every(id => proyektorDi(templateRuang(id).benda).every(p => p.maskBidang === true)));
-  cek('template objek & immersive: sinar mentah (sasarannya bukan layar / bidang)',
-    (['mapping-objek', 'immersive'] as const).every(id => proyektorDi(templateRuang(id).benda).every(p => !p.maskBidang)));
+  cek('semua template: sinar nyata tanpa Mask (cahaya lewat tepi layar tetap jatuh ke dinding / lantai)',
+    KATEGORI_RUANG.every(k => proyektorDi(templateRuang(k.id).benda).every(p => !p.maskBidang)));
+  cek('terang cahaya per titik mengikuti jarak² & sudut datang (bukan warna rata di semua permukaan)',
+    /return Math\.max\(0\.05, cosT\) \/ \(cosA \*\* 3 \* d2\);/.test(sinar) && /vertexColors: true, opacity: bg\.opasitas/.test(sinar) && /faktor\(kena\[n\]!, kenaN\[n\]\)/.test(sinar));
   cek('Objek Saya ikut menyimpan pilihan Mask', /maskBidang: 'bool'/.test(readFileSync('lib/objek-saya.ts', 'utf8')));
 }
 
