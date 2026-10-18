@@ -188,32 +188,64 @@ export function tiltKeLayar(p: Benda, l: Benda, ruang: Ruang): Benda {
   }
   return { ...p, tilt: Math.round(((lo + hi) / 2) * 10) / 10 };
 }
+/** Batas lens shift vertikal yang dipakai pemasangan otomatis (pecahan tinggi gambar, umum di proyektor instalasi). */
+export const OFFSET_MAKS_OTOMATIS = 1;
+
 /**
- * Pindahkan proyektor ke jarak lempar ideal (throw ratio x lebar layar) di
- * garis tengah layar, menghadap layar (pan), lalu atur tilt supaya gambar
- * tepat di tengah layar. Ketinggian pemasangan tidak diubah.
+ * Pasang proyektor ke layar seperti instalasi yang benar (dipakai "Tambah" & tombol Arahkan ke layar):
+ *  - badan LURUS (tilt 0) -> gambar persegi tepat, tanpa keystone (menunduk = trapesium yang meleset dari layar);
+ *  - lensa di garis tengah layar, menghadap layar, pada jarak lempar = throw ratio x lebar gambar perlu;
+ *  - ruang terlalu pendek -> zoom ke throw ratio yang masih muat (dalam rentang lensa trMin..trMax);
+ *  - ketinggian diatur (drop pole) supaya, dengan offset lensanya, gambar tepat di bidang layar
+ *    (plafon: tepi atas gambar di garis lensa; meja: tinggi meja tetap);
+ *  - plafon terlalu rendah / meja terlalu rendah -> lens shift (offset) seperlunya s.d. OFFSET_MAKS_OTOMATIS,
+ *    baru sisanya ditutup dengan tilt (keystone kecil).
+ * Lebar gambar perlu = lebar layar, atau lebih bila layar lebih "tinggi" dari 16:9 (mis. 4:3) supaya tingginya tertutup.
  */
 export function proyektorKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang): Benda {
   const rl = (l.rot * Math.PI) / 180;
   const n = [Math.sin(rl), Math.cos(rl)];
-  const ideal = throwRatioDari(p) * l.w;
   const S = keDunia(l, [0, l.h / 2, l.d / 2]);
   const rot = (((l.rot + 180) % 360) + 360) % 360;
-  const taruh = (q: Benda, jarak: number): Benda => {
+  const plafon = p.pasangProyektor !== 'meja';
+  const lebarPerlu = Math.max(l.w, (l.h * 16) / 9);
+
+  //  Jarak bebas dari muka layar ke dinding seberang sepanjang normal layar (sisakan badan + 0,2 m).
+  const ke = (v: number, a: number, lo: number, hi: number) => (a > 1e-6 ? (hi - v) / a : a < -1e-6 ? (lo - v) / a : Infinity);
+  const bebas = Math.min(ke(S[0], n[0], k.x0, k.x0 + k.p), ke(S[2], n[1], 0, k.l)) - p.d - 0.2;
+  const [trLo, trHi] = zoomLensa(p);
+  let tr = Math.min(trHi, Math.max(trLo, throwRatioDari(p)));
+  if (tr * lebarPerlu > bebas) tr = Math.max(trLo, bebas / lebarPerlu);
+  const jarak = Math.max(0.5, Math.min(tr * lebarPerlu, bebas));
+  const tinggiGambar = ((jarak / tr) * 9) / 16;
+
+  //  Ketinggian lensa: pusat gambar = lensa -/+ offset x tinggi gambar (plafon terbalik: di bawah lensa).
+  const arahV = plafon ? -1 : 1, off0 = offsetLensaDari(p);
+  const yLokal = lensaDatar(p)[1];
+  const elev = plafon
+    ? Math.max(0.3, Math.min(k.t - p.h - 0.06, S[1] - arahV * off0 * tinggiGambar - yLokal))
+    : p.elev;
+  const yLensa = elev + yLokal;
+  const offPerlu = (S[1] - yLensa) / (arahV * tinggiGambar);
+  const off = Math.abs(offPerlu - off0) < 0.005 ? off0 : Math.min(OFFSET_MAKS_OTOMATIS, Math.max(0, offPerlu));
+
+  const taruh = (q: Benda, jarakLensa: number): Benda => {
     //  Titik benda = posisi lensa yang diinginkan - offset lensa (dengan tilt q) pada rotasi ini.
     const [ox, , oz] = keDunia({ ...q, rot, x: 0, z: 0, elev: 0 }, lensaProyektor(q));
-    return { ...q, rot, x: S[0] + n[0] * jarak - ox, z: S[2] + n[1] * jarak - oz };
+    return { ...q, rot, x: S[0] + n[0] * jarakLensa - ox, z: S[2] + n[1] * jarakLensa - oz };
   };
-  let q = taruh({ ...p, tilt: 0 }, ideal);
-  let jarakTegak = ideal;
-  for (let i = 0; i < 4; i++) {
+  let q = taruh({ ...p, elev: bulat2(elev), tilt: 0, throwRatio: Math.round(tr * 1000) / 1000, offsetLensa: Math.round(off * 1000) / 1000, geserLensaH: 0 }, jarak);
+  //  Lens shift tidak cukup: sisa selisih tinggi ditutup tilt, jarak dikoreksi (sumbu miring sedikit lebih panjang).
+  if (Math.abs(sinarProyektor(q, [l, q], ruang).selisihV ?? 0) > 0.01) {
+    let jarakTegak = jarak;
+    for (let i = 0; i < 4; i++) {
+      q = tiltKeLayar(q, l, ruang);
+      const sn = sinarProyektor(q, [l, q], ruang);
+      if (!sn.layar) break;
+      jarakTegak += (jarak - sn.jarak) * Math.cos((tiltDari(q) * Math.PI) / 180);
+      q = taruh(q, jarakTegak);
+    }
     q = tiltKeLayar(q, l, ruang);
-    const sn = sinarProyektor(q, [l, q], ruang);
-    if (!sn.layar) break;
-    //  Jarak sepanjang sumbu lensa sedikit lebih panjang bila menunduk - koreksi jarak tegaknya.
-    jarakTegak += (ideal - sn.jarak) * Math.cos((tiltDari(q) * Math.PI) / 180);
-    q = taruh(q, jarakTegak);
   }
-  q = tiltKeLayar(q, l, ruang);
   return { ...q, x: bulat2(Math.min(k.x0 + k.p - 0.1, Math.max(k.x0 + 0.1, q.x))), z: bulat2(Math.min(k.l - 0.1, Math.max(0.1, q.z))) };
 }

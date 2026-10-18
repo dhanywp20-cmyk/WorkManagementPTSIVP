@@ -86,10 +86,11 @@ console.log('\n3. Proyektor & layar');
   cek('proyektor portabel menghadap layar ikut mengenai layar', meja.layar?.id === layar.id);
 
   //  Pan & tilt
-  cek('proyektor plafon perlu menunduk agar gambar di tengah layar', (p.tilt ?? 0) < 0 && (p.tilt ?? 0) > -20, `${p.tilt}`);
+  cek('proyektor plafon LURUS (tanpa tilt = tanpa keystone), lensa diturunkan sejajar tepi atas layar (offset 50%)',
+    (p.tilt ?? 0) === 0 && dekat(lensa[1], layar.elev + layar.h, 0.02), `${p.tilt} ${lensa[1]} vs ${layar.elev + layar.h}`);
   cek('setelah diposisikan: gambar tepat di tengah layar (tinggi & samping)', dekat(s.selisihV ?? 9, 0, 0.01) && dekat(s.selisihH ?? 9, 0, 0.02), `${s.selisihV} ${s.selisihH}`);
-  const datar = sinarProyektor({ ...p, tilt: 0 }, [layar, p], ruang);
-  cek('tanpa tilt gambar terlalu tinggi (keluar atas layar)', (datar.selisihV ?? 0) > 0.05, `${datar.selisihV}`);
+  const naik = sinarProyektor({ ...p, elev: p.elev + 0.3 }, [layar, p], ruang);
+  cek('proyektor dinaikkan 30 cm: gambar ikut naik keluar atas layar', dekat(naik.selisihV ?? 0, 0.3, 0.01), `${naik.selisihV}`);
   const lebihTunduk = sinarProyektor({ ...p, tilt: (p.tilt ?? 0) - 5 }, [layar, p], ruang);
   cek('menunduk lebih jauh: gambar turun di bawah tengah layar', (lebihTunduk.selisihV ?? 0) < -0.05, `${lebihTunduk.selisihV}`);
   cek('lensa ikut turun & mundur saat badan menunduk 20°', lensaProyektor({ ...p, tilt: -20 })[1] < lensaProyektor({ ...p, tilt: 0 })[1] - 0.05 && lensaProyektor({ ...p, tilt: -20 })[2] < lensaProyektor({ ...p, tilt: 0 })[2]);
