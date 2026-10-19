@@ -229,11 +229,11 @@ export function Modal({
           aria-describedby={keterangan ? idKeterangan : undefined}
           tabIndex={-1}
           onClick={e => e.stopPropagation()}
-          className={`w-full ${LEBAR[ukuran]} bg-white rounded-kartu shadow-modal flex flex-col max-h-[90vh] outline-none`}
+          className={`w-full ${LEBAR[ukuran]} bg-white rounded-kartu shadow-modal flex flex-col max-h-[90vh] outline-hidden`}
         >
           {/* ── Header ── */}
-          <div className="flex items-start gap-3 px-5 py-4 border-b border-slate-100 flex-shrink-0">
-            {ikon && <div className="flex-shrink-0 mt-0.5"><Ikon nama={ikon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>}
+          <div className="flex items-start gap-3 px-5 py-4 border-b border-slate-100 shrink-0">
+            {ikon && <div className="shrink-0 mt-0.5"><Ikon nama={ikon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>}
             <div className="flex-1 min-w-0">
               <h2 id={idJudul} className="text-sm font-bold text-slate-800 leading-snug">{judul}</h2>
               {keterangan && (
@@ -242,7 +242,7 @@ export function Modal({
             </div>
             <button
               type="button" onClick={onTutup} aria-label="Tutup"
-              className="w-8 h-8 rounded-kecil flex items-center justify-center flex-shrink-0 text-slate-500 hover:text-rose-600 transition-all"
+              className="w-8 h-8 rounded-kecil flex items-center justify-center shrink-0 text-slate-500 hover:text-rose-600 transition-all"
               style={{ background: 'rgba(0,0,0,0.05)' }}
             >
               <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,7 +256,7 @@ export function Modal({
 
           {/* ── Footer ── */}
           {footer && (
-            <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-100 flex-shrink-0 bg-slate-50/60">
+            <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-100 shrink-0 bg-slate-50/60">
               {footer}
             </div>
           )}

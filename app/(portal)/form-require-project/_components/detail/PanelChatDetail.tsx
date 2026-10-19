@@ -26,7 +26,7 @@ export function PanelChatDetail({ chatFileRef, chatRoomFilter, currentUser, deta
   return (
     <>
       <div className={`${detailMobileTab === 'chat' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[1.5] overflow-hidden bg-white/95 min-w-0`}>
-        <div className="px-4 py-2.5 border-b border-gray-100 flex-shrink-0 bg-gray-50">
+        <div className="px-4 py-2.5 border-b border-gray-100 shrink-0 bg-gray-50">
           <p className="text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-2"><IkonTeks nama="💬" />Discussion Chat</p>
           {/* Room filter tabs for chat */}
           {(() => {
@@ -95,11 +95,11 @@ export function PanelChatDetail({ chatFileRef, chatRoomFilter, currentUser, deta
                         </>
                       )}
                       {' · '}{new Date(msg.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                      {chatRoomFilter === 'all' && msgRoomLabel && <span className="bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded text-[10px] font-bold">{msgRoomLabel}</span>}
+                      {chatRoomFilter === 'all' && msgRoomLabel && <span className="bg-teal-100 text-teal-700 px-1.5 py-0.5 rounded-sm text-[10px] font-bold">{msgRoomLabel}</span>}
                     </p>
-                    <div className={`px-4 py-2.5 rounded-2xl text-sm font-medium shadow-sm ${
+                    <div className={`px-4 py-2.5 rounded-2xl text-sm font-medium shadow-xs ${
                       isMe
-                        ? 'bg-gradient-to-br from-teal-600 to-teal-800 text-white rounded-tr-sm'
+                        ? 'bg-linear-to-br from-teal-600 to-teal-800 text-white rounded-tr-sm'
                         : msg.sender_role === 'guest'
                           ? 'bg-blue-50 text-blue-800 border border-blue-200 rounded-tl-sm'
                           : msg.sender_role === 'admin' || msg.sender_role === 'superadmin'
@@ -116,7 +116,7 @@ export function PanelChatDetail({ chatFileRef, chatRoomFilter, currentUser, deta
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="flex-shrink-0 p-4 border-t border-gray-100 bg-gray-50">
+        <div className="shrink-0 p-4 border-t border-gray-100 bg-gray-50">
           {/* Show which room this message will go to */}
           {chatRoomFilter !== 'all' && selectedRequest.status !== 'rejected' && selectedRequest.status !== 'pending' && (
             <div className="mb-2 px-2.5 py-1.5 bg-teal-50 border border-teal-200 rounded-lg text-[11px] text-teal-700 font-semibold flex items-center gap-1.5">
@@ -134,15 +134,15 @@ export function PanelChatDetail({ chatFileRef, chatRoomFilter, currentUser, deta
                 <textarea value={msgText} onChange={e => setMsgText(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                   placeholder="Ketik pesan... (Enter kirim)" rows={1}
-                  className="flex-1 bg-transparent text-sm text-gray-800 outline-none resize-none max-h-24 placeholder-gray-400" />
-                <button onClick={() => chatFileRef.current?.click()} className="text-gray-500 hover:text-teal-600 transition-colors flex-shrink-0">
+                  className="flex-1 bg-transparent text-sm text-gray-800 outline-hidden resize-none max-h-24 placeholder-gray-400" />
+                <button onClick={() => chatFileRef.current?.click()} className="text-gray-500 hover:text-teal-600 transition-colors shrink-0">
                   {uploadingFile ? <div className="w-4 h-4 border-2 border-gray-300 border-t-teal-500 rounded-full animate-spin" /> : <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>}
                 </button>
                 <input ref={chatFileRef} type="file" className="hidden" accept="image/*,.pdf,.doc,.docx"
                   onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = ''; }} />
               </div>
               <button onClick={handleSendMessage} disabled={sendingMsg || !msgText.trim()}
-                className="bg-gradient-to-r from-teal-600 to-teal-800 text-white px-4 py-2 rounded-xl font-bold transition-all disabled:opacity-50 shadow-md flex-shrink-0">
+                className="bg-linear-to-r from-teal-600 to-teal-800 text-white px-4 py-2 rounded-xl font-bold transition-all disabled:opacity-50 shadow-md shrink-0">
                 {sendingMsg ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>}
               </button>
             </div>

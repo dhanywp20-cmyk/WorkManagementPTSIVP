@@ -52,7 +52,7 @@ export function HitunganAV({ proyekId, beritahu }: { proyekId: string; beritahu:
   };
 
   return (
-    <div className="rounded-xl shadow-sm overflow-hidden" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
+    <div className="rounded-xl shadow-xs overflow-hidden" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
       <div className="flex items-center gap-2 px-4 py-2.5" style={{ borderBottom: hasil?.length ? `1px solid ${NETRAL.garis}` : undefined }}>
         <Calculator size={14} style={{ color: TEMA.samar }} />
         <p className="text-[12px] font-bold uppercase tracking-wider flex-1" style={{ color: NETRAL.tinta2 }}>

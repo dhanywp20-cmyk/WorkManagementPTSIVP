@@ -79,7 +79,7 @@ export function DaftarLaporanHarian({ bolehHapus, filterCategory, filterDate, fi
                     <p className="font-semibold text-slate-800 text-sm leading-tight truncate">{row.project_name}</p>
                     {row.address && <p className="text-[11px] text-slate-500 mt-0.5 truncate"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>}
                   </div>
-                  <span className="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-bold"
+                  <span className="shrink-0 inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-bold"
                     style={{ background: badge.bg, color: badge.color, border: `1px solid ${badge.border}` }}>
                     {badge.label}
                   </span>
@@ -93,10 +93,10 @@ export function DaftarLaporanHarian({ bolehHapus, filterCategory, filterDate, fi
                 </div>
                 <div className="flex items-center justify-between gap-2 pt-1 border-t border-gray-100">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
                     <span className="text-xs font-semibold text-slate-700 truncate">{row.handler_name || '—'}</span>
                   </div>
-                  <span className="text-[11px] text-slate-500 flex-shrink-0">
+                  <span className="text-[11px] text-slate-500 shrink-0">
                     {row.report_date ? new Date(row.report_date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : '—'}
                     {row.jam !== '-' ? ` · ${row.jam}` : ''}
                   </span>
@@ -203,7 +203,7 @@ export function DaftarLaporanHarian({ bolehHapus, filterCategory, filterDate, fi
                     </td>
                     <td style={TD}>
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
                         <span className="text-xs font-semibold text-slate-700">{row.handler_name || '—'}</span>
                       </div>
                     </td>

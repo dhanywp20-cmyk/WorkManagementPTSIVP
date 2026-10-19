@@ -253,7 +253,7 @@ export function AssignPTSModal({
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1200] p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1200 p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
         style={{ animation: 'scale-in 0.25s ease-out', border: `2px solid ${aksen.garis}` }}>
@@ -264,7 +264,7 @@ export function AssignPTSModal({
             <h3 className="text-lg font-bold text-white">{hijau ? '✅ Approve & Assign Request' : '🎯 Assign ke Tim'}</h3>
             <p className={`text-xs mt-0.5 truncate max-w-[300px] ${aksen.subjudul}`}>{req.project_name}</p>
           </div>
-          <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all flex-shrink-0">
+          <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all shrink-0">
             <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -289,7 +289,7 @@ export function AssignPTSModal({
           {isExternal && (
             <div className="rounded-xl p-3 flex items-start gap-2"
               style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-              <span className="text-base flex-shrink-0"><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+              <span className="text-base shrink-0"><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <p className="text-xs text-indigo-700 leading-relaxed">
                 Request dari divisi external <strong>{req.sales_division}</strong>. Cukup pilih <strong>Tim PTS</strong> yang menangani —
                 IVP Sales internal untuk divisi ini sudah otomatis ter-mapping sejak request dibuat.
@@ -306,7 +306,7 @@ export function AssignPTSModal({
               </p>
               <select aria-label="-- Pilih Supervisor --" value={selectedSupervisorId}
                 onChange={e => { setSelectedSupervisorId(e.target.value); setFormErr(''); }}
-                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-amber-500/40 mb-2.5"
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 focus:ring-2 focus:ring-amber-500/40 mb-2.5"
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                 <option value="">-- Pilih Supervisor --</option>
                 {supervisors.map(s => <option key={s.id} value={s.id}>{s.full_name}{s.team_type ? ` · ${s.team_type}` : ''}</option>)}
@@ -333,7 +333,7 @@ export function AssignPTSModal({
             ) : (
               <select aria-label="-- Pilih Anggota Team PTS --" value={selectedPTSId}
                 onChange={e => { setSelectedPTSId(e.target.value); setFormErr(''); }}
-                className={`w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 focus:ring-2 ${aksen.cincin}`}
+                className={`w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all text-slate-800 focus:ring-2 ${aksen.cincin}`}
                 style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
                 <option value="">-- Pilih Anggota Team PTS --</option>
                 <option value="SELF">Saya kerjakan sendiri</option>
@@ -349,7 +349,7 @@ export function AssignPTSModal({
           {/* Info WA */}
           <div className="rounded-xl p-3 flex items-start gap-2"
             style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
-            <span className="text-base flex-shrink-0"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+            <span className="text-base shrink-0"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <p className="text-[11px] text-green-700 leading-relaxed">
               WA notifikasi otomatis dikirim ke <strong>Tim PTS</strong> yang di-assign (kecuali kamu sendiri).
             </p>
@@ -367,7 +367,7 @@ export function AssignPTSModal({
               Batal
             </button>
             <button onClick={handleSave} disabled={saving || !selectedPTSId}
-              className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="flex-2 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               style={{ background: aksen.gradasi, boxShadow: aksen.bayang }}>
               {saving
                 ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>

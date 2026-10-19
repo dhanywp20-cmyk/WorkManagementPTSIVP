@@ -48,16 +48,16 @@ export function DaftarSesiKuis({ activeAttempts, filteredSessions, handleStart, 
             </button>
           ) : (
             <button onClick={() => handleStart(s)}
-              className={`px-5 py-2.5 text-sm font-bold rounded-xl shadow transition-all w-full formulir:w-auto ${inProgress ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
+              className={`px-5 py-2.5 text-sm font-bold rounded-xl shadow-sm transition-all w-full formulir:w-auto ${inProgress ? 'bg-amber-500 hover:bg-amber-600 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
               {inProgress ? '▶️ Lanjutkan Quiz' : '🚀 Mulai Quiz'}
             </button>
           );
 
           return (
-            <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-5 sm:p-6 hover:shadow-md transition-all"
+            <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-xs p-5 sm:p-6 hover:shadow-md transition-all"
               style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(8px)', opacity: alreadyDone ? 0.75 : 1 }}>
               <div className="flex items-start gap-4 sm:gap-5">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl flex-shrink-0"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
+                <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-2xl shrink-0"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-slate-800 text-base sm:text-lg">
                     {s.session_name}
@@ -71,7 +71,7 @@ export function DaftarSesiKuis({ activeAttempts, filteredSessions, handleStart, 
                   beberapa baris sementara tombolnya tetap menahan ruangnya.
                   Di bawah 'formulir' tombolnya turun ke bawah, selebar kartu.
                 */}
-                <div className="hidden formulir:block flex-shrink-0">{tombol}</div>
+                <div className="hidden formulir:block shrink-0">{tombol}</div>
               </div>
 
               <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-3 text-xs text-slate-500">

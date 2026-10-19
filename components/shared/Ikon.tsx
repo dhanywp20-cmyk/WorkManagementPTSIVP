@@ -75,7 +75,7 @@ export function Ikon({ nama, ukuran = 16, tebal = 2, className = '' }: {
   if (!K) return <span aria-hidden="true" className={className} style={{ fontSize: typeof ukuran === 'number' ? ukuran * 0.9 : ukuran, lineHeight: 1 }}>{nama}</span>;
   //  K diambil dari PETA statis (komponen Lucide yang sama tiap render), bukan dibuat saat render.
   // eslint-disable-next-line react-hooks/static-components
-  return <K aria-hidden="true" focusable="false" size={ukuran} strokeWidth={tebal} className={`flex-shrink-0 ${className}`} />;
+  return <K aria-hidden="true" focusable="false" size={ukuran} strokeWidth={tebal} className={`shrink-0 ${className}`} />;
 }
 
 /**

@@ -16,9 +16,9 @@ interface BarisDesain {
 /** Pratinjau satu versi: dimuat malas & di-cache peramban; placeholder bila belum ada gambar. */
 export function GambarVersi({ id, versi, className }: { id: string; versi: number; className: string }) {
   const [gagal, setGagal] = useState(false);
-  if (gagal) return <div className={`${className} rounded-lg bg-slate-100 grid place-items-center flex-shrink-0 text-slate-400`}><Ikon nama="🧊" ukuran={18} /></div>;
+  if (gagal) return <div className={`${className} rounded-lg bg-slate-100 grid place-items-center shrink-0 text-slate-400`}><Ikon nama="🧊" ukuran={18} /></div>;
   return <img src={urlGambarDesain(id, versi)} alt="" loading="lazy" decoding="async" onError={() => setGagal(true)}
-    className={`${className} object-cover rounded-lg border border-slate-100 flex-shrink-0 bg-slate-50`} />;
+    className={`${className} object-cover rounded-lg border border-slate-100 shrink-0 bg-slate-50`} />;
 }
 
 /**
@@ -72,7 +72,7 @@ export function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {
       keterangan="Dari laptop, atau dari desain yang disimpan anggota tim di server (versi lama bisa dibuka dari riwayat).">
       <button type="button" onClick={onLaptop}
         className="w-full mb-3 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-left hover:bg-emerald-100">
-        <HardDriveUpload size={20} className="text-emerald-700 flex-shrink-0" />
+        <HardDriveUpload size={20} className="text-emerald-700 shrink-0" />
         <span className="min-w-0">
           <span className="block text-[13px] font-bold text-emerald-900">Buka dari laptop (.glb)</span>
           <span className="block text-[11.5px] text-emerald-800">File yang disimpan lewat "Simpan .glb" - tanpa storage server</span>

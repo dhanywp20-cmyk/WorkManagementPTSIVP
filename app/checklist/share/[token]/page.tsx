@@ -177,13 +177,13 @@ export default function ChecklistSharePage() {
               )}
             </div>
             <button type="button" onClick={muatUlang} aria-label="Muat ulang checklist" title="Muat ulang (lihat perubahan dari orang lain)"
-              className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ border: `1px solid ${NETRAL.garis}`, color: TEMA.samar }}>
+              className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center" style={{ border: `1px solid ${NETRAL.garis}`, color: TEMA.samar }}>
               <RefreshCw size={14} />
             </button>
             <button type="button" onClick={() => { setIsianNama(nama); setMintaNama({ lanjut: null }); }}
-              className="flex-shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11.5px] font-bold max-w-[45%]"
+              className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11.5px] font-bold max-w-[45%]"
               style={{ background: nama ? TEMA.tint : '#fffbeb', color: nama ? TEMA.warnaTua : '#92400e', border: `1px solid ${nama ? TEMA.garisTint : '#fde68a'}` }}>
-              <UserRound size={13} className="flex-shrink-0" />
+              <UserRound size={13} className="shrink-0" />
               <span className="truncate">{nama || 'Isi nama'}</span>
             </button>
           </div>
@@ -271,7 +271,7 @@ export default function ChecklistSharePage() {
           <input value={isianNama} onChange={e => setIsianNama(e.target.value)} maxLength={BATAS.nama} autoFocus
             onKeyDown={e => { if (e.key === 'Enter' && namaSah) konfirmasiNama(); }}
             placeholder="mis. Budi - Teknisi"
-            className="mt-1 w-full rounded-xl px-3 py-2.5 text-[16px] outline-none focus:ring-2"
+            className="mt-1 w-full rounded-xl px-3 py-2.5 text-[16px] outline-hidden focus:ring-2"
             style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta }} />
         </label>
       </Modal>

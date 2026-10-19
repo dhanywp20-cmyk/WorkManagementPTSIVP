@@ -25,7 +25,7 @@ export function ModalHapusMassal({ bulkConfirm, notify, selectedIds, setBulkConf
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center p-4" style={{ zIndex: Z.overlay }}>
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
-            <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
+            <div className="bg-linear-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
               <span className="text-2xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div><h3 className="font-bold text-white">Hapus {selectedIds.size} Request?</h3>
               <p className="text-red-100 text-xs mt-0.5">Tindakan ini tidak dapat dibatalkan</p></div>
@@ -40,7 +40,7 @@ export function ModalHapusMassal({ bulkConfirm, notify, selectedIds, setBulkConf
                   if (!error) { setRequests(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
                   else notify('error', 'Gagal: ' + error.message);
                   setBulkDeleting(false);
-                }} className="flex-[2] bg-gradient-to-r from-red-600 to-red-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm hover:from-red-700 hover:to-red-800">
+                }} className="flex-2 bg-linear-to-r from-red-600 to-red-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm hover:from-red-700 hover:to-red-800">
                   <IkonTeks nama="🗑" />Ya, Hapus Permanen
                 </button>
               </div>

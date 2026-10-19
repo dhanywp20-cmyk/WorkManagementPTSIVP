@@ -18,7 +18,7 @@ function Saklar({ nilai, onUbah, label, ket, mati }: { nilai: boolean; onUbah: (
       </div>
       <button type="button" role="switch" aria-checked={nilai} aria-label={label} disabled={mati} onClick={() => onUbah(!nilai)}
         className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${nilai ? 'bg-emerald-600' : 'bg-slate-300'} disabled:cursor-not-allowed`}>
-        <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${nilai ? 'translate-x-5' : ''}`} />
+        <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${nilai ? 'translate-x-5' : ''}`} />
       </button>
     </div>
   );

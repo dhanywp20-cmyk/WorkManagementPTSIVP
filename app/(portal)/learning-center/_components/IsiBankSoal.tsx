@@ -60,7 +60,7 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5">
             <p className="text-xs text-amber-900 leading-relaxed">
               <strong>Pengaturan urutan soal belum aktif.</strong> Jalankan{' '}
-              <code className="px-1 py-0.5 rounded bg-amber-100 font-mono text-[11px]">sql/learning-center-urutan-soal.sql</code>{' '}
+              <code className="px-1 py-0.5 rounded-sm bg-amber-100 font-mono text-[11px]">sql/learning-center-urutan-soal.sql</code>{' '}
               di Supabase, lalu muat ulang halaman ini — tombol panah naik/turun akan muncul di tiap soal.
             </p>
           </div>
@@ -73,7 +73,7 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
 
         {/* Material filter chips */}
         {viewMaterials.length > 0 && (
-          <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-sm">
+          <div className="flex flex-wrap gap-2 items-center bg-white border border-slate-200 rounded-2xl px-4 py-2.5 shadow-xs">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Filter:</span>
             <button
               onClick={() => setSelectedMat('')}
@@ -103,12 +103,12 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
         {/* Edit Soal Modal */}
         {editQ && (
         <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
+          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-1000 p-4">
             <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
-              <h3 className="font-bold text-slate-800 mb-4 sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100"><IkonTeks nama="✏" />Edit Soal</h3>
+              <h3 className="font-bold text-slate-800 mb-4 sticky top-0 z-10 bg-white/95 backdrop-blur-xs -mx-5 px-5 py-2.5 border-b border-slate-100"><IkonTeks nama="✏" />Edit Soal</h3>
               <div className="space-y-3">
                 <textarea value={editQ.question} onChange={e => setEditQ(p => p && ({ ...p, question: e.target.value }))}
-                  rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Pertanyaan" />
+                  rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 resize-none" placeholder="Pertanyaan" />
                 <UnggahGambarSoal url={editQ.gambar_url} ubah={u => setEditQ(p => p && ({ ...p, gambar_url: u || null }))} />
                 {editQ.question_type === 'essay' ? (
                   <div>
@@ -116,13 +116,13 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
                       Kunci / Referensi Jawaban <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case">Optional</span>
                     </label>
                     <textarea id="f-learning-center-components-questionspage-12" value={editQ.model_answer ?? ''} onChange={e => setEditQ(p => p && ({ ...p, model_answer: e.target.value }))}
-                      rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 resize-none" placeholder="Contoh jawaban ideal..." />
+                      rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 resize-none" placeholder="Contoh jawaban ideal..." />
                   </div>
                 ) : (['a','b','c','d'] as const).map(opt => (
                   <div key={opt} className="flex items-center gap-2">
-                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${editQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
+                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${editQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
                     <input aria-label={`Pilihan jawaban ${opt.toUpperCase()}`} value={(editQ as any)[`option_${opt}`]} onChange={e => setEditQ(p => p && ({ ...p, [`option_${opt}`]: e.target.value }))}
-                      className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400" />
+                      className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-hidden focus:border-blue-400" />
                     <button onClick={() => setEditQ(p => p && ({ ...p, correct_answer: opt.toUpperCase() as any }))}
                       className={`text-xs px-2 py-1 rounded-lg font-semibold transition-all ${editQ.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-slate-100 text-slate-500 hover:bg-green-50'}`}>
                       Benar
@@ -130,12 +130,12 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
                   </div>
                 ))}
                 <select aria-label="Tingkat kesulitan" value={editQ.difficulty} onChange={e => setEditQ(p => p && ({ ...p, difficulty: e.target.value as any }))}
-                  className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400">
+                  className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400">
                   <option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
                 </select>
               </div>
               <div className="flex gap-3 mt-5">
-                <button onClick={handleSaveEdit} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow transition-all">Simpan</button>
+                <button onClick={handleSaveEdit} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-sm transition-all">Simpan</button>
                 <button onClick={() => setEditQ(null)} className="px-5 py-2.5 bg-slate-100 text-slate-600 text-sm font-semibold rounded-xl hover:bg-slate-200 transition-all">Batal</button>
               </div>
             </div>
@@ -200,7 +200,7 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
                       <span className="text-xs font-bold px-3 py-1.5 rounded-full text-white" style={{ background: matColor.gradient }}>
                         📖 {mat.materi_name}
                       </span>
-                      <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-sm">
+                      <span className="text-xs font-semibold text-slate-500 bg-white border border-slate-200 px-2.5 py-0.5 rounded-full shadow-xs">
                         {totalForMat} soal · {batchKeys.filter(b => b !== '').length} grup
                       </span>
                     </div>

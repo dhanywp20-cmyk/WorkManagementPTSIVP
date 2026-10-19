@@ -163,11 +163,11 @@ export function StatCard({ icon, label, value, sub, color, sparkline, donut, loa
             <span className="text-sm"><Ikon nama={icon} ukuran={14} /></span>
             <span className="text-[11px] font-semibold tracking-wide uppercase truncate" style={{ color:'rgba(0,0,0,0.4)' }}>{label}</span>
           </div>
-          {loading ? <div className="h-7 w-16 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.08)' }}/> :
+          {loading ? <div className="h-7 w-16 rounded-sm animate-pulse" style={{ background:'rgba(0,0,0,0.08)' }}/> :
             <div className="text-lg sm:text-2xl font-black tracking-tight" style={{ color }}>{value}</div>}
           {sub && <div className="text-[11px] mt-0.5 truncate" style={{ color:'rgba(0,0,0,0.35)' }}>{sub}</div>}
         </div>
-        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+        <div className="flex flex-col items-end gap-1 shrink-0">
           {donut && <MiniDonut segments={donut.segments}/>}
           {sparkline && sparkline.length > 1 && <Sparkline values={sparkline} color={color}/>}
         </div>
@@ -180,7 +180,7 @@ export function SectionHeader({ icon, title, sub, right }: { icon:string; title:
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base shrink-0"
           style={{ background:'rgba(190,18,60,0.1)', border:'1px solid rgba(190,18,60,0.15)' }}><Ikon nama={icon} ukuran={16} /></div>
         <div>
           <h2 className="text-sm font-bold tracking-wide" style={{ color:'rgba(0,0,0,0.75)' }}>{title}</h2>
@@ -198,7 +198,7 @@ export function HBarChart({ data, color, maxItems=6 }: { data:{label:string;valu
     <div className="space-y-1.5">
       {top.map((d,i) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="text-[11px] w-24 truncate flex-shrink-0 text-right" style={{ color:'rgba(0,0,0,0.5)' }}>{d.label}</span>
+          <span className="text-[11px] w-24 truncate shrink-0 text-right" style={{ color:'rgba(0,0,0,0.5)' }}>{d.label}</span>
           <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background:'rgba(0,0,0,0.06)' }}>
             <div className="h-full rounded-full transition-all duration-700"
               style={{ width:`${(d.value/max)*100}%`, background:color, opacity:0.85-i*0.07 }}/>
@@ -216,12 +216,12 @@ export function AuditRow({ entry }: { entry: AuditEntry }) {
   return (
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl transition-all"
       style={{ background: s.bg, border:`1px solid ${s.border}` }}>
-      <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-sm"
+      <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-sm"
         style={{ background:`${s.dot}18` }}><Ikon nama={entry.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-xs font-bold truncate" style={{ color:'rgba(0,0,0,0.75)' }}>{entry.action}</span>
-          <span className="text-[11px] flex-shrink-0" style={{ color:'rgba(0,0,0,0.35)' }}>{fmt}</span>
+          <span className="text-[11px] shrink-0" style={{ color:'rgba(0,0,0,0.35)' }}>{fmt}</span>
         </div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background:`${s.dot}18`, color:s.text }}>{entry.module}</span>

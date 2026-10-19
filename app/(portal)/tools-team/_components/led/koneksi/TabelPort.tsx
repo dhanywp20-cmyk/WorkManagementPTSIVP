@@ -25,7 +25,7 @@ export function TabelPort({ a }: { a: AlatRuangKoneksi }) {
               <tr key={p.port} className={`border-t border-slate-100 ${s.mode === 'manual' ? 'cursor-pointer hover:bg-slate-50' : ''} ${s.mode === 'manual' && p.port === portAktif ? 'bg-blue-50/60' : ''}`}
                 onClick={() => s.mode === 'manual' && setPortAktif(p.port)}>
                 <td className="px-3 py-1.5 font-semibold text-slate-800 whitespace-nowrap">
-                  <span className="inline-block w-2.5 h-2.5 rounded-sm mr-2 align-middle" style={{ background: warnaPort(p.port) }} />{namaPort(t, p.port)}
+                  <span className="inline-block w-2.5 h-2.5 rounded-xs mr-2 align-middle" style={{ background: warnaPort(p.port) }} />{namaPort(t, p.port)}
                 </td>
                 <td className="px-3 py-1.5 text-right tabular-nums">{p.jumlah}</td>
                 <td className="px-3 py-1.5 text-right tabular-nums">{p.px.toLocaleString('id-ID')}</td>

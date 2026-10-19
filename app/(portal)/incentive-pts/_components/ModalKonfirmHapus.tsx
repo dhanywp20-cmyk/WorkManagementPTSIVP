@@ -16,7 +16,7 @@ export function ModalKonfirmHapus({ jalankanHapus, konfirmHapus, menghapus, setK
     <>
       {konfirmHapus && (
       <ModalPortal>
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        <div className="fixed inset-0 z-200 flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}
           onClick={() => !menghapus && setKonfirmHapus(null)}>
           <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"

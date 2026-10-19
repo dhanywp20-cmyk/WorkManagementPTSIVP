@@ -24,15 +24,15 @@ export function BarisRingkasanKPI({ kpi, loading }: BarisRingkasanKPIProps) {
         <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
           <RelAksen warna={AKSEN}/>
           <KepalaUbin ikon="🏅" judul="Beban Handler" warna={AKSEN} catatan="Open"/>
-          {loading ? <div className="h-28 rounded animate-pulse bg-slate-100"/>
+          {loading ? <div className="h-28 rounded-sm animate-pulse bg-slate-100"/>
             : kpi?.tickets.byHandler.length ? <>
               <div className="flex flex-col">
                 {kpi.tickets.byHandler.slice(0,5).map((h,i)=>(
-                  <div key={h.name} className="flex items-center gap-2.5 py-[7px] border-b border-black/[0.05] last:border-b-0">
-                    <span aria-hidden="true" className="w-7 h-7 rounded-[10px] grid place-items-center text-[11px] font-black text-white flex-shrink-0"
+                  <div key={h.name} className="flex items-center gap-2.5 py-[7px] border-b border-black/5 last:border-b-0">
+                    <span aria-hidden="true" className="w-7 h-7 rounded-[10px] grid place-items-center text-[11px] font-black text-white shrink-0"
                       style={{ background: i===0 ? AKSEN : '#cbd5e1' }}>{inisial(h.name)}</span>
                     <span className="text-[12px] font-extrabold text-slate-800 flex-1 truncate">{h.name}</span>
-                    <span className="text-[16px] font-black tabular-nums flex-shrink-0"
+                    <span className="text-[16px] font-black tabular-nums shrink-0"
                       style={{ color: i===0 ? AKSEN : '#94a3b8' }}>{h.count}</span>
                   </div>
                 ))}
@@ -48,7 +48,7 @@ export function BarisRingkasanKPI({ kpi, loading }: BarisRingkasanKPIProps) {
         <div className={`${UBIN} lg:col-span-3 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
           <RelAksen warna={AKSEN}/>
           <KepalaUbin ikon="🏢" judul="Ticket per Divisi" warna={AKSEN}/>
-          {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
+          {loading?<div className="h-32 rounded-sm animate-pulse bg-slate-100"/>:
             kpi?.tickets.byDivision.length
               ? <HBarChart data={kpi.tickets.byDivision.map(d=>({label:d.div,value:d.count}))}/>
               : <p className="text-sm text-center py-6 text-slate-500">Tidak ada data</p>}
@@ -62,7 +62,7 @@ export function BarisRingkasanKPI({ kpi, loading }: BarisRingkasanKPIProps) {
         <div className={`${UBIN} lg:col-span-6 h-full`} style={{ boxShadow: BAYANG_UBIN }}>
           <RelAksen warna={AKSEN}/>
           <KepalaUbin ikon="📦" judul="Ticket per Produk" warna={AKSEN} catatan="6 teratas"/>
-          {loading?<div className="h-32 rounded animate-pulse bg-slate-100"/>:
+          {loading?<div className="h-32 rounded-sm animate-pulse bg-slate-100"/>:
             kpi?.tickets.byProduct?.length
               ? <HBarChart lebarLabel="10rem" data={kpi.tickets.byProduct.map(p=>({label:p.product,value:p.count}))}/>
               : <p className="text-sm text-center py-6 text-slate-500">Tidak ada data produk</p>}

@@ -63,7 +63,7 @@ export function GeserCepat({ a }: { a: AlatDesain }) {
   if (!terpilih || terpilih.terkunci) return null;
   const t = 'w-7 h-7 grid place-items-center rounded-md text-slate-700 hover:bg-slate-100 active:bg-blue-100';
   return (
-    <div className="grid grid-cols-3 gap-0.5 rounded-xl bg-white/95 border border-slate-200 shadow-sm p-1 self-start" role="group" aria-label="Geser cepat">
+    <div className="grid grid-cols-3 gap-0.5 rounded-xl bg-white/95 border border-slate-200 shadow-xs p-1 self-start" role="group" aria-label="Geser cepat">
       <span />
       <button type="button" className={t} onClick={() => geser(0, 1, 0)} title="Maju / menjauh (↑)" aria-label="Maju"><ChevronUp size={16} /></button>
       <button type="button" className={t} onClick={() => geser(0, 0, 1)} title="Naik (PageUp)" aria-label="Naik"><ArrowBigUp size={15} /></button>

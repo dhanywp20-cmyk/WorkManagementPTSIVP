@@ -131,7 +131,7 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
                     {h === 'No' && selectMode && isAdmin
                       ? <input type="checkbox"
                           checked={selectedIds.size === filteredReviews.length && filteredReviews.length > 0}
-                          onChange={toggleSelectAll} className="w-4 h-4 rounded accent-violet-600 cursor-pointer" title="Pilih Semua" />
+                          onChange={toggleSelectAll} className="w-4 h-4 rounded-sm accent-violet-600 cursor-pointer" title="Pilih Semua" />
                       : h}
                   </th>
                 ))}
@@ -153,12 +153,12 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
                     <td className="px-3 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
                       {selectMode && isAdmin
                         ? <input type="checkbox" checked={selectedIds.has(r.id)}
-                            onChange={() => toggleSelectId(r.id)} className="w-4 h-4 rounded accent-violet-600 cursor-pointer" />
+                            onChange={() => toggleSelectId(r.id)} className="w-4 h-4 rounded-sm accent-violet-600 cursor-pointer" />
                         : <span className="text-[11px] font-bold text-gray-500">{hal.mulai + idx + 1}</span>}
                     </td>
                     {/* Project */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
-                      <div className="text-xs font-bold text-gray-800 leading-tight break-words">{r.project_name || '—'}</div>
+                      <div className="text-xs font-bold text-gray-800 leading-tight wrap-break-word">{r.project_name || '—'}</div>
                       {r.address && <div className="text-[11px] text-gray-500 truncate mt-0.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address}</div>}
                       <div className="text-[11px] text-gray-500 mt-0.5">{r.created_at ? formatDatetime(r.created_at) : '—'}</div>
                     </td>
@@ -174,11 +174,11 @@ export function DaftarReview({ bolehEditReview, fetchError, fetchReviews, filter
                     {/* Handler */}
                     <td className="px-3 py-3 border-r border-gray-200 align-middle">
                       <div className="flex items-center gap-1">
-                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
                           style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)' }}>
                           {r.assign_name?.charAt(0)?.toUpperCase() || '?'}
                         </div>
-                        <span className="text-[12px] font-bold text-gray-800 leading-tight break-words">{r.assign_name}</span>
+                        <span className="text-[12px] font-bold text-gray-800 leading-tight wrap-break-word">{r.assign_name}</span>
                       </div>
                     </td>
                     {/* Product */}

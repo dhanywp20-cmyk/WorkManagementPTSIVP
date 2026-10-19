@@ -19,7 +19,7 @@ export function ModalKonfirmBatch({ batchConfirm, batchProcessing, batchYear, ha
     <>
       {batchConfirm && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1200] p-4" onClick={e => { if (e.target === e.currentTarget) setBatchConfirm(false); }}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-1200 p-4" onClick={e => { if (e.target === e.currentTarget) setBatchConfirm(false); }}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-red-200">
             <h3 className="text-lg font-bold text-gray-800 mb-2"><IkonTeks nama="🚀" />Konfirmasi Process Batch</h3>
             <p className="text-sm text-gray-500 mb-2">Proses semua tranche <strong>payment_year = {batchYear}</strong> status <strong>pending</strong>.</p>

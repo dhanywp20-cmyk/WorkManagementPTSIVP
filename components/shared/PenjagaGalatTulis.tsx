@@ -40,12 +40,12 @@ export function PenjagaGalatTulis() {
   if (!galat) return null;
   return (
     <div role="alert" data-penjaga-galat=""
-      className="fixed bottom-4 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-[28rem] z-[3100] px-4 py-3 rounded-xl text-sm font-semibold flex items-start gap-2.5 animate-slide-up"
+      className="fixed bottom-4 left-3 right-3 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:w-md z-3100 px-4 py-3 rounded-xl text-sm font-semibold flex items-start gap-2.5 animate-slide-up"
       style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', boxShadow: '0 8px 24px rgba(15,23,42,0.16)' }}>
-      <CircleX size={18} aria-hidden="true" className="flex-shrink-0 mt-px" />
+      <CircleX size={18} aria-hidden="true" className="shrink-0 mt-px" />
       <span className="leading-snug flex-1">{galat.pesan}</span>
       <button type="button" onClick={() => setGalat(null)} aria-label="Tutup pemberitahuan"
-        className="flex-shrink-0 -m-1 p-1 rounded-md hover:bg-red-100">
+        className="shrink-0 -m-1 p-1 rounded-md hover:bg-red-100">
         <X size={16} aria-hidden="true" />
       </button>
     </div>

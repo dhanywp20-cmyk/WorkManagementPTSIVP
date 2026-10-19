@@ -108,7 +108,7 @@ export function HandlerDonutCard({
         <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {title}</p>
         <div className="flex bg-gray-100 rounded-lg p-0.5">
           {(["PTS", "Services"] as const).map((t) => (
-            <button key={t} onClick={() => onToggle(t)} className={`px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[11px] sm:text-xs font-bold transition-all ${teamToggle === t ? "bg-white shadow text-purple-600" : "text-gray-500 hover:text-gray-700"}`}>{t}</button>
+            <button key={t} onClick={() => onToggle(t)} className={`px-1.5 py-0.5 sm:px-3 sm:py-1 rounded-md text-[11px] sm:text-xs font-bold transition-all ${teamToggle === t ? "bg-white shadow-sm text-purple-600" : "text-gray-500 hover:text-gray-700"}`}>{t}</button>
           ))}
         </div>
       </div>
@@ -122,7 +122,7 @@ export function HandlerDonutCard({
               (1fr = minmax(auto,1fr)) tidak bisa menyusut di bawah lebar
               isinya, sehingga SELURUH halaman ikut melebar dan bisa digeser
               ke samping. */}
-          <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0 w-[58px] h-[58px] sm:w-[120px] sm:h-[120px]">
+          <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120" className="shrink-0 w-[58px] h-[58px] sm:w-[120px] sm:h-[120px]">
             {slices.map((s) =>
               s.isFullCircle ? (
                 <g key={s.i} style={{ cursor: "pointer" }} onClick={() => onSliceClick(s.name)}
@@ -154,10 +154,10 @@ export function HandlerDonutCard({
               <div key={s.i} className="flex items-center gap-1.5 cursor-pointer rounded-lg px-1.5 py-0.5 transition-all"
                 style={{ background: hov === s.i || activeHandler === s.name ? `${s.color}20` : "transparent", outline: activeHandler === s.name ? `1px solid ${s.color}` : "none" }}
                 onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => onSliceClick(s.name)}>
-                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0" style={{ background: s.color }} />
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0" style={{ background: s.color }} />
                 <span className="text-[10px] sm:text-[11px] font-semibold text-gray-600 truncate flex-1">{s.name}</span>
-                <span className="text-[10px] sm:text-[11px] font-bold flex-shrink-0" style={{ color: s.color }}>{s.value}</span>
-                {activeHandler === s.name && <span className="text-[10px] font-bold text-purple-600 flex-shrink-0">✓</span>}
+                <span className="text-[10px] sm:text-[11px] font-bold shrink-0" style={{ color: s.color }}>{s.value}</span>
+                {activeHandler === s.name && <span className="text-[10px] font-bold text-purple-600 shrink-0">✓</span>}
               </div>
             ))}
           </div>

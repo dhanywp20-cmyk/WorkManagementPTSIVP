@@ -41,7 +41,7 @@ export function ModalApproveInternal({ formatDate, handleInternalApproveProject,
               {/* Brand BOTH: dua reviewer, dan approve ini belum tentu yang terakhir. */}
               {internalApproveTarget.internal_sales_id_2 && (
                 <div className="rounded-xl p-3 flex items-start gap-2" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-                  <span className="text-base flex-shrink-0"><Ikon nama="🤝" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                  <span className="text-base shrink-0"><Ikon nama="🤝" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <p className="text-xs text-indigo-700 leading-relaxed">
                     Request ini <strong>Kedua Brand</strong> — perlu approve dari dua Sales Internal.
                     Kalau yang satunya belum, request menunggu dia dulu sebelum diteruskan ke Admin.
@@ -54,7 +54,7 @@ export function ModalApproveInternal({ formatDate, handleInternalApproveProject,
                   className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all disabled:opacity-50"
                   style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>Batal</button>
                 <button onClick={() => handleInternalApproveProject(internalApproveTarget)} disabled={internalApproveSaving}
-                  className="flex-[2] text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
+                  className="flex-2 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50"
                   style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
                   {internalApproveSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                   <IkonTeks nama="✅" />Ya, Approve &amp; Teruskan

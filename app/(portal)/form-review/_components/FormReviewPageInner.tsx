@@ -492,7 +492,7 @@ export function FormReviewPageInner() {
     !r.grade_product_knowledge && !r.grade_product_knowledge_bast
   );
 
-  const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
+  const inputCls = "w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
   const inputStyle = { background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.12)' };
 
   // Loading awal - tampilkan sebelum data siap (sesuai role)
@@ -512,8 +512,8 @@ export function FormReviewPageInner() {
       {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
           stacking context, sehingga z-index SEMUA modal di dalamnya cuma
           dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
-          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
-          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          di-portal ke <body>. Akibatnya modal z-1100 bisa tampil DI BELAKANG
+          modal z-1000 yang di-portal. Urutan cat terhadap tint di atas tetap
           aman karena elemen ini datang belakangan di DOM. */}
       <div className="relative flex flex-col flex-1 overflow-hidden">
 
@@ -550,7 +550,7 @@ export function FormReviewPageInner() {
           style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #b45309' }}>
           {/* Loading Bar */}
           {loadingBar > 0 && (
-            <div className="absolute top-0 left-0 w-full h-0.5 z-[60] overflow-hidden" style={{ background: 'rgba(217,119,6,0.15)' }}>
+            <div className="absolute top-0 left-0 w-full h-0.5 z-60 overflow-hidden" style={{ background: 'rgba(217,119,6,0.15)' }}>
               <div
                 className="h-full transition-all duration-300 ease-out"
                 style={{
@@ -669,7 +669,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search project / lokasi..." value={searchProject} onChange={e => setSearchProject(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Cari project / lokasi..." style={{ minWidth: 180 }} />
                 </div>
               </div>
@@ -678,7 +678,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search sales..." value={searchSalesName} onChange={e => setSearchSalesName(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Cari sales..." />
                 </div>
               </div>
@@ -687,7 +687,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input aria-label="Search handler..." value={searchHandler} onChange={e => setSearchHandler(e.target.value)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 transition-all"
                     placeholder="Cari handler..." />
                 </div>
               </div>
@@ -696,7 +696,7 @@ export function FormReviewPageInner() {
                 <div className="relative">
                   <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-[11px]"><Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <select aria-label="Semua Kategori" value={filterReviewCat} onChange={e => setFilterReviewCat(e.target.value as any)}
-                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-none bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
+                    className="w-full rounded-lg pl-7 pr-3 py-1 sm:py-1.5 text-xs outline-hidden bg-gray-50 border border-gray-200 focus:bg-white focus:border-violet-300 appearance-none cursor-pointer transition-all">
                     <option value="all">Semua Kategori</option>
                     <option value="Demo Product">Demo Product</option>
                     <option value="BAST">BAST</option>
@@ -782,9 +782,9 @@ export function FormReviewPageInner() {
       {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
-            <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
+            <div className="bg-linear-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
               <span className="text-2xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div><h3 className="font-bold text-white">Hapus {selectedIds.size} Review?</h3>
               <p className="text-red-100 text-xs mt-0.5">Tindakan ini tidak dapat dibatalkan</p></div>
@@ -799,7 +799,7 @@ export function FormReviewPageInner() {
                   if (!error) { setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
                   else notify('error', 'Gagal: ' + error.message);
                   setBulkDeleting(false);
-                }} className="flex-[2] bg-gradient-to-r from-violet-600 to-violet-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm">
+                }} className="flex-2 bg-linear-to-r from-violet-600 to-violet-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm">
                   <IkonTeks nama="🗑" />Ya, Hapus Permanen
                 </button>
               </div>

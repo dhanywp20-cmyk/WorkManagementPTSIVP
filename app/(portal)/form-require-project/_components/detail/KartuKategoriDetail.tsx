@@ -11,9 +11,9 @@ export interface KartuKategoriDetailProps {
 export function KartuKategoriDetail({ ChipDisplay, dr }: KartuKategoriDetailProps) {
   return (
     <>
-      <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
+      <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-xs">
         <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-          <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+          <span className="w-8 h-8 shrink-0 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow-sm"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
           Kategori Kebutuhan & Solution
         </h3>
         <div className="space-y-4">

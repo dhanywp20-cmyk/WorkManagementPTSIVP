@@ -60,7 +60,7 @@ function CincinProgres({ pct, sudah, total }: { pct: number; sudah: number; tota
   const r = 34, k = 2 * Math.PI * r;
   const warna = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#ea580c';
   return (
-    <div className="relative w-[88px] h-[88px] flex-shrink-0" role="img" aria-label={`${sudah} dari ${total} sudah isi daily report (${pct}%)`}>
+    <div className="relative w-[88px] h-[88px] shrink-0" role="img" aria-label={`${sudah} dari ${total} sudah isi daily report (${pct}%)`}>
       <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90" aria-hidden="true">
         <circle cx="40" cy="40" r={r} fill="none" stroke="#e2e8f0" strokeWidth="8" />
         {pct > 0 && <circle cx="40" cy="40" r={r} fill="none" stroke={warna} strokeWidth="8" strokeLinecap="round"
@@ -80,7 +80,7 @@ function StatPills({ items }: { items: { label: string; value: number; color: st
       {items.map((s, i) => (
         <div key={i} className="min-w-0">
           <div className="flex items-center gap-1.5">
-            <span aria-hidden="true" className="w-2 h-2 rounded-[3px] flex-shrink-0" style={{ background: s.color }} />
+            <span aria-hidden="true" className="w-2 h-2 rounded-[3px] shrink-0" style={{ background: s.color }} />
             <span className="text-[10px] font-black uppercase tracking-[0.07em] text-slate-500 truncate">{s.label}</span>
           </div>
           <div className="text-[26px] font-black leading-none mt-1 tabular-nums text-slate-900" style={{ letterSpacing: '-0.03em' }}>{s.value}</div>
@@ -93,7 +93,7 @@ function StatPills({ items }: { items: { label: string; value: number; color: st
 function MiniRow({ title, sub, tone }: { title: string; sub: string; tone?: string }) {
   return (
     <div className="flex items-start gap-2 py-1.5 border-b border-slate-100 last:border-0">
-      <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: tone ?? '#94a3b8' }} />
+      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: tone ?? '#94a3b8' }} />
       <div className="min-w-0 flex-1">
         <div className="text-xs font-semibold text-slate-700 truncate">{title}</div>
         <div className="text-[11px] text-slate-500 truncate">{sub}</div>
@@ -250,16 +250,16 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           dan karena itu salah label.
         */}
         {g.ketuaBelumLapor && (
-          <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 self-center" style={{ background: '#f59e0b' }}
+          <span className="w-1.5 h-1.5 rounded-full shrink-0 self-center" style={{ background: '#f59e0b' }}
             title="Belum daily report" />
         )}
         {/* Judul kelompok naik dari text-[11px]: keluhannya nama terlalu kecil, dan judul induknya harus tetap lebih tegas dari nama anggotanya. */}
         <span className={`text-[11px] font-bold truncate max-w-[170px] ${g.ketuaBelumLapor ? 'text-amber-700' : 'text-slate-500'}`}>{g.nama}</span>
         {g.jabatan && (
-          <span className="text-[11px] font-semibold text-slate-500 flex-shrink-0">{g.jabatan}</span>
+          <span className="text-[11px] font-semibold text-slate-500 shrink-0">{g.jabatan}</span>
         )}
         {g.anggota.length > 0 && (
-          <span className="text-[11px] font-bold text-slate-500 flex-shrink-0">{g.anggota.length}</span>
+          <span className="text-[11px] font-bold text-slate-500 shrink-0">{g.anggota.length}</span>
         )}
       </div>
       {/*
@@ -278,7 +278,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
           {g.anggota.filter(m => !kelompok.peta.has(m.id)).map(m => (
             <button key={m.id} onClick={() => openMenu('daily-report')}
               className="flex items-center gap-1.5 py-1 px-1.5 hover:bg-slate-50 rounded-md transition-colors text-left">
-              <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: m.active > 0 ? '#dc2626' : '#f59e0b' }} />
+              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: m.active > 0 ? '#dc2626' : '#f59e0b' }} />
               {/*
                 Nama anggota - INI yang dikeluhkan terlalu kecil.
                 text-[11px] -> text-[13px], dan max-w ikut
@@ -287,7 +287,7 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
               */}
               <span className="text-[13px] font-semibold text-slate-700 truncate max-w-[170px]">{m.name}</span>
               {m.active > 0 && (
-                <span className="text-[11px] font-bold px-1 py-px rounded-full flex-shrink-0"
+                <span className="text-[11px] font-bold px-1 py-px rounded-full shrink-0"
                   style={{ background: 'rgba(220,38,38,0.1)', color: '#dc2626' }}>{m.active}</span>
               )}
             </button>
@@ -380,7 +380,7 @@ function BarisRiwayatQuiz({ r, onClick }: { r: RiwayatQuizRingkas; onClick: () =
     // keyboard/pembaca layar seperti kontrol lain di platform ini.
     <button type="button" onClick={onClick}
       className="flex items-center gap-2 py-1.5 w-full text-left border-b border-indigo-100/70 last:border-0 hover:bg-indigo-100/40 rounded-lg px-1 -mx-1 transition-colors">
-      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black flex-shrink-0 ${warna}`}>
+      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-black shrink-0 ${warna}`}>
         {menunggu ? '⏳' : (r.score?.toFixed(0) ?? '—')}
       </span>
       <div className="min-w-0 flex-1">
@@ -390,7 +390,7 @@ function BarisRiwayatQuiz({ r, onClick }: { r: RiwayatQuizRingkas; onClick: () =
       {/*  Lencana panah, bukan sekadar chevron tipis - diminta eksplisit
           sebagai penanda "klik untuk buka popup", bukan hiasan yang gampang
           terlewat matanya di kartu sepadat ini. */}
-      <span aria-hidden="true" className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold flex-shrink-0 bg-indigo-100 text-indigo-600">→</span>
+      <span aria-hidden="true" className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 bg-indigo-100 text-indigo-600">→</span>
     </button>
   );
 }
@@ -398,7 +398,7 @@ function BarisRiwayatQuiz({ r, onClick }: { r: RiwayatQuizRingkas; onClick: () =
 function BarisAngka({ icon, label, value, sub }: { icon: string; label: string; value: string; sub?: string }) {
   return (
     <div className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-indigo-50/70 border border-indigo-100">
-      <span className="text-lg flex-shrink-0" aria-hidden="true"><Ikon nama={icon} ukuran={18} /></span>
+      <span className="text-lg shrink-0" aria-hidden="true"><Ikon nama={icon} ukuran={18} /></span>
       <div className="min-w-0 flex-1">
         <div className="text-[11px] text-indigo-400 font-semibold leading-none">{label}</div>
         <div className="text-sm font-black text-indigo-800 leading-tight mt-0.5">
@@ -596,9 +596,9 @@ const ShowroomWidget: React.FC<WidgetProps> = ({ openMenu }) => {
         {days.map(d => (
           <div key={d.day} className="flex items-center gap-2 py-1.5 px-1 border-b border-slate-100 last:border-0"
             style={d.isToday ? { background: 'rgba(13,148,136,0.06)', borderRadius: 8 } : undefined}>
-            <span className="text-[11px] font-bold w-12 flex-shrink-0" style={{ color: d.isToday ? '#0f766e' : '#64748b' }}>{d.day}</span>
+            <span className="text-[11px] font-bold w-12 shrink-0" style={{ color: d.isToday ? '#0f766e' : '#64748b' }}>{d.day}</span>
             <span className="text-xs font-semibold text-slate-700 truncate flex-1">{d.name || <span className="text-slate-500 font-normal">{d.libur ? 'Libur' : '—'}</span>}</span>
-            {d.isToday && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0" style={{ background: '#0f766e', color: 'white' }}>Hari ini</span>}
+            {d.isToday && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0" style={{ background: '#0f766e', color: 'white' }}>Hari ini</span>}
           </div>
         ))}
       </div>

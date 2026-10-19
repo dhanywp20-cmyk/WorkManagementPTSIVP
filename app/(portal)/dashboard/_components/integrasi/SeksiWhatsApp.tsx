@@ -34,7 +34,7 @@ export function SeksiWhatsApp({ hapusRahasia, koneksi, p, pesanKanal, rahasia, s
                 <h3 className="text-sm font-bold text-slate-700">Gateway WhatsApp</h3>
                 <p className="text-[11.5px] text-slate-500 mt-0.5">Penyedia yang mengantar pesan ke nomor tim.</p>
               </div>
-              <span className="ml-auto flex-shrink-0"><LencanaStatus status={spWA.bisaCek ? koneksi.whatsapp : { keadaan: 'terhubung', info: spWA.label }} /></span>
+              <span className="ml-auto shrink-0"><LencanaStatus status={spWA.bisaCek ? koneksi.whatsapp : { keadaan: 'terhubung', info: spWA.label }} /></span>
             </div>
             <div className="p-3 space-y-3">
               <div className="grid grid-cols-1 formulir:grid-cols-3 gap-2">
@@ -47,7 +47,7 @@ export function SeksiWhatsApp({ hapusRahasia, koneksi, p, pesanKanal, rahasia, s
                       style={{ borderColor: dipilih ? '#16a34a' : '#e2e8f0', background: dipilih ? '#16a34a0d' : 'transparent' }}>
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span className="text-[11.5px] font-bold text-slate-700 leading-tight">{sp.label}</span>
-                        {sp.resmi && <span className="text-[10px] font-black px-1 py-px rounded bg-sky-100 text-sky-700 flex-shrink-0">RESMI</span>}
+                        {sp.resmi && <span className="text-[10px] font-black px-1 py-px rounded-sm bg-sky-100 text-sky-700 shrink-0">RESMI</span>}
                       </div>
                       <p className="text-[11px] text-slate-500 leading-snug">{sp.ringkas}</p>
                     </button>
@@ -73,7 +73,7 @@ export function SeksiWhatsApp({ hapusRahasia, koneksi, p, pesanKanal, rahasia, s
                     <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">{kol.label}</label>
                     <input value={p.waConfig[kol.kunci] ?? ''} placeholder={kol.placeholder}
                       onChange={e => ubah(x => ({ ...x, waConfig: { ...x.waConfig, [kol.kunci]: e.target.value } }))}
-                      className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
+                      className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-hidden focus:border-green-400" />
                     <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{kol.petunjuk}</p>
                   </div>
                 ))}
@@ -89,7 +89,7 @@ export function SeksiWhatsApp({ hapusRahasia, koneksi, p, pesanKanal, rahasia, s
             </p>
             <label htmlFor="f-dashboard-components-modal-integrasi-1" className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">Nomor tujuan</label>
             <input id="f-dashboard-components-modal-integrasi-1" value={waTujuan} onChange={e => setWaTujuan(e.target.value)} placeholder="contoh: 6281234567890"
-              className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-green-400" />
+              className="w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-hidden focus:border-green-400" />
             <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
               Kode negara tanpa <span className="font-mono">+</span>. Awalan <span className="font-mono">08…</span> ditulis <span className="font-mono">628…</span>
             </p>

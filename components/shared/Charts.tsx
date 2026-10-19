@@ -28,7 +28,7 @@ export function MiniSpark({
   const max = Math.max(...values, 1);
   const bw = Math.max(2, Math.floor(width / values.length) - 1);
   return (
-    <svg width={width} height={height} className="flex-shrink-0"
+    <svg width={width} height={height} className="shrink-0"
       role="img" aria-label={`Tren ${values.length} periode terakhir`}>
       {values.map((v, i) => {
         const bh = Math.max(2, (v / max) * height);
@@ -125,7 +125,7 @@ export function DonutChart({
   if (!total) {
     return (
       <div style={{ width: size, height: size }}
-        className="flex items-center justify-center flex-shrink-0">
+        className="flex items-center justify-center shrink-0">
         <span className="text-[11px] text-slate-400 font-bold">—</span>
       </div>
     );
@@ -134,7 +134,7 @@ export function DonutChart({
   const celah = isi.length > 1 ? 2 : 0;
   let cum = 0;
   return (
-    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
       <svg aria-hidden="true" focusable="false" width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#f1f5f9" strokeWidth={strokeWidth} />
         {isi.map((seg, i) => {
@@ -177,7 +177,7 @@ export function TrendBadge({
   const bagus = lowerIsBetter ? delta < 0 : delta > 0;
   const panah = delta > 0 ? '▲' : '▼';
   return (
-    <span className="text-[11px] font-bold flex-shrink-0"
+    <span className="text-[11px] font-bold shrink-0"
       // Hijau/merah tua: kontras teks >= 4.5:1 di atas putih (hijau terang dulu 2.5:1).
       style={{ color: bagus ? WARNA.berhasil.teks : WARNA.bahaya.teks }}
       title={`${bagus ? 'Membaik' : 'Memburuk'} ${abs.toFixed(1)}${suffix} dibanding periode sebelumnya`}>

@@ -607,7 +607,7 @@ export default function Page() {
         <div className="text-5xl mb-4"><Ikon nama="🔐" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <h2 className="text-xl font-bold text-gray-800 mb-2">Sesi Habis</h2>
         <p className="text-gray-500 text-sm mb-6">Silakan login kembali melalui dashboard.</p>
-        <a href="/dashboard" className="bg-gradient-to-r from-teal-600 to-teal-800 text-white px-6 py-3 rounded-xl font-bold hover:from-teal-700 hover:to-teal-900 transition-all shadow-md inline-block">
+        <a href="/dashboard" className="bg-linear-to-r from-teal-600 to-teal-800 text-white px-6 py-3 rounded-xl font-bold hover:from-teal-700 hover:to-teal-900 transition-all shadow-md inline-block">
           Kembali ke Dashboard
         </a>
       </div>

@@ -102,7 +102,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
     <>
       {showDetailModal && selectedRequest && detailSc && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0" style={{ zIndex: Z.overlay }}
+        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-0" style={{ zIndex: Z.overlay }}
           onClick={e => { if (e.target === e.currentTarget) handleCloseDetail(); }}>
           <div className="bg-white w-full h-full animate-slide-up flex flex-col overflow-hidden"
             style={{ border: 'none' }}>
@@ -110,7 +110,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
             {/* Detail Modal Header */}
             {/* flex-col sm:flex-row: sebelumnya SATU baris (flex items-center) berisi
                 tombol tutup + judul + sampai 6 tombol aksi (Update Status/Edit/
-                Hapus/Download/Print, dst). Tombol aksinya flex-shrink-0 - menolak
+                Hapus/Download/Print, dst). Tombol aksinya shrink-0 - menolak
                 menyusut - jadi begitu semuanya tidak muat di satu baris di HP,
                 yang terjadi bukan tombolnya turun ke bawah, tapi seluruh baris
                 header memaksa lebih lebar dari layar dan tombol paling kanan
@@ -124,7 +124,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
             {/* Warning: non-IVP guest has no sales_division */}
             {isNonIVPGuest && !currentUser.sales_division && (
               <div className="mx-4 my-2 px-4 py-3 rounded-xl flex items-center gap-3 border-2 border-amber-300" style={{ background: 'rgba(254,243,199,0.9)' }}>
-                <span className="text-2xl flex-shrink-0"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div>
                   <p className="text-sm font-bold text-amber-800">Sales Division belum diset di akun kamu!</p>
                   <p className="text-xs text-amber-700 mt-0.5">Hubungi admin untuk set <strong>Sales Division</strong> di profil akunmu. Tanpa ini, request tidak bisa di-link ke IVP Sales internal.</p>
@@ -135,7 +135,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
             {/* Rejection reason banner */}
             {selectedRequest.status === 'rejected' && (
               <div className="mx-4 my-2 px-4 py-3 rounded-xl flex items-start gap-3 border-2 border-red-300" style={{ background: 'rgba(254,226,226,0.9)' }}>
-                <span className="text-2xl flex-shrink-0 mt-0.5"><Ikon nama="❌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0 mt-0.5"><Ikon nama="❌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-red-800">Request ini ditolak</p>
                   {selectedRequest.rejection_reason && (
@@ -157,7 +157,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
 
             {/* IVP Guest info banner */}
             {isIVPGuest && selectedRequest.ivp_assignee === currentUser.full_name && selectedRequest.requester_id !== currentUser.id && (
-              <div className="px-5 py-2 flex items-center gap-2 text-xs flex-shrink-0"
+              <div className="px-5 py-2 flex items-center gap-2 text-xs shrink-0"
                 style={{ background: 'rgba(99,102,241,0.10)', borderBottom: '1px solid rgba(99,102,241,0.2)' }}>
                 <span><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <span className="text-indigo-700 font-semibold">
@@ -169,7 +169,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
 
             {/* Detail Modal Body — 2 columns: LEFT (info + attachments) | RIGHT (chat) */}
             {/* Mobile: tab switcher to toggle between Info and Chat panels */}
-            <div className="flex sm:hidden border-b border-gray-200 bg-white flex-shrink-0">
+            <div className="flex sm:hidden border-b border-gray-200 bg-white shrink-0">
               <button onClick={() => setDetailMobileTab('info')}
                 className={`flex-1 py-2.5 text-xs font-bold transition-all border-b-2 ${detailMobileTab === 'info' ? 'text-teal-700 border-teal-600' : 'text-gray-500 border-transparent'}`}>
                 <IkonTeks nama="📋" />Info Project
@@ -182,7 +182,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
             <div className="flex-1 flex flex-col sm:flex-row overflow-hidden min-h-0">
 
               {/* LEFT: Detail Info + Attachments */}
-              <div className={`${detailMobileTab === 'info' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-[3] min-w-0 border-r border-gray-200 overflow-y-auto bg-gray-50`}>
+              <div className={`${detailMobileTab === 'info' ? 'flex flex-col' : 'hidden'} sm:flex sm:flex-col flex-3 min-w-0 border-r border-gray-200 overflow-y-auto bg-gray-50`}>
                 {/* Room Tab Navigator — STICKY di atas scroll area, supaya bisa pindah
                     section tanpa perlu scroll balik ke atas dulu. Ditaruh DI LUAR
                     "p-5 space-y-5" (bukan ikut scroll bareng konten) tapi tetap di
@@ -193,10 +193,10 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                   const totalDetailRooms = 1 + detailRooms.length;
                   if (totalDetailRooms <= 1) return null;
                   return (
-                    <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm px-5 pt-4 pb-3 border-b border-gray-200 shadow-sm">
+                    <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-xs px-5 pt-4 pb-3 border-b border-gray-200 shadow-xs">
                       <div className="flex items-center bg-teal-50 border border-teal-200 rounded-2xl px-2 py-1.5 gap-1 overflow-x-auto">
                         <button aria-label="Sebelumnya" type="button" onClick={() => setDetailRoomIdx(i => Math.max(0, i-1))} disabled={detailRoomIdx === 0}
-                          className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 transition-all flex-shrink-0">
+                          className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 transition-all shrink-0">
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
                         </button>
                         {Array.from({length: totalDetailRooms}).map((_, i) => {
@@ -211,14 +211,14 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                           };
                           return (
                             <button key={i} type="button" onClick={() => setDetailRoomIdx(i)}
-                              className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${detailRoomIdx === i ? 'bg-teal-600 text-white shadow' : 'text-teal-700 hover:bg-teal-100'}`}>
-                              {roomSt && <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor[roomSt] || 'bg-gray-300'}`} />}
+                              className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${detailRoomIdx === i ? 'bg-teal-600 text-white shadow-sm' : 'text-teal-700 hover:bg-teal-100'}`}>
+                              {roomSt && <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor[roomSt] || 'bg-gray-300'}`} />}
                               {label}
                             </button>
                           );
                         })}
                         <button aria-label="Berikutnya" type="button" onClick={() => setDetailRoomIdx(i => Math.min(totalDetailRooms-1, i+1))} disabled={detailRoomIdx === totalDetailRooms-1}
-                          className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 transition-all flex-shrink-0">
+                          className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 transition-all shrink-0">
                           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
                         </button>
                         <span className="text-[11px] text-teal-700 font-bold ml-auto mr-1">{detailRoomIdx+1}/{totalDetailRooms}</span>
@@ -237,13 +237,13 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
 
                     items-start supaya kartu pendek tidak ikut meregang mengikuti
                     kartu Source & Peripheral yang paling tinggi. */}
-                <div className="p-5 grid grid-cols-1 satulayar:grid-cols-2 gap-5 items-start [&>*]:min-w-0">
+                <div className="p-5 grid grid-cols-1 satulayar:grid-cols-2 gap-5 items-start *:min-w-0">
 
                   {/* Assigned PTS — "in_progress" nudge */}
                   {isTeamPTS && detailRoomStatus === 'approved' && detailRoomAssignName === currentUser.full_name && (
                     <div className="rounded-xl px-4 py-3 flex items-center gap-3 satulayar:col-span-2"
                       style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.25)' }}>
-                      <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                       </svg>
                       <div>
@@ -304,7 +304,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                       if (!filtered.length) return <span className="text-sm text-gray-500 italic">—</span>;
                       return <div className="flex flex-wrap gap-1.5 sm:gap-2">{filtered.map(item => (
                         <span key={item} className="flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border-2 border-teal-500 bg-teal-50 text-teal-700 text-xs sm:text-sm font-medium">
-                          <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 border-teal-500 bg-teal-500 flex items-center justify-center flex-shrink-0"><svg aria-hidden="true" focusable="false" className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg></div>
+                          <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-sm border-2 border-teal-500 bg-teal-500 flex items-center justify-center shrink-0"><svg aria-hidden="true" focusable="false" className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg></div>
                           {item}
                         </span>
                       ))}</div>;
@@ -312,7 +312,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                     const YNDisplay = ({ value, label }: { value: string; label: string }) => (
                       <div>
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1 sm:mb-2">{label}</label>
-                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-1 sm:mb-2">{['Yes','No'].map(opt => (<span key={opt} className={`flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border-2 text-xs sm:text-sm font-medium ${value === opt ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-gray-300 bg-white text-gray-500'}`}><div className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${value === opt ? 'border-teal-500' : 'border-gray-400'}`}>{value === opt && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-teal-500" />}</div>{opt}</span>))}</div>
+                        <div className="flex flex-wrap gap-1.5 sm:gap-2 mb-1 sm:mb-2">{['Yes','No'].map(opt => (<span key={opt} className={`flex items-center gap-1 sm:gap-1.5 px-2 py-1 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border-2 text-xs sm:text-sm font-medium ${value === opt ? 'border-teal-500 bg-teal-50 text-teal-700' : 'border-gray-300 bg-white text-gray-500'}`}><div className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${value === opt ? 'border-teal-500' : 'border-gray-400'}`}>{value === opt && <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-teal-500" />}</div>{opt}</span>))}</div>
                       </div>
                     );
 

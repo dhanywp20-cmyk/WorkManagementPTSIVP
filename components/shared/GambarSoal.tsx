@@ -25,7 +25,7 @@ export function GambarSoal({ url, tinggi = 'max-h-64', className = '' }: { url: 
       </button>
       {besar && (
         <div role="dialog" aria-modal="true" aria-label="Gambar soal" onClick={() => setBesar(false)}
-          className="fixed inset-0 z-[1100] bg-black/85 flex items-center justify-center p-4 cursor-zoom-out">
+          className="fixed inset-0 z-1100 bg-black/85 flex items-center justify-center p-4 cursor-zoom-out">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt="Gambar soal" className="max-h-full max-w-full object-contain rounded-lg" />
         </div>

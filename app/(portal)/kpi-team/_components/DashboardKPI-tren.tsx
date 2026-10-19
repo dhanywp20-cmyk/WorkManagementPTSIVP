@@ -79,12 +79,12 @@ export function AuditRow({ entry }: { entry: AuditEntry }) {
   return (
     <div className="flex items-start gap-3 px-3 py-2.5 rounded-xl transition-all"
       style={{ background: s.bg, border:`1px solid ${s.border}` }}>
-      <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 text-sm"
+      <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-sm"
         style={{ background:`${s.dot}18` }}><Ikon nama={entry.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
           <span className="text-sm font-bold truncate" style={{ color:'rgba(0,0,0,0.75)' }}>{entry.action}</span>
-          <span className="text-sm flex-shrink-0" style={{ color:'rgba(0,0,0,0.35)' }}>{fmt}</span>
+          <span className="text-sm shrink-0" style={{ color:'rgba(0,0,0,0.35)' }}>{fmt}</span>
         </div>
         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
           <span className="text-sm font-semibold px-1.5 py-0.5 rounded-full" style={{ background:`${s.dot}18`, color:s.text }}>{entry.module}</span>

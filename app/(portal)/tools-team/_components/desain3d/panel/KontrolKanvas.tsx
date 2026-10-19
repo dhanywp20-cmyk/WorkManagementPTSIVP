@@ -29,7 +29,7 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
     <>
       <div className="kontrol-kanvas lapis-tembus absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5 max-w-[calc(100%-16px)]">
         <button type="button" onClick={() => setChipBuka(v => !v)} aria-expanded={chipBuka}
-          className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/95 border border-slate-200 text-[12px] font-bold text-slate-700 shadow-sm">
+          className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/95 border border-slate-200 text-[12px] font-bold text-slate-700 shadow-xs">
           <Settings2 size={14} /> Tampilan {chipBuka ? '▴' : '▾'}
         </button>
         <div className={`${chipBuka ? 'flex' : 'hidden'} sm:flex gap-1.5 flex-wrap lapis-tembus`}>
@@ -50,7 +50,7 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
             ...(benda.some(nirkabel) ? [{ v: tampilShare, s: setTampilShare, l: 'Share nirkabel' }] : []),
             ...(kabel.length && tampilKabel ? [{ v: kabelPower, s: setKabelPower, l: 'Kabel power' }] : []),
             { v: bayangan, s: setBayangan, l: 'Bayangan & cahaya' }].map(t => (
-            <label key={t.l} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/90 border border-slate-200 text-[11.5px] font-semibold text-slate-700 shadow-sm">
+            <label key={t.l} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/90 border border-slate-200 text-[11.5px] font-semibold text-slate-700 shadow-xs">
               <input type="checkbox" checked={t.v} onChange={e => t.s(e.target.checked)} /> {t.l}
             </label>
           ))}
@@ -64,7 +64,7 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
       <DaftarKanvas a={a} />
       <button type="button" onClick={() => setLayarPenuh(v => !v)} aria-pressed={layarPenuh}
         title={layarPenuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} aria-label={layarPenuh ? 'Keluar layar penuh' : 'Layar penuh'}
-        className="kontrol-kanvas absolute right-2 top-2 z-10 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 border border-slate-200 text-slate-700 shadow-sm hover:bg-slate-50">
+        className="kontrol-kanvas absolute right-2 top-2 z-10 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 border border-slate-200 text-slate-700 shadow-xs hover:bg-slate-50">
         {layarPenuh ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
       </button>
     </>

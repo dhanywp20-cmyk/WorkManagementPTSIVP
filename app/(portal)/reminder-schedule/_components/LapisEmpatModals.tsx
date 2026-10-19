@@ -27,7 +27,7 @@ export function TanyaLanjutanModal({
 }) {
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1100] flex items-center justify-center p-4"
+      <div role="dialog" aria-modal="true" className="fixed inset-0 z-1100 flex items-center justify-center p-4"
         style={{ background: 'rgba(15,23,42,0.55)' }}>
         <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden">
           <div className="px-5 py-3.5" style={{ background: '#0891b2', color: '#fff' }}>
@@ -85,7 +85,7 @@ export function PilihTipeReminderModal({
 }) {
   return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      <div className="fixed inset-0 z-200 flex items-center justify-center p-4"
         style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
         <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
           role="dialog" aria-modal="true" aria-labelledby="judul-tipe-reminder">
@@ -111,7 +111,7 @@ export function PilihTipeReminderModal({
             <button type="button" onClick={onPilihLama}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-cyan-400 hover:bg-cyan-50/50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">
                     {buatUntukGuest ? 'Project Lama Anda — Satu BAST' : 'Project Lama — Satu BAST'}
@@ -132,7 +132,7 @@ export function PilihTipeReminderModal({
             <button type="button" onClick={onPilihBaru}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">Project Baru</p>
                   <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
@@ -179,14 +179,14 @@ export function CariProyekLamaModal({
 }) {
   return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      <div className="fixed inset-0 z-200 flex items-center justify-center p-4"
         style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
         <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
           style={{ maxHeight: '85vh' }} role="dialog" aria-modal="true" aria-labelledby="judul-cari-reminder">
           <div className="px-5 py-4 text-white flex items-center gap-3" style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)' }}>
             <button type="button" aria-label="Kembali"
               onClick={onKembali}
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 hover:bg-white/10">
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 hover:bg-white/10">
               <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
               </svg>
@@ -209,7 +209,7 @@ export function CariProyekLamaModal({
               <input type="text" autoFocus value={carianProyek}
                 onChange={e => { setCarianProyek(e.target.value); setPraPilihProyek(null); }}
                 placeholder="Ketik nama project untuk mencari..."
-                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 border border-slate-200" />
+                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-cyan-500/40 border border-slate-200" />
             </div>
 
             {hasilCarianProyek.length === 0 && (
@@ -232,7 +232,7 @@ export function CariProyekLamaModal({
                       className="w-full text-left px-4 py-3 transition-colors border-b last:border-b-0 flex flex-col gap-0.5"
                       style={{ borderColor: 'rgba(0,0,0,0.06)', background: disorot ? 'rgba(8,145,178,0.08)' : 'white' }}>
                       <span className="flex items-center gap-2">
-                        {disorot && <span className="text-cyan-700 flex-shrink-0">✓</span>}
+                        {disorot && <span className="text-cyan-700 shrink-0">✓</span>}
                         <span className="text-sm font-bold text-slate-800">{r.project_name}</span>
                       </span>
                       <span className="text-xs text-slate-500 flex gap-3 flex-wrap">
@@ -247,7 +247,7 @@ export function CariProyekLamaModal({
             )}
           </div>
 
-          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center flex-shrink-0">
+          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center shrink-0">
             <span className="text-[11px] text-slate-500">
               {praPilihProyek ? `Dipilih: ${praPilihProyek.project_name}` : 'Belum ada yang dipilih'}
             </span>

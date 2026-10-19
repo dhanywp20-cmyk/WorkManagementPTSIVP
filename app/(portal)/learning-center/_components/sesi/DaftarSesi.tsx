@@ -39,10 +39,10 @@ export function DaftarSesi({ filtered, fmtDT, getSessionStatus, handleDelete, ha
             ? teamUsers.filter(u => s.target_user_ids!.includes(u.id)).map(u => u.full_name)
             : null;
           return (
-            <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-sm p-5"
+            <div key={s.id} className="stagger-item rounded-2xl border border-white/60 shadow-xs p-5"
               style={{ background: '#ffffff' }}>
               {/* Di layar sempit deretan tombol turun ke bawah, bukan berdesakan
-                  di kanan judul: dengan flex-shrink-0 tombolnya tidak mau
+                  di kanan judul: dengan shrink-0 tombolnya tidak mau
                   mengecil, jadi ia meluber keluar kartu dan halaman ikut bisa
                   digeser ke samping. */}
               <div className="flex flex-col sm:flex-row items-start sm:justify-between gap-3 sm:gap-4">
@@ -152,7 +152,7 @@ export function DaftarSesi({ filtered, fmtDT, getSessionStatus, handleDelete, ha
                     })()}
                   </div>
                 </div>
-                <div className="flex gap-2 flex-wrap w-full sm:w-auto sm:flex-shrink-0 justify-start sm:justify-end">
+                <div className="flex gap-2 flex-wrap w-full sm:w-auto sm:shrink-0 justify-start sm:justify-end">
                   {onViewResults && (
                     <button
                       onClick={() => onViewResults(s.id)}

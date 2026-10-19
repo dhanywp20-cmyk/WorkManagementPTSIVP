@@ -81,7 +81,7 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2">👨‍💼</span>
             <select aria-label="— Pilih penanganan —" value={form.assign_name} onChange={e => set({ assign_name: e.target.value })}
-              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
+              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 focus:ring-2 focus:ring-red-500/40 appearance-none cursor-pointer"
               style={{ background: "rgba(255,255,255,0.90)", border: "1px solid rgba(0,0,0,0.12)" }}>
               <option value="">— Pilih penanganan —</option>
               <option value="SELF">Saya kerjakan sendiri</option>
@@ -136,7 +136,7 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
               <button aria-label="Tutup" type="button" onClick={() => set({ photo: null })} className="text-red-600 hover:text-red-700 font-bold text-xs ml-1">✕</button>
             </div>
             <img src={URL.createObjectURL(form.photo)} alt="Preview"
-              className="w-full max-h-48 object-cover rounded-lg border-2 shadow-sm"
+              className="w-full max-h-48 object-cover rounded-lg border-2 shadow-xs"
               style={{ borderColor: "rgba(220,38,38,0.3)" }} />
           </div>
         )}

@@ -38,7 +38,7 @@ export function BagianPenilaianKPI({ calcKPI, currentUser, fetchKPIMembers, filt
             <span className="text-[10px] font-bold px-2 py-1 rounded-lg text-blue-700" style={{ background: '#eff6ff', border: '1px solid #bfdbfe' }}>
               <Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {kpiPeriodLabel}
             </span>
-            {kpiLoading && <div className="w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin flex-shrink-0" />}
+            {kpiLoading && <div className="w-4 h-4 border-2 border-sky-200 border-t-sky-600 rounded-full animate-spin shrink-0" />}
           </div>
           {/* KPI period controls */}
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -53,14 +53,14 @@ export function BagianPenilaianKPI({ calcKPI, currentUser, fetchKPIMembers, filt
             </div>
             {kpiPeriodLen === '6m' && (
               <select value={kpiStartMonth} onChange={e => setKpiStartMonth(Number(e.target.value))} aria-label="Periode enam bulan"
-                className="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
+                className="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-hidden">
                 {[{v:1,l:'Jan–Jun'},{v:2,l:'Feb–Jul'},{v:3,l:'Mar–Agt'},{v:4,l:'Apr–Sep'},{v:5,l:'Mei–Okt'},{v:6,l:'Jun–Nov'},{v:7,l:'Jul–Des'}].map(o=>(
                   <option key={o.v} value={o.v}>{o.l}</option>
                 ))}
               </select>
             )}
             <select value={kpiYear} onChange={e => setKpiYear(Number(e.target.value))} aria-label="Tahun"
-              className="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-none">
+              className="text-[11px] border border-slate-200 rounded-lg px-2 py-1 bg-white text-slate-600 outline-hidden">
               {[2024,2025,2026,2027].map(y=>(<option key={y} value={y}>{y}</option>))}
             </select>
             <button onClick={() => fetchKPIMembers()}
@@ -108,9 +108,9 @@ export function BagianPenilaianKPI({ calcKPI, currentUser, fetchKPIMembers, filt
                 const avg = scored.length ? Math.round(scored.reduce((s, m) => s + calcKPI(m), 0) / scored.length) : null;
                 const avgC = avg == null ? '#94a3b8' : avg >= 85 ? '#10b981' : avg >= 70 ? '#3b82f6' : avg >= 50 ? '#f59e0b' : '#ef4444';
                 return (
-                  <div key={tt} className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div key={tt} className="rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
                     <div className="flex items-center gap-2 px-3 py-1.5 border-b border-slate-100" style={{ background: `${col}08` }}>
-                      <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{ background: col }}>{abbr[0]}</div>
+                      <div className="w-5 h-5 rounded-md flex items-center justify-center text-white text-[11px] font-black shrink-0" style={{ background: col }}>{abbr[0]}</div>
                       <span className="text-[11px] font-black text-slate-600 uppercase tracking-wider">{tt}</span>
                       <span className="text-[11px] text-slate-500">{ms.length} anggota</span>
                       {avg !== null && <span className="ml-auto text-sm font-black" style={{ color: avgC }}>avg {avg}%</span>}
@@ -132,9 +132,9 @@ export function BagianPenilaianKPI({ calcKPI, currentUser, fetchKPIMembers, filt
                         if (m.ticketAvgResponseHours > 24) alerts.push(`⏱${m.ticketAvgResponseHours}j`);
                         return (
                           <div key={m.id} {...bisaDiklik(() => setSelectedKPIMember(m.id))}
-                            className="flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border cursor-pointer hover:shadow-md transition-all"
+                            className="shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl border cursor-pointer hover:shadow-md transition-all"
                             style={{ background: noData ? '#f8fafc' : `${c}08`, borderColor: noData ? '#e2e8f0' : `${c}40`, minWidth: 88, maxWidth: 104 }}>
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white shadow-sm flex-shrink-0"
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white shadow-xs shrink-0"
                               style={{ background: `linear-gradient(135deg,${c},${c}88)` }}>
                               {m.name.charAt(0)}
                             </div>
@@ -154,7 +154,7 @@ export function BagianPenilaianKPI({ calcKPI, currentUser, fetchKPIMembers, filt
                             {alerts.length > 0 && (
                               <div className="flex gap-0.5 flex-wrap justify-center">
                                 {alerts.map((a, i) => (
-                                  <span key={i} className="text-[10px] font-bold px-1 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-100 leading-none">{a}</span>
+                                  <span key={i} className="text-[10px] font-bold px-1 py-0.5 rounded-sm bg-amber-50 text-amber-700 border border-amber-100 leading-none">{a}</span>
                                 ))}
                               </div>
                             )}

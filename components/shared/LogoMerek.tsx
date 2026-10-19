@@ -64,7 +64,7 @@ export function LogoMerek({
 
   return (
     <div
-      className={`rounded-xl shadow-md flex items-center justify-center flex-shrink-0 overflow-hidden ${className}`}
+      className={`rounded-xl shadow-md flex items-center justify-center shrink-0 overflow-hidden ${className}`}
       style={{ width: sisi, height: sisi, ...latar }}
     >
       {adaLogo ? (

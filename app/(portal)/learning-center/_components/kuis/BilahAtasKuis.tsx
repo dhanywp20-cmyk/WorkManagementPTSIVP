@@ -23,7 +23,7 @@ export interface BilahAtasKuisProps {
 export function BilahAtasKuis({ KELILING, KET_WAKTU, WARNA_WAKTU, answered, fmtTimer, handleSubmit, isUrgent, porsiWaktu, questions, session, setKonfirmasiKeluar, timeLeft, tingkatWaktu }: BilahAtasKuisProps) {
   return (
     <>
-      <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 flex-shrink-0 bg-white border-b border-slate-200"
+      <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 shrink-0 bg-white border-b border-slate-200"
         style={{ boxShadow: '0 8px 24px -18px rgba(15,23,42,.18)' }}>
         <div className="min-w-0 flex-1">
           <h2 className="font-bold text-[12.5px] sm:text-sm truncate text-slate-800">
@@ -43,8 +43,8 @@ export function BilahAtasKuis({ KELILING, KET_WAKTU, WARNA_WAKTU, answered, fmtT
           bisa dibaca sekilas tanpa memproses angkanya.
         */}
         {timeLeft !== null && (
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <div className="relative flex-shrink-0" style={{ width: 38, height: 38 }}>
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <div className="relative shrink-0" style={{ width: 38, height: 38 }}>
               <svg width="38" height="38" viewBox="0 0 46 46" aria-hidden="true"
                 style={{ transform: 'rotate(-90deg)', display: 'block' }}>
                 <circle cx="23" cy="23" r="19" fill="none" stroke="#E2E8F0" strokeWidth="4" />
@@ -77,7 +77,7 @@ export function BilahAtasKuis({ KELILING, KET_WAKTU, WARNA_WAKTU, answered, fmtT
         */}
         {answered < questions.length && (
           <button onClick={() => handleSubmit(false)}
-            className="px-3 py-2 lg:px-7 lg:py-3.5 text-[12px] lg:text-base font-bold rounded-lg lg:rounded-xl transition-all flex-shrink-0 hidden formulir:block bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200">
+            className="px-3 py-2 lg:px-7 lg:py-3.5 text-[12px] lg:text-base font-bold rounded-lg lg:rounded-xl transition-all shrink-0 hidden formulir:block bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200">
             Submit
           </button>
         )}
@@ -86,7 +86,7 @@ export function BilahAtasKuis({ KELILING, KET_WAKTU, WARNA_WAKTU, answered, fmtT
             Menutup quiz berbatas waktu tanpa peringatan berarti kehilangan
             kesempatan mengerjakan, dan itu tidak bisa dibatalkan. */}
         <button onClick={() => setKonfirmasiKeluar(true)} aria-label="Keluar dari quiz"
-          className="w-9 h-9 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center transition-all flex-shrink-0 bg-transparent hover:bg-slate-100 text-slate-500 border border-slate-200">
+          className="w-9 h-9 lg:w-12 lg:h-12 rounded-lg lg:rounded-xl flex items-center justify-center transition-all shrink-0 bg-transparent hover:bg-slate-100 text-slate-500 border border-slate-200">
           <svg aria-hidden="true" focusable="false" className="w-5 h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
           </svg>

@@ -6,7 +6,7 @@ import { SimpanKeProyek } from './SimpanKeProyek';
 
 /** Komponen form & hasil bersama untuk semua alat di Tools Team. */
 
-export const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
+export const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
 
 export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', bantuan }: {
   label: string; nilai: number; onUbah: (v: number) => void; satuan?: string; min?: number; step?: number | 'any'; bantuan?: string;
@@ -60,7 +60,7 @@ export function Segmen<T extends string>({ nilai, onUbah, opsi, label }: { nilai
       <div role="radiogroup" className="flex gap-1 p-1 rounded-xl bg-slate-100">
         {opsi.map(o => (
           <button key={o.v} type="button" role="radio" aria-checked={nilai === o.v} onClick={() => onUbah(o.v)}
-            className={`flex-1 px-2 py-1.5 rounded-lg text-[12.5px] font-semibold ${nilai === o.v ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+            className={`flex-1 px-2 py-1.5 rounded-lg text-[12.5px] font-semibold ${nilai === o.v ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>
             {o.l}
           </button>
         ))}

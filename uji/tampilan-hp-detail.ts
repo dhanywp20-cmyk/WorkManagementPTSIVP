@@ -32,7 +32,7 @@ cek('garis penghubung per sisi (tetap menyambung)', /left: 0, right: '50%'/.test
 
 console.log('\n3. Header & kartu tidak bertumpuk');
 cek('lencana memberi ruang tombol kanan atas', /flex flex-wrap gap-2 mb-3 pr-24 sm:pr-40/.test(popup));
-cek('email Assign To dipotong rapi', /<div className="min-w-0">\s*<p className="text-sm font-bold text-slate-800 break-words">/.test(popup) && /text-xs truncate/.test(popup));
+cek('email Assign To dipotong rapi', /<div className="min-w-0">\s*<p className="text-sm font-bold text-slate-800 (?:break-words|wrap-break-word)">/.test(popup) && /text-xs truncate/.test(popup));
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
 process.exit(gagal ? 1 : 0);

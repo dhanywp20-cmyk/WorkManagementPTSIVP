@@ -38,7 +38,7 @@ export function HeaderFormRequire({ bellDropdownOpen, handleOpenDetail, pimpinan
               </button>
               {bellDropdownOpen && (
                 <div className="absolute right-0 top-11 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-scale-in" style={{ zIndex: Z.dropdown }}>
-                  <div className="bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-3 flex items-center justify-between">
+                  <div className="bg-linear-to-r from-violet-500 to-violet-600 px-4 py-3 flex items-center justify-between">
                     <p className="text-white text-xs font-bold"><IkonTeks nama="🔔" />Tiket Aktif ({activeTickets.length})</p>
                     <button aria-label="Tutup" onClick={() => setBellDropdownOpen(false)} className="text-white/70 hover:text-white text-xs font-bold">✕</button>
                   </div>

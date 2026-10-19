@@ -23,9 +23,9 @@ export function KolomInfoProyekBaru({ currentUser, dueDateForm, form, isInternal
       <div className="satulayar:col-span-1 space-y-4 satulayar:overflow-y-auto satulayar:pr-1 satulayar:min-h-0">
 
       {/* ── Project Info ── */}
-      <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-sm">
+      <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-xs">
         <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-          <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+          <span className="w-7 h-7 bg-teal-600 text-white rounded-lg flex items-center justify-center text-xs shadow-sm"><Ikon nama="📁" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
           Informasi Project
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -33,13 +33,13 @@ export function KolomInfoProyekBaru({ currentUser, dueDateForm, form, isInternal
             <label htmlFor="f-form-require-project-components-modals-16" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Nama Project *</label>
             <input id="f-form-require-project-components-modals-16" value={form.project_name} onChange={e => setForm(prev => ({ ...prev, project_name: e.target.value }))}
               placeholder="Contoh: Meeting Room Lantai 5 - PT ABC"
-              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all text-sm font-medium bg-white outline-none" />
+              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all text-sm font-medium bg-white outline-hidden" />
           </div>
           <div className="md:col-span-2">
             <label htmlFor="f-form-require-project-components-modals-17" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Lokasi Project *</label>
             <textarea id="f-form-require-project-components-modals-17" value={form.project_location} onChange={e => setForm(prev => ({ ...prev, project_location: e.target.value }))}
               placeholder="Contoh: Gedung Wisma 46 Lt.12, Jl. MH Thamrin No.1, Jakarta Pusat"
-              rows={3} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all text-sm font-medium bg-white outline-none resize-none" />
+              rows={3} className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all text-sm font-medium bg-white outline-hidden resize-none" />
           </div>
           {['admin','superadmin','team_pts','team'].includes((currentUser?.role || '').toLowerCase().trim()) && (
             <div className="md:col-span-2">
@@ -94,7 +94,7 @@ export function KolomInfoProyekBaru({ currentUser, dueDateForm, form, isInternal
           <div>
             <label htmlFor="f-form-require-project-components-modals-18" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Target Selesai *</label>
             <input id="f-form-require-project-components-modals-18" type="date" value={dueDateForm} onChange={e => setDueDateForm(e.target.value)} required aria-label="Target selesai"
-              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all text-sm font-medium bg-white outline-none" />
+              className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:border-teal-500 focus:ring-2 focus:ring-teal-100 transition-all text-sm font-medium bg-white outline-hidden" />
           </div>
 
         </div>

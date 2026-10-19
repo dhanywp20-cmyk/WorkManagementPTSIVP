@@ -295,7 +295,7 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
                 <span className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>Instruksi tambahan (opsional)</span>
                 <textarea value={aiInstruksi} onChange={e => setAiInstruksi(e.target.value)} rows={2} maxLength={2000} disabled={aiSibuk}
                   placeholder="mis. Ruangan BPKP Padang; fokus instalasi & konfigurasi; switcher meja pakai Aten"
-                  className="mt-1 w-full rounded-xl px-3 py-2 text-[13px] outline-none focus:ring-2"
+                  className="mt-1 w-full rounded-xl px-3 py-2 text-[13px] outline-hidden focus:ring-2"
                   style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta, background: NETRAL.permukaan }} />
               </label>
               {aiSibuk ? (
@@ -336,7 +336,7 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
               </div>
               <textarea id="impor-teks" value={teks} onChange={e => setTeks(e.target.value)} rows={14}
                 placeholder={CONTOH_TEKS}
-                className="w-full rounded-xl px-3 py-2.5 text-[13px] font-mono outline-none focus:ring-2"
+                className="w-full rounded-xl px-3 py-2.5 text-[13px] font-mono outline-hidden focus:ring-2"
                 style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta, background: NETRAL.permukaan }} />
               <p className="text-[11.5px] leading-relaxed" style={{ color: TEMA.samar }}>
                 <b>## Judul</b> = bagian · <b>**Teks tebal**</b> atau <b>### Judul</b> = kelompok · <b>- [ ] teks</b> = item
@@ -376,7 +376,7 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
                 <span className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>Keterangan (dari teks sebelum bagian pertama)</span>
                 <textarea value={draft.keterangan} rows={2} maxLength={BATAS.keterangan}
                   onChange={e => setDraft({ ...draft, keterangan: e.target.value })}
-                  className="mt-1 w-full rounded-xl px-3 py-2 text-[12.5px] outline-none focus:ring-2"
+                  className="mt-1 w-full rounded-xl px-3 py-2 text-[12.5px] outline-hidden focus:ring-2"
                   style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta }} />
               </label>
             )}
@@ -401,16 +401,16 @@ export function ModalImpor({ buka, onTutup, onSimpan, labelSimpan = n => `Simpan
                   <span className="flex-1 min-w-0">
                     <span className="flex items-center gap-2 flex-wrap">
                       <span className="text-[13.5px] font-bold" style={{ color: NETRAL.tinta }}>{b.judul}</span>
-                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded" style={{ ...fontAngka, background: TEMA.tint, color: TEMA.warnaTua }}>
+                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-sm" style={{ ...fontAngka, background: TEMA.tint, color: TEMA.warnaTua }}>
                         {b.items.length} item
                       </span>
                       {sudah > 0 && (
-                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded" style={{ background: TEMA.selesaiTint, color: TEMA.selesai }}>
+                        <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-sm" style={{ background: TEMA.selesaiTint, color: TEMA.selesai }}>
                           {sudah} sudah selesai
                         </span>
                       )}
                       {b.catatan && (
-                        <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded" style={{ background: NETRAL.permukaanRedam, color: NETRAL.tinta2 }}>
+                        <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-sm" style={{ background: NETRAL.permukaanRedam, color: NETRAL.tinta2 }}>
                           + catatan
                         </span>
                       )}

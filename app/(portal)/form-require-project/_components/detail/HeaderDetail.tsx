@@ -45,10 +45,10 @@ export interface HeaderDetailProps {
 export function HeaderDetail({ attachments, bisaKelolaRequest, bolehEditRequest, bolehRerouteRequest, canInternalApproveProject, currentUser, desain3dTools, detailIsPending, detailRoomAssignName, detailRoomIdx, detailRoomStatus, detailSc, downloadingPackage, formatDate, getCCLabel, handleCloseDetail, handleOpenEditForm, handleReject, handleStatusUpdate, isPTS, isTeamPTS, notify, selectedRequest, setAssignModal, setDeleteConfirmText, setDeleteModal, setDownloadingPackage, setInternalApproveTarget, setRerouteTarget, setRerouteTo, setSelectedNewStatus, setStatusUpdateModal }: HeaderDetailProps) {
   return (
     <>
-      <div className="bg-gradient-to-r from-teal-700 to-teal-900 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-shrink-0">
+      <div className="bg-linear-to-r from-teal-700 to-teal-900 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 shrink-0">
         <div className="flex items-center gap-3">
         <button aria-label="Tutup" onClick={handleCloseDetail}
-          className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-xl transition-all flex-shrink-0">
+          className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-xl transition-all shrink-0">
           <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
         <div className="flex-1 min-w-0">
@@ -64,7 +64,7 @@ export function HeaderDetail({ attachments, bisaKelolaRequest, bolehEditRequest,
           </p>
         </div>
         </div>
-        <div className="flex gap-1.5 sm:gap-2 flex-wrap sm:flex-shrink-0">
+        <div className="flex gap-1.5 sm:gap-2 flex-wrap sm:shrink-0">
           {/* Sales Internal: wajib review dulu sebelum Admin bisa approve */}
           {canInternalApproveProject(selectedRequest) && (
             <>

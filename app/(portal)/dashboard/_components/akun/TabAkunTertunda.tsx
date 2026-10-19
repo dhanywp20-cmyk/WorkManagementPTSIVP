@@ -55,7 +55,7 @@ export function TabAkunTertunda({ activeTab, approveMenus, approvingUser, handle
                     return (
                       <button key={key} type="button" onClick={() => setApproveMenus(prev => checked ? prev.filter(k => k !== key) : [...prev, key])}
                         className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-all text-left text-xs ${checked ? 'border-amber-400 bg-amber-50 text-amber-800' : 'border-slate-200 bg-slate-50 text-slate-500'}`}>
-                        <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${checked ? 'border-amber-500 bg-amber-500' : 'border-slate-300 bg-white'}`}>
+                        <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 ${checked ? 'border-amber-500 bg-amber-500' : 'border-slate-300 bg-white'}`}>
                           {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                         </div>
                         <span><Ikon nama={m.icon} ukuran={14} /></span><span className="font-semibold truncate">{m.label}</span>
@@ -66,7 +66,7 @@ export function TabAkunTertunda({ activeTab, approveMenus, approvingUser, handle
               </div>
               <div className="flex gap-3 pt-1">
                 <button onClick={handleApproveUser} disabled={saving}
-                  className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-2.5 rounded-lg font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 hover:from-emerald-700 hover:to-emerald-800 transition-all">
+                  className="flex-1 bg-linear-to-r from-emerald-600 to-emerald-700 text-white py-2.5 rounded-lg font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 hover:from-emerald-700 hover:to-emerald-800 transition-all">
                   {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                   <IkonTeks nama="✅" />Setujui Akun
                 </button>
@@ -90,14 +90,14 @@ export function TabAkunTertunda({ activeTab, approveMenus, approvingUser, handle
                 const isStale = daysPending !== null && daysPending > 14;
                 return (
                 <div key={user.id} className={`flex items-center gap-3 p-3 rounded-xl border ${isStale ? 'border-red-300 bg-red-50' : 'border-amber-200 bg-amber-50'}`}>
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0 ${isStale ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-800'}`}>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${isStale ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-800'}`}>
                     {user.full_name?.charAt(0)?.toUpperCase() ?? '?'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-bold text-slate-800 text-sm truncate">{user.full_name}</p>
                       {daysPending !== null && (
-                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black flex-shrink-0 ${isStale ? 'bg-red-200 text-red-800' : 'bg-amber-100 text-amber-700'}`}>
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-black shrink-0 ${isStale ? 'bg-red-200 text-red-800' : 'bg-amber-100 text-amber-700'}`}>
                           {isStale ? `⚠️ ${daysPending}h` : `${daysPending}h`}
                         </span>
                       )}
@@ -111,7 +111,7 @@ export function TabAkunTertunda({ activeTab, approveMenus, approvingUser, handle
                       {user.phone_number && <span className="text-[10px] text-slate-500"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /> {user.phone_number}</span>}
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1 flex-shrink-0">
+                  <div className="flex flex-col gap-1 shrink-0">
                     <button onClick={() => { setApprovingUser(user); setApproveMenus(DEFAULT_MENU_KEYS); }}
                       className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all">Review</button>
                     <button onClick={() => handleRejectUser(user.id, user.full_name)}

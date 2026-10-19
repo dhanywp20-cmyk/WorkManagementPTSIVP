@@ -66,7 +66,7 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
     <div className="lapis-tembus relative flex flex-col gap-1.5" role="toolbar" aria-label="Alat desain">
       {!hanyaLihat && (
         <button type="button" onClick={() => bukaSisi('tambah')} aria-pressed={sisi === 'tambah'} title="Tambah benda (A)"
-          className={`inline-flex items-center gap-1.5 h-9 px-2.5 rounded-xl text-[12.5px] font-bold text-white shadow-sm bg-blue-700 hover:bg-blue-800 ${sisi === 'tambah' ? 'ring-2 ring-offset-1 ring-blue-400' : ''}`}>
+          className={`inline-flex items-center gap-1.5 h-9 px-2.5 rounded-xl text-[12.5px] font-bold text-white shadow-xs bg-blue-700 hover:bg-blue-800 ${sisi === 'tambah' ? 'ring-2 ring-offset-1 ring-blue-400' : ''}`}>
           <Plus size={16} /> <span className="hidden sm:inline">Tambah</span>
         </button>
       )}
@@ -87,11 +87,11 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
       )}
       {!ukur && !hanyaLihat && <GeserCepat a={a} />}
       {ukur && (
-        <div className="self-start flex items-center gap-1.5 rounded-lg bg-red-600 text-white px-2 py-1 text-[11.5px] font-bold shadow-sm">
+        <div className="self-start flex items-center gap-1.5 rounded-lg bg-red-600 text-white px-2 py-1 text-[11.5px] font-bold shadow-xs">
           <Ruler size={13} /> {titikUkur ? 'Titik kedua' : 'Titik pertama'}
           {jumlahGaris > 0 && (
             <button type="button" onClick={() => setRuang(r => ({ ...r, penggaris: [] }))} title="Hapus semua garis ukur"
-              className="ml-1 rounded bg-white/20 px-1.5 hover:bg-white/30">Hapus {jumlahGaris}</button>
+              className="ml-1 rounded-sm bg-white/20 px-1.5 hover:bg-white/30">Hapus {jumlahGaris}</button>
           )}
         </div>
       )}
@@ -108,7 +108,7 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
                   {LABEL_GOLONGAN[g]}
                 </label>
                 <button type="button" onClick={() => setSembunyiGolongan(kelompok.filter(x => x !== g))} title={`Isolasi: tampilkan hanya ${LABEL_GOLONGAN[g]}`}
-                  className="px-1.5 py-0.5 rounded text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Hanya</button>
+                  className="px-1.5 py-0.5 rounded-sm text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Hanya</button>
               </div>
             ))}
             {sembunyiGolongan.length > 0 && (
