@@ -14,6 +14,7 @@ import { useMerek } from '@/lib/merek';
 import { InstallGuideModal } from './InstallGuideModal';
 import { UnduhApk } from './UnduhApk';
 import { Profil2FA } from './profil-2fa';
+import { ProfilIntegrasi } from './profil-integrasi';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // UserProfileModal
@@ -565,6 +566,7 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                     </button>
                   )}
                   <Profil2FA />
+                  <ProfilIntegrasi />
                 </div>
               </Kartu>
             </div>
