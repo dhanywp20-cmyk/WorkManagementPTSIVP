@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { cabutSemuaToken } from '@/lib/token-integrasi';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,6 +141,8 @@ export async function POST(request: NextRequest) {
     // sudah tersimpan di atas dan sudah diperiksa) - dicatat, bukan diam.
     const { error: galatSesi } = await supabase.from('user_sessions').delete().eq('user_id', user.id);
     if (galatSesi) console.error('verify-otp: gagal mencabut sesi lama', galatSesi.message);
+    // Token integrasi (DIWAYPI) yang mungkin dibuat pembobol ikut dicabut.
+    await cabutSemuaToken(supabase, user.id);
 
     // Kode yang benar mengosongkan hitungan salah - kalau tidak, pemilik akun
     // yang sempat salah ketik ikut terkunci saat berikutnya butuh reset.

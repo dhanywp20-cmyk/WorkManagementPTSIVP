@@ -167,6 +167,15 @@ async function main() {
     { ...ctxTulis, u: { ...u, team_type: 'Team Services' } });
   cek('akun Team Services diarahkan ke aplikasi', !r9.ok && /Team Services/.test(String(r9.galat)));
 
+  //  Syarat tombol Update Status (bolehUpdateTicket): RLS juga meloloskan pembuat tiket, tapi
+  //  Sales pembuat tiket tidak boleh menutupnya lewat DIWAYPI.
+  const eSales = efekTiruan();
+  const { db: dbSales, kueri: kSales } = klienTiruan(q => q.tabel === 'tickets' && q.op === 'select' ? { data: { ...tiket, status: 'In Progress' } } : { data: null });
+  const r9b = await jalankanAksi('tiket_selesai', { id: tiket.id, catatan: 'beres' },
+    { db: dbSales, admin: dbSales, u: { ...u, role: 'sales', access_level: 'guest', full_name: 'Andi Sales' }, cakupan: ['baca', 'tulis'], efek: eSales.efek });
+  cek('bukan handler & tanpa akses penuh: ditolak sebelum menulis apa pun',
+    !r9b.ok && /handler/.test(String(r9b.galat)) && !kSales.some(q => q.op !== 'select') && eSales.wa.length === 0, String(r9b.galat));
+
   const r10 = await jalankanAksi('daily_report_tambah', { tanggal: '2999-01-01', deskripsi: 'x' }, ctxTulis);
   cek('daily report masa depan ditolak', !r10.ok && /belum terjadi/.test(String(r10.galat)));
 

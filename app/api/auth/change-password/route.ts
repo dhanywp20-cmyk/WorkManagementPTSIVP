@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { getSessionUser, isAdminRole } from '@/lib/server-auth';
+import { cabutSemuaToken } from '@/lib/token-integrasi';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,6 +69,8 @@ export async function POST(request: NextRequest) {
 
     // Invalidate semua session user ini (force re-login)
     await supabase.from('user_sessions').delete().eq('user_id', userId);
+    // Token integrasi (DIWAYPI) ikut dicabut - sama alasannya dengan sesi.
+    await cabutSemuaToken(supabase, userId);
 
     /*
       Bersihkan lockout brute-force (login/route.ts) UNTUK USERNAME INI.

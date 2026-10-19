@@ -297,6 +297,12 @@ async function tiketAktivitas(a: Record<string, unknown>, k: KonteksAksi): Promi
   if (error) return gagal(error.message);
   const t = data as BarisTiket | null;
   if (!t || t.is_deleted) return gagal('Tiket tidak ditemukan atau Anda tidak punya akses.');
+  //  Syarat yang sama dengan tombol Update Status di aplikasi (bolehUpdateTicket): RLS tk_update
+  //  lebih longgar (pembuat tiket & Supervisor juga lolos), jadi tanpa ini Sales pembuat tiket
+  //  bisa menutup tiketnya sendiri lewat DIWAYPI - hal yang dilarang di layarnya.
+  if (!hasFullAccess(u) && t.assign_name !== u.full_name) {
+    return gagal('Hanya handler tiket ini atau pemegang akses penuh yang boleh memperbaruinya.');
+  }
   if (t.current_team === 'Team Services') return gagal('Tiket ini sedang ditangani Team Services.');
 
   const baru = a.status === undefined || a.status === null || a.status === '' ? t.status : statusResmi(a.status);
@@ -457,6 +463,9 @@ async function checklistSimpan(a: Record<string, unknown>, k: KonteksAksi): Prom
   if (!akses.hak.edit) return gagal('Anda tidak di-assign ke checklist ini, jadi hanya bisa melihat.');
   const hasil = await simpanPerubahan(db, id, perubahan, akun.nama, 'admin');
   if ('galat' in hasil) return gagal(hasil.galat);
+  const u = k.u;
+  await k.efek.audit({ user_id: u.id, user_name: u.full_name ?? u.username, action: 'update',
+    module: 'checklist', target_id: id, notes: `DIWAYPI: ${perubahan.length} item checklist diubah` });
   return { ok: true, diubah: perubahan.length };
 }
 
@@ -615,7 +624,11 @@ async function jadwalBuat(a: Record<string, unknown>, k: KonteksAksi): Promise<H
   //  "Kelanjutan proyek yang sudah ada?" - aplikasi bertanya; DIWAYPI wajib menjawab.
   let grupInsentif: string | null | undefined;
   let peringatan: string | undefined;
-  const kata = bersih(isian.project_name, 150);
+  //  BUKAN bersih(): itu membuang , ( ) ' " sehingga "Kejaksaan Negeri (Bogor)" tidak lagi menemukan
+  //  dirinya sendiri dan jadwal baru diam-diam jadi proyek insentif terpisah. Untuk .ilike cukup
+  //  wildcard yang dinetralkan (% dan * -> _ yang cocok dengan karakter itu sendiri); kecocokan
+  //  persisnya tetap diputuskan proyekSerupa.
+  const kata = isian.project_name.replace(/[\\%*]/g, '_');
   const { data: mirip } = kata
     ? await db.from('reminders').select('id, project_name, category, status, due_date, assign_name, incentive_group_id')
       .ilike('project_name', `%${kata}%`).not('is_deleted', 'is', true).limit(200)
