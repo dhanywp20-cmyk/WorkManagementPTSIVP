@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { simpanSebentar } from '@/lib/simpan-sebentar';
 import { hasFullAccess } from '@/lib/constants';
 import { rapikanKelas, type KelasEksternal } from '@/lib/kelas-eksternal';
 import { AKSI_LIVE, jadwalLive, type AksiLive } from '@/lib/kuis-live';
@@ -30,17 +31,27 @@ export const dynamic = 'force-dynamic';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const jawab = (b: unknown, status = 200) => NextResponse.json(b, { status, headers: { 'Cache-Control': 'no-store' } });
 
+/**
+ * Hak akun. Layar host Kuis Live membaca status berkala, jadi hasil cek sesi + peran disimpan 30 dtk per
+ * token sesi (kunci = hash token - tidak pernah tertukar antar akun). Logout / ganti peran berlaku
+ * paling lambat 30 dtk di endpoint ini. Tanpa ini: ±27 ribu query sesi & users di satu hari Kuis Live.
+ */
 async function hak(req: NextRequest) {
-  const jaga = await pastikanMasuk(req);
-  if (!jaga.ok) return { ok: false as const, status: jaga.status, alasan: jaga.alasan };
-  const db = getAdminClient();
-  const { data } = await db.from('users').select('role,access_level').eq('id', jaga.user.id).maybeSingle();
-  const { data: pim } = await db.from('users').select('pimpinan').eq('id', jaga.user.id).maybeSingle();
-  const ubah = hasFullAccess((data ?? {}) as { role?: string; access_level?: string });
-  const lihat = ubah || (pim as { pimpinan?: boolean } | null)?.pimpinan === true;
-  if (!lihat) return { ok: false as const, status: 403, alasan: 'Hanya admin Learning Center.' };
-  return { ok: true as const, ubah, user: jaga.user, db };
+  const token = req.cookies.get('ivp_session')?.value ?? '';
+  const ambil = async () => {
+    const jaga = await pastikanMasuk(req);
+    if (!jaga.ok) return { ok: false as const, status: jaga.status, alasan: jaga.alasan };
+    const { data } = await getAdminClient().from('users').select('role,access_level,pimpinan').eq('id', jaga.user.id).maybeSingle();
+    const u = (data ?? {}) as { role?: string; access_level?: string; pimpinan?: boolean };
+    const ubah = hasFullAccess(u);
+    if (!ubah && u.pimpinan !== true) return { ok: false as const, status: 403, alasan: 'Hanya admin Learning Center.' };
+    return { ok: true as const, ubah, user: jaga.user };
+  };
+  const h = token ? await simpanSebentar(`hak-kelas:${crypto.createHash('sha256').update(token).digest('hex')}`, 30_000, ambil) : await ambil();
+  return h.ok ? { ...h, db: getAdminClient() } : h;
 }
+
+interface DataPesertaAdmin { id: string; nama: string; created_at: string; instansi: string | null; kontak: string | null; izin_kontak: boolean }
 
 export async function GET(req: NextRequest) {
   const h = await hak(req);
@@ -60,7 +71,7 @@ export async function GET(req: NextRequest) {
     if (!UUID.test(id)) return jawab({ error: 'Kelas tidak dikenal.' }, 400);
     const [{ data: kelas }, { data: peserta }, { data: hasil }] = await Promise.all([
       db.from('lc_eks_kelas').select('*').eq('id', id).maybeSingle(),
-      db.from('lc_eks_peserta').select('id,nama,created_at').eq('kelas_id', id).order('created_at'),
+      db.from('lc_eks_peserta').select('id,nama,created_at,instansi,kontak,izin_kontak').eq('kelas_id', id).order('created_at'),
       db.from('lc_eks_hasil').select('peserta_id,percobaan,mulai_pada,selesai_pada,benar,jumlah,skor,lulus,durasi_detik,lewat_waktu,pindah_tab,keluar_jendela,salin_tempel,log_pelanggaran,dikirim_otomatis')
         .eq('kelas_id', id).order('percobaan', { ascending: false }),
     ]);
@@ -76,7 +87,13 @@ export async function GET(req: NextRequest) {
       const dimainkan = sesi === k.live_sesi && k.live_tahap !== 'lobi'
         ? jadwalLive(k).indeks + 1
         : (((jml ?? []) as { indeks: number }[])[0]?.indeks ?? -1) + 1;
-      return jawab({ kelas, ubah: h.ubah, live: { sesi, jumlahSesi: k.live_sesi, dimainkan, papan } });
+      //  Perusahaan & kontak (migrasi 054) ikut di papan supaya CSV Kuis Live lengkap untuk Sales.
+      const data = new Map(((peserta ?? []) as DataPesertaAdmin[]).map(p => [p.id, p]));
+      const papanLengkap = papan.map(b => {
+        const d = data.get(b.peserta_id);
+        return { ...b, instansi: d?.instansi ?? null, kontak: d?.kontak ?? null, izin_kontak: d?.izin_kontak ?? false };
+      });
+      return jawab({ kelas, ubah: h.ubah, live: { sesi, jumlahSesi: k.live_sesi, dimainkan, papan: papanLengkap } });
     }
     const terakhir = new Map<string, Record<string, unknown>>();
     const percobaan = new Map<string, number>();
@@ -87,7 +104,7 @@ export async function GET(req: NextRequest) {
     }
     return jawab({
       kelas, ubah: h.ubah,
-      peserta: ((peserta ?? []) as { id: string; nama: string; created_at: string }[]).map(p => ({ ...p, percobaan: percobaan.get(p.id) ?? 0, hasil: terakhir.get(p.id) ?? null })),
+      peserta: ((peserta ?? []) as DataPesertaAdmin[]).map(p => ({ ...p, percobaan: percobaan.get(p.id) ?? 0, hasil: terakhir.get(p.id) ?? null })),
     });
   }
 

@@ -123,6 +123,8 @@ export function denahDari(ruang: Ruang, benda: Benda[]): Denah {
     if (i === 0) ukur([k.x0, 0], [k.x0, k.l], mm(k.l), [-JARAK_UKUR, 0]);
     else if (i === kotak.length - 1 || k.l !== kotak[i - 1].l) ukur([k.x0 + k.p, 0], [k.x0 + k.p, k.l], mm(k.l), [JARAK_UKUR, 0]);
   });
+  //  Tinggi plafon tiap ruang (denah tidak punya sumbu tegak): tulisan "PLAFON +3000" di pojok belakang-kiri dalam ruang.
+  kotak.forEach(k => tulisan.push({ p: [k.x0 + Math.min(0.9, k.p / 4), k.l - Math.min(0.3, k.l / 6)], teks: `PLAFON +${mm(k.t)}`, tinggi: TINGGI_TEKS_UKUR, lapis: 'UKURAN' }));
   const ujung = kotak[kotak.length - 1];
   if (kotak.length > 1) ukur([0, 0], [ujung.x0 + ujung.p, 0], mm(ujung.x0 + ujung.p), [0, -JARAK_UKUR * 2]);
 

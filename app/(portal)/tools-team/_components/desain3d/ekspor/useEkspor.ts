@@ -141,7 +141,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           judul: `Analisis jarak pandang · konten ${label}`, jenis: 'tabel' as const,
           kepala: ['Display', ...(duaRuang ? ['Ruang'] : []), 'Ukuran gambar', 'Penonton terjauh', 'Tinggi minimal', 'Sudut maks', 'Status'],
           rataKanan: duaRuang ? [3, 4, 5] : [2, 3, 4],
-          isi: analisis.map(a => [a.d.nama, ...(duaRuang ? [`Ruang ${a.ri + 1}`] : []), `${fm(a.d.w)} × ${fm(a.d.h)} m`,
+          isi: analisis.map(a => [a.d.nama, ...(duaRuang ? [`Ruang ${a.ri + 1}`] : []), `${fm(a.gambar.w)} × ${fm(a.gambar.h)} m`,
             a.jumlah ? `${fm(a.terjauh, 1)} m` : '—', `${fm(a.tinggiPerlu)} m`, `${fm(a.sudutMaks, 0)}°`, a.jumlah ? (a.cukup ? 'Cukup' : 'Kurang') : 'Tanpa penonton']),
         }] : []),
         //  Proyektor dipecah 2 tabel: 11 kolom dalam satu tabel tidak muat di lebar A4 (kolom kanan terpotong).
@@ -165,7 +165,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           judul: 'Area blending proyektor', jenis: 'tabel' as const,
           kepala: ['Proyektor', 'Bertumpuk dengan', 'Arah', 'Lebar / tinggi area', '% gambar pertama', '% gambar kedua'], rataKanan: [3, 4, 5],
           isi: infoBlending.map(b => [b.namaA, b.namaB, b.arah, `${Math.round(b.lebarM * 100)} cm`,
-            `${fm(b.persenA, 1)}% ≈ ${pikselBlending(b.persenA, b.arah)} px`, `${fm(b.persenB, 1)}% ≈ ${pikselBlending(b.persenB, b.arah)} px`]),
+            `${fm(b.persenA, 1)}% ≈ ${pikselBlending(b.persenA, b.arah, b.pxA)} px`, `${fm(b.persenB, 1)}% ≈ ${pikselBlending(b.persenB, b.arah, b.pxB)} px`]),
         }] : []),
         ...(benda.some(b => b.jenis === 'lampu') ? [{
           judul: `Pencahayaan · dimmer semua lampu ${ruang.dimmer ?? 100}%`, jenis: 'tabel' as const,
@@ -226,7 +226,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
     `*Desain ruang: ${namaDesain}*`,
     ...kotakRuang.map((k, i) => `Ruang ${i + 1}: ${f(k.p)} × ${f(k.l)} m, plafon ${f(k.t)} m`),
     ...Object.entries(benda.reduce<Record<string, number>>((m, b) => { m[b.nama] = (m[b.nama] ?? 0) + 1; return m; }, {})).map(([n, j]) => `- ${n}: ${j}`),
-    ...analisis.map(a => `${a.d.nama}${kotakRuang.length > 1 ? ` (ruang ${a.ri + 1})` : ''}: ${f(a.d.w)} × ${f(a.d.h)} m, penonton terjauh ${f(a.terjauh, 1)} m → tinggi perlu ${f(a.tinggiPerlu)} m (${a.cukup ? 'CUKUP' : 'KURANG'}), sudut maks ${f(a.sudutMaks, 0)}°`),
+    ...analisis.map(a => `${a.d.nama}${kotakRuang.length > 1 ? ` (ruang ${a.ri + 1})` : ''}: gambar ${f(a.gambar.w)} × ${f(a.gambar.h)} m, penonton terjauh ${f(a.terjauh, 1)} m → tinggi perlu ${f(a.tinggiPerlu)} m (${a.cukup ? 'CUKUP' : 'KURANG'}), sudut maks ${f(a.sudutMaks, 0)}°`),
     ...benda.filter(b => b.jenis === 'proyektor').map(p => {
       const sn = sinarProyektor(p, benda, ruang);
       return `${p.nama}: jarak lempar ${f(sn.jarak)} m → gambar ${f(sn.lebar)} × ${f(sn.tinggi)} m (throw ratio ${f(throwRatioDari(p))}${sn.layar && sn.trPas ? `; pas ${sn.layar.nama} perlu ${f(sn.trPas)}` : ''})`;

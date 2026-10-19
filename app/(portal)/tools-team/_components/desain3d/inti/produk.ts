@@ -2,7 +2,7 @@
  * desain3d/inti/produk.ts - Spesifikasi & ukuran produk dari datasheet: videowall, IFP, layar, TV, rack, tribun, bidang mapping.
  * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
  */
-import { ukuranDariDiagonal } from '@/lib/av-hitung';
+import { cabinetUntukUkuran, ukuranDariDiagonal } from '@/lib/av-hitung';
 import type { Benda, ModelVW, PanelVW, RasioLayar } from './tipe';
 import { terapkanUkuranTeks } from './teks';
 
@@ -52,7 +52,35 @@ export function ukuranLayar(diag: number, rasio: RasioLayar | string) {
   const u = ukuranDariDiagonal(diag, a, b);
   return { w: u.lebarM, h: u.tinggiM };
 }
-/** Hitung ulang w/h/d dari properti produk (videowall, layar, IFP, TV, rak). */
+/**
+ * Ukuran GAMBAR (area aktif) display - bukan bodinya. TV & IFP: w/h benda = bodi + bezel (IFP 65" 0,898 m,
+ * gambarnya 0,809 m), jadi aturan jarak pandang 4-6-8 memakai ini, bukan d.h. Layar proyektor = area
+ * tayang; videowall & LED = seluruh permukaan.
+ */
+export function ukuranGambarDisplay(d: Pick<Benda, 'jenis' | 'diag' | 'w' | 'h'>): { w: number; h: number } {
+  if (d.jenis === 'tv' || d.jenis === 'ifp') {
+    const u = ukuranDariDiagonal(d.diag ?? (d.jenis === 'tv' ? 65 : 75));
+    return { w: Math.round(u.lebarM * 1000) / 1000, h: Math.round(u.tinggiM * 1000) / 1000 };
+  }
+  return { w: d.w, h: d.h };
+}
+/**
+ * LED videotron tersusun dari cabinet UTUH: ukuran = kolom x lebar cabinet, baris x tinggi cabinet (dulu
+ * bebas - bawaan 4 x 2,25 m dengan cabinet 500 mm = 4,5 baris, tidak mungkin dipasang). Resolusi =
+ * piksel per cabinet (dibulatkan, seperti datasheet) x jumlah cabinet - rumus yang sama dengan alat
+ * LED Videotron (lib/av-hitung-led.ts hitungLED).
+ */
+export function susunanLED(b: Pick<Benda, 'w' | 'h' | 'pitch' | 'cabW' | 'cabH' | 'pxUnitX' | 'pxUnitY' | 'unitLED'>) {
+  const cabW = Math.max(100, b.cabW ?? 500), cabH = Math.max(100, b.cabH ?? 500), pitch = Math.max(0.3, b.pitch ?? 2.5);
+  const { kolom, baris } = cabinetUntukUkuran(b.w || cabW / 1000, b.h || cabH / 1000, cabW, cabH, 'round');
+  //  Piksel per unit: dari datasheet referensi bila ada (pitch dagang dibulatkan, mis. P1.86 = 172 px / 320 mm).
+  const pxCabX = b.pxUnitX && b.pxUnitX > 0 ? Math.round(b.pxUnitX) : Math.round(cabW / pitch);
+  const pxCabY = b.pxUnitY && b.pxUnitY > 0 ? Math.round(b.pxUnitY) : Math.round(cabH / pitch);
+  return { kolom, baris, cabW, cabH, pitch, unit: b.unitLED ?? 'cabinet', pxCabX, pxCabY, resX: pxCabX * kolom, resY: pxCabY * baris, lebarM: (kolom * cabW) / 1000, tinggiM: (baris * cabH) / 1000 };
+}
+/** Desain lama (sebelum LED dibulatkan ke cabinet utuh): rapikan saat dibuka supaya ukuran, BOM & resolusi benar. */
+export const rapikanLED = (benda: Benda[]): Benda[] => benda.map(b => (b.jenis === 'led' ? terapkanUkuran(b) : b));
+/** Hitung ulang w/h/d dari properti produk (videowall, layar, LED, IFP, TV, rak). */
 export function terapkanUkuran(b: Benda): Benda {
   switch (b.jenis) {
     case 'videowall': {
@@ -61,6 +89,7 @@ export function terapkanUkuran(b: Benda): Benda {
       return { ...b, kol, bar, w: m.w * kol, h: m.h * bar, d: m.d };
     }
     case 'layar': { const u = ukuranLayar(b.diag ?? 120, b.rasio ?? '16:9'); return { ...b, w: u.w, h: u.h }; }
+    case 'led': { const s = susunanLED(b); return { ...b, w: s.lebarM, h: s.tinggiM }; }
     case 'ifp': { const u = ukuranIFP(b.diag ?? 75); return { ...b, ...u }; }
     //  Area aktif 16:9 + bezel ±12 mm tiap sisi (signage / TV komersial).
     case 'tv': { const u = ukuranDariDiagonal(b.diag ?? 65); return { ...b, w: Math.round((u.lebarM + 0.024) * 1000) / 1000, h: Math.round((u.tinggiM + 0.024) * 1000) / 1000 }; }

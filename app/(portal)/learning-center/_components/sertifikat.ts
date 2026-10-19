@@ -1,12 +1,13 @@
 /**
  * Sertifikat Learning Center: kanvas A4 mendatar (2480 × 1754 px) -> PNG atau dicetak.
  * Aturan berhak & nomor: lib/sertifikat.ts. Nama perusahaan dari pengaturan merek.
+ * Dipakai juga peserta Kelas Eksternal yang lulus (app/kelas/[token]) - `instansi` = perusahaan peserta.
  */
 import { merek } from '@/lib/merek';
 import { nomorSertifikat, ringkasJudul, tanggalSertifikat, type AttemptSertifikat } from '@/lib/sertifikat';
 import { namaBerkas, unduhKanvasPNG } from '@/lib/lembar-cetak';
 
-export interface DataSertifikat { nama: string; sesi: string; materi?: string | null; passing?: number | null; attempt: AttemptSertifikat }
+export interface DataSertifikat { nama: string; instansi?: string | null; sesi: string; materi?: string | null; passing?: number | null; attempt: AttemptSertifikat }
 
 const W = 2480, H = 1754;
 const NAVY = '#13294b', EMAS = '#b8892b';
@@ -37,7 +38,8 @@ function gambar(d: DataSertifikat): HTMLCanvasElement {
   tengah('diberikan kepada', 760, 'italic 52px Georgia, serif', '#475569');
   tengah(ringkasJudul(d.nama, 40), 920, 'bold 120px Georgia, "Times New Roman", serif', '#0f172a');
   g.strokeStyle = EMAS; g.lineWidth = 4; g.beginPath(); g.moveTo(W / 2 - 620, 960); g.lineTo(W / 2 + 620, 960); g.stroke();
-  tengah('atas keberhasilannya menyelesaikan kuis', 1070, '48px Georgia, serif', '#475569');
+  if (d.instansi) tengah(ringkasJudul(d.instansi, 60), 1010, 'italic 42px Georgia, serif', '#475569');
+  tengah('atas keberhasilannya menyelesaikan kuis', d.instansi ? 1090 : 1070, '48px Georgia, serif', '#475569');
   tengah(ringkasJudul(d.sesi), 1170, 'bold 70px Georgia, serif', NAVY);
   if (d.materi) tengah(ringkasJudul(`Materi: ${d.materi}`, 80), 1250, '44px Georgia, serif', '#475569');
   tengah(`Nilai ${Math.round(d.attempt.score ?? 0)}${d.passing ? `  ·  Passing ${d.passing}%` : ''}`, 1340, 'bold 54px Georgia, serif', '#047857');

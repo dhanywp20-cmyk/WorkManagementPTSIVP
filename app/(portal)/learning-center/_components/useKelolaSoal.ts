@@ -11,11 +11,11 @@ export interface KelolaSoalKonteks {
   load: () => Promise<void>;
   materials: Material[];
   modeGrup: boolean;
-  newQ: { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string; difficulty: "easy" | "medium" | "hard"; material_id: string; batch_name: string; question_type: "abcd" | "essay"; model_answer: string; answer_format: "text" | "image"; };
+  newQ: { question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string; difficulty: "easy" | "medium" | "hard"; material_id: string; batch_name: string; question_type: "abcd" | "essay"; model_answer: string; answer_format: "text" | "image"; gambar_url: string; };
   questions: Question[];
   setDialog: import("react").Dispatch<import("react").SetStateAction<DialogState>>;
   setEditQ: import("react").Dispatch<import("react").SetStateAction<Question | null>>;
-  setNewQ: import("react").Dispatch<import("react").SetStateAction<{ question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string; difficulty: "easy" | "medium" | "hard"; material_id: string; batch_name: string; question_type: "abcd" | "essay"; model_answer: string; answer_format: "text" | "image"; }>>;
+  setNewQ: import("react").Dispatch<import("react").SetStateAction<{ question: string; option_a: string; option_b: string; option_c: string; option_d: string; correct_answer: string; difficulty: "easy" | "medium" | "hard"; material_id: string; batch_name: string; question_type: "abcd" | "essay"; model_answer: string; answer_format: "text" | "image"; gambar_url: string; }>>;
   setShowAddManual: import("react").Dispatch<import("react").SetStateAction<boolean>>;
   user: User;
 }
@@ -63,7 +63,7 @@ export function useKelolaSoal(k: KelolaSoalKonteks) {
       question: editQ.question, option_a: editQ.option_a, option_b: editQ.option_b,
       option_c: editQ.option_c, option_d: editQ.option_d,
       correct_answer: editQ.correct_answer, difficulty: editQ.difficulty,
-      model_answer: editQ.model_answer,
+      model_answer: editQ.model_answer, gambar_url: editQ.gambar_url || null,
     }).eq('id', editQ.id).select('id');
     if (error || !data || data.length === 0) {
       setDialog({ type: 'error', message: 'Gagal menyimpan perubahan soal.' });
@@ -82,7 +82,7 @@ export function useKelolaSoal(k: KelolaSoalKonteks) {
     const payload = newQ.question_type === 'essay'
       ? { question: newQ.question, material_id: newQ.material_id, batch_name: newQ.batch_name,
           difficulty: newQ.difficulty, question_type: 'essay', model_answer: newQ.model_answer,
-          answer_format: newQ.answer_format ?? 'text',
+          answer_format: newQ.answer_format ?? 'text', gambar_url: newQ.gambar_url || null,
           option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: null }
       //  answer_format tetap DITULIS 'text' walau tidak berarti apa-apa untuk
       //  soal abcd - kolomnya NOT NULL. Menyetelnya ke `undefined` (versi
@@ -93,7 +93,7 @@ export function useKelolaSoal(k: KelolaSoalKonteks) {
       //  untuk kolom yang "disebut tapi tidak diisi" itu, bukan memakai
       //  default tabelnya. Baris yang sama persis membuat generate-AI gagal
       //  (lihat simpanHasil), dan berlaku juga di sini walau cuma satu baris.
-      : { ...newQ, question_type: 'abcd', answer_format: 'text' };
+      : { ...newQ, question_type: 'abcd', answer_format: 'text', gambar_url: newQ.gambar_url || null };
     /*
       Soal baru diberi nomor di EKOR grupnya. Tanpa ini ia masuk tanpa nomor,
       dan soal tanpa nomor jatuh ke pengurutan created_at - artinya begitu
@@ -121,7 +121,7 @@ export function useKelolaSoal(k: KelolaSoalKonteks) {
       setNewQ(p => ({ ...p, ...KOSONG_SOAL }));
     } else {
       setShowAddManual(false);
-      setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '', batch_name: '', question_type: 'abcd', model_answer: '', answer_format: 'text' });
+      setNewQ({ question: '', option_a: '', option_b: '', option_c: '', option_d: '', correct_answer: 'A', difficulty: 'medium', material_id: '', batch_name: '', question_type: 'abcd', model_answer: '', answer_format: 'text', gambar_url: '' });
     }
     load();
     setDialog({ type: 'success', message: 'Soal berhasil ditambahkan!' });

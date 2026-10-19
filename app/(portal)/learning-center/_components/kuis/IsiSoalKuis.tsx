@@ -3,6 +3,7 @@
 /** IsiSoalKuis - dipecah dari app/(portal)/learning-center/_components/MyQuizPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { Ikon } from '@/components/shared/Ikon';
 import { type QuizQuestion } from '../MyQuizPage';
+import { GambarSoal } from '@/components/shared/GambarSoal';
 
 export interface IsiSoalKuisProps {
   answers: Record<string, string>;
@@ -64,6 +65,7 @@ export function IsiSoalKuis({ answers, current, gambarJawaban, handleAnswer, han
                di layar sempit, bukan meluber keluar kartu. */}
           <p className="text-[17px] sm:text-xl lg:text-2xl font-semibold leading-snug mb-5 lg:mb-7 break-words"
             style={{ color: '#141828', letterSpacing: '-0.015em' }}>{q.question}</p>
+          <GambarSoal url={q.gambar_url} tinggi="max-h-72" className="mb-5 lg:mb-7 border border-slate-200" />
           <div className="space-y-2.5 lg:space-y-3">
             {isEssay && q.answer_format === 'image' ? (
               /* Jawaban berupa foto - untuk soal merancang yang paling wajar

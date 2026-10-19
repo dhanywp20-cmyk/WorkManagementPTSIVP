@@ -74,6 +74,8 @@ export function QuestionsPage({ user }: { user: User }) {
     question_type: 'abcd' as 'abcd' | 'essay', model_answer: '',
     /** Hanya berarti untuk soal essay - lihat sql/learning-center-essay-gambar.sql. */
     answer_format: 'text' as 'text' | 'image',
+    /** Gambar opsional soal (migrasi 054); '' = tanpa gambar. */
+    gambar_url: '',
   });
   const [genCount, setGenCount] = useState(10);
   const [genDiff, setGenDiff] = useState<'easy' | 'medium' | 'hard' | 'mixed'>('mixed');
@@ -235,7 +237,7 @@ export function QuestionsPage({ user }: { user: User }) {
 
   const KOSONG_SOAL = {
     question: '', option_a: '', option_b: '', option_c: '', option_d: '',
-    correct_answer: 'A', model_answer: '',
+    correct_answer: 'A', model_answer: '', gambar_url: '',
   } as const;
 
   /**
