@@ -95,9 +95,9 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     //  Dengan lensa standar 1,39-2,09 tinggi gambar maks 2,8 m (layar hanya tertutup ±75%). Hasil uji: tertutup >= 99%,
     //  tumpang blending ±33% (tiap sambungan).
     const proj = [-30, 0, 30].map((deg, i) => proyektorKe(k, [7 + (i - 1) * 0.8, 4.3, pusatZ - 1], titik(deg), 1, `Proyektor ${i + 1} (blending)`, [0.9, 1.1]));
-    //  Mask ke bidang menyala: yang tampil = hasil akhir setelah masking di media server (matikan di panel proyektor
-    //  untuk melihat sinar mentah yang tumpah ke dinding & lantai).
-    return { nama: 'Mapping layar cekung', ruang, benda: [bidang, ...proj.map(p => ({ ...p, maskBidang: true }))] };
+    //  Sinar nyata (tanpa Mask): cahaya yang lewat tepi layar tetap jatuh ke dinding / lantai di belakangnya,
+    //  makin redup dengan jarak & sudut - seperti di lokasi. Mask ke bidang tetap bisa dinyalakan di panel proyektor.
+    return { nama: 'Mapping layar cekung', ruang, benda: [bidang, ...proj] };
   }
   if (id === 'mapping-cembung') {
     const ruang: Ruang = { p: 12, l: 10, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'redup', r2: null };
@@ -111,7 +111,7 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     //  -> gambar trapesium & ujung layar cembung lebih jauh, jadi tanpa ini pita atas layar tidak tersinari.
     //  Hasil uji: tertutup >= 99%, tumpang ±17%; ±15% cahaya jatuh di luar layar (wajib di-mask di media server).
     const proj = [-1, 1].map((s, i) => proyektorKe(k, [6 + s * 1.9, 4.3, 6.2], titik(s * 10, yT + 0.1), 1.55, `Proyektor ${i + 1} (blending)`, [1.39, 2.09]));
-    return { nama: 'Mapping layar cembung', ruang, benda: [bidang, ...proj.map(p => ({ ...p, maskBidang: true }))] };
+    return { nama: 'Mapping layar cembung', ruang, benda: [bidang, ...proj] };
   }
   if (id === 'mapping-objek') {
     const ruang: Ruang = { p: 12, l: 10, t: 5, lantai: 'polos', warnaLantai: ABU_LANTAI, warnaDinding: ABU_DINDING, cahaya: 'redup', r2: null };

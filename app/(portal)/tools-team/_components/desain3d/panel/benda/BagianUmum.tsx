@@ -19,7 +19,9 @@ const BAGIAN_WARNA: Partial<Record<Benda['jenis'], string>> = {
 };
 
 export function BagianUmum({ c }: { c: KonteksAtur }) {
-  const { UKURAN_DARI_PILIHAN, b, batas, bawaan, bedaBawaan, bundar, formProduk, label, mm, onGambar, onSimpanProduk, plafon, set, setFormProduk } = c;
+  const { UKURAN_DARI_PILIHAN, b, batas, bawaan, bedaBawaan, bundar, formProduk, label, mm, onGambar, onSimpanProduk, plafon, set, setFormProduk, setUkuran } = c;
+  //  LED: lebar / tinggi dibulatkan ke kelipatan cabinet utuh (inti/produk.ts susunanLED).
+  const setLebarTinggi = b.jenis === 'led' ? setUkuran : set;
   //  Proyektor boleh tertanam di dinding / plafon (hanya lensa di dalam ruang) - inti/proyektor.ts jepitProyektor.
   const proyektor = b.jenis === 'proyektor';
   const posisiProyektor = (ubah: Partial<Pick<Benda, 'x' | 'z' | 'elev'>>) => {
@@ -49,8 +51,8 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
         <span className={label}>Ukuran produk</span>
         <div className="grid grid-cols-3 gap-2">
           <Angka label={bundar ? 'Diameter (mm)' : 'Lebar (mm)'} nilai={mm(b.w)} step={1}
-            onUbah={v => v >= 5 && v <= 30000 && set(bundar ? { w: v / 1000, d: v / 1000 } : { w: v / 1000 })} />
-          <Angka label="Tinggi (mm)" nilai={mm(b.h)} step={1} onUbah={v => v >= 2 && v <= 15000 && set({ h: v / 1000 })} />
+            onUbah={v => v >= 5 && v <= 30000 && setLebarTinggi(bundar ? { w: v / 1000, d: v / 1000 } : { w: v / 1000 })} />
+          <Angka label="Tinggi (mm)" nilai={mm(b.h)} step={1} onUbah={v => v >= 2 && v <= 15000 && setLebarTinggi({ h: v / 1000 })} />
           {!bundar && (
             <Angka label={b.jenis === 'meja' ? 'Panjang (mm)' : 'Tebal (mm)'} nilai={mm(b.d)} step={1}
               onUbah={v => v >= 2 && v <= 30000 && set({ d: v / 1000 })} />

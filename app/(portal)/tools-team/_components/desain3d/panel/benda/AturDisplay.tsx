@@ -1,8 +1,9 @@
 'use client';
 /** Atur display: videowall (termasuk panel custom), layar proyektor, IFP, TV / signage, LED, pilihan pemasangan. */
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
-import { BISA_PASANG, CELAH_PASANG, IFP_DIAG, LABEL_PASANG, LAYAR_DIAG, type ModelVW, PANEL_VW_AWAL, type PanelVW, type Pasang, pasangDari, PITCH_LED, RASIO_LAYAR, type RasioLayar, spekVideowall, TV_DIAG, VIDEOWALL } from '../../inti';
+import { BISA_PASANG, CELAH_PASANG, IFP_DIAG, LABEL_PASANG, LAYAR_DIAG, type ModelVW, PANEL_VW_AWAL, type PanelVW, type Pasang, pasangDari, RASIO_LAYAR, type RasioLayar, spekVideowall, TV_DIAG, VIDEOWALL } from '../../inti';
 import type { KonteksAtur } from './konteks';
+import { AturLED } from './AturLED';
 
 export function AturDisplay({ c }: { c: KonteksAtur }) {
   const { b, set, setUkuran } = c;
@@ -102,20 +103,7 @@ export function AturDisplay({ c }: { c: KonteksAtur }) {
           </div>
         );
       })()}
-      {b.jenis === 'led' && (
-        <>
-          <div className="grid grid-cols-2 gap-2">
-            <Pilih label="Pitch" nilai={PITCH_LED.includes(b.pitch ?? 2.5) ? b.pitch ?? 2.5 : -1} onUbah={v => v > 0 && set({ pitch: v })}
-              opsi={[...PITCH_LED.map(p => ({ v: p, l: `P${p}` })), { v: -1, l: 'Custom...' }]} />
-            <Angka label="Pitch" nilai={b.pitch ?? 2.5} satuan="mm" onUbah={v => v > 0 && set({ pitch: v })} />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Angka label="Lebar cabinet" nilai={b.cabW ?? 500} satuan="mm" onUbah={v => v >= 100 && set({ cabW: v })} />
-            <Angka label="Tinggi cabinet" nilai={b.cabH ?? 500} satuan="mm" onUbah={v => v >= 100 && set({ cabH: v })} />
-          </div>
-          <p className="text-[12px] text-slate-600">Resolusi ±{Math.round((b.w * 1000) / (b.pitch ?? 2.5))} × {Math.round((b.h * 1000) / (b.pitch ?? 2.5))} px.</p>
-        </>
-      )}
+      {b.jenis === 'led' && <AturLED c={c} />}
     </>
   );
 }

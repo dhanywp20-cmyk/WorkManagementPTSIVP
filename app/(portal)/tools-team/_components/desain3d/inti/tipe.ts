@@ -35,6 +35,8 @@ export type Finish = 'walnut' | 'oak' | 'putih';
 export type TipeKursi = 'kantor' | 'kelas';
 export type TipeKamera = 'ptz' | 'ptz-ai' | 'xbar';
 export type PasangProyektor = 'plafon' | 'meja';
+/** Resolusi asli panel proyektor - menentukan rasio gambar (16:9 / 16:10 / 4:3) & piksel blending. */
+export type ResolusiProyektor = 'FHD' | 'WUXGA' | '4K' | 'WXGA' | 'XGA';
 /** Speaker: kotak dinding (lama), dinding 6" membulat + bracket putar, portable aktif (kolom + subwoofer), line array. */
 export type TipeSpeaker = 'kotak' | 'dinding6' | 'kolom' | 'linearray';
 export type ModelVW = '55BDL2105X' | '49BDL2105X' | 'custom';
@@ -58,7 +60,9 @@ export interface Benda {
   /** m */ w: number; h: number; d: number; /** tinggi sisi bawah dari lantai */ elev: number;
   /** TV / IFP / layar: diagonal inci */ diag?: number;
   /** Layar proyektor */ rasio?: RasioLayar;
-  /** LED: pitch mm; ukuran cabinet mm untuk garis cabinet */ pitch?: number; cabW?: number; cabH?: number;
+  /** LED: pitch mm; ukuran satu unit (cabinet / modul) mm */ pitch?: number; cabW?: number; cabH?: number;
+  /** LED: satuan dari referensi menu LED Videotron (modul / cabinet per brand) atau cabinet ukuran bebas */ satuanLED?: 'referensi' | 'cabinet';
+  /** LED dari referensi: kunci modul (brand|kode|model), jenis unit, piksel per unit sesuai datasheet */ modulLED?: string; unitLED?: 'modul' | 'cabinet'; pxUnitX?: number; pxUnitY?: number;
   /** Videowall LCD */ vw?: ModelVW; kol?: number; bar?: number;
   /** Videowall model 'custom': spesifikasi panel yang diisi sendiri */ panel?: PanelVW;
   /** Warna utama benda (#rrggbb) - menggantikan warna bawaan badan/kain/rangka/permukaan */ warna?: string;
@@ -91,6 +95,7 @@ export interface Benda {
   /** Display lift (paperless): layar sedang naik dari meja */ naik?: boolean;
   /** Proyektor: gantung plafon (bawaan) atau portabel di meja */ pasangProyektor?: PasangProyektor;
   /** Proyektor: throw ratio lensa (jarak lempar : lebar gambar), bawaan 1,5 */ throwRatio?: number;
+  /** Proyektor: resolusi asli (bawaan Full HD 16:9; WUXGA = 16:10, umum di proyektor instalasi) */ resolusiProyektor?: ResolusiProyektor;
   /** Proyektor: tilt (derajat, negatif = menunduk). Pan = rot. */ tilt?: number;
   /** Display: konten di layar ('pola' = pola uji bawaan; 'gambar' = unggahan, tidak disimpan) */ konten?: KontenLayar;
   /** Display: sembunyikan garis ukuran (mm) benda ini walau garis ukuran dinyalakan. */ sembunyiUkur?: boolean;

@@ -16,7 +16,7 @@
  *   - Area blending: mesin/blending.ts.
  */
 import { f } from '../../bersama/ui';
-import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, keGambar, lensaDari, type Lensa, lumenDari, offsetLensaDari, permukaanUtama, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
+import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, keGambar, lensaDari, type Lensa, lumenDari, offsetLensaDari, permukaanUtama, rasioGambarProyektor, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { gambarBlending } from './blending';
@@ -90,7 +90,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const dataBlend: { p: Benda; L: Lensa; O: T.Vector3; sasaran: T.Object3D[]; kena: (T.Vector3 | null)[]; baris: (Titik | null)[]; kolom: (Titik | null)[] }[] = [];
   const sumberCahaya: SumberCahaya[] = [];
   /** Bidang gambar tiap proyektor - dibuat SETELAH blending dihitung, supaya keterangan tidak jatuh di area tumpang tindih. */
-  const bidangGambar: { p: Benda; L: Lensa; pos: number[]; uv: number[]; opasitas: number; warna: T.Color; tepi: T.Color; lebar: number; tinggi: number; permukaan: string | null; teks: { info: string[]; lux: (number | null)[]; pos: number[]; uv: number[] } | null }[] = [];
+  const bidangGambar: { p: Benda; L: Lensa; pos: number[]; uv: number[]; warnaTitik: number[]; opasitas: number; warna: T.Color; tepi: T.Color; lebar: number; tinggi: number; permukaan: string | null; teks: { info: string[]; lux: (number | null)[]; pos: number[]; uv: number[] } | null }[] = [];
   const bendaTersinari = new Set<string>();
   daftarProj.forEach((p, idx) => {
     const sn = sinarProyektor(p, benda, ruang);
@@ -101,15 +101,15 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const D = new THREE.Vector3(...arahProyektor(p)).normalize();
     const kanan = new THREE.Vector3(-Math.cos(r), 0, Math.sin(r));
     const atas = new THREE.Vector3().crossVectors(kanan, D).normalize();
-    const w1 = 1 / throwRatioDari(p), h1 = (w1 * 9) / 16, arahV = p.pasangProyektor === 'meja' ? 1 : -1;
+    const w1 = 1 / throwRatioDari(p), h1 = w1 * rasioGambarProyektor(p), arahV = p.pasangProyektor === 'meja' ? 1 : -1;
     const offV = offsetLensaDari(p), gH = geserLensaDari(p);
     const arah = new THREE.Vector3();
     /** Arah sinar ke titik gambar (u, v), -0,5..0,5 - rumus yang sama dengan inti/blending.ts. */
     const arahUV = (u: number, v: number) => arah.copy(D).addScaledVector(kanan, (u + gH) * w1).addScaledVector(atas, (v + arahV * offV) * h1).normalize();
-    const kena: (T.Vector3 | null)[] = [], kenaId: (string | null)[] = [];
+    const kena: (T.Vector3 | null)[] = [], kenaId: (string | null)[] = [], kenaN: (T.Vector3 | null)[] = [];
     for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
       const t = tembakRinci(O, arahUV(i / (NX - 1) - 0.5, j / (NY - 1) - 0.5), sasaran);
-      kena.push(t?.p ?? null); kenaId.push(t?.id ?? null);
+      kena.push(t?.p ?? null); kenaId.push(t?.id ?? null); kenaN.push(t?.n ?? null);
       if (t && diBenda(t.id)) bendaTersinari.add(t.id!);
     }
     const sel = (i: number, j: number) => kena[j * NX + i];
@@ -139,13 +139,26 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const mask = !!p.maskBidang;
     /** Boleh digambar: bukan benda (benda diterangi lewat cahayaBenda) & - bila di-mask - di layar / bidang. */
     const bolehId = (id: string | null) => !diBenda(id) && (!mask || diBidang(id));
-    const pos: number[] = [], uv: number[] = [];
-    const quadKe = (P: number[], U: number[]) => (A: T.Vector3, B: T.Vector3, C: T.Vector3, Dd: T.Vector3, batas: number, u0: number, v0: number, u1: number, v1: number) => {
+    //  Terang cahaya per titik seperti kenyataan: iluminansi E ∝ cos(sudut datang) / (cos³(sudut ke sumbu) ·
+    //  jarak²), relatif terhadap pusat gambar. Cahaya yang lewat tepi layar & jatuh di dinding jauh di
+    //  belakangnya / lantai yang terkena miring jadi lebih redup - bukan selembar warna rata di mana-mana.
+    const terang = (P: T.Vector3, n: T.Vector3 | null) => {
+      const r = P.clone().sub(O), d2 = Math.max(0.01, r.lengthSq()); r.normalize();
+      const cosA = Math.max(0.2, r.dot(D)), cosT = n ? Math.abs(r.dot(n)) : 1;
+      return Math.max(0.05, cosT) / (cosA ** 3 * d2);
+    };
+    const pusatGambar = tembakRinci(O, arahUV(0, 0).clone(), sasaran);
+    const terangAcuan = pusatGambar ? terang(pusatGambar.p, pusatGambar.n) : 1 / Math.max(0.25, sn.jarak ** 2);
+    /** Faktor terang 0,06..1,4 (1 = pusat gambar). */
+    const faktor = (P: T.Vector3, n: T.Vector3 | null) => Math.min(1.4, Math.max(0.06, terang(P, n) / terangAcuan));
+    const pos: number[] = [], uv: number[] = [], warnaTitik: number[] = [];
+    const quadKe = (P: number[], U: number[], W?: number[]) => (A: T.Vector3, B: T.Vector3, C: T.Vector3, Dd: T.Vector3, batas: number, u0: number, v0: number, u1: number, v1: number, k?: number[]) => {
       if (A.distanceTo(B) > batas || B.distanceTo(C) > batas || C.distanceTo(Dd) > batas || Dd.distanceTo(A) > batas) return;
       P.push(A.x, A.y, A.z, B.x, B.y, B.z, C.x, C.y, C.z, A.x, A.y, A.z, C.x, C.y, C.z, Dd.x, Dd.y, Dd.z);
       U.push(u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1);
+      if (W) for (const s of [0, 1, 2, 0, 2, 3]) { const f = k?.[s] ?? 1; W.push(warna.r * f, warna.g * f, warna.b * f); }
     };
-    const quad = quadKe(pos, uv);
+    const quad = quadKe(pos, uv, warnaTitik);
     const gu = (i: number) => i / (NX - 1), gv = (j: number) => j / (NY - 1);
     const S = 8;
     for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
@@ -155,10 +168,13 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const batas = ((jarak * w1) / (NX - 1)) * 6 + 0.05;
       const ids = sudut.map(n => kenaId[n]);
       const satuPermukaan = ids.every(id => id === ids[0]);
-      if (satuPermukaan && bolehId(ids[0])) { quad(kena[sudut[0]]!, kena[sudut[1]]!, kena[sudut[2]]!, kena[sudut[3]]!, batas, gu(i), gv(j), gu(i + 1), gv(j + 1)); continue; }
+      if (satuPermukaan && bolehId(ids[0])) {
+        quad(kena[sudut[0]]!, kena[sudut[1]]!, kena[sudut[2]]!, kena[sudut[3]]!, batas, gu(i), gv(j), gu(i + 1), gv(j + 1), sudut.map(n => faktor(kena[n]!, kenaN[n])));
+        continue;
+      }
       if (satuPermukaan || kasar) continue;
       //  Sel campuran (tepi benda / bayangannya, tepi layar / bidang): grid (S+1)x(S+1) sinar di dalam sel ini.
-      const sub: ({ p: T.Vector3; id: string | null } | null)[] = [];
+      const sub: ({ p: T.Vector3; id: string | null; n: T.Vector3 | null } | null)[] = [];
       for (let b = 0; b <= S; b++) for (let a = 0; a <= S; a++) {
         sub.push(tembakRinci(O, arahUV((i + a / S) / (NX - 1) - 0.5, (j + b / S) / (NY - 1) - 0.5), sasaran));
       }
@@ -167,7 +183,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
         const q = [t(a, b), t(a + 1, b), t(a + 1, b + 1), t(a, b + 1)];
         //  Satu permukaan per sub-sel: tidak ada segi empat yang merentang dari tepi layar ke dinding di belakangnya.
         if (q.some(x => !x || x.id !== q[0]!.id || !bolehId(x.id))) continue;
-        quad(q[0]!.p, q[1]!.p, q[2]!.p, q[3]!.p, batas / S + 0.05, gu(i + a / S), gv(j + b / S), gu(i + (a + 1) / S), gv(j + (b + 1) / S));
+        quad(q[0]!.p, q[1]!.p, q[2]!.p, q[3]!.p, batas / S + 0.05, gu(i + a / S), gv(j + b / S), gu(i + (a + 1) / S), gv(j + (b + 1) / S), q.map(x => faktor(x!.p, x!.n)));
       }
     }
     //  Tepi gambar (warna per proyektor) + kerucut cahaya dari lensa ke tepi itu. Di-mask: tiap titik tepi
@@ -235,7 +251,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const d = t.p.distanceTo(O), cosA = Math.max(0.2, r.dot(D)), cosT = t.n ? Math.abs(r.dot(t.n)) : 1;
       return (E0 * cosT) / (cosA ** 3 * d * d);
     };
-    bidangGambar.push({ p, L: lensaDari(p), pos, uv, warna, tepi: warnaTepi, lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, permukaan: sn.layar ? null : namaPermukaan(kenaId), opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
+    bidangGambar.push({ p, L: lensaDari(p), pos, uv, warnaTitik, warna, tepi: warnaTepi, lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, permukaan: sn.layar ? null : namaPermukaan(kenaId), opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
       teks: tulis ? {
         info: [p.nama, `Jarak lensa → bidang ${f(jarakSumbu)} m`, `Ukuran gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`,
           `Pusat ${f(luxDi(0, 0) ?? E0 / (jarakSumbu * jarakSumbu), 0)} lx`],
@@ -279,7 +295,9 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(bg.pos, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(bg.uv, 2));
-    const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, color: bg.warna, opacity: bg.opasitas * (grid ? 0.45 : 1), side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+    //  Warna per titik = warna sinar x faktor terang (jarak & sudut datang) - lihat `terang` di atas.
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(bg.warnaTitik, 3));
+    const gambar = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ ...cahaya, vertexColors: true, opacity: bg.opasitas * (grid ? 0.45 : 1), side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
     gambar.renderOrder = 2; grupBantu.add(gambar);
     if (grid) {
       const kg = kotakGrid(bg.lebar, bg.tinggi, bg.p.gridKolom);
