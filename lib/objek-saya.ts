@@ -37,7 +37,7 @@ const BIDANG: Record<string, Tipe> = {
   sembunyiUkur: 'bool', sembunyiLabel: 'bool', monitorMeja: 'angka', tipeRak: 'teks', tipeLampu: 'teks', sudutLampu: 'angka', dimmer: 'angka',
   kelvin: 'angka', gantungLampu: 'angka', putarModel: 'angka', ukuranFile: 'angka3', satuanModel: 'teks', bentukObjek: 'teks',
   tipePerangkat: 'teks', pakaiDongle: 'bool', teks: 'teks', tinggiHuruf: 'angka', hadapTeks: 'teks', latarTeks: 'warna',
-  gridKolom: 'angka', warnaGrid: 'warna',
+  gridKolom: 'angka', warnaGrid: 'warna', maskBidang: 'bool', resolusiProyektor: 'teks', satuanLED: 'teks', unitLED: 'teks', pxUnitX: 'angka', pxUnitY: 'angka',
 };
 const POLA_PILIHAN = /^[a-z0-9:.\- ]{1,40}$/i;
 const POLA_MODEL = /^data:model\/gltf-binary;base64,[A-Za-z0-9+/=]+$/;

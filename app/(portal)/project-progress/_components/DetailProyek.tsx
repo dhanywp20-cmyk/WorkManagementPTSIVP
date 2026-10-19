@@ -13,6 +13,7 @@ import { ModalChecklistBaru, ModalProyek, type IsianProyek } from './FormProyek'
 import type { CalonAnggota } from './PilihAnggota';
 import { ringkasDariLokasi } from './ringkasan/hitung';
 import { RingkasanProyek } from './ringkasan/Ringkasan';
+import { HitunganAV } from './HitunganAV';
 import { panggil, pesanGalat } from './api';
 
 const kecil = 'inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold transition-colors';
@@ -208,6 +209,8 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
           {urut.map(c => <KartuChecklist key={c.id} c={c} onBuka={() => onBukaChecklist(c.id)} />)}
         </div>
       )}
+
+      <HitunganAV proyekId={proyekId} beritahu={beritahu} />
 
       <ModalProyek buka={ubahBuka} awal={proyek} salesUsers={salesUsers} onTutup={() => setUbahBuka(false)} onSimpan={simpanProyek} />
       <ModalChecklistBaru proyekId={proyekId} buka={baruBuka} calonAnggota={calonAnggota} onTutup={() => setBaruBuka(false)}

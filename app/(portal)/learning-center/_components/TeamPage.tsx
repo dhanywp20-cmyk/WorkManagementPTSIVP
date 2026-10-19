@@ -9,6 +9,7 @@ import { isPimpinan } from '@/lib/pimpinan';
 import { getSession } from '@/lib/auth';
 import { createNotification } from '@/lib/notifications';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { GambarSoal } from '@/components/shared/GambarSoal';
 
 function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
   user: User; onBack: () => void; isAdminView: boolean;
@@ -430,6 +431,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                         <div className="flex-1">
                           <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1} · Essay · <span className={`${DIFF_COLOR[q.difficulty].split(' ')[1]}`}>{q.difficulty}</span></p>
                           <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
+                        <GambarSoal url={q.gambar_url} tinggi="max-h-48" className="mx-0! mt-2 border border-slate-200" />
                         </div>
                       </div>
                       <div className="ml-2 sm:ml-10 space-y-3">
@@ -555,6 +557,7 @@ function UserAnswerReview({ user, onBack, isAdminView, autoOpenAttemptId }: {
                       <div className="flex-1">
                         <p className="text-xs font-bold text-slate-500 mb-1">Soal {idx+1} · <span className={`${DIFF_COLOR[q.difficulty].split(' ')[1]}`}>{q.difficulty}</span></p>
                         <p className="text-sm font-semibold text-slate-800 leading-relaxed">{q.question}</p>
+                        <GambarSoal url={q.gambar_url} tinggi="max-h-48" className="mx-0! mt-2 border border-slate-200" />
                       </div>
                     </div>
                     {/* 1 kolom di ponsel: dipaksa 2 kolom + ml-10 (jarak

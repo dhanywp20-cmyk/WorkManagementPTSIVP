@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from 'react';
 import { ArrowBigDown, ArrowBigUp, ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { jepitProyektor } from '../inti';
 import type { AlatDesain } from './alat';
 
 const LANGKAH = [0.01, 0.05, 0.1, 0.5];
@@ -32,6 +33,11 @@ export function GeserCepat({ a }: { a: AlatDesain }) {
     const r = (v: number) => Math.round(v * 1000) / 1000;
     setBenda(bs => bs.map(b => {
       if (!ids.has(b.id) || b.terkunci) return b;
+      if (b.jenis === 'proyektor') {
+        //  Badan boleh menembus dinding / plafon - yang dijaga di dalam ruang hanya lensanya.
+        const j = jepitProyektor({ ...b, x: b.x + dx, z: b.z + dz, elev: b.elev + dNaik * langkah }, batas.x, batas.z, plafonDi(Math.min(batas.x, Math.max(0, b.x + dx))));
+        return { ...b, x: r(j.x), z: r(j.z), elev: r(j.elev) };
+      }
       const x = r(Math.min(batas.x, Math.max(0, b.x + dx))), z = r(Math.min(batas.z, Math.max(0, b.z + dz)));
       const elev = r(Math.min(Math.max(0, plafonDi(x) - b.h), Math.max(0, b.elev + dNaik * langkah)));
       return { ...b, x, z, elev };

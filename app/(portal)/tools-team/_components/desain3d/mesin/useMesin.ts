@@ -5,7 +5,7 @@
  */
 import { useEffect } from 'react';
 import { sesuaikanTinggi } from '../bangun';
-import { daftarRuang, ikutUtama, magnet, ruangDari, tampilDi, togglePilih } from '../inti';
+import { daftarRuang, ikutUtama, jepitProyektor, magnet, ruangDari, tampilDi, togglePilih } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { kenaPermukaan } from './kena';
@@ -108,17 +108,26 @@ export function useMesin(K: KeadaanDesain) {
           const r = ruangRef.current;
           const bt = batasDunia(r);
           const b0 = bendaRef.current.find(b => b.id === o.userData.id); if (!b0) return;
-          let x = Math.round(Math.min(bt.x, Math.max(0, o.position.x)) * 1000) / 1000;
-          let z = Math.round(Math.min(bt.z, Math.max(0, o.position.z)) * 1000) / 1000;
+          //  Proyektor: badan boleh menembus dinding / plafon (tersembunyi, hanya lensa di dalam ruang) - dijepit
+          //  lewat posisi lensanya di bawah, bukan titik tengahnya.
+          const proyektor = b0.jenis === 'proyektor';
+          const jepitX = (v: number) => (proyektor ? v : Math.min(bt.x, Math.max(0, v)));
+          const jepitZ = (v: number) => (proyektor ? v : Math.min(bt.z, Math.max(0, v)));
+          let x = Math.round(jepitX(o.position.x) * 1000) / 1000;
+          let z = Math.round(jepitZ(o.position.z) * 1000) / 1000;
           //  Magnet: tarik ke tepi / tengah benda lain (yang tidak ikut terpilih & tidak disembunyikan).
           if ((gizmo as unknown as { mode: string }).mode === 'translate' && snapRef.current.magnet) {
             const ikut = new Set([o.userData.id as string, ...pilihLainRef.current]);
             const mg = magnet({ ...b0, x, z }, bendaRef.current.filter(b => !ikut.has(b.id) && tampilDi(b, sembunyiRef.current)));
-            x = Math.min(bt.x, Math.max(0, mg.x)); z = Math.min(bt.z, Math.max(0, mg.z));
+            x = jepitX(mg.x); z = jepitZ(mg.z);
           }
-          const plafon = daftarRuang(r)[ruangDari(r, x)]?.t ?? r.t;
-          const elev = Math.round(Math.min(Math.max(0, plafon - b0.h), Math.max(0, o.position.y)) * 100) / 100;
           const rot = ((Math.round((o.rotation.y * 180) / Math.PI) % 360) + 360) % 360;
+          const plafon = daftarRuang(r)[ruangDari(r, Math.min(bt.x, Math.max(0, x)))]?.t ?? r.t;
+          let elev = Math.round(Math.min(Math.max(0, plafon - b0.h), Math.max(0, o.position.y)) * 100) / 100;
+          if (proyektor) {
+            const j = jepitProyektor({ ...b0, x, z, rot, elev: Math.max(0, o.position.y) }, bt.x, bt.z, plafon);
+            x = Math.round(j.x * 1000) / 1000; z = Math.round(j.z * 1000) / 1000; elev = Math.round(j.elev * 100) / 100;
+          }
           o.position.set(x, elev, z);
           sesuaikanTinggi(o, { ...b0, elev }, plafon);
           //  Mouse cepat mengirim ratusan objectChange per detik: state React cukup diperbarui sekali per frame layar.
@@ -254,6 +263,10 @@ export function useMesin(K: KeadaanDesain) {
           gambarLayar.current.forEach(t => t.dispose()); gambarLayar.current.clear();
           if (scene.environment instanceof THREE.Texture) scene.environment.dispose();
           renderer.dispose();
+          //  dispose() TIDAK menutup konteks WebGL-nya. Chrome hanya mengizinkan ±16 konteks hidup per tab:
+          //  tanpa ini, bolak-balik membuka Desain 3D di sesi yang lama menumpuk konteks (memori GPU naik,
+          //  peringatan "Too many active WebGL contexts", tab makin berat).
+          renderer.forceContextLoss();
           renderer.domElement.remove(); labelRenderer.domElement.remove();
         };
       } catch (e) {

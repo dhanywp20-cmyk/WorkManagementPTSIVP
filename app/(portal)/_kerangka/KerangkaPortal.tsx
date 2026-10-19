@@ -48,20 +48,32 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   */
   const [tujuanMenu, setTujuanMenu] = useState<string | null>(null);
   const [sedangPindah, mulaiPindah] = useTransition();
+  /** Alamat lengkap (dengan ?query) yang sedang dituju - untuk jaring pengaman muat penuh di bawah. */
+  const urlTujuan = useRef<string | null>(null);
   const jalurSorot = tujuanMenu ?? pathname;
   /** Menu yang alamatnya sedang dibuka / sedang dituju (termasuk sub-halamannya). */
   const aktifUrl = (url: string) => jalurSorot === url || jalurSorot.startsWith(url + '/');
   const berandaTersorot = jalurSorot === '/dashboard';
   const pindahKe = useCallback((url: string) => {
     const jalur = url.split('?')[0];
-    if (jalur !== pathname) setTujuanMenu(jalur);
+    if (jalur !== pathname) { setTujuanMenu(jalur); urlTujuan.current = url; }
     mulaiPindah(() => router.push(url));
   }, [pathname, router]);
-  useEffect(() => { setTujuanMenu(null); }, [pathname]);
-  //  Jaring pengaman: perpindahan yang batal/tertolak tidak boleh meninggalkan sorotan palsu.
+  useEffect(() => { setTujuanMenu(null); urlTujuan.current = null; }, [pathname]);
+  /*
+    Jaring pengaman perpindahan yang MENGGANTUNG. Tab yang dibuka berjam-jam melewati beberapa deploy;
+    router.push lalu bisa tertahan (potongan kode halaman versi lama sudah tidak ada, permintaan
+    tergantung di jaringan yang sempat putus) dan layar lama diam tanpa ujung - dulu di sini cuma
+    sorotannya yang dilepas sesudah 10 dtk. Sekarang: 12 dtk tanpa alamat berganti -> buka alamat
+    tujuan dengan muat penuh (kode & data versi terbaru), sama seperti mengetik alamatnya sendiri.
+  */
   useEffect(() => {
     if (!tujuanMenu) return;
-    const t = setTimeout(() => setTujuanMenu(null), 10_000);
+    const t = setTimeout(() => {
+      const url = urlTujuan.current;
+      setTujuanMenu(null);
+      if (url && navigator.onLine !== false) window.location.assign(url);
+    }, 12_000);
     return () => clearTimeout(t);
   }, [tujuanMenu]);
   const merek = useMerek();
@@ -129,9 +141,12 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     Tinggi area modul sebagai variabel CSS --tinggi-isi: pengganti 100vh untuk modul yang dulu
     menghitung tingginya terhadap iframe (mis. calc(100vh - 112px) di Materi Learning Center).
   */
-  const isiRef = useRef<HTMLDivElement>(null);
+  //  Elemen area isi lewat callback ref: efek ini jalan sekali saat elemennya muncul. Dulu efeknya tanpa
+  //  daftar dependensi - jalan di SETIAP render kerangka (termasuk tiap perubahan status pindah menu),
+  //  membuat ResizeObserver baru & memaksa peramban menghitung tata letak (getBoundingClientRect).
+  const [isiEl, setIsiEl] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
-    const el = isiRef.current;
+    const el = isiEl;
     if (!el || typeof ResizeObserver === 'undefined') return;
     //  --jarak-bawah-isi: ruang di bawah area isi (menu bawah HP + footer) - dipakai bilah `fixed bottom`
     //  milik modul (mis. antrean offline Project Progress) supaya tidak tertutup menu bawah.
@@ -143,8 +158,9 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     ukur();
     const ro = new ResizeObserver(ukur);
     ro.observe(el);
-    return () => ro.disconnect();
-  });
+    window.addEventListener('resize', ukur);
+    return () => { ro.disconnect(); window.removeEventListener('resize', ukur); };
+  }, [isiEl]);
 
   /*
     Daftar menu dihitung langsung dari akun, BUKAN lewat timer "memuat menu". Dulu ada setTimeout
@@ -816,7 +832,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
                 berarti "setinggi area ini" (app/globals.css), karena dulu ukuran itu diukur terhadap
                 iframe. Layar penuh (quiz) menaikkan area ini menutupi seluruh layar seperti dulu.
               */
-              <div ref={isiRef} className={layarPenuh
+              <div ref={setIsiEl} className={layarPenuh
                 ? 'isi-portal fixed inset-0 z-300 bg-white overflow-auto'
                 : 'isi-portal w-full h-full overflow-auto relative'}>
                 {children}

@@ -9,6 +9,7 @@ import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Grid3x3, Timer 
 import type { AlasanKirimOtomatis } from '@/lib/kelas-eksternal';
 import { bacaDraf, panggilKelas, tulisDraf, type InfoKelas, type Percobaan } from './api';
 import { usePengawas } from './usePengawas';
+import { GambarSoal } from '@/components/shared/GambarSoal';
 
 /** Mode admin: cek tiap 15 dtk apakah kelas diakhiri pengajar. */
 const CEK_DIAKHIRI_MS = 15_000;
@@ -125,6 +126,7 @@ export function LayarQuiz({ kelas, judul, data, modeAdmin, onKirim }: {
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-5 sm:py-8 select-none">
         <p className="text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-2">Soal {i + 1} dari {data.soal.length}</p>
         <h2 className="text-[16px] sm:text-[18px] font-semibold text-slate-900 leading-relaxed whitespace-pre-line">{soal.teks}</h2>
+        <GambarSoal url={soal.gambar} tinggi="max-h-72" className="mt-4 border border-slate-200" />
         <div className="mt-5 space-y-2.5" role="radiogroup" aria-label={`Pilihan jawaban soal ${i + 1}`}>
           {(['A', 'B', 'C', 'D'] as const).filter(p => soal.pilihan[p]).map(p => {
             const aktif = jawaban[soal.id] === p;

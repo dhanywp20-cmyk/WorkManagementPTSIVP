@@ -15,4 +15,8 @@ export function lembarAV(judul: string, masukan: Baris[], hasil: Baris[], catata
   };
 }
 
-export const aksiLembar = (l: () => Lembar, nama: string) => ({ onCetak: () => bukaCetak(l()), onPng: () => unduhLembarPNG(l(), namaBerkas(nama)) });
+/** Cetak, PNG, dan Simpan ke proyek (tools_av_hasil) - dipakai semua hasil Kalkulator AV. */
+export const aksiLembar = (l: () => Lembar, nama: string) => ({
+  onCetak: () => bukaCetak(l()), onPng: () => unduhLembarPNG(l(), namaBerkas(nama)),
+  simpan: { judul: nama, lembar: l },
+});

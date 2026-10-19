@@ -63,6 +63,8 @@ export interface Question {
    * Diabaikan untuk soal abcd. Lihat sql/learning-center-essay-gambar.sql.
    */
   answer_format?: 'text' | 'image';
+  /** Gambar opsional soal (foto perangkat, diagram) - migrasi 054. */
+  gambar_url?: string | null;
 }
 
 export interface QuizSession {

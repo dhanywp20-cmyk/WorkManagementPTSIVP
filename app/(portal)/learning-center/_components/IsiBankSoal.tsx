@@ -6,6 +6,7 @@ import { ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { supabase, Material, Question, FolderNode, DialogState } from './shared';
 import { GrupBatchSoal } from './soal/GrupBatchSoal';
+import { UnggahGambarSoal } from './soal/UnggahGambarSoal';
 import { FOLDER_COLORS } from './QuestionsPage';
 
 export interface IsiBankSoalProps {
@@ -108,6 +109,7 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
               <div className="space-y-3">
                 <textarea value={editQ.question} onChange={e => setEditQ(p => p && ({ ...p, question: e.target.value }))}
                   rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 resize-none" placeholder="Pertanyaan" />
+                <UnggahGambarSoal url={editQ.gambar_url} ubah={u => setEditQ(p => p && ({ ...p, gambar_url: u || null }))} />
                 {editQ.question_type === 'essay' ? (
                   <div>
                     <label htmlFor="f-learning-center-components-questionspage-12" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">

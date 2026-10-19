@@ -19,8 +19,8 @@ const css = readFileSync('app/globals.css', 'utf8');
 console.log('\n1. Sorotan langsung saat diklik');
 cek('sorotan memakai tujuan yang diklik lebih dulu (jalurSorot)', /const jalurSorot = tujuanMenu \?\? pathname;/.test(kp));
 cek('aktifUrl membaca jalurSorot, bukan pathname', /const aktifUrl = \(url: string\) => jalurSorot === url/.test(kp));
-cek('tujuan dilepas saat alamat benar-benar berganti', /useEffect\(\(\) => \{ setTujuanMenu\(null\); \}, \[pathname\]\);/.test(kp));
-cek('jaring pengaman: sorotan palsu dilepas sendiri', /setTimeout\(\(\) => setTujuanMenu\(null\), 10_000\)/.test(kp));
+cek('tujuan dilepas saat alamat benar-benar berganti', /useEffect\(\(\) => \{ setTujuanMenu\(null\); urlTujuan\.current = null; \}, \[pathname\]\);/.test(kp));
+cek('jaring pengaman: menggantung 12 dtk -> sorotan dilepas & alamat tujuan dibuka muat penuh', /setTujuanMenu\(null\);\s*if \(url && navigator\.onLine !== false\) window\.location\.assign\(url\);\s*\}, 12_000\)/.test(kp));
 cek('sidebar & menu bawah memakai sorotan baru', /showDashboardPanel=\{berandaTersorot\}/.test(kp) && /aktif: showSidebar \? berandaTersorot : true/.test(kp));
 
 console.log('\n2. Semua jalur pindah menu lewat pindahKe (transition)');

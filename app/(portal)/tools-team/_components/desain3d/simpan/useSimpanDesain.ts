@@ -5,7 +5,7 @@
  */
 import { useEffect } from 'react';
 import { unduhUrl } from '../../bersama/cetak';
-import { type Benda, idBaru, type Ruang } from '../inti';
+import { type Benda, idBaru, rapikanLED, type Ruang } from '../inti';
 import { denganLegendaSamping } from '../panel/LegendaKabel';
 import { bacaDesainGLB, dataDesainFile, KUNCI_DESAIN, namaFileDesain } from './file-glb';
 import { daftarkanTekstur, teksturUntukFile, teksturUntukSimpan } from './teksturRuang';
@@ -80,7 +80,8 @@ export function useSimpanDesain(K: KeadaanDesain) {
       return;
     }
     const namaBerkas = file.name;
-    const pasang = (bendaBaru: Benda[]) => {
+    const pasang = (bendaMentah: Benda[]) => {
+      const bendaBaru = rapikanLED(bendaMentah);
       const rb = { ...RUANG_AWAL, ...d.ruang };
       ruangRef.current = rb;
       setRuang(rb); setBenda(bendaBaru); setNamaDesain(d.nama);
@@ -246,9 +247,10 @@ export function useSimpanDesain(K: KeadaanDesain) {
       if (m) for (const [idL, url] of Object.entries(d.data.layar ?? {})) {
         muatGambarLayar(m, idL, url, gambarLayar.current, () => setVersiGambar(v => v + 1));
       }
-      setRuang(ruangBaru); setBenda(d.data.benda); setNamaDesain(d.nama);
-      setAsal({ jenis: 'baru' }); setDasar(ambilKunci(ruangBaru, d.data.benda, d.nama));
-      riwayat.mulaiBaru({ ruang: ruangBaru, benda: d.data.benda });
+      const bendaBuka = rapikanLED(d.data.benda);
+      setRuang(ruangBaru); setBenda(bendaBuka); setNamaDesain(d.nama);
+      setAsal({ jenis: 'baru' }); setDasar(ambilKunci(ruangBaru, bendaBuka, d.nama));
+      riwayat.mulaiBaru({ ruang: ruangBaru, benda: bendaBuka });
       //  Versi lama: menyimpan membuat versi baru dari isi ini (riwayat tidak diubah).
       setDesainAktif({ id: d.id, bolehUbah: d.bolehUbah, versi: d.versiTerbaru });
       setLihatVersi(d.versi !== d.versiTerbaru ? { versi: d.versi, terbaru: d.versiTerbaru } : null);

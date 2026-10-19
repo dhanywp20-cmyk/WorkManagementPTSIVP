@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { RefreshCw, TriangleAlert, House } from 'lucide-react';
-import { galatBerkasTidakTermuat, KUNCI_MUAT_ULANG } from '@/lib/galat-berkas';
+import { bolehMuatUlang, galatBerkasTidakTermuat, KUNCI_MUAT_ULANG } from '@/lib/galat-berkas';
 import { laporGalat } from '@/lib/lapor-galat';
 
 /**
@@ -21,11 +21,11 @@ export function LayarGalat({ error, reset, penuh = false }: {
   useEffect(() => {
     console.error('[galat-halaman]', error);
     laporGalat({ pesan: `${error.name && error.name !== 'Error' ? `${error.name}: ` : ''}${error.message}`, sumber: 'halaman', digest: error.digest });
-    //  Galat berkas lama sesudah deploy: muat ulang sekali, diam-diam.
+    //  Galat berkas lama sesudah deploy: muat ulang diam-diam (paling sering sekali per menit).
     if (galatBerkasTidakTermuat(error)) {
       try {
-        if (sessionStorage.getItem(KUNCI_MUAT_ULANG) !== '1') {
-          sessionStorage.setItem(KUNCI_MUAT_ULANG, '1');
+        if (bolehMuatUlang(sessionStorage.getItem(KUNCI_MUAT_ULANG), Date.now())) {
+          sessionStorage.setItem(KUNCI_MUAT_ULANG, String(Date.now()));
           window.location.reload();
         }
       } catch { /* sessionStorage ditolak - biarkan tombol manual */ }

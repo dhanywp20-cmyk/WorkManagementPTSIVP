@@ -2,8 +2,9 @@
  * lib/kelas-eksternal.ts - aturan Kelas Eksternal Learning Center (quiz untuk customer tanpa akun).
  * Murni (tanpa basis data), dipakai route server & halaman, dan diuji di uji/kelas-eksternal.ts.
  *
- * Peserta cukup mengisi NAMA. Perangkatnya menyimpan token acak (localStorage); server hanya
- * menyimpan hash-nya - jadi kembali dari HP yang sama melanjutkan, bukan mendaftar ulang.
+ * Peserta mengisi NAMA (+ perusahaan / kontak bila kelas memintanya - isian_peserta). Perangkatnya
+ * menyimpan token acak (localStorage); server hanya menyimpan hash-nya - jadi kembali dari HP yang
+ * sama melanjutkan, bukan mendaftar ulang.
  */
 
 import { MAKS_PESERTA_LIVE, rapikanDetik, rapikanUrlGambar, rapikanWarna } from './kuis-live';
@@ -29,11 +30,49 @@ export interface KelasEksternal {
   detik_per_soal: number;
   /** Tampilan: warna tema (#rrggbb; null = ungu bawaan), logo event & gambar latar (unggahan admin). */
   tema_warna: string | null; logo_url: string | null; latar_url: string | null;
+  /** Data yang diminta saat peserta masuk (migrasi 054). */
+  isian_peserta: IsianPeserta;
   dibuat_nama?: string | null; created_at?: string; updated_at?: string;
 }
 
 export type ModeMulai = 'auto' | 'admin';
 export type JenisKelas = 'mandiri' | 'live';
+
+// ── Data peserta ────────────────────────────────────────────────────────────
+/** 'nama': nama saja. 'instansi': + perusahaan (wajib). 'kontak': + perusahaan (wajib) + email/HP (opsional) + izin dihubungi. */
+export type IsianPeserta = 'nama' | 'instansi' | 'kontak';
+export const ISIAN_PESERTA: { nilai: IsianPeserta; label: string; ket: string }[] = [
+  { nilai: 'nama', label: 'Nama saja', ket: 'Paling cepat untuk peserta.' },
+  { nilai: 'instansi', label: 'Nama + perusahaan', ket: 'Perusahaan/instansi wajib diisi.' },
+  { nilai: 'kontak', label: 'Nama + perusahaan + kontak', ket: 'Email/HP opsional, dengan izin dihubungi.' },
+];
+export const rapikanIsianPeserta = (v: unknown): IsianPeserta => (v === 'instansi' || v === 'kontak' ? v : 'nama');
+export const MAKS_INSTANSI = 120;
+export const MAKS_KONTAK = 120;
+
+export interface DataPeserta { instansi: string | null; kontak: string | null; izin_kontak: boolean }
+
+const bersih = (v: unknown) => String(v ?? '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim();
+
+/**
+ * Isian tambahan peserta sesuai pengaturan kelas. Yang tidak diminta kelas dibuang (null), jadi
+ * peramban tidak bisa menyelipkan data yang tidak diminta. Izin dihubungi hanya berlaku bila kontak diisi.
+ */
+export function rapikanDataPeserta(isian: IsianPeserta, m: Record<string, unknown>): DataPeserta | { galat: string } {
+  if (isian === 'nama') return { instansi: null, kontak: null, izin_kontak: false };
+  const instansi = bersih(m.instansi);
+  if (instansi.length < 2) return { galat: 'Isi nama perusahaan / instansi Anda.' };
+  if (instansi.length > MAKS_INSTANSI) return { galat: `Nama perusahaan maksimal ${MAKS_INSTANSI} karakter.` };
+  if (isian === 'instansi') return { instansi, kontak: null, izin_kontak: false };
+  const kontak = bersih(m.kontak);
+  if (!kontak) return { instansi, kontak: null, izin_kontak: false };
+  if (kontak.length > MAKS_KONTAK) return { galat: `Kontak maksimal ${MAKS_KONTAK} karakter.` };
+  const email = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(kontak);
+  const digit = kontak.replace(/[\s().-]/g, '');
+  const hp = /^\+?\d{8,15}$/.test(digit);
+  if (!email && !hp) return { galat: 'Kontak harus berupa email atau nomor HP.' };
+  return { instansi, kontak, izin_kontak: m.izin_kontak === true };
+}
 
 // ── Pelanggaran ─────────────────────────────────────────────────────────────
 export const JENIS_PELANGGARAN = ['pindah_tab', 'keluar_jendela', 'salin_tempel'] as const;
@@ -171,6 +210,7 @@ export function rapikanKelas(m: Record<string, unknown>): { galat: string } | Om
     maks_peserta: angka(m.maks_peserta, 1, jenis === 'live' ? MAKS_PESERTA_LIVE : 2000, 200) as number,
     mode_mulai: m.mode_mulai === 'admin' ? 'admin' : 'auto',
     batas_pelanggaran: angka(m.batas_pelanggaran, 1, 50, null),
+    isian_peserta: rapikanIsianPeserta(m.isian_peserta),
   };
 }
 
