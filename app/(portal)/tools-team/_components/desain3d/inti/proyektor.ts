@@ -3,7 +3,7 @@
  * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
  */
 import { bulat2, daftarRuang, ruangDari } from './ruang';
-import { type Benda, type Kotak, type ResolusiProyektor, type Ruang, type Titik, warnaSah } from './tipe';
+import { type Benda, type Kotak, type RasioProyektor, type Ruang, type Titik, warnaSah } from './tipe';
 
 /** Titik lokal benda (alas y = 0, +z = arah hadap) ke koordinat dunia. */
 export function keDunia(b: Benda, [lx, ly, lz]: Titik): Titik {
@@ -48,19 +48,19 @@ export function arahProyektor(b: Benda): Titik {
   return [Math.sin(r) * Math.cos(t), Math.sin(t), Math.cos(r) * Math.cos(t)];
 }
 /**
- * Resolusi asli proyektor. Gambar proyektor mengikuti panelnya: Full HD / 4K = 16:9, WUXGA / WXGA = 16:10
- * (umum di proyektor instalasi - gambarnya 11% lebih tinggi dari 16:9 pada lebar yang sama), XGA = 4:3.
+ * Rasio aspek gambar proyektor - mengikuti panel aslinya: 16:9 (Full HD / 4K), 16:10 (WUXGA, umum di
+ * proyektor instalasi - 11% lebih tinggi dari 16:9 pada lebar yang sama), 4:3 (XGA), 21:9 (ultra-wide).
+ * `px` = piksel acuan blending (lebar 1920 px).
  */
-export const RESOLUSI_PROYEKTOR: Record<ResolusiProyektor, { x: number; y: number; label: string }> = {
-  FHD: { x: 1920, y: 1080, label: 'Full HD 1920×1080 · 16:9' },
-  WUXGA: { x: 1920, y: 1200, label: 'WUXGA 1920×1200 · 16:10' },
-  '4K': { x: 3840, y: 2160, label: '4K UHD 3840×2160 · 16:9' },
-  WXGA: { x: 1280, y: 800, label: 'WXGA 1280×800 · 16:10' },
-  XGA: { x: 1024, y: 768, label: 'XGA 1024×768 · 4:3' },
+export const RASIO_PROYEKTOR: Record<RasioProyektor, { lebar: number; tinggi: number; label: string; px: { x: number; y: number } }> = {
+  '16:9': { lebar: 16, tinggi: 9, label: '16:9 (Full HD / 4K)', px: { x: 1920, y: 1080 } },
+  '16:10': { lebar: 16, tinggi: 10, label: '16:10 (WUXGA)', px: { x: 1920, y: 1200 } },
+  '4:3': { lebar: 4, tinggi: 3, label: '4:3 (XGA)', px: { x: 1920, y: 1440 } },
+  '21:9': { lebar: 21, tinggi: 9, label: '21:9 (ultra-wide)', px: { x: 1920, y: 823 } },
 };
-export const resolusiProyektorDari = (p: Pick<Benda, 'resolusiProyektor'>) => RESOLUSI_PROYEKTOR[p.resolusiProyektor ?? 'FHD'] ?? RESOLUSI_PROYEKTOR.FHD;
-/** Tinggi gambar / lebar gambar proyektor (9/16, 10/16, 3/4). */
-export const rasioGambarProyektor = (p: Pick<Benda, 'resolusiProyektor'>) => { const r = resolusiProyektorDari(p); return r.y / r.x; };
+export const rasioProyektorDari = (p: Pick<Benda, 'rasioProyektor'>) => RASIO_PROYEKTOR[p.rasioProyektor ?? '16:9'] ?? RASIO_PROYEKTOR['16:9'];
+/** Tinggi gambar / lebar gambar proyektor (9/16, 10/16, 3/4, 9/21). */
+export const rasioGambarProyektor = (p: Pick<Benda, 'rasioProyektor'>) => { const r = rasioProyektorDari(p); return r.tinggi / r.lebar; };
 /** Jarak minimum lensa dari dinding / plafon / lantai (m). */
 export const JARAK_LENSA_PERMUKAAN = 0.03;
 /**
