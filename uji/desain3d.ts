@@ -302,6 +302,28 @@ console.log('\n11. Batch 2: bukaan, set kelas, jangkauan, proyektor, signage, Pr
     && bf.every((x, i) => i === 0 || (x.arah[1] < bf[i - 1].arah[1] && x.jarak! < bf[i - 1].jarak!)), bf.map(x => x.jarak?.toFixed(1)).join(','));
   const atas = bf[0];
   cek('berkas modul teratas: tilt 4° -> jatuh sejauh (tinggi - 1,2) / tan 4°', dekat(atas.jarak!, (atas.asal[1] - 1.2) / Math.tan(4 * Math.PI / 180) + (atas.asal[2] - 0.5), 0.05), `${atas.jarak}`);
+  //  Line array di ruang nyata (auditorium 16 x 20 x 7 m, tribun 12 baris): telinga ikut tribun, sumbu berhenti di dinding.
+  {
+    const aud = templateRuang('auditorium'), kA = M3.daftarRuang(aud.ruang)[0];
+    const laA = aud.benda.find(x => x.jenis === 'speaker' && M3.tipeSpeakerDari(x) === 'linearray')!;
+    const tribunA = aud.benda.find(x => x.jenis === 'tribun')!;
+    const ruangA = { x0: kA.x0, x1: kA.x0 + kA.p, z0: 0, z1: kA.l, t: kA.t, telinga: M3.telingaPenonton(aud.benda, laA) };
+    const bA = berkasLineArray(laA, ruangA);
+    cek('auditorium: line array tidak lagi "menjangkau" lebih jauh dari panjang ruang (dulu 72 m di ruang 20 m)',
+      bA.every(x => x.jarak === null || x.jarak <= kA.l + 0.01) && berkasLineArray(laA).some(x => (x.jarak ?? 0) > kA.l), bA.map(x => `${x.jarak?.toFixed(1)}${x.dinding ? 'd' : ''}`).join(','));
+    //  Tribun menghadap panggung (rot 180): baris depan di sisi z kecil (dekat panggung), baris belakang di dinding belakang.
+    const zDepan = tribunA.z - tribunA.d / 2 + 0.2, zBelakang = tribunA.z + tribunA.d / 2 - 0.2;
+    cek('lantai penonton tribun naik ke belakang (baris belakang lebih tinggi dari baris depan)',
+      M3.lantaiPenontonDi(aud.benda, tribunA.x, zBelakang) > M3.lantaiPenontonDi(aud.benda, tribunA.x, zDepan) + 1
+      && M3.lantaiPenontonDi(aud.benda, tribunA.x, zDepan) < 0.4, `${M3.lantaiPenontonDi(aud.benda, tribunA.x, zDepan)} -> ${M3.lantaiPenontonDi(aud.benda, tribunA.x, zBelakang)}`);
+    cek('template auditorium: semua modul line array mendarat di penonton (tidak ada yang menabrak dinding)', bA.every(x => x.jatuh && !x.dinding));
+    const diTelinga = bA.filter(x => x.jatuh && !x.dinding);
+    //  Lantai tribun berupa anak tangga: sumbu bisa mendarat di sisi tegak anak tangga (paling banyak 1 riser di bawah).
+    const riserA = (tribunA.h - 0.95) / ((tribunA.baris ?? 8) - 1);
+    cek('titik jatuh di penonton setinggi telinga di atas lantai tribun / ruang (tidak di atasnya, paling banyak 1 anak tangga di bawah)',
+      diTelinga.length > 0 && diTelinga.every(x => { const d = x.jatuh![1] - ruangA.telinga(x.jatuh![0], x.jatuh![2]); return d <= 0.01 && d >= -riserA - 0.01; }),
+      diTelinga.map(x => (x.jatuh![1] - ruangA.telinga(x.jatuh![0], x.jatuh![2])).toFixed(3)).join(','));
+  }
   const spp = { ...bendaBaru('speaker-plafon', k), elev: 2.94, sebaran: 90 };
   cek('cakupan speaker plafon 90° dari 2,94 m = jari-jari (2,94-1,2)·tan45°', dekat(cakupanSpeakerPlafon(spp), 1.74) && sebaranSpeaker(bendaBaru('speaker', k)) === 90);
   //  Proyektor: offset lensa & lens shift.

@@ -4,6 +4,7 @@
  */
 import type * as T from 'three';
 import { type Benda, formatPanjang, type GarisPenggaris, jarakGrid, jarakKeDinding, type Kotak, mm, rincianGaris, type Snap, sudutTapak, type Titik } from '../inti';
+import { mengalah } from './label';
 import type { Mesin } from './tipe';
 
 type GizmoSnap = { setTranslationSnap?: (v: number | null) => void; setRotationSnap?: (v: number | null) => void };
@@ -68,6 +69,8 @@ export function gambarPenggaris(m: Mesin, daftar: GarisPenggaris[], titikAwal: T
     titik(gp.a); titik(gp.b);
     const r = rincianGaris(gp);
     const el = document.createElement('div');
+    //  Penggaris dibuat sendiri oleh engineer: selalu tampil (label lain yang menabrak yang mengalah).
+    el.dataset.penting = '1';
     el.style.cssText = 'display:flex;align-items:center;gap:4px;padding:2px 4px 2px 7px;border-radius:7px;background:#dc2626;color:#fff;font:700 11.5px system-ui,sans-serif;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25);pointer-events:auto';
     const teks = document.createElement('span');
     teks.textContent = formatPanjang(Math.hypot(r.datar, r.tinggi));
@@ -103,7 +106,7 @@ export function gambarJarakDinding(m: Mesin, b: Benda | null, k: Kotak | null) {
     if (panjang < 0.02) return;
     const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...a), new THREE.Vector3(...c)]);
     const l = new THREE.Line(geo, bahan); l.computeLineDistances(); l.renderOrder = 5; g.add(l);
-    const el = document.createElement('div');
+    const el = mengalah(document.createElement('div'));
     el.style.cssText = 'padding:1px 6px;border-radius:6px;background:#0369a1;color:#fff;font:700 11px system-ui,sans-serif;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.25)';
     el.textContent = el.dataset.teks = `${mm(panjang)} mm`;
     const lb = new m.CSS2DObject(el);
