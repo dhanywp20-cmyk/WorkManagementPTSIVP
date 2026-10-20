@@ -12,11 +12,18 @@ import { gambarUkurBlending } from './ukurBlending';
 export interface DataBlend {
   p: Benda; L: Lensa; O: T.Vector3;
   /** Benda & ruang yang bisa disinari proyektor ini (dirinya sendiri dikecualikan). */ sasaran: T.Object3D[];
-  /** Grid titik gambar NX x NY (baris demi baris) dari raycast sinar. */ kena: (T.Vector3 | null)[];
+  /**
+   * Segitiga permukaan yang benar-benar tersinari proyektor ini (9 angka per segitiga, sisi depan menghadap
+   * lensa) - potongan sel yang sama dengan bidang cahayanya (mesin/sinar.ts), jadi tepi zona ikut tepat di tepi
+   * layar, pojok ruangan & bayangan benda, bukan bertangga selebar sel grid.
+   */
+  zona: number[];
+  /** Normal tiap titik zona (menghadap lensa) - batas "permukaan mulai membelakangi lensa lawan" dipotong halus. */ zonaN: number[];
+  /** Mesh permukaan tiap segitiga zona - permukaan itu sendiri tidak dihitung menghalangi sinar lensa lawan. */ zonaMesh: string[];
   baris: (Titik | null)[]; kolom: (Titik | null)[];
 }
 
-/** Titik sudut poligon zona + nilai batas bingkai lawan (>= 0 = di dalam). */
+/** Titik sudut poligon zona + nilai batas (>= 0 = di dalam): 4 sisi bingkai lawan & sudut datang dari kedua lensa. */
 interface Simpul { p: T.Vector3; f: number[] }
 
 /** Potong poligon cembung oleh satu batas f[c] >= 0 (Sutherland-Hodgman, interpolasi linear). */
@@ -34,6 +41,12 @@ function potong(poli: Simpul[], c: number): Simpul[] {
   return hasil;
 }
 
+/**
+ * Cahaya yang datang sangat miring (cos sudut datang < 0,08, ±85°) praktis tidak menerangi (< 8% terang tegak
+ * lurus) dan batas bayangannya meloncat-loncat menyusuri permukaan - di zona blending dianggap tidak menyinari.
+ */
+const COS_MIN = 0.08;
+
 /** Nama ringkas untuk label: tanpa akhiran "(blending)" template, "Proyektor 2" -> "P2". */
 const pendek = (n: string) => n.replace(/\s*\(blending\)\s*/i, '').replace(/^Proyektor\s*(?=\d)/i, 'P').trim() || n;
 
@@ -41,7 +54,7 @@ const pendek = (n: string) => n.replace(/\s*\(blending\)\s*/i, '').replace(/^Pro
 const kunci = (h: Blending[]) => JSON.stringify(h.map(b => [b.a, b.b, b.namaA, b.namaB, b.arah, b.lebarM.toFixed(3), b.persenA.toFixed(1), b.persenB.toFixed(1)]));
 
 export function gambarBlending(
-  m: Mesin, data: DataBlend[], NX: number, NY: number,
+  m: Mesin, data: DataBlend[],
   setInfo: (f: (v: Blending[]) => Blending[]) => void,
   /** Kartu keterangan detail (persen & piksel) ikut digambar. */ detail: boolean,
 ): Blending[] {
@@ -50,15 +63,15 @@ export function gambarBlending(
   const arah = new THREE.Vector3(), X = new THREE.Vector3();
 
   //  Titik permukaan benar-benar disinari proyektor ke-i: sinar dari lensanya tidak terhalang
-  //  benda lain sebelum sampai ke titik itu (toleransi 5 cm).
-  const terlihat = (i: number, t: Titik) => {
+  //  benda lain sebelum sampai ke titik itu (toleransi 5 cm). `abaikan` = mesh permukaan titik itu sendiri.
+  const terlihat = (i: number, t: Titik, abaikan?: string) => {
     const d = data[i];
     X.set(t[0], t[1], t[2]);
     const jarak = X.distanceTo(d.O);
     ray.set(d.O, arah.copy(X).sub(d.O).normalize());
     const hit = ray.intersectObjects(d.sasaran, true).find(h => {
       const o = h.object as T.Mesh;
-      if (!o.isMesh) return false;
+      if (!o.isMesh || o.uuid === abaikan) return false;
       const mt = (Array.isArray(o.material) ? o.material[0] : o.material) as T.Material & { opacity?: number };
       return !(mt?.transparent && (mt.opacity ?? 1) < 0.6);
     });
@@ -68,29 +81,30 @@ export function gambarBlending(
   const hasil = hitungBlending(data.map(d => ({ p: d.p, L: d.L, baris: d.baris, kolom: d.kolom })), terlihat);
   setInfo(v => (kunci(v) === kunci(hasil) ? v : hasil));
 
-  const bahan = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+  //  FrontSide: zona hanya di sisi permukaan yang menghadap lensa (ikut tembus bersama dinding yang disembunyikan).
+  const bahan = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.FrontSide, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   for (const b of hasil) {
-    const A = data.find(d => d.p.id === b.a), B = data.find(d => d.p.id === b.b);
+    const iA = data.findIndex(d => d.p.id === b.a), iB = data.findIndex(d => d.p.id === b.b);
+    const A = data[iA], B = data[iB];
     if (!A || !B) continue;
-    //  Zona: tiap sel grid gambar A dipotong (Sutherland-Hodgman) oleh bingkai gambar B - fungsi batas
-    //  |u| <= 0,5 & |v| <= 0,5 di koordinat lensa B, diinterpolasi linear antar sudut sel - jadi tepi zona
-    //  mengikuti tepi gambar B dengan halus, bukan bergerigi per sel.
-    const sel = (i: number, j: number) => A.kena[j * NX + i];
-    const pos: number[] = [];
-    for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
-      const sudut = [sel(i, j), sel(i + 1, j), sel(i + 1, j + 1), sel(i, j + 1)];
-      if (sudut.some(x => !x)) continue;
-      //  Sel yang "melompat" (tepi benda ke dinding di belakangnya) dilewati - aturan yang sama dengan sinar.
-      const jarak = (sudut[0]!.distanceTo(A.O) + sudut[2]!.distanceTo(A.O)) / 2;
-      const batas = ((jarak * A.L.w1) / (NX - 1)) * 6 + 0.05;
-      if (sudut.some((x, k) => x!.distanceTo(sudut[(k + 1) % 4]!) > batas)) continue;
+    //  Zona: tiap segitiga yang tersinari A dipotong (Sutherland-Hodgman) oleh bingkai gambar B - fungsi batas
+    //  |u| <= 0,5 & |v| <= 0,5 di koordinat lensa B - dan oleh cos sudut datang dari lensa A & B >= COS_MIN
+    //  (ujung layar cembung membelakangi lensa / disinari sangat miring), semuanya diinterpolasi linear antar
+    //  sudut sehingga tepinya halus. Terakhir hanya yang tidak terhalang benda lain dari lensa B.
+    const pos: number[] = [], z = A.zona, zn = A.zonaN;
+    for (let s = 0; s + 8 < z.length; s += 9) {
       let poli: Simpul[] = [];
-      for (const x of sudut) {
-        const k = keGambar(B.L, [x!.x, x!.y, x!.z]);
-        if (!k) { poli = []; break; }
-        poli.push({ p: x!.clone(), f: [0.5 - k.u, 0.5 + k.u, 0.5 - k.v, 0.5 + k.v] });
+      for (let k = 0; k < 9; k += 3) {
+        const p = new THREE.Vector3(z[s + k], z[s + k + 1], z[s + k + 2]);
+        const g = keGambar(B.L, [p.x, p.y, p.z]);
+        if (!g) { poli = []; break; }
+        const cos = (O: T.Vector3) => { const r = O.clone().sub(p).normalize(); return r.x * zn[s + k] + r.y * zn[s + k + 1] + r.z * zn[s + k + 2]; };
+        poli.push({ p, f: [0.5 - g.u, 0.5 + g.u, 0.5 - g.v, 0.5 + g.v, cos(A.O) - COS_MIN, cos(B.O) - COS_MIN] });
       }
-      for (let c = 0; c < 4 && poli.length; c++) poli = potong(poli, c);
+      for (let c = 0; c < 6 && poli.length; c++) poli = potong(poli, c);
+      if (poli.length < 3) continue;
+      const pusat = poli.reduce((t, x) => t.add(x.p), new THREE.Vector3()).divideScalar(poli.length);
+      if (!terlihat(iB, [pusat.x, pusat.y, pusat.z], A.zonaMesh[s / 9])) continue;
       for (let k = 1; k + 1 < poli.length; k++) {
         const [a0, a1, a2] = [poli[0].p, poli[k].p, poli[k + 1].p];
         pos.push(a0.x, a0.y, a0.z, a1.x, a1.y, a1.z, a2.x, a2.y, a2.z);

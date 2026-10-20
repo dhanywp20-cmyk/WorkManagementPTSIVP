@@ -2,7 +2,7 @@
 /** Kontrol di atas kanvas 3D: centang tampilan, aksi benda terpilih, geser tepat, bilah alat kiri, daftar benda, layar penuh. */
 import { useEffect, useState } from 'react';
 import { DISPLAY, nirkabel } from '../inti';
-import { Maximize2, Minimize2, Settings2 } from 'lucide-react';
+import { Eye, EyeOff, Maximize2, Minimize2, Settings2 } from 'lucide-react';
 import { AksiTerpilih } from './AksiTerpilih';
 import { GeserTepat } from './GeserTepat';
 import { BilahKiri } from './BilahKiri';
@@ -10,7 +10,7 @@ import { DaftarKanvas } from './DaftarKanvas';
 import type { AlatDesain } from './alat';
 
 export function KontrolKanvas({ a }: { a: AlatDesain }) {
-  const { teksSinar, setTeksSinar, adaProyektor, bayangan, benda, chipBuka, detailBlending, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, labelProduk, setBayangan, setChipBuka, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setSinar, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, layarPenuh, setLayarPenuh, alatKanvas } = a.K;
+  const { sembunyiTeks, setSembunyiTeks, jarakDinding, setJarakDinding, teksSinar, setTeksSinar, adaProyektor, bayangan, benda, chipBuka, detailBlending, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, labelProduk, setBayangan, setChipBuka, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setSinar, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, layarPenuh, setLayarPenuh, alatKanvas } = a.K;
   //  Geser tepat terikat ke benda yang terpilih saat dibuka - pilih benda lain = otomatis tertutup.
   const [geser, setGeser] = useState<{ id: string; teks: string } | null>(null);
   const geserAktif = geser && geser.id === terpilih?.id ? geser : null;
@@ -28,12 +28,16 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
   return (
     <>
       <div className="kontrol-kanvas lapis-tembus absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5 max-w-[calc(100%-16px)]">
+        {/* Centang tampilan bisa dilipat (semua layar) supaya tidak menutupi gambar - diingat per perangkat. */}
         <button type="button" onClick={() => setChipBuka(v => !v)} aria-expanded={chipBuka}
-          className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/95 border border-slate-200 text-[12px] font-bold text-slate-700 shadow-sm">
+          title={chipBuka ? 'Lipat pilihan tampilan' : 'Buka pilihan tampilan'}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/95 border border-slate-200 text-[12px] font-bold text-slate-700 shadow-sm">
           <Settings2 size={14} /> Tampilan {chipBuka ? '▴' : '▾'}
         </button>
-        <div className={`${chipBuka ? 'flex' : 'hidden'} sm:flex gap-1.5 flex-wrap lapis-tembus`}>
+        <div className={`${chipBuka ? 'flex' : 'hidden'} gap-1.5 flex-wrap lapis-tembus`}>
           {[{ v: ukur, s: setUkur, l: 'Ukuran' },
+            //  Jarak benda terpilih ke dinding: bawaan mati (lima angka mm menutupi gambar).
+            { v: jarakDinding, s: setJarakDinding, l: 'Jarak ke dinding' },
             ...(benda.some(b => DISPLAY.includes(b.jenis)) ? [{ v: garisUkur, s: setGarisUkur, l: 'Garis ukuran (mm)' }] : []),
             { v: labelProduk, s: setLabelProduk, l: 'Label produk' },
             { v: kerucut, s: setKerucut, l: 'Sudut pandang' },
@@ -62,6 +66,13 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
         <BilahKiri a={a} />
       </div>
       <DaftarKanvas a={a} />
+      {/* Satu tombol untuk menyembunyikan / menampilkan SEMUA tulisan di kanvas (label, ukuran, angka blending,
+          keterangan di cahaya) - gambar & garis tetap tampil. */}
+      <button type="button" onClick={() => setSembunyiTeks(!sembunyiTeks)} aria-pressed={sembunyiTeks}
+        title={sembunyiTeks ? 'Tampilkan tulisan di kanvas' : 'Sembunyikan semua tulisan di kanvas (label, ukuran, keterangan)'}
+        className={`kontrol-kanvas absolute right-12 top-2 z-10 inline-flex items-center gap-1.5 h-9 px-2.5 rounded-xl border text-[12px] font-bold shadow-sm ${sembunyiTeks ? 'bg-slate-800 border-slate-800 text-white hover:bg-slate-700' : 'bg-white/95 border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
+        {sembunyiTeks ? <EyeOff size={15} /> : <Eye size={15} />} Teks
+      </button>
       <button type="button" onClick={() => setLayarPenuh(v => !v)} aria-pressed={layarPenuh}
         title={layarPenuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} aria-label={layarPenuh ? 'Keluar layar penuh' : 'Layar penuh'}
         className="kontrol-kanvas absolute right-2 top-2 z-10 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 border border-slate-200 text-slate-700 shadow-sm hover:bg-slate-50">

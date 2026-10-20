@@ -12,14 +12,6 @@ import { posisiPas, terbangKe } from './kamera';
 
 export function useKamera(K: KeadaanDesain) {
   const { analisis, batas, benda, fokusRuang, kameraSiap, kotakRuang, mesin, pasSetelahTemplate, pilih, ruang, setTampilan, siap, sudutRef } = K;
-  //  Setelah template dipasang: pas-kan kamera ke ruangan BARU (dipanggil dari efek supaya ukuran ruangnya sudah yang baru).
-  useEffect(() => {
-    if (!pasSetelahTemplate.current || !siap) return;
-    const langsung = pasSetelahTemplate.current === 'langsung';
-    pasSetelahTemplate.current = false;
-    pasKeLayar('semua', langsung);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ruang, siap]);
   // ── Kamera ──
   /** Titik pusat & kotak batas untuk dipas ke kanvas: semua ruang atau satu ruang. */
   const fokusKotak = (fk: 'semua' | number) => {
@@ -52,11 +44,23 @@ export function useKamera(K: KeadaanDesain) {
     kameraKe(sudut, fk);
   };
 
-  /** Pas seluruh ruangan (atau ruang terfokus) ke kanvas dari arah kamera sekarang. */
-  const pasKeLayar = (fk: 'semua' | number = fokusRuang, langsung = false) => {
+  /**
+   * Pas seluruh ruangan (atau ruang terfokus) ke kanvas dari arah kamera sekarang. `tidakLandai` (setelah template
+   * dipasang): arah yang terlalu landai - sisa "Dari kursi" setinggi mata / kamera yang diputar rendah - dinaikkan
+   * ke sudut standar (arah mendatar tetap), supaya ruangan baru tidak terlihat dari samping datar & tertutup benda
+   * tinggi (tribun auditorium menutupi panggung & LED).
+   */
+  const pasKeLayar = (fk: 'semua' | number = fokusRuang, langsung = false, tidakLandai = false) => {
     const m = mesin.current; if (!m) return;
     const { target, kotak } = fokusKotak(fk);
-    terbangKe(m, posisiPas(m, target, m.kamera.position.clone().sub(m.orbit.target).normalize(), kotak), target, langsung);
+    const arah = m.kamera.position.clone().sub(m.orbit.target).normalize();
+    const iso = new m.THREE.Vector3(...ARAH_SUDUT.iso).normalize();
+    if (tidakLandai && arah.y < iso.y * 0.8) {
+      const datar = Math.hypot(arah.x, arah.z);
+      if (datar < 1e-6) arah.copy(iso);
+      else arah.set((arah.x / datar) * Math.sqrt(1 - iso.y ** 2), iso.y, (arah.z / datar) * Math.sqrt(1 - iso.y ** 2));
+    }
+    terbangKe(m, posisiPas(m, target, arah, kotak), target, langsung);
   };
 
   const zoom = (faktor: number) => {
@@ -90,6 +94,17 @@ export function useKamera(K: KeadaanDesain) {
     if (sudutRef.current === 'kursi') kameraKe('kursi'); else pasKeLayar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [batas.x, batas.z, batas.t, siap]);
+  //  Setelah template dipasang: pas-kan kamera ke ruangan BARU (dipanggil dari efek supaya ukuran ruangnya sudah yang baru).
+  //  Sengaja SESUDAH efek ukuran ruang di atas: efek berjalan berurutan, jadi pas templat ini yang menang (dulu efek
+  //  ukuran ruang menimpanya dengan arah kamera lama yang landai).
+  useEffect(() => {
+    if (!pasSetelahTemplate.current || !siap) return;
+    const langsung = pasSetelahTemplate.current === 'langsung';
+    pasSetelahTemplate.current = false;
+    if (sudutRef.current === 'kursi') { sudutRef.current = 'iso'; setTampilan('3d'); }
+    pasKeLayar('semua', langsung, true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ruang, siap]);
 
   return { fokusBenda, fokusKotak, kameraKe, pasKeLayar, pilihSudut, putarKamera, zoom };
 }

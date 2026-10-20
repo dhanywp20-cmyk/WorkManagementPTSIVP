@@ -7,7 +7,7 @@ import { ukuranDariDiagonal } from '@/lib/av-hitung';
 import { angkaDari, type EntriPustaka, teksDari } from '@/lib/pustaka';
 import { PANEL_VW_AWAL } from './produk';
 import { throwRatioDari } from './proyektor';
-import type { Benda, Jenis, PanelVW, ResolusiProyektor } from './tipe';
+import type { Benda, Jenis, PanelVW, RasioProyektor } from './tipe';
 
 /** Jenis pustaka yang bisa mengisi tiap jenis benda. */
 export const PUSTAKA_UNTUK: Partial<Record<Jenis, string>> = {
@@ -37,10 +37,10 @@ export function isiDariPustaka(b: Benda, e: EntriPustaka): Partial<Benda> | null
     const lumen = Math.round(angkaDari(e, 'lumen'));
     //  Posisi zoom sekarang dipertahankan bila masih dalam rentang lensa baru.
     const tr = Math.min(trMax, Math.max(trMin, throwRatioDari(b)));
-    //  Resolusi asli dari pustaka (WUXGA = gambar 16:10) - rasio gambar, cakupan & piksel blending ikut.
-    const res = teksDari(e, 'resolusi');
-    const resolusiProyektor = (['FHD', 'WUXGA', '4K', 'WXGA', 'XGA'] as const).find(r => r === res) as ResolusiProyektor | undefined;
-    return { nama, ...(lumen > 0 ? { lumen } : {}), ...(trMin > 0 ? { trMin, trMax, throwRatio: bulat(tr, 2) } : {}), ...(resolusiProyektor ? { resolusiProyektor } : {}) };
+    //  Rasio gambar dari resolusi di pustaka (WUXGA / WXGA = 16:10, Full HD / 4K = 16:9) - cakupan & blending ikut.
+    const rasioDari: Record<string, RasioProyektor> = { FHD: '16:9', '4K': '16:9', WUXGA: '16:10', WXGA: '16:10' };
+    const rasioProyektor = rasioDari[teksDari(e, 'resolusi')];
+    return { nama, ...(lumen > 0 ? { lumen } : {}), ...(trMin > 0 ? { trMin, trMax, throwRatio: bulat(tr, 2) } : {}), ...(rasioProyektor ? { rasioProyektor } : {}) };
   }
   if (b.jenis === 'videowall') {
     const u = ukuranDariDiagonal(angkaDari(e, 'diagonal'));
