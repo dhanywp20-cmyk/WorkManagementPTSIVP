@@ -15,10 +15,11 @@ import { aturSnapGizmo, gambarGridSnap, gambarJarakDinding, gambarPenggaris } fr
 import { penggarisSah, ruangDari, tampilDi } from '../inti';
 import { gambarAlatBantu } from './alatBantu';
 import { gambarBayangan } from './bayangan';
+import { aturTeksTersembunyi } from './label';
 
 
 export function useAdegan(K: KeadaanDesain) {
-  const { teksSinar, setUkuranCahaya, sembunyiGolongan, snap, titikUkur, setRuang, gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
+  const { sembunyiTeks, jarakDinding, teksSinar, setUkuranCahaya, sembunyiGolongan, snap, titikUkur, setRuang, gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
   // ── Ruangan: lantai bertekstur + 4 dinding per ruang ──
   //  Dinding hanya terlihat dari sisi dalam (FrontSide), jadi dinding yang
   //  membelakangi kamera otomatis "tembus" seperti denah rumah boneka.
@@ -102,19 +103,25 @@ export function useAdegan(K: KeadaanDesain) {
     const m = mesin.current; if (!m || !siap) return;
     gambarPenggaris(m, penggarisSah(ruang.penggaris), titikUkur, id => setRuang(r => ({ ...r, penggaris: (r.penggaris ?? []).filter(g => g.id !== id) })));
   }, [ruang.penggaris, titikUkur, siap, mesin, setRuang]);
-  //  Jarak benda terpilih ke dinding (ikut centang "Garis ukuran"; tidak saat memilih banyak).
+  //  Jarak benda terpilih ke dinding (centang "Jarak ke dinding"; tidak saat memilih banyak).
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    const b = ukur && !pilihLain.length ? benda.find(x => x.id === pilih) ?? null : null;
+    const b = jarakDinding && !pilihLain.length ? benda.find(x => x.id === pilih) ?? null : null;
     gambarJarakDinding(m, b, b ? kotakRuang[ruangDari(ruang, b.x)] ?? null : null);
-  }, [pilih, pilihLain, benda, kotakRuang, ruang, ukur, siap, mesin]);
+  }, [pilih, pilihLain, benda, kotakRuang, ruang, jarakDinding, siap, mesin]);
+  //  "Sembunyikan teks": lapisan label CSS2D (mesin/label.ts); keterangan yang tercetak di cahaya ikut lewat
+  //  teksSinar di efek alat bantu di bawah.
+  useEffect(() => {
+    const m = mesin.current; if (!m || !siap) return;
+    aturTeksTersembunyi(m, sembunyiTeks);
+  }, [sembunyiTeks, siap, mesin]);
 
   // ── Alat bantu: label ukuran, garis jarak terjauh, kerucut sudut pandang ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    gambarAlatBantu(m, { analisis, benda: sembunyiGolongan.length ? benda.filter(b => tampilDi(b, sembunyiGolongan)) : benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, teksSinar, setInfoBlending, setUkuranCahaya });
+    gambarAlatBantu(m, { analisis, benda: sembunyiGolongan.length ? benda.filter(b => tampilDi(b, sembunyiGolongan)) : benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, teksSinar: teksSinar && !sembunyiTeks, setInfoBlending, setUkuranCahaya, tampilan });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, tampilShare, kabel, tampilBlending, detailBlending, gridSinar, teksSinar, sembunyiGolongan]);
+  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, tampilShare, kabel, tampilBlending, detailBlending, gridSinar, teksSinar, sembunyiTeks, sembunyiGolongan, tampilan]);
   // ── Tingkat cahaya ruangan ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;

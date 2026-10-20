@@ -46,8 +46,10 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     const k = daftarRuang(ruang)[0];
     const panggung = { ...bendaBaru('panggung', k), x: 8, z: 2.2, w: 11, d: 4.2, h: 0.8 };
     const led = { ...bendaBaru('led', k), x: 8, z: 0.08, w: 6.5, h: 3.5, elev: 1.6, pitch: 2.5, nama: 'LED videotron 6,5 × 3,5 m' };
+    //  Kemiringan atas 6° + 2° per sambungan: sumbu ke-8 modul mendarat di telinga penonton tribun dari baris depan
+    //  (z ±9,2) sampai belakang (z ±18,7) - dengan 4° modul teratas lewat di atas baris belakang & menabrak dinding.
     const la = (x: number, nama: string) => ({ ...bendaBaru('speaker', k, { tipeSpeaker: 'linearray', modul: 8 }), x, z: 1.2, rot: 0, gantung: true,
-      elev: 7 - 0.6 - 2.4, tiltLA: 4, sudutModul: 2, nama });
+      elev: 7 - 0.6 - 2.4, tiltLA: 6, sudutModul: 2, nama });
     const tribun = bendaBaru('tribun', k, { baris: 12, kursiBaris: 18, tinggiAnak: 0.3 });
     const podium = { ...bendaBaru('meja', k, { bentukMeja: 'podium' }), x: 11.5, z: 2.6, elev: 0.8, rot: 0 };
     const kam = { ...bendaBaru('kamera', k, { tipeKamera: 'ptz' }), x: 8, z: 19.8, elev: 4.2, rot: 180 };
