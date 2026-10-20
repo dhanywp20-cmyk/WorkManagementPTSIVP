@@ -33,7 +33,7 @@ export function hindariTumpuk(wadah: HTMLElement, m: Mesin) {
     if (r?.width) penting.push(r);
   });
   const tabrak = (r: DOMRect, daftar: DOMRect[]) => daftar.some(a => r.left < a.right + 2 && r.right > a.left - 2 && r.top < a.bottom + 1 && r.bottom > a.top - 1);
-  /** Tampil bila tidak menabrak `ambil` (lalu ikut masuk `ambil`), selain itu disembunyikan sementara. */
+  /** Kotak label yang sudah tampil; label berikutnya (prioritas turun) tidak boleh menabraknya. */
   const terpakai = [...penting];
   [...wadah.querySelectorAll<HTMLElement>('[data-mengalah]')]
     .sort((a, b) => Number(b.dataset.mengalah || 1) - Number(a.dataset.mengalah || 1))
