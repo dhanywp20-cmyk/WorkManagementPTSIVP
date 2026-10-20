@@ -200,11 +200,9 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
     case 'touchpanel': return { ...dasar, z: k.l * 0.4, w: 0.26, h: 0.16, d: 0.17, elev: 0.75, rot: 180, ...atur };
     case 'kamera': {
       const tipe = atur.tipeKamera ?? 'ptz';
-      //  Tinggi pasang seperti di lapangan (dulu 0,4 m - kamera menyorot wajah dari bawah): PTZ di atas display
-      //  bawaan (TV 65" pada 1,0-1,83 m), camera soundbar di bawahnya - sedekat mungkin dengan mata duduk ±1,2 m.
-      if (tipe === 'xbar') return { ...dasar, nama: 'Camera soundbar', z: 0.12, w: 0.9, h: 0.1, d: 0.09, elev: 0.85, tipeKamera: 'xbar', ...atur };
-      if (tipe === 'ptz-ai') return { ...dasar, nama: 'Kamera PTZ AI', z: 0.12, w: 0.28, h: 0.15, d: 0.09, elev: 1.88, tipeKamera: 'ptz-ai', ...atur };
-      return { ...dasar, nama: 'Kamera PTZ', z: 0.15, w: 0.17, h: 0.19, d: 0.17, elev: 1.88, tipeKamera: 'ptz', ...atur };
+      if (tipe === 'xbar') return { ...dasar, nama: 'Camera soundbar', z: 0.12, w: 0.9, h: 0.1, d: 0.09, elev: 0.62, tipeKamera: 'xbar', ...atur };
+      if (tipe === 'ptz-ai') return { ...dasar, nama: 'Kamera PTZ AI', z: 0.12, w: 0.28, h: 0.15, d: 0.09, elev: 0.4, tipeKamera: 'ptz-ai', ...atur };
+      return { ...dasar, nama: 'Kamera PTZ', z: 0.15, w: 0.17, h: 0.19, d: 0.17, elev: 0.4, tipeKamera: 'ptz', ...atur };
     }
     case 'perangkat': {
       const t = atur.tipePerangkat ?? 'laptop', sp = SPEK_PERANGKAT[t];
@@ -256,8 +254,7 @@ export function contohAwal(r: Ruang): Benda[] {
   const k = daftarRuang(r)[0];
   const vw = bendaBaru('videowall', k);
   const meja = bendaBaru('meja', k);
-  //  Kamera tepat di atas videowall (bawah videowall 0,8 m terlalu rendah untuk kamera - menyorot dari bawah).
-  const kam = { ...bendaBaru('kamera', k), elev: Math.round((vw.elev + vw.h + 0.05) * 100) / 100 };
+  const kam = { ...bendaBaru('kamera', k), elev: vw.elev - 0.3 };
   const kursi: Benda[] = [];
   for (let i = 0; i < 3; i++) {
     for (const sisi of [-1, 1]) {

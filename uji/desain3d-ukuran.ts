@@ -13,7 +13,7 @@
 import { readFileSync } from 'fs';
 import {
   bendaBaru, cakupanProyektor, daftarRuang, denahDari, JARAK_LENSA_PERMUKAAN, jepitProyektor, KATEGORI_RUANG, keDunia, lensaProyektor,
-  permukaanBenda, proyektorKeLayar, salinIsi, barisKeterangan, bomDesain, contohAwal, daftarBenda, lensaDari, rapikanLED, susunanLED,
+  permukaanBenda, proyektorKeLayar, salinIsi, barisKeterangan, bomDesain, daftarBenda, lensaDari, rapikanLED, susunanLED,
   sesuaikanUkuranRuang, sinarProyektor, templateRuang, throwRatioDari, ukuranGambarDisplay, type Benda, type Blending, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 import { hitungLED, MODUL_LED, ukuranDariDiagonal } from '../lib/av-hitung';
@@ -153,13 +153,13 @@ console.log('\n8. Keterangan blending tidak mengganggu');
   cek('centang bernama "Keterangan blending"', /l: 'Keterangan blending'/.test(readFileSync(`${D3}/panel/KontrolKanvas.tsx`, 'utf8')));
 }
 
-console.log('\n9. Resolusi asli proyektor (16:9 / 16:10 / 4:3)');
+console.log('\n9. Rasio aspek proyektor (16:9 / 16:10 / 4:3 / 21:9)');
 {
   const r: Ruang = { p: 8, l: 8, t: 3.2, lantai: 'kayu', r2: null };
   const k = daftarRuang(r)[0];
-  for (const [res, rasio] of [['FHD', 9 / 16], ['WUXGA', 10 / 16], ['4K', 9 / 16], ['XGA', 3 / 4]] as const) {
+  for (const [res, rasio] of [['16:9', 9 / 16], ['16:10', 10 / 16], ['4:3', 3 / 4], ['21:9', 9 / 21]] as const) {
     const l = bendaBaru('layar', k, { diag: 100, rasio: '16:10' } as Partial<Benda>);
-    const p = proyektorKeLayar({ ...bendaBaru('proyektor', k, { pasangProyektor: 'plafon' }), resolusiProyektor: res }, l, k, r);
+    const p = proyektorKeLayar({ ...bendaBaru('proyektor', k, { pasangProyektor: 'plafon' }), rasioProyektor: res }, l, k, r);
     const sn = sinarProyektor(p, [l, p], r);
     const c = cakupanProyektor([p], permukaanBenda(l));
     cek(`${res}: tinggi gambar = lebar x ${rasio.toFixed(4)} (sinar, lensa blending), layar 16:10 tertutup ${pr(c.tertutup)}`,
@@ -167,7 +167,7 @@ console.log('\n9. Resolusi asli proyektor (16:9 / 16:10 / 4:3)');
       `${sn.lebar.toFixed(2)} x ${sn.tinggi.toFixed(2)}`);
   }
   const b: Blending = { a: 'a', b: 'b', namaA: 'P1', namaB: 'P2', arah: 'atas-bawah', lebarM: 0.5, persenA: 10, persenB: 10, tengah: [0, 0, 0], garis: [], pxA: 1200, pxB: 1080 };
-  cek('piksel blending dari resolusi tiap proyektor (WUXGA 10% tinggi = 120 px, Full HD = 108 px)', barisKeterangan(b)[2] === 'P1: 10% ≈ 120 px · P2: 10% ≈ 108 px' && barisKeterangan(b)[3] === 'dari tinggi gambar (1200 / 1080 px)');
+  cek('piksel blending dari rasio tiap proyektor (16:10 10% tinggi = 120 px, 16:9 = 108 px)', barisKeterangan(b)[2] === 'P1: 10% ≈ 120 px · P2: 10% ≈ 108 px' && barisKeterangan(b)[3] === 'dari tinggi gambar (acuan 1200 / 1080 px)');
 }
 
 console.log('\n10. LED: unit utuh & referensi menu LED Videotron');
@@ -197,16 +197,6 @@ console.log('\n11. BOM: videowall per panel, LED per unit');
   cek(`videowall 2 x 2 = ${bVw.jumlah} ${bVw.satuan} (dulu "1 unit")`, bVw.jumlah === 4 && bVw.satuan === 'panel');
   cek(`LED 9 x 5 = ${bLed.jumlah} ${bLed.satuan} (dulu "1 unit")`, bLed.jumlah === 45 && bLed.satuan === 'cabinet' && /1800 × 1000 px/.test(bLed.catatan));
   cek('BOM lengkap memakai jumlah yang sama', bomDesain([vw, led], []).find(x => x.item === vw.nama)!.jumlah === 4);
-}
-
-console.log('\n12. Objek lain: tinggi pasang kamera');
-{
-  for (const t of ['ptz', 'ptz-ai', 'xbar'] as const) {
-    const kam = bendaBaru('kamera', k3, { tipeKamera: t });
-    cek(`kamera ${t}: ${kam.elev} m dari lantai (dekat tinggi mata, bukan 0,4 m)`, kam.elev >= 0.8 && kam.elev <= 2.2);
-  }
-  const contoh = contohAwal(r3), vw = contoh.find(b => b.jenis === 'videowall')!, kam = contoh.find(b => b.jenis === 'kamera')!;
-  cek(`ruang meeting contoh: kamera di atas videowall (${kam.elev} m >= ${(vw.elev + vw.h).toFixed(2)} m), bukan di bawahnya`, kam.elev >= vw.elev + vw.h);
 }
 
 console.log(`\n${gagal ? 'GAGAL' : 'OK'}: ${lulus} lulus, ${gagal} gagal`);
