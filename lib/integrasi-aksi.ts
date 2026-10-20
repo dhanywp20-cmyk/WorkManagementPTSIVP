@@ -58,7 +58,9 @@ const KATEGORI_DR = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigu
   'Training', 'Maintenance', 'Standby Event', 'Internal', 'Design Single Line Diagram', 'Research and Development'];
 
 export const AKSI_BACA = ['profil', 'ringkasan', 'tiket_cari', 'tiket_detail', 'jadwal_cari', 'progres_project',
-  'checklist_detail', 'daily_report', 'daily_report_tim'] as const;
+  'checklist_detail', 'daily_report', 'daily_report_tim', 'desain_cari'] as const;
+/** Status Request Design Project (project_requests.status) - sama dengan form-require-project. */
+const STATUS_DESAIN = ['pending', 'approved', 'in_progress', 'completed', 'rejected'];
 export const AKSI_TULIS = ['tiket_aktivitas', 'tiket_selesai', 'jadwal_buat', 'jadwal_status', 'jadwal_selesai',
   'daily_report_tambah', 'checklist_simpan'] as const;
 
@@ -111,6 +113,7 @@ export async function jalankanAksi(nama: string, a: Record<string, unknown>, k: 
     case 'checklist_detail': return checklistDetail(a, k);
     case 'daily_report': return dailyReport(a, k);
     case 'daily_report_tim': return dailyReportTim(a, k);
+    case 'desain_cari': return desainCari(a, k);
     case 'tiket_aktivitas': return tiketAktivitas(a, k);
     case 'tiket_selesai': return tiketAktivitas({ ...a, status: 'Solved' }, k);
     case 'jadwal_status': return jadwalStatus(a, k);
@@ -268,6 +271,33 @@ async function dailyReportTim(a: Record<string, unknown>, { db, u }: KonteksAksi
   return { ok: true, tanggal: tgl,
     sudah: daftar.filter(t => sudah.has(t.id)).map(t => t.full_name),
     belum: daftar.filter(t => !sudah.has(t.id)).map(t => `${t.full_name}${t.jabatan ? ` (${t.jabatan})` : ''}`) };
+}
+
+/**
+ * Request Design Project (halaman form-require-project, tabel project_requests). RLS
+ * (boleh_lihat_baris) membatasi baris persis seperti di layar; aturan tampilan halaman
+ * untuk Team PTS biasa ikut diterapkan: hanya request yang sudah di-assign (atau
+ * di-route ke dia sebagai Supervisor). aktif = belum completed/rejected.
+ */
+async function desainCari(a: Record<string, unknown>, { db, u }: KonteksAksi): Promise<HasilAksi> {
+  let q = db.from('project_requests')
+    .select('id, project_name, room_name, project_location, sales_name, sales_division, requester_name, status, '
+      + 'routing_status, assign_name, assigned_supervisor_id, due_date, created_at, approved_at, rejection_reason, brand')
+    .order('created_at', { ascending: false }).limit(BARIS);
+  const st = String(a.status ?? '').trim().toLowerCase().replace(/\s+/g, '_');
+  if (STATUS_DESAIN.includes(st)) q = q.eq('status', st);
+  else if (a.aktif) q = q.not('status', 'in', '("completed","rejected")');
+  if (a.saya) q = q.eq('assign_name', u.full_name ?? '');
+  const k = bersih(a.kata);
+  if (k) q = q.or(`project_name.ilike.%${k}%,room_name.ilike.%${k}%,sales_name.ilike.%${k}%,project_location.ilike.%${k}%`);
+  const { data, error } = await q;
+  if (error) return gagal(error.message);
+  let baris = (data ?? []) as { assign_name: string | null; assigned_supervisor_id: string | null }[];
+  const role = (u.role ?? '').toLowerCase();
+  if ((role === 'team_pts' || role === 'team') && u.jabatan !== 'Manager') {
+    baris = baris.filter(r => !!r.assign_name || r.assigned_supervisor_id === u.id);
+  }
+  return { ok: true, jumlah: baris.length, request: baris };
 }
 
 // ---------------------------------------------------------------- tulis
