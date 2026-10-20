@@ -38,7 +38,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id">
+    // suppressHydrationWarning: lib/merek.ts menulis warna merek (--merek-utama dkk.) ke style <html> SEBELUM
+    // React selesai hidrasi - sengaja, supaya warna bawaan tidak sempat berkedip. Atribut itu memang beda dari
+    // HTML server; tanpa ini setiap halaman memunculkan galat hidrasi palsu. Hanya berlaku untuk atribut <html>
+    // ini sendiri, bukan isinya.
+    <html lang="id" suppressHydrationWarning>
       <body className="antialiased">
         <PwaBootstrap />
         <PenjagaGalatTulis />
