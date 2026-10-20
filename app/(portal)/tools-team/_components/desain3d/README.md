@@ -75,15 +75,15 @@ satu baris di tabel (TypeScript menolak bila ada jenis yang terlewat).
 | `useKamera.ts` + `kamera.ts` | arah pandang, pas ruangan, zoom, putar, fokus benda / kursi |
 | `useAdegan.ts` | efek: ruangan, benda (bangun ulang hanya yang berubah), gizmo, cahaya |
 | `alatBantu.ts` | label ukuran & produk, kerucut pandang, jangkauan speaker, kabel |
-| `sinar.ts` | sinar proyektor: grid raycast ke bidang, tepi bayangan benda dipecah halus, nama di proyektor |
+| `sinar.ts` | sinar proyektor: grid raycast ke bidang (diangkat tegak lurus permukaan, sisi depan menghadap lensa - tidak tembus ke balik layar / dinding yang disembunyikan), sel tepi & pojok dipecah halus sampai tepat di batasnya, nama di proyektor |
 | `cahayaBenda.ts` | cahaya proyektor di benda per titik permukaan (masuk bingkai, menghadap lensa, tidak terhalang) |
 | `teksCahaya.ts` | tulisan hitam kecil tercetak di cahaya: nama, jarak lensa → bidang, ukuran gambar, lux pusat & pojok |
 | `bayangan.ts` | bayangan lembut & pendar cahaya layar |
-| `blending.ts` | zona ungu area blending (raycast keterhalangan) |
+| `blending.ts` | zona ungu area blending: segitiga yang tersinari dipotong bingkai lawan & sudut datang kedua lensa, raycast keterhalangan |
 | `ukurBlending.ts` | garis ukur berpanah + kaki ukur, angka cm, garis penunjuk & kartu keterangan blending |
 | `garisUkurDisplay.ts` | garis ukuran display merah (lebar & tinggi, mm) |
 | `gambarKabel.ts` | jalur kabel sebagai tabung berwarna (InstancedMesh per warna) |
-| `label.ts` | label CSS2D: anti-tumpuk & gambar ke foto |
+| `label.ts` | label CSS2D: anti-tumpuk, gambar ke foto, "Sembunyikan teks" (tombol Teks di kanvas) |
 | `tipe.ts` | tipe `Mesin`, arah kamera standar |
 
 ## Alur data

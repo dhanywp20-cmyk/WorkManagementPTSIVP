@@ -34,7 +34,17 @@ export function hindariTumpuk(wadah: HTMLElement, m: Mesin) {
   tataLabelProduk(m, wadah, mengalah.map((r): KotakLayar => ({ l: r.left, t: r.top, r: r.right, b: r.bottom })));
 }
 
+/**
+ * "Sembunyikan teks": seluruh lapisan label CSS2D disembunyikan lewat display (bukan visibility - itu ditimpa per
+ * label oleh hindariTumpuk). Foto / cetak ikut bersih (gambarLabel).
+ */
+export function aturTeksTersembunyi(m: Mesin, sembunyi: boolean) {
+  m.labelRenderer.domElement.style.display = sembunyi ? 'none' : '';
+}
+const teksTersembunyi = (m: Mesin) => m.labelRenderer.domElement.style.display === 'none';
+
 export function gambarLabel(m: Mesin, g: CanvasRenderingContext2D, w: number, h: number) {
+  if (teksTersembunyi(m)) return;
   //  Sedikit lebih besar dari di layar supaya tetap terbaca saat gambar diperkecil / dicetak.
   const skala = (w / Math.max(1, m.renderer.domElement.clientWidth || w)) * 1.35;
   const v = new m.THREE.Vector3();
