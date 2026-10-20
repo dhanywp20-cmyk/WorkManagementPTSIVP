@@ -14,7 +14,7 @@ const tgl = (s: string | null) => s ? new Date(s).toLocaleString('id-ID', { day:
 export function ProfilIntegrasi() {
   const [daftar, setDaftar] = useState<Token[] | null>(null);
   const [buka, setBuka] = useState(false);
-  const [tulis, setTulis] = useState(true);
+  const [tulis, setTulis] = useState(false);
   const [baru, setBaru] = useState<string | null>(null);
   const [galat, setGalat] = useState('');
   const [sibuk, setSibuk] = useState(false);
@@ -107,7 +107,8 @@ export function ProfilIntegrasi() {
         <div className="rounded-xl border border-slate-200 p-3 space-y-2 text-sm">
           <label className="flex items-start gap-2">
             <input type="checkbox" checked={tulis} onChange={e => setTulis(e.target.checked)} className="mt-1" />
-            <span>Izinkan mengubah data: catatan & status tiket, daily report, centang checklist project.
+            <span>Izinkan mengubah data: catatan & status tiket (termasuk menutup tiket jadi Solved), daily report,
+              centang checklist project, membuat jadwal, dan mengubah status jadwal (Completed ikut mengirim WA ke tamu & Sales).
               <span className="block text-xs text-slate-500">Tanpa ini DIWAYPI hanya bisa membaca. Semua aksi tercatat di audit trail.</span></span>
           </label>
           {galat && <p className="text-rose-600 text-xs">{galat}</p>}

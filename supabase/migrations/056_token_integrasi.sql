@@ -6,7 +6,8 @@
 --
 -- Yang disimpan hanya hash SHA-256; token penuh ditampilkan SEKALI saat dibuat. Empat huruf
 -- terakhir disimpan sebagai penanda supaya pemilik bisa mengenali token mana yang ia cabut.
--- cakupan: 'baca' (selalu) + opsional 'tulis' (catatan/status tiket, daily report, checklist).
+-- cakupan: 'baca' (selalu) + opsional 'tulis' (catatan/status tiket termasuk Solved, daily report,
+-- checklist, buat jadwal, ubah status jadwal). Token dicabut otomatis saat password diganti/di-reset.
 --
 -- Tanpa kebijakan RLS & tanpa grant: hanya route server (service role) yang membaca/menulis -
 -- /api/integrasi/token (kelola token, sesi cookie) dan /api/integrasi/diwaypi (pakai token).

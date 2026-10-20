@@ -72,3 +72,15 @@ export function namaSah(v: unknown): string | null {
   const s = String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 60);
   return s || null;
 }
+
+/**
+ * Cabut semua token integrasi milik satu akun. Dipanggil bersama penghapusan sesi saat password
+ * diganti / di-reset: kalau akun dicurigai dibobol, token yang sempat dibuat pembobol harus ikut
+ * mati - token tidak punya masa berlaku, jadi tanpa ini ia hidup terus. Gagal = dicatat, tidak
+ * membatalkan penggantian password yang sudah tersimpan.
+ */
+export async function cabutSemuaToken(db: SupabaseClient, userId: string): Promise<void> {
+  const { error } = await db.from('token_integrasi').update({ dicabut: new Date().toISOString() })
+    .eq('user_id', userId).is('dicabut', null);
+  if (error) console.error('cabutSemuaToken: gagal mencabut token integrasi', error.message);
+}
