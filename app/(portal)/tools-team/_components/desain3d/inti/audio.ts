@@ -2,7 +2,6 @@
  * desain3d/inti/audio.ts - Speaker: tipe, sudut sebaran, jangkauan, line array, cakupan speaker plafon.
  * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
  */
-import { tinggiAlasDi } from './katalog';
 import { barisTribun } from './produk';
 import type { Benda, TipeSpeaker, Titik } from './tipe';
 
@@ -21,16 +20,17 @@ export const sebaranVSpeaker = (b: Benda) => Math.min(180, Math.max(4, b.sebaran
 /** Jangkauan suara yang digambar (m); bawaan per tipe bila tidak diisi. */
 export const jangkauanDari = (b: Benda) => Math.min(60, Math.max(0.5, b.jangkauan ?? ({ kotak: 8, dinding6: 10, kolom: 25, linearray: 40 } as const)[tipeSpeakerDari(b)]));
 /**
- * Tinggi lantai tempat penonton di (x, z): baris tribun (tiap baris naik setinggi anak tangganya), panggung /
- * alas di bawahnya, selain itu lantai ruang (0).
+ * Tinggi lantai tempat penonton berdiri / duduk di (x, z): baris tribun (tiap baris naik setinggi anak tangganya)
+ * atau panggung, selain itu lantai ruang (0). Meja & objek tidak dihitung - penonton duduk di sampingnya.
  */
 export function lantaiPenontonDi(benda: Benda[], x: number, z: number): number {
-  let tinggi = tinggiAlasDi(benda, x, z);
+  let tinggi = 0;
   for (const t of benda) {
-    if (t.jenis !== 'tribun') continue;
+    if (t.jenis !== 'tribun' && t.jenis !== 'panggung') continue;
     const r = (t.rot * Math.PI) / 180, dx = x - t.x, dz = z - t.z;
     const lx = dx * Math.cos(r) - dz * Math.sin(r), lz = dx * Math.sin(r) + dz * Math.cos(r);
     if (Math.abs(lx) > t.w / 2 || Math.abs(lz) > t.d / 2) continue;
+    if (t.jenis === 'panggung') { tinggi = Math.max(tinggi, t.elev + t.h); continue; }
     //  Rumus yang sama dengan kursiTribun: baris 0 di depan (lz = +d/2), riser = (h - 0,95) / (n - 1).
     const n = barisTribun(t), riser = n > 1 ? Math.max(0, (t.h - 0.95) / (n - 1)) : 0;
     const i = Math.min(n - 1, Math.max(0, Math.floor((t.d / 2 - lz) / (t.d / n))));
@@ -46,10 +46,12 @@ export function lantaiPenontonDi(benda: Benda[], x: number, z: number): number {
  */
 export function telingaPenonton(benda: Benda[], b: Benda): (x: number, z: number) => number {
   const r = (b.rot * Math.PI) / 180, kx = -Math.cos(r), kz = Math.sin(r), tanH = Math.tan(((Math.min(170, sebaranSpeaker(b)) / 2) * Math.PI) / 180);
+  //  Hanya benda yang bisa jadi lantai penonton - fungsi ini dipanggil ribuan kali per gambar (tiap langkah sumbu).
+  const alas = benda.filter(x => x.jenis === 'tribun' || x.jenis === 'panggung');
   return (x, z) => {
     const lebar = Math.hypot(x - b.x, z - b.z) * tanH;
     let t = 0;
-    for (let s = -1; s <= 1.0001; s += 0.125) t = Math.max(t, lantaiPenontonDi(benda, x + kx * lebar * s, z + kz * lebar * s));
+    if (alas.length) for (let s = -1; s <= 1.0001; s += 0.125) t = Math.max(t, lantaiPenontonDi(alas, x + kx * lebar * s, z + kz * lebar * s));
     return t + TINGGI_DENGAR;
   };
 }
