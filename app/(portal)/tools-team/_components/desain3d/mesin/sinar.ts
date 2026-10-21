@@ -337,14 +337,18 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const keLensa = (P: T.Vector3) => O.clone().sub(P).normalize();
     const pita: number[] = [], kerucut: number[] = [], alfa: number[] = [];
     //  Sinar nyata: tanpa kerucut berwarna & pita tepi (di udara cahaya proyektor tidak terlihat tanpa asap) - cukup
-    //  4 garis frustum tipis dari lensa ke pojok gambar sebagai alat bantu rancangan.
+    //  4 rusuk frustum tipis dari lensa ke pojok gambar sebagai alat bantu rancangan. Rusuk = dua irisan segitiga
+    //  bersilang (mesh kerucut di bawah), bukan garis 1 px.
     if (nyata) {
       const pojokG = [rinci[0], rinci[NX - 1], rinci[NX * NY - 1], rinci[(NY - 1) * NX]].filter((x): x is Kena => !!x);
-      const garisF: number[] = [];
-      for (const q of pojokG) garisF.push(ujung.x, ujung.y, ujung.z, q.p.x, q.p.y, q.p.z);
-      if (garisF.length) {
-        const gf = new THREE.BufferGeometry(); gf.setAttribute('position', new THREE.Float32BufferAttribute(garisF, 3));
-        grupBantu.add(new THREE.LineSegments(gf, new THREE.LineBasicMaterial({ ...cahaya, color: warnaTepi, opacity: 0.55 })));
+      for (const q of pojokG) {
+        const r = q.p.clone().sub(ujung).normalize();
+        const s1 = new THREE.Vector3().crossVectors(r, Math.abs(r.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0)).normalize().multiplyScalar(lebarGaris / 2);
+        const s2 = new THREE.Vector3().crossVectors(r, s1).normalize().multiplyScalar(lebarGaris / 2);
+        for (const s of [s1, s2]) {
+          kerucut.push(ujung.x, ujung.y, ujung.z, q.p.x - s.x, q.p.y - s.y, q.p.z - s.z, q.p.x + s.x, q.p.y + s.y, q.p.z + s.z);
+          for (let k = 0; k < 3; k++) alfa.push(warnaTepi.r, warnaTepi.g, warnaTepi.b, 0.55);
+        }
       }
     }
     for (let i = 0; i < tepi.length && !nyata; i++) {
