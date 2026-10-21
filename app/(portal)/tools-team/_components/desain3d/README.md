@@ -33,7 +33,7 @@ Arah ketergantungan **satu arah**: `panel → (aksi, simpan, ekspor, mesin) → 
 | `katalog.ts` | katalog "Tambah", `bendaBaru`, set ruang kelas, `tandaBentuk`, `tinggiAlasDi` |
 | `cahaya.ts` | lampu, lux langsung + pantul, cahaya siang, kontras proyektor |
 | `audio.ts` | speaker, line array, cakupan speaker plafon |
-| `proyektor.ts` | lensa (throw ratio, zoom, lens shift), arah, sinar ke layar |
+| `proyektor.ts` | lensa (throw ratio, zoom, koreksi jarak L = TR × W − b, batas lens shift, rasio 16:9/16:10/17:9/4:3/21:9), arah, sinar ke layar, luminance (lux × gain / π) - setara kalkulator Panasonic TDC (uji/proyektor-panasonic.ts) |
 | `blending.ts` | area blending antar proyektor: lebar (cm) menyusuri permukaan & persen gambar |
 | `kabel.ts` | jalur & panjang kabel ke rack, **legend warna standar** |
 | `rak.ts` | isi rack (elevation) |

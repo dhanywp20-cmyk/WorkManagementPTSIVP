@@ -16,7 +16,7 @@
  *   - Area blending: mesin/blending.ts.
  */
 import { f } from '../../bersama/ui';
-import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, keGambar, lensaDari, type Lensa, lumenDari, offsetLensaDari, permukaanUtama, rasioGambarProyektor, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
+import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, keGambar, koreksiJarakDari, lensaDari, type Lensa, lumenDari, offsetLensaDari, permukaanUtama, rasioGambarProyektor, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { type DataBlend, gambarBlending } from './blending';
@@ -126,7 +126,10 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const bendaTersinari = new Set<string>();
   daftarProj.forEach((p, idx) => {
     const sn = sinarProyektor(p, benda, ruang);
-    const O = new THREE.Vector3(...sn.asal);
+    //  O = puncak kerucut sinar (ujung lensa mundur sejauh koreksi jarak b, inti/blending.ts lensaDari) - semua sinar,
+    //  jarak untuk lux & ukuran gambar dari sini. Kerucut & kilau tetap digambar dari ujung lensa (`ujung`).
+    const kj = koreksiJarakDari(p);
+    const O = new THREE.Vector3(...lensaDari(p).O), ujung = new THREE.Vector3(...sn.asal);
     const sendiri = m.cache.get(p.id)?.obj;
     const sasaran = [...m.grupRuang.children, ...m.grupBenda.children.filter(o => o !== sendiri && !o.userData.sorot)];
     const r = (p.rot * Math.PI) / 180;
@@ -334,7 +337,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
         const a0 = A.p.clone().sub(s), a1 = A.p.clone().add(s), b0 = B.p.clone().sub(s), b1 = B.p.clone().add(s);
         for (const v of [a0, b0, b1, a0, b1, a1]) pita.push(v.x, v.y, v.z);
       }
-      kerucut.push(O.x, O.y, O.z, A.p.x, A.p.y, A.p.z, B.p.x, B.p.y, B.p.z);
+      kerucut.push(ujung.x, ujung.y, ujung.z, A.p.x, A.p.y, A.p.z, B.p.x, B.p.y, B.p.z);
       //  Kerucut: pekat di lensa (warna tepi), memudar ke bidang (warna sinar).
       alfa.push(warnaTepi.r, warnaTepi.g, warnaTepi.b, 0.45 * redam, warna.r, warna.g, warna.b, 0.08 * redam, warna.r, warna.g, warna.b, 0.08 * redam);
     }
@@ -350,7 +353,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       kerucutSinar.renderOrder = 2; grupBantu.add(kerucutSinar);
     }
     const kilau = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 8), new THREE.MeshBasicMaterial({ ...cahaya, color: 0xfffbeb, blending: THREE.AdditiveBlending, opacity: 0.95 }));
-    kilau.position.copy(O); grupBantu.add(kilau);
+    kilau.position.copy(ujung); grupBantu.add(kilau);
     //  Grid tulisan: sinar yang hanya mengenai bidang sasaran (BIDANG_TEKS) - tulisan utuh walau ada benda
     //  di depan lensa. Saklar "Keterangan sinar"; saat menyeret tanpa tulisan (tekstur tidak dibuat ulang tiap frame).
     const tulis = teksSinar && !kasar;
@@ -367,7 +370,8 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       }
       tengah = kt[Math.floor(NY / 2) * NX + Math.floor(NX / 2)] ?? tengah;
     }
-    const jarakSumbu = sn.layar ? sn.jarak : tengah ? tengah.distanceTo(O) : sn.jarak;
+    //  Jarak sepanjang sumbu dari PUNCAK sinar (ukuran gambar = jarak x w1); yang ditulis = dari ujung lensa (- b).
+    const jarakSumbu = sn.layar ? sn.jarak + kj : tengah ? tengah.distanceTo(O) : sn.jarak + kj;
     //  Lux di titik gambar (u, v): fluks lensa merata di bidang tegak lurus sumbu -> E = lumen/(w1·h1) ·
     //  cos(sudut datang) / (cos³(sudut ke sumbu) · jarak²). Di pusat bidang tegak = lumen / luas gambar.
     const E0 = lumenDari(p) / (w1 * h1);
@@ -379,7 +383,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     };
     bidangGambar.push({ p, L: lensaDari(p), pos, uv, warnaTitik, warna, tepi: warnaTepi, lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, permukaan: sn.layar ? null : namaPermukaan(kenaId), opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
       teks: tulis ? {
-        info: [p.nama, `Jarak lensa → bidang ${f(jarakSumbu)} m`, `Ukuran gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`,
+        info: [p.nama, `Jarak lensa → bidang ${f(jarakSumbu - kj)} m`, `Ukuran gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`,
           `Pusat ${f(luxDi(0, 0) ?? E0 / (jarakSumbu * jarakSumbu), 0)} lx`],
         //  Kiri atas, kanan atas, kiri bawah, kanan bawah (sedikit ke dalam dari tepi gambar).
         lux: [luxDi(-0.48, 0.47), luxDi(0.48, 0.47), luxDi(-0.48, -0.47), luxDi(0.48, -0.47)],

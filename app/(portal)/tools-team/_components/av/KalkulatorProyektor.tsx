@@ -29,6 +29,8 @@ export function KalkulatorProyektor() {
   const [rasioK, setRasioK] = useState('16:10');
   const [throwMin, setThrowMin] = useState(1.39);
   const [throwMax, setThrowMax] = useState(2.09);
+  /** Koreksi jarak b rumus lensa L = TR x lebar - b (datasheet / kalkulator pabrikan); 0 = L = TR x lebar. */
+  const [koreksi, setKoreksi] = useState(0);
   const [lux, setLux] = useState(300);
   const [gain, setGain] = useState(1);
   const [kontras, setKontras] = useState<KategoriKontras>('dasar');
@@ -39,7 +41,7 @@ export function KalkulatorProyektor() {
   /** Model dari Pustaka (opsional): lumennya dibandingkan dengan kebutuhan. */
   const [model, setModel] = useState<{ nama: string; lumen: number } | null>(null);
   const pakaiModel = (e: EntriPustaka) => {
-    setThrowMin(angkaDari(e, 'throwMin', throwMin)); setThrowMax(angkaDari(e, 'throwMaks', throwMax));
+    setThrowMin(angkaDari(e, 'throwMin', throwMin)); setThrowMax(angkaDari(e, 'throwMaks', throwMax)); setKoreksi(angkaDari(e, 'koreksiJarak', 0));
     setShiftAtas(angkaDari(e, 'shiftAtas', 0)); setShiftBawah(angkaDari(e, 'shiftBawah', 0));
     const s = teksDari(e, 'sumber'); if (s === 'laser' || s === 'lampu' || s === 'led') setSumber(s);
     setModel({ nama: e.nama, lumen: angkaDari(e, 'lumen') });
@@ -52,18 +54,18 @@ export function KalkulatorProyektor() {
   const sus = SUMBER.find(s => s.v === sumber)!;
   const perlu = lumenUntukKontras(luas, lux, kat.rasio, gain);
   const spek = lumenSpesifikasi(perlu, sus.susut);
-  const lempar = rentangJarakLempar(lebar, throwMin, throwMax);
+  const lempar = rentangJarakLempar(lebar, throwMin, throwMax, koreksi);
   const lensa = rentangTinggiLensa(bawah, tinggi, shiftAtas, shiftBawah);
   const nadaLumen = spek > 20000 ? 'buruk' : spek > 10000 ? 'awas' : 'baik';
   const ringkas = () => [
     `*Proyektor - gambar ${f(lebar)} × ${f(tinggi)} m (${rasioK}, ±${f(diag, 0)}")*`,
-    `Jarak lensa ke layar ${f(lempar.dekatM)}-${f(lempar.jauhM)} m (throw ${throwMin}-${throwMax})`,
+    `Jarak lensa ke layar ${f(lempar.dekatM)}-${f(lempar.jauhM)} m (throw ${throwMin}-${throwMax}${koreksi ? `, L = TR × lebar − ${f(koreksi, 3)}` : ''})`,
     `Tinggi pusat lensa tanpa keystone: ${f(lensa.terendahM)}-${f(lensa.tertinggiM)} m (shift +${shiftAtas}% / −${shiftBawah}%)`,
     `Kontras ${kat.rasio}:1 (${kat.l}) di ${lux} lux: perlu ±${f(perlu, 0)} lm, spesifikasi ${sus.v} ±${f(spek, 0)} lm`,
     ...(model ? [`Model ${model.nama}: ${f(model.lumen, 0)} lm - ${model.lumen >= spek ? 'cukup' : model.lumen >= perlu ? 'cukup saat baru' : 'kurang'}`] : []),
   ].join('\n');
   const lembar = () => lembarAV('Proyektor',
-    [['Lebar gambar', `${f(lebar)} m (${rasioK})`], ['Throw ratio', `${throwMin} – ${throwMax}`], ['Tepi bawah gambar', `${f(bawah)} m`], ['Lens shift', `+${shiftAtas}% / −${shiftBawah}%`],
+    [['Lebar gambar', `${f(lebar)} m (${rasioK})`], ['Throw ratio', `${throwMin} – ${throwMax}${koreksi ? ` (koreksi b ${f(koreksi, 3)} m)` : ''}`], ['Tepi bawah gambar', `${f(bawah)} m`], ['Lens shift', `+${shiftAtas}% / −${shiftBawah}%`],
       ['Cahaya di layar', `±${lux} lux`], ['Gain layar', f(gain)], ['Kategori kontras', `${kat.l} (${kat.rasio}:1)`], ['Sumber cahaya', sus.l]],
     [['Ukuran gambar', `${f(lebar)} × ${f(tinggi)} m (±${f(diag, 0)}")`], ['Jarak lempar', `${f(lempar.dekatM)} – ${f(lempar.jauhM)} m`, true],
       ['Tinggi pusat lensa', `${f(lensa.terendahM)} – ${f(lensa.tertinggiM)} m`, true], ['Lumen perlu', `±${f(perlu, 0)} lm`], ['Lumen spesifikasi', `±${f(spek, 0)} lm`, true]],
@@ -79,6 +81,7 @@ export function KalkulatorProyektor() {
               <Pilih label="Rasio" nilai={rasioK} onUbah={setRasioK} opsi={RASIO.map(x => ({ v: x.v, l: x.l }))} />
               <Angka label="Throw ratio min" nilai={throwMin} onUbah={v => v > 0 && setThrowMin(v)} />
               <Angka label="Throw ratio maks" nilai={throwMax} onUbah={v => v > 0 && setThrowMax(v)} />
+              <Angka label="Koreksi jarak b" nilai={koreksi} min={-1} step={0.001} onUbah={v => v >= -1 && v <= 1 && setKoreksi(v)} satuan="m" bantuan="L = TR × lebar − b" />
               <Angka label="Tepi bawah gambar" nilai={bawah} onUbah={v => v >= 0 && setBawah(v)} satuan="m" />
               <Angka label="Gain layar" nilai={gain} onUbah={v => v > 0 && setGain(v)} bantuan="matte putih 1,0" />
               <Angka label="Lens shift atas" nilai={shiftAtas} onUbah={v => v >= 0 && setShiftAtas(v)} satuan="%" />

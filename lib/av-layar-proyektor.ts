@@ -103,8 +103,9 @@ export function lumenSpesifikasi(lumenPerlu: number, susutPersen: number): numbe
 }
 
 /** Rentang jarak lensa ke layar untuk lebar gambar tertentu (lensa zoom: throw ratio min..maks). */
-export function rentangJarakLempar(lebarGambarM: number, trMin: number, trMaks: number) {
-  return { dekatM: lebarGambarM * Math.min(trMin, trMaks), jauhM: lebarGambarM * Math.max(trMin, trMaks) };
+export function rentangJarakLempar(lebarGambarM: number, trMin: number, trMaks: number, koreksiM = 0) {
+  //  Rumus lensa datasheet L = TR x lebar - b (mis. Panasonic ET-D3QW200: L = 0,566 x SW - 0,082); b = 0 -> L = TR x lebar.
+  return { dekatM: lebarGambarM * Math.min(trMin, trMaks) - koreksiM, jauhM: lebarGambarM * Math.max(trMin, trMaks) - koreksiM };
 }
 
 /**

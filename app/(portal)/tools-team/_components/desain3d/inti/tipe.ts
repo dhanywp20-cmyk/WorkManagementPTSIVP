@@ -36,7 +36,7 @@ export type TipeKursi = 'kantor' | 'kelas';
 export type TipeKamera = 'ptz' | 'ptz-ai' | 'xbar';
 export type PasangProyektor = 'plafon' | 'meja';
 /** Rasio aspek gambar proyektor (panel aslinya) - yang umum saja. */
-export type RasioProyektor = '16:9' | '16:10' | '4:3' | '21:9';
+export type RasioProyektor = '16:9' | '16:10' | '17:9' | '4:3' | '21:9';
 /** Speaker: kotak dinding (lama), dinding 6" membulat + bracket putar, portable aktif (kolom + subwoofer), line array. */
 export type TipeSpeaker = 'kotak' | 'dinding6' | 'kolom' | 'linearray';
 export type ModelVW = '55BDL2105X' | '49BDL2105X' | 'custom';
@@ -81,6 +81,13 @@ export interface Benda {
   /** Proyektor: lens shift horizontal (pecahan lebar gambar, + = ke kanan dilihat dari proyektor) */ geserLensaH?: number;
   /** Proyektor: warna sinar di kanvas (#rrggbb) - tanpa = otomatis (inti/proyektor.ts warnaSinarProyektor). */ warnaSinar?: string;
   /** Proyektor: kecerahan (ANSI lumen) */ lumen?: number;
+  /**
+   * Proyektor: koreksi jarak lempar b (m) dari rumus datasheet lensa L = TR x lebar gambar - b (mis. Panasonic
+   * ET-D3QW200: L = 0,566 x SW - 0,082). Puncak kerucut sinar berada b di belakang ujung lensa. Bawaan 0.
+   */ koreksiJarak?: number;
+  /** Proyektor: batas lens shift lensa (pecahan tinggi / lebar gambar, datasheet) - atas, bawah, kiri-kanan. Kosong = tidak dibatasi. */
+  shiftAtasMaks?: number; shiftBawahMaks?: number; shiftHMaks?: number;
+  /** Layar / bidang mapping: gain kain layar (bawaan 1,0) - luminance gambar = lux x gain / π. */ gainLayar?: number;
   /** Proyektor, mode Grid sinar (inti/gridProyektor.ts): jumlah kolom grid & warna garisnya (kosong = warna sinar). */
   gridKolom?: number; warnaGrid?: string;
   /** Proyektor: tampilkan cahaya hanya di layar / bidang mapping (masking di media server); sisanya tidak digambar. */

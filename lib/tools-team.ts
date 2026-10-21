@@ -273,6 +273,7 @@ const ENUM_PRODUK: Record<string, readonly string[]> = {
   tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati', 'cctv', 'dashboard', 'campuran', 'desktop'], tipeRak: ['kaca', 'tertutup', 'open'], tipeLampu: ['downlight', 'spot', 'panel', 'linear', 'gantung'],
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
   tipePerangkat: ['pc', 'laptop', 'dongle', 'hp', 'tablet'],
+  rasioProyektor: ['16:9', '16:10', '17:9', '4:3', '21:9'],
 };
 /** Angka yang boleh ada di template beserta batasnya. */
 const ANGKA_PRODUK: Record<string, [number, number]> = {
@@ -280,7 +281,8 @@ const ANGKA_PRODUK: Record<string, [number, number]> = {
   kol: [1, 30], bar: [1, 30], rakU: [1, 80], throwRatio: [0.1, 10], tilt: [-90, 45], trMin: [0.1, 10], trMax: [0.1, 10],
   baris: [1, 60], kursiBaris: [1, 80], tinggiAnak: [0.1, 1], jariBidang: [0.2, 50], busur: [10, 360], jangkauan: [0.5, 60], sebaran: [10, 180], sebaranV: [4, 180],
   modul: [1, 24], sudutModul: [0, 15], tiltLA: [-30, 60],
-  offsetLensa: [-0.5, 1.5], geserLensaH: [-0.6, 0.6], lumen: [0, 100000], monitorMeja: [0, 12], sudutLampu: [10, 160], dimmer: [0, 100], kelvin: [2000, 7000], gantungLampu: [0, 3],
+  offsetLensa: [-0.5, 1.5], geserLensaH: [-0.6, 0.6], lumen: [0, 100000], monitorMeja: [0, 12],
+  koreksiJarak: [-1, 1], shiftAtasMaks: [0, 1.5], shiftBawahMaks: [0, 1.5], shiftHMaks: [0, 1], gainLayar: [0.1, 5], sudutLampu: [10, 160], dimmer: [0, 100], kelvin: [2000, 7000], gantungLampu: [0, 3],
 };
 const ANGKA_PANEL: Record<string, [number, number]> = {
   w: [0.05, 5], h: [0.05, 5], d: [0.001, 1], bezelMm: [0, 100], resX: [1, 16000], resY: [1, 16000], wTipikal: [0, 5000], wMaks: [0, 5000],

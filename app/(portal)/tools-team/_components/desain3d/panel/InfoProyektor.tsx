@@ -1,6 +1,6 @@
 'use client';
 /** Panel proyektor (Atur benda): jarak lempar, ukuran gambar, tombol mengepaskan ke layar, kontras vs lampu. */
-import { type Benda, cakupanProyektor, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, LUX_PRESET, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
+import { type Benda, cakupanProyektor, jarakUntukLebar, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, LUX_PRESET, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
 import { f, Catatan } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 
@@ -95,7 +95,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
   ) : null;
   /** Panel proyektor: jarak lempar, ukuran gambar, & tombol mengepaskan ke layar. */
   /** Kontras gambar proyektor terhadap lampu ruangan + saran lumen / dimmer. */
-  const blokKontras = (p: Benda, kePermukaan: boolean) => {
+  const blokKontras = (p: Benda, kePermukaan: boolean, layar: Benda | null = null) => {
     const kp = kontrasProyektor(p, benda, ruang, targetKontras);
     const warna = kp.cukup ? 'text-emerald-700' : kp.kontras >= targetKontras * 0.6 ? 'text-amber-700' : 'text-rose-700';
     //  Dimmer semua lampu agar target tercapai (lux lampu ~ sebanding dengan dimmer).
@@ -110,11 +110,22 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           className="block w-full min-w-0 rounded-md border border-slate-200 bg-white px-1.5 py-1 text-[11.5px] text-slate-800">
           {TARGET_KONTRAS.map(t => <option key={t.v} value={t.v}>Target {t.l} · {t.ket}</option>)}
         </select>
-        <div className="grid grid-cols-3 gap-1.5 text-center">
-          <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Gambar</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luxGambar, 0)} lux</p></div>
+        {/*  Sama dengan kalkulator pabrikan (Panasonic TDC): iluminansi, luminance (lux x gain / π) & kontras di pusat gambar. */}
+        <div className="grid grid-cols-2 gap-1.5 text-center">
+          <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Gambar (iluminansi)</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luxGambar, 0)} lux</p></div>
+          <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Luminance · gain {f(kp.gain, 2)}</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.luminance, 0)} cd/m²</p></div>
           <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Lampu di {kePermukaan ? 'permukaan' : 'layar'}</Catatan><p className="text-[13px] font-extrabold text-slate-900 tabular-nums">{f(kp.cahaya.total, 0)} lux</p></div>
           <div className="rounded-md bg-slate-50 px-1 py-1"><Catatan>Kontras</Catatan><p className={`text-[13px] font-extrabold tabular-nums ${warna}`}>{f(kp.kontras, 1)} : 1</p></div>
         </div>
+        {layar && (
+          <label className="flex items-center gap-2 text-[11.5px] text-slate-700">
+            Gain layar {layar.nama}
+            <input type="number" min={0.1} max={5} step={0.05} value={layar.gainLayar ?? 1} aria-label="Gain layar"
+              onChange={e => { const v = Number(e.target.value); if (v >= 0.1 && v <= 5) gantiBenda({ ...layar, gainLayar: Math.round(v * 100) / 100 }); }}
+              className="w-20 rounded-md border border-slate-200 bg-white px-1.5 py-0.5 text-[12px] tabular-nums" />
+            <span className="text-slate-500">(datasheet kain layar; putih doff 1,0)</span>
+          </label>
+        )}
         <p className="text-[11.5px] text-slate-600 leading-relaxed">
           {kp.cahaya.dariLampu
             ? <>Dari {kp.cahaya.jumlahLampu} lampu (dimmer semua {dimSekarang}%): langsung {f(kp.cahaya.langsung, 0)} + pantulan ruangan {f(kp.cahaya.pantul, 0)} lux{kp.cahaya.siang > 0.5 ? <> + cahaya siang jendela {f(kp.cahaya.siang, 0)} lux</> : null}. Gambar {f(kp.luas, 1)} m² dari {lumenDari(p).toLocaleString('id-ID')} lm.</>
@@ -169,6 +180,8 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
     const selisih = (sn.lebar - lyr.w) / lyr.w;
     const pasLebar = Math.abs(selisih) <= 0.03;
     const [zMin, zMax] = zoomLensa(p), trPas = sn.trPas ?? 0;
+    //  "Distance to screen (Min~Max)" kalkulator pabrikan: jarak ujung lensa ke layar agar gambar selebar layar.
+    const [jMin, jMax] = jarakUntukLebar(p, Math.max(lyr.w, lyr.h / (sn.tinggi / Math.max(0.001, sn.lebar)))), kj = koreksiJarakDari(p);
     const zoomBisa = trPas >= zMin - 0.005 && trPas <= zMax + 0.005;
     const sv = sn.selisihV ?? 0, sh = sn.selisihH ?? 0;
     const pasTinggi = Math.abs(sv) <= 0.03, pasSamping = Math.abs(sh) <= 0.05;
@@ -178,6 +191,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         <p className="text-[12px] text-slate-700 leading-relaxed">
           Ke <b>{lyr.nama}</b>: jarak lempar <b>{f(sn.jarak)} m</b>, gambar {f(sn.lebar)} × {f(sn.tinggi)} m, tilt {f(tiltDari(p), 1)}°.
           {' '}Agar pas selebar layar ({f(lyr.w)} m) perlu throw ratio <b>{f(sn.trPas ?? 0)} : 1</b>.
+          {' '}Jarak lensa ke layar untuk gambar pas: <b>{f(jMin)}{Math.abs(jMax - jMin) > 0.005 ? `–${f(jMax)}` : ''} m</b> (zoom TR {f(zMin, 2)}{zMax - zMin > 0.005 ? `–${f(zMax, 2)}` : ''}{kj ? `, koreksi ${f(kj, 3)} m` : ''}).
         </p>
         {blokSinarSebenarnya(lyr)}
         {!pasLebar && (zoomBisa ? (
@@ -186,12 +200,12 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           </button>
         ) : (
           <p className="text-[12px] font-semibold text-amber-700">
-            TR {f(trPas, 2)} di luar rentang zoom lensa ({f(zMin, 2)}–{f(zMax, 2)}): pindahkan lensa ke jarak {f(zMin * lyr.w)}–{f(zMax * lyr.w)} m dari layar, atau ganti lensa.
+            TR {f(trPas, 2)} di luar rentang zoom lensa ({f(zMin, 2)}–{f(zMax, 2)}): pindahkan lensa ke jarak {f(jMin)}–{f(jMax)} m dari layar, atau ganti lensa.
           </p>
         ))}
         {blokMask()}
           {blokGrid(K.ukuranCahaya[p.id]?.lebar ?? sn.lebar, K.ukuranCahaya[p.id]?.tinggi ?? sn.tinggi)}
-        {blokKontras(p, false)}
+        {blokKontras(p, false, lyr)}
         {blokBlending}
         <ul className="text-[12px] font-semibold space-y-0.5">
           <li className={pasLebar ? 'text-emerald-700' : 'text-amber-700'}>

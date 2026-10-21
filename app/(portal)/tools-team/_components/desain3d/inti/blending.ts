@@ -7,11 +7,15 @@
  * Murni: tanpa three.js / React / DOM (diuji di uji/blending-proyektor.ts). Titik permukaan
  * (hasil raycast) & uji keterhalangan diberikan pemanggil (mesin/alatBantu.ts).
  */
-import { arahProyektor, geserLensaDari, keDunia, lensaProyektor, offsetLensaDari, rasioGambarProyektor, rasioProyektorDari, throwRatioDari } from './proyektor';
+import { arahProyektor, geserLensaDari, keDunia, koreksiJarakDari, lensaProyektor, offsetLensaDari, rasioGambarProyektor, rasioProyektorDari, throwRatioDari } from './proyektor';
 import type { Benda, Titik } from './tipe';
 
 /** Model lensa proyektor: basis ortonormal (sumbu, kanan, atas) + lebar/tinggi gambar per meter lempar. */
 export interface Lensa {
+  /**
+   * Puncak kerucut sinar: ujung lensa digeser mundur sejauh koreksi jarak b (rumus lensa L = TR x W - b), jadi
+   * lebar gambar = jarak dari puncak / TR. b = 0 (bawaan): puncak = ujung lensa.
+   */
   O: Titik; D: Titik; kanan: Titik; atas: Titik;
   /** lebar & tinggi gambar per 1 m jarak lempar (rasio panel proyektor: 16:9 / 16:10 / 4:3) */ w1: number; h1: number;
   /** pergeseran pusat gambar (lens shift) dalam pecahan lebar / tinggi gambar */ gH: number; gV: number;
@@ -34,7 +38,8 @@ export function lensaDari(p: Benda): Lensa {
   const w1 = 1 / throwRatioDari(p), h1 = w1 * rasioGambarProyektor(p);
   //  Gantung plafon = terbalik: offset vertikal lensa ke bawah sumbu.
   const arahV = p.pasangProyektor === 'meja' ? 1 : -1;
-  return { O: keDunia(p, lensaProyektor(p)), D, kanan, atas, w1, h1, gH: geserLensaDari(p), gV: arahV * offsetLensaDari(p) };
+  const O = tambah(keDunia(p, lensaProyektor(p)), D, -koreksiJarakDari(p));
+  return { O, D, kanan, atas, w1, h1, gH: geserLensaDari(p), gV: arahV * offsetLensaDari(p) };
 }
 
 /** Arah sinar ke titik gambar (u, v) - u, v dari -0,5 (kiri / bawah) sampai 0,5 (kanan / atas). */
