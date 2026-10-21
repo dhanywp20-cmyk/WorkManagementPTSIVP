@@ -72,7 +72,9 @@ export function AdminDashboard({ user }: { user: User }) {
       // Round 2: analytics data in parallel
       const [recentRes, allAttRes, usersRes] = await Promise.all([
         supabase.from('lc_quiz_attempts')
-          .select('*, users(full_name), lc_quiz_sessions(session_name, passing_grade)')
+          //  Tanpa embed users(...): dua relasi ke users (user_id & graded_by) membuat embed itu ditolak -
+          //  nama diambil dari peta user di bawah (lihat catatan query berikutnya).
+          .select('*, lc_quiz_sessions(session_name, passing_grade)')
           .eq('is_submitted', true).order('submitted_at', { ascending: false }).limit(50),
         // Dua hal yang DISENGAJA di query ini:
         //
@@ -90,11 +92,10 @@ export function AdminDashboard({ user }: { user: User }) {
         supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
         supabase.from('users').select('id, full_name, jabatan, sales_division, team_type, role'),
       ]);
-      setRecentAttempts(recentRes.data ?? []);
-
       // Peta user dipakai menggantikan embed users(...) - lihat catatan query di atas.
       const userMap: Record<string, any> = {};
       (usersRes.data ?? []).forEach((u: any) => { userMap[u.id] = u; });
+      setRecentAttempts((recentRes.data ?? []).map((a: any) => ({ ...a, users: userMap[a.user_id] ?? null })));
 
       const allAtt = (allAttRes.data ?? [])
         .filter((a: any) => a.grading_status !== 'pending_review') // essay belum dinilai jangan masuk statistik

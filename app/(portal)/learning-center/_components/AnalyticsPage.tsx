@@ -28,11 +28,17 @@ export function AnalyticsPage() {
 
   useEffect(() => {
     const load = async () => {
-      // '*' disengaja - lihat catatan di AdminDashboard.
-      const { data: a } = await supabase
-        .from('lc_quiz_attempts')
-        .select('*, users(full_name, sales_division, team_type, role)')
-        .eq('is_submitted', true);
+      // '*' disengaja & TANPA embed users(...) - lihat catatan di AdminDashboard. lc_quiz_attempts punya DUA
+      // relasi ke users (user_id & graded_by/penilai essay): embed users(...) ditolak PostgREST ("lebih dari
+      // satu relasi"), data jadi null dan SELURUH halaman ini kosong tanpa pesan apa pun. Data pengguna
+      // diambil terpisah lalu digabung lewat user_id.
+      const [{ data: mentah }, { data: pengguna }] = await Promise.all([
+        supabase.from('lc_quiz_attempts').select('*').eq('is_submitted', true),
+        supabase.from('users').select('id, full_name, sales_division, team_type, role'),
+      ]);
+      const petaUser: Record<string, any> = {};
+      (pengguna ?? []).forEach((u: any) => { petaUser[u.id] = u; });
+      const a = mentah ? mentah.map((x: any) => ({ ...x, users: petaUser[x.user_id] ?? null })) : null;
 
       if (a) {
         const graded = a.filter((att: any) => att.grading_status !== 'pending_review'); // skor essay yg belum dinilai jangan masuk rata-rata
