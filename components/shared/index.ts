@@ -44,7 +44,7 @@ export { BatalButton, SubmitFormButton } from './FormActions';
 // Logo & identitas merek (bisa diubah dari Admin Panel - lihat lib/merek.ts).
 export { LogoMerek } from './LogoMerek';
 // Kerangka modal baku - lihat komentar di Modal.tsx sebelum membuat popup baru.
-export { Modal, TombolModal, type ModalProps } from './Modal';
+export { Modal, TombolModal, KepalaModal, LATAR_MODAL, KARTU_MODAL, type ModalProps } from './Modal';
 // Satu pola Setujui / Tolak / Tugaskan untuk semua menu - lihat Persetujuan.tsx.
 export { LABEL as LABEL_PERSETUJUAN, TombolSetujui, TombolTolak, TombolTugaskan, PilihPenugasan, ModalSetujui, ModalTolak, KotakInfo, LabelIsian, kelasIsianPersetujuan, type PilihanPetugas } from './Persetujuan';
 // Paginasi daftar - satu mekanisme & satu angka baris/halaman untuk semua

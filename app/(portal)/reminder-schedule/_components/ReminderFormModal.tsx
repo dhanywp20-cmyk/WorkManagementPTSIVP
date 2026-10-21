@@ -7,7 +7,7 @@ import {
   REPEAT_OPTIONS, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES,
   PRODUCT_TYPES,
 } from './shared';
-import { FormField, SectionHeader, MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
+import { FormField, SectionHeader, MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import { useKelompokPTSDitugaskan } from '@/lib/kelompok';
 import { Ikon } from '@/components/shared/Ikon';
@@ -70,26 +70,10 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-3 sm:p-4"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden"
-        style={{ animation: 'scale-in 0.25s ease-out', border: '1.5px solid rgba(220,38,38,0.25)' }}>
-
-        {/* Header */}
-        <div className="px-6 py-4 rounded-t-2xl flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-white">{editingReminder ? '✏️ Edit Reminder' : '➕ Tambah Reminder'}</h2>
-              <p className="text-cyan-200/80 text-xs mt-1">Isi detail jadwal & informasi project</p>
-            </div>
-            <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
-              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1100] p-3 sm:p-4" style={LATAR_MODAL}>
+      {/*  Kartu & kepala baku (components/shared/Modal.tsx) - kerangkanya sendiri hanya karena tiga kolom setinggi layar. */}
+      <div className={`${KARTU_MODAL} w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden`}>
+        <KepalaModal judul={editingReminder ? 'Edit Reminder' : 'Tambah Reminder'} keterangan="Isi detail jadwal & informasi project" onTutup={onClose} />
 
         {/* Tiga kolom menyamping supaya seluruh isian terlihat sekaligus.
             Sebelumnya semuanya bertumpuk vertikal di modal selebar 2xl, jadi
