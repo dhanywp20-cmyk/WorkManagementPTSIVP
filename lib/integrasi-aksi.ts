@@ -15,12 +15,8 @@
  * (lib/efek-server.ts) sebagai ganti fungsi peramban.
  */
 import crypto from 'crypto';
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { UserLengkap } from '@/lib/ai-server';
-import type { Cakupan } from '@/lib/token-integrasi';
 import { updateSah, wajibCatatan } from '@/app/(portal)/ticketing/_components/alur-status';
 import { hakAtas, muatChecklist, simpanPerubahan, type Akun } from '@/lib/checklist-server';
-import type { EfekSamping } from '@/lib/efek-samping';
 import { KOLOM_KABAR_TIKET, kabarkanTicketSelesai, tutupJadwalTicket, type TiketUntukKabar } from '@/lib/tiket-selesai';
 import { INCENTIVE_TRIGGER_CATEGORIES, CATEGORIES, bolehUbahJadwal, galatIsianJadwal, proyekSerupa, type StatusJadwal } from '@/lib/jadwal-aturan';
 import { KOLOM_BARIS_JADWAL, simpanDetailPelaksanaan, ubahStatusJadwal, type BarisJadwal, type IsianPelaksanaan } from '@/lib/jadwal-status';
@@ -32,61 +28,35 @@ import { hasFullAccess } from '@/lib/constants';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { idDariNama } from '@/lib/identitas';
 import { appBaseUrl } from '@/lib/app-url';
+import {
+  BARIS, adalahAtasan, bersih, gagal, hariIniWIB, idSah, jamSah, jamWIB, teks, tglSah,
+  type HasilAksi, type KonteksAksi,
+} from '@/lib/integrasi-bantu';
+import { AKSI_MENU_BACA } from '@/lib/integrasi-menu';
+import { AKSI_MENU_TULIS } from '@/lib/integrasi-tulis';
+import { analisa } from '@/lib/integrasi-analisa';
 
-export interface KonteksAksi {
-  /** Klien Supabase SEBAGAI pemilik token (RLS berlaku). */
-  db: SupabaseClient;
-  /** Service role - hanya untuk checklist (pola route checklist) & data akun. */
-  admin: SupabaseClient;
-  u: UserLengkap;
-  cakupan: Cakupan[];
-  /** WA / in-app / audit sisi server (buatEfekServer) - pengganti fungsi peramban. */
-  efek: EfekSamping;
-  /**
-   * Muat aturan yang di peramban dimuat saat halaman dibuka (daftar tim yang bisa
-   * ditugaskan, kategori insentif). Route mengisinya; uji tidak (tanpa jaringan).
-   */
-  muatAturan?: () => Promise<void>;
-}
+//  Penolong & tipe kini tinggal di lib/integrasi-bantu.ts; diekspor ulang dari sini supaya
+//  pemanggil lama (route, uji) tetap mengimpor dari tempat yang sama.
+export { adalahAtasan, bersih, hariIniWIB, teks, tglSah, type HasilAksi, type KonteksAksi };
 
-export type HasilAksi = Record<string, unknown> & { ok: boolean; galat?: string };
-
-const BARIS = 25;
 const STATUS_TIKET = ['Waiting Approval', 'Pending', 'Call', 'Onsite', 'In Progress', 'Pending Action', 'Overdue', 'Solved', 'Rejected'];
 const STATUS_PTS = ['Waiting Approval', 'Pending', 'Call', 'Onsite', 'In Progress', 'Pending Action', 'Solved'];
 const KATEGORI_DR = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Troubleshooting',
   'Training', 'Maintenance', 'Standby Event', 'Internal', 'Design Single Line Diagram', 'Research and Development'];
 
-export const AKSI_BACA = ['profil', 'ringkasan', 'tiket_cari', 'tiket_detail', 'jadwal_cari', 'progres_project',
-  'checklist_detail', 'daily_report', 'daily_report_tim'] as const;
-export const AKSI_TULIS = ['tiket_aktivitas', 'tiket_selesai', 'jadwal_buat', 'jadwal_status', 'jadwal_selesai',
-  'daily_report_tambah', 'checklist_simpan'] as const;
-
-// ---------------------------------------------------------------- bantu
-export function hariIniWIB(offset = 0): string {
-  return new Date(Date.now() + 7 * 3600_000 + offset * 86_400_000).toISOString().slice(0, 10);
-}
-function jamWIB(): string {
-  return new Date(Date.now() + 7 * 3600_000).toISOString().slice(11, 16);
-}
-/** Isian bebas untuk filter PostgREST (.or / ilike): tanpa karakter sintaks. */
-export function bersih(v: unknown, maks = 60): string {
-  return String(v ?? '').replace(/[%*,()\\"'`]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maks);
-}
-/** Teks yang DISIMPAN: hanya dipangkas & dibatasi (boleh tanda baca). */
-export function teks(v: unknown, maks: number): string {
-  return String(v ?? '').replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, '').trim().slice(0, maks);
-}
-export const tglSah = (v: unknown) => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null);
-const jamSah = (v: unknown) => (typeof v === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : null);
-const idSah = (v: unknown) => (typeof v === 'string' && /^[0-9a-f-]{8,64}$/i.test(v) ? v : null);
-const gagal = (galat: string): HasilAksi => ({ ok: false, galat });
-
-export function adalahAtasan(u: UserLengkap): boolean {
-  const r = (u.role ?? '').toLowerCase();
-  const j = (u.jabatan ?? '').toLowerCase();
-  return r === 'admin' || r === 'superadmin' || u.access_level === 'full' || /supervisor|manager|head|kepala/.test(j);
-}
+/**
+ * Aksi tahap 1-2 ditulis di berkas ini; aksi menu lain (Request Design, Tech Note, Unit
+ * Movement, Form Review, Piket, KPI, Insentif, Learning Center, Summary Project, buat &
+ * approve tiket) di lib/integrasi-menu.ts (baca) dan lib/integrasi-tulis.ts (ubah data),
+ * analisa lintas menu di lib/integrasi-analisa.ts.
+ */
+export const AKSI_BACA: readonly string[] = ['profil', 'ringkasan', 'tiket_cari', 'tiket_detail', 'jadwal_cari', 'progres_project',
+  'checklist_detail', 'daily_report', 'daily_report_tim', 'desain_cari', 'analisa', ...Object.keys(AKSI_MENU_BACA)];
+/** Status Request Design Project (project_requests.status) - sama dengan form-require-project. */
+const STATUS_DESAIN = ['pending', 'approved', 'in_progress', 'completed', 'rejected'];
+export const AKSI_TULIS: readonly string[] = ['tiket_aktivitas', 'tiket_selesai', 'jadwal_buat', 'jadwal_status', 'jadwal_selesai',
+  'daily_report_tambah', 'checklist_simpan', ...Object.keys(AKSI_MENU_TULIS)];
 
 /** Status tiket dari isian bebas ("in progress", "solved") -> ejaan resmi, atau null. */
 export function statusResmi(v: unknown): string | null {
@@ -96,8 +66,8 @@ export function statusResmi(v: unknown): string | null {
 
 // ---------------------------------------------------------------- pintu utama
 export async function jalankanAksi(nama: string, a: Record<string, unknown>, k: KonteksAksi): Promise<HasilAksi> {
-  const tulis = (AKSI_TULIS as readonly string[]).includes(nama);
-  if (!tulis && !(AKSI_BACA as readonly string[]).includes(nama)) return gagal(`Aksi tidak dikenal: ${nama}`);
+  const tulis = AKSI_TULIS.includes(nama);
+  if (!tulis && !AKSI_BACA.includes(nama)) return gagal(`Aksi tidak dikenal: ${nama}`);
   if (tulis && !k.cakupan.includes('tulis')) {
     return gagal('Token ini hanya boleh MEMBACA. Buat token baru dengan izin ubah data di Profil > Integrasi DIWAYPI.');
   }
@@ -111,6 +81,7 @@ export async function jalankanAksi(nama: string, a: Record<string, unknown>, k: 
     case 'checklist_detail': return checklistDetail(a, k);
     case 'daily_report': return dailyReport(a, k);
     case 'daily_report_tim': return dailyReportTim(a, k);
+    case 'desain_cari': return desainCari(a, k);
     case 'tiket_aktivitas': return tiketAktivitas(a, k);
     case 'tiket_selesai': return tiketAktivitas({ ...a, status: 'Solved' }, k);
     case 'jadwal_status': return jadwalStatus(a, k);
@@ -118,7 +89,11 @@ export async function jalankanAksi(nama: string, a: Record<string, unknown>, k: 
     case 'jadwal_buat': return jadwalBuat(a, k);
     case 'daily_report_tambah': return dailyReportTambah(a, k);
     case 'checklist_simpan': return checklistSimpan(a, k);
+    case 'analisa': return analisa(a, k);
   }
+  const punya = (o: object) => Object.prototype.hasOwnProperty.call(o, nama);
+  const menu = punya(AKSI_MENU_BACA) ? AKSI_MENU_BACA[nama] : punya(AKSI_MENU_TULIS) ? AKSI_MENU_TULIS[nama] : null;
+  if (menu) return menu(a, k);
   return gagal(`Aksi tidak dikenal: ${nama}`);
 }
 
@@ -268,6 +243,33 @@ async function dailyReportTim(a: Record<string, unknown>, { db, u }: KonteksAksi
   return { ok: true, tanggal: tgl,
     sudah: daftar.filter(t => sudah.has(t.id)).map(t => t.full_name),
     belum: daftar.filter(t => !sudah.has(t.id)).map(t => `${t.full_name}${t.jabatan ? ` (${t.jabatan})` : ''}`) };
+}
+
+/**
+ * Request Design Project (halaman form-require-project, tabel project_requests). RLS
+ * (boleh_lihat_baris) membatasi baris persis seperti di layar; aturan tampilan halaman
+ * untuk Team PTS biasa ikut diterapkan: hanya request yang sudah di-assign (atau
+ * di-route ke dia sebagai Supervisor). aktif = belum completed/rejected.
+ */
+async function desainCari(a: Record<string, unknown>, { db, u }: KonteksAksi): Promise<HasilAksi> {
+  let q = db.from('project_requests')
+    .select('id, project_name, room_name, project_location, sales_name, sales_division, requester_name, status, '
+      + 'routing_status, assign_name, assigned_supervisor_id, due_date, created_at, approved_at, rejection_reason, brand')
+    .order('created_at', { ascending: false }).limit(BARIS);
+  const st = String(a.status ?? '').trim().toLowerCase().replace(/\s+/g, '_');
+  if (STATUS_DESAIN.includes(st)) q = q.eq('status', st);
+  else if (a.aktif) q = q.not('status', 'in', '("completed","rejected")');
+  if (a.saya) q = q.eq('assign_name', u.full_name ?? '');
+  const k = bersih(a.kata);
+  if (k) q = q.or(`project_name.ilike.%${k}%,room_name.ilike.%${k}%,sales_name.ilike.%${k}%,project_location.ilike.%${k}%`);
+  const { data, error } = await q;
+  if (error) return gagal(error.message);
+  let baris = (data ?? []) as unknown as { assign_name: string | null; assigned_supervisor_id: string | null }[];
+  const role = (u.role ?? '').toLowerCase();
+  if ((role === 'team_pts' || role === 'team') && u.jabatan !== 'Manager') {
+    baris = baris.filter(r => !!r.assign_name || r.assigned_supervisor_id === u.id);
+  }
+  return { ok: true, jumlah: baris.length, request: baris };
 }
 
 // ---------------------------------------------------------------- tulis

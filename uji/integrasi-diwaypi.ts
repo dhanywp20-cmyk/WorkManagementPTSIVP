@@ -179,6 +179,24 @@ async function main() {
   const r10 = await jalankanAksi('daily_report_tambah', { tanggal: '2999-01-01', deskripsi: 'x' }, ctxTulis);
   cek('daily report masa depan ditolak', !r10.ok && /belum terjadi/.test(String(r10.galat)));
 
+  console.log('request design project');
+  const reqDesain = [
+    { id: 'rq-1', project_name: 'BCA Menara', status: 'pending', assign_name: null, assigned_supervisor_id: null },
+    { id: 'rq-2', project_name: 'RSUD Matraman', status: 'in_progress', assign_name: 'Dhany', assigned_supervisor_id: null },
+  ];
+  const { db: dbDesain, kueri: kDesain } = klienTiruan(q => (q.tabel === 'project_requests' ? { data: reqDesain } : { data: null }));
+  const r11 = await jalankanAksi('desain_cari', { aktif: true, kata: 'bca' }, { db: dbDesain, admin: dbDesain, u, cakupan: ['baca'], efek: efekTiruan().efek });
+  const fDesain = kDesain[0]?.filter.join(' | ') ?? '';
+  cek('desain_cari membaca project_requests dengan token baca', r11.ok === true && kDesain[0]?.tabel === 'project_requests');
+  cek('aktif = belum completed/rejected', fDesain.includes('not:status,in,("completed","rejected")'), fDesain);
+  cek('kata dicari di project/ruangan/sales/lokasi', fDesain.includes('project_name.ilike.%bca%'), fDesain);
+  cek('Team PTS biasa hanya melihat request yang sudah di-assign (seperti di layar)',
+    (r11.request as { id: string }[]).map(r => r.id).join() === 'rq-2', JSON.stringify(r11.request));
+  const r12 = await jalankanAksi('desain_cari', { status: 'In Progress' },
+    { db: dbDesain, admin: dbDesain, u: { ...u, role: 'admin' }, cakupan: ['baca'], efek: efekTiruan().efek });
+  cek('admin melihat semua + status dinormalkan', (r12.request as unknown[]).length === 2
+    && (kDesain[1]?.filter ?? []).includes('eq:status,in_progress'), JSON.stringify(kDesain[1]?.filter));
+
   await ujiTiketSelesai(tiket);
   await ujiJadwalStatus();
   await ujiJadwalBuat();

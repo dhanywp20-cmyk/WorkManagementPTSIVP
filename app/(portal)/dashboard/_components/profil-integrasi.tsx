@@ -107,9 +107,12 @@ export function ProfilIntegrasi() {
         <div className="rounded-xl border border-slate-200 p-3 space-y-2 text-sm">
           <label className="flex items-start gap-2">
             <input type="checkbox" checked={tulis} onChange={e => setTulis(e.target.checked)} className="mt-1" />
-            <span>Izinkan mengubah data: catatan & status tiket (termasuk menutup tiket jadi Solved), daily report,
-              centang checklist project, membuat jadwal, dan mengubah status jadwal (Completed ikut mengirim WA ke tamu & Sales).
-              <span className="block text-xs text-slate-500">Tanpa ini DIWAYPI hanya bisa membaca. Semua aksi tercatat di audit trail.</span></span>
+            <span>Izinkan mengubah data, dengan hak yang sama persis seperti akun Anda di layar: tiket (buat, approve/assign,
+              catatan & status termasuk Solved), jadwal (buat & ubah status - Completed ikut mengirim WA ke tamu & Sales), daily report,
+              checklist project, Request Design (approve/assign, status, tolak, review Sales Internal, ajukan ulang, chat),
+              Tech Note (unggah & review), Unit Movement (catat & tandai kembali), dan kegiatan Piket Showroom.
+              <span className="block text-xs text-slate-500">Tanpa ini DIWAYPI hanya bisa membaca dan menganalisa. Hapus data, proses/bayar
+                insentif, pengaturan KPI, dan kuis tetap hanya lewat aplikasi. Semua aksi tercatat di audit trail.</span></span>
           </label>
           {galat && <p className="text-rose-600 text-xs">{galat}</p>}
           <div className="flex gap-2">
