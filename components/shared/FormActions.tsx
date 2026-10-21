@@ -14,8 +14,9 @@
  * kirim; kata "Simpan" hanya dipakai saat mengubah data yang sudah ada - sebab
  * di situlah artinya memang menyimpan, bukan mengirim.
  *
- * Warnanya tetap dibedakan per modul (merah untuk Ticket, cyan untuk Schedule,
- * teal untuk Design) karena itu penanda tempat, bukan penanda perbuatan.
+ * Warnanya SATU untuk semua menu: warna merek (Admin Panel -> merek), sama dengan aksi utama
+ * TombolModal. Dulu merah untuk Ticket, cyan untuk Schedule, teal untuk Design - tiap menu punya
+ * temanya sendiri; permintaan pemilik: seragam di semua menu.
  */
 
 const IKON_KIRIM = 'M12 19l9 2-9-18-9 18 9-2zm0 0v-8';
@@ -32,7 +33,7 @@ export function BatalButton({ onClick, disabled }: { onClick: () => void; disabl
 }
 
 export function SubmitFormButton({
-  onClick, loading, disabled, editing, suffix, blockedLabel, gradient, shadow,
+  onClick, loading, disabled, editing, suffix, blockedLabel,
 }: {
   onClick: () => void;
   loading?: boolean;
@@ -43,15 +44,17 @@ export function SubmitFormButton({
   suffix?: string;
   /** Label saat tombol sengaja dikunci, supaya sebabnya terbaca di tombolnya. */
   blockedLabel?: string;
-  gradient: string;
-  shadow: string;
+  /** Usang - diabaikan. Warna tombol selalu warna merek (lihat catatan di atas). */
+  gradient?: string;
+  /** Usang - diabaikan. */
+  shadow?: string;
 }) {
   const terkunci = !!blockedLabel;
   const label = editing ? 'Simpan Perubahan' : 'Submit Form';
   return (
     <button type="button" onClick={onClick} disabled={disabled || loading}
-      className="text-white px-5 py-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
-      style={{ background: gradient, boxShadow: shadow }}>
+      className="text-white px-5 py-2 rounded-kontrol font-bold text-xs flex items-center justify-center gap-1.5 transition-all hover:opacity-90 disabled:opacity-50"
+      style={{ background: 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))' }}>
       {loading
         ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{editing ? 'Menyimpan...' : 'Mengirim...'}</>
         : terkunci

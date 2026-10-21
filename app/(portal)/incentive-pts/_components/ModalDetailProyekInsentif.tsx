@@ -25,15 +25,15 @@ export function ModalDetailProyekInsentif({ allUsers, currentUser, detailProject
     <>
       {detailProject && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden border border-gray-200">
-            <div className="px-6 py-5" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
+        <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1100] p-4 overflow-y-auto" onClick={e => { if (e.target === e.currentTarget) setDetailProject(null); }}>
+          <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl max-h-full flex flex-col overflow-hidden border border-gray-200">
+            <div className="px-6 py-5 bg-white border-b border-slate-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-bold text-white">{detailProject.project_name}</h2>
-                  <p className="text-xs text-rose-200 mt-0.5">{detailProject.assign_name} · {detailProject.category}</p>
+                  <h2 className="text-lg font-bold text-slate-800">{detailProject.project_name}</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">{detailProject.assign_name} · {detailProject.category}</p>
                 </div>
-                <button aria-label="Tutup" onClick={() => setDetailProject(null)} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">
+                <button aria-label="Tutup" onClick={() => setDetailProject(null)} className="w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold flex-shrink-0">
                   <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>

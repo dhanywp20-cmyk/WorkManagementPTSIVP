@@ -1,5 +1,5 @@
 'use client';
-import { ModalPortal, AdminEditFields } from '@/components/shared';
+import { Modal, TombolModal, AdminEditFields } from '@/components/shared';
 import type { Ticket, TeamMember } from './shared';
 import { bolehReroute, TICKET_ADMIN_FIELDS } from './shared';
 import { IkonTeks } from '@/components/shared/Ikon';
@@ -28,21 +28,12 @@ export function AdminEditModal({
   onClose: () => void;
 }) {
   return (
-    <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
-        onClick={e => { if (e.target === e.currentTarget && !adminEditSaving) onClose(); }}>
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-full flex flex-col overflow-hidden"
-          style={{ animation: 'scale-in 0.25s ease-out' }}>
-          <div className="px-6 py-4 flex items-center justify-between flex-shrink-0" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
-            <div className="min-w-0">
-              <h3 className="text-lg font-bold text-white"><IkonTeks nama="🛠" />Edit Detail &amp; Re-route</h3>
-              <p className="text-indigo-100/90 text-xs mt-0.5 truncate">{adminEditTicket.project_name}</p>
-            </div>
-            <button aria-label="Tutup" onClick={onClose} disabled={adminEditSaving}
-              className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg disabled:opacity-40">✕</button>
-          </div>
-
-          <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
+    <Modal buka onTutup={() => { if (!adminEditSaving) onClose(); }} judul="Edit Detail & Alihkan" keterangan={adminEditTicket.project_name} ukuran="xl" lapisan="atas" tutupDiLuar={false}
+      footer={<>
+        <TombolModal onClick={onClose} disabled={adminEditSaving}>Batal</TombolModal>
+        <TombolModal jenis="utama" onClick={simpanAdminEdit} disabled={adminEditSaving}>{adminEditSaving ? 'Menyimpan...' : 'Simpan Perubahan'}</TombolModal>
+      </>}>
+          <div className="space-y-5">
             {/* ── Re-route ── */}
             <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.25)' }}>
               <p className="text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-2"><IkonTeks nama="🔀" />Alihkan Pekerjaan</p>
@@ -88,22 +79,6 @@ export function AdminEditModal({
               dan diberitahukan ke yang menangani lewat WA.
             </p>
           </div>
-
-          <div className="px-6 py-4 flex gap-3 flex-shrink-0 border-t border-slate-100">
-            <button onClick={onClose} disabled={adminEditSaving}
-              className="flex-1 py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-40">
-              Batal
-            </button>
-            <button onClick={simpanAdminEdit} disabled={adminEditSaving}
-              className="flex-[2] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
-              {adminEditSaving
-                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
-                : <>💾 Simpan Perubahan</>}
-            </button>
-          </div>
-        </div>
-      </div>
-    </ModalPortal>
+    </Modal>
   );
 }

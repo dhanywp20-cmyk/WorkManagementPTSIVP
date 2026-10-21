@@ -474,7 +474,7 @@ export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: (
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
       style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
-      <div className="bg-white rounded-2xl shadow-2xl p-7 w-full max-w-sm border border-slate-200">
+      <div className="bg-white rounded-kartu shadow-modal p-7 w-full max-w-sm border border-slate-200">
         <div className="flex flex-col items-center text-center mb-6">
           <div className={`w-14 h-14 ${cfg.iconBg} border rounded-2xl flex items-center justify-center text-2xl mb-4`}>
             <Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" />

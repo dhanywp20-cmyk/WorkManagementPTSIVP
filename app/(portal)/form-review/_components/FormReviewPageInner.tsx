@@ -15,7 +15,7 @@ import { compressImage } from '@/lib/image-compress';
 import { hasFullAccess } from '@/lib/constants';
 import { appLink } from '@/lib/app-url';
 import { ReviewForm, Reminder, GuestUser, PIE_COLORS, formatDatetime } from './shared';
-import { FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, Paginasi, usePaginasi, ConfirmDialog, type ConfirmState, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal } from '@/components/shared';
+import { FormField, SectionHeader, StarRating, LoadingScreen, MiniPieChart, ViewIconBtn, EditIconBtn, DeleteIconBtn, ActionGroup, Paginasi, usePaginasi, ConfirmDialog, type ConfirmState, ErrorState, MobileListCard, MobileCardBadge, ListEmptyState, StatCard, ModalPortal, KepalaModal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { Toast } from '@/components/shared/Toast';
 import { PopupLonceng } from './PopupLonceng';
@@ -712,8 +712,7 @@ export function FormReviewPageInner() {
                 <div className="flex items-center gap-2">
                   <button onClick={() => setSelectedIds(new Set())} className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Batal Pilih</button>
                   <button onClick={() => setBulkConfirm(true)} disabled={bulkDeleting}
-                    className="text-xs font-bold text-white px-4 py-1.5 rounded-lg disabled:opacity-50 flex items-center gap-1"
-                    style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+                    className="tombol-utama text-xs font-bold  px-4 py-1.5 rounded-kontrol disabled:opacity-50 flex items-center gap-1">
                     {bulkDeleting ? '⏳ Menghapus...' : `🗑️ Hapus ${selectedIds.size}`}
                   </button>
                 </div>
@@ -782,25 +781,21 @@ export function FormReviewPageInner() {
       {/* Bulk Delete Confirm Modal */}
       {bulkConfirm && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden border-2 border-red-400">
-            <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 flex items-center gap-3">
-              <span className="text-2xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-              <div><h3 className="font-bold text-white">Hapus {selectedIds.size} Review?</h3>
-              <p className="text-red-100 text-xs mt-0.5">Tindakan ini tidak dapat dibatalkan</p></div>
-            </div>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1000] p-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
+          <div className="bg-white rounded-kartu shadow-modal max-w-sm w-full overflow-hidden">
+            <KepalaModal judul={`Hapus ${selectedIds.size} Review?`} keterangan="Tindakan ini tidak dapat dibatalkan." onTutup={() => setBulkConfirm(false)} />
             <div className="p-6">
               <p className="text-sm text-gray-600 mb-5">Kamu akan menghapus <strong>{selectedIds.size} review</strong> yang dipilih secara permanen.</p>
               <div className="flex gap-3">
-                <button onClick={() => setBulkConfirm(false)} className="flex-1 border-2 border-gray-300 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-50 transition-all text-sm">Batal</button>
+                <button onClick={() => setBulkConfirm(false)} className="tombol-kedua flex-1 py-2.5 rounded-kontrol font-bold text-sm">Batal</button>
                 <button onClick={async () => {
                   setBulkConfirm(false); setBulkDeleting(true);
                   const { error } = await supabase.from('form_reviews').delete().in('id', Array.from(selectedIds));
                   if (!error) { setReviews(p => p.filter(r => !selectedIds.has(r.id))); setSelectedIds(new Set()); setSelectMode(false); }
                   else notify('error', 'Gagal: ' + error.message);
                   setBulkDeleting(false);
-                }} className="flex-[2] bg-gradient-to-r from-violet-600 to-violet-700 text-white py-2.5 rounded-xl font-bold shadow-lg transition-all text-sm">
-                  <IkonTeks nama="🗑" />Ya, Hapus Permanen
+                }} className="tombol-bahaya flex-[2] py-2.5 rounded-kontrol font-bold text-sm">
+                  Ya, Hapus Permanen
                 </button>
               </div>
             </div>
