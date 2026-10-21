@@ -208,8 +208,7 @@ export function NewFormModal({
         <div className="border-t border-gray-200 px-4 py-3 flex gap-2 justify-end bg-white/90 flex-shrink-0">
           <BatalButton onClick={onClose} />
           <SubmitFormButton onClick={onSubmit} loading={submitting}
-            gradient="linear-gradient(135deg,#0d9488,#115e59)"
-            shadow="0 4px 14px rgba(13,148,136,0.35)" />
+            />
         </div>
       </div>
     </div>

@@ -682,8 +682,6 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                   ? `${total} Reminder (${dateCount} hari${targetCount > 1 ? ` × ${targetCount} orang` : ''})`
                   : undefined;
               })()}
-              gradient="linear-gradient(135deg,#0891b2,#0e7490)"
-              shadow="0 4px 14px rgba(8,145,178,0.35)"
             />
           </div>
         </div>

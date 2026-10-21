@@ -524,8 +524,6 @@ export function RequestJadwalModal({
                 const dateCount = new Set([form.due_date, ...form.extra_dates].filter(Boolean)).size || 1;
                 return dateCount > 1 ? `${dateCount} Hari` : undefined;
               })()}
-              gradient="linear-gradient(135deg,#2563eb,#1d4ed8)"
-              shadow="0 4px 14px rgba(37,99,235,0.35)"
             />
           </div>
           </div>
