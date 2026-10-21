@@ -68,6 +68,12 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 <Angka label="Koreksi jarak b (rumus L = TR × lebar − b)" nilai={koreksiJarakDari(b)} satuan="m" step={0.001} min={-1}
                   onUbah={v => v >= -1 && v <= 1 && set({ koreksiJarak: Math.round(v * 1000) / 1000 || undefined })} />
                 <Catatan>Isi dari rumus jarak lempar di datasheet lensa, mis. Panasonic ET-D3QW200: L = 0,566 × SW − 0,082 → TR 0,566 & b 0,082. Kosong / 0 = L = TR × lebar.</Catatan>
+                {/*  Sama dengan Kalkulator Proyektor: tanpa b, jarak bisa selisih beberapa cm - puluhan cm dari kalkulator pabrikan. */}
+                {!koreksiJarakDari(b) && (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11.5px] leading-snug text-amber-800">
+                    Koreksi b belum diisi - jarak lempar bisa selisih dari kalkulator pabrikan. Isi dari datasheet lensa / Pustaka.
+                  </p>
+                )}
               </div>
             );
           })()}

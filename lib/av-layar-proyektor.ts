@@ -109,6 +109,19 @@ export function rentangJarakLempar(lebarGambarM: number, trMin: number, trMaks: 
 }
 
 /**
+ * Rumus lensa L = TR x lebar - b dari DUA hasil kalkulator pabrikan / tabel datasheet pada zoom yang sama
+ * (mis. Panasonic 100" -> 1,189 m & 200" -> 2,460 m): TR = selisih jarak / selisih lebar, b = TR x lebar - jarak.
+ * null bila kedua lebar sama / masukan tidak sah.
+ */
+export function rumusLensaDariDuaTitik(lebar1M: number, jarak1M: number, lebar2M: number, jarak2M: number): { tr: number; b: number } | null {
+  if (![lebar1M, jarak1M, lebar2M, jarak2M].every(v => Number.isFinite(v) && v > 0)) return null;
+  if (Math.abs(lebar2M - lebar1M) < 1e-6) return null;
+  const tr = (jarak2M - jarak1M) / (lebar2M - lebar1M);
+  if (!(tr > 0)) return null;
+  return { tr, b: tr * lebar1M - jarak1M };
+}
+
+/**
  * Rentang tinggi (dari lantai) pusat lensa yang masih menghasilkan gambar tegak tanpa keystone, dengan
  * lens shift vertikal ±`shiftPersen` dari tinggi gambar (dihitung dari pusat gambar).
  */
