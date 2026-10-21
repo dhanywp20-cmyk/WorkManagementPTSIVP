@@ -121,7 +121,13 @@ export function useMesin(K: KeadaanDesain) {
             const mg = magnet({ ...b0, x, z }, bendaRef.current.filter(b => !ikut.has(b.id) && tampilDi(b, sembunyiRef.current)));
             x = jepitX(mg.x); z = jepitZ(mg.z);
           }
-          const rot = ((Math.round((o.rotation.y * 180) / Math.PI) % 360) + 360) % 360;
+          //  Sudut putar dari arah MUKA benda (sumbu +z lokal), bukan dari o.rotation.y: lewat ±90° three.js
+          //  menyimpan putaran gizmo sebagai Euler (180°, 180° - θ, 180°), sehingga rotation.y saja tercatat salah
+          //  (diputar 120° terbaca 60°) - sinar proyektor lalu keluar dari samping badan, bukan dari lensa.
+          const muka = new THREE.Vector3(0, 0, 1).applyQuaternion(o.quaternion);
+          const sudut = Math.atan2(muka.x, muka.z);
+          o.rotation.set(0, sudut, 0);
+          const rot = ((Math.round((sudut * 180) / Math.PI) % 360) + 360) % 360;
           const plafon = daftarRuang(r)[ruangDari(r, Math.min(bt.x, Math.max(0, x)))]?.t ?? r.t;
           let elev = Math.round(Math.min(Math.max(0, plafon - b0.h), Math.max(0, o.position.y)) * 100) / 100;
           if (proyektor) {

@@ -128,6 +128,11 @@ console.log('\n4. Tepi cahaya & Mask ke bidang');
     KATEGORI_RUANG.every(k => proyektorDi(templateRuang(k.id).benda).every(p => !p.maskBidang)));
   cek('terang cahaya per titik mengikuti jarak² & sudut datang (bukan warna rata di semua permukaan)',
     /return Math\.max\(0\.05, cosT\) \/ \(cosA \*\* 3 \* d2\);/.test(sinar) && /vertexColors: true, opacity: bg\.opasitas/.test(sinar) && /q\.map\(x => faktor\(x\.p, x\.n\)\)/.test(sinar));
+  //  Gizmo putar: lewat ±90° three.js menyimpan putaran sebagai Euler (180°, 180° - θ, 180°) - rot dari rotation.y
+  //  saja salah (120° terbaca 60°) & sinar proyektor keluar dari samping badan, bukan dari lensa.
+  const mesin = readFileSync('app/(portal)/tools-team/_components/desain3d/mesin/useMesin.ts', 'utf8');
+  cek('putar gizmo > 90°: sudut dibaca dari arah muka benda (quaternion), bukan rotation.y',
+    /new THREE\.Vector3\(0, 0, 1\)\.applyQuaternion\(o\.quaternion\)/.test(mesin) && !/o\.rotation\.y \* 180/.test(mesin));
   cek('Objek Saya ikut menyimpan pilihan Mask', /maskBidang: 'bool'/.test(readFileSync('lib/objek-saya.ts', 'utf8')));
 }
 
