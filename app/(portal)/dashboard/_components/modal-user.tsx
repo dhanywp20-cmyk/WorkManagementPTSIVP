@@ -205,7 +205,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-3xl max-h-full flex flex-col border border-slate-200">
 

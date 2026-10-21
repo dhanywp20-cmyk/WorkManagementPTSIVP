@@ -74,7 +74,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-xl max-h-full flex flex-col border border-slate-200">
         <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">

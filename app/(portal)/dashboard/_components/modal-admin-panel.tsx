@@ -151,7 +151,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm pt-16 px-4 pb-4">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-[1000] flex items-center justify-center pt-16 px-4 pb-4">
       {/* Di ponsel panel navigasi TIDAK boleh berdiri sebagai kolom kiri: 224px
           dari layar 360px hanya menyisakan seratusan piksel untuk isinya, dan
           tabel di dalamnya jadi terpotong sampai hanya kolom aksi yang terlihat.

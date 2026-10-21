@@ -8,15 +8,19 @@ export interface ModalHasilGenerateMassalProps {
   setBulkGenerateResult: import("react").Dispatch<import("react").SetStateAction<{ tahun: number; berhasil: string[]; gagal: { nama: string; alasan: string; }[]; dilewati: string[]; } | null>>;
 }
 
-export function ModalHasilGenerateMassal({ bulkGenerateResult, setBulkGenerateResult }: ModalHasilGenerateMassalProps) {
-  if (!bulkGenerateResult) return null;
-  const tutup = () => setBulkGenerateResult(null);
-  const Bagian = ({ judul, warna, isi }: { judul: string; warna: string; isi: string[] }) => isi.length ? (
+function Bagian({ judul, warna, isi }: { judul: string; warna: string; isi: string[] }) {
+  if (!isi.length) return null;
+  return (
     <div>
       <p className={`text-xs font-bold mb-1 ${warna}`}>{judul} ({isi.length})</p>
       <ul className="text-[13px] text-slate-600 space-y-0.5">{isi.map(n => <li key={n}>• {n}</li>)}</ul>
     </div>
-  ) : null;
+  );
+}
+
+export function ModalHasilGenerateMassal({ bulkGenerateResult, setBulkGenerateResult }: ModalHasilGenerateMassalProps) {
+  if (!bulkGenerateResult) return null;
+  const tutup = () => setBulkGenerateResult(null);
   return (
     <Modal buka onTutup={tutup} judul={`Hasil Generate Tahapan Massal ${bulkGenerateResult.tahun}`} footer={<TombolModal onClick={tutup}>Tutup</TombolModal>}>
       <div className="space-y-3">

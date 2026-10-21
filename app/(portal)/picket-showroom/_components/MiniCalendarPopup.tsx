@@ -57,9 +57,9 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
 
   return(
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-[1200] flex items-center justify-center p-4"
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
-      <div className="bg-white rounded-kartu shadow-modal overflow-hidden" style={{width:'640px',maxWidth:'95vw',animation:'scale-in 0.2s ease-out',border:'1.5px solid rgba(220,38,38,0.2)'}}>
+      <div className="bg-white rounded-kartu shadow-modal overflow-hidden" style={{width:'640px',maxWidth:'95vw',animation:'scale-in 0.2s ease-out'}}>
         <div className="px-5 py-3.5 flex items-center justify-between bg-white border-b border-slate-100">
           <button aria-label="Sebelumnya" onClick={()=>setCalMonth(new Date(y,m-1,1))} className="text-slate-500 hover:text-slate-800 font-bold text-2xl w-9 h-9 flex items-center justify-center rounded-lg hover:bg-white/10">‹</button>
           <div className="text-center">
