@@ -6,6 +6,7 @@
  * saat dibuat - setelah itu yang terlihat cuma 4 huruf terakhirnya.
  */
 import React, { useCallback, useEffect, useState } from 'react';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 
 interface Token { id: string; nama: string; akhiran: string; cakupan: string[]; dibuat: string; terakhir_dipakai: string | null; dicabut: string | null }
 
@@ -19,6 +20,8 @@ export function ProfilIntegrasi() {
   const [galat, setGalat] = useState('');
   const [sibuk, setSibuk] = useState(false);
   const [tersalin, setTersalin] = useState(false);
+  //  Konfirmasi memakai dialog platform, bukan window.confirm bawaan peramban.
+  const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
 
   const muat = useCallback(async () => {
     try {
@@ -50,11 +53,13 @@ export function ProfilIntegrasi() {
     setSibuk(false);
   };
 
-  const cabut = async (id: string) => {
-    if (!window.confirm('Cabut token ini? DIWAYPI yang memakainya langsung kehilangan akses.')) return;
-    await fetch(`/api/integrasi/token?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
-    muat();
-  };
+  const cabut = (id: string) => setKonfirmasi({
+    message: 'Cabut token ini?', description: 'DIWAYPI yang memakainya langsung kehilangan akses.', danger: true, confirmLabel: 'Cabut',
+    onConfirm: async () => {
+      await fetch(`/api/integrasi/token?id=${encodeURIComponent(id)}`, { method: 'DELETE' }).catch(() => {});
+      muat();
+    },
+  });
 
   const salin = async () => {
     if (!baru) return;
@@ -126,6 +131,7 @@ export function ProfilIntegrasi() {
           + Hubungkan DIWAYPI
         </button>
       )}
+      <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     </div>
   );
 }

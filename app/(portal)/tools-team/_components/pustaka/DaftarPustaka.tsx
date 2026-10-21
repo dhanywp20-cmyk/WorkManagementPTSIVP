@@ -5,7 +5,7 @@
  * Artikel dibuka di modal baca.
  */
 import { useMemo, useState } from 'react';
-import { ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { ConfirmDialog, type ConfirmState, Toast, useNotif } from '@/components/shared';
 import { Modal } from '@/components/shared/Modal';
 import { type EntriPustaka, type JenisPustaka, teksDari } from '@/lib/pustaka';
 import { FormEntri } from './FormEntri';
@@ -25,7 +25,8 @@ export function DaftarPustaka({ jenis }: { jenis: JenisPustaka }) {
   const [ubah, setUbah] = useState<EntriPustaka | null | 'baru'>(null);
   const [baca, setBaca] = useState<EntriPustaka | null>(null);
   const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
-  const [pesan, setPesan] = useState('');
+  //  Hasil hapus lewat Toast bersama (sama dengan menu lain), bukan paragraf status sendiri.
+  const { notif, notify } = useNotif();
   const kolom = jenis.bidang.filter(b => b.kolom);
   //  "Milik saya" hanya berarti bila sebagian entri boleh diubah akun ini (Team: entri buatannya sendiri).
   const [milikSaya, setMilikSaya] = useState(false);
@@ -38,7 +39,7 @@ export function DaftarPustaka({ jenis }: { jenis: JenisPustaka }) {
   const hapus = (e: EntriPustaka) => setKonfirmasi({
     message: `Hapus "${e.nama}" dari Pustaka?`, danger: true, confirmLabel: 'Hapus',
     description: 'Kalkulator tidak bisa memilihnya lagi. Hasil hitung yang sudah dicetak tidak berubah.',
-    onConfirm: async () => { setKonfirmasi(null); const h = await hapusEntri(e.id, jenis.v); setPesan(h.ok ? `"${e.nama}" dihapus.` : h.alasan ?? 'Gagal menghapus.'); },
+    onConfirm: async () => { setKonfirmasi(null); const h = await hapusEntri(e.id, jenis.v); if (h.ok) notify('success', `"${e.nama}" dihapus.`); else notify('error', h.alasan ?? 'Gagal menghapus.'); },
   });
   const artikel = jenis.kelompok === 'artikel';
   return (
@@ -59,7 +60,7 @@ export function DaftarPustaka({ jenis }: { jenis: JenisPustaka }) {
           </button>
         )}
       </div>
-      {pesan && <p role="status" className="rounded-lg bg-slate-50 px-3 py-2 text-[12.5px] font-semibold text-slate-700">{pesan}</p>}
+      <Toast notif={notif} />
       {memuat ? <p className="text-sm text-slate-500 py-6 text-center">Memuat…</p>
         : gagal ? <p className="text-sm text-rose-700 py-6 text-center">Pustaka tidak bisa dimuat - kalkulator memakai nilai bawaan.</p>
         : !daftar.length ? <p className="text-sm text-slate-500 py-6 text-center">{cari ? 'Tidak ada yang cocok.' : 'Belum ada isi.'}</p>

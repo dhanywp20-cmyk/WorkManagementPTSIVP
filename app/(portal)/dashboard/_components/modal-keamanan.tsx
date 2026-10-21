@@ -6,6 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared';
 
 interface Akun { id: string; full_name: string; username: string; role: string }
 
@@ -16,6 +17,8 @@ export function KeamananInline() {
   const [pesan, setPesan] = useState<{ galat: boolean; teks: string } | null>(null);
   const [sibuk, setSibuk] = useState(false);
   const [memuat, setMemuat] = useState(true);
+  //  Konfirmasi memakai dialog platform, bukan window.confirm bawaan peramban (tampilannya beda tiap peramban & memblokir halaman).
+  const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
 
   const muat = useCallback(async () => {
     try {
@@ -60,7 +63,7 @@ export function KeamananInline() {
         <>
           <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">2FA</span>
           <button disabled={sibuk} title="Hapus 2FA akun ini (HP hilang)"
-            onClick={() => { if (window.confirm(`Reset 2FA ${a.full_name}?`)) void kirim({ aksi: 'reset', user_id: a.id }, `2FA ${a.full_name} direset.`); }}
+            onClick={() => setKonfirmasi({ message: `Reset 2FA ${a.full_name}?`, description: 'Authenticator lama tidak berlaku; akun ini mendaftar ulang 2FA saat login berikutnya.', danger: true, confirmLabel: 'Reset 2FA', onConfirm: () => { void kirim({ aksi: 'reset', user_id: a.id }, `2FA ${a.full_name} direset.`); } })}
             className="text-[11px] font-bold text-red-600 hover:underline disabled:opacity-40">Reset</button>
         </>
       ) : (
@@ -102,6 +105,7 @@ export function KeamananInline() {
           <ul className="divide-y divide-slate-100">{lain.map(baris)}</ul>
         </section>
       )}
+      <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     </div>
   );
 }

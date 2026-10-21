@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 import { BrandPicMappingDB } from './shared';
 import { useDaftarPilihan } from '@/lib/daftar-pilihan';
-import { ModalPortal } from '@/components/shared';
+import { InlineToast, ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // BrandPicSettingModal
@@ -83,7 +83,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
           </div>
           <button aria-label="Tutup" onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">✕</button>
         </div>
-        {notif && <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex-shrink-0 ${notif.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>{notif.type==='success'?'✅':'❌'} {notif.msg}</div>}
+        <InlineToast notif={notif} />
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {loading ? <div className="flex justify-center py-10"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin"/></div> : (
             <>
@@ -180,11 +180,7 @@ export function BrandPicSettingContent() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
-      {notif && (
-        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex-shrink-0 ${notif.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>
-          {notif.type==='success'?'✅':'❌'} {notif.msg}
-        </div>
-      )}
+      <InlineToast notif={notif} />
       {/* Kartu putih di atas latar slate — sama dengan Kartu di Profil. */}
       <div className="flex-1 min-h-0 p-4">
         <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">

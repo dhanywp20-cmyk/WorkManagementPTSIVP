@@ -10,7 +10,7 @@ export {
   DuplicateIconBtn, CompleteIconBtn, ActionGroup,
   FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
 } from './ActionIcons';
-export { Toast, InlineToast, type Notif } from './Toast';
+export { Toast, InlineToast, useNotif, type Notif } from './Toast';
 // Pemberitahuan simpan yang gagal - satu untuk semua modul, dipasang di app/layout.tsx.
 export { PenjagaGalatTulis } from './PenjagaGalatTulis';
 // Galat skrip & promise di layar pengguna -> Admin Panel -> Kesehatan Sistem (dipasang di app/layout.tsx).
