@@ -1,6 +1,6 @@
 // Session
-/** Durasi sesi login: 6 jam (sama di semua modul) */
-export const SESSION_DURATION_MS = 6 * 60 * 60 * 1000;
+/** Durasi sesi login: 400 hari, sama dengan cookie sesi (lib/masuk-server.ts SESSION_HOURS) - praktis tanpa batas. */
+export const SESSION_DURATION_MS = 400 * 24 * 60 * 60 * 1000;
 
 // Brand Colors
 /**

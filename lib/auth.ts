@@ -99,6 +99,25 @@ export async function verifySessionFromCookie<T = Record<string, unknown>>(): Pr
 }
 
 /**
+ * Tanya server apakah cookie sesi tab ini masih berlaku. 'habis' HANYA bila server menjawab 401 (cookie
+ * hilang / dicabut lewat Keluar); jaringan putus atau galat server = 'gagal' - jangan keluarkan orang hanya
+ * karena sinyal jelek. Bila sah, token PostgREST ikut diperbarui.
+ */
+export async function cekSesiServer(): Promise<'sah' | 'habis' | 'gagal'> {
+  try {
+    const res = await fetch('/api/auth/session', { credentials: 'include' });
+    if (res.status === 401) return 'habis';
+    if (!res.ok) return 'gagal';
+    const { user, db_token } = await res.json();
+    if (!user) return 'habis';
+    if (db_token) setDbToken(db_token);
+    return 'sah';
+  } catch {
+    return 'gagal';
+  }
+}
+
+/**
  * Cek session dan redirect ke dashboard jika expired.
  * Mengembalikan true jika session masih valid.
  */
@@ -119,11 +138,10 @@ export function checkSessionOrRedirect(): boolean {
 /**
  * Perbarui token PostgREST bila sudah dekat kedaluwarsa.
  *
- * Token dan sesi browser sama-sama berumur 6 jam tapi diperpanjang oleh hal
- * berbeda: setSession() mengulang hitungan mundur sesi dari nol tanpa ikut
- * menerbitkan token baru. Tanpa pemantau ini, sesi bisa terlihat segar
- * sementara PostgREST menolak setiap query dengan galat JWT, dan dari sisi
- * user tidak ada tanda apa pun bahwa sesinya bermasalah.
+ * Token berumur 6 jam, sesi browser jauh lebih panjang (SESSION_DURATION_MS).
+ * Tanpa pemantau ini, sesi bisa terlihat segar sementara PostgREST menolak
+ * setiap query dengan galat JWT, dan dari sisi user tidak ada tanda apa pun
+ * bahwa sesinya bermasalah.
  */
 export async function refreshDbTokenIfNeeded(ambangMenit = 30): Promise<void> {
   const exp = dbTokenExpiryMs();
