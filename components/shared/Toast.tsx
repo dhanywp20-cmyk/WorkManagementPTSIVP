@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CircleCheck, CircleX, TriangleAlert, Info } from 'lucide-react';
 
 /**
@@ -38,6 +39,22 @@ export function Toast({ notif }: { notif: Notif | null }) {
       <span className="leading-snug">{notif.msg}</span>
     </div>
   );
+}
+
+/**
+ * State toast baku: `notify('success', 'Tersimpan')` -> tampil 3,5 detik lalu hilang sendiri.
+ * Pasangkan dengan <Toast notif={notif} />. Pesan baru menggantikan yang lama (timer ikut diulang).
+ */
+export function useNotif(ms = 3500) {
+  const [notif, setNotif] = useState<Notif | null>(null);
+  const timer = useRef<number | undefined>(undefined);
+  const notify = useCallback((type: Notif['type'], msg: string) => {
+    setNotif({ type, msg });
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setNotif(null), ms);
+  }, [ms]);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  return { notif, notify };
 }
 
 export function InlineToast({ notif }: { notif: Notif | null }) {
