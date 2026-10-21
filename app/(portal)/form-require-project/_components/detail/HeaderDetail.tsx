@@ -2,6 +2,7 @@
 
 /** HeaderDetail - dipecah dari app/(portal)/form-require-project/_components/ModalDetailRequest.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { IkonTeks } from '@/components/shared/Ikon';
+import { TombolSetujui, TombolTolak, TombolTugaskan } from '@/components/shared';
 import { unduhPaketRequest } from '../paket-unduhan';
 import { cetakRequest } from '../cetak-request';
 import { User, ProjectRequest, ProjectAttachment } from '../shared';
@@ -68,39 +69,20 @@ export function HeaderDetail({ attachments, bisaKelolaRequest, bolehEditRequest,
           {/* Sales Internal: wajib review dulu sebelum Admin bisa approve */}
           {canInternalApproveProject(selectedRequest) && (
             <>
-              <button onClick={() => setInternalApproveTarget(selectedRequest)}
-                className="bg-amber-500 hover:bg-amber-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
-                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                Approve & Teruskan ke Admin
-              </button>
-              <button onClick={() => handleReject(selectedRequest)}
-                className="bg-white/20 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/30 flex items-center gap-1.5">
-                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                Tolak
-              </button>
+              <TombolSetujui ukuran="kecil" onClick={() => setInternalApproveTarget(selectedRequest)}>Setujui &amp; Teruskan ke Admin</TombolSetujui>
+              <TombolTolak ukuran="kecil" onClick={() => handleReject(selectedRequest)} />
             </>
           )}
-          {/* Approve/Tolak: hanya admin/superadmin, terkunci selama masih internal_review */}
+          {/* Setujui/Tolak: hanya admin/superadmin, terkunci selama masih internal_review */}
           {bisaKelolaRequest && detailIsPending && selectedRequest.routing_status !== 'internal_review' && (
             <>
-              <button onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}
-                className="bg-emerald-500 hover:bg-emerald-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
-                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                Approve & Assign PTS
-              </button>
-              <button onClick={() => handleReject(selectedRequest)}
-                className="bg-white/20 hover:bg-red-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-white/30 flex items-center gap-1.5">
-                <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
-                Tolak
-              </button>
+              <TombolSetujui ukuran="kecil" onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}>Setujui &amp; Tugaskan</TombolSetujui>
+              <TombolTolak ukuran="kecil" onClick={() => handleReject(selectedRequest)} />
             </>
           )}
           {/* Supervisor yang di-route: wajib assign lanjut ke Tim PTS (atau sendiri) */}
           {selectedRequest?.routing_status === 'supervisor_assign' && selectedRequest?.assigned_supervisor_id === currentUser.id && (
-            <button onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}
-              className="bg-amber-500 hover:bg-amber-400 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all flex items-center gap-1 sm:gap-1.5">
-              <IkonTeks nama="🎯" />Assign ke Tim
-            </button>
+            <TombolTugaskan ukuran="kecil" onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}>Tugaskan Tim</TombolTugaskan>
           )}
           {/* Info untuk PTS yang di-assign: tombol mulai in_progress */}
           {isTeamPTS && detailRoomStatus === 'approved' && detailRoomAssignName === currentUser.full_name && (
