@@ -23,11 +23,11 @@ export function ModalNominalProyek({ handleSaveNominal, nominalBast, nominalProj
     <>
       {nominalProject && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1100] p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" style={{ border: '1.5px solid rgba(99,102,241,0.3)' }}>
-            <div className="px-5 py-4" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
-              <h3 className="text-base font-bold text-white"><IkonTeks nama="💰" />Input Nominal Incentive</h3>
-              <p className="text-xs text-rose-200 mt-0.5 truncate">{nominalProject.project_name}</p>
+        <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1100] p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
+          <div className="bg-white rounded-kartu shadow-modal w-full max-w-md overflow-hidden">
+            <div className="px-5 py-4 bg-white border-b border-slate-100">
+              <h3 className="text-base font-bold text-slate-800"><IkonTeks nama="💰" />Input Nominal Incentive</h3>
+              <p className="text-xs text-slate-500 mt-0.5 truncate">{nominalProject.project_name}</p>
             </div>
             <div className="p-5 space-y-4">
               {/*
@@ -108,9 +108,9 @@ export function ModalNominalProyek({ handleSaveNominal, nominalBast, nominalProj
               </div>
             </div>
             <div className="flex gap-3 px-5 pb-5">
-              <button onClick={() => { setNominalProject(null); setNominalValue(''); setNominalBast(''); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
+              <button onClick={() => { setNominalProject(null); setNominalValue(''); setNominalBast(''); }} className="tombol-kedua flex-1 py-2.5 rounded-kontrol font-bold text-sm">Batal</button>
               <button onClick={handleSaveNominal} disabled={savingNominal}
-                className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
+                className="tombol-utama flex-1 py-2.5 rounded-kontrol font-bold text-sm  flex items-center justify-center gap-2 disabled:opacity-50">
                 {savingNominal && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 Simpan
               </button>
