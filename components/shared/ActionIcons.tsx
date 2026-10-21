@@ -178,7 +178,7 @@ export function PrintIconBtn({ onClick, title = 'Print PDF', disabled }: {
   );
 }
 
-export function ApproveIconBtn({ onClick, title = 'Approve', disabled, pulse }: {
+export function ApproveIconBtn({ onClick, title = 'Setujui', disabled, pulse }: {
   onClick: () => void; title?: string; disabled?: boolean; pulse?: boolean;
 }) {
   return (

@@ -167,7 +167,7 @@ export function DaftarSesi({ filtered, fmtDT, getSessionStatus, handleDelete, ha
                   )}
                   <button data-tulis
                     onClick={() => openReassign(s)}
-                    title="Assign soal yang sama ke tim / target berbeda"
+                    title="Tugaskan soal yang sama ke tim / target berbeda"
                     className="px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 flex items-center gap-1"
                   >
                     <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -3,7 +3,7 @@
 /** TabAkunTertunda - dipecah dari app/(portal)/dashboard/_components/modal-akun.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
 import { IkonTeks } from '@/components/shared/Ikon';
 import { User, ALL_MENU_KEYS, DEFAULT_MENU_KEYS } from '../shared';
-import { Username } from '@/components/shared';
+import { TombolSetujui, TombolTolak, Username } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import React from 'react';
 
@@ -65,15 +65,8 @@ export function TabAkunTertunda({ activeTab, approveMenus, approvingUser, handle
                 </div>
               </div>
               <div className="flex gap-3 pt-1">
-                <button onClick={handleApproveUser} disabled={saving}
-                  className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white py-2.5 rounded-lg font-semibold text-sm disabled:opacity-60 flex items-center justify-center gap-2 hover:from-emerald-700 hover:to-emerald-800 transition-all">
-                  {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  <IkonTeks nama="✅" />Setujui Akun
-                </button>
-                <button onClick={() => handleRejectUser(approvingUser.id, approvingUser.full_name)}
-                  className="px-5 py-2.5 rounded-lg border border-red-200 text-red-600 font-semibold text-sm hover:bg-red-50 transition-all">
-                  <IkonTeks nama="❌" />Tolak
-                </button>
+                <TombolSetujui onClick={handleApproveUser} disabled={saving} className="flex-1">{saving ? 'Memproses...' : 'Setujui Akun'}</TombolSetujui>
+                <TombolTolak onClick={() => handleRejectUser(approvingUser.id, approvingUser.full_name)} />
               </div>
             </div>
           ) : pendingUsers.length === 0 ? (
@@ -112,10 +105,8 @@ export function TabAkunTertunda({ activeTab, approveMenus, approvingUser, handle
                     </div>
                   </div>
                   <div className="flex flex-col gap-1 flex-shrink-0">
-                    <button onClick={() => { setApprovingUser(user); setApproveMenus(DEFAULT_MENU_KEYS); }}
-                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-all">Review</button>
-                    <button onClick={() => handleRejectUser(user.id, user.full_name)}
-                      className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all">Tolak</button>
+                    <TombolSetujui ukuran="kecil" onClick={() => { setApprovingUser(user); setApproveMenus(DEFAULT_MENU_KEYS); }}>Tinjau</TombolSetujui>
+                    <TombolTolak ukuran="kecil" onClick={() => handleRejectUser(user.id, user.full_name)} />
                   </div>
                 </div>
                 );

@@ -1,7 +1,7 @@
 'use client';
 import type { Dispatch, SetStateAction } from 'react';
 import { useRouter } from 'next/navigation';
-import { ModalPortal } from '@/components/shared';
+import { ModalPortal, TombolTugaskan } from '@/components/shared';
 import { InfoLine } from './DonutCards';
 import { cetakTicket } from './cetak-ticket';
 import type { Ticket, User } from './shared';
@@ -121,13 +121,10 @@ export function TicketDetailPopup({
                 <div className="mx-4 mt-3 rounded-xl p-3 flex items-center gap-3" style={{ background: "rgba(245,158,11,0.1)", border: "1.5px solid rgba(245,158,11,0.4)" }}>
                   <span className="text-2xl"><Ikon nama="🎯" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-amber-800">Ticket ini menunggu kamu assign ke tim</p>
-                    <p className="text-[11px] text-amber-700">Sudah diapprove Admin — pilih anggota tim atau kerjakan sendiri.</p>
+                    <p className="text-xs font-bold text-amber-800">Ticket ini menunggu kamu tugaskan ke tim</p>
+                    <p className="text-[11px] text-amber-700">Sudah disetujui Admin — pilih anggota tim atau kerjakan sendiri.</p>
                   </div>
-                  <button onClick={() => { setSupAssignTicket(selectedTicket); setSupAssignTo(""); }}
-                    className="flex-shrink-0 text-white px-3 py-2 rounded-lg text-xs font-bold" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}>
-                    <IkonTeks nama="🎯" />Assign ke Tim
-                  </button>
+                  <TombolTugaskan ukuran="kecil" className="flex-shrink-0" onClick={() => { setSupAssignTicket(selectedTicket); setSupAssignTo(""); }}>Tugaskan Tim</TombolTugaskan>
                 </div>
               )}
               {/* Admin / Full Access: betulkan data & alihkan pekerjaan.

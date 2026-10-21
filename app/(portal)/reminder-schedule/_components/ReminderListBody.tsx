@@ -201,7 +201,7 @@ export function ReminderListBody({
                   )}
                   {canInternalApprove(r) && (
                     <>
-                      <ApproveIconBtn onClick={() => setInternalApproveTarget(r)} title="Approve & Teruskan ke Admin" pulse />
+                      <ApproveIconBtn onClick={() => setInternalApproveTarget(r)} title="Setujui & Teruskan ke Admin" pulse />
                       <button aria-label="Tolak" onClick={() => handleInternalReject(r)} title="Tolak"
                         className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
                         <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -210,7 +210,7 @@ export function ReminderListBody({
                   )}
                   {canApproveAssign && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && r.routing_status !== 'internal_review' && (
                     <>
-                      <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Approve & Assign" pulse />
+                      <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Setujui & Tugaskan" pulse />
                       <button aria-label="Tolak" onClick={() => handleAdminReject(r)} title="Tolak"
                         className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
                         <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -218,7 +218,7 @@ export function ReminderListBody({
                     </>
                   )}
                   {currentUser?.id === r.assigned_supervisor_id && r.routing_status === 'supervisor_assign' && (
-                    <ApproveIconBtn onClick={() => openSupervisorAssign(r, group)} title="Assign Tim" pulse />
+                    <ApproveIconBtn onClick={() => openSupervisorAssign(r, group)} title="Tugaskan Tim" pulse />
                   )}
                   {(isAdmin || isManager) && layakIncentive(r) && (
                     <button aria-label={`Sync ${r.project_name} ke Incentive PTS`}
@@ -492,7 +492,7 @@ export function ReminderListBody({
                         {/* Approve & Teruskan — Sales Internal yg di-mapping, wajib duluan sebelum Admin */}
                         {canInternalApprove(group[0]) && (
                           <>
-                            <ApproveIconBtn onClick={() => setInternalApproveTarget(group[0])} title="Approve & Teruskan ke Admin" pulse />
+                            <ApproveIconBtn onClick={() => setInternalApproveTarget(group[0])} title="Setujui & Teruskan ke Admin" pulse />
                             <button aria-label="Tolak" onClick={() => handleInternalReject(group[0])} title="Tolak"
                               className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
                               <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -502,7 +502,7 @@ export function ReminderListBody({
                         {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign & sudah lolos review internal */}
                         {canApproveAssign && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && group[0].routing_status !== 'internal_review' && (
                           <>
-                            <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Approve & Assign" pulse />
+                            <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Setujui & Tugaskan" pulse />
                             <button aria-label="Tolak" onClick={() => handleAdminReject(group[0])} title="Tolak"
                               className="w-8 h-8 shrink-0 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white border border-red-200 rounded-lg flex items-center justify-center transition-all">
                               <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -511,7 +511,7 @@ export function ReminderListBody({
                         )}
                         {/* Assign Tim — Supervisor yg di-route, wajib assign anggota/diri sendiri */}
                         {currentUser?.id === group[0].assigned_supervisor_id && group[0].routing_status === 'supervisor_assign' && (
-                          <ApproveIconBtn onClick={() => openSupervisorAssign(group[0], group)} title="Assign Tim" pulse />
+                          <ApproveIconBtn onClick={() => openSupervisorAssign(group[0], group)} title="Tugaskan Tim" pulse />
                         )}
                         {(isAdmin || isManager) && layakIncentive(group[0]) && (
                           <button aria-label={`Sync ${group[0].project_name} ke Incentive PTS`}
