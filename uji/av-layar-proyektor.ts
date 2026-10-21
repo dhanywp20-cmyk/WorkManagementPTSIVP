@@ -30,6 +30,10 @@ cek('kontras 15:1, 300 lux, 4 m² -> 16.800 lumen', dekat(lumenUntukKontras(4, 3
 cek('gain 1,3 menurunkan kebutuhan', dekat(lumenUntukKontras(4, 300, 15, 1.3), 16800 / 1.3));
 cek('susut 20% -> spesifikasi 21.000 lumen', dekat(lumenSpesifikasi(16800, 20), 21000));
 const lj = rentangJarakLempar(3, 1.9, 1.2);
+//  Rumus lensa dengan koreksi b (Panasonic ET-D3QW200, 100" 17:9 lebar 2,245 m): 1,189 - 1,418 m.
+const ljB = rentangJarakLempar(2.245, 0.566, 0.669, 0.082);
+if (Math.abs(ljB.dekatM - 1.189) > 0.005 || Math.abs(ljB.jauhM - 1.418) > 0.006) { console.log(`  GAGAL koreksi jarak b Panasonic: ${ljB.dekatM} - ${ljB.jauhM}`); process.exitCode = 1; }
+else console.log('  ok   koreksi jarak b: L = TR x lebar - b sama dengan kalkulator Panasonic (1,189 - 1,418 m)');
 cek('gambar 3 m, throw 1,2-1,9 -> 3,6-5,7 m (urutan masukan bebas)', dekat(lj.dekatM, 3.6) && dekat(lj.jauhM, 5.7));
 const lens = rentangTinggiLensa(1, 1.5, 50, 10);
 cek('pusat gambar 1,75 m, shift +50%/-10% -> lensa 1,60-2,50 m', dekat(lens.terendahM, 1.6) && dekat(lens.tertinggiM, 2.5));

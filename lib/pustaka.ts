@@ -23,6 +23,7 @@ const MEREK: Bidang = { k: 'merek', l: 'Merek', tipe: 'teks', kolom: true };
 const CATATAN: Bidang = { k: 'catatan', l: 'Catatan', tipe: 'panjang' };
 const RESOLUSI: Bidang = { k: 'resolusi', l: 'Resolusi', tipe: 'pilih', kolom: true, opsi: [
   { v: 'WXGA', l: 'WXGA 1280×800' }, { v: 'FHD', l: 'Full HD 1920×1080' }, { v: 'WUXGA', l: 'WUXGA 1920×1200' }, { v: '4K', l: '4K UHD 3840×2160' },
+  { v: '4KDCI', l: 'Native 4K 4096×2160 (17:9)' },
 ] };
 
 export const JENIS_PUSTAKA: JenisPustaka[] = [
@@ -32,6 +33,9 @@ export const JENIS_PUSTAKA: JenisPustaka[] = [
     { k: 'throwMaks', l: 'Throw ratio maks', tipe: 'angka', min: 0.1, maks: 20, wajib: true, kolom: true },
     { k: 'shiftAtas', l: 'Lens shift atas', tipe: 'angka', satuan: '%', min: 0, maks: 150 },
     { k: 'shiftBawah', l: 'Lens shift bawah', tipe: 'angka', satuan: '%', min: 0, maks: 150 },
+    { k: 'shiftHorizontal', l: 'Lens shift kiri-kanan', tipe: 'angka', satuan: '%', min: 0, maks: 100 },
+    //  Rumus jarak lempar datasheet lensa: L = TR x lebar gambar - b (mis. Panasonic: L = 0,566 x SW - 0,082).
+    { k: 'koreksiJarak', l: 'Koreksi jarak b (L = TR × lebar − b)', tipe: 'angka', satuan: 'm', min: -1, maks: 1 },
     { k: 'sumber', l: 'Sumber cahaya', tipe: 'pilih', opsi: [{ v: 'laser', l: 'Laser' }, { v: 'lampu', l: 'Lampu' }, { v: 'led', l: 'LED' }] },
     { k: 'watt', l: 'Daya', tipe: 'angka', satuan: 'W', min: 0, maks: 10000 }, CATATAN] },
   { v: 'speaker', l: 'Speaker', ikon: '🔊', kelompok: 'produk', ket: 'Dipakai Kalkulator AV › Audio (sensitivitas, sudut, tap line).', bidang: [

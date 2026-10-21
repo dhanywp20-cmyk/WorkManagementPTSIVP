@@ -12,6 +12,7 @@ import { kenaPermukaan } from './kena';
 import type { Mesin } from './tipe';
 import { batasDunia, terbangKe } from './kamera';
 import { hindariTumpuk } from './label';
+import { pasangPatchProyektor } from './proyektorNyata';
 
 
 export function useMesin(K: KeadaanDesain) {
@@ -34,6 +35,8 @@ export function useMesin(K: KeadaanDesain) {
         const wadah = wadahRef.current;
         if (!hidup || !wadah) return;
 
+        //  Proyektor = SpotLight bergambar (mesin/proyektorNyata.ts): di luar bingkai gambar tidak menyala.
+        pasangPatchProyektor(THREE);
         const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
         renderer.setPixelRatio(Math.min(2, window.devicePixelRatio));
         renderer.setClearColor(0xe2e8f0);

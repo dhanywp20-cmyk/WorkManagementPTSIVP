@@ -1,11 +1,11 @@
 'use client';
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
-import { Angka, f, Segmen, Catatan } from '../../../bersama/ui';
-import { bendaBaru, geserLensaDari, lumenDari, offsetLensaDari, type PasangProyektor, RASIO_PROYEKTOR, type RasioProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
+import { batasShift, bendaBaru, geserLensaDari, koreksiJarakDari, lumenDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, type RasioProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
 export function AturProyektor({ c }: { c: KonteksAtur }) {
-  const { b, kosong, label, onUbah, set, semua } = c;
+  const { b, kosong, label, onGambar, onUbah, set, semua } = c;
   const proyektor = semua.filter(x => x.jenis === 'proyektor');
   const warnaSinar = warnaSinarProyektor(b, Math.max(0, proyektor.findIndex(x => x.id === b.id)), proyektor.length);
   return (
@@ -64,6 +64,10 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                   {tetap ? 'Lensa tetap (tanpa zoom) - isi TR terlebar & terpanjang dari datasheet bila lensanya zoom.'
                     : `Zoom ${f(zMax / zMin, 2)}× (TR ${f(zMin, 2)} - ${f(zMax, 2)} : 1). − = gambar membesar (wide), + = gambar mengecil (tele).`}
                 </Catatan>
+                {/*  Rumus lensa pabrikan: L = a x SW - b. a = TR terlebar / terpanjang di atas, b = koreksi ini. */}
+                <Angka label="Koreksi jarak b (rumus L = TR × lebar − b)" nilai={koreksiJarakDari(b)} satuan="m" step={0.001} min={-1}
+                  onUbah={v => v >= -1 && v <= 1 && set({ koreksiJarak: Math.round(v * 1000) / 1000 || undefined })} />
+                <Catatan>Isi dari rumus jarak lempar di datasheet lensa, mis. Panasonic ET-D3QW200: L = 0,566 × SW − 0,082 → TR 0,566 & b 0,082. Kosong / 0 = L = TR × lebar.</Catatan>
               </div>
             );
           })()}
@@ -81,13 +85,43 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 onUbah={v => v >= -60 && v <= 60 && set({ geserLensaH: v / 100 })} />
               <Angka label="Lumen" nilai={lumenDari(b)} satuan="lm" step={100} onUbah={v => v >= 100 && v <= 100000 && set({ lumen: Math.round(v) })} />
             </div>
+            {(() => {
+              //  Batas lens shift lensa dari datasheet (Panasonic: VS atas / bawah, HS kiri-kanan, % tinggi / lebar gambar).
+              const bs = batasShift(b);
+              const persen = (v: number | null) => (v === null ? undefined : Math.round(v * 100));
+              const isi = (k: 'shiftAtasMaks' | 'shiftBawahMaks' | 'shiftHMaks', v: number) => v >= 0 && v <= 150 && set({ [k]: v ? v / 100 : undefined });
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Angka label="Batas atas" nilai={persen(bs.atas) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftAtasMaks', v)} />
+                    <Angka label="Batas bawah" nilai={persen(bs.bawah) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftBawahMaks', v)} />
+                    <Angka label="Batas kiri-kanan" nilai={persen(bs.h) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftHMaks', v)} />
+                  </div>
+                  {(bs.lewatV || bs.lewatH) && (
+                    <p className="text-[12px] font-semibold text-rose-700">
+                      Lens shift melebihi kemampuan lensa ({bs.lewatV ? `vertikal ${Math.round(offsetLensaDari(b) * 100)}% di luar +${persen(bs.atas) ?? '∞'}/−${persen(bs.bawah) ?? '∞'}%` : ''}{bs.lewatV && bs.lewatH ? '; ' : ''}{bs.lewatH ? `horizontal ${Math.round(geserLensaDari(b) * 100)}% di luar ±${persen(bs.h)}%` : ''}) - geser proyektor atau pakai tilt.
+                    </p>
+                  )}
+                </>
+              );
+            })()}
             {/*  Rasio aspek panel proyektor: ukuran gambar, cakupan layar, lux & piksel blending mengikuti. */}
             <Segmen label="Rasio aspek gambar" nilai={b.rasioProyektor ?? '16:9'} onUbah={(v: RasioProyektor) => set({ rasioProyektor: v })}
               opsi={(Object.keys(RASIO_PROYEKTOR) as RasioProyektor[]).map(k => ({ v: k, l: k }))} />
             <Catatan>
               Vertikal = geser pusat gambar dalam % tinggi gambar (relatif proyektor; gantung plafon = terbalik): 0% = tepat di sumbu lensa,
               50% = tepi gambar sejajar lensa (umum pada proyektor tanpa lens shift). Horizontal = % lebar gambar, + ke kanan.
+              Batas = kemampuan lens shift lensa dari datasheet (Panasonic: VS1 / VS2 / HS); 0 = tidak dibatasi.
             </Catatan>
+          </div>
+          {/*  Konten yang diproyeksikan (centang "Sinar nyata"): gambar ini yang jatuh di layar / dinding / benda. */}
+          <div>
+            <Pilih label="Konten yang diproyeksikan" nilai={b.konten ?? 'pola'} onUbah={(v: KontenLayar) => (v === 'gambar' ? onGambar() : set({ konten: v }))}
+              opsi={[
+                { v: 'pola', l: 'Pola uji' }, { v: 'putih', l: 'Putih penuh (cek kecerahan & keseragaman)' }, { v: 'dashboard', l: 'Dashboard / grafik' },
+                { v: 'cctv', l: 'CCTV' }, { v: 'desktop', l: 'Home screen / presentasi' }, { v: 'gambar', l: 'Gambar unggahan...' }, { v: 'mati', l: 'Mati (proyektor padam)' },
+              ] as { v: KontenLayar; l: string }[]} />
+            <Catatan>Tampil saat "Sinar nyata" dicentang: gambar diproyeksikan dari lensa (lens shift, keystone & lengkung layar ikut), terang dari lumen dibanding cahaya ruangan, bayangan benda & warna permukaan asli. Centang Grid sinar = pola grid uji.</Catatan>
           </div>
           {/*  Warna sinar di kanvas: otomatis beda per proyektor (>= 2) supaya cakupan tiap bidang mudah dibedakan. */}
           <div>

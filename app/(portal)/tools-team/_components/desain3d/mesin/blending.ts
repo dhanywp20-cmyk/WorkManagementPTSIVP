@@ -57,6 +57,7 @@ export function gambarBlending(
   m: Mesin, data: DataBlend[],
   setInfo: (f: (v: Blending[]) => Blending[]) => void,
   /** Kartu keterangan detail (persen & piksel) ikut digambar. */ detail: boolean,
+  /** Zona ungu & garis ukur digambar (false = hanya dihitung, mis. untuk ramp blending Sinar nyata). */ gambar = true,
 ): Blending[] {
   const { THREE, grupBantu } = m;
   const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
@@ -80,6 +81,7 @@ export function gambarBlending(
 
   const hasil = hitungBlending(data.map(d => ({ p: d.p, L: d.L, baris: d.baris, kolom: d.kolom })), terlihat);
   setInfo(v => (kunci(v) === kunci(hasil) ? v : hasil));
+  if (!gambar) return hasil;
 
   //  FrontSide: zona hanya di sisi permukaan yang menghadap lensa (ikut tembus bersama dinding yang disembunyikan).
   const bahan = new THREE.MeshBasicMaterial({ color: 0xa855f7, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.FrontSide, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });

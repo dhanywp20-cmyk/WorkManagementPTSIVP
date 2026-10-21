@@ -3,7 +3,7 @@
  * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
  */
 import { bendaBaru } from './katalog';
-import { arahProyektor, lumenDari, sinarProyektor } from './proyektor';
+import { arahProyektor, gainLayarDari, lumenDari, luminanceDari, sinarProyektor } from './proyektor';
 import { bukaanDinding, daftarRuang, ruangDari, sisiLuar } from './ruang';
 import type { Benda, Kotak, Ruang, TipeLampu, Titik } from './tipe';
 
@@ -135,5 +135,9 @@ export function kontrasProyektor(p: Benda, semua: Benda[], r: Ruang, target: num
   const cahaya = luxCahayaDi(semua, r, P, n);
   const amb = Math.max(0.5, cahaya.total);
   const kontras = (luxGambar + amb) / amb;
-  return { luxGambar, cahaya, kontras, cukup: kontras >= target, lumenPerlu: Math.ceil(((target - 1) * amb * luas) / 100) * 100, luas };
+  //  Luminance di layar (cd/m²) = lux x gain / π - sama dengan kalkulator Panasonic (kontras tidak berubah oleh gain:
+  //  gambar & cahaya ruangan sama-sama dipantulkan kain layar yang sama).
+  const gain = gainLayarDari(sn.layar);
+  return { luxGambar, cahaya, kontras, cukup: kontras >= target, lumenPerlu: Math.ceil(((target - 1) * amb * luas) / 100) * 100, luas,
+    gain, luminance: luminanceDari(luxGambar, gain) };
 }

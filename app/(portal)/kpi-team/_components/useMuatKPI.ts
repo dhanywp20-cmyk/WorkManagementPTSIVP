@@ -161,7 +161,8 @@ export function useMuatKPI(k: MuatKPIKonteks) {
       const weekWorkDays = 5;
 
       const roleMap: Record<string,number> = {};
-      users.forEach((u:any)=>{ roleMap[u.role]=(roleMap[u.role]||0)+1; });
+      //  Role kosong / null dikelompokkan sebagai "belum diatur" - dulu kunci objeknya jadi teks "null" dan tampil "NULL" di grafik.
+      users.forEach((u:any)=>{ const r = typeof u.role === 'string' && u.role.trim() ? u.role.trim() : 'belum diatur'; roleMap[r]=(roleMap[r]||0)+1; });
 
       // Learning: dari lc_quiz_attempts (submitted)
       const lcSubmitted = lcAttempts.length;

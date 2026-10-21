@@ -160,11 +160,11 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
             sn.layar?.nama ?? 'Dinding / permukaan', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—']),
         }, {
           judul: `Kecerahan & kontras proyektor · target ${targetKontras}:1`, jenis: 'tabel' as const,
-          kepala: ['Proyektor', 'Lumen', 'Cahaya di gambar', 'Cahaya lampu di gambar', 'Kontras'],
-          rataKanan: [1, 2, 3, 4],
+          kepala: ['Proyektor', 'Lumen', 'Cahaya di gambar', 'Luminance', 'Cahaya lampu di gambar', 'Kontras'],
+          rataKanan: [1, 2, 3, 4, 5],
           isi: proyektor.map(({ p }) => {
             const kp = kontrasProyektor(p, benda, ruang, targetKontras);
-            return [p.nama, lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}`,
+            return [p.nama, lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.luminance, 0)} cd/m² (gain ${fm(kp.gain, 2)})`, `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}`,
               `${fm(kp.kontras, 1)} : 1 ${kp.cukup ? '✓' : `✗ (perlu ±${kp.lumenPerlu.toLocaleString('id-ID')} lm)`}`];
           }),
         }] : []),

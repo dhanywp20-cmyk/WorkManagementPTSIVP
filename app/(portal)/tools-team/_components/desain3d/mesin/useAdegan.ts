@@ -16,10 +16,11 @@ import { penggarisSah, ruangDari, tampilDi } from '../inti';
 import { gambarAlatBantu } from './alatBantu';
 import { gambarBayangan } from './bayangan';
 import { aturTeksTersembunyi } from './label';
+import { aturCahayaRuang } from './proyektorNyata';
 
 
 export function useAdegan(K: KeadaanDesain) {
-  const { sembunyiTeks, jarakDinding, teksSinar, setUkuranCahaya, sembunyiGolongan, snap, titikUkur, setRuang, gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
+  const { sinarNyata, sembunyiTeks, jarakDinding, teksSinar, setUkuranCahaya, sembunyiGolongan, snap, titikUkur, setRuang, gambarTekstur, versiTekstur, pilihLain, analisis, bayangan, benda, detailBlending, gambarLayar, gridSinar, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, mesin, modeGizmo, modelImpor, pilih, plafonDi, ruang, setInfoBlending, siap, sinar, sudutNyaman, tampilBlending, tampilKabel, tampilShare, tampilan, teksturBayang, ukur, versiGambar } = K;
   // ── Ruangan: lantai bertekstur + 4 dinding per ruang ──
   //  Dinding hanya terlihat dari sisi dalam (FrontSide), jadi dinding yang
   //  membelakangi kamera otomatis "tembus" seperti denah rumah boneka.
@@ -48,14 +49,17 @@ export function useAdegan(K: KeadaanDesain) {
       }
     });
     for (const [id, c] of cache) if (!ada.has(id)) { grupBenda.remove(c.obj); buang(c.obj); cache.delete(id); }
+    //  Sinar nyata: layar proyektor = kain putih matte - gambarnya datang dari proyektor yang menyinarinya, bukan
+    //  layar yang menyala sendiri seperti TV (dulu pola uji tampil walau tidak ada / mati proyektornya).
+    const layarPolos = sinar && sinarNyata;
     for (const b of benda) {
-      const tanda = `${tandaBentuk(b)}|${versiGambar}`;
+      const tanda = `${tandaBentuk(b)}|${versiGambar}${b.jenis === 'layar' ? `|${layarPolos}` : ''}`;
       let c = cache.get(b.id);
       if (!c || c.tanda !== tanda) {
         if (c) { grupBenda.remove(c.obj); buang(c.obj); }
         const obj = buatModel(b, {
           THREE,
-          layar: x => (x.konten === 'mati' ? null : x.konten === 'gambar' ? gambarLayar.current.get(x.id) ?? null : teksturKonten(THREE, x)),
+          layar: x => (x.konten === 'mati' || (x.jenis === 'layar' && layarPolos) ? null : x.konten === 'gambar' ? gambarLayar.current.get(x.id) ?? null : teksturKonten(THREE, x)),
           model: k => modelImpor.current.get(k) ?? null,
         });
         obj.userData.id = b.id;
@@ -79,7 +83,7 @@ export function useAdegan(K: KeadaanDesain) {
       const s = new THREE.BoxHelper(o, 0x60a5fa); s.userData.sorot = true; grupBenda.add(s);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [benda, pilih, pilihLain, siap, ruang, versiGambar, sembunyiGolongan]);
+  }, [benda, pilih, pilihLain, siap, ruang, versiGambar, sembunyiGolongan, sinar, sinarNyata]);
 
   // ── Gizmo menempel ke benda terpilih ──
   useEffect(() => {
@@ -116,20 +120,19 @@ export function useAdegan(K: KeadaanDesain) {
     aturTeksTersembunyi(m, sembunyiTeks);
   }, [sembunyiTeks, siap, mesin]);
 
+  // ── Tingkat cahaya ruangan ──
+  //  Sebelum alat bantu: lampu proyektor mode Sinar nyata dikalibrasi terhadap cahaya ruangan yang baru.
+  useEffect(() => {
+    const m = mesin.current; if (!m || !siap) return;
+    aturCahayaRuang(m, { f: { terang: 1, redup: 0.45, gelap: 0.12 }[ruang.cahaya ?? 'terang'] });
+  }, [ruang.cahaya, siap]);
+
   // ── Alat bantu: label ukuran, garis jarak terjauh, kerucut sudut pandang ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    gambarAlatBantu(m, { analisis, benda: sembunyiGolongan.length ? benda.filter(b => tampilDi(b, sembunyiGolongan)) : benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, teksSinar: teksSinar && !sembunyiTeks, setInfoBlending, setUkuranCahaya, tampilan });
+    gambarAlatBantu(m, { analisis, benda: sembunyiGolongan.length ? benda.filter(b => tampilDi(b, sembunyiGolongan)) : benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, teksSinar: teksSinar && !sembunyiTeks, setInfoBlending, setUkuranCahaya, tampilan, sinarNyata, gambarLayar });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, tampilShare, kabel, tampilBlending, detailBlending, gridSinar, teksSinar, sembunyiTeks, sembunyiGolongan, tampilan]);
-  // ── Tingkat cahaya ruangan ──
-  useEffect(() => {
-    const m = mesin.current; if (!m || !siap) return;
-    const f = { terang: 1, redup: 0.45, gelap: 0.12 }[ruang.cahaya ?? 'terang'];
-    m.lampu.matahari.intensity = 1.6 * f; m.lampu.langit.intensity = 0.35 * f;
-    (m.scene as T.Scene & { environmentIntensity: number }).environmentIntensity = Math.max(0.1, f);
-  }, [ruang.cahaya, siap]);
-
+  }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, tampilShare, kabel, tampilBlending, detailBlending, gridSinar, teksSinar, sembunyiTeks, sembunyiGolongan, tampilan, sinarNyata, versiGambar]);
   // ── Bayangan lembut & cahaya layar ──
   //  Lampu arah adegan berada di depan-atas, jadi display yang menempel dinding hanya menjatuhkan
   //  bayangan setebal celah bracket (beberapa cm) - nyaris tak terlihat. Di sini ditambahkan bayangan

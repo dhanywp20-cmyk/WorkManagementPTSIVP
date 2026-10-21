@@ -14,7 +14,7 @@ export const PUSTAKA_UNTUK: Partial<Record<Jenis, string>> = {
   proyektor: 'proyektor', videowall: 'display', tv: 'display', ifp: 'display', speaker: 'speaker', 'speaker-plafon': 'speaker',
 };
 
-const RESOLUSI: Record<string, [number, number]> = { WXGA: [1280, 800], FHD: [1920, 1080], WUXGA: [1920, 1200], '4K': [3840, 2160] };
+const RESOLUSI: Record<string, [number, number]> = { WXGA: [1280, 800], FHD: [1920, 1080], WUXGA: [1920, 1200], '4K': [3840, 2160], '4KDCI': [4096, 2160] };
 const bulat = (v: number, d = 3) => Math.round(v * 10 ** d) / 10 ** d;
 
 /** Entri yang cocok: panel videowall (bezel > 0) hanya untuk videowall; speaker plafon hanya untuk speaker plafon. */
@@ -38,9 +38,15 @@ export function isiDariPustaka(b: Benda, e: EntriPustaka): Partial<Benda> | null
     //  Posisi zoom sekarang dipertahankan bila masih dalam rentang lensa baru.
     const tr = Math.min(trMax, Math.max(trMin, throwRatioDari(b)));
     //  Rasio gambar dari resolusi di pustaka (WUXGA / WXGA = 16:10, Full HD / 4K = 16:9) - cakupan & blending ikut.
-    const rasioDari: Record<string, RasioProyektor> = { FHD: '16:9', '4K': '16:9', WUXGA: '16:10', WXGA: '16:10' };
+    const rasioDari: Record<string, RasioProyektor> = { FHD: '16:9', '4K': '16:9', WUXGA: '16:10', WXGA: '16:10', '4KDCI': '17:9' };
     const rasioProyektor = rasioDari[teksDari(e, 'resolusi')];
-    return { nama, ...(lumen > 0 ? { lumen } : {}), ...(trMin > 0 ? { trMin, trMax, throwRatio: bulat(tr, 2) } : {}), ...(rasioProyektor ? { rasioProyektor } : {}) };
+    //  Batas lens shift & koreksi jarak lensa (datasheet) - Desain 3D memperingatkan shift di luar batas & menghitung
+    //  jarak lempar seperti kalkulator pabrikan (L = TR x W - b). Kosong di pustaka = tidak diubah.
+    const shift = (k: string) => { const v = angkaDari(e, k); return v > 0 ? bulat(v / 100) : undefined; };
+    const kj = angkaDari(e, 'koreksiJarak');
+    const batas = { shiftAtasMaks: shift('shiftAtas'), shiftBawahMaks: shift('shiftBawah'), shiftHMaks: shift('shiftHorizontal') };
+    return { nama, ...(lumen > 0 ? { lumen } : {}), ...(trMin > 0 ? { trMin, trMax, throwRatio: bulat(tr, 2) } : {}), ...(rasioProyektor ? { rasioProyektor } : {}),
+      ...Object.fromEntries(Object.entries(batas).filter(([, v]) => v !== undefined)), ...(kj ? { koreksiJarak: bulat(kj) } : {}) };
   }
   if (b.jenis === 'videowall') {
     const u = ukuranDariDiagonal(angkaDari(e, 'diagonal'));
