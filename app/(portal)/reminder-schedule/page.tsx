@@ -559,9 +559,9 @@ function ReminderSchedulePageInner() {
       // Urutan pengecekan = urutan mendesaknya. Yang menunggu SAYA bertindak
       // didahulukan daripada yang tinggal saya kerjakan sendiri.
       if (r.routing_status === 'supervisor_assign' && r.assigned_supervisor_id === currentUser.id) {
-        tambah(r, 'Perlu kamu assign ke tim', '#f59e0b');
+        tambah(r, 'Perlu kamu tugaskan ke tim', '#f59e0b');
       } else if (r.routing_status === 'admin_review' && (isAdmin || isManager)) {
-        tambah(r, 'Menunggu approval kamu', '#dc2626');
+        tambah(r, 'Menunggu persetujuan kamu', '#dc2626');
       } else if (isMyReviewStage(r)) {
         tambah(r, 'Perlu review kamu', '#8b5cf6');
       } else if (r.assigned_to === currentUser.username) {

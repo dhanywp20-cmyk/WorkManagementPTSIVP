@@ -5,6 +5,7 @@
  *   Supervisor Team PTS IVP & MVI dulu (lib/perbandingan.ts). Detail alur data: app/api/tools-team/perbandingan.
  */
 import { useState } from 'react';
+import { ConfirmDialog, type ConfirmState, ModalTolak, TombolSetujui, TombolTolak } from '@/components/shared';
 import { Bot, CheckCheck, ClipboardCopy, Download, Info, Loader2, Send, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { type Bahasa, jumlahCek, type KartuBanding, loloskanSemua } from '@/lib/perbandingan';
 import { UnggahBrosur } from './perbandingan/UnggahBrosur';
@@ -27,6 +28,8 @@ export function ProductComparison() {
   const [kartu, setKartu] = useState<KartuBanding | null>(null);
   const [mode, setMode] = useState<Mode>({ jenis: 'baru' });
   const [catatan, setCatatan] = useState('');
+  const [tolakBuka, setTolakBuka] = useState(false);
+  const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const [pesan, setPesan] = useState<{ t: string; galat?: boolean } | null>(null);
   const [kerja, setKerja] = useState<string | null>(null);
   const cek = kartu ? jumlahCek(kartu) : 0;
@@ -109,7 +112,7 @@ export function ProductComparison() {
               <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white border border-slate-200 p-3">
                 {cek > 0 && <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-[12px] font-bold" title="Klik sel kuning untuk memutuskan satu per satu">{cek} nilai perlu dicek</span>}
                 {cek > 0 && p.peran?.lolosSemua && (mode.jenis === 'periksa' || (mode.jenis === 'baru' && p.peran.langsung)) && (
-                  <button type="button" onClick={() => { if (window.confirm(`Loloskan ${cek} nilai yang ditandai "cek" apa adanya?`)) setKartu(loloskanSemua(kartu)); }}
+                  <button type="button" onClick={() => setKonfirmasi({ message: `Loloskan ${cek} nilai yang ditandai "cek" apa adanya?`, confirmLabel: 'Loloskan semua', onConfirm: () => setKartu(k => (k ? loloskanSemua(k) : k)) })}
                     title="Terima semua nilai bertanda cek sekaligus (berisi teks = disebut brosur, kosong = tidak dipublikasikan)"
                     className={`${tombol} text-amber-900 border border-amber-300 bg-amber-50 hover:bg-amber-100`}><CheckCheck size={15} /> Loloskan semua</button>
                 )}
@@ -127,11 +130,12 @@ export function ProductComparison() {
                   )}
                   {mode.jenis === 'periksa' && (
                     <>
-                      <input value={catatan} onChange={e => setCatatan(e.target.value)} placeholder="Catatan (wajib bila ditolak)" className="w-56 rounded-lg border border-slate-200 px-2.5 py-2 text-base sm:text-[13px]" />
-                      <button type="button" disabled={!!kerja} onClick={() => void jalankan('tolak', async () => { await p.putuskan(mode.r.id, 'tolak', catatan); setKartu(null); setMode({ jenis: 'baru' }); setTab('pengajuan'); return 'Ditolak - pengaju mendapat notifikasi.'; })}
-                        className={`${tombol} text-rose-700 border border-rose-200 hover:bg-rose-50`}>Tolak</button>
-                      <button type="button" disabled={cek > 0 || !!kerja} onClick={() => void jalankan('setuju', async () => { await p.putuskan(mode.r.id, 'setujui', catatan, kartu); setKartu(null); setMode({ jenis: 'baru' }); setTab('pengajuan'); return 'Disetujui - pengaju bisa mengunduh PDF.'; })}
-                        className={`${tombol} text-white bg-emerald-600 hover:bg-emerald-700`}><ShieldCheck size={15} /> Setujui</button>
+                      <input value={catatan} onChange={e => setCatatan(e.target.value)} placeholder="Catatan (opsional)" aria-label="Catatan persetujuan" className="w-56 rounded-lg border border-slate-200 px-2.5 py-2 text-base sm:text-[13px]" />
+                      {/*  Pola persetujuan bersama: Tolak membuka ModalTolak (alasan wajib), Setujui tombol utama. */}
+                      <TombolTolak disabled={!!kerja} onClick={() => setTolakBuka(true)} />
+                      <TombolSetujui disabled={cek > 0 || !!kerja} onClick={() => void jalankan('setuju', async () => { await p.putuskan(mode.r.id, 'setujui', catatan, kartu); setKartu(null); setMode({ jenis: 'baru' }); setTab('pengajuan'); return 'Disetujui - pengaju bisa mengunduh PDF.'; })} />
+                      <ModalTolak buka={tolakBuka} onTutup={() => setTolakBuka(false)} judul="Tolak Pengajuan Comparison" sibuk={kerja === 'tolak'}
+                        onTolak={alasan => { setTolakBuka(false); void jalankan('tolak', async () => { await p.putuskan(mode.r.id, 'tolak', alasan); setKartu(null); setMode({ jenis: 'baru' }); setTab('pengajuan'); return 'Ditolak - pengaju mendapat notifikasi.'; }); }} />
                     </>
                   )}
                   {mode.jenis === 'lihat' && mode.r.status === 'disetujui' && (
@@ -148,6 +152,7 @@ export function ProductComparison() {
         </>
       )}
       {pesan && <p role="status" className={`text-[13px] font-semibold ${pesan.galat ? 'text-rose-700' : 'text-emerald-700'}`}>{pesan.t}</p>}
+      <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
     </div>
   );
 }

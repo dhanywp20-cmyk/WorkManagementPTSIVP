@@ -414,7 +414,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     <>
       {canInternalApproveProject(req) && (
         <>
-          <button aria-label="Approve & Teruskan ke Admin" onClick={() => setInternalApproveTarget(req)} title="Approve & Teruskan ke Admin"
+          <button aria-label="Setujui & Teruskan ke Admin" onClick={() => setInternalApproveTarget(req)} title="Setujui & Teruskan ke Admin"
             className="w-8 h-8 shrink-0 bg-amber-50 hover:bg-amber-500 text-amber-700 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>
@@ -426,7 +426,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       )}
       {bisaKelolaRequest && req.status === 'pending' && req.routing_status !== 'internal_review' && (
         <>
-          <button aria-label="Approve" onClick={() => handleApprove(req)} title="Approve"
+          <button aria-label="Setujui" onClick={() => handleApprove(req)} title="Setujui"
             className="w-8 h-8 shrink-0 bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>

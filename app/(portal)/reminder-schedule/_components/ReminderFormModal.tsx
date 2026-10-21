@@ -229,7 +229,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
 
           {/* Assign To — single or bulk */}
           <div>
-            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Assign To *</label>
+            <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>Tugaskan ke *</label>
             {!editingReminder && (
               <div className="flex flex-wrap gap-2 mb-3">
                 {([
@@ -498,7 +498,7 @@ export function ReminderFormModal({ editingReminder, formData, setFormData, savi
                   <>
                     <div className="flex items-center gap-2">
                       <span className="text-base"><Ikon nama="⭐" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-                      <p className="text-sm font-bold text-violet-700">Assign Guest untuk Form Review</p>
+                      <p className="text-sm font-bold text-violet-700">Tugaskan Guest untuk Form Review</p>
                     </div>
                     <p className="text-xs text-violet-600 -mt-1">
                       Kategori <strong>{formData.category}</strong> memerlukan review dari Guest / Sales.

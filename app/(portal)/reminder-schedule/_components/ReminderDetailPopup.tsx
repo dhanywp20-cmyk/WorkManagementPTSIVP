@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import type { RefObject, Dispatch, SetStateAction } from 'react';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
 import {
-  SectionHeaderSmall, InfoRow, Username, ModalPortal, AuditTrailPanel, FlowSteps,
+  SectionHeaderSmall, InfoRow, Username, ModalPortal, AuditTrailPanel, FlowSteps, TombolSetujui, TombolTolak, TombolTugaskan,
 } from '@/components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { ModePenyelesaianPanel } from './ModePenyelesaianPanel';
@@ -190,28 +190,18 @@ export function ReminderDetailPopup({
             <div className="flex gap-2 flex-wrap sticky top-0 z-20 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-gray-100">
               {canInternalApprove(detailReminder) && (
                 <>
-                  <button onClick={() => setInternalApproveTarget(detailReminder)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}><IkonTeks nama="✅" />Approve &amp; Teruskan ke Admin</button>
-                  <button onClick={() => handleInternalReject(detailReminder)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: 'white' }}><IkonTeks nama="❌" />Tolak</button>
+                  <TombolSetujui ukuran="kecil" onClick={() => setInternalApproveTarget(detailReminder)}>Setujui &amp; Teruskan ke Admin</TombolSetujui>
+                  <TombolTolak ukuran="kecil" onClick={() => handleInternalReject(detailReminder)} />
                 </>
               )}
               {canApproveAssign && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.routing_status !== 'internal_review' && (
                 <>
-                  <button onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}><IkonTeks nama="✅" />Approve &amp; Assign</button>
-                  <button onClick={() => handleAdminReject(detailReminder)}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                    style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', color: 'white' }}><IkonTeks nama="❌" />Tolak</button>
+                  <TombolSetujui ukuran="kecil" onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}>Setujui &amp; Tugaskan</TombolSetujui>
+                  <TombolTolak ukuran="kecil" onClick={() => handleAdminReject(detailReminder)} />
                 </>
               )}
               {currentUser?.id === detailReminder.assigned_supervisor_id && detailReminder.routing_status === 'supervisor_assign' && (
-                <button onClick={() => openSupervisorAssign(detailReminder, [detailReminder, ...reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id)])}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', color: 'white' }}><IkonTeks nama="🎯" />Assign Tim</button>
+                <TombolTugaskan ukuran="kecil" onClick={() => openSupervisorAssign(detailReminder, [detailReminder, ...reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id)])}>Tugaskan Tim</TombolTugaskan>
               )}
               {bolehEditReminder(detailReminder) && detailReminder.status !== 'done' && (
                 <button onClick={() => { setRescheduleTarget(detailReminder); }}
@@ -276,7 +266,7 @@ export function ReminderDetailPopup({
             <SectionHeaderSmall icon="📋" title="Detail Jadwal" />
             <div className="mt-3 grid grid-cols-2 gap-4">
               <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.08)' }}>
-                <p className="text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: '#64748b' }}>Assign To</p>
+                <p className="text-[11px] font-bold tracking-widest uppercase mb-2" style={{ color: '#64748b' }}>Ditugaskan ke</p>
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
                     style={{ background: 'rgba(220,38,38,0.2)', color: '#dc2626' }}>
