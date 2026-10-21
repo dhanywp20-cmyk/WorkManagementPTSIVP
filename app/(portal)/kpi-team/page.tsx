@@ -555,8 +555,7 @@ export default function KPITeamPage() {
   return (
     <div className="h-screen overflow-hidden flex flex-col"
       style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
-      <PageHeader icon="📊" title="KPI Team" subtitle="PTS IVP — Key Performance Indicators"
-        color={KPI_COLOR} colorLight="#0369a1">
+      <PageHeader icon="📊" title="KPI Team" subtitle="PTS IVP — Key Performance Indicators">
         {scope.kind === 'team' && (
           <span className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded-lg"
             style={{ background: 'rgba(14,165,233,0.12)', color: '#0369a1', border: '1px solid rgba(14,165,233,0.3)' }}>

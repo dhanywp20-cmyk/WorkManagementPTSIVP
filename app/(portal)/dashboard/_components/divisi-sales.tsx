@@ -95,8 +95,7 @@ export function DivisiSalesInline() {
             placeholder="Nama divisi baru…"
             className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-slate-400 bg-white" />
           <button type="button" onClick={tambah}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0 transition-all hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg,#0f766e,#115e59)' }}>
+            className="tombol-utama px-4 py-2.5 rounded-kontrol text-xs font-bold flex-shrink-0 transition-all hover:opacity-90">
             Tambah
           </button>
         </div>
@@ -125,8 +124,7 @@ export function DivisiSalesInline() {
         <div className="flex items-center justify-end gap-2">
           <p className="text-[11px] text-slate-500 mr-auto">Divisi yang masih dipakai akun tidak bisa dihapus.</p>
           <button type="button" onClick={simpan} disabled={menyimpan || divisi.length === 0}
-            className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg,#0f766e,#115e59)' }}>
+            className="tombol-utama px-4 py-2 rounded-kontrol text-xs font-bold transition-all disabled:opacity-50 hover:opacity-90">
             {menyimpan ? 'Menyimpan…' : 'Simpan Daftar Divisi'}
           </button>
         </div>

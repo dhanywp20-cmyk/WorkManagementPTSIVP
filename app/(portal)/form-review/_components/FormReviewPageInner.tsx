@@ -642,8 +642,8 @@ export function FormReviewPageInner() {
                     <button key={tab} onClick={() => setSwitchTab(tab)}
                       className="px-4 py-2 text-xs font-bold transition-all"
                       style={switchTab === tab
-                        ? { background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', color: 'white' }
-                        : { background: 'transparent', color: '#7c3aed' }}>
+                        ? { background: 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))', color: 'white' }
+                        : { background: 'transparent', color: 'var(--merek-utama)' }}>
                       {tab === 'Demo Product' ? '🖥️' : '📌'} {tab}
                     </button>
                   ))}

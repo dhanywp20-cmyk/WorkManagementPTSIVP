@@ -19,8 +19,7 @@ export function UrlListField({ label, icon, value, onChange }: {
           value={input} onChange={e=>setInput(e.target.value)}
           onKeyDown={e=>e.key==='Enter'&&(e.preventDefault(),add())}/>
         <button type="button" onClick={add}
-          className="px-3 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0"
-          style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>
+          className="tombol-utama px-3 py-2.5 rounded-kontrol text-xs font-bold flex-shrink-0">
           + Tambah
         </button>
       </div>

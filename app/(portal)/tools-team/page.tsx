@@ -59,14 +59,14 @@ function ToolsKerjaInner() {
 
   return (
     <div className="min-h-screen" style={{ background: 'var(--latar-halaman, #f1f5f9)' }}>
-      <PageHeader icon="🧮" title="AV Solution Tools" subtitle="Kalkulator & desain untuk engineer Audio Visual" color="#1d4ed8" colorLight="#3b82f6">
+      <PageHeader icon="🧮" title="AV Solution Tools" subtitle="Kalkulator & desain untuk engineer Audio Visual">
         {/* Pilihan alat di header (pola tombol "Mapping Center" di Summary Project): yang aktif berisi gradien, yang lain putih. */}
         {alat.map(a => {
           const on = a.k === aktif;
           return (
             <button key={a.k} type="button" onClick={() => pilih(a.k)} aria-pressed={on} title={a.ket}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 ${on ? 'text-white hover:opacity-90' : 'bg-white text-blue-700 border border-blue-200 hover:bg-blue-50'}`}
-              style={on ? { background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)', boxShadow: '0 4px 14px rgba(29,78,216,0.35)' } : undefined}>
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all hover:scale-105 ${on ? 'text-white hover:opacity-90' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}
+              style={on ? { background: 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))', boxShadow: '0 4px 14px var(--merek-utama-tembus)' } : undefined}>
               <Ikon nama={a.ikon} ukuran={15} />{a.judul}
             </button>
           );

@@ -836,8 +836,7 @@ export function SchemeTab({ olehNama, notify }: {
           Kembalikan ke bawaan
         </button>
         <button type="button" onClick={simpan} disabled={menyimpan || !!masalah.length || !berubah}
-          className="px-5 py-2 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-40"
-          style={{ background: 'linear-gradient(135deg,#e11d48,#9f1239)', boxShadow: '0 4px 14px rgba(225,29,72,0.35)' }}>
+          className="tombol-utama px-5 py-2 rounded-kontrol text-xs font-bold transition-all disabled:opacity-40">
           {menyimpan ? 'Menyimpan…' : berubah ? 'Simpan Skema' : 'Tersimpan'}
         </button>
       </div>

@@ -91,8 +91,7 @@ export function ModalPengaturanDasborKPI({ kpiSettings, saveKpiSettings, setKpiS
                 Reset Default
               </button>
               <button onClick={()=>{ saveKpiSettings(kpiSettings); setShowSettings(false); }}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-white transition-colors"
-                style={{background:'linear-gradient(135deg,#7c3aed,#6d28d9)'}}>
+                className="tombol-utama px-4 py-2 rounded-kontrol text-sm font-bold transition-colors">
                 ✓ Simpan & Tutup
               </button>
             </div>

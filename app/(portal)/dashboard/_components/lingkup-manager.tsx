@@ -155,8 +155,7 @@ export function LingkupManagerInline() {
             Daftar kelompoknya diatur di Admin Panel → Kelompok &amp; Notifikasi.
           </p>
           <button type="button" onClick={simpan} disabled={menyimpan}
-            className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50 hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg,#0f766e,#115e59)' }}>
+            className="tombol-utama px-4 py-2 rounded-kontrol text-xs font-bold transition-all disabled:opacity-50 hover:opacity-90">
             {menyimpan ? 'Menyimpan…' : 'Simpan Lingkup'}
           </button>
         </div>

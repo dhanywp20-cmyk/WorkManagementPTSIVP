@@ -148,7 +148,7 @@ export default function ProjectProgressPage() {
   return (
     <div className="min-h-screen" style={{ background: 'var(--latar-halaman)' }}>
       <Toast notif={toast} />
-      <PageHeader icon="📊" title="Project Progress" color={TEMA.warna} colorLight={TEMA.warnaTua}
+      <PageHeader icon="📊" title="Project Progress"
         subtitle="Checklist pekerjaan per proyek & lokasi · tim mencentang langsung dari lapangan">
         {admin && !proyekId && (
           <button onClick={() => setBaruBuka(true)}

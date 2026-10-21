@@ -395,7 +395,7 @@ export default function IncentivePTSPage() {
       <Toast notif={toast} />
 
       {/* Header - header baku semua modul (components/shared/PageHeader) */}
-      <PageHeader icon="💰" title="Incentive PTS" subtitle="Insentif tim PTS per proyek & tranche pembayaran" color="#f43f5e">
+      <PageHeader icon="💰" title="Incentive PTS" subtitle="Insentif tim PTS per proyek & tranche pembayaran">
           <div className="hidden sm:flex items-center gap-4 text-right">
             <div><p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Total Pool</p><p className="text-sm font-black text-emerald-700">{formatRupiah(totalPool)}</p></div>
             <div><p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">Projects</p><p className="text-sm font-black text-rose-600">{projects.length}</p></div>

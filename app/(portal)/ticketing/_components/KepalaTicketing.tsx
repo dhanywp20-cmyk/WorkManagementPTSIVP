@@ -31,7 +31,7 @@ export interface KepalaTicketingProps {
 export function KepalaTicketing({ canApproveAssign, canCreateTicket, canManageTickets, currentUser, currentUserTeamType, fetchProjectReminders, notifications, pendingApprovalTickets, pendingServicesApprovalTickets, setApprovalAssignees, setNewTicket, setShowAccountSettings, setShowApprovalModal, setShowNewTicket, setShowNotifications, setShowReminderSchedule, setShowServicesApprovalModal, showNewTicket, showNotifications }: KepalaTicketingProps) {
   return (
     <>
-      <PageHeader icon="🎫" title="Ticket Troubleshooting" color="#dc2626" colorLight="#991b1b">
+      <PageHeader icon="🎫" title="Ticket Troubleshooting">
         {/* Bell notif */}
         {currentUser?.role !== "guest" && (
           <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-xl transition-all hover:bg-red-50 border-2 border-transparent hover:border-red-200" title="Notifications">
@@ -48,7 +48,7 @@ export function KepalaTicketing({ canApproveAssign, canCreateTicket, canManageTi
 
         {/* Approval button */}
         {canApproveAssign && pendingApprovalTickets.length > 0 && (
-          <button onClick={() => { setApprovalAssignees({}); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} className="relative flex items-center gap-1.5 text-white text-sm font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#ea580c,#c2410c)", boxShadow: "0 2px 8px rgba(234,88,12,0.35)" }}>
+          <button onClick={() => { setApprovalAssignees({}); fetchProjectReminders(pendingApprovalTickets); setShowApprovalModal(true); }} className="tombol-kedua relative flex items-center gap-1.5 text-sm font-bold px-3.5 py-2 rounded-kontrol transition-all hover:scale-105 hover:opacity-90">
             <IkonTeks nama="⏳" />Approval
             <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[11px] font-bold rounded-full w-5 h-5 flex items-center justify-center">{pendingApprovalTickets.length}</span>
           </button>
@@ -56,7 +56,7 @@ export function KepalaTicketing({ canApproveAssign, canCreateTicket, canManageTi
 
         {/* Services Approval button */}
         {currentUserTeamType === "Team Services" && pendingServicesApprovalTickets.length > 0 && (
-          <button onClick={() => setShowServicesApprovalModal(true)} className="relative flex items-center gap-1.5 text-white text-sm font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#db2777,#be185d)", boxShadow: "0 2px 8px rgba(219,39,119,0.35)" }}>
+          <button onClick={() => setShowServicesApprovalModal(true)} className="tombol-kedua relative flex items-center gap-1.5 text-sm font-bold px-3.5 py-2 rounded-kontrol transition-all hover:scale-105 hover:opacity-90">
             <IkonTeks nama="🔧" />Ticket Masuk
             <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[11px] font-bold rounded-full w-5 h-5 flex items-center justify-center">{pendingServicesApprovalTickets.length}</span>
           </button>
@@ -64,7 +64,7 @@ export function KepalaTicketing({ canApproveAssign, canCreateTicket, canManageTi
 
         {/* Reminder button */}
         {canManageTickets && (
-          <button onClick={() => { setShowReminderSchedule(true); setShowAccountSettings(false); setShowNewTicket(false); }} className="flex items-center gap-1.5 text-white text-sm font-bold px-3.5 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)", boxShadow: "0 2px 8px rgba(124,58,237,0.3)" }} title="Reminder harian: Briefing pagi 06.00 WIB">
+          <button onClick={() => { setShowReminderSchedule(true); setShowAccountSettings(false); setShowNewTicket(false); }} className="tombol-kedua flex items-center gap-1.5 text-sm font-bold px-3.5 py-2 rounded-kontrol transition-all hover:scale-105 hover:opacity-90" title="Reminder harian: Briefing pagi 06.00 WIB">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -85,7 +85,7 @@ export function KepalaTicketing({ canApproveAssign, canCreateTicket, canManageTi
                 sales_division: prev.sales_division || currentUser.sales_division || "",
               }));
             }
-          })() }} className="flex items-center gap-1.5 text-white text-sm font-bold px-4 py-2 rounded-xl transition-all hover:scale-105 hover:opacity-90" style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 4px 14px rgba(220,38,38,0.4)" }}>
+          })() }} className="tombol-utama flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-kontrol transition-all hover:scale-105 hover:opacity-90">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
             </svg>

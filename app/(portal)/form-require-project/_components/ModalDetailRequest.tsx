@@ -207,7 +207,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                           const roomSt = getRoomStatus(selectedRequest, i);
                           const dotColor: Record<string, string> = {
                             pending: 'bg-amber-400', approved: 'bg-teal-400', in_progress: 'bg-blue-400',
-                            completed: 'bg-purple-400', rejected: 'bg-red-400',
+                            completed: 'bg-emerald-400', rejected: 'bg-red-400',
                           };
                           return (
                             <button key={i} type="button" onClick={() => setDetailRoomIdx(i)}

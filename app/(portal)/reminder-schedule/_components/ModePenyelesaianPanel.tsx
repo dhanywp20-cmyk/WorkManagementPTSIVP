@@ -183,8 +183,7 @@ export function ModePenyelesaianPanel({
             Batal
           </button>
           <button onClick={handleModeConfirm} disabled={savingMode || !modePenyelesaian}
-            className="flex-[2] py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
-            style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
+            className="tombol-utama flex-[2] py-2.5 rounded-kontrol text-sm font-bold disabled:opacity-50 transition-all">
             {savingMode ? 'Menyimpan...' : (modeEditSaja ? '💾 Simpan Detail' : '✅ Konfirmasi & Selesaikan')}
           </button>
         </div>
