@@ -103,7 +103,7 @@ export function IsiBankSoal({ buangDraf, bukaTambahDiGrup, currentFolderNode, ed
         {/* Edit Soal Modal */}
         {editQ && (
         <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
+          <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1000] p-4">
             <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
               <h3 className="font-bold text-slate-800 mb-4 sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100"><IkonTeks nama="✏" />Edit Soal</h3>
               <div className="space-y-3">

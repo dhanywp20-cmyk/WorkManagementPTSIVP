@@ -363,7 +363,7 @@ export function ringkasPenanganan(t: {
 export const statusColors: Record<string, string> = {
   "Waiting Approval": "bg-orange-50 text-orange-600 border-orange-200",
   Rejected: "bg-red-100 text-red-700 border-red-300",
-  Pending: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  Pending: "bg-amber-50 text-amber-700 border-amber-200",
   Call: "bg-sky-50 text-sky-600 border-sky-200",
   Onsite: "bg-purple-50 text-purple-600 border-purple-200",
   "In Progress": "bg-blue-50 text-blue-600 border-blue-200",

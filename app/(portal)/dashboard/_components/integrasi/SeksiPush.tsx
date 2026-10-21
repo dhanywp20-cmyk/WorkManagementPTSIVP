@@ -46,8 +46,7 @@ export function SeksiPush({ aktifkanPushServer, hapusRahasia, pushInfo, pushMemu
                       per-orang.
                     </p>
                     <button type="button" onClick={() => aktifkanPushServer(false)} disabled={pushMemuat}
-                      className="text-[12px] font-bold px-3 py-2 rounded-lg text-white disabled:opacity-50"
-                      style={{ background: 'linear-gradient(135deg,#e11d48,#be123c)' }}>
+                      className="tombol-utama text-[12px] font-bold px-3 py-2 rounded-kontrol disabled:opacity-50">
                       {pushMemuat ? 'Mengaktifkan…' : '📲 Aktifkan Push Notification'}
                     </button>
                   </>

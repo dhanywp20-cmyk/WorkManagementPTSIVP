@@ -49,7 +49,7 @@ function KartuDaftar({ d, isi, onUbah }: { d: DefDaftar; isi: string[]; onUbah: 
             placeholder={`Tambah ${d.judul.toLowerCase()}…`} aria-label={`Tambah ${d.judul}`}
             className="flex-1 min-w-0 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm outline-none focus:border-slate-400 bg-white" />
           <button type="button" onClick={tambah}
-            className="px-4 py-2.5 rounded-xl text-xs font-bold text-white flex-shrink-0 hover:opacity-90" style={{ background: 'linear-gradient(135deg,#0f766e,#115e59)' }}>Tambah</button>
+            className="tombol-utama px-4 py-2.5 rounded-kontrol text-xs font-bold flex-shrink-0 hover:opacity-90">Tambah</button>
         </div>
         {galat && <p className="text-xs font-semibold text-rose-700">{galat}</p>}
         <div className="flex flex-wrap gap-1.5">
@@ -119,7 +119,7 @@ export function DaftarPilihanInline() {
         {berubah && <p className="text-[11px] text-amber-700 font-semibold mr-auto">Ada perubahan yang belum disimpan.</p>}
         {berubah && <button type="button" onClick={() => setIsi(awal)} className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">Batal</button>}
         <button type="button" onClick={simpan} disabled={menyimpan || !berubah}
-          className="px-4 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-50 hover:opacity-90" style={{ background: 'linear-gradient(135deg,#0f766e,#115e59)' }}>
+          className="tombol-utama px-4 py-2 rounded-kontrol text-xs font-bold disabled:opacity-50 hover:opacity-90">
           {menyimpan ? 'Menyimpan…' : 'Simpan Daftar Pilihan'}
         </button>
       </div>

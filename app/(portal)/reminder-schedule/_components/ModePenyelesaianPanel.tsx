@@ -60,15 +60,15 @@ export function ModePenyelesaianPanel({
   const batalkan = () => { setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); setPendingPhotoUrl(undefined); };
 
   return (
-    <div className="bg-white rounded-2xl shadow-2xl fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 overflow-hidden flex flex-col"
+    <div className="bg-white rounded-kartu shadow-modal fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 overflow-hidden flex flex-col"
       style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', height: '100%' }}>
-      <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
-        <h3 className="text-white font-bold text-base"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {modeEditSaja ? 'Detail Pelaksanaan' : 'Mode Penyelesaian'}</h3>
-        <p className="text-emerald-100 text-[11px] mt-0.5">
+      <div className="px-5 py-4 bg-white border-b border-slate-100 text-slate-800 flex-shrink-0 relative">
+        <h3 className="text-slate-800 font-bold text-base"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {modeEditSaja ? 'Detail Pelaksanaan' : 'Mode Penyelesaian'}</h3>
+        <p className="text-slate-500 text-[11px] mt-0.5">
           {modeEditSaja ? 'Status tetap Completed — hanya detailnya yang disimpan' : 'Lengkapi data sebelum status jadi Completed'}
         </p>
         <button aria-label="Tutup" onClick={batalkan}
-          className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+          className="absolute top-3 right-3 w-8 h-8 rounded-kecil bg-black/5 text-slate-500 hover:text-rose-600 flex items-center justify-center font-bold text-sm">✕</button>
       </div>
       <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
         <div>
@@ -183,8 +183,7 @@ export function ModePenyelesaianPanel({
             Batal
           </button>
           <button onClick={handleModeConfirm} disabled={savingMode || !modePenyelesaian}
-            className="flex-[2] py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 transition-all"
-            style={{ background: 'linear-gradient(135deg,#059669,#047857)' }}>
+            className="tombol-utama flex-[2] py-2.5 rounded-kontrol text-sm font-bold disabled:opacity-50 transition-all">
             {savingMode ? 'Menyimpan...' : (modeEditSaja ? '💾 Simpan Detail' : '✅ Konfirmasi & Selesaikan')}
           </button>
         </div>

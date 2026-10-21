@@ -15,7 +15,7 @@ export function cetakRequest(selectedRequest: ProjectRequest, ccLabel: string, d
   const sc = statusConfig[selectedRequest.status] || statusConfig.pending;
   const printDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' } as Intl.DateTimeFormatOptions);
   const statusColorMap: Record<string, string> = {
-    pending: '#d97706', approved: '#0d9488', in_progress: '#2563eb', completed: '#7c3aed', rejected: '#dc2626',
+    pending: '#d97706', approved: '#0d9488', in_progress: '#2563eb', completed: '#059669', rejected: '#dc2626',
   };
   const statusColor = statusColorMap[selectedRequest.status] || '#0d9488';
   const statusLabel = sc.label;

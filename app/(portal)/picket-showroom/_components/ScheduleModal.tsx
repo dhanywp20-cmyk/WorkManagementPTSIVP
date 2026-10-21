@@ -124,15 +124,15 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
 
   return(
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4 overflow-y-auto">
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden" style={{animation:'scale-in 0.25s ease-out',border:'1.5px solid rgba(220,38,38,0.25)'}}>
-        <div className="px-6 py-5 rounded-t-2xl" style={{background:'linear-gradient(135deg,#dc2626,#991b1b)'}}>
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1100] p-4 overflow-y-auto">
+      <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl max-h-full flex flex-col overflow-hidden">
+        <div className="px-6 py-5 rounded-t-2xl bg-white border-b border-slate-100">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-bold text-white"><IkonTeks nama="📋" />Atur Jadwal Piket — 2 Minggu</h2>
-              <p className="text-red-200/80 text-xs mt-0.5">{fmtWk(weekStart)} &amp; {fmtWk(week2Start)}</p>
+              <h2 className="text-lg font-bold text-slate-800"><IkonTeks nama="📋" />Atur Jadwal Piket — 2 Minggu</h2>
+              <p className="text-slate-500 text-xs mt-0.5">{fmtWk(weekStart)} &amp; {fmtWk(week2Start)}</p>
             </div>
-            <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg">
+            <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold flex-shrink-0">
               <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
@@ -200,7 +200,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
         </div>
         <div className="px-5 pb-5 pt-3 flex gap-3 flex-shrink-0">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl font-semibold text-sm" style={{background:'rgba(255,255,255,0.95)',color:'#64748b',border:'1px solid rgba(0,0,0,0.12)'}}>Batal</button>
-          <button onClick={handleSave} disabled={saving||loading} className="flex-1 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60" style={{background:'linear-gradient(135deg,#dc2626,#b91c1c)',boxShadow:'0 4px 14px rgba(220,38,38,0.35)'}}>
+          <button onClick={handleSave} disabled={saving||loading} className="tombol-bahaya flex-1 py-3 rounded-kontrol font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60">
             {saving&&<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}<IkonTeks nama="💾" />Simpan 2 Minggu
           </button>
         </div>
