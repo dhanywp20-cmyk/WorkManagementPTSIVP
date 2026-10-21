@@ -1,11 +1,11 @@
 'use client';
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
-import { Angka, f, Segmen, Catatan } from '../../../bersama/ui';
-import { batasShift, bendaBaru, geserLensaDari, koreksiJarakDari, lumenDari, offsetLensaDari, type PasangProyektor, RASIO_PROYEKTOR, type RasioProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
+import { batasShift, bendaBaru, geserLensaDari, koreksiJarakDari, lumenDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, type RasioProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
 export function AturProyektor({ c }: { c: KonteksAtur }) {
-  const { b, kosong, label, onUbah, set, semua } = c;
+  const { b, kosong, label, onGambar, onUbah, set, semua } = c;
   const proyektor = semua.filter(x => x.jenis === 'proyektor');
   const warnaSinar = warnaSinarProyektor(b, Math.max(0, proyektor.findIndex(x => x.id === b.id)), proyektor.length);
   return (
@@ -113,6 +113,15 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
               50% = tepi gambar sejajar lensa (umum pada proyektor tanpa lens shift). Horizontal = % lebar gambar, + ke kanan.
               Batas = kemampuan lens shift lensa dari datasheet (Panasonic: VS1 / VS2 / HS); 0 = tidak dibatasi.
             </Catatan>
+          </div>
+          {/*  Konten yang diproyeksikan (centang "Sinar nyata"): gambar ini yang jatuh di layar / dinding / benda. */}
+          <div>
+            <Pilih label="Konten yang diproyeksikan" nilai={b.konten ?? 'pola'} onUbah={(v: KontenLayar) => (v === 'gambar' ? onGambar() : set({ konten: v }))}
+              opsi={[
+                { v: 'pola', l: 'Pola uji' }, { v: 'putih', l: 'Putih penuh (cek kecerahan & keseragaman)' }, { v: 'dashboard', l: 'Dashboard / grafik' },
+                { v: 'cctv', l: 'CCTV' }, { v: 'desktop', l: 'Home screen / presentasi' }, { v: 'gambar', l: 'Gambar unggahan...' }, { v: 'mati', l: 'Mati (proyektor padam)' },
+              ] as { v: KontenLayar; l: string }[]} />
+            <Catatan>Tampil saat "Sinar nyata" dicentang: gambar diproyeksikan dari lensa (lens shift, keystone & lengkung layar ikut), terang dari lumen dibanding cahaya ruangan, bayangan benda & warna permukaan asli. Centang Grid sinar = pola grid uji.</Catatan>
           </div>
           {/*  Warna sinar di kanvas: otomatis beda per proyektor (>= 2) supaya cakupan tiap bidang mudah dibedakan. */}
           <div>

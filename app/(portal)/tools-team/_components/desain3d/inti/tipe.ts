@@ -28,7 +28,7 @@ export const LABEL_BENTUK_OBJEK: Record<BentukObjek, string> = {
 };
 export type BentukMeja = 'rapat' | 'bulat' | 'kelas' | 'dosen' | 'podium' | 'kredensa' | 'operator';
 /** Konten layar: pola uji, unggahan, mati, atau konten contoh (CCTV, dashboard, campuran, home screen). */
-export type KontenLayar = 'pola' | 'gambar' | 'mati' | 'cctv' | 'dashboard' | 'campuran' | 'desktop';
+export type KontenLayar = 'pola' | 'gambar' | 'mati' | 'cctv' | 'dashboard' | 'campuran' | 'desktop' | 'putih';
 export type TipeRak = 'kaca' | 'tertutup' | 'open';
 export type TipeLampu = 'downlight' | 'spot' | 'panel' | 'linear' | 'gantung';
 export type Finish = 'walnut' | 'oak' | 'putih';
