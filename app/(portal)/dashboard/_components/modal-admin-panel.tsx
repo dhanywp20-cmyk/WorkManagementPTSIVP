@@ -156,7 +156,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
           dari layar 360px hanya menyisakan seratusan piksel untuk isinya, dan
           tabel di dalamnya jadi terpotong sampai hanya kolom aksi yang terlihat.
           Di sana ia berubah jadi deretan tab mendatar di atas isi. */}
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-7xl h-[90vh] flex flex-col sm:flex-row overflow-hidden border border-slate-200">
+      <div className="bg-white rounded-kartu shadow-modal w-full max-w-7xl h-[90vh] flex flex-col sm:flex-row overflow-hidden border border-slate-200">
 
         {/* ── LEFT SIDEBAR (ponsel: bilah tab atas) ── */}
         <div className="w-full sm:w-56 flex-shrink-0 flex flex-col border-b sm:border-b-0 sm:border-r border-slate-100" style={{ background: 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)' }}>

@@ -18,10 +18,9 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
   return (
     <ModalPortal>
       <div role="dialog" aria-modal="true" aria-label="Panduan pasang aplikasi"
-        className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-4"
+        style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1100] p-4"
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90dvh] overflow-y-auto"
-          style={{ animation: 'scale-in 0.2s ease-out' }}>
+        <div className="bg-white rounded-kartu shadow-modal w-full max-w-lg max-h-[90dvh] overflow-y-auto">
           <div className="px-6 py-5 rounded-t-2xl text-white relative" style={{ background: `linear-gradient(135deg, ${warnaUtama}, #881337)` }}>
             <p className="text-[11px] font-bold uppercase tracking-widest text-white/60 mb-1">Tanpa file, tanpa admin</p>
             <h2 className="text-lg font-black"><IkonTeks nama="📲" />Pasang Aplikasi di HP</h2>

@@ -75,13 +75,13 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
   return (
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-full flex flex-col border border-slate-200">
-        <div className="bg-gradient-to-r from-amber-600 to-amber-500 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
+      <div className="bg-white rounded-kartu shadow-modal w-full max-w-xl max-h-full flex flex-col border border-slate-200">
+        <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-lg"><Ikon nama="⚙" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-            <div><h2 className="text-base font-bold text-white">Setting PIC Brand</h2><p className="text-white/70 text-xs">Mapping brand ke PIC penanggung jawab (Request Design Project)</p></div>
+            <div><h2 className="text-base font-bold text-slate-800">Setting PIC Brand</h2><p className="text-slate-500 text-xs">Mapping brand ke PIC penanggung jawab (Request Design Project)</p></div>
           </div>
-          <button aria-label="Tutup" onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold flex-shrink-0">✕</button>
         </div>
         <InlineToast notif={notif} />
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
@@ -104,7 +104,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="px-5 py-4 border-t border-slate-100 flex gap-3 flex-shrink-0">
           <button onClick={onClose} className="flex-1 border-2 border-slate-300 text-slate-600 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all">Batal</button>
-          <button onClick={handleSave} disabled={saving||loading} className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-50" style={{background:'linear-gradient(135deg,#d97706,#b45309)'}}>
+          <button onClick={handleSave} disabled={saving||loading} className="tombol-utama flex-1 py-2.5 rounded-kontrol font-bold text-sm transition-all disabled:opacity-50">
             {saving?'⏳ Menyimpan...':'💾 Simpan Semua'}
           </button>
         </div>
@@ -210,8 +210,7 @@ export function BrandPicSettingContent() {
       </div>
       <div className="px-5 py-4 border-t border-slate-100 flex-shrink-0">
         <button onClick={handleSave} disabled={saving||loading}
-          className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-50"
-          style={{background:'linear-gradient(135deg,#d97706,#b45309)'}}>
+          className="tombol-utama w-full py-2.5 rounded-kontrol font-bold text-sm transition-all disabled:opacity-50">
           {saving?'⏳ Menyimpan...':'💾 Simpan Semua Mapping PIC Brand'}
         </button>
       </div>

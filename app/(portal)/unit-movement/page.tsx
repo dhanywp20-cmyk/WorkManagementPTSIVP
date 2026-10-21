@@ -258,7 +258,7 @@ function UnitMovementPageInner() {
 
   if (!isLoggedIn) return (
     <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--latar-halaman)',backgroundSize:'cover'}}>
-      <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full mx-4">
+      <div className="bg-white rounded-kartu shadow-modal p-8 text-center max-w-sm w-full mx-4">
         <div className="text-4xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <h2 className="font-black text-gray-800 text-lg">Sesi Tidak Ditemukan</h2>
         <p className="text-gray-500 text-sm mt-2 mb-5">Silakan login terlebih dahulu melalui halaman utama.</p>
@@ -283,14 +283,13 @@ function UnitMovementPageInner() {
       {deleteConfirm&&(
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1100] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center space-y-4">
+          <div className="bg-white rounded-kartu shadow-modal p-6 w-full max-w-sm text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{background:'#fee2e2'}}><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
             <h3 className="font-bold text-gray-900">Hapus Log?</h3>
             <p className="text-sm text-gray-500">Data <strong>{deleteConfirm.project_name}</strong> akan dihapus permanen.</p>
             <div className="flex gap-3">
               <button onClick={()=>setDeleteConfirm(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">Batal</button>
-              <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60"
-                style={{background:'linear-gradient(135deg,#ef4444,#dc2626)'}}>{deleting?'Menghapus...':'Ya, Hapus'}</button>
+              <button onClick={handleDelete} disabled={deleting} className="tombol-bahaya flex-1 py-2.5 rounded-kontrol text-sm font-bold disabled:opacity-60">{deleting?'Menghapus...':'Ya, Hapus'}</button>
             </div>
           </div>
         </div>

@@ -207,22 +207,22 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
   <ModalPortal>
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-full flex flex-col border border-slate-200">
+      <div className="bg-white rounded-kartu shadow-modal w-full max-w-3xl max-h-full flex flex-col border border-slate-200">
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-teal-700 to-teal-600 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
+        <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-              <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
+              <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">User Management</h2>
-              <p className="text-white/60 text-xs">Mapping Atasan, IVP & MVI Account &amp; CC per User</p>
+              <h2 className="text-lg font-bold text-slate-800 tracking-tight">User Management</h2>
+              <p className="text-slate-500 text-xs">Mapping Atasan, IVP & MVI Account &amp; CC per User</p>
             </div>
           </div>
-          <button aria-label="Tutup" onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">
+          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold flex-shrink-0">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
@@ -379,8 +379,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                         <p className="text-[11px] text-slate-500">{ccChecked.size} orang dipilih untuk di-CC</p>
                       </div>
                       <button onClick={handleSaveUserCC} disabled={ccSaving}
-                        className="px-5 py-2.5 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-50 hover:scale-[1.02]"
-                        style={{ background: 'linear-gradient(135deg,#0d9488,#0f766e)' }}>
+                        className="tombol-utama px-5 py-2.5 rounded-kontrol font-bold text-sm  transition-all disabled:opacity-50 hover:scale-[1.02]">
                         {ccSaving ? '⏳ Menyimpan...' : '💾 Simpan CC'}
                       </button>
                     </div>

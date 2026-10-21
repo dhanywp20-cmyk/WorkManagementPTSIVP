@@ -302,8 +302,8 @@ export function QuestionsPage({ user }: { user: User }) {
   // Rename Folder Modal
   const renameFolderModalJSX = renameFolder ? (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1000] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1000] p-4">
+      <div className="bg-white rounded-kartu shadow-modal p-6 w-full max-w-sm">
         <h3 className="font-bold text-slate-800 mb-1 text-base"><IkonTeks nama="✏" />Ubah Nama Folder</h3>
         <p className="text-xs text-slate-500 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
         <input
@@ -318,8 +318,7 @@ export function QuestionsPage({ user }: { user: User }) {
           <button
             onClick={handleRenameFolder}
             disabled={renameSaving}
-            className="flex-1 py-2.5 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-all hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg,#3b82f6,#4f46e5)' }}
+            className="tombol-utama flex-1 py-2.5  text-sm font-bold rounded-kontrol disabled:opacity-60 transition-all hover:opacity-90"
           >
             {renameSaving ? (
               <span className="flex items-center justify-center gap-2">

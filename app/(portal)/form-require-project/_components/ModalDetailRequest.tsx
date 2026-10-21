@@ -102,7 +102,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
     <>
       {showDetailModal && selectedRequest && detailSc && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-0" style={{ zIndex: Z.overlay }}
+        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center p-0" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: Z.overlay }}
           onClick={e => { if (e.target === e.currentTarget) handleCloseDetail(); }}>
           <div className="bg-white w-full h-full animate-slide-up flex flex-col overflow-hidden"
             style={{ border: 'none' }}>

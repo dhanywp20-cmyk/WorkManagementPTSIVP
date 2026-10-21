@@ -138,7 +138,7 @@ export function RequestJadwalModal({
           >
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)' }}
+              style={{ background: 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))' }}
             >
               {salesName.charAt(0).toUpperCase()}
             </div>
