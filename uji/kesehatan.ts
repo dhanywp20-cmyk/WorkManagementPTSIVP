@@ -3,7 +3,10 @@
  *
  * Jalankan: npx tsx uji/kesehatan.ts
  */
+import { readFileSync } from 'fs';
 import { ringkasKesehatan, BATAS_DB, type DataKesehatan } from '../lib/kesehatan';
+import { KATALOG_EVENT, eventTersambung } from '../lib/notifikasi/katalog';
+import { kanalUntuk, BAWAAN } from '../lib/notifikasi/pengaturan';
 
 let lulus = 0, gagal = 0;
 function cek(nama: string, syarat: boolean) {
@@ -38,6 +41,16 @@ cek('DB 90% -> kuning; 96% -> merah', penuh[0]?.tingkat === 'kuning' && ringkasK
 cek('migrasi 036 belum -> kuning', ringkasKesehatan({ ...sehat, sistem: null, sqlBelum: true }, sekarang).some(p => p.teks.includes('036')));
 const env = ringkasKesehatan({ ...sehat, env: { serviceRole: false, cronSecret: false }, sqlBelum: true, sistem: null }, sekarang);
 cek('kunci Vercel hilang -> merah, diurutkan sebelum kuning', env[0].tingkat === 'merah' && env[1].tingkat === 'merah' && env[env.length - 1].tingkat === 'kuning');
+
+const diriSendiri = ringkasKesehatan({ ...sehat, sistem: { ...sehat.sistem!, fungsi_berahasia: ['kesehatan_sistem'] } }, sekarang);
+cek('kesehatan_sistem tidak menandai dirinya sendiri (alert merah palsu tiap hari)', diriSendiri.length === 0);
+const campur = ringkasKesehatan({ ...sehat, sistem: { ...sehat.sistem!, fungsi_berahasia: ['kesehatan_sistem', 'check_pending_tickets'] } }, sekarang);
+cek('fungsi berahasia sungguhan tetap merah', campur.length === 1 && campur[0].teks.includes('check_pending_tickets') && !campur[0].teks.includes('kesehatan_sistem'));
+cek('alert kesehatan terdaftar & tersambung ke saklar per-kejadian Admin Panel', !!KATALOG_EVENT.find(e => e.key === 'system.health_alert') && eventTersambung('system.health_alert'));
+const tgNyala = { ...BAWAAN, aktif: { ...BAWAAN.aktif, telegram: true } };
+cek('bawaan: alert lewat Telegram', kanalUntuk('system.health_alert', tgNyala).includes('telegram'));
+cek('dimatikan di Admin Panel -> tidak lewat Telegram', !kanalUntuk('system.health_alert', { ...tgNyala, perEvent: { 'system.health_alert': [] } }).includes('telegram'));
+cek('kirimAlertKesehatan memeriksa saklar per-kejadian', /kanalUntuk\('system\.health_alert', pengaturan\)\.includes\('telegram'\)/.test(readFileSync('lib/kesehatan-server.ts', 'utf8')));
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

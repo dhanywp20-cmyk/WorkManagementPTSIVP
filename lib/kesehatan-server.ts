@@ -5,7 +5,7 @@
  */
 import { createHash } from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
+import { bacaPengaturan, kanalUntuk } from '@/lib/notifikasi/pengaturan';
 import { bacaRahasia } from '@/lib/rahasia-server';
 import { KUNCI_CRON_TERAKHIR, type JejakCron } from '@/lib/cron-catat';
 import { ringkasKesehatan, type DataKesehatan, type Peringatan } from '@/lib/kesehatan';
@@ -80,6 +80,8 @@ export async function kirimAlertKesehatan(db: SupabaseClient): Promise<{ merah: 
 
     const [token, pengaturan] = await Promise.all([bacaRahasia('telegram.bot_token'), bacaPengaturan()]);
     if (!token || !pengaturan.aktif.telegram) return { merah: merah.length, terkirim: 0, alasan: 'Telegram belum aktif' };
+    //  Saklar per kejadian di Admin Panel -> Integrations (baris "Peringatan merah Kesehatan Sistem").
+    if (!kanalUntuk('system.health_alert', pengaturan).includes('telegram')) return { merah: merah.length, terkirim: 0, alasan: 'alert dimatikan di Admin Panel' };
 
     const { data: admin } = await db.from('users').select('telegram_chat_id')
       .or('role.in.(admin,superadmin),access_level.eq.full').not('telegram_chat_id', 'is', null);
