@@ -10,7 +10,13 @@ import crypto from 'crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { issueDbToken } from '@/lib/db-token';
 
-export const SESSION_HOURS = 6;
+/**
+ * Umur sesi login: 400 hari = batas umur cookie di Chrome - praktis tidak pernah habis; berakhir hanya lewat
+ * Keluar. Dulu 6 jam: portal di HP / tab yang dibuka seharian tiba-tiba ditolak server (menu "macet", PWA
+ * minta login lagi) padahal tetap dipakai. Token basis data tetap 6 jam & diperbarui otomatis dari cookie
+ * ini (lib/supabase.ts refreshDbToken).
+ */
+export const SESSION_HOURS = 400 * 24;
 /** Gagal per username (ketat) & per IP (longgar - satu kantor berbagi satu IP publik/NAT). */
 export const BATAS_GAGAL_USER = 5;
 export const BATAS_GAGAL_IP = 30;

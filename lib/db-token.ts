@@ -20,7 +20,7 @@ import crypto from 'crypto';
 
 const SECRET = process.env.SUPABASE_JWT_SECRET ?? '';
 
-/** Umur token disamakan dengan umur sesi (6 jam) agar keduanya kedaluwarsa bersamaan. */
+/** Umur token 6 jam; diperbarui otomatis dari cookie sesi (umurnya jauh lebih panjang) sebelum habis - lib/supabase.ts. */
 const TOKEN_HOURS = 6;
 
 function base64url(input: Buffer | string): string {

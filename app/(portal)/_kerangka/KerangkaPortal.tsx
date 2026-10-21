@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase, setDbToken } from '@/lib/supabase';
-import { setSession, clearSession, getSession, verifySessionFromCookie } from '@/lib/auth';
+import { setSession, clearSession, getSession, verifySessionFromCookie, cekSesiServer } from '@/lib/auth';
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
 import type { User, MenuItem } from '../dashboard/_components/shared';
@@ -19,7 +19,6 @@ import { tujuanLanjutAman } from '@/lib/tujuan-lanjut';
 import { SidebarPortal } from './SidebarPortal';
 import { DAFTAR_MENU, MENU_ICONS, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KEYS } from './daftar-menu';
 import { useMerek, latarDasbor } from '@/lib/merek';
-import SessionExpiryBanner from '@/app/_components/SessionExpiryBanner';
 import { LogoMerek, FooterPlatform } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 
@@ -184,7 +183,8 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     return DAFTAR_MENU.filter(m => izin.includes(m.key));
   }, [kunciMenu]);
 
-  const handleLogout = () => {
+  /** Kembali ke layar masuk: keluar sendiri, atau sesi di server sudah berakhir (efek di bawah). */
+  const sesiBerakhir = useCallback(() => {
     autoNavigatedRef.current = false; // reset so next login re-navigates correctly
     setIsLoggedIn(false); setCurrentUser(null);
     /* Wajib: dasborMuncul direset, dan sudahMasukRef juga supaya login BERIKUTNYA bisa memicu
@@ -195,8 +195,43 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     clearSession();
     setShowSidebar(false);
     setShowAdminPanel(false); setShowUserProfile(false);
+    //  Perpindahan yang tertolak tidak boleh menyalakan jaring pengaman muat penuh 12 dtk di atas.
+    setTujuanMenu(null); urlTujuan.current = null;
+    //  setShowSidebar stabil; dicantumkan karena React Compiler tidak bisa memastikannya (dipakai masukKeDashboard sebelum dideklarasikan).
+  }, [setShowSidebar]);
+  const handleLogout = () => {
+    sesiBerakhir();
     router.push('/dashboard');
   };
+
+  /*
+    COOKIE SESI HILANG, PORTAL MASIH TAMPAK MASUK - penyebab menu "macet" sesudah dibuka berjam-jam.
+    Dulu cookie httpOnly mati 6 jam sesudah login (kini 400 hari, lib/masuk-server.ts), tapi cookie tetap
+    bisa hilang: Keluar di tab lain, data situs dihapus, sesi lama dari sebelum perubahan itu. Profil di
+    sessionStorage tidak tahu. Pindah menu lalu dialihkan proxy.ts ke /dashboard?lanjut=<tujuan>: alamatnya
+    tetap /dashboard, sorotan menu tertahan, jaring pengaman memuat ulang halaman - dan portal tampil lagi
+    dari sessionStorage di Dashboard yang sama. Berulang terus.
+
+    ?lanjut= hanya dipasang proxy.ts bila cookie tidak ada, jadi HANYA saat alamat membawanya server ditanya
+    sekali (tanpa permintaan berkala - hemat kuota Vercel & Supabase): 401 -> layar masuk (sesudah login
+    langsung ke halaman tujuan, lihat masukKeDashboard); sah (mis. sudah login lagi di tab lain) -> lanjut
+    ke tujuannya.
+  */
+  useEffect(() => {
+    if (!isLoggedIn || sedangPindah) return;
+    const lanjut = new URLSearchParams(window.location.search).get('lanjut');
+    if (!lanjut) return;
+    let batal = false;
+    void cekSesiServer().then(hasil => {
+      if (batal) return;
+      if (hasil === 'habis') sesiBerakhir();
+      else if (hasil === 'sah') {
+        const tujuan = tujuanLanjutAman(lanjut);
+        if (tujuan) router.replace(tujuan);
+      }
+    });
+    return () => { batal = true; };
+  }, [pathname, sedangPindah, isLoggedIn, sesiBerakhir, router]);
 
   // Auto-navigate sales/guest to first allowed menu when sidebar opens
   // Uses autoNavigatedRef so this runs EXACTLY ONCE per login - no race conditions
@@ -350,7 +385,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
         sessionStorage kosong bukan berarti sesinya sudah habis - itu cuma
         berarti tab/proses ini baru (refresh yang mendaur ulang proses tab,
         PWA yang dibuka lagi setelah OS membekukan/menutupnya di HP, dst).
-        Cookie httpOnly (umurnya 6 jam, sama dengan SESSION_DURATION_MS) yang
+        Cookie httpOnly (umurnya 400 hari, sama dengan SESSION_DURATION_MS) yang
         jadi sumber kebenaran sebenarnya - verifySessionFromCookie() dipanggil
         untuk kasus ini, jadi orang tidak dilempar ke layar login walau
         cookie-nya masih sah.
@@ -765,7 +800,6 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   // VIEW: SIDEBAR
   return (
     <div className={`${dasborMuncul ? 'lc-dasbor-pudar' : ''} flex flex-col bg-cover bg-center bg-fixed`} style={{ ...latarDasbor(merek), height: '100dvh' }}>
-      {isLoggedIn && <SessionExpiryBanner />}
       {renderModals()}
 
       {/* ── Onboarding Tour + floating button (sidebar view — stable mount) ── */}
