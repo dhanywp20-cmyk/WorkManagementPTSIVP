@@ -8,6 +8,8 @@ import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 import { hasFullAccess } from '@/lib/constants';
 import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
 import { cariReminderByNama, reminderTerbaru } from '@/lib/cari-reminder';
+import { gabungHasilProyek } from '@/lib/gabung-hasil-proyek';
+import { adalahKategoriInsentif } from '@/lib/incentive-scheme-kategori';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { KolomPenugasanTiket } from './tiket-baru/KolomPenugasanTiket';
 import { KolomBarangKeluhan } from './tiket-baru/KolomBarangKeluhan';
@@ -55,6 +57,11 @@ export interface ReminderRef {
   pic_phone: string;
   category: string;
   assign_name: string;
+  /**
+   * Tanggal jadwal (reminders.due_date) atau tanggal ticket lama. Satu project
+   * bisa punya beberapa jadwal - tanggal inilah yang membedakannya di daftar.
+   */
+  due_date?: string | null;
 }
 
 interface Props {
@@ -134,7 +141,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     // dan datanya cuma ada di sini kalau ia tidak pernah lewat Request Schedule.
     let qt = supabase
       .from('tickets')
-      .select('id, project_name, address, sales_name, sales_division, product, customer_phone, assign_name');
+      .select('id, project_name, address, sales_name, sales_division, product, customer_phone, assign_name, date');
     if (!kosong) {
       qt = qt.ilike('project_name', `%${q.trim().replace(/([%_\\])/g, '\\$1')}%`);
     }
@@ -149,7 +156,7 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     // di basis data ini - menyebutnya, walau cuma di daftar select, membuat
     // PostgREST menolak seluruh kueri dengan "column reminders.title does not
     // exist", dan penolakan itu tampil sebagai "project tidak ditemukan".
-    const kolomReminder = 'id, project_name, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name';
+    const kolomReminder = 'id, project_name, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name, due_date';
     const [rRes, tRes] = await Promise.all([
       kosong
         ? reminderTerbaru<ReminderRef>(
@@ -170,33 +177,20 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     // memang nihil terlihat sama persis dari luar, dan yang pertama menyesatkan.
     setGalatCari(rRes.error?.message ?? (tRes.error ? tRes.error.message : null));
 
-    const hasil: ReminderRef[] = [];
-    const sudah = new Set<string>();
-    const tambah = (r: ReminderRef) => {
-      // Satu project bisa muncul di kedua tabel - disatukan berdasarkan nama +
-      // alamat supaya daftarnya tidak memuat baris kembar yang membingungkan.
-      // Spasinya ikut diratakan: "Jl.Parangtritis" dan "Jl. Parangtritis"
-      // adalah alamat yang sama, dan tanpa perataan ini keduanya lolos sebagai
-      // dua pilihan identik - lalu orang memilih salah satunya secara acak,
-      // yang berarti nama project pada ticket ikut jadi acak.
-      const rapikan = (v: string) => v.normalize('NFKC').replace(/\s+/g, ' ').trim().toLowerCase();
-      const kunci = `${rapikan(r.project_name || r.title || '')}|${rapikan(r.address || '')}`;
-      if (sudah.has(kunci)) return;
-      sudah.add(kunci);
-      hasil.push(r);
-    };
-    for (const r of (rRes.data ?? []) as ReminderRef[]) tambah({ ...r, _sumber: 'reminder' });
-    for (const t of (tRes.data ?? []) as Record<string, unknown>[]) {
-      tambah({
-        id: String(t.id), project_name: String(t.project_name ?? ''), title: undefined,
-        address: String(t.address ?? ''), sales_name: String(t.sales_name ?? ''),
-        sales_division: String(t.sales_division ?? ''), product: String(t.product ?? ''),
-        pic_name: '', pic_phone: String(t.customer_phone ?? ''),
-        category: 'Ticket', assign_name: String(t.assign_name ?? ''),
-        _sumber: 'ticket',
-      });
-    }
-    setReminderResults(hasil.slice(0, 12));
+    // Satu project bisa punya beberapa jadwal (Konfigurasi, Standby Event, ...)
+    // dan muncul lagi di tabel tickets. Aturan penyatuannya - termasuk kenapa
+    // kategori ikut jadi kunci - ada di lib/gabung-hasil-proyek.ts.
+    const jadwal = ((rRes.data ?? []) as ReminderRef[]).map(r => ({ ...r, _sumber: 'reminder' as const }));
+    const tiketLama = ((tRes.data ?? []) as Record<string, unknown>[]).map((t): ReminderRef => ({
+      id: String(t.id), project_name: String(t.project_name ?? ''), title: undefined,
+      address: String(t.address ?? ''), sales_name: String(t.sales_name ?? ''),
+      sales_division: String(t.sales_division ?? ''), product: String(t.product ?? ''),
+      pic_name: '', pic_phone: String(t.customer_phone ?? ''),
+      category: 'Ticket', assign_name: String(t.assign_name ?? ''),
+      due_date: t.date ? String(t.date) : null,
+      _sumber: 'ticket',
+    }));
+    setReminderResults(gabungHasilProyek(jadwal, tiketLama, 15, adalahKategoriInsentif));
     setReminderSearching(false);
   }, [currentUser]);
 

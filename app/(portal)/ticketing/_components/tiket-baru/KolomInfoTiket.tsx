@@ -4,6 +4,7 @@
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { BRAND_OPTIONS } from '@/lib/brand-routing';
 import { type NewTicketForm, type ReminderRef } from '../NewTicketModal';
+import { formatTanggal } from '@/lib/checklist';
 
 export interface KolomInfoTiketProps {
   form: NewTicketForm;
@@ -144,7 +145,7 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
             <div className="mt-1 rounded-xl border overflow-hidden shadow-lg z-10"
               style={{ background: "white", borderColor: "rgba(220,38,38,0.2)" }}>
               {reminderResults.map(r => (
-                <button key={r.id} type="button"
+                <button key={`${r._sumber}-${r.id}`} type="button"
                   onClick={() => selectReminder(r)}
                   className="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors border-b last:border-b-0 flex flex-col gap-0.5"
                   style={{ borderColor: "rgba(0,0,0,0.06)" }}>
@@ -155,6 +156,7 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
                         {r._sumber === 'ticket' ? '🎫 Ticket lama' : r.category}
                       </span>
                     )}
+                    {r.due_date && <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatTanggal(r.due_date)}</span>}
                     {r.address && <span><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.slice(0, 50)}{r.address.length > 50 ? '…' : ''}</span>}
                     {r.sales_name && <span><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.sales_name}</span>}
                   </span>
@@ -170,7 +172,7 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
               <span className="text-red-600 font-bold text-sm">✓</span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-slate-800 truncate">{selectedReminder.project_name || selectedReminder.title}</p>
-                <p className="text-xs text-slate-500">{selectedReminder.category} · Data berhasil di-fill otomatis</p>
+                <p className="text-xs text-slate-500">{selectedReminder.category}{selectedReminder.due_date ? ` · ${formatTanggal(selectedReminder.due_date)}` : ''} · Data berhasil di-fill otomatis</p>
               </div>
               <button aria-label="Tutup" type="button"
                 onClick={() => { setSelectedReminder(null); set({ project_name: '' }); }}
