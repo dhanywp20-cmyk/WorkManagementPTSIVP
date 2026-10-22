@@ -84,9 +84,23 @@ export interface Benda {
   /**
    * Proyektor: koreksi jarak lempar b (m) dari rumus datasheet lensa L = TR x lebar gambar - b (mis. Panasonic
    * ET-D3QW200: L = 0,566 x SW - 0,082). Puncak kerucut sinar berada b di belakang ujung lensa. Bawaan 0.
+   * Kalkulator Panasonic memakai b berbeda di ujung wide & tele - ini nilai di ujung WIDE (TR terlebar).
    */ koreksiJarak?: number;
-  /** Proyektor: batas lens shift lensa (pecahan tinggi / lebar gambar, datasheet) - atas, bawah, kiri-kanan. Kosong = tidak dibatasi. */
+  /** Proyektor: koreksi jarak b (m) di ujung TELE (TR terpanjang); kosong = sama dengan wide. Di antaranya diinterpolasi ikut zoom. */
+  koreksiJarakTele?: number;
+  /**
+   * Proyektor TANPA lens shift (portabel / short throw): offset vertikal gambar tetap (pecahan tinggi gambar, sama
+   * dengan offsetLensa, mis. Panasonic PT-LMX460 0,346). Bila diisi, offsetLensa & lens shift horizontal diabaikan.
+   */ offsetTetap?: number;
+  /** Proyektor: kontras asli (full on / full off, x:1) - membatasi kontras gambar di ruang gelap. Kosong = tidak dibatasi. */
+  kontrasAsli?: number;
+  /** Proyektor: batas lens shift lensa (pecahan tinggi / lebar gambar, datasheet) - atas, bawah, kiri-kanan. Kosong = tidak dibatasi, 0 = tidak bisa digeser. */
   shiftAtasMaks?: number; shiftBawahMaks?: number; shiftHMaks?: number;
+  /**
+   * Proyektor: daerah lens shift sebenarnya sebagai poligon [x0, y0, x1, y1, ...] (satuan lebar & tinggi gambar,
+   * gambar di tengah = kotak ±0,5; cara kalkulator Panasonic, lib/pustaka.ts bacaPoligonShift). Bila ada, batas
+   * shift dihitung dari poligon ini (termasuk kombinasi vertikal + horizontal), bukan dari tiga batas di atas.
+   */ poligonShift?: number[];
   /** Layar / bidang mapping: gain kain layar (bawaan 1,0) - luminance gambar = lux x gain / π. */ gainLayar?: number;
   /** Proyektor, mode Grid sinar (inti/gridProyektor.ts): jumlah kolom grid & warna garisnya (kosong = warna sinar). */
   gridKolom?: number; warnaGrid?: string;

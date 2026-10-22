@@ -52,7 +52,7 @@ cek('100": jarak 1,189 - 1,418 m (selisih < 5 mm)', dekat(jr.dekatM, 1.189, 0.00
 cek('lebar sama / jarak kosong -> null', rumusLensaDariDuaTitik(2, 1, 2, 1.5) === null && rumusLensaDariDuaTitik(2, 0, 4, 2) === null);
 const ui = readFileSync('app/(portal)/tools-team/_components/av/KalkulatorProyektor.tsx', 'utf8');
 cek('Kalkulator punya rasio 17:9 & input diagonal', /'17:9'/.test(ui) && /label="Diagonal gambar"/.test(ui));
-cek('koreksi b kosong -> peringatan di masukan & hasil', /\{!koreksi && \(/.test(ui) && /nada=\{koreksi \? undefined : 'awas'\}/.test(ui));
+cek('koreksi b kosong (wide & tele) -> peringatan di masukan & hasil', /\{!koreksi && !koreksiTele && \(/.test(ui) && /nada=\{koreksi \|\| koreksiTele \? undefined : 'awas'\}/.test(ui));
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

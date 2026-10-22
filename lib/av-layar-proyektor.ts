@@ -93,8 +93,12 @@ export type KategoriKontras = (typeof KONTRAS_ANSI)[number]['v'];
  * Gain layar menaikkan pantulan proyektor ke arah penonton; cahaya ruang dianggap datang menyebar
  * (tidak ikut diperkuat gain) - pendekatan yang umum dipakai kalkulator pabrikan.
  */
-export function lumenUntukKontras(luasM2: number, luxDiLayar: number, rasio: number, gainLayar = 1): number {
-  return (luasM2 * Math.max(0, luxDiLayar) * Math.max(0, rasio - 1)) / Math.max(0.3, gainLayar);
+export function lumenUntukKontras(luasM2: number, luxDiLayar: number, rasio: number, gainLayar = 1, kontrasAsli?: number): number {
+  //  Kontras asli proyektor C (kalkulator Panasonic: (Lp + La) / (Lp / C + La)) -> Lp = La x (rasio - 1) / (1 - rasio / C).
+  //  Rasio >= C tidak tercapai berapa pun lumennya.
+  const C = kontrasAsli && kontrasAsli > 1 ? kontrasAsli : Infinity;
+  if (rasio >= C) return Infinity;
+  return (luasM2 * Math.max(0, luxDiLayar) * Math.max(0, rasio - 1)) / (1 - rasio / C) / Math.max(0.3, gainLayar);
 }
 
 /** Lumen spesifikasi: kebutuhan dibagi sisa cahaya di akhir umur (laser ±20%, lampu ±30-50% susut). */
@@ -103,9 +107,10 @@ export function lumenSpesifikasi(lumenPerlu: number, susutPersen: number): numbe
 }
 
 /** Rentang jarak lensa ke layar untuk lebar gambar tertentu (lensa zoom: throw ratio min..maks). */
-export function rentangJarakLempar(lebarGambarM: number, trMin: number, trMaks: number, koreksiM = 0) {
+export function rentangJarakLempar(lebarGambarM: number, trMin: number, trMaks: number, koreksiM = 0, koreksiTeleM = koreksiM) {
   //  Rumus lensa datasheet L = TR x lebar - b (mis. Panasonic ET-D3QW200: L = 0,566 x SW - 0,082); b = 0 -> L = TR x lebar.
-  return { dekatM: lebarGambarM * Math.min(trMin, trMaks) - koreksiM, jauhM: lebarGambarM * Math.max(trMin, trMaks) - koreksiM };
+  //  Kalkulator Panasonic memakai b sendiri di ujung wide (TR terlebar) & tele (TR terpanjang).
+  return { dekatM: lebarGambarM * Math.min(trMin, trMaks) - koreksiM, jauhM: lebarGambarM * Math.max(trMin, trMaks) - koreksiTeleM };
 }
 
 /**

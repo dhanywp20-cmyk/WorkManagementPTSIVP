@@ -20,7 +20,7 @@
 import type * as T from 'three';
 import { teksturKonten } from '../bangun/konten';
 import { teksturPolaUji } from '../bangun/tekstur';
-import { type Benda, kotakGrid, type Lensa, lumenDari, rasioGambarProyektor } from '../inti';
+import { type Benda, koreksiJarakDari, kotakGrid, type Lensa, lumenDari, rasioGambarProyektor } from '../inti';
 import type { Mesin } from './tipe';
 
 /** Gambar konten per kunci (pola uji / dashboard dibuat sekali, bukan tiap gambar ulang). */
@@ -77,7 +77,8 @@ interface Adaptasi { f: number; k: number }
 const adaptasi = new WeakMap<object, Adaptasi>();
 const adaptasiDari = (m: Mesin): Adaptasi => adaptasi.get(m) ?? { f: 1, k: 1 };
 /**
- * Pasang lampu adegan = dasar tingkat cahaya ruangan (f) x adaptasi eksposur (k, mode Sinar nyata; 1 = normal).
+ * Pasang lampu adegan = dasar tingkat cahaya ruangan (f) x k. k selalu 1 sejak Sinar nyata tidak lagi meredupkan
+ * ruangan saat gambar proyektor terang (lihat LUTUT) - tetap ada supaya pemanggil lama tidak berubah.
  * Adaptasi dilakukan pada LAMPU, bukan toneMappingExposure, supaya garis ukur, label & layar display (bahan tanpa
  * cahaya) tidak ikut menggelap.
  */
@@ -151,13 +152,23 @@ export function ambienAdegan(m: Mesin, n: T.Vector3): number {
 /** Keseragaman ANSI proyektor (pojok / pusat) - spesifikasi umum proyektor instalasi ±85%. */
 export const KESERAGAMAN = 0.85;
 /**
- * Adaptasi mata / kamera ke layar: bila putih gambar proyektor (nilai linear adegan) melebihi ini, SEMUA cahaya
- * adegan (ruangan + proyektor) diturunkan sebanding sampai putih gambar = nilai ini (ACES +-0,92 sRGB, warna konten
- * tetap setia) - seperti foto yang diekspos untuk layar. Ruang gelap: gambar pekat & ruangan menggelap. Ruang terang:
- * gambar tampak pudar (hitam gambar setara terang dinding), bukan putih rata. Perbandingan gambar : ruangan = kontras
- * di panel; bahan tanpa cahaya (garis ukur, label, layar display) tidak terpengaruh.
+ * Putih gambar proyektor (nilai linear adegan, luminance putih = iradiansi / pi) disalin apa adanya sampai LUTUT,
+ * di atasnya digulung halus menuju TERANG_MAKS (ACES +-0,92 sRGB) supaya gambar yang sangat terang tidak jadi putih
+ * rata & warna konten tetap terbaca.
+ *
+ * Yang digulung HANYA cahaya proyektor. Dulu seluruh cahaya adegan (ruangan + proyektor) diturunkan sebanding
+ * sampai putih gambar = 1,3 - akibatnya menggeser proyektor mendekat membuat SELURUH RUANGAN menggelap (diukur:
+ * lampu ruangan 0,26 -> 0,041, enam kali, saat proyektor maju dari 8 ke 3 m), padahal lampu ruangannya tidak
+ * berubah. Sekarang ruangan tetap; gambar makin terang saat proyektor mendekat & makin redup saat menjauh
+ * (lux = lumen / luas, seperti kalkulator pabrikan), hanya puncaknya yang dilunakkan.
  */
-const TERANG_SASARAN = 1.3;
+const LUTUT = 0.8, TERANG_MAKS = 1.5;
+/** Gulung terang putih gambar: linear sampai LUTUT, lalu mendekati TERANG_MAKS tanpa pernah melewatinya. */
+export function gulungTerang(w: number): number {
+  if (w <= LUTUT) return w;
+  const ruang = TERANG_MAKS - LUTUT;
+  return LUTUT + ruang * (1 - Math.exp(-(w - LUTUT) / ruang));
+}
 /** Resolusi peta gambar proyektor (lebar piksel). */
 const LEBAR_PETA = 768;
 
@@ -258,7 +269,7 @@ function gambarPeta(kv: HTMLCanvasElement, L: Lensa, m: MasukanLampu): number {
 }
 
 /**
- * Pasang / perbarui lampu semua proyektor (mode Sinar nyata) & adaptasi eksposurnya. `daftar` kosong = semua lampu
+ * Pasang / perbarui lampu semua proyektor (mode Sinar nyata) & gulungan terang gambarnya. `daftar` kosong = semua lampu
  * proyektor dilepas, cahaya ruangan kembali normal.
  */
 export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[]) {
@@ -304,7 +315,7 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[]) {
     }
     const kam = light.shadow.camera as T.PerspectiveCamera;
     kam.up.set(...L.atas);
-    kam.near = Math.max(0.05, (p.koreksiJarak ?? 0) + 0.06);
+    kam.near = Math.max(0.05, koreksiJarakDari(p) + 0.06);
     kam.far = 60;
     const fw = TX * 2000, fh = TY * 2000;
     kam.setViewOffset(fw, fh, (x0 + TX) * 1000, (TY - y1) * 1000, (x1 - x0) * 1000, (y1 - y0) * 1000);
@@ -331,11 +342,13 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[]) {
   //  terang cahaya ruangan yang dirender di permukaan sasaran (A, diukur) setara dengan lux ruangan yang dihitung,
   //  dirata-rata atas semua proyektor supaya satuan cahaya proyektor sama untuk semuanya.
   const skala = ukur.reduce((a, u) => a + u.A / u.lux, 0) / Math.max(1, ukur.length);
-  //  Permukaan putih: luminance = iradiansi / pi (BRDF Lambert) -> (A + skala x lux gambar) / pi.
-  const terangMaks = Math.max(0, ...ukur.filter(u => u.cd > 0).map(u => (u.A + skala * u.luxGambar) / Math.PI));
-  const k = terangMaks > TERANG_SASARAN ? TERANG_SASARAN / terangMaks : 1;
+  //  Permukaan putih: luminance = iradiansi / pi (BRDF Lambert) -> (A + skala x lux gambar) / pi. Puncaknya digulung
+  //  per proyektor (gulungTerang); cahaya ruangan TIDAK disentuh - lihat catatan LUTUT.
   for (const u of ukur) {
-    u.light.intensity = u.cd * skala * k;
+    const putih = (u.A + skala * u.luxGambar) / Math.PI;
+    const tampil = gulungTerang(putih);
+    const faktor = u.luxGambar > 0 ? Math.max(0, (tampil * Math.PI - u.A) / (skala * u.luxGambar)) : 1;
+    u.light.intensity = u.cd * skala * faktor;
   }
-  aturCahayaRuang(m, { k });
+  aturCahayaRuang(m, { k: 1 });
 }
