@@ -19,7 +19,7 @@ export function bersihkanHarga(x: unknown): Record<string, number> {
   return h;
 }
 
-export const rupiah = (v: number) => `Rp ${Math.round(v).toLocaleString('id-ID')}`;
+export { rupiah } from '../bersama/cetak';
 
 export const PITCH = [0.9, 1.2, 1.25, 1.5, 1.56, 1.86, 1.9, 2, 2.5, 2.6, 2.9, 3.91, 4.81, 5, 6.67, 8, 10];
 
