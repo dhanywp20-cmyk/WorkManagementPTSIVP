@@ -91,7 +91,7 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'kursi', label: 'Kursi kantor', ket: 'Beroda, sandaran melengkung', jenis: 'kursi', atur: { tipeKursi: 'kantor' } },
       { kunci: 'kursi-kelas', label: 'Kursi kelas', ket: 'Empat kaki, cangkang plastik', jenis: 'kursi', atur: { tipeKursi: 'kelas' } },
       { kunci: 'meja-dosen', label: 'Meja dosen', ket: 'Meja pengajar berpanel depan', jenis: 'meja', atur: { bentukMeja: 'dosen' } },
-      { kunci: 'podium', label: 'Podium', ket: 'Mimbar + mic gooseneck', jenis: 'meja', atur: { bentukMeja: 'podium' } },
+      { kunci: 'podium', label: 'Podium', ket: 'Smart lectern MAXHUB SL22MC: layar sentuh 21,5" + 2 mic gooseneck', jenis: 'meja', atur: { bentukMeja: 'podium' } },
       { kunci: 'kredensa', label: 'Kredensa', ket: 'Lemari rendah di bawah display', jenis: 'meja', atur: { bentukMeja: 'kredensa' } },
       { kunci: 'meja-operator', label: 'Meja operator', ket: 'Control room, multi monitor', jenis: 'meja', atur: { bentukMeja: 'operator' } },
     ],
@@ -169,7 +169,8 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       if (bentuk === 'bulat') return { ...dasar, nama: 'Meja bundar', z: k.l * 0.55, w: 1.2, h: 0.75, d: 1.2, elev: 0, bentukMeja: 'bulat', finish: 'walnut', ...atur };
       if (bentuk === 'kelas') return { ...dasar, nama: 'Meja kelas', z: k.l * 0.5, w: 1.2, h: 0.75, d: 0.5, elev: 0, bentukMeja: 'kelas', finish: 'oak', ...atur };
       if (bentuk === 'dosen') return { ...dasar, nama: 'Meja dosen', x: k.x0 + Math.min(1.8, k.p * 0.25), z: 1.5, w: 1.6, h: 0.75, d: 0.75, elev: 0, bentukMeja: 'dosen', finish: 'oak', ...atur };
-      if (bentuk === 'podium') return { ...dasar, nama: 'Podium', x: k.x0 + Math.min(3, k.p * 0.35), z: 1.3, w: 0.6, h: 1.15, d: 0.5, elev: 0, bentukMeja: 'podium', finish: 'walnut', ...atur };
+      //  MAXHUB SL22MC: 786 x 420 mm, tinggi bisa diatur 0,99-1,19 m.
+      if (bentuk === 'podium') return { ...dasar, nama: 'Podium', x: k.x0 + Math.min(3, k.p * 0.35), z: 1.3, w: 0.786, h: 1.1, d: 0.42, elev: 0, bentukMeja: 'podium', finish: 'walnut', ...atur };
       if (bentuk === 'kredensa') return { ...dasar, nama: 'Kredensa', z: 0.25, w: Math.min(2.4, k.p * 0.5), h: 0.75, d: 0.45, elev: 0, bentukMeja: 'kredensa', finish: 'walnut', ...atur };
       if (bentuk === 'operator') return { ...dasar, nama: 'Meja operator', z: Math.min(k.l - 1, k.l * 0.55), w: 1.8, h: 0.75, d: 0.8, elev: 0, bentukMeja: 'operator', monitorMeja: 4, finish: 'walnut', ...atur };
       return { ...dasar, nama: 'Meja rapat', z: k.l * 0.55, w: 1.2, h: 0.75, d: 3.6, elev: 0, bentukMeja: 'rapat', finish: 'walnut', ...atur };

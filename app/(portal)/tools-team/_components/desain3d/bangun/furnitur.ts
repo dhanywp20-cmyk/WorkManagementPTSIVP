@@ -71,21 +71,66 @@ export function bangunMeja({ THREE, g, b, warnaB, W }: Konteks) {
     g.add(kotak(THREE, laci, b.h - tebal - 0.1, b.d - 0.12, panel, b.w / 2 - 0.03 - laci / 2, (b.h - tebal) / 2 + 0.03, -0.02));
     for (let i = 0; i < 3; i++) g.add(kotak(THREE, laci * 0.4, 0.012, 0.012, logam, b.w / 2 - 0.03 - laci / 2, 0.16 + i * 0.2, -b.d / 2 + 0.04));
   } else if (bentuk === 'podium') {
-    //  Podium / mimbar: alas, badan meruncing, bidang baca miring ke arah pembicara (-z), panel logo & mic gooseneck.
-    const kayu = new THREE.MeshPhysicalMaterial({ map: teksturKayu(THREE, warnaB ? 'putih' : fin, false), color: warnaB ? new THREE.Color(warnaB) : 0xffffff, roughness: 0.45, clearcoat: 0.4 });
-    const tAlas = 0.06, tBaca = b.h - 0.06;
-    g.add(papan(THREE, b.w, b.d, tAlas, 0.02, logam, 0.006));
-    g.add(blok(THREE, b.w * 0.86, tBaca - tAlas, b.d * 0.82, 0.04, kayu, 0.008).translateY(tAlas));
-    g.add(blok(THREE, b.w * 0.6, (tBaca - tAlas) * 0.35, 0.006, 0.01, mat(THREE, 0xe7e5e4, { roughness: 0.4 }), 0.002).translateY(tAlas + (tBaca - tAlas) * 0.45).translateZ(b.d * 0.41 + 0.004));
-    const baca = papan(THREE, b.w, b.d * 0.9, 0.035, 0.02, kayu, 0.006);
-    baca.position.set(0, tBaca, 0); baca.rotation.x = -0.22; g.add(baca);
-    const hitamMic = mat(THREE, 0x111827, { metalness: 0.5, roughness: 0.4 });
-    const kurva = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(b.w * 0.3, tBaca + 0.03, b.d * 0.3), new THREE.Vector3(b.w * 0.3, tBaca + 0.2, b.d * 0.22), new THREE.Vector3(b.w * 0.26, tBaca + 0.33, b.d * 0.02),
-    ]);
-    g.add(new THREE.Mesh(new THREE.TubeGeometry(kurva, 20, 0.005, 8, false), hitamMic));
-    const kepala = new THREE.Mesh(new THREE.SphereGeometry(0.016, 16, 12), hitamMic);
-    kepala.scale.set(1, 1.5, 1); kepala.position.set(b.w * 0.25, tBaca + 0.35, -b.d * 0.02); g.add(kepala);
+    //  Podium = smart lectern MAXHUB SL22MC (786 x 420 mm, tinggi 0,99-1,19 m): kaki busur dengan sisi cekung ke
+    //  pembicara (-z) & 3 bantalan, satu tiang miring berpenampang membulat (bawah di sisi penonton, atas di bawah
+    //  tengah meja), meja miring ke pembicara - lis abu-abu, permukaan kaca hitam, layar sentuh 21,5" & dua alur
+    //  di sisi - plus dua mic gooseneck di pojok belakang yang melengkung ke arah pembicara.
+    const badan = mat(THREE, W(0x2b2e33), { metalness: 0.35, roughness: 0.42 });
+    const lis = mat(THREE, W(0x4a4e55), { metalness: 0.55, roughness: 0.32 });
+    const kaca = new THREE.MeshPhysicalMaterial({ color: 0x07080a, roughness: 0.08, metalness: 0.1, clearcoat: 1, clearcoatRoughness: 0.05 });
+    const layar = new THREE.MeshPhysicalMaterial({ color: 0x0b1018, roughness: 0.04, clearcoat: 1, clearcoatRoughness: 0.03, emissive: 0x0a1222, emissiveIntensity: 0.4 });
+    const hitam = mat(THREE, 0x0d0e10, { roughness: 0.6 });
+
+    //  Kaki busur: pita lengkung (dua kurva kuadrat), tebal 25 mm di atas 3 bantalan 12 mm.
+    const tKaki = 0.025, bantal = 0.012;
+    const a = b.w * 0.4, ujung = -b.d * 0.46, luar = b.d * 1.4, dalam = b.d * 0.82;
+    const kaki = new THREE.Shape();
+    kaki.moveTo(-a, ujung); kaki.quadraticCurveTo(0, luar, a, ujung);
+    kaki.lineTo(a - 0.085, ujung); kaki.quadraticCurveTo(0, dalam, -a + 0.085, ujung); kaki.closePath();
+    g.add(lempeng(THREE, kaki, tKaki, 0.006, badan, 32).translateY(bantal));
+    const puncakKaki = (ujung + luar) / 2;
+    for (const [x, z] of [[-a + 0.035, ujung + 0.03], [a - 0.035, ujung + 0.03], [0, puncakKaki - 0.05]] as const) {
+      g.add(papan(THREE, 0.05, 0.05, bantal, 0.01, hitam, 0.002).translateX(x).translateZ(z));
+    }
+
+    //  Meja miring 12 derajat ke arah pembicara; semua isinya di grup lokal meja (datar), lalu grupnya dimiringkan.
+    const miring = 0.21, tMeja = 0.045;
+    const meja = new THREE.Group();
+    meja.position.set(0, b.h - tMeja - (b.d / 2) * Math.sin(miring), 0);
+    meja.rotation.x = -miring;
+    meja.add(papan(THREE, b.w, b.d, tMeja, 0.025, lis, 0.008, 4));
+    meja.add(papan(THREE, b.w - 0.014, b.d - 0.014, 0.004, 0.02, kaca, 0.0015).translateY(tMeja));
+    //  Layar 21,5" 16:9 (476 x 268 mm) di tengah, sedikit ke arah pembicara.
+    const lyr = papan(THREE, 0.476, 0.268, 0.002, 0.004, layar, 0.0008);
+    lyr.position.set(0, tMeja + 0.004, -0.012); meja.add(lyr);
+    for (const sx of [-1, 1]) meja.add(kotak(THREE, 0.006, 0.0015, b.d * 0.62, hitam, sx * (b.w / 2 - 0.05), tMeja + 0.0045, -0.01));
+    //  Mic gooseneck: pangkal di pojok belakang (+z), naik lalu melengkung ke pembicara (-z), kepala busa memanjang.
+    const hitamMic = mat(THREE, 0x111214, { metalness: 0.5, roughness: 0.35 });
+    for (const sx of [-1, 1]) {
+      const x0 = sx * (b.w / 2 - 0.07), z0 = b.d / 2 - 0.06, y0 = tMeja + 0.004;
+      meja.add(new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.015, 0.022, 20), hitamMic).translateX(x0).translateY(y0 + 0.011).translateZ(z0));
+      const kurva = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(x0, y0 + 0.02, z0), new THREE.Vector3(x0, y0 + 0.17, z0 + 0.005),
+        new THREE.Vector3(x0 * 0.98, y0 + 0.31, z0 - 0.05), new THREE.Vector3(x0 * 0.95, y0 + 0.37, z0 - 0.15),
+      ]);
+      meja.add(new THREE.Mesh(new THREE.TubeGeometry(kurva, 32, 0.0045, 10, false), hitamMic));
+      const ujungMic = kurva.getPoint(1), arah = kurva.getTangent(1);
+      const kepala = new THREE.Mesh(new THREE.CapsuleGeometry(0.009, 0.034, 6, 14), hitamMic);
+      kepala.position.copy(ujungMic).addScaledVector(arah, 0.02);
+      kepala.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), arah);
+      meja.add(kepala);
+    }
+    g.add(meja);
+
+    //  Tiang miring: dari punggung kaki (sisi penonton) ke bawah tengah meja.
+    //  Seperti foto produk: tiang lebar (±24% lebar meja) & miring ±13 derajat.
+    const bawah = new THREE.Vector3(0, bantal + tKaki - 0.005, puncakKaki - 0.03);
+    const atasT = new THREE.Vector3(0, meja.position.y - 0.005, -0.05);
+    const panjang = bawah.distanceTo(atasT);
+    const tiang = blok(THREE, b.w * 0.24, panjang, 0.105, 0.04, badan, 0.012, 4);
+    tiang.rotation.x = Math.atan2(atasT.z - bawah.z, atasT.y - bawah.y);
+    tiang.position.copy(bawah);
+    g.add(tiang);
   } else if (bentuk === 'kredensa') {
     //  Kredensa: badan lemari gelap, pintu berpanel dengan handle, plint tersembunyi, daun atas.
     const badan = mat(THREE, W(0x1d2026), { roughness: 0.5 });
