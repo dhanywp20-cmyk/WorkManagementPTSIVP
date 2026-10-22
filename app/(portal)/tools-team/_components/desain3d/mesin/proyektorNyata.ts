@@ -20,7 +20,7 @@
 import type * as T from 'three';
 import { teksturKonten } from '../bangun/konten';
 import { teksturPolaUji } from '../bangun/tekstur';
-import { type Benda, kotakGrid, type Lensa, lumenDari, rasioGambarProyektor } from '../inti';
+import { type Benda, koreksiJarakDari, kotakGrid, type Lensa, lumenDari, rasioGambarProyektor } from '../inti';
 import type { Mesin } from './tipe';
 
 /** Gambar konten per kunci (pola uji / dashboard dibuat sekali, bukan tiap gambar ulang). */
@@ -304,7 +304,7 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[]) {
     }
     const kam = light.shadow.camera as T.PerspectiveCamera;
     kam.up.set(...L.atas);
-    kam.near = Math.max(0.05, (p.koreksiJarak ?? 0) + 0.06);
+    kam.near = Math.max(0.05, koreksiJarakDari(p) + 0.06);
     kam.far = 60;
     const fw = TX * 2000, fh = TY * 2000;
     kam.setViewOffset(fw, fh, (x0 + TX) * 1000, (TY - y1) * 1000, (x1 - x0) * 1000, (y1 - y0) * 1000);

@@ -65,9 +65,13 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                     : `Zoom ${f(zMax / zMin, 2)}× (TR ${f(zMin, 2)} - ${f(zMax, 2)} : 1). − = gambar membesar (wide), + = gambar mengecil (tele).`}
                 </Catatan>
                 {/*  Rumus lensa pabrikan: L = a x SW - b. a = TR terlebar / terpanjang di atas, b = koreksi ini. */}
-                <Angka label="Koreksi jarak b (rumus L = TR × lebar − b)" nilai={koreksiJarakDari(b)} satuan="m" step={0.001} min={-1}
-                  onUbah={v => v >= -1 && v <= 1 && set({ koreksiJarak: Math.round(v * 1000) / 1000 || undefined })} />
-                <Catatan>Isi dari rumus jarak lempar di datasheet lensa, mis. Panasonic ET-D3QW200: L = 0,566 × SW − 0,082 → TR 0,566 & b 0,082. Kosong / 0 = L = TR × lebar.</Catatan>
+                <div className="grid grid-cols-2 gap-2">
+                  <Angka label="Koreksi b wide" nilai={b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-1}
+                    onUbah={v => v >= -1 && v <= 1 && set({ koreksiJarak: Math.round(v * 1000) / 1000 || undefined })} />
+                  <Angka label="Koreksi b tele" nilai={b.koreksiJarakTele ?? b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-1}
+                    onUbah={v => v >= -1 && v <= 1 && set({ koreksiJarakTele: Math.round(v * 1000) / 1000 })} />
+                </div>
+                <Catatan>Rumus jarak lempar lensa L = TR × lebar − b, b di ujung wide & tele (kalkulator Panasonic menyimpan keduanya; di antaranya ikut zoom - sekarang {f(koreksiJarakDari(b), 3)} m). Contoh PT-MZ882 lensa standar: TR 1,639 b 0,055 (wide) - TR 2,788 b 0,048 (tele). Kosong / 0 = L = TR × lebar.</Catatan>
                 {/*  Sama dengan Kalkulator Proyektor: tanpa b, jarak bisa selisih beberapa cm - puluhan cm dari kalkulator pabrikan. */}
                 {!koreksiJarakDari(b) && (
                   <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11.5px] leading-snug text-amber-800">
@@ -80,10 +84,20 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
           <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Lens shift</p>
-              {(offsetLensaDari(b) !== 0 || geserLensaDari(b) !== 0) && (
+              {b.offsetTetap === undefined && (offsetLensaDari(b) !== 0 || geserLensaDari(b) !== 0) && (
                 <button type="button" onClick={() => set({ offsetLensa: 0, geserLensaH: 0 })} className="text-[11.5px] font-bold text-blue-700 hover:underline">Ke tengah (0%)</button>
               )}
             </div>
+            {b.offsetTetap !== undefined ? (
+              //  Proyektor tanpa lens shift (portabel / short throw): posisi gambar terhadap lensa dikunci datasheet.
+              <div className="grid grid-cols-3 gap-2 items-end">
+                <p className="col-span-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] leading-snug text-slate-700">
+                  Tanpa lens shift - pusat gambar tetap {f(b.offsetTetap * 100, 1)}% tinggi gambar dari sumbu lensa.{' '}
+                  <button type="button" onClick={() => set({ offsetTetap: undefined })} className="font-bold text-blue-700 hover:underline">Lepas kunci</button>
+                </p>
+                <Angka label="Lumen" nilai={lumenDari(b)} satuan="lm" step={100} onUbah={v => v >= 100 && v <= 100000 && set({ lumen: Math.round(v) })} />
+              </div>
+            ) : (
             <div className="grid grid-cols-3 gap-2">
               <Angka label="Vertikal" nilai={Math.round(offsetLensaDari(b) * 100)} satuan="%" step={1} min={-50}
                 onUbah={v => v >= -50 && v <= 150 && set({ offsetLensa: v / 100 })} />
@@ -91,21 +105,36 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 onUbah={v => v >= -60 && v <= 60 && set({ geserLensaH: v / 100 })} />
               <Angka label="Lumen" nilai={lumenDari(b)} satuan="lm" step={100} onUbah={v => v >= 100 && v <= 100000 && set({ lumen: Math.round(v) })} />
             </div>
-            {(() => {
+            )}
+            {b.offsetTetap === undefined && (() => {
               //  Batas lens shift lensa dari datasheet (Panasonic: VS atas / bawah, HS kiri-kanan, % tinggi / lebar gambar).
               const bs = batasShift(b);
               const persen = (v: number | null) => (v === null ? undefined : Math.round(v * 100));
               const isi = (k: 'shiftAtasMaks' | 'shiftBawahMaks' | 'shiftHMaks', v: number) => v >= 0 && v <= 150 && set({ [k]: v ? v / 100 : undefined });
+              const poligon = !!b.poligonShift?.length;
               return (
                 <>
+                  {poligon ? (
+                    //  Daerah shift dari pabrikan (segi delapan Panasonic dsb.): batas per sumbu dihitung dari poligonnya.
+                    <p className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] leading-snug text-slate-700">
+                      Daerah lens shift lensa: vertikal +{persen(bs.atas)}/−{persen(bs.bawah)}%, kiri-kanan ±{persen(bs.h)}% - shift vertikal &amp; horizontal penuh tidak bisa bersamaan.{' '}
+                      <button type="button" onClick={() => set({ poligonShift: undefined })} className="font-bold text-blue-700 hover:underline">Pakai batas manual</button>
+                    </p>
+                  ) : (
                   <div className="grid grid-cols-3 gap-2">
                     <Angka label="Batas atas" nilai={persen(bs.atas) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftAtasMaks', v)} />
                     <Angka label="Batas bawah" nilai={persen(bs.bawah) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftBawahMaks', v)} />
                     <Angka label="Batas kiri-kanan" nilai={persen(bs.h) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftHMaks', v)} />
                   </div>
+                  )}
                   {(bs.lewatV || bs.lewatH) && (
                     <p className="text-[12px] font-semibold text-rose-700">
                       Lens shift melebihi kemampuan lensa ({bs.lewatV ? `vertikal ${Math.round(offsetLensaDari(b) * 100)}% di luar +${persen(bs.atas) ?? '∞'}/−${persen(bs.bawah) ?? '∞'}%` : ''}{bs.lewatV && bs.lewatH ? '; ' : ''}{bs.lewatH ? `horizontal ${Math.round(geserLensaDari(b) * 100)}% di luar ±${persen(bs.h)}%` : ''}) - geser proyektor atau pakai tilt.
+                    </p>
+                  )}
+                  {bs.lewatGabungan && (
+                    <p className="text-[12px] font-semibold text-rose-700">
+                      Kombinasi lens shift vertikal {Math.round(offsetLensaDari(b) * 100)}% + horizontal {Math.round(geserLensaDari(b) * 100)}% di luar daerah lensa (sudut segi delapan) - kurangi salah satu, geser proyektor, atau pakai tilt.
                     </p>
                   )}
                 </>

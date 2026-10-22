@@ -134,10 +134,15 @@ export function kontrasProyektor(p: Benda, semua: Benda[], r: Ruang, target: num
   const luxGambar = lumenDari(p) / luas;
   const cahaya = luxCahayaDi(semua, r, P, n);
   const amb = Math.max(0.5, cahaya.total);
-  const kontras = (luxGambar + amb) / amb;
+  //  Rumus kalkulator Panasonic: (gambar + ruang) / (gambar / kontras asli + ruang) - di ruang gelap kontras dibatasi
+  //  kontras asli proyektor (hitam proyektor tidak benar-benar hitam). Tanpa kontras asli: (gambar + ruang) / ruang.
+  const C = p.kontrasAsli && p.kontrasAsli > 1 ? p.kontrasAsli : Infinity;
+  const kontras = (luxGambar + amb) / (luxGambar / C + amb);
+  //  Lux gambar agar kontras = target: E = ruang x (target - 1) / (1 - target / C); target >= C tidak tercapai.
+  const luxPerlu = target < C ? (amb * (target - 1)) / (1 - target / C) : Infinity;
   //  Luminance di layar (cd/m²) = lux x gain / π - sama dengan kalkulator Panasonic (kontras tidak berubah oleh gain:
   //  gambar & cahaya ruangan sama-sama dipantulkan kain layar yang sama).
   const gain = gainLayarDari(sn.layar);
-  return { luxGambar, cahaya, kontras, cukup: kontras >= target, lumenPerlu: Math.ceil(((target - 1) * amb * luas) / 100) * 100, luas,
+  return { luxGambar, cahaya, kontras, cukup: kontras >= target, lumenPerlu: Math.ceil((luxPerlu * luas) / 100) * 100, luas,
     gain, luminance: luminanceDari(luxGambar, gain) };
 }

@@ -135,7 +135,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           ? <p className="text-[12px] font-semibold text-emerald-700">Memenuhi target {targetKontras} : 1.</p>
           : (
             <div className="space-y-1">
-              <p className={`text-[12px] font-semibold ${warna}`}>Di bawah target {targetKontras} : 1 - butuh proyektor ±{kp.lumenPerlu.toLocaleString('id-ID')} lm, atau kurangi cahaya lampu di {kePermukaan ? 'permukaan' : 'layar'} sampai ±{f(ambPerlu, 0)} lux.</p>
+              <p className={`text-[12px] font-semibold ${warna}`}>Di bawah target {targetKontras} : 1 - {Number.isFinite(kp.lumenPerlu) ? `butuh proyektor ±${kp.lumenPerlu.toLocaleString('id-ID')} lm` : `melebihi kontras asli proyektor (${p.kontrasAsli?.toLocaleString('id-ID')} : 1), lumen berapa pun tidak cukup`}, atau kurangi cahaya lampu di {kePermukaan ? 'permukaan' : 'layar'} sampai ±{f(ambPerlu, 0)} lux.</p>
               {kp.cahaya.siang > 0.5 && (ruang.tirai ?? 0) < 100 && (
                 <button type="button" onClick={() => setRuang(r => ({ ...r, tirai: 100 }))}
                   className="mr-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-bold border border-sky-200 bg-sky-50 text-sky-900 hover:bg-sky-100">

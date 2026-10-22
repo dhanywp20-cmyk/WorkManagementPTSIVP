@@ -165,7 +165,7 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           isi: proyektor.map(({ p }) => {
             const kp = kontrasProyektor(p, benda, ruang, targetKontras);
             return [p.nama, lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.luminance, 0)} cd/m² (gain ${fm(kp.gain, 2)})`, `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}`,
-              `${fm(kp.kontras, 1)} : 1 ${kp.cukup ? '✓' : `✗ (perlu ±${kp.lumenPerlu.toLocaleString('id-ID')} lm)`}`];
+              `${fm(kp.kontras, 1)} : 1 ${kp.cukup ? '✓' : `✗ (${Number.isFinite(kp.lumenPerlu) ? `perlu ±${kp.lumenPerlu.toLocaleString('id-ID')} lm` : 'melebihi kontras asli proyektor'})`}`];
           }),
         }] : []),
         ...(tampilBlending && infoBlending.length ? [{
