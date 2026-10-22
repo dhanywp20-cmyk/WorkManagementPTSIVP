@@ -21,7 +21,7 @@ const Desain3D = dynamic(() => import('./_components/Desain3D'), {
 const ALAT = [
   { k: '3d', judul: 'Desain 3D Ruang', ket: 'Tata letak ruang AV + analisis jarak pandang', ikon: '🧊', C: Desain3D },
   { k: 'led', judul: 'LED Videotron', ket: 'Calculator LED, Screen & Power Connection, daftar material & penawaran', ikon: '📺', C: KalkulatorLED },
-  { k: 'av', judul: 'Kalkulator AV', ket: 'Ukuran layar, proyektor, sinyal & jaringan AV, audio & akustik, daya, rak, PoE', ikon: '🧮', C: KalkulatorAV },
+  { k: 'av', judul: 'Kalkulator AV', ket: 'Ukuran layar, videowall & IFP (BOM & penawaran), proyektor, sinyal & jaringan AV, audio & akustik, daya, rak, PoE', ikon: '🧮', C: KalkulatorAV },
   { k: 'banding', judul: 'Product Comparison', ket: 'Battle card perbandingan produk dari brosur PDF - template baku, diverifikasi Team PTS', ikon: '⚖️', C: ProductComparison },
   { k: 'pustaka', judul: 'Pustaka', ket: 'Katalog produk, data acuan & artikel panduan tim - diisi Admin, dipakai kalkulator', ikon: '📚', C: Pustaka },
 ] as const;

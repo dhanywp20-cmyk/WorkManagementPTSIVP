@@ -6,6 +6,8 @@ import { esc } from '@/lib/lembar-cetak';
 
 export * from '@/lib/lembar-cetak';
 
+export const rupiah = (v: number) => `Rp ${Math.round(v).toLocaleString('id-ID')}`;
+
 /** Diagram susunan cabinet/modul (SVG) dengan proporsi sebenarnya + label ukuran. */
 export function diagramSusunan(kolom: number, baris: number, lebarM: number, tinggiM: number, satuan: string): string {
   const maksW = 480, maksH = 170;

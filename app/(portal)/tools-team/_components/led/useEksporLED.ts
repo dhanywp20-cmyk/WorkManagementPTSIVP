@@ -6,6 +6,7 @@ import { ringkasanDaya, seksiCetakDaya } from './daya/teks';
 import { ringkasanKoneksi, seksiCetakKoneksi } from './koneksi/teks';
 import { KECERAHAN } from '@/lib/av-hitung';
 import { rupiah } from './data';
+import { isiLembarBom } from '../bersama/TabelBom';
 import type { KeadaanLED } from './useKeadaanLED';
 
 export function useEksporLED(K: KeadaanLED) {
@@ -101,19 +102,7 @@ export function useEksporLED(K: KeadaanLED) {
       { judul: 'Layar', jenis: 'info',
         kiri: [{ label: 'LED', nilai: `${labelLED} · ${kolom} × ${baris} ${namaUnit}${n > 1 ? ` · ${n} screen` : ''}` }, { label: 'Ukuran', nilai: `${f(h.lebarM)} × ${f(h.tinggiM)} m · ${h.resX} × ${h.resY} px`, sorot: true }],
         kanan: [{ label: 'Customer', nilai: customer || '—' }, { label: 'Project', nilai: project || '—' }] },
-      { judul: adaHarga ? 'Rincian penawaran' : 'Daftar material', jenis: 'tabel',
-        kepala: adaHarga ? ['No', 'Item', 'Qty', 'Satuan', 'Harga satuan', 'Jumlah', 'Keterangan'] : ['No', 'Item', 'Qty', 'Satuan', 'Keterangan'],
-        rataKanan: adaHarga ? [0, 2, 4, 5] : [0, 2],
-        isi: [
-          ...barisBom.map((b, i) => adaHarga
-            ? [String(i + 1), b.item, b.qty.toLocaleString('id-ID'), b.satuan, harga[b.kunci] ? rupiah(harga[b.kunci]) : '—', harga[b.kunci] ? rupiah(harga[b.kunci] * b.qty) : '—', b.ket]
-            : [String(i + 1), b.item, b.qty.toLocaleString('id-ID'), b.satuan, b.ket]),
-          ...(adaHarga ? [
-            ['', 'Subtotal', '', '', '', rupiah(nilaiPenawaran.subtotal), ''],
-            ['', `PPN ${bom.ppn}%`, '', '', '', rupiah(nilaiPenawaran.ppn), ''],
-            ['', 'TOTAL', '', '', '', rupiah(nilaiPenawaran.total), ''],
-          ] : []),
-        ] },
+      { judul: adaHarga ? 'Rincian penawaran' : 'Daftar material', jenis: 'tabel', ...isiLembarBom(barisBom, harga, bom.ppn, nilaiPenawaran) },
     ],
     catatan: 'Jumlah power supply, kabel, dan rangka adalah perkiraan lapangan dari AV Solution Tools. Cadangan (spare) disarankan 2-3% untuk modul & receiving card. Harga dapat berubah; verifikasi stok & datasheet sebelum penawaran resmi.',
     tandaTangan: [{ label: 'Dibuat oleh', nama: pembuat }, { label: 'Disetujui' }],
