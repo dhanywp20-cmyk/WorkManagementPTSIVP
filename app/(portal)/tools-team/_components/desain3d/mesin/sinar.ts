@@ -66,7 +66,10 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
    * bayangan & bahan permukaan asli. Mati: penanda warna rancangan (lapisan aditif per proyektor) seperti dulu.
    */
   const nyata = sinar && sinarNyata && daftarProj.length <= batasProyektorNyata(m);
-  if (!nyata) aturLampuProyektor(m, []);
+  //  Tanpa proyektor lampunya juga harus dibuang: dulu 0 proyektor tetap dihitung "nyata" (0 <= batas GPU) lalu fungsi
+  //  langsung kembali, sehingga lampu proyektor ruangan sebelumnya tertinggal - membuka Smart Classroom sesudah ruang
+  //  berproyektor menyisakan cahaya gambar di dinding tanpa proyektor yang bisa diklik.
+  if (!nyata || !daftarProj.length) aturLampuProyektor(m, []);
   if (!(sinar || hitungBlend) || !daftarProj.length) return;
 
   m.scene.updateMatrixWorld(true);
@@ -336,9 +339,10 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const lebarGaris = Math.min(0.03, Math.max(0.01, sn.jarak * w1 * 0.003));
     const keLensa = (P: T.Vector3) => O.clone().sub(P).normalize();
     const pita: number[] = [], kerucut: number[] = [], alfa: number[] = [];
-    //  Sinar nyata: tanpa kerucut berwarna & pita tepi (di udara cahaya proyektor tidak terlihat tanpa asap) - cukup
-    //  4 rusuk frustum tipis dari lensa ke pojok gambar sebagai alat bantu rancangan. Rusuk = dua irisan segitiga
-    //  bersilang (mesh kerucut di bawah), bukan garis 1 px.
+    //  Sinar nyata: rambatan cahaya di udara (kerucut berwarna, sama dengan mode penanda) tetap digambar sebagai alat
+    //  bantu rancangan - tanpa itu arah sinar dari lensa nyaris tak terlihat - ditambah 4 rusuk frustum tipis dari
+    //  lensa ke pojok gambar. Pita tepi tidak: tepi gambar sudah tampak dari cahayanya sendiri. Rusuk = dua irisan
+    //  segitiga bersilang (mesh kerucut di bawah), bukan garis 1 px.
     if (nyata) {
       const pojokG = [rinci[0], rinci[NX - 1], rinci[NX * NY - 1], rinci[(NY - 1) * NX]].filter((x): x is Kena => !!x);
       for (const q of pojokG) {
@@ -351,10 +355,10 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
         }
       }
     }
-    for (let i = 0; i < tepi.length && !nyata; i++) {
+    for (let i = 0; i < tepi.length; i++) {
       const A = tepi[i], B = tepi[(i + 1) % tepi.length];
       if (!A || !B) continue;
-      if (A.p.distanceTo(B.p) < Math.max(0.6, A.p.distanceTo(O) * w1 * 0.4)) {
+      if (!nyata && A.p.distanceTo(B.p) < Math.max(0.6, A.p.distanceTo(O) * w1 * 0.4)) {
         const n = new THREE.Vector3().addVectors(A.n ?? keLensa(A.p), B.n ?? keLensa(B.p)).normalize();
         const s = new THREE.Vector3().crossVectors(n, B.p.clone().sub(A.p)).normalize().multiplyScalar(lebarGaris / 2);
         const a0 = A.p.clone().sub(s), a1 = A.p.clone().add(s), b0 = B.p.clone().sub(s), b1 = B.p.clone().add(s);
