@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { User, TeamMember } from './shared';
 import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
@@ -9,7 +8,7 @@ import { hasFullAccess } from '@/lib/constants';
 import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
 import { cariReminderByNama, reminderTerbaru } from '@/lib/cari-reminder';
 import { gabungHasilProyek } from '@/lib/gabung-hasil-proyek';
-import { adalahKategoriInsentif } from '@/lib/incentive-scheme-kategori';
+import { kategoriInsentif } from '@/lib/incentive-scheme-kategori';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { KolomPenugasanTiket } from './tiket-baru/KolomPenugasanTiket';
 import { KolomBarangKeluhan } from './tiket-baru/KolomBarangKeluhan';
@@ -135,62 +134,46 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
     setReminderSearching(true);
     const lingkup = await hitungLingkupProject(currentUser as never);
 
-    // Tickets: project yang pernah punya ticket
-    // Tabel ini sebelumnya tidak ikut dicari sama sekali. Padahal project yang
-    // sudah pernah bermasalah justru yang paling mungkin dibuatkan ticket lagi,
-    // dan datanya cuma ada di sini kalau ia tidak pernah lewat Request Schedule.
-    let qt = supabase
-      .from('tickets')
-      .select('id, project_name, address, sales_name, sales_division, product, customer_phone, assign_name, date');
-    if (!kosong) {
-      qt = qt.ilike('project_name', `%${q.trim().replace(/([%_\\])/g, '\\$1')}%`);
-    }
-
     const filter = filterLingkup(lingkup);
     setPencarianDibatasi(!!filter);
-    if (filter) { qt = qt.or(filter); }
 
-    // Reminders: SEMUA kategori, lewat lib/cari-reminder.ts.
+    // HANYA jadwal Konfigurasi / Konfigurasi & Training / Training.
+    //
+    // Memilih hasil menautkan tickets.reminder_id ke jadwal itu, dan porsi
+    // Support di Incentive PTS mencocokkan ticket lewat reminder_id ke proyek
+    // insentif - yaitu jadwal berkategori ini. Menawarkan Standby Event,
+    // Maintenance, dsb. hanya membuka jalan salah klik yang memutus tautannya.
+    // Karena alasan yang sama tabel tickets tidak lagi ikut dicari: baris dari
+    // sana tidak punya reminder_id sama sekali. Project tanpa jadwal insentif
+    // dibuat lewat "Project Baru".
+    //
+    // Saringannya di kueri, bukan sesudahnya: kalau disaring belakangan, batas
+    // 15 baris bisa habis dimakan kategori lain dan jadwal Konfigurasi yang
+    // sah tidak pernah sampai ke daftar.
     //
     // Daftar kolom di bawah sengaja TIDAK memuat `title`. Kolom itu tidak ada
     // di basis data ini - menyebutnya, walau cuma di daftar select, membuat
     // PostgREST menolak seluruh kueri dengan "column reminders.title does not
     // exist", dan penolakan itu tampil sebagai "project tidak ditemukan".
     const kolomReminder = 'id, project_name, address, sales_name, sales_division, product, pic_name, pic_phone, category, assign_name, due_date';
-    const [rRes, tRes] = await Promise.all([
-      kosong
-        ? reminderTerbaru<ReminderRef>(
-            kolomReminder,
-            20,
-            kueri => (filter ? (kueri as { or(f: string): typeof kueri }).or(filter) : kueri),
-          )
-        : cariReminderByNama<ReminderRef>(
-            q,
-            kolomReminder,
-            15,
-            kueri => (filter ? (kueri as { or(f: string): typeof kueri }).or(filter) : kueri),
-          ),
-      qt.order('created_at', { ascending: false }).limit(kosong ? 20 : 15),
-    ]);
+    const kategori = kategoriInsentif();
+    type Kueri = { in(k: string, v: string[]): Kueri; or(f: string): Kueri };
+    const batasi = <Q,>(kueri: Q): Q => {
+      const k = (kueri as unknown as Kueri).in('category', kategori);
+      return (filter ? k.or(filter) : k) as unknown as Q;
+    };
+    const rRes = kosong
+      ? await reminderTerbaru<ReminderRef>(kolomReminder, 20, batasi)
+      : await cariReminderByNama<ReminderRef>(q, kolomReminder, 15, batasi);
 
     // Galat TIDAK ditelan. Pencarian yang ditolak basis data dan pencarian yang
     // memang nihil terlihat sama persis dari luar, dan yang pertama menyesatkan.
-    setGalatCari(rRes.error?.message ?? (tRes.error ? tRes.error.message : null));
+    setGalatCari(rRes.error?.message ?? null);
 
-    // Satu project bisa punya beberapa jadwal (Konfigurasi, Standby Event, ...)
-    // dan muncul lagi di tabel tickets. Aturan penyatuannya - termasuk kenapa
-    // kategori ikut jadi kunci - ada di lib/gabung-hasil-proyek.ts.
+    // Satu project bisa punya beberapa jadwal insentif (Konfigurasi lalu
+    // Training). Aturan penyatuannya ada di lib/gabung-hasil-proyek.ts.
     const jadwal = ((rRes.data ?? []) as ReminderRef[]).map(r => ({ ...r, _sumber: 'reminder' as const }));
-    const tiketLama = ((tRes.data ?? []) as Record<string, unknown>[]).map((t): ReminderRef => ({
-      id: String(t.id), project_name: String(t.project_name ?? ''), title: undefined,
-      address: String(t.address ?? ''), sales_name: String(t.sales_name ?? ''),
-      sales_division: String(t.sales_division ?? ''), product: String(t.product ?? ''),
-      pic_name: '', pic_phone: String(t.customer_phone ?? ''),
-      category: 'Ticket', assign_name: String(t.assign_name ?? ''),
-      due_date: t.date ? String(t.date) : null,
-      _sumber: 'ticket',
-    }));
-    setReminderResults(gabungHasilProyek(jadwal, tiketLama, 15, adalahKategoriInsentif));
+    setReminderResults(gabungHasilProyek(jadwal, [], 15));
     setReminderSearching(false);
   }, [currentUser]);
 

@@ -125,15 +125,15 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
             <p className="mt-1.5 text-[11px] text-slate-600 leading-snug">
               {pencarianDibatasi ? (
                 <>
-                  Tidak ada project bernama &quot;{reminderQuery.trim()}&quot; dalam jangkauan akun kamu.
+                  Tidak ada jadwal Konfigurasi / Training bernama &quot;{reminderQuery.trim()}&quot; dalam jangkauan akun kamu.
                   Pencarian hanya mencakup project divisi kamu — kalau project ini milik divisi lain,
                   minta Admin atau Team PTS yang membuatkan ticket-nya.
                 </>
               ) : (
                 <>
-                  Tidak ada project bernama &quot;{reminderQuery.trim()}&quot;. Akun kamu mencari ke
-                  SELURUH divisi, jadi kemungkinan besar namanya memang belum tercatat di Reminder
-                  Schedule maupun Ticketing — coba potongan nama yang lebih pendek, atau isi sebagai
+                  Tidak ada jadwal Konfigurasi, Konfigurasi &amp; Training, atau Training bernama
+                  &quot;{reminderQuery.trim()}&quot;. Kategori lain (Standby Event, Maintenance, ...)
+                  sengaja tidak ditampilkan — coba potongan nama yang lebih pendek, atau isi sebagai
                   Project Baru.
                 </>
               )}

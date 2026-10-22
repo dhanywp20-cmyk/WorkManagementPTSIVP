@@ -39,7 +39,7 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
             </button>
             <div className="min-w-0">
               <h3 id="judul-cari-project" className="font-bold text-base"><IkonTeks nama="🔍" />Cari Project yang Sudah Ada</h3>
-              <p className="text-[12px] text-white/80 mt-0.5">Ketik nama project, pilih dari hasilnya, lalu konfirmasi.</p>
+              <p className="text-[12px] text-white/80 mt-0.5">Hanya jadwal Konfigurasi, Konfigurasi &amp; Training, atau Training - ticket tertaut ke Incentive PTS.</p>
             </div>
           </div>
 
@@ -70,15 +70,16 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
               <p className="mt-2 text-[11px] text-slate-600 leading-snug">
                 {pencarianDibatasi ? (
                   <>
-                    Tidak ada project bernama &quot;{reminderQuery.trim()}&quot; dalam jangkauan akun kamu.
+                    Tidak ada jadwal Konfigurasi / Training bernama &quot;{reminderQuery.trim()}&quot; dalam jangkauan akun kamu.
                     Pencarian hanya mencakup project divisi kamu — kalau project ini milik divisi lain,
                     minta Admin atau Team PTS yang membuatkan ticket-nya.
                   </>
                 ) : (
                   <>
-                    Tidak ada project bernama &quot;{reminderQuery.trim()}&quot;. Akun kamu mencari ke
-                    SELURUH divisi, jadi kemungkinan besar namanya memang belum tercatat — coba
-                    potongan nama yang lebih pendek, atau tekan Kembali dan pilih Project Baru.
+                    Tidak ada jadwal Konfigurasi, Konfigurasi &amp; Training, atau Training bernama
+                    &quot;{reminderQuery.trim()}&quot;. Kategori lain (Standby Event, Maintenance, ...)
+                    sengaja tidak ditampilkan — coba potongan nama yang lebih pendek, atau tekan
+                    Kembali dan pilih Project Baru.
                   </>
                 )}
               </p>
