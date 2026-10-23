@@ -30,7 +30,7 @@ export function DaftarKanvas({ a }: { a: AlatDesain }) {
     setPilihan(r.pilih, r.lain);
   };
   return (
-    <div ref={wadah} className="kontrol-kanvas absolute right-2 top-12 z-10 w-56 sm:w-60 max-h-[60%] flex flex-col rounded-xl bg-white/95 border border-slate-200 shadow-lg"
+    <div ref={wadah} className="kontrol-kanvas absolute right-2 top-2 z-10 w-56 sm:w-60 max-h-[60%] flex flex-col rounded-xl bg-white/95 border border-slate-200 shadow-lg"
       role="region" aria-label="Daftar benda">
       <div className="flex items-center gap-1 px-2 py-1.5 border-b border-slate-100">
         <Search size={13} className="text-slate-400 shrink-0" />
