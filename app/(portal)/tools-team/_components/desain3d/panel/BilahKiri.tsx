@@ -1,23 +1,23 @@
 'use client';
 /**
- * Bilah alat kiri di dalam kanvas: Tambah, Teks cepat, Pilih banyak, Penggaris, Snap grid (+ magnet), Kelompok
- * (sembunyikan / isolasi), dan Geser / Putar
- * untuk benda terpilih (+ geser cepat), daftar benda di kanvas. Pintasan: A = Tambah, M = penggaris, G = snap,
+ * Rel alat kiri kanvas - satu panel tetap: Tambah, Teks cepat, Pilih banyak, Penggaris, Snap grid (+ magnet),
+ * Kelompok (sembunyikan / isolasi), Daftar benda, Pusatkan isi. Alat untuk benda terpilih (geser / putar, geser
+ * cepat) ada di bilah benda terpilih (KontrolKanvas). Pintasan: A = Tambah, M = penggaris, G = snap,
  * R = geser/putar, L = daftar benda, panah = geser, Esc = batal.
  */
 import { useEffect, useRef, useState } from 'react';
-import { BoxSelect, Grid3x3, Layers, ListTree, Magnet, Move3d, Plus, Rotate3d, Ruler, Type } from 'lucide-react';
-import { GeserCepat } from './GeserCepat';
+import { AlignCenterVertical, BoxSelect, Grid3x3, Layers, ListTree, Magnet, Plus, Ruler, Type } from 'lucide-react';
 import { golonganDari, jumlahSembunyiSendiri, type Golongan, KATALOG, LABEL_GOLONGAN, labelLangkah, LANGKAH_SNAP, MAKS_PENGGARIS, SUDUT_SNAP, titikSnap, type Titik } from '../inti';
-import { grupNav } from './gaya';
+import { grupNav, itemMenu, menuMelayang } from './gaya';
 import { TombolNav } from './TombolNav';
 import type { AlatDesain } from './alat';
 
 const ITEM_TEKS = KATALOG.flatMap(g => g.item).find(i => i.kunci === 'teks-dinding');
 
 export function BilahKiri({ a }: { a: AlatDesain }) {
-  const { benda, daftarKanvas, setDaftarKanvas, sembunyiGolongan, setSembunyiGolongan, alatKanvas, bukaSisi, hanyaLihat, klikUkurRef, modeBanyak, modeGizmo, ruang, setAlatKanvas, setModeBanyak, setModeGizmo,
+  const { benda, daftarKanvas, setDaftarKanvas, sembunyiGolongan, setSembunyiGolongan, alatKanvas, bukaSisi, hanyaLihat, klikUkurRef, menuPusat, modeBanyak, modeGizmo, ruang, setAlatKanvas, setMenuPusat, setModeBanyak, setModeGizmo,
     setPilih, setPilihLain, setRuang, setSnap, setTitikUkur, sisi, snap, terpilih, titikUkur } = a.K;
+  const { pusatkan } = a.aksi;
   const [menuSnap, setMenuSnap] = useState(false);
   const [menuKelompok, setMenuKelompok] = useState(false);
   //  Kelompok yang ada di desain ini (urutan tetap), untuk sembunyikan / isolasi.
@@ -61,31 +61,24 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
     return () => window.removeEventListener('keydown', tekan);
   });
 
+  const tutupSemua = () => { setMenuSnap(false); setMenuKelompok(false); setMenuPusat(false); };
   const pilihan = (aktif: boolean) => `px-2 py-1 rounded-md text-[12px] font-semibold border ${aktif ? 'bg-blue-700 border-blue-700 text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`;
   return (
     <div className="lapis-tembus relative flex flex-col gap-1.5" role="toolbar" aria-label="Alat desain">
-      {!hanyaLihat && (
-        <button type="button" onClick={() => bukaSisi('tambah')} aria-pressed={sisi === 'tambah'} title="Tambah benda (A)"
-          className={`inline-flex items-center gap-1.5 h-9 px-2.5 rounded-xl text-[12.5px] font-bold text-white shadow-sm bg-blue-700 hover:bg-blue-800 ${sisi === 'tambah' ? 'ring-2 ring-offset-1 ring-blue-400' : ''}`}>
-          <Plus size={16} /> <span className="hidden sm:inline">Tambah</span>
-        </button>
-      )}
       <div className={`${grupNav} self-start`}>
+        {!hanyaLihat && (
+          <button type="button" onClick={() => bukaSisi('tambah')} aria-pressed={sisi === 'tambah'} title="Tambah benda (A)" aria-label="Tambah benda"
+            className={`w-9 h-9 grid place-items-center text-white ${sisi === 'tambah' ? 'bg-blue-800' : 'bg-blue-700 hover:bg-blue-800'}`}><Plus size={18} /></button>
+        )}
         {!hanyaLihat && ITEM_TEKS && <TombolNav judul="Tambah teks / keterangan" onClick={() => a.aksi.tambah(ITEM_TEKS)}><Type size={17} /></TombolNav>}
         <TombolNav judul={modeBanyak ? 'Pilih banyak: aktif' : 'Pilih banyak (atau Shift / Ctrl + klik)'} aktif={modeBanyak} onClick={() => { keluarUkur(); setModeBanyak(!modeBanyak); }}><BoxSelect size={17} /></TombolNav>
         <TombolNav judul={ukur ? 'Penggaris: aktif - klik dua titik (M / Esc untuk selesai)' : 'Penggaris - ukur jarak dua titik (M)'} aktif={ukur} onClick={() => (ukur ? keluarUkur() : mulaiUkur())}><Ruler size={17} /></TombolNav>
-        <TombolNav judul={snap.aktif ? `Snap grid ${labelLangkah(snap.langkah)} · ${snap.sudut}° (G)` : 'Snap grid - geser & putar presisi (G)'} aktif={snap.aktif || menuSnap} onClick={() => { setMenuKelompok(false); setMenuSnap(v => !v); }}><Grid3x3 size={17} /></TombolNav>
+        <TombolNav judul={snap.aktif ? `Snap grid ${labelLangkah(snap.langkah)} · ${snap.sudut}° (G)` : 'Snap grid - geser & putar presisi (G)'} aktif={snap.aktif || menuSnap} onClick={() => { tutupSemua(); setMenuSnap(v => !v); }}><Grid3x3 size={17} /></TombolNav>
         <TombolNav judul={sembunyiGolongan.length ? `${sembunyiGolongan.length - jumlahSembunyiSendiri(sembunyiGolongan)} kelompok & ${jumlahSembunyiSendiri(sembunyiGolongan)} benda disembunyikan` : 'Sembunyikan / isolasi kelompok benda'} aktif={sembunyiGolongan.length > 0 || menuKelompok}
-          onClick={() => { setMenuSnap(false); setMenuKelompok(v => !v); }}><Layers size={17} /></TombolNav>
+          onClick={() => { tutupSemua(); setMenuKelompok(v => !v); }}><Layers size={17} /></TombolNav>
         <TombolNav judul={daftarKanvas ? 'Tutup daftar benda (L)' : 'Daftar benda - pilih dari nama (L)'} aktif={daftarKanvas} onClick={() => setDaftarKanvas(!daftarKanvas)}><ListTree size={17} /></TombolNav>
+        {!hanyaLihat && <TombolNav judul="Pusatkan isi - geser semua benda ke tengah ruang" aktif={menuPusat} onClick={() => { tutupSemua(); setMenuPusat(v => !v); }}><AlignCenterVertical size={17} /></TombolNav>}
       </div>
-      {terpilih && !ukur && (
-        <div className={`${grupNav} self-start`} role="group" aria-label="Geser atau putar benda">
-          <TombolNav judul="Geser (R)" aktif={modeGizmo === 'translate'} onClick={() => setModeGizmo('translate')}><Move3d size={17} /></TombolNav>
-          <TombolNav judul="Putar (R)" aktif={modeGizmo === 'rotate'} onClick={() => setModeGizmo('rotate')}><Rotate3d size={17} /></TombolNav>
-        </div>
-      )}
-      {!ukur && !hanyaLihat && <GeserCepat a={a} />}
       {ukur && (
         <div className="self-start flex items-center gap-1.5 rounded-lg bg-red-600 text-white px-2 py-1 text-[11.5px] font-bold shadow-sm">
           <Ruler size={13} /> {titikUkur ? 'Titik kedua' : 'Titik pertama'}
@@ -94,6 +87,22 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
               className="ml-1 rounded bg-white/20 px-1.5 hover:bg-white/30">Hapus {jumlahGaris}</button>
           )}
         </div>
+      )}
+      {menuPusat && (
+        <>
+          <div aria-hidden="true" className="fixed inset-0 z-20" onClick={() => setMenuPusat(false)} />
+          <div className={`absolute left-11 top-10 w-64 ${menuMelayang}`}>
+            {([['xz', 'Tengah ruang', 'Kiri-kanan & depan-belakang'], ['x', 'Kiri-kanan saja', 'Jarak ke layar tidak berubah'], ['z', 'Depan-belakang saja', 'Posisi kiri-kanan tetap']] as const).map(([v, l, k]) => (
+              <button key={v} type="button" onClick={() => pusatkan(v)} className={itemMenu}>
+                <span className="block text-[13px] font-semibold text-slate-900">{l}</span>
+                <span className="block text-[11.5px] text-slate-500">{k}</span>
+              </button>
+            ))}
+            <p className="px-3 pt-1.5 pb-1 text-[11px] text-slate-500 border-t border-slate-100 mt-1">
+              Meja-kursi jadi patokan tengah. Benda yang menempel dinding tetap di dindingnya; proyektor ikut layarnya.
+            </p>
+          </div>
+        </>
       )}
       {menuKelompok && (
         <>

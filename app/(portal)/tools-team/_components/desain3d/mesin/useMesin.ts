@@ -77,9 +77,9 @@ export function useMesin(K: KeadaanDesain) {
         const orbit = new OrbitControls(kamera, renderer.domElement);
         orbit.enableDamping = true; orbit.dampingFactor = 0.12;
         orbit.maxPolarAngle = Math.PI / 2 - 0.02;
-        //  Geser = menggeser bidang lantai (seperti peta), bukan bidang layar;
-        //  roda/pinch zoom menuju titik di bawah kursor/jari, bukan ke tengah.
-        orbit.screenSpacePanning = false;
+        //  Geser mengikuti LAYAR (gaya SketchUp): kanvas ikut kursor ke arah mana pun. Dulu menggeser bidang lantai -
+        //  dari sudut rendah geser jadi lambat & melompat. Roda/pinch zoom menuju titik di bawah kursor/jari.
+        orbit.screenSpacePanning = true;
         orbit.zoomToCursor = true;
         orbit.minDistance = 0.4; orbit.maxDistance = 80;
         orbit.addEventListener('start', () => { if (mesin.current) mesin.current.terbang = null; });
@@ -234,9 +234,11 @@ export function useMesin(K: KeadaanDesain) {
             kamera.position.copy(vT).add(vS.setFromSpherical(sf));
             if (k >= 1 && mesin.current) mesin.current.terbang = null;
           } else {
-            //  Titik pusat putaran dijaga di sekitar ruangan (geser tidak bisa "tersesat").
+            //  Titik pusat putaran dijaga di sekitar ruangan supaya geser tidak "tersesat" - dengan kelonggaran separuh
+            //  ukuran ruang (min. 3 m). Dulu hanya 1 m di luar dinding, sehingga geser terasa mentok di tepi ruangan.
             const bt = batasDunia(ruangRef.current);
-            vT.set(Math.min(bt.x + 1, Math.max(-1, orbit.target.x)), Math.min(bt.t, Math.max(0, orbit.target.y)), Math.min(bt.z + 1, Math.max(-1, orbit.target.z)));
+            const ls = Math.max(3, Math.max(bt.x, bt.z) * 0.5);
+            vT.set(Math.min(bt.x + ls, Math.max(-ls, orbit.target.x)), Math.min(bt.t + ls, Math.max(-0.5, orbit.target.y)), Math.min(bt.z + ls, Math.max(-ls, orbit.target.z)));
             if (!vT.equals(orbit.target)) { vS.subVectors(vT, orbit.target); orbit.target.add(vS); kamera.position.add(vS); }
           }
           orbit.update(); renderer.render(scene, kamera); labelRenderer.render(scene, kamera);
@@ -285,13 +287,41 @@ export function useMesin(K: KeadaanDesain) {
     return () => { hidup = false; bersihkan(); };
   }, []);
 
-  // ── Mode seret: satu jari/klik kiri memutar atau menggeser; dua jari selalu pinch-zoom ──
+  // ── Mode seret (gaya SketchUp): klik kiri di ruang kosong = putar, klik kanan = geser, roda = zoom; Spasi + seret
+  //    kiri = geser sementara; tombol tangan (NavKamera) = seret kiri selalu geser. Dua jari selalu pinch-zoom. ──
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
     const { MOUSE, TOUCH } = m.THREE;
-    const geser = modeSeret === 'geser';
-    m.orbit.mouseButtons = { LEFT: geser ? MOUSE.PAN : MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: geser ? MOUSE.ROTATE : MOUSE.PAN };
-    m.orbit.touches = { ONE: geser ? TOUCH.PAN : TOUCH.ROTATE, TWO: geser ? TOUCH.DOLLY_ROTATE : TOUCH.DOLLY_PAN };
+    const kanvas = m.renderer.domElement;
+    let spasi = false, diAtas = false;
+    const pasang = () => {
+      const geser = modeSeret === 'geser' || spasi;
+      m.orbit.mouseButtons = { LEFT: geser ? MOUSE.PAN : MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: geser ? MOUSE.ROTATE : MOUSE.PAN };
+      m.orbit.touches = { ONE: modeSeret === 'geser' ? TOUCH.PAN : TOUCH.ROTATE, TWO: modeSeret === 'geser' ? TOUCH.DOLLY_ROTATE : TOUCH.DOLLY_PAN };
+      kanvas.style.cursor = spasi ? 'grab' : '';
+    };
+    pasang();
+    const mengetik = (e: KeyboardEvent) => e.target instanceof Element && !!e.target.closest('input, textarea, select, [contenteditable="true"], [role=dialog]');
+    const turun = (e: KeyboardEvent) => {
+      //  Hanya saat kursor di atas kanvas & tidak mengetik - Spasi di tempat lain tetap menggulir halaman / mengetik.
+      if (e.code !== 'Space' || !diAtas || mengetik(e)) return;
+      e.preventDefault();
+      if (!spasi) { spasi = true; pasang(); }
+    };
+    const naik = (e: KeyboardEvent) => { if (e.code === 'Space' && spasi) { spasi = false; pasang(); } };
+    const masuk = () => { diAtas = true; };
+    const keluar = () => { diAtas = false; };
+    window.addEventListener('keydown', turun);
+    window.addEventListener('keyup', naik);
+    kanvas.addEventListener('pointerenter', masuk);
+    kanvas.addEventListener('pointerleave', keluar);
+    return () => {
+      window.removeEventListener('keydown', turun);
+      window.removeEventListener('keyup', naik);
+      kanvas.removeEventListener('pointerenter', masuk);
+      kanvas.removeEventListener('pointerleave', keluar);
+      kanvas.style.cursor = '';
+    };
   }, [modeSeret, siap]);
 
 }
