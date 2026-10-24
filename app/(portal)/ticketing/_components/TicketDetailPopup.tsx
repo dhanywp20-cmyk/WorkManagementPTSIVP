@@ -8,7 +8,7 @@ import type { Ticket, User } from './shared';
 import { formatDateTime, statusColors, ringkasPenanganan, bolehReroute, adalahPending } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { SolusiSerupa } from './SolusiSerupa';
-import { wajibCatatan } from './alur-status';
+import { jejakProgres, wajibCatatan } from './alur-status';
 import { PilihStatusPTS } from './PilihStatusPTS';
 
 /** Bentuk state form "Update Status" di page.tsx - dioper ke sini apa adanya. */
@@ -173,36 +173,33 @@ export function TicketDetailPopup({
                   })()}
                 </div>
                 <div className="flex items-center">
-                  {(["Pending","Call","Onsite","In Progress","Solved"] as const).map((step, idx, arr) => {
-                    const order = ["Pending","Call","Onsite","In Progress","Solved"];
-                    /* Posisi diambil dari langkah TERJAUH yang pernah dicapai menurut riwayat
-                       aktivitas, bukan status sekarang. "Pending Action" dan
-                       "Pending Check" tidak ada di daftar ini, jadi memakai status
-                       sekarang akan membuat ticket yang sudah jauh terlihat mundur
-                       ke titik awal. */
-                    const dariRiwayat = (selectedTicket.activity_logs ?? [])
-                      .map(l => order.indexOf(l.new_status))
-                      .filter(i => i >= 0);
-                    const curIdx = Math.max(
-                      order.indexOf(selectedTicket.status),
-                      ...(dariRiwayat.length ? dariRiwayat : [-1]),
-                    );
-                    const stepIdx = order.indexOf(step);
-                    const done = stepIdx < curIdx;
-                    const active = stepIdx === curIdx;
+                  {(() => {
+                    /* Hanya langkah yang benar-benar dilalui yang dicentang; langkah yang dilompati (mis. Call
+                       langsung Solved) tampil "dilewati". Aturannya: alur-status.ts jejakProgres. */
+                    const jejak = jejakProgres(selectedTicket.status, selectedTicket.activity_logs ?? []);
+                    const iAktif = jejak.findIndex(j => j.keadaan === 'aktif');
                     const icons: Record<string,string> = { Pending:'🟡', Call:'📞', Onsite:'🚗', 'In Progress':'🔵', Solved:'✅' };
-                    return (
-                      <div key={step} className="flex items-center flex-1 last:flex-none">
-                        <div className="flex flex-col items-center gap-0.5">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 ${active ? 'border-red-500 bg-red-50 shadow-md scale-110' : done ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
-                            {done ? '✓' : icons[step]}
+                    return jejak.map(({ langkah: step, keadaan }, idx, arr) => {
+                      const done = keadaan === 'selesai', active = keadaan === 'aktif', lewat = keadaan === 'dilewati';
+                      //  Garis ke langkah berikutnya: hijau bila kedua ujung dilalui; putus-putus bila berada di jalur
+                      //  yang sudah lewat tetapi salah satu ujungnya dilompati; abu-abu di depan langkah aktif.
+                      const kanan = arr[idx + 1]?.keadaan;
+                      const ujungDilalui = (k?: string) => k === 'selesai' || k === 'aktif';
+                      const garis = idx + 1 > iAktif ? 'h-0.5 bg-gray-200' : ujungDilalui(keadaan) && ujungDilalui(kanan) ? 'h-0.5 bg-green-400' : 'border-t-2 border-dashed border-gray-300';
+                      return (
+                        <div key={step} className="flex items-center flex-1 last:flex-none">
+                          <div className="flex flex-col items-center gap-0.5" title={lewat ? `${step} dilewati - tidak pernah dilalui ticket ini` : undefined}>
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 ${active ? 'border-red-500 bg-red-50 shadow-md scale-110' : done ? 'border-green-500 bg-green-50' : lewat ? 'border-dashed border-gray-300 bg-white text-gray-400' : 'border-gray-200 bg-gray-50'}`}>
+                              {done ? '✓' : lewat ? '–' : icons[step]}
+                            </div>
+                            <span className={`text-[10px] font-bold text-center leading-tight whitespace-nowrap ${active ? 'text-red-600' : done ? 'text-green-700' : 'text-gray-400'}`}>{step}</span>
+                            {lewat && <span className="text-[9px] leading-none text-gray-400">dilewati</span>}
                           </div>
-                          <span className={`text-[10px] font-bold text-center leading-tight whitespace-nowrap ${active ? 'text-red-600' : done ? 'text-green-700' : 'text-gray-500'}`}>{step}</span>
+                          {idx < arr.length - 1 && <div className={`flex-1 mx-0.5 mb-3 ${garis}`} />}
                         </div>
-                        {idx < arr.length - 1 && <div className={`flex-1 h-0.5 mx-0.5 mb-3 ${done ? 'bg-green-400' : 'bg-gray-200'}`} />}
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
