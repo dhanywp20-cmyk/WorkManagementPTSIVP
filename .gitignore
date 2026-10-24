@@ -58,3 +58,5 @@ __pycache__/
 /e2e/node_modules/
 /e2e/test-results/
 /e2e/playwright-report/
+# Playwright CLI output (may contain credentials)
+.playwright-cli/
