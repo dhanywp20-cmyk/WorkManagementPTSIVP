@@ -85,3 +85,31 @@ export function wajibCatatan(sekarang: string, baru: string): boolean {
   if (baru === sekarang) return true;
   return baru === 'Pending Action' || baru === 'Solved';
 }
+
+/** Langkah yang digambar di garis progres detail ticket. */
+export const LANGKAH_PROGRES = ['Pending', 'Call', 'Onsite', 'In Progress', 'Solved'] as const;
+export type KeadaanLangkah = 'selesai' | 'dilewati' | 'aktif' | 'belum';
+
+/**
+ * Keadaan tiap langkah garis progres, dari status sekarang & riwayat aktivitas.
+ *
+ * Aturan 3 di atas membolehkan Solved dari status apa pun, jadi jalur nyata sering melompat (Call -> Solved).
+ * Dulu semua langkah di depan posisi terjauh dicentang hijau - ticket yang langsung Solved setelah Call tampak
+ * melewati Onsite & In Progress padahal tidak pernah. Sekarang:
+ *  - aktif    = status sekarang; bila status tidak ada di garis (Pending Action, Overdue, ...) = langkah
+ *               terjauh yang pernah dicapai. Ticket yang dibuka ulang mengikuti status sekarangnya.
+ *  - selesai  = sebelum langkah aktif DAN benar-benar ada di riwayat (Pending = awal, selalu dilalui).
+ *  - dilewati = sebelum langkah aktif tetapi tidak pernah dilalui.
+ *  - belum    = sesudah langkah aktif.
+ */
+export function jejakProgres(status: string, riwayat: readonly { new_status?: string | null }[]): { langkah: (typeof LANGKAH_PROGRES)[number]; keadaan: KeadaanLangkah }[] {
+  const urutan: readonly string[] = LANGKAH_PROGRES;
+  const dicapai = new Set<number>([0]);
+  for (const l of riwayat) { const i = urutan.indexOf(l.new_status ?? ''); if (i >= 0) dicapai.add(i); }
+  const iStatus = urutan.indexOf(status);
+  const aktif = iStatus >= 0 ? iStatus : Math.max(...dicapai);
+  return LANGKAH_PROGRES.map((langkah, i) => ({
+    langkah,
+    keadaan: i === aktif ? 'aktif' : i > aktif ? 'belum' : dicapai.has(i) ? 'selesai' : 'dilewati',
+  }));
+}
