@@ -78,7 +78,7 @@ const adaptasi = new WeakMap<object, Adaptasi>();
 const adaptasiDari = (m: Mesin): Adaptasi => adaptasi.get(m) ?? { f: 1, k: 1 };
 /**
  * Pasang lampu adegan = dasar tingkat cahaya ruangan (f) x k. k selalu 1 sejak Sinar nyata tidak lagi meredupkan
- * ruangan saat gambar proyektor terang (lihat LUTUT) - tetap ada supaya pemanggil lama tidak berubah.
+ * ruangan saat gambar proyektor terang (lihat TAMBAHAN_MAKS) - tetap ada supaya pemanggil lama tidak berubah.
  * Adaptasi dilakukan pada LAMPU, bukan toneMappingExposure, supaya garis ukur, label & layar display (bahan tanpa
  * cahaya) tidak ikut menggelap.
  */
@@ -152,22 +152,22 @@ export function ambienAdegan(m: Mesin, n: T.Vector3): number {
 /** Keseragaman ANSI proyektor (pojok / pusat) - spesifikasi umum proyektor instalasi ±85%. */
 export const KESERAGAMAN = 0.85;
 /**
- * Putih gambar proyektor (nilai linear adegan, luminance putih = iradiansi / pi) disalin apa adanya sampai LUTUT,
- * di atasnya digulung halus menuju TERANG_MAKS (ACES +-0,92 sRGB) supaya gambar yang sangat terang tidak jadi putih
- * rata & warna konten tetap terbaca.
+ * Tambahan terang dari proyektor di atas cahaya ruangan (luminance putih = iradiansi / pi, nilai linear adegan)
+ * digulung halus menuju TAMBAHAN_MAKS: hampir linear saat redup, tidak pernah melewati batas - supaya gambar yang
+ * sangat terang di ruang gelap tidak jadi putih rata & warna konten tetap terbaca.
  *
- * Yang digulung HANYA cahaya proyektor. Dulu seluruh cahaya adegan (ruangan + proyektor) diturunkan sebanding
- * sampai putih gambar = 1,3 - akibatnya menggeser proyektor mendekat membuat SELURUH RUANGAN menggelap (diukur:
- * lampu ruangan 0,26 -> 0,041, enam kali, saat proyektor maju dari 8 ke 3 m), padahal lampu ruangannya tidak
- * berubah. Sekarang ruangan tetap; gambar makin terang saat proyektor mendekat & makin redup saat menjauh
- * (lux = lumen / luas, seperti kalkulator pabrikan), hanya puncaknya yang dilunakkan.
+ * Cahaya ruangan TIDAK PERNAH disentuh. Riwayat:
+ *   - dulu seluruh cahaya adegan diturunkan sebanding sampai putih gambar = 1,3: memasang / mendekatkan proyektor
+ *     membuat SELURUH RUANGAN menggelap (diukur 6x) & pengaturan "Cahaya ruangan" seperti tidak berfungsi;
+ *   - lalu batasnya dipasang pada TOTAL (ruangan + gambar) = 1,5: di ruang terang cahaya ruangannya sendiri sudah
+ *     mendekati 1,5, jatah proyektor habis, lampu proyektor = 0 & gambarnya hilang.
+ * Sekarang yang dibatasi hanya tambahan dari proyektor - ruangan tetap, gambar selalu tampil, makin terang saat
+ * proyektor mendekat & makin redup saat menjauh (lux = lumen / luas, seperti kalkulator pabrikan).
  */
-const LUTUT = 0.8, TERANG_MAKS = 1.5;
-/** Gulung terang putih gambar: linear sampai LUTUT, lalu mendekati TERANG_MAKS tanpa pernah melewatinya. */
-export function gulungTerang(w: number): number {
-  if (w <= LUTUT) return w;
-  const ruang = TERANG_MAKS - LUTUT;
-  return LUTUT + ruang * (1 - Math.exp(-(w - LUTUT) / ruang));
+const TAMBAHAN_MAKS = 1.2;
+/** Gulung tambahan terang proyektor q (>= 0): ~q saat kecil, mendekati TAMBAHAN_MAKS tanpa pernah melewatinya. */
+export function gulungTerang(q: number): number {
+  return q <= 0 ? 0 : TAMBAHAN_MAKS * (1 - Math.exp(-q / TAMBAHAN_MAKS));
 }
 /** Resolusi peta gambar proyektor (lebar piksel). */
 const LEBAR_PETA = 768;
@@ -342,12 +342,11 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[]) {
   //  terang cahaya ruangan yang dirender di permukaan sasaran (A, diukur) setara dengan lux ruangan yang dihitung,
   //  dirata-rata atas semua proyektor supaya satuan cahaya proyektor sama untuk semuanya.
   const skala = ukur.reduce((a, u) => a + u.A / u.lux, 0) / Math.max(1, ukur.length);
-  //  Permukaan putih: luminance = iradiansi / pi (BRDF Lambert) -> (A + skala x lux gambar) / pi. Puncaknya digulung
-  //  per proyektor (gulungTerang); cahaya ruangan TIDAK disentuh - lihat catatan LUTUT.
+  //  Permukaan putih: luminance = iradiansi / pi (BRDF Lambert) -> A / pi (ruangan) + skala x lux gambar / pi
+  //  (proyektor). Hanya bagian proyektor yang digulung (gulungTerang); cahaya ruangan TIDAK disentuh.
   for (const u of ukur) {
-    const putih = (u.A + skala * u.luxGambar) / Math.PI;
-    const tampil = gulungTerang(putih);
-    const faktor = u.luxGambar > 0 ? Math.max(0, (tampil * Math.PI - u.A) / (skala * u.luxGambar)) : 1;
+    const tambahan = (skala * u.luxGambar) / Math.PI;
+    const faktor = tambahan > 0 ? gulungTerang(tambahan) / tambahan : 1;
     u.light.intensity = u.cd * skala * faktor;
   }
   aturCahayaRuang(m, { k: 1 });
