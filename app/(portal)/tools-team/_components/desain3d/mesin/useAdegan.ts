@@ -128,9 +128,16 @@ export function useAdegan(K: KeadaanDesain) {
   }, [ruang.cahaya, siap]);
 
   // ── Alat bantu: label ukuran, garis jarak terjauh, kerucut sudut pandang ──
+  //  Dua tahap: sinar proyektor langsung digambar KASAR (grid jarang, tanpa subdivisi tepi - beberapa ms) supaya
+  //  layar tidak membeku tiap perubahan; gambar RINCI baru dihitung sekali setelah perubahan berhenti 300 ms.
+  //  Dulu tiap ketikan / geseran / undo langsung menembak ±44 ribu raycast di ruang dengan banyak proyektor.
   useEffect(() => {
     const m = mesin.current; if (!m || !siap) return;
-    gambarAlatBantu(m, { analisis, benda: sembunyiGolongan.length ? benda.filter(b => tampilDi(b, sembunyiGolongan)) : benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, teksSinar: teksSinar && !sembunyiTeks, setInfoBlending, setUkuranCahaya, tampilan, sinarNyata, gambarLayar });
+    const gambar = () => gambarAlatBantu(m, { analisis, benda: sembunyiGolongan.length ? benda.filter(b => tampilDi(b, sembunyiGolongan)) : benda, garisUkur, jangkau, kabel, kerucut, kotakRuang, labelProduk, plafonDi, ruang, sinar, sudutNyaman, tampilKabel, tampilShare, ukur, tampilBlending, detailBlending, gridSinar, teksSinar: teksSinar && !sembunyiTeks, setInfoBlending, setUkuranCahaya, tampilan, sinarNyata, gambarLayar });
+    m.kasarPaksa = true;
+    try { gambar(); } finally { m.kasarPaksa = false; }
+    const rinci = setTimeout(gambar, 300);
+    return () => clearTimeout(rinci);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analisis, ukur, garisUkur, labelProduk, kerucut, sinar, siap, kotakRuang, benda, ruang, sudutNyaman, jangkau, tampilKabel, tampilShare, kabel, tampilBlending, detailBlending, gridSinar, teksSinar, sembunyiTeks, sembunyiGolongan, tampilan, sinarNyata, versiGambar]);
   // ── Bayangan lembut & cahaya layar ──
