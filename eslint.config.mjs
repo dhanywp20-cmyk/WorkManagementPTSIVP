@@ -9,7 +9,9 @@ export default [
   ...nextVitals,
   ...nextTs,
   {
-    ignores: ['.next/**', 'node_modules/**', 'android/**', 'public/**', 'hasil/**', 'scripts/**', 'uji/**', 'e2e/**', 'next-env.d.ts', 'next.config.js'],
+    //  .claude/** = skill agen (sebagian dari pihak ketiga, mis. Taste Skill) - bukan kode aplikasi, tidak
+    //  mengikuti aturan React proyek ini; .playwright-cli/** = keluaran Playwright CLI.
+    ignores: ['.next/**', 'node_modules/**', 'android/**', 'public/**', 'hasil/**', 'scripts/**', 'uji/**', 'e2e/**', '.claude/**', '.playwright-cli/**', 'next-env.d.ts', 'next.config.js'],
   },
   {
     rules: {
