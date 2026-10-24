@@ -111,6 +111,17 @@ public class MainActivity extends Activity {
     /** Aplikasi sedang terlihat: notifikasi baru masuk senyap (alarm halaman web yang berbunyi). */
     static volatile boolean terlihat;
 
+    /**
+     * Kapan aplikasi terakhir masuk latar belakang (0 = belum pernah). WebView TIDAK memuat ulang saat aplikasi dibuka
+     * kembali, jadi halaman bisa menjalankan kode web lama berhari-hari - contoh nyata: perbaikan sesi 400 hari tidak
+     * sampai, kode lama di memori masih "Keluar" sendiri sesudah 6 jam. Saat kembali:
+     *   >= 5 menit  -> beri tahu halaman (event wm-kembali): halaman memeriksa versi web & update APK
+     *                  (components/shared/PantauVersiWeb.tsx, PembaruanAndroid.tsx) - satu permintaan, tanpa polling;
+     *   >= 12 jam   -> muat ulang halaman: kode & data pasti basi, formulir yang ditinggal selama itu tidak berlanjut.
+     */
+    private long keLatarSejak = 0;
+    private static final long JEDA_KABARI_MS = 5 * 60 * 1000L, JEDA_MUAT_ULANG_MS = 12 * 60 * 60 * 1000L;
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -119,12 +130,19 @@ public class MainActivity extends Activity {
         //  isinya tetap ada di lonceng notifikasi di dalam aplikasi.
         NotificationManager nm = getSystemService(NotificationManager.class);
         if (nm != null) nm.cancelAll();
+        if (keLatarSejak > 0 && web != null) {
+            long lama = System.currentTimeMillis() - keLatarSejak;
+            if (lama >= JEDA_MUAT_ULANG_MS) web.reload();
+            else if (lama >= JEDA_KABARI_MS) web.evaluateJavascript("window.dispatchEvent(new Event('wm-kembali'))", null);
+        }
+        keLatarSejak = 0;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         terlihat = false;
+        keLatarSejak = System.currentTimeMillis();
         CookieManager.getInstance().flush();
     }
 

@@ -58,6 +58,7 @@ export { Keterangan } from './Keterangan';
 // Dipasang sekali di root layout, bukan per-modul.
 export { PwaBootstrap } from './PwaBootstrap';
 export { PembaruanAndroid } from './PembaruanAndroid';
+export { PantauVersiWeb } from './PantauVersiWeb';
 // Keping identitas build (versi · commit · waktu bangun) - lihat ChipVersi.tsx.
 export { ChipVersi } from './ChipVersi';
 // Bilah kaki platform (hak cipta - kontak bantuan - identitas build).
