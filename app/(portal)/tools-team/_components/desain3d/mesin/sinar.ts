@@ -76,7 +76,9 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   const ray = new THREE.Raycaster(); ray.near = 0.03; ray.far = 80;
   (ray.params as { Line?: { threshold: number } }).Line = { threshold: 0.0001 };
   //  Saat menyeret: grid lebih kasar & tanpa sinar tambahan supaya tetap lancar.
-  const kasar = m.gizmo.dragging;
+  //  Tahap cepat sesudah perubahan (m.kasarPaksa) juga kasar, tapi tulisan & pola grid tetap digambar - tidak
+  //  berkedip hilang 300 ms tiap ketikan.
+  const menyeret = m.gizmo.dragging, kasar = menyeret || !!m.kasarPaksa;
   const NX = kasar ? 12 : 24, NY = kasar ? 7 : 14;
   const cahaya = { transparent: true, depthWrite: false, toneMapped: false };
   //  Banyak proyektor (immersive): kerucut & bidang gambar diredam supaya tumpukannya tidak silau.
@@ -152,9 +154,20 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     const arah = new THREE.Vector3();
     /** Arah sinar ke titik gambar (u, v), -0,5..0,5 - rumus yang sama dengan inti/blending.ts. */
     const arahUV = (u: number, v: number) => arah.copy(D).addScaledVector(kanan, (u + gH) * w1).addScaledVector(atas, (v + arahV * offV) * h1).normalize();
+    /**
+     * Sinar ke titik gambar (u, v 0..1), DIINGAT per proyektor: sub-grid dua sel tepi yang bersebelahan berbagi
+     * satu sisi, dan bagi-dua tepi dari dua permukaan yang bertemu menembak titik-titik yang sama persis.
+     */
+    const ingat = new Map<number, Kena | null>();
+    const tembakUV = (u: number, v: number) => {
+      const k = Math.round(u * 1e7) * 1e8 + Math.round(v * 1e7);
+      let h = ingat.get(k);
+      if (h === undefined) { h = tembakRinci(O, arahUV(u - 0.5, v - 0.5), sasaran); ingat.set(k, h); }
+      return h;
+    };
     const kena: (T.Vector3 | null)[] = [], kenaId: (string | null)[] = [], rinci: (Kena | null)[] = [];
     for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) {
-      const t = tembakRinci(O, arahUV(i / (NX - 1) - 0.5, j / (NY - 1) - 0.5), sasaran);
+      const t = tembakUV(i / (NX - 1), j / (NY - 1));
       kena.push(t?.p ?? null); kenaId.push(t?.id ?? null); rinci.push(t);
       if (t && diBenda(t.id)) bendaTersinari.add(t.id!);
     }
@@ -248,10 +261,11 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     /**
      * Sub-sel TEPI (sudut-sudutnya di permukaan berbeda - tepi bayangan benda, tepi layar -> dinding di belakangnya,
      * pojok ruangan): tiap permukaan di sub-sel ini digambar sampai TEPAT di batasnya. Titik batas di tiap sisi yang
-     * menyeberang dicari dengan membagi dua sinar (3x -> ±1/64 sel grid), lalu poligonnya (marching squares)
+     * menyeberang dicari dengan membagi dua sinar (LANGKAH_BAGI x di sub-sel 1/4 -> ±1/64 sel grid), lalu poligonnya (marching squares)
      * dipecah segitiga. Dulu sub-sel campuran dibuang utuh -> tepi bayangan & tepi layar bertangga.
      */
-    const tepiHalus = (s4: (Kena | null)[], uvS: number[][], jarak: number) => {
+    const LANGKAH_BAGI = 4;
+    const tepiHalus = (s4: (Kena | null)[], uvS: number[][], jarak: number, S: number) => {
       const sudah: Kena[] = [];
       for (const rep of s4) {
         if (!rep || sudah.some(x => x.id === rep.id && sePermukaan(x, rep))) continue;
@@ -270,8 +284,8 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
           const [ia, ib] = dalam[k] ? [k, k2] : [k2, k];
           const di = (t: number) => [uvS[ia][0] + (uvS[ib][0] - uvS[ia][0]) * t, uvS[ia][1] + (uvS[ib][1] - uvS[ia][1]) * t];
           let lo = 0, hi = 1, kenaLo = s4[ia]!;
-          for (let n = 0; n < 3; n++) {
-            const t = (lo + hi) / 2, [u, v] = di(t), h = tembakRinci(O, arahUV(u - 0.5, v - 0.5), sasaran);
+          for (let n = 0; n < LANGKAH_BAGI; n++) {
+            const t = (lo + hi) / 2, [u, v] = di(t), h = tembakUV(u, v);
             if (anggota(h)) { lo = t; kenaLo = h; } else hi = t;
           }
           const [u, v] = di(lo);
@@ -292,7 +306,11 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       }
     };
     const gu = (i: number) => i / (NX - 1), gv = (j: number) => j / (NY - 1);
-    const S = 8;
+    //  Sel dipecah S x S. Sel LENGKUNG (satu permukaan, layar cekung / cembung) tetap 8 x 8 - kehalusan lengkungan
+    //  bergantung padanya. Sel TEPI (pergantian permukaan) cukup 4 x 4 + bagi-dua 4 langkah di tepiHalus: presisi
+    //  tepi tetap 1/64 sel (dulu 8 x 8 + 3 langkah), sinarnya sekitar separuh - sel tepi adalah sebagian besar
+    //  dari ±44 ribu raycast per perubahan di ruang immersive 6 proyektor.
+    const S_LENGKUNG = 8, S_TEPI = 4;
     for (let j = 0; j < NY - 1; j++) for (let i = 0; i < NX - 1; i++) {
       const q = [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]].map(([a, b]) => rinci[b * NX + a]);
       const ada = q.filter((x): x is Kena => !!x);
@@ -301,18 +319,19 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       const satu = satuSel(q);
       if (satu && (kasar || !melengkung(q))) { isi(q, batasSel(jarak, Math.min(...q.map(x => x.cos))), gu(i), gv(j), gu(i + 1), gv(j + 1)); continue; }
       if (kasar) continue;
+      const S = satu ? S_LENGKUNG : S_TEPI;
       //  Sel campuran (tepi benda / bayangannya, tepi layar / bidang, pojok ruangan, sinar yang lolos keluar):
       //  grid (S+1)x(S+1) sinar di dalam sel ini; sub-sel satu permukaan digambar utuh, sub-sel tepi lewat tepiHalus.
       const sub: (Kena | null)[] = [];
       for (let b = 0; b <= S; b++) for (let a = 0; a <= S; a++) {
-        sub.push(tembakRinci(O, arahUV((i + a / S) / (NX - 1) - 0.5, (j + b / S) / (NY - 1) - 0.5), sasaran));
+        sub.push(tembakUV(gu(i + a / S), gv(j + b / S)));
       }
       const t = (a: number, b: number) => sub[b * (S + 1) + a];
       for (let b = 0; b < S; b++) for (let a = 0; a < S; a++) {
         const s4 = [t(a, b), t(a + 1, b), t(a + 1, b + 1), t(a, b + 1)];
         const u0 = gu(i + a / S), v0 = gv(j + b / S), u1 = gu(i + (a + 1) / S), v1 = gv(j + (b + 1) / S);
         if (satuSel(s4)) isi(s4, batasSel(jarak, Math.min(...s4.map(x => x.cos)), S), u0, v0, u1, v1);
-        else tepiHalus(s4, [[u0, v0], [u1, v0], [u1, v1], [u0, v1]], jarak);
+        else tepiHalus(s4, [[u0, v0], [u1, v0], [u1, v1], [u0, v1]], jarak, S);
       }
     }
     if (!sinar) return;
@@ -383,7 +402,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     kilau.position.copy(ujung); grupBantu.add(kilau);
     //  Grid tulisan: sinar yang hanya mengenai bidang sasaran (BIDANG_TEKS) - tulisan utuh walau ada benda
     //  di depan lensa. Saklar "Keterangan sinar"; saat menyeret tanpa tulisan (tekstur tidak dibuat ulang tiap frame).
-    const tulis = teksSinar && !kasar;
+    const tulis = teksSinar && !menyeret;
     const teksPos: number[] = [], teksUv: number[] = [];
     let tengah = sel(Math.floor(NX / 2), Math.floor(NY / 2));
     if (tulis) {
@@ -430,7 +449,7 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
   }
   const blending: Blending[] = hitungBlend ? gambarBlending(m, dataBlend, setInfoBlending, detailBlending, tampilBlending) : [];
   //  Mode grid (bukan saat menyeret - tekstur tidak dibuat ulang tiap frame): cahaya diredam, pola garis menonjol.
-  const grid = gridSinar && !kasar;
+  const grid = gridSinar && !menyeret;
   //  Ukuran gambar di permukaan yang benar-benar disinari (layar mapping, benda, dinding) untuk panel proyektor.
   if (!kasar) {
     const ukuran: Record<string, CahayaDiPermukaan> = {};

@@ -7,6 +7,10 @@ export type Mesin = {
   scene: T.Scene; kamera: T.PerspectiveCamera;
   orbit: KontrolOrbit;
   /** Animasi kamera yang sedang berjalan (tombol arah pandang / fokus). */ terbang: Terbang | null;
+  /**
+   * Gambar alat bantu dalam mode KASAR walau tidak sedang menyeret (useAdegan): tahap cepat sesaat sesudah
+   * perubahan; hitungan rinci menyusul sekali setelah perubahan berhenti.
+   */ kasarPaksa?: boolean;
   gizmo: T.Object3D & { attach: (o: T.Object3D) => void; detach: () => void; setMode: (m: 'translate' | 'rotate') => void; showX: boolean; showY: boolean; showZ: boolean; dragging: boolean; dispose: () => void; object?: T.Object3D };
   grupRuang: T.Group; grupBenda: T.Group; grupBantu: T.Group;
   /** Bayangan lembut di dinding/lantai & cahaya layar (lihat efek "Bayangan & cahaya"). */ grupBayang: T.Group;
