@@ -1,6 +1,6 @@
 import './globals.css';
 import type { Metadata, Viewport } from 'next';
-import { PwaBootstrap, PembaruanAndroid, PenjagaGalatTulis, PenjagaDialog, PelaporGalat } from '@/components/shared';
+import { PwaBootstrap, PembaruanAndroid, PantauVersiWeb, PenjagaGalatTulis, PenjagaDialog, PelaporGalat } from '@/components/shared';
 
 export const metadata: Metadata = {
   title: { default: 'Dashboard PTS IVP - IndoVisual', template: '%s · PTS IVP' },
@@ -49,6 +49,7 @@ export default function RootLayout({
         <PelaporGalat />
         <PenjagaDialog />
         <PembaruanAndroid />
+        <PantauVersiWeb />
         {children}
         {/*
           DI SINI DULU ADA SUNTIKAN CSS — SENGAJA DIHAPUS, JANGAN DIKEMBALIKAN.
