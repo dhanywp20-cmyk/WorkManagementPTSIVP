@@ -19,7 +19,7 @@ export interface KepalaJadwalProps {
 export function KepalaJadwal({ canAddReminder, isGuest, mulaiBuatReminder, mulaiRequestJadwal, myActiveReminders, pendingReviewCount, setShowBellPopup, view }: KepalaJadwalProps) {
   return (
     <>
-      <PageHeader icon="🗓️" title="Request Schedule" color="#0891b2" colorLight="#0e7490">
+      <PageHeader icon="🗓️" title="Request Schedule">
         <button aria-label={`Notifikasi jadwal${myActiveReminders.length ? ` (${myActiveReminders.length} aktif)` : ''}`} onClick={() => setShowBellPopup(true)}
           className="relative p-2 rounded-xl transition-all hover:bg-cyan-50 border-2 border-transparent hover:border-cyan-200">
           <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,8 +35,7 @@ export function KepalaJadwal({ canAddReminder, isGuest, mulaiBuatReminder, mulai
 
         {canAddReminder && view === 'list' && (
           <button onClick={mulaiBuatReminder}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
-            style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)', boxShadow: '0 4px 14px rgba(8,145,178,0.4)' }}>
+            className="tombol-utama flex items-center gap-1.5 px-4 py-2 rounded-kontrol text-sm font-bold transition-all hover:scale-105 hover:opacity-90">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
             Tambah Reminder
           </button>

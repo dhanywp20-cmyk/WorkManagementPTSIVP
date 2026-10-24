@@ -60,8 +60,7 @@ export function ModalBuatFolder({ folderForm, folders, saveFolder, saving, setFo
         <div className="flex gap-3 justify-end mt-2">
           <button onClick={()=>setShowFolderModal(false)} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200 transition-colors">Batal</button>
           <button onClick={saveFolder} disabled={saving||!folderForm.name.trim()}
-            className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-40 transition-colors"
-            style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}>
+            className="tombol-utama px-4 py-2 rounded-kontrol text-sm font-bold disabled:opacity-40 transition-colors">
             {saving ? '⏳ Menyimpan...' : '💾 Simpan Folder'}
           </button>
         </div>

@@ -18,7 +18,7 @@ export interface HeaderFormRequireProps {
 export function HeaderFormRequire({ bellDropdownOpen, handleOpenDetail, pimpinan, requests, setBellDropdownOpen, setShowNewFormModal }: HeaderFormRequireProps) {
   return (
     <>
-      <PageHeader icon="🏗️" title="Request Design Project" subtitle="IVP Product — AV Solution Request" color="#7c3aed" colorLight="#6d28d9">
+      <PageHeader icon="🏗️" title="Request Design Project" subtitle="IVP Product — AV Solution Request">
         {/* Bell notif — tiket pending/in_progress */}
         {(() => {
           const activeTickets = requests.filter(r => r.status === 'pending' || r.status === 'in_progress');
@@ -65,8 +65,7 @@ export function HeaderFormRequire({ bellDropdownOpen, handleOpenDetail, pimpinan
 
         {!pimpinan && (
         <button onClick={() => setShowNewFormModal(true)}
-          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
-          style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow: '0 4px 14px rgba(124,58,237,0.4)' }}>
+          className="tombol-utama flex items-center gap-1.5 px-4 py-2 rounded-kontrol text-sm font-bold transition-all hover:scale-105 hover:opacity-90">
           <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
           Buat Request
         </button>

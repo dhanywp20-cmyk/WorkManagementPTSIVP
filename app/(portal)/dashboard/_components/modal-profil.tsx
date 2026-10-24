@@ -318,8 +318,8 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 sm:p-4">
-      <div className="bg-slate-50 rounded-2xl shadow-2xl w-full max-w-5xl h-full max-h-full flex flex-col overflow-hidden border border-slate-200">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-slate-50 rounded-kartu shadow-modal w-full max-w-5xl h-full max-h-full flex flex-col overflow-hidden border border-slate-200">
 
         {/* ── HERO ──
             Menyapa lalu langsung menyebut identitas, bukan judul generik

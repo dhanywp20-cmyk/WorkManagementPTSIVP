@@ -73,8 +73,7 @@ export function TabIVP({ activeTab, getUserById, handleAddIvp, handleDeleteIvp, 
               </div>
             </div>
             <button onClick={handleAddIvp} disabled={saving || !ivpDiv || !ivpUserId}
-              className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+              className="tombol-utama w-full py-2.5 rounded-kontrol font-bold text-sm transition-all disabled:opacity-50">
               {saving ? '⏳ Menyimpan...' : '🔗 Tambah IVP Mapping'}
             </button>
           </div>

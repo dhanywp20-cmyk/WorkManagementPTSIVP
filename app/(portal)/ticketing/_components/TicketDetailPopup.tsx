@@ -75,7 +75,7 @@ export function TicketDetailPopup({
 
   return (
     <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-3"
+      <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1000] p-3" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
         onClick={e => { if (e.target === e.currentTarget) { onClose(); setShowUpdateForm(false); } }}>
         <div className="flex items-start gap-3 w-full my-2" style={{ maxWidth: showUpdateForm ? '1120px' : '720px', transition: 'max-width 0.2s' }}>
 
@@ -83,36 +83,35 @@ export function TicketDetailPopup({
               terbuka - dua panel berdampingan di layar sempit membuat detail
               terjepit jadi kolom selebar beberapa huruf. Panel Update punya
               tombol "‹ Detail" untuk kembali. */}
-          <div className={`bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden w-full flex-col flex-1 min-w-0 ${showUpdateForm ? 'hidden md:flex' : 'flex'}`}
-            style={{ animation: "scale-in 0.25s ease-out", border: "1px solid rgba(0,0,0,0.1)", maxHeight: "94vh" }}>
+          <div className={`bg-white rounded-kartu shadow-modal overflow-hidden w-full flex-col flex-1 min-w-0 ${showUpdateForm ? 'hidden md:flex' : 'flex'}`}
+            style={{ maxHeight: "94vh" }}>
             {/* Header */}
-            <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
+            <div className="px-5 py-4 pr-12 flex-shrink-0 relative border-b border-slate-100">
               {/* Latar bulat dibuang: di atas kepala merah ini lencana
                   putih-transparan membuat tulisannya nyaris tak terbaca.
                   Teks putih polos di atas merah jauh lebih terbaca, dan
                   ruangnya cukup untuk menyebut keterangan pelimpahan. */}
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[11px] font-bold text-white/90">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2 text-[11px] font-bold text-slate-600">
                 <span><IkonTeks nama="🎫" />Tim: {ringkasPenanganan(selectedTicket).teamHandler}</span>
                 <span>Status: {ringkasPenanganan(selectedTicket).statusLengkap}</span>
                 {selectedTicket.services_status && <span>Services: {selectedTicket.services_status}</span>}
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
-              <h2 className="text-lg font-bold text-white leading-tight">{selectedTicket.project_name}</h2>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1 mb-0.5">Nama Project</p>
+              <h2 className="text-lg font-bold text-slate-800 leading-tight">{selectedTicket.project_name}</h2>
               {selectedTicket.address && (
                 <>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
-                  <p className="text-white/75 text-xs flex items-center gap-1"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {selectedTicket.address}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1.5 mb-0.5">Lokasi</p>
+                  <p className="text-slate-600 text-xs flex items-center gap-1"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {selectedTicket.address}</p>
                 </>
               )}
               {selectedTicket.status === "Onsite" && (
                 <button onClick={() => { onClose(); setShowUpdateForm(false); router.push('/reminder-schedule'); }}
-                  className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold text-white"
-                  style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.92)' }}>
+                  className="tombol-kedua mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-kontrol text-[11px] font-bold">
                   <IkonTeks nama="🗓" />Lihat Jadwal Reminder
                 </button>
               )}
               <button aria-label="Tutup" onClick={() => { onClose(); setShowUpdateForm(false); }}
-                className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+                className="absolute top-3 right-3 w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold text-sm">✕</button>
             </div>
 
             <div className="overflow-y-auto flex-1 min-h-0">
@@ -143,7 +142,7 @@ export function TicketDetailPopup({
                     </p>
                   </div>
                   <button onClick={() => bukaAdminEdit(selectedTicket)}
-                    className="flex-shrink-0 text-white px-3 py-2 rounded-lg text-xs font-bold" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)' }}>
+                    className="tombol-kedua flex-shrink-0 px-3 py-2 rounded-kontrol text-xs font-bold">
                     <IkonTeks nama="🛠" />Edit &amp; Re-route
                   </button>
                 </div>
@@ -312,55 +311,54 @@ export function TicketDetailPopup({
             </div>
             {/* Footer actions — outside overflow, always visible */}
             <div className="px-4 py-3 border-t border-gray-100 flex flex-wrap gap-2 bg-gray-50/50 flex-shrink-0">
-                <button onClick={() => cetakTicket(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#16a34a,#15803d)" }}><IkonTeks nama="📄" />PDF</button>
+                <button onClick={() => cetakTicket(selectedTicket)} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="📄" />PDF</button>
                 {selectedTicket.status === "Solved" && bolehUpdateTicket(selectedTicket) && currentUserTeamType !== "Team Services" && (
-                  <button onClick={() => { setReopenTargetTicket(selectedTicket); setReopenAssignee(selectedTicket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#f59e0b,#d97706)" }}><IkonTeks nama="🔓" />Re-open</button>
+                  <button onClick={() => { setReopenTargetTicket(selectedTicket); setReopenAssignee(selectedTicket.assign_name || ""); setReopenNotes(""); setShowReopenModal(true); }} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="🔓" />Re-open</button>
                 )}
                 {/* C2: dulu jalan buntu - services_status "Solved" tidak bisa dibuka siapa
                     pun. Team Services (membetulkan salah klik sendiri) atau Admin/
                     Superadmin (pengawasan) sekarang bisa. */}
                 {selectedTicket.services_status === "Solved" && bolehUpdateTicket(selectedTicket) &&
                   (currentUserTeamType === "Team Services" || currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
-                  <button onClick={() => setReopenServicesTarget(selectedTicket)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}><IkonTeks nama="🔓" />Re-open Services</button>
+                  <button onClick={() => setReopenServicesTarget(selectedTicket)} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="🔓" />Re-open Services</button>
                 )}
                 {bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
                   <button onClick={bukaTutupUpdate}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${showUpdateForm ? 'bg-gray-200 text-gray-700' : 'text-white'}`}
-                    style={showUpdateForm ? {} : { background: "linear-gradient(135deg,#dc2626,#b91c1c)" }}>
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold transition-all ${showUpdateForm ? 'tombol-kedua' : 'tombol-utama'}`}>
                     {showUpdateForm ? '✕ Tutup' : '➕ Update Status'}
                   </button>
                 )}
                 {bolehUpdateTicket(selectedTicket) && currentUserTeamType === "Team Services" && selectedTicket.services_status === "Waiting Approval" && (
-                  <button onClick={() => setShowServicesApprovalModal(true)} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white" style={{ background: "linear-gradient(135deg,#db2777,#be185d)" }}><IkonTeks nama="🔧" />Konfirmasi</button>
+                  <button onClick={() => setShowServicesApprovalModal(true)} className="tombol-utama flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="🔧" />Konfirmasi</button>
                 )}
-                <button onClick={() => { onClose(); setShowUpdateForm(false); }} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold border border-gray-200 text-gray-600 bg-white">✕ Close</button>
+                <button onClick={() => { onClose(); setShowUpdateForm(false); }} className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold">Tutup</button>
               </div>
           </div>
 
           {/* RIGHT: Update Status Panel */}
           {showUpdateForm && bolehUpdateTicket(selectedTicket) && selectedTicket.status !== "Waiting Approval" && (currentUserTeamType === "Team Services" ? selectedTicket.services_status !== "Solved" && selectedTicket.services_status !== "Waiting Approval" : selectedTicket.status !== "Solved") && (
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden flex-shrink-0 w-full md:w-[340px]"
-              style={{ animation: "scale-in 0.2s ease-out", border: "2px solid rgba(220,38,38,0.25)", maxHeight: "94vh" }}>
-              <div className="px-4 py-3" style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
+            <div className="bg-white rounded-kartu shadow-modal overflow-hidden flex-shrink-0 w-full md:w-[340px]"
+              style={{ maxHeight: "94vh" }}>
+              <div className="px-4 py-3 border-b border-slate-100">
                 <div className="flex items-center justify-between gap-2">
                   <button type="button" onClick={() => setShowUpdateForm(false)} aria-label="Kembali ke detail ticket"
-                    className="md:hidden flex-shrink-0 inline-flex items-center gap-0.5 -ml-1 pl-1 pr-2.5 py-1.5 rounded-lg text-white text-xs font-bold bg-black/20 active:bg-black/35">
+                    className="tombol-kedua md:hidden flex-shrink-0 inline-flex items-center gap-0.5 -ml-1 pl-1 pr-2.5 py-1.5 rounded-kontrol text-xs font-bold">
                     <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
                     Detail
                   </button>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-white text-sm">{currentUserTeamType === "Team Services" ? "🔧 Update Services" : "➕ Update Status"}</h3>
+                    <h3 className="font-bold text-slate-800 text-sm">{currentUserTeamType === "Team Services" ? "🔧 Update Services" : "➕ Update Status"}</h3>
                     {/* Di HP panel detail tersembunyi, jadi nama project
                         disebut di sini supaya jelas ticket mana yang diubah. */}
-                    <p className="md:hidden text-white/90 text-[11px] font-semibold truncate">{selectedTicket.project_name}</p>
-                    <p className="text-red-200 text-[11px]">Handler: {newActivity.handler_name}</p>
+                    <p className="md:hidden text-slate-600 text-[11px] font-semibold truncate">{selectedTicket.project_name}</p>
+                    <p className="text-slate-500 text-[11px]">Handler: {newActivity.handler_name}</p>
                   </div>
-                  <button aria-label="Tutup panel update" onClick={() => setShowUpdateForm(false)} className="hidden md:block text-white hover:bg-white/20 rounded-lg p-1 font-bold text-xs">✕</button>
+                  <button aria-label="Tutup panel update" onClick={() => setShowUpdateForm(false)} className="hidden md:flex w-8 h-8 rounded-kecil items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold text-xs">✕</button>
                   {/* HP: ✕ bulat sama persis dengan detail ticket - menutup
                       seluruh popup, bukan hanya kembali ke detail (itu tugas
                       tombol "‹ Detail"). */}
                   <button aria-label="Tutup" onClick={() => { onClose(); setShowUpdateForm(false); }}
-                    className="md:hidden flex-shrink-0 self-start w-7 h-7 rounded-full bg-black/20 active:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+                    className="md:hidden flex-shrink-0 self-start w-8 h-8 rounded-kecil bg-black/5 text-slate-500 flex items-center justify-center font-bold text-sm">✕</button>
                 </div>
               </div>
 
@@ -492,8 +490,7 @@ export function TicketDetailPopup({
 
                 <button onClick={addActivity}
                   disabled={uploading || newActivity.new_status === "" || (notesWajib && !newActivity.notes.trim())}
-                  className="w-full text-white py-2.5 rounded-xl font-bold transition-all hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                  style={{ background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 4px 14px rgba(220,38,38,0.35)" }}>
+                  className="tombol-utama w-full py-2.5 rounded-kontrol font-bold transition-all text-sm">
                   {uploading ? "⏳ Menyimpan..." : newActivity.new_status === "" ? "Pilih status dulu" : "💾 Simpan Activity"}
                 </button>
               </div>

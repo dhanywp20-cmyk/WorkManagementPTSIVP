@@ -61,8 +61,7 @@ export function ModalUnggahNote({ closeUploadModal, editingNote, folders, saving
         <div className="flex gap-3 justify-end">
           <button onClick={closeUploadModal} className="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 bg-gray-100 border border-gray-200 hover:bg-gray-200">Batal</button>
           <button onClick={submitTechNote} disabled={saving||!uploadForm.title.trim()||!uploadForm.folder_id||!linkOneDriveSah(uploadForm.one_drive_link)}
-            className="px-4 py-2 rounded-xl text-white text-sm font-bold disabled:opacity-40 transition-colors"
-            style={{ background:'linear-gradient(135deg,#ec4899,#be185d)' }}>
+            className="tombol-utama px-4 py-2 rounded-kontrol text-sm font-bold disabled:opacity-40 transition-colors">
             {saving ? '⏳ Mengirim...' : '📤 Submit untuk Review'}
           </button>
         </div>

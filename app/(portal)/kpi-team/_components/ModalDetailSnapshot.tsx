@@ -28,7 +28,7 @@ export function ModalDetailSnapshot({ kpiSnapshots, selectedSnapMember, setSelec
           <div role="dialog" aria-modal="true" aria-label="Detail anggota" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
             style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
             onClick={e => { if (e.target === e.currentTarget) setSelectedSnapMember(null); }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-y-auto" style={{ maxHeight: '100%' }}>
+            <div className="bg-white rounded-kartu shadow-modal w-full max-w-sm overflow-y-auto" style={{ maxHeight: '100%' }}>
               <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-2xl">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-base text-white flex-shrink-0"
                   style={{ background: `linear-gradient(135deg,${tc},${tc}cc)` }}>{m.name.charAt(0)}</div>

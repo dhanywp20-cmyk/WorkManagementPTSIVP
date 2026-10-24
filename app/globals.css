@@ -436,3 +436,19 @@ html {
 .isi-sedang-pindah > :not(.bilah-pindah-menu) { animation: redupPindahMenu 0.2s ease 0.15s forwards; }
 @keyframes redupPindahMenu { to { opacity: 0.55; } }
 @media (prefers-reduced-motion: reduce) { .bilah-pindah-menu::before { animation-duration: 2s; } }
+
+/*
+  TOMBOL BAKU - satu wujud untuk semua menu (permintaan pemilik: tidak ada menu yang punya tema sendiri).
+  Sama persis dengan TombolModal (components/shared/Modal.tsx):
+    .tombol-utama  aksi utama        -> warna merek (Admin Panel -> merek), bukan merah/cyan/teal per menu
+    .tombol-kedua  aksi pendamping   -> putih bergaris, tenang
+    .tombol-bahaya hapus / tolak     -> merah, artinya tidak ikut berubah dengan merek
+  Ukuran & jarak tetap diatur kelas Tailwind di elemennya (px-3 py-2 text-xs, dst).
+*/
+.tombol-utama { background: linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2)); color: #fff; }
+.tombol-utama:hover:not(:disabled) { opacity: 0.9; }
+.tombol-kedua { background: #fff; color: #334155; border: 1px solid #cbd5e1; }
+.tombol-kedua:hover:not(:disabled) { background: #f8fafc; }
+.tombol-bahaya { background: #dc2626; color: #fff; }
+.tombol-bahaya:hover:not(:disabled) { background: #b91c1c; }
+.tombol-utama:disabled, .tombol-kedua:disabled, .tombol-bahaya:disabled { opacity: 0.5; cursor: not-allowed; }

@@ -190,7 +190,8 @@ export const SERI = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#00
 /** Peta teks status record (Ticket/Reminder/Request) -> WARNA. Kunci huruf kecil. */
 const STATUS_KE_WARNA: Record<string, NamaWarna> = {
   solved: 'berhasil', done: 'berhasil', selesai: 'berhasil', approved: 'berhasil', paid: 'berhasil', completed: 'berhasil', lulus: 'berhasil',
-  pending: 'info', processed: 'info', 'in progress': 'info', in_progress: 'info', proses: 'info', 'process repair': 'info', open: 'info',
+  processed: 'info', 'in progress': 'info', in_progress: 'info', proses: 'info', 'process repair': 'info', open: 'info',
+  pending: 'awas', 'pending review': 'awas', revision: 'awas', 'perlu revisi': 'awas',
   'waiting approval': 'awas', waiting: 'awas', menunggu: 'awas', review: 'awas', warranty: 'awas', 'submit rma': 'awas',
   overdue: 'bahaya', rejected: 'bahaya', ditolak: 'bahaya', blocked: 'bahaya', 'out of warranty': 'bahaya', gagal: 'bahaya',
   cancelled: 'netral', canceled: 'netral', batal: 'netral', archived: 'netral', draft: 'netral',
@@ -204,11 +205,13 @@ export function warnaUntukStatus(status: string | null | undefined): NamaWarna {
 /**
  * Warna status TICKET untuk chart & lencana. Dulu disalin identik di tiga
  * berkas (kpi-team/shared, DashboardKPI, dashboard/kpi-bagian) - kini satu.
- * Nilainya sengaja tidak diubah supaya chart yang sudah dikenal tim tidak
- * berganti warna.
+ * Mengikuti lencana di halaman Ticketing (statusColors) dan aturan lintas menu
+ * di STATUS_KE_WARNA: Pending = amber (menunggu ditangani), Waiting Approval =
+ * oranye, Process Repair = biru (sedang dikerjakan). Dulu Pending biru di chart
+ * tapi kuning di lencana - status yang sama tampil dua warna.
  */
 export const WARNA_STATUS_TICKET: Record<string, string> = {
-  'Waiting Approval': '#f59e0b', 'Pending': '#3b82f6', 'Solved': '#10b981',
+  'Waiting Approval': '#f97316', 'Pending': '#f59e0b', 'Solved': '#10b981',
   'Cancelled': '#6b7280', 'Overdue': '#ef4444', 'Warranty': '#8b5cf6',
-  'Out Of Warranty': '#ec4899', 'Process Repair': '#f97316', 'Submit RMA': '#06b6d4',
+  'Out Of Warranty': '#ec4899', 'Process Repair': '#2563eb', 'Submit RMA': '#06b6d4',
 };
