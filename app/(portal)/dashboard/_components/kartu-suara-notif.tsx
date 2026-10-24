@@ -75,7 +75,7 @@ export function KartuSuaraNotif() {
           <button type="button" onClick={() => putar(draf)}
             className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">▶ Dengarkan</button>
           <button type="button" onClick={() => masukan.current?.click()} disabled={sibuk !== ''}
-            className="px-3 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-60 hover:opacity-90" style={{ background: 'linear-gradient(135deg,#4f46e5,#4338ca)' }}>
+            className="tombol-utama px-3 py-2 rounded-kontrol text-xs font-bold disabled:opacity-60 hover:opacity-90">
             {sibuk === 'unggah' ? 'Mengunggah…' : 'Ganti suara…'}
           </button>
           <input ref={masukan} type="file" accept="audio/mpeg,audio/wav,audio/x-wav,audio/ogg,audio/webm,audio/mp4,audio/x-m4a,audio/aac,.mp3,.wav,.ogg,.m4a,.aac,.webm"
@@ -94,7 +94,7 @@ export function KartuSuaraNotif() {
           )}
           {berubah && <button type="button" onClick={() => setDraf(tersimpan)} className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">Batal</button>}
           <button type="button" onClick={simpan} disabled={!berubah || sibuk !== ''}
-            className="px-4 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-50 hover:opacity-90" style={{ background: 'linear-gradient(135deg,#0f766e,#115e59)' }}>
+            className="tombol-utama px-4 py-2 rounded-kontrol text-xs font-bold disabled:opacity-50 hover:opacity-90">
             {sibuk === 'simpan' ? 'Menyimpan…' : 'Simpan Suara'}
           </button>
         </div>

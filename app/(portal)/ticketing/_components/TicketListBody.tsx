@@ -407,7 +407,7 @@ export function TicketListBody({
                   return (
                     <button key={page} onClick={() => setCurrentPage(page)}
                       className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${currentPage === page ? 'text-white border-0' : 'border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-                      style={currentPage === page ? { background: 'linear-gradient(135deg,#dc2626,#b91c1c)' } : {}}>
+                      style={currentPage === page ? { background: 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))' } : {}}>
                       {page}
                     </button>
                   );

@@ -1,5 +1,5 @@
 'use client';
-import { BatalButton, ModalPortal, SubmitFormButton } from '@/components/shared';
+import { BatalButton, ModalPortal, SubmitFormButton, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { useRef, useState } from 'react';
 import { FormRuanganUtama } from './form-baru/FormRuanganUtama';
@@ -129,16 +129,10 @@ export function NewFormModal({
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[1100] p-4">
-      <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col border-2 border-teal-500 animate-scale-in overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-teal-600 to-teal-800 px-6 py-4 flex items-center justify-between flex-shrink-0">
-          <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2"><IkonTeks nama="📋" />Form Equipment Request — IVP &amp; MVI</h2>
-            <p className="text-teal-100 text-xs mt-0.5">Requester: <span className="font-bold">{currentUser.full_name}</span></p>
-          </div>
-          <button aria-label="Tutup" onClick={onClose} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold transition-all text-lg">✕</button>
-        </div>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1100] p-4" style={LATAR_MODAL}>
+      {/*  Kartu, kepala & tombol baku (components/shared/Modal.tsx) - dulu kepala bergradasi teal sendiri. */}
+      <div className={`${KARTU_MODAL} w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden`}>
+        <KepalaModal judul="Form Equipment Request — IVP & MVI" keterangan={<>Requester: <span className="font-bold">{currentUser.full_name}</span></>} onTutup={onClose} />
 
         {/* Dua kolom, BUKAN tiga seperti form lain — pembagiannya mengikuti
             isinya, bukan angka. Konfigurator ruangan di kanan berisi tab per
@@ -208,8 +202,7 @@ export function NewFormModal({
         <div className="border-t border-gray-200 px-4 py-3 flex gap-2 justify-end bg-white/90 flex-shrink-0">
           <BatalButton onClick={onClose} />
           <SubmitFormButton onClick={onSubmit} loading={submitting}
-            gradient="linear-gradient(135deg,#0d9488,#115e59)"
-            shadow="0 4px 14px rgba(13,148,136,0.35)" />
+            />
         </div>
       </div>
     </div>

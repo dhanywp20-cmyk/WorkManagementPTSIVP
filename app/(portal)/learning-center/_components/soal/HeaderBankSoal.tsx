@@ -66,8 +66,7 @@ export function HeaderBankSoal({ easyCount, filteredQuestions, goBack, hardCount
             </button>
             <button
               data-tulis onClick={() => setShowAddManual(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
+              className="tombol-kedua flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-kontrol shadow transition-all hover:opacity-90"
             >
               <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -76,8 +75,7 @@ export function HeaderBankSoal({ easyCount, filteredQuestions, goBack, hardCount
             </button>
             <button
               data-tulis onClick={() => setShowGenerate(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-white text-sm font-semibold rounded-xl shadow transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}
+              className="tombol-utama flex items-center gap-1.5 px-3 py-2 text-sm font-semibold rounded-kontrol shadow transition-all hover:opacity-90"
             >
               <svg aria-hidden="true" focusable="false" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />

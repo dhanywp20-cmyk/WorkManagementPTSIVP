@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { User, TeamMember } from './shared';
-import { SalesPicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
+import { SalesPicker, Modal, BatalButton, SubmitFormButton } from '@/components/shared';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 import { hasFullAccess } from '@/lib/constants';
 import { hitungLingkupProject, filterLingkup } from '@/lib/project-scope';
@@ -232,54 +232,34 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
   }, [langkah]);
 
   if (langkah === 'pilih') return (
-    <ModalPortal>
-      <LangkahPilihJenis
-        onClose={onClose} setLangkah={setLangkah} switchProjectType={switchProjectType}
-      />
-    </ModalPortal>
+    <LangkahPilihJenis
+      onClose={onClose} setLangkah={setLangkah} switchProjectType={switchProjectType}
+    />
   );
 
   if (langkah === 'cari') return (
-    <ModalPortal>
+    <>
       <LangkahCariProyek
         galatCari={galatCari} handleQueryChange={handleQueryChange} konfirmasiPilihan={konfirmasiPilihan} onClose={onClose} pencarianDibatasi={pencarianDibatasi} praPilih={praPilih} reminderQuery={reminderQuery} reminderResults={reminderResults} reminderSearching={reminderSearching} setLangkah={setLangkah} setPraPilih={setPraPilih} setReminderQuery={setReminderQuery} setReminderResults={setReminderResults} sorotPilihan={sorotPilihan}
       />
-    </ModalPortal>
+    </>
   );
 
   return (
-  <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-3 sm:p-4"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-[1500px] max-h-full flex flex-col overflow-hidden"
-        style={{ animation: "scale-in 0.25s ease-out", border: "1.5px solid rgba(220,38,38,0.25)" }}>
-
-        {/* Header */}
-        <div className="px-8 py-6 rounded-t-2xl flex-shrink-0"
-          style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-white"><IkonTeks nama="🎫" />Create New Ticket</h2>
-              <p className="text-red-200/80 text-xs mt-1">Isi detail ticket & informasi troubleshooting</p>
-            </div>
-            <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
-              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Tiga kolom menyamping — pola yang sama dengan form Request Schedule.
-            Di bawah xl tetap satu kolom; memaksa tiga kolom di layar kecil hanya
-            memindahkan gulirnya jadi ke samping. */}
-        <div className="flex-1 min-h-0 overflow-y-auto satulayar:overflow-hidden">
-          {/* TANPA satulayar:h-full — modal Ticket menyesuaikan tingginya dengan isi.
-              Field-nya jauh lebih sedikit daripada form Reminder; dipaksa
-              setinggi layar, dua pertiga bawahnya jadi kotak kosong yang tidak
-              mengerjakan apa-apa. Batas atasnya tetap max-h-full, jadi kalau
-              isinya panjang ia berhenti di tepi layar dan kolomnya menggulir. */}
-          <div className="p-5 grid grid-cols-1 satulayar:grid-cols-3 gap-5">
+  //  Kerangka Modal bersama (judul, tombol tutup, Esc, lapisan) - dulu kepala bergradasi merah sendiri.
+  //  Footer milik Modal: tombol Buat Ticket tidak ikut tergulir bersama kolom.
+  <Modal buka onTutup={onClose} judul="Buat Ticket Baru" keterangan="Isi detail ticket & informasi troubleshooting" ukuran="penuh" tutupDiLuar={false}
+    footer={<>
+      <BatalButton onClick={onClose} />
+      <SubmitFormButton
+        onClick={() => { if (isExternalGuest && !form.brand) return; onSubmit(); }}
+        loading={uploading}
+        disabled={isExternalGuest && !form.brand}
+        blockedLabel={isExternalGuest && !form.brand ? "Pilih Brand dulu" : undefined}
+      />
+    </>}>
+          {/* Tiga kolom menyamping — pola yang sama dengan form Request Schedule. Di bawah xl satu kolom. */}
+          <div className="grid grid-cols-1 satulayar:grid-cols-3 gap-5">
 
           {/* ── Kolom 1: ticket ini tentang apa ── */}
           <KolomInfoTiket
@@ -296,29 +276,6 @@ export function NewTicketModal({ onClose, form, setForm, uploading, currentUser,
             canAssignDirect={canAssignDirect} currentUser={currentUser} externalSalesUsers={externalSalesUsers} form={form} isInternalSalesGuest={isInternalSalesGuest} set={set} supervisorMembers={supervisorMembers} teamPTSMembers={teamPTSMembers} users={users}
           />
           </div>
-        </div>
-
-        {/* Footer dipisah supaya tombol Buat Ticket tidak ikut tergulir bersama
-            kolom dan berada di luar layar justru saat form siap dikirim. */}
-        <div className="px-6 py-4 flex-shrink-0 border-t border-slate-200 bg-white/70">
-          {/* Tombol rata KANAN dan seukuran isinya, bukan melebar penuh.
-              Tombol selebar frame membuat aksi terasa seberat isinya sendiri,
-              padahal ia cuma penutup; dan dua tombol sama besar tidak
-              membedakan mana aksi utama dan mana jalan keluar. */}
-          <div className="flex gap-2 justify-end">
-            <BatalButton onClick={onClose} />
-            <SubmitFormButton
-              onClick={() => { if (isExternalGuest && !form.brand) return; onSubmit(); }}
-              loading={uploading}
-              disabled={isExternalGuest && !form.brand}
-              blockedLabel={isExternalGuest && !form.brand ? "Pilih Brand dulu" : undefined}
-              gradient="linear-gradient(135deg,#dc2626,#b91c1c)"
-              shadow="0 4px 14px rgba(220,38,38,0.35)"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </ModalPortal>
+  </Modal>
   );
 }

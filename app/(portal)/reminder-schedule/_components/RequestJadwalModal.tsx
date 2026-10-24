@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { CATEGORY_CONFIG, PRODUCT_TYPES } from './shared';
-import { MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton } from '@/components/shared';
+import { MultiDatePicker, ModalPortal, BatalButton, SubmitFormButton, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
 import { SalesPicker, type SalesPickerUser } from '@/components/shared/SalesPicker';
 import { BRAND_OPTIONS, type Brand } from '@/lib/brand-routing';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -119,34 +119,10 @@ export function RequestJadwalModal({
 
   return (
     <ModalPortal>
-    <div role="dialog" aria-modal="true"
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1100] p-3 sm:p-4"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
-    >
-      <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden"
-        style={{ animation: 'scale-in 0.25s ease-out', border: '2px solid rgba(59,130,246,0.35)' }}
-      >
-        {/* Header */}
-        <div
-          className="px-8 py-6 rounded-t-2xl flex items-center justify-between flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}
-        >
-          <div>
-            <h2 className="text-xl font-bold text-white"><IkonTeks nama="📩" />Request Jadwal</h2>
-            <p className="text-blue-200/80 text-xs mt-1">
-              Permintaan akan dikirim ke Admin untuk disetujui &amp; di-assign ke Team PTS
-            </p>
-          </div>
-          <button aria-label="Tutup"
-            onClick={onClose}
-            className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all"
-          >
-            <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1100] p-3 sm:p-4" style={LATAR_MODAL}>
+      {/*  Kartu & kepala baku (components/shared/Modal.tsx) - kerangkanya sendiri hanya karena tiga kolom setinggi layar. */}
+      <div className={`${KARTU_MODAL} w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden`}>
+        <KepalaModal judul="Request Jadwal" keterangan="Permintaan dikirim ke Admin untuk disetujui & ditugaskan ke Team PTS" onTutup={onClose} />
 
         {/* Tiga kolom menyamping — pola yang sama dengan form Reminder & Ticket. */}
         <div className="flex-1 min-h-0 overflow-y-auto satulayar:overflow-hidden">
@@ -162,7 +138,7 @@ export function RequestJadwalModal({
           >
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-black text-white flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)' }}
+              style={{ background: 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))' }}
             >
               {salesName.charAt(0).toUpperCase()}
             </div>
@@ -524,8 +500,6 @@ export function RequestJadwalModal({
                 const dateCount = new Set([form.due_date, ...form.extra_dates].filter(Boolean)).size || 1;
                 return dateCount > 1 ? `${dateCount} Hari` : undefined;
               })()}
-              gradient="linear-gradient(135deg,#2563eb,#1d4ed8)"
-              shadow="0 4px 14px rgba(37,99,235,0.35)"
             />
           </div>
           </div>

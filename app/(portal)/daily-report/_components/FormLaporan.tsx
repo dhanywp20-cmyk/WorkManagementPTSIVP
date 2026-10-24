@@ -169,7 +169,7 @@ export function FormLaporan({ autoCount, currentUser, editingId, formDate, formL
             {/* Save */}
             <div className="flex gap-3 pt-2 pb-2">
               <button onClick={() => { hapusDraf(); setFormOpen(false); setEditingId(null); }} className="flex-1 py-3 rounded-xl font-semibold text-sm border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all">Batal</button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)', boxShadow: '0 4px 14px rgba(220,38,38,0.3)' }}>
+              <button onClick={handleSave} disabled={saving} className="tombol-utama flex-1 py-3 rounded-kontrol font-bold text-sm  flex items-center justify-center gap-2 transition-all">
                 {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 {editingId ? 'Simpan Perubahan' : '📋 Simpan Report'}
               </button>

@@ -19,21 +19,19 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
     <>
       {detailReview && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-[1000] p-4"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1000] p-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
           onClick={e => { if (e.target === e.currentTarget) setDetailReview(null); }}>
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 overflow-hidden flex flex-col"
-            style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '96dvh' }}>
+          <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl my-4 overflow-hidden flex flex-col"
+            style={{ maxHeight: '96dvh' }}>
 
             {/* Header */}
-            <div className="px-6 py-5 flex-shrink-0 relative"
-              style={{ background: detailReview.review_category === 'Demo Product' ? 'linear-gradient(135deg,#7c3aeddd,#5b21b688)' : 'linear-gradient(135deg,#0ea5e9dd,#0284c788)' }}>
+            {/*  Kepala putih baku (sama dengan Modal bersama) - dulu ungu / biru menurut kategori. */}
+            <div className="px-6 py-5 pr-12 flex-shrink-0 relative border-b border-slate-100 bg-white">
               <div className="flex flex-wrap gap-2 mb-3">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
-                  style={{ background: detailReview.review_category === 'Demo Product' ? '#7c3aed' : '#0ea5e9', border: '2px solid rgba(255,255,255,0.6)' }}>
-                  {detailReview.review_category === 'Demo Product' ? '🖥️' : '📌'} {detailReview.review_category}
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
+                  {detailReview.review_category}
                 </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
-                  style={{ background: 'rgba(0,0,0,0.25)', border: '2px solid rgba(255,255,255,0.4)' }}>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
                   <Ikon nama="📋" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailReview.reminder_category}
                 </span>
                 {/* Status badge */}
@@ -42,28 +40,26 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
                     ? !!detailReview.grade_product_knowledge
                     : !!(detailReview.grade_training_customer && detailReview.grade_product_knowledge_bast);
                   return hasReview ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white"
-                      style={{ background: '#059669', border: '2px solid rgba(255,255,255,0.5)' }}>
-                      <IkonTeks nama="✅" />Sudah Diisi
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                      Sudah Diisi
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold text-white animate-pulse"
-                      style={{ background: '#d97706', border: '2px solid rgba(255,255,255,0.5)' }}>
-                      <IkonTeks nama="⏳" />Belum Diisi
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">
+                      Belum Diisi
                     </span>
                   );
                 })()}
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
-              <h2 className="text-xl font-bold text-white leading-tight">{detailReview.project_name || '—'}</h2>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1 mb-0.5">Nama Project</p>
+              <h2 className="text-lg font-bold text-slate-800 leading-tight">{detailReview.project_name || '—'}</h2>
               {detailReview.address && (
                 <>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
-                  <p className="text-white/80 text-sm flex items-center gap-1.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailReview.address}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1.5 mb-0.5">Lokasi</p>
+                  <p className="text-slate-600 text-sm flex items-center gap-1.5"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {detailReview.address}</p>
                 </>
               )}
               <button aria-label="Tutup" onClick={() => setDetailReview(null)}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+                className="absolute top-3 right-3 w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold text-sm">✕</button>
             </div>
 
             <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
@@ -203,22 +199,19 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
                 {/* Edit untuk admin/Full Access, atau Guest/Sales/Team yang memang pemilik baris ini */}
                 {bolehEditReview(detailReview) && (
                   <button onClick={() => openEdit(detailReview)}
-                    className="flex-1 text-white py-3 rounded-xl font-bold text-sm transition-all hover:scale-[1.01] flex items-center justify-center gap-2"
-                    style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 3px 12px rgba(124,58,237,0.3)' }}>
-                    <IkonTeks nama="✏" />Edit / Isi Review
+                    className="tombol-utama flex-1 py-3 rounded-kontrol font-bold text-sm flex items-center justify-center gap-2">
+                    Edit / Isi Review
                   </button>
                 )}
                 {isAdmin && (
                   <button onClick={() => { setDetailReview(null); openDeleteModal(detailReview); }}
-                    className="px-5 py-3 rounded-xl font-bold text-sm text-red-600 transition-all hover:bg-red-50 hover:scale-[1.01] flex items-center gap-2"
-                    style={{ border: '1.5px solid rgba(220,38,38,0.35)' }}>
-                    <IkonTeks nama="🗑" />Hapus
+                    className="tombol-kedua !text-rose-700 px-5 py-3 rounded-kontrol font-bold text-sm flex items-center gap-2">
+                    Hapus
                   </button>
                 )}
                 <button onClick={() => setDetailReview(null)}
-                  className="px-5 py-3 rounded-xl font-bold text-sm text-gray-500 transition-all hover:bg-gray-100"
-                  style={{ border: '1px solid rgba(0,0,0,0.12)' }}>
-                  ✕ Tutup
+                  className="tombol-kedua px-5 py-3 rounded-kontrol font-bold text-sm">
+                  Tutup
                 </button>
               </div>
             </div>

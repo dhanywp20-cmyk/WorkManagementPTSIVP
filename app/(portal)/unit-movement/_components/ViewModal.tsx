@@ -67,8 +67,7 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
               <div className="flex flex-wrap gap-2">
                 {suratUrls.map((url,i)=>(
                   <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
-                    style={{background:'linear-gradient(135deg,#3b82f6,#2563eb)',color:'white'}}><IkonTeks nama="🔗" />Surat {i+1}</a>
+                    className="tombol-utama inline-flex items-center gap-2 px-4 py-2 rounded-kontrol text-sm font-semibold hover:opacity-80"><IkonTeks nama="🔗" />Surat {i+1}</a>
                 ))}
               </div>
             </div>
@@ -79,8 +78,7 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
               <div className="flex flex-wrap gap-2">
                 {barangUrls.map((url,i)=>(
                   <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-80"
-                    style={{background:'linear-gradient(135deg,#8b5cf6,#7c3aed)',color:'white'}}><IkonTeks nama="🖼" />Foto {i+1}</a>
+                    className="tombol-utama inline-flex items-center gap-2 px-4 py-2 rounded-kontrol text-sm font-semibold hover:opacity-80"><IkonTeks nama="🖼" />Foto {i+1}</a>
                 ))}
               </div>
             </div>

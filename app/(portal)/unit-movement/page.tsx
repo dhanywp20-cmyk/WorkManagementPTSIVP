@@ -258,13 +258,12 @@ function UnitMovementPageInner() {
 
   if (!isLoggedIn) return (
     <div className="min-h-screen flex items-center justify-center" style={{background: 'var(--latar-halaman)',backgroundSize:'cover'}}>
-      <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl p-8 text-center max-w-sm w-full mx-4">
+      <div className="bg-white rounded-kartu shadow-modal p-8 text-center max-w-sm w-full mx-4">
         <div className="text-4xl mb-3"><Ikon nama="🔒" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <h2 className="font-black text-gray-800 text-lg">Sesi Tidak Ditemukan</h2>
         <p className="text-gray-500 text-sm mt-2 mb-5">Silakan login terlebih dahulu melalui halaman utama.</p>
         <button onClick={()=>{ const t=window.top!==window?window.top:window; if(t) t.location.href='/dashboard'; }}
-          className="w-full py-3 rounded-xl text-sm font-bold text-white"
-          style={{background:'linear-gradient(135deg,#f59e0b,#d97706)'}}>
+          className="tombol-utama w-full py-3 rounded-kontrol text-sm font-bold">
           Kembali ke Dashboard
         </button>
       </div>
@@ -283,14 +282,13 @@ function UnitMovementPageInner() {
       {deleteConfirm&&(
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1100] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
-          <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm text-center space-y-4">
+          <div className="bg-white rounded-kartu shadow-modal p-6 w-full max-w-sm text-center space-y-4">
             <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-2xl" style={{background:'#fee2e2'}}><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
             <h3 className="font-bold text-gray-900">Hapus Log?</h3>
             <p className="text-sm text-gray-500">Data <strong>{deleteConfirm.project_name}</strong> akan dihapus permanen.</p>
             <div className="flex gap-3">
               <button onClick={()=>setDeleteConfirm(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50">Batal</button>
-              <button onClick={handleDelete} disabled={deleting} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60"
-                style={{background:'linear-gradient(135deg,#ef4444,#dc2626)'}}>{deleting?'Menghapus...':'Ya, Hapus'}</button>
+              <button onClick={handleDelete} disabled={deleting} className="tombol-bahaya flex-1 py-2.5 rounded-kontrol text-sm font-bold disabled:opacity-60">{deleting?'Menghapus...':'Ya, Hapus'}</button>
             </div>
           </div>
         </div>
@@ -300,11 +298,10 @@ function UnitMovementPageInner() {
       <Toast notif={notif} />
 
       {/* Header */}
-      <PageHeader icon="🚚" title="Unit Movement Log" subtitle="PTS IVP — Equipment Tracking" color="#d97706" colorLight="#b45309">
+      <PageHeader icon="🚚" title="Unit Movement Log" subtitle="PTS IVP — Equipment Tracking">
         {canAddLog&&(
           <button onClick={()=>setEditLog(null)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:opacity-90"
-            style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',boxShadow:'0 2px 8px rgba(245,158,11,0.35)'}}>
+            className="tombol-utama flex items-center gap-2 px-4 py-2 rounded-kontrol text-sm font-bold transition-all hover:opacity-90">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4"/></svg>
             Tambah Log
           </button>
@@ -454,8 +451,7 @@ function UnitMovementPageInner() {
                 Refresh
               </button>
               <button onClick={exportToExcel} disabled={filteredLogs.length === 0}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:opacity-90 disabled:opacity-40"
-                style={{background:'linear-gradient(135deg,#d97706,#b45309)',color:'white',border:'1px solid #b45309'}}>
+                className="tombol-utama flex items-center gap-1.5 px-3 py-1.5 rounded-kontrol text-xs font-semibold border transition-all hover:opacity-90 disabled:opacity-40">
                 <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>

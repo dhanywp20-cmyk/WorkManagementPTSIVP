@@ -375,8 +375,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
           </div>
           {tulis && (
             <button onClick={() => openForm()}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold text-white rounded-xl shadow-md hover:scale-[1.03] transition-all whitespace-nowrap"
-              style={{ background: 'linear-gradient(135deg,#3b82f6,#6366f1)', boxShadow: '0 4px 12px rgba(99,102,241,0.35)' }}>
+              className="tombol-utama flex items-center gap-1.5 px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold  rounded-kontrol shadow-md hover:scale-[1.03] transition-all whitespace-nowrap">
               <span className="text-base leading-none">+</span> Tambah Materi
             </button>
           )}
@@ -622,7 +621,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-kartu shadow-modal w-full max-w-lg border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><IkonTeks nama="✏" />Tambah Materi Baru</h3>
               <button aria-label="Tutup" onClick={() => setShowForm(false)}
@@ -690,7 +689,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200">
+          <div className="bg-white rounded-kartu shadow-modal w-full max-w-sm border border-slate-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><IkonTeks nama="✏" />Ubah Nama Folder</h3>
               <button aria-label="Tutup" onClick={() => setRenameFolder(null)}
@@ -710,8 +709,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
               <p className="text-xs text-slate-500 mb-4">Sebelumnya: <strong className="text-slate-600">{renameFolder.oldName}</strong></p>
               <div className="flex gap-3">
                 <button onClick={handleRenameFolder} disabled={renameFolderSaving}
-                  className="flex-1 py-2.5 text-white text-sm font-bold rounded-xl disabled:opacity-60 transition-all hover:opacity-90"
-                  style={{ background: 'linear-gradient(135deg,#3b82f6,#4f46e5)' }}>
+                  className="tombol-utama flex-1 py-2.5  text-sm font-bold rounded-kontrol disabled:opacity-60 transition-all hover:opacity-90">
                   {renameFolderSaving ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -735,7 +733,7 @@ export function MateriPage({ user, isAdmin, readOnly = false }: { user: User; is
       <ModalPortal>
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-kartu shadow-modal w-full max-w-lg border border-slate-200 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="font-bold text-slate-800 flex items-center gap-2"><IkonTeks nama="✏" />Edit Materi</h3>
               <button aria-label="Tutup" onClick={() => setEditMaterial(null)}

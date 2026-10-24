@@ -232,24 +232,7 @@ export function Modal({
           className={`w-full ${LEBAR[ukuran]} bg-white rounded-kartu shadow-modal flex flex-col max-h-[90vh] outline-none`}
         >
           {/* ── Header ── */}
-          <div className="flex items-start gap-3 px-5 py-4 border-b border-slate-100 flex-shrink-0">
-            {ikon && <div className="flex-shrink-0 mt-0.5"><Ikon nama={ikon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>}
-            <div className="flex-1 min-w-0">
-              <h2 id={idJudul} className="text-sm font-bold text-slate-800 leading-snug">{judul}</h2>
-              {keterangan && (
-                <p id={idKeterangan} className="text-xs text-slate-500 mt-0.5 leading-relaxed">{keterangan}</p>
-              )}
-            </div>
-            <button
-              type="button" onClick={onTutup} aria-label="Tutup"
-              className="w-8 h-8 rounded-kecil flex items-center justify-center flex-shrink-0 text-slate-500 hover:text-rose-600 transition-all"
-              style={{ background: 'rgba(0,0,0,0.05)' }}
-            >
-              <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
+          <KepalaModal judul={judul} keterangan={keterangan} ikon={ikon} onTutup={onTutup} idJudul={idJudul} idKeterangan={idKeterangan} />
 
           {/* ── Content ── */}
           <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0">{children}</div>
@@ -265,6 +248,44 @@ export function Modal({
     </ModalPortal>
   );
 }
+
+/**
+ * Kepala modal baku (judul + keterangan + tombol tutup) - dipakai Modal sendiri, dan oleh popup yang
+ * kerangkanya khusus (form tiga kolom setinggi layar, detail dua panel) supaya kepalanya tetap SAMA PERSIS
+ * dengan semua popup lain. `kiri` = slot tombol sebelum judul (mis. "‹ Kembali" di HP); `aksi` = slot
+ * tombol tambahan sebelum tombol tutup.
+ */
+export function KepalaModal({ judul, keterangan, ikon, onTutup, idJudul, idKeterangan, kiri, aksi }: {
+  judul: React.ReactNode; keterangan?: React.ReactNode; ikon?: React.ReactNode; onTutup: () => void;
+  idJudul?: string; idKeterangan?: string; kiri?: React.ReactNode; aksi?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start gap-3 px-5 py-4 border-b border-slate-100 flex-shrink-0 bg-white">
+      {kiri}
+      {ikon && <div className="flex-shrink-0 mt-0.5"><Ikon nama={ikon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></div>}
+      <div className="flex-1 min-w-0">
+        <h2 id={idJudul} className="text-sm font-bold text-slate-800 leading-snug">{judul}</h2>
+        {keterangan && (
+          <div id={idKeterangan} className="text-xs text-slate-500 mt-0.5 leading-relaxed">{keterangan}</div>
+        )}
+      </div>
+      {aksi}
+      <button
+        type="button" onClick={onTutup} aria-label="Tutup"
+        className="w-8 h-8 rounded-kecil flex items-center justify-center flex-shrink-0 text-slate-500 hover:text-rose-600 transition-all"
+        style={{ background: 'rgba(0,0,0,0.05)' }}
+      >
+        <svg aria-hidden="true" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+/** Latar gelap & kartu baku untuk popup berkerangka khusus (nilai sama dengan Modal). */
+export const LATAR_MODAL: React.CSSProperties = { background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' };
+export const KARTU_MODAL = 'bg-white rounded-kartu shadow-modal';
 
 /**
  * Tombol footer baku.

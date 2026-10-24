@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import type { RefObject, Dispatch, SetStateAction } from 'react';
 import { triggersProjectProgress } from '@/lib/project-progress-sync';
 import {
-  SectionHeaderSmall, InfoRow, Username, ModalPortal, AuditTrailPanel, FlowSteps, TombolSetujui, TombolTolak, TombolTugaskan,
+  SectionHeaderSmall, InfoRow, Username, ModalPortal, AuditTrailPanel, FlowSteps, TombolSetujui, TombolTolak, TombolTugaskan, KepalaModal,
 } from '@/components/shared';
 import { PriorityBadge, StatusBadge, CategoryBadge } from './Badges';
 import { ModePenyelesaianPanel } from './ModePenyelesaianPanel';
@@ -129,59 +129,57 @@ export function ReminderDetailPopup({
 
   return (
     <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex justify-center z-[1000] p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 flex justify-center z-[1000] p-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) { setDetailReminder(null); setShowModeModal(false); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); } }}>
       <div className="flex gap-3 w-full justify-center min-h-0"
         style={{ maxWidth: showModeModal ? '1140px' : showRiwayat ? '1060px' : '672px', transition: 'max-width 0.25s ease' }}>
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full flex-1 min-w-0 overflow-hidden flex flex-col"
-        style={{ animation: 'scale-in 0.25s ease-out', border: '1px solid rgba(0,0,0,0.1)', height: '100%' }}>
-        <div className="px-6 py-5 flex-shrink-0 sticky top-0 z-30 relative" style={{
-          background: (() => { const c = CATEGORY_CONFIG[detailReminder.category]; const base = c ? `linear-gradient(135deg,${c.accent}dd,${c.accent}88)` : 'linear-gradient(135deg,#1d4ed8,#1e40af)'; return `linear-gradient(rgba(0,0,0,0.3),rgba(0,0,0,0.15)),${base}`; })()
-        }}>
+      {/*  Kartu & kepala baku (putih, sama dengan Modal bersama) - dulu kepalanya berwarna per kategori. */}
+      <div className="bg-white rounded-kartu shadow-modal w-full flex-1 min-w-0 overflow-hidden flex flex-col"
+        style={{ height: '100%' }}>
+        <div className="px-6 py-5 flex-shrink-0 sticky top-0 z-30 relative bg-white border-b border-slate-100">
           <button onClick={() => setShowRiwayat(v => !v)}
             title={showRiwayat ? 'Sembunyikan riwayat perubahan' : 'Tampilkan riwayat perubahan'}
-            className="absolute top-4 right-14 h-7 px-2.5 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center gap-1 text-[11px] font-bold">
+            className="tombol-kedua absolute top-3 right-14 h-8 px-2.5 rounded-kecil flex items-center gap-1 text-[11px] font-bold">
             <Ikon nama="🕘" ukuran="1em" className="inline-block align-[-0.12em]" /> <span className="hidden sm:inline">Riwayat</span>
           </button>
           {/* pr: ruang untuk tombol Riwayat & Tutup (absolute di kanan atas) supaya lencana tidak tertimpa. */}
           <div className="flex flex-wrap gap-2 mb-3 pr-24 sm:pr-40">
-            <PriorityBadge priority={detailReminder.priority} onHeader />
-            <StatusBadge status={detailReminder.status} onHeader />
-            <CategoryBadge category={detailReminder.category} onHeader />
+            <PriorityBadge priority={detailReminder.priority} />
+            <StatusBadge status={detailReminder.status} />
+            <CategoryBadge category={detailReminder.category} />
             {detailReminder.repeat !== 'none' && (
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white">
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
                 🔁 {REPEAT_OPTIONS.find(r => r.value === detailReminder.repeat)?.label}
               </span>
             )}
             {detailReminder.wa_sent_h1 && (
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-500/80 text-white"><IkonTeks nama="✅" />WA H-1 Terkirim</span>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800"><IkonTeks nama="✅" />WA H-1 Terkirim</span>
             )}
           </div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-1 mb-0.5">Nama Project</p>
-          <h2 className="text-lg sm:text-2xl font-bold text-white leading-tight">{(detailReminder.project_name || '').trim() || ((detailReminder as any).title || '').trim() || '—'}</h2>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1 mb-0.5">Nama Project</p>
+          <h2 className="text-lg sm:text-xl font-bold text-slate-800 leading-tight">{(detailReminder.project_name || '').trim() || ((detailReminder as any).title || '').trim() || '—'}</h2>
           {detailReminder.address && (
             <>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-2 mb-0.5">Lokasi</p>
-              <p className="text-white text-sm flex items-center gap-1.5"><span><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>{detailReminder.address}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-2 mb-0.5">Lokasi</p>
+              <p className="text-slate-700 text-sm flex items-center gap-1.5"><span><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>{detailReminder.address}</p>
             </>
           )}
           {detailReminder.description && (
             <>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-2 mb-0.5">Deskripsi</p>
-              <p className="text-white/90 text-xs">{detailReminder.description}</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-2 mb-0.5">Deskripsi</p>
+              <p className="text-slate-600 text-xs">{detailReminder.description}</p>
             </>
           )}
           {/* Troubleshooting link ke Ticketing — navigasi internal */}
           {detailReminder.category === 'Troubleshooting' && (
             <button
               onClick={e => { e.stopPropagation(); setDetailReminder(null); router.push('/ticketing'); }}
-              className="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all hover:scale-[1.03]"
-              style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.92)' }}>
+              className="tombol-kedua mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-kontrol text-xs font-bold">
               <IkonTeks nama="🎫" />Buka Platform Ticketing
             </button>
           )}
           <button aria-label="Tutup" onClick={() => { setDetailReminder(null); setPendingStatus(null); setStatusPhoto(null); setStatusPhotoPreview(null); }}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+            className="absolute top-3 right-3 w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold text-sm">✕</button>
         </div>
 
         <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
@@ -205,20 +203,17 @@ export function ReminderDetailPopup({
               )}
               {bolehEditReminder(detailReminder) && detailReminder.status !== 'done' && (
                 <button onClick={() => { setRescheduleTarget(detailReminder); }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg,#d97706,#b45309)', color: 'white' }}><IkonTeks nama="📅" />Re-Schedule</button>
+                  className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="📅" />Re-Schedule</button>
               )}
               {bolehEditReminder(detailReminder) && detailReminder.status === 'done' && detailReminder.sales_name?.trim() && (REVIEW_TRIGGER_CATEGORIES as readonly string[]).includes(detailReminder.category) && (
                 <button onClick={() => handleResendFormReview(detailReminder)} disabled={resendingFormReview}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02] disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', color: 'white' }}>
-                  {resendingFormReview ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '⭐'} Resend Review</button>
+                  className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold">
+                  {resendingFormReview ? <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-700 rounded-full animate-spin" /> : '⭐'} Kirim Ulang Review</button>
               )}
               {(isAdmin || isManager) && (
                 <button onClick={() => handleSendWA(detailReminder)} disabled={sendingWA === detailReminder.id}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02] disabled:opacity-60"
-                  style={{ background: 'linear-gradient(135deg,#16a34a,#15803d)', color: 'white' }}>
-                  {sendingWA === detailReminder.id ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '💬'} Kirim WA</button>
+                  className="tombol-kedua flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold">
+                  {sendingWA === detailReminder.id ? <div className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-700 rounded-full animate-spin" /> : '💬'} Kirim WA</button>
               )}
               {/*
                 Dulu (isAdmin || isManager) saja - Sales pembuat request
@@ -246,8 +241,7 @@ export function ReminderDetailPopup({
               )}
               {bolehEditReminder(detailReminder) && (
                 <button onClick={() => openEdit(detailReminder)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition-all hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg,#2563eb,#1d4ed8)', color: 'white' }}><IkonTeks nama="✏" />Edit</button>
+                  className="tombol-utama flex items-center gap-1.5 px-3 py-2 rounded-kontrol text-xs font-bold"><IkonTeks nama="✏" />Edit</button>
               )}
             </div>
           )}
@@ -523,8 +517,7 @@ export function ReminderDetailPopup({
                 </div>
               </div>
               <button onClick={() => bukaEditDetailPelaksanaan(detailReminder)}
-                className="w-full py-2.5 rounded-xl text-xs font-bold text-white transition-all hover:scale-[1.02]"
-                style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)', boxShadow: '0 3px 12px rgba(245,158,11,0.35)' }}>
+                className="tombol-utama w-full py-2.5 rounded-kontrol text-xs font-bold">
                 <IkonTeks nama="➕" />Isi Detail Pelaksanaan
               </button>
             </div>
@@ -639,8 +632,7 @@ export function ReminderDetailPopup({
                 <button
                   onClick={handleConfirmStatusUpdate}
                   disabled={updatingStatus}
-                  className="flex-1 py-2 rounded-xl text-xs font-bold text-white transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{ background: 'linear-gradient(135deg,#059669,#047857)', boxShadow: '0 3px 12px rgba(5,150,105,0.35)' }}>
+                  className="tombol-utama flex-1 py-2 rounded-kontrol text-xs font-bold flex items-center justify-center gap-2">
                   {updatingStatus
                     ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     : <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
@@ -691,14 +683,9 @@ export function ReminderDetailPopup({
       {/* HP: panel ini menjadi lapisan penuh di atas detail (fixed inset-3) - berdampingan di layar
           sempit membuat popup detail terjepit menjadi garis tipis di kiri. */}
       {showRiwayat && !showModeModal && (
-        <div className="bg-white rounded-2xl shadow-2xl fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 md:self-start overflow-hidden flex flex-col"
-          style={{ animation: 'scale-in 0.2s ease-out', border: '1px solid rgba(0,0,0,0.1)', maxHeight: '100%' }}>
-          <div className="px-5 py-4 flex-shrink-0 relative" style={{ background: 'linear-gradient(135deg,#475569,#334155)' }}>
-            <h3 className="text-white font-bold text-base"><IkonTeks nama="🕘" />Riwayat Perubahan</h3>
-            <p className="text-slate-500 text-[11px] mt-0.5 truncate">{detailReminder.project_name}</p>
-            <button aria-label="Tutup" onClick={() => setShowRiwayat(false)}
-              className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
-          </div>
+        <div className="bg-white rounded-kartu shadow-modal fixed inset-3 z-20 md:static md:inset-auto md:z-auto md:max-w-sm md:w-full flex-shrink-0 md:self-start overflow-hidden flex flex-col"
+          style={{ maxHeight: '100%' }}>
+          <KepalaModal judul="Riwayat Perubahan" keterangan={detailReminder.project_name} onTutup={() => setShowRiwayat(false)} />
           <div className="flex-1 overflow-y-auto">
             {/* Alur ditaruh di panel ini, di bawah riwayat: keduanya
                 menjawab pertanyaan yang sama — sudah sampai mana perkara

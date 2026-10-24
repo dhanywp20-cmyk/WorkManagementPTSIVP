@@ -71,8 +71,7 @@ export function TabAtasan({ ATASAN_JABATAN, activeTab, allUsers, atasanByDiv, at
               </div>
             </div>
             <button onClick={handleAddAtasan} disabled={saving || !atasanDiv || !atasanSupId}
-              className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg,#d97706,#b45309)' }}>
+              className="tombol-utama w-full py-2.5 rounded-kontrol font-bold text-sm transition-all disabled:opacity-50">
               {saving ? '⏳ Menyimpan...' : '💾 Tambah Mapping Atasan'}
             </button>
           </div>

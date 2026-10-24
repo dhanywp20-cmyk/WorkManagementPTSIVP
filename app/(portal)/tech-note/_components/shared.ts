@@ -51,15 +51,15 @@ export interface TechNoteHistory {
 export const STATUS_CONFIG = {
   pending:  { label: 'Pending Review', color: '#d97706', bg: '#fef3c7', border: '#fcd34d', icon: '⏳' },
   approved: { label: 'Approved',       color: '#059669', bg: '#d1fae5', border: '#6ee7b7', icon: '✅' },
-  revision: { label: 'Perlu Revisi',   color: '#dc2626', bg: '#fee2e2', border: '#fca5a5', icon: '🔄' },
-  rejected: { label: 'Ditolak',        color: '#6b7280', bg: '#f3f4f6', border: '#d1d5db', icon: '❌' },
+  revision: { label: 'Perlu Revisi',   color: '#d97706', bg: '#fef3c7', border: '#fcd34d', icon: '🔄' },
+  rejected: { label: 'Ditolak',        color: '#dc2626', bg: '#fee2e2', border: '#fca5a5', icon: '❌' },
 } as const;
 
 export const ACTION_CONFIG = {
   submitted:          { label: 'Submitted',    color: '#3b82f6', icon: '📤' },
   approved:           { label: 'Approved',     color: '#10b981', icon: '✅' },
   revision_requested: { label: 'Minta Revisi', color: '#f59e0b', icon: '🔄' },
-  rejected:           { label: 'Ditolak',      color: '#6b7280', icon: '❌' },
+  rejected:           { label: 'Ditolak',      color: '#dc2626', icon: '❌' },
   resubmitted:        { label: 'Resubmit',     color: '#8b5cf6', icon: '📤' },
 } as const;
 
