@@ -3,9 +3,11 @@
  * Progress. Murni, dipakai server (detail proyek: diagregasi dulu supaya yang dikirim kecil) dan
  * peramban (link share & checklist, item sudah dimuat).
  *
- * "Dikerjakan Oleh" HANYA menghitung handler - anggota yang di-assign di checklist lokasi itu. Admin /
- * orang lain yang membantu mencentang tetap tercatat di item (selesai_oleh) dan riwayat, tetapi tidak
- * masuk grafik kontribusi.
+ * "Dikerjakan Oleh" HANYA menghitung handler - anggota yang di-assign di checklist lokasi itu.
+ *  - Ringkasan PROYEK: jumlah LOKASI yang dipegang tiap handler (siapa yang mencentang tidak
+ *    berpengaruh - handler yang centangnya diwakili Admin / teknisi lapangan tetap terhitung).
+ *  - Ringkasan SATU LOKASI: item selesai yang dicentang handler lokasi itu. Admin / orang lain yang
+ *    membantu mencentang tetap tercatat di item (selesai_oleh) dan riwayat, tetapi tidak masuk grafik.
  */
 
 export interface ItemSelesai { daftar_id: string; selesai: boolean; selesai_oleh: string | null; selesai_pada: string | null }
@@ -31,6 +33,20 @@ export function kontribusiHandler(items: ItemSelesai[], anggota: AnggotaNama[]):
   return [...hitung].map(([nama, jumlah]) => ({ nama, jumlah })).sort((a, b) => b.jumlah - a.jumlah || a.nama.localeCompare(b.nama, 'id'));
 }
 
+/** Lokasi (checklist) yang dipegang tiap handler, terbanyak dulu. Satu nama dihitung sekali per lokasi. */
+export function lokasiPerHandler(anggota: AnggotaNama[]): Kontribusi[] {
+  const lokasi = new Map<string, { nama: string; daftar: Set<string> }>();
+  for (const a of anggota) {
+    const k = norm(a.nama);
+    if (!k) continue;
+    const e = lokasi.get(k) ?? { nama: a.nama.trim(), daftar: new Set<string>() };
+    e.daftar.add(a.daftar_id);
+    lokasi.set(k, e);
+  }
+  return [...lokasi.values()].map(e => ({ nama: e.nama, jumlah: e.daftar.size }))
+    .sort((a, b) => b.jumlah - a.jumlah || a.nama.localeCompare(b.nama, 'id'));
+}
+
 /** Tanggal (WIB) dari stempel waktu ISO - satu zona untuk semua orang, server maupun HP. */
 export function tanggalWIB(iso: string): string {
   return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
@@ -47,8 +63,8 @@ export function selesaiPerHari(items: ItemSelesai[]): Record<string, number> {
 }
 
 /** Ringkasan aktivitas untuk dikirim server ke detail proyek (kecil, tanpa daftar item). */
-export interface AktivitasProyek { kontribusi: Kontribusi[]; perHari: Record<string, number> }
+export interface AktivitasProyek { /** Lokasi per handler. */ kontribusi: Kontribusi[]; perHari: Record<string, number> }
 
 export function aktivitasProyek(items: ItemSelesai[], anggota: AnggotaNama[]): AktivitasProyek {
-  return { kontribusi: kontribusiHandler(items, anggota), perHari: selesaiPerHari(items) };
+  return { kontribusi: lokasiPerHandler(anggota), perHari: selesaiPerHari(items) };
 }

@@ -213,7 +213,7 @@ export function useDataLaporan(k: DataLaporanKonteks) {
   const divisionPieData = useMemo(() => {
     const m = new Map<string, number>();
     allRows.forEach(r => { if (r.sales_division) m.set(r.sales_division, (m.get(r.sales_division) ?? 0) + 1); });
-    return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([label, value], i) => ({ label, value, color: PIE_C[(i+3) % PIE_C.length] }));
+    return Array.from(m.entries()).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_C[(i+3) % PIE_C.length] }));
   }, [allRows]);
 
   const productPieData = useMemo(() => {
