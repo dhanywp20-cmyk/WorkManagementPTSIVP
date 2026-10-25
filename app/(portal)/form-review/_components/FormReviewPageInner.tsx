@@ -476,7 +476,7 @@ export function FormReviewPageInner() {
       const prod = r.review_category === 'Demo Product' ? r.product_demo : r.product_bast;
       if (prod) map[prod] = (map[prod] || 0) + 1;
     });
-    return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+    return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
   })();
 
   const myActivePendingReviews = reviews.filter(r =>

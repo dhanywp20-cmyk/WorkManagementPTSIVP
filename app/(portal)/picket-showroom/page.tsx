@@ -326,10 +326,10 @@ function PiketShowroomPageInner() {
     if(summaryMonth!==null&&parseInt(d.slice(5,7),10)!==summaryMonth)return false;
     return true;
   });
-  const kPieAll=Object.entries(filteredKgPie.reduce((acc,k)=>{(k.kebutuhan||[]).forEach(x=>{acc[x]=(acc[x]||0)+1;});return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
-  const divPieAll=Object.entries(filteredKgPie.reduce((acc,k)=>{if(k.sales_division)acc[k.sales_division]=(acc[k.sales_division]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
+  const kPieAll=Object.entries(filteredKgPie.reduce((acc,k)=>{(k.kebutuhan||[]).forEach(x=>{acc[x]=(acc[x]||0)+1;});return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
+  const divPieAll=Object.entries(filteredKgPie.reduce((acc,k)=>{if(k.sales_division)acc[k.sales_division]=(acc[k.sales_division]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
   const kgTypePie=denganNilai(daftarKegiatan, filteredKgPie.map(k=>k.jenis_kegiatan)).map((j,i)=>({label:j,value:filteredKgPie.filter(k=>k.jenis_kegiatan===j).length,color:KEGIATAN_COLORS[j]||PIE_COLORS[i%PIE_COLORS.length]})).filter(d=>d.value>0);
-  const instansiPie=Object.entries(filteredKgPie.filter(k=>k.tamu_instansi).reduce((acc,k)=>{const key=k.tamu_instansi!;acc[key]=(acc[key]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
+  const instansiPie=Object.entries(filteredKgPie.filter(k=>k.tamu_instansi).reduce((acc,k)=>{const key=k.tamu_instansi!;acc[key]=(acc[key]||0)+1;return acc;},{}as Record<string,number>)).sort(([,a],[,b])=>b-a).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
   const PRODUK_SPESIFIK=produkSpesifik(daftarProduk);
   const produkPie=Object.entries(filteredKgPie.reduce((acc,k)=>{
     const produk=k.produk||[];
@@ -340,7 +340,7 @@ function PiketShowroomPageInner() {
       produk.forEach(p=>{acc[p]=(acc[p]||0)+1;});
     }
     return acc;
-  },{}as Record<string,number>)).sort(([,a],[,b])=>b-a).slice(0,12).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
+  },{}as Record<string,number>)).sort(([,a],[,b])=>b-a).map(([label,value],i)=>({label,value,color:PIE_COLORS[i%PIE_COLORS.length]}));
 
   // Export Excel per-bulan (format sama dgn Export All) berdasarkan bulan terpilih di ringkasan.
   const MONTH_NAMES=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
