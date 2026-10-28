@@ -19,6 +19,7 @@ import { useKelompok } from '@/lib/kelompok';
 import { AnalyticsPlatform, type Tab as AnalyticsTab } from '@/app/analytics-dashboard/_components/AnalyticsPlatform';
 import { Ikon } from '@/components/shared/Ikon';
 import { AKSEN_UTAMA } from './primitives';
+import { hasFullAccess } from '@/lib/constants';
 
 /**
  * Ruang kosong di sebelah Piket Showroom + Learning Center (lg:grid-cols-3
@@ -181,6 +182,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
               <HeaderTabBtn label="Analytics"      icon="📊" active={analyticsTab==='kpi'}     onClick={() => setAnalyticsTab('kpi')} />
               <HeaderTabBtn label="Command Center" icon="🏠" active={analyticsTab==='command'} onClick={() => setAnalyticsTab('command')} badge={analyticsCounts.totalAlerts} />
               <HeaderTabBtn label="Audit Log"      icon="📋" active={analyticsTab==='audit'}   onClick={() => setAnalyticsTab('audit')} badge={analyticsCounts.auditCount} />
+              {hasFullAccess(currentUser) && <HeaderTabBtn label="Pemakaian" icon="👥" active={analyticsTab==='pemakaian'} onClick={() => setAnalyticsTab('pemakaian')} />}
             </div>
           )}
         </div>
