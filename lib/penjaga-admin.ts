@@ -19,12 +19,14 @@
 import { NextRequest } from 'next/server';
 import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase-admin';
+import { bolehDiwaypiDan2FA } from '@/lib/constants';
 
 export interface Pemanggil {
   id: string;
   username: string;
   full_name: string;
   role: string;
+  access_level?: string | null;
 }
 
 export type HasilPenjaga =
@@ -62,7 +64,7 @@ export async function pastikanMasuk(req: NextRequest): Promise<HasilPenjaga> {
 
   const { data: user } = await db
     .from('users')
-    .select('id, username, full_name, role')
+    .select('id, username, full_name, role, access_level')
     .eq('id', sesi.user_id)
     .single();
 
@@ -79,5 +81,13 @@ export async function pastikanAdmin(req: NextRequest): Promise<HasilPenjaga> {
   if (!PERAN_ADMIN.includes((masuk.user.role ?? '').toLowerCase())) {
     return { ok: false, status: 403, alasan: 'Hanya admin yang boleh mengubah pengaturan ini.' };
   }
+  return masuk;
+}
+
+/** Admin atau akun Full Access (lib/constants.ts bolehDiwaypiDan2FA) - dibaca ulang dari tabel users. */
+export async function pastikanAksesPenuh(req: NextRequest, alasan: string): Promise<HasilPenjaga> {
+  const masuk = await pastikanMasuk(req);
+  if (!masuk.ok) return masuk;
+  if (!bolehDiwaypiDan2FA(masuk.user)) return { ok: false, status: 403, alasan };
   return masuk;
 }

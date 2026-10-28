@@ -7,7 +7,7 @@ import { User, JabatanType, JABATAN_CONFIG, ALL_MENU_KEYS, ALL_MENU_LABELS, ROLE
 import { ModalPortal, formatUsername } from '@/components/shared';
 
 import { ambilProfil, Kartu, Baris, Kelompok } from './modal-bersama';
-import { hasFullAccess } from '@/lib/constants';
+import { bolehDiwaypiDan2FA, hasFullAccess } from '@/lib/constants';
 import { bacaPengaturan } from '@/lib/notifikasi/pengaturan';
 import { statusInstalasiPWA, subscribeInstallPWA, pasangAplikasiPWA, type StatusInstallPWA } from '@/lib/pwa-install';
 import { useMerek } from '@/lib/merek';
@@ -565,8 +565,8 @@ export function UserProfileModal({ currentUser, onClose }: UserProfileModalProps
                       <IkonTeks nama="🔑" />Ubah Password
                     </button>
                   )}
-                  <Profil2FA />
-                  <ProfilIntegrasi />
+                  {/* 2FA & DIWAYPI hanya admin & akun Full Access (server juga menolak yang lain). */}
+                  {bolehDiwaypiDan2FA(userData) && <><Profil2FA /><ProfilIntegrasi /></>}
                 </div>
               </Kartu>
             </div>
