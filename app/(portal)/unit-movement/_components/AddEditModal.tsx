@@ -194,8 +194,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
           )}
 
           <button type="button" onClick={handleSave} disabled={saving}
-            className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-            style={{background:'linear-gradient(135deg,#f59e0b,#d97706)',boxShadow:'0 4px 14px rgba(245,158,11,0.35)'}}>
+            className="tombol-utama w-full py-3.5 rounded-kontrol text-sm font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed">
             {saving?'⏳ Menyimpan...':isEdit?'💾 Simpan Perubahan':'➕ Tambah Log'}
           </button>
         </div>

@@ -67,6 +67,9 @@ const CRON_PREFIX = '/api/cron/';
 // Pemantau eksternal (JARVIS Sentinel) memanggil dengan MONITOR_TOKEN, bukan sesi pengguna -
 // route-nya memeriksa token sendiri (lib/monitor.ts). Jalur persis, bukan awalan.
 const MONITOR_PATH = '/api/monitor';
+// DIWAYPI (asisten desktop pemilik akun) memanggil dengan token pribadinya, bukan cookie - route-nya
+// memeriksa token sendiri (lib/token-integrasi.ts) dan hanya menjalankan aksi dari daftar tetap.
+const INTEGRASI_DIWAYPI_PATH = '/api/integrasi/diwaypi';
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -78,6 +81,7 @@ export function proxy(request: NextRequest) {
   if (!pathname.startsWith('/api/') && BERKAS_STATIS.test(pathname)) return NextResponse.next();
   if (pathname.startsWith(CRON_PREFIX)) return NextResponse.next();
   if (pathname === MONITOR_PATH) return NextResponse.next();
+  if (pathname === INTEGRASI_DIWAYPI_PATH) return NextResponse.next();
 
   const session = request.cookies.get('ivp_session');
   if (!session?.value) {

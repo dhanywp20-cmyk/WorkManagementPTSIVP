@@ -22,16 +22,30 @@ export interface JenisPustaka { v: string; l: string; ikon: string; kelompok: Ke
 const MEREK: Bidang = { k: 'merek', l: 'Merek', tipe: 'teks', kolom: true };
 const CATATAN: Bidang = { k: 'catatan', l: 'Catatan', tipe: 'panjang' };
 const RESOLUSI: Bidang = { k: 'resolusi', l: 'Resolusi', tipe: 'pilih', kolom: true, opsi: [
-  { v: 'WXGA', l: 'WXGA 1280×800' }, { v: 'FHD', l: 'Full HD 1920×1080' }, { v: 'WUXGA', l: 'WUXGA 1920×1200' }, { v: '4K', l: '4K UHD 3840×2160' },
+  { v: 'XGA', l: 'XGA 1024×768 (4:3)' }, { v: 'WXGA', l: 'WXGA 1280×800' }, { v: 'FHD', l: 'Full HD 1920×1080' }, { v: 'WUXGA', l: 'WUXGA 1920×1200' }, { v: '4K', l: '4K UHD 3840×2160' },
+  { v: '4KDCI', l: 'Native 4K 4096×2160 (17:9)' },
 ] };
 
 export const JENIS_PUSTAKA: JenisPustaka[] = [
   { v: 'proyektor', l: 'Proyektor', ikon: '📽', kelompok: 'produk', ket: 'Dipakai Kalkulator AV › Proyektor (throw, lens shift, lumen).', bidang: [
     MEREK, { k: 'lumen', l: 'Lumen', tipe: 'angka', satuan: 'lm', min: 100, maks: 100000, wajib: true, kolom: true }, RESOLUSI,
-    { k: 'throwMin', l: 'Throw ratio min', tipe: 'angka', min: 0.1, maks: 20, wajib: true, kolom: true },
-    { k: 'throwMaks', l: 'Throw ratio maks', tipe: 'angka', min: 0.1, maks: 20, wajib: true, kolom: true },
+    //  Throw ratio & b dari KALKULATOR pabrikan (rumus jarak lensa), bukan angka brosur: brosur Panasonic PT-MZ882
+    //  1,61-2,76, kalkulatornya 1,639-2,788 - selisih ±2% itu sendiri sudah beberapa cm di gambar 3 m.
+    { k: 'throwMin', l: 'Throw ratio min (wide)', tipe: 'angka', min: 0.1, maks: 20, wajib: true, kolom: true },
+    { k: 'throwMaks', l: 'Throw ratio maks (tele)', tipe: 'angka', min: 0.1, maks: 20, wajib: true, kolom: true },
+    //  Lens shift: 0 = tidak bisa digeser; kosong = tidak diketahui (tidak dibatasi).
     { k: 'shiftAtas', l: 'Lens shift atas', tipe: 'angka', satuan: '%', min: 0, maks: 150 },
     { k: 'shiftBawah', l: 'Lens shift bawah', tipe: 'angka', satuan: '%', min: 0, maks: 150 },
+    { k: 'shiftHorizontal', l: 'Lens shift kiri-kanan', tipe: 'angka', satuan: '%', min: 0, maks: 100 },
+    //  Daerah shift sebenarnya (segi delapan Panasonic, dsb.): shift vertikal & horizontal penuh tidak bisa bersamaan.
+    { k: 'poligonShift', l: 'Daerah lens shift (poligon x,y; ...)', tipe: 'teks' },
+    //  Proyektor tanpa lens shift (portabel / short throw): pusat gambar selalu sekian % tinggi gambar di atas lensa.
+    { k: 'offsetTetap', l: 'Offset gambar tetap (tanpa lens shift)', tipe: 'angka', satuan: '%', min: -50, maks: 150 },
+    //  Rumus jarak lempar datasheet lensa: L = TR x lebar gambar - b (mis. Panasonic: L = 0,566 x SW - 0,082).
+    //  Kalkulator Panasonic memakai b sendiri di ujung wide & tele.
+    { k: 'koreksiJarak', l: 'Koreksi jarak b wide (L = TR × lebar − b)', tipe: 'angka', satuan: 'm', min: -1, maks: 1 },
+    { k: 'koreksiJarakTele', l: 'Koreksi jarak b tele (kosong = sama dengan wide)', tipe: 'angka', satuan: 'm', min: -1, maks: 1 },
+    { k: 'kontras', l: 'Kontras asli (full on / full off)', tipe: 'angka', satuan: ': 1', min: 100, maks: 100000000 },
     { k: 'sumber', l: 'Sumber cahaya', tipe: 'pilih', opsi: [{ v: 'laser', l: 'Laser' }, { v: 'lampu', l: 'Lampu' }, { v: 'led', l: 'LED' }] },
     { k: 'watt', l: 'Daya', tipe: 'angka', satuan: 'W', min: 0, maks: 10000 }, CATATAN] },
   { v: 'speaker', l: 'Speaker', ikon: '🔊', kelompok: 'produk', ket: 'Dipakai Kalkulator AV › Audio (sensitivitas, sudut, tap line).', bidang: [
@@ -128,6 +142,7 @@ export function periksaEntri(jenis: unknown, nama: unknown, data: unknown):
       if (!b.opsi?.some(o => o.v === s)) return { ok: false, alasan: `${b.l} tidak sah.` };
       hasil[b.k] = s;
     } else {
+      if (b.k === 'poligonShift' && !bacaPoligonShift(String(v))) return { ok: false, alasan: `${b.l}: tulis 3-24 titik "x,y; x,y; ..." (satuan lebar & tinggi gambar).` };
       hasil[b.k] = String(v).slice(0, b.tipe === 'panjang' ? MAKS_PANJANG : MAKS_TEKS);
     }
   }
@@ -139,3 +154,19 @@ export const angkaDari = (e: EntriPustaka, k: string, cadangan = 0) => (typeof e
 export const teksDari = (e: EntriPustaka, k: string) => (e.data[k] === undefined ? '' : String(e.data[k]));
 /** Tap pertama dari "3/6/12" atau "7,5/15/30" (W) - dipisah garis miring/titik koma/spasi; koma = desimal. */
 export const tapPertama = (e: EntriPustaka) => teksDari(e, 'tap').split(/[/; ]+/).map(x => Number(x.replace(',', '.'))).find(x => x > 0) ?? 0;
+
+/**
+ * Daerah lens shift sebagai poligon, cara kalkulator Panasonic (LensShiftVp): titik-titik tepi daerah yang boleh
+ * ditempati GAMBAR, dalam satuan lebar (x) & tinggi (y) gambar, gambar di tengah sumbu lensa = kotak ±0,5. Contoh
+ * PT-MZ882 + lensa standar: "-0.5,1.17; 0.5,1.17; 0.85,0.5; 0.85,-0.5; 0.5,-1.17; -0.5,-1.17; -0.85,-0.5; -0.85,0.5".
+ * Diterima teks "x,y; x,y; ..." (Pustaka) atau larik angka datar [x0, y0, x1, y1, ...] (desain / template).
+ * Kembali larik datar 3-24 titik dengan |angka| <= 3, atau undefined bila tidak sah.
+ */
+export function bacaPoligonShift(v: unknown): number[] | undefined {
+  const angka = typeof v === 'string'
+    ? v.split(';').map(s => s.trim()).filter(Boolean).flatMap(s => s.split(',').map(x => Number(x.trim())))
+    : Array.isArray(v) ? v : null;
+  if (!angka || angka.length % 2 || angka.length < 6 || angka.length > 48) return undefined;
+  if (!angka.every(x => typeof x === 'number' && Number.isFinite(x) && Math.abs(x) <= 3)) return undefined;
+  return angka as number[];
+}

@@ -18,7 +18,7 @@ export interface DialogFormSoalProps {
 export function DialogFormSoal({ handleAddManual, materials, modeGrup, newQ, setNewQ, tutupTambahManual, viewMaterials }: DialogFormSoalProps) {
   return (
     <>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/40 flex items-center justify-center z-1000 p-4">
+      <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-1000 p-4">
         <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
           <h3 className="font-bold text-slate-800 mb-1 text-base sticky top-0 z-10 bg-white/95 backdrop-blur-xs -mx-5 px-5 py-2.5 border-b border-slate-100">
             {modeGrup ? '➕ Tambah Soal ke Grup' : '➕ Tambah Soal Manual'}

@@ -71,7 +71,7 @@ export function gambarTeksCahaya(m: Mesin, pos: number[], uv: number[], blok: Bl
 /**
  * Pola grid di seluruh gambar satu proyektor (uv 0..1): kolom x baris kotak (bawaan 16 x 9, inti/gridProyektor.ts), bingkai
  * tebal, dua diagonal & lingkaran pusat - warna proyektor itu. Campuran biasa (bukan aditif) supaya garis
- * tetap terlihat di permukaan putih. Tampil dari dua sisi (pola tanpa tulisan, tidak terbaca terbalik).
+ * tetap terlihat di permukaan putih. Hanya sisi yang menghadap lensa (ikut tembus bersama dinding yang disembunyikan).
  */
 export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T.Color, kolom = 16, baris = 9) {
   const { THREE, grupBantu } = m;
@@ -96,7 +96,7 @@ export function gambarGridCahaya(m: Mesin, pos: number[], uv: number[], warna: T
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
   const pola = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({
-    map: tx, transparent: true, depthWrite: false, toneMapped: false, side: THREE.DoubleSide,
+    map: tx, transparent: true, depthWrite: false, toneMapped: false, side: THREE.FrontSide,
     polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
   }));
   pola.renderOrder = 3; grupBantu.add(pola);

@@ -21,7 +21,7 @@ export function ModalPengaturanKPI({ kpiSettings, saveKpiSettings, setKpiSetting
         <div role="dialog" aria-modal="true" aria-label="Pengaturan KPI" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowSettings(false); }}>
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-white rounded-kartu shadow-modal w-full max-w-md overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <div>
                 <div className="font-bold text-slate-800 text-base"><IkonTeks nama="⚙" />Pengaturan KPI</div>
@@ -89,8 +89,7 @@ export function ModalPengaturanKPI({ kpiSettings, saveKpiSettings, setKpiSetting
                 Reset Default
               </button>
               <button onClick={() => { saveKpiSettings(kpiSettings); setShowSettings(false); }}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-white transition-colors"
-                style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+                className="tombol-utama px-4 py-2 rounded-kontrol text-xs font-bold  transition-colors">
                 ✓ Simpan & Tutup
               </button>
             </div>

@@ -6,7 +6,7 @@
  */
 import { useState } from 'react';
 import { bukaCetak, esc, type Lembar, namaBerkas, unduhKanvasPNG, unduhLembarPNG, unduhUrl } from '../../bersama/cetak';
-import { cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, throwRatioDari, tipeSpeakerDari } from '../inti';
+import { berkasLineArray, cekRuangGerak, denahDari, dxfDenah, skalaDenah, svgDenah, formatPanjang, penggarisSah, rincianGaris, type Benda, bomDesain, cakupanSpeakerPlafon, checklistDariBom, daftarBenda, jangkauanDari, kontrasProyektor, lumenDari, lumenLampu, luxBidangKerja, modulLA, pikselBlending, rekapKabel, ruangDari, sambunganKe, sebaranSpeaker, sebaranVSpeaker, sinarProyektor, SPEK_LAMPU, sudutLampuDari, svgElevasiRak, telingaPenonton, throwRatioDari, tipeSpeakerDari } from '../inti';
 import { denganLegendaSamping, gambarLegendaBaris, htmlLegendaKabel } from '../panel/LegendaKabel';
 import { f } from '../../bersama/ui';
 import { getSession } from '@/lib/auth';
@@ -103,6 +103,13 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
   const lembar3D = (): Lembar => {
     const foto = TAMPAK.map(t => ({ ...t, url: fotoKanvas(t.arah, 1.5)?.toDataURL('image/jpeg', 0.86) ?? '' }));
     const fm = (n: number, d = 2) => f(n, d);
+    /** Line array: jangkauan nyata sumbu modul ke telinga penonton (hitungan yang sama dengan kanvas & panel). */
+    const jangkauLA = (b: Benda) => {
+      const k = kotakRuang[ruangDari(ruang, b.x)] ?? kotakRuang[0];
+      const bs = berkasLineArray(b, { x0: k.x0, x1: k.x0 + k.p, z0: 0, z1: k.l, t: k.t, telinga: telingaPenonton(benda, b) });
+      const d = bs.filter(x => x.jarak !== null && !x.dinding).map(x => x.jarak!), n = bs.filter(x => x.dinding).length;
+      return (d.length ? `menjangkau ${fm(Math.min(...d), 1)}–${fm(Math.max(...d), 1)} m` : 'sumbu belum turun ke penonton') + (n ? ` · ${n} modul ke dinding/plafon` : '');
+    };
     //  Daftar perangkat: dikelompokkan per kategori, benda bernama sama dijumlah (inti/bom.ts, sama dengan BOM Excel).
     const baris = daftarBenda(benda);
     const jumlahItem = baris.reduce((n, r) => n + r.jumlah, 0);
@@ -153,12 +160,12 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
             sn.layar?.nama ?? 'Dinding / permukaan', `${fm(sn.jarak)} m`, `${fm(sn.lebar)} × ${fm(sn.tinggi)} m`, `${fm(throwRatioDari(p))} : 1`, sn.trPas ? `${fm(sn.trPas)} : 1` : '—']),
         }, {
           judul: `Kecerahan & kontras proyektor · target ${targetKontras}:1`, jenis: 'tabel' as const,
-          kepala: ['Proyektor', 'Lumen', 'Cahaya di gambar', 'Cahaya lampu di gambar', 'Kontras'],
-          rataKanan: [1, 2, 3, 4],
+          kepala: ['Proyektor', 'Lumen', 'Cahaya di gambar', 'Luminance', 'Cahaya lampu di gambar', 'Kontras'],
+          rataKanan: [1, 2, 3, 4, 5],
           isi: proyektor.map(({ p }) => {
             const kp = kontrasProyektor(p, benda, ruang, targetKontras);
-            return [p.nama, lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}`,
-              `${fm(kp.kontras, 1)} : 1 ${kp.cukup ? '✓' : `✗ (perlu ±${kp.lumenPerlu.toLocaleString('id-ID')} lm)`}`];
+            return [p.nama, lumenDari(p).toLocaleString('id-ID'), `${fm(kp.luxGambar, 0)} lux`, `${fm(kp.luminance, 0)} cd/m² (gain ${fm(kp.gain, 2)})`, `${fm(kp.cahaya.total, 0)} lux${kp.cahaya.dariLampu ? '' : ' (perkiraan)'}`,
+              `${fm(kp.kontras, 1)} : 1 ${kp.cukup ? '✓' : `✗ (${Number.isFinite(kp.lumenPerlu) ? `perlu ±${kp.lumenPerlu.toLocaleString('id-ID')} lm` : 'melebihi kontras asli proyektor'})`}`];
           }),
         }] : []),
         ...(tampilBlending && infoBlending.length ? [{
@@ -186,7 +193,8 @@ export function useEkspor(K: KeadaanDesain, dep: Pick<ReturnType<typeof useKamer
           isi: speaker.map(b => [b.nama, b.jenis === 'speaker-plafon' ? 'Speaker plafon' : `${NAMA_TIPE[tipeSpeakerDari(b)] ?? 'Speaker'}${tipeSpeakerDari(b) === 'linearray' ? ` · ${modulLA(b)} modul` : ''}`,
             b.jenis === 'speaker-plafon' ? `Plafon ${fm(b.elev)} m` : `${b.gantung ? 'Gantung' : 'Dinding / stand'} · ${fm(b.elev)} m`,
             `${fm(sebaranSpeaker(b), 0)}° × ${fm(sebaranVSpeaker(b), 0)}°${tipeSpeakerDari(b) === 'linearray' && b.jenis === 'speaker' ? ' / modul' : ''}`,
-            b.jenis === 'speaker-plafon' ? `radius ±${fm(cakupanSpeakerPlafon(b), 1)} m di tinggi dengar` : `±${fm(jangkauanDari(b), 0)} m`]),
+            b.jenis === 'speaker-plafon' ? `radius ±${fm(cakupanSpeakerPlafon(b), 1)} m di tinggi dengar`
+              : tipeSpeakerDari(b) === 'linearray' ? jangkauLA(b) : `±${fm(jangkauanDari(b), 0)} m`]),
         }] : []),
       ],
       catatan: 'Aturan 4-6-8: jarak penonton terjauh maksimal 4, 6, atau 8 kali tinggi gambar untuk konten detail, analitis, atau umum. Ukuran produk mengikuti katalog bawaan; sesuaikan dengan datasheet sebelum penawaran.',

@@ -1,5 +1,5 @@
 import {
-  ALUR_STATUS_PTS, alasanBelumBisa, bolehCatatanSaja, statusBerikutnya, updateSah, wajibCatatan,
+  ALUR_STATUS_PTS, alasanBelumBisa, bolehCatatanSaja, jejakProgres, statusBerikutnya, updateSah, wajibCatatan,
 } from '@/app/(portal)/ticketing/_components/alur-status';
 
 // Aturan pindah status di panel "Update Status" Ticketing (Team PTS).
@@ -47,6 +47,20 @@ cek(!wajibCatatan('Pending', 'Call') && !wajibCatatan('Pending', 'Onsite') && !w
 // ── Status asing tidak bocor ──────────────────────────────────────────────
 cek(!updateSah('In Progress', 'Warranty'), 'Status Team Services tidak sah di alur PTS');
 cek(ALUR_STATUS_PTS.length === 6, 'Daftar status PTS tetap 6');
+
+// ── Garis progres detail ticket: hanya langkah yang benar-benar dilalui yang dicentang ──
+const jejak = (status: string, log: string[]) => jejakProgres(status, log.map(new_status => ({ new_status }))).map(j => `${j.langkah}:${j.keadaan}`).join(' ');
+//  Kasus pemilik: Call lalu langsung Solved - dulu Onsite & In Progress ikut dicentang.
+cek(jejak('Solved', ['Call', 'Solved']) === 'Pending:selesai Call:selesai Onsite:dilewati In Progress:dilewati Solved:aktif',
+  `Call -> Solved: Onsite & In Progress dilewati (${jejak('Solved', ['Call', 'Solved'])})`);
+cek(jejak('Solved', ['Call', 'Onsite', 'In Progress', 'Solved']).split(' ').filter(x => x.endsWith(':selesai')).length === 4, 'Jalur lengkap: 4 langkah selesai, Solved aktif');
+cek(jejak('Solved', ['Solved']) === 'Pending:selesai Call:dilewati Onsite:dilewati In Progress:dilewati Solved:aktif', 'Pending langsung Solved: tiga langkah penanganan dilewati');
+cek(jejak('Onsite', ['Onsite']) === 'Pending:selesai Call:dilewati Onsite:aktif In Progress:belum Solved:belum', 'Langsung Onsite: Call dilewati, sisanya belum');
+//  Dibuka ulang sesudah Solved: posisi mengikuti status sekarang, bukan langkah terjauh di riwayat.
+cek(jejak('Call', ['Call', 'Solved', 'Call']) === 'Pending:selesai Call:aktif Onsite:belum In Progress:belum Solved:belum', 'Dibuka ulang ke Call: Solved kembali "belum"');
+//  Status di luar garis (Pending Action, Overdue): aktif = langkah terjauh yang pernah dicapai.
+cek(jejak('Pending Action', ['Call', 'In Progress', 'Pending Action']) === 'Pending:selesai Call:selesai Onsite:dilewati In Progress:aktif Solved:belum', 'Pending Action: aktif di langkah terjauh (In Progress)');
+cek(jejak('Pending', []) === 'Pending:aktif Call:belum Onsite:belum In Progress:belum Solved:belum', 'Ticket baru: Pending aktif');
 
 if (gagal) { console.error(`\n${gagal} cek gagal`); process.exit(1); }
 console.log('\nSemua cek lolos');

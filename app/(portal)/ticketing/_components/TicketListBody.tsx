@@ -220,7 +220,7 @@ export function TicketListBody({
               <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Product</th>
               <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">SN Unit</th>
               <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Issue</th>
-              <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Assigned</th>
+              <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Ditugaskan ke</th>
               <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Status</th>
               <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Sales</th>
               <th className="px-2 py-3 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">Action</th>
@@ -407,7 +407,7 @@ export function TicketListBody({
                   return (
                     <button key={page} onClick={() => setCurrentPage(page)}
                       className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${currentPage === page ? 'text-white border-0' : 'border border-gray-200 text-gray-500 hover:bg-gray-50'}`}
-                      style={currentPage === page ? { background: 'linear-gradient(135deg,#dc2626,#b91c1c)' } : {}}>
+                      style={currentPage === page ? { background: 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))' } : {}}>
                       {page}
                     </button>
                   );

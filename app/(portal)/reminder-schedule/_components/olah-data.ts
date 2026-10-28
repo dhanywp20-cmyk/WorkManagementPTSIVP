@@ -22,10 +22,11 @@ export function kelompokkanReminder<T extends { batch_id?: string | null; projec
 
 export interface IrisPie { label: string; value: number; color: string }
 
-function jadiPie(map: Record<string, number>, urut: boolean, batas?: number): IrisPie[] {
+//  Tanpa batas jumlah irisan: semua nilai tampil (legenda MiniPieChart digulir), supaya angka total
+//  di tengah donat sama dengan jumlah jadwal.
+function jadiPie(map: Record<string, number>, urut: boolean): IrisPie[] {
   let baris = Object.entries(map);
   if (urut) baris = baris.sort((a, b) => b[1] - a[1]);
-  if (batas) baris = baris.slice(0, batas);
   return baris.map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
 }
 /** Hitung per kunci; `semua` = nilai kosong ikut dihitung (kategori), selain itu dilewati. */
@@ -37,9 +38,9 @@ function hitung<T>(daftar: T[], kunci: (r: T) => string | null | undefined, semu
 
 /** Per kategori (urutan kemunculan). */
 export const pieKategori = (d: { category: string }[]) => jadiPie(hitung(d, r => r.category, true), false);
-/** Per divisi sales, 8 terbanyak. */
-export const pieDivisiSales = (d: { sales_division?: string | null }[]) => jadiPie(hitung(d, r => r.sales_division), true, 8);
-/** Per anggota Team PTS yang ditugaskan, semua. */
+/** Per divisi sales, terbanyak dulu. */
+export const pieDivisiSales = (d: { sales_division?: string | null }[]) => jadiPie(hitung(d, r => r.sales_division), true);
+/** Per handler yang ditugaskan (Team PTS IVP & MVI), semua. */
 export const pieTeamPts = (d: { assign_name?: string | null }[]) => jadiPie(hitung(d, r => r.assign_name), true);
-/** Per produk, 12 terbanyak. */
-export const pieProduk = (d: { product?: string | null }[]) => jadiPie(hitung(d, r => r.product), true, 12);
+/** Per produk, terbanyak dulu. */
+export const pieProduk = (d: { product?: string | null }[]) => jadiPie(hitung(d, r => r.product), true);

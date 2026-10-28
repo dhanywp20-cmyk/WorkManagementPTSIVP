@@ -1,7 +1,7 @@
 'use client';
 
 /** ModalAlihkanSesi - dipecah dari app/(portal)/learning-center/_components/SessionsPage.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { ModalPortal } from '@/components/shared';
+import { Modal, TombolModal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { User, QuizSession } from '../shared';
 
@@ -27,24 +27,14 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
   return (
     <>
       {showReassign && reassignSource && (
-      <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-start justify-center p-4 overflow-y-auto"
-          style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(6px)' }}
-          onClick={e => { if (e.target === e.currentTarget) setShowReassign(false); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-6 border border-slate-200 overflow-hidden">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between"
-              style={{ background: 'linear-gradient(135deg,#ecfdf5,#d1fae5)' }}>
-              <div>
-                <div className="font-bold text-slate-800 text-base"><IkonTeks nama="📤" />Assign Ulang Quiz</div>
-                <div className="text-xs text-slate-500 mt-0.5 truncate max-w-xs">Soal dari: <span className="font-semibold text-emerald-700">{reassignSource.session_name}</span></div>
-              </div>
-              <button aria-label="Tutup" onClick={() => setShowReassign(false)}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-white/80 text-lg leading-none">×</button>
-            </div>
-
+      <Modal buka onTutup={() => { if (!reassigning) setShowReassign(false); }} judul="Tugaskan Ulang Quiz" tutupDiLuar={false}
+        keterangan={<>Soal dari: <span className="font-semibold text-slate-700">{reassignSource.session_name}</span></>}
+        footer={<>
+          <TombolModal onClick={() => setShowReassign(false)} disabled={reassigning}>Batal</TombolModal>
+          <TombolModal jenis="utama" onClick={() => { void handleReassign(); }} disabled={reassigning}>{reassigning ? 'Menyimpan...' : 'Tugaskan Sekarang'}</TombolModal>
+        </>}>
             {/* Info materi — read-only */}
-            <div className="mx-6 mt-4 px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3 flex-wrap">
+            <div className="px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3 flex-wrap">
               <span className="text-sm"><Ikon nama="📚" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-700 truncate">{reassignSource.materi_name}</p>
@@ -53,7 +43,7 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
               <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 shrink-0">Reuse ♻️</span>
             </div>
 
-            <div className="px-6 py-4 space-y-4">
+            <div className="pt-4 space-y-4">
               {/* Nama Sesi */}
               <div>
                 <label htmlFor="f-learning-center-components-sessionspage-9" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Sesi *</label>
@@ -242,23 +232,7 @@ export function ModalAlihkanSesi({ cariAnggotaUlang, cariDivisiUlang, handleReas
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="flex gap-3 px-6 pb-5 pt-1 justify-end border-t border-slate-100">
-              <button onClick={() => setShowReassign(false)} disabled={reassigning}
-                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition-all disabled:opacity-50">
-                Batal
-              </button>
-              <button onClick={handleReassign} disabled={reassigning}
-                className="px-5 py-2.5 text-white text-sm font-bold rounded-xl shadow-sm transition-all disabled:opacity-60 flex items-center gap-2"
-                style={{ background: 'linear-gradient(135deg,#059669,#10b981)' }}>
-                {reassigning
-                  ? <><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Menyimpan...</>
-                  : <>📤 Assign Sekarang</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      </ModalPortal>
+      </Modal>
       )}
     </>
   );

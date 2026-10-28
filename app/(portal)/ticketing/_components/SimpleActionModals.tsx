@@ -1,16 +1,21 @@
 'use client';
-import { ModalPortal } from '@/components/shared';
+import { Modal, TombolModal, ModalTolak, PilihPenugasan } from '@/components/shared';
 import type { Ticket, TeamMember } from './shared';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 /**
  * Modal-modal kecil & mandiri dari app/ticketing/page.tsx - masing-masing
  * cuma butuh satu ticket target + beberapa field lokal + satu handler
- * konfirmasi. Dipindah ke sini apa adanya (JSX identik, tanpa mengubah
- * logika) sebagai bagian pemecahan page.tsx yang tadinya 4.400+ baris
- * menjadi satu berkas. Semua state & handler TETAP di page.tsx - komponen
- * di sini murni presentasional, dioper lewat props.
+ * konfirmasi. Semua state & handler TETAP di page.tsx - komponen di sini
+ * murni presentasional, dioper lewat props.
+ *
+ * Kerangka: Modal bersama (components/shared/Modal.tsx) & pola persetujuan bersama
+ * (components/shared/Persetujuan.tsx) - dulu tiap popup di sini punya kepala bergradasi
+ * & warna sendiri (oranye, kuning, merah muda, merah), berbeda dengan menu lain.
  */
+
+const kelasIsian = 'w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-300';
+const kotakInfo = 'rounded-kontrol border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800';
+const subjudul = (t: Ticket) => `${t.project_name} · ${t.issue_case}`;
 
 // ── OVERDUE SETTING ──
 
@@ -27,21 +32,38 @@ export function OverdueSettingModal({
   onHapusSetting: () => void;
 }) {
   return (
-    <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-4">
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
-          <div className="flex items-center gap-3 mb-4"><span className="text-3xl"><Ikon nama="⏰" ukuran="1em" className="inline-block align-[-0.12em]" /></span><div><h3 className="text-lg font-bold text-gray-800">Overdue Setting</h3><p className="text-xs text-gray-500 font-medium">{overdueTargetTicket.project_name}</p><p className="text-xs text-gray-500">{overdueTargetTicket.issue_case}</p></div></div>
-          <p className="text-xs text-orange-700 rounded-lg p-2 mb-4" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)" }}><IkonTeks nama="⚠" />Setting ini hanya terlihat oleh admin Anda. Handler akan mendapat notifikasi merah ketika ticket overdue. Default otomatis: ticket overdue setelah 48 jam jika tidak di-set manual.</p>
-          <div className="space-y-4"><div><label className="block text-sm font-bold mb-1 text-gray-700"><IkonTeks nama="⏱" />Overdue Setelah Berapa Jam?</label><div className="flex items-center gap-3"><input aria-label="⏱️ Overdue Setelah Berapa Jam?" type="number" min="1" value={overdueForm.due_hours} onChange={(e) => setOverdueForm({ due_hours: e.target.value })} className="flex-1 rounded-lg px-3 py-2.5 text-lg font-bold text-center focus:ring-2 focus:ring-orange-500" style={{ border: "2px solid rgba(245,158,11,0.3)", background: "white" }} /><span className="text-gray-600 font-semibold text-sm">jam</span></div><div className="flex gap-2 mt-2">{[24, 48, 72, 96].map((h) => (<button key={h} type="button" onClick={() => setOverdueForm({ due_hours: String(h) })} className={`flex-1 py-1 rounded-lg text-xs font-bold border transition-all ${overdueForm.due_hours === String(h) ? "bg-orange-500 text-white border-orange-500" : "bg-orange-50 text-orange-700 border-orange-300 hover:bg-orange-100"}`}>{h}j{h === 48 ? " (default)" : ""}</button>))}</div><p className="text-xs text-gray-500 mt-2"><IkonTeks nama="⏰" />Dihitung dari waktu ticket pertama kali dibuat</p></div><div className="grid grid-cols-2 gap-3 pt-2"><button onClick={saveOverdueSetting} className="bg-linear-to-r from-orange-500 to-orange-700 text-white py-2.5 rounded-xl font-bold hover:from-orange-600 hover:to-orange-800 transition-all"><IkonTeks nama="💾" />Simpan</button><button onClick={onClose} className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all">✕ Batal</button></div>{punyaSettingTersimpan && (<button onClick={onHapusSetting} className="w-full bg-red-100 text-red-700 py-2 rounded-xl font-bold hover:bg-red-200 transition-all text-sm border border-red-300"><IkonTeks nama="🗑" />Hapus Setting Overdue</button>)}</div>
+    <Modal buka onTutup={onClose} judul="Overdue Setting" keterangan={subjudul(overdueTargetTicket)} tutupDiLuar={false}
+      footer={<>
+        {punyaSettingTersimpan && <TombolModal jenis="bahaya" onClick={onHapusSetting} className="mr-auto">Hapus Setting</TombolModal>}
+        <TombolModal onClick={onClose}>Batal</TombolModal>
+        <TombolModal jenis="utama" onClick={saveOverdueSetting}>Simpan</TombolModal>
+      </>}>
+      <div className="space-y-4">
+        <p className={kotakInfo}>Setting ini hanya terlihat oleh admin. Handler mendapat notifikasi merah ketika ticket overdue. Default: overdue setelah 48 jam bila tidak di-set manual.</p>
+        <div>
+          <label htmlFor="f-ticketing-overdue-jam" className="block text-xs font-bold text-slate-700 mb-1.5">Overdue setelah berapa jam?</label>
+          <div className="flex items-center gap-3">
+            <input id="f-ticketing-overdue-jam" type="number" min="1" value={overdueForm.due_hours} onChange={(e) => setOverdueForm({ due_hours: e.target.value })}
+              className={`${kelasIsian} text-center font-bold`} />
+            <span className="text-slate-600 font-semibold text-sm">jam</span>
+          </div>
+          <div className="flex gap-2 mt-2">
+            {[24, 48, 72, 96].map((h) => (
+              <button key={h} type="button" onClick={() => setOverdueForm({ due_hours: String(h) })}
+                className={`flex-1 py-1 rounded-kontrol text-xs font-bold border transition-all ${overdueForm.due_hours === String(h) ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'}`}>
+                {h}j{h === 48 ? ' (default)' : ''}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-slate-500 mt-2">Dihitung dari waktu ticket pertama kali dibuat.</p>
         </div>
       </div>
-    </ModalPortal>
+    </Modal>
   );
 }
 
 // ── RE-OPEN TICKET (PTS) ──
-// Z.overlayTop — bisa dibuka dari daftar MAUPUN dari dalam popup detail
-// (Z.overlay), jadi harus selapis di atasnya.
+// Lapisan atas - bisa dibuka dari daftar MAUPUN dari dalam popup detail.
 
 export function ReopenPTSModal({
   reopenTargetTicket, reopenAssignee, setReopenAssignee, reopenNotes, setReopenNotes,
@@ -58,21 +80,27 @@ export function ReopenPTSModal({
   onClose: () => void;
 }) {
   return (
-    <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4">
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(245,158,11,0.5)" }}>
-          <div className="flex items-center gap-3 mb-5"><span className="text-3xl"><Ikon nama="🔓" ukuran="1em" className="inline-block align-[-0.12em]" /></span><div><h3 className="text-lg font-bold text-gray-800">Re-open Ticket</h3><p className="text-xs text-gray-500">{reopenTargetTicket.project_name} · {reopenTargetTicket.issue_case}</p></div></div>
-          <div className="rounded-xl p-3 mb-4 text-xs" style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", color: "#b45309" }}><IkonTeks nama="⚠" />Status akan berubah ke <strong>Pending</strong> dan activity log baru ditambahkan otomatis.</div>
-          <div className="space-y-4"><div><label htmlFor="f-ticketing-components-simpleactionmodals-1" className="block text-sm font-bold mb-1 text-gray-700">Assign ke Handler *</label><select id="f-ticketing-components-simpleactionmodals-1" value={reopenAssignee} onChange={(e) => setReopenAssignee(e.target.value)} className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}><option value="">— Pilih Handler —</option>{teamPTSMembers.map((m) => (<option key={m.id} value={m.name}>{m.name}</option>))}</select></div><div><label htmlFor="f-ticketing-components-simpleactionmodals-2" className="block text-sm font-bold mb-1 text-gray-700">Alasan (opsional)</label><textarea id="f-ticketing-components-simpleactionmodals-2" value={reopenNotes} onChange={(e) => setReopenNotes(e.target.value)} placeholder="Masalah muncul kembali..." rows={3} className="w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all focus:ring-2 focus:ring-red-500/40 resize-none" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} /></div><div className="grid grid-cols-2 gap-3"><button onClick={reopenTicket} disabled={uploading || !reopenAssignee} className="bg-linear-to-r from-amber-500 to-amber-700 text-white py-2.5 rounded-xl font-bold hover:from-amber-600 hover:to-amber-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{uploading ? "⏳..." : "🔓 Re-open"}</button><button onClick={onClose} className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all">Batal</button></div></div>
+    <Modal buka onTutup={onClose} judul="Re-open Ticket" keterangan={subjudul(reopenTargetTicket)} lapisan="atas" tutupDiLuar={false}
+      footer={<>
+        <TombolModal onClick={onClose} disabled={uploading}>Batal</TombolModal>
+        <TombolModal jenis="utama" onClick={reopenTicket} disabled={uploading || !reopenAssignee}>{uploading ? 'Memproses...' : 'Re-open'}</TombolModal>
+      </>}>
+      <div className="space-y-4">
+        <p className={kotakInfo}>Status akan berubah ke <strong>Pending</strong> dan activity log baru ditambahkan otomatis.</p>
+        <PilihPenugasan nilai={reopenAssignee} onUbah={setReopenAssignee} kosong="- Pilih handler -"
+          pilihan={teamPTSMembers.map(m => ({ v: m.name, l: m.name }))} />
+        <div>
+          <label htmlFor="f-ticketing-reopen-alasan" className="block text-xs font-bold text-slate-700 mb-1.5">Alasan (opsional)</label>
+          <textarea id="f-ticketing-reopen-alasan" value={reopenNotes} onChange={(e) => setReopenNotes(e.target.value)} placeholder="Masalah muncul kembali..." rows={3}
+            className={`${kelasIsian} resize-none`} />
         </div>
       </div>
-    </ModalPortal>
+    </Modal>
   );
 }
 
 // ── RE-OPEN SERVICES ──
-// C2: konfirmasi Reopen Services - lebih sederhana dari modal PTS di atas
-// (tidak perlu pilih assignee, sisi Services memang tidak punya konsep itu).
+// Lebih sederhana dari modal PTS di atas (sisi Services tidak punya konsep petugas).
 
 export function ReopenServicesModal({
   reopenServicesTarget, reopeningServices, reopenServicesTicket, onClose,
@@ -83,23 +111,17 @@ export function ReopenServicesModal({
   onClose: () => void;
 }) {
   return (
-    <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4"
-        onClick={(e) => { if (e.target === e.currentTarget && !reopeningServices) onClose(); }}>
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(219,39,119,0.5)" }}>
-          <div className="flex items-center gap-3 mb-5"><span className="text-3xl"><Ikon nama="🔓" ukuran="1em" className="inline-block align-[-0.12em]" /></span><div><h3 className="text-lg font-bold text-gray-800">Re-open Services</h3><p className="text-xs text-gray-500">{reopenServicesTarget.project_name} · {reopenServicesTarget.issue_case}</p></div></div>
-          <div className="rounded-xl p-3 mb-5 text-xs" style={{ background: "rgba(219,39,119,0.1)", border: "1px solid rgba(219,39,119,0.2)", color: "#be185d" }}><IkonTeks nama="⚠" />Status Services akan kembali ke <strong>Pending</strong>. Status utama PTS tidak ikut berubah.</div>
-          <div className="grid grid-cols-2 gap-3">
-            <button onClick={reopenServicesTicket} disabled={reopeningServices} className="bg-linear-to-r from-pink-600 to-rose-700 text-white py-2.5 rounded-xl font-bold hover:from-pink-700 hover:to-rose-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed">{reopeningServices ? "⏳..." : "🔓 Re-open"}</button>
-            <button onClick={onClose} disabled={reopeningServices} className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all disabled:opacity-50">Batal</button>
-          </div>
-        </div>
-      </div>
-    </ModalPortal>
+    <Modal buka onTutup={() => { if (!reopeningServices) onClose(); }} judul="Re-open Services" keterangan={subjudul(reopenServicesTarget)} ukuran="sm" lapisan="atas"
+      footer={<>
+        <TombolModal onClick={onClose} disabled={reopeningServices}>Batal</TombolModal>
+        <TombolModal jenis="utama" onClick={reopenServicesTicket} disabled={reopeningServices}>{reopeningServices ? 'Memproses...' : 'Re-open'}</TombolModal>
+      </>}>
+      <p className={kotakInfo}>Status Services akan kembali ke <strong>Pending</strong>. Status utama PTS tidak ikut berubah.</p>
+    </Modal>
   );
 }
 
-// ── REJECT TICKET — Soft reject dengan alasan ──
+// ── TOLAK TICKET — tidak dihapus, status Rejected + alasan ──
 
 export function RejectModal({
   rejectTargetTicket, rejectReason, setRejectReason, uploading, confirmReject, onClose,
@@ -112,44 +134,11 @@ export function RejectModal({
   onClose: () => void;
 }) {
   return (
-    <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4">
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(220,38,38,0.4)" }}>
-          <div className="flex items-center gap-3 mb-1">
-            <span className="text-3xl"><Ikon nama="❌" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-            <div>
-              <h3 className="text-lg font-bold text-gray-800">Tolak Ticket</h3>
-              <p className="text-xs text-gray-500 font-medium">{rejectTargetTicket.project_name}</p>
-              <p className="text-xs text-gray-500">{rejectTargetTicket.issue_case}</p>
-            </div>
-          </div>
-          <div className="rounded-xl p-3 mb-4 mt-3 text-xs" style={{ background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)", color: "#92400e" }}>
-            <IkonTeks nama="💡" />Ticket <strong>tidak dihapus</strong> — tetap tersimpan dengan status "Rejected". Sales dapat melihat alasan penolakan dan mengajukan ulang jika diperlukan.
-          </div>
-          <label htmlFor="f-ticketing-components-simpleactionmodals-3" className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#64748b" }}>Alasan Penolakan *</label>
-          <textarea id="f-ticketing-components-simpleactionmodals-3"
-            value={rejectReason}
-            onChange={e => setRejectReason(e.target.value)}
-            rows={3}
-            placeholder="Contoh: Data tidak lengkap, harap isi nomor SN unit dan deskripsi masalah lebih detail..."
-            className="w-full rounded-xl px-4 py-3 text-sm outline-hidden resize-none focus:ring-2 focus:ring-red-400"
-            style={{ border: "1.5px solid rgba(220,38,38,0.3)", background: "rgba(255,255,255,0.95)" }}
-            autoFocus
-          />
-          <div className="flex gap-3 mt-4">
-            <button onClick={onClose}
-              className="flex-1 py-2.5 rounded-xl font-semibold text-sm" style={{ background: "rgba(0,0,0,0.06)", color: "#475569" }}>
-              Batal
-            </button>
-            <button onClick={confirmReject} disabled={uploading || !rejectReason.trim()}
-              className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white disabled:opacity-50"
-              style={{ background: "linear-gradient(135deg,#dc2626,#991b1b)" }}>
-              {uploading ? "⏳ Menyimpan..." : "❌ Tolak Ticket"}
-            </button>
-          </div>
-        </div>
-      </div>
-    </ModalPortal>
+    <ModalTolak buka onTutup={onClose} judul="Tolak Ticket" keterangan={subjudul(rejectTargetTicket)} lapisan="atas"
+      alasan={rejectReason} onAlasan={setRejectReason} onTolak={() => confirmReject()} sibuk={uploading}
+      placeholder="Contoh: data tidak lengkap, isi nomor SN unit dan deskripsi masalah lebih detail...">
+      <p className={kotakInfo}>Ticket <strong>tidak dihapus</strong> - tetap tersimpan dengan status &quot;Rejected&quot;. Sales dapat melihat alasan penolakan dan mengajukan ulang.</p>
+    </ModalTolak>
   );
 }
 
@@ -166,36 +155,23 @@ export function DeleteModal({
   onClose: () => void;
 }) {
   return (
-    <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-4">
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-md w-full p-6" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(220,38,38,0.5)" }}>
-          <div className="flex items-center gap-3 mb-4"><span className="text-3xl"><Ikon nama="🗑" ukuran="1em" className="inline-block align-[-0.12em]" /></span><div><h3 className="text-lg font-bold text-gray-800">Hapus Ticket</h3><p className="text-xs text-gray-500 font-medium">{deleteTargetTicket.project_name}</p><p className="text-xs text-gray-500">{deleteTargetTicket.issue_case}</p></div></div>
-          <div className="rounded-xl p-3 mb-4 text-xs" style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.2)", color: "#b91c1c" }}>
-            <Ikon nama="⚠" ukuran="1em" className="inline-block align-[-0.12em]" /> <strong>Tindakan ini tidak dapat dibatalkan.</strong> Ticket beserta seluruh activity log dan overdue setting akan dihapus permanen dari database.
-          </div>
-          <div className="mb-4">
-            <label htmlFor="f-ticketing-components-simpleactionmodals-4" className="block text-sm font-bold mb-1 text-gray-700">Ketik <span className="font-mono bg-red-100 text-red-700 px-1 rounded-sm">HAPUS</span> untuk konfirmasi</label>
-            <input id="f-ticketing-components-simpleactionmodals-4"
-              type="text"
-              value={deleteConfirmText}
-              onChange={(e) => setDeleteConfirmText(e.target.value)}
-              placeholder="Ketik HAPUS di sini..."
-              className="w-full rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-red-500"
-              style={{ border: "2px solid rgba(220,38,38,0.3)", background: "white" }}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={deleteTicket}
-              disabled={deleteConfirmText !== "HAPUS" || uploading}
-              className="bg-linear-to-r from-red-600 to-red-800 text-white py-2.5 rounded-xl font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:from-red-700 hover:to-red-900"
-            >
-              {uploading ? "⏳..." : "🗑️ Hapus Permanen"}
-            </button>
-            <button onClick={onClose} className="bg-gray-100 text-gray-700 py-2.5 rounded-xl font-bold hover:bg-gray-200 transition-all">✕ Batal</button>
-          </div>
+    <Modal buka onTutup={onClose} judul="Hapus Ticket" keterangan={subjudul(deleteTargetTicket)} tutupDiLuar={false}
+      footer={<>
+        <TombolModal onClick={onClose} disabled={uploading}>Batal</TombolModal>
+        <TombolModal jenis="bahaya" onClick={deleteTicket} disabled={deleteConfirmText !== 'HAPUS' || uploading}>{uploading ? 'Menghapus...' : 'Hapus Permanen'}</TombolModal>
+      </>}>
+      <div className="space-y-4">
+        <p className="rounded-kontrol border border-rose-200 bg-rose-50 px-3 py-2 text-xs leading-relaxed text-rose-800">
+          <strong>Tindakan ini tidak dapat dibatalkan.</strong> Ticket beserta seluruh activity log dan overdue setting dihapus permanen.
+        </p>
+        <div>
+          <label htmlFor="f-ticketing-hapus-konfirmasi" className="block text-xs font-bold text-slate-700 mb-1.5">
+            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1 rounded-sm">HAPUS</span> untuk konfirmasi
+          </label>
+          <input id="f-ticketing-hapus-konfirmasi" type="text" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)}
+            placeholder="Ketik HAPUS di sini..." className={kelasIsian} />
         </div>
       </div>
-    </ModalPortal>
+    </Modal>
   );
 }

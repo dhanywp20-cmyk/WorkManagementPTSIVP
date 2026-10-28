@@ -53,7 +53,7 @@ export function useStatistikRequest(k: StatistikRequestKonteks) {
     { label: 'Pending', value: stats.pending, color: '#f59e0b' },
     { label: 'Approved', value: stats.approved, color: '#10b981' },
     { label: 'In Progress', value: stats.in_progress, color: '#3b82f6' },
-    { label: 'Completed', value: stats.completed, color: '#8b5cf6' },
+    { label: 'Completed', value: stats.completed, color: '#059669' },
     { label: 'Rejected', value: stats.rejected, color: '#ef4444' },
   ].filter(d => d.value > 0);
 

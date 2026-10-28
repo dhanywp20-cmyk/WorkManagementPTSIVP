@@ -633,18 +633,19 @@ function TicketingSystemInner() {
         {/* ── LOADING POPUP (Redesigned) ── */}
         {showLoadingPopup && (
         <ModalPortal>
-          <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100">
-            <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(220,38,38,0.3)" }}>
+          <div role="dialog" aria-modal="true" aria-live="polite" className="fixed inset-0 flex items-center justify-center z-1100" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
+            {/*  Kartu proses: bentuk & warna sama dengan Modal bersama; pemintal memakai warna merek. */}
+            <div className="bg-white rounded-kartu shadow-modal p-8 max-w-sm w-full mx-4">
               <div className="flex flex-col items-center">
                 {loadingMessage.includes("✅") ? (
                   <div className="text-6xl mb-4 animate-bounce"><Ikon nama="✅" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                 ) : (
                   <div className="relative w-16 h-16 mb-4">
                     <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-                    <div className="absolute inset-0 rounded-full border-4 border-red-600 border-t-transparent animate-spin"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-merek border-t-transparent animate-spin"></div>
                   </div>
                 )}
-                <p className="text-xl font-bold text-gray-800 text-center">{loadingMessage}</p>
+                <p className="text-base font-bold text-slate-800 text-center">{loadingMessage}</p>
               </div>
             </div>
           </div>
@@ -654,7 +655,7 @@ function TicketingSystemInner() {
         {/* ── UPLOAD PROGRESS BAR ── */}
         {uploading && !showLoadingPopup && (
           <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-gray-200">
-            <div className="h-full bg-linear-to-r from-red-500 to-red-700 animate-pulse" style={{ width: "100%", transition: "width 0.3s" }}></div>
+            <div className="h-full bg-merek animate-pulse" style={{ width: "100%", transition: "width 0.3s" }}></div>
           </div>
         )}
 

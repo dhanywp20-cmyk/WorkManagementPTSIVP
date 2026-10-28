@@ -10,7 +10,7 @@ import { angkaDari } from '@/lib/pustaka';
 import { usePustaka } from '../../pustaka/usePustaka';
 import { useState } from 'react';
 
-const CATATAN = 'Ukuran panel = area gambar 16:9 dari diagonalnya; celah bezel (bezel-to-bezel) ditambahkan di antara panel. Bezel tipis (≤ 1,8 mm) disarankan bila teks/spreadsheet melintasi sambungan.';
+const CATATAN = 'Ukuran panel = area gambar 16:9 dari diagonalnya; celah bezel (bezel-to-bezel) ditambahkan di antara panel. Bezel tipis (≤ 1,8 mm) disarankan bila teks/spreadsheet melintasi sambungan. Daftar material & penawaran: menu Videowall & IFP.';
 
 export function PanelVideowall({ lebarM, tinggiM }: { lebarM: number; tinggiM: number }) {
   //  Panel dari Pustaka (display dengan bezel > 0); bawaan kode bila pustaka kosong.

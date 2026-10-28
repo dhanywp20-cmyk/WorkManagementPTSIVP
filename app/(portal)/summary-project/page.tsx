@@ -146,12 +146,11 @@ export default function SummaryProjectPage() {
       <div className="relative flex flex-col flex-1 overflow-hidden">
         <Toast notif={toast} />
 
-        <PageHeader icon="🗂️" title="Summary Project" color={THEME.color} colorLight={THEME.colorLight}
+        <PageHeader icon="🗂️" title="Summary Project"
           subtitle="Riwayat Request Schedule · Troubleshooting · Design Project · Form Review per project">
           {isAdmin && (
             <button onClick={() => setShowMapping(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all hover:scale-105 hover:opacity-90"
-              style={{ background: `linear-gradient(135deg, ${THEME.color}, ${THEME.colorLight})`, boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}>
+              className="tombol-utama flex items-center gap-1.5 px-4 py-2 rounded-kontrol text-sm font-bold transition-all hover:scale-105 hover:opacity-90">
               <IkonTeks nama="🧭" />Mapping Center
               {!!belumTerpeta && <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-amber-950 text-[11px]">{belumTerpeta}</span>}
             </button>

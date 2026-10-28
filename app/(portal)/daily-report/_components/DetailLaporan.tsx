@@ -25,32 +25,32 @@ export function DetailLaporan({ badge, c, linkedReport, openEditForm, openNewFor
       <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
         <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ background: 'white', maxHeight: '96vh' }} onClick={e => e.stopPropagation()}>
           {/* Colored header */}
-          <div className="px-6 py-5 text-white shrink-0 relative" style={{ background: `linear-gradient(135deg, ${c.accent}, ${c.accent}cc)` }}>
+          <div className="px-6 py-5 bg-white border-b border-slate-100 text-slate-800 shrink-0 relative">
             <div className="flex items-start gap-3">
               <span className="text-3xl">{row.kegiatan_icon}</span>
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mb-0.5">Sumber</p>
-                <p className="text-[11px] font-bold uppercase tracking-widest opacity-80">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Sumber</p>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-slate-600">
                   {row.source === 'reminder' ? 'Reminder Schedule' : row.source === 'ticket' ? 'Ticket Troubleshooting' : 'Aktivitas Manual'}
                 </p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-2 mb-0.5">Nama Project</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-2 mb-0.5">Nama Project</p>
                 <h3 className="text-base font-black leading-tight">{row.project_name}</h3>
                 {row.address && (
                   <>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-white/55 mt-1.5 mb-0.5">Lokasi</p>
-                    <p className="text-xs opacity-80 flex items-center gap-1"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1.5 mb-0.5">Lokasi</p>
+                    <p className="text-xs text-slate-600 flex items-center gap-1"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.address}</p>
                   </>
                 )}
               </div>
             </div>
             {/* Status + jam */}
             <div className="flex items-center gap-2 mt-4">
-              <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20">{badge.label}</span>
-              {row.jam !== '-' && <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20"><Ikon nama="🕐" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.jam}</span>}
-              <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-white/20"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.report_date}</span>
+              <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-700">{badge.label}</span>
+              {row.jam !== '-' && <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-700"><Ikon nama="🕐" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.jam}</span>}
+              <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-700"><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {row.report_date}</span>
             </div>
             <button aria-label="Tutup" onClick={() => setModalRow(null)}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+              className="absolute top-3 right-3 w-8 h-8 rounded-kecil bg-black/5 text-slate-500 hover:text-rose-600 flex items-center justify-center font-bold text-sm">✕</button>
           </div>
           {/* Body */}
           <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1 min-h-0">
@@ -139,7 +139,7 @@ export function DetailLaporan({ badge, c, linkedReport, openEditForm, openNewFor
                 {row.source === 'reminder' ? '🔔 Reminder Schedule' : row.source === 'ticket' ? '🎫 Ticket Troubleshooting' : '✍️ Aktivitas Manual'}
               </span>
               {!linkedReport && row.source !== 'manual' && (
-                <button onClick={() => { setModalRow(null); openNewForm(); }} className="text-[11px] font-bold px-3 py-1.5 rounded-lg text-white" style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>+ Buat Report</button>
+                <button onClick={() => { setModalRow(null); openNewForm(); }} className="tombol-utama text-[11px] font-bold px-3 py-1.5 rounded-kontrol ">+ Buat Report</button>
               )}
             </div>
           </div>

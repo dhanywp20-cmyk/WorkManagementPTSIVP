@@ -27,6 +27,15 @@ function pasMateri(sx: number, sy: number, rx: number, ry: number) {
   const w = Math.round(sx * s), h = Math.round(sy * s);
   return { s, w, h, barX: rx - w, barY: ry - h };
 }
+/**
+ * Sisa bar hitam - jumlah KEDUA sisi, ditulis rinci per sisi. Dulu "71 px kiri-kanan" terbaca 71 px di tiap sisi
+ * (padahal total; tiap sisi ±35 px).
+ */
+function teksSisa(p: ReturnType<typeof pasMateri>) {
+  if (!p.barX && !p.barY) return 'pas penuh';
+  const [n, a, b] = p.barX ? [p.barX, 'kiri', 'kanan'] : [p.barY, 'atas', 'bawah'];
+  return `sisa hitam ${n} px (${a} ${Math.floor(n / 2)} + ${b} ${Math.ceil(n / 2)} px)`;
+}
 
 export function TampilanKonten({ a }: { a: AlatLED }) {
   const { h, kolom, baris, refresh, bit, labelLED, project } = a.K;
@@ -60,7 +69,7 @@ export function TampilanKonten({ a }: { a: AlatLED }) {
     `- Resolusi kanvas: ${h.resX} × ${h.resY} px (persis, jangan diskalakan) · rasio ${h.rasioTerdekat}`,
     `- Ukuran fisik: ${f(h.lebarM)} × ${f(h.tinggiM)} m · ${kolom} × ${baris} unit @ ${h.pxCabX} × ${h.pxCabY} px`,
     `- Frame rate: ${fps} fps · warna ${bit}-bit · format MP4 H.264${lewat4K ? '/H.265 atau dibagi per output controller' : ''}, PNG/JPG untuk gambar diam`,
-    ...SUMBER.map(m => { const p = pasMateri(m.x, m.y, h.resX, h.resY); return `- Materi ${m.l}: tampil ${p.w} × ${p.h} px (skala ${f(p.s * 100, 0)}%), sisa ${p.barX ? `${p.barX} px kiri-kanan` : `${p.barY} px atas-bawah`}`; }),
+    ...SUMBER.map(m => { const p = pasMateri(m.x, m.y, h.resX, h.resY); return `- Materi ${m.l}: tampil ${p.w} × ${p.h} px (skala ${f(p.s * 100, 0)}%), ${teksSisa(p)}`; }),
     '- Teks penting jauhi 1 cabinet dari tepi; minimal tinggi huruf ±1/20 tinggi layar untuk penonton jauh.',
   ].join('\n');
 
@@ -82,7 +91,7 @@ export function TampilanKonten({ a }: { a: AlatLED }) {
               const pas = p.barX === 0 && p.barY === 0;
               return (
                 <p key={m.l} className={`text-[12.5px] rounded-lg px-2.5 py-1.5 border ${pas ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
-                  Materi <b>{m.l}</b> tampil {p.w} × {p.h} px (skala {f(p.s * 100, 0)}%){pas ? ' - pas penuh.' : `, sisa hitam ${p.barX ? `${p.barX} px kiri-kanan` : `${p.barY} px atas-bawah`}.`}
+                  Materi <b>{m.l}</b> tampil {p.w} × {p.h} px (skala {f(p.s * 100, 0)}%){pas ? ' - pas penuh.' : `, ${teksSisa(p)}.`}
                 </p>
               );
             })}

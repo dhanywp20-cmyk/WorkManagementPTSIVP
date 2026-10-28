@@ -1,7 +1,6 @@
 'use client';
 /** Modals-AssignPTSModal.tsx - dipecah dari Modals.tsx (scripts/pecah-modul.mjs); Modals.tsx tetap mengekspor ulang semuanya. */
-import { ModalPortal } from '@/components/shared';
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { KotakInfo, Modal, PilihPenugasan, TombolModal, TombolSetujui } from '@/components/shared';
 import { appLink } from '@/lib/app-url';
 import { cobaIdentitas, tanpaIdentitas } from '@/lib/identitas';
 import { createNotification } from '@/lib/notifications';
@@ -11,14 +10,14 @@ import { useEffect, useState } from 'react';
 import { getRoomAssignName, getRoomAssignUserId, ProjectRequest, sendWANotif, User } from './shared';
 
 /**
- * AssignPTSModal - popup Approve & Assign dan Assign ke Tim untuk Request
+ * AssignPTSModal - popup Setujui & Tugaskan dan Tugaskan Tim untuk Request
  * Design Project.
  *
- * Tampilan dan model isian assign-nya sengaja MENGIKUTI Ticketing dan Request
- * Schedule, bukan punya gaya sendiri. Tiga hal yang disamakan:
+ * Tampilan dan model isian penugasannya memakai pola persetujuan bersama
+ * (components/shared/Persetujuan.tsx) - sama persis dengan Ticketing dan Request
+ * Schedule, bukan gaya sendiri:
  *
- *   1. Warna menandai TAHAP, bukan halaman. Hijau untuk approve, kuning untuk
- *      assign oleh Supervisor - persis seperti kedua platform lain.
+ *   1. Kerangka Modal bersama; aksi utama "Setujui & Tugaskan" / "Tugaskan".
  *   2. Pemilihan orang memakai <select> dengan optgroup, bukan daftar kartu
  *      avatar. Kartu avatar terlihat lebih ramai tapi memaksa admin menggulir
  *      untuk menemukan satu nama, dan tidak bisa diketik.
@@ -244,141 +243,68 @@ export function AssignPTSModal({
     setSaving(false);
   };
 
-  // Warna menandai tahap, bukan halaman - sama seperti Ticketing & Request
-  // Schedule: hijau saat approve, kuning saat Supervisor meng-assign.
-  const hijau = allowSupervisorRoute;
-  const aksen = hijau
-    ? { garis: 'rgba(34,197,94,0.4)', gradasi: 'linear-gradient(135deg,#16a34a,#15803d)', bayang: '0 4px 14px rgba(22,163,74,0.35)', cincin: 'focus:ring-green-500/40', subjudul: 'text-green-200/80' }
-    : { garis: 'rgba(245,158,11,0.4)', gradasi: 'linear-gradient(135deg,#f59e0b,#d97706)', bayang: '0 4px 14px rgba(245,158,11,0.35)', cincin: 'focus:ring-amber-500/40', subjudul: 'text-amber-100/90' };
+  //  Kerangka & tombol: pola persetujuan bersama (components/shared/Persetujuan.tsx) - sama dengan Ticketing
+  //  & Request Schedule. Approve oleh Admin/Manager = "Setujui & Tugaskan"; Supervisor = "Tugaskan".
+  const tahapSetujui = allowSupervisorRoute;
+  const adaRute = allowSupervisorRoute && supervisors.length > 0;
 
   return (
-  <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1200 p-4"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
-        style={{ animation: 'scale-in 0.25s ease-out', border: `2px solid ${aksen.garis}` }}>
+    <Modal buka onTutup={onClose} judul={tahapSetujui ? 'Setujui & Tugaskan Request' : 'Tugaskan Tim'} keterangan={req.project_name} lapisan="maks"
+      footer={<>
+        <TombolModal onClick={onClose} disabled={saving}>Batal</TombolModal>
+        <TombolModal jenis="utama" onClick={handleSave} disabled={saving || !selectedPTSId}>
+          {saving ? 'Menyimpan...' : tahapSetujui ? (supervisors.length > 0 ? 'Tugaskan Langsung (lewati Supervisor)' : 'Setujui & Tugaskan') : 'Tugaskan'}
+        </TombolModal>
+      </>}>
+      <div className="space-y-4">
+        <KotakInfo judul="Request dari Sales">
+          <p className="text-sm font-bold text-slate-800">
+            {req.sales_name || '-'}{req.sales_division ? ` · ${req.sales_division}` : ''}
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-[11px] font-bold align-middle ${isExternal ? 'bg-amber-100 text-amber-800' : 'bg-slate-200 text-slate-700'}`}>
+              {isExternal ? 'External' : 'Internal IVP'}
+            </span>
+          </p>
+          <p>Ruangan {req.room_name || '-'} · {req.requester_name}</p>
+        </KotakInfo>
 
-        {/* Header */}
-        <div className="px-6 py-5 flex items-center justify-between" style={{ background: aksen.gradasi }}>
-          <div className="min-w-0">
-            <h3 className="text-lg font-bold text-white">{hijau ? '✅ Approve & Assign Request' : '🎯 Assign ke Tim'}</h3>
-            <p className={`text-xs mt-0.5 truncate max-w-[300px] ${aksen.subjudul}`}>{req.project_name}</p>
-          </div>
-          <button aria-label="Tutup" onClick={onClose} className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all shrink-0">
-            <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        {/* Divisi external: IVP Sales internal sudah ter-mapping sejak request dibuat */}
+        {isExternal && (
+          <KotakInfo>
+            Request dari divisi external <strong>{req.sales_division}</strong>. Cukup pilih <strong>Tim PTS</strong> yang menangani -
+            IVP Sales internal untuk divisi ini sudah otomatis ter-mapping sejak request dibuat.
+          </KotakInfo>
+        )}
 
-        <div className="p-6 space-y-4">
-          {/* Info request */}
-          <div className="rounded-xl p-3 space-y-1"
-            style={{ background: 'rgba(59,130,246,0.07)', border: '1px solid rgba(59,130,246,0.2)' }}>
-            <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest">Request dari Sales</p>
-            <p className="text-sm font-bold text-slate-800">
-              {req.sales_name || '-'}{req.sales_division ? ` · ${req.sales_division}` : ''}
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-[11px] font-bold align-middle ${isExternal ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                {isExternal ? 'External' : 'Internal IVP'}
-              </span>
-            </p>
-            <p className="text-xs text-slate-500">🛋️ {req.room_name || '-'} · 👤 {req.requester_name}</p>
-          </div>
-
-          {/* Divisi external: IVP Sales internal sudah ter-mapping sejak request dibuat */}
-          {isExternal && (
-            <div className="rounded-xl p-3 flex items-start gap-2"
-              style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.25)' }}>
-              <span className="text-base shrink-0"><Ikon nama="🔗" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-              <p className="text-xs text-indigo-700 leading-relaxed">
-                Request dari divisi external <strong>{req.sales_division}</strong>. Cukup pilih <strong>Tim PTS</strong> yang menangani —
-                IVP Sales internal untuk divisi ini sudah otomatis ter-mapping sejak request dibuat.
-              </p>
+        {/* Lewat Supervisor - jalur UTAMA saat menyetujui, sama seperti Request Schedule */}
+        {adaRute && (
+          <KotakInfo nada="awas" judul="Rekomendasi: lewat Supervisor">
+            <p className="mb-2">Supervisor yang dipilih menerima WA untuk menugaskan anggota timnya, atau mengerjakan sendiri.</p>
+            <div className="space-y-2">
+              <PilihPenugasan nilai={selectedSupervisorId} onUbah={v => { setSelectedSupervisorId(v); setFormErr(''); }} label="Supervisor" kosong="- Pilih Supervisor -"
+                pilihan={supervisors.map(s => ({ v: s.id, l: s.full_name, ket: s.team_type }))} />
+              <TombolSetujui onClick={handleRouteToSupervisor} disabled={routeSaving || !selectedSupervisorId} className="w-full">
+                {routeSaving ? 'Memproses...' : 'Setujui & Teruskan ke Supervisor'}
+              </TombolSetujui>
             </div>
-          )}
+          </KotakInfo>
+        )}
 
-          {/* Route ke Supervisor — jalur UTAMA saat approve, sama seperti Request Schedule */}
-          {allowSupervisorRoute && supervisors.length > 0 && (
-            <div className="rounded-xl p-4" style={{ background: 'rgba(245,158,11,0.08)', border: '1.5px solid rgba(245,158,11,0.3)' }}>
-              <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="🎯" />Route ke Supervisor (Rekomendasi)</p>
-              <p className="text-[11px] text-amber-700 mb-3">
-                Supervisor yang dipilih akan di-WA untuk meng-assign ke anggota timnya, atau mengerjakan sendiri.
-              </p>
-              <select aria-label="-- Pilih Supervisor --" value={selectedSupervisorId}
-                onChange={e => { setSelectedSupervisorId(e.target.value); setFormErr(''); }}
-                className="w-full rounded-xl px-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 focus:ring-2 focus:ring-amber-500/40 mb-2.5"
-                style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
-                <option value="">-- Pilih Supervisor --</option>
-                {supervisors.map(s => <option key={s.id} value={s.id}>{s.full_name}{s.team_type ? ` · ${s.team_type}` : ''}</option>)}
-              </select>
-              <button type="button" onClick={handleRouteToSupervisor} disabled={routeSaving || !selectedSupervisorId}
-                className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-                style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706)' }}>
-                {routeSaving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                <IkonTeks nama="🎯" />Approve &amp; Route ke Supervisor
-              </button>
-            </div>
-          )}
+        {/* Tugaskan ke Tim PTS */}
+        {teamMembers.length === 0 ? (
+          <KotakInfo>Tidak ada Team PTS tersedia.</KotakInfo>
+        ) : (
+          <PilihPenugasan nilai={selectedPTSId} onUbah={v => { setSelectedPTSId(v); setFormErr(''); }} wajib={!adaRute}
+            label={adaRute ? 'Atau tugaskan langsung ke' : 'Tugaskan ke'} kosong="- Pilih anggota Team PTS -"
+            pilihan={[
+              { v: 'SELF', l: 'Saya kerjakan sendiri', grup: 'Saya' },
+              ...anggotaLain.map(m => ({ v: m.id, l: m.full_name, ket: m.team_type, grup: 'Anggota Tim' })),
+            ]} />
+        )}
 
-          {/* Assign ke Tim PTS */}
-          <div>
-            <label className="block text-xs font-bold mb-1.5 tracking-widest uppercase" style={{ color: '#64748b' }}>
-              {allowSupervisorRoute && supervisors.length > 0 ? 'Atau Assign Langsung Manual' : 'Assign ke Team PTS *'}
-            </label>
-            {teamMembers.length === 0 ? (
-              <div className="text-center py-6 text-gray-500 text-sm rounded-xl" style={{ background: '#f8fafc', border: '1px solid rgba(0,0,0,0.08)' }}>
-                <div className="text-3xl mb-1"><Ikon nama="👥" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-                <p className="text-xs">Tidak ada Team PTS tersedia</p>
-              </div>
-            ) : (
-              <select aria-label="-- Pilih Anggota Team PTS --" value={selectedPTSId}
-                onChange={e => { setSelectedPTSId(e.target.value); setFormErr(''); }}
-                className={`w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all text-slate-800 focus:ring-2 ${aksen.cincin}`}
-                style={{ background: '#ffffff', border: '1px solid rgba(0,0,0,0.12)' }}>
-                <option value="">-- Pilih Anggota Team PTS --</option>
-                <option value="SELF">Saya kerjakan sendiri</option>
-                <optgroup label="Anggota Tim">
-                  {anggotaLain.map(m => (
-                    <option key={m.id} value={m.id}>{m.full_name}{m.team_type ? ` · ${m.team_type}` : ''}</option>
-                  ))}
-                </optgroup>
-              </select>
-            )}
-          </div>
+        <KotakInfo nada="baik">WA notifikasi otomatis dikirim ke <strong>Tim PTS</strong> yang ditugaskan (kecuali kamu sendiri).</KotakInfo>
 
-          {/* Info WA */}
-          <div className="rounded-xl p-3 flex items-start gap-2"
-            style={{ background: 'rgba(34,197,94,0.07)', border: '1px solid rgba(34,197,94,0.2)' }}>
-            <span className="text-base shrink-0"><Ikon nama="💬" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
-            <p className="text-[11px] text-green-700 leading-relaxed">
-              WA notifikasi otomatis dikirim ke <strong>Tim PTS</strong> yang di-assign (kecuali kamu sendiri).
-            </p>
-          </div>
-
-          {formErr && (
-            <div className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200">{formErr}</div>
-          )}
-
-          {/* Buttons */}
-          <div className="flex gap-3 pt-1">
-            <button onClick={onClose}
-              className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
-              style={{ background: '#f8fafc', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
-              Batal
-            </button>
-            <button onClick={handleSave} disabled={saving || !selectedPTSId}
-              className="flex-2 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              style={{ background: aksen.gradasi, boxShadow: aksen.bayang }}>
-              {saving
-                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan...</>
-                : hijau
-                  ? (supervisors.length > 0 ? <>✅ Assign Langsung (lewati Supervisor)</> : <>✅ Approve &amp; Assign</>)
-                  : <>🎯 Assign</>}
-            </button>
-          </div>
-        </div>
+        {formErr && <KotakInfo nada="bahaya">{formErr}</KotakInfo>}
       </div>
-    </div>
-  </ModalPortal>
+    </Modal>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
 /** LangkahCariProyek - dipecah dari app/(portal)/ticketing/_components/NewTicketModal.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { Ikon } from '@/components/shared/Ikon';
+import { Modal, TombolModal } from '@/components/shared';
 import { type ReminderRef } from '../NewTicketModal';
+import { formatTanggal } from '@/lib/checklist';
 
 export interface LangkahCariProyekProps {
   galatCari: string | null;
@@ -23,26 +25,16 @@ export interface LangkahCariProyekProps {
 
 export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPilihan, onClose, pencarianDibatasi, praPilih, reminderQuery, reminderResults, reminderSearching, setLangkah, setPraPilih, setReminderQuery, setReminderResults, sorotPilihan }: LangkahCariProyekProps) {
   return (
-    <>
-      <div className="fixed inset-0 z-200 flex items-center justify-center p-4"
-        style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(3px)' }}>
-        <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col"
-          style={{ maxHeight: '85vh' }} role="dialog" aria-modal="true" aria-labelledby="judul-cari-project">
-          <div className="px-5 py-4 text-white flex items-center gap-3" style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}>
-            <button type="button" aria-label="Kembali"
-              onClick={() => { setLangkah('pilih'); setPraPilih(null); setReminderQuery(''); setReminderResults([]); }}
-              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 hover:bg-white/10">
-              <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <div className="min-w-0">
-              <h3 id="judul-cari-project" className="font-bold text-base"><IkonTeks nama="🔍" />Cari Project yang Sudah Ada</h3>
-              <p className="text-[12px] text-white/80 mt-0.5">Ketik nama project, pilih dari hasilnya, lalu konfirmasi.</p>
-            </div>
-          </div>
-
-          <div className="p-4 flex-1 overflow-y-auto min-h-0">
+    <Modal buka onTutup={onClose} judul="Cari Project yang Sudah Ada" keterangan="Hanya jadwal Konfigurasi, Konfigurasi & Training, atau Training - ticket tertaut ke Incentive PTS."
+      footer={<>
+        <TombolModal className="mr-auto" onClick={() => { setLangkah('pilih'); setPraPilih(null); setReminderQuery(''); setReminderResults([]); }}>← Kembali</TombolModal>
+        <span className="hidden sm:inline text-[11px] text-slate-500 truncate max-w-[40%]">
+          {praPilih ? `Dipilih: ${praPilih.project_name || praPilih.title}` : 'Belum ada yang dipilih'}
+        </span>
+        <TombolModal onClick={onClose}>Batal</TombolModal>
+        <TombolModal jenis="utama" onClick={konfirmasiPilihan} disabled={!praPilih}>OK, Isi Form →</TombolModal>
+      </>}>
+          <div>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input
@@ -69,15 +61,16 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
               <p className="mt-2 text-[11px] text-slate-600 leading-snug">
                 {pencarianDibatasi ? (
                   <>
-                    Tidak ada project bernama &quot;{reminderQuery.trim()}&quot; dalam jangkauan akun kamu.
+                    Tidak ada jadwal Konfigurasi / Training bernama &quot;{reminderQuery.trim()}&quot; dalam jangkauan akun kamu.
                     Pencarian hanya mencakup project divisi kamu — kalau project ini milik divisi lain,
                     minta Admin atau Team PTS yang membuatkan ticket-nya.
                   </>
                 ) : (
                   <>
-                    Tidak ada project bernama &quot;{reminderQuery.trim()}&quot;. Akun kamu mencari ke
-                    SELURUH divisi, jadi kemungkinan besar namanya memang belum tercatat — coba
-                    potongan nama yang lebih pendek, atau tekan Kembali dan pilih Project Baru.
+                    Tidak ada jadwal Konfigurasi, Konfigurasi &amp; Training, atau Training bernama
+                    &quot;{reminderQuery.trim()}&quot;. Kategori lain (Standby Event, Maintenance, ...)
+                    sengaja tidak ditampilkan — coba potongan nama yang lebih pendek, atau tekan
+                    Kembali dan pilih Project Baru.
                   </>
                 )}
               </p>
@@ -111,6 +104,8 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
                             {r._sumber === 'ticket' ? '🎫 Ticket lama' : r.category}
                           </span>
                         )}
+                        {/* Satu project bisa punya beberapa jadwal - tanggalnya yang membedakan. */}
+                        {r.due_date && <span><Ikon nama="📅" ukuran="1em" className="inline-block align-[-0.12em]" /> {formatTanggal(r.due_date)}</span>}
                         {r.address && <span><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.address.slice(0, 50)}{r.address.length > 50 ? '…' : ''}</span>}
                         {r.sales_name && <span><Ikon nama="👤" ukuran="1em" className="inline-block align-[-0.12em]" /> {r.sales_name}</span>}
                       </span>
@@ -121,24 +116,6 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
             )}
           </div>
 
-          <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center shrink-0">
-            <span className="text-[11px] text-slate-500">
-              {praPilih ? `Dipilih: ${praPilih.project_name || praPilih.title}` : 'Belum ada yang dipilih'}
-            </span>
-            <div className="flex gap-2">
-              <button type="button" onClick={onClose}
-                className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-300 hover:bg-slate-100">
-                Batal
-              </button>
-              <button type="button" onClick={konfirmasiPilihan} disabled={!praPilih}
-                className="px-4 py-2 rounded-lg text-sm font-bold text-white transition-all disabled:opacity-40"
-                style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}>
-                OK, Isi Form →
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </>
+    </Modal>
   );
 }

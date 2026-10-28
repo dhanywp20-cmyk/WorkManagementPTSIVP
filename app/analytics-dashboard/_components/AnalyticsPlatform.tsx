@@ -15,7 +15,7 @@ import { isPimpinan } from '@/lib/pimpinan';
 import { getSession, startSessionWatcher } from '@/lib/auth';
 import DashboardKPI from '@/app/(portal)/kpi-team/_components/DashboardKPI';
 import { User as DashUser } from '@/app/(portal)/dashboard/_components/shared';
-import { StatCard } from '@/components/shared';
+import { FooterPlatform, StatCard } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 
 // Types
@@ -170,6 +170,11 @@ export function AnalyticsPlatform({
   const [user,    setUser]    = useState<User | null>(injectedUser ?? null);
   const [auth,    setAuth]    = useState<'checking' | 'ok' | 'denied'>(injectedUser ? 'ok' : 'checking');
   const [tabState, setTabState] = useState<Tab>('kpi');   // Default: Dashboard Analytics
+  /** Halaman dibuka langsung (bukan di iframe bingkai portal yang sudah berkaki FooterPlatform). Diisi setelah
+   *  mount - di server `window` tidak ada, nilai awal false supaya HTML server & klien sama. */
+  const [diLuarBingkai, setDiLuarBingkai] = useState(false);
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { try { setDiLuarBingkai(window.self === window.top); } catch { /* iframe lintas origin: di dalam bingkai */ } }, []);
   const tab = controlledTab ?? tabState;
   const setTab = (t: Tab) => { onTabChange?.(t); if (controlledTab === undefined) setTabState(t); };
   const [stats,   setStats]   = useState<Stats | null>(null);
@@ -670,12 +675,11 @@ export function AnalyticsPlatform({
           </div>
         )}
 
-        <p className="text-center select-none pb-2">
-          <span className="inline-block text-[11px] text-slate-500 bg-white/90 rounded-full px-3 py-1 shadow-xs">
-            Analytics Platform — IndoVisual PTS · Work Management
-          </span>
-        </p>
       </div>{/* end scrollable content */}
+      {/*  Kaki halaman = FooterPlatform yang sama dengan bingkai portal - bukan label "Analytics Platform — …"
+          sendiri. Di dashboard (embedded) & di iframe portal kaki itu sudah ada di bingkainya; hanya saat
+          halaman ini dibuka langsung (bukan di dalam bingkai) kakinya dipasang di sini. */}
+      {!embedded && diLuarBingkai && <FooterPlatform />}
     </div>
   );
 }

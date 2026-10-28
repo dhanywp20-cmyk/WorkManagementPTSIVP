@@ -1,5 +1,5 @@
 'use client';
-import { ModalPortal, AuditTrailPanel, FlowSteps } from '@/components/shared';
+import { Modal, TombolModal, AuditTrailPanel, FlowSteps } from '@/components/shared';
 import type { Ticket, User } from './shared';
 import { formatDateTime, ringkasPenanganan, statusColors } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
@@ -19,13 +19,9 @@ export function ActivitySummaryModal({
   onClose: () => void;
 }) {
   return (
-    <ModalPortal>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1000 p-2">
-        <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full h-[96vh] flex flex-col" style={{ animation: "scale-in 0.25s ease-out", border: "2px solid rgba(59,130,246,0.5)" }}>
-          <div className="p-5 border-b shrink-0" style={{ background: "linear-gradient(135deg,#2563eb,#1d4ed8)", borderColor: "rgba(0,0,0,0.1)" }}>
-            <div className="flex justify-between items-center"><div className="flex items-center gap-3"><span className="text-2xl"><Ikon nama="🔄" ukuran="1em" className="inline-block align-[-0.12em]" /></span><div><h3 className="text-lg font-bold text-white">Activity Summary</h3><p className="text-sm text-blue-100 font-medium">{summaryTicket.project_name}</p><p className="text-xs text-blue-200">{summaryTicket.issue_case}</p></div></div><button aria-label="Tutup" onClick={onClose} className="text-white hover:bg-white/20 rounded-lg p-2 font-bold transition-all text-lg">✕</button></div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-5">
+    <Modal buka onTutup={onClose} judul="Ringkasan Aktivitas" keterangan={`${summaryTicket.project_name} · ${summaryTicket.issue_case}`} ukuran="lg"
+      footer={<TombolModal onClick={onClose}>Tutup</TombolModal>}>
+          <div>
             <div className="mb-4">
               {/* Baris pembuatan diturunkan dari ticket-nya sendiri: logAudit
                   baru mencatat 'create' sejak perbaikan terakhir, jadi tanpa
@@ -126,9 +122,6 @@ export function ActivitySummaryModal({
               </div>
             )}
           </div>
-          <div className="p-4 border-t shrink-0" style={{ background: "rgba(0,0,0,0.03)", borderColor: "rgba(0,0,0,0.08)" }}><button onClick={onClose} className="w-full bg-linear-to-r from-blue-600 to-blue-800 text-white py-3 rounded-xl font-bold hover:from-blue-700 hover:to-blue-900 transition-all">✕ Tutup</button></div>
-        </div>
-      </div>
-    </ModalPortal>
+    </Modal>
   );
 }

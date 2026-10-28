@@ -66,10 +66,10 @@ export function IsiTechNote({ canManage, currentUser, fetchError, fetchNotes, fi
                 <button key={t.id} onClick={()=>setTab(t.id as typeof tab)}
                   className="px-4 py-1.5 rounded-xl text-[13px] font-bold transition-all border"
                   style={{
-                    background: tab===t.id ? 'linear-gradient(135deg,#be185d,#9d174d)' : 'rgba(255,255,255,0.92)',
+                    background: tab===t.id ? 'linear-gradient(135deg, var(--merek-utama), var(--merek-utama-2))' : 'rgba(255,255,255,0.92)',
                     color: tab===t.id ? '#fff' : '#64748b',
-                    borderColor: tab===t.id ? '#be185d' : '#e2e8f0',
-                    boxShadow: tab===t.id ? '0 2px 8px rgba(190,24,93,0.25)' : 'none',
+                    borderColor: tab===t.id ? 'var(--merek-utama)' : '#e2e8f0',
+                    boxShadow: tab===t.id ? '0 2px 8px var(--merek-utama-tembus)' : 'none',
                   }}>
                   {t.label}
                 </button>

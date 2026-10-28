@@ -20,7 +20,6 @@ import { useTemplateKategori } from './desain3d/simpan/useTemplateKategori';
 import { useObjekSaya } from './desain3d/simpan/useObjekSaya';
 import { InfoProyektor } from './desain3d/panel/InfoProyektor';
 
-import { BilahBerkas } from './desain3d/panel/BilahBerkas';
 import { BilahAlat } from './desain3d/panel/BilahAlat';
 import { KontrolKanvas } from './desain3d/panel/KontrolKanvas';
 import { PanelTambah } from './desain3d/panel/PanelTambah';
@@ -78,9 +77,7 @@ export default function Desain3D() {
     <div className="space-y-3">
       <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
       <div className={layarPenuh ? 'fixed inset-0 z-950 flex flex-col bg-white' : 'rounded-2xl overflow-hidden border border-slate-200 bg-white'}>
-        {/* Berkas yang sedang dibuka: nama (bisa diganti langsung) + dari mana asalnya + sudah/belum tersimpan.
-            Dulu kanvas tidak memberi tahu desain mana yang sedang terbuka. */}
-        <BilahBerkas a={a} />
+        {/* Satu bilah atas: nama berkas & status, Kategori / Ruangan / Benda, Buka / Simpan, sudut pandang, Ekspor. */}
         <BilahAlat a={a} />
 
         <div className={`flex flex-col lg:flex-row ${layarPenuh ? 'flex-1 min-h-0' : ''}`}>
@@ -104,7 +101,7 @@ export default function Desain3D() {
             </div>
           )}
           {pesan && (
-            <div role="status" className="pointer-events-none absolute left-1/2 -translate-x-1/2 top-12 z-20 max-w-[calc(100%-32px)] px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-[12px] font-semibold shadow-lg text-center">{pesan}</div>
+            <div role="status" className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-14 z-20 max-w-[calc(100%-32px)] px-3 py-1.5 rounded-lg bg-emerald-700 text-white text-[12px] font-semibold shadow-lg text-center">{pesan}</div>
           )}
           <NavKamera a={a} />
         </div>

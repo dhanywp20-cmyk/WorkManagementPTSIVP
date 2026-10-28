@@ -59,6 +59,17 @@ let pengirimServer: PengirimServer | null = null;
 export function pasangPengirimServer(fn: PengirimServer) { pengirimServer = fn; }
 
 /**
+ * Pengirim yang disebut langsung oleh pemanggil server, bukan lewat registrasi
+ * global di atas. Dipakai lib/efek-server.ts (DIWAYPI) supaya pengiriman dari
+ * sana membawa Telegram juga TANPA mengubah perilaku cron yang memakai
+ * pasangPengirimServer - registrasi global berlaku untuk seluruh proses.
+ */
+export interface JalurKirim {
+  wa?: PengirimServer;
+  telegram?: (nomor: string, pesan: string) => Promise<{ ok: boolean; alasan?: string }>;
+}
+
+/**
  * Kirim satu WA. SATU jalur untuk semua penyedia (Fonnte / Cloud API /
  * webhook): token dibaca server dari Admin Panel -> Integrations
  * (rahasia_integrasi), tidak lagi dari Edge Function `swift-responder`.
@@ -68,12 +79,14 @@ export function pasangPengirimServer(fn: PengirimServer) { pengirimServer = fn; 
  */
 async function kirimLewatPenyedia(
   body: Record<string, unknown>,
+  jalur?: JalurKirim,
 ): Promise<{ ok?: boolean; reason?: string }> {
   const target = String(body.target ?? '');
   const message = String(body.message ?? '');
-  if (typeof window === 'undefined') {
-    if (!pengirimServer) return { ok: false, reason: 'pengirim WA server belum dipasang (import lib/wa-server)' };
-    const h = await pengirimServer(target, message);
+  const pengirim = jalur?.wa ?? pengirimServer;
+  if (jalur?.wa || typeof window === 'undefined') {
+    if (!pengirim) return { ok: false, reason: 'pengirim WA server belum dipasang (import lib/wa-server)' };
+    const h = await pengirim(target, message);
     return { ok: h.ok, reason: h.alasan };
   }
   const res = await fetch('/api/notifikasi/whatsapp/kirim', {
@@ -136,21 +149,25 @@ async function kirimDuaKanal(
   message: string,
   type: string,
   event?: string,
+  jalur?: JalurKirim,
 ): Promise<{ ok: boolean; reason?: string }> {
   const berlaku = await kanalBerlaku(event);
 
   //  Telegram dijalankan tanpa ditunggu: ia tidak boleh memperlambat - apalagi
   //  menggagalkan - pengiriman WhatsApp yang sudah berjalan selama ini.
+  //  (Jalur server menunggunya di ujung: fungsi serverless bisa mati lebih dulu.)
+  let tg: Promise<unknown> | null = null;
   if (!berlaku || berlaku.tg) {
-    void kirimTelegramKeNomor(target, message).catch(() => { /* diam */ });
+    tg = (jalur?.telegram ?? kirimTelegramKeNomor)(target, message).catch(() => { /* diam */ });
   }
+  const tungguTg = async <T,>(h: T): Promise<T> => { if (jalur?.telegram && tg) await tg; return h; };
 
   if (berlaku && !berlaku.wa) {
-    return { ok: false, reason: `kanal WhatsApp dimatikan admin untuk kejadian ${event}` };
+    return tungguTg({ ok: false, reason: `kanal WhatsApp dimatikan admin untuk kejadian ${event}` });
   }
-  if (!(await waMenyala())) return { ok: false, reason: 'kanal WhatsApp dimatikan admin' };
-  const data = await kirimLewatPenyedia({ type, target, message });
-  return { ok: data?.ok === true, reason: data?.reason };
+  if (!(await waMenyala())) return tungguTg({ ok: false, reason: 'kanal WhatsApp dimatikan admin' });
+  const data = await kirimLewatPenyedia({ type, target, message }, jalur);
+  return tungguTg({ ok: data?.ok === true, reason: data?.reason });
 }
 
 /**
@@ -185,12 +202,14 @@ export async function sendWA(
   type = 'reminder_wa',
   /** Kunci di KATALOG_EVENT. Diisi = saklar per-event di Admin Panel berlaku. */
   event?: string,
+  /** Pengirim server eksplisit (lihat JalurKirim). Peramban tidak mengisinya. */
+  jalur?: JalurKirim,
 ): Promise<{ ok: boolean; reason?: string }> {
   try {
     //  Kanal dimatikan admin BUKAN kegagalan - alasannya dibedakan supaya
     //  layar yang menampilkan hasil kirim (Reminder Schedule) bisa berkata
     //  "WhatsApp sedang dimatikan", bukan "gagal kirim" yang menyesatkan.
-    return await kirimDuaKanal(target, message, type, event);
+    return await kirimDuaKanal(target, message, type, event, jalur);
   } catch {
     return { ok: false, reason: 'network error' };
   }

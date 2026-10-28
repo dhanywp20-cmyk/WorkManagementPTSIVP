@@ -102,7 +102,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
     <>
       {showDetailModal && selectedRequest && detailSc && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-0" style={{ zIndex: Z.overlay }}
+        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center p-0" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', zIndex: Z.overlay }}
           onClick={e => { if (e.target === e.currentTarget) handleCloseDetail(); }}>
           <div className="bg-white w-full h-full animate-slide-up flex flex-col overflow-hidden"
             style={{ border: 'none' }}>
@@ -207,7 +207,7 @@ export function ModalDetailRequest({ activeAttachTab, attachments, bisaKelolaReq
                           const roomSt = getRoomStatus(selectedRequest, i);
                           const dotColor: Record<string, string> = {
                             pending: 'bg-amber-400', approved: 'bg-teal-400', in_progress: 'bg-blue-400',
-                            completed: 'bg-purple-400', rejected: 'bg-red-400',
+                            completed: 'bg-emerald-400', rejected: 'bg-red-400',
                           };
                           return (
                             <button key={i} type="button" onClick={() => setDetailRoomIdx(i)}

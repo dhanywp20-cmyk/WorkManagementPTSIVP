@@ -138,9 +138,9 @@ const berwarna = (d: { label: string; value: number }[]) => d.map((x, i) => ({ .
 const pieOrang = (o: Kontribusi[]) => berwarna(o.map(x => ({ label: x.nama, value: x.jumlah })));
 const pie = (data: { label: string; value: number; color: string }[]) => data.filter(d => d.value > 0);
 
-/** Donat "Dikerjakan Oleh" - handler (anggota checklist) saja. */
-function DikerjakanOleh({ orang }: { orang: Kontribusi[] }) {
-  return <MiniPieChart title="Dikerjakan Oleh (Handler)" icon="👷" data={pieOrang(orang)} />;
+/** Donat "Dikerjakan Oleh" - handler (anggota checklist) saja; proyek: lokasi, satu lokasi: item. */
+function DikerjakanOleh({ orang, satuan }: { orang: Kontribusi[]; satuan: 'lokasi' | 'item' }) {
+  return <MiniPieChart title="Dikerjakan Oleh (Handler)" icon="👷" data={pieOrang(orang)} centerLabel={satuan} />;
 }
 
 /** Bungkus yang bisa dilipat - untuk halaman kerja (checklist) supaya ringkasan tidak menghalangi. */
@@ -180,7 +180,7 @@ export function RingkasanProyek({ r }: { r: Ringkasan }) {
             { label: 'Belum ada item', value: r.perStatus.kosong, color: '#e2e8f0' },
           ])} />
           {tenggat.length > 0 && <MiniPieChart title="Tenggat Lokasi Berjalan" icon="🗓️" data={tenggat} />}
-          {r.perOrang.length > 0 && <DikerjakanOleh orang={r.perOrang} />}
+          {r.perOrang.length > 0 && <DikerjakanOleh orang={r.perOrang} satuan="lokasi" />}
         </div>
       </div>
       {r.laju.length > 1 && <GrafikLaju laju={r.laju} />}
@@ -218,7 +218,7 @@ export function RingkasanChecklist({ r }: { r: DataChecklist }) {
       {(adaWaktu || r.perOrang.length > 0) && (
         <div className={`grid gap-3 ${adaWaktu && r.perOrang.length ? 'md:grid-cols-2' : ''}`}>
           {adaWaktu && <div className="rounded-xl p-4" style={kartu}><BlokWaktu w={r} persen={r.persen} /></div>}
-          {r.perOrang.length > 0 && <DikerjakanOleh orang={r.perOrang} />}
+          {r.perOrang.length > 0 && <DikerjakanOleh orang={r.perOrang} satuan="item" />}
         </div>
       )}
       {r.laju.length > 1 && <GrafikLaju laju={r.laju} />}

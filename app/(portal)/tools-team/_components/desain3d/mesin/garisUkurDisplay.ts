@@ -3,6 +3,7 @@
  * tinggi di kanan tiap display, ujung bertanda, angka dalam mm. Dipisah dari mesin/alatBantu.ts.
  */
 import { DISPLAY, type Benda } from '../inti';
+import { mengalah, PRIORITAS_LABEL } from './label';
 import type { Mesin } from './tipe';
 
 export function gambarGarisUkurDisplay(m: Mesin, benda: Benda[]) {
@@ -19,7 +20,7 @@ export function gambarGarisUkurDisplay(m: Mesin, benda: Benda[]) {
     balok(b.w, t, 0, yAtas); balok(t, tanda, -b.w / 2, yAtas); balok(t, tanda, b.w / 2, yAtas);
     balok(t, b.h, xKanan, b.h / 2); balok(tanda, t, xKanan, 0); balok(tanda, t, xKanan, b.h);
     const teks = (isi: string, x: number, y: number, tegak: boolean) => {
-      const el = document.createElement('div');
+      const el = mengalah(document.createElement('div'), PRIORITAS_LABEL.ukur);
       el.textContent = isi;
       el.style.cssText = `font:700 12px system-ui,sans-serif;color:#dc2626;background:rgba(255,255,255,.85);padding:${tegak ? '4px 1px' : '1px 4px'};border-radius:4px;white-space:nowrap${tegak ? ';writing-mode:vertical-rl' : ''}`;
       const o = new CSS2DObject(el); o.position.set(x, y, zp); grp.add(o);

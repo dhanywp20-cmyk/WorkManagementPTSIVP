@@ -50,7 +50,7 @@ export function TabJadwalTranche({ currentUser, exporting, filteredTranches, han
             <div className="flex gap-2">
               {bisaKonfig(currentUser) && (
                 <button onClick={() => { setBatchYear(tahunAktif); setBatchConfirm(true); }}
-                  className="px-4 py-2 rounded-xl text-sm font-bold text-white hover:opacity-90" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
+                  className="tombol-utama px-4 py-2 rounded-kontrol text-sm font-bold hover:opacity-90">
                   <IkonTeks nama="🚀" />Process Batch {tahunAktif}
                 </button>
               )}

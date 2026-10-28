@@ -1,7 +1,7 @@
 'use client';
 
 /** ModalEditForm - dipecah dari app/(portal)/form-require-project/page.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { SalesPicker, ModalPortal } from '@/components/shared';
+import { SalesPicker, ModalPortal, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
 import { Z } from '@/lib/z-index';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { namaRuangan, type EditRoomFields } from './ruangan';
@@ -35,15 +35,10 @@ export function ModalEditForm({ editCur, editDueDate, editFormData, editFormModa
     <>
       {editFormModal && selectedRequest && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4" style={{ zIndex: Z.overlayTop }}>
-          <div className="bg-white/90 rounded-3xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col border-2 border-amber-400 animate-scale-in overflow-hidden">
-            <div className="bg-linear-to-r from-amber-500 to-amber-700 px-6 py-4 flex items-center justify-between shrink-0">
-              <div>
-                <h2 className="text-lg font-bold text-white"><IkonTeks nama="✏" />Edit Kebutuhan Project</h2>
-                <p className="text-amber-100 text-xs mt-0.5">{selectedRequest.project_name}</p>
-              </div>
-              <button aria-label="Tutup" onClick={() => setEditFormModal(false)} className="bg-white/20 hover:bg-white/30 text-white w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg">✕</button>
-            </div>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center p-4" style={{ ...LATAR_MODAL, zIndex: Z.overlayTop }}>
+          {/*  Kartu, kepala & tombol baku (components/shared/Modal.tsx) - dulu kepala bergradasi kuning sendiri. */}
+          <div className={`${KARTU_MODAL} w-full max-w-2xl max-h-full flex flex-col overflow-hidden`}>
+            <KepalaModal judul="Edit Kebutuhan Project" keterangan={selectedRequest.project_name} onTutup={() => setEditFormModal(false)} />
             <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-gray-50">
 
               <div className="bg-white/95 rounded-2xl p-5 border-2 border-gray-200 shadow-xs">
@@ -299,12 +294,9 @@ export function ModalEditForm({ editCur, editDueDate, editFormData, editFormModa
                 </div>
               </div>
             </div>
-            <div className="border-t-2 border-gray-200 p-4 flex gap-3 bg-white/90 shrink-0">
-              <button onClick={() => setEditFormModal(false)} className="flex-1 border-2 border-gray-300 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50">Batal</button>
-              <button onClick={handleEditFormSubmit} className="flex-2 bg-linear-to-r from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 text-white py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
-                <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Simpan Perubahan
-              </button>
+            <div className="flex items-center justify-end gap-2 px-5 py-3.5 border-t border-slate-100 shrink-0 bg-slate-50/60">
+              <button onClick={() => setEditFormModal(false)} className="tombol-kedua px-4 py-2 rounded-kontrol text-xs font-bold">Batal</button>
+              <button onClick={handleEditFormSubmit} className="tombol-utama px-4 py-2 rounded-kontrol text-xs font-bold">Simpan Perubahan</button>
             </div>
           </div>
         </div>

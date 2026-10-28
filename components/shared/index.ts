@@ -10,7 +10,7 @@ export {
   DuplicateIconBtn, CompleteIconBtn, ActionGroup,
   FlowchartIconBtn, PrintIconBtn, ApproveIconBtn, ReopenIconBtn, OverdueIconBtn,
 } from './ActionIcons';
-export { Toast, InlineToast, type Notif } from './Toast';
+export { Toast, InlineToast, useNotif, type Notif } from './Toast';
 // Pemberitahuan simpan yang gagal - satu untuk semua modul, dipasang di app/layout.tsx.
 export { PenjagaGalatTulis } from './PenjagaGalatTulis';
 // Galat skrip & promise di layar pengguna -> Admin Panel -> Kesehatan Sistem (dipasang di app/layout.tsx).
@@ -44,7 +44,9 @@ export { BatalButton, SubmitFormButton } from './FormActions';
 // Logo & identitas merek (bisa diubah dari Admin Panel - lihat lib/merek.ts).
 export { LogoMerek } from './LogoMerek';
 // Kerangka modal baku - lihat komentar di Modal.tsx sebelum membuat popup baru.
-export { Modal, TombolModal, type ModalProps } from './Modal';
+export { Modal, TombolModal, KepalaModal, LATAR_MODAL, KARTU_MODAL, type ModalProps } from './Modal';
+// Satu pola Setujui / Tolak / Tugaskan untuk semua menu - lihat Persetujuan.tsx.
+export { LABEL as LABEL_PERSETUJUAN, TombolSetujui, TombolTolak, TombolTugaskan, PilihPenugasan, ModalSetujui, ModalTolak, KotakInfo, LabelIsian, kelasIsianPersetujuan, type PilihanPetugas } from './Persetujuan';
 // Paginasi daftar - satu mekanisme & satu angka baris/halaman untuk semua
 // modul. Lihat catatan di Paginasi.tsx.
 export { Paginasi, usePaginasi, BARIS_PER_HALAMAN, type HasilPaginasi } from './Paginasi';
@@ -56,6 +58,7 @@ export { Keterangan } from './Keterangan';
 // Dipasang sekali di root layout, bukan per-modul.
 export { PwaBootstrap } from './PwaBootstrap';
 export { PembaruanAndroid } from './PembaruanAndroid';
+export { PantauVersiWeb } from './PantauVersiWeb';
 // Keping identitas build (versi · commit · waktu bangun) - lihat ChipVersi.tsx.
 export { ChipVersi } from './ChipVersi';
 // Bilah kaki platform (hak cipta - kontak bantuan - identitas build).

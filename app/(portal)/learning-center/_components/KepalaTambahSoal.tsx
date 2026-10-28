@@ -29,8 +29,7 @@ export function KepalaTambahSoal({ questions, rootFolders, setShowAddManual, set
           <div className="flex items-center gap-2">
             <button
               data-tulis onClick={() => setShowAddManual(true)}
-              className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}
+              className="tombol-kedua flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-kontrol shadow-sm transition-all hover:opacity-90"
             >
               <svg aria-hidden="true" focusable="false" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -39,8 +38,7 @@ export function KepalaTambahSoal({ questions, rootFolders, setShowAddManual, set
             </button>
             <button
               data-tulis onClick={() => setShowGenerate(true)}
-              className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)' }}
+              className="tombol-utama flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-kontrol shadow-sm transition-all hover:opacity-90"
             >
               <svg aria-hidden="true" focusable="false" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3l14 9-14 9V3z" />

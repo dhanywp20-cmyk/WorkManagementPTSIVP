@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase';
 import { KUNCI_PENGATURAN } from '@/lib/kunci-pengaturan';
 import { sendWA } from '@/lib/wa';
 import { adalahKategoriInsentif } from '@/lib/incentive-scheme';
+import { CATEGORIES, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, newBatchId, type StatusJadwal } from '@/lib/jadwal-aturan';
+export { CATEGORIES, REVIEW_TRIGGER_CATEGORIES, INCENTIVE_TRIGGER_CATEGORIES, formatDate, newBatchId };
 
 // Placeholder default saat Sales request tanpa isi notes - BUKAN catatan asli,
 // jangan ditampilkan/disimpan lagi begitu request sudah di-assign ke pengerjaan.
@@ -18,7 +20,7 @@ export function cleanRequestNotes(notes: string | null | undefined): string {
 // Types
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent';
-export type Status = 'pending' | 'done' | 'cancelled';
+export type Status = StatusJadwal;
 export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly';
 export type PicType = 'standard' | 'manager_pic';
 export type ControllerBrand = 'cue' | 'extron' | 'wyrestorm';
@@ -125,11 +127,8 @@ export interface GuestUser {
   is_internal_sales?: boolean;
 }
 
-// Kategori yang men-trigger auto form_review ke Guest
-export const REVIEW_TRIGGER_CATEGORIES = ['Konfigurasi', 'Demo Product', 'Konfigurasi & Training', 'Training'] as const;
-
-// Kategori yang wajib memilih Onsite/Remote saat status  Completed
-export const INCENTIVE_TRIGGER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
+// REVIEW_TRIGGER_CATEGORIES (auto form_review ke Guest) & INCENTIVE_TRIGGER_CATEGORIES
+// (wajib Onsite/Remote saat Completed) kini di lib/jadwal-aturan.ts - diekspor ulang di atas.
 
 // Kategori yang mendukung Controller Automation (subset dari INCENTIVE_TRIGGER_CATEGORIES)
 export const CONTROLLER_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
@@ -170,7 +169,6 @@ export const STATUS_CONFIG: Record<Status, { label: string; color: string; bg: s
   cancelled:   { label: 'Cancelled', color: '#374151', bg: '#f3f4f6', border: '#6b7280', icon: '❌' },
 };
 
-export const CATEGORIES = ['Demo Product', 'Meeting & Survey', 'Konfigurasi', 'Konfigurasi & Training', 'Troubleshooting', 'Training', 'Maintenance', 'Standby Event', 'Internal'];
 
 // Tipe produk untuk routing pipeline (dipilih sales saat request). "LED & LCD"
 // = proyek punya keduanya. Satu sumber untuk form + mapping Admin Panel.
@@ -222,17 +220,7 @@ export const PIE_COLORS = ['#7c3aed','#0ea5e9','#10b981','#e11d48','#f59e0b','#6
 
 // Helpers
 
-export function formatDate(dateStr: string) {
-  if (!dateStr) return '';
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-// ID grup untuk reminder yang dibuat sekaligus dari 1 submission multi-tanggal.
-export function newBatchId(): string {
-  return (typeof crypto !== 'undefined' && crypto.randomUUID)
-    ? crypto.randomUUID()
-    : `batch-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
+// formatDate & newBatchId kini di lib/jadwal-aturan.ts (dipakai juga DIWAYPI) - diekspor ulang di atas.
 
 export interface SupervisorCandidate {
   id: string;

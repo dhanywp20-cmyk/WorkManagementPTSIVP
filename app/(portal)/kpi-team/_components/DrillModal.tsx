@@ -24,23 +24,22 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
     <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
+      <div className="bg-white rounded-kartu shadow-modal w-full max-w-md overflow-hidden flex flex-col"
         style={{ maxHeight: '100%' }}>
 
         {/* Header */}
-        <div className="px-5 py-4 flex items-center gap-3 shrink-0 relative"
-          style={{ background: `linear-gradient(135deg, ${teamColor}, ${teamColor}cc)` }}>
-          <button aria-label="Tutup" onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+        <div className="px-5 py-4 bg-white border-b border-slate-100 text-slate-800 flex items-center gap-3 shrink-0 relative">
+          <button aria-label="Tutup" onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-kecil bg-black/5 text-slate-500 hover:text-rose-600 flex items-center justify-center font-bold text-sm">✕</button>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black text-white"
-              style={{ background: 'rgba(255,255,255,0.2)' }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black text-slate-800"
+              style={{ background: '#f1f5f9' }}>
               {member.name.charAt(0)}
             </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Nama</p>
-              <div className="text-white font-black text-sm leading-tight">{member.name}</div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Tim · Jabatan · Periode</p>
-              <div className="text-white/70 text-[11px]">{member.team_type.replace('Team ','')} · {member.jabatan} · {period}</div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Nama</p>
+              <div className="text-slate-800 font-black text-sm leading-tight">{member.name}</div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1.5 mb-0.5">Tim · Jabatan · Periode</p>
+              <div className="text-slate-600 text-[11px]">{member.team_type.replace('Team ','')} · {member.jabatan} · {period}</div>
             </div>
           </div>
         </div>

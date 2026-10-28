@@ -72,9 +72,10 @@ export function Segmen<T extends string>({ nilai, onUbah, opsi, label }: { nilai
 export function Kartu({ judul, children, aksi }: { judul: string; children: React.ReactNode; aksi?: React.ReactNode }) {
   return (
     <section className="rounded-2xl bg-white border border-slate-200 p-4 sm:p-5">
-      <div className="flex items-center justify-between gap-2 mb-3">
+      {/* Kartu sempit (kolom hasil di samping): baris tombol aksi pindah utuh ke bawah judul, bukan terjepit di sampingnya. */}
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
         <h2 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-600">{judul}</h2>
-        {aksi}
+        {aksi && <div className="max-w-full">{aksi}</div>}
       </div>
       {children}
     </section>

@@ -61,7 +61,7 @@ export function StatusBadge({ status }: { status: TechNote['status'] }) {
   const cfg = STATUS_CONFIG[status];
   const bgMap: Record<string,string> = {
     approved: 'rgba(16,185,129,0.12)', pending: 'rgba(245,158,11,0.12)',
-    revision: 'rgba(239,68,68,0.12)',  rejected: 'rgba(107,114,128,0.12)',
+    revision: 'rgba(245,158,11,0.12)', rejected: 'rgba(239,68,68,0.12)',
   };
   return (
     <span style={{ display:'inline-flex', alignItems:'center', gap:4,
@@ -419,14 +419,13 @@ export function TechNotePageInner() {
       style={{ background: 'var(--latar-halaman)', backgroundSize:'cover', backgroundPosition:'center', backgroundAttachment:'fixed' }}>
 
       {/* ── Top Nav ── header baku semua modul (components/shared/PageHeader) */}
-      <PageHeader icon="📝" title="Tech Note R&D" subtitle="Dokumentasi teknikal & R&D · KPI 10%" color="#ec4899">
+      <PageHeader icon="📝" title="Tech Note R&D" subtitle="Dokumentasi teknikal & R&D · KPI 10%">
             <select aria-label="Tahun" value={year} onChange={e=>setYear(Number(e.target.value))}
               className="text-slate-700 text-sm font-bold outline-hidden rounded-xl px-3 py-1.5 bg-gray-100 border border-gray-200 focus:border-rose-400">
               {[curY,curY-1,curY-2].map(y=><option key={y} value={y}>{y}</option>)}
             </select>
             <button onClick={()=>{ uploadSnapshotRef.current = uploadForm; setShowUploadModal(true); }}
-              className="text-sm font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 text-white hover:opacity-90 hover:scale-105"
-              style={{ background:'linear-gradient(135deg,#ec4899,#be185d)', boxShadow:'0 4px 14px rgba(236,72,153,0.35)' }}>
+              className="tombol-utama text-sm font-bold px-4 py-2 rounded-kontrol transition-all flex items-center gap-1.5 hover:opacity-90 hover:scale-105">
               <IkonTeks nama="➕" />Upload Tech Note
             </button>
       </PageHeader>

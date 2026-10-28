@@ -24,7 +24,7 @@ export function ModalMulaiKPI({ kpiMembers, kpiPeriodLabel, kpiSettings, kpiYear
         <div role="dialog" aria-modal="true" aria-label="Mulai periode KPI" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
           style={{ background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)' }}
           onClick={e => { if (e.target === e.currentTarget) setShowStartKPI(false); }}>
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+          <div className="bg-white rounded-kartu shadow-modal w-full max-w-md overflow-hidden">
             <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100">
               <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shrink-0"
                 style={{ background: 'linear-gradient(135deg,#10b981,#059669)' }}><Ikon nama="🚀" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
@@ -52,8 +52,7 @@ export function ModalMulaiKPI({ kpiMembers, kpiPeriodLabel, kpiSettings, kpiYear
                 Batal
               </button>
               <button onClick={() => saveKPISnapshot()} disabled={savingSnapshot}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-60"
-                style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.4)' }}>
+                className="tombol-utama flex items-center gap-2 px-5 py-2 rounded-kontrol text-xs font-bold  transition-all disabled:opacity-60">
                 {savingSnapshot ? (
                   <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Menyimpan…</>
                 ) : (

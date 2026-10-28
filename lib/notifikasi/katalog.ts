@@ -24,7 +24,7 @@ export interface DefinisiEvent {
   label: string;
   kategori: KategoriEvent;
   /** Kanal yang aktif kalau belum ada pengaturan admin untuk event ini. */
-  bawaanKanal: Array<'in_app' | 'whatsapp'>;
+  bawaanKanal: Array<'in_app' | 'whatsapp' | 'telegram'>;
 }
 
 /**
@@ -70,6 +70,7 @@ export const EVENT_TERSAMBUNG: ReadonlySet<string> = new Set<string>([
   'system.overdue_escalation',   // cron: eskalasi tiket/jadwal terlambat
   'system.password_reset',       // forgot-password: kode OTP
   'tools.perbandingan',          // Product Comparison: pengajuan verifikasi & hasilnya
+  'system.health_alert',         // cron escalate & digest: peringatan merah Kesehatan Sistem (lib/kesehatan-server.ts)
 ]);
 
 /** Apakah saklar per-event untuk kunci ini benar-benar berpengaruh? */
@@ -101,6 +102,8 @@ export const KATALOG_EVENT: DefinisiEvent[] = [
   { key: 'tools.perbandingan',        label: 'Product Comparison: pengajuan & hasil verifikasi', kategori: 'approval', bawaanKanal: ['in_app', 'whatsapp'] },
   { key: 'system.digest',             label: 'Ringkasan harian (digest)',         kategori: 'system',      bawaanKanal: ['whatsapp'] },
   { key: 'system.overdue_escalation', label: 'Eskalasi tiket/jadwal terlambat',   kategori: 'system',      bawaanKanal: ['whatsapp'] },
+  //  Dulu alert ini hanya tunduk pada saklar induk Telegram - tidak ada baris di sini, jadi tidak bisa dimatikan sendiri.
+  { key: 'system.health_alert',       label: 'Peringatan merah Kesehatan Sistem (ke admin)', kategori: 'system', bawaanKanal: ['telegram'] },
 ];
 
 export function cariEvent(key: string): DefinisiEvent | undefined {

@@ -77,7 +77,7 @@ export function KolomPenugasanTiket({ canAssignDirect, currentUser, externalSale
             <span className="text-lg"><Ikon nama="👷" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <span className="text-sm font-bold tracking-wide text-slate-700">Penanganan</span>
           </div>
-          <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Assign ke *</label>
+          <label className="block text-[11px] font-bold mb-1.5 tracking-widest uppercase" style={{ color: "#94a3b8" }}>Tugaskan ke *</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2">👨‍💼</span>
             <select aria-label="— Pilih penanganan —" value={form.assign_name} onChange={e => set({ assign_name: e.target.value })}

@@ -6,6 +6,7 @@ import { Status, Reminder, TeamUser, isDueToday } from './shared';
 import { bolehDitugaskanOleh } from '@/lib/teams';
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
+import { bolehUbahJadwal } from '@/lib/jadwal-aturan';
 
 export interface TurunanJadwalKonteks {
   currentUser: TeamUser | null;
@@ -106,12 +107,9 @@ export function useTurunanJadwal(k: TurunanJadwalKonteks) {
     admin/Full Access - keduanya salah arah, dan itu sebab "salah assign
     harus lewat Supabase/admin" yang dikeluhkan.
   */
+  //  Aturannya di lib/jadwal-aturan.ts - DIWAYPI memakai aturan yang sama.
   const bolehEditReminder = (r: Reminder): boolean =>
-    !isPimpinan(currentUser) && (isAdmin || isManager
-    || (!!currentUser?.username && r.assigned_to === currentUser.username)
-    || (!!currentUser?.full_name && r.assign_name === currentUser.full_name)
-    || (!!currentUser?.full_name && r.sales_name === currentUser.full_name)
-    || (!!currentUser?.username && r.created_by === currentUser.username));
+    bolehUbahJadwal(currentUser, r, { isAdmin, isManager, pimpinan: isPimpinan(currentUser) });
   // Boleh approve kalau bagian-nya belum di-approve (reviewer utama vs kedua terpisah).
   const canInternalApprove = (r: Reminder) => {
     if (isPimpinan(currentUser)) return false;

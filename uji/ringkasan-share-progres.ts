@@ -1,7 +1,7 @@
 /**
  * uji/ringkasan-share-progres.ts - ringkasan & grafik Project Progress (semua tampilan):
  * angka (app/(portal)/project-progress/_components/ringkasan/hitung.ts), "Dikerjakan Oleh" hanya
- * handler (lib/checklist-ringkasan.ts), dan aturan "tiap fakta tampil sekali".
+ * handler - proyek: lokasi per handler, satu lokasi: item per handler (lib/checklist-ringkasan.ts), dan aturan "tiap fakta tampil sekali".
  *
  * Jalankan: npm test -- ringkasan-share-progres
  */
@@ -9,7 +9,7 @@ import { readFileSync } from 'fs';
 import {
   hitungRingkasan, MAKS_HARI_LAJU, lajuDariPeta, ringkasChecklist, ringkasDaftarProyek, ringkasDariLokasi,
 } from '../app/(portal)/project-progress/_components/ringkasan/hitung';
-import { aktivitasProyek, kontribusiHandler, selesaiPerHari, tanggalWIB } from '../lib/checklist-ringkasan';
+import { aktivitasProyek, kontribusiHandler, lokasiPerHandler, selesaiPerHari, tanggalWIB } from '../lib/checklist-ringkasan';
 import type { ChecklistItem } from '../lib/checklist';
 import { supportPerDaftar } from '../lib/checklist-server';
 
@@ -41,11 +41,18 @@ const items = [
 ];
 const r = hitungRingkasan({ start_date: '2026-09-25', target_date: '2026-10-23' }, daftar, items, anggota, HARI);
 
-console.log('\n1. Dikerjakan Oleh = handler saja');
-cek('admin yang membantu tidak dihitung', !r.perOrang.some(o => /admin/i.test(o.nama)));
-cek('nama dicocokkan tanpa beda huruf/spasi', r.perOrang.find(o => o.nama === 'Yoga KS')?.jumlah === 1);
-cek('handler dihitung per checklist-nya sendiri (Ade di c bukan handler)', r.perOrang.find(o => o.nama === 'Ade')?.jumlah === 1);
-cek('total kontribusi 2 dari 4 item selesai', r.perOrang.reduce((n, o) => n + o.jumlah, 0) === 2);
+console.log('\n1. Dikerjakan Oleh (proyek) = lokasi per handler');
+cek('admin yang membantu mencentang tidak dihitung', !r.perOrang.some(o => /admin/i.test(o.nama)));
+cek('Ade & Yoga KS masing-masing 1 lokasi', r.perOrang.find(o => o.nama === 'Ade')?.jumlah === 1 && r.perOrang.find(o => o.nama === 'Yoga KS')?.jumlah === 1);
+cek('total = jumlah lokasi ber-handler, bukan jumlah item', r.perOrang.reduce((n, o) => n + o.jumlah, 0) === 2);
+const lph = lokasiPerHandler([
+  { daftar_id: 'a', nama: 'Dhany Wahyu' }, { daftar_id: 'b', nama: 'dhany wahyu ' }, { daftar_id: 'b', nama: 'Dhany Wahyu' },
+  { daftar_id: 'c', nama: 'Yoga KS' }, { daftar_id: 'c', nama: ' ' },
+]);
+cek('handler tetap terhitung walau centangnya diwakili Admin', lph[0].nama === 'Dhany Wahyu' && lph[0].jumlah === 2);
+cek('satu nama sekali per lokasi, nama kosong diabaikan', lph.length === 2 && lph[1].jumlah === 1);
+cek('View-Only: handler di luar lokasi proyek tidak ikut',
+  hitungRingkasan({ start_date: null, target_date: null }, daftar, [], [...anggota, { daftar_id: 'zz', nama: 'Lain' }], HARI).perOrang.length === 2);
 cek('laju tetap menghitung SEMUA item selesai (laju pekerjaan, bukan kontribusi)', r.laju[r.laju.length - 1].kumulatif === 4);
 cek('tanggal per hari memakai WIB', tanggalWIB('2026-10-01T18:30:00Z') === '2026-10-02');
 

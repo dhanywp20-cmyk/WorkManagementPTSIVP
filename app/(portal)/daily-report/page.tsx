@@ -253,11 +253,10 @@ export default function DailyReportPage() {
   // MAIN LIST VIEW
   return (
     <PW>
-      <PageHeader icon="📋" title="Daily Report" subtitle="PTS IVP & MVI" color="#059669" colorLight="#047857">
+      <PageHeader icon="📋" title="Daily Report" subtitle="PTS IVP & MVI">
         {!pimpinan && (
           <button onClick={openNewForm}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-bold text-sm text-white hover:scale-[1.02] transition-all"
-            style={{ background: 'linear-gradient(135deg,#059669,#047857)', boxShadow: '0 4px 14px rgba(5,150,105,0.4)' }}>
+            className="tombol-utama flex items-center gap-1.5 px-4 py-2 rounded-kontrol font-bold text-sm hover:scale-[1.02] transition-all">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             + Tambah Report
           </button>

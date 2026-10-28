@@ -28,15 +28,15 @@ export const LABEL_BENTUK_OBJEK: Record<BentukObjek, string> = {
 };
 export type BentukMeja = 'rapat' | 'bulat' | 'kelas' | 'dosen' | 'podium' | 'kredensa' | 'operator';
 /** Konten layar: pola uji, unggahan, mati, atau konten contoh (CCTV, dashboard, campuran, home screen). */
-export type KontenLayar = 'pola' | 'gambar' | 'mati' | 'cctv' | 'dashboard' | 'campuran' | 'desktop';
+export type KontenLayar = 'pola' | 'gambar' | 'mati' | 'cctv' | 'dashboard' | 'campuran' | 'desktop' | 'putih';
 export type TipeRak = 'kaca' | 'tertutup' | 'open';
 export type TipeLampu = 'downlight' | 'spot' | 'panel' | 'linear' | 'gantung';
 export type Finish = 'walnut' | 'oak' | 'putih';
 export type TipeKursi = 'kantor' | 'kelas';
 export type TipeKamera = 'ptz' | 'ptz-ai' | 'xbar';
 export type PasangProyektor = 'plafon' | 'meja';
-/** Resolusi asli panel proyektor - menentukan rasio gambar (16:9 / 16:10 / 4:3) & piksel blending. */
-export type ResolusiProyektor = 'FHD' | 'WUXGA' | '4K' | 'WXGA' | 'XGA';
+/** Rasio aspek gambar proyektor (panel aslinya) - yang umum saja. */
+export type RasioProyektor = '16:9' | '16:10' | '17:9' | '4:3' | '21:9';
 /** Speaker: kotak dinding (lama), dinding 6" membulat + bracket putar, portable aktif (kolom + subwoofer), line array. */
 export type TipeSpeaker = 'kotak' | 'dinding6' | 'kolom' | 'linearray';
 export type ModelVW = '55BDL2105X' | '49BDL2105X' | 'custom';
@@ -81,6 +81,27 @@ export interface Benda {
   /** Proyektor: lens shift horizontal (pecahan lebar gambar, + = ke kanan dilihat dari proyektor) */ geserLensaH?: number;
   /** Proyektor: warna sinar di kanvas (#rrggbb) - tanpa = otomatis (inti/proyektor.ts warnaSinarProyektor). */ warnaSinar?: string;
   /** Proyektor: kecerahan (ANSI lumen) */ lumen?: number;
+  /**
+   * Proyektor: koreksi jarak lempar b (m) dari rumus datasheet lensa L = TR x lebar gambar - b (mis. Panasonic
+   * ET-D3QW200: L = 0,566 x SW - 0,082). Puncak kerucut sinar berada b di belakang ujung lensa. Bawaan 0.
+   * Kalkulator Panasonic memakai b berbeda di ujung wide & tele - ini nilai di ujung WIDE (TR terlebar).
+   */ koreksiJarak?: number;
+  /** Proyektor: koreksi jarak b (m) di ujung TELE (TR terpanjang); kosong = sama dengan wide. Di antaranya diinterpolasi ikut zoom. */
+  koreksiJarakTele?: number;
+  /**
+   * Proyektor TANPA lens shift (portabel / short throw): offset vertikal gambar tetap (pecahan tinggi gambar, sama
+   * dengan offsetLensa, mis. Panasonic PT-LMX460 0,346). Bila diisi, offsetLensa & lens shift horizontal diabaikan.
+   */ offsetTetap?: number;
+  /** Proyektor: kontras asli (full on / full off, x:1) - membatasi kontras gambar di ruang gelap. Kosong = tidak dibatasi. */
+  kontrasAsli?: number;
+  /** Proyektor: batas lens shift lensa (pecahan tinggi / lebar gambar, datasheet) - atas, bawah, kiri-kanan. Kosong = tidak dibatasi, 0 = tidak bisa digeser. */
+  shiftAtasMaks?: number; shiftBawahMaks?: number; shiftHMaks?: number;
+  /**
+   * Proyektor: daerah lens shift sebenarnya sebagai poligon [x0, y0, x1, y1, ...] (satuan lebar & tinggi gambar,
+   * gambar di tengah = kotak ±0,5; cara kalkulator Panasonic, lib/pustaka.ts bacaPoligonShift). Bila ada, batas
+   * shift dihitung dari poligon ini (termasuk kombinasi vertikal + horizontal), bukan dari tiga batas di atas.
+   */ poligonShift?: number[];
+  /** Layar / bidang mapping: gain kain layar (bawaan 1,0) - luminance gambar = lux x gain / π. */ gainLayar?: number;
   /** Proyektor, mode Grid sinar (inti/gridProyektor.ts): jumlah kolom grid & warna garisnya (kosong = warna sinar). */
   gridKolom?: number; warnaGrid?: string;
   /** Proyektor: tampilkan cahaya hanya di layar / bidang mapping (masking di media server); sisanya tidak digambar. */
@@ -95,7 +116,7 @@ export interface Benda {
   /** Display lift (paperless): layar sedang naik dari meja */ naik?: boolean;
   /** Proyektor: gantung plafon (bawaan) atau portabel di meja */ pasangProyektor?: PasangProyektor;
   /** Proyektor: throw ratio lensa (jarak lempar : lebar gambar), bawaan 1,5 */ throwRatio?: number;
-  /** Proyektor: resolusi asli (bawaan Full HD 16:9; WUXGA = 16:10, umum di proyektor instalasi) */ resolusiProyektor?: ResolusiProyektor;
+  /** Proyektor: rasio aspek gambar (bawaan 16:9; 16:10 = WUXGA, umum di proyektor instalasi) */ rasioProyektor?: RasioProyektor;
   /** Proyektor: tilt (derajat, negatif = menunduk). Pan = rot. */ tilt?: number;
   /** Display: konten di layar ('pola' = pola uji bawaan; 'gambar' = unggahan, tidak disimpan) */ konten?: KontenLayar;
   /** Display: sembunyikan garis ukuran (mm) benda ini walau garis ukuran dinyalakan. */ sembunyiUkur?: boolean;

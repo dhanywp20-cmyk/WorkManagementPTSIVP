@@ -13,7 +13,7 @@
  * Piket Showroom PUNYA daftar sendiri (memang menyertakan Team PTS UMP) -
  * TIDAK memakai konstanta ini.
  */
-import { kelompokDitugaskan, KELOMPOK_BAWAAN } from './kelompok';
+import { kelompokDitugaskan, KELOMPOK_BAWAAN } from './kelompok-inti';
 
 /**
  * Nilai bawaan, dipakai di luar React dan saat pengaturannya belum termuat.

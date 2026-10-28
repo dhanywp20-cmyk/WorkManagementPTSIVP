@@ -3,7 +3,7 @@
  * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
  */
 import { bulat2, daftarRuang, ruangDari } from './ruang';
-import { type Benda, type Kotak, type ResolusiProyektor, type Ruang, type Titik, warnaSah } from './tipe';
+import { type Benda, type Kotak, type RasioProyektor, type Ruang, type Titik, warnaSah } from './tipe';
 
 /** Titik lokal benda (alas y = 0, +z = arah hadap) ke koordinat dunia. */
 export function keDunia(b: Benda, [lx, ly, lz]: Titik): Titik {
@@ -48,19 +48,21 @@ export function arahProyektor(b: Benda): Titik {
   return [Math.sin(r) * Math.cos(t), Math.sin(t), Math.cos(r) * Math.cos(t)];
 }
 /**
- * Resolusi asli proyektor. Gambar proyektor mengikuti panelnya: Full HD / 4K = 16:9, WUXGA / WXGA = 16:10
- * (umum di proyektor instalasi - gambarnya 11% lebih tinggi dari 16:9 pada lebar yang sama), XGA = 4:3.
+ * Rasio aspek gambar proyektor - mengikuti panel aslinya: 16:9 (Full HD / 4K), 16:10 (WUXGA, umum di
+ * proyektor instalasi - 11% lebih tinggi dari 16:9 pada lebar yang sama), 4:3 (XGA), 21:9 (ultra-wide).
+ * `px` = piksel acuan blending (lebar 1920 px).
  */
-export const RESOLUSI_PROYEKTOR: Record<ResolusiProyektor, { x: number; y: number; label: string }> = {
-  FHD: { x: 1920, y: 1080, label: 'Full HD 1920×1080 · 16:9' },
-  WUXGA: { x: 1920, y: 1200, label: 'WUXGA 1920×1200 · 16:10' },
-  '4K': { x: 3840, y: 2160, label: '4K UHD 3840×2160 · 16:9' },
-  WXGA: { x: 1280, y: 800, label: 'WXGA 1280×800 · 16:10' },
-  XGA: { x: 1024, y: 768, label: 'XGA 1024×768 · 4:3' },
+export const RASIO_PROYEKTOR: Record<RasioProyektor, { lebar: number; tinggi: number; label: string; px: { x: number; y: number } }> = {
+  '16:9': { lebar: 16, tinggi: 9, label: '16:9 (Full HD / 4K)', px: { x: 1920, y: 1080 } },
+  '16:10': { lebar: 16, tinggi: 10, label: '16:10 (WUXGA)', px: { x: 1920, y: 1200 } },
+  //  Native 4K / DCI 4096 x 2160 (Panasonic PT-RQ, dll.) - acuan blending tetap 1920 px lebar.
+  '17:9': { lebar: 17, tinggi: 9, label: '17:9 (Native 4K)', px: { x: 1920, y: 1016 } },
+  '4:3': { lebar: 4, tinggi: 3, label: '4:3 (XGA)', px: { x: 1920, y: 1440 } },
+  '21:9': { lebar: 21, tinggi: 9, label: '21:9 (ultra-wide)', px: { x: 1920, y: 823 } },
 };
-export const resolusiProyektorDari = (p: Pick<Benda, 'resolusiProyektor'>) => RESOLUSI_PROYEKTOR[p.resolusiProyektor ?? 'FHD'] ?? RESOLUSI_PROYEKTOR.FHD;
-/** Tinggi gambar / lebar gambar proyektor (9/16, 10/16, 3/4). */
-export const rasioGambarProyektor = (p: Pick<Benda, 'resolusiProyektor'>) => { const r = resolusiProyektorDari(p); return r.y / r.x; };
+export const rasioProyektorDari = (p: Pick<Benda, 'rasioProyektor'>) => RASIO_PROYEKTOR[p.rasioProyektor ?? '16:9'] ?? RASIO_PROYEKTOR['16:9'];
+/** Tinggi gambar / lebar gambar proyektor (9/16, 10/16, 3/4, 9/21). */
+export const rasioGambarProyektor = (p: Pick<Benda, 'rasioProyektor'>) => { const r = rasioProyektorDari(p); return r.tinggi / r.lebar; };
 /** Jarak minimum lensa dari dinding / plafon / lantai (m). */
 export const JARAK_LENSA_PERMUKAAN = 0.03;
 /**
@@ -76,10 +78,78 @@ export function jepitProyektor(b: Benda, X: number, Z: number, plafon: number): 
   return { x: b.x + geser(lx, m, X - m), z: b.z + geser(lz, m, Z - m), elev: Math.max(0, b.elev + geser(ly, m, plafon - m)) };
 }
 export const throwRatioDari = (b: Benda) => Math.max(0.1, b.throwRatio ?? 1.5);
-/** Offset vertikal lensa proyektor (pecahan tinggi gambar). */
-export const offsetLensaDari = (p: Benda) => Math.min(1.5, Math.max(-0.5, p.offsetLensa ?? OFFSET_GAMBAR));
-/** Lens shift horizontal (pecahan lebar gambar). */
-export const geserLensaDari = (p: Benda) => Math.min(0.6, Math.max(-0.6, p.geserLensaH ?? 0));
+/** Offset vertikal lensa proyektor (pecahan tinggi gambar). Proyektor tanpa lens shift: offset tetapnya. */
+export const offsetLensaDari = (p: Benda) => Math.min(1.5, Math.max(-0.5, p.offsetTetap ?? p.offsetLensa ?? OFFSET_GAMBAR));
+/**
+ * Koreksi jarak b (m) rumus lensa L = TR x W - b pada posisi zoom `tr`; bawaan 0 (L = TR x W). Kalkulator Panasonic
+ * menyimpan b di ujung wide & tele dan menginterpolasinya linear ikut zoom - di sini sama.
+ */
+export function koreksiJarakDari(p: Benda, tr = throwRatioDari(p)) {
+  const jepit = (v: number) => Math.min(1, Math.max(-1, v));
+  const wide = p.koreksiJarak ?? 0;
+  if (p.koreksiJarakTele === undefined) return jepit(wide);
+  const [lo, hi] = zoomLensa(p);
+  const t = hi - lo > 1e-6 ? Math.min(1, Math.max(0, (tr - lo) / (hi - lo))) : 0;
+  return jepit(wide + (p.koreksiJarakTele - wide) * t);
+}
+/** Lebar gambar di jarak lempar L (diukur dari ujung lensa): W = (L + b) / TR - rumus kalkulator pabrikan. */
+export const lebarGambarDi = (p: Benda, jarak: number, tr = throwRatioDari(p)) => Math.max(0, (jarak + koreksiJarakDari(p, tr)) / tr);
+/** Jarak lempar terdekat & terjauh (rentang zoom) untuk gambar selebar `lebar` - "Distance to screen (Min~Max)". */
+export function jarakUntukLebar(p: Benda, lebar: number): [number, number] {
+  const [lo, hi] = zoomLensa(p);
+  return [lo * lebar - koreksiJarakDari(p, lo), hi * lebar - koreksiJarakDari(p, hi)];
+}
+/** Gain layar sasaran (bawaan 1,0 = layar putih doff). */
+export const gainLayarDari = (l: Benda | null | undefined) => Math.min(5, Math.max(0.1, l?.gainLayar ?? 1));
+/** Luminance gambar (cd/m², nits) dari iluminansi (lux) & gain layar: L = E x gain / π. */
+export const luminanceDari = (lux: number, gain = 1) => (lux * gain) / Math.PI;
+/** Titik (x, y) di dalam poligon datar [x0, y0, x1, y1, ...] - ray casting. */
+function diDalamPoligon(pg: number[], x: number, y: number): boolean {
+  let dalam = false;
+  for (let i = 0, j = pg.length - 2; i < pg.length; j = i, i += 2) {
+    const [xi, yi, xj, yj] = [pg[i], pg[i + 1], pg[j], pg[j + 1]];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) dalam = !dalam;
+  }
+  return dalam;
+}
+/**
+ * Gambar yang digeser (h = pecahan lebar, v = pecahan tinggi) masih di dalam daerah lens shift: keempat pojoknya di
+ * dalam poligon - cara kalkulator Panasonic (tepi gambar memotong tepi poligon = di luar; poligon diperbesar 0,01%
+ * supaya posisi tepat di batas tetap sah). Segi delapan Panasonic membuat shift vertikal & horizontal penuh tidak
+ * bisa bersamaan: daerah sahnya belah ketupat |v| / VS + |h| / HS <= 1, bukan kotak.
+ */
+export function shiftMuat(pg: number[], h: number, v: number): boolean {
+  const besar = pg.map(n => n * 1.0001);
+  return [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]].every(([a, b]) => diDalamPoligon(besar, h + a, v + b));
+}
+/** Shift terjauh dari tengah ke arah (dx, dy) yang masih muat di poligon (bagi dua; 0 bila tengah pun tidak muat). */
+function shiftTerjauh(pg: number[], dx: number, dy: number): number {
+  if (!shiftMuat(pg, 0, 0)) return 0;
+  let lo = 0, hi = 2;
+  for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (shiftMuat(pg, dx * m, dy * m)) lo = m; else hi = m; }
+  return Math.round(lo * 1000) / 1000;
+}
+/**
+ * Batas lens shift lensa (pecahan; null = tidak dibatasi) & apakah posisi sekarang masih di dalamnya. Dengan poligon
+ * (poligonShift) batas per sumbu dihitung dari poligon dan kombinasi keduanya ikut diperiksa (`lewatGabungan`).
+ */
+export function batasShift(p: Benda) {
+  //  Tanpa lens shift (offset tetap): posisi gambar dikunci, tidak ada yang bisa dilewati.
+  if (p.offsetTetap !== undefined) return { atas: 0, bawah: 0, h: 0, lewatV: false, lewatH: false, lewatGabungan: false, ada: true, tetap: true };
+  const v = offsetLensaDari(p), g = geserLensaDari(p);
+  const pg = p.poligonShift && p.poligonShift.length >= 6 ? p.poligonShift : null;
+  if (pg) {
+    const atas = shiftTerjauh(pg, 0, 1), bawah = shiftTerjauh(pg, 0, -1), h = Math.min(shiftTerjauh(pg, 1, 0), shiftTerjauh(pg, -1, 0));
+    const lewatV = !shiftMuat(pg, 0, v), lewatH = !shiftMuat(pg, g, 0);
+    return { atas, bawah, h, lewatV, lewatH, lewatGabungan: !lewatV && !lewatH && !shiftMuat(pg, g, v), ada: true, tetap: false };
+  }
+  const atas = p.shiftAtasMaks ?? null, bawah = p.shiftBawahMaks ?? null, h = p.shiftHMaks ?? null;
+  const lewatV = (atas !== null && v > atas + 1e-6) || (bawah !== null && v < -bawah - 1e-6);
+  const lewatH = h !== null && Math.abs(g) > h + 1e-6;
+  return { atas, bawah, h, lewatV, lewatH, lewatGabungan: false, ada: atas !== null || bawah !== null || h !== null, tetap: false };
+}
+/** Lens shift horizontal (pecahan lebar gambar); proyektor tanpa lens shift selalu 0. */
+export const geserLensaDari = (p: Benda) => (p.offsetTetap !== undefined ? 0 : Math.min(0.6, Math.max(-0.6, p.geserLensaH ?? 0)));
 /** Lumen bawaan bila tidak diisi. */
 export const lumenDari = (p: Benda) => Math.max(100, p.lumen ?? (p.pasangProyektor === 'meja' ? 3500 : 5000));
 /**
@@ -176,7 +246,8 @@ export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
     //  Gambar proyektor mengikuti rasio PANEL proyektor (16:9 / 16:10 / 4:3), BUKAN rasio layar - sama dengan sinar
     //  yang digambar (mesin/sinar.ts) & cakupanProyektor. Dulu mengikuti layar: di layar 4:3 gambar dianggap
     //  2,71 x 2,03 m padahal 2,71 x 1,52 m - lux, kontras, & Pasang ke layar (tilt keliru, 80% tertutup) meleset.
-    const lebar = t / tr, tinggi = lebar * rasioG;
+    //  Lebar = (L + b) / TR - koreksi jarak lensa (rumus datasheet / kalkulator pabrikan), L dari ujung lensa.
+    const kj = koreksiJarakDari(p), lebar = lebarGambarDi(p, t, tr), tinggi = lebar * rasioG;
     const kanan: Titik = [Math.cos(rl), 0, -Math.sin(rl)];
     //  Sedikit di depan kain layar supaya tidak berkedip (z-fighting).
     const pusat: Titik = [
@@ -187,13 +258,13 @@ export function sinarProyektor(p: Benda, semua: Benda[], ruang: Ruang): Sinar {
     const selisihH = (pusat[0] - S[0]) * kanan[0] + (pusat[2] - S[2]) * kanan[2];
     return {
       asal, sudut: persegi(pusat, kanan, lebar, tinggi), layar: l, jarak: t, lebar, tinggi,
-      trPas: t / Math.max(0.01, l.w, l.h / rasioG), selisihV: pusat[1] - S[1], selisihH,
+      trPas: (t + kj) / Math.max(0.01, l.w, l.h / rasioG), selisihV: pusat[1] - S[1], selisihH,
     };
   }
   const k = daftarRuang(ruang)[ri] ?? daftarRuang(ruang)[0];
   const ke = (v: number, a: number, lo: number, hi: number) => (a > 1e-6 ? (hi - v) / a : a < -1e-6 ? (lo - v) / a : Infinity);
   const jarak = Math.min(15, Math.max(0.3, Math.min(ke(asal[0], D[0], k.x0, k.x0 + k.p), ke(asal[2], D[2], 0, k.l), ke(asal[1], D[1], 0, k.t)) - 0.005));
-  const lebar = jarak / tr, tinggi = lebar * rasioG;
+  const lebar = lebarGambarDi(p, jarak, tr), tinggi = lebar * rasioG;
   const pusat: Titik = [asal[0] + D[0] * jarak + kananP[0] * lebar * geserH, asal[1] + D[1] * jarak + naikTurun * tinggi * offV, asal[2] + D[2] * jarak + kananP[2] * lebar * geserH];
   return { asal, sudut: persegi(pusat, [Math.cos(r), 0, -Math.sin(r)], lebar, tinggi), layar: null, jarak, lebar, tinggi, trPas: null, selisihV: null, selisihH: null };
 }
@@ -247,9 +318,10 @@ export function proyektorKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang): Be
   const bebas = Math.min(ke(S[0], n[0], k.x0, k.x0 + k.p), ke(S[2], n[1], 0, k.l)) - p.d - 0.2;
   const [trLo, trHi] = zoomLensa(p);
   let tr = Math.min(trHi, Math.max(trLo, throwRatioDari(p)));
-  if (tr * lebarPerlu > bebas) tr = Math.max(trLo, bebas / lebarPerlu);
-  const jarak = Math.max(0.5, Math.min(tr * lebarPerlu, bebas));
-  const tinggiGambar = (jarak / tr) * rasioG;
+  //  Jarak lempar L = TR x W - b (koreksi jarak lensa, rumus datasheet; b ikut posisi zoom).
+  if (tr * lebarPerlu - koreksiJarakDari(p, tr) > bebas) tr = Math.max(trLo, (bebas + koreksiJarakDari(p, tr)) / lebarPerlu);
+  const jarak = Math.max(0.5, Math.min(tr * lebarPerlu - koreksiJarakDari(p, tr), bebas));
+  const tinggiGambar = lebarGambarDi(p, jarak, tr) * rasioG;
 
   //  Ketinggian lensa: pusat gambar = lensa -/+ offset x tinggi gambar (plafon terbalik: di bawah lensa).
   const arahV = plafon ? -1 : 1, off0 = offsetLensaDari(p);
@@ -259,7 +331,9 @@ export function proyektorKeLayar(p: Benda, l: Benda, k: Kotak, ruang: Ruang): Be
     : p.elev;
   const yLensa = elev + yLokal;
   const offPerlu = (S[1] - yLensa) / (arahV * tinggiGambar);
-  const off = Math.abs(offPerlu - off0) < 0.005 ? off0 : Math.min(OFFSET_MAKS_OTOMATIS, Math.max(0, offPerlu));
+  //  Lens shift otomatis dibatasi kemampuan lensa (datasheet: shift atas) bila diisi - sisanya ditutup tilt.
+  const offMaks = Math.min(OFFSET_MAKS_OTOMATIS, batasShift({ ...p, geserLensaH: 0 }).atas ?? Infinity);
+  const off = Math.abs(offPerlu - off0) < 0.005 ? off0 : Math.min(offMaks, Math.max(0, offPerlu));
 
   const taruh = (q: Benda, jarakLensa: number): Benda => {
     //  Titik benda = posisi lensa yang diinginkan - offset lensa (dengan tilt q) pada rotasi ini.

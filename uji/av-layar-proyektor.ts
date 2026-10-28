@@ -4,7 +4,9 @@
  *
  * Jalankan: npx tsx uji/av-layar-proyektor.ts
  */
-import { cekResolusi, hitungBlending, jarakPikselMenyatuM, jarakTerdekatNyamanM, lumenSpesifikasi, lumenUntukKontras, PANEL_VIDEOWALL, rentangJarakLempar, rentangTinggiLensa, sudutKeAtasDerajat, videowallUntuk } from '../lib/av-layar-proyektor';
+import { readFileSync } from 'fs';
+import { ukuranDariDiagonal } from '../lib/av-hitung';
+import { cekResolusi, hitungBlending, jarakPikselMenyatuM, jarakTerdekatNyamanM, lumenSpesifikasi, lumenUntukKontras, PANEL_VIDEOWALL, rentangJarakLempar, rentangTinggiLensa, rumusLensaDariDuaTitik, sudutKeAtasDerajat, videowallUntuk } from '../lib/av-layar-proyektor';
 
 let lulus = 0, gagal = 0;
 const dekat = (a: number, b: number, t = 0.01) => Math.abs(a - b) <= t;
@@ -30,11 +32,27 @@ cek('kontras 15:1, 300 lux, 4 m² -> 16.800 lumen', dekat(lumenUntukKontras(4, 3
 cek('gain 1,3 menurunkan kebutuhan', dekat(lumenUntukKontras(4, 300, 15, 1.3), 16800 / 1.3));
 cek('susut 20% -> spesifikasi 21.000 lumen', dekat(lumenSpesifikasi(16800, 20), 21000));
 const lj = rentangJarakLempar(3, 1.9, 1.2);
+//  Rumus lensa dengan koreksi b (Panasonic ET-D3QW200, 100" 17:9 lebar 2,245 m): 1,189 - 1,418 m.
+const ljB = rentangJarakLempar(2.245, 0.566, 0.669, 0.082);
+if (Math.abs(ljB.dekatM - 1.189) > 0.005 || Math.abs(ljB.jauhM - 1.418) > 0.006) { console.log(`  GAGAL koreksi jarak b Panasonic: ${ljB.dekatM} - ${ljB.jauhM}`); process.exitCode = 1; }
+else console.log('  ok   koreksi jarak b: L = TR x lebar - b sama dengan kalkulator Panasonic (1,189 - 1,418 m)');
 cek('gambar 3 m, throw 1,2-1,9 -> 3,6-5,7 m (urutan masukan bebas)', dekat(lj.dekatM, 3.6) && dekat(lj.jauhM, 5.7));
 const lens = rentangTinggiLensa(1, 1.5, 50, 10);
 cek('pusat gambar 1,75 m, shift +50%/-10% -> lensa 1,60-2,50 m', dekat(lens.terendahM, 1.6) && dekat(lens.tertinggiM, 2.5));
 const bl = hitungBlending(3, 1, 4, 15, 1920, 1200);
 cek('blending 3 × 1, 4 m, overlap 15% -> 10,8 m, 5184 px', dekat(bl.lebarM, 10.8) && bl.resX === 5184 && dekat(bl.tinggiM, 2.5) && bl.resY === 1200);
+
+console.log('\nKalkulator Proyektor vs kalkulator Panasonic (PT-RQ50K + ET-D3QW200, 17:9)');
+const d100 = ukuranDariDiagonal(100, 17, 9), d200 = ukuranDariDiagonal(200, 17, 9);
+cek('100" 17:9 -> lebar 2,245 m (Screen size Panasonic)', dekat(d100.lebarM, 2.245, 0.002));
+const rl = rumusLensaDariDuaTitik(d100.lebarM, 1.189, d200.lebarM, 2.460);
+cek('dua hasil Panasonic (100" 1,189 m & 200" 2,460 m) -> L = 0,566 x SW - 0,082', !!rl && dekat(rl.tr, 0.566, 0.002) && dekat(rl.b, 0.082, 0.003));
+const jr = rentangJarakLempar(d100.lebarM, 0.566, 0.669, 0.082);
+cek('100": jarak 1,189 - 1,418 m (selisih < 5 mm)', dekat(jr.dekatM, 1.189, 0.005) && dekat(jr.jauhM, 1.418, 0.005));
+cek('lebar sama / jarak kosong -> null', rumusLensaDariDuaTitik(2, 1, 2, 1.5) === null && rumusLensaDariDuaTitik(2, 0, 4, 2) === null);
+const ui = readFileSync('app/(portal)/tools-team/_components/av/KalkulatorProyektor.tsx', 'utf8');
+cek('Kalkulator punya rasio 17:9 & input diagonal', /'17:9'/.test(ui) && /label="Diagonal gambar"/.test(ui));
+cek('koreksi b kosong (wide & tele) -> peringatan di masukan & hasil', /\{!koreksi && !koreksiTele && \(/.test(ui) && /nada=\{koreksi \|\| koreksiTele \? undefined : 'awas'\}/.test(ui));
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

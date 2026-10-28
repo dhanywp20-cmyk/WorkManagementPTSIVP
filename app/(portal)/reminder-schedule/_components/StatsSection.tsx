@@ -85,7 +85,7 @@ export function StatsSection({
           onSliceClick={label => setSearchDivisionSales(searchDivisionSales === label ? '' : label)}
         />
         <MiniPieChart
-          data={teamPtsPieData} title="Team PTS IVP" icon="👥"
+          data={teamPtsPieData} title="Team Handler" icon="👥"
           activeFilter={searchTeamHandler || null}
           onSliceClick={label => setSearchTeamHandler(searchTeamHandler === label ? '' : label)}
         />

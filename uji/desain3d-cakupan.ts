@@ -113,12 +113,26 @@ console.log('\n4. Tepi cahaya & Mask ke bidang');
 {
   const sinar = readFileSync('app/(portal)/tools-team/_components/desain3d/mesin/sinar.ts', 'utf8');
   cek('sel di tepi layar / bidang (sudut di permukaan berbeda) dipecah halus, bukan dibuang (zigzag)',
-    /const satuPermukaan = ids\.every\(id => id === ids\[0\]\)/.test(sinar) && /x\.id !== q\[0\]!\.id/.test(sinar));
+    /const satuSel = \(q: \(Kena \| null\)\[\]\): q is Kena\[\] => q\.every\(x => !!x && x\.id === q\[0\]!\.id && sePermukaan\(q\[0\]!, x\)\)/.test(sinar)
+    && /else tepiHalus\(s4,/.test(sinar));
+  cek('tepi bayangan & tepi layar dicari dengan bagi dua sinar (tidak bertangga selebar sub-sel)', /if \(anggota\(h\)\) \{ lo = t; kenaLo = h; \} else hi = t;/.test(sinar));
+  cek('pojok ruangan (lantai-dinding) bukan "satu permukaan": dibedakan per mesh & normal', /if \(a\.kunci === b\.kunci\) return d > 0\.7;/.test(sinar));
+  cek('bidang gambar diangkat tegak lurus permukaan (tidak tenggelam di layar lengkung yang disinari miring)',
+    /hit\.point\.clone\(\)\.addScaledVector\(n, ANGKAT\)/.test(sinar) && /melengkung\(q\)/.test(sinar));
+  cek('cahaya hanya di sisi yang menghadap lensa: tidak tembus ke balik layar / melayang di dinding yang disembunyikan',
+    /side: THREE\.FrontSide, blending: THREE\.AdditiveBlending/.test(sinar) && !/LineSegments/.test(sinar));
+  cek('zona blending dipotong halus: bingkai lawan + sudut datang kedua lensa (COS_MIN)',
+    /cos\(A\.O\) - COS_MIN, cos\(B\.O\) - COS_MIN/.test(readFileSync('app/(portal)/tools-team/_components/desain3d/mesin/blending.ts', 'utf8')));
   cek('Mask ke bidang: hanya cahaya di layar / bidang yang digambar', /const bolehId = \(id: string \| null\) => !diBenda\(id\) && \(!mask \|\| diBidang\(id\)\)/.test(sinar));
   cek('semua template: sinar nyata tanpa Mask (cahaya lewat tepi layar tetap jatuh ke dinding / lantai)',
     KATEGORI_RUANG.every(k => proyektorDi(templateRuang(k.id).benda).every(p => !p.maskBidang)));
   cek('terang cahaya per titik mengikuti jarak² & sudut datang (bukan warna rata di semua permukaan)',
-    /return Math\.max\(0\.05, cosT\) \/ \(cosA \*\* 3 \* d2\);/.test(sinar) && /vertexColors: true, opacity: bg\.opasitas/.test(sinar) && /faktor\(kena\[n\]!, kenaN\[n\]\)/.test(sinar));
+    /return Math\.max\(0\.05, cosT\) \/ \(cosA \*\* 3 \* d2\);/.test(sinar) && /vertexColors: true, opacity: bg\.opasitas/.test(sinar) && /q\.map\(x => faktor\(x\.p, x\.n\)\)/.test(sinar));
+  //  Gizmo putar: lewat ±90° three.js menyimpan putaran sebagai Euler (180°, 180° - θ, 180°) - rot dari rotation.y
+  //  saja salah (120° terbaca 60°) & sinar proyektor keluar dari samping badan, bukan dari lensa.
+  const mesin = readFileSync('app/(portal)/tools-team/_components/desain3d/mesin/useMesin.ts', 'utf8');
+  cek('putar gizmo > 90°: sudut dibaca dari arah muka benda (quaternion), bukan rotation.y',
+    /new THREE\.Vector3\(0, 0, 1\)\.applyQuaternion\(o\.quaternion\)/.test(mesin) && !/o\.rotation\.y \* 180/.test(mesin));
   cek('Objek Saya ikut menyimpan pilihan Mask', /maskBidang: 'bool'/.test(readFileSync('lib/objek-saya.ts', 'utf8')));
 }
 

@@ -712,8 +712,7 @@ export function IntegrasiInline() {
                 </span>
               )}
               <button type="button" onClick={simpanSekarang} disabled={simpan}
-                className="text-xs font-bold px-4 py-2 rounded-lg text-white disabled:opacity-50 shrink-0"
-                style={{ background: 'linear-gradient(135deg,#0891b2,#0e7490)' }}>
+                className="tombol-utama text-xs font-bold px-4 py-2 rounded-kontrol disabled:opacity-50 shrink-0">
                 {simpan ? 'Menyimpan…' : 'Simpan'}
               </button>
             </div>

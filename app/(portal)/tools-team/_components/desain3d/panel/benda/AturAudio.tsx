@@ -1,11 +1,11 @@
 'use client';
 /** Atur audio: mic, speaker (tipe, sebaran, jangkauan), line array (modul, sudut, tilt). */
 import { Angka, f, Segmen, Catatan } from '../../../bersama/ui';
-import { bendaBaru, berkasLineArray, cakupanSpeakerPlafon, jangkauanDari, modulLA, sebaranSpeaker, sebaranVSpeaker, sudutModulLA, tiltLADari, TINGGI_DENGAR, type TipeSpeaker, tipeSpeakerDari } from '../../inti';
+import { bendaBaru, berkasLineArray, cakupanSpeakerPlafon, jangkauanDari, modulLA, sebaranSpeaker, sebaranVSpeaker, sudutModulLA, tiltLADari, telingaPenonton, TINGGI_DENGAR, type TipeSpeaker, tipeSpeakerDari } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
 export function AturAudio({ c }: { c: KonteksAtur }) {
-  const { b, kosong, onUbah, plafon, set } = c;
+  const { b, batas, kosong, onUbah, plafon, semua, set } = c;
   return (
     <>
       {b.jenis === 'mic' && (
@@ -24,7 +24,9 @@ export function AturAudio({ c }: { c: KonteksAtur }) {
       )}
       {b.jenis === 'speaker' && tipeSpeakerDari(b) === 'linearray' && (() => {
         const n = modulLA(b), hm = b.h / n;
-        const berkas = berkasLineArray(b).filter(x => x.jarak !== null);
+        //  Sama dengan kanvas: telinga ikut lantai penonton (tribun / panggung), sumbu berhenti di dinding / plafon.
+        const semuaBerkas = berkasLineArray(b, { x0: 0, x1: batas.x, z0: 0, z1: batas.z, t: plafon, telinga: telingaPenonton(semua, b) });
+        const berkas = semuaBerkas.filter(x => x.jarak !== null && !x.dinding), keDinding = semuaBerkas.filter(x => x.dinding).length;
         const dekat = berkas.length ? Math.min(...berkas.map(x => x.jarak!)) : null, jauh = berkas.length ? Math.max(...berkas.map(x => x.jarak!)) : null;
         const ubahModul = (v: number) => {
           const m = Math.max(1, Math.min(24, Math.round(v)));
@@ -56,7 +58,7 @@ export function AturAudio({ c }: { c: KonteksAtur }) {
             <p className="text-[12px] text-slate-600 leading-relaxed">
               Tinggi per modul {Math.round(hm * 1000)} mm · total lengkung {f(tiltLADari(b) + (n - 1) * sudutModulLA(b), 1)}°.
               {dekat !== null && jauh !== null
-                ? <> Sumbu modul jatuh di tinggi telinga ({f(TINGGI_DENGAR)} m) dari <b>{f(dekat, 1)} m</b> sampai <b>{f(jauh, 1)} m</b>{berkas.length < n ? ` (${n - berkas.length} modul teratas mengarah ke jauh)` : ''}.</>
+                ? <> Sumbu modul jatuh di telinga penonton ({f(TINGGI_DENGAR)} m di atas lantai / tribun) dari <b>{f(dekat, 1)} m</b> sampai <b>{f(jauh, 1)} m</b>{keDinding ? ` (${keDinding} modul teratas menabrak dinding / plafon lebih dulu)` : berkas.length < n ? ` (${n - berkas.length} modul teratas mengarah ke jauh)` : ''}.</>
                 : <> Sumbu modul belum turun ke tinggi telinga - tambah kemiringan atas / sudut antar modul agar suara menjangkau penonton.</>}
             </p>
           </div>

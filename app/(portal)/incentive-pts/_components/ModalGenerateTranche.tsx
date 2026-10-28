@@ -20,8 +20,8 @@ export function ModalGenerateTranche({ generateProject, generating, handleGenera
     <>
       {showGenerateModal && generateProject && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/50 flex items-center justify-center z-1200 p-4" onClick={e => { if (e.target === e.currentTarget) { setShowGenerateModal(false); setGenerateProject(null); } }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-200">
+        <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-1200 p-4" onClick={e => { if (e.target === e.currentTarget) { setShowGenerateModal(false); setGenerateProject(null); } }}>
+          <div className="bg-white rounded-kartu shadow-modal w-full max-w-md p-6 border border-gray-200">
             <h3 className="text-lg font-bold text-gray-800 mb-4"><IkonTeks nama="⚡" />Generate Tranche</h3>
             <p className="text-sm text-gray-500 mb-1">Project: <strong className="text-gray-800">{generateProject.project_name}</strong></p>
             <p className="text-sm text-gray-500 mb-4">BAST: <strong>{generateProject.bast_date}</strong> · Pool: <strong className="text-emerald-700">{formatRupiah(generateProject.incentive_value || 0)}</strong></p>
@@ -83,9 +83,9 @@ export function ModalGenerateTranche({ generateProject, generating, handleGenera
               );
             })()}
             <div className="flex gap-3">
-              <button onClick={() => { setShowGenerateModal(false); setGenerateProject(null); }} className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-gray-500 border border-gray-200 hover:bg-gray-50">Batal</button>
+              <button onClick={() => { setShowGenerateModal(false); setGenerateProject(null); }} className="tombol-kedua flex-1 py-2.5 rounded-kontrol font-bold text-sm">Batal</button>
               <button onClick={handleGenerateTranches} disabled={generating}
-                className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ background: 'linear-gradient(135deg,#e11d48,#7c3aed)' }}>
+                className="tombol-utama flex-1 py-2.5 rounded-kontrol font-bold text-sm  flex items-center justify-center gap-2 disabled:opacity-50">
                 {generating && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                 Generate
               </button>

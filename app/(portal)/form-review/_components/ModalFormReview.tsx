@@ -1,7 +1,7 @@
 'use client';
 
 /** ModalFormReview - dipecah dari app/(portal)/form-review/_components/FormReviewPageInner.tsx (scripts/ekstrak-jsx.mjs). Semua keadaan tetap milik induk. */
-import { FormField, SectionHeader, StarRating, ModalPortal } from '@/components/shared';
+import { FormField, SectionHeader, StarRating, ModalPortal, KepalaModal, LATAR_MODAL, KARTU_MODAL } from '@/components/shared';
 import { IkonTeks } from '@/components/shared/Ikon';
 import { ReviewForm } from './shared';
 
@@ -29,26 +29,11 @@ export function ModalFormReview({ editingReview, emptyReviewForm, fotoPreview, f
     <>
       {showFormModal && editingReview && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4 overflow-y-auto"
-          onClick={e => { if (e.target === e.currentTarget) { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); } }}>
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl max-h-full flex flex-col overflow-hidden"
-            style={{ animation: 'scale-in 0.25s ease-out', border: '1.5px solid rgba(124,58,237,0.25)' }}>
-            {/* Header */}
-            <div className="px-8 py-6 rounded-t-2xl shrink-0" style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-white"><IkonTeks nama="✏" />Isi Review</h2>
-                  <p className="text-violet-200/80 text-xs mt-1">{editingReview.project_name}</p>
-                  <p className="text-violet-300/70 text-xs mt-0.5">
-                    {editingReview.review_category === 'Demo Product' ? '🖥️ Demo Product' : '📌 BAST (Training)'}
-                  </p>
-                </div>
-                <button aria-label="Tutup" onClick={() => { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); }}
-                  className="bg-white/15 hover:bg-white/25 text-white p-2 rounded-lg transition-all">
-                  <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-              </div>
-            </div>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-1100 p-4 overflow-y-auto" style={LATAR_MODAL}>
+          {/*  Kartu, kepala & tombol baku (components/shared/Modal.tsx) - dulu kepala ungu sendiri. */}
+          <div className={`${KARTU_MODAL} w-full max-w-2xl max-h-full flex flex-col overflow-hidden`}>
+            <KepalaModal judul="Isi Review" onTutup={() => { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); }}
+              keterangan={`${editingReview.project_name} · ${editingReview.review_category === 'Demo Product' ? 'Demo Product' : 'BAST (Training)'}`} />
 
             <div className="p-8 space-y-5 flex-1 min-h-0 overflow-y-auto">
               {/* Project Info (Read-only) */}
@@ -132,15 +117,13 @@ export function ModalFormReview({ editingReview, emptyReviewForm, fotoPreview, f
 
               <div className="flex gap-3 pt-2">
                 <button onClick={() => { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); }}
-                  className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all"
-                  style={{ background: 'rgba(255,255,255,0.95)', color: '#64748b', border: '1px solid rgba(0,0,0,0.12)' }}>
+                  className="tombol-kedua flex-1 py-3 rounded-kontrol font-bold text-sm">
                   Batal
                 </button>
                 <button onClick={handleSaveReview} disabled={saving}
-                  className="flex-1 text-white py-3 rounded-xl font-bold transition-all text-sm flex items-center justify-center gap-2 hover:scale-[1.02]"
-                  style={{ background: 'linear-gradient(135deg,#7c3aed,#5b21b6)', boxShadow: '0 4px 14px rgba(124,58,237,0.35)' }}>
+                  className="tombol-utama flex-1 py-3 rounded-kontrol font-bold text-sm flex items-center justify-center gap-2">
                   {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                  <IkonTeks nama="💾" />Simpan Review
+                  Simpan Review
                 </button>
               </div>
             </div>

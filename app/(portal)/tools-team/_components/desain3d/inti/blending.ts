@@ -7,11 +7,15 @@
  * Murni: tanpa three.js / React / DOM (diuji di uji/blending-proyektor.ts). Titik permukaan
  * (hasil raycast) & uji keterhalangan diberikan pemanggil (mesin/alatBantu.ts).
  */
-import { arahProyektor, geserLensaDari, keDunia, lensaProyektor, offsetLensaDari, rasioGambarProyektor, resolusiProyektorDari, throwRatioDari } from './proyektor';
+import { arahProyektor, geserLensaDari, keDunia, koreksiJarakDari, lensaProyektor, offsetLensaDari, rasioGambarProyektor, rasioProyektorDari, throwRatioDari } from './proyektor';
 import type { Benda, Titik } from './tipe';
 
 /** Model lensa proyektor: basis ortonormal (sumbu, kanan, atas) + lebar/tinggi gambar per meter lempar. */
 export interface Lensa {
+  /**
+   * Puncak kerucut sinar: ujung lensa digeser mundur sejauh koreksi jarak b (rumus lensa L = TR x W - b), jadi
+   * lebar gambar = jarak dari puncak / TR. b = 0 (bawaan): puncak = ujung lensa.
+   */
   O: Titik; D: Titik; kanan: Titik; atas: Titik;
   /** lebar & tinggi gambar per 1 m jarak lempar (rasio panel proyektor: 16:9 / 16:10 / 4:3) */ w1: number; h1: number;
   /** pergeseran pusat gambar (lens shift) dalam pecahan lebar / tinggi gambar */ gH: number; gV: number;
@@ -34,7 +38,8 @@ export function lensaDari(p: Benda): Lensa {
   const w1 = 1 / throwRatioDari(p), h1 = w1 * rasioGambarProyektor(p);
   //  Gantung plafon = terbalik: offset vertikal lensa ke bawah sumbu.
   const arahV = p.pasangProyektor === 'meja' ? 1 : -1;
-  return { O: keDunia(p, lensaProyektor(p)), D, kanan, atas, w1, h1, gH: geserLensaDari(p), gV: arahV * offsetLensaDari(p) };
+  const O = tambah(keDunia(p, lensaProyektor(p)), D, -koreksiJarakDari(p));
+  return { O, D, kanan, atas, w1, h1, gH: geserLensaDari(p), gV: arahV * offsetLensaDari(p) };
 }
 
 /** Arah sinar ke titik gambar (u, v) - u, v dari -0,5 (kiri / bawah) sampai 0,5 (kanan / atas). */
@@ -127,7 +132,7 @@ export interface Blending {
   /** Persen dari lebar (kiri-kanan) / tinggi (atas-bawah) gambar A & B. */ persenA: number; persenB: number;
   /** Titik tengah area blending (untuk label). */ tengah: Titik;
   /** Titik permukaan dari tepi ke tepi area blending di garis tengah gambar A (garis ukur berpanah). */ garis: Titik[];
-  /** Piksel lebar (kiri-kanan) / tinggi (atas-bawah) gambar A & B - dari resolusi asli tiap proyektor. */ pxA?: number; pxB?: number;
+  /** Piksel acuan lebar (kiri-kanan) / tinggi (atas-bawah) gambar A & B - dari rasio aspek tiap proyektor. */ pxA?: number; pxB?: number;
 }
 
 /** Blending di bawah ini diabaikan (sentuhan tepi / pembulatan sampel). */
@@ -156,8 +161,8 @@ export function hitungBlending(daftar: SampelProyektor[], terlihat: (i: number, 
       lebarM: (pilih.ab.lebarM + pilih.ba.lebarM) / 2, persenA: pilih.ab.persen, persenB: pilih.ba.persen,
       tengah: [(pilih.ab.tengah[0] + pilih.ba.tengah[0]) / 2, (pilih.ab.tengah[1] + pilih.ba.tengah[1]) / 2, (pilih.ab.tengah[2] + pilih.ba.tengah[2]) / 2],
       garis: pilih.ab.garis,
-      pxA: pilih.arah === 'kiri-kanan' ? resolusiProyektorDari(A.p).x : resolusiProyektorDari(A.p).y,
-      pxB: pilih.arah === 'kiri-kanan' ? resolusiProyektorDari(B.p).x : resolusiProyektorDari(B.p).y,
+      pxA: pilih.arah === 'kiri-kanan' ? rasioProyektorDari(A.p).px.x : rasioProyektorDari(A.p).px.y,
+      pxB: pilih.arah === 'kiri-kanan' ? rasioProyektorDari(B.p).px.x : rasioProyektorDari(B.p).px.y,
     });
   }
   return hasil;
@@ -170,10 +175,10 @@ export function teksBlending(b: Pick<Blending, 'lebarM' | 'persenA' | 'persenB'>
   return `${cm} cm · ${pa === pb ? `${pa}%` : `${pa}% / ${pb}%`}`;
 }
 
-/** Resolusi acuan bila resolusi proyektor tidak diketahui: Full HD 1920 x 1080. */
+/** Piksel acuan bila rasio proyektor tidak diketahui: 1920 x 1080 (16:9). */
 export const PIKSEL_ACUAN = { 'kiri-kanan': 1920, 'atas-bawah': 1080 } as const;
 
-/** Lebar blending dalam piksel, mis. 12% kiri-kanan dari 1920 px -> 230. `px` = lebar / tinggi panel proyektor itu. */
+/** Lebar blending dalam piksel acuan, mis. 12% kiri-kanan dari 1920 px -> 230. `px` = lebar / tinggi acuan proyektor itu. */
 export const pikselBlending = (persen: number, arah: Blending['arah'], px: number = PIKSEL_ACUAN[arah]) => Math.round((persen / 100) * px);
 
 /**
@@ -191,6 +196,6 @@ export function barisKeterangan(b: Blending, nama: (n: string) => string = n => 
     `Area blending ${nama(b.namaA)} ↔ ${nama(b.namaB)} · ${b.arah}`,
     `${sisi === 'lebar' ? 'Lebar' : 'Tinggi'} area ${Math.round(b.lebarM * 100)} cm`,
     `${nama(b.namaA)}: ${p(b.persenA, pxA)} · ${nama(b.namaB)}: ${p(b.persenB, pxB)}`,
-    `dari ${sisi} gambar (${pxA === pxB ? `${pxA} px` : `${pxA} / ${pxB} px`})`,
+    `dari ${sisi} gambar (acuan ${pxA === pxB ? `${pxA} px` : `${pxA} / ${pxB} px`})`,
   ];
 }

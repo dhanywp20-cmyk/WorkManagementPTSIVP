@@ -8,6 +8,7 @@
  */
 import type { ModulLED, Hardware, BrandLED } from '@/lib/av-hitung';
 import { bersihkanIsiRak } from '@/app/(portal)/tools-team/_components/desain3d/inti/rak';
+import { bacaPoligonShift } from '@/lib/pustaka';
 
 export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[]; /** Daftar brand modul (boleh kosong untuk data lama). */ brand?: BrandLED[] }
 
@@ -270,9 +271,10 @@ export interface ProdukTim {
 const ENUM_PRODUK: Record<string, readonly string[]> = {
   rasio: ['16:9', '16:10', '4:3', '21:9'], vw: ['55BDL2105X', '49BDL2105X', 'custom'], pasang: ['dinding', 'hollow', 'standfloor'],
   mic: ['gooseneck', 'boundary'], bentukMeja: ['rapat', 'bulat', 'kelas', 'dosen', 'podium', 'kredensa', 'operator'], bentukBidang: ['datar', 'lengkung', 'cembung'], finish: ['walnut', 'oak', 'putih'],
-  tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati', 'cctv', 'dashboard', 'campuran', 'desktop'], tipeRak: ['kaca', 'tertutup', 'open'], tipeLampu: ['downlight', 'spot', 'panel', 'linear', 'gantung'],
+  tipeKursi: ['kantor', 'kelas'], tipeKamera: ['ptz', 'ptz-ai', 'xbar'], pasangProyektor: ['plafon', 'meja'], konten: ['pola', 'mati', 'cctv', 'dashboard', 'campuran', 'desktop', 'putih'], tipeRak: ['kaca', 'tertutup', 'open'], tipeLampu: ['downlight', 'spot', 'panel', 'linear', 'gantung'],
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
   tipePerangkat: ['pc', 'laptop', 'dongle', 'hp', 'tablet'],
+  rasioProyektor: ['16:9', '16:10', '17:9', '4:3', '21:9'],
 };
 /** Angka yang boleh ada di template beserta batasnya. */
 const ANGKA_PRODUK: Record<string, [number, number]> = {
@@ -280,7 +282,8 @@ const ANGKA_PRODUK: Record<string, [number, number]> = {
   kol: [1, 30], bar: [1, 30], rakU: [1, 80], throwRatio: [0.1, 10], tilt: [-90, 45], trMin: [0.1, 10], trMax: [0.1, 10],
   baris: [1, 60], kursiBaris: [1, 80], tinggiAnak: [0.1, 1], jariBidang: [0.2, 50], busur: [10, 360], jangkauan: [0.5, 60], sebaran: [10, 180], sebaranV: [4, 180],
   modul: [1, 24], sudutModul: [0, 15], tiltLA: [-30, 60],
-  offsetLensa: [-0.5, 1.5], geserLensaH: [-0.6, 0.6], lumen: [0, 100000], monitorMeja: [0, 12], sudutLampu: [10, 160], dimmer: [0, 100], kelvin: [2000, 7000], gantungLampu: [0, 3],
+  offsetLensa: [-0.5, 1.5], geserLensaH: [-0.6, 0.6], lumen: [0, 100000], monitorMeja: [0, 12],
+  koreksiJarak: [-1, 1], koreksiJarakTele: [-1, 1], offsetTetap: [-0.5, 1.5], kontrasAsli: [1, 1e8], shiftAtasMaks: [0, 1.5], shiftBawahMaks: [0, 1.5], shiftHMaks: [0, 1], gainLayar: [0.1, 5], sudutLampu: [10, 160], dimmer: [0, 100], kelvin: [2000, 7000], gantungLampu: [0, 3],
 };
 const ANGKA_PANEL: Record<string, [number, number]> = {
   w: [0.05, 5], h: [0.05, 5], d: [0.001, 1], bezelMm: [0, 100], resX: [1, 16000], resY: [1, 16000], wTipikal: [0, 5000], wMaks: [0, 5000],
@@ -299,6 +302,8 @@ export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
   if (typeof a.warna === 'string' && /^#[0-9a-f]{6}$/i.test(a.warna)) hasil.warna = a.warna.toLowerCase();
   const isiRak = bersihkanIsiRak(a.isiRak);
   if (isiRak) hasil.isiRak = isiRak;
+  const poligon = bacaPoligonShift(a.poligonShift);
+  if (poligon) hasil.poligonShift = poligon;
   if (a.panel && typeof a.panel === 'object') {
     const p = a.panel as Record<string, unknown>, panel: Record<string, number> = {};
     for (const [k, batas] of Object.entries(ANGKA_PANEL)) { const v = angka(p[k], batas); if (v !== undefined) panel[k] = v; }

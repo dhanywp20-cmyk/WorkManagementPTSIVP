@@ -157,16 +157,16 @@ export function FillDetailModal({row,onClose,onSaved,currentUser}:{row:PiketRow;
 
   return(
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 bg-black/60 flex items-center justify-center z-1100 p-4" onClick={e=>{if(e.target===e.currentTarget)requestClose();}}>
-      <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-2xl my-4 flex flex-col" style={{animation:'scale-in 0.25s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96dvh'}}>
-        <div className="px-6 py-5 rounded-t-2xl shrink-0 relative" style={{background:dc.grad}}>
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-1100 p-4" onClick={e=>{if(e.target===e.currentTarget)requestClose();}}>
+      <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl my-4 flex flex-col" style={{animation:'scale-in 0.25s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96dvh'}}>
+        <div className="px-6 py-5 bg-white border-b border-slate-100 text-slate-800 rounded-t-2xl shrink-0 relative">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Hari Piket</p>
-            <h2 className="text-lg font-bold text-white"><IkonTeks nama="✍" />Detail Piket — {row.day_of_week}</h2>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mt-1.5 mb-0.5">Tanggal · PIC</p>
-            <p className="text-white/70 text-xs">{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · {[row.pic_ivp_name,row.pic_ump_name,row.pic_mvi_name].filter(Boolean).join(' / ')||'Belum ada PIC'}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Hari Piket</p>
+            <h2 className="text-lg font-bold text-slate-800"><IkonTeks nama="✍" />Detail Piket — {row.day_of_week}</h2>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mt-1.5 mb-0.5">Tanggal · PIC</p>
+            <p className="text-slate-600 text-xs">{new Date(row.day_date+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})} · {[row.pic_ivp_name,row.pic_ump_name,row.pic_mvi_name].filter(Boolean).join(' / ')||'Belum ada PIC'}</p>
           </div>
-          <button aria-label="Tutup" onClick={requestClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/20 hover:bg-black/35 text-white flex items-center justify-center font-bold text-sm">✕</button>
+          <button aria-label="Tutup" onClick={requestClose} className="absolute top-3 right-3 w-8 h-8 rounded-kecil bg-black/5 text-slate-500 hover:text-rose-600 flex items-center justify-center font-bold text-sm">✕</button>
         </div>
         {toast&&<div className={`mx-5 mt-4 px-4 py-3 rounded-xl text-sm font-semibold flex gap-2 shrink-0 ${toast.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}><span>{toast.type==='success'?'✅':'❌'}</span><span>{toast.msg}</span></div>}
         <div className="p-6 space-y-5 overflow-y-auto flex-1 min-h-0">

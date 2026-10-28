@@ -91,7 +91,7 @@ export const KATALOG: { grup: string; item: ItemKatalog[] }[] = [
       { kunci: 'kursi', label: 'Kursi kantor', ket: 'Beroda, sandaran melengkung', jenis: 'kursi', atur: { tipeKursi: 'kantor' } },
       { kunci: 'kursi-kelas', label: 'Kursi kelas', ket: 'Empat kaki, cangkang plastik', jenis: 'kursi', atur: { tipeKursi: 'kelas' } },
       { kunci: 'meja-dosen', label: 'Meja dosen', ket: 'Meja pengajar berpanel depan', jenis: 'meja', atur: { bentukMeja: 'dosen' } },
-      { kunci: 'podium', label: 'Podium', ket: 'Mimbar + mic gooseneck', jenis: 'meja', atur: { bentukMeja: 'podium' } },
+      { kunci: 'podium', label: 'Podium', ket: 'Smart lectern MAXHUB SL22MC: layar sentuh 21,5" + 2 mic gooseneck', jenis: 'meja', atur: { bentukMeja: 'podium' } },
       { kunci: 'kredensa', label: 'Kredensa', ket: 'Lemari rendah di bawah display', jenis: 'meja', atur: { bentukMeja: 'kredensa' } },
       { kunci: 'meja-operator', label: 'Meja operator', ket: 'Control room, multi monitor', jenis: 'meja', atur: { bentukMeja: 'operator' } },
     ],
@@ -169,7 +169,8 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
       if (bentuk === 'bulat') return { ...dasar, nama: 'Meja bundar', z: k.l * 0.55, w: 1.2, h: 0.75, d: 1.2, elev: 0, bentukMeja: 'bulat', finish: 'walnut', ...atur };
       if (bentuk === 'kelas') return { ...dasar, nama: 'Meja kelas', z: k.l * 0.5, w: 1.2, h: 0.75, d: 0.5, elev: 0, bentukMeja: 'kelas', finish: 'oak', ...atur };
       if (bentuk === 'dosen') return { ...dasar, nama: 'Meja dosen', x: k.x0 + Math.min(1.8, k.p * 0.25), z: 1.5, w: 1.6, h: 0.75, d: 0.75, elev: 0, bentukMeja: 'dosen', finish: 'oak', ...atur };
-      if (bentuk === 'podium') return { ...dasar, nama: 'Podium', x: k.x0 + Math.min(3, k.p * 0.35), z: 1.3, w: 0.6, h: 1.15, d: 0.5, elev: 0, bentukMeja: 'podium', finish: 'walnut', ...atur };
+      //  MAXHUB SL22MC: 786 x 420 mm, tinggi bisa diatur 0,99-1,19 m.
+      if (bentuk === 'podium') return { ...dasar, nama: 'Podium', x: k.x0 + Math.min(3, k.p * 0.35), z: 1.3, w: 0.786, h: 1.1, d: 0.42, elev: 0, bentukMeja: 'podium', finish: 'walnut', ...atur };
       if (bentuk === 'kredensa') return { ...dasar, nama: 'Kredensa', z: 0.25, w: Math.min(2.4, k.p * 0.5), h: 0.75, d: 0.45, elev: 0, bentukMeja: 'kredensa', finish: 'walnut', ...atur };
       if (bentuk === 'operator') return { ...dasar, nama: 'Meja operator', z: Math.min(k.l - 1, k.l * 0.55), w: 1.8, h: 0.75, d: 0.8, elev: 0, bentukMeja: 'operator', monitorMeja: 4, finish: 'walnut', ...atur };
       return { ...dasar, nama: 'Meja rapat', z: k.l * 0.55, w: 1.2, h: 0.75, d: 3.6, elev: 0, bentukMeja: 'rapat', finish: 'walnut', ...atur };
@@ -200,11 +201,9 @@ export function bendaBaru(jenis: Jenis, k: Kotak, atur: Partial<Benda> = {}): Be
     case 'touchpanel': return { ...dasar, z: k.l * 0.4, w: 0.26, h: 0.16, d: 0.17, elev: 0.75, rot: 180, ...atur };
     case 'kamera': {
       const tipe = atur.tipeKamera ?? 'ptz';
-      //  Tinggi pasang seperti di lapangan (dulu 0,4 m - kamera menyorot wajah dari bawah): PTZ di atas display
-      //  bawaan (TV 65" pada 1,0-1,83 m), camera soundbar di bawahnya - sedekat mungkin dengan mata duduk ±1,2 m.
-      if (tipe === 'xbar') return { ...dasar, nama: 'Camera soundbar', z: 0.12, w: 0.9, h: 0.1, d: 0.09, elev: 0.85, tipeKamera: 'xbar', ...atur };
-      if (tipe === 'ptz-ai') return { ...dasar, nama: 'Kamera PTZ AI', z: 0.12, w: 0.28, h: 0.15, d: 0.09, elev: 1.88, tipeKamera: 'ptz-ai', ...atur };
-      return { ...dasar, nama: 'Kamera PTZ', z: 0.15, w: 0.17, h: 0.19, d: 0.17, elev: 1.88, tipeKamera: 'ptz', ...atur };
+      if (tipe === 'xbar') return { ...dasar, nama: 'Camera soundbar', z: 0.12, w: 0.9, h: 0.1, d: 0.09, elev: 0.62, tipeKamera: 'xbar', ...atur };
+      if (tipe === 'ptz-ai') return { ...dasar, nama: 'Kamera PTZ AI', z: 0.12, w: 0.28, h: 0.15, d: 0.09, elev: 0.4, tipeKamera: 'ptz-ai', ...atur };
+      return { ...dasar, nama: 'Kamera PTZ', z: 0.15, w: 0.17, h: 0.19, d: 0.17, elev: 0.4, tipeKamera: 'ptz', ...atur };
     }
     case 'perangkat': {
       const t = atur.tipePerangkat ?? 'laptop', sp = SPEK_PERANGKAT[t];
@@ -256,8 +255,7 @@ export function contohAwal(r: Ruang): Benda[] {
   const k = daftarRuang(r)[0];
   const vw = bendaBaru('videowall', k);
   const meja = bendaBaru('meja', k);
-  //  Kamera tepat di atas videowall (bawah videowall 0,8 m terlalu rendah untuk kamera - menyorot dari bawah).
-  const kam = { ...bendaBaru('kamera', k), elev: Math.round((vw.elev + vw.h + 0.05) * 100) / 100 };
+  const kam = { ...bendaBaru('kamera', k), elev: vw.elev - 0.3 };
   const kursi: Benda[] = [];
   for (let i = 0; i < 3; i++) {
     for (const sisi of [-1, 1]) {

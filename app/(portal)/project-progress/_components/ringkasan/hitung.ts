@@ -10,7 +10,7 @@ import {
   hariIni, keadaanJadwal, statDari,
   type ChecklistItem, type KeadaanJadwal, type ProyekRingkas, type StatChecklist,
 } from '@/lib/checklist';
-import { kontribusiHandler, selesaiPerHari, type AnggotaNama, type Kontribusi } from '@/lib/checklist-ringkasan';
+import { kontribusiHandler, lokasiPerHandler, selesaiPerHari, type AnggotaNama, type Kontribusi } from '@/lib/checklist-ringkasan';
 
 export type StatusLokasi = 'selesai' | 'berjalan' | 'belum' | 'kosong';
 
@@ -29,7 +29,7 @@ export interface Ringkasan extends Waktu {
   perStatus: Record<StatusLokasi, number>;
   /** Tenggat lokasi yang BELUM selesai (selesai sudah ada di perStatus). */
   perTenggat: Record<Exclude<KeadaanJadwal, 'selesai'>, number>;
-  /** Handler saja (anggota checklist). Kosong bila data aktivitas tidak tersedia. */
+  /** Lokasi per handler (anggota checklist). Kosong bila data aktivitas tidak tersedia. */
   perOrang: Kontribusi[];
   laju: TitikLaju[];
 }
@@ -110,7 +110,7 @@ export function hitungRingkasan(
   for (const d of daftar) perDaftar.set(d.id, []);
   for (const it of items) perDaftar.get(it.daftar_id)?.push(it);
   return ringkasDariLokasi(proyek, daftar.map(d => ({ ...d, stat: statDari(perDaftar.get(d.id) ?? []) })),
-    { kontribusi: kontribusiHandler(items, anggota), perHari: selesaiPerHari(items) }, hariIniStr);
+    { kontribusi: lokasiPerHandler(anggota.filter(a => perDaftar.has(a.daftar_id))), perHari: selesaiPerHari(items) }, hariIniStr);
 }
 
 // ── Daftar proyek (tampilan depan) ──────────────────────────────────────────

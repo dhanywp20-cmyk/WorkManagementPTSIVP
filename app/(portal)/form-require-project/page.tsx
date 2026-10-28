@@ -414,7 +414,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
     <>
       {canInternalApproveProject(req) && (
         <>
-          <button aria-label="Approve & Teruskan ke Admin" onClick={() => setInternalApproveTarget(req)} title="Approve & Teruskan ke Admin"
+          <button aria-label="Setujui & Teruskan ke Admin" onClick={() => setInternalApproveTarget(req)} title="Setujui & Teruskan ke Admin"
             className="w-8 h-8 shrink-0 bg-amber-50 hover:bg-amber-500 text-amber-700 hover:text-white border border-amber-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>
@@ -426,7 +426,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
       )}
       {bisaKelolaRequest && req.status === 'pending' && req.routing_status !== 'internal_review' && (
         <>
-          <button aria-label="Approve" onClick={() => handleApprove(req)} title="Approve"
+          <button aria-label="Setujui" onClick={() => handleApprove(req)} title="Setujui"
             className="w-8 h-8 shrink-0 bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">
             <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
           </button>
@@ -602,12 +602,12 @@ export default function Page() {
     <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center"
       style={{ background: 'var(--latar-halaman)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
       <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.4)' }} />
-      <div className="relative z-10 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center"
-        style={{ border: '2px solid rgba(13,148,136,0.3)' }}>
+      <div className="relative z-10 bg-white rounded-kartu shadow-modal p-8 max-w-sm w-full text-center"
+        >
         <div className="text-5xl mb-4"><Ikon nama="🔐" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
         <h2 className="text-xl font-bold text-gray-800 mb-2">Sesi Habis</h2>
         <p className="text-gray-500 text-sm mb-6">Silakan login kembali melalui dashboard.</p>
-        <a href="/dashboard" className="bg-linear-to-r from-teal-600 to-teal-800 text-white px-6 py-3 rounded-xl font-bold hover:from-teal-700 hover:to-teal-900 transition-all shadow-md inline-block">
+        <a href="/dashboard" className="tombol-utama px-6 py-3 rounded-kontrol font-bold transition-all inline-block">
           Kembali ke Dashboard
         </a>
       </div>

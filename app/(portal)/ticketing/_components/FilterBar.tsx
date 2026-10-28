@@ -215,8 +215,7 @@ export function FilterBar({
             <button onClick={() => setSelectedIds(new Set())}
               className="text-xs text-gray-500 px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Batal Pilih</button>
             <button onClick={() => setBulkConfirm(true)} disabled={bulkDeleting}
-              className="text-xs font-bold text-white px-4 py-1.5 rounded-lg disabled:opacity-50 flex items-center gap-1"
-              style={{ background: 'linear-gradient(135deg,#dc2626,#b91c1c)' }}>
+              className="tombol-bahaya text-xs font-bold px-4 py-1.5 rounded-kontrol disabled:opacity-50 flex items-center gap-1">
               {bulkDeleting ? '⏳ Menghapus...' : `🗑️ Hapus ${selectedIds.size} Ticket`}
             </button>
           </div>

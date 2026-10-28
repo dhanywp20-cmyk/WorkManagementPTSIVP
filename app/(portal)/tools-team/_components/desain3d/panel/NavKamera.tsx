@@ -1,5 +1,5 @@
 'use client';
-/** Kontrol kamera mendatar di kiri-bawah kanvas: mode seret, zoom, putar 45°, pas ruangan, fokus benda, menu arah pandang. */
+/** Navigasi kamera - satu kelompok di kanan-bawah kanvas: mode seret, zoom, putar 45°, pas ruangan, fokus benda, arah pandang. */
 import { Crosshair, Maximize2, Move, Rotate3d, RotateCcw, RotateCw, Video, ZoomIn, ZoomOut } from 'lucide-react';
 import { grupNavMendatar, tombolSudut } from './gaya';
 import { TombolNav } from './TombolNav';
@@ -11,30 +11,27 @@ export function NavKamera({ a }: { a: AlatDesain }) {
   return (
     <>
       {siap && (
-        <div className="kontrol-kanvas lapis-tembus absolute left-2 bottom-2 z-10 flex flex-row flex-wrap items-end gap-1.5 max-w-[calc(100%-16px)]" role="toolbar" aria-label="Kontrol kamera">
+        <div className="kontrol-kanvas absolute right-2 bottom-2 z-10" role="toolbar" aria-label="Kontrol kamera">
           <div className={grupNavMendatar}>
-            <TombolNav judul={modeSeret === 'geser' ? 'Seret = geser bidang (ketuk: ganti ke putar)' : 'Seret = putar kamera (ketuk: ganti ke geser)'}
+            <TombolNav judul={modeSeret === 'geser' ? 'Tangan aktif: seret = geser kanvas (klik: kembali ke putar)' : 'Tangan: seret kiri = geser kanvas (atau klik kanan / Spasi + seret)'}
               aktif={modeSeret === 'geser'} onClick={() => setModeSeret(v => (v === 'geser' ? 'putar' : 'geser'))}>
-              {modeSeret === 'geser' ? <Move size={17} /> : <Rotate3d size={17} />}
+              {modeSeret === 'geser' ? <Move size={16} /> : <Rotate3d size={16} />}
             </TombolNav>
-          </div>
-          <div className={grupNavMendatar}>
-            <TombolNav judul="Perbesar" onClick={() => zoom(0.7)}><ZoomIn size={17} /></TombolNav>
-            <TombolNav judul="Perkecil" onClick={() => zoom(1.4)}><ZoomOut size={17} /></TombolNav>
-          </div>
-          <div className={grupNavMendatar}>
-            <TombolNav judul="Putar kamera 45° ke kiri" onClick={() => putarKamera(-45)}><RotateCcw size={17} /></TombolNav>
-            <TombolNav judul="Putar kamera 45° ke kanan" onClick={() => putarKamera(45)}><RotateCw size={17} /></TombolNav>
-          </div>
-          <div className={grupNavMendatar}>
-            <TombolNav judul="Tampilkan seluruh ruangan" onClick={() => pasKeLayar()}><Maximize2 size={17} /></TombolNav>
-            {terpilih && <TombolNav judul={`Fokus ke ${terpilih.nama}`} onClick={fokusBenda}><Crosshair size={17} /></TombolNav>}
-            <TombolNav judul="Arah pandang" aktif={menuSudut} onClick={() => setMenuSudut(v => !v)}><Video size={17} /></TombolNav>
+            {/*  Ponsel: zoom & putar lewat pinch / dua jari - tombolnya disembunyikan supaya tidak menabrak menu Tampilan. */}
+            <span className="hidden sm:contents">
+              <TombolNav judul="Perbesar" onClick={() => zoom(0.7)}><ZoomIn size={16} /></TombolNav>
+              <TombolNav judul="Perkecil" onClick={() => zoom(1.4)}><ZoomOut size={16} /></TombolNav>
+              <TombolNav judul="Putar kamera 45° ke kiri" onClick={() => putarKamera(-45)}><RotateCcw size={16} /></TombolNav>
+              <TombolNav judul="Putar kamera 45° ke kanan" onClick={() => putarKamera(45)}><RotateCw size={16} /></TombolNav>
+            </span>
+            <TombolNav judul="Tampilkan seluruh ruangan" onClick={() => pasKeLayar()}><Maximize2 size={16} /></TombolNav>
+            {terpilih && <TombolNav judul={`Fokus ke ${terpilih.nama}`} onClick={fokusBenda}><Crosshair size={16} /></TombolNav>}
+            <TombolNav judul="Arah pandang" aktif={menuSudut} onClick={() => setMenuSudut(v => !v)}><Video size={16} /></TombolNav>
           </div>
         </div>
       )}
       {siap && menuSudut && (
-        <div className="kontrol-kanvas absolute left-2 bottom-14 z-20 w-[236px] max-w-[calc(100%-16px)] rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-xl p-2.5">
+        <div className="kontrol-kanvas absolute right-2 bottom-14 z-20 w-[236px] max-w-[calc(100%-16px)] rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-xl p-2.5">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">Arah pandang</p>
           <div className="grid grid-cols-3 gap-1">
             {([['iso', '3D'], ['atas', 'Atas'], ['kursi', 'Dari kursi']] as const).map(([v, l]) => (

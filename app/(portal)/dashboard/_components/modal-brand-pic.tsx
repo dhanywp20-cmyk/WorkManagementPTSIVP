@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 import { BrandPicMappingDB } from './shared';
 import { useDaftarPilihan } from '@/lib/daftar-pilihan';
-import { ModalPortal } from '@/components/shared';
+import { InlineToast, ModalPortal } from '@/components/shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 
 // BrandPicSettingModal
@@ -74,16 +74,16 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-full flex flex-col border border-slate-200">
-        <div className="bg-linear-to-r from-amber-600 to-amber-500 px-6 py-5 flex items-center justify-between shrink-0 rounded-t-2xl">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-1000 flex items-center justify-center p-4">
+      <div className="bg-white rounded-kartu shadow-modal w-full max-w-xl max-h-full flex flex-col border border-slate-200">
+        <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center text-lg"><Ikon nama="⚙" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
-            <div><h2 className="text-base font-bold text-white">Setting PIC Brand</h2><p className="text-white/70 text-xs">Mapping brand ke PIC penanggung jawab (Request Design Project)</p></div>
+            <div><h2 className="text-base font-bold text-slate-800">Setting PIC Brand</h2><p className="text-slate-500 text-xs">Mapping brand ke PIC penanggung jawab (Request Design Project)</p></div>
           </div>
-          <button aria-label="Tutup" onClick={onClose} className="bg-white/10 hover:bg-white/20 text-white p-2 rounded-lg transition-all">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold shrink-0">✕</button>
         </div>
-        {notif && <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold shrink-0 ${notif.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>{notif.type==='success'?'✅':'❌'} {notif.msg}</div>}
+        <InlineToast notif={notif} />
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {loading ? <div className="flex justify-center py-10"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin"/></div> : (
             <>
@@ -104,7 +104,7 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
         </div>
         <div className="px-5 py-4 border-t border-slate-100 flex gap-3 shrink-0">
           <button onClick={onClose} className="flex-1 border-2 border-slate-300 text-slate-600 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all">Batal</button>
-          <button onClick={handleSave} disabled={saving||loading} className="flex-1 py-2.5 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-50" style={{background:'linear-gradient(135deg,#d97706,#b45309)'}}>
+          <button onClick={handleSave} disabled={saving||loading} className="tombol-utama flex-1 py-2.5 rounded-kontrol font-bold text-sm transition-all disabled:opacity-50">
             {saving?'⏳ Menyimpan...':'💾 Simpan Semua'}
           </button>
         </div>
@@ -180,11 +180,7 @@ export function BrandPicSettingContent() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
-      {notif && (
-        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold shrink-0 ${notif.type==='success'?'bg-emerald-50 text-emerald-700 border border-emerald-200':'bg-red-50 text-red-700 border border-red-200'}`}>
-          {notif.type==='success'?'✅':'❌'} {notif.msg}
-        </div>
-      )}
+      <InlineToast notif={notif} />
       {/* Kartu putih di atas latar slate — sama dengan Kartu di Profil. */}
       <div className="flex-1 min-h-0 p-4">
         <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
@@ -214,8 +210,7 @@ export function BrandPicSettingContent() {
       </div>
       <div className="px-5 py-4 border-t border-slate-100 shrink-0">
         <button onClick={handleSave} disabled={saving||loading}
-          className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all disabled:opacity-50"
-          style={{background:'linear-gradient(135deg,#d97706,#b45309)'}}>
+          className="tombol-utama w-full py-2.5 rounded-kontrol font-bold text-sm transition-all disabled:opacity-50">
           {saving?'⏳ Menyimpan...':'💾 Simpan Semua Mapping PIC Brand'}
         </button>
       </div>

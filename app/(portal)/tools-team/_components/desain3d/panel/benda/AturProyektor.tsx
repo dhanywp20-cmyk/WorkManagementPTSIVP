@@ -1,11 +1,11 @@
 'use client';
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
-import { bendaBaru, geserLensaDari, lumenDari, offsetLensaDari, type PasangProyektor, RESOLUSI_PROYEKTOR, type ResolusiProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { batasShift, bendaBaru, geserLensaDari, koreksiJarakDari, lumenDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, type RasioProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
 export function AturProyektor({ c }: { c: KonteksAtur }) {
-  const { b, kosong, label, onUbah, set, semua } = c;
+  const { b, kosong, label, onGambar, onUbah, set, semua } = c;
   const proyektor = semua.filter(x => x.jenis === 'proyektor');
   const warnaSinar = warnaSinarProyektor(b, Math.max(0, proyektor.findIndex(x => x.id === b.id)), proyektor.length);
   return (
@@ -64,16 +64,40 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                   {tetap ? 'Lensa tetap (tanpa zoom) - isi TR terlebar & terpanjang dari datasheet bila lensanya zoom.'
                     : `Zoom ${f(zMax / zMin, 2)}× (TR ${f(zMin, 2)} - ${f(zMax, 2)} : 1). − = gambar membesar (wide), + = gambar mengecil (tele).`}
                 </Catatan>
+                {/*  Rumus lensa pabrikan: L = a x SW - b. a = TR terlebar / terpanjang di atas, b = koreksi ini. */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Angka label="Koreksi b wide" nilai={b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-1}
+                    onUbah={v => v >= -1 && v <= 1 && set({ koreksiJarak: Math.round(v * 1000) / 1000 || undefined })} />
+                  <Angka label="Koreksi b tele" nilai={b.koreksiJarakTele ?? b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-1}
+                    onUbah={v => v >= -1 && v <= 1 && set({ koreksiJarakTele: Math.round(v * 1000) / 1000 })} />
+                </div>
+                <Catatan>Rumus jarak lempar lensa L = TR × lebar − b, b di ujung wide & tele (kalkulator Panasonic menyimpan keduanya; di antaranya ikut zoom - sekarang {f(koreksiJarakDari(b), 3)} m). Contoh PT-MZ882 lensa standar: TR 1,639 b 0,055 (wide) - TR 2,788 b 0,048 (tele). Kosong / 0 = L = TR × lebar.</Catatan>
+                {/*  Sama dengan Kalkulator Proyektor: tanpa b, jarak bisa selisih beberapa cm - puluhan cm dari kalkulator pabrikan. */}
+                {!koreksiJarakDari(b) && (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11.5px] leading-snug text-amber-800">
+                    Koreksi b belum diisi - jarak lempar bisa selisih dari kalkulator pabrikan. Isi dari datasheet lensa / Pustaka.
+                  </p>
+                )}
               </div>
             );
           })()}
           <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Lens shift</p>
-              {(offsetLensaDari(b) !== 0 || geserLensaDari(b) !== 0) && (
+              {b.offsetTetap === undefined && (offsetLensaDari(b) !== 0 || geserLensaDari(b) !== 0) && (
                 <button type="button" onClick={() => set({ offsetLensa: 0, geserLensaH: 0 })} className="text-[11.5px] font-bold text-blue-700 hover:underline">Ke tengah (0%)</button>
               )}
             </div>
+            {b.offsetTetap !== undefined ? (
+              //  Proyektor tanpa lens shift (portabel / short throw): posisi gambar terhadap lensa dikunci datasheet.
+              <div className="grid grid-cols-3 gap-2 items-end">
+                <p className="col-span-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] leading-snug text-slate-700">
+                  Tanpa lens shift - pusat gambar tetap {f(b.offsetTetap * 100, 1)}% tinggi gambar dari sumbu lensa.{' '}
+                  <button type="button" onClick={() => set({ offsetTetap: undefined })} className="font-bold text-blue-700 hover:underline">Lepas kunci</button>
+                </p>
+                <Angka label="Lumen" nilai={lumenDari(b)} satuan="lm" step={100} onUbah={v => v >= 100 && v <= 100000 && set({ lumen: Math.round(v) })} />
+              </div>
+            ) : (
             <div className="grid grid-cols-3 gap-2">
               <Angka label="Vertikal" nilai={Math.round(offsetLensaDari(b) * 100)} satuan="%" step={1} min={-50}
                 onUbah={v => v >= -50 && v <= 150 && set({ offsetLensa: v / 100 })} />
@@ -81,13 +105,58 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 onUbah={v => v >= -60 && v <= 60 && set({ geserLensaH: v / 100 })} />
               <Angka label="Lumen" nilai={lumenDari(b)} satuan="lm" step={100} onUbah={v => v >= 100 && v <= 100000 && set({ lumen: Math.round(v) })} />
             </div>
-            {/*  Resolusi asli panel: rasio gambar (16:9 / 16:10 / 4:3), cakupan layar, lux & piksel blending mengikuti. */}
-            <Pilih label="Resolusi asli" nilai={b.resolusiProyektor ?? 'FHD'} onUbah={(v: ResolusiProyektor) => set({ resolusiProyektor: v })}
-              opsi={(Object.keys(RESOLUSI_PROYEKTOR) as ResolusiProyektor[]).map(k => ({ v: k, l: RESOLUSI_PROYEKTOR[k].label }))} />
+            )}
+            {b.offsetTetap === undefined && (() => {
+              //  Batas lens shift lensa dari datasheet (Panasonic: VS atas / bawah, HS kiri-kanan, % tinggi / lebar gambar).
+              const bs = batasShift(b);
+              const persen = (v: number | null) => (v === null ? undefined : Math.round(v * 100));
+              const isi = (k: 'shiftAtasMaks' | 'shiftBawahMaks' | 'shiftHMaks', v: number) => v >= 0 && v <= 150 && set({ [k]: v ? v / 100 : undefined });
+              const poligon = !!b.poligonShift?.length;
+              return (
+                <>
+                  {poligon ? (
+                    //  Daerah shift dari pabrikan (segi delapan Panasonic dsb.): batas per sumbu dihitung dari poligonnya.
+                    <p className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] leading-snug text-slate-700">
+                      Daerah lens shift lensa: vertikal +{persen(bs.atas)}/−{persen(bs.bawah)}%, kiri-kanan ±{persen(bs.h)}% - shift vertikal &amp; horizontal penuh tidak bisa bersamaan.{' '}
+                      <button type="button" onClick={() => set({ poligonShift: undefined })} className="font-bold text-blue-700 hover:underline">Pakai batas manual</button>
+                    </p>
+                  ) : (
+                  <div className="grid grid-cols-3 gap-2">
+                    <Angka label="Batas atas" nilai={persen(bs.atas) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftAtasMaks', v)} />
+                    <Angka label="Batas bawah" nilai={persen(bs.bawah) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftBawahMaks', v)} />
+                    <Angka label="Batas kiri-kanan" nilai={persen(bs.h) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftHMaks', v)} />
+                  </div>
+                  )}
+                  {(bs.lewatV || bs.lewatH) && (
+                    <p className="text-[12px] font-semibold text-rose-700">
+                      Lens shift melebihi kemampuan lensa ({bs.lewatV ? `vertikal ${Math.round(offsetLensaDari(b) * 100)}% di luar +${persen(bs.atas) ?? '∞'}/−${persen(bs.bawah) ?? '∞'}%` : ''}{bs.lewatV && bs.lewatH ? '; ' : ''}{bs.lewatH ? `horizontal ${Math.round(geserLensaDari(b) * 100)}% di luar ±${persen(bs.h)}%` : ''}) - geser proyektor atau pakai tilt.
+                    </p>
+                  )}
+                  {bs.lewatGabungan && (
+                    <p className="text-[12px] font-semibold text-rose-700">
+                      Kombinasi lens shift vertikal {Math.round(offsetLensaDari(b) * 100)}% + horizontal {Math.round(geserLensaDari(b) * 100)}% di luar daerah lensa (sudut segi delapan) - kurangi salah satu, geser proyektor, atau pakai tilt.
+                    </p>
+                  )}
+                </>
+              );
+            })()}
+            {/*  Rasio aspek panel proyektor: ukuran gambar, cakupan layar, lux & piksel blending mengikuti. */}
+            <Segmen label="Rasio aspek gambar" nilai={b.rasioProyektor ?? '16:9'} onUbah={(v: RasioProyektor) => set({ rasioProyektor: v })}
+              opsi={(Object.keys(RASIO_PROYEKTOR) as RasioProyektor[]).map(k => ({ v: k, l: k }))} />
             <Catatan>
               Vertikal = geser pusat gambar dalam % tinggi gambar (relatif proyektor; gantung plafon = terbalik): 0% = tepat di sumbu lensa,
               50% = tepi gambar sejajar lensa (umum pada proyektor tanpa lens shift). Horizontal = % lebar gambar, + ke kanan.
+              Batas = kemampuan lens shift lensa dari datasheet (Panasonic: VS1 / VS2 / HS); 0 = tidak dibatasi.
             </Catatan>
+          </div>
+          {/*  Konten yang diproyeksikan (centang "Sinar nyata"): gambar ini yang jatuh di layar / dinding / benda. */}
+          <div>
+            <Pilih label="Konten yang diproyeksikan" nilai={b.konten ?? 'pola'} onUbah={(v: KontenLayar) => (v === 'gambar' ? onGambar() : set({ konten: v }))}
+              opsi={[
+                { v: 'pola', l: 'Pola uji' }, { v: 'putih', l: 'Putih penuh (cek kecerahan & keseragaman)' }, { v: 'dashboard', l: 'Dashboard / grafik' },
+                { v: 'cctv', l: 'CCTV' }, { v: 'desktop', l: 'Home screen / presentasi' }, { v: 'gambar', l: 'Gambar unggahan...' }, { v: 'mati', l: 'Mati (proyektor padam)' },
+              ] as { v: KontenLayar; l: string }[]} />
+            <Catatan>Tampil saat "Sinar nyata" dicentang: gambar diproyeksikan dari lensa (lens shift, keystone & lengkung layar ikut), terang dari lumen dibanding cahaya ruangan, bayangan benda & warna permukaan asli. Centang Grid sinar = pola grid uji.</Catatan>
           </div>
           {/*  Warna sinar di kanvas: otomatis beda per proyektor (>= 2) supaya cakupan tiap bidang mudah dibedakan. */}
           <div>

@@ -1,19 +1,34 @@
 'use client';
-/** Kontrol di atas kanvas 3D: centang tampilan, aksi benda terpilih, geser tepat, bilah alat kiri, daftar benda, layar penuh. */
+/**
+ * Kontrol di atas kanvas 3D, tata letak gaya aplikasi CAD - tiap kelompok punya satu tempat tetap:
+ *   kiri          rel alat (BilahKiri): Tambah, teks, pilih banyak, penggaris, snap, kelompok, daftar, pusatkan
+ *   tengah-atas   benda terpilih: aksi (AksiTerpilih), geser / putar, geser cepat, geser tepat
+ *   kiri-bawah    menu Tampilan (centang dikelompokkan) - dulu deretan chip yang menutupi kanvas
+ *   kanan-bawah   navigasi kamera (NavKamera)
+ *   kanan-atas    daftar benda (DaftarKanvas)
+ */
 import { useEffect, useState } from 'react';
 import { DISPLAY, nirkabel } from '../inti';
-import { Maximize2, Minimize2, Settings2 } from 'lucide-react';
+import { ChevronUp, Layers3, Move3d, Rotate3d } from 'lucide-react';
 import { AksiTerpilih } from './AksiTerpilih';
 import { GeserTepat } from './GeserTepat';
+import { GeserCepat } from './GeserCepat';
 import { BilahKiri } from './BilahKiri';
 import { DaftarKanvas } from './DaftarKanvas';
+import { grupNavMendatar, judulMenu, panelKanvas } from './gaya';
+import { TombolNav } from './TombolNav';
 import type { AlatDesain } from './alat';
 
+interface Centang { v: boolean; s: (v: boolean) => void; l: string }
+
 export function KontrolKanvas({ a }: { a: AlatDesain }) {
-  const { teksSinar, setTeksSinar, adaProyektor, bayangan, benda, chipBuka, detailBlending, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, labelProduk, setBayangan, setChipBuka, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setSinar, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, layarPenuh, setLayarPenuh, alatKanvas } = a.K;
+  const { sinarNyata, setSinarNyata, sembunyiTeks, setSembunyiTeks, jarakDinding, setJarakDinding, teksSinar, setTeksSinar, adaProyektor, bayangan, benda, detailBlending, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, labelProduk, setBayangan, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setSinar, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, alatKanvas, hanyaLihat, modeGizmo, setModeGizmo } = a.K;
   //  Geser tepat terikat ke benda yang terpilih saat dibuka - pilih benda lain = otomatis tertutup.
   const [geser, setGeser] = useState<{ id: string; teks: string } | null>(null);
   const geserAktif = geser && geser.id === terpilih?.id ? geser : null;
+  //  Menu Tampilan: tertutup saat halaman dibuka (keadaan lokal - tidak dibaca dari penyimpanan, jadi tidak ada
+  //  beda tampilan server / peramban saat hidrasi).
+  const [tampilanBuka, setTampilanBuka] = useState(false);
   //  Ketik angka (atau -) saat benda terpilih = buka Geser tepat dengan angka itu.
   useEffect(() => {
     const tekan = (e: KeyboardEvent) => {
@@ -25,48 +40,94 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
     window.addEventListener('keydown', tekan);
     return () => window.removeEventListener('keydown', tekan);
   }, [terpilih, geserAktif, alatKanvas]);
+
+  const kelompok: { judul: string; isi: Centang[] }[] = ([
+    { judul: 'Ukuran & label', isi: [
+      { v: ukur, s: setUkur, l: 'Ukuran' },
+      //  Jarak benda terpilih ke dinding: bawaan mati (lima angka mm menutupi gambar).
+      { v: jarakDinding, s: setJarakDinding, l: 'Jarak ke dinding' },
+      ...(benda.some(b => DISPLAY.includes(b.jenis)) ? [{ v: garisUkur, s: setGarisUkur, l: 'Garis ukuran (mm)' }] : []),
+      { v: labelProduk, s: setLabelProduk, l: 'Label produk' },
+      //  Satu sakelar untuk SEMUA tulisan di kanvas (label, ukuran, angka blending, keterangan di cahaya).
+      { v: !sembunyiTeks, s: (v: boolean) => setSembunyiTeks(!v), l: 'Tulisan di kanvas' },
+    ] },
+    { judul: 'Analisis', isi: [
+      { v: kerucut, s: setKerucut, l: 'Sudut pandang' },
+      ...(benda.some(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon') ? [{ v: jangkau, s: setJangkau, l: 'Jangkauan speaker' }] : []),
+      ...(kabel.length ? [{ v: tampilKabel, s: setTampilKabel, l: 'Jalur kabel' }] : []),
+      ...(kabel.length && tampilKabel ? [{ v: kabelPower, s: setKabelPower, l: 'Kabel power' }] : []),
+      ...(benda.some(nirkabel) ? [{ v: tampilShare, s: setTampilShare, l: 'Share nirkabel' }] : []),
+    ] },
+    { judul: 'Proyektor', isi: adaProyektor ? [
+      { v: sinar, s: setSinar, l: 'Sinar proyektor' },
+      //  Sinar nyata: proyektor = lampu bergambar (lumen vs cahaya ruangan, bayangan, bahan); mati = penanda warna.
+      ...(sinar ? [{ v: sinarNyata, s: setSinarNyata, l: 'Sinar nyata' }] : []),
+      //  Mode grid: gambar tiap proyektor sebagai pola garis 16 x 9 (bentuk & sambungan antar gambar terlihat).
+      ...(sinar ? [{ v: gridSinar, s: setGridSinar, l: 'Grid sinar' }] : []),
+      ...(sinar ? [{ v: teksSinar, s: setTeksSinar, l: 'Keterangan sinar' }] : []),
+      ...(jumlahProyektor >= 2 ? [{ v: tampilBlending, s: setTampilBlending, l: 'Area blending' }] : []),
+      //  Zona ungu, garis ukur & angka cm ikut "Area blending"; kartu keterangan (persen & piksel) bawaannya
+      //  tersembunyi - centang ini untuk semua, atau klik ⓘ di angka cm untuk satu area.
+      ...(jumlahProyektor >= 2 && tampilBlending ? [{ v: detailBlending, s: setDetailBlending, l: 'Keterangan blending' }] : []),
+    ] : [] },
+    { judul: 'Render', isi: [{ v: bayangan, s: setBayangan, l: 'Bayangan & cahaya' }] },
+  ] as { judul: string; isi: Centang[] }[]).filter(k => k.isi.length);
+  const jumlahAktif = kelompok.reduce((n, k) => n + k.isi.filter(c => c.v).length, 0);
+
   return (
     <>
-      <div className="kontrol-kanvas lapis-tembus absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5 max-w-[calc(100%-16px)]">
-        <button type="button" onClick={() => setChipBuka(v => !v)} aria-expanded={chipBuka}
-          className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/95 border border-slate-200 text-[12px] font-bold text-slate-700 shadow-xs">
-          <Settings2 size={14} /> Tampilan {chipBuka ? '▴' : '▾'}
-        </button>
-        <div className={`${chipBuka ? 'flex' : 'hidden'} sm:flex gap-1.5 flex-wrap lapis-tembus`}>
-          {[{ v: ukur, s: setUkur, l: 'Ukuran' },
-            ...(benda.some(b => DISPLAY.includes(b.jenis)) ? [{ v: garisUkur, s: setGarisUkur, l: 'Garis ukuran (mm)' }] : []),
-            { v: labelProduk, s: setLabelProduk, l: 'Label produk' },
-            { v: kerucut, s: setKerucut, l: 'Sudut pandang' },
-            ...(adaProyektor ? [{ v: sinar, s: setSinar, l: 'Sinar proyektor' }] : []),
-            //  Mode grid: gambar tiap proyektor sebagai pola garis 16 x 9 (bentuk & sambungan antar gambar terlihat).
-            ...(adaProyektor && sinar ? [{ v: gridSinar, s: setGridSinar, l: 'Grid sinar' }] : []),
-            ...(adaProyektor && sinar ? [{ v: teksSinar, s: setTeksSinar, l: 'Keterangan sinar' }] : []),
-            ...(jumlahProyektor >= 2 ? [{ v: tampilBlending, s: setTampilBlending, l: 'Area blending' }] : []),
-            //  Zona ungu, garis ukur & angka cm ikut "Area blending"; kartu keterangan (persen & piksel) bawaannya
-            //  tersembunyi - centang ini untuk semua, atau klik ⓘ di angka cm untuk satu area.
-            ...(jumlahProyektor >= 2 && tampilBlending ? [{ v: detailBlending, s: setDetailBlending, l: 'Keterangan blending' }] : []),
-            ...(benda.some(b => b.jenis === 'speaker' || b.jenis === 'speaker-plafon') ? [{ v: jangkau, s: setJangkau, l: 'Jangkauan speaker' }] : []),
-            ...(kabel.length ? [{ v: tampilKabel, s: setTampilKabel, l: 'Jalur kabel' }] : []),
-            ...(benda.some(nirkabel) ? [{ v: tampilShare, s: setTampilShare, l: 'Share nirkabel' }] : []),
-            ...(kabel.length && tampilKabel ? [{ v: kabelPower, s: setKabelPower, l: 'Kabel power' }] : []),
-            { v: bayangan, s: setBayangan, l: 'Bayangan & cahaya' }].map(t => (
-            <label key={t.l} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white/90 border border-slate-200 text-[11.5px] font-semibold text-slate-700 shadow-xs">
-              <input type="checkbox" checked={t.v} onChange={e => t.s(e.target.checked)} /> {t.l}
-            </label>
-          ))}
-        </div>
-        {/* Aksi benda terpilih (panel/AksiTerpilih.tsx) & geser tepat. */}
-        <AksiTerpilih a={a} onGeserTepat={() => terpilih && setGeser({ id: terpilih.id, teks: '' })} />
-        {geserAktif && <GeserTepat a={a} awal={geserAktif.teks} onTutup={() => setGeser(null)} />}
-        {/* Bilah alat kiri: Tambah, teks, pilih banyak, penggaris, snap grid, geser / putar. */}
+      {/* Kiri: rel alat. */}
+      <div className="kontrol-kanvas lapis-tembus absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5">
         <BilahKiri a={a} />
       </div>
+
+      {/* Tengah-atas: semua yang berlaku untuk benda terpilih, berkumpul di satu tempat. */}
+      {terpilih && (
+        <div className="kontrol-kanvas lapis-tembus absolute left-1/2 -translate-x-1/2 top-2 z-10 flex flex-col items-center gap-1.5 max-w-[calc(100%-120px)]">
+          <AksiTerpilih a={a} onGeserTepat={() => terpilih && setGeser({ id: terpilih.id, teks: '' })} />
+          {alatKanvas === 'pilih' && !terpilih.terkunci && (
+            <div className="lapis-tembus flex items-center gap-1.5">
+              <div className={grupNavMendatar} role="group" aria-label="Geser atau putar benda">
+                <TombolNav judul="Geser (R)" aktif={modeGizmo === 'translate'} onClick={() => setModeGizmo('translate')}><Move3d size={16} /></TombolNav>
+                <TombolNav judul="Putar (R)" aktif={modeGizmo === 'rotate'} onClick={() => setModeGizmo('rotate')}><Rotate3d size={16} /></TombolNav>
+              </div>
+              {!hanyaLihat && <GeserCepat a={a} />}
+            </div>
+          )}
+          {geserAktif && <GeserTepat a={a} awal={geserAktif.teks} onTutup={() => setGeser(null)} />}
+        </div>
+      )}
+
+      {/* Kiri-bawah: menu Tampilan. */}
+      <div className="kontrol-kanvas absolute left-2 bottom-2 z-10">
+        <button type="button" onClick={() => setTampilanBuka(v => !v)} aria-expanded={tampilanBuka} aria-haspopup="dialog"
+          title="Pilih yang tampil di kanvas: ukuran, label, sinar proyektor, kabel, bayangan"
+          className={`inline-flex items-center gap-1.5 h-9 px-3 ${panelKanvas} text-[12.5px] font-semibold ${tampilanBuka ? 'text-blue-800 border-blue-300' : 'text-slate-700 hover:bg-slate-50'}`}>
+          <Layers3 size={16} /> Tampilan
+          <span className="min-w-5 h-5 px-1 rounded-full bg-slate-100 text-[11px] font-bold text-slate-600 grid place-items-center">{jumlahAktif}</span>
+          <ChevronUp size={14} className={`transition-transform ${tampilanBuka ? '' : 'rotate-180'}`} />
+        </button>
+        {tampilanBuka && (
+          <>
+            <div aria-hidden="true" className="fixed inset-0 z-20" onClick={() => setTampilanBuka(false)} />
+            <div role="dialog" aria-label="Pilihan tampilan" className={`absolute left-0 bottom-full mb-1.5 z-30 w-60 max-h-[min(70vh,460px)] overflow-y-auto ${panelKanvas} p-1.5`}>
+              {kelompok.map(k => (
+                <div key={k.judul}>
+                  <p className={judulMenu}>{k.judul}</p>
+                  {k.isi.map(c => (
+                    <label key={c.l} className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg text-[12.5px] text-slate-800 hover:bg-slate-50 cursor-pointer">
+                      {c.l}
+                      <input type="checkbox" className="w-4 h-4 accent-blue-700" checked={c.v} onChange={e => c.s(e.target.checked)} />
+                    </label>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+
       <DaftarKanvas a={a} />
-      <button type="button" onClick={() => setLayarPenuh(v => !v)} aria-pressed={layarPenuh}
-        title={layarPenuh ? 'Keluar layar penuh (Esc)' : 'Layar penuh'} aria-label={layarPenuh ? 'Keluar layar penuh' : 'Layar penuh'}
-        className="kontrol-kanvas absolute right-2 top-2 z-10 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-white/95 border border-slate-200 text-slate-700 shadow-xs hover:bg-slate-50">
-        {layarPenuh ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-      </button>
     </>
   );
 }

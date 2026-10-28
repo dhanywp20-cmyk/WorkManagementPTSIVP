@@ -47,7 +47,10 @@ export function ringkasKesehatan(d: DataKesehatan, sekarang: number): Peringatan
   if (galat24 >= 20) p.push({ tingkat: 'kuning', teks: `${galat24} galat di layar pengguna dalam 24 jam - lihat kartu "Galat di layar pengguna".` });
   const s = d.sistem;
   if (s) {
-    if (s.fungsi_berahasia.length) p.push({ tingkat: 'merah', teks: `Fungsi DB masih menyimpan token/kunci tertulis: ${s.fungsi_berahasia.join(', ')}. Jalankan migrasi 035 lalu rotate token.` });
+    //  kesehatan_sistem sendiri memuat teks pencariannya ('%api.fonnte.com%') - dulu ia menandai DIRINYA SENDIRI
+    //  sebagai "fungsi berahasia", sehingga alert merah palsu terkirim ke Telegram admin setiap hari.
+    const berahasia = s.fungsi_berahasia.filter(f => f !== 'kesehatan_sistem');
+    if (berahasia.length) p.push({ tingkat: 'merah', teks: `Fungsi DB masih menyimpan token/kunci tertulis: ${berahasia.join(', ')}. Jalankan migrasi 035 lalu rotate token.` });
     if (s.pemicu_http.length) p.push({ tingkat: 'merah', teks: `Trigger memanggil HTTP keluar langsung dari DB (bisa WA dobel / di luar satu pintu): ${s.pemicu_http.map(t => `${t.trigger} (${t.tabel})`).join(', ')}.` });
     const pakaiDb = s.db_bytes / BATAS_DB;
     if (pakaiDb > 0.8) p.push({ tingkat: pakaiDb > 0.95 ? 'merah' : 'kuning', teks: `Basis data ${Math.round(pakaiDb * 100)}% dari batas paket Free (500 MB).` });

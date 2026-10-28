@@ -36,7 +36,7 @@ const asliProject = (sourceReminders: R[]) => {
 const asliSales = (sourceReminders: R[]) => {
   const map: Record<string, number> = {};
   sourceReminders.forEach(r => { if (r.sales_division) { map[r.sales_division] = (map[r.sales_division] || 0) + 1; } });
-  return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
 };
 const asliTeam = (sourceReminders: R[]) => {
   const map: Record<string, number> = {};
@@ -46,7 +46,7 @@ const asliTeam = (sourceReminders: R[]) => {
 const asliProduk = (sourceReminders: R[]) => {
   const map: Record<string, number> = {};
   sourceReminders.forEach(r => { if (r.product) { map[r.product] = (map[r.product] || 0) + 1; } });
-  return Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]).map(([label, value], i) => ({ label, value, color: PIE_COLORS[i % PIE_COLORS.length] }));
 };
 
 // ── data acak deterministik ──
@@ -80,8 +80,8 @@ const contoh: R[] = [
   { project_name: 'B', category: 'K', due_date: '2026-10-01', due_time: '09:00' }, { project_name: ' B ', category: 'K', due_date: '2026-10-01', due_time: '09:00' },
 ];
 cek('satu batch_id digabung walau tanggal beda; nama dengan spasi ikut digabung', kelompokkanReminder(contoh).map(g => g.length).join(',') === '2,2');
-cek('pie divisi sales dibatasi 8, produk 12', pieDivisiSales(Array.from({ length: 20 }, (_, i) => ({ sales_division: `D${i}` }))).length === 8
-  && pieProduk(Array.from({ length: 30 }, (_, i) => ({ product: `P${i}` }))).length === 12);
+cek('pie divisi sales & produk tidak dipotong (total donat = jumlah jadwal)', pieDivisiSales(Array.from({ length: 20 }, (_, i) => ({ sales_division: `D${i}` }))).length === 20
+  && pieProduk(Array.from({ length: 30 }, (_, i) => ({ product: `P${i}` }))).length === 30);
 
 console.log(`\n${lulus} lulus, ${gagal} gagal`);
 if (gagal) process.exit(1);

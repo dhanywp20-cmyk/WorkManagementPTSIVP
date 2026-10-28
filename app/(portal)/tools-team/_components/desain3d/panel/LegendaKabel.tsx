@@ -15,7 +15,7 @@ const HURUF = 'Segoe UI, Arial, sans-serif';
 /** Overlay di sisi kanan bawah kanvas 3D. */
 export function LegendaKabel({ dipakai }: { dipakai: Set<GolonganKabel> }) {
   return (
-    <div className="kontrol-kanvas absolute right-2 bottom-2 z-10 rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md px-2.5 py-2 max-w-[calc(100%-120px)]"
+    <div className="kontrol-kanvas absolute right-2 bottom-14 z-10 rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md px-2.5 py-2 max-w-[calc(100%-120px)]"
       role="note" aria-label="Legend warna kabel">
       <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Legend kabel</p>
       <ul className="space-y-0.5">

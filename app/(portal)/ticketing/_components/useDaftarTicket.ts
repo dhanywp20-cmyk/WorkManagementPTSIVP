@@ -95,7 +95,7 @@ export function useDaftarTicket(k: DaftarTicketKonteks) {
         ...(overdue > 0 ? [{ name: "Overdue", value: overdue, color: "#EF4444" }] : []),
         ...(solvedOverdue > 0 ? [{ name: "Solved (Overdue)", value: solvedOverdue, color: "#9333ea" }] : []),
       ].filter((d) => d.value > 0),
-      handlerData: Object.entries(tickets.reduce((acc, t) => { acc[t.assign_name] = (acc[t.assign_name] || 0) + 1; return acc; }, {} as Record<string, number>)).map(([name, tickets]) => {
+      handlerData: Object.entries(tickets.reduce((acc, t) => { acc[t.assign_name] = (acc[t.assign_name] || 0) + 1; return acc; }, {} as Record<string, number>)).sort((a, b) => b[1] - a[1]).map(([name, tickets]) => {
         const member = teamMembers.find((m) => m.name.trim().toLowerCase() === name.trim().toLowerCase());
         return { name, tickets, team: member?.team_type || "Team PTS IVP" };
       }),
@@ -106,7 +106,7 @@ export function useDaftarTicket(k: DaftarTicketKonteks) {
     const divisionCounts: Record<string, number> = {};
     tickets.forEach((t) => { if (t.sales_division) divisionCounts[t.sales_division] = (divisionCounts[t.sales_division] || 0) + 1; });
     const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16", "#F97316", "#6366F1", "#14B8A6", "#F43F5E", "#A855F7", "#22D3EE", "#EAB308"];
-    const divisionData = Object.entries(divisionCounts).map(([name, value], i) => ({ name, value, color: colors[i % colors.length] })).sort((a, b) => b.value - a.value).slice(0, 10);
+    const divisionData = Object.entries(divisionCounts).map(([name, value], i) => ({ name, value, color: colors[i % colors.length] })).sort((a, b) => b.value - a.value);
     return { data: divisionData, total: divisionData.reduce((sum, d) => sum + d.value, 0) };
   }, [tickets]);
 
@@ -117,8 +117,7 @@ export function useDaftarTicket(k: DaftarTicketKonteks) {
     const colors = ["#3B82F6","#10B981","#F59E0B","#EF4444","#8B5CF6","#EC4899","#06B6D4","#84CC16","#F97316","#6366F1","#14B8A6","#F43F5E","#A855F7","#22D3EE","#EAB308"];
     const data = Object.entries(counts)
       .map(([name, value], i) => ({ name, value, color: colors[i % colors.length] }))
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 12);
+      .sort((a, b) => b.value - a.value);
     return { data, total: data.reduce((s, d) => s + d.value, 0) };
   }, [tickets]);
 

@@ -9,6 +9,7 @@
  * server (/api/tools-team/objek-saya) dan peramban (ekspor / impor). Diuji di uji/objek-saya.ts.
  */
 import { bersihkanIsiRak } from '@/app/(portal)/tools-team/_components/desain3d/inti/rak';
+import { bacaPoligonShift } from '@/lib/pustaka';
 
 export const FORMAT_OBJEK_SAYA = 'pts-objek-saya';
 export const MAKS_OBJEK_PER_AKUN = 150;
@@ -37,7 +38,8 @@ const BIDANG: Record<string, Tipe> = {
   sembunyiUkur: 'bool', sembunyiLabel: 'bool', monitorMeja: 'angka', tipeRak: 'teks', tipeLampu: 'teks', sudutLampu: 'angka', dimmer: 'angka',
   kelvin: 'angka', gantungLampu: 'angka', putarModel: 'angka', ukuranFile: 'angka3', satuanModel: 'teks', bentukObjek: 'teks',
   tipePerangkat: 'teks', pakaiDongle: 'bool', teks: 'teks', tinggiHuruf: 'angka', hadapTeks: 'teks', latarTeks: 'warna',
-  gridKolom: 'angka', warnaGrid: 'warna', maskBidang: 'bool', resolusiProyektor: 'teks', satuanLED: 'teks', unitLED: 'teks', pxUnitX: 'angka', pxUnitY: 'angka',
+  gridKolom: 'angka', warnaGrid: 'warna', maskBidang: 'bool', rasioProyektor: 'teks', satuanLED: 'teks', unitLED: 'teks', pxUnitX: 'angka', pxUnitY: 'angka',
+  koreksiJarak: 'angka', koreksiJarakTele: 'angka', offsetTetap: 'angka', kontrasAsli: 'angka', shiftAtasMaks: 'angka', shiftBawahMaks: 'angka', shiftHMaks: 'angka', gainLayar: 'angka',
 };
 const POLA_PILIHAN = /^[a-z0-9:.\- ]{1,40}$/i;
 const POLA_MODEL = /^data:model\/gltf-binary;base64,[A-Za-z0-9+/=]+$/;
@@ -61,6 +63,8 @@ export function bersihkanAturObjek(x: unknown): Record<string, unknown> {
   if (hasil.konten === 'gambar') delete hasil.konten;   // foto unggahan hanya ada di memori desain
   const isiRak = bersihkanIsiRak(a.isiRak);
   if (isiRak) hasil.isiRak = isiRak;
+  const poligon = bacaPoligonShift(a.poligonShift);
+  if (poligon) hasil.poligonShift = poligon;
   const panel = a.panel as Record<string, unknown> | undefined;
   if (panel && typeof panel === 'object' && !Array.isArray(panel)) {
     const p: Record<string, number> = {};
