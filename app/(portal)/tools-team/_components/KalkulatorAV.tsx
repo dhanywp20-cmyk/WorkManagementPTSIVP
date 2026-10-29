@@ -37,7 +37,7 @@ export function KalkulatorAV() {
           const on = x.k === aktif;
           return (
             <button key={x.k} type="button" role="tab" aria-selected={on} onClick={() => setAktif(x.k)}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap ${on ? 'bg-blue-700 text-white shadow-sm' : 'text-slate-700 hover:bg-slate-50'}`}>
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-bold whitespace-nowrap ${on ? 'bg-blue-700 text-white shadow-xs' : 'text-slate-700 hover:bg-slate-50'}`}>
               <Ikon nama={x.ikon} ukuran={14} /> {x.judul}
             </button>
           );

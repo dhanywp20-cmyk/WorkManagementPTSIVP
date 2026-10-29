@@ -97,7 +97,7 @@ export function KotakInfo({ nada = 'info', judul, children }: { nada?: keyof typ
 }
 
 /** Isian tanggal / jam / teks baku di popup persetujuan. */
-export const kelasIsianPersetujuan = 'w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300';
+export const kelasIsianPersetujuan = 'w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-300';
 export function LabelIsian({ htmlFor, children, wajib }: { htmlFor: string; children: React.ReactNode; wajib?: boolean }) {
   return <label htmlFor={htmlFor} className="block text-xs font-bold text-slate-700 mb-1.5">{children}{wajib && <span className="text-rose-600"> *</span>}</label>;
 }
@@ -118,7 +118,7 @@ export function PilihPenugasan({ nilai, onUbah, pilihan, label = LABEL.tugaskan,
         {label}{wajib && <span className="text-rose-600"> *</span>}
       </label>
       <select id={id} value={nilai} onChange={e => onUbah(e.target.value)} disabled={disabled}
-        className="w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300 disabled:bg-slate-100">
+        className="w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-300 disabled:bg-slate-100">
         <option value="">{kosong}</option>
         {grup.length <= 1 ? opsi(pilihan) : grup.map(g => (
           <optgroup key={g || '-'} label={g || 'Lainnya'}>{opsi(pilihan.filter(p => (p.grup ?? '') === g))}</optgroup>
@@ -177,7 +177,7 @@ export function ModalTolak({ buka, onTutup, judul, keterangan, onTolak, sibuk = 
         <div>
           <label htmlFor={id} className="block text-xs font-bold text-slate-700 mb-1.5">{LABEL.alasanTolak}<span className="text-rose-600"> *</span></label>
           <textarea id={id} value={alasan} onChange={e => setAlasan(e.target.value)} rows={4} placeholder={placeholder}
-            className="w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-200 resize-y" />
+            className="w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-rose-200 resize-y" />
         </div>
         {children}
       </div>

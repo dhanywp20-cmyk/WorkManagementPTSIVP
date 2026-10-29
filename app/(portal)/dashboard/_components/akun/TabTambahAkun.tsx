@@ -25,15 +25,15 @@ export function TabTambahAkun({ MenuPermissionSelector, activeTab, daftarDivisi,
           <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
             <div>
               <label htmlFor="f-dashboard-components-modal-akun-30" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Full Name *</label>
-              <input id="f-dashboard-components-modal-akun-30" value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Nama lengkap" />
+              <input id="f-dashboard-components-modal-akun-30" value={newUser.full_name} onChange={e => setNewUser({ ...newUser, full_name: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Nama lengkap" />
             </div>
             <div>
               <label htmlFor="f-dashboard-components-modal-akun-31" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Username *</label>
-              <input id="f-dashboard-components-modal-akun-31" value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="username" />
+              <input id="f-dashboard-components-modal-akun-31" value={newUser.username} onChange={e => setNewUser({ ...newUser, username: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="username" />
             </div>
             <div>
               <label htmlFor="f-dashboard-components-modal-akun-32" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Password *</label>
-              <input id="f-dashboard-components-modal-akun-32" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="min 6 karakter" />
+              <input id="f-dashboard-components-modal-akun-32" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="min 6 karakter" />
             </div>
             <div className="formulir:col-span-3">
               <label htmlFor="f-dashboard-components-modal-akun-33" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Divisi *</label>
@@ -43,7 +43,7 @@ export function TabTambahAkun({ MenuPermissionSelector, activeTab, daftarDivisi,
                 const semua = divisi === 'Administrator' || divisi === 'Viewer';
                 setNewUser({ ...newUser, divisi, pts_type: '', pts_daerah: '', sales_division: '', allowed_menus: semua ? [...ALL_MENU_KEYS] : (newUser.divisi === 'Administrator' || newUser.divisi === 'Viewer' ? DEFAULT_MENU_KEYS : newUser.allowed_menus) });
               }}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                 <option value="">-- Pilih Divisi --</option>
                 <option value="PTS">PTS</option>
                 <option value="Sales">Sales</option>
@@ -56,7 +56,7 @@ export function TabTambahAkun({ MenuPermissionSelector, activeTab, daftarDivisi,
               <div className="formulir:col-span-3">
                 <label htmlFor="f-dashboard-components-modal-akun-34" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Tipe PTS *</label>
                 <select id="f-dashboard-components-modal-akun-34" value={newUser.pts_type} onChange={e => setNewUser({ ...newUser, pts_type: e.target.value, pts_daerah: '', allowed_menus: paketMenuKelompok(e.target.value, kelompokPTSList) })}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                   <option value="">-- Pilih Tipe PTS --</option>
                   {kelompokPTSList.map(k => <option key={k.nama} value={k.label}>{k.label} → {k.nama}</option>)}
                 </select>
@@ -67,7 +67,7 @@ export function TabTambahAkun({ MenuPermissionSelector, activeTab, daftarDivisi,
                 <label htmlFor="f-dashboard-components-modal-akun-35" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Alamat Daerah *</label>
                 <input id="f-dashboard-components-modal-akun-35" value={newUser.pts_daerah} onChange={e => setNewUser({ ...newUser, pts_daerah: e.target.value })}
                   placeholder="Contoh: Surabaya, Bandung, Medan..."
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" />
                 <p className="text-[11px] text-slate-500 mt-1">Otomatis mengisi Daerah/Kota saat dipilih di dropdown PTS Cabang, Reminder Schedule.</p>
               </div>
             )}
@@ -75,27 +75,27 @@ export function TabTambahAkun({ MenuPermissionSelector, activeTab, daftarDivisi,
               <div className="formulir:col-span-3">
                 <label htmlFor="f-dashboard-components-modal-akun-36" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Sales Division *</label>
                 <select id="f-dashboard-components-modal-akun-36" value={newUser.sales_division} onChange={e => setNewUser({ ...newUser, sales_division: e.target.value })}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                   <option value="">-- Pilih Sales Division --</option>{daftarDivisi.map(div => <option key={div} value={div}>{div}</option>)}
                 </select>
               </div>
             )}
             <div>
               <label htmlFor="f-dashboard-components-modal-akun-37" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest">Jabatan</label>
-              <select id="f-dashboard-components-modal-akun-37" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
+              <select id="f-dashboard-components-modal-akun-37" value={newUser.jabatan} onChange={e => setNewUser({ ...newUser, jabatan: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400 bg-white">
                 <option value="">— Pilih Jabatan —</option>{JABATAN_LIST.map(j => <option key={j} value={j}>{JABATAN_CONFIG[j].icon} {j}</option>)}
               </select>
             </div>
             <div>
               <label htmlFor="f-dashboard-components-modal-akun-38" className="block text-xs font-bold mb-1 text-slate-600 uppercase tracking-widest"><IkonTeks nama="📱" />No. Telepon / WA</label>
-              <input id="f-dashboard-components-modal-akun-38" value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
+              <input id="f-dashboard-components-modal-akun-38" value={newUser.phone_number} onChange={e => setNewUser({ ...newUser, phone_number: e.target.value })} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 focus:border-rose-400" placeholder="Contoh: 08123456789" />
             </div>
             <div className="formulir:col-span-3">
               {MenuPermissionSelector({ selected: newUser.allowed_menus, target: "new" })}
             </div>
           </div>
           <button onClick={handleAddUser} disabled={saving}
-            className="w-full bg-gradient-to-r from-rose-600 to-rose-700 text-white py-3 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
+            className="w-full bg-linear-to-r from-rose-600 to-rose-700 text-white py-3 rounded-lg font-semibold hover:from-rose-700 hover:to-rose-800 transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
             {saving && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
             <IkonTeks nama="➕" />Tambah Akun
           </button>

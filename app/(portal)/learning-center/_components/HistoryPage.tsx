@@ -62,9 +62,9 @@ export function HistoryPage({ user }: { user: User }) {
             </div>
           )}
           {filtered.map(a => (
-            <div key={a.id} className="stagger-item rounded-2xl border border-slate-200 shadow-sm p-5 flex items-center gap-5"
+            <div key={a.id} className="stagger-item rounded-2xl border border-slate-200 shadow-xs p-5 flex items-center gap-5"
               style={{ background: '#ffffff' }}>
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white flex-shrink-0 ${a.grading_status === 'pending_review' ? 'bg-gradient-to-br from-amber-400 to-amber-600' : a.passed ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-rose-400 to-rose-600'}`}>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white shrink-0 ${a.grading_status === 'pending_review' ? 'bg-linear-to-br from-amber-400 to-amber-600' : a.passed ? 'bg-linear-to-br from-emerald-400 to-emerald-600' : 'bg-linear-to-br from-rose-400 to-rose-600'}`}>
                 {a.grading_status === 'pending_review' ? '⏳' : (a.score?.toFixed(0) ?? '—')}
               </div>
               <div className="flex-1 min-w-0">
@@ -80,7 +80,7 @@ export function HistoryPage({ user }: { user: User }) {
                   {a.time_taken_sec && <span><Ikon nama="⏱" ukuran="1em" className="inline-block align-[-0.12em]" /> {Math.floor(a.time_taken_sec/60)}m {a.time_taken_sec%60}s</span>}
                 </div>
               </div>
-              <div className="text-right flex-shrink-0 flex items-center gap-3">
+              <div className="text-right shrink-0 flex items-center gap-3">
                 <div>
                   <GradingStatusBadge attempt={a} />
                   <p className="text-xs text-slate-500 mt-1.5">{a.submitted_at ? fmtDate(a.submitted_at) : ''}</p>

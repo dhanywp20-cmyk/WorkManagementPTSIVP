@@ -92,7 +92,7 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
               value={reminderQuery}
               onChange={e => handleQueryChange(e.target.value)}
               placeholder="Ketik nama project untuk mencari..."
-              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }}
             />
             {reminderSearching && (
@@ -176,7 +176,7 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
               </div>
               <button aria-label="Tutup" type="button"
                 onClick={() => { setSelectedReminder(null); set({ project_name: '' }); }}
-                className="text-xs text-red-600 hover:text-red-700 font-bold flex-shrink-0">✕</button>
+                className="text-xs text-red-600 hover:text-red-700 font-bold shrink-0">✕</button>
             </div>
           )}
         </div>
@@ -206,7 +206,7 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
               onChange={e => projectType === 'new' || !selectedReminder ? set({ project_name: e.target.value }) : undefined}
               readOnly={projectType === 'existing' && !!selectedReminder}
               placeholder={projectType === 'existing' ? 'Pilih project dari pencarian di atas' : 'Example: BCA Cibitung Project'}
-              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
               style={{
                 background: projectType === 'existing' && selectedReminder ? "rgba(220,38,38,0.05)" : "rgba(255,255,255,0.95)",
                 border: projectType === 'existing' && selectedReminder ? "1px solid rgba(220,38,38,0.3)" : "1px solid rgba(0,0,0,0.12)",
@@ -220,7 +220,7 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
             <span className="absolute left-3 top-3"><Ikon nama="📍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <textarea value={form.address} onChange={e => set({ address: e.target.value })}
               rows={2} placeholder="Example: Jl. Jend. Sudirman No. 1..."
-              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
+              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 resize-none"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
           </div>
         </div>
@@ -235,7 +235,7 @@ export function KolomInfoTiket({ form, galatCari, handleQueryChange, isExternalG
             <span className="absolute left-3 top-1/2 -translate-y-1/2"><Ikon nama="📱" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <input type="text" value={form.customer_phone} onChange={e => set({ customer_phone: e.target.value })}
               placeholder="Adi - 08xx-xxxx-xxxx"
-              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
+              className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40"
               style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(0,0,0,0.12)" }} />
           </div>
         </div>

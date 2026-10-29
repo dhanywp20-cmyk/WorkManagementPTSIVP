@@ -47,7 +47,7 @@ export function BagianObjekSaya({ a }: { a: AlatDesain }) {
               <div key={o.id} className="group relative">
                 <button type="button" onClick={() => void tambah(o)} disabled={sibuk === o.id}
                   className="w-full h-full text-left rounded-xl border border-sky-200 bg-sky-50/50 px-3 py-2.5 pr-7 hover:border-sky-400 hover:bg-sky-100/60 disabled:opacity-60">
-                  <span className="block text-[13px] font-bold text-slate-900 break-words">{o.nama}</span>
+                  <span className="block text-[13px] font-bold text-slate-900 wrap-break-word">{o.nama}</span>
                   <span className="block text-[11.5px] text-slate-600">{o.ket || LABEL[o.jenis] || o.jenis}</span>
                   <span className="block text-[11px] text-slate-500 mt-0.5">
                     {typeof o.atur.w === 'number' && typeof o.atur.h === 'number' ? `${Math.round((o.atur.w as number) * 1000)} × ${Math.round((o.atur.h as number) * 1000)} mm` : ''}

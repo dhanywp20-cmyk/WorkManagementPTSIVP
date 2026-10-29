@@ -1,8 +1,59 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-/* ── Token desain ─────────────────────────────────────────────────────────
+@config '../tailwind.config.ts';
+
+/* satulayar - form tiga kolom: laptop (pointer halus) walau di-zoom, layar >= 1280px.
+   formulir  - grid form pendek Admin Panel: tetap 1 kolom di layar sentuh sempit.
+   Alasan lengkap lihat riwayat tailwind.config.ts (sebelum Tailwind 4). */
+@custom-variant satulayar {
+  @media (min-width: 1280px), ((pointer: fine) and (min-width: 900px)) { @slot; }
+}
+@custom-variant formulir {
+  @media (min-width: 900px), ((pointer: fine) and (min-width: 640px)) { @slot; }
+}
+
+/* Kesetaraan dengan Tailwind 3 (tampilan tidak boleh bergeser karena upgrade):
+   - line-height ukuran teks kembali ke rem tetap. v4 memakai rasio, sehingga input yang
+     dipaksa 16px di HP (cegah zoom iOS) ikut meninggi 41 -> 46 px.
+   - isian form kembali berlatar putih bawaan peramban; preflight v4 membuatnya transparan. */
+@theme {
+  --text-xs--line-height: 1rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl--line-height: 1.75rem;
+  --text-2xl--line-height: 2rem;
+  --text-3xl--line-height: 2.25rem;
+  --text-4xl--line-height: 2.5rem;
+}
+@layer base {
+  input:where(:not([type='button'], [type='reset'], [type='submit'], [type='checkbox'], [type='radio'], [type='range'], [type='color'], [type='file'])),
+  select,
+  textarea {
+    background-color: Field;
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@layer utilities {
+  /* ── Token desain ─────────────────────────────────────────────────────────
    Warna merek TIDAK lagi ditulis di sini. Sumbernya lib/merek.ts, yang
    membacanya dari database dan memasangnya sebagai --merek-* di <html>
    (lihat tulisWarnaKeCSS). Blok --ivp-brand yang dulu ada di sini memakai
@@ -18,56 +69,70 @@
 
    Nilai ukuran (radius, bayangan, jarak, tipografi) ada di lib/desain.ts.
    ───────────────────────────────────────────────────────────────────────── */
-:root {
-  /* Nilai awal; ditimpa lib/merek.ts begitu pengaturannya termuat. Ditulis di
+  :root {
+    /* Nilai awal; ditimpa lib/merek.ts begitu pengaturannya termuat. Ditulis di
      sini supaya CSS yang memakainya tetap punya warna sebelum JavaScript
      jalan - bukan sebagai sumber kebenaran. */
-  --merek-utama:        #e11d48;
-  --merek-utama-2:      #be123c;
-  --merek-aksen:        #c8861d;
-  --merek-utama-tembus: rgba(225, 29, 72, 0.1);
+    --merek-utama: #e11d48;
+    --merek-utama-2: #be123c;
+    --merek-aksen: #c8861d;
+    --merek-utama-tembus: rgba(225, 29, 72, 0.1);
 
-  /* Warna semantik - cermin WARNA di lib/desain.ts (ubah bersamaan). */
-  --halaman:         #f3f5f8;
-  /* Latar halaman modul: warna netral, atau gambar merek (lib/merek.ts). */
-  --latar-halaman:   var(--halaman);
-  --permukaan:       #ffffff;
-  --permukaan-redam: #f8fafc;
-  --garis:           #e2e8f0;
-  --garis-kuat:      #cbd5e1;
-  --tinta:           #0f172a;
-  --tinta-2:         #475569;
-  --tinta-3:         #94a3b8;
-}
+    /* Warna semantik - cermin WARNA di lib/desain.ts (ubah bersamaan). */
+    --halaman: #f3f5f8;
+    /* Latar halaman modul: warna netral, atau gambar merek (lib/merek.ts). */
+    --latar-halaman: var(--halaman);
+    --permukaan: #ffffff;
+    --permukaan-redam: #f8fafc;
+    --garis: #e2e8f0;
+    --garis-kuat: #cbd5e1;
+    --tinta: #0f172a;
+    --tinta-2: #475569;
+    --tinta-3: #94a3b8;
+  }
 
-/* ── Prevent white background flash on zoom/scale ───────────────────────── */
-html, body {
-  background: transparent;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
+  /* ── Prevent white background flash on zoom/scale ───────────────────────── */
+  html,
+  body {
+    background: transparent;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
 
-/* ── Modern thin scrollbar — semua platform ─────────────────────────────── */
-/* Webkit (Chrome, Edge, Safari) */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; border-radius: 99px; }
-::-webkit-scrollbar-thumb {
-  background: rgba(99, 102, 241, 0.25);
-  border-radius: 99px;
-  transition: background 0.2s;
-}
-::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.55); }
-::-webkit-scrollbar-corner { background: transparent; }
-/* Firefox */
-* { scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.25) transparent; }
+  /* ── Modern thin scrollbar — semua platform ─────────────────────────────── */
+  /* Webkit (Chrome, Edge, Safari) */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.25);
+    border-radius: 99px;
+    transition: background 0.2s;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.55);
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(99, 102, 241, 0.25) transparent;
+  }
 
-/* ── Global responsive safety ───────────────────────────────────────────── */
-html {
-  -webkit-text-size-adjust: 100%;   /* prevent iOS font-size inflation */
-}
+  /* ── Global responsive safety ───────────────────────────────────────────── */
+  html {
+    -webkit-text-size-adjust: 100%; /* prevent iOS font-size inflation */
+  }
 
-/* ── Skala layar ponsel ───────────────────────────────────────────────────
+  /* ── Skala layar ponsel ───────────────────────────────────────────────────
    Semua ukuran Tailwind — teks, padding, gap, lebar ikon — dinyatakan dalam
    rem, yaitu kelipatan ukuran font akar. Mengecilkan akar sekali di sini
    mengecilkan SELURUHNYA secara serempak dan sebanding, tanpa perlu menyisir
@@ -80,14 +145,22 @@ html {
 
    Nilai yang ditulis dalam px — mis. text-[10px] — memang tidak ikut mengecil.
    Itu disengaja: yang seperti itu sudah kecil sejak awal. */
-/* Lantai ukuran teks di SEMUA layar: 7-9.5px (~270 pemakaian) di bawah batas
+  /* Lantai ukuran teks di SEMUA layar: 7-9.5px (~270 pemakaian) di bawah batas
    baca nyaman bahkan di desktop. Ponsel menaikkannya lagi di blok bawah. */
-.text-\[7px\], .text-\[8px\], .text-\[8\.5px\], .text-\[9px\], .text-\[9\.5px\] { font-size: 10px !important; }
+  .text-\[7px\],
+  .text-\[8px\],
+  .text-\[8\.5px\],
+  .text-\[9px\],
+  .text-\[9\.5px\] {
+    font-size: 10px !important;
+  }
 
-@media (max-width: 640px) {
-  html { font-size: 87.5%; }
+  @media (max-width: 640px) {
+    html {
+      font-size: 87.5%;
+    }
 
-  /* ── Paket keterbacaan ponsel (2026-09-25) ──────────────────────────────
+    /* ── Paket keterbacaan ponsel (2026-09-25) ──────────────────────────────
      1. Isian >= 16px: di bawah itu Safari iOS memperbesar layar setiap kali
         kolom diketuk. Dulu dicegah dengan mematikan zoom seluruhnya
         (maximumScale: 1) - yang juga mengunci orang yang butuh memperbesar.
@@ -97,26 +170,43 @@ html {
         desktop tidak berubah.
      !important dibutuhkan karena kelas utilitas Tailwind lebih spesifik
      daripada pemilih elemen. */
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
-  select, textarea {
-    font-size: 16px !important;
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not(
+        [type='color']
+      ),
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
+    .text-\[7px\],
+    .text-\[8px\],
+    .text-\[8\.5px\],
+    .text-\[9px\],
+    .text-\[9\.5px\] {
+      font-size: 10.5px !important;
+    }
+    .text-\[10px\] {
+      font-size: 11px !important;
+    }
   }
-  .text-\[7px\], .text-\[8px\], .text-\[8\.5px\], .text-\[9px\], .text-\[9\.5px\] { font-size: 10.5px !important; }
-  .text-\[10px\] { font-size: 11px !important; }
-}
 
-/* FilterLipat (components/shared/FilterLipat.tsx): di ponsel hanya isian
+  /* FilterLipat (components/shared/FilterLipat.tsx): di ponsel hanya isian
    pertama yang tampil selama filter dilipat. Ditulis sebagai CSS biasa karena
    varian max-sm: Tailwind nonaktif (tailwind.config punya screen kustom). */
-@media (max-width: 639px) {
-  .filter-lipat-tutup > *:nth-child(n+2) { display: none !important; }
-  .filter-lipat-tutup > *:first-child { grid-column: 1 / -1; }
-}
-*, *::before, *::after {
-  box-sizing: border-box;
-}
+  @media (max-width: 639px) {
+    .filter-lipat-tutup > *:nth-child(n + 2) {
+      display: none !important;
+    }
+    .filter-lipat-tutup > *:first-child {
+      grid-column: 1 / -1;
+    }
+  }
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
 
-/* ── Page / section transitions ─────────────────────────────────────────────
+  /* ── Page / section transitions ─────────────────────────────────────────────
    ATURAN WAJIB untuk animasi masuk: frame terakhir memakai `transform: none`,
    BUKAN `translateY(0)` / `scale(1)`.
 
@@ -134,58 +224,133 @@ html {
    `transform: none` di frame terakhir menghapus jebakan itu tanpa mengubah
    satu piksel pun: interpolasinya tetap mulus (none = matriks identitas), dan
    setelah animasi selesai elemennya benar-benar bebas transform. */
-@keyframes lcPageIn {
-  from { opacity: 0; transform: translateY(50px) scale(0.92); }
-  to   { opacity: 1; transform: none; }
-}
-.lc-page-enter { animation: lcPageIn 0.95s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  @keyframes lcPageIn {
+    from {
+      opacity: 0;
+      transform: translateY(50px) scale(0.92);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .lc-page-enter {
+    animation: lcPageIn 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-@keyframes zoomIn {
-  from { opacity: 0; transform: scale(0.75); }
-  to   { opacity: 1; transform: none; }
-}
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(60px); }
-  to   { opacity: 1; transform: none; }
-}
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-35px); }
-  to   { opacity: 1; transform: none; }
-}
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes zoomIn {
+    from {
+      opacity: 0;
+      transform: scale(0.75);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(60px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-35px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 
-.animate-fade-in  { animation: fadeIn   0.65s ease-out both; }
-.animate-zoom-in  { animation: zoomIn   0.90s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.animate-slide-up { animation: slideUp  0.80s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.animate-slide-down { animation: slideDown 0.70s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .animate-fade-in {
+    animation: fadeIn 0.65s ease-out both;
+  }
+  .animate-zoom-in {
+    animation: zoomIn 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .animate-slide-down {
+    animation: slideDown 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
 
-/* Staggered list rows */
-.stagger-item { animation: slideUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) both; }
-.stagger-item:nth-child(1)  { animation-delay:  0ms; }
-.stagger-item:nth-child(2)  { animation-delay: 75ms; }
-.stagger-item:nth-child(3)  { animation-delay:140ms; }
-.stagger-item:nth-child(4)  { animation-delay:195ms; }
-.stagger-item:nth-child(5)  { animation-delay:242ms; }
-.stagger-item:nth-child(6)  { animation-delay:283ms; }
-.stagger-item:nth-child(7)  { animation-delay:318ms; }
-.stagger-item:nth-child(8)  { animation-delay:348ms; }
-.stagger-item:nth-child(n+9){ animation-delay:373ms; }
+  /* Staggered list rows */
+  .stagger-item {
+    animation: slideUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stagger-item:nth-child(1) {
+    animation-delay: 0ms;
+  }
+  .stagger-item:nth-child(2) {
+    animation-delay: 75ms;
+  }
+  .stagger-item:nth-child(3) {
+    animation-delay: 140ms;
+  }
+  .stagger-item:nth-child(4) {
+    animation-delay: 195ms;
+  }
+  .stagger-item:nth-child(5) {
+    animation-delay: 242ms;
+  }
+  .stagger-item:nth-child(6) {
+    animation-delay: 283ms;
+  }
+  .stagger-item:nth-child(7) {
+    animation-delay: 318ms;
+  }
+  .stagger-item:nth-child(8) {
+    animation-delay: 348ms;
+  }
+  .stagger-item:nth-child(n + 9) {
+    animation-delay: 373ms;
+  }
 
-/* ── Page section entrance delay helpers ─────────────────────────────────── */
-/* Use alongside animate-slide-up / animate-zoom-in / animate-slide-down     */
-.anim-d0   { animation-delay:   0ms !important; }
-.anim-d80  { animation-delay:  80ms !important; }
-.anim-d160 { animation-delay: 160ms !important; }
-.anim-d240 { animation-delay: 240ms !important; }
-.anim-d320 { animation-delay: 320ms !important; }
-.anim-d400 { animation-delay: 400ms !important; }
-.anim-d480 { animation-delay: 480ms !important; }
-.anim-d560 { animation-delay: 560ms !important; }
+  /* ── Page section entrance delay helpers ─────────────────────────────────── */
+  /* Use alongside animate-slide-up / animate-zoom-in / animate-slide-down     */
+  .anim-d0 {
+    animation-delay: 0ms !important;
+  }
+  .anim-d80 {
+    animation-delay: 80ms !important;
+  }
+  .anim-d160 {
+    animation-delay: 160ms !important;
+  }
+  .anim-d240 {
+    animation-delay: 240ms !important;
+  }
+  .anim-d320 {
+    animation-delay: 320ms !important;
+  }
+  .anim-d400 {
+    animation-delay: 400ms !important;
+  }
+  .anim-d480 {
+    animation-delay: 480ms !important;
+  }
+  .anim-d560 {
+    animation-delay: 560ms !important;
+  }
 
-/* ── Zebra stripe — in @layer base so Tailwind bg-* utilities override it ── */
+  /* ── Zebra stripe — in @layer base so Tailwind bg-* utilities override it ── */
+}
 @layer base {
   .table-zebra tbody tr:nth-child(even) {
     background-color: rgba(219, 234, 254, 0.38);
@@ -309,10 +474,16 @@ html {
       dan tidak pernah menyisakan ruang kosong pada modal yang sudah pas.
 
    overflow-y ikut disetel karena batas tinggi tanpa gulir hanya memindahkan
-   masalah: isinya terpotong dan tidak bisa dijangkau. */
-:where(.fixed.inset-0:not(.pointer-events-none)) > :where(*) {
-  max-height: 100dvh;
-  overflow-y: auto;
+   masalah: isinya terpotong dan tidak bisa dijangkau.
+
+   Tailwind 4: aturan di luar @layer SELALU menang atas utilitas (utilitas kini di @layer
+   utilities), berapa pun kekhususannya - :where() tidak lagi cukup. Karena itu aturan ini
+   ditaruh di @layer base: max-h-[90vh] dkk. di komponen kembali menang seperti di v3. */
+@layer base {
+  :where(.fixed.inset-0:not(.pointer-events-none)) > :where(*) {
+    max-height: 100dvh;
+    overflow-y: auto;
+  }
 }
 
 /* ── Animasi masuk halaman login ───────────────────────────────────────────

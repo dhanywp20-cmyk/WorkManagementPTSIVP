@@ -142,8 +142,8 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
       {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
           stacking context, sehingga z-index SEMUA modal di dalamnya cuma
           dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
-          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
-          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          di-portal ke <body>. Akibatnya modal z-1100 bisa tampil DI BELAKANG
+          modal z-1000 yang di-portal. Urutan cat terhadap tint di atas tetap
           aman karena elemen ini datang belakangan di DOM. */}
       <div className="relative flex flex-col flex-1 overflow-hidden">
         {isAdmin
@@ -189,7 +189,7 @@ function LearningCenter({ currentUser }: { currentUser: User }) {
 function JudulLC() {
   return (
     <div className="flex items-center gap-2.5 sm:gap-3 px-4 sm:px-6 pt-2.5 sm:pt-3.5 pb-0">
-      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0"
         style={{ background: '#4f46e514', color: '#4f46e5', border: '1px solid #4f46e526' }}><Ikon nama="🎓" ukuran={18} /></div>
       <div>
         <h1 className="text-[15px] sm:text-base font-bold tracking-tight leading-tight text-slate-900">Learning Center</h1>
@@ -212,7 +212,7 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
   ];
   return (
     <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #4f46e5' }}
-      className="flex-shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
+      className="shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
       <JudulLC />
       {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
           tombol lepas. Dengan penandanya pembaca layar menyebut "tab 2 dari 6"
@@ -224,13 +224,13 @@ function AdminTopNav({ view, onChange }: { view: AdminView; onChange: (v: AdminV
         <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
           {items.map(i => (
             <button key={i.key} type="button" role="tab" aria-selected={view === i.key} onClick={() => onChange(i.key)}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap shrink-0
                 ${view === i.key ? 'text-blue-700 border-blue-600 bg-blue-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
               <Ikon nama={i.icon} ukuran={14} />{i.label}
             </button>
           ))}
           <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
-            className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-200 text-base flex-shrink-0">
+            className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all border border-transparent hover:border-blue-200 text-base shrink-0">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
@@ -255,7 +255,7 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
   ];
   return (
     <div style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', boxShadow: 'inset 0 2px 0 #4f46e5' }}
-      className="flex-shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
+      className="shrink-0 sticky top-0 z-50 animate-slide-down anim-d0">
       <JudulLC />
       {/* role="tablist": deretan ini mengganti isi halaman, bukan sekadar
           tombol lepas. Dengan penandanya pembaca layar menyebut "tab 2 dari 6"
@@ -264,13 +264,13 @@ function TeamTopNav({ view, onChange }: { view: TeamView; onChange: (v: TeamView
         <nav role="tablist" aria-label="Bagian Learning Center" className="flex items-end gap-1 px-4 pt-2 overflow-x-auto">
           {items.map(i => (
             <button key={i.key} type="button" role="tab" aria-selected={view === i.key} onClick={() => onChange(i.key)}
-              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap flex-shrink-0
+              className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium rounded-t-lg border-b-2 transition-all whitespace-nowrap shrink-0
                 ${view === i.key ? 'text-indigo-700 border-indigo-600 bg-indigo-50/60 font-semibold' : 'text-slate-500 border-transparent hover:text-slate-700 hover:bg-slate-50'}`}>
               <Ikon nama={i.icon} ukuran={14} />{i.label}
             </button>
           ))}
           <button aria-label="Refresh halaman" onClick={() => window.location.reload()} title="Refresh halaman"
-            className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-200 flex-shrink-0">
+            className="ml-1 mb-1 w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition-all border border-transparent hover:border-indigo-200 shrink-0">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>

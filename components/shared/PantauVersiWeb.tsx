@@ -45,9 +45,9 @@ export function PantauVersiWeb() {
 
   if (!baru) return null;
   return (
-    <div role="status" className="fixed inset-x-0 bottom-0 z-[2400] p-3 flex justify-center pointer-events-none">
+    <div role="status" className="fixed inset-x-0 bottom-0 z-2400 p-3 flex justify-center pointer-events-none">
       <div className="pointer-events-auto w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-slate-200 p-3.5 flex items-center gap-3">
-        <span className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center flex-shrink-0"><Ikon nama="🔄" ukuran={18} /></span>
+        <span className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center shrink-0"><Ikon nama="🔄" ukuran={18} /></span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold text-slate-800">Versi baru tersedia</p>
           <p className="text-[11px] text-slate-500">Muat ulang untuk memakai perbaikan terbaru.</p>

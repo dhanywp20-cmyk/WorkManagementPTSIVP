@@ -32,7 +32,7 @@ export function BarisNotifikasiTicket({ ticket, overdue, currentUserTeamType, on
           {overdue && <p className="text-xs text-rose-700 font-bold mt-0.5">Overdue - segera tangani</p>}
           {tanggal && <p className="text-[11px] text-slate-500 mt-1">{tanggal}</p>}
         </div>
-        <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-bold border ${overdue ? statusColors['Overdue'] : statusColors[status]}`}>{overdue ? 'Overdue' : status}</span>
+        <span className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-bold border ${overdue ? statusColors['Overdue'] : statusColors[status]}`}>{overdue ? 'Overdue' : status}</span>
       </div>
     </div>
   );

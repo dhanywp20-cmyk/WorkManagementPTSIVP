@@ -37,7 +37,7 @@ export function DaftarReviewTertunda({ judul, keterangan, kosong, reviews, isTea
                   {r.address && <p className="text-xs text-slate-500 mt-0.5">{r.address}</p>}
                   {isTeam && r.sales_name && <p className="text-xs text-slate-600 font-semibold mt-0.5">Guest: {r.sales_name}</p>}
                 </div>
-                <div className="flex-shrink-0 text-right">
+                <div className="shrink-0 text-right">
                   <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800">Belum diisi</span>
                   <p className="text-[11px] text-slate-500 mt-1">{isTeam ? r.sales_name : r.assign_name}</p>
                 </div>

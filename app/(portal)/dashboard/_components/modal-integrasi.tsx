@@ -93,7 +93,7 @@ export function PilihModel({ nilai, profil, onGanti, warna }: {
       <>
         <input value={nilai} onChange={e => onGanti(e.target.value)}
           aria-label="Nama model AI"
-          className={`w-full text-xs px-2.5 py-2 rounded-lg border border-amber-300 focus:outline-none ${fokus}`} />
+          className={`w-full text-xs px-2.5 py-2 rounded-lg border border-amber-300 focus:outline-hidden ${fokus}`} />
         <p className="text-[10px] text-amber-700 mt-1 leading-relaxed">
           Daftar model tidak bisa dibaca{galat ? ` (${galat})` : ''} — ketik nama modelnya.
           Periksa tokennya lebih dulu; nama yang salah baru ketahuan saat AI dipakai.
@@ -106,7 +106,7 @@ export function PilihModel({ nilai, profil, onGanti, warna }: {
     <>
       <select value={nilai} onChange={e => onGanti(e.target.value)}
         aria-label="Model AI"
-        className={`w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 bg-white focus:outline-none ${fokus}`}>
+        className={`w-full text-xs px-2.5 py-2 rounded-lg border border-slate-200 bg-white focus:outline-hidden ${fokus}`}>
         {/* Model tersimpan yang tidak ada di daftar tetap ditampilkan - kalau
             tidak, ia diam-diam tergantikan baris pertama dan pemakainya
             mengira itulah yang selama ini terpakai. */}
@@ -125,9 +125,9 @@ export function PilihModel({ nilai, profil, onGanti, warna }: {
 export function Saklar({ aktif, onKlik, warna }: { aktif: boolean; onKlik: () => void; warna: string }) {
   return (
     <button type="button" onClick={onKlik} role="switch" aria-checked={aktif}
-      className="relative w-9 h-5 rounded-full transition-colors flex-shrink-0"
+      className="relative w-9 h-5 rounded-full transition-colors shrink-0"
       style={{ background: aktif ? warna : '#cbd5e1' }}>
-      <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+      <span className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all"
         style={{ left: aktif ? 18 : 2 }} />
     </button>
   );
@@ -167,11 +167,11 @@ export function LencanaStatus({ status }: { status: StatusKoneksi }) {
       : { bg: '#fef3c7', fg: '#b45309', titik: '#f59e0b', teks: 'Belum Terhubung' };
   return (
     <span
-      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full flex-shrink-0"
+      className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-1 rounded-full shrink-0"
       style={{ background: gaya.bg, color: gaya.fg }}
       title={status.keadaan === 'putus' ? status.alasan
              : status.keadaan === 'terhubung' ? status.info : 'Sedang memeriksa koneksi…'}>
-      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: gaya.titik }} />
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: gaya.titik }} />
       {gaya.teks}
     </span>
   );
@@ -193,7 +193,7 @@ export function PesanKotak({ pesan }: { pesan: PesanKotak | null }) {
         background: ok ? '#f0fdf4' : '#fef2f2',
         border: `1px solid ${ok ? '#bbf7d0' : '#fecaca'}`,
       }}>
-      <span className="text-[11px] leading-none mt-px flex-shrink-0">{ok ? '✅' : '⚠️'}</span>
+      <span className="text-[11px] leading-none mt-px shrink-0">{ok ? '✅' : '⚠️'}</span>
       <span className={`text-[11px] font-semibold leading-relaxed ${ok ? 'text-green-700' : 'text-red-600'}`}>
         {pesan.teks}
       </span>
@@ -253,10 +253,10 @@ export function BlokToken({
           placeholder={status?.dariEnv ? 'pakai bawaan server — isi untuk menggantinya…'
                        : status?.terisi ? 'isi untuk mengganti…' : 'tempel token di sini'}
           autoComplete="new-password"
-          className="flex-1 min-w-0 text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:border-sky-400" />
+          className="flex-1 min-w-0 text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-hidden focus:border-sky-400" />
         <button type="button" disabled={sibuk || !nilai.trim()}
           onClick={async () => { setSibuk(true); await onSimpan(nilai.trim()); setNilai(''); setSibuk(false); }}
-          className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white bg-slate-700 hover:bg-slate-800 disabled:opacity-40 flex-shrink-0">
+          className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg text-white bg-slate-700 hover:bg-slate-800 disabled:opacity-40 shrink-0">
           Simpan
         </button>
         {/* Hapus hanya untuk nilai yang memang TERSIMPAN di basis data.
@@ -266,7 +266,7 @@ export function BlokToken({
         {status?.terisi && !status.dariEnv && (
           <button type="button" disabled={sibuk}
             onClick={async () => { setSibuk(true); await onHapus(); setSibuk(false); }}
-            className="text-[11px] font-bold px-2 py-1.5 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-40 flex-shrink-0">
+            className="text-[11px] font-bold px-2 py-1.5 rounded-lg text-red-600 hover:bg-red-50 disabled:opacity-40 shrink-0">
             Hapus
           </button>
         )}
@@ -608,7 +608,7 @@ export function IntegrasiInline() {
     <div className="rounded-xl border border-slate-200 bg-white p-3 relative overflow-hidden">
       <span className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: warna }} />
       <div className="flex items-center gap-1.5 mb-1.5">
-        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: warna }} />
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: warna }} />
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 truncate">{nama}</span>
       </div>
       <div className="text-[17px] font-bold text-slate-800 leading-tight">{nilai}</div>
@@ -649,13 +649,13 @@ export function IntegrasiInline() {
             return (
               <button key={r.key} type="button" onClick={() => setSeksi(r.key)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-left whitespace-nowrap transition-colors border ${
-                  aktif ? 'bg-white border-slate-200 shadow-sm text-slate-800 font-bold'
+                  aktif ? 'bg-white border-slate-200 shadow-xs text-slate-800 font-bold'
                         : 'border-transparent text-slate-500 hover:bg-slate-100 font-semibold'}`}>
                 <span className="text-xs flex-1">{r.label}</span>
                 {r.hitung && (
                   <span className={`text-[11px] font-bold ${aktif ? 'text-cyan-700' : 'text-slate-500'}`}>{r.hitung}</span>
                 )}
-                {r.tanda && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}
+                {r.tanda && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
               </button>
             );
           })}
@@ -712,7 +712,7 @@ export function IntegrasiInline() {
                 </span>
               )}
               <button type="button" onClick={simpanSekarang} disabled={simpan}
-                className="tombol-utama text-xs font-bold px-4 py-2 rounded-kontrol disabled:opacity-50 flex-shrink-0">
+                className="tombol-utama text-xs font-bold px-4 py-2 rounded-kontrol disabled:opacity-50 shrink-0">
                 {simpan ? 'Menyimpan…' : 'Simpan'}
               </button>
             </div>

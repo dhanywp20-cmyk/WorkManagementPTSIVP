@@ -32,14 +32,14 @@ export function TabAtasan({ ATASAN_JABATAN, activeTab, allUsers, atasanByDiv, at
     <>
       {activeTab === 'atasan' && (
         <>
-          <div className="p-5 border-b border-slate-100 bg-amber-50/60 space-y-3 flex-shrink-0">
+          <div className="p-5 border-b border-slate-100 bg-amber-50/60 space-y-3 shrink-0">
             <p className="text-xs font-bold text-amber-800 uppercase tracking-widest"><IkonTeks nama="➕" />Tambah Mapping Atasan Divisi</p>
             <Keterangan className="ml-1">Mapping divisi → atasan. User dengan <strong>divisi yang sama</strong> otomatis ter-CC ke atasan terdaftar. Untuk user beda divisi (misal Handono SGP 1 → Rainata SGP), gunakan tab <strong>CC per User</strong>.</Keterangan>
             <div className="grid grid-cols-1 formulir:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="f-dashboard-components-modal-user-1" className="block text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Sales Division</label>
                 <select id="f-dashboard-components-modal-user-1" value={atasanDiv} onChange={e => setAtasanDiv(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 bg-white">
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100 bg-white">
                   <option value="">— Pilih Divisi —</option>
                   {nonIvpDivisions.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -50,7 +50,7 @@ export function TabAtasan({ ATASAN_JABATAN, activeTab, allUsers, atasanByDiv, at
                   <div className="text-[11px] text-rose-600 p-2 bg-rose-50 rounded-lg border border-rose-200"><IkonTeks nama="⚠" />Set jabatan user di Account Settings terlebih dahulu.</div>
                 ) : (
                   <select aria-label="— Pilih Atasan —" value={atasanSupId} onChange={e => setAtasanSupId(e.target.value)}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100 bg-white">
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-hidden focus:border-amber-400 focus:ring-2 focus:ring-amber-100 bg-white">
                     <option value="">— Pilih Atasan —</option>
                     {ATASAN_JABATAN.slice().reverse().map(tier => {
                       const list = supervisorCandidates.filter(u => u.jabatan === tier);
@@ -130,19 +130,19 @@ export function TabAtasan({ ATASAN_JABATAN, activeTab, allUsers, atasanByDiv, at
                               const cfg = u.jabatan ? JABATAN_CONFIG[u.jabatan as JabatanType] : null;
                               return (
                                 <div key={u.id} className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-white border border-slate-200 text-xs">
-                                  <div className="w-4 h-4 rounded-full flex items-center justify-center font-black text-[10px] flex-shrink-0"
+                                  <div className="w-4 h-4 rounded-full flex items-center justify-center font-black text-[10px] shrink-0"
                                     style={{ background: 'linear-gradient(135deg,#fde68a,#f59e0b)', color: '#78350f' }}>
                                     {u.full_name?.charAt(0)?.toUpperCase()}
                                   </div>
                                   <span className="font-semibold text-slate-700">{u.full_name}</span>
                                   {u.jabatan && (
-                                    <span className="text-[10px] font-bold px-1 py-0.5 rounded"
+                                    <span className="text-[10px] font-bold px-1 py-0.5 rounded-sm"
                                       style={{ background: cfg?.bg ?? '#f1f5f9', color: cfg?.color ?? '#475569' }}>
                                       <Ikon nama={cfg?.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}
                                     </span>
                                   )}
                                   {u.sales_division && u.sales_division !== division && (
-                                    <span className="text-[10px] text-slate-500 bg-slate-100 px-1 py-0.5 rounded">{u.sales_division}</span>
+                                    <span className="text-[10px] text-slate-500 bg-slate-100 px-1 py-0.5 rounded-sm">{u.sales_division}</span>
                                   )}
                                 </div>
                               );
@@ -156,7 +156,7 @@ export function TabAtasan({ ATASAN_JABATAN, activeTab, allUsers, atasanByDiv, at
                           const cfg = sup?.jabatan ? JABATAN_CONFIG[sup.jabatan as JabatanType] : null;
                           return (
                             <div key={m.id} className="flex items-center gap-3 px-4 py-3">
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-lg shrink-0"
                                 style={{ background: cfg?.bg ?? '#f9fafb', border: `1.5px solid ${cfg?.border ?? '#e5e7eb'}` }}>
                                 {cfg?.icon ?? '👤'}
                               </div>
@@ -173,7 +173,7 @@ export function TabAtasan({ ATASAN_JABATAN, activeTab, allUsers, atasanByDiv, at
                                 </div>
                               </div>
                               <button aria-label="Tutup" onClick={() => handleDeleteAtasan(m.id)}
-                                className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all flex-shrink-0">
+                                className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all shrink-0">
                                 <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                               </button>
                             </div>

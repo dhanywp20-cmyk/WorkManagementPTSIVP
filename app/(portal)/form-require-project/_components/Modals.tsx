@@ -99,7 +99,7 @@ export function NewFormModal({
           return (
             <button key={opt} type="button" onClick={() => onChange(toggleArr(value, opt))}
               className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${checked ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>
+              <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 transition-all ${checked ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>
                 {checked && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
               </div>
               {opt}
@@ -117,7 +117,7 @@ export function NewFormModal({
         {options.map(opt => (
           <button key={opt} type="button" onClick={() => onChange(opt)}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${value === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${value === opt ? 'border-teal-500' : 'border-gray-400'}`}>
+            <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${value === opt ? 'border-teal-500' : 'border-gray-400'}`}>
               {value === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}
             </div>
             {opt}
@@ -129,7 +129,7 @@ export function NewFormModal({
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1100] p-4" style={LATAR_MODAL}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-1100 p-4" style={LATAR_MODAL}>
       {/*  Kartu, kepala & tombol baku (components/shared/Modal.tsx) - dulu kepala bergradasi teal sendiri. */}
       <div className={`${KARTU_MODAL} w-full max-w-[1500px] h-full max-h-full flex flex-col overflow-hidden`}>
         <KepalaModal judul="Form Equipment Request — IVP & MVI" keterangan={<>Requester: <span className="font-bold">{currentUser.full_name}</span></>} onTutup={onClose} />
@@ -148,11 +148,11 @@ export function NewFormModal({
 
           <div className="satulayar:col-span-2 space-y-4 satulayar:overflow-y-auto satulayar:pr-1 satulayar:min-h-0">
           {/* ── Room Tab Navigator ── */}
-          <div className="bg-white/95 rounded-2xl border-2 border-teal-200 shadow-sm overflow-hidden">
+          <div className="bg-white/95 rounded-2xl border-2 border-teal-200 shadow-xs overflow-hidden">
             {/* Tab bar */}
             <div className="flex items-center bg-teal-50 border-b border-teal-200 px-2 py-1.5 gap-1 overflow-x-auto">
               <button aria-label="Sebelumnya" type="button" onClick={goLeft} disabled={activeRoomIdx === 0}
-                className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0">
+                className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0">
                 <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7"/></svg>
               </button>
               {Array.from({length: totalRooms}).map((_, i) => {
@@ -160,17 +160,17 @@ export function NewFormModal({
                 const isActive = activeRoomIdx === i;
                 return (
                   <button key={i} type="button" onClick={() => setActiveRoomIdx(i)}
-                    className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isActive ? 'bg-teal-600 text-white shadow' : 'text-teal-700 hover:bg-teal-100'}`}>
+                    className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${isActive ? 'bg-teal-600 text-white shadow-sm' : 'text-teal-700 hover:bg-teal-100'}`}>
                     {label}
                   </button>
                 );
               })}
               <button aria-label="Berikutnya" type="button" onClick={goRight} disabled={activeRoomIdx === totalRooms - 1}
-                className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex-shrink-0">
+                className="p-1.5 rounded-lg text-teal-700 hover:bg-teal-100 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0">
                 <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7"/></svg>
               </button>
               <button type="button" onClick={addAndGoToRoom}
-                className="flex-shrink-0 px-3 py-1.5 rounded-xl bg-teal-500 text-white text-xs font-bold hover:bg-teal-600 transition-all whitespace-nowrap ml-1">
+                className="shrink-0 px-3 py-1.5 rounded-xl bg-teal-500 text-white text-xs font-bold hover:bg-teal-600 transition-all whitespace-nowrap ml-1">
                 + Ruangan Lain
               </button>
               {/* Pendorong ini hanya dipakai saat barisnya memang muat. Di ponsel
@@ -179,7 +179,7 @@ export function NewFormModal({
               <span className="text-[11px] text-teal-700 font-bold mr-1">{activeRoomIdx+1}/{totalRooms}</span>
               {activeRoomIdx > 0 && (
                 <button aria-label="Tutup" type="button" onClick={() => { setRooms(p => p.filter((_,i)=>i!==activeRoomIdx-1)); setActiveRoomIdx(a=>Math.max(0,a-1)); }}
-                  className="flex-shrink-0 p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all">
+                  className="shrink-0 p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all">
                   <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
               )}
@@ -199,7 +199,7 @@ export function NewFormModal({
           </div>
         </div>
 
-        <div className="border-t border-gray-200 px-4 py-3 flex gap-2 justify-end bg-white/90 flex-shrink-0">
+        <div className="border-t border-gray-200 px-4 py-3 flex gap-2 justify-end bg-white/90 shrink-0">
           <BatalButton onClick={onClose} />
           <SubmitFormButton onClick={onSubmit} loading={submitting}
             />

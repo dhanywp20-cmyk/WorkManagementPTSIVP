@@ -231,7 +231,7 @@ function KotakLogo({ url, a, b, tembus, sisi }: { url: string; a?: string; b?: s
         ada logo -> putih, belum ada -> gradasi warna merek. Pratinjau di sini
         HARUS sama persis dengan hasil aslinya; kalau tidak, admin memilih warna
         berdasarkan pratinjau yang bukan gambaran platformnya. */
-    <div className="rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+    <div className="rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
       style={{ width: sisi, height: sisi,
         background: url ? (tembus ? 'rgba(255,255,255,0.92)' : '#ffffff')
                         : (tembus ? 'rgba(255,255,255,0.15)' : `linear-gradient(135deg, ${a}, ${b})`),
@@ -255,7 +255,7 @@ function Unggah({ label, jenis, nilai, sedang, keterangan, onBerkas, onHapus }: 
     <div>
       <Label>{label}</Label>
       <div className="mt-1.5 flex items-center gap-3">
-        <div className={`rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden flex-shrink-0 ${jenis === 'logo' ? 'w-14 h-14' : 'w-24 h-14'}`}>
+        <div className={`rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden shrink-0 ${jenis === 'logo' ? 'w-14 h-14' : 'w-24 h-14'}`}>
           {nilai
             // eslint-disable-next-line @next/next/no-img-element
             ? <img src={nilai} alt="" className="w-full h-full object-contain" />
@@ -288,7 +288,7 @@ function Isian({ label, nilai, bawaan, onChange }: {
     <div>
       <Label>{label}</Label>
       <input value={nilai} onChange={e => onChange(e.target.value)} placeholder={bawaan}
-        className="mt-1.5 w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-slate-400 bg-white" />
+        className="mt-1.5 w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm outline-hidden focus:border-slate-400 bg-white" />
     </div>
   );
 }
@@ -300,9 +300,9 @@ function Warna({ label, nilai, onChange }: { label: string; nilai: string; onCha
       <div className="mt-1.5 flex gap-2">
         <input type="color" value={/^#[0-9a-f]{6}$/i.test(nilai) ? nilai : '#000000'}
           onChange={e => onChange(e.target.value)} aria-label={label}
-          className="w-11 h-10 rounded-xl border border-slate-200 bg-white p-1 cursor-pointer flex-shrink-0" />
+          className="w-11 h-10 rounded-xl border border-slate-200 bg-white p-1 cursor-pointer shrink-0" />
         <input value={nilai} onChange={e => onChange(e.target.value)} placeholder="#e11d48"
-          className="flex-1 min-w-0 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono outline-none focus:border-slate-400 bg-white" />
+          className="flex-1 min-w-0 border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono outline-hidden focus:border-slate-400 bg-white" />
       </div>
     </div>
   );

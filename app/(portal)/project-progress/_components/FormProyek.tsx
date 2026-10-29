@@ -10,7 +10,7 @@ import { ModalImpor } from './ModalImpor';
 import { PilihAnggota, type CalonAnggota } from './PilihAnggota';
 import { panggil } from './api';
 
-const isian = 'mt-1 w-full rounded-xl px-3 py-2 text-[13px] outline-none focus:ring-2';
+const isian = 'mt-1 w-full rounded-xl px-3 py-2 text-[13px] outline-hidden focus:ring-2';
 const gayaIsian = { border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta, background: NETRAL.permukaan };
 const Label = ({ t }: { t: string }) => <span className="text-[12px] font-bold" style={{ color: NETRAL.tinta2 }}>{t}</span>;
 
@@ -230,7 +230,7 @@ export function ModalChecklistBaru({ proyekId, buka, calonAnggota, onTutup, onDi
                 <div className="relative">
                   <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: TEMA.samar }} />
                   <input value={cariSalin} onChange={e => setCariSalin(e.target.value)} placeholder="Cari proyek atau lokasi…" aria-label="Cari checklist sumber"
-                    className="w-full rounded-lg pl-9 pr-3 py-2 text-[13px] outline-none focus:ring-2" style={gayaIsian} />
+                    className="w-full rounded-lg pl-9 pr-3 py-2 text-[13px] outline-hidden focus:ring-2" style={gayaIsian} />
                 </div>
                 <div className="max-h-48 overflow-y-auto rounded-lg divide-y" style={{ border: `1px solid ${NETRAL.garis}`, borderColor: NETRAL.garis }}>
                   {!sumberSalin && <p className="px-3 py-3 text-[12px]" style={{ color: TEMA.samar }}>Memuat…</p>}
@@ -347,7 +347,7 @@ export function ModalSalinChecklist({ buka, sumber, daftarProyek, calonAnggota, 
           <div className="mt-1 relative">
             <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: TEMA.samar }} />
             <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari proyek atau client…" aria-label="Cari proyek tujuan"
-              className="w-full rounded-lg pl-9 pr-3 py-2 text-[13px] outline-none focus:ring-2" style={gayaIsian} />
+              className="w-full rounded-lg pl-9 pr-3 py-2 text-[13px] outline-hidden focus:ring-2" style={gayaIsian} />
           </div>
           <div className="mt-2 max-h-44 overflow-y-auto rounded-lg divide-y" style={{ border: `1px solid ${NETRAL.garis}`, borderColor: NETRAL.garis }}>
             {pilihan.length === 0 && <p className="px-3 py-3 text-[12px]" style={{ color: TEMA.samar }}>Tidak ada proyek yang cocok.</p>}

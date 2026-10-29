@@ -22,10 +22,10 @@ export interface DetailLaporanProps {
 export function DetailLaporan({ badge, c, linkedReport, openEditForm, openNewForm, pimpinan, reports, row, setModalRow }: DetailLaporanProps) {
   return (
     <>
-      <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
+      <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)' }} onClick={() => setModalRow(null)}>
         <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden flex flex-col" style={{ background: 'white', maxHeight: '96vh' }} onClick={e => e.stopPropagation()}>
           {/* Colored header */}
-          <div className="px-6 py-5 bg-white border-b border-slate-100 text-slate-800 flex-shrink-0 relative">
+          <div className="px-6 py-5 bg-white border-b border-slate-100 text-slate-800 shrink-0 relative">
             <div className="flex items-start gap-3">
               <span className="text-3xl">{row.kegiatan_icon}</span>
               <div>
@@ -73,7 +73,7 @@ export function DetailLaporan({ badge, c, linkedReport, openEditForm, openNewFor
               <div>
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Handler</p>
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-bold shrink-0" style={{ background: avc(row.handler_name) }}>{ini(row.handler_name)}</div>
                   <div><p className="text-xs font-bold text-slate-800">{row.handler_name}</p>{row.handler_username && <p className="text-[11px] text-slate-500"><Username value={row.handler_username} /></p>}</div>
                 </div>
               </div>

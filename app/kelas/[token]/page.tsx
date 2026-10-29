@@ -23,7 +23,7 @@ const CEK_MULAI_MS = 4000;
 function Kartu({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-slate-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-sm p-6 sm:p-8">{children}</div>
+      <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-xs p-6 sm:p-8">{children}</div>
     </div>
   );
 }
@@ -132,7 +132,7 @@ export default function HalamanKelas() {
         <div className="text-center space-y-4">
           <p className="text-[13px] font-semibold text-slate-500">{k.judul}</p>
           {info.peserta && <p className="text-[15px] font-bold text-slate-800">{info.peserta.nama}</p>}
-          <div className={`mx-auto w-36 h-36 rounded-full flex flex-col items-center justify-center border-[10px] ${hasil.lulus ? 'border-emerald-500' : 'border-amber-400'}`}>
+          <div className={`mx-auto w-36 h-36 rounded-full flex flex-col items-center justify-center border-10 ${hasil.lulus ? 'border-emerald-500' : 'border-amber-400'}`}>
             <span className="text-[40px] font-extrabold text-slate-900 tabular-nums leading-none">{hasil.skor}</span>
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mt-1">Nilai</span>
           </div>
@@ -192,7 +192,7 @@ export default function HalamanKelas() {
         <Info ikon={<Target size={13} />} teks={`Lulus ≥ ${k.passingGrade}`} />
       </div>
       <p className="mt-3 flex items-start gap-1.5 text-[12px] text-slate-500">
-        <ShieldAlert size={14} className="flex-shrink-0 mt-px" />
+        <ShieldAlert size={14} className="shrink-0 mt-px" />
         <span>Pindah tab/aplikasi, keluar jendela, dan salin-tempel dicatat{k.batasPelanggaran ? ` · ${k.batasPelanggaran}× = jawaban terkirim otomatis` : ''}.</span>
       </p>
 
@@ -204,7 +204,7 @@ export default function HalamanKelas() {
             <label htmlFor="nama-peserta" className="block text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">Nama lengkap</label>
             <input id="nama-peserta" value={nama} onChange={e => setNama(e.target.value)} maxLength={80} autoComplete="name" autoFocus
               onKeyDown={e => { if (e.key === 'Enter' && bisaKirimDaftar) void daftarLaluMulai(); }}
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-[15px] outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-[15px] outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               placeholder="Nama Anda" />
             <div className="mt-3"><IsianTambahan isian={k.isianPeserta} nilai={isian} ubah={setIsian} gaya="terang" /></div>
           </div>

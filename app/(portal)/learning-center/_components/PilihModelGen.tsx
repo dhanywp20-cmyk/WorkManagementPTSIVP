@@ -46,7 +46,7 @@ export function PilihModelGen({ daftarModelGen, modeBanding, modelBandingA, mode
                   <div key={m.lbl}>
                     <label className="block text-[11px] font-bold text-violet-600 uppercase tracking-wide mb-1">{m.lbl}</label>
                     <select aria-label="Model AI" value={m.val} onChange={e => m.set(e.target.value)}
-                      className="w-full text-xs px-2.5 py-2 rounded-lg border border-violet-200 bg-white outline-none focus:border-violet-400">
+                      className="w-full text-xs px-2.5 py-2 rounded-lg border border-violet-200 bg-white outline-hidden focus:border-violet-400">
                       {daftarModelGen.map(x => <option key={x.id} value={x.id}>{x.id}</option>)}
                     </select>
                   </div>

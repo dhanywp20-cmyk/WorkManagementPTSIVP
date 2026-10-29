@@ -88,7 +88,7 @@ export function TechNoteKPISummary({ technotes, currentUser, year }:
     const totalApproved = technotes.filter(t => t.status === 'approved').length;
     const totalPending  = technotes.filter(t => t.status === 'pending').length;
     return (
-      <div className="rounded-2xl p-4 mb-5 shadow-sm" style={{ background: '#ffffff', border: '1.5px solid #fce7f3', borderLeft: '4px solid #ec4899' }}>
+      <div className="rounded-2xl p-4 mb-5 shadow-xs" style={{ background: '#ffffff', border: '1.5px solid #fce7f3', borderLeft: '4px solid #ec4899' }}>
         <div className="text-[11px] font-bold uppercase tracking-wider text-rose-600 mb-3">
           <IkonTeks nama="📝" />Ringkasan KPI R&D Tech Note {year} — Semua Tim
         </div>
@@ -98,7 +98,7 @@ export function TechNoteKPISummary({ technotes, currentUser, year }:
             { label:'Pending Review', value: totalPending,  color:'#b45309', bg:'#ffffff', border:'#fef3c7' },
             { label:'Total Submissions', value: technotes.length, color:'#7c3aed', bg:'#ffffff', border:'#ede9fe' },
           ].map(c => (
-            <div key={c.label} className="rounded-xl p-3 text-center border shadow-sm"
+            <div key={c.label} className="rounded-xl p-3 text-center border shadow-xs"
               style={{ background: c.bg, borderColor: c.border }}>
               <div className="text-lg sm:text-2xl font-black" style={{ color: c.color }}>{c.value}</div>
               <div className="text-[11px] text-slate-500 font-medium mt-0.5">{c.label}</div>
@@ -114,17 +114,17 @@ export function TechNoteKPISummary({ technotes, currentUser, year }:
   const approvedCount = technotes.filter(t => t.status === 'approved').length;
   const myPendingCount = technotes.filter(t => t.author_id === currentUser.id && t.status === 'pending').length;
   return (
-    <div className="rounded-2xl p-4 mb-5 shadow-sm"
+    <div className="rounded-2xl p-4 mb-5 shadow-xs"
       style={{ background: '#ffffff', border: '1.5px solid #ede9fe', borderLeft: '4px solid #8b5cf6' }}>
       <div className="text-[11px] font-bold uppercase tracking-wider text-violet-600 mb-3">
         <IkonTeks nama="📝" />Tech Note R&D {year}
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl p-3 text-center border shadow-sm" style={{ borderColor:'#d1fae5' }}>
+        <div className="rounded-xl p-3 text-center border shadow-xs" style={{ borderColor:'#d1fae5' }}>
           <div className="text-lg sm:text-2xl font-black text-emerald-700">{approvedCount}</div>
           <div className="text-[11px] text-slate-500 font-medium mt-0.5">Approved (Semua Tim)</div>
         </div>
-        <div className="rounded-xl p-3 text-center border shadow-sm" style={{ borderColor:'#fef3c7' }}>
+        <div className="rounded-xl p-3 text-center border shadow-xs" style={{ borderColor:'#fef3c7' }}>
           <div className="text-lg sm:text-2xl font-black text-amber-700">{myPendingCount}</div>
           <div className="text-[11px] text-slate-500 font-medium mt-0.5">Milik Saya — Pending</div>
         </div>
@@ -245,7 +245,7 @@ export function Modal({ open, onClose, title, width=560, children }:{
   if (!open) return null;
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
       style={{ background:'rgba(0,0,0,0.45)', backdropFilter:'blur(4px)' }} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:width, maxHeight:'100%',
         overflowY:'auto', borderRadius:20, border:'1px solid rgba(0,0,0,0.08)',
@@ -274,7 +274,7 @@ export function Field({ label, children }:{ label:string; children:React.ReactNo
 }
 
 export const inputCls = [
-  'w-full px-3 py-2.5 rounded-xl text-sm text-slate-800 outline-none transition-all',
+  'w-full px-3 py-2.5 rounded-xl text-sm text-slate-800 outline-hidden transition-all',
   'placeholder-slate-400 bg-gray-50 border border-gray-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-100',
 ].join(' ');
 
@@ -421,7 +421,7 @@ export function TechNotePageInner() {
       {/* ── Top Nav ── header baku semua modul (components/shared/PageHeader) */}
       <PageHeader icon="📝" title="Tech Note R&D" subtitle="Dokumentasi teknikal & R&D · KPI 10%">
             <select aria-label="Tahun" value={year} onChange={e=>setYear(Number(e.target.value))}
-              className="text-slate-700 text-sm font-bold outline-none rounded-xl px-3 py-1.5 bg-gray-100 border border-gray-200 focus:border-rose-400">
+              className="text-slate-700 text-sm font-bold outline-hidden rounded-xl px-3 py-1.5 bg-gray-100 border border-gray-200 focus:border-rose-400">
               {[curY,curY-1,curY-2].map(y=><option key={y} value={y}>{y}</option>)}
             </select>
             <button onClick={()=>{ uploadSnapshotRef.current = uploadForm; setShowUploadModal(true); }}

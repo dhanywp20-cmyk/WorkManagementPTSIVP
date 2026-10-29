@@ -236,7 +236,7 @@ export function KodeAcaraInline() {
               type="checkbox"
               checked={form.aktif}
               onChange={e => setForm({ ...form, aktif: e.target.checked })}
-              className="w-5 h-5 mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0"
+              className="w-5 h-5 mt-0.5 rounded-sm border-slate-300 text-indigo-600 focus:ring-indigo-400 shrink-0"
             />
             <span>
               <span className="block text-sm font-bold text-slate-800">Aktifkan pendaftaran lewat Kode Acara</span>
@@ -261,7 +261,7 @@ export function KodeAcaraInline() {
                 onChange={e => setForm({ ...form, kode: e.target.value })}
                 placeholder="mis. IVPEXPO2026"
                 autoComplete="off"
-                className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono tracking-wider outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm font-mono tracking-wider outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
               />
               <div className="flex gap-2">
                 <button type="button" onClick={() => setLihatKode(v => !v)}
@@ -294,7 +294,7 @@ export function KodeAcaraInline() {
                   ...form,
                   berlakuSampai: e.target.value ? new Date(e.target.value).toISOString() : null,
                 })}
-                className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+                className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-hidden focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
               />
               {form.berlakuSampai && (
                 <button type="button" onClick={() => setForm({ ...form, berlakuSampai: null })}
@@ -323,9 +323,9 @@ export function KodeAcaraInline() {
                 {gambarQr ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={gambarQr} alt="QR Code pendaftaran" width={128} height={128}
-                    className="w-32 h-32 rounded-lg border border-slate-200 flex-shrink-0" />
+                    className="w-32 h-32 rounded-lg border border-slate-200 shrink-0" />
                 ) : (
-                  <div className="w-32 h-32 rounded-lg border border-slate-200 flex items-center justify-center text-[11px] text-slate-500 flex-shrink-0">
+                  <div className="w-32 h-32 rounded-lg border border-slate-200 flex items-center justify-center text-[11px] text-slate-500 shrink-0">
                     Membuat QR…
                   </div>
                 )}
@@ -393,7 +393,7 @@ export function KodeAcaraInline() {
           jadi panel tumbuh mengikuti layar dan tetap muat di dalam modal.
         */}
         <div className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col lg:max-h-[calc(90vh-160px)]">
-          <div className="flex items-center gap-3 p-4 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+          <div className="flex items-center gap-3 p-4 border-b border-slate-100 bg-slate-50 shrink-0">
             <span className="text-2xl"><Ikon nama="🎓" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-slate-800">
@@ -410,7 +410,7 @@ export function KodeAcaraInline() {
                 ulang seluruh URL Admin Panel. */}
             <button type="button" onClick={() => ambil()} disabled={muat} title="Muat ulang daftar pendaftar"
               aria-label="Muat ulang daftar pendaftar"
-              className="w-8 h-8 flex-shrink-0 rounded-lg flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+              className="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:bg-white border border-transparent hover:border-slate-200 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
               <svg aria-hidden="true" focusable="false" className={`w-4 h-4 ${muat ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>

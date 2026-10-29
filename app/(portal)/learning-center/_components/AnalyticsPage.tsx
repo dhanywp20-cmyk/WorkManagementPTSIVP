@@ -187,10 +187,10 @@ export function AnalyticsPage() {
 
         {sessionStats.length > 0 && (
           <section>
-            <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">Statistik Per Sesi</h3>
+            <h3 className="text-[11px] font-bold uppercase tracking-widest mb-4 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-xs backdrop-blur-xs">Statistik Per Sesi</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {sessionStats.map((s: any) => (
-                <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <div key={s.id} className="bg-white rounded-2xl border border-slate-200 shadow-xs p-5">
                   <p className="text-sm font-bold text-slate-800 mb-4 leading-snug line-clamp-2">{s.name}</p>
                   <div className="flex items-start gap-4">
                     <div className="flex flex-col items-center gap-1">
@@ -262,28 +262,28 @@ export function AnalyticsPage() {
         {/* ── Top Performers — Team ─────────────────────────────────────── */}
         <section>
           <div className="flex items-center justify-between flex-wrap gap-3 mb-1">
-            <h3 className="text-[11px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+            <h3 className="text-[11px] font-bold uppercase tracking-widest inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-xs backdrop-blur-xs">
               <IkonTeks nama="🏆" />Top Performers — {TEAM_FILTER_CONFIG[activeTeam].label}
             </h3>
             <div className="flex items-center gap-2">
               {nationalAvg !== null && (
-                <span className="text-[11px] font-bold text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
+                <span className="text-[11px] font-bold text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-xs">
                   <IkonTeks nama="🌏" />Rata-rata Nasional (semua divisi): <span className="text-slate-800">{nationalAvg.toFixed(1)}</span>
                 </span>
               )}
               {divisionStats.length > 0 && (
                 <select aria-label="Filter divisi" value={divisionFilter} onChange={e => setDivisionFilter(e.target.value)}
-                  className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-none focus:border-indigo-400 bg-white font-semibold text-slate-600">
+                  className="text-xs border border-slate-200 rounded-lg px-3 py-1.5 outline-hidden focus:border-indigo-400 bg-white font-semibold text-slate-600">
                   <option value="">Semua Divisi</option>
                   {divisionStats.map(d => <option key={d.div} value={d.div}>{d.div}</option>)}
                 </select>
               )}
             </div>
           </div>
-          <p className="inline-block text-xs text-slate-500 mb-4 bg-white/90 rounded-full px-3 py-1 shadow-sm">
+          <p className="inline-block text-xs text-slate-500 mb-4 bg-white/90 rounded-full px-3 py-1 shadow-xs">
             Klik nama untuk melihat detail nilai & aktivitas per quiz{divisionFilter && <> · Menampilkan divisi <strong>{divisionFilter}</strong></>}
           </p>
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto">
             <table className="w-full text-sm table-zebra">
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
@@ -351,9 +351,9 @@ export function AnalyticsPage() {
         {/* ── Top Performers — Sales Division ───────────────────────────── */}
         {divisionStats.length > 0 && (
           <section>
-            <h3 className="text-[11px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm"><IkonTeks nama="🏢" />Top Performers — Sales Division</h3>
+            <h3 className="text-[11px] font-bold uppercase tracking-widest mb-1 inline-flex items-center bg-white/90 text-slate-700 px-3 py-1.5 rounded-full shadow-xs backdrop-blur-xs"><IkonTeks nama="🏢" />Top Performers — Sales Division</h3>
             <p className="text-xs text-slate-500 mb-4 ml-1">Ranking performa per divisi penjualan, diurutkan berdasarkan rata-rata nilai</p>
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden overflow-x-auto">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden overflow-x-auto">
               <table className="w-full text-sm table-zebra">
                 <thead className="border-b border-slate-200 bg-slate-50">
                   <tr>
@@ -377,7 +377,7 @@ export function AnalyticsPage() {
                         <td className="px-5 py-3.5 text-center text-sm font-black text-slate-500">{i + 1}</td>
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm flex-shrink-0"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
+                            <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm shrink-0"><Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" /></div>
                             <div>
                               <p className="font-bold text-slate-800 text-sm">{d.div}</p>
                               {medal && <p className="text-[11px] text-slate-500">{medal} Top {i + 1}</p>}
@@ -421,15 +421,15 @@ export function AnalyticsPage() {
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-1.5 justify-center">
                             <div className="flex items-center gap-1 text-[11px]">
-                              <span className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
+                              <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
                               <span className="text-slate-500">≥80: <strong>{d.scoreGood}</strong></span>
                             </div>
                             <div className="flex items-center gap-1 text-[11px]">
-                              <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" />
+                              <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
                               <span className="text-slate-500">60–79: <strong>{d.scoreMid}</strong></span>
                             </div>
                             <div className="flex items-center gap-1 text-[11px]">
-                              <span className="w-2 h-2 rounded-full bg-rose-400 flex-shrink-0" />
+                              <span className="w-2 h-2 rounded-full bg-rose-400 shrink-0" />
                               <span className="text-slate-500">&lt;60: <strong>{d.scoreLow}</strong></span>
                             </div>
                           </div>
@@ -447,13 +447,13 @@ export function AnalyticsPage() {
       {/* ─── User Detail Modal ─────────────────────────────────────────────── */}
       {selectedUser && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
           style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}
           onClick={() => setSelectedUser(null)}>
           <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl max-h-full flex flex-col"
             onClick={e => e.stopPropagation()}>
             {/* Modal header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 flex-shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
               <div>
                 <h2 className="font-bold text-slate-800 text-lg leading-tight">{selectedUser.name}</h2>
                 <p className="text-xs text-slate-500 mt-0.5">Riwayat semua quiz yang diselesaikan</p>
@@ -509,7 +509,7 @@ export function AnalyticsPage() {
                       const passing = a.lc_quiz_sessions?.passing_grade ?? 70;
                       const tabSw = a.tab_switches ?? 0;
                       return (
-                        <div key={a.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4 hover:shadow-sm transition-all">
+                        <div key={a.id} className="bg-white rounded-xl border border-slate-200 p-4 flex items-center gap-4 hover:shadow-xs transition-all">
                           {/* Score donut */}
                           <DonutChart
                             segments={[
@@ -540,7 +540,7 @@ export function AnalyticsPage() {
                             </div>
                           </div>
                           {/* Right: score detail */}
-                          <div className="text-right flex-shrink-0 space-y-0.5">
+                          <div className="text-right shrink-0 space-y-0.5">
                             <p className="text-xs font-semibold text-slate-600">
                               {a.total_correct ?? '?'}/{a.total_questions ?? '?'} benar
                             </p>

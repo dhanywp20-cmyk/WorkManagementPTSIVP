@@ -42,8 +42,8 @@ export function LatarKuis({ children, tema, warna, className = '' }: { children:
       }}>
       {!gambar && <>
         <div aria-hidden="true" className="pointer-events-none absolute -top-24 -left-24 w-72 h-72 rounded-full bg-white/[0.07]" />
-        <div aria-hidden="true" className="pointer-events-none absolute top-1/3 -right-16 w-48 h-48 rotate-12 rounded-3xl bg-white/[0.05]" />
-        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -left-10 w-96 h-96 rotate-45 bg-black/[0.08]" />
+        <div aria-hidden="true" className="pointer-events-none absolute top-1/3 -right-16 w-48 h-48 rotate-12 rounded-3xl bg-white/5" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -left-10 w-96 h-96 rotate-45 bg-black/8" />
       </>}
       {/* Warna tema yang sangat terang: digelapkan sedikit supaya tulisan putih tetap terbaca. */}
       {terang && <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black/35" />}
@@ -150,10 +150,10 @@ export function Podium({ juara, besar = false }: { juara: { nama: string; poin: 
         if (!j) return <div key={i} className={besar ? 'w-48' : 'w-24'} />;
         return (
           <div key={i} className={`flex flex-col items-center ${besar ? 'w-48' : 'w-24'}`}>
-            <p className={`font-black text-center leading-tight break-words w-full ${besar ? 'text-[24px] mb-2' : 'text-[14px] mb-1'}`}>{j.nama}</p>
+            <p className={`font-black text-center leading-tight wrap-break-word w-full ${besar ? 'text-[24px] mb-2' : 'text-[14px] mb-1'}`}>{j.nama}</p>
             <p className={`font-bold text-white/85 tabular-nums ${besar ? 'text-[18px] mb-2' : 'text-[12px] mb-1'}`}>{angka(j.poin)}</p>
             <div className={`w-full ${tinggi[posisi]} rounded-t-lg flex items-start justify-center pt-1 shadow-lg ${posisi === 1 ? 'bg-[#f5b800]' : posisi === 2 ? 'bg-slate-300' : 'bg-[#cd7f32]'}`}>
-              <span className={`font-black text-white drop-shadow ${besar ? 'text-[48px]' : 'text-[30px]'}`}>{posisi}</span>
+              <span className={`font-black text-white drop-shadow-sm ${besar ? 'text-[48px]' : 'text-[30px]'}`}>{posisi}</span>
             </div>
           </div>
         );

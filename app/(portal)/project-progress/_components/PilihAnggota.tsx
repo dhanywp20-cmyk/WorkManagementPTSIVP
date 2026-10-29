@@ -48,7 +48,7 @@ export function PilihAnggota({ calon, terpilih, onUbah }: {
       <div className="relative">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: TEMA.samar }} />
         <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari nama atau tim…" aria-label="Cari anggota"
-          className="w-full rounded-lg pl-9 pr-3 py-2 text-[13px] outline-none focus:ring-2"
+          className="w-full rounded-lg pl-9 pr-3 py-2 text-[13px] outline-hidden focus:ring-2"
           style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta }} />
       </div>
       <div className="max-h-56 overflow-y-auto rounded-lg divide-y" style={{ border: `1px solid ${NETRAL.garis}`, borderColor: NETRAL.garis }}>

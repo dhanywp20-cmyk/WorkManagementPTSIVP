@@ -39,7 +39,7 @@ function KartuDaftar({ d, isi, onUbah }: { d: DefDaftar; isi: string[]; onUbah: 
         </div>
         {diubah && (
           <button type="button" onClick={() => onUbah([...d.bawaan])}
-            className="flex-shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50">Kembalikan bawaan</button>
+            className="shrink-0 px-2.5 py-1.5 rounded-lg text-[11px] font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50">Kembalikan bawaan</button>
         )}
       </div>
       <div className="p-4 space-y-3">
@@ -47,9 +47,9 @@ function KartuDaftar({ d, isi, onUbah }: { d: DefDaftar; isi: string[]; onUbah: 
           <input value={baru} onChange={e => { setBaru(e.target.value); setGalat(''); }} maxLength={MAKS_PANJANG}
             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); tambah(); } }}
             placeholder={`Tambah ${d.judul.toLowerCase()}…`} aria-label={`Tambah ${d.judul}`}
-            className="flex-1 min-w-0 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm outline-none focus:border-slate-400 bg-white" />
+            className="flex-1 min-w-0 border border-slate-200 rounded-xl px-3.5 py-2.5 text-base sm:text-sm outline-hidden focus:border-slate-400 bg-white" />
           <button type="button" onClick={tambah}
-            className="tombol-utama px-4 py-2.5 rounded-kontrol text-xs font-bold flex-shrink-0 hover:opacity-90">Tambah</button>
+            className="tombol-utama px-4 py-2.5 rounded-kontrol text-xs font-bold shrink-0 hover:opacity-90">Tambah</button>
         </div>
         {galat && <p className="text-xs font-semibold text-rose-700">{galat}</p>}
         <div className="flex flex-wrap gap-1.5">
@@ -115,7 +115,7 @@ export function DaftarPilihanInline() {
           {DAFTAR_PILIHAN.filter(d => d.menu.startsWith(g)).map(d => <KartuDaftar key={d.k} d={d} isi={isi[d.k]} onUbah={v => ubah(d.k, v)} />)}
         </section>
       ))}
-      <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 backdrop-blur border-t border-slate-200 flex items-center justify-end gap-2">
+      <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-white/95 backdrop-blur-sm border-t border-slate-200 flex items-center justify-end gap-2">
         {berubah && <p className="text-[11px] text-amber-700 font-semibold mr-auto">Ada perubahan yang belum disimpan.</p>}
         {berubah && <button type="button" onClick={() => setIsi(awal)} className="px-3 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-700 hover:bg-slate-50">Batal</button>}
         <button type="button" onClick={simpan} disabled={menyimpan || !berubah}

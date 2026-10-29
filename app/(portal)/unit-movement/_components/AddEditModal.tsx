@@ -37,7 +37,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
 
   const set = (k:string,v:string) => setForm(p=>({...p,[k]:v}));
   const isMasuk = form.status_barang==='Masuk';
-  const inp = "w-full px-3 py-2.5 rounded-xl text-sm outline-none transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100";
+  const inp = "w-full px-3 py-2.5 rounded-xl text-sm outline-hidden transition-all border border-gray-200 bg-gray-50 focus:bg-white focus:border-amber-400 focus:ring-2 focus:ring-amber-100";
   const lbl = "block text-[11px] font-bold uppercase tracking-widest text-gray-500 mb-1.5";
 
   const handleSave = async () => {
@@ -75,7 +75,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
       <div className="w-full max-w-lg max-h-full overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
           <div className="flex items-center gap-3">
@@ -188,7 +188,7 @@ export function AddEditModal({ log, currentUser, teamMembers, onClose, onSave }:
 
           {uploading&&(
             <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
-              <div className="w-4 h-4 border-2 border-amber-300 border-t-amber-600 rounded-full animate-spin flex-shrink-0"/>
+              <div className="w-4 h-4 border-2 border-amber-300 border-t-amber-600 rounded-full animate-spin shrink-0"/>
               <span className="text-xs font-semibold text-amber-700">Mengupload file ke Supabase Storage...</span>
             </div>
           )}

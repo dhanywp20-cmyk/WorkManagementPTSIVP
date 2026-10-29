@@ -50,7 +50,7 @@ export function PageHeader({ icon, title, subtitle, children }: PageHeaderProps)
         {/* Left: icon + title */}
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <div
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: 'var(--merek-utama-tembus)', color: 'var(--merek-utama)', border: '1px solid var(--merek-utama-tembus)' }}
           >
             <Ikon nama={icon} ukuran={18} />
@@ -70,7 +70,7 @@ export function PageHeader({ icon, title, subtitle, children }: PageHeaderProps)
 
         {/* Right: action slot */}
         {children && (
-          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto sm:overflow-visible sm:flex-wrap -mx-4 px-4 sm:mx-0 sm:px-0 [&>*]:flex-shrink-0"
+          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto sm:overflow-visible sm:flex-wrap -mx-4 px-4 sm:mx-0 sm:px-0 *:shrink-0"
             style={{ scrollbarWidth: 'none' }}>
             {children}
           </div>

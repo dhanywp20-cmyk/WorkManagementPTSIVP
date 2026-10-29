@@ -116,7 +116,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
         <span className="block text-sm font-bold text-gray-800 truncate">{p.name}</span>
         <span className="block text-[11px] text-gray-500 truncate">{p.code}{p.location ? ` · ${p.location}` : ''}{p.sales_name ? ` · ${p.sales_name}` : ''}</span>
       </span>
-      {p.skor > 0 && <span className="text-[11px] font-bold text-indigo-600 flex-shrink-0">{Math.round(p.skor * 100)}%</span>}
+      {p.skor > 0 && <span className="text-[11px] font-bold text-indigo-600 shrink-0">{Math.round(p.skor * 100)}%</span>}
     </button>
   );
 
@@ -162,7 +162,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
             <div className="flex gap-2">
               <input aria-label="Saring antrean berdasarkan nama" value={filter} onChange={e => setFilter(e.target.value)}
                 placeholder="Saring nama..."
-                className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
+                className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm outline-hidden bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
             </div>
             <div className="border border-gray-100 rounded-xl divide-y divide-gray-100 max-h-[55vh] overflow-y-auto">
               {memuat ? (
@@ -175,7 +175,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
                 <button key={g.kunci} type="button" onClick={() => pilihGrup(g)}
                   className={`w-full text-left px-3 py-2.5 hover:bg-indigo-50/60 flex items-center justify-between gap-2 ${aktif?.kunci === g.kunci ? 'bg-indigo-50' : ''}`}>
                   <span className="text-sm font-semibold text-gray-800 truncate">{g.nama}</span>
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 flex-shrink-0">{g.records.length}</span>
+                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 shrink-0">{g.records.length}</span>
                 </button>
               ))}
             </div>
@@ -224,7 +224,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
                 <div>
                   <input aria-label="Cari project lain berdasarkan nama atau kode" value={cariManual} onChange={e => setCariManual(e.target.value)}
                     placeholder="Cari project lain (nama / PRJ-xxxx)..."
-                    className="w-full px-3 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
+                    className="w-full px-3 py-2 rounded-lg text-sm outline-hidden bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
                   {hasilManual.length > 0 && (
                     <div className="space-y-1.5 mt-1.5">{hasilManual.map(p => <KartuProject key={p.project_id} p={p} />)}</div>
                   )}
@@ -234,7 +234,7 @@ export function ModalMappingCenter({ currentUserName, onTutup, onBerubah }: {
                   <label className="block">
                     <span className="block text-[11px] font-bold uppercase tracking-wide text-gray-500 mb-1">Atau buat project baru</span>
                     <input value={namaBaru} onChange={e => setNamaBaru(e.target.value)}
-                      className="w-full px-3 py-2 rounded-lg text-sm outline-none bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
+                      className="w-full px-3 py-2 rounded-lg text-sm outline-hidden bg-gray-50 border border-gray-200 focus:ring-2 focus:ring-indigo-400" />
                   </label>
                   <div className="flex gap-2">
                     <button type="button" disabled={sibuk || !namaBaru.trim()}

@@ -25,7 +25,7 @@ export function AngkaKecil({ nilai, onUbah, label }: { nilai: number; onUbah: (v
       value={teks ?? String(nilai)}
       onChange={e => { setTeks(e.target.value); const v = Math.round(Number(e.target.value)); if (v >= 1 && v <= 8192) onUbah(v); }}
       onBlur={() => setTeks(null)}
-      className="w-[64px] shrink-0 rounded-lg border border-slate-200 bg-white px-1.5 py-1 text-[12px] tabular-nums text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200" />
+      className="w-[64px] shrink-0 rounded-lg border border-slate-200 bg-white px-1.5 py-1 text-[12px] tabular-nums text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-200" />
   );
 }
 

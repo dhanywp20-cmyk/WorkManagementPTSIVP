@@ -39,7 +39,7 @@ export function ModalHapusTahapan({ hapusTahapan, jalankanHapusTahapan, ketikHap
             <KotakInfo nada="awas">Yang dihapus hanya tahapan &amp; pembagiannya. Data proyeknya sendiri - nominal, BAST, mode, PIC - tidak disentuh.</KotakInfo>
             <div>
               <label htmlFor="f-incentive-hapus-tahapan" className="block text-xs font-bold text-slate-700 mb-1.5">
-                Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1 rounded">{kunci}</span> untuk melanjutkan
+                Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1 rounded-sm">{kunci}</span> untuk melanjutkan
               </label>
               <input id="f-incentive-hapus-tahapan" type="text" value={ketikHapusTahapan} autoFocus onChange={e => setKetikHapusTahapan(e.target.value)} placeholder={kunci} className={kelasIsian} />
             </div>

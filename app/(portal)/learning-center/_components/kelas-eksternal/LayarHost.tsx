@@ -172,7 +172,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
 
   const isi = (
     <>
-      <header className="flex items-center gap-3 px-6 pt-4 flex-shrink-0">
+      <header className="flex items-center gap-3 px-6 pt-4 shrink-0">
         <LogoEvent url={tema.logo} tinggi={34} />
         <div className="flex-1 min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-white/70">Kuis Live{h && h.sesi > 1 ? ` · sesi ${h.sesi}` : ''}</p>
@@ -194,13 +194,13 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
       </header>
 
       {h && tahap !== 'lobi' && (
-        <div className="px-6 pt-3 flex-shrink-0">
+        <div className="px-6 pt-3 shrink-0">
           <BilahSoal indeks={h.indeks} total={h.total} selesai={tahap === 'selesai' || ((tahap === 'hasil' || tahap === 'papan') && terakhir)} />
         </div>
       )}
-      {galat && <p className="mx-6 mt-3 rounded-xl bg-red-600/90 px-4 py-2 text-[14px] font-bold flex-shrink-0">{galat}</p>}
+      {galat && <p className="mx-6 mt-3 rounded-xl bg-red-600/90 px-4 py-2 text-[14px] font-bold shrink-0">{galat}</p>}
       {dijeda && (
-        <p className="mx-6 mt-3 self-center inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2 text-[18px] font-black text-slate-900 shadow-lg flex-shrink-0">
+        <p className="mx-6 mt-3 self-center inline-flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2 text-[18px] font-black text-slate-900 shadow-lg shrink-0">
           <Pause size={18} fill="currentColor" />DIJEDA
         </p>
       )}
@@ -218,7 +218,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
             </section>
             <section className="min-w-0 min-h-0 flex flex-col gap-5">
               <div>
-                <h1 className="text-[40px] font-black leading-tight drop-shadow line-clamp-2">{kelas.judul}</h1>
+                <h1 className="text-[40px] font-black leading-tight drop-shadow-sm line-clamp-2">{kelas.judul}</h1>
                 <p className="mt-1 text-[16px] font-bold text-white/85">{h.total} soal · {h.detik} detik per soal</p>
               </div>
               <div className="flex items-center gap-4 flex-wrap">
@@ -260,9 +260,9 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
 
         {h && (tahap === 'soal' || tahap === 'hasil') && h.soal && (
           <div className="flex-1 min-h-0 flex flex-col gap-4">
-            <p className={`flex-shrink-0 rounded-3xl bg-white text-slate-900 px-8 py-4 text-center font-black leading-tight shadow-2xl ${potong}`}
+            <p className={`shrink-0 rounded-3xl bg-white text-slate-900 px-8 py-4 text-center font-black leading-tight shadow-2xl ${potong}`}
               style={{ fontSize: huruf(h.soal.teks, [[70, 34], [130, 28], [220, 24], [9999, 20]]) }}>{h.soal.teks}</p>
-            <GambarSoal url={h.soal.gambar} tinggi="max-h-[30vh]" className="flex-shrink-0 shadow-2xl" />
+            <GambarSoal url={h.soal.gambar} tinggi="max-h-[30vh]" className="shrink-0 shadow-2xl" />
 
             {tahap === 'soal' ? (
               <div className="flex-1 min-h-0 grid grid-cols-[auto_1fr_auto] items-center gap-8">
@@ -290,7 +290,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
               <Distribusi distribusi={h.distribusi} kunci={h.kunci as Pilihan | null} />
             )}
 
-            <div className="flex-shrink-0 grid grid-cols-2 gap-3">
+            <div className="shrink-0 grid grid-cols-2 gap-3">
               {PILIHAN_KUIS.map(p => {
                 const teks = h.soal!.pilihan[p];
                 const benar = tahap === 'hasil' && h.kunci === p;
@@ -298,9 +298,9 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
                 return (
                   <div key={p} className={`flex items-center gap-4 rounded-2xl shadow-[0_5px_0_rgba(0,0,0,.2)] transition-opacity ${skala ? 'px-6 py-3 min-h-[76px]' : 'px-4 py-3'}`}
                     style={{ backgroundColor: WARNA_PILIHAN[p], opacity: redup ? 0.35 : 1 }}>
-                    <span className={`flex-1 font-extrabold leading-snug break-words ${potong}`}
+                    <span className={`flex-1 font-extrabold leading-snug wrap-break-word ${potong}`}
                       style={{ fontSize: huruf(teks, [[30, 24], [60, 20], [110, 17], [9999, 15]]) }}>{teks}</span>
-                    {benar && <Check size={34} strokeWidth={4} className="flex-shrink-0" aria-label="Jawaban benar" />}
+                    {benar && <Check size={34} strokeWidth={4} className="shrink-0" aria-label="Jawaban benar" />}
                   </div>
                 );
               })}
@@ -310,7 +310,8 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
 
         {h && tahap === 'papan' && (
           <div className="m-auto w-full max-w-3xl space-y-5">
-            <p className="text-center text-[44px] font-black drop-shadow">Papan Skor</p>
+            <style>{'@keyframes kuis-geser{0%{transform:translateX(-40px);opacity:0}100%{transform:none;opacity:1}}'}</style>
+            <p className="text-center text-[44px] font-black drop-shadow-sm">Papan Skor</p>
             <ol className="space-y-3">
               {(h.papan ?? []).slice(0, 5).map((b, i) => (
                 <li key={b.peserta_id} className="flex items-center gap-4 rounded-2xl bg-white text-slate-900 px-5 py-3.5 shadow-xl animate-[kuis-geser_.4s_ease-out_both]"
@@ -322,13 +323,12 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
               ))}
             </ol>
             {(h.papan ?? []).length === 0 && <p className="text-center text-[16px] font-bold text-white/80">Belum ada pemain.</p>}
-            <style>{'@keyframes kuis-geser{0%{transform:translateX(-40px);opacity:0}100%{transform:none;opacity:1}}'}</style>
           </div>
         )}
 
         {h && tahap === 'selesai' && (
           <div className="m-auto w-full max-w-5xl space-y-5 text-center">
-            <p className="text-[38px] font-black drop-shadow">Selamat untuk para juara!</p>
+            <p className="text-[38px] font-black drop-shadow-sm">Selamat untuk para juara!</p>
             {(h.papan ?? []).length > 0
               ? <Podium juara={(h.papan ?? []).slice(0, 3)} besar />
               : <p className="text-[16px] font-bold text-white/80">Tidak ada pemain yang menjawab.</p>}
@@ -348,7 +348,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
       </main>
 
       {h && tahap !== 'lobi' && (
-        <footer className="flex-shrink-0 flex items-center justify-end gap-3 flex-wrap px-6 pb-4">
+        <footer className="shrink-0 flex items-center justify-end gap-3 flex-wrap px-6 pb-4">
           {keteranganOtomatis && (
             <span className="mr-auto rounded-full bg-black/25 px-4 py-2 text-[14px] font-bold tabular-nums">{keteranganOtomatis}</span>
           )}
@@ -358,7 +358,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
                 <Play size={19} fill="currentColor" />Lanjutkan
               </button>
             ) : (
-              <button type="button" className={`${tombolKecil} !text-[15px] !px-4 !py-3`} disabled={sibuk} onClick={() => void aksi('live_jeda')}
+              <button type="button" className={`${tombolKecil} text-[15px]! px-4! py-3!`} disabled={sibuk} onClick={() => void aksi('live_jeda')}
                 title="Bekukan waktu - untuk membaca soal atau diskusi">
                 <Pause size={16} fill="currentColor" />Jeda
               </button>
@@ -371,7 +371,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
           )}
           {tahap === 'selesai' && (
             <>
-              <button type="button" className={`${tombolKecil} !text-[15px] !px-4 !py-3`} onClick={onHasil}><BarChart3 size={16} />Hasil lengkap</button>
+              <button type="button" className={`${tombolKecil} text-[15px]! px-4! py-3!`} onClick={onHasil}><BarChart3 size={16} />Hasil lengkap</button>
               <button type="button" className={tombolUtama} disabled={sibuk} onClick={() => void aksi('live_ulang')}><RotateCcw size={18} />Main lagi</button>
             </>
           )}
@@ -386,7 +386,7 @@ export function LayarHost({ kelas, onTutup, onHasil }: { kelas: KelasEksternal; 
         <LatarKuis tema={tema} className="h-full">
           {skala ? (
             <div className="h-dvh w-full flex items-center justify-center overflow-hidden">
-              <div className="flex-shrink-0 flex flex-col" style={{ width: LEBAR, height: TINGGI, transform: `scale(${skala})` }}>{isi}</div>
+              <div className="shrink-0 flex flex-col" style={{ width: LEBAR, height: TINGGI, transform: `scale(${skala})` }}>{isi}</div>
             </div>
           ) : (
             <div className="h-dvh overflow-y-auto flex flex-col">{isi}</div>

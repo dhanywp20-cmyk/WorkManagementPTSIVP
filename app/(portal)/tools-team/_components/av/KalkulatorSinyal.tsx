@@ -46,7 +46,7 @@ export function KalkulatorSinyal() {
                   <span className="font-semibold text-slate-800">{a.nama}</span>
                   <span className="block text-[11.5px] text-slate-500">{a.panjang}</span>
                 </span>
-                <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+                <span className={`text-[12px] font-bold px-2 py-0.5 rounded-full shrink-0 ${ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
                   {ok ? 'Cukup' : 'Tidak cukup'} · {a.gbps} Gbps
                 </span>
               </li>

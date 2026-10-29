@@ -11,10 +11,10 @@ export const tombolIkon = 'inline-grid place-items-center w-8 h-8 rounded-lg bor
 /** Pemisah tipis antar kelompok di bilah atas. */
 export const pemisah = 'hidden md:block w-px h-5 bg-slate-200';
 /** Panel melayang di atas kanvas (rel alat, bilah terpilih, navigasi, menu). */
-export const panelKanvas = 'rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-md';
+export const panelKanvas = 'rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md';
 /** Grup tombol kamera mendatar (kanan-bawah kanvas). */
-export const grupNavMendatar = 'flex flex-row rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-md overflow-hidden divide-x divide-slate-100';
-export const grupNav = 'flex flex-col rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-md overflow-hidden divide-y divide-slate-100';
+export const grupNavMendatar = 'flex flex-row rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md overflow-hidden divide-x divide-slate-100';
+export const grupNav = 'flex flex-col rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md overflow-hidden divide-y divide-slate-100';
 export const tombolSudut = (aktif: boolean) => `px-2 py-1.5 rounded-lg text-[12px] font-semibold border ${aktif ? 'bg-blue-700 border-blue-700 text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`;
 /** Menu tarik-turun (Ekspor, Pusatkan isi, Tampilan). */
 export const menuMelayang = 'z-30 rounded-xl bg-white border border-slate-200 shadow-xl p-1.5';

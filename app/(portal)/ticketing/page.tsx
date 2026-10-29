@@ -625,15 +625,15 @@ function TicketingSystemInner() {
       {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
           stacking context, sehingga z-index SEMUA modal di dalamnya cuma
           dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
-          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
-          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          di-portal ke <body>. Akibatnya modal z-1100 bisa tampil DI BELAKANG
+          modal z-1000 yang di-portal. Urutan cat terhadap tint di atas tetap
           aman karena elemen ini datang belakangan di DOM. */}
       <div className="relative flex flex-col flex-1 overflow-hidden">
 
         {/* ── LOADING POPUP (Redesigned) ── */}
         {showLoadingPopup && (
         <ModalPortal>
-          <div role="dialog" aria-modal="true" aria-live="polite" className="fixed inset-0 flex items-center justify-center z-[1100]" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
+          <div role="dialog" aria-modal="true" aria-live="polite" className="fixed inset-0 flex items-center justify-center z-1100" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
             {/*  Kartu proses: bentuk & warna sama dengan Modal bersama; pemintal memakai warna merek. */}
             <div className="bg-white rounded-kartu shadow-modal p-8 max-w-sm w-full mx-4">
               <div className="flex flex-col items-center">

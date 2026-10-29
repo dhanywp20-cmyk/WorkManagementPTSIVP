@@ -302,7 +302,7 @@ export function QuestionsPage({ user }: { user: User }) {
   // Rename Folder Modal
   const renameFolderModalJSX = renameFolder ? (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1000] p-4">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-1000 p-4">
       <div className="bg-white rounded-kartu shadow-modal p-6 w-full max-w-sm">
         <h3 className="font-bold text-slate-800 mb-1 text-base"><IkonTeks nama="✏" />Ubah Nama Folder</h3>
         <p className="text-xs text-slate-500 mb-4">Semua materi dalam folder ini akan diperbarui secara otomatis.</p>
@@ -310,7 +310,7 @@ export function QuestionsPage({ user }: { user: User }) {
           value={renameFolder?.newName ?? ''}
           onChange={e => setRenameFolder(p => p && ({ ...p, newName: e.target.value }))}
           onKeyDown={e => { if (e.key === 'Enter') handleRenameFolder(); if (e.key === 'Escape') setRenameFolder(null); }}
-          className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 mb-4"
+          className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100 mb-4"
           autoFocus
           placeholder="Nama folder baru..."
         />
@@ -355,11 +355,11 @@ export function QuestionsPage({ user }: { user: User }) {
 
   // Generate Panel (plain JSX var - NOT a sub-component, avoids remount on every keystroke)
   const generatePanelJSX = (
-    <div className="bg-gradient-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
+    <div className="bg-linear-to-br from-violet-50 to-indigo-50 rounded-2xl border border-violet-200 p-6">
       <div className="flex items-start justify-between mb-3">
         <h3 className="font-bold text-violet-800 flex items-center gap-2"><IkonTeks nama="✨" />Generate Soal dengan Gemini AI</h3>
         {/* Gemini usage badge */}
-        <div className="flex items-center gap-2 text-[11px] font-semibold flex-shrink-0">
+        <div className="flex items-center gap-2 text-[11px] font-semibold shrink-0">
           <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border ${geminiRemaining <= 5 ? 'bg-rose-50 border-rose-200 text-rose-700' : geminiRemaining <= 15 ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
             <span>{geminiRemaining <= 5 ? '⚠️' : geminiRemaining <= 15 ? '🟡' : '🟢'}</span>
             <span>Hari ini: <strong>{geminiUsage.count}</strong> kali</span>
@@ -398,7 +398,7 @@ export function QuestionsPage({ user }: { user: User }) {
 
       {genStatus && (
         <div className="mb-4 flex items-center gap-2 text-sm text-violet-700 bg-violet-100 border border-violet-200 rounded-xl px-4 py-2.5 font-medium">
-          <span className="w-4 h-4 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin flex-shrink-0" />
+          <span className="w-4 h-4 border-2 border-violet-300 border-t-violet-600 rounded-full animate-spin shrink-0" />
           {genStatus}
         </div>
       )}
@@ -410,7 +410,7 @@ export function QuestionsPage({ user }: { user: User }) {
 
       <div className="flex gap-3">
         <button onClick={modeBanding ? handleBanding : handleGenerate} disabled={generating}
-          className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 flex items-center gap-2">
+          className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold rounded-xl shadow-sm transition-all disabled:opacity-60 flex items-center gap-2">
           {generating
             ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />{modeBanding ? 'Membandingkan...' : 'Generating...'}</>
             : (modeBanding ? '⚖️ Bandingkan Sekarang' : '✨ Generate Sekarang')}

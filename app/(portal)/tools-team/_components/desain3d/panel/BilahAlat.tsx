@@ -73,7 +73,7 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
           <div role="radiogroup" aria-label="Sudut pandang" className="inline-flex h-8 p-0.5 rounded-lg bg-slate-100">
             {sudut.map(([v, l, s]) => (
               <button key={v} type="button" role="radio" aria-checked={tampilan === v} onClick={() => pilihSudut(s)}
-                className={`px-2.5 rounded-md text-[12.5px] font-semibold whitespace-nowrap ${tampilan === v ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>{l}</button>
+                className={`px-2.5 rounded-md text-[12.5px] font-semibold whitespace-nowrap ${tampilan === v ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}>{l}</button>
             ))}
           </div>
           <div className="relative">

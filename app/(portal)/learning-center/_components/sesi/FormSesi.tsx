@@ -47,14 +47,14 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
             <div className="col-span-2">
               <label htmlFor="f-learning-center-components-sessionspage-1" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Nama Sesi *</label>
               <input id="f-learning-center-components-sessionspage-1" value={form.session_name} onChange={e => setForm(p => ({ ...p, session_name: e.target.value }))}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400"
                 placeholder="contoh: Quiz Microvision — Batch 1 — Mei 2025" />
             </div>
             <div>
               <label htmlFor="f-learning-center-components-sessionspage-2" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
               <select id="f-learning-center-components-sessionspage-2" value={form.material_id}
                 onChange={e => setForm(p => ({ ...p, material_id: e.target.value, batch_filter: '' }))}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400 bg-white">
                 <option value="">-- Pilih Materi --</option>
                 {materials.map(m => {
                   const total = questions.filter(q => q.material_id === m.id && ((q as any).question_type ?? 'abcd') === form.session_type).length;
@@ -84,7 +84,7 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                   <select id="f-learning-center-components-sessionspage-3"
                     value={form.batch_filter}
                     onChange={e => setForm(p => ({ ...p, batch_filter: e.target.value }))}
-                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400 bg-white"
                   >
                     <option value="">-- Semua Grup ({questions.filter(q => q.material_id === form.material_id && ((q as any).question_type ?? 'abcd') === form.session_type).length} soal dicampur) --</option>
                     {batches.map(b => {
@@ -104,43 +104,43 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
               <label htmlFor="f-learning-center-components-sessionspage-4" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Jumlah Soal</label>
               <input id="f-learning-center-components-sessionspage-4" type="number" min={1} max={100} value={form.question_count}
                 onChange={e => setForm(p => ({ ...p, question_count: +e.target.value }))}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400" />
             </div>
             <div>
               <label htmlFor="f-learning-center-components-sessionspage-5" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Timer (menit, 0 = tanpa timer)</label>
               <input id="f-learning-center-components-sessionspage-5" type="number" min={0} value={form.timer_minutes}
                 onChange={e => setForm(p => ({ ...p, timer_minutes: +e.target.value }))}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400" />
             </div>
             <div>
               <label htmlFor="f-learning-center-components-sessionspage-6" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Passing Grade (%)</label>
               <input id="f-learning-center-components-sessionspage-6" type="number" min={0} max={100} value={form.passing_grade}
                 onChange={e => setForm(p => ({ ...p, passing_grade: +e.target.value }))}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400" />
             </div>
             <div>
               <label htmlFor="f-learning-center-components-sessionspage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="⏰" />Waktu Dibuka</label>
               <input id="f-learning-center-components-sessionspage-7" type="datetime-local" value={form.open_at} onChange={e => setForm(p => ({ ...p, open_at: e.target.value }))}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400" />
               <p className="text-[11px] text-slate-500 mt-1">Kosongkan = langsung aktif sekarang</p>
             </div>
             <div>
               <label htmlFor="f-learning-center-components-sessionspage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5"><IkonTeks nama="🔒" />Waktu Ditutup</label>
               <input id="f-learning-center-components-sessionspage-8" type="datetime-local" value={form.close_at} onChange={e => setForm(p => ({ ...p, close_at: e.target.value }))}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400" />
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400" />
               <p className="text-[11px] text-slate-500 mt-1">Kosongkan = tidak ada batas waktu</p>
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-1">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.allow_retake} onChange={e => setForm(p => ({ ...p, allow_retake: e.target.checked }))}
-                  className="w-4 h-4 rounded border-slate-300 text-emerald-700 focus:ring-emerald-400" />
+                  className="w-4 h-4 rounded-sm border-slate-300 text-emerald-700 focus:ring-emerald-400" />
                 <span className="text-sm font-medium text-slate-700">Boleh Retake</span>
               </label>
               {/* Mengacak urutan TAMPIL saja - penilaian tetap per question_id
                   di server, jadi tidak ada hubungannya dengan kunci jawaban. */}
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.acak_soal} onChange={e => setForm(p => ({ ...p, acak_soal: e.target.checked }))}
-                  className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400" />
+                  className="w-4 h-4 rounded-sm border-slate-300 text-indigo-600 focus:ring-indigo-400" />
                 <span className="text-sm font-medium text-slate-700"><IkonTeks nama="🔀" />Acak Urutan Soal</span>
                 <span className="text-[11px] text-slate-500">(beda tiap peserta)</span>
               </label>
@@ -150,22 +150,22 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
               <div className="flex gap-2 mb-3 flex-wrap">
                 <button type="button"
                   onClick={() => setForm(p => ({ ...p, target_mode: 'all', target_roles: [], target_user_ids: [], target_divisions: [] }))}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'all' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'all' ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
                   <IkonTeks nama="🌐" />Semua
                 </button>
                 <button type="button"
                   onClick={() => setForm(p => ({ ...p, target_mode: 'role', target_user_ids: [], target_divisions: [] }))}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'role' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'role' ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
                   <IkonTeks nama="🏷" />Per Role
                 </button>
                 <button type="button"
                   onClick={() => setForm(p => ({ ...p, target_mode: 'division', target_roles: [], target_user_ids: [] }))}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'division' ? 'bg-orange-500 text-white border-orange-500 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-orange-300'}`}>
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'division' ? 'bg-orange-500 text-white border-orange-500 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-orange-300'}`}>
                   <IkonTeks nama="🏢" />Per Sales Division
                 </button>
                 <button type="button"
                   onClick={() => setForm(p => ({ ...p, target_mode: 'user', target_roles: [], target_divisions: [] }))}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'user' ? 'bg-indigo-600 text-white border-indigo-600 shadow' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${form.target_mode === 'user' ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm' : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'}`}>
                   <IkonTeks nama="👤" />Per Anggota
                 </button>
               </div>
@@ -187,7 +187,7 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                       return (
                         <label key={role} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${checked ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}`}>
                           <input type="checkbox" checked={checked} onChange={() => toggleTargetRole(role)}
-                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0" />
+                            className="w-4 h-4 rounded-sm border-slate-300 text-indigo-600 focus:ring-indigo-400 shrink-0" />
                           <span className="text-sm font-semibold text-slate-800 flex-1">
                             {roleLabel[role] ?? `📌 ${role.charAt(0).toUpperCase() + role.slice(1)}`}
                           </span>
@@ -209,7 +209,7 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                   <p className="text-xs text-slate-500 mb-2">Pilih Sales Division yang akan menerima quiz ini:</p>
                   <input aria-label="Cari divisi..." value={cariDivisi} onChange={e => setCariDivisi(e.target.value)}
                     placeholder="Cari divisi..."
-                    className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
+                    className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-orange-200 focus:border-orange-400" />
                   <div className="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
                     {uniqueDivisions.length === 0 && (
                       <p className="text-xs text-slate-500 text-center py-3">Tidak ada sales division ditemukan. Pastikan field <code>sales_division</code> diisi di data user.</p>
@@ -226,8 +226,8 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                       return (
                         <label key={div} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all ${checked ? 'bg-orange-50 border border-orange-200' : 'hover:bg-slate-50 border border-transparent'}`}>
                           <input type="checkbox" checked={checked} onChange={() => toggleTargetDivision(div)}
-                            className="w-4 h-4 rounded border-slate-300 text-orange-700 focus:ring-orange-400 flex-shrink-0" />
-                          <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 text-xs font-bold flex-shrink-0">
+                            className="w-4 h-4 rounded-sm border-slate-300 text-orange-700 focus:ring-orange-400 shrink-0" />
+                          <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 text-xs font-bold shrink-0">
                             <Ikon nama="🏢" ukuran="1em" className="inline-block align-[-0.12em]" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -251,7 +251,7 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                   <p className="text-xs text-slate-500 mb-2">Pilih anggota secara individual:</p>
                   <input aria-label="Cari nama, role, atau jabatan..." value={cariAnggota} onChange={e => setCariAnggota(e.target.value)}
                     placeholder="Cari nama, role, atau jabatan..."
-                    className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
+                    className="w-full mb-2 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400" />
                   <div className="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
                     {teamUsers.length === 0 && <p className="text-xs text-slate-500 text-center py-4">Tidak ada user ditemukan</p>}
                     {(() => {
@@ -273,8 +273,8 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
                       return (
                         <label key={u.id} className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-all ${checked ? 'bg-indigo-50 border border-indigo-200' : 'hover:bg-slate-50 border border-transparent'}`}>
                           <input type="checkbox" checked={checked} onChange={() => toggleTargetUser(u.id)}
-                            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-400 flex-shrink-0" />
-                          <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold flex-shrink-0">
+                            className="w-4 h-4 rounded-sm border-slate-300 text-indigo-600 focus:ring-indigo-400 shrink-0" />
+                          <div className="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold shrink-0">
                             {u.full_name?.[0]?.toUpperCase()}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -295,7 +295,7 @@ export function FormSesi({ cariAnggota, cariDivisi, form, handleCreate, material
           </div>
           <div className="flex gap-3 mt-5">
             <button onClick={handleCreate} disabled={saving}
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60">
+              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-sm transition-all disabled:opacity-60">
               {saving ? 'Membuat...' : '🎯 Buat Sesi Quiz'}
             </button>
             <button onClick={() => setShowForm(false)}

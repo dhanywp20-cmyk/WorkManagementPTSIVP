@@ -68,7 +68,7 @@ export function usePengawas({ kelas, aktif, onBatasTercapai }: {
       window.clearTimeout(tundaBlur);
       window.clearTimeout(sembunyiPeringatan);
       document.removeEventListener('visibilitychange', onVisibility);
-      window.removeEventListener('blur', onBlur);
+      window.removeEventListener('blur-sm', onBlur);
       for (const ev of ['copy', 'cut', 'paste', 'contextmenu'] as const) document.removeEventListener(ev, onSalin);
     };
   }, [kelas, aktif]);

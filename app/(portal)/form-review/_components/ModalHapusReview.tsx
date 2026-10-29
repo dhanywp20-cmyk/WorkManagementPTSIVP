@@ -27,7 +27,7 @@ export function ModalHapusReview({ deleteConfirmText, deleteTarget, handleDelete
         <KotakInfo nada="bahaya"><strong>Tindakan ini tidak dapat dibatalkan.</strong> Review ini dihapus permanen dari database.</KotakInfo>
         <div>
           <label htmlFor="f-form-review-page-1" className="block text-xs font-bold text-slate-700 mb-1.5">
-            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">HAPUS</span> untuk konfirmasi
+            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-sm">HAPUS</span> untuk konfirmasi
           </label>
           <input id="f-form-review-page-1" type="text" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)}
             placeholder="Ketik HAPUS di sini..." className={kelasIsian} />

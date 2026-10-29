@@ -75,7 +75,7 @@ export function BagianRiwayatKPI({ expandedSnapshot, kpiSnapshots, kpiYear, setE
                           onMouseLeave={e => (e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#fafafa')}>
                           <td className="px-3 py-2.5">
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0"
+                              <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0"
                                 style={{ background: `linear-gradient(135deg,${tc},${tc}cc)` }}>{m.name.charAt(0)}</div>
                               <div>
                                 <div className="font-semibold text-slate-700 leading-tight">{m.name}</div>

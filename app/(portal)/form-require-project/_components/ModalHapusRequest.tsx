@@ -27,7 +27,7 @@ export function ModalHapusRequest({ deleteConfirmText, deleteModal, deleting, ha
         <KotakInfo nada="awas">Tidak bisa dibatalkan - pesan &amp; lampiran request ikut terhapus.</KotakInfo>
         <div>
           <label htmlFor="f-require-hapus-konfirmasi" className="block text-xs font-bold text-slate-700 mb-1.5">
-            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1 rounded">HAPUS</span> untuk konfirmasi
+            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1 rounded-sm">HAPUS</span> untuk konfirmasi
           </label>
           <input id="f-require-hapus-konfirmasi" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)}
             placeholder="Ketik HAPUS di sini..." autoFocus className={kelasIsian} />

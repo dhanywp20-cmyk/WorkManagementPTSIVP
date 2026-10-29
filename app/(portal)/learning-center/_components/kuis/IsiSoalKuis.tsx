@@ -34,7 +34,7 @@ export function IsiSoalKuis({ answers, current, gambarJawaban, handleAnswer, han
         <div className="max-w-5xl mx-auto flex items-center gap-3 lg:gap-5">
           <button onClick={() => setCurrent(p => Math.max(0, p - 1))} disabled={current === 0}
             aria-label="Soal sebelumnya"
-            className="hidden lg:flex flex-shrink-0 w-12 h-12 rounded-full items-center justify-center bg-white border border-slate-200 text-slate-500 transition-all hover:text-[#5B5BF5] hover:border-[#5B5BF5] hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-500 disabled:hover:border-slate-200 disabled:hover:shadow-none"
+            className="hidden lg:flex shrink-0 w-12 h-12 rounded-full items-center justify-center bg-white border border-slate-200 text-slate-500 transition-all hover:text-[#5B5BF5] hover:border-[#5B5BF5] hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-500 disabled:hover:border-slate-200 disabled:hover:shadow-none"
             style={{ boxShadow: '0 1px 2px rgba(15,23,42,.04), 0 6px 16px -6px rgba(15,23,42,.12)' }}>
             <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
@@ -60,10 +60,10 @@ export function IsiSoalKuis({ answers, current, gambarJawaban, handleAnswer, han
             </span>
             <span className={`text-[11px] lg:text-xs font-bold px-2 py-0.5 rounded-full border ${q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : q.difficulty === 'medium' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>{q.difficulty}</span>
           </div>
-          {/*  break-words: pengaman untuk teks panjang tanpa spasi (mis. satu
+          {/*  wrap-break-word: pengaman untuk teks panjang tanpa spasi (mis. satu
                kata sangat panjang atau tautan) supaya tetap terbungkus rapi
                di layar sempit, bukan meluber keluar kartu. */}
-          <p className="text-[17px] sm:text-xl lg:text-2xl font-semibold leading-snug mb-5 lg:mb-7 break-words"
+          <p className="text-[17px] sm:text-xl lg:text-2xl font-semibold leading-snug mb-5 lg:mb-7 wrap-break-word"
             style={{ color: '#141828', letterSpacing: '-0.015em' }}>{q.question}</p>
           <GambarSoal url={q.gambar_url} tinggi="max-h-72" className="mb-5 lg:mb-7 border border-slate-200" />
           <div className="space-y-2.5 lg:space-y-3">
@@ -79,7 +79,7 @@ export function IsiSoalKuis({ answers, current, gambarJawaban, handleAnswer, han
                     <div className="flex items-start gap-3">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={gambarJawaban[q.id]} alt="Pratinjau jawaban kamu"
-                        className="w-24 h-24 object-cover rounded-lg border border-emerald-200 flex-shrink-0" />
+                        className="w-24 h-24 object-cover rounded-lg border border-emerald-200 shrink-0" />
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-emerald-700">✓ Foto jawaban tersimpan</p>
                         <p className="text-[11px] text-emerald-700 leading-relaxed mt-0.5">
@@ -123,7 +123,7 @@ export function IsiSoalKuis({ answers, current, gambarJawaban, handleAnswer, han
                 onChange={e => setAnswers(p => ({ ...p, [q.id]: e.target.value }))}
                 onBlur={e => handleAnswer(q.id, e.target.value)}
                 rows={8}
-                className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:border-slate-500 resize-y"
+                className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm outline-hidden focus:border-slate-500 resize-y"
                 placeholder="Tulis jawaban essay kamu di sini..."
               />
             ) : (['A','B','C','D'] as const).map(opt => {
@@ -139,14 +139,14 @@ export function IsiSoalKuis({ answers, current, gambarJawaban, handleAnswer, han
                 */
                 <button key={opt} onClick={() => handleAnswer(q.id, opt)}
                   aria-pressed={selected}
-                  className={`w-full flex items-center gap-3 lg:gap-4 px-4 py-3.5 sm:px-5 sm:py-4 lg:py-5 rounded-xl text-left transition-all duration-200 ${selected ? '' : 'hover:border-[#C7CBF5] hover:-translate-y-px hover:shadow-sm'}`}
+                  className={`w-full flex items-center gap-3 lg:gap-4 px-4 py-3.5 sm:px-5 sm:py-4 lg:py-5 rounded-xl text-left transition-all duration-200 ${selected ? '' : 'hover:border-[#C7CBF5] hover:-translate-y-px hover:shadow-xs'}`}
                   style={{
                     border: `1.5px solid ${selected ? '#5B5BF5' : '#E4E7F0'}`,
                     background: selected ? '#EEEEFE' : '#FFFFFF',
                     color: '#141828',
                     boxShadow: selected ? '0 1px 2px rgba(91,91,245,.12)' : undefined,
                   }}>
-                  <span className="w-[30px] h-[30px] sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center text-[13px] sm:text-sm lg:text-base font-black flex-shrink-0 transition-all tabular-nums"
+                  <span className="w-[30px] h-[30px] sm:w-9 sm:h-9 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center text-[13px] sm:text-sm lg:text-base font-black shrink-0 transition-all tabular-nums"
                     style={{
                       background: selected ? '#5B5BF5' : '#F1F2F8',
                       color: selected ? '#FFFFFF' : '#5A6180',
@@ -155,9 +155,9 @@ export function IsiSoalKuis({ answers, current, gambarJawaban, handleAnswer, han
                        menyusut di bawah lebar isinya sendiri untuk teks yang
                        panjang tanpa spasi - baris pilihannya akan meluber
                        keluar kartu alih-alih membungkus rapi ke bawah. */}
-                  <span className="text-[14.5px] sm:text-base lg:text-lg font-medium flex-1 min-w-0 break-words">{val}</span>
+                  <span className="text-[14.5px] sm:text-base lg:text-lg font-medium flex-1 min-w-0 wrap-break-word">{val}</span>
                   {selected && (
-                    <svg aria-hidden="true" focusable="false" className="w-5 h-5 lg:w-6 lg:h-6 flex-shrink-0" style={{ color: '#5B5BF5' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg aria-hidden="true" focusable="false" className="w-5 h-5 lg:w-6 lg:h-6 shrink-0" style={{ color: '#5B5BF5' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
@@ -169,7 +169,7 @@ export function IsiSoalKuis({ answers, current, gambarJawaban, handleAnswer, han
 
           <button onClick={() => setCurrent(p => Math.min(questions.length - 1, p + 1))} disabled={current === questions.length - 1}
             aria-label="Soal berikutnya"
-            className="hidden lg:flex flex-shrink-0 w-12 h-12 rounded-full items-center justify-center bg-white border border-slate-200 text-slate-500 transition-all hover:text-[#5B5BF5] hover:border-[#5B5BF5] hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-500 disabled:hover:border-slate-200 disabled:hover:shadow-none"
+            className="hidden lg:flex shrink-0 w-12 h-12 rounded-full items-center justify-center bg-white border border-slate-200 text-slate-500 transition-all hover:text-[#5B5BF5] hover:border-[#5B5BF5] hover:shadow-md disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-500 disabled:hover:border-slate-200 disabled:hover:shadow-none"
             style={{ boxShadow: '0 1px 2px rgba(15,23,42,.04), 0 6px 16px -6px rgba(15,23,42,.12)' }}>
             <svg aria-hidden="true" focusable="false" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />

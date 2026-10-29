@@ -19,7 +19,7 @@ export function LangkahPilihJenis({ onClose, setLangkah, switchProjectType }: La
               onClick={() => { switchProjectType('existing'); setLangkah('cari'); }}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">Project yang sudah ada</p>
                   <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
@@ -36,7 +36,7 @@ export function LangkahPilihJenis({ onClose, setLangkah, switchProjectType }: La
               onClick={() => { switchProjectType('new'); setLangkah('form'); }}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">Project baru</p>
                   <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">

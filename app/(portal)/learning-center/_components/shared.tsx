@@ -195,7 +195,7 @@ export function SearchInput({ value, onChange, placeholder }: { value: string; o
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder ?? 'Cari...'}
         aria-label={placeholder ?? 'Cari'}
-        className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white w-full sm:w-64"
+        className="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-xl outline-hidden focus:border-blue-400 focus:ring-2 focus:ring-blue-100 bg-white w-full sm:w-64"
       />
     </div>
   );
@@ -472,7 +472,7 @@ export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: (
   const isConfirm = dialog.type === 'confirm';
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[2000] flex items-center justify-center p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-2000 flex items-center justify-center p-4"
       style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(6px)' }}>
       <div className="bg-white rounded-kartu shadow-modal p-7 w-full max-w-sm border border-slate-200">
         <div className="flex flex-col items-center text-center mb-6">
@@ -499,7 +499,7 @@ export function AppDialog({ dialog, onClose }: { dialog: DialogState; onClose: (
               }
               onClose();
             }}
-            className={`${isConfirm ? 'flex-1' : 'px-8'} py-2.5 text-white text-sm font-bold rounded-xl shadow transition-all disabled:opacity-60 ${cfg.btn}`}>
+            className={`${isConfirm ? 'flex-1' : 'px-8'} py-2.5 text-white text-sm font-bold rounded-xl shadow-sm transition-all disabled:opacity-60 ${cfg.btn}`}>
             {running
               ? <span className="flex items-center justify-center gap-2"><span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"/>Memproses...</span>
               : isConfirm ? (dialog.confirmLabel ?? 'Konfirmasi') : 'OK'}

@@ -373,8 +373,8 @@ function PiketShowroomPageInner() {
       {/* TANPA z-index — disengaja. `relative z-10` di sini dulu membentuk
           stacking context, sehingga z-index SEMUA modal di dalamnya cuma
           dibandingkan sesama isi pembungkus ini, bukan dengan overlay yang
-          di-portal ke <body>. Akibatnya modal z-[1100] bisa tampil DI BELAKANG
-          modal z-[1000] yang di-portal. Urutan cat terhadap tint di atas tetap
+          di-portal ke <body>. Akibatnya modal z-1100 bisa tampil DI BELAKANG
+          modal z-1000 yang di-portal. Urutan cat terhadap tint di atas tetap
           aman karena elemen ini datang belakangan di DOM. */}
       <div className="relative flex flex-col flex-1 overflow-hidden">
         {/* ── HEADER ── */}
@@ -437,7 +437,7 @@ function PiketShowroomPageInner() {
                         <span className="text-[11px] font-bold text-red-700 leading-tight">{wLabel}</span>
                         <span className="text-[11px] text-red-600 leading-tight">{wLabel2}</span>
                       </div>
-                      {!isCurrWeek&&<button onClick={()=>setWeekStart(getMonday(new Date()))} className="text-[10px] font-bold px-2 py-1 rounded-lg text-white flex-shrink-0" style={{background:'#dc2626'}}>Ini</button>}
+                      {!isCurrWeek&&<button onClick={()=>setWeekStart(getMonday(new Date()))} className="text-[10px] font-bold px-2 py-1 rounded-lg text-white shrink-0" style={{background:'#dc2626'}}>Ini</button>}
                     </div>
                     <button aria-label="Berikutnya" onClick={()=>setWeekStart(d=>addDays(d,14))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-base text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">›</button>
                     <button onClick={()=>setWeekStart(d=>addDays(d,28))} className="w-7 h-7 rounded-lg flex items-center justify-center font-bold text-sm text-slate-500 hover:text-red-600 border border-slate-200 hover:border-red-200 hover:bg-red-50">››</button>
@@ -461,12 +461,12 @@ function PiketShowroomPageInner() {
                 <div className="relative flex-1 min-w-[160px]">
                   <svg aria-hidden="true" focusable="false" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                   <input aria-label="Cari nama, instansi, kegiatan..." value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari nama, instansi, kegiatan..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none" style={{background:'rgba(248,250,252,0.9)',border:'1px solid rgba(0,0,0,0.1)'}}/>
+                    className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-hidden" style={{background:'rgba(248,250,252,0.9)',border:'1px solid rgba(0,0,0,0.1)'}}/>
                 </div>
-                <select aria-label="Semua Hari" value={filterDay} onChange={e=>setFilterDay(e.target.value as any)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
+                <select aria-label="Semua Hari" value={filterDay} onChange={e=>setFilterDay(e.target.value as any)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-hidden bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
                   <option value="">Semua Hari</option>{DAYS_OF_WEEK.map(d=><option key={d} value={d}>{d}</option>)}
                 </select>
-                <select aria-label="Semua Kegiatan" value={filterKegiatan||''} onChange={e=>setFilterKegiatan(e.target.value||null)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-none bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
+                <select aria-label="Semua Kegiatan" value={filterKegiatan||''} onChange={e=>setFilterKegiatan(e.target.value||null)} className="px-3 py-2 rounded-xl text-xs font-semibold outline-hidden bg-white" style={{border:'1px solid rgba(0,0,0,0.1)'}}>
                   <option value="">Semua Kegiatan</option>{denganNilai(daftarKegiatan, filterKegiatan).map(j=><option key={j} value={j}>{j}</option>)}
                 </select>
                 <button onClick={()=>setFilterTamu(f=>!f)} className="px-3 py-2 rounded-xl text-xs font-semibold border"
@@ -499,7 +499,7 @@ function PiketShowroomPageInner() {
               if(!isWeekday)return null;
               return(
                 <div className="mx-4 mb-3 mt-1 flex items-center gap-3 px-4 py-2.5 rounded-xl" style={{background:`${todayDc?.accent||'#dc2626'}10`,border:`1px solid ${todayDc?.accent||'#dc2626'}30`}}>
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm flex-shrink-0" style={{background:todayDc?.grad||'linear-gradient(135deg,#dc2626,#991b1b)'}}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-sm shrink-0" style={{background:todayDc?.grad||'linear-gradient(135deg,#dc2626,#991b1b)'}}>
                     {now.getDate()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -536,10 +536,10 @@ function PiketShowroomPageInner() {
                   const jumlahKg=kegiatanList.filter(k=>k.piket_id===row.id).length;
                   return (
                     <div key={row.id} className={`px-4 py-3 flex items-start gap-3 ${todayRow?'bg-green-50/60':''}`}>
-                      <div className="flex flex-col items-center w-11 flex-shrink-0" style={{color:dc.accent}}>
+                      <div className="flex flex-col items-center w-11 shrink-0" style={{color:dc.accent}}>
                         <span className="text-lg font-black leading-none">{new Date(row.day_date+'T00:00:00').getDate()}</span>
                         <span className="text-[11px] font-bold">{row.day_of_week}</span>
-                        {todayRow&&<span className="text-[11px] font-bold px-1 py-0.5 rounded text-white mt-0.5 text-center leading-tight" style={{background:dc.accent}}>Hari ini</span>}
+                        {todayRow&&<span className="text-[11px] font-bold px-1 py-0.5 rounded-sm text-white mt-0.5 text-center leading-tight" style={{background:dc.accent}}>Hari ini</span>}
                       </div>
                       <div className="flex-1 min-w-0 pt-0.5">
                         {isHoliday?(
@@ -550,9 +550,9 @@ function PiketShowroomPageInner() {
                           <div className="space-y-1">
                             {pics.map(p=>(
                               <div key={p.team} className="flex items-center gap-1.5">
-                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0" style={{background:TEAM_LABEL[p.team]?.dot??'#64748b'}}>{p.name!.charAt(0).toUpperCase()}</div>
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0" style={{background:TEAM_LABEL[p.team]?.dot??'#64748b'}}>{p.name!.charAt(0).toUpperCase()}</div>
                                 <span className="text-[13px] font-semibold text-slate-800 truncate">{p.name}</span>
-                                <span className="text-[10px] text-slate-500 flex-shrink-0">{p.team.replace('PTS ','')}</span>
+                                <span className="text-[10px] text-slate-500 shrink-0">{p.team.replace('PTS ','')}</span>
                               </div>
                             ))}
                           </div>
@@ -563,7 +563,7 @@ function PiketShowroomPageInner() {
                           daftar HP tidak punya tombol sama sekali, jadi dari HP
                           tidak ada seorang pun (admin sekalipun) yang bisa
                           mengisi atau melihat detail piket. */}
-                      <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                      <div className="flex flex-col items-end gap-1 shrink-0">
                         <ActionGroup>
                           {!isVirtual&&<ViewIconBtn onClick={()=>setViewDetail(row)} />}
                           {bolehIsi&&<EditIconBtn onClick={()=>isVirtual?handleFillVirtual(row):setFillDetail(row)} />}
@@ -663,7 +663,7 @@ function PiketShowroomPageInner() {
                                     const tc=TEAM_LABEL[team]??DEFAULT_TEAM_COLOR;
                                     return(
                                       <div className="flex items-center gap-1.5">
-                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white flex-shrink-0" style={{background:tc.dot}}>{picBaris.name.charAt(0).toUpperCase()}</div>
+                                        <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shrink-0" style={{background:tc.dot}}>{picBaris.name.charAt(0).toUpperCase()}</div>
                                         <div className="min-w-0">
                                           <p className="text-[13px] font-semibold text-slate-800 truncate leading-tight">{picBaris.name}</p>
                                           <span className="text-[10px] font-bold uppercase" style={{color:tc.text}}>{team}</span>
@@ -693,7 +693,7 @@ function PiketShowroomPageInner() {
                                       const u=ptUsers.find(x=>x.full_name===(kg as any).team_rnd);
                                       const teamLabel=u?.team_type?labelKelompokPTS(u.team_type):'';
                                       const tc=teamLabel?TEAM_LABEL[teamLabel]:null;
-                                      return tc?<span className="text-[10px] font-black px-1 py-0.5 rounded text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
+                                      return tc?<span className="text-[10px] font-black px-1 py-0.5 rounded-sm text-white" style={{background:tc.dot}}>{teamLabel}</span>:null;
                                     })()}
                                   </div>
                                 )}
@@ -702,7 +702,7 @@ function PiketShowroomPageInner() {
                                   <div className="flex flex-col gap-0.5 mt-0.5">
                                     {kg.kebutuhan.map(k=>(
                                       <span key={k} className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 leading-tight">
-                                        <span className="w-1 h-1 rounded-full flex-shrink-0" style={{background:dc.accent}}/>
+                                        <span className="w-1 h-1 rounded-full shrink-0" style={{background:dc.accent}}/>
                                         {k}
                                       </span>
                                     ))}
@@ -715,8 +715,8 @@ function PiketShowroomPageInner() {
                           <td className="px-3 py-3 align-middle" style={{borderRight:'1px solid #cbd5e1'}}>
                             {kg?.jam_mulai?(
                               <div className="flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 flex-shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
-                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 flex-shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 shrink-0">Mulai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_mulai)}</span></div>
+                                <div className="flex items-center gap-1"><span className="text-[10px] font-bold text-slate-500 w-10 shrink-0">Selesai</span><span className="text-sm font-bold text-slate-700">{formatTime(kg.jam_selesai)}</span></div>
                               </div>
                             ):<span className="text-gray-400 text-xs">—</span>}
                           </td>

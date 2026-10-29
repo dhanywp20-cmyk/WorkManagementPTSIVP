@@ -21,14 +21,14 @@ export function DrillModal({ member, onClose, period, onViewBreakdown }: { membe
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4"
       style={{ background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-md overflow-hidden flex flex-col"
         style={{ maxHeight: '100%' }}>
 
         {/* Header */}
-        <div className="px-5 py-4 bg-white border-b border-slate-100 text-slate-800 flex items-center gap-3 flex-shrink-0 relative">
+        <div className="px-5 py-4 bg-white border-b border-slate-100 text-slate-800 flex items-center gap-3 shrink-0 relative">
           <button aria-label="Tutup" onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-kecil bg-black/5 text-slate-500 hover:text-rose-600 flex items-center justify-center font-bold text-sm">✕</button>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black text-slate-800"
@@ -183,11 +183,11 @@ export function ProgressBar({ value, max, showPct = true, h = 6 }: { value: numb
   const color = progressColor(pct);
   return (
     <div className="flex items-center gap-1.5 w-full min-w-0">
-      <div className="flex-1 rounded-full overflow-hidden flex-shrink-0" style={{ height: h, background: '#f1f5f9', minWidth: 40 }}>
+      <div className="flex-1 rounded-full overflow-hidden shrink-0" style={{ height: h, background: '#f1f5f9', minWidth: 40 }}>
         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: color }} />
       </div>
       {showPct && (
-        <span className="text-[11px] font-bold w-7 text-right flex-shrink-0" style={{ color }}>
+        <span className="text-[11px] font-bold w-7 text-right shrink-0" style={{ color }}>
           {Math.round(pct)}%
         </span>
       )}

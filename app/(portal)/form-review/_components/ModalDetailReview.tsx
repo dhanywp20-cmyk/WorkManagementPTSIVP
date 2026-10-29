@@ -19,14 +19,14 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
     <>
       {detailReview && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1000] p-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-1000 p-4" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
           onClick={e => { if (e.target === e.currentTarget) setDetailReview(null); }}>
           <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl my-4 overflow-hidden flex flex-col"
             style={{ maxHeight: '96dvh' }}>
 
             {/* Header */}
             {/*  Kepala putih baku (sama dengan Modal bersama) - dulu ungu / biru menurut kategori. */}
-            <div className="px-6 py-5 pr-12 flex-shrink-0 relative border-b border-slate-100 bg-white">
+            <div className="px-6 py-5 pr-12 shrink-0 relative border-b border-slate-100 bg-white">
               <div className="flex flex-wrap gap-2 mb-3">
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
                   {detailReview.review_category}
@@ -76,7 +76,7 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
                 ].filter(x => x.value).map((item, i) => (
                   <div key={i} className="rounded-xl px-4 py-3" style={{ background: 'rgba(248,250,252,0.9)', border: '1px solid rgba(0,0,0,0.07)' }}>
                     <p className="text-[10px] font-bold tracking-widest uppercase text-gray-500"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {item.label}</p>
-                    <p className="text-sm font-bold text-gray-800 mt-0.5 break-words">{item.value}</p>
+                    <p className="text-sm font-bold text-gray-800 mt-0.5 wrap-break-word">{item.value}</p>
                   </div>
                 ))}
               </div>
@@ -205,7 +205,7 @@ export function ModalDetailReview({ bolehEditReview, detailReview, isAdmin, open
                 )}
                 {isAdmin && (
                   <button onClick={() => { setDetailReview(null); openDeleteModal(detailReview); }}
-                    className="tombol-kedua !text-rose-700 px-5 py-3 rounded-kontrol font-bold text-sm flex items-center gap-2">
+                    className="tombol-kedua text-rose-700! px-5 py-3 rounded-kontrol font-bold text-sm flex items-center gap-2">
                     Hapus
                   </button>
                 )}

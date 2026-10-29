@@ -8,7 +8,7 @@ import { Modal } from '@/components/shared/Modal';
 import { type Bidang, type EntriPustaka, type JenisPustaka, periksaEntri } from '@/lib/pustaka';
 import { simpanEntri } from './usePustaka';
 
-const kelas = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-200';
+const kelas = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-blue-200';
 
 function Isian({ b, nilai, onUbah }: { b: Bidang; nilai: string; onUbah: (v: string) => void }) {
   const label = <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">{b.l}{b.satuan ? ` (${b.satuan})` : ''}{b.wajib ? ' *' : ''}</span>;

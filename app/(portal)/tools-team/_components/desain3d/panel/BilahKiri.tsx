@@ -80,11 +80,11 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
         {!hanyaLihat && <TombolNav judul="Pusatkan isi - geser semua benda ke tengah ruang" aktif={menuPusat} onClick={() => { tutupSemua(); setMenuPusat(v => !v); }}><AlignCenterVertical size={17} /></TombolNav>}
       </div>
       {ukur && (
-        <div className="self-start flex items-center gap-1.5 rounded-lg bg-red-600 text-white px-2 py-1 text-[11.5px] font-bold shadow-sm">
+        <div className="self-start flex items-center gap-1.5 rounded-lg bg-red-600 text-white px-2 py-1 text-[11.5px] font-bold shadow-xs">
           <Ruler size={13} /> {titikUkur ? 'Titik kedua' : 'Titik pertama'}
           {jumlahGaris > 0 && (
             <button type="button" onClick={() => setRuang(r => ({ ...r, penggaris: [] }))} title="Hapus semua garis ukur"
-              className="ml-1 rounded bg-white/20 px-1.5 hover:bg-white/30">Hapus {jumlahGaris}</button>
+              className="ml-1 rounded-sm bg-white/20 px-1.5 hover:bg-white/30">Hapus {jumlahGaris}</button>
           )}
         </div>
       )}
@@ -117,7 +117,7 @@ export function BilahKiri({ a }: { a: AlatDesain }) {
                   {LABEL_GOLONGAN[g]}
                 </label>
                 <button type="button" onClick={() => setSembunyiGolongan(kelompok.filter(x => x !== g))} title={`Isolasi: tampilkan hanya ${LABEL_GOLONGAN[g]}`}
-                  className="px-1.5 py-0.5 rounded text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Hanya</button>
+                  className="px-1.5 py-0.5 rounded-sm text-[11px] font-semibold text-blue-700 hover:bg-blue-50">Hanya</button>
               </div>
             ))}
             {sembunyiGolongan.length > 0 && (

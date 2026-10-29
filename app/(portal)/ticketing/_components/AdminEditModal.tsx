@@ -40,7 +40,7 @@ export function AdminEditModal({
               {bolehReroute(adminEditTicket) ? (
                 <>
                   <select aria-label="— Biarkan seperti sekarang —" value={adminRerouteTo} onChange={e => setAdminRerouteTo(e.target.value)}
-                    className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-amber-200">
+                    className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:ring-2 focus:ring-amber-200">
                     <option value="">— Biarkan seperti sekarang —</option>
                     <option value="SELF">Saya kerjakan sendiri</option>
                     {supervisorMembers.length > 0 && (

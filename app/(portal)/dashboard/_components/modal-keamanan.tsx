@@ -83,7 +83,7 @@ export function KeamananInline() {
           title={wajibAdmin ? 'Matikan' : 'Nyalakan (2FA akun Anda harus aktif)'}
           onClick={() => void kirim({ aksi: 'atur', wajibAdmin: !wajibAdmin }, wajibAdmin ? 'Wajib 2FA admin dimatikan.' : 'Wajib 2FA admin menyala.')}
           className={`relative w-11 h-6 rounded-full transition-colors disabled:opacity-50 ${wajibAdmin ? 'bg-emerald-600' : 'bg-slate-300'}`}>
-          <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${wajibAdmin ? 'translate-x-5' : ''}`} />
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${wajibAdmin ? 'translate-x-5' : ''}`} />
         </button>
       </section>
 

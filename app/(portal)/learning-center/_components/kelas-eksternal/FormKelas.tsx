@@ -13,7 +13,7 @@ import { PALET_TEMA, PILIHAN_DETIK, WARNA_BAWAAN, teksDiAtas } from '@/lib/kuis-
 
 interface SoalRingkas { id: string; materi_name: string | null; batch_name: string | null; question: string }
 
-const isian = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-[13.5px] outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100';
+const isian = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-[13.5px] outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100';
 const label = 'block text-[11.5px] font-bold uppercase tracking-wider text-slate-500 mb-1';
 const keLokal = (iso: string | null) => (iso ? new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');
 
@@ -207,7 +207,7 @@ export function FormKelas({ awal, onTutup, onSimpan }: {
             <div className="relative w-48">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari soal / materi" aria-label="Cari soal"
-                className="w-full rounded-lg border border-slate-300 pl-8 pr-2 py-1.5 text-[12.5px] outline-none focus:border-indigo-500" />
+                className="w-full rounded-lg border border-slate-300 pl-8 pr-2 py-1.5 text-[12.5px] outline-hidden focus:border-indigo-500" />
             </div>
           </div>
           <div className="rounded-xl border border-slate-200 overflow-y-auto max-h-[52vh] divide-y divide-slate-100">
@@ -258,7 +258,7 @@ function TampilanKuis<T extends IsianTampilan>({ f, setF, mengunggah, unggah }: 
         <div className="flex flex-wrap items-center gap-1.5">
           {PALET_TEMA.map(w => (
             <button key={w} type="button" aria-label={`Warna ${w}`} aria-pressed={f.tema_warna === w} onClick={() => setF(x => ({ ...x, tema_warna: w }))}
-              className={`w-8 h-8 rounded-full border-2 ${f.tema_warna === w ? 'border-slate-900 ring-2 ring-offset-1 ring-slate-900' : 'border-white shadow'}`}
+              className={`w-8 h-8 rounded-full border-2 ${f.tema_warna === w ? 'border-slate-900 ring-2 ring-offset-1 ring-slate-900' : 'border-white shadow-sm'}`}
               style={{ backgroundColor: w }} />
           ))}
           <label className="relative w-8 h-8 rounded-full border-2 border-dashed border-slate-300 overflow-hidden cursor-pointer" title="Warna lain">
@@ -312,7 +312,7 @@ function TampilanKuis<T extends IsianTampilan>({ f, setF, mengunggah, unggah }: 
           )}
           <p className="relative text-[13px] font-black text-center line-clamp-1">{f.judul || 'Judul kuis'}</p>
           <div className="relative grid grid-cols-4 gap-1 w-full max-w-[220px]">
-            {['#e21b3c', '#1368ce', '#d89e00', '#26890c'].map(w => <span key={w} className="h-3.5 rounded" style={{ backgroundColor: w }} />)}
+            {['#e21b3c', '#1368ce', '#d89e00', '#26890c'].map(w => <span key={w} className="h-3.5 rounded-sm" style={{ backgroundColor: w }} />)}
           </div>
         </div>
       </div>

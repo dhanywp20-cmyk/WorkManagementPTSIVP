@@ -41,9 +41,9 @@ export function PanelNotifBagian({ bagian, onTutup, onItemClick }: {
 
   return (
     <ModalPortal>
-      <div className="fixed inset-0 z-[1600] bg-slate-900/40" onClick={onTutup} aria-hidden="true" />
+      <div className="fixed inset-0 z-1600 bg-slate-900/40" onClick={onTutup} aria-hidden="true" />
       <div role="dialog" aria-modal="true" aria-label="Rincian notifikasi"
-        className="fixed z-[1601] inset-x-0 bottom-0 max-h-[80vh] rounded-t-2xl sm:inset-x-auto sm:bottom-auto sm:top-16 sm:right-4 sm:w-[380px] sm:max-h-[75vh] sm:rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden"
+        className="fixed z-1601 inset-x-0 bottom-0 max-h-[80vh] rounded-t-2xl sm:inset-x-auto sm:bottom-auto sm:top-16 sm:right-4 sm:w-[380px] sm:max-h-[75vh] sm:rounded-2xl bg-white shadow-2xl flex flex-col overflow-hidden"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="sm:hidden mx-auto mt-2 h-1 w-10 rounded-full bg-slate-300" aria-hidden="true" />
         <div className="px-4 py-3 flex items-center justify-between border-b border-slate-100">
@@ -64,7 +64,7 @@ export function PanelNotifBagian({ bagian, onTutup, onItemClick }: {
               <section key={b.kunci} className="border-b border-slate-100 last:border-0">
                 <button type="button" onClick={() => setBuka(terbuka ? null : b.kunci)} aria-expanded={terbuka}
                   className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-slate-50 min-h-[52px]">
-                  <span className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: b.bgColor }}>
+                  <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: b.bgColor }}>
                     <Icon className="w-4 h-4" style={{ color: b.color }} />
                   </span>
                   <span className="flex-1 text-sm font-semibold text-slate-800">{b.label}</span>
@@ -90,7 +90,7 @@ export function PanelNotifBagian({ bagian, onTutup, onItemClick }: {
                           <span className="block text-sm font-semibold text-slate-800 truncate leading-tight">{item.title}</span>
                           <span className="block text-[12px] text-slate-500 truncate mt-0.5">{item.subtitle}</span>
                         </span>
-                        <span className="text-[11px] text-slate-500 flex-shrink-0 mt-0.5">{waktu(item.time)}</span>
+                        <span className="text-[11px] text-slate-500 shrink-0 mt-0.5">{waktu(item.time)}</span>
                       </button>
                     ))}
                   </div>

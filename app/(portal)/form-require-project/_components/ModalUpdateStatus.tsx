@@ -48,7 +48,7 @@ export function ModalUpdateStatus({ bisaKelolaRequest, canSetInProgress, current
           return (
             <button key={v} type="button" role="radio" aria-checked={dipilih} onClick={() => setSelectedNewStatus(v)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-kontrol border text-left transition-all text-sm font-semibold ${dipilih ? 'border-slate-800 bg-slate-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-              <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${dipilih ? 'border-slate-800' : 'border-slate-300'}`}>
+              <span className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${dipilih ? 'border-slate-800' : 'border-slate-300'}`}>
                 {dipilih && <span className="w-2 h-2 rounded-full bg-slate-800" />}
               </span>
               <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${sc?.color ?? ''} ${sc?.bg ?? ''} ${sc?.border ?? ''}`}>{sc?.label ?? v}</span>

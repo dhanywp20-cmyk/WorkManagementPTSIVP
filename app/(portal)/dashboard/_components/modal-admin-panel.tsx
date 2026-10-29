@@ -151,7 +151,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-[1000] flex items-center justify-center pt-16 px-4 pb-4">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-1000 flex items-center justify-center pt-16 px-4 pb-4">
       {/* Di ponsel panel navigasi TIDAK boleh berdiri sebagai kolom kiri: 224px
           dari layar 360px hanya menyisakan seratusan piksel untuk isinya, dan
           tabel di dalamnya jadi terpotong sampai hanya kolom aksi yang terlihat.
@@ -159,11 +159,11 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-7xl h-[90vh] flex flex-col sm:flex-row overflow-hidden border border-slate-200">
 
         {/* ── LEFT SIDEBAR (ponsel: bilah tab atas) ── */}
-        <div className="w-full sm:w-56 flex-shrink-0 flex flex-col border-b sm:border-b-0 sm:border-r border-slate-100" style={{ background: 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)' }}>
+        <div className="w-full sm:w-56 shrink-0 flex flex-col border-b sm:border-b-0 sm:border-r border-slate-100" style={{ background: 'linear-gradient(160deg, #1e293b 0%, #0f172a 100%)' }}>
           {/* Sidebar header */}
           <div className="px-4 sm:px-5 py-3 sm:py-5 border-b border-white/10">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
                 <svg aria-hidden="true" focusable="false" className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
@@ -188,7 +188,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
               const items = navItems.filter(n => n.group === grup.key);
               if (items.length === 0) return null;
               return (
-                <div key={grup.key} className={`flex flex-row sm:flex-col flex-shrink-0 sm:flex-shrink gap-1 sm:gap-0.5 ${gi > 0 ? 'sm:mt-4 pl-2 sm:pl-0 ml-1 sm:ml-0 border-l sm:border-l-0 border-white/10' : ''}`}>
+                <div key={grup.key} className={`flex flex-row sm:flex-col shrink-0 sm:shrink gap-1 sm:gap-0.5 ${gi > 0 ? 'sm:mt-4 pl-2 sm:pl-0 ml-1 sm:ml-0 border-l sm:border-l-0 border-white/10' : ''}`}>
                   <p className="hidden sm:block px-3 pt-1 pb-1.5 text-[11px] font-bold tracking-widest uppercase text-white/30">
                     {grup.label}
                   </p>
@@ -196,7 +196,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
                     const isActive = activeSection === item.key;
                     return (
                       <button key={item.key} type="button" role="tab" aria-selected={isActive} onClick={() => setActiveSection(item.key)}
-                        className="flex-shrink-0 sm:w-full flex items-center gap-2 sm:gap-3 px-3 py-2 sm:py-2.5 rounded-xl text-left transition-all text-xs sm:text-sm font-semibold whitespace-nowrap"
+                        className="shrink-0 sm:w-full flex items-center gap-2 sm:gap-3 px-3 py-2 sm:py-2.5 rounded-xl text-left transition-all text-xs sm:text-sm font-semibold whitespace-nowrap"
                         style={isActive
                           ? { background: item.activeBg, border: `1px solid ${item.activeBorder}`, color: item.activeText }
                           : { background: 'transparent', border: '1px solid transparent', color: 'rgba(255,255,255,0.55)' }}
@@ -204,7 +204,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
                         onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}>
                         <span className={isActive ? '' : 'opacity-60'}><Ikon nama={item.icon} ukuran={15} /></span>
                         <span className="sm:truncate">{item.label}</span>
-                        {isActive && <div className="hidden sm:block ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: item.color }} />}
+                        {isActive && <div className="hidden sm:block ml-auto w-1.5 h-1.5 rounded-full shrink-0" style={{ background: item.color }} />}
                       </button>
                     );
                   })}
@@ -217,9 +217,9 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
         {/* ── RIGHT CONTENT ── */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Section header strip */}
-          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center gap-2 sm:gap-3 flex-shrink-0"
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center gap-2 sm:gap-3 shrink-0"
             style={{ background: 'linear-gradient(135deg, #f8fafc, #f1f5f9)' }}>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
               style={{ background: activeNav.activeBg, border: `1px solid ${activeNav.activeBorder}`, color: activeNav.activeText }}>
               <Ikon nama={activeNav.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" />
             </div>
@@ -240,7 +240,7 @@ const navItems: { key: 'settings' | 'userManagement' | 'picBrand' | 'kpiRoster' 
               </p>
             </div>
             <button aria-label="Tutup" onClick={onClose}
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all text-slate-500 hover:text-slate-700"
+              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-all text-slate-500 hover:text-slate-700"
               style={{ background: 'rgba(0,0,0,0.05)' }}
               onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.1)'; (e.currentTarget as HTMLButtonElement).style.color = '#dc2626'; }}
               onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(0,0,0,0.05)'; (e.currentTarget as HTMLButtonElement).style.color = ''; }}
@@ -365,9 +365,9 @@ export function KpiRosterInline() {
       // Kartu putih di atas latar slate - bentuk yang sama dengan Kartu di
       // halaman Profil, supaya berpindah antar bagian tidak terasa seperti
       // berpindah aplikasi.
-      <div className="mb-4 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="mb-4 bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100 bg-slate-50/60">
-          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+          <div className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
           <span className="text-[11px] font-bold uppercase tracking-widest flex-1" style={{ color }}>{label}</span>
           <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-white border border-slate-200 text-slate-500">
             {aktif}/{members.length} aktif
@@ -386,7 +386,7 @@ export function KpiRosterInline() {
                   borderColor: enabled ? border : '#e2e8f0',
                 }}>
                 {/* Avatar */}
-                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-white"
+                <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white"
                   style={{ background: enabled ? color : '#94a3b8' }}>
                   {u.full_name.charAt(0).toUpperCase()}
                 </div>
@@ -398,7 +398,7 @@ export function KpiRosterInline() {
                   <p className="text-xs text-slate-500 truncate">{u.jabatan ?? '—'}</p>
                 </div>
                 {/* Status badge */}
-                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border flex-shrink-0 ${
+                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${
                   enabled
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : 'bg-slate-100 text-slate-500 border-slate-200'
@@ -409,12 +409,12 @@ export function KpiRosterInline() {
                 <button aria-label={enabled ? 'Nonaktifkan dari KPI' : 'Aktifkan ke KPI'}
                   onClick={() => toggleKpi(u)}
                   disabled={isSaving}
-                  className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 focus:outline-none ${
+                  className={`relative w-11 h-6 rounded-full transition-all shrink-0 focus:outline-hidden ${
                     enabled ? 'bg-sky-500' : 'bg-slate-300'
                   } ${isSaving ? 'opacity-50 cursor-wait' : 'cursor-pointer hover:opacity-90'}`}
                   title={enabled ? 'Nonaktifkan dari KPI' : 'Aktifkan ke KPI'}>
                   <span
-                    className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform"
+                    className="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform"
                     style={{ transform: enabled ? 'translateX(20px)' : 'translateX(0)' }}
                   />
                 </button>
@@ -430,7 +430,7 @@ export function KpiRosterInline() {
   return (
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       {notification && (
-        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${
+        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shrink-0 ${
           notification.type === 'success'
             ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
             : 'bg-red-50 text-red-700 border border-red-200'
@@ -440,7 +440,7 @@ export function KpiRosterInline() {
       )}
 
       {/* Header info */}
-      <div className="px-5 pt-4 pb-3 flex-shrink-0">
+      <div className="px-5 pt-4 pb-3 shrink-0">
         <StripInfo icon="🎯" judul="KPI Roster"
           keterangan={<>Hanya anggota yang <strong>diaktifkan</strong> di sini yang akan muncul &amp; dinilai di halaman KPI Team.</>}
           angka={loading ? undefined : activeCount}

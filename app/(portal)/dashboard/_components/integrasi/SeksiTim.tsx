@@ -20,7 +20,7 @@ export function SeksiTim({ belumTG, seksi, tim }: SeksiTimProps) {
               <p className="text-[11.5px] text-slate-500 mt-0.5">Siapa yang benar-benar bisa dikabarkan lewat kanal mana.</p>
             </div>
             {belumTG > 0 && (
-              <span className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
+              <span className="ml-auto text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 shrink-0">
                 {belumTG} belum Telegram
               </span>
             )}

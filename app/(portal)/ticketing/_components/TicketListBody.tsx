@@ -89,8 +89,8 @@ export function TicketListBody({
     <div className="space-y-3 py-2 p-4">
       {[...Array(5)].map((_, i) => (
         <div key={i} className="animate-pulse flex gap-3 items-center bg-white/60 rounded-xl p-4 border border-gray-200">
-          <div className="flex-1 space-y-2"><div className="h-4 bg-gray-200 rounded w-2/5"></div><div className="h-3 bg-gray-100 rounded w-1/4"></div></div>
-          <div className="h-4 bg-gray-200 rounded w-1/6"></div><div className="h-4 bg-gray-200 rounded w-1/5"></div><div className="h-6 bg-gray-200 rounded-full w-20"></div><div className="h-8 bg-gray-200 rounded-lg w-16"></div>
+          <div className="flex-1 space-y-2"><div className="h-4 bg-gray-200 rounded-sm w-2/5"></div><div className="h-3 bg-gray-100 rounded-sm w-1/4"></div></div>
+          <div className="h-4 bg-gray-200 rounded-sm w-1/6"></div><div className="h-4 bg-gray-200 rounded-sm w-1/5"></div><div className="h-6 bg-gray-200 rounded-full w-20"></div><div className="h-8 bg-gray-200 rounded-lg w-16"></div>
         </div>
       ))}
       <div className="flex items-center justify-center gap-3 py-4 text-gray-500"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div><span className="text-sm font-medium">Memuat daftar ticket...</span></div>
@@ -212,7 +212,7 @@ export function TicketListBody({
                   ? <input type="checkbox"
                       checked={selectedIds.size === filteredTickets.length && filteredTickets.length > 0}
                       onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded accent-red-600 cursor-pointer" title="Pilih Semua" />
+                      className="w-4 h-4 rounded-sm accent-red-600 cursor-pointer" title="Pilih Semua" />
                   : 'No'}
               </th>
               <th className="px-3 py-3 text-left text-[11px] font-bold text-slate-600 uppercase tracking-wider">Project / Lokasi</th>
@@ -245,13 +245,13 @@ export function TicketListBody({
                     {selectMode && canManageTickets
                       ? <input type="checkbox" checked={selectedIds.has(ticket.id)}
                           onChange={() => toggleSelectId(ticket.id)}
-                          className="w-4 h-4 rounded accent-red-600 cursor-pointer" />
+                          className="w-4 h-4 rounded-sm accent-red-600 cursor-pointer" />
                       : <span className="text-[11px] font-bold text-gray-500">{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</span>}
                   </td>
                   <td className="px-3 py-3 align-middle">
                     <div className="flex items-start gap-1">
                       {isActiveOverdue && <span className="mt-0.5 shrink-0" title="Overdue!"><Ico name="alert" className="w-3.5 h-3.5 text-red-500" /></span>}
-                      <div className="font-bold text-gray-800 text-sm break-words leading-tight">{ticket.project_name}</div>
+                      <div className="font-bold text-gray-800 text-sm wrap-break-word leading-tight">{ticket.project_name}</div>
                     </div>
                     {ticket.address && (
                       <div className="text-[11px] text-gray-500 mt-0.5 flex items-center gap-0.5">
@@ -299,16 +299,16 @@ export function TicketListBody({
                         perbedaannya.
                       */
                       <button onClick={() => { setProductFilter(prev => prev === ticket.product ? null : (ticket.product ?? null)); ticketListRef.current?.scrollIntoView({ behavior: "smooth" }); }}
-                        className="text-left text-[12px] font-semibold px-1.5 py-0.5 rounded break-words leading-tight transition-all inline-block"
+                        className="text-left text-[12px] font-semibold px-1.5 py-0.5 rounded-sm wrap-break-word leading-tight transition-all inline-block"
                         style={{ background: productFilter === ticket.product ? '#6366f1' : '#eef2ff', color: productFilter === ticket.product ? 'white' : '#4338ca' }}>
                         <Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /> {ticket.product}
                       </button>
                     )}
                   </td>
-                  <td className="px-3 py-3 align-middle py-4"><div className="text-[13px] text-gray-600 break-words leading-tight">{ticket.sn_unit || "—"}</div></td>
-                  <td className="px-3 py-3 align-middle py-4"><div className="text-[13px] text-gray-700 break-words leading-tight">{ticket.issue_case}</div></td>
+                  <td className="px-3 py-3 align-middle py-4"><div className="text-[13px] text-gray-600 wrap-break-word leading-tight">{ticket.sn_unit || "—"}</div></td>
+                  <td className="px-3 py-3 align-middle py-4"><div className="text-[13px] text-gray-700 wrap-break-word leading-tight">{ticket.issue_case}</div></td>
                   <td className="px-3 py-3 align-middle py-4">
-                    <div className="text-sm text-gray-700 break-words leading-tight">{ticket.assign_name}</div>
+                    <div className="text-sm text-gray-700 wrap-break-word leading-tight">{ticket.assign_name}</div>
                     {/* Tampilkan team handler (dari users), bukan current_team ticket */}
                     {(() => {
                       const handler = teamMembers.find(m => m.name === ticket.assign_name);
@@ -345,14 +345,14 @@ export function TicketListBody({
                       {ticket.status === "Onsite" && (
                         <button
                           onClick={e => { e.stopPropagation(); router.push('/reminder-schedule'); }}
-                          className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors"
+                          className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-sm transition-colors"
                           style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>
                           <IkonTeks nama="🗓" />Jadwal
                         </button>
                       )}
                     </div>
                    </td>
-                  <td className="px-2 py-3 align-middle"><div className="text-xs text-gray-600 break-words leading-tight">{ticket.sales_name || "—"}</div>{ticket.sales_division && <div className="text-xs text-purple-500 font-semibold mt-0.5">{ticket.sales_division}</div>}</td>
+                  <td className="px-2 py-3 align-middle"><div className="text-xs text-gray-600 wrap-break-word leading-tight">{ticket.sales_name || "—"}</div>{ticket.sales_division && <div className="text-xs text-purple-500 font-semibold mt-0.5">{ticket.sales_division}</div>}</td>
                   <td className="px-1 py-2 align-middle">
                     <div className="flex flex-wrap items-center justify-center gap-1">
                       {/* Activity log badge + View */}

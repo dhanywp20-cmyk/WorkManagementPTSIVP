@@ -13,7 +13,7 @@ import type { Ticket, TeamMember } from './shared';
  * & warna sendiri (oranye, kuning, merah muda, merah), berbeda dengan menu lain.
  */
 
-const kelasIsian = 'w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-300';
+const kelasIsian = 'w-full rounded-kontrol border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-slate-300';
 const kotakInfo = 'rounded-kontrol border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-800';
 const subjudul = (t: Ticket) => `${t.project_name} · ${t.issue_case}`;
 
@@ -166,7 +166,7 @@ export function DeleteModal({
         </p>
         <div>
           <label htmlFor="f-ticketing-hapus-konfirmasi" className="block text-xs font-bold text-slate-700 mb-1.5">
-            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1 rounded">HAPUS</span> untuk konfirmasi
+            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1 rounded-sm">HAPUS</span> untuk konfirmasi
           </label>
           <input id="f-ticketing-hapus-konfirmasi" type="text" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)}
             placeholder="Ketik HAPUS di sini..." className={kelasIsian} />

@@ -83,7 +83,7 @@ export function PilihTipeReminderModal({
             <button type="button" onClick={onPilihLama}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">
                     {buatUntukGuest ? 'Project Lama Anda — Satu BAST' : 'Project Lama — Satu BAST'}
@@ -104,7 +104,7 @@ export function PilihTipeReminderModal({
             <button type="button" onClick={onPilihBaru}
               className="w-full text-left p-3.5 rounded-xl border-2 border-slate-200 hover:border-slate-400 hover:bg-slate-50 transition-all">
               <div className="flex items-start gap-3">
-                <span className="text-2xl flex-shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-2xl shrink-0"><Ikon nama="✏" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-800">Project Baru</p>
                   <p className="text-[12px] text-slate-500 leading-relaxed mt-0.5">
@@ -158,7 +158,7 @@ export function CariProyekLamaModal({
               <input type="text" autoFocus value={carianProyek}
                 onChange={e => { setCarianProyek(e.target.value); setPraPilihProyek(null); }}
                 placeholder="Ketik nama project untuk mencari..."
-                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-slate-300 border border-slate-200" />
+                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-slate-300 border border-slate-200" />
             </div>
 
             {hasilCarianProyek.length === 0 && (
@@ -181,7 +181,7 @@ export function CariProyekLamaModal({
                       className="w-full text-left px-4 py-3 transition-colors border-b last:border-b-0 flex flex-col gap-0.5"
                       style={{ borderColor: 'rgba(0,0,0,0.06)', background: disorot ? '#f1f5f9' : 'white' }}>
                       <span className="flex items-center gap-2">
-                        {disorot && <span className="text-slate-800 flex-shrink-0">✓</span>}
+                        {disorot && <span className="text-slate-800 shrink-0">✓</span>}
                         <span className="text-sm font-bold text-slate-800">{r.project_name}</span>
                       </span>
                       <span className="text-xs text-slate-500 flex gap-3 flex-wrap">

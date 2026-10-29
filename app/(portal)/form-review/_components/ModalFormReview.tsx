@@ -11,7 +11,7 @@ export interface ModalFormReviewProps {
   fotoPreview: string | null;
   fotoRef: import("react").RefObject<HTMLInputElement | null>;
   handleSaveReview: () => Promise<void>;
-  inputCls: "w-full rounded-xl px-4 py-3 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
+  inputCls: "w-full rounded-xl px-4 py-3 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-violet-500/40";
   inputStyle: { background: string; border: string; };
   reviewFormData: { product_demo: string; grade_product_knowledge: number; catatan_grade_product_knowledge: string; product_bast: string; grade_training_customer: number; catatan_grade_training_customer: string; grade_product_knowledge_bast: number; catatan_grade_product_knowledge_bast: string; foto_dokumentasi_url: string; };
   rfd: (patch: Partial<{ product_demo: string; grade_product_knowledge: number; catatan_grade_product_knowledge: string; product_bast: string; grade_training_customer: number; catatan_grade_training_customer: string; grade_product_knowledge_bast: number; catatan_grade_product_knowledge_bast: string; foto_dokumentasi_url: string; }>) => void;
@@ -29,7 +29,7 @@ export function ModalFormReview({ editingReview, emptyReviewForm, fotoPreview, f
     <>
       {showFormModal && editingReview && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-[1100] p-4 overflow-y-auto" style={LATAR_MODAL}>
+        <div role="dialog" aria-modal="true" className="fixed inset-0 flex items-center justify-center z-1100 p-4 overflow-y-auto" style={LATAR_MODAL}>
           {/*  Kartu, kepala & tombol baku (components/shared/Modal.tsx) - dulu kepala ungu sendiri. */}
           <div className={`${KARTU_MODAL} w-full max-w-2xl max-h-full flex flex-col overflow-hidden`}>
             <KepalaModal judul="Isi Review" onTutup={() => { setShowFormModal(false); setEditingReview(null); setReviewFormData(emptyReviewForm); }}

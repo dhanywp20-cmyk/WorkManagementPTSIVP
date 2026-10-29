@@ -76,7 +76,7 @@ export function IsiDashboardKPI({ auditFilter, auditLoading, auditSearch, filter
                 </svg>
                 <input aria-label="Cari actor, aksi, target..." value={auditSearch} onChange={e=>setAuditSearch(e.target.value)}
                   placeholder="Cari actor, aksi, target..."
-                  className="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-none bg-slate-50 border border-slate-200 text-slate-700 focus:border-blue-300 focus:ring-1 focus:ring-blue-100 transition-all"/>
+                  className="w-full rounded-lg pl-8 pr-3 py-2 text-sm outline-hidden bg-slate-50 border border-slate-200 text-slate-700 focus:border-blue-300 focus:ring-1 focus:ring-blue-100 transition-all"/>
               </div>
               {(['all','ticket','reminder','piket','user'] as const).map(f=>(
                 <button key={f} onClick={()=>setAuditFilter(f)}

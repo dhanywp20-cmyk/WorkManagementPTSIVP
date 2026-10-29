@@ -25,7 +25,7 @@ export function MiniCalendar({ reminders, calendarMonth, setCalendarMonth, selec
   const totalThisMonth = reminders.filter(r => r.due_date.startsWith(`${y}-${String(m+1).padStart(2,'0')}`)).length;
 
   return (
-    <div className="rounded-2xl overflow-hidden flex-shrink-0" style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.08)', backdropFilter: 'blur(12px)', width: 380 }}>
+    <div className="rounded-2xl overflow-hidden shrink-0" style={{ background: 'rgba(255,255,255,0.95)', border: '1px solid rgba(0,0,0,0.08)', backdropFilter: 'blur(12px)', width: 380 }}>
       <div className="px-4 py-3 flex items-center justify-between" style={{ background: 'linear-gradient(135deg,#dc2626,#991b1b)' }}>
         <button aria-label="Sebelumnya" onClick={() => setCalendarMonth(new Date(y, m-1, 1))} className="text-white/80 hover:text-white font-bold text-lg px-2 py-0.5 rounded-lg hover:bg-white/10 transition-all">‹</button>
         <div className="text-center">

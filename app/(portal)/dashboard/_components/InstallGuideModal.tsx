@@ -18,7 +18,7 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
   return (
     <ModalPortal>
       <div role="dialog" aria-modal="true" aria-label="Panduan pasang aplikasi"
-        style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1100] p-4"
+        style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-1100 p-4"
         onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
         <div className="bg-white rounded-kartu shadow-modal w-full max-w-lg max-h-[90dvh] overflow-y-auto">
           <div className="px-6 py-5 bg-white border-b border-slate-100 text-slate-800 relative">
@@ -33,7 +33,7 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
             {/* Android */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-sm font-black flex-shrink-0" style={{ background: '#16a34a' }}>A</div>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-sm font-black shrink-0" style={{ background: '#16a34a' }}>A</div>
                 <h3 className="font-bold text-slate-800 text-sm">Android (Chrome)</h3>
               </div>
               <ol className="space-y-2.5 pl-1">
@@ -44,7 +44,7 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
                   'Ketuk "Install" / "Tambahkan" - selesai. Ikonnya langsung muncul di HP.',
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white flex-shrink-0 mt-0.5" style={{ background: '#16a34a' }}>{i + 1}</span>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0 mt-0.5" style={{ background: '#16a34a' }}>{i + 1}</span>
                     {step}
                   </li>
                 ))}
@@ -54,7 +54,7 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
             {/* iPhone */}
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-sm font-black flex-shrink-0" style={{ background: '#1f2937' }}></div>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-sm font-black shrink-0" style={{ background: '#1f2937' }}></div>
                 <h3 className="font-bold text-slate-800 text-sm">iPhone (Safari)</h3>
               </div>
               <ol className="space-y-2.5 pl-1">
@@ -65,7 +65,7 @@ export function InstallGuideModal({ warnaUtama, onClose }: { warnaUtama: string;
                   'Ketuk "Tambah" - selesai. Ikonnya muncul di layar utama seperti aplikasi biasa.',
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white flex-shrink-0 mt-0.5" style={{ background: '#1f2937' }}>{i + 1}</span>
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0 mt-0.5" style={{ background: '#1f2937' }}>{i + 1}</span>
                     {step}
                   </li>
                 ))}

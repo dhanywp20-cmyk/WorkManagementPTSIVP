@@ -37,7 +37,7 @@ export function ModalBatalBatch({ batalBatch, jalankanBatalBatch, ketikBatalBatc
         <KotakInfo>Tahapannya sendiri TIDAK dihapus - hanya hasil pemrosesannya. Nominal proyek tetap terkunci. Untuk menghapus tahapan, pakai tombol ↩️ di baris proyeknya.</KotakInfo>
         <div>
           <label htmlFor="f-incentive-pts-page-2" className="block text-xs font-bold text-slate-700 mb-1.5">
-            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1 rounded">{kunci}</span> untuk melanjutkan
+            Ketik <span className="font-mono bg-rose-100 text-rose-700 px-1 rounded-sm">{kunci}</span> untuk melanjutkan
           </label>
           <input id="f-incentive-pts-page-2" type="text" value={ketikBatalBatch} autoFocus onChange={e => setKetikBatalBatch(e.target.value)} placeholder={kunci} className={kelasIsian} />
         </div>

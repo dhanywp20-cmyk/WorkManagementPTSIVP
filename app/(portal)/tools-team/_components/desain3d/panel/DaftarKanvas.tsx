@@ -35,7 +35,7 @@ export function DaftarKanvas({ a }: { a: AlatDesain }) {
       <div className="flex items-center gap-1 px-2 py-1.5 border-b border-slate-100">
         <Search size={13} className="text-slate-400 shrink-0" />
         <input value={cari} onChange={e => setCari(e.target.value)} placeholder={`Cari (${benda.length})`} aria-label="Cari benda"
-          className="flex-1 min-w-0 bg-transparent text-base sm:text-[12.5px] outline-none" />
+          className="flex-1 min-w-0 bg-transparent text-base sm:text-[12.5px] outline-hidden" />
         <button type="button" onClick={() => setDaftarKanvas(false)} aria-label="Tutup daftar (L)" title="Tutup (L)" className="w-6 h-6 grid place-items-center rounded-md text-slate-500 hover:bg-slate-100"><X size={14} /></button>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto py-1">

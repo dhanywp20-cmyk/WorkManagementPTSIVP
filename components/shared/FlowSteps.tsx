@@ -90,7 +90,7 @@ export function FlowSteps({
                     style={{ top: '0.6875rem', left: '50%', right: 0, background: w.garis }} />
                 )}
 
-                <span className="relative flex items-center justify-center rounded-full flex-shrink-0"
+                <span className="relative flex items-center justify-center rounded-full shrink-0"
                   style={{
                     width: '1.375rem', height: '1.375rem',
                     background: k === 'menunggu' ? '#fff' : w.bulat,
@@ -107,7 +107,7 @@ export function FlowSteps({
                   {s.label}
                 </p>
                 {s.pelaku && (
-                  <p className="text-[10px] text-center leading-tight text-slate-500 px-1 w-full [overflow-wrap:anywhere]">
+                  <p className="text-[10px] text-center leading-tight text-slate-500 px-1 w-full wrap-anywhere">
                     {s.pelaku}
                   </p>
                 )}

@@ -69,7 +69,7 @@ export function ModalShare({ target, onTutup, onUbah, beritahu }: {
             </p>
           </div>
           <button type="button" disabled={sibuk} onClick={() => jalankan('share', !target.share_aktif)}
-            className="px-3.5 py-2 rounded-lg text-[12px] font-bold text-white flex-shrink-0 disabled:opacity-60"
+            className="px-3.5 py-2 rounded-lg text-[12px] font-bold text-white shrink-0 disabled:opacity-60"
             style={{ background: target.share_aktif ? '#64748b' : TEMA.selesai }}>
             {target.share_aktif ? 'Matikan' : 'Aktifkan'}
           </button>

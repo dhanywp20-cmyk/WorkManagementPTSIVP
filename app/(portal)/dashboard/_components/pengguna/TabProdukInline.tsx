@@ -41,7 +41,7 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
             <div className="grid grid-cols-1 formulir:grid-cols-3 gap-3">
               <div>
                 <label htmlFor="f-dashboard-components-modal-user-7" className="block text-[11px] font-bold mb-1 text-slate-500 uppercase tracking-widest">Tipe Produk</label>
-                <select id="f-dashboard-components-modal-user-7" value={prodType} onChange={e => setProdType(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-200 bg-white">
+                <select id="f-dashboard-components-modal-user-7" value={prodType} onChange={e => setProdType(e.target.value)} className="w-full border border-rose-200 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-rose-200 bg-white">
                   <option value="">-- Pilih Tipe --</option>
                   {PRODUCT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
@@ -67,9 +67,9 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
                 <div key={m.id} className="bg-white border border-rose-200 rounded-lg px-3 py-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs flex-wrap">
-                      <span className="font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded">{m.product_type}</span>
+                      <span className="font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-sm">{m.product_type}</span>
                       <span className="text-slate-500">→</span>
-                      {m.team_types.map(tt => <span key={tt} className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">{tt.replace('Team PTS ', '')}</span>)}
+                      {m.team_types.map(tt => <span key={tt} className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-sm">{tt.replace('Team PTS ', '')}</span>)}
                     </div>
                     <button aria-label="Hapus" onClick={() => handleDeleteProdSup(m.id)} className="text-rose-300 hover:text-red-500 transition-colors" title="Hapus">
                       <svg aria-hidden="true" focusable="false" className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -88,7 +88,7 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
             <p className="text-xs font-bold text-amber-700 mb-1"><IkonTeks nama="👑" />Akun Manager (gerbang approval)</p>
             <Keterangan className="ml-1">Manager yang wajib approve sebelum request turun ke supervisor. Untuk sekarang boleh sama dengan Admin (Dhany); bisa dialihkan ke akun lain kapan saja.</Keterangan>
             <div className="flex gap-3">
-              <select aria-label="-- Pilih Akun Manager --" value={managerUserId} onChange={e => setManagerUserId(e.target.value)} className="flex-1 min-w-0 border border-amber-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-200 bg-white">
+              <select aria-label="-- Pilih Akun Manager --" value={managerUserId} onChange={e => setManagerUserId(e.target.value)} className="flex-1 min-w-0 border border-amber-200 rounded-lg px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-amber-200 bg-white">
                 <option value="">-- Pilih Akun Manager --</option>
                 {allUsers.filter(u => u.jabatan === 'Manager' || ['admin', 'superadmin'].includes((u.role || '').toLowerCase())).map(u => <option key={u.id} value={u.id}>{u.full_name}{u.jabatan ? ` (${u.jabatan})` : ''}</option>)}
               </select>
@@ -103,7 +103,7 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
             <div className="relative mb-3">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
               <input aria-label="Cari nama sales..." value={internalSearch} onChange={e => setInternalSearch(e.target.value)} placeholder="Cari nama sales..."
-                className="w-full pl-9 pr-3 py-2 border border-sky-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-sky-200 bg-white" />
+                className="w-full pl-9 pr-3 py-2 border border-sky-200 rounded-lg text-sm outline-hidden focus:ring-2 focus:ring-sky-200 bg-white" />
             </div>
             {/* TANPA max-h di sini: tab ini sudah menggulir sebagai satu blok
                 (bungkusnya flex-1 overflow-y-auto di induk). Kotak
@@ -119,7 +119,7 @@ export function TabProdukInline({ activeTab, allUsers, getSupervisorsForTeam, ha
                     <p className="text-[11px] text-slate-500">{u.sales_division || '—'}</p>
                   </div>
                   <button onClick={() => handleToggleInternalSales(u.id, !!u.is_internal_sales)} disabled={savingInternal === u.id}
-                    className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex-shrink-0"
+                    className="px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0"
                     style={u.is_internal_sales ? { background: '#0ea5e9', color: 'white' } : { background: '#f1f5f9', color: '#64748b' }}>
                     {u.is_internal_sales ? '✓ Internal' : 'External'}
                   </button>

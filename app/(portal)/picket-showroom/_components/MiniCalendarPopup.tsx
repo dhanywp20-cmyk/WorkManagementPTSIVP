@@ -57,7 +57,7 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
 
   return(
   <ModalPortal>
-    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-[1200] flex items-center justify-center p-4"
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-1200 flex items-center justify-center p-4"
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="bg-white rounded-kartu shadow-modal overflow-hidden" style={{width:'640px',maxWidth:'95vw',animation:'scale-in 0.2s ease-out'}}>
         <div className="px-5 py-3.5 flex items-center justify-between bg-white border-b border-slate-100">
@@ -123,7 +123,7 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
 
                 {/* Actual DB PIC names — hidden on holiday */}
                 {hasDB && inMonth && !isHoliday && dbPics.map((name,pi)=>(
-                  <div key={pi} className="text-[10px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded mb-0.5"
+                  <div key={pi} className="text-[10px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded-sm mb-0.5"
                     style={{color:dc?.accent||'#374151',background:`${dc?.accent||'#dc2626'}18`}}>
                     {name}
                   </div>
@@ -131,7 +131,7 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
 
                 {/* Rolling projection — shown only when no DB row exists */}
                 {rollingName && (
-                  <div className="text-[10px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded mb-0.5"
+                  <div className="text-[10px] font-semibold leading-tight truncate px-0.5 py-0.5 rounded-sm mb-0.5"
                     style={{
                       color:rollingDc?.accent||'#94a3b8',
                       background:`${rollingDc?.accent||'#94a3b8'}12`,
@@ -148,11 +148,11 @@ export function MiniCalendarPopup({allRows,holidays=[],onClose}:{allRows:PiketRo
         {/* Legend */}
         <div className="px-4 py-2 border-t border-gray-100 flex items-center gap-4">
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{background:'rgba(220,38,38,0.18)'}}/>
+            <div className="w-3 h-3 rounded-sm" style={{background:'rgba(220,38,38,0.18)'}}/>
             <span className="text-[11px] text-gray-500 font-medium">Jadwal tersimpan</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded" style={{background:'rgba(148,163,184,0.18)',opacity:0.75}}/>
+            <div className="w-3 h-3 rounded-sm" style={{background:'rgba(148,163,184,0.18)',opacity:0.75}}/>
             <span className="text-[11px] text-gray-500 font-medium">Proyeksi rolling (belum dikonfirmasi)</span>
           </div>
           <div className="flex items-center gap-1.5">

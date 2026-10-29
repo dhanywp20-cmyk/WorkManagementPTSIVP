@@ -29,13 +29,13 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
 
   return(
   <ModalPortal>
-    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1100] p-4"
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-1100 p-4"
       onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-3xl my-4 flex flex-col"
         style={{animation:'scale-in 0.2s ease-out',border:`1.5px solid ${dc.accent}40`,maxHeight:'96dvh'}}>
 
         {/* Header */}
-        <div className="px-6 py-5 bg-white border-b border-slate-100 text-slate-800 rounded-t-2xl flex-shrink-0 relative">
+        <div className="px-6 py-5 bg-white border-b border-slate-100 text-slate-800 rounded-t-2xl shrink-0 relative">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-0.5">Jadwal</p>
             <h2 className="text-lg font-black text-slate-800"><IkonTeks nama="📋" />Detail Jadwal Piket</h2>
@@ -56,7 +56,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                 return(
                   <div key={team} className="flex items-center gap-3 p-4 rounded-xl transition-all"
                     style={{background:`${tc.dot}08`,border:`1.5px solid ${tc.dot}25`}}>
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-black flex-shrink-0"
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-black shrink-0"
                       style={{background:tc.dot}}>{name!.charAt(0).toUpperCase()}</div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-slate-800 truncate">{name}</p>
@@ -87,7 +87,7 @@ export function ViewDetailModal({row,kegiatanList,currentUser,onClose,onEdit}:{r
                     {/* Kegiatan header */}
                     <div className="px-4 py-3 flex items-center justify-between" style={{background:`${kColor}08`,borderBottom:`1px solid ${kColor}20`}}>
                       <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-black px-2.5 py-1 rounded text-white" style={{background:kColor}}>{kg.jenis_kegiatan}</span>
+                        <span className="text-[11px] font-black px-2.5 py-1 rounded-sm text-white" style={{background:kColor}}>{kg.jenis_kegiatan}</span>
                         <span className="text-[11px] font-bold text-slate-500">Kegiatan {i+1}</span>
                       </div>
                       {kg.jam_mulai&&<span className="text-xs font-bold text-slate-600">{formatTime(kg.jam_mulai)} – {formatTime(kg.jam_selesai)}</span>}

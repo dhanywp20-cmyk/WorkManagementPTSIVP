@@ -40,10 +40,10 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
         <>
         {/* Nama Ruangan 1 */}
         <div className="flex items-center gap-2 mb-4 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl">
-          <span className="text-xs font-black text-teal-700 flex-shrink-0">Ruangan 1</span>
+          <span className="text-xs font-black text-teal-700 shrink-0">Ruangan 1</span>
           <input value={form.room_name} onChange={e => setForm(prev => ({ ...prev, room_name: e.target.value }))}
             placeholder="Nama ruangan / area..."
-            className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm font-medium bg-white outline-none focus:border-teal-400" />
+            className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm font-medium bg-white outline-hidden focus:border-teal-400" />
         </div>
 
         {/* Kebutuhan */}
@@ -54,7 +54,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
               const active = form.kebutuhan[0] === opt;
               return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, kebutuhan: active ? [] : [opt] }))}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500' : 'border-gray-400'}`}>{active && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${active ? 'border-teal-500' : 'border-gray-400'}`}>{active && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                 {opt}
               </button>;
             })}
@@ -62,7 +62,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
         </div>
         <div className="mb-4">
           <input value={form.kebutuhan_other} onChange={e => setForm(prev => ({ ...prev, kebutuhan_other: e.target.value }))}
-            placeholder="Other kebutuhan..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-teal-400 bg-white outline-none" />
+            placeholder="Other kebutuhan..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-teal-400 bg-white outline-hidden" />
         </div>
 
         {/* Solution Product */}
@@ -73,7 +73,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
               const active = form.solution_product.includes(opt);
               return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, solution_product: active ? prev.solution_product.filter(x=>x!==opt) : [...prev.solution_product,opt] }))}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                 {opt}
               </button>;
             })}
@@ -81,7 +81,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
         </div>
         <div className="mb-4">
           <input value={form.solution_other} onChange={e => setForm(prev => ({ ...prev, solution_other: e.target.value }))}
-            placeholder="Other solution..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-teal-400 bg-white outline-none" />
+            placeholder="Other solution..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-teal-400 bg-white outline-hidden" />
         </div>
 
         {/* Brand Display 1 & 2 + Middleware — kembar dari RoomSection di atas. */}
@@ -92,7 +92,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
               const brand = e.target.value;
               const pic = brandPicMappings.find(m => m.brand_type==='display' && m.brand_name===brand);
               setForm(prev => ({...prev, brand_display:brand, brand_display_pic_id:pic?.pic_user_id||'', brand_display_pic_name:pic?.pic_user_name||''}));
-            }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400 appearance-none">
+            }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-amber-400 appearance-none">
               <option value="">— Pilih Brand Display —</option>
               {denganNilai(merekDisplay, form.brand_display).map(b => <option key={b} value={b}>{b}</option>)}
             </select>
@@ -105,11 +105,11 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
             const brand = e.target.value;
             const pic = brandPicMappings.find(m => m.brand_type==='display' && m.brand_name===brand);
             setForm(prev => ({...prev, brand_display_2:brand, brand_display_2_pic_id:pic?.pic_user_id||'', brand_display_2_pic_name:pic?.pic_user_name||''}));
-          }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400">
+          }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-amber-400">
             <option value="">— Pilih Brand Display 2 —</option>
             {denganNilai(merekDisplay, form.brand_display_2).map(b => <option key={b} value={b}>{b}</option>)}
           </select>
-          {form.brand_display_2 && form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded px-2 py-1"><IkonTeks nama="👤" />PIC: {form.brand_display_2_pic_name}</p>}
+          {form.brand_display_2 && form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-amber-700 font-semibold bg-amber-50 border border-amber-200 rounded-sm px-2 py-1"><IkonTeks nama="👤" />PIC: {form.brand_display_2_pic_name}</p>}
           {form.brand_display_2 && !form.brand_display_2_pic_name && <p className="mt-1 text-[11px] text-gray-500 italic">PIC belum di-mapping</p>}
         </div>
           <div>
@@ -118,7 +118,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
               const brand = e.target.value;
               const pic = brandPicMappings.find(m => m.brand_type==='middleware' && m.brand_name===brand);
               setForm(prev => ({...prev, brand_middleware:brand, brand_middleware_pic_id:pic?.pic_user_id||'', brand_middleware_pic_name:pic?.pic_user_name||''}));
-            }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-violet-400 appearance-none">
+            }} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-violet-400 appearance-none">
               <option value="">— Pilih Brand Middleware —</option>
               {denganNilai(merekMiddleware, form.brand_middleware).map(b => <option key={b} value={b}>{b}</option>)}
             </select>
@@ -137,7 +137,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
                   const active = form.layout_signage[0] === opt;
                   return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, layout_signage: active ? [] : [opt] }))}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500' : 'border-gray-400'}`}>{active && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
+                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${active ? 'border-teal-500' : 'border-gray-400'}`}>{active && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                     {opt}
                   </button>;
                 })}
@@ -150,15 +150,15 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
                   const active = form.jaringan_cms.includes(opt);
                   return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, jaringan_cms: active ? prev.jaringan_cms.filter(x=>x!==opt) : [...prev.jaringan_cms,opt] }))}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                    <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                     {opt}
                   </button>;
                 })}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><label htmlFor="f-form-require-project-components-modals-22" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Input</label><input id="f-form-require-project-components-modals-22" value={form.jumlah_input} onChange={e => setForm(prev => ({...prev, jumlah_input: e.target.value}))} placeholder="e.g. 4" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>
-              <div><label htmlFor="f-form-require-project-components-modals-23" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Output</label><input id="f-form-require-project-components-modals-23" value={form.jumlah_output} onChange={e => setForm(prev => ({...prev, jumlah_output: e.target.value}))} placeholder="e.g. 2" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>
+              <div><label htmlFor="f-form-require-project-components-modals-22" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Input</label><input id="f-form-require-project-components-modals-22" value={form.jumlah_input} onChange={e => setForm(prev => ({...prev, jumlah_input: e.target.value}))} placeholder="e.g. 4" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400"/></div>
+              <div><label htmlFor="f-form-require-project-components-modals-23" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Output</label><input id="f-form-require-project-components-modals-23" value={form.jumlah_output} onChange={e => setForm(prev => ({...prev, jumlah_output: e.target.value}))} placeholder="e.g. 2" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400"/></div>
             </div>
           </div>
         )}
@@ -172,18 +172,18 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
                 const active = form.source.includes(opt);
                 return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, source: active ? prev.source.filter(x=>x!==opt) : [...prev.source,opt] }))}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                  <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                   {opt}
                 </button>;
               })}
             </div>
           </div>
           <div className="flex gap-3 mb-3">
-            {form.source.includes('Laptop') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-24" className="block text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-1">Qty Laptop</label><input id="f-form-require-project-components-modals-24" type="number" min="1" value={(form as any).source_laptop_qty||''} onChange={e=>setForm(prev=>({...prev, source_laptop_qty:e.target.value} as any))} placeholder="1" className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm bg-amber-50 outline-none focus:border-amber-400"/></div>}
-            {form.source.includes('PC / Mini PC') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-25" className="block text-[11px] font-bold text-blue-600 uppercase tracking-widest mb-1">Qty PC</label><input id="f-form-require-project-components-modals-25" type="number" min="1" value={(form as any).source_pc_qty||''} onChange={e=>setForm(prev=>({...prev, source_pc_qty:e.target.value} as any))} placeholder="1" className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm bg-blue-50 outline-none focus:border-blue-400"/></div>}
+            {form.source.includes('Laptop') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-24" className="block text-[11px] font-bold text-amber-700 uppercase tracking-widest mb-1">Qty Laptop</label><input id="f-form-require-project-components-modals-24" type="number" min="1" value={(form as any).source_laptop_qty||''} onChange={e=>setForm(prev=>({...prev, source_laptop_qty:e.target.value} as any))} placeholder="1" className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm bg-amber-50 outline-hidden focus:border-amber-400"/></div>}
+            {form.source.includes('PC / Mini PC') && <div className="flex-1 min-w-0"><label htmlFor="f-form-require-project-components-modals-25" className="block text-[11px] font-bold text-blue-600 uppercase tracking-widest mb-1">Qty PC</label><input id="f-form-require-project-components-modals-25" type="number" min="1" value={(form as any).source_pc_qty||''} onChange={e=>setForm(prev=>({...prev, source_pc_qty:e.target.value} as any))} placeholder="1" className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm bg-blue-50 outline-hidden focus:border-blue-400"/></div>}
           </div>
           <input value={form.source_other} onChange={e => setForm(prev => ({ ...prev, source_other: e.target.value }))}
-            placeholder="Other source..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400" />
+            placeholder="Other source..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400" />
         </div>
 
         {/* Camera + Audio — 2 kolom.
@@ -199,13 +199,13 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
             <div className="flex flex-wrap gap-2">
               {['Yes','No'].map(opt => <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, camera_conference: opt }))}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${form.camera_conference === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${form.camera_conference === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.camera_conference === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${form.camera_conference === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.camera_conference === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                 {opt}
               </button>)}
             </div>
           </div>
           {form.camera_conference === 'Yes' && <div className="ml-4 mb-4 space-y-3 border-l-2 border-teal-200 pl-4">
-            <div><label htmlFor="f-form-require-project-components-modals-26" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Camera</label><input id="f-form-require-project-components-modals-26" value={form.camera_jumlah} onChange={e => setForm(prev => ({ ...prev, camera_jumlah: e.target.value }))} placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>
+            <div><label htmlFor="f-form-require-project-components-modals-26" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Camera</label><input id="f-form-require-project-components-modals-26" value={form.camera_jumlah} onChange={e => setForm(prev => ({ ...prev, camera_jumlah: e.target.value }))} placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400"/></div>
             <div className="mb-4">
               <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">Tipe Tracking</label>
               <div className="flex flex-wrap gap-2">
@@ -213,7 +213,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
                   const active = form.camera_tracking.includes(opt);
                   return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, camera_tracking: active ? prev.camera_tracking.filter(x=>x!==opt) : [...prev.camera_tracking,opt] }))}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                    <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                     {opt}
                   </button>;
                 })}
@@ -228,13 +228,13 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
             <div className="flex flex-wrap gap-2">
               {['Yes','No'].map(opt => <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, audio_system: opt }))}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${form.audio_system === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${form.audio_system === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.audio_system === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${form.audio_system === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.audio_system === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                 {opt}
               </button>)}
             </div>
           </div>
           {form.audio_system === 'Yes' && <div className="ml-4 mb-4 space-y-3 border-l-2 border-teal-200 pl-4">
-            <div><label htmlFor="f-form-require-project-components-modals-27" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Mixer / DSP</label><input id="f-form-require-project-components-modals-27" value={form.audio_mixer} onChange={e => setForm(prev => ({ ...prev, audio_mixer: e.target.value }))} placeholder="e.g. Yamaha QL1, QSC, etc." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>
+            <div><label htmlFor="f-form-require-project-components-modals-27" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Mixer / DSP</label><input id="f-form-require-project-components-modals-27" value={form.audio_mixer} onChange={e => setForm(prev => ({ ...prev, audio_mixer: e.target.value }))} placeholder="e.g. Yamaha QL1, QSC, etc." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400"/></div>
             <div className="mb-4">
               <label className="block text-xs font-bold text-gray-600 tracking-widest uppercase mb-2">Audio Detail</label>
               <div className="flex flex-wrap gap-2">
@@ -242,7 +242,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
                   const active = form.audio_detail.includes(opt);
                   return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, audio_detail: active ? prev.audio_detail.filter(x=>x!==opt) : [...prev.audio_detail,opt] }))}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                    <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                     {opt}
                   </button>;
                 })}
@@ -260,12 +260,12 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
               <div className="flex flex-wrap gap-2">
                 {['Yes','No'].map(opt => <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, wallplate_input: opt }))}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${form.wallplate_input === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${form.wallplate_input === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.wallplate_input === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${form.wallplate_input === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.wallplate_input === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                   {opt}
                 </button>)}
               </div>
             </div>
-            {form.wallplate_input === 'Yes' && <div className="ml-4 border-l-2 border-teal-200 pl-4 mb-4"><label htmlFor="f-form-require-project-components-modals-28" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Wallplate</label><input id="f-form-require-project-components-modals-28" value={form.wallplate_jumlah} onChange={e => setForm(prev => ({ ...prev, wallplate_jumlah: e.target.value }))} placeholder="e.g. 3 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>}
+            {form.wallplate_input === 'Yes' && <div className="ml-4 border-l-2 border-teal-200 pl-4 mb-4"><label htmlFor="f-form-require-project-components-modals-28" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Wallplate</label><input id="f-form-require-project-components-modals-28" value={form.wallplate_jumlah} onChange={e => setForm(prev => ({ ...prev, wallplate_jumlah: e.target.value }))} placeholder="e.g. 3 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400"/></div>}
           </div>
           <div>
             <div className="mb-4">
@@ -273,12 +273,12 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
               <div className="flex flex-wrap gap-2">
                 {['Yes','No'].map(opt => <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, tabletop_input: opt }))}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${form.tabletop_input === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${form.tabletop_input === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.tabletop_input === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${form.tabletop_input === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.tabletop_input === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                   {opt}
                 </button>)}
               </div>
             </div>
-            {form.tabletop_input === 'Yes' && <div className="ml-4 border-l-2 border-teal-200 pl-4 mb-4"><label htmlFor="f-form-require-project-components-modals-29" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Tabletop</label><input id="f-form-require-project-components-modals-29" value={form.tabletop_jumlah} onChange={e => setForm(prev => ({ ...prev, tabletop_jumlah: e.target.value }))} placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>}
+            {form.tabletop_input === 'Yes' && <div className="ml-4 border-l-2 border-teal-200 pl-4 mb-4"><label htmlFor="f-form-require-project-components-modals-29" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Jumlah Tabletop</label><input id="f-form-require-project-components-modals-29" value={form.tabletop_jumlah} onChange={e => setForm(prev => ({ ...prev, tabletop_jumlah: e.target.value }))} placeholder="e.g. 2 unit" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400"/></div>}
           </div>
         </div>
 
@@ -290,7 +290,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
             <div className="flex flex-wrap gap-2">
               {['Yes','No'].map(opt => <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, wireless_presentation: opt }))}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${form.wireless_presentation === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${form.wireless_presentation === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.wireless_presentation === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${form.wireless_presentation === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.wireless_presentation === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                 {opt}
               </button>)}
             </div>
@@ -303,7 +303,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
                   const active = form.wireless_mode.includes(opt);
                   return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, wireless_mode: active ? prev.wireless_mode.filter(x=>x!==opt) : [...prev.wireless_mode,opt] }))}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                    <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                     {opt}
                   </button>;
                 })}
@@ -314,7 +314,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
               <div className="flex flex-wrap gap-2">
                 {['Yes','No'].map(opt => <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, wireless_dongle: opt }))}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${form.wireless_dongle === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${form.wireless_dongle === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.wireless_dongle === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${form.wireless_dongle === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.wireless_dongle === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                   {opt}
                 </button>)}
               </div>
@@ -328,7 +328,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
             <div className="flex flex-wrap gap-2">
               {['Yes','No'].map(opt => <button key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, controller_automation: opt }))}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${form.controller_automation === opt ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300'}`}>
-                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${form.controller_automation === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.controller_automation === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${form.controller_automation === opt ? 'border-teal-500' : 'border-gray-400'}`}>{form.controller_automation === opt && <div className="w-2 h-2 rounded-full bg-teal-500" />}</div>
                 {opt}
               </button>)}
             </div>
@@ -341,7 +341,7 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
                   const active = form.controller_type.includes(opt);
                   return <button aria-pressed={active} key={opt} type="button" onClick={() => setForm(prev => ({ ...prev, controller_type: active ? prev.controller_type.filter(x=>x!==opt) : [...prev.controller_type,opt] }))}
                     className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 text-sm font-medium transition-all ${active ? 'border-teal-500 bg-teal-50 text-teal-700 shadow-md' : 'border-gray-300 bg-white text-gray-600 hover:border-teal-300 hover:bg-teal-50/50'}`}>
-                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
+                    <div className={`w-4 h-4 rounded-sm border-2 flex items-center justify-center shrink-0 ${active ? 'border-teal-500 bg-teal-500' : 'border-gray-400'}`}>{active && <svg aria-hidden="true" focusable="false" className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}</div>
                     {opt}
                   </button>;
                 })}
@@ -353,9 +353,9 @@ export function FormRuanganUtama({ activeRoomIdx, boqFormFile, boqRoom1Ref, boqR
 
         {/* Ukuran, Suggest, Keterangan */}
         <div className="mb-4 pt-2 border-t border-gray-100 space-y-3">
-          <div><label htmlFor="f-form-require-project-components-modals-30" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ukuran Ruangan (P×L×T)</label><input id="f-form-require-project-components-modals-30" value={form.ukuran_ruangan} onChange={e=>setForm(p=>({...p,ukuran_ruangan:e.target.value}))} placeholder="e.g. 8m×6m×3m" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>
-          <div><label htmlFor="f-form-require-project-components-modals-31" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Suggest Tampilan (W×H)</label><input id="f-form-require-project-components-modals-31" value={form.suggest_tampilan} onChange={e=>setForm(p=>({...p,suggest_tampilan:e.target.value}))} placeholder="e.g. 1920×1080 atau 4K" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400"/></div>
-          <div><label htmlFor="f-form-require-project-components-modals-32" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Keterangan Lain</label><textarea id="f-form-require-project-components-modals-32" value={form.keterangan_lain} onChange={e=>setForm(p=>({...p,keterangan_lain:e.target.value}))} rows={2} placeholder="Info tambahan..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400 resize-none"/></div>
+          <div><label htmlFor="f-form-require-project-components-modals-30" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Ukuran Ruangan (P×L×T)</label><input id="f-form-require-project-components-modals-30" value={form.ukuran_ruangan} onChange={e=>setForm(p=>({...p,ukuran_ruangan:e.target.value}))} placeholder="e.g. 8m×6m×3m" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400"/></div>
+          <div><label htmlFor="f-form-require-project-components-modals-31" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Suggest Tampilan (W×H)</label><input id="f-form-require-project-components-modals-31" value={form.suggest_tampilan} onChange={e=>setForm(p=>({...p,suggest_tampilan:e.target.value}))} placeholder="e.g. 1920×1080 atau 4K" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400"/></div>
+          <div><label htmlFor="f-form-require-project-components-modals-32" className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Keterangan Lain</label><textarea id="f-form-require-project-components-modals-32" value={form.keterangan_lain} onChange={e=>setForm(p=>({...p,keterangan_lain:e.target.value}))} rows={2} placeholder="Info tambahan..." className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white outline-hidden focus:border-teal-400 resize-none"/></div>
         </div>
 
         {/* Foto + BOQ — 2 col, only for non-team */}

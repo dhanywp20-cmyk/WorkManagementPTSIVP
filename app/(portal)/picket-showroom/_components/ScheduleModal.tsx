@@ -124,7 +124,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
 
   return(
   <ModalPortal>
-    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1100] p-4 overflow-y-auto">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-1100 p-4 overflow-y-auto">
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-2xl max-h-full flex flex-col overflow-hidden">
         <div className="px-6 py-5 rounded-t-2xl bg-white border-b border-slate-100">
           <div className="flex items-center justify-between">
@@ -132,7 +132,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
               <h2 className="text-lg font-bold text-slate-800"><IkonTeks nama="📋" />Atur Jadwal Piket — 2 Minggu</h2>
               <p className="text-slate-500 text-xs mt-0.5">{fmtWk(weekStart)} &amp; {fmtWk(week2Start)}</p>
             </div>
-            <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold flex-shrink-0">
+            <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold shrink-0">
               <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
           </div>
@@ -157,7 +157,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                   <div key={day} className="grid grid-cols-[100px_1fr_1fr] gap-2 items-center">
                     {/* Day label */}
                     <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{background:dc.light}}>
-                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[11px] font-black flex-shrink-0" style={{background:dc.grad}}>{DAY_EN[day]}</div>
+                      <div className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-[11px] font-black shrink-0" style={{background:dc.grad}}>{DAY_EN[day]}</div>
                       <span className="text-xs font-bold" style={{color:dc.accent}}>{day}</span>
                     </div>
                     {/* 2 week dropdowns */}
@@ -169,11 +169,11 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
                       const tc=teamKey?TEAM_LABEL[teamKey]:null;
                       return(
                         <div key={wk} className="relative">
-                          {isToday(date)&&<span className="absolute -top-2 left-2 text-[10px] font-bold px-1 py-0.5 rounded text-white z-10" style={{background:dc.accent}}>TODAY</span>}
+                          {isToday(date)&&<span className="absolute -top-2 left-2 text-[10px] font-bold px-1 py-0.5 rounded-sm text-white z-10" style={{background:dc.accent}}>TODAY</span>}
                           <div className="flex items-center gap-1.5 p-1.5 rounded-xl border" style={{borderColor:`${dc.accent}25`,background:'white'}}>
-                            {tc&&<div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{background:tc.dot}}/>}
+                            {tc&&<div className="w-1.5 h-1.5 rounded-full shrink-0" style={{background:tc.dot}}/>}
                             <select aria-label="— Belum —" value={assign[wk]?.[day]||''} onChange={e=>setAssign(p=>({...p,[wk]:{...p[wk],[day]:e.target.value}}))}
-                              className="flex-1 text-[11px] outline-none bg-transparent min-w-0 py-1">
+                              className="flex-1 text-[11px] outline-hidden bg-transparent min-w-0 py-1">
                               <option value="">— Belum —</option>
                               {/* Satu optgroup per kelompok PTS dari pengaturan admin -
                                   bukan tiga nama yang dipaku. Kelompok baru langsung
@@ -198,7 +198,7 @@ export function ScheduleModal({weekStart,users,currentUser,onClose,onSaved}:{wee
             </>
           )}
         </div>
-        <div className="px-5 pb-5 pt-3 flex gap-3 flex-shrink-0">
+        <div className="px-5 pb-5 pt-3 flex gap-3 shrink-0">
           <button onClick={onClose} className="flex-1 py-3 rounded-xl font-semibold text-sm" style={{background:'rgba(255,255,255,0.95)',color:'#64748b',border:'1px solid rgba(0,0,0,0.12)'}}>Batal</button>
           <button onClick={handleSave} disabled={saving||loading} className="tombol-bahaya flex-1 py-3 rounded-kontrol font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60">
             {saving&&<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"/>}<IkonTeks nama="💾" />Simpan 2 Minggu

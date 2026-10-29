@@ -23,7 +23,7 @@ export function ModalNominalProyek({ handleSaveNominal, nominalBast, nominalProj
     <>
       {nominalProject && (
       <ModalPortal>
-        <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1100] p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
+        <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-1100 p-4" onClick={e => { if (e.target === e.currentTarget) setNominalProject(null); }}>
           <div className="bg-white rounded-kartu shadow-modal w-full max-w-md overflow-hidden">
             <div className="px-5 py-4 bg-white border-b border-slate-100">
               <h3 className="text-base font-bold text-slate-800"><IkonTeks nama="💰" />Input Nominal Incentive</h3>
@@ -50,11 +50,11 @@ export function ModalNominalProyek({ handleSaveNominal, nominalBast, nominalProj
                 <div className="flex items-center justify-between gap-3 mb-1.5">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Tanggal BAST</p>
                   {nominalProject.bast_date
-                    ? <span className="flex-shrink-0 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">Auto ✓</span>
-                    : <span className="flex-shrink-0 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">Perlu diisi</span>}
+                    ? <span className="shrink-0 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-sm border border-emerald-200">Auto ✓</span>
+                    : <span className="shrink-0 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-sm border border-amber-200">Perlu diisi</span>}
                 </div>
                 <input aria-label="Perlu diisi" type="date" value={nominalBast} onChange={e => setNominalBast(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-rose-400" />
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-800 outline-hidden focus:ring-2 focus:ring-rose-400" />
                 <p className="text-[11px] text-gray-500 mt-1.5">
                   {nominalBast
                     ? <>Tahapan akan jatuh di {new Date(nominalBast).getFullYear() + 1} · {new Date(nominalBast).getFullYear() + 2} · {new Date(nominalBast).getFullYear() + 3}</>
@@ -65,7 +65,7 @@ export function ModalNominalProyek({ handleSaveNominal, nominalBast, nominalProj
               {/* Mode info */}
               {nominalProject.mode_penyelesaian && (
                 <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-200">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${nominalProject.mode_penyelesaian === 'onsite' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-sm ${nominalProject.mode_penyelesaian === 'onsite' ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}`}>
                     {nominalProject.mode_penyelesaian === 'onsite' ? '🏢 Onsite' : '💻 Remote'}
                   </span>
                   <span className="text-xs text-gray-500">
@@ -93,7 +93,7 @@ export function ModalNominalProyek({ handleSaveNominal, nominalBast, nominalProj
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-medium">Rp</span>
                   <input type="number" min={0} value={nominalValue} onChange={e => setNominalValue(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-rose-400"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm text-gray-800 outline-hidden focus:ring-2 focus:ring-rose-400"
                     placeholder="Contoh: 15000000" autoFocus />
                 </div>
                 {nominalValue && Number(nominalValue) > 0 && (

@@ -177,7 +177,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
     if (!u?.jabatan) return null;
     const cfg = JABATAN_CONFIG[u.jabatan as JabatanType];
     if (!cfg) return null;
-    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
   };
 
   const atasanByDiv: Record<string, typeof divSupMaps> = {};
@@ -205,12 +205,12 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
 
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+    <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 z-1000 flex items-center justify-center p-4">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       <div className="bg-white rounded-kartu shadow-modal w-full max-w-3xl max-h-full flex flex-col border border-slate-200">
 
         {/* Header */}
-        <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between flex-shrink-0 rounded-t-2xl">
+        <div className="bg-white border-b border-slate-100 px-6 py-5 flex items-center justify-between shrink-0 rounded-t-2xl">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center">
               <svg aria-hidden="true" focusable="false" className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -222,19 +222,19 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
               <p className="text-slate-500 text-xs">Mapping Atasan, IVP & MVI Account &amp; CC per User</p>
             </div>
           </div>
-          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold flex-shrink-0">
+          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-kecil flex items-center justify-center text-slate-500 hover:text-rose-600 bg-black/5 font-bold shrink-0">
             <svg aria-hidden="true" focusable="false" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
 
         {notification && (
-          <div className={`mx-5 mt-3 px-4 py-3 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+          <div className={`mx-5 mt-3 px-4 py-3 rounded-lg text-sm font-semibold flex items-center gap-2 shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
             {notification.type === 'success' ? '✅' : notification.type === 'error' ? '❌' : 'ℹ️'} {notification.msg}
           </div>
         )}
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap bg-slate-50/60">
+        <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 shrink-0 flex-wrap bg-slate-50/60">
           <button onClick={() => setActiveTab('atasan')}
             className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${activeTab === 'atasan' ? 'border-amber-500 text-amber-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
             👨‍💼 Mapping Atasan ({Object.keys(atasanByDiv).length} divisi)
@@ -265,7 +265,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
           {activeTab === 'user_cc' && (
             <div className="flex flex-1 overflow-hidden min-h-0">
               {/* Left: user list */}
-              <div className="w-56 border-r border-slate-200 flex flex-col flex-shrink-0">
+              <div className="w-56 border-r border-slate-200 flex flex-col shrink-0">
                 <div className="px-4 py-2.5 bg-teal-50 border-b border-teal-100">
                   <p className="text-[11px] font-bold text-teal-700 uppercase tracking-widest">Pilih User</p>
                   <p className="text-[10px] text-teal-700 mt-0.5">Centang siapa yang di-CC saat user ini buat aktivitas</p>
@@ -307,7 +307,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                   </div>
                 ) : (
                   <>
-                    <div className="px-4 py-3 bg-teal-50 border-b border-teal-100 flex-shrink-0">
+                    <div className="px-4 py-3 bg-teal-50 border-b border-teal-100 shrink-0">
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-xs font-bold text-teal-800">CC untuk: {selectedUserObj?.full_name}</p>
@@ -350,10 +350,10 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                                 const n = new Set(prev); n.has(u.id) ? n.delete(u.id) : n.add(u.id); return n;
                               })}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all ${checked ? 'border-teal-400 bg-teal-50' : 'border-slate-200 bg-white hover:border-teal-200 hover:bg-teal-50/30'}`}>
-                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${checked ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-white'}`}>
+                                <div className={`w-5 h-5 rounded-sm border-2 flex items-center justify-center shrink-0 transition-all ${checked ? 'border-teal-500 bg-teal-500' : 'border-slate-300 bg-white'}`}>
                                   {checked && <svg aria-hidden="true" focusable="false" className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
                                 </div>
-                                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                                   style={{ background: cfg?.bg ?? '#f1f5f9', border: `1.5px solid ${cfg?.border ?? '#e2e8f0'}` }}>
                                   <span className="text-base">{cfg?.icon ?? '👤'}</span>
                                 </div>
@@ -374,7 +374,7 @@ export function UserManagementModal({ onClose }: UserManagementModalProps) {
                       )}
                     </div>
 
-                    <div className="p-4 border-t border-slate-100 flex-shrink-0 bg-slate-50/50 flex items-center gap-3">
+                    <div className="p-4 border-t border-slate-100 shrink-0 bg-slate-50/50 flex items-center gap-3">
                       <div className="flex-1">
                         <p className="text-[11px] text-slate-500">{ccChecked.size} orang dipilih untuk di-CC</p>
                       </div>
@@ -549,7 +549,7 @@ export function UserManagementInline() {
     if (!u?.jabatan) return null;
     const cfg = JABATAN_CONFIG[u.jabatan as JabatanType];
     if (!cfg) return null;
-    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
+    return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm border" style={{ background: cfg.bg, color: cfg.color, borderColor: cfg.border }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {u.jabatan}</span>;
   };
 
   // Struktur Organisasi (atasan_id) helpers
@@ -690,7 +690,7 @@ export function UserManagementInline() {
     <div className="h-full flex flex-col overflow-hidden bg-slate-50">
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
       {notification && (
-        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 flex-shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
+        <div className={`mx-5 mt-3 px-4 py-2.5 rounded-lg text-sm font-semibold flex items-center gap-2 shrink-0 ${notification.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : notification.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
           {notification.type === 'success' ? '✅' : notification.type === 'error' ? '❌' : 'ℹ️'} {notification.msg}
         </div>
       )}
@@ -700,9 +700,9 @@ export function UserManagementInline() {
           langsung ke latar tanpa bidang sendiri, jadi bagian ini terlihat
           belum jadi dibanding bagian lain. */}
       <div className="flex-1 min-h-0 p-4">
-        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="h-full flex flex-col bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
       {/* Tabs */}
-      <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 flex-shrink-0 flex-wrap bg-slate-50/60">
+      <div className="flex border-b border-slate-100 px-5 pt-3 gap-1 shrink-0 flex-wrap bg-slate-50/60">
         <button onClick={() => setActiveTab('org')} className={`px-4 py-2 text-xs font-bold border-b-2 transition-all ${activeTab === 'org' ? 'border-emerald-500 text-emerald-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}>
           <IkonTeks nama="🏛" />Struktur Organisasi
         </button>
@@ -745,12 +745,12 @@ export function UserManagementInline() {
 
             {/* Search bar for atasan & ivp tabs */}
             {(activeTab === 'atasan' || activeTab === 'ivp') && (
-              <div className="px-5 pt-4 flex-shrink-0">
+              <div className="px-5 pt-4 shrink-0">
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"><Ikon nama="🔍" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                   <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                     placeholder={activeTab === 'ivp' ? 'Cari nama sales (IVP / MVI)...' : 'Cari divisi...'}
-                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-none focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
+                    className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm outline-hidden focus:border-teal-400 focus:ring-2 focus:ring-teal-100 transition-all" />
                 </div>
               </div>
             )}

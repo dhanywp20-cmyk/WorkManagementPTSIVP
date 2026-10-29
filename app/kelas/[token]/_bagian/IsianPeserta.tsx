@@ -19,8 +19,8 @@ export function IsianTambahan({ isian, nilai, ubah, gaya }: {
   if (isian === 'nama') return null;
   const kuis = gaya === 'kuis';
   const kelasInput = kuis
-    ? 'w-full h-12 rounded-xl border-2 border-slate-300 px-4 text-center text-[16px] font-bold outline-none focus:border-slate-900'
-    : 'w-full rounded-xl border border-slate-300 px-4 py-3 text-[15px] outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100';
+    ? 'w-full h-12 rounded-xl border-2 border-slate-300 px-4 text-center text-[16px] font-bold outline-hidden focus:border-slate-900'
+    : 'w-full rounded-xl border border-slate-300 px-4 py-3 text-[15px] outline-hidden focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100';
   const label = (htmlFor: string, teks: string, opsional = false) => (
     <label htmlFor={htmlFor} className={kuis ? 'sr-only' : 'block text-[12px] font-bold uppercase tracking-wider text-slate-500 mb-1.5'}>
       {teks}{opsional && !kuis && <span className="ml-1 normal-case tracking-normal font-normal text-slate-400">(opsional)</span>}
@@ -45,7 +45,7 @@ export function IsianTambahan({ isian, nilai, ubah, gaya }: {
           {nilai.kontak.trim() && (
             <label className="flex items-start gap-2 text-left text-[12.5px] text-slate-600 cursor-pointer">
               <input type="checkbox" checked={nilai.izin_kontak} onChange={e => ubah({ ...nilai, izin_kontak: e.target.checked })}
-                className="mt-0.5 w-4 h-4 accent-indigo-600 flex-shrink-0" />
+                className="mt-0.5 w-4 h-4 accent-indigo-600 shrink-0" />
               <span>Saya bersedia dihubungi untuk informasi produk dan pelatihan berikutnya.</span>
             </label>
           )}

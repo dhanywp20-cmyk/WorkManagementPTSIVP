@@ -41,7 +41,7 @@ export function SeksiKanal({ cariEvent, cocokCari, kategori, p, seksi, setCariEv
                     : `Bot pribadi · ${timTG} dari ${totalTim} anggota terhubung`;
                   return (
                     <div key={k.key} className="flex items-center gap-3 px-3.5 py-3 bg-white">
-                      <span className="w-8 h-8 rounded-lg grid place-items-center flex-shrink-0 text-sm"
+                      <span className="w-8 h-8 rounded-lg grid place-items-center shrink-0 text-sm"
                         style={{ background: `${k.warna}1a`, color: k.warna }}>
                         {k.key === 'in_app' ? '🔔' : k.key === 'whatsapp' ? '✆' : '➤'}
                       </span>
@@ -87,7 +87,7 @@ export function SeksiKanal({ cariEvent, cocokCari, kategori, p, seksi, setCariEv
                   {KATALOG_EVENT.length} kejadian · centang lewat kanal mana masing-masing dikabarkan.
                 </p>
               </div>
-              <div className="ml-auto flex gap-3 flex-shrink-0">
+              <div className="ml-auto flex gap-3 shrink-0">
                 {KANAL.map(k => (
                   <span key={k.key} className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
                     <span className="w-1.5 h-1.5 rounded-full" style={{ background: k.warna }} />
@@ -117,7 +117,7 @@ export function SeksiKanal({ cariEvent, cocokCari, kategori, p, seksi, setCariEv
               )}
               <input value={cariEvent} onChange={e => setCariEvent(e.target.value)}
                 placeholder="Cari kejadian…" aria-label="Cari kejadian"
-                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-none focus:border-cyan-400 mb-2.5" />
+                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 focus:outline-hidden focus:border-cyan-400 mb-2.5" />
               <div className="rounded-lg border border-slate-200 overflow-hidden">
                 <div className="grid grid-cols-[1fr_46px_46px_46px] px-3.5 py-1.5 bg-slate-50 border-b border-slate-200">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Kejadian</span>
@@ -147,7 +147,7 @@ export function SeksiKanal({ cariEvent, cocokCari, kategori, p, seksi, setCariEv
                                   <span className="truncate">{e.label}</span>
                                   {!eventTersambung(e.key) && (
                                     <span title="Titik pengirimannya belum menyebutkan kunci event ini — centang di baris ini belum berpengaruh, yang berlaku hanya saklar induk kanal di atas."
-                                      className="flex-shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
+                                      className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
                                       style={{ background: 'rgba(245,158,11,0.14)', color: '#b45309' }}>
                                       belum aktif
                                     </span>

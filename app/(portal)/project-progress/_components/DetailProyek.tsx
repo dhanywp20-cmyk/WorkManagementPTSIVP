@@ -27,14 +27,14 @@ function KartuChecklist({ c, onBuka }: { c: ChecklistRingkas; onBuka: () => void
   const j = keadaanJadwal(c.target_date, tuntas);
   return (
     <button type="button" onClick={onBuka}
-      className="text-left rounded-xl p-4 space-y-2.5 transition-all hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2"
+      className="text-left rounded-xl p-4 space-y-2.5 transition-all hover:-translate-y-0.5 focus:outline-hidden focus-visible:ring-2"
       style={{ background: NETRAL.permukaan, border: `1px solid ${c.stat.kendala ? TEMA.kendalaGaris : NETRAL.garis}`, boxShadow: '0 1px 2px rgba(15,23,42,0.05)' }}>
       <div className="flex items-start justify-between gap-2">
         <p className="text-[14px] font-bold leading-snug flex items-start gap-1.5" style={{ color: NETRAL.tinta }}>
-          <MapPin size={15} className="mt-0.5 flex-shrink-0" style={{ color: TEMA.warna }} /> {c.judul}
+          <MapPin size={15} className="mt-0.5 shrink-0" style={{ color: TEMA.warna }} /> {c.judul}
         </p>
-        <span className="flex items-center gap-1 flex-shrink-0">
-          {c.saya && <span className="px-1.5 py-0.5 rounded text-[11px] font-bold" style={{ background: TEMA.tint, color: TEMA.warnaTua }}>Tugas saya</span>}
+        <span className="flex items-center gap-1 shrink-0">
+          {c.saya && <span className="px-1.5 py-0.5 rounded-sm text-[11px] font-bold" style={{ background: TEMA.tint, color: TEMA.warnaTua }}>Tugas saya</span>}
           {c.share_aktif && <Link2 size={14} aria-label="Link tim aktif" style={{ color: TEMA.selesai }} />}
         </span>
       </div>
@@ -46,12 +46,12 @@ function KartuChecklist({ c, onBuka }: { c: ChecklistRingkas; onBuka: () => void
         <KepingKendala jumlah={c.stat.kendala} />
       </div>
       <p className="text-[11.5px] flex items-center gap-1.5 truncate" style={{ color: NETRAL.tinta2 }}>
-        <Users size={12} className="flex-shrink-0" />
+        <Users size={12} className="shrink-0" />
         {c.anggota.length ? c.anggota.map(a => a.nama).join(', ') : 'Belum di-assign'}
       </p>
       {c.support_lokasi && (
         <p className="text-[11.5px] flex items-center gap-1.5 truncate" style={{ color: NETRAL.tinta2 }} title="Support di lokasi">
-          <HardHat size={12} className="flex-shrink-0" /> {c.support_lokasi}
+          <HardHat size={12} className="shrink-0" /> {c.support_lokasi}
         </p>
       )}
     </button>
@@ -135,7 +135,7 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
       <div className="rounded-xl p-4 space-y-3" style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
         <div className="flex items-start gap-3 flex-wrap">
           <button onClick={onKembali} aria-label="Kembali ke daftar proyek"
-            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
+            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ border: `1px solid ${NETRAL.garis}`, color: NETRAL.tinta2 }}>
             <ArrowLeft size={16} />
           </button>
           <div className="flex-1 min-w-[220px]">
@@ -185,7 +185,7 @@ export function DetailProyek({ proyekId, onKembali, onBukaChecklist, beritahu, o
       )}
 
       {/* Berpanel: latar halaman bisa berupa foto (Admin Panel > Merek). */}
-      <div className="flex items-center justify-between gap-2 rounded-xl px-4 py-2.5 shadow-sm"
+      <div className="flex items-center justify-between gap-2 rounded-xl px-4 py-2.5 shadow-xs"
         style={{ background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}` }}>
         <p className="text-[12px] font-bold uppercase tracking-wider" style={{ color: NETRAL.tinta2 }}>
           Checklist per lokasi · {checklist.length}

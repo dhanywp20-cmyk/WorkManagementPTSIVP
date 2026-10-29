@@ -29,7 +29,7 @@ export function TabelBom({ baris, harga, setHarga, ppn, nilai }: {
               <td className="px-2 py-1">
                 <input type="number" inputMode="numeric" min={0} step={1000} aria-label={`Harga satuan ${b.item}`} value={harga[b.kunci] ?? ''} placeholder="0"
                   onChange={e => { const v = Math.max(0, Number(e.target.value) || 0); setHarga(hg => { const baru = { ...hg }; if (v > 0) baru[b.kunci] = v; else delete baru[b.kunci]; return baru; }); }}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-right text-[12.5px] tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-200" />
+                  className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-right text-[12.5px] tabular-nums focus:outline-hidden focus:ring-2 focus:ring-blue-200" />
               </td>
               <td className="px-2 py-1.5 text-right tabular-nums whitespace-nowrap">{harga[b.kunci] ? rupiah(harga[b.kunci] * b.qty) : '—'}</td>
             </tr>

@@ -89,7 +89,7 @@ export function PanelLokasi({ lokasi, semua, keterangan, jadwal, anggota, suppor
   const pindah = (arah: -1 | 1) => { const l = semua[urutan + arah]; if (l) onPilih(l.id); };
 
   return (
-    <div className="fixed inset-0 z-[1000]" role="dialog" aria-modal="true" aria-label={lokasi.judul}>
+    <div className="fixed inset-0 z-1000" role="dialog" aria-modal="true" aria-label={lokasi.judul}>
       <div className="absolute inset-0 bg-slate-900/40" onClick={tutup}
         style={{ opacity: masuk ? 1 : 0, transition: `opacity ${DURASI}ms ease` }} />
 
@@ -98,7 +98,7 @@ export function PanelLokasi({ lokasi, semua, keterangan, jadwal, anggota, suppor
         style={{ background: 'var(--halaman, #f3f5f8)', transform: masuk ? 'none' : geser, transition: `transform ${DURASI}ms cubic-bezier(.2,.8,.2,1)` }}
       >
         {/* Daftar lokasi - desktop saja */}
-        <nav aria-label="Lokasi" className="hidden lg:flex flex-col w-72 flex-shrink-0" style={{ background: NETRAL.permukaan, borderRight: `1px solid ${NETRAL.garis}` }}>
+        <nav aria-label="Lokasi" className="hidden lg:flex flex-col w-72 shrink-0" style={{ background: NETRAL.permukaan, borderRight: `1px solid ${NETRAL.garis}` }}>
           <p className="px-4 py-3.5 text-[11px] font-bold uppercase tracking-wider" style={{ color: TEMA.samar, borderBottom: `1px solid ${NETRAL.garis}` }}>
             Lokasi · {semua.length}
           </p>
@@ -112,7 +112,7 @@ export function PanelLokasi({ lokasi, semua, keterangan, jadwal, anggota, suppor
                     style={{ background: aktif ? TEMA.tint : undefined, boxShadow: aktif ? `inset 3px 0 0 ${TEMA.warna}` : undefined }}>
                     <span className="flex items-center gap-2">
                       <span className="text-[13px] font-semibold flex-1 min-w-0 truncate" style={{ color: aktif ? TEMA.warnaTua : NETRAL.tinta }}>{l.judul}</span>
-                      {l.stat.kendala > 0 && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: TEMA.kendala }} title={`${l.stat.kendala} kendala`} />}
+                      {l.stat.kendala > 0 && <span className="w-2 h-2 rounded-full shrink-0" style={{ background: TEMA.kendala }} title={`${l.stat.kendala} kendala`} />}
                       <span className="text-[11px] font-bold tabular-nums" style={{ color: l.persen === 100 ? TEMA.selesai : TEMA.samar }}>{l.persen}%</span>
                     </span>
                     <span className="block h-1 rounded-full overflow-hidden" style={{ background: NETRAL.garis }}>
@@ -130,7 +130,7 @@ export function PanelLokasi({ lokasi, semua, keterangan, jadwal, anggota, suppor
 
           <header className="px-4 sm:px-6 py-3 space-y-2" style={{ background: NETRAL.permukaan, borderBottom: `1px solid ${NETRAL.garis}` }}>
             <div className="flex items-center gap-2">
-              <MapPin size={17} className="flex-shrink-0" style={{ color: TEMA.warna }} />
+              <MapPin size={17} className="shrink-0" style={{ color: TEMA.warna }} />
               <h2 className="font-bold text-[15px] lg:text-[17px] flex-1 min-w-0 truncate" style={{ color: NETRAL.tinta }}>{lokasi.judul}</h2>
               <KepingKendala jumlah={lokasi.stat.kendala} />
               <span className="lg:hidden text-[11px] font-semibold tabular-nums" style={{ color: TEMA.samar }}>{urutan + 1}/{semua.length}</span>

@@ -34,7 +34,7 @@ export function IdentitasBerkas({ a }: { a: AlatDesain }) {
     <div className="flex items-center gap-1.5 min-w-0" role="group" aria-label="Berkas yang sedang dibuka">
       <label className="relative min-w-[140px] w-[200px] max-w-[260px]" title="Klik untuk mengganti nama desain">
         <input value={namaDesain} onChange={e => setNamaDesain(e.target.value)} maxLength={80} placeholder="Nama desain..." aria-label="Nama desain"
-          className="w-full h-8 rounded-lg border border-transparent bg-transparent pl-2 pr-7 text-[14px] font-bold text-slate-900 hover:border-slate-200 hover:bg-white focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-none truncate" />
+          className="w-full h-8 rounded-lg border border-transparent bg-transparent pl-2 pr-7 text-[14px] font-bold text-slate-900 hover:border-slate-200 hover:bg-white focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 outline-hidden truncate" />
         <Pencil size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" aria-hidden />
       </label>
       <span title={rinci.judul} aria-label={rinci.judul} className={`inline-flex items-center h-6 px-2 rounded-full border text-[11.5px] font-semibold cursor-help ${kelas}`}>{rinci.isi}</span>

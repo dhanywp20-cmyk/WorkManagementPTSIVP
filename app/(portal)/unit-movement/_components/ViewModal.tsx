@@ -11,7 +11,7 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
   const typeLines  = splitTypeLines(log.type_barang);
   return (
   <ModalPortal>
-    <div role="dialog" aria-modal="true" className="fixed inset-0 z-[1000] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
+    <div role="dialog" aria-modal="true" className="fixed inset-0 z-1000 flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.6)',backdropFilter:'blur(6px)'}}>
       <div className="w-full max-w-2xl max-h-full overflow-y-auto rounded-2xl bg-white shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
           <div className="flex items-center gap-3">
@@ -23,7 +23,7 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
               <p className="text-xs text-gray-600">{fmtDate(log.tanggal,true)}</p>
             </div>
           </div>
-          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm flex-shrink-0">✕</button>
+          <button aria-label="Tutup" onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm shrink-0">✕</button>
         </div>
         <div className="p-6 space-y-4">
           <div className="flex items-center gap-2 flex-wrap">
@@ -41,21 +41,21 @@ export function ViewModal({ log, onClose }: { log:MovementLog; onClose:()=>void 
               {label:'Catatan', value:log.catatan, icon:'📝'},
             ].filter(r=>r.value).map(r=>(
               <div key={r.label} className="flex gap-3 px-4 py-3 rounded-xl" style={{background:'#f8fafc',border:'1px solid #e2e8f0'}}>
-                <span className="text-base flex-shrink-0"><Ikon nama={r.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
+                <span className="text-base shrink-0"><Ikon nama={r.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
                 <div><p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">{r.label}</p>
                 <p className="text-sm font-semibold text-gray-800 mt-0.5 whitespace-pre-line">{r.value}</p></div>
               </div>
             ))}
             {typeLines.length>0&&(
               <div className="flex gap-3 px-4 py-3 rounded-xl" style={{background:'#f8fafc',border:'1px solid #e2e8f0'}}>
-                <span className="text-base flex-shrink-0"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-base shrink-0"><Ikon nama="📦" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div><p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Type Barang</p>
                 <div className="mt-0.5 space-y-0.5">{typeLines.map((l,i)=><p key={i} className="text-sm font-semibold text-gray-800">{l}</p>)}</div></div>
               </div>
             )}
             {log.serial_number&&(
               <div className="flex gap-3 px-4 py-3 rounded-xl" style={{background:'#f8fafc',border:'1px solid #e2e8f0'}}>
-                <span className="text-base flex-shrink-0"><Ikon nama="🔢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
+                <span className="text-base shrink-0"><Ikon nama="🔢" ukuran="1em" className="inline-block align-[-0.12em]" /></span>
                 <div><p className="text-[11px] font-bold uppercase tracking-widest text-gray-500">Serial Number</p>
                 <p className="text-sm font-semibold text-gray-800 font-mono mt-0.5">{log.serial_number}</p></div>
               </div>

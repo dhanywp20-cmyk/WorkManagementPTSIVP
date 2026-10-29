@@ -64,7 +64,7 @@ export function GeserCepat({ a }: { a: AlatDesain }) {
   const t = 'w-8 h-9 grid place-items-center text-slate-700 hover:bg-slate-100 active:bg-blue-100';
   //  Satu baris di bilah benda terpilih (tengah-atas kanvas): kiri, maju, mundur, kanan | naik, turun | langkah.
   return (
-    <div className="flex items-center rounded-xl bg-white/95 backdrop-blur border border-slate-200 shadow-md overflow-hidden divide-x divide-slate-100" role="group" aria-label="Geser cepat">
+    <div className="flex items-center rounded-xl bg-white/95 backdrop-blur-sm border border-slate-200 shadow-md overflow-hidden divide-x divide-slate-100" role="group" aria-label="Geser cepat">
       <button type="button" className={t} onClick={() => geser(-1, 0, 0)} title="Kiri (←)" aria-label="Kiri"><ChevronLeft size={16} /></button>
       <button type="button" className={t} onClick={() => geser(0, 1, 0)} title="Maju / menjauh (↑)" aria-label="Maju"><ChevronUp size={16} /></button>
       <button type="button" className={t} onClick={() => geser(0, -1, 0)} title="Mundur / mendekat (↓)" aria-label="Mundur"><ChevronDown size={16} /></button>

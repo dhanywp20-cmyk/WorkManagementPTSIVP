@@ -21,7 +21,7 @@ export function BarisTrenKPI({ kpi, loading, scope }: BarisTrenKPIProps) {
           <RelAksen warna={AKSEN}/>
           <KepalaUbin ikon="📈" judul={`Trend Ticket Bulanan ${new Date().getFullYear()}`} warna={AKSEN}
             catatan={!loading&&kpi ? `${kpi.tickets.monthlyTickets.reduce((s,v)=>s+v,0)} total` : undefined}/>
-          {loading ? <div className="h-36 rounded animate-pulse bg-slate-100"/>
+          {loading ? <div className="h-36 rounded-sm animate-pulse bg-slate-100"/>
             : kpi?.tickets.monthlyTickets?.some(v=>v>0)
               ? <TrenBulanan data={kpi.tickets.monthlyTickets}
                   {...(scope.kind!=='admin' ? { viewW: 1400, viewH: 220 } : {})}/>
@@ -45,7 +45,7 @@ export function BarisTrenKPI({ kpi, loading, scope }: BarisTrenKPIProps) {
                 <div key={s.label}>
                   <p className="text-[10px] font-black uppercase tracking-[0.07em] text-slate-500 truncate">{s.label}</p>
                   {loading
-                    ? <div className="h-6 w-10 rounded bg-slate-100 animate-pulse mt-1"/>
+                    ? <div className="h-6 w-10 rounded-sm bg-slate-100 animate-pulse mt-1"/>
                     : <p className="text-[24px] font-black leading-none mt-1 tabular-nums" style={{color:s.w,letterSpacing:'-0.03em'}}>{s.value}</p>}
                 </div>
               ))}
@@ -65,9 +65,9 @@ export function BarisTrenKPI({ kpi, loading, scope }: BarisTrenKPIProps) {
                     <p className="text-[11px] font-extrabold text-slate-700">Pass rate</p>
                     <div className="flex flex-col gap-1 mt-1.5">
                       <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
-                        <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:w}}/>{kpi.learning.completedSessions} lulus</span>
+                        <i className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{background:w}}/>{kpi.learning.completedSessions} lulus</span>
                       <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
-                        <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:'#e2e8f0'}}/>{gagal} gagal</span>
+                        <i className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{background:'#e2e8f0'}}/>{gagal} gagal</span>
                     </div>
                   </div>
                 </div>
@@ -103,7 +103,7 @@ export function BarisTrenKPI({ kpi, loading, scope }: BarisTrenKPIProps) {
                   <div className="flex flex-wrap gap-x-3.5 gap-y-1.5 mt-2.5">
                     {peran.map((r,i)=>(
                       <span key={r.role??i} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-500">
-                        <i className="w-2.5 h-2.5 rounded-[3px] flex-shrink-0" style={{background:WARNA[i%WARNA.length]}}/>
+                        <i className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{background:WARNA[i%WARNA.length]}}/>
                         {(r.role??'Belum diatur').toUpperCase()} {r.count}
                       </span>
                     ))}

@@ -18,9 +18,9 @@ export interface DialogFormSoalProps {
 export function DialogFormSoal({ handleAddManual, materials, modeGrup, newQ, setNewQ, tutupTambahManual, viewMaterials }: DialogFormSoalProps) {
   return (
     <>
-      <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-[1000] p-4">
+      <div role="dialog" aria-modal="true" style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }} className="fixed inset-0 flex items-center justify-center z-1000 p-4">
         <div className="rounded-2xl shadow-2xl p-6 w-full max-w-lg max-h-full overflow-y-auto" style={{ background: '#ffffff' }}>
-          <h3 className="font-bold text-slate-800 mb-1 text-base sticky top-0 z-10 bg-white/95 backdrop-blur-sm -mx-5 px-5 py-2.5 border-b border-slate-100">
+          <h3 className="font-bold text-slate-800 mb-1 text-base sticky top-0 z-10 bg-white/95 backdrop-blur-xs -mx-5 px-5 py-2.5 border-b border-slate-100">
             {modeGrup ? '➕ Tambah Soal ke Grup' : '➕ Tambah Soal Manual'}
           </h3>
           <p className="text-xs text-slate-500 mb-3">
@@ -62,7 +62,7 @@ export function DialogFormSoal({ handleAddManual, materials, modeGrup, newQ, set
             <div>
               <label htmlFor="f-learning-center-components-questionspage-7" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Materi *</label>
               <select id="f-learning-center-components-questionspage-7" value={newQ.material_id} onChange={e => setNewQ(p => ({ ...p, material_id: e.target.value }))}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400 bg-white">
                 <option value="">-- Pilih Materi --</option>
                 {(viewMaterials.length > 0 ? viewMaterials : materials).map(m =>
                   <option key={m.id} value={m.id}>{m.materi_name}</option>
@@ -72,7 +72,7 @@ export function DialogFormSoal({ handleAddManual, materials, modeGrup, newQ, set
             <div>
               <label htmlFor="f-learning-center-components-questionspage-8" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Pertanyaan *</label>
               <textarea id="f-learning-center-components-questionspage-8" value={newQ.question} onChange={e => setNewQ(p => ({ ...p, question: e.target.value }))}
-                rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
+                rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400 resize-none"
                 placeholder="Tulis pertanyaan di sini..." />
             </div>
             <UnggahGambarSoal url={newQ.gambar_url} ubah={u => setNewQ(p => ({ ...p, gambar_url: u }))} />
@@ -114,18 +114,18 @@ export function DialogFormSoal({ handleAddManual, materials, modeGrup, newQ, set
                   <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional — hanya untuk bantu admin menilai, tidak dilihat peserta</span>
                 </label>
                 <textarea id="f-learning-center-components-questionspage-9" value={newQ.model_answer} onChange={e => setNewQ(p => ({ ...p, model_answer: e.target.value }))}
-                  rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 resize-none"
+                  rows={3} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400 resize-none"
                   placeholder="Contoh jawaban ideal / poin-poin kunci penilaian..." />
               </div>
               </>
             ) : (['a', 'b', 'c', 'd'] as const).map(opt => (
               <div key={opt} className="flex items-center gap-2">
-                <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-600'}`}>{opt.toUpperCase()}</span>
                 <input value={(newQ as any)[`option_${opt}`]} onChange={e => setNewQ(p => ({ ...p, [`option_${opt}`]: e.target.value }))}
-                  className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-400"
+                  className="flex-1 border border-slate-200 rounded-xl px-3 py-2 text-sm outline-hidden focus:border-emerald-400"
                   placeholder={`Pilihan ${opt.toUpperCase()}`} />
                 <button onClick={() => setNewQ(p => ({ ...p, correct_answer: opt.toUpperCase() }))}
-                  className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all flex-shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-slate-100 text-slate-500 hover:bg-green-50 border border-transparent'}`}>
+                  className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all shrink-0 ${newQ.correct_answer === opt.toUpperCase() ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-slate-100 text-slate-500 hover:bg-green-50 border border-transparent'}`}>
                   ✓ Benar
                 </button>
               </div>
@@ -136,13 +136,13 @@ export function DialogFormSoal({ handleAddManual, materials, modeGrup, newQ, set
                 <span className="ml-1 text-[11px] font-normal text-slate-500 normal-case tracking-normal">Optional</span>
               </label>
               <input id="f-learning-center-components-questionspage-10" value={newQ.batch_name} onChange={e => setNewQ(p => ({ ...p, batch_name: e.target.value }))}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400"
                 placeholder="contoh: Instalasi Dasar, Quiz Minggu 1, Troubleshooting..." />
             </div>
             <div>
               <label htmlFor="f-learning-center-components-questionspage-11" className="block text-xs font-bold text-slate-600 uppercase tracking-widest mb-1.5">Tingkat Kesulitan</label>
               <select id="f-learning-center-components-questionspage-11" value={newQ.difficulty} onChange={e => setNewQ(p => ({ ...p, difficulty: e.target.value as any }))}
-                className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-emerald-400 bg-white">
+                className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-hidden focus:border-emerald-400 bg-white">
                 <option value="easy">Easy</option>
                 <option value="medium">Medium</option>
                 <option value="hard">Hard</option>
@@ -151,7 +151,7 @@ export function DialogFormSoal({ handleAddManual, materials, modeGrup, newQ, set
           </div>
           <div className="flex gap-3 mt-5">
             <button onClick={handleAddManual}
-              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow transition-all">
+              className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold rounded-xl shadow-sm transition-all">
               <IkonTeks nama="💾" />Simpan Soal
             </button>
             <button onClick={tutupTambahManual}

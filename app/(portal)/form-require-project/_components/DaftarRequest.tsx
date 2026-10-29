@@ -48,11 +48,11 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
           {[...Array(5)].map((_, i) => (
             <div key={i} className="animate-pulse flex gap-3 items-center bg-white/60 rounded-xl p-4 border border-gray-200">
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-2/5" />
-                <div className="h-3 bg-gray-100 rounded w-1/4" />
+                <div className="h-4 bg-gray-200 rounded-sm w-2/5" />
+                <div className="h-3 bg-gray-100 rounded-sm w-1/4" />
               </div>
-              <div className="h-4 bg-gray-200 rounded w-1/6" />
-              <div className="h-4 bg-gray-200 rounded w-1/5" />
+              <div className="h-4 bg-gray-200 rounded-sm w-1/6" />
+              <div className="h-4 bg-gray-200 rounded-sm w-1/5" />
               <div className="h-6 bg-gray-200 rounded-full w-20" />
               <div className="h-8 bg-gray-200 rounded-lg w-16" />
             </div>
@@ -145,7 +145,7 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
                   {selectMode && bisaKelolaRequest
                     ? <input type="checkbox"
                         checked={selectedIds.size === filteredRequests.length && filteredRequests.length > 0}
-                        onChange={toggleSelectAll} className="w-4 h-4 rounded accent-teal-600 cursor-pointer" title="Pilih Semua" />
+                        onChange={toggleSelectAll} className="w-4 h-4 rounded-sm accent-teal-600 cursor-pointer" title="Pilih Semua" />
                     : 'ID'}
                 </th>
                 <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide border-r border-gray-200">Nama Project</th>
@@ -174,7 +174,7 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
                     <td className="px-2 py-3 border-r border-gray-200 align-middle text-center" onClick={e => e.stopPropagation()}>
                       {selectMode && bisaKelolaRequest
                         ? <input type="checkbox" checked={selectedIds.has(req.id)}
-                            onChange={() => toggleSelectId(req.id)} className="w-4 h-4 rounded accent-teal-600 cursor-pointer" />
+                            onChange={() => toggleSelectId(req.id)} className="w-4 h-4 rounded-sm accent-teal-600 cursor-pointer" />
                         : (
                           <span className="text-xs font-bold text-gray-500">
                             {hal.mulai + index + 1}
@@ -183,11 +183,11 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
                     </td>
                     <td className="px-3 py-3 border-r border-gray-200 align-middle max-w-0">
                       <div className="flex items-start gap-1.5">
-                        {unread > 0 && <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 animate-pulse mt-1" />}
+                        {unread > 0 && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 animate-pulse mt-1" />}
                         <div className="min-w-0 flex-1">
                           <div className="font-bold text-gray-800 text-sm leading-tight truncate" title={req.project_name}>{req.project_name}</div>
                           {req.project_location && (
-                            <div className="text-xs text-gray-500 leading-tight mt-0.5 line-clamp-2 break-words" title={req.project_location}>{req.project_location}</div>
+                            <div className="text-xs text-gray-500 leading-tight mt-0.5 line-clamp-2 wrap-break-word" title={req.project_location}>{req.project_location}</div>
                           )}
                           {unread > 0 && <span className="text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full font-bold">+{unread} pesan</span>}
                           <div className="text-xs text-gray-500 mt-0.5">{new Date(req.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</div>                             
@@ -205,7 +205,7 @@ export function DaftarRequest({ bisaKelolaRequest, currentUser, filterMonth, fil
                     <td className="px-3 py-3 border-r border-gray-100 align-middle">
                       {req.assign_name ? (
                         <div className="flex items-center gap-1.5">
-                          <div className="w-6 h-6 rounded-full bg-teal-600 text-white text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                          <div className="w-6 h-6 rounded-full bg-teal-600 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
                             {req.assign_name.charAt(0).toUpperCase()}
                           </div>
                           <div className="text-xs font-semibold text-gray-700 leading-tight">{req.assign_name}</div>

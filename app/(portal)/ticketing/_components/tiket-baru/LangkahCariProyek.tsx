@@ -43,7 +43,7 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
                 value={reminderQuery}
                 onChange={e => handleQueryChange(e.target.value)}
                 placeholder="Ketik nama project untuk mencari..."
-                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-none transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 border border-slate-200"
+                className="w-full rounded-xl pl-9 pr-4 py-2.5 text-sm outline-hidden transition-all text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-red-500/40 border border-slate-200"
               />
               {reminderSearching && (
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500">mencari...</span>
@@ -95,7 +95,7 @@ export function LangkahCariProyek({ galatCari, handleQueryChange, konfirmasiPili
                         background: disorot ? 'rgba(220,38,38,0.08)' : 'white',
                       }}>
                       <span className="flex items-center gap-2">
-                        {disorot && <span className="text-red-600 flex-shrink-0">✓</span>}
+                        {disorot && <span className="text-red-600 shrink-0">✓</span>}
                         <span className="text-sm font-bold text-slate-800">{r.project_name || r.title}</span>
                       </span>
                       <span className="text-xs text-slate-500 flex gap-3 flex-wrap pl-0">

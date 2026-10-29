@@ -46,11 +46,11 @@ function StatCard({ icon, label, value, sub, color, sparkline, donut, loading }:
             <span className="text-sm"><Ikon nama={icon} ukuran={14} /></span>
             <span className="text-[11px] font-semibold tracking-wide uppercase truncate" style={{ color:'rgba(0,0,0,0.4)' }}>{label}</span>
           </div>
-          {loading ? <div className="h-7 w-16 rounded animate-pulse" style={{ background:'rgba(0,0,0,0.08)' }}/> :
+          {loading ? <div className="h-7 w-16 rounded-sm animate-pulse" style={{ background:'rgba(0,0,0,0.08)' }}/> :
             <div className="text-lg sm:text-2xl font-black tracking-tight" style={{ color }}>{value}</div>}
           {sub && <div className="text-[11px] mt-0.5 truncate" style={{ color:'rgba(0,0,0,0.35)' }}>{sub}</div>}
         </div>
-        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+        <div className="flex flex-col items-end gap-1 shrink-0">
           {donut && <MiniDonut segments={donut.segments}/>}
           {sparkline && sparkline.length > 1 && <Sparkline values={sparkline} color={color}/>}
         </div>
@@ -63,7 +63,7 @@ function SectionHeader({ icon, title, sub, right }: { icon:string; title:string;
   return (
     <div className="flex items-center justify-between mb-4">
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0"
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base shrink-0"
           style={{ background:'rgba(190,18,60,0.1)', border:'1px solid rgba(190,18,60,0.15)' }}><Ikon nama={icon} ukuran={16} /></div>
         <div>
           <h2 className="text-base font-bold tracking-wide" style={{ color:'rgba(0,0,0,0.75)' }}>{title}</h2>
