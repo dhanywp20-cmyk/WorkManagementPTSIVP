@@ -10,6 +10,7 @@ import { KalkulatorAV } from './_components/KalkulatorAV';
 import { Pustaka } from './_components/Pustaka';
 import { ProductComparison } from './_components/ProductComparison';
 import { bolehLihatPustaka } from '@/lib/pustaka';
+import { catatPemakaian } from '@/lib/pemakaian';
 
 //  three.js (~600 KB) hanya diunduh saat alat Desain 3D dibuka.
 const Desain3D = dynamic(() => import('./_components/Desain3D'), {
@@ -46,6 +47,8 @@ function ToolsKerjaInner() {
     setSiap(true);
     return startSessionWatcher();
   }, []);
+  //  Tab Pemakaian di Analytics: alat mana yang dibuka (KerangkaPortal sengaja melewati modul ini).
+  useEffect(() => { if (siap) catatPemakaian('tools-team', aktif); }, [siap, aktif]);
 
   const pilih = (k: string) => {
     setAktif(k);

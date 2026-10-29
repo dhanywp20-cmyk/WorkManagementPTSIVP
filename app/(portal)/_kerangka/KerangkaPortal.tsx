@@ -21,6 +21,7 @@ import { DAFTAR_MENU, MENU_ICONS, LEARNING_KEYS, PROJECT_KEYS, INTERNAL_DAILY_KE
 import { useMerek, latarDasbor } from '@/lib/merek';
 import { LogoMerek, FooterPlatform } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
+import { catatPemakaian } from '@/lib/pemakaian';
 
 /**
  * KerangkaPortal - layout bersama SEMUA modul (app/(portal)/layout.tsx): sesi & layar masuk, header,
@@ -440,6 +441,11 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   const isAdmin = ['admin', 'superadmin'].includes(currentUser?.role?.toLowerCase() ?? '');
   /** Modul yang sedang dibuka, untuk panduan kontekstual Asisten (lib/panduan.ts). */
   const modulAktif = showDashboardPanel ? 'dashboard' : (pathname.replace(/^\/+/, '').split('/')[0] || 'dashboard');
+  //  Catatan pemakaian menu (tab Pemakaian di Analytics). AV Solution Tools dicatat halamannya
+  //  sendiri bersama alat yang dibuka (tools-team/page.tsx), jadi dilewati di sini.
+  useEffect(() => {
+    if (isLoggedIn && modulAktif !== 'tools-team') catatPemakaian(modulAktif);
+  }, [isLoggedIn, modulAktif]);
   const asistenAtasan = isAdmin || /supervisor|manager/i.test(currentUser?.jabatan ?? '');
   // Admin/superadmin, ATAU akun Team PTS dengan toggle "Full Access" aktif
   // (mis. Manager PTS) - dipakai untuk hal yang BUKAN kelola akun: lihat

@@ -17,6 +17,8 @@ import DashboardKPI from '@/app/(portal)/kpi-team/_components/DashboardKPI';
 import { User as DashUser } from '@/app/(portal)/dashboard/_components/shared';
 import { FooterPlatform, StatCard } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
+import { hasFullAccess } from '@/lib/constants';
+import { PanelPemakaian } from './PanelPemakaian';
 
 // Types
 
@@ -46,7 +48,7 @@ interface Stats {
   activity: { id: string; label: string; sub: string; time: string; dot: string }[];
 }
 
-export type Tab = 'kpi' | 'command' | 'audit';
+export type Tab = 'kpi' | 'command' | 'audit' | 'pemakaian';
 
 // Small helper components
 
@@ -176,6 +178,8 @@ export function AnalyticsPlatform({
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { try { setDiLuarBingkai(window.self === window.top); } catch { /* iframe lintas origin: di dalam bingkai */ } }, []);
   const tab = controlledTab ?? tabState;
+  /** Tab Pemakaian = aktivitas rekan kerja: hanya admin & Full Access (server juga menolak yang lain). */
+  const lihatPemakaian = hasFullAccess(user);
   const setTab = (t: Tab) => { onTabChange?.(t); if (controlledTab === undefined) setTabState(t); };
   const [stats,   setStats]   = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -417,6 +421,7 @@ export function AnalyticsPlatform({
           <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
           <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
           <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
+          {lihatPemakaian && <TabBtn label="Pemakaian" icon="👥" active={tab==='pemakaian'} onClick={() => setTab('pemakaian')} />}
           <button aria-label="Refresh" onClick={() => { loadStats(); if (tab === 'audit') loadAudit(); }} title="Refresh"
             className="ml-auto w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-110"
             style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.08)' }}>
@@ -469,6 +474,7 @@ export function AnalyticsPlatform({
             <TabBtn label="Analytics"      icon="📊" active={tab==='kpi'}     onClick={() => setTab('kpi')} />
             <TabBtn label="Command Center" icon="🏠" active={tab==='command'} onClick={() => setTab('command')} badge={totalAlerts || undefined} />
             <TabBtn label="Audit Log"      icon="📋" active={tab==='audit'}   onClick={() => setTab('audit')} badge={auditRows.length > 0 ? auditRows.length : undefined} />
+            {lihatPemakaian && <TabBtn label="Pemakaian" icon="👥" active={tab==='pemakaian'} onClick={() => setTab('pemakaian')} />}
           </div>
         </div>
       </header>
@@ -558,6 +564,9 @@ export function AnalyticsPlatform({
         {/* ═══════════════════════════════════════════════════════════════ */}
         {/* TAB 3 — AUDIT LOG  (audit_trail + activity_logs)               */}
         {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* TAB 4 — PEMAKAIAN (admin & Full Access) */}
+        {tab === 'pemakaian' && lihatPemakaian && <PanelPemakaian />}
+
         {tab === 'audit' && (
           <div className="rounded-2xl overflow-hidden"
             style={{background:'rgba(255,255,255,0.97)',border:'1px solid rgba(0,0,0,0.07)',boxShadow:'0 2px 12px rgba(0,0,0,0.06)'}}>
