@@ -1,5 +1,5 @@
 /** incentive-scheme-aturan.ts - dipecah dari incentive-scheme.ts (scripts/pecah-modul.mjs); incentive-scheme.ts tetap mengekspor ulang semuanya. */
-import { INCENTIVE_CATEGORIES } from './incentive-scheme-kategori';
+import { INCENTIVE_CATEGORIES } from './incentive-scheme-kategori-bawaan';
 import { SkemaInsentif } from './incentive-scheme-tipe';
 
 /**

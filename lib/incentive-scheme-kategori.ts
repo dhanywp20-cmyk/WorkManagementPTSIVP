@@ -1,5 +1,8 @@
 /** incentive-scheme-kategori.ts - dipecah dari incentive-scheme.ts (scripts/pecah-modul.mjs); incentive-scheme.ts tetap mengekspor ulang semuanya. */
 import { ambilSkema } from './incentive-scheme-simpan';
+import { INCENTIVE_CATEGORIES } from './incentive-scheme-kategori-bawaan';
+
+export { INCENTIVE_CATEGORIES };
 
 /**
  * Kategori Request Schedule yang menghasilkan proyek insentif.
@@ -7,9 +10,9 @@ import { ambilSkema } from './incentive-scheme-simpan';
  * Tinggal di sini, bukan di modul Incentive, karena Request Schedule juga
  * membutuhkannya - untuk tombol "Sync ke Incentive". Menaruhnya di modul
  * Incentive akan memaksa halaman jadwal menarik seluruh mesin hitung insentif
- * hanya demi sebuah daftar tiga kata.
+ * hanya demi sebuah daftar tiga kata. Konstantanya sendiri ada di incentive-scheme-kategori-bawaan
+ * (modul tanpa impor) supaya urutan muat modul tidak bisa merusaknya.
  */
-export const INCENTIVE_CATEGORIES = ['Konfigurasi', 'Konfigurasi & Training', 'Training'] as const;
 
 /*
   KATEGORI ITU KEBIJAKAN, BUKAN KODE.
