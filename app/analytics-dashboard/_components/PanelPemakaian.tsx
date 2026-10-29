@@ -18,7 +18,7 @@ const NAMA_MODUL: Record<string, string> = Object.fromEntries([
   ...DAFTAR_MENU.flatMap(m => m.items.filter(i => i.internal).map(i => [i.url.replace(/^\//, ''), i.name])),
 ]);
 const NAMA_ALAT: Record<string, string> = {
-  '3d': 'Desain 3D Ruang', led: 'LED Videotron', av: 'Kalkulator AV', banding: 'Product Comparison', pustaka: 'Pustaka',
+  '3d': 'Desain 3D Ruang', led: 'LED Videotron', av: 'Kalkulator AV', banding: 'Product Comparison', cekbarang: 'Checklist Barang', pustaka: 'Pustaka',
 };
 const tgl = (s: string | null) => s ? new Date(s).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
 const KARTU = 'rounded-2xl bg-white border border-slate-200 shadow-sm overflow-hidden';
