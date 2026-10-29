@@ -78,6 +78,13 @@ export function dbTokenExpiryMs(): number | null {
  */
 let pembaruanBerjalan: Promise<void> | null = null;
 
+/**
+ * Event di window saat server menjawab 401 waktu token diperbarui: cookie sesi sudah tidak ada / tidak
+ * sah. Didengar KerangkaPortal -> layar masuk. Pindah menu tidak lagi melewati proxy.ts (lihat
+ * config.matcher di sana), jadi cookie yang hilang tidak lagi ketahuan dari pengalihan saat pindah menu.
+ */
+export const SESI_HABIS = 'ivp:sesi-habis';
+
 export function refreshDbToken(): Promise<void> {
   // Satu pembaruan pada satu waktu: tanpa ini, sepuluh query yang berangkat
   // bersamaan akan memicu sepuluh panggilan /api/auth/session sekaligus.
@@ -85,6 +92,7 @@ export function refreshDbToken(): Promise<void> {
   pembaruanBerjalan = (async () => {
     try {
       const res = await fetch('/api/auth/session', { credentials: 'include' });
+      if (res.status === 401) { window.dispatchEvent(new Event(SESI_HABIS)); return; }
       if (!res.ok) return;
       const { db_token } = await res.json();
       if (db_token) setDbToken(db_token);

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback, useTransition } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { supabase, setDbToken } from '@/lib/supabase';
+import { supabase, setDbToken, SESI_HABIS } from '@/lib/supabase';
 import { setSession, clearSession, getSession, verifySessionFromCookie, cekSesiServer } from '@/lib/auth';
 import { hasFullAccess } from '@/lib/constants';
 import { isPimpinan } from '@/lib/pimpinan';
@@ -217,6 +217,10 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     sekali (tanpa permintaan berkala - hemat kuota Vercel & Supabase): 401 -> layar masuk (sesudah login
     langsung ke halaman tujuan, lihat masukKeDashboard); sah (mis. sudah login lagi di tab lain) -> lanjut
     ke tujuannya.
+
+    Kini pindah menu di dalam portal TIDAK lewat proxy.ts lagi (matcher-nya melewatkan permintaan RSC
+    supaya halaman statis langsung dari CDN), jadi ?lanjut= hanya muncul saat halaman dibuka langsung.
+    Cookie yang hilang di tengah jalan ketahuan saat token diperbarui (401 -> event SESI_HABIS, di bawah).
   */
   useEffect(() => {
     if (!isLoggedIn || sedangPindah) return;
@@ -233,6 +237,13 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     });
     return () => { batal = true; };
   }, [pathname, sedangPindah, isLoggedIn, sesiBerakhir, router]);
+
+  //  Token gagal diperbarui karena cookie sesi tidak sah lagi (401) -> layar masuk.
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    window.addEventListener(SESI_HABIS, sesiBerakhir);
+    return () => window.removeEventListener(SESI_HABIS, sesiBerakhir);
+  }, [isLoggedIn, sesiBerakhir]);
 
   // Auto-navigate sales/guest to first allowed menu when sidebar opens
   // Uses autoNavigatedRef so this runs EXACTLY ONCE per login - no race conditions

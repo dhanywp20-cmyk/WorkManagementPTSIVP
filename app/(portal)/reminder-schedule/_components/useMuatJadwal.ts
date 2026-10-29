@@ -35,7 +35,7 @@ export function useMuatJadwal(k: MuatJadwalKonteks) {
     } catch (err: any) {
       setFetchError(err?.message ?? 'Gagal memuat data');
     }
-    setTimeout(() => setListLoading(false), 400);
+    setListLoading(false);
   };
   return { fetchRemindersForUser, fetchRemindersQuiet, fetchReminders };
 }

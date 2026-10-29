@@ -36,6 +36,13 @@ cek('sesiBerakhir melepas tujuan menu (jaring pengaman 12 dtk tidak memuat ulang
 cek('Keluar memakai jalur yang sama', /const handleLogout = \(\) => \{\s*sesiBerakhir\(\);\s*router\.push\('\/dashboard'\);/.test(portal));
 cek('sesudah login kembali ke ?lanjut=', /const lanjut = tujuanLanjutAman\(new URLSearchParams\(window\.location\.search\)\.get\('lanjut'\)\);\s*if \(lanjut\) router\.replace\(lanjut\);/.test(portal));
 cek('proxy.ts tetap memasang ?lanjut= saat cookie tidak ada', /keLogin\.searchParams\.set\('lanjut'/.test(baca('proxy.ts')));
+const proxy = baca('proxy.ts');
+cek('proxy: /api selalu lewat proxy', /matcher: \[\s*'\/api\/:path\*',/.test(proxy));
+cek('proxy: pindah menu (header RSC) & berkas statis tidak lewat proxy (fungsi Node bom1)',
+  /missing: \[\{ type: 'header', key: 'rsc' \}\]/.test(proxy) && /\(\?!api\/\|_next\/static/.test(proxy) && /png\|jpe\?g/.test(proxy));
+const klien = baca('lib/supabase.ts');
+cek('401 saat token diperbarui -> event SESI_HABIS', /if \(res\.status === 401\) \{ window\.dispatchEvent\(new Event\(SESI_HABIS\)\); return; \}/.test(klien));
+cek('portal mendengar SESI_HABIS -> layar masuk', /window\.addEventListener\(SESI_HABIS, sesiBerakhir\)/.test(portal) && /removeEventListener\(SESI_HABIS, sesiBerakhir\)/.test(portal));
 const auth = baca('lib/auth.ts');
 cek('cekSesiServer: hanya 401 dianggap habis (sinyal jelek bukan alasan keluar)', /if \(res\.status === 401\) return 'habis';\s*if \(!res\.ok\) return 'gagal';/.test(auth));
 
