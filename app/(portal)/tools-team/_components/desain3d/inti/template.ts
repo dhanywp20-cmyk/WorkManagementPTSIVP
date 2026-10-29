@@ -1,5 +1,6 @@
 /** Template kategori ruangan siap pakai (dipisah dari model.ts). */
 import { bendaBaru, contohAwal, setRuangKelas } from './katalog';
+import { LENSA_MZ882, type LensaPanasonic, lensaMZ882 } from './lensaPanasonic';
 import { lengkungDari } from './produk';
 import { arahkanKe, keDunia, lensaProyektor } from './proyektor';
 import { daftarRuang } from './ruang';
@@ -16,20 +17,21 @@ export const KATEGORI_RUANG: { id: KategoriRuang; judul: string; ket: string; ik
   { id: 'mapping-lengkung', judul: 'Mapping - layar cekung', ket: 'Screen melengkung ke dalam + 3 proyektor blending; bentuk & warna bisa diganti', ikon: '🌙' },
   { id: 'mapping-cembung', judul: 'Mapping - layar cembung', ket: 'Screen melengkung keluar + 2 proyektor blending; bentuk & warna bisa diganti', ikon: '🏛️' },
   { id: 'mapping-objek', judul: 'Mapping - objek upload', ket: 'Alas di tengah + 3 proyektor; impor objek .glb lalu cek sinarnya', ikon: '🧩' },
-  { id: 'immersive', judul: 'Immersive room', ket: 'Proyeksi 4 dinding + lantai: 4 proyektor UST dinding & 2 lantai (bisa ditambah)', ikon: '🌐' },
+  { id: 'immersive', judul: 'Immersive room', ket: 'Proyeksi 4 dinding + lantai: 5 × Panasonic PT-MZ882 + ET-ELU20 (bisa ditambah)', ikon: '🌐' },
 ];
 
 /** Warna bawaan ruang mapping: abu-abu netral (bukan hitam) supaya ruang & sinar tetap terlihat. */
 const ABU_DINDING = '#9ca3af', ABU_LANTAI = '#6b7280';
 
 /**
- * Proyektor gantung plafon tanpa lens shift (pusat gambar = sumbu) dengan LENSA tepat di `lensa`, dibidik ke
- * `target`. Posisi badan dihitung balik dari lensa (badan ikut miring saat menunduk), jadi setelan hasil uji
- * cakupan (inti/cakupanProyektor.ts, uji/desain3d-cakupan.ts) terpasang persis.
+ * Proyektor gantung plafon PT-MZ882 + lensa nyata `ln` (zoom `tr`, di dalam rentang lensa) tanpa lens shift (pusat
+ * gambar = sumbu) dengan LENSA tepat di `lensa`, dibidik ke `target`. Posisi badan dihitung balik dari lensa (badan
+ * ikut miring saat menunduk), jadi setelan hasil uji cakupan (inti/cakupanProyektor.ts, uji/desain3d-cakupan.ts)
+ * terpasang persis. Mapping memakai tilt: gambar trapesium dikoreksi warping di media server.
  */
-function proyektorKe(k: Kotak, lensa: Titik, target: Titik, tr: number, nama: string, zoom: [number, number] = [tr, tr]): Benda {
+function proyektorKe(k: Kotak, lensa: Titik, target: Titik, ln: LensaPanasonic, tr: number, nama: string): Benda {
   const p0 = bendaBaru('proyektor', k, { pasangProyektor: 'plafon' });
-  let p: Benda = { ...p0, x: lensa[0], z: lensa[2], elev: lensa[1] - p0.h / 2, offsetLensa: 0, throwRatio: tr, trMin: zoom[0], trMax: zoom[1], nama };
+  let p: Benda = { ...p0, ...lensaMZ882(ln, tr), x: lensa[0], z: lensa[2], elev: lensa[1] - p0.h / 2, offsetLensa: 0, nama };
   for (let i = 0; i < 4; i++) {
     p = arahkanKe(p, target);
     const l = keDunia(p, lensaProyektor(p));
@@ -93,10 +95,10 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     bidang.z = bidang.d / 2 + 0.2;
     const pusatZ = bidang.z + (7 - bidang.d / 2), yT = bidang.elev + bidang.h / 2 + 0.15;
     const titik = (deg: number): Titik => { const a = (deg * Math.PI) / 180; return [7 + 7 * Math.sin(a), yT, pusatZ - 7 * Math.cos(a)]; };
-    //  Layar 3,5 m tinggi: gambar 16:9 harus >= 3,5 m tinggi di jarak ±6 m -> lensa throw pendek (TR 1,0, zoom 0,9-1,1).
-    //  Dengan lensa standar 1,39-2,09 tinggi gambar maks 2,8 m (layar hanya tertutup ±75%). Hasil uji: tertutup >= 99%,
-    //  tumpang blending ±33% (tiap sambungan).
-    const proj = [-30, 0, 30].map((deg, i) => proyektorKe(k, [7 + (i - 1) * 0.8, 4.3, pusatZ - 1], titik(deg), 1, `Proyektor ${i + 1} (blending)`, [0.9, 1.1]));
+    //  Layar 3,5 m tinggi di jarak ±6 m -> lensa throw pendek: PT-MZ882 + ET-ELW22 (zoom 0,814-1,009) di TR 1,0.
+    //  Lensa standar ET-ELS20 (1,639-2,788) di jarak ini hanya memberi gambar ±2,3 m tinggi. Hasil uji: tertutup >= 99%,
+    //  tumpang blending tiap sambungan di rentang 10-40%.
+    const proj = [-30, 0, 30].map((deg, i) => proyektorKe(k, [7 + (i - 1) * 0.8, 4.3, pusatZ - 1], titik(deg), LENSA_MZ882.ELW22, 1, `Proyektor ${i + 1} (blending)`));
     //  Sinar nyata (tanpa Mask): cahaya yang lewat tepi layar tetap jatuh ke dinding / lantai di belakangnya,
     //  makin redup dengan jarak & sudut - seperti di lokasi. Mask ke bidang tetap bisa dinyalakan di panel proyektor.
     return { nama: 'Mapping layar cekung', ruang, benda: [bidang, ...proj] };
@@ -112,7 +114,8 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     //  Tiap proyektor membidik separuh layarnya (±10° busur), sedikit di atas tengah: proyektor plafon menunduk
     //  -> gambar trapesium & ujung layar cembung lebih jauh, jadi tanpa ini pita atas layar tidak tersinari.
     //  Hasil uji: tertutup >= 99%, tumpang ±17%; ±15% cahaya jatuh di luar layar (wajib di-mask di media server).
-    const proj = [-1, 1].map((s, i) => proyektorKe(k, [6 + s * 1.9, 4.3, 6.2], titik(s * 10, yT + 0.1), 1.55, `Proyektor ${i + 1} (blending)`, [1.39, 2.09]));
+    //  PT-MZ882 + ET-ELW20 (zoom 1,245-1,695) di TR 1,55.
+    const proj = [-1, 1].map((s, i) => proyektorKe(k, [6 + s * 1.9, 4.3, 6.2], titik(s * 10, yT + 0.1), LENSA_MZ882.ELW20, 1.55, `Proyektor ${i + 1} (blending)`));
     return { nama: 'Mapping layar cembung', ruang, benda: [bidang, ...proj] };
   }
   if (id === 'mapping-objek') {
@@ -123,30 +126,44 @@ export function templateRuang(id: KategoriRuang): { nama: string; ruang: Ruang; 
     //  tersinari sampai bawah (dari 4,2 m & bidik 1,2 m bagian bawah sisi objek tidak kena).
     const proj = [0, 120, 240].map((deg, i) => {
       const a = (deg * Math.PI) / 180;
-      return proyektorKe(k, [6 + 4 * Math.sin(a), 3.6, 5 + 4 * Math.cos(a)], [6, 1, 5], 1.39, `Proyektor ${i + 1}`, [1.39, 2.09]);
+      //  PT-MZ882 + ET-ELW20 di TR 1,39 (zoom 1,245-1,695).
+      return proyektorKe(k, [6 + 4 * Math.sin(a), 3.6, 5 + 4 * Math.cos(a)], [6, 1, 5], LENSA_MZ882.ELW20, 1.39, `Proyektor ${i + 1}`);
     });
     return { nama: 'Mapping objek', ruang, benda: [alas, ...proj] };
   }
   if (id === 'immersive') {
-    //  Ruang 6 x 6 x 3,5 m. Tiap dinding disorot satu proyektor ultra short throw (TR 0,25) yang
-    //  digantung 1,5 m dari dinding itu sendiri - gambar 6 x 3,375 m dan tidak terhalang proyektor lain.
-    //  Offset 46%: gambar naik sedikit sampai plafon (offset 50% menyisakan pita ±13 cm di atas yang gelap). Lantai: dua proyektor tegak ke bawah, lens shift 12% ke luar
-    //  supaya keduanya menutup lantai dengan area blending di tengah.
+    //  Ruang 6 x 6 x 3,5 m, semua PT-MZ882 + ET-ELU20 (ultra short throw, zoom 0,338-0,364, lens shift V ±50%):
+    //  - dinding: lensa 2,05 m dari dinding itu sendiri, zoom terlebar -> gambar 6,15 x 3,84 m (16:10) menutup dinding
+    //    6 x 3,5 m dengan ±7 cm sisa di tiap sisi; badan rapat di plafon, lens shift ±43% menurunkan pusat gambar ke
+    //    1,75 m (masih di dalam batas 50%). Keempat proyektor tidak menghalangi sinar satu sama lain.
+    //  - lantai: SATU proyektor tegak ke bawah dari plafon. Dari ±3,3 m lensa ini memberi gambar ±9,7 x 6,06 m - menutup
+    //    lantai 6 x 6 m; kelebihannya jatuh ke kaki dinding kiri-kanan (±1,2 m) dan wajib di-mask di media server.
+    //    Dua ET-ELW22 (gambar ±4,1 x 2,6 m) tidak cukup untuk lantai ini; resolusi lebih tinggi = 6 x ET-ELW22 (3 x 2).
+    //  Dulu: UST karangan TR 0,25 (tidak ada lensa Panasonic MZ seperti itu) & lantai TR 0,5-0,65.
     const ruang: Ruang = { p: 6, l: 6, t: 3.5, lantai: 'polos', warnaLantai: '#e5e7eb', warnaDinding: '#f8fafc', cahaya: 'gelap', r2: null };
     const k = daftarRuang(ruang)[0];
+    const ELU = LENSA_MZ882.ELU20;
     /** Proyektor plafon dengan LENSA tepat di (x, z). */
     const diLensa = (atur: Partial<Benda>, x: number, z: number): Benda => {
-      const p0 = { ...bendaBaru('proyektor', k, { pasangProyektor: 'plafon' }), x: 0, z: 0, ...atur } as Benda;
+      const p0 = { ...bendaBaru('proyektor', k, { pasangProyektor: 'plafon' }), x: 0, z: 0, ...lensaMZ882(ELU, ELU.trMin), ...atur } as Benda;
       const l = keDunia(p0, lensaProyektor(p0));
       return { ...p0, x: Math.round((x - l[0]) * 1000) / 1000, z: Math.round((z - l[2]) * 1000) / 1000 };
     };
-    const ust = (rot: number, x: number, z: number, nama: string) =>
-      diLensa({ elev: 3.3, rot, tilt: 0, offsetLensa: 0.46, throwRatio: 0.25, trMin: 0.25, trMax: 0.25, nama: `UST ${nama}` }, x, z);
-    const lantai = (rot: number, z: number) =>
-      diLensa({ elev: 3.3, rot, tilt: -90, offsetLensa: 0.12, throwRatio: 0.54, trMin: 0.5, trMax: 0.65, nama: 'Lantai' }, 3, z);
+    const tinggiBadan = bendaBaru('proyektor', k, { pasangProyektor: 'plafon' }).h;
+    const JARAK = 2.05, elev = ruang.t - tinggiBadan - 0.02;
+    //  Lebar gambar di zoom terlebar: (L + b) / TR; lens shift = (tinggi lensa - 1,75) / tinggi gambar.
+    const tinggiGambar = (JARAK + ELU.koreksiJarak) / ELU.trMin / 1.6;
+    const offset = Math.round(((elev + tinggiBadan / 2 - ruang.t / 2) / tinggiGambar) * 1000) / 1000;
+    const dinding = (rot: number, x: number, z: number, nama: string) =>
+      diLensa({ elev, rot, tilt: 0, offsetLensa: offset, nama: `PT-MZ882 ${nama}` }, x, z);
+    const lantai0 = diLensa({ elev: 3.3, rot: 0, tilt: -90, offsetLensa: 0, nama: 'PT-MZ882 lantai' }, 3, 3);
+    //  Zoom lantai: sisi pendek gambar (16:10) >= 6,06 m dari tinggi lensanya - dijepit ke rentang lensa.
+    const tinggiLensa = keDunia(lantai0, lensaProyektor(lantai0))[1];
+    const trLantai = Math.round(Math.min(ELU.trMax, Math.max(ELU.trMin, (tinggiLensa + ELU.koreksiJarak) / (6.06 * 1.6))) * 10000) / 10000;
     const hasil: Benda[] = [
-      ust(180, 3, 1.5, 'dinding depan'), ust(0, 3, 4.5, 'dinding belakang'), ust(270, 1.5, 3, 'dinding kiri'), ust(90, 4.5, 3, 'dinding kanan'),
-      lantai(0, 2), lantai(180, 4),
+      dinding(180, 3, JARAK, 'dinding depan'), dinding(0, 3, ruang.l - JARAK, 'dinding belakang'),
+      dinding(270, JARAK, 3, 'dinding kiri'), dinding(90, ruang.p - JARAK, 3, 'dinding kanan'),
+      { ...lantai0, throwRatio: trLantai },
     ];
     hasil.forEach((p, i) => { p.nama = `${p.nama} ${i + 1}`; });
     return { nama: 'Immersive room', ruang, benda: hasil };
