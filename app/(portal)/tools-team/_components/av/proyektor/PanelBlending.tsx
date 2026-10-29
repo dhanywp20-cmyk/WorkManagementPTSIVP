@@ -168,7 +168,7 @@ export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
               </>
             )}
             <p className="col-span-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] leading-snug text-slate-700">
-              Lensa mengikuti Kalkulator Proyektor di atas: <b className="tabular-nums">{teksLensa}</b>. Ganti model / lensa di sana (Pustaka).
+              Lensa mengikuti kartu Proyektor &amp; lensa di atas: <b className="tabular-nums">{teksLensa}</b>. Ganti model / lensa di sana (Pustaka).
             </p>
           </div>
         </div>
