@@ -368,6 +368,11 @@ function TicketingSystemInner() {
         pengguna sendiri memuat ulang (silent = false) atau sudah lebih dari JEDA_DATA_PENDUKUNG_MS.
       */
       const perluPendukung = !silent || Date.now() - pendukungDimuat.current > JEDA_DATA_PENDUKUNG_MS;
+      const activeUser = userOverride !== undefined ? userOverride : currentUser;
+      //  Tiket tidak bergantung pada daftar akun - berangkat BERSAMAAN, bukan sesudahnya (satu
+      //  perjalanan pulang-pergi ke Supabase lebih sedikit sebelum tabel tampil). Jumlah kueri sama.
+      const tiketDimuat = ambilTiketUntuk(activeUser, rentang);
+      tiketDimuat.catch(() => { /* galatnya ditangkap di await di bawah - ini hanya mencegah "unhandled rejection" */ });
       const [membersData, usersData] = perluPendukung ? await Promise.all([
         // team_members tidak ada - ambil dari users dengan role team
         supabase.from("users").select("id, username, full_name, role, team_type, phone_number, sales_division, allowed_menus, jabatan, bisa_ditugaskan").in("role", ["team", "team_pts"]).order("full_name"),
@@ -390,9 +395,7 @@ function TicketingSystemInner() {
           bisa_ditugaskan: u.bisa_ditugaskan,
         }));
       }
-      const activeUser = userOverride !== undefined ? userOverride : currentUser;
-
-      const { tickets: daftarTiket, periksaPilihan } = await ambilTiketUntuk(activeUser, rentang);
+      const { tickets: daftarTiket, periksaPilihan } = await tiketDimuat;
       setTickets(daftarTiket);
       if (periksaPilihan && selectedTicket && !daftarTiket.find((t: Ticket) => t.id === selectedTicket.id)) setSelectedTicket(null);
       if (anggotaTim) setTeamMembers(anggotaTim);

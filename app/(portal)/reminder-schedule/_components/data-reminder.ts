@@ -44,15 +44,17 @@ export async function ambilReminderUntuk(
       menarik data tak terbatas kalau suatu saat membengkak jauh - kalau
       sampai kejadian, dicatat lewat console, bukan diam-diam terpotong
       seperti sebelumnya).
+
+      Jumlahnya ikut dalam jawaban kueri yang sama (count: 'exact'), bukan kueri terpisah lebih
+      dulu - satu perjalanan ke Supabase lebih sedikit, baris yang terambil sama persis.
     */
-    const { count } = await supabase.from('reminders').select('id', { count: 'exact', head: true });
     const MAKS_REMINDERS = 5000;
-    const batasAmbil = Math.min(Math.max(500, count ?? 0), MAKS_REMINDERS);
+    const { data, error, count } = await supabase.from('reminders').select('*', { count: 'exact' })
+      .order('created_at', { ascending: false }).limit(MAKS_REMINDERS);
+    if (error) throw new Error(error.message);
     if ((count ?? 0) > MAKS_REMINDERS) {
       console.error(`[reminder-schedule] total reminders (${count}) melebihi batas aman ${MAKS_REMINDERS} - sebagian data terlama tidak ikut termuat.`);
     }
-    const { data, error } = await supabase.from('reminders').select('*').order('created_at', { ascending: false }).limit(batasAmbil);
-    if (error) throw new Error(error.message);
     const all = (data as Reminder[]) ?? [];
     if (!activeUser) return all;
     // Admin & Manager: lihat SEMUA (termasuk yg masih proses approval / belum di-assign).

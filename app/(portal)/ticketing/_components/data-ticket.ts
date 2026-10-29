@@ -77,22 +77,35 @@ export async function ambilTiketUntuk(
 
     const ownBase: Ticket[] = [];
     const addOwn = (t: Ticket) => { if (!ownBase.find(x => x.id === t.id)) ownBase.push(t); };
-    const { data: milikSaya } = await cobaIdentitas(async pakaiUuid => await supabase.from("tickets")
-      .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
-      .or(pakaiUuid ? klausaMilik : klausaMilikTanpaUuid)
-      .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
-      .order("created_at", { ascending: false }));
+    const isIVP = selfDiv === "IVP" || selfDiv === "MVI";
+    //  Kueri yang tidak saling bergantung berangkat BERSAMAAN: tiket milik sendiri + pemetaan
+    //  cabangnya (IVP: divisi yang dihandle & CC langsung; lainnya: pemetaan supervisor). Kuerinya
+    //  sama persis dengan dulu - hanya tidak lagi menunggu satu per satu.
+    const [{ data: milikSaya }, pemetaanA, pemetaanB] = await Promise.all([
+      cobaIdentitas(async pakaiUuid => await supabase.from("tickets")
+        .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
+        .or(pakaiUuid ? klausaMilik : klausaMilikTanpaUuid)
+        .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
+        .order("created_at", { ascending: false })),
+      isIVP
+        ? supabase.from("division_ivp_mappings").select("sales_division, brand_type").eq("ivp_id", resolvedUser.id)
+        : supabase.from("division_supervisor_mappings").select("sales_division").eq("supervisor_id", resolvedUser.id),
+      isIVP
+        ? supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
+          .or(`internal_sales_id.eq.${resolvedUser.id},internal_sales_id_2.eq.${resolvedUser.id}`).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
+          .order("created_at", { ascending: false })
+        : supabase.from("user_supervisor_mappings").select("user_id").eq("supervisor_id", resolvedUser.id),
+    ]);
     (milikSaya ?? []).forEach(addOwn);
 
     // Sales Internal (IVP/MVI): lihat ticket dari semua divisi yang dia handle
     // (division_ivp_mappings) - ini yang mewujudkan "CC ke list ticket" utk
     // Troubleshooting (fast-track, tanpa gerbang approval, tapi tetap visible).
-    const isIVP = selfDiv === "IVP" || selfDiv === "MVI";
     if (isIVP) {
       // IVP/MVI guest: lihat ticket divisi yg dia handle, TAPI hanya utk BRAND yg dia
       // pegang (division_ivp_mappings.brand_type). Ticket lama tanpa brand / brand BOTH /
       // guest dgn mapping legacy (brand_type null)  tetap tampil (backward compat).
-      const { data: ivpDivMaps } = await supabase.from("division_ivp_mappings").select("sales_division, brand_type").eq("ivp_id", resolvedUser.id);
+      const ivpDivMaps = pemetaanA.data;
       const myBrandMaps = (ivpDivMaps ?? []) as { sales_division: string; brand_type: string | null }[];
       const handledDivisions = Array.from(new Set(myBrandMaps.map(m => m.sales_division)));
       const ivpTickets: Ticket[] = [...ownBase];
@@ -108,9 +121,7 @@ export async function ambilTiketUntuk(
         });
       }
       // Ticket yg secara eksplisit di-CC ke guest ini (internal_sales_id / _2) - brand match.
-      const { data: byInternalId } = await supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
-        .or(`internal_sales_id.eq.${resolvedUser.id},internal_sales_id_2.eq.${resolvedUser.id}`).gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
-      .order("created_at", { ascending: false });
+      const byInternalId = pemetaanB.data as Ticket[] | null;
       (byInternalId ?? []).forEach(addIVP);
       // Sort akhir berdasarkan created_at descending
       ivpTickets.sort((a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime());
@@ -121,8 +132,7 @@ export async function ambilTiketUntuk(
       const addUnique = (t: Ticket) => { if (!finalTickets.find(x => x.id === t.id)) finalTickets.push(t); };
 
       // Cek apakah user terdaftar sebagai supervisor di division_supervisor_mappings
-      const { data: supMaps } = await supabase.from("division_supervisor_mappings")
-        .select("sales_division").eq("supervisor_id", resolvedUser.id);
+      const supMaps = pemetaanA.data;
       const supervisedDivisions = (supMaps ?? []).map((m: any) => m.sales_division as string);
 
       // Auto: jika punya jabatan tier > 1, otomatis supervisi divisi sendiri
@@ -131,8 +141,7 @@ export async function ambilTiketUntuk(
       }
 
       // Cek user_supervisor_mappings - user yang secara manual di-CC ke user ini
-      const { data: userSupMapsData } = await supabase.from("user_supervisor_mappings")
-        .select("user_id").eq("supervisor_id", resolvedUser.id);
+      const userSupMapsData = pemetaanB.data as { user_id: string }[] | null;
       const manualSubordinateIds = new Set((userSupMapsData ?? []).map((m: any) => m.user_id as string));
 
       const isSupervisor = (supervisedDivisions.length > 0 && selfTier > 0) || manualSubordinateIds.size > 0;
@@ -174,63 +183,39 @@ export async function ambilTiketUntuk(
           (allGuestUsers ?? []).filter((u: any) => subordinateIds.has(u.id)).map((u: any) => u.username as string)
         );
 
-        // Ambil ticket dari divisi yang di-supervisi
-        let allDivTickets: Ticket[] = [];
-        if (supervisedDivisions.length > 0) {
-          const { data: dt } = await supabase.from("tickets")
-            .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
-            .in("sales_division", supervisedDivisions)
-            .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
-      .order("created_at", { ascending: false });
-          if (dt) allDivTickets = dt;
-        }
-
-        // Tambah ticket dari manual subordinates (bisa beda divisi)
-        if (manualSubordinateIds.size > 0) {
-          const manualUsers = (allGuestUsers ?? []).filter((u: any) => manualSubordinateIds.has(u.id));
-          const manualUsernames = manualUsers.map((u: any) => u.username).filter(Boolean);
-          if (manualUsernames.length > 0) {
-            const { data: manualTickets } = await supabase.from("tickets")
-              .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
-              .in("created_by", manualUsernames)
-              .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
-      .order("created_at", { ascending: false });
-            (manualTickets ?? []).forEach((t: Ticket) => {
-              if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
-            });
-          }
-        }
-
+        //  Tiga kueri tiket di bawah hanya bergantung pada pemetaan & daftar akun di atas, tidak pada
+        //  satu sama lain - berangkat BERSAMAAN. Hasilnya digabung dengan urutan yang sama seperti dulu
+        //  (divisi -> bawahan manual -> tanpa divisi), jadi isi daftar tidak berubah.
+        const manualUsernames = manualSubordinateIds.size > 0
+          ? (allGuestUsers ?? []).filter((u: any) => manualSubordinateIds.has(u.id)).map((u: any) => u.username).filter(Boolean)
+          : [];
         // Fallback: ticket tanpa sales_division tapi sales_name = bawahan (divisi valid)
         // Menangkap ticket yang dibuat admin/superadmin untuk bawahan di divisi yang disupervisi,
         // dimana sales_division tidak diisi, sehingga query .in("sales_division") melewatinya.
         // subordinateNames sudah terfilter hanya bawahan yang divisinya valid (subordinateIds).
-        try {
-          const allSubordinateUsers = (allGuestUsers ?? []).filter((u: any) =>
-            subordinateIds.has(u.id) || manualSubordinateIds.has(u.id)
-          );
-          const subordinateNames = Array.from(new Set(
-            allSubordinateUsers.flatMap((u: any) => [
-              u.full_name,
-              u.username,
-              u.full_name ? u.full_name.split(' ')[0] : null,
-            ].filter(Boolean))
-          )) as string[];
-          if (subordinateNames.length > 0) {
-            const { data: noDivTickets } = await supabase.from("tickets")
-              .select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`)
-              .in("sales_name", subordinateNames)
-              .is("sales_division", null)
-              .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
-      .order("created_at", { ascending: false });
-            (noDivTickets ?? []).forEach((t: Ticket) => {
-              if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
-            });
-            // TIDAK mengambil ticket dari divisi lain berdasarkan nama bawahan saja.
-            // Akses lintas divisi HARUS melalui explicit mapping di
-            // division_supervisor_mappings atau user_supervisor_mappings.
-          }
-        } catch { }
+        // TIDAK mengambil ticket dari divisi lain berdasarkan nama bawahan saja.
+        // Akses lintas divisi HARUS melalui explicit mapping di
+        // division_supervisor_mappings atau user_supervisor_mappings.
+        const subordinateNames = Array.from(new Set(
+          (allGuestUsers ?? []).filter((u: any) => subordinateIds.has(u.id) || manualSubordinateIds.has(u.id))
+            .flatMap((u: any) => [u.full_name, u.username, u.full_name ? u.full_name.split(' ')[0] : null].filter(Boolean))
+        )) as string[];
+        const tiketDari = (q: (b: any) => any) => q(supabase.from("tickets").select(`*, activity_logs(${KOLOM_LOG_RINGKAS})`))
+          .gte("created_at", rentang.dari).lt("created_at", rentang.sebelum)
+          .order("created_at", { ascending: false });
+        const kosong = Promise.resolve({ data: null as Ticket[] | null });
+        const [divRes, manualRes, noDivRes] = await Promise.all([
+          supervisedDivisions.length > 0 ? tiketDari(b => b.in("sales_division", supervisedDivisions)) : kosong,
+          manualUsernames.length > 0 ? tiketDari(b => b.in("created_by", manualUsernames)) : kosong,
+          //  Dulu dibungkus try/catch kosong: kegagalannya tidak boleh menggagalkan daftar.
+          subordinateNames.length > 0
+            ? Promise.resolve(tiketDari(b => b.in("sales_name", subordinateNames).is("sales_division", null))).catch(() => ({ data: null }))
+            : kosong,
+        ]);
+        const allDivTickets: Ticket[] = (divRes.data as Ticket[] | null) ?? [];
+        for (const t of [...((manualRes.data as Ticket[] | null) ?? []), ...((noDivRes.data as Ticket[] | null) ?? [])]) {
+          if (!allDivTickets.find(x => x.id === t.id)) allDivTickets.push(t);
+        }
 
         allDivTickets.forEach((t: Ticket) => {
           // Ticket milik sendiri selalu masuk
@@ -302,8 +287,10 @@ async function gabungLogServices(tickets: Ticket[]): Promise<Ticket[]> {
     // ticket organisasi lain ikut terunduh, dan ukurannya tumbuh terus.
     const idTampil = tickets.map((t: Ticket) => t.id).filter(Boolean);
     const svcLogs: ActivityLog[] = [];
-    for (let i = 0; i < idTampil.length; i += 100) {
-      const { data } = await supabaseServices.from("activity_logs")
+    //  Per 100 id, semua potongan berangkat BERSAMAAN (dulu satu per satu).
+    const potongan: number[] = [];
+    for (let i = 0; i < idTampil.length; i += 100) potongan.push(i);
+    const hasil = await Promise.all(potongan.map(i => supabaseServices.from("activity_logs")
         //  Ringkas juga: kueri ini ikut jalan pada SETIAP polling, jadi
         //  kolom berat di sini sama mahalnya dengan yang di basis PTS.
         .select(KOLOM_LOG_RINGKAS)
@@ -314,9 +301,8 @@ async function gabungLogServices(tickets: Ticket[]): Promise<Ticket[]> {
         //  tahun lampau untuk membacanya. Pembatasnya sudah ticket_id:
         //  daftarnya cuma berisi tiket yang memang sedang ditampilkan.
         .in("ticket_id", idTampil.slice(i, i + 100))
-        .order("created_at", { ascending: false });
-      if (data) svcLogs.push(...(data as ActivityLog[]));
-    }
+        .order("created_at", { ascending: false })));
+    for (const { data } of hasil) if (data) svcLogs.push(...(data as ActivityLog[]));
     if (svcLogs.length === 0) return tickets;
     return tickets.map((ticket: Ticket) => {
       const svcTicketLogs = svcLogs.filter((l: ActivityLog) => l.ticket_id === ticket.id);
