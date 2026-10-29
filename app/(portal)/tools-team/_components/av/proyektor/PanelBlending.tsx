@@ -21,7 +21,7 @@ const RESOLUSI = [
   { v: 'xga', l: 'XGA 1024 × 768', x: 1024, y: 768 },
   { v: 'custom', l: 'Custom…', x: 0, y: 0 },
 ];
-const CATATAN = 'Overlap umum 15-25% lebar gambar satu proyektor (atas-bawah biasanya sama). Overlap dibulatkan ke piksel utuh seperti di media server. Mode Ukuran target: gambar per proyektor dibesarkan sampai susunan menutup lebar DAN tinggi target; kelebihan di satu arah di-mask (piksel ter-mask). Kanvas = resolusi output media server; konten = resolusi file konten yang perlu dibuat. Gunakan proyektor dengan model, lensa & umur sumber cahaya yang sama.';
+const CATATAN = 'Overlap umum 15-25% lebar gambar satu proyektor (atas-bawah biasanya sama); bisa diisi dalam % atau cm (lebar area blending di layar). Overlap dibulatkan ke piksel utuh seperti di media server. Mode Ukuran target: gambar per proyektor dibesarkan sampai susunan menutup lebar DAN tinggi target; kelebihan di satu arah di-mask (piksel ter-mask). Kanvas = resolusi output media server; konten = resolusi file konten yang perlu dibuat. Gunakan proyektor dengan model, lensa & umur sumber cahaya yang sama.';
 
 const bulat = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
 const px = (x: number, y: number) => `${x} × ${y}`;
@@ -34,13 +34,19 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
   const [target, setTarget] = useState({ l: 8, t: 2.5 });
   const [overlapH, setOverlapH] = useState(15);
   const [overlapV, setOverlapV] = useState(15);
+  /** Overlap diisi sebagai % gambar satu proyektor atau cm area blending di layar. */
+  const [satuanOverlap, setSatuanOverlap] = useState<'persen' | 'cm'>('persen');
   const [resK, setResK] = useState('wuxga');
   const [custom, setCustom] = useState({ x: 1920, y: 1200 });
   const [throwRatio, setThrowRatio] = useState(0);
   const preset = RESOLUSI.find(x => x.v === resK)!;
   const res = resK === 'custom' ? custom : preset;
   const namaRes = resK === 'custom' ? `Custom ${px(custom.x, custom.y)}` : preset.l;
-  const dasar = { resX: res.x, resY: res.y, overlapH, overlapV, throwRatio, targetLebarM: target.l, targetTinggiM: target.t };
+  const dalamCm = satuanOverlap === 'cm';
+  const dasar = {
+    resX: res.x, resY: res.y, throwRatio, targetLebarM: target.l, targetTinggiM: target.t,
+    ...(dalamCm ? { overlapH: overlapH / 100, overlapV: overlapV / 100, overlapSatuan: 'meter' as const } : { overlapH, overlapV }),
+  };
   const b = rencanaBlending({ ...dasar, kolom, baris, mode, lebarSatuM: lebarSatu });
   const modeTarget = mode === 'target';
   const saran = modeTarget ? saranSusunanBlending(dasar) : [];
@@ -53,10 +59,22 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
     setMode(m);
   };
 
+  //  Ganti satuan overlap: isian ikut dikonversi dari ukuran gambar per proyektor saat ini.
+  const gantiSatuanOverlap = (s: 'persen' | 'cm') => {
+    if (s === satuanOverlap) return;
+    if (s === 'cm') { setOverlapH(bulat((overlapH / 100) * b.lebarSatuM * 100, 1)); setOverlapV(bulat((overlapV / 100) * b.tinggiSatuM * 100, 1)); }
+    else {
+      setOverlapH(Math.min(50, bulat(b.lebarSatuM > 0 ? overlapH / b.lebarSatuM : 0, 1)));
+      setOverlapV(Math.min(50, bulat(b.tinggiSatuM > 0 ? overlapV / b.tinggiSatuM : 0, 1)));
+    }
+    setSatuanOverlap(s);
+  };
+  const teksOverlapIsi = (v: number) => (dalamCm ? `${f(v, 1)} cm` : `${f(v, 1)}%`);
+
   const teksUkuran = modeTarget ? `target ${f(target.l)} × ${f(target.t)} m` : `${f(lebarSatu)} m per proyektor`;
   const ringkas = () => [
     `*Edge blending ${b.kolom} × ${b.baris} (${b.jumlah} proyektor ${namaRes}), ${teksUkuran}*`,
-    `Overlap ${f(b.overlapHPersen, 1)}% (${b.overlapHpx} px) kiri-kanan, ${f(b.overlapVPersen, 1)}% (${b.overlapVpx} px) atas-bawah`,
+    `Overlap kiri-kanan ${f(b.overlapHM * 100, 1)} cm (${f(b.overlapHPersen, 1)}%, ${b.overlapHpx} px), atas-bawah ${f(b.overlapVM * 100, 1)} cm (${f(b.overlapVPersen, 1)}%, ${b.overlapVpx} px)`,
     `Gambar per proyektor ${f(b.lebarSatuM)} × ${f(b.tinggiSatuM)} m, gabungan ${f(b.lebarM)} × ${f(b.tinggiM)} m`,
     `Resolusi kanvas ${px(b.kanvasX, b.kanvasY)}${modeTarget ? `, konten ${px(b.kontenX, b.kontenY)} (mask ${b.maskX} × ${b.maskY} px)` : ''}`,
     `Kepadatan ${f(b.pxPerM, 0)} px/m (pitch ${f(b.pitchMm, 2)} mm), efisiensi piksel ${f(b.efisiensiPersen, 1)}%`,
@@ -65,13 +83,14 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
   const lembar = () => lembarAV('Edge Blending Proyektor',
     [['Susunan', `${b.kolom} × ${b.baris} (${b.jumlah} proyektor)`], ['Resolusi per proyektor', namaRes],
       ['Ukuran dari', modeTarget ? `Ukuran target ${f(target.l)} × ${f(target.t)} m` : `Lebar gambar / proyektor ${f(lebarSatu)} m`],
-      ['Overlap kiri-kanan', `${overlapH}% → ${b.overlapHpx} px`], ['Overlap atas-bawah', `${overlapV}% → ${b.overlapVpx} px`],
+      ['Overlap kiri-kanan', `${teksOverlapIsi(overlapH)} → ${f(b.overlapHPersen, 1)}% · ${b.overlapHpx} px`],
+      ['Overlap atas-bawah', `${teksOverlapIsi(overlapV)} → ${f(b.overlapVPersen, 1)}% · ${b.overlapVpx} px`],
       ...(throwRatio ? [['Throw ratio', String(throwRatio)] as [string, string]] : [])],
     [['Gambar per proyektor', `${f(b.lebarSatuM)} × ${f(b.tinggiSatuM)} m`], ['Gambar gabungan', `${f(b.lebarM)} × ${f(b.tinggiM)} m`, true],
       ['Resolusi kanvas', `${px(b.kanvasX, b.kanvasY)} (${teksRasio(b.kanvasX, b.kanvasY)})`, true],
       ...(modeTarget ? [['Resolusi konten', `${px(b.kontenX, b.kontenY)} (${teksRasio(b.kontenX, b.kontenY)})`, true] as [string, string, boolean],
         ['Piksel ter-mask', `${b.maskX} × ${b.maskY} px`] as [string, string]] : []),
-      ['Area blending', `${f(b.overlapHM)} m kiri-kanan · ${f(b.overlapVM)} m atas-bawah`],
+      ['Area blending', `${f(b.overlapHM * 100, 1)} cm kiri-kanan · ${f(b.overlapVM * 100, 1)} cm atas-bawah`],
       ['Zona blending', `${b.zonaKiriKanan} kiri-kanan · ${b.zonaAtasBawah} atas-bawah · ${b.zonaSudut} sudut`],
       ['Kepadatan piksel', `${f(b.pxPerM, 0)} px/m · pitch ${f(b.pitchMm, 2)} mm`], ['Efisiensi piksel', `${f(b.efisiensiPersen, 1)}%`],
       ...(b.jarakLemparM ? [['Jarak lempar', `±${f(b.jarakLemparM)} m`] as [string, string]] : [])],
@@ -106,8 +125,20 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
             )}
             <Angka label="Kolom" nilai={kolom} onUbah={v => v >= 1 && v <= 12 && setKolom(Math.round(v))} step={1} />
             <Angka label="Baris" nilai={baris} onUbah={v => v >= 1 && v <= 6 && setBaris(Math.round(v))} step={1} />
-            <Angka label="Overlap H" nilai={overlapH} onUbah={v => v >= 0 && v <= 50 && setOverlapH(v)} satuan="%" bantuan="Overlap kiri-kanan, % lebar gambar satu proyektor" />
-            <Angka label="Overlap V" nilai={overlapV} onUbah={v => v >= 0 && v <= 50 && setOverlapV(v)} satuan="%" bantuan="Overlap atas-bawah, % tinggi gambar satu proyektor" />
+            <div className="col-span-2">
+              <Segmen label="Overlap dalam" nilai={satuanOverlap} onUbah={gantiSatuanOverlap} opsi={[{ v: 'persen', l: '% gambar' }, { v: 'cm', l: 'cm di layar' }]} />
+            </div>
+            {dalamCm ? (
+              <>
+                <Angka label="Overlap H" nilai={overlapH} onUbah={v => v >= 0 && setOverlapH(v)} satuan="cm" bantuan="Lebar area blending kiri-kanan di layar (cm). Maksimal 50% lebar gambar satu proyektor." />
+                <Angka label="Overlap V" nilai={overlapV} onUbah={v => v >= 0 && setOverlapV(v)} satuan="cm" bantuan="Tinggi area blending atas-bawah di layar (cm). Maksimal 50% tinggi gambar satu proyektor." />
+              </>
+            ) : (
+              <>
+                <Angka label="Overlap H" nilai={overlapH} onUbah={v => v >= 0 && v <= 50 && setOverlapH(v)} satuan="%" bantuan="Overlap kiri-kanan, % lebar gambar satu proyektor" />
+                <Angka label="Overlap V" nilai={overlapV} onUbah={v => v >= 0 && v <= 50 && setOverlapV(v)} satuan="%" bantuan="Overlap atas-bawah, % tinggi gambar satu proyektor" />
+              </>
+            )}
             <div className="col-span-2"><Pilih label="Resolusi proyektor" nilai={resK} onUbah={setResK} opsi={RESOLUSI.map(x => ({ v: x.v, l: x.l }))} /></div>
             {resK === 'custom' && (
               <>
@@ -132,8 +163,10 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
             <Nilai label="Gambar gabungan" nilai={`${f(b.lebarM)} × ${f(b.tinggiM)}`} satuan="m" ket={`${f(b.lebarM * b.tinggiM)} m²`} />
             <Nilai label="Gambar / proyektor" nilai={`${f(b.lebarSatuM)} × ${f(b.tinggiSatuM)}`} satuan="m"
               ket={`±${f(Math.hypot(b.lebarSatuM, b.tinggiSatuM) / 0.0254, 0)} inci`} />
-            <Nilai label="Overlap kiri-kanan" nilai={f(b.overlapHM)} satuan="m" ket={b.kolom > 1 ? `${b.overlapHpx} px · ${b.zonaKiriKanan} zona` : 'tidak ada (1 kolom)'} />
-            <Nilai label="Overlap atas-bawah" nilai={f(b.overlapVM)} satuan="m" ket={b.baris > 1 ? `${b.overlapVpx} px · ${b.zonaAtasBawah} zona` : 'tidak ada (1 baris)'} />
+            <Nilai label="Overlap kiri-kanan" nilai={f(b.overlapHM * 100, 1)} satuan="cm"
+              ket={b.kolom > 1 ? `${f(b.overlapHPersen, 1)}% · ${b.overlapHpx} px · ${b.zonaKiriKanan} zona` : 'tidak ada (1 kolom)'} />
+            <Nilai label="Overlap atas-bawah" nilai={f(b.overlapVM * 100, 1)} satuan="cm"
+              ket={b.baris > 1 ? `${f(b.overlapVPersen, 1)}% · ${b.overlapVpx} px · ${b.zonaAtasBawah} zona` : 'tidak ada (1 baris)'} />
             <Nilai label="Kepadatan piksel" nilai={f(b.pxPerM, 0)} satuan="px/m" ket={`pitch ${f(b.pitchMm, 2)} mm`} />
             <Nilai label="Efisiensi piksel" nilai={f(b.efisiensiPersen, 1)} satuan="%" nada={b.efisiensiPersen >= 80 ? 'baik' : b.efisiensiPersen >= 65 ? 'awas' : 'buruk'}
               ket="terpakai konten" />

@@ -67,6 +67,15 @@ cek('saran: jumlah proyektor naik & resolusi konten selalu naik', sr.length >= 2
 cek('saran: 4 × 1 dilewati (tertahan tinggi target, tidak lebih baik dari 3 × 1)', !sr.some(s => s.kolom === 4 && s.baris === 1));
 cek('saran: semua menutup target', sr.every(s => s.lebarM >= 12 - 1e-9 && s.tinggiM >= 3 - 1e-9));
 cek('rasio 3552 : 1200 = 2,96 : 1', teksRasio(3552, 1200) === '2,96 : 1');
+//  Overlap dalam meter: 3 × 1, 4 m per proyektor, overlap 60 cm = 15% -> sama dengan isian 15%.
+const om = rencanaBlending({ ...WUXGA, kolom: 3, baris: 1, overlapH: 0.6, overlapV: 0.6, overlapSatuan: 'meter', mode: 'proyektor', lebarSatuM: 4 });
+cek('overlap 60 cm pada gambar 4 m = 15% = 288 px', om.overlapHpx === 288 && dekat(om.overlapHPersen, 15) && dekat(om.overlapHM, 0.6) && om.kanvasX === 5184);
+//  Target 12 × 3 m, 3 × 1, overlap 50 cm tetap: lebar perlu (12 + 2·0,5)/3 = 4,33 m, tinggi perlu 3 m -> 4,8 m (tinggi menentukan).
+const ot = rencanaBlending({ ...WUXGA, kolom: 3, baris: 1, overlapH: 0.5, overlapV: 0, overlapSatuan: 'meter', mode: 'target', targetLebarM: 12, targetTinggiM: 3 });
+cek('target + overlap 50 cm: area blending tetap ±50 cm (±1 px)', dekat(ot.overlapHM, 0.5, ot.pitchMm / 1000) && ot.lebarM >= 12 - 1e-9 && ot.tinggiM >= 3 - 1e-9);
+const ol = rencanaBlending({ ...WUXGA, kolom: 4, baris: 1, overlapH: 0.5, overlapV: 0, overlapSatuan: 'meter', mode: 'target', targetLebarM: 20, targetTinggiM: 3 });
+cek('target lebar menentukan: (20 + 3·0,5)/4 = 5,375 m per proyektor, overlap ±50 cm', dekat(ol.lebarSatuM, 5.375, 0.01) && dekat(ol.overlapHM, 0.5, ol.pitchMm / 1000) && ol.lebarM >= 20 - 1e-9);
+cek('overlap meter melebihi 50% gambar dibatasi 50%', rencanaBlending({ ...WUXGA, kolom: 2, baris: 1, overlapH: 3, overlapV: 0, overlapSatuan: 'meter', mode: 'proyektor', lebarSatuM: 4 }).overlapHpx === 960);
 
 console.log('\nKalkulator Proyektor vs kalkulator Panasonic (PT-RQ50K + ET-D3QW200, 17:9)');
 const d100 = ukuranDariDiagonal(100, 17, 9), d200 = ukuranDariDiagonal(200, 17, 9);
