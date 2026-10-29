@@ -98,7 +98,7 @@ export function KalkulatorProyektor() {
   const teksShift = offsetTetap !== null ? `tanpa lens shift, offset tetap ${f(offsetTetap, 1)}%` : `shift +${shiftAtas}% / −${shiftBawah}%`;
   const nadaLumen = spek > 20000 ? 'buruk' : spek > 10000 ? 'awas' : 'baik';
   const ringkas = () => [
-    `*Proyektor - gambar ${f(lebar)} × ${f(tinggi)} m (${rasioK}, ±${f(diag, 0)}")*`,
+    `*Proyektor - gambar per proyektor ${f(lebar)} × ${f(tinggi)} m (${rasioK}, ±${f(diag, 0)}")*`,
     `Jarak lensa ke layar ${f(lempar.dekatM, 3)}-${f(lempar.jauhM, 3)} m (throw ${throwMin}-${throwMax}, ${teksB})`,
     `Tinggi pusat lensa tanpa keystone: ${offsetTetap !== null ? f(lensa.terendahM) : `${f(lensa.terendahM)}-${f(lensa.tertinggiM)}`} m (${teksShift})`,
     takTercapai ? `Kontras ${kat.rasio}:1 (${kat.l}) melebihi kontras asli proyektor ${f(kontrasAsli, 0)}:1 - tidak tercapai`
@@ -106,9 +106,9 @@ export function KalkulatorProyektor() {
     ...(model ? [`Model ${model.nama}: ${f(model.lumen, 0)} lm - ${model.lumen >= spek ? 'cukup' : model.lumen >= perlu ? 'cukup saat baru' : 'kurang'}`] : []),
   ].join('\n');
   const lembar = () => lembarAV('Proyektor',
-    [['Lebar gambar', `${f(lebar)} m (${rasioK})`], ['Throw ratio', `${throwMin} – ${throwMax} (${teksB})`], ['Tepi bawah gambar', `${f(bawah)} m`], ['Lens shift', teksShift],
+    [['Lebar gambar / proyektor', `${f(lebar)} m (${rasioK})`], ['Throw ratio', `${throwMin} – ${throwMax} (${teksB})`], ['Tepi bawah gambar', `${f(bawah)} m`], ['Lens shift', teksShift],
       ['Cahaya di layar', `±${lux} lux`], ['Gain layar', f(gain)], ['Kategori kontras', `${kat.l} (${kat.rasio}:1)`], ['Sumber cahaya', sus.l]],
-    [['Ukuran gambar', `${f(lebar)} × ${f(tinggi)} m (±${f(diag, 0)}")`], ['Jarak lempar', `${f(lempar.dekatM, 3)} – ${f(lempar.jauhM, 3)} m`, true],
+    [['Gambar per proyektor', `${f(lebar)} × ${f(tinggi)} m (±${f(diag, 0)}")`], ['Jarak lempar', `${f(lempar.dekatM, 3)} – ${f(lempar.jauhM, 3)} m`, true],
       ['Tinggi pusat lensa', offsetTetap !== null ? `${f(lensa.terendahM)} m (tetap)` : `${f(lensa.terendahM)} – ${f(lensa.tertinggiM)} m`, true],
       ['Lumen perlu', takTercapai ? 'tidak tercapai (melebihi kontras asli)' : `±${f(perlu, 0)} lm`], ['Lumen spesifikasi', takTercapai ? '—' : `±${f(spek, 0)} lm`, true]],
     CATATAN);
@@ -120,7 +120,7 @@ export function KalkulatorProyektor() {
             <PilihPustaka jenis="proyektor" label="Model dari Pustaka" onPilih={pakaiModel} />
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
-                <Segmen label="Ukuran gambar dari" nilai={modeUkuran} onUbah={setModeUkuran} opsi={[{ v: 'diagonal', l: 'Diagonal (inci)' }, { v: 'lebar', l: 'Lebar (m)' }]} />
+                <Segmen label="Gambar 1 proyektor dari" nilai={modeUkuran} onUbah={setModeUkuran} opsi={[{ v: 'diagonal', l: 'Diagonal (inci)' }, { v: 'lebar', l: 'Lebar (m)' }]} />
               </div>
               {modeUkuran === 'diagonal'
                 ? <Angka label="Diagonal gambar" nilai={diagonal} onUbah={v => v > 0 && setDiagonal(v)} satuan="inci" bantuan="Diagonal gambar proyektor dalam rasio panelnya - sama dengan Screen size di kalkulator Panasonic" />
@@ -177,7 +177,7 @@ export function KalkulatorProyektor() {
         </Kartu>
         <Kartu judul="Hasil" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Proyektor')} />}>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            <Nilai label="Ukuran gambar" nilai={`${f(lebar)} × ${f(tinggi)}`} satuan="m" ket={`${f(diag, 0)} inci · ${f(luas)} m²`} />
+            <Nilai label="Gambar 1 proyektor" nilai={`${f(lebar)} × ${f(tinggi)}`} satuan="m" ket={`${f(diag, 0)} inci · ${f(luas)} m²`} />
             <Nilai label="Jarak lempar" nilai={`${f(lempar.dekatM, 3)}-${f(lempar.jauhM, 3)}`} satuan="m" nada={koreksi || koreksiTele ? undefined : 'awas'} ket={koreksi || koreksiTele ? 'ujung lensa ke layar' : 'tanpa koreksi b lensa'} />
             <Nilai label="Tinggi pusat lensa" nilai={offsetTetap !== null ? f(lensa.terendahM) : `${f(lensa.terendahM)}-${f(lensa.tertinggiM)}`} satuan="m" ket={offsetTetap !== null ? 'tetap (tanpa lens shift)' : 'tanpa keystone'} />
             <Nilai label="Lumen perlu" nilai={takTercapai ? 'Tidak tercapai' : f(perlu, 0)} satuan={takTercapai ? undefined : 'lm'} nada={takTercapai ? 'buruk' : undefined}
