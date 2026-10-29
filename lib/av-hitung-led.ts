@@ -34,6 +34,23 @@ export interface HasilLED {
 export const PX_PER_PORT_DASAR = 655_360;
 
 /**
+ * Pitch NYATA di balik nama dagang LED. Nama dagang memotong pitch sebenarnya: "P2.9" = 2,976 mm (168 px per
+ * 500 mm), "P1.9" = 1,953 mm (256 px), "P1.5" = 1,5625 mm (320 px / 500 mm, 384 px / 600 mm). Dulu piksel
+ * cabinet dihitung dari nama dagangnya (500 / 2,9 = 172 px, bukan 168) - resolusi, port LAN, & sending card
+ * ikut meleset 2-4%. Pitch yang tidak ada di sini (2,5; 1,86; 10; ...) memang pitch sebenarnya.
+ */
+export const PITCH_NYATA: Readonly<Record<string, number>> = {
+  '0.9': 0.9375, '1.2': 1.25, '1.5': 1.5625, '1.56': 1.5625, '1.8': 1.875, '1.87': 1.875, '1.9': 1.953125,
+  '2.6': 2.604, '2.9': 2.976, '3.9': 3.90625, '3.91': 3.90625, '4.8': 4.807, '4.81': 4.807, '6.6': 6.667, '6.67': 6.667,
+};
+
+/** Pitch sebenarnya (mm) untuk pitch yang diisi - nama dagang diganti pitch nyatanya. */
+export const pitchNyata = (pitch: number): number => PITCH_NYATA[String(Math.round(pitch * 100) / 100)] ?? pitch;
+
+/** Piksel sepanjang satu sisi cabinet / modul: ukuran (mm) / pitch nyata, dibulatkan seperti datasheet. */
+export const pikselUnit = (ukuranMm: number, pitch: number): number => Math.max(1, Math.round(ukuranMm / pitchNyata(pitch)));
+
+/**
  * Kapasitas 1 port pada frame rate & kedalaman warna tertentu. Novastar
  * menyatakan kapasitas port 10/12-bit = SEPARUH 8-bit (data dikirim dua kali
  * lebar), bukan 8/10 seperti hitungan bit mentah - memakai 8/bit membuat
@@ -75,8 +92,8 @@ export function hitungLED(m: MasukanLED): HasilLED {
   const baris = Math.max(1, Math.round(m.baris));
   const lebarM = (kolom * m.cabLebar) / 1000;
   const tinggiM = (baris * m.cabTinggi) / 1000;
-  const pxCabX = m.pxX ?? Math.round(m.cabLebar / m.pitch);
-  const pxCabY = m.pxY ?? Math.round(m.cabTinggi / m.pitch);
+  const pxCabX = m.pxX ?? pikselUnit(m.cabLebar, m.pitch);
+  const pxCabY = m.pxY ?? pikselUnit(m.cabTinggi, m.pitch);
   const resX = pxCabX * kolom;
   const resY = pxCabY * baris;
   const g = fpb(resX, resY) || 1;

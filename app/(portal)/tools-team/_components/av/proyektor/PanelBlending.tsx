@@ -3,7 +3,8 @@
  * Edge blending untuk proyeksi immersive: kolom × baris proyektor identik dengan overlap kiri-kanan &
  * atas-bawah sendiri. Ukuran dari lebar gambar satu proyektor ATAU dari ukuran layar target (lebar ×
  * tinggi) -> resolusi kanvas & konten, piksel ter-mask, kepadatan piksel, zona blending, peta piksel
- * per proyektor (setting media server) dan saran susunan. Rumus: lib/av-layar-proyektor.ts (rencanaBlending).
+ * per proyektor (setting media server) dan saran susunan. Jarak lempar memakai lensa Kalkulator Proyektor di atas
+ * (TR terlebar-terpanjang + koreksi b, rumus kalkulator Panasonic). Rumus: lib/av-layar-proyektor.ts (rencanaBlending).
  */
 import { Angka, Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../../bersama/ui';
 import { aksiLembar, lembarAV } from '../lembar';
@@ -21,12 +22,20 @@ const RESOLUSI = [
   { v: 'xga', l: 'XGA 1024 × 768', x: 1024, y: 768 },
   { v: 'custom', l: 'Custom…', x: 0, y: 0 },
 ];
-const CATATAN = 'Overlap umum 15-25% lebar gambar satu proyektor (atas-bawah biasanya sama); bisa diisi dalam % atau cm (lebar area blending di layar). Overlap dibulatkan ke piksel utuh seperti di media server. Mode Ukuran target: gambar per proyektor dibesarkan sampai susunan menutup lebar DAN tinggi target; kelebihan di satu arah di-mask (piksel ter-mask). Kanvas = resolusi output media server; konten = resolusi file konten yang perlu dibuat. Gunakan proyektor dengan model, lensa & umur sumber cahaya yang sama.';
+/** Resolusi di Pustaka -> pilihan di atas. */
+const DARI_PUSTAKA: Record<string, string> = { XGA: 'xga', WXGA: 'wxga', FHD: 'fhd', WUXGA: 'wuxga', '4K': '4k', '4KDCI': '4kdci' };
+const CATATAN = 'Overlap umum 15-25% lebar gambar satu proyektor (atas-bawah biasanya sama); bisa diisi dalam % atau cm (lebar area blending di layar). Jarak lempar & jarak antar lensa menganggap tiap lensa tepat di depan pusat gambarnya (lens shift kiri-kanan 0, tanpa keystone). Overlap dibulatkan ke piksel utuh seperti di media server. Mode Ukuran target: gambar per proyektor dibesarkan sampai susunan menutup lebar DAN tinggi target; kelebihan di satu arah di-mask (piksel ter-mask). Kanvas = resolusi output media server; konten = resolusi file konten yang perlu dibuat. Gunakan proyektor dengan model, lensa & umur sumber cahaya yang sama.';
 
 const bulat = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;
 const px = (x: number, y: number) => `${x} × ${y}`;
 
-export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
+export function PanelBlending({ lebarSatuAwal, lensa, resolusiModel }: {
+  lebarSatuAwal: number;
+  /** Lensa Kalkulator Proyektor: TR terlebar & terpanjang, koreksi b wide & tele (L = TR × lebar − b). */
+  lensa: { trMin: number; trMaks: number; bWide: number; bTele: number };
+  /** Resolusi model Pustaka yang dipilih (WUXGA, 4K, ...); null = belum memilih model. */
+  resolusiModel?: string | null;
+}) {
   const [mode, setMode] = useState<'proyektor' | 'target'>('proyektor');
   const [kolom, setKolom] = useState(2);
   const [baris, setBaris] = useState(1);
@@ -36,15 +45,22 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
   const [overlapV, setOverlapV] = useState(15);
   /** Overlap diisi sebagai % gambar satu proyektor atau cm area blending di layar. */
   const [satuanOverlap, setSatuanOverlap] = useState<'persen' | 'cm'>('persen');
-  const [resK, setResK] = useState('wuxga');
+  const [resK, setResK] = useState(() => (resolusiModel && DARI_PUSTAKA[resolusiModel]) || 'wuxga');
   const [custom, setCustom] = useState({ x: 1920, y: 1200 });
-  const [throwRatio, setThrowRatio] = useState(0);
+  //  Model dipilih di kalkulator di atas -> resolusi blending ikut model itu (piksel overlap & kanvas).
+  //  (Disesuaikan saat render, bukan di efek: https://react.dev/learn/you-might-not-need-an-effect.)
+  const [resModelLalu, setResModelLalu] = useState(resolusiModel);
+  if (resolusiModel !== resModelLalu) {
+    setResModelLalu(resolusiModel);
+    const v = resolusiModel ? DARI_PUSTAKA[resolusiModel] : undefined;
+    if (v) setResK(v);
+  }
   const preset = RESOLUSI.find(x => x.v === resK)!;
   const res = resK === 'custom' ? custom : preset;
   const namaRes = resK === 'custom' ? `Custom ${px(custom.x, custom.y)}` : preset.l;
   const dalamCm = satuanOverlap === 'cm';
   const dasar = {
-    resX: res.x, resY: res.y, throwRatio, targetLebarM: target.l, targetTinggiM: target.t,
+    resX: res.x, resY: res.y, lensa, targetLebarM: target.l, targetTinggiM: target.t,
     ...(dalamCm ? { overlapH: overlapH / 100, overlapV: overlapV / 100, overlapSatuan: 'meter' as const } : { overlapH, overlapV }),
   };
   const b = rencanaBlending({ ...dasar, kolom, baris, mode, lebarSatuM: lebarSatu });
@@ -71,6 +87,10 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
   };
   const teksOverlapIsi = (v: number) => (dalamCm ? `${f(v, 1)} cm` : `${f(v, 1)}%`);
 
+  const zoom = lensa.trMaks - lensa.trMin > 0.005;
+  const teksJarak = zoom ? `${f(b.jarakDekatM)}–${f(b.jarakJauhM)}` : f(b.jarakDekatM);
+  const teksLensa = `TR ${f(lensa.trMin, 3)}${zoom ? `–${f(lensa.trMaks, 3)}` : ''}${lensa.bWide || lensa.bTele ? `, b ${f(lensa.bWide, 3)}${zoom && lensa.bTele !== lensa.bWide ? `/${f(lensa.bTele, 3)}` : ''}` : ''}`;
+  const teksAntarLensa = [b.kolom > 1 && `${f(b.jarakLensaHM)} m kiri-kanan`, b.baris > 1 && `${f(b.jarakLensaVM)} m atas-bawah`].filter(Boolean).join(' · ');
   const teksUkuran = modeTarget ? `target ${f(target.l)} × ${f(target.t)} m` : `${f(lebarSatu)} m per proyektor`;
   const ringkas = () => [
     `*Edge blending ${b.kolom} × ${b.baris} (${b.jumlah} proyektor ${namaRes}), ${teksUkuran}*`,
@@ -78,14 +98,14 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
     `Gambar per proyektor ${f(b.lebarSatuM)} × ${f(b.tinggiSatuM)} m, gabungan ${f(b.lebarM)} × ${f(b.tinggiM)} m`,
     `Resolusi kanvas ${px(b.kanvasX, b.kanvasY)}${modeTarget ? `, konten ${px(b.kontenX, b.kontenY)} (mask ${b.maskX} × ${b.maskY} px)` : ''}`,
     `Kepadatan ${f(b.pxPerM, 0)} px/m (pitch ${f(b.pitchMm, 2)} mm), efisiensi piksel ${f(b.efisiensiPersen, 1)}%`,
-    ...(b.jarakLemparM ? [`Jarak lempar ±${f(b.jarakLemparM)} m (TR ${throwRatio})`] : []),
+    `Jarak ujung lensa ke layar ${teksJarak} m (${teksLensa})${teksAntarLensa ? `, jarak antar lensa ${teksAntarLensa}` : ''}`,
   ].join('\n');
   const lembar = () => lembarAV('Edge Blending Proyektor',
     [['Susunan', `${b.kolom} × ${b.baris} (${b.jumlah} proyektor)`], ['Resolusi per proyektor', namaRes],
       ['Ukuran dari', modeTarget ? `Ukuran target ${f(target.l)} × ${f(target.t)} m` : `Lebar gambar / proyektor ${f(lebarSatu)} m`],
       ['Overlap kiri-kanan', `${teksOverlapIsi(overlapH)} → ${f(b.overlapHPersen, 1)}% · ${b.overlapHpx} px`],
       ['Overlap atas-bawah', `${teksOverlapIsi(overlapV)} → ${f(b.overlapVPersen, 1)}% · ${b.overlapVpx} px`],
-      ...(throwRatio ? [['Throw ratio', String(throwRatio)] as [string, string]] : [])],
+      ['Lensa', teksLensa]],
     [['Gambar per proyektor', `${f(b.lebarSatuM)} × ${f(b.tinggiSatuM)} m`], ['Gambar gabungan', `${f(b.lebarM)} × ${f(b.tinggiM)} m`, true],
       ['Resolusi kanvas', `${px(b.kanvasX, b.kanvasY)} (${teksRasio(b.kanvasX, b.kanvasY)})`, true],
       ...(modeTarget ? [['Resolusi konten', `${px(b.kontenX, b.kontenY)} (${teksRasio(b.kontenX, b.kontenY)})`, true] as [string, string, boolean],
@@ -93,7 +113,8 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
       ['Area blending', `${f(b.overlapHM * 100, 1)} cm kiri-kanan · ${f(b.overlapVM * 100, 1)} cm atas-bawah`],
       ['Zona blending', `${b.zonaKiriKanan} kiri-kanan · ${b.zonaAtasBawah} atas-bawah · ${b.zonaSudut} sudut`],
       ['Kepadatan piksel', `${f(b.pxPerM, 0)} px/m · pitch ${f(b.pitchMm, 2)} mm`], ['Efisiensi piksel', `${f(b.efisiensiPersen, 1)}%`],
-      ...(b.jarakLemparM ? [['Jarak lempar', `±${f(b.jarakLemparM)} m`] as [string, string]] : [])],
+      ['Jarak lempar / proyektor', `${teksJarak} m (ujung lensa ke layar)`, true],
+      ...(teksAntarLensa ? [['Jarak antar lensa', `${teksAntarLensa} (sumbu ke sumbu)`] as [string, string]] : [])],
     CATATAN,
     [
       { judul: 'Peta piksel per proyektor (kanvas)', jenis: 'tabel', kepala: ['Proyektor', 'Kolom', 'Baris', 'X', 'Y', 'X akhir', 'Y akhir'], rataKanan: [1, 2, 3, 4, 5, 6],
@@ -146,7 +167,9 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
                 <Angka label="Res. vertikal" nilai={custom.y} onUbah={v => v >= 200 && v <= 8192 && setCustom(c => ({ ...c, y: Math.round(v) }))} satuan="px" step={1} />
               </>
             )}
-            <Angka label="Throw ratio" nilai={throwRatio} onUbah={v => v >= 0 && v <= 10 && setThrowRatio(v)} bantuan="Opsional - isi untuk menghitung jarak lempar (TR × lebar gambar per proyektor). 0 = tidak dihitung." />
+            <p className="col-span-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] leading-snug text-slate-700">
+              Lensa mengikuti Kalkulator Proyektor di atas: <b className="tabular-nums">{teksLensa}</b>. Ganti model / lensa di sana (Pustaka).
+            </p>
           </div>
         </div>
 
@@ -170,7 +193,9 @@ export function PanelBlending({ lebarSatuAwal }: { lebarSatuAwal: number }) {
             <Nilai label="Kepadatan piksel" nilai={f(b.pxPerM, 0)} satuan="px/m" ket={`pitch ${f(b.pitchMm, 2)} mm`} />
             <Nilai label="Efisiensi piksel" nilai={f(b.efisiensiPersen, 1)} satuan="%" nada={b.efisiensiPersen >= 80 ? 'baik' : b.efisiensiPersen >= 65 ? 'awas' : 'buruk'}
               ket="terpakai konten" />
-            {b.jarakLemparM > 0 && <Nilai label="Jarak lempar" nilai={`±${f(b.jarakLemparM)}`} satuan="m" ket={`TR ${throwRatio}`} />}
+            <Nilai label="Jarak lempar" nilai={teksJarak} satuan="m" ket={`ujung lensa ke layar · ${zoom ? 'rentang zoom' : 'lensa tetap'}`} />
+            {teksAntarLensa && <Nilai label="Jarak antar lensa" nilai={f(b.kolom > 1 ? b.jarakLensaHM : b.jarakLensaVM)} satuan="m"
+              ket={b.kolom > 1 && b.baris > 1 ? `kiri-kanan · atas-bawah ${f(b.jarakLensaVM)} m` : `sumbu ke sumbu, ${b.kolom > 1 ? 'kiri-kanan' : 'atas-bawah'}`} />}
           </div>
 
           {modeTarget && saran.length > 0 && (

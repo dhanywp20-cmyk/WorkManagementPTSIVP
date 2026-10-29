@@ -275,6 +275,7 @@ const ENUM_PRODUK: Record<string, readonly string[]> = {
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
   tipePerangkat: ['pc', 'laptop', 'dongle', 'hp', 'tablet'],
   rasioProyektor: ['16:9', '16:10', '17:9', '4:3', '21:9'],
+  resolusiProyektor: ['XGA', 'WXGA', 'FHD', 'WUXGA', '4K', '4KDCI'],
 };
 /** Angka yang boleh ada di template beserta batasnya. */
 const ANGKA_PRODUK: Record<string, [number, number]> = {

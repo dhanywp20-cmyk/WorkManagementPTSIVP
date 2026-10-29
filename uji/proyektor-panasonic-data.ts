@@ -78,8 +78,8 @@ cek(`iluminansi pusat 1.734 lux (kita ${lux.toFixed(0)})`, Math.abs(lux - 1734) 
 const kontras = (lux + 200) / (lux / 3000000 + 200);
 cek(`kontras 9,7 : 1 dengan kontras asli 3.000.000:1 (kita ${kontras.toFixed(2)})`, Math.abs(kontras - 9.7) < 0.05);
 //  Lumen untuk kontras 9,67:1 di 200 lux harus kembali ke ±8.200 lm (rumus lumenUntukKontras dengan kontras asli).
-cek('lumenUntukKontras membalik rumus yang sama (±8.200 lm)', Math.abs(lumenUntukKontras(lebarSS * tinggiSS, 200, kontras, 1, 3000000) - 8200) < 1);
-cek('target melebihi kontras asli -> tidak tercapai (Infinity)', !Number.isFinite(lumenUntukKontras(4, 0.5, 2000, 1, 1500)));
+cek('lumenUntukKontras membalik rumus yang sama (±8.200 lm)', Math.abs(lumenUntukKontras(lebarSS * tinggiSS, 200, kontras, 3000000) - 8200) < 1);
+cek('target melebihi kontras asli -> tidak tercapai (Infinity)', !Number.isFinite(lumenUntukKontras(4, 0.5, 2000, 1500)));
 
 console.log('\n3. Lens shift segi delapan (cara kalkulator Panasonic: semua pojok gambar di dalam poligon)');
 const p = proyektor(mz);

@@ -1,7 +1,7 @@
 'use client';
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
-import { batasShift, bendaBaru, geserLensaDari, koreksiJarakDari, lumenDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, type RasioProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { batasShift, bendaBaru, geserLensaDari, koreksiJarakDari, lumenDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import type { KonteksAtur } from './konteks';
 
 export function AturProyektor({ c }: { c: KonteksAtur }) {
@@ -141,7 +141,12 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
               );
             })()}
             {/*  Rasio aspek panel proyektor: ukuran gambar, cakupan layar, lux & piksel blending mengikuti. */}
-            <Segmen label="Rasio aspek gambar" nilai={b.rasioProyektor ?? '16:9'} onUbah={(v: RasioProyektor) => set({ rasioProyektor: v })}
+            {/*  Resolusi panel: piksel area blending = persen x resolusi ini (bukan acuan 1920 px); rasio ikut. */}
+            <Pilih label="Resolusi panel" nilai={b.resolusiProyektor && RESOLUSI_PROYEKTOR[b.resolusiProyektor]?.rasio === (b.rasioProyektor ?? '16:9') ? b.resolusiProyektor : ''}
+              onUbah={(v: string) => { const r = RESOLUSI_PROYEKTOR[v as ResolusiProyektor]; set(r ? { resolusiProyektor: v as ResolusiProyektor, rasioProyektor: r.rasio } : { resolusiProyektor: undefined }); }}
+              opsi={[{ v: '', l: 'Belum diisi (piksel blending acuan 1920 px)' }, ...(Object.keys(RESOLUSI_PROYEKTOR) as ResolusiProyektor[]).map(k => ({ v: k, l: RESOLUSI_PROYEKTOR[k].label }))]} />
+            <Segmen label="Rasio aspek gambar" nilai={b.rasioProyektor ?? '16:9'}
+              onUbah={(v: RasioProyektor) => set({ rasioProyektor: v, ...(b.resolusiProyektor && RESOLUSI_PROYEKTOR[b.resolusiProyektor]?.rasio !== v ? { resolusiProyektor: undefined } : {}) })}
               opsi={(Object.keys(RASIO_PROYEKTOR) as RasioProyektor[]).map(k => ({ v: k, l: k }))} />
             <Catatan>
               Vertikal = geser pusat gambar dalam % tinggi gambar (relatif proyektor; gantung plafon = terbalik): 0% = tepat di sumbu lensa,

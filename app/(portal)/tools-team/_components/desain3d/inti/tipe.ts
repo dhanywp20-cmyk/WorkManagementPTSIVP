@@ -37,6 +37,8 @@ export type TipeKamera = 'ptz' | 'ptz-ai' | 'xbar';
 export type PasangProyektor = 'plafon' | 'meja';
 /** Rasio aspek gambar proyektor (panel aslinya) - yang umum saja. */
 export type RasioProyektor = '16:9' | '16:10' | '17:9' | '4:3' | '21:9';
+/** Resolusi native panel proyektor (kunci yang sama dengan Pustaka). */
+export type ResolusiProyektor = 'XGA' | 'WXGA' | 'FHD' | 'WUXGA' | '4K' | '4KDCI';
 /** Speaker: kotak dinding (lama), dinding 6" membulat + bracket putar, portable aktif (kolom + subwoofer), line array. */
 export type TipeSpeaker = 'kotak' | 'dinding6' | 'kolom' | 'linearray';
 export type ModelVW = '55BDL2105X' | '49BDL2105X' | 'custom';
@@ -117,6 +119,7 @@ export interface Benda {
   /** Proyektor: gantung plafon (bawaan) atau portabel di meja */ pasangProyektor?: PasangProyektor;
   /** Proyektor: throw ratio lensa (jarak lempar : lebar gambar), bawaan 1,5 */ throwRatio?: number;
   /** Proyektor: rasio aspek gambar (bawaan 16:9; 16:10 = WUXGA, umum di proyektor instalasi) */ rasioProyektor?: RasioProyektor;
+  /** Proyektor: resolusi native panel - piksel blending yang diisi di processor. Kosong = acuan 1920 px lebar. */ resolusiProyektor?: ResolusiProyektor;
   /** Proyektor: tilt (derajat, negatif = menunduk). Pan = rot. */ tilt?: number;
   /** Display: konten di layar ('pola' = pola uji bawaan; 'gambar' = unggahan, tidak disimpan) */ konten?: KontenLayar;
   /** Display: sembunyikan garis ukuran (mm) benda ini walau garis ukuran dinyalakan. */ sembunyiUkur?: boolean;

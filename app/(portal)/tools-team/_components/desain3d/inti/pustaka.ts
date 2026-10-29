@@ -7,7 +7,7 @@ import { ukuranDariDiagonal } from '@/lib/av-hitung';
 import { angkaDari, bacaPoligonShift, type EntriPustaka, teksDari } from '@/lib/pustaka';
 import { PANEL_VW_AWAL } from './produk';
 import { throwRatioDari } from './proyektor';
-import type { Benda, Jenis, PanelVW, RasioProyektor } from './tipe';
+import type { Benda, Jenis, PanelVW, RasioProyektor, ResolusiProyektor } from './tipe';
 
 /** Jenis pustaka yang bisa mengisi tiap jenis benda. */
 export const PUSTAKA_UNTUK: Partial<Record<Jenis, string>> = {
@@ -40,6 +40,8 @@ export function isiDariPustaka(b: Benda, e: EntriPustaka): Partial<Benda> | null
     //  Rasio gambar dari resolusi di pustaka (WUXGA / WXGA = 16:10, Full HD / 4K = 16:9) - cakupan & blending ikut.
     const rasioDari: Record<string, RasioProyektor> = { XGA: '4:3', FHD: '16:9', '4K': '16:9', WUXGA: '16:10', WXGA: '16:10', '4KDCI': '17:9' };
     const rasioProyektor = rasioDari[teksDari(e, 'resolusi')];
+    //  Resolusi native ikut disimpan: piksel area blending = persen x resolusi panel ini (XGA 1024, 4K 3840, ...).
+    const resolusiProyektor = rasioProyektor ? (teksDari(e, 'resolusi') as ResolusiProyektor) : undefined;
     //  Data LENSA (rumus jarak, batas lens shift, offset tetap, kontras asli) diganti UTUH dari entri: model lain = lensa
     //  lain, jadi nilai model sebelumnya tidak boleh tertinggal (dulu b model lama terbawa ke model yang b-nya kosong).
     //  0 tetap 0 (lensa tanpa shift); hanya bidang yang kosong yang jadi undefined (tidak dibatasi / bawaan).
@@ -52,7 +54,7 @@ export function isiDariPustaka(b: Benda, e: EntriPustaka): Partial<Benda> | null
       poligonShift: bacaPoligonShift(teksDari(e, 'poligonShift')),
       ...(ada('offsetTetap') ? { offsetLensa: angka('offsetTetap', 100), geserLensaH: 0 } : {}),
     };
-    return { nama, ...(lumen > 0 ? { lumen } : {}), ...(trMin > 0 ? { trMin, trMax, throwRatio: bulat(tr, 2) } : {}), ...(rasioProyektor ? { rasioProyektor } : {}), ...lensa };
+    return { nama, ...(lumen > 0 ? { lumen } : {}), ...(trMin > 0 ? { trMin, trMax, throwRatio: bulat(tr, 2) } : {}), ...(rasioProyektor ? { rasioProyektor, resolusiProyektor } : { resolusiProyektor: undefined }), ...lensa };
   }
   if (b.jenis === 'videowall') {
     const u = ukuranDariDiagonal(angkaDari(e, 'diagonal'));

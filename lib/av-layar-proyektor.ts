@@ -90,16 +90,28 @@ export type KategoriKontras = (typeof KONTRAS_ANSI)[number]['v'];
 
 /**
  * Lumen agar kontras tercapai: dari (Lp + La) / La = C -> lumen = lux_ruang_di_layar × luas × (C − 1).
- * Gain layar menaikkan pantulan proyektor ke arah penonton; cahaya ruang dianggap datang menyebar
- * (tidak ikut diperkuat gain) - pendekatan yang umum dipakai kalkulator pabrikan.
+ * Gain layar TIDAK mengubah kontras: gambar & cahaya ruang sama-sama dipantulkan kain layar yang sama - cara
+ * kalkulator Panasonic dan Desain 3D (inti/cahaya.ts kontrasProyektor). Gain hanya menaikkan luminance
+ * (luminanceLayar). Dulu lumen dibagi gain: layar gain 1,3 dianggap butuh 23% lumen lebih sedikit - beda dengan
+ * Panasonic & Desain 3D untuk ruang yang sama.
  */
-export function lumenUntukKontras(luasM2: number, luxDiLayar: number, rasio: number, gainLayar = 1, kontrasAsli?: number): number {
+export function lumenUntukKontras(luasM2: number, luxDiLayar: number, rasio: number, kontrasAsli?: number): number {
   //  Kontras asli proyektor C (kalkulator Panasonic: (Lp + La) / (Lp / C + La)) -> Lp = La x (rasio - 1) / (1 - rasio / C).
   //  Rasio >= C tidak tercapai berapa pun lumennya.
   const C = kontrasAsli && kontrasAsli > 1 ? kontrasAsli : Infinity;
   if (rasio >= C) return Infinity;
-  return (luasM2 * Math.max(0, luxDiLayar) * Math.max(0, rasio - 1)) / (1 - rasio / C) / Math.max(0.3, gainLayar);
+  return (luasM2 * Math.max(0, luxDiLayar) * Math.max(0, rasio - 1)) / (1 - rasio / C);
 }
+
+/** Kontras di layar untuk lumen tertentu (rumus kalkulator Panasonic): (E + La) / (E / C + La), E = lumen / luas. */
+export function kontrasDiLayar(lumen: number, luasM2: number, luxDiLayar: number, kontrasAsli?: number): number {
+  const E = lumen / Math.max(1e-6, luasM2), La = Math.max(1e-6, luxDiLayar);
+  const C = kontrasAsli && kontrasAsli > 1 ? kontrasAsli : Infinity;
+  return (E + La) / (E / C + La);
+}
+
+/** Luminance gambar di layar (cd/m², nits) = iluminansi (lux) × gain / π - sama dengan kalkulator Panasonic. */
+export const luminanceLayar = (lux: number, gain = 1) => (lux * gain) / Math.PI;
 
 /** Lumen spesifikasi: kebutuhan dibagi sisa cahaya di akhir umur (laser ±20%, lampu ±30-50% susut). */
 export function lumenSpesifikasi(lumenPerlu: number, susutPersen: number): number {
@@ -126,13 +138,30 @@ export function rumusLensaDariDuaTitik(lebar1M: number, jarak1M: number, lebar2M
   return { tr, b: tr * lebar1M - jarak1M };
 }
 
+export type Pemasangan = 'plafon' | 'meja';
+
 /**
- * Rentang tinggi (dari lantai) pusat lensa yang masih menghasilkan gambar tegak tanpa keystone, dengan
- * lens shift vertikal ±`shiftPersen` dari tinggi gambar (dihitung dari pusat gambar).
+ * Rentang tinggi (dari lantai) pusat lensa yang masih menghasilkan gambar tegak tanpa keystone. Lens shift
+ * (Panasonic: % tinggi gambar, dari posisi gambar tepat di tengah sumbu lensa) dinyatakan RELATIF proyektor:
+ * "atas" = gambar naik ke arah atap badan proyektor. Di meja, gambar naik = lensa relatif lebih rendah
+ * (terendah = pusat − shift atas); gantung plafon terbalik, jadi arahnya ikut terbalik. Dulu satu rumus untuk
+ * keduanya - benar untuk plafon, tertukar untuk meja bila shift atas ≠ bawah.
  */
-export function rentangTinggiLensa(bawahGambarM: number, tinggiGambarM: number, shiftAtasPersen: number, shiftBawahPersen: number) {
+export function rentangTinggiLensa(bawahGambarM: number, tinggiGambarM: number, shiftAtasPersen: number, shiftBawahPersen: number, pasang: Pemasangan = 'plafon') {
   const pusat = bawahGambarM + tinggiGambarM / 2;
-  return { terendahM: pusat - (tinggiGambarM * shiftBawahPersen) / 100, tertinggiM: pusat + (tinggiGambarM * shiftAtasPersen) / 100 };
+  const [turun, naik] = pasang === 'meja' ? [shiftAtasPersen, shiftBawahPersen] : [shiftBawahPersen, shiftAtasPersen];
+  return { terendahM: pusat - (tinggiGambarM * turun) / 100, tertinggiM: pusat + (tinggiGambarM * naik) / 100 };
+}
+
+/**
+ * Tinggi pusat lensa proyektor TANPA lens shift: pusat gambar selalu `offsetPersen` % tinggi gambar dari sumbu
+ * lensa, di atas lensa saat di meja dan di bawah lensa saat gantung plafon terbalik (mis. PT-LMX460 34,62%:
+ * gambar 120" 4:3 bertepi bawah 0,9 m -> lensa 1,18 m di meja, 2,45 m di plafon). Dulu selalu dihitung
+ * seperti di meja, padahal proyektor kelas umumnya digantung.
+ */
+export function tinggiLensaTetap(bawahGambarM: number, tinggiGambarM: number, offsetPersen: number, pasang: Pemasangan = 'plafon') {
+  const pusat = bawahGambarM + tinggiGambarM / 2;
+  return pusat + (pasang === 'meja' ? -1 : 1) * (tinggiGambarM * offsetPersen) / 100;
 }
 
 /**
@@ -166,7 +195,11 @@ export interface MasukanBlending {
    */
   mode: 'proyektor' | 'target';
   lebarSatuM?: number; targetLebarM?: number; targetTinggiM?: number;
-  /** Throw ratio lensa (0 = tidak dihitung). */ throwRatio?: number;
+  /**
+   * Lensa (opsional): throw ratio terlebar & terpanjang + koreksi b (L = TR × lebar − b) di ujung wide & tele -
+   * data yang sama dengan Kalkulator Proyektor / Pustaka, jadi jarak lempar sama dengan kalkulator Panasonic.
+   */
+  lensa?: { trMin: number; trMaks: number; bWide?: number; bTele?: number };
 }
 
 /**
@@ -202,7 +235,8 @@ export function rencanaBlending(m: MasukanBlending) {
   //  Area konten: ukuran target (mode target) atau seluruh kanvas.
   const kontenX = target ? Math.min(kanvasX, Math.round(m.targetLebarM! / mPerPx)) : kanvasX;
   const kontenY = target ? Math.min(kanvasY, Math.round(m.targetTinggiM! / mPerPx)) : kanvasY;
-  const tr = m.throwRatio ?? 0;
+  const ln = m.lensa && m.lensa.trMin > 0 ? m.lensa : null;
+  const lempar = ln ? rentangJarakLempar(rx * mPerPx, ln.trMin, Math.max(ln.trMin, ln.trMaks), ln.bWide ?? 0, ln.bTele ?? ln.bWide ?? 0) : null;
   return {
     kolom: k, baris: b, jumlah: k * b, resX: rx, resY: ry,
     lebarSatuM, tinggiSatuM, lebarM, tinggiM, kanvasX, kanvasY,
@@ -213,7 +247,13 @@ export function rencanaBlending(m: MasukanBlending) {
     efisiensiPersen: ((kontenX * kontenY) / (k * b * rx * ry)) * 100,
     pxPerM: mPerPx > 0 ? 1 / mPerPx : 0, pitchMm: mPerPx * 1000,
     zonaKiriKanan: (k - 1) * b, zonaAtasBawah: (b - 1) * k, zonaSudut: (k - 1) * (b - 1),
-    jarakLemparM: tr > 0 ? tr * lebarSatuM : 0,
+    /** Jarak ujung lensa ke layar tiap proyektor (rentang zoom lensa); 0 tanpa data lensa. */
+    jarakDekatM: lempar ? lempar.dekatM : 0, jarakJauhM: lempar ? lempar.jauhM : 0,
+    /**
+     * Jarak antar sumbu lensa proyektor bertetangga (lens shift 0, tiap lensa tepat di depan pusat gambarnya):
+     * kiri-kanan = (resX − overlap px) × m/px, atas-bawah = (resY − overlap px) × m/px.
+     */
+    jarakLensaHM: k > 1 ? (rx - oHpx) * mPerPx : 0, jarakLensaVM: b > 1 ? (ry - oVpx) * mPerPx : 0,
     /** Posisi tiap proyektor di kanvas (px) - untuk setting output media server. */
     peta: Array.from({ length: k * b }, (_, i) => {
       const c = i % k, r = Math.floor(i / k);

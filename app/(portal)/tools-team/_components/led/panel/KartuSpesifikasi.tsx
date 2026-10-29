@@ -1,7 +1,7 @@
 'use client';
 /** Kartu spesifikasi: brand / modul / cabinet, mode ukuran atau jumlah, daya & berat per unit, refresh & bit. */
-import { Angka, f, Kartu, Pilih, Segmen } from '../../bersama/ui';
-import { kunciModul } from '@/lib/av-hitung';
+import { Angka, Catatan, f, Kartu, Pilih, Segmen } from '../../bersama/ui';
+import { kunciModul, pitchNyata } from '@/lib/av-hitung';
 import { CABINET, PITCH } from '../data';
 import { TombolRef } from './komponen';
 import type { AlatLED } from './alat';
@@ -26,10 +26,13 @@ export function KartuSpesifikasi({ a }: { a: AlatLED }) {
             <>
               <div className="grid grid-cols-2 gap-3">
                 <Pilih label="Pixel pitch" nilai={PITCH.includes(pitch) ? pitch : -1} onUbah={v => { if (v > 0) { setPitch(v); setPxIn(null); } }}
-                  opsi={[...PITCH.map(p => ({ v: p, l: `P${p}` })), { v: -1, l: 'Custom...' }]} />
+                  opsi={[...PITCH.map(p => ({ v: p, l: pitchNyata(p) !== p ? `P${p} (nyata ${f(pitchNyata(p), 3)} mm)` : `P${p}` })), { v: -1, l: 'Custom...' }]} />
                 <Angka label="Pitch (mm)" nilai={pitch} onUbah={v => { if (v > 0) { setPitch(v); setPxIn(null); } }} satuan="mm" />
               </div>
               <Pilih label="Ukuran cabinet" nilai={cabKey} onUbah={pilihCab} opsi={CABINET.map(c => ({ v: c.v, l: c.l }))} />
+              {pitchNyata(pitch) !== pitch && (
+                <Catatan>P{pitch} adalah nama dagang - pitch sebenarnya {f(pitchNyata(pitch), 3)} mm, jadi 1 {namaUnit} {f(cabW, 1)} × {f(cabH, 1)} mm = {px.x} × {px.y} px. Cocokkan dengan datasheet; isi Pixel/{namaUnit} bila berbeda.</Catatan>
+              )}
               {cabKey === 'custom' && (
                 <div className="grid grid-cols-2 gap-3">
                   <Angka label="Lebar cabinet" nilai={cabW} onUbah={v => { if (v > 0) { setCabW(v); setPxIn(null); } }} satuan="mm" />
