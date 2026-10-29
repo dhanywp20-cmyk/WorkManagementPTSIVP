@@ -3,6 +3,7 @@
 import { type Benda, cakupanProyektor, jarakUntukLebar, koreksiJarakDari, permukaanBenda, kotakGrid, labelKotakGrid, PILIHAN_KOLOM_GRID, warnaSah, warnaSinarProyektor, kontrasProyektor, layarTerdekat, lumenDari, LUX_PRESET, proyektorKeLayar, ruangDari, sinarProyektor, TARGET_KONTRAS, tiltDari, tiltKeLayar, zoomLensa } from '../inti';
 import { f, Catatan } from '../../bersama/ui';
 import type { KeadaanDesain } from '../useKeadaanDesain';
+import { SusunBlending } from './SusunBlending';
 
 export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
   const { benda, gantiBenda, gridSinar, infoBlending, kotakRuang, ruang, setGridSinar, setRuang, setTargetKontras, tampilBlending, targetKontras } = K;
@@ -195,8 +196,8 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         </p>
         {blokSinarSebenarnya(lyr)}
         {!pasLebar && (zoomBisa ? (
-          <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round(trPas * 100) / 100 })}>
-            Zoom pas ke layar (TR {f(trPas, 2)} : 1)
+          <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round(Math.min(zMax, Math.max(zMin, trPas)) * 1000) / 1000 })}>
+            Zoom pas ke layar (TR {f(trPas, 3)} : 1)
           </button>
         ) : (
           <p className="text-[12px] font-semibold text-amber-700">
@@ -207,6 +208,7 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
           {blokGrid(K.ukuranCahaya[p.id]?.lebar ?? sn.lebar, K.ukuranCahaya[p.id]?.tinggi ?? sn.tinggi)}
         {blokKontras(p, false, lyr)}
         {blokBlending}
+        <SusunBlending p={p} layar={lyr} K={K} />
         <ul className="text-[12px] font-semibold space-y-0.5">
           <li className={pasLebar ? 'text-emerald-700' : 'text-amber-700'}>
             {pasLebar ? 'Lebar gambar pas.' : selisih > 0 ? `Gambar melebihi lebar layar ${f(sn.lebar - lyr.w)} m.` : `Gambar kurang ${f(lyr.w - sn.lebar)} m dari lebar layar.`}
@@ -221,7 +223,8 @@ export function InfoProyektor({ p, K }: { p: Benda; K: KeadaanDesain }) {
         {!(pasLebar && pasTinggi && pasSamping && Math.abs(tiltDari(p)) <= 1) && (
           <div className="flex gap-1.5 flex-wrap">
             {!pasTinggi && <button type="button" className={tombolKecil} onClick={() => gantiBenda(tiltKeLayar(p, lyr, ruang))}>Atur tilt otomatis</button>}
-            {!pasLebar && <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round((sn.trPas ?? 1.5) * 100) / 100 })}>Pakai throw ratio {f(sn.trPas ?? 0)}</button>}
+            {/*  Hanya TR yang bisa dicapai lensa (rentang zoom) - di luar itu peringatan di atas menyuruh pindah / ganti lensa. */}
+            {!pasLebar && zoomBisa && <button type="button" className={tombolKecil} onClick={() => gantiBenda({ ...p, throwRatio: Math.round(Math.min(zMax, Math.max(zMin, trPas)) * 1000) / 1000 })}>Pakai throw ratio {f(trPas, 3)}</button>}
             <button type="button" className={tombolKecil} onClick={() => gantiBenda(proyektorKeLayar(p, lyr, k, ruang))}
               title="Proyektor lurus (tanpa keystone), jarak & zoom sesuai lensa, tinggi diatur (drop pole)">Posisikan otomatis (lurus, tanpa keystone)</button>
           </div>

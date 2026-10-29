@@ -7,7 +7,7 @@ import { useReferensiLED } from './referensi/useReferensiLED';
 import { bersihkanDaya, type DataDaya, DAYA_AWAL, type PengaturanDaya, susunDaya } from './daya/data';
 import { bersihkanKoneksi, type DataKoneksi, KONEKSI_AWAL, type PengaturanKoneksi, susunKoneksi } from './koneksi/data';
 import { getSession } from '@/lib/auth';
-import { bomLED, BRAND_UMUM, brandModul, cabinetUntukUkuran, cariModul, daftarBrand, type Hardware, hitungLED, kapasitasHardware, kunciModul, type Pembulatan, saranHardware, totalPenawaran } from '@/lib/av-hitung';
+import { bomLED, BRAND_UMUM, brandModul, cabinetUntukUkuran, cariModul, daftarBrand, type Hardware, hitungLED, kapasitasHardware, kunciModul, type Pembulatan, pikselUnit, saranHardware, totalPenawaran } from '@/lib/av-hitung';
 import { isPimpinan } from '@/lib/pimpinan';
 import { bersihkanBOM, bersihkanHarga, BOM_AWAL, BULAT, CABINET, type Lingkungan, LINGKUNGAN_TIPE, type PengaturanBOM, PER_M2 } from './data';
 import type { SubLED } from './panel/BarSub';
@@ -91,7 +91,7 @@ export function useKeadaanLED({ subAwal = 'led', onSub }: { subAwal?: SubLED; on
   const modulBrand = daftarModul.filter(m => brandModul(m) === brandAktif);
   const u = satuan === 'modul'
     ? { pitch: modul.pitch, w: modul.w, h: modul.h, pxX: modul.pxW, pxY: modul.pxH, kode: modul.kode, merek: brandAktif, model: modul.model ?? '' }
-    : { pitch, w: cabW, h: cabH, pxX: Math.round(cabW / pitch), pxY: Math.round(cabH / pitch), kode: `P${pitch}`, merek: '', model: '' };
+    : { pitch, w: cabW, h: cabH, pxX: pikselUnit(cabW, pitch), pxY: pikselUnit(cabH, pitch), kode: `P${pitch}`, merek: '', model: '' };
   /** Nama produk di ringkasan & cetak: brand (kecuali Umum) + model + pitch. */
   const labelLED = [u.merek !== BRAND_UMUM && u.merek, u.model, u.kode].filter(Boolean).join(' ');
   const px = pxIn ?? { x: u.pxX, y: u.pxY };

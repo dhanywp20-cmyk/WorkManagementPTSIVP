@@ -38,7 +38,7 @@ const BIDANG: Record<string, Tipe> = {
   sembunyiUkur: 'bool', sembunyiLabel: 'bool', monitorMeja: 'angka', tipeRak: 'teks', tipeLampu: 'teks', sudutLampu: 'angka', dimmer: 'angka',
   kelvin: 'angka', gantungLampu: 'angka', putarModel: 'angka', ukuranFile: 'angka3', satuanModel: 'teks', bentukObjek: 'teks',
   tipePerangkat: 'teks', pakaiDongle: 'bool', teks: 'teks', tinggiHuruf: 'angka', hadapTeks: 'teks', latarTeks: 'warna',
-  gridKolom: 'angka', warnaGrid: 'warna', maskBidang: 'bool', rasioProyektor: 'teks', satuanLED: 'teks', unitLED: 'teks', pxUnitX: 'angka', pxUnitY: 'angka',
+  gridKolom: 'angka', warnaGrid: 'warna', maskBidang: 'bool', rasioProyektor: 'teks', resolusiProyektor: 'teks', satuanLED: 'teks', unitLED: 'teks', pxUnitX: 'angka', pxUnitY: 'angka',
   koreksiJarak: 'angka', koreksiJarakTele: 'angka', offsetTetap: 'angka', kontrasAsli: 'angka', shiftAtasMaks: 'angka', shiftBawahMaks: 'angka', shiftHMaks: 'angka', gainLayar: 'angka',
 };
 const POLA_PILIHAN = /^[a-z0-9:.\- ]{1,40}$/i;

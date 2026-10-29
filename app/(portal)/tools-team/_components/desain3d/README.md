@@ -34,7 +34,8 @@ Arah ketergantungan **satu arah**: `panel → (aksi, simpan, ekspor, mesin) → 
 | `cahaya.ts` | lampu, lux langsung + pantul, cahaya siang, kontras proyektor |
 | `audio.ts` | speaker, line array, cakupan speaker plafon |
 | `proyektor.ts` | lensa (throw ratio, zoom, koreksi jarak L = TR × W − b, batas lens shift, rasio 16:9/16:10/17:9/4:3/21:9), arah, sinar ke layar, luminance (lux × gain / π) - setara kalkulator Panasonic TDC (uji/proyektor-panasonic.ts) |
-| `blending.ts` | area blending antar proyektor: lebar (cm) menyusuri permukaan & persen gambar |
+| `blending.ts` | area blending antar proyektor: lebar (cm) menyusuri permukaan & persen gambar (piksel dari resolusi panel) |
+| `susunBlending.ts` | susun proyektor identik jadi edge blending ke layar seperti kalkulator Panasonic: lurus tanpa keystone, TR dalam rentang zoom, lens shift dalam daerah lensa |
 | `kabel.ts` | jalur & panjang kabel ke rack, **legend warna standar** |
 | `rak.ts` | isi rack (elevation) |
 | `bom.ts` | BOM: perangkat & furnitur (dijumlah), aksesori pemasangan, isi rack, kabel; draf checklist instalasi Project Progress |

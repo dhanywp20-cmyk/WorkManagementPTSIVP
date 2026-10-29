@@ -7,7 +7,7 @@
  * Murni: tanpa three.js / React / DOM (diuji di uji/blending-proyektor.ts). Titik permukaan
  * (hasil raycast) & uji keterhalangan diberikan pemanggil (mesin/alatBantu.ts).
  */
-import { arahProyektor, geserLensaDari, keDunia, koreksiJarakDari, lensaProyektor, offsetLensaDari, rasioGambarProyektor, rasioProyektorDari, throwRatioDari } from './proyektor';
+import { arahProyektor, geserLensaDari, keDunia, koreksiJarakDari, lensaProyektor, offsetLensaDari, rasioGambarProyektor, rasioProyektorDari, resolusiProyektorDari, throwRatioDari } from './proyektor';
 import type { Benda, Titik } from './tipe';
 
 /** Model lensa proyektor: basis ortonormal (sumbu, kanan, atas) + lebar/tinggi gambar per meter lempar. */
@@ -132,7 +132,16 @@ export interface Blending {
   /** Persen dari lebar (kiri-kanan) / tinggi (atas-bawah) gambar A & B. */ persenA: number; persenB: number;
   /** Titik tengah area blending (untuk label). */ tengah: Titik;
   /** Titik permukaan dari tepi ke tepi area blending di garis tengah gambar A (garis ukur berpanah). */ garis: Titik[];
-  /** Piksel acuan lebar (kiri-kanan) / tinggi (atas-bawah) gambar A & B - dari rasio aspek tiap proyektor. */ pxA?: number; pxB?: number;
+  /**
+   * Piksel lebar (kiri-kanan) / tinggi (atas-bawah) gambar A & B: resolusi native proyektor bila diketahui
+   * (resA / resB, mis. 'WUXGA'), selain itu acuan 1920 px lebar menurut rasio aspeknya.
+   */ pxA?: number; pxB?: number; resA?: string; resB?: string;
+}
+
+/** Piksel sisi gambar proyektor untuk arah blending: resolusi native, atau acuan 1920 px lebar. */
+function pikselSisi(p: Benda, arah: Blending['arah']): { px: number; res?: string } {
+  const r = resolusiProyektorDari(p), a = rasioProyektorDari(p).px;
+  return r ? { px: arah === 'kiri-kanan' ? r.x : r.y, res: r.kunci } : { px: arah === 'kiri-kanan' ? a.x : a.y };
 }
 
 /** Blending di bawah ini diabaikan (sentuhan tepi / pembulatan sampel). */
@@ -156,13 +165,13 @@ export function hitungBlending(daftar: SampelProyektor[], terlihat: (i: number, 
     const pilih = h && v ? (h.ab.persen <= v.ab.persen ? { arah: 'kiri-kanan' as const, ...h } : { arah: 'atas-bawah' as const, ...v })
       : h ? { arah: 'kiri-kanan' as const, ...h } : v ? { arah: 'atas-bawah' as const, ...v } : null;
     if (!pilih || Math.max(pilih.ab.persen, pilih.ba.persen) < BLENDING_MIN_PERSEN) continue;
+    const sa = pikselSisi(A.p, pilih.arah), sb = pikselSisi(B.p, pilih.arah);
     hasil.push({
       a: A.p.id, b: B.p.id, namaA: A.p.nama, namaB: B.p.nama, arah: pilih.arah,
       lebarM: (pilih.ab.lebarM + pilih.ba.lebarM) / 2, persenA: pilih.ab.persen, persenB: pilih.ba.persen,
       tengah: [(pilih.ab.tengah[0] + pilih.ba.tengah[0]) / 2, (pilih.ab.tengah[1] + pilih.ba.tengah[1]) / 2, (pilih.ab.tengah[2] + pilih.ba.tengah[2]) / 2],
       garis: pilih.ab.garis,
-      pxA: pilih.arah === 'kiri-kanan' ? rasioProyektorDari(A.p).px.x : rasioProyektorDari(A.p).px.y,
-      pxB: pilih.arah === 'kiri-kanan' ? rasioProyektorDari(B.p).px.x : rasioProyektorDari(B.p).px.y,
+      pxA: sa.px, pxB: sb.px, ...(sa.res ? { resA: sa.res } : {}), ...(sb.res ? { resB: sb.res } : {}),
     });
   }
   return hasil;
@@ -192,10 +201,15 @@ export function barisKeterangan(b: Blending, nama: (n: string) => string = n => 
   const pxA = b.pxA ?? PIKSEL_ACUAN[b.arah], pxB = b.pxB ?? PIKSEL_ACUAN[b.arah];
   const p = (x: number, px: number) => `${Math.round(x)}% ≈ ${pikselBlending(x, b.arah, px)} px`;
   const sisi = b.arah === 'kiri-kanan' ? 'lebar' : 'tinggi';
+  //  Resolusi native diketahui: "(WUXGA 1920 px)"; belum: "(acuan 1920 px)" seperti sebelumnya.
+  const sumber = (res: string | undefined, px: number) => `${res ?? 'acuan'} ${px}`;
+  const asal = b.resA || b.resB
+    ? (sumber(b.resA, pxA) === sumber(b.resB, pxB) ? `${sumber(b.resA, pxA)} px` : `${sumber(b.resA, pxA)} / ${sumber(b.resB, pxB)} px`)
+    : `acuan ${pxA === pxB ? `${pxA} px` : `${pxA} / ${pxB} px`}`;
   return [
     `Area blending ${nama(b.namaA)} ↔ ${nama(b.namaB)} · ${b.arah}`,
     `${sisi === 'lebar' ? 'Lebar' : 'Tinggi'} area ${Math.round(b.lebarM * 100)} cm`,
     `${nama(b.namaA)}: ${p(b.persenA, pxA)} · ${nama(b.namaB)}: ${p(b.persenB, pxB)}`,
-    `dari ${sisi} gambar (acuan ${pxA === pxB ? `${pxA} px` : `${pxA} / ${pxB} px`})`,
+    `dari ${sisi} gambar (${asal})`,
   ];
 }

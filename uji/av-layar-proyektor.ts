@@ -6,7 +6,7 @@
  */
 import { readFileSync } from 'fs';
 import { ukuranDariDiagonal } from '../lib/av-hitung';
-import { cekResolusi, hitungBlending, jarakPikselMenyatuM, jarakTerdekatNyamanM, lumenSpesifikasi, lumenUntukKontras, PANEL_VIDEOWALL, rencanaBlending, rentangJarakLempar, rentangTinggiLensa, rumusLensaDariDuaTitik, saranSusunanBlending, sudutKeAtasDerajat, teksRasio, videowallUntuk } from '../lib/av-layar-proyektor';
+import { cekResolusi, hitungBlending, jarakPikselMenyatuM, jarakTerdekatNyamanM, kontrasDiLayar, lumenSpesifikasi, lumenUntukKontras, luminanceLayar, tinggiLensaTetap, PANEL_VIDEOWALL, rencanaBlending, rentangJarakLempar, rentangTinggiLensa, rumusLensaDariDuaTitik, saranSusunanBlending, sudutKeAtasDerajat, teksRasio, videowallUntuk } from '../lib/av-layar-proyektor';
 
 let lulus = 0, gagal = 0;
 const dekat = (a: number, b: number, t = 0.01) => Math.abs(a - b) <= t;
@@ -28,8 +28,10 @@ cek('target 2,44 × 1,37 m dengan 55" bezel 3,5 mm -> 2 × 2', vw.kolom === 2 &&
 cek('ukuran nyata 2×2 55" ±2,44 m lebar, resolusi 3840×2160', dekat(vw.lebarM, 2.4387, 0.005) && vw.resX === 3840 && vw.resY === 2160);
 
 console.log('\nProyektor');
-cek('kontras 15:1, 300 lux, 4 m² -> 16.800 lumen', dekat(lumenUntukKontras(4, 300, 15, 1), 16800));
-cek('gain 1,3 menurunkan kebutuhan', dekat(lumenUntukKontras(4, 300, 15, 1.3), 16800 / 1.3));
+cek('kontras 15:1, 300 lux, 4 m² -> 16.800 lumen', dekat(lumenUntukKontras(4, 300, 15), 16800));
+//  Panasonic & Desain 3D: gain tidak mengubah kontras (dulu kalkulator membagi lumen dengan gain - beda 23% di gain 1,3).
+cek('16.800 lm di 4 m² & 300 lux -> kontras tepat 15 : 1 (balikan rumus yang sama)', dekat(kontrasDiLayar(16800, 4, 300), 15));
+cek('luminance = lux × gain / π: 4.200 lux gain 1,3 -> 1.738 cd/m²', dekat(luminanceLayar(4200, 1.3), 1738.0, 0.5));
 cek('susut 20% -> spesifikasi 21.000 lumen', dekat(lumenSpesifikasi(16800, 20), 21000));
 const lj = rentangJarakLempar(3, 1.9, 1.2);
 //  Rumus lensa dengan koreksi b (Panasonic ET-D3QW200, 100" 17:9 lebar 2,245 m): 1,189 - 1,418 m.
@@ -37,8 +39,14 @@ const ljB = rentangJarakLempar(2.245, 0.566, 0.669, 0.082);
 if (Math.abs(ljB.dekatM - 1.189) > 0.005 || Math.abs(ljB.jauhM - 1.418) > 0.006) { console.log(`  GAGAL koreksi jarak b Panasonic: ${ljB.dekatM} - ${ljB.jauhM}`); process.exitCode = 1; }
 else console.log('  ok   koreksi jarak b: L = TR x lebar - b sama dengan kalkulator Panasonic (1,189 - 1,418 m)');
 cek('gambar 3 m, throw 1,2-1,9 -> 3,6-5,7 m (urutan masukan bebas)', dekat(lj.dekatM, 3.6) && dekat(lj.jauhM, 5.7));
+//  Shift relatif proyektor: plafon terbalik -> shift atas menaikkan LENSA relatif gambar; di meja kebalikannya.
 const lens = rentangTinggiLensa(1, 1.5, 50, 10);
-cek('pusat gambar 1,75 m, shift +50%/-10% -> lensa 1,60-2,50 m', dekat(lens.terendahM, 1.6) && dekat(lens.tertinggiM, 2.5));
+cek('plafon: pusat gambar 1,75 m, shift +50%/-10% -> lensa 1,60-2,50 m', dekat(lens.terendahM, 1.6) && dekat(lens.tertinggiM, 2.5));
+const lensMeja = rentangTinggiLensa(1, 1.5, 50, 10, 'meja');
+cek('meja: shift atas 50% = gambar bisa naik -> lensa serendah 1,00 m, setinggi 1,90 m', dekat(lensMeja.terendahM, 1.0) && dekat(lensMeja.tertinggiM, 1.9));
+//  PT-LMX460 (offset tetap 34,62%), 120" 4:3 = 2,438 × 1,829 m, tepi bawah 0,9 m: pusat 1,814 m.
+cek('offset tetap di meja: lensa 0,633 m di bawah pusat gambar (1,18 m)', dekat(tinggiLensaTetap(0.9, 1.8288, 34.62, 'meja'), 1.1813, 0.001));
+cek('offset tetap gantung plafon: lensa 0,633 m di atas pusat gambar (2,45 m)', dekat(tinggiLensaTetap(0.9, 1.8288, 34.62, 'plafon'), 2.4475, 0.001));
 const bl = hitungBlending(3, 1, 4, 15, 1920, 1200);
 cek('blending 3 × 1, 4 m, overlap 15% -> 10,8 m, 5184 px', dekat(bl.lebarM, 10.8) && bl.resX === 5184 && dekat(bl.tinggiM, 2.5) && bl.resY === 1200);
 
@@ -61,7 +69,12 @@ cek('target 12 × 3 m, 3 × 1: menutup kedua arah', rt.lebarM >= 12 - 1e-9 && rt
 cek('target 12 × 3 m, 3 × 1: per proyektor 4,8 × 3 m', dekat(rt.lebarSatuM, 4.8) && dekat(rt.tinggiSatuM, 3));
 cek('target 12 × 3 m, 3 × 1: konten 4800 × 1200, mask 384 × 0', rt.kontenX === 4800 && rt.kontenY === 1200 && rt.maskX === 384 && rt.maskY === 0);
 cek('efisiensi = konten / semua piksel native (4800·1200 / 3·1920·1200 = 83,3%)', dekat(rt.efisiensiPersen, 83.33));
-cek('jarak lempar = TR × lebar per proyektor', dekat(rencanaBlending({ ...WUXGA, kolom: 1, baris: 1, overlapH: 0, overlapV: 0, mode: 'proyektor', lebarSatuM: 3, throwRatio: 1.5 }).jarakLemparM, 4.5));
+//  Lensa PT-MZ882 + ET-ELS20 (rumus kalkulator Panasonic): TR 1,63911-2,78771, b 0,054882 / 0,048228.
+const ELS20 = { trMin: 1.63911, trMaks: 2.78771, bWide: 0.054882, bTele: 0.048228 };
+const rLensa = rencanaBlending({ ...WUXGA, kolom: 3, baris: 1, overlapH: 15, overlapV: 0, mode: 'proyektor', lebarSatuM: ukuranDariDiagonal(127.71, 16, 10).lebarM, lensa: ELS20 });
+cek('jarak lempar per proyektor = rumus Panasonic (127,71" -> 4,454 - 7,620 m)', dekat(rLensa.jarakDekatM, 4.454, 0.002) && dekat(rLensa.jarakJauhM, 7.62, 0.002));
+cek('jarak antar lensa = (1920 − 288) px × m/px = 85% lebar gambar', dekat(rLensa.jarakLensaHM, rLensa.lebarSatuM * (1632 / 1920), 1e-9) && rLensa.jarakLensaVM === 0);
+cek('tanpa data lensa: jarak 0 (tidak dihitung)', rencanaBlending({ ...WUXGA, kolom: 1, baris: 1, overlapH: 0, overlapV: 0, mode: 'proyektor', lebarSatuM: 3 }).jarakDekatM === 0);
 const sr = saranSusunanBlending({ ...WUXGA, overlapH: 15, overlapV: 15, targetLebarM: 12, targetTinggiM: 3 });
 cek('saran: jumlah proyektor naik & resolusi konten selalu naik', sr.length >= 2 && sr.every((s, i) => i === 0 || (s.jumlah >= sr[i - 1].jumlah && s.kontenX * s.kontenY > sr[i - 1].kontenX * sr[i - 1].kontenY)));
 cek('saran: 4 × 1 dilewati (tertahan tinggi target, tidak lebih baik dari 3 × 1)', !sr.some(s => s.kolom === 4 && s.baris === 1));

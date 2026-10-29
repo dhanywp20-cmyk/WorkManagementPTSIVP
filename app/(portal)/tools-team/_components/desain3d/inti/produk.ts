@@ -2,7 +2,7 @@
  * desain3d/inti/produk.ts - Spesifikasi & ukuran produk dari datasheet: videowall, IFP, layar, TV, rack, tribun, bidang mapping.
  * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
  */
-import { cabinetUntukUkuran, ukuranDariDiagonal } from '@/lib/av-hitung';
+import { cabinetUntukUkuran, pikselUnit, ukuranDariDiagonal } from '@/lib/av-hitung';
 import type { Benda, ModelVW, PanelVW, RasioLayar } from './tipe';
 import { terapkanUkuranTeks } from './teks';
 
@@ -74,8 +74,9 @@ export function susunanLED(b: Pick<Benda, 'w' | 'h' | 'pitch' | 'cabW' | 'cabH' 
   const cabW = Math.max(100, b.cabW ?? 500), cabH = Math.max(100, b.cabH ?? 500), pitch = Math.max(0.3, b.pitch ?? 2.5);
   const { kolom, baris } = cabinetUntukUkuran(b.w || cabW / 1000, b.h || cabH / 1000, cabW, cabH, 'round');
   //  Piksel per unit: dari datasheet referensi bila ada (pitch dagang dibulatkan, mis. P1.86 = 172 px / 320 mm).
-  const pxCabX = b.pxUnitX && b.pxUnitX > 0 ? Math.round(b.pxUnitX) : Math.round(cabW / pitch);
-  const pxCabY = b.pxUnitY && b.pxUnitY > 0 ? Math.round(b.pxUnitY) : Math.round(cabH / pitch);
+  //  Tanpa datasheet: pitch NYATA di balik nama dagang (P2.9 = 2,976 mm -> 168 px per 500 mm, bukan 172).
+  const pxCabX = b.pxUnitX && b.pxUnitX > 0 ? Math.round(b.pxUnitX) : pikselUnit(cabW, pitch);
+  const pxCabY = b.pxUnitY && b.pxUnitY > 0 ? Math.round(b.pxUnitY) : pikselUnit(cabH, pitch);
   return { kolom, baris, cabW, cabH, pitch, unit: b.unitLED ?? 'cabinet', pxCabX, pxCabY, resX: pxCabX * kolom, resY: pxCabY * baris, lebarM: (kolom * cabW) / 1000, tinggiM: (baris * cabH) / 1000 };
 }
 /** Desain lama (sebelum LED dibulatkan ke cabinet utuh): rapikan saat dibuka supaya ukuran, BOM & resolusi benar. */
