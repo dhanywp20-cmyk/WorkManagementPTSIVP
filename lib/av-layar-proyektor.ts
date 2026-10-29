@@ -154,7 +154,11 @@ export function hitungBlending(kolom: number, baris: number, lebarSatuM: number,
 export interface MasukanBlending {
   kolom: number; baris: number;
   /** Resolusi native satu proyektor (px). */ resX: number; resY: number;
-  /** Overlap kiri-kanan (% lebar satu gambar) & atas-bawah (% tinggi satu gambar). */ overlapH: number; overlapV: number;
+  /**
+   * Overlap kiri-kanan & atas-bawah. Satuan 'persen' (bawaan): % lebar / tinggi satu gambar.
+   * Satuan 'meter': lebar area blending di layar (m) - diubah ke % dari ukuran gambar per proyektor.
+   */
+  overlapH: number; overlapV: number; overlapSatuan?: 'persen' | 'meter';
   /**
    * 'proyektor' = lebar gambar satu proyektor diketahui (`lebarSatuM`).
    * 'target' = ukuran layar yang harus tertutup (`targetLebarM` × `targetTinggiM`): gambar per proyektor
@@ -173,10 +177,22 @@ export interface MasukanBlending {
 export function rencanaBlending(m: MasukanBlending) {
   const k = Math.max(1, Math.round(m.kolom)), b = Math.max(1, Math.round(m.baris));
   const rx = Math.max(1, Math.round(m.resX)), ry = Math.max(1, Math.round(m.resY));
-  const oHpx = k > 1 ? Math.round((rx * Math.min(50, Math.max(0, m.overlapH))) / 100) : 0;
-  const oVpx = b > 1 ? Math.round((ry * Math.min(50, Math.max(0, m.overlapV))) / 100) : 0;
-  const kanvasX = k * rx - (k - 1) * oHpx, kanvasY = b * ry - (b - 1) * oVpx;
   const target = m.mode === 'target' && (m.targetLebarM ?? 0) > 0 && (m.targetTinggiM ?? 0) > 0;
+  let pH = m.overlapH, pV = m.overlapV;
+  if (m.overlapSatuan === 'meter') {
+    const oH = k > 1 ? Math.max(0, m.overlapH) : 0, oV = b > 1 ? Math.max(0, m.overlapV) : 0;
+    //  Lebar gambar per proyektor: diketahui, atau yang menutup target dengan overlap meter tetap
+    //  (k × W − (k − 1) × overlap ≥ lebar target; sama untuk tinggi).
+    const lebarSatu = target
+      ? Math.max((m.targetLebarM! + (k - 1) * oH) / k, ((m.targetTinggiM! + (b - 1) * oV) / b) * (rx / ry))
+      : Math.max(0, m.lebarSatuM ?? 0);
+    const tinggiSatu = (lebarSatu * ry) / rx;
+    pH = lebarSatu > 0 ? (oH / lebarSatu) * 100 : 0;
+    pV = tinggiSatu > 0 ? (oV / tinggiSatu) * 100 : 0;
+  }
+  const oHpx = k > 1 ? Math.round((rx * Math.min(50, Math.max(0, pH))) / 100) : 0;
+  const oVpx = b > 1 ? Math.round((ry * Math.min(50, Math.max(0, pV))) / 100) : 0;
+  const kanvasX = k * rx - (k - 1) * oHpx, kanvasY = b * ry - (b - 1) * oVpx;
   //  Meter per piksel: dari lebar satu gambar, atau yang cukup besar untuk menutup target di dua arah.
   const mPerPx = target
     ? Math.max(m.targetLebarM! / kanvasX, m.targetTinggiM! / kanvasY)
