@@ -8,6 +8,8 @@ _components/
   Desain3D.tsx       kerangka Desain 3D Ruang AV        → desain3d/  (lihat desain3d/README.md)
   KalkulatorLED.tsx  kerangka LED Videotron             → led/
   KalkulatorAV.tsx   kerangka Kalkulator AV (5 sub)     → av/
+  ChecklistBarang.tsx kerangka Checklist Barang         → cekbarang/ (impor Excel / PDF, PDF hasil + tanda tangan;
+                     logika murni lib/checklist-barang.ts, diuji uji/checklist-barang.ts)
   bersama/           dipakai semua alat: ui.tsx (isian, kartu, nilai), cetak.ts (lembar A4 & PNG),
                      riwayat.ts (undo / redo)
 ```

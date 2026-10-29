@@ -15,7 +15,7 @@ type KelasPdf = new (o: object) => DokPenuh & {
   registerFont(n: string, src: ArrayBuffer): void; on(e: string, f: (x?: Uint8Array) => void): void; end(): void; info: Record<string, string>;
 };
 let muat: Promise<{ Pdf: KelasPdf; huruf: Record<string, ArrayBuffer> }> | null = null;
-function siapkan() {
+export function siapkan() {
   muat ??= Promise.all([
     import('pdfkit/js/pdfkit.standalone.js').then(m => ((m as { default?: unknown }).default ?? m) as KelasPdf),
     ...Object.entries(HURUF).map(async ([n, f]) => {

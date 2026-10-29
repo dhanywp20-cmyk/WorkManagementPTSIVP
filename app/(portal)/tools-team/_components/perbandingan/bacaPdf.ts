@@ -1,7 +1,7 @@
 'use client';
 /**
  * Baca teks brosur PDF DI PERAMBAN (pdf.js) - berkas tidak pernah diunggah. Per halaman, baris dirapikan.
- * pdf.js hanya dimuat saat dibutuhkan (build legacy: aman untuk WebView APK lama).
+ * pdf.js hanya dimuat saat dibutuhkan (build legacy: aman untuk WebView APK lama). pdfjs() dipakai juga Checklist Barang.
  */
 import { MIN_KARAKTER_TEKS, periksaBerkas } from '@/lib/perbandingan';
 
@@ -9,7 +9,7 @@ export interface HasilBaca { halaman: string[]; jumlahHalaman: number; karakter:
 
 type PdfJs = typeof import('pdfjs-dist');
 let muat: Promise<PdfJs> | null = null;
-function pdfjs(): Promise<PdfJs> {
+export function pdfjs(): Promise<PdfJs> {
   muat ??= import('pdfjs-dist/legacy/build/pdf.mjs').then(m => {
     const lib = m as unknown as PdfJs;
     lib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/legacy/build/pdf.worker.min.mjs', import.meta.url).toString();

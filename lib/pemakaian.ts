@@ -16,7 +16,7 @@ export const MODUL_DICATAT = [
 export type ModulDicatat = typeof MODUL_DICATAT[number];
 
 /** Alat di AV Solution Tools (ALAT di tools-team/page.tsx). */
-export const ALAT_TOOLS = ['3d', 'led', 'av', 'banding', 'pustaka'] as const;
+export const ALAT_TOOLS = ['3d', 'led', 'av', 'banding', 'cekbarang', 'pustaka'] as const;
 
 export const modulSah = (v: unknown): v is ModulDicatat => typeof v === 'string' && (MODUL_DICATAT as readonly string[]).includes(v);
 /** Sub hanya untuk AV Solution Tools; modul lain selalu tanpa sub. */

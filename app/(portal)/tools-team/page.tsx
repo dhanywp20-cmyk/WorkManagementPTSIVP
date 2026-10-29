@@ -9,6 +9,7 @@ import { KalkulatorLED, type SubLED } from './_components/KalkulatorLED';
 import { KalkulatorAV } from './_components/KalkulatorAV';
 import { Pustaka } from './_components/Pustaka';
 import { ProductComparison } from './_components/ProductComparison';
+import { ChecklistBarang } from './_components/ChecklistBarang';
 import { bolehLihatPustaka } from '@/lib/pustaka';
 import { catatPemakaian } from '@/lib/pemakaian';
 
@@ -24,6 +25,7 @@ const ALAT = [
   { k: 'led', judul: 'LED Videotron', ket: 'Calculator LED, Screen & Power Connection, daftar material & penawaran', ikon: '📺', C: KalkulatorLED },
   { k: 'av', judul: 'Kalkulator AV', ket: 'Ukuran layar, videowall & IFP (BOM & penawaran), proyektor, sinyal & jaringan AV, audio & akustik, daya, rak, PoE', ikon: '🧮', C: KalkulatorAV },
   { k: 'banding', judul: 'Product Comparison', ket: 'Battle card perbandingan produk dari brosur PDF - template baku, diverifikasi Team PTS', ikon: '⚖️', C: ProductComparison },
+  { k: 'cekbarang', judul: 'Checklist Barang', ket: 'Impor daftar barang dari Excel / PDF, centang hasil cek, unduh PDF bertanda tangan', ikon: '📋', C: ChecklistBarang },
   { k: 'pustaka', judul: 'Pustaka', ket: 'Katalog produk, data acuan & artikel panduan tim - diisi Admin, dipakai kalkulator', ikon: '📚', C: Pustaka },
 ] as const;
 
@@ -83,6 +85,7 @@ function ToolsKerjaInner() {
             : aktif === 'av' ? <KalkulatorAV />
             : aktif === 'pustaka' ? <Pustaka />
             : aktif === 'banding' ? <ProductComparison />
+            : aktif === 'cekbarang' ? <ChecklistBarang />
             : <Desain3D />}
         </main>
       </div>
