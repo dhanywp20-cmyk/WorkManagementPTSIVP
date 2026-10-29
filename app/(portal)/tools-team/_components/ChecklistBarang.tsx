@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCheck, FileDown, FileSpreadsheet, Pencil, Plus, RotateCcw, Search, Trash2, Upload } from 'lucide-react';
 import { getSession } from '@/lib/auth';
+import { ConfirmDialog, type ConfirmState } from '@/components/shared/ConfirmDialog';
 import {
   bacaDraf, dokBaru, type DokChecklist, type ItemBarang, itemBaru, MAKS_ITEM, MAKS_PENANDA, type Penanda, ringkas,
 } from '@/lib/checklist-barang';
@@ -56,6 +57,7 @@ export function ChecklistBarang() {
   const [sibuk, setSibuk] = useState<'' | 'baca' | 'pdf' | 'template'>('');
   const [pesan, setPesan] = useState<{ t: string; galat?: boolean } | null>(null);
   const [seret, setSeret] = useState(false);
+  const [konfirmasi, setKonfirmasi] = useState<ConfirmState | null>(null);
   const inputBerkas = useRef<HTMLInputElement>(null);
 
   const r = useMemo(() => ringkas(d.items), [d.items]);
@@ -116,24 +118,30 @@ export function ChecklistBarang() {
   };
 
   const sisaKeSesuai = () => {
-    if (!r.belum || !window.confirm(`Tandai ${r.belum} barang yang belum dicek sebagai sesuai / ada?`)) return;
-    setD(x => ({ ...x, items: x.items.map(it => (it.grup || it.status ? it : { ...it, status: 'ok' })) }));
+    if (!r.belum) return;
+    setKonfirmasi({
+      message: `Tandai ${r.belum} barang yang belum dicek sebagai sesuai / ada?`, confirmLabel: 'Tandai sesuai',
+      onConfirm: () => setD(x => ({ ...x, items: x.items.map(it => (it.grup || it.status ? it : { ...it, status: 'ok' })) })),
+    });
   };
-  const kosongkanCek = () => {
-    if (!window.confirm('Kosongkan semua hasil cek & keterangan? Daftar barang tetap.')) return;
-    setD(x => ({ ...x, items: x.items.map(it => ({ ...it, status: '', ket: '' })), penanda: x.penanda.map(p => ({ ...p, ttd: '' })) }));
-  };
-  const mulaiBaru = () => {
-    if (!window.confirm('Mulai checklist baru? Daftar, hasil cek & tanda tangan saat ini dihapus dari perangkat ini.')) return;
-    setD(x => ({ ...dokBaru(hariIni()), penanda: x.penanda.map(p => ({ ...p, ttd: '' })) }));
-    setImpor(null); setUbah(false); setCari(''); setSaring('semua'); setPesan(null);
-  };
+  const kosongkanCek = () => setKonfirmasi({
+    message: 'Kosongkan semua hasil cek & keterangan?', description: 'Daftar barang tetap.', danger: true, confirmLabel: 'Kosongkan',
+    onConfirm: () => setD(x => ({ ...x, items: x.items.map(it => ({ ...it, status: '', ket: '' })), penanda: x.penanda.map(p => ({ ...p, ttd: '' })) })),
+  });
+  const mulaiBaru = () => setKonfirmasi({
+    message: 'Mulai checklist baru?', description: 'Daftar, hasil cek & tanda tangan saat ini dihapus dari perangkat ini.', danger: true, confirmLabel: 'Mulai baru',
+    onConfirm: () => {
+      setD(x => ({ ...dokBaru(hariIni()), penanda: x.penanda.map(p => ({ ...p, ttd: '' })) }));
+      setImpor(null); setUbah(false); setCari(''); setSaring('semua'); setPesan(null);
+    },
+  });
 
   const dicek = r.ok + r.tidak;
   const persen = r.total ? Math.round((dicek / r.total) * 100) : 0;
 
   return (
     <div className="space-y-4 pb-24">
+      <ConfirmDialog state={konfirmasi} onCancel={() => setKonfirmasi(null)} />
       <Kartu judul="Dokumen">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
           <Isian label="Judul" className="lg:col-span-2"><input value={d.judul} onChange={e => ubahDok({ judul: e.target.value })} placeholder="Checklist Barang" className={kelasInput} /></Isian>
