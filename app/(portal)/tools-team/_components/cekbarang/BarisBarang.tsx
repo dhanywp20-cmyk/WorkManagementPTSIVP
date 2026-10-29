@@ -9,15 +9,15 @@ const kelasIsian = 'min-w-0 rounded-lg border border-slate-200 bg-white px-2.5 p
 /** Kolom grid baris (mode cek) - dipakai juga kepala tabel di ChecklistBarang. */
 export const GRID_CEK = 'grid grid-cols-[1.75rem_minmax(0,1fr)_auto] sm:grid-cols-[2rem_minmax(0,1fr)_6.5rem_5.75rem_minmax(0,15rem)] gap-x-3';
 
-export const BarisBarang = memo(function BarisBarang({ it, no, ubah, fokus, onUbah, onHapus }: {
-  it: ItemBarang; no: number; ubah: boolean; fokus: boolean;
+export const BarisBarang = memo(function BarisBarang({ it, no, ubah, onUbah, onHapus }: {
+  it: ItemBarang; no: number; ubah: boolean;
   onUbah: (id: string, p: Partial<ItemBarang>) => void; onHapus: (id: string) => void;
 }) {
   if (ubah) {
     return (
       <li className={`flex flex-wrap sm:flex-nowrap items-center gap-2 px-3 py-2 ${it.grup ? 'bg-slate-50' : ''}`}>
         <span className="w-7 shrink-0 text-center text-[12px] tabular-nums text-slate-500">{it.grup ? '—' : no}</span>
-        <input value={it.nama} onChange={e => onUbah(it.id, { nama: e.target.value })} autoFocus={fokus}
+        <input value={it.nama} onChange={e => onUbah(it.id, { nama: e.target.value })}
           placeholder={it.grup ? 'Judul kelompok' : 'Nama barang'} aria-label="Nama barang"
           className={`${kelasIsian} flex-1 basis-40 ${it.grup ? 'font-bold' : ''}`} />
         {!it.grup && (

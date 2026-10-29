@@ -13,6 +13,7 @@ import {
 import { Catatan, Kartu, kelasInput, Nilai, Segmen } from './bersama/ui';
 import { BarisBarang, GRID_CEK } from './cekbarang/BarisBarang';
 import { PadTtd } from './cekbarang/PadTtd';
+import { FormTambah } from './cekbarang/FormTambah';
 import { imporBerkas, unduhPdfChecklist, unduhTemplate } from './cekbarang/berkas';
 
 const KUNCI = 'tools-team-checklist-barang-v1';
@@ -49,7 +50,6 @@ export function ChecklistBarang() {
   }, [d]);
 
   const [ubah, setUbah] = useState(false);
-  const [fokus, setFokus] = useState('');
   const [cari, setCari] = useState('');
   const [saring, setSaring] = useState<Saring>('semua');
   const [impor, setImpor] = useState<Impor | null>(null);
@@ -79,11 +79,10 @@ export function ChecklistBarang() {
   const hapusItem = useCallback((id: string) => setD(x => ({ ...x, items: x.items.filter(it => it.id !== id) })), [setD]);
   const ubahPenanda = (i: number, p: Partial<Penanda>) => setD(x => ({ ...x, penanda: x.penanda.map((v, j) => (j === i ? { ...v, ...p } : v)) }));
 
-  const tambahItem = () => {
-    if (d.items.length >= MAKS_ITEM) return;
-    const it = itemBaru();
-    setD(x => ({ ...x, items: [...x.items, it] }));
-    setUbah(true); setCari(''); setSaring('semua'); setFokus(it.id);
+  //  Barang baru selalu terlihat: saringan & pencarian dilepas.
+  const tambahItem = (isi: Pick<ItemBarang, 'nama' | 'spek' | 'qty' | 'satuan'>) => {
+    setD(x => (x.items.length >= MAKS_ITEM ? x : { ...x, items: [...x.items, itemBaru(isi)] }));
+    setCari(''); setSaring('semua'); setPesan(null);
   };
 
   const bacaBerkas = async (f?: File | null) => {
@@ -172,13 +171,12 @@ export function ChecklistBarang() {
             className={`rounded-2xl border-2 border-dashed px-4 py-10 text-center ${seret ? 'border-blue-400 bg-blue-50' : 'border-slate-200 bg-slate-50/60'}`}>
             <Upload size={28} className="mx-auto text-slate-400" />
             <p className="mt-2 text-[14px] font-semibold text-slate-800">Impor daftar barang dari Excel atau PDF</p>
-            <p className="mt-1 text-[12.5px] text-slate-500">Seret berkas ke sini, atau tambah barang satu per satu.</p>
+            <p className="mt-1 text-[12.5px] text-slate-500">Seret berkas ke sini, atau ketik barang satu per satu di bawah.</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               <button type="button" onClick={() => inputBerkas.current?.click()} disabled={!!sibuk}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-blue-700 hover:bg-blue-800 disabled:opacity-60">
                 <Upload size={15} /> {sibuk === 'baca' ? 'Membaca…' : 'Pilih berkas'}
               </button>
-              <button type="button" onClick={tambahItem} className={kelasTombol}><Plus size={15} /> Tambah manual</button>
             </div>
           </div>
         ) : (
@@ -208,7 +206,7 @@ export function ChecklistBarang() {
                   ]} />
                 </div>
               )}
-              <button type="button" onClick={() => { setUbah(v => !v); setFokus(''); }} aria-pressed={ubah}
+              <button type="button" onClick={() => setUbah(v => !v)} aria-pressed={ubah}
                 className={ubah ? 'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-[13px] font-bold bg-blue-700 text-white hover:bg-blue-800' : kelasTombol}>
                 <Pencil size={15} /> {ubah ? 'Selesai ubah' : 'Ubah daftar'}
               </button>
@@ -223,20 +221,24 @@ export function ChecklistBarang() {
               {tampil.length ? (
                 <ul className="divide-y divide-slate-100">
                   {tampil.map(it => (
-                    <BarisBarang key={it.id} it={it} no={nomor.get(it.id) ?? 0} ubah={ubah} fokus={fokus === it.id} onUbah={ubahItem} onHapus={hapusItem} />
+                    <BarisBarang key={it.id} it={it} no={nomor.get(it.id) ?? 0} ubah={ubah} onUbah={ubahItem} onHapus={hapusItem} />
                   ))}
                 </ul>
               ) : <p className="px-3 py-6 text-center text-[13px] text-slate-500">Tidak ada barang yang cocok.</p>}
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={tambahItem} disabled={d.items.length >= MAKS_ITEM} className={kelasTombol}><Plus size={15} /> Tambah barang</button>
-              {!ubah && r.belum > 0 && (
-                <button type="button" onClick={sisaKeSesuai} className={kelasTombol} title="Tandai semua barang yang belum dicek sebagai sesuai">
-                  <CheckCheck size={15} /> Sisa {r.belum} → sesuai
-                </button>
-              )}
-            </div>
+          </div>
+        )}
+
+        {/* Satu posisi tetap untuk layar kosong & daftar: form tidak dipasang ulang, fokus & satuan terakhir tetap. */}
+        {!impor && (
+          <div className="mt-3 space-y-3">
+            <FormTambah onTambah={tambahItem} penuh={d.items.length >= MAKS_ITEM} />
+            {!ubah && r.belum > 0 && (
+              <button type="button" onClick={sisaKeSesuai} className={kelasTombol} title="Tandai semua barang yang belum dicek sebagai sesuai">
+                <CheckCheck size={15} /> Sisa {r.belum} → sesuai
+              </button>
+            )}
           </div>
         )}
       </Kartu>
