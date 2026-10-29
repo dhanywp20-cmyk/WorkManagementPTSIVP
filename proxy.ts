@@ -98,6 +98,24 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
+/*
+  Sejak Next 16 proxy berjalan di runtime Node.js: di Vercel ia FUNGSI di region bom1, bukan lagi kode
+  edge di kota terdekat. Tiap permintaan yang cocok matcher harus menunggu fungsi itu (dan bangun dari
+  dingin bila lama tidak dipakai) sebelum dilayani - termasuk halaman statis yang sebenarnya siap di CDN.
+  Karena itu matcher dibatasi:
+   - /api/* SELALU lewat proxy (401 tanpa cookie), apa pun header-nya.
+   - Halaman hanya saat dibuka langsung (ketik alamat / refresh / tautan). Pindah menu di dalam portal &
+     prefetch-nya membawa header `RSC` dan dilayani langsung dari CDN - halaman portal statis, tanpa data;
+     data dijaga RLS & pemeriksaan sesi di tiap API. Cookie yang hilang di tengah jalan ditangani
+     KerangkaPortal (event SESI_HABIS dari lib/supabase.ts).
+   - Berkas /public (gambar, ikon, suara) tidak lewat proxy sama sekali - sama dengan BERKAS_STATIS di atas.
+*/
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    '/api/:path*',
+    {
+      source: '/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:png|jpe?g|gif|svg|webp|avif|ico|bmp|wav|mp3|ogg|m4a|mp4|webm|woff2?|ttf|otf|eot|txt|map)$).*)',
+      missing: [{ type: 'header', key: 'rsc' }],
+    },
+  ],
 };
