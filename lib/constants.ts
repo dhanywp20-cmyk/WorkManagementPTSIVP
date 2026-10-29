@@ -87,3 +87,11 @@ export function hasFullAccess(user: AccessCheckUser): boolean {
   const team = r === 'team' || r === 'team_pts';
   return admin || (team && user.access_level === 'full');
 }
+
+/**
+ * Integrasi DIWAYPI (token asisten desktop) & verifikasi 2 langkah: HANYA admin dan akun yang
+ * ditunjuk admin lewat toggle Full Access (keputusan pemilik). Guest & Team biasa tidak.
+ * Dipakai profil (tampil/tidak) DAN server (/api/integrasi/token, /api/integrasi/diwaypi,
+ * /api/auth/2fa) - nilai role & access_level di server dibaca ulang dari tabel users.
+ */
+export const bolehDiwaypiDan2FA = (user: AccessCheckUser): boolean => hasFullAccess(user);

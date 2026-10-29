@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { pastikanMasuk } from '@/lib/penjaga-admin';
+import { bolehDiwaypiDan2FA } from '@/lib/constants';
 import { catatPercobaan, getClientIp, PESAN_TERKUNCI, sedangTerkunci } from '@/lib/masuk-server';
 import {
   adalahAdmin, aktifkanDaftar2FA, baca2FA, bacaPengaturan2FA, gantiCadangan2FA, mulaiDaftar2FA, periksaKode2FA,
@@ -56,6 +57,11 @@ export async function POST(req: NextRequest) {
       return jawab({ error: 'Kode salah atau sudah dipakai.' }, 400);
     };
 
+    //  Mendaftar 2FA hanya untuk admin & akun Full Access. Yang sudah aktif tetap bisa
+    //  mengganti kode cadangan / mematikannya (mis. setelah Full Access dicabut).
+    if ((aksi === 'mulai' || aksi === 'aktifkan') && !bolehDiwaypiDan2FA(user)) {
+      return jawab({ error: '2FA hanya untuk admin & akun yang ditunjuk.' }, 403);
+    }
     if (aksi === 'mulai') {
       if (baris?.aktif) return jawab({ error: '2FA sudah aktif.' }, 409);
       return jawab(await mulaiDaftar2FA(db, user));

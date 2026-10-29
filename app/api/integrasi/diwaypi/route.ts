@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase-admin';
 import { klienSebagaiUser, muatUser } from '@/lib/ai-server';
 import { ambilBearer, verifikasiToken } from '@/lib/token-integrasi';
+import { bolehDiwaypiDan2FA } from '@/lib/constants';
 import { AKSI_BACA, AKSI_TULIS, jalankanAksi } from '@/lib/integrasi-aksi';
 import { buatEfekServer } from '@/lib/efek-server';
 import { muatKelompok } from '@/lib/kelompok-inti';
@@ -27,6 +28,9 @@ async function pemilik(req: NextRequest) {
     { status: 401, headers: { ...KEPALA, 'WWW-Authenticate': 'Bearer' } }) };
   const u = await muatUser(p.userId);
   if (!u) return { galat: NextResponse.json({ ok: false, galat: 'Akun pemilik token tidak ditemukan.' }, { status: 401, headers: KEPALA }) };
+  //  Diperiksa tiap permintaan, bukan hanya saat token dibuat: token akun yang Full Access-nya
+  //  dicabut langsung tidak berlaku lagi.
+  if (!bolehDiwaypiDan2FA(u)) return { galat: NextResponse.json({ ok: false, galat: 'Integrasi DIWAYPI hanya untuk admin & akun yang ditunjuk.' }, { status: 403, headers: KEPALA }) };
   return { p, u, admin };
 }
 
