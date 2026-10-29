@@ -150,3 +150,86 @@ export function hitungBlending(kolom: number, baris: number, lebarSatuM: number,
     overlapM: lebarSatuM * o, overlapPx: Math.round(resX * o),
   };
 }
+
+export interface MasukanBlending {
+  kolom: number; baris: number;
+  /** Resolusi native satu proyektor (px). */ resX: number; resY: number;
+  /** Overlap kiri-kanan (% lebar satu gambar) & atas-bawah (% tinggi satu gambar). */ overlapH: number; overlapV: number;
+  /**
+   * 'proyektor' = lebar gambar satu proyektor diketahui (`lebarSatuM`).
+   * 'target' = ukuran layar yang harus tertutup (`targetLebarM` × `targetTinggiM`): gambar per proyektor
+   * dibesarkan sampai susunan menutup target di kedua arah; kelebihan di salah satu arah di-mask.
+   */
+  mode: 'proyektor' | 'target';
+  lebarSatuM?: number; targetLebarM?: number; targetTinggiM?: number;
+  /** Throw ratio lensa (0 = tidak dihitung). */ throwRatio?: number;
+}
+
+/**
+ * Rencana edge blending lengkap untuk proyeksi immersive. Overlap dibulatkan ke piksel utuh (seperti
+ * di media server / prosesor blending), lalu semua ukuran diturunkan dari piksel itu:
+ * kanvas = kolom × resX − (kolom − 1) × overlapPx.
+ */
+export function rencanaBlending(m: MasukanBlending) {
+  const k = Math.max(1, Math.round(m.kolom)), b = Math.max(1, Math.round(m.baris));
+  const rx = Math.max(1, Math.round(m.resX)), ry = Math.max(1, Math.round(m.resY));
+  const oHpx = k > 1 ? Math.round((rx * Math.min(50, Math.max(0, m.overlapH))) / 100) : 0;
+  const oVpx = b > 1 ? Math.round((ry * Math.min(50, Math.max(0, m.overlapV))) / 100) : 0;
+  const kanvasX = k * rx - (k - 1) * oHpx, kanvasY = b * ry - (b - 1) * oVpx;
+  const target = m.mode === 'target' && (m.targetLebarM ?? 0) > 0 && (m.targetTinggiM ?? 0) > 0;
+  //  Meter per piksel: dari lebar satu gambar, atau yang cukup besar untuk menutup target di dua arah.
+  const mPerPx = target
+    ? Math.max(m.targetLebarM! / kanvasX, m.targetTinggiM! / kanvasY)
+    : Math.max(0, m.lebarSatuM ?? 0) / rx;
+  const lebarSatuM = rx * mPerPx, tinggiSatuM = ry * mPerPx;
+  const lebarM = kanvasX * mPerPx, tinggiM = kanvasY * mPerPx;
+  //  Area konten: ukuran target (mode target) atau seluruh kanvas.
+  const kontenX = target ? Math.min(kanvasX, Math.round(m.targetLebarM! / mPerPx)) : kanvasX;
+  const kontenY = target ? Math.min(kanvasY, Math.round(m.targetTinggiM! / mPerPx)) : kanvasY;
+  const tr = m.throwRatio ?? 0;
+  return {
+    kolom: k, baris: b, jumlah: k * b, resX: rx, resY: ry,
+    lebarSatuM, tinggiSatuM, lebarM, tinggiM, kanvasX, kanvasY,
+    overlapHpx: oHpx, overlapVpx: oVpx, overlapHM: oHpx * mPerPx, overlapVM: oVpx * mPerPx,
+    /** Overlap sebenarnya setelah dibulatkan ke piksel (%). */ overlapHPersen: (oHpx / rx) * 100, overlapVPersen: (oVpx / ry) * 100,
+    kontenX, kontenY, maskX: kanvasX - kontenX, maskY: kanvasY - kontenY,
+    /** Piksel kanvas yang benar-benar dipakai konten / seluruh piksel native semua proyektor. */
+    efisiensiPersen: ((kontenX * kontenY) / (k * b * rx * ry)) * 100,
+    pxPerM: mPerPx > 0 ? 1 / mPerPx : 0, pitchMm: mPerPx * 1000,
+    zonaKiriKanan: (k - 1) * b, zonaAtasBawah: (b - 1) * k, zonaSudut: (k - 1) * (b - 1),
+    jarakLemparM: tr > 0 ? tr * lebarSatuM : 0,
+    /** Posisi tiap proyektor di kanvas (px) - untuk setting output media server. */
+    peta: Array.from({ length: k * b }, (_, i) => {
+      const c = i % k, r = Math.floor(i / k);
+      const x = c * (rx - oHpx), y = r * (ry - oVpx);
+      return { nama: `P${i + 1}`, kolom: c + 1, baris: r + 1, x, y, x2: x + rx, y2: y + ry };
+    }),
+  };
+}
+
+export type RencanaBlending = ReturnType<typeof rencanaBlending>;
+
+/**
+ * Tangga pilihan susunan kolom × baris untuk ukuran target: dari jumlah proyektor paling sedikit, hanya
+ * susunan yang resolusi kontennya NAIK dibanding pilihan sebelumnya (4 × 1 yang tertahan tinggi
+ * target tidak lebih baik dari 3 × 1, jadi dilewati) dan efisiensi pikselnya ≥ `efisiensiMin` %.
+ */
+export function saranSusunanBlending(m: Omit<MasukanBlending, 'kolom' | 'baris' | 'mode'>, maksKolom = 12, maksBaris = 6, efisiensiMin = 60, maks = 6) {
+  const semua: RencanaBlending[] = [];
+  for (let b = 1; b <= maksBaris; b++) for (let k = 1; k <= maksKolom; k++) {
+    const r = rencanaBlending({ ...m, kolom: k, baris: b, mode: 'target' });
+    if (r.efisiensiPersen >= efisiensiMin) semua.push(r);
+  }
+  semua.sort((p, q) => p.jumlah - q.jumlah || q.efisiensiPersen - p.efisiensiPersen);
+  const hasil: RencanaBlending[] = [];
+  let terbaik = 0;
+  for (const r of semua) {
+    const px = r.kontenX * r.kontenY;
+    //  Naik minimal 5% supaya selisih pembulatan tidak dianggap pilihan baru.
+    if (px > terbaik * 1.05) { hasil.push(r); terbaik = px; }
+  }
+  return hasil.slice(0, maks);
+}
+
+/** Rasio lebar : tinggi sebagai "2,96 : 1". */
+export const teksRasio = (x: number, y: number) => (y > 0 ? `${(x / y).toLocaleString('id-ID', { maximumFractionDigits: 2 })} : 1` : '-');
