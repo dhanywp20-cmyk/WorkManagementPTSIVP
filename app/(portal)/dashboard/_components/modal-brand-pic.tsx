@@ -61,9 +61,9 @@ export function BrandPicSettingModal({ onClose }: { onClose: () => void }) {
     const key = `${type}:${brand}`;
     return (
       <div className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
-        <span className="w-36 text-sm font-semibold text-slate-700 flex-shrink-0">{brand}</span>
+        <span className="w-24 sm:w-36 text-sm font-semibold text-slate-700 flex-shrink-0 break-words">{brand}</span>
         <select aria-label="— Belum ada PIC —" value={mappings[key]||''} onChange={e=>setMappings(p=>({...p,[key]:e.target.value}))}
-          className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400 appearance-none">
+          className="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-teal-400 appearance-none text-ellipsis">
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
         </select>
@@ -167,9 +167,9 @@ export function BrandPicSettingContent() {
     const key = `${type}:${brand}`;
     return (
       <div className="flex items-center gap-3 py-2.5 border-b border-slate-100 last:border-0">
-        <span className="w-36 text-sm font-semibold text-slate-700 flex-shrink-0">{brand}</span>
+        <span className="w-24 sm:w-36 text-sm font-semibold text-slate-700 flex-shrink-0 break-words">{brand}</span>
         <select aria-label="— Belum ada PIC —" value={mappings[key]||''} onChange={e=>setMappings(p=>({...p,[key]:e.target.value}))}
-          className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400 appearance-none">
+          className="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white outline-none focus:border-amber-400 appearance-none text-ellipsis">
           <option value="">— Belum ada PIC —</option>
           {brandUsers.map(u=><option key={u.id} value={u.id}>{u.full_name} ({u.sales_division})</option>)}
         </select>
@@ -189,7 +189,8 @@ export function BrandPicSettingContent() {
           <div className="flex justify-center py-16"><div className="w-6 h-6 rounded-full border-2 border-t-amber-500 border-amber-200 animate-spin"/></div>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-5">
+            {/* HP & layar sempit: satu kolom (Display lalu Middleware); dua kolom baru di lg. */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               <div>
                 <p className="text-sm font-bold text-amber-700 uppercase tracking-widest mb-3"><IkonTeks nama="🖥" />Brand Display</p>
                 <div className="bg-amber-50/50 rounded-xl border border-amber-200 px-4 py-1">
