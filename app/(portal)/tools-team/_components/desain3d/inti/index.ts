@@ -30,6 +30,7 @@ export * from './audio';
 export * from './proyektor';
 export * from './blending';
 export * from './susunBlending';
+export * from './lensaPanasonic';
 export * from './kabel';
 export * from './rak';
 export * from './template';

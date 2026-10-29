@@ -36,6 +36,7 @@ Arah ketergantungan **satu arah**: `panel → (aksi, simpan, ekspor, mesin) → 
 | `proyektor.ts` | lensa (throw ratio, zoom, koreksi jarak L = TR × W − b, batas lens shift, rasio 16:9/16:10/17:9/4:3/21:9), arah, sinar ke layar, luminance (lux × gain / π) - setara kalkulator Panasonic TDC (uji/proyektor-panasonic.ts) |
 | `blending.ts` | area blending antar proyektor: lebar (cm) menyusuri permukaan & persen gambar (piksel dari resolusi panel) |
 | `susunBlending.ts` | susun proyektor identik jadi edge blending ke layar seperti kalkulator Panasonic: lurus tanpa keystone, TR dalam rentang zoom, lens shift dalam daerah lensa |
+| `lensaPanasonic.ts` | lensa nyata PT-MZ882 (ELU20 / ELW22 / ELW20 / ELS20) untuk template Mapping & Immersive - angka sama dengan Pustaka (uji/desain3d-template-lensa.ts) |
 | `kabel.ts` | jalur & panjang kabel ke rack, **legend warna standar** |
 | `rak.ts` | isi rack (elevation) |
 | `bom.ts` | BOM: perangkat & furnitur (dijumlah), aksesori pemasangan, isi rack, kabel; draf checklist instalasi Project Progress |

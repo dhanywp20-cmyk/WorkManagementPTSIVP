@@ -59,8 +59,8 @@ for (const id of ['mapping-lengkung', 'mapping-cembung'] as const) {
     const c = cakupanProyektor(proj, permukaanRuang(k, s));
     cek(`immersive: ${s} tertutup dari lantai sampai plafon (${pr(c.tertutup)})`, c.tertutup >= 0.99, c.celah.join('/'));
   }
-  const lantai = cakupanProyektor(proj, permukaanRuang(k, 'lantai'));
-  cek('immersive: dua proyektor lantai punya area blending di tengah', lantai.tumpang > 0.05);
+  const lantai = proj.filter(p => (p.tilt ?? 0) === -90);
+  cek('immersive: lantai 6 × 6 m cukup SATU ET-ELU20 tegak ke bawah', lantai.length === 1 && cakupanProyektor(lantai, permukaanRuang(k, 'lantai')).tertutup >= 0.99);
 }
 
 console.log('\n3. Tambah proyektor ke layar (proyektorKeLayar)');

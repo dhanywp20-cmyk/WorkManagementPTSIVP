@@ -369,11 +369,12 @@ console.log('\n12. Kategori ruangan, tribun, bidang mapping, zoom, arah proyekto
       luar.map(b => `${b.nama}@${b.x.toFixed(1)},${b.z.toFixed(1)} atas ${(b.elev + b.h).toFixed(2)}`).join('; '));
   }
   const imm = templateRuang('immersive');
-  cek('immersive: 4 proyektor dinding + 2 lantai (tilt -90°), ruang gelap', imm.benda.filter(b => b.jenis === 'proyektor').length === 6
-    && imm.benda.filter(b => tiltDari(b) === -90).length === 2 && imm.ruang.cahaya === 'gelap');
-  cek('immersive: UST dinding TR 0,25, lensa 1,5 m dari dinding -> gambar 6 m = lebar dinding', imm.benda.filter(b => tiltDari(b) !== -90).every(b => {
+  cek('immersive: 4 proyektor dinding + 1 lantai (tilt -90°), ruang gelap', imm.benda.filter(b => b.jenis === 'proyektor').length === 5
+    && imm.benda.filter(b => tiltDari(b) === -90).length === 1 && imm.ruang.cahaya === 'gelap');
+  //  PT-MZ882 + ET-ELU20 (TR 0,33827, b 0,029388): lensa 2,05 m dari dinding -> gambar (2,05 + b) / TR = 6,15 m >= lebar dinding 6 m.
+  cek('immersive: ET-ELU20 dinding zoom terlebar, lensa 2,05 m dari dinding -> gambar 6,15 m menutup dinding 6 m', imm.benda.filter(b => tiltDari(b) !== -90).every(b => {
     const l = keDunia(b, lensaProyektor(b));
-    return dekat(b.throwRatio ?? 0, 0.25) && dekat(Math.min(l[0], 6 - l[0], l[2], 6 - l[2]), 1.5, 0.002);
+    return dekat(b.throwRatio ?? 0, 0.33827, 1e-6) && dekat(Math.min(l[0], 6 - l[0], l[2], 6 - l[2]), 2.05, 0.002) && dekat((2.05 + 0.029388) / 0.33827, 6.147, 0.001);
   }));
   for (const id of ['mapping-lengkung', 'mapping-cembung', 'mapping-objek'] as const) {
     const t = templateRuang(id);
