@@ -1,4 +1,5 @@
 import { statusConfig, type ProjectRequest } from './shared';
+import { esc, escObjek } from '@/lib/lembar-cetak';
 import { htmlSeksiDesain3D, type TautanDesain3D } from './desain-3d-request';
 
 /**
@@ -10,8 +11,12 @@ import { htmlSeksiDesain3D, type TautanDesain3D } from './desain-3d-request';
 const formatDate = (dt: string) => new Date(dt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 const formatDueDate = (dt: string) => new Date(dt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 
-export function cetakRequest(selectedRequest: ProjectRequest, ccLabel: string, desain3d: TautanDesain3D[] = []): void {
-  if (!selectedRequest) return;
+export function cetakRequest(asli: ProjectRequest, ccLabel: string, desain3d: TautanDesain3D[] = []): void {
+  if (!asli) return;
+  //  Semua teks request di-escape SEKALI di sini (diisi Sales / tamu); jendela cetak berjalan di origin aplikasi
+  //  dengan hak orang yang menekan Cetak. Seksi Desain 3D meng-escape isinya sendiri (htmlSeksiDesain3D).
+  const selectedRequest = escObjek(asli);
+  ccLabel = esc(ccLabel);
   const sc = statusConfig[selectedRequest.status] || statusConfig.pending;
   const printDate = new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' } as Intl.DateTimeFormatOptions);
   const statusColorMap: Record<string, string> = {
