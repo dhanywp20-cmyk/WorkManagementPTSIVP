@@ -15,6 +15,25 @@
 export const esc = (v: unknown) =>
   String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
 
+/**
+ * Salinan objek dengan SEMUA teksnya di-escape (termasuk isi array & objek di dalamnya) - untuk lembar cetak
+ * yang menempelkan banyak bidang data ke HTML jendela cetak. Jendela window.open('') berasal dari origin yang
+ * sama dengan aplikasi, jadi teks yang tidak di-escape (mis. deskripsi ticket berisi <img onerror=...>) akan
+ * berjalan dengan hak orang yang menekan Cetak. Escape sekali di awal tidak bisa terlewat satu bidang pun.
+ */
+export function escObjek<T>(o: T, dalam = 0): T {
+  if (typeof o === 'string') return esc(o) as unknown as T;
+  if (dalam > 4 || o === null || typeof o !== 'object') return o;
+  if (Array.isArray(o)) return o.map(x => escObjek(x, dalam + 1)) as unknown as T;
+  return Object.fromEntries(Object.entries(o as Record<string, unknown>).map(([k, v]) => [k, escObjek(v, dalam + 1)])) as T;
+}
+
+/** Tautan / gambar hanya http(s) atau jalur di aplikasi ini; selain itu (javascript:, data:...) kosong. */
+export const urlAman = (u: unknown): string => {
+  const s = String(u ?? '').trim();
+  return /^(https?:\/\/|\/(?!\/))/i.test(s) ? s : '';
+};
+
 export interface Info { label: string; nilai: string; sorot?: boolean }
 
 export type Seksi =

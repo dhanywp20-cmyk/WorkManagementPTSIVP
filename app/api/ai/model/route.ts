@@ -14,6 +14,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { bacaRahasia } from '@/lib/rahasia-server';
+import { pastikanMasuk } from '@/lib/penjaga-admin';
 
 interface ModelGoogle {
   name?: string;
@@ -23,6 +24,9 @@ interface ModelGoogle {
 }
 
 export async function GET(request: NextRequest) {
+  //  Sesi diverifikasi di sini (proxy.ts hanya memeriksa ada-nya cookie) - daftar ini memakai token Gemini perusahaan.
+  const jaga = await pastikanMasuk(request);
+  if (!jaga.ok) return NextResponse.json({ error: { message: jaga.alasan } }, { status: jaga.status });
   try {
     const penilai = request.nextUrl.searchParams.get('profil') === 'penilai';
 

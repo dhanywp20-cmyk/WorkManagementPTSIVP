@@ -88,7 +88,7 @@ export function useUbahStatus(k: UbahStatusKonteks) {
       const fileName = `completion_${detailReminder.id}_${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from('reminder-photos')
-        .upload(fileName, compressed, { upsert: true, cacheControl: '31536000' });
+        .upload(fileName, compressed, { upsert: false, cacheControl: '31536000' });
       if (upErr) {
         notify('error', 'Gagal upload foto: ' + upErr.message);
         setUpdatingStatus(false);
