@@ -44,23 +44,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Akun belum aktif. Hubungi admin.' }, { status: 401 });
     }
 
-    // Verifikasi password
+    // Verifikasi password - HANYA bcrypt. 16 password plaintext terakhir sudah di-hash di tempat (migrasi 059,
+    // pgcrypto bf = $2a$, dicek cocok dengan bcryptjs); jalur "bandingkan plaintext" dihapus supaya password
+    // polos tidak pernah lagi diterima dari tabel.
     const stored = cred.password_hash;
-    const isHashed = stored.startsWith('$2b$') || stored.startsWith('$2a$');
-    let valid = false;
-
-    if (isHashed) {
-      valid = await bcrypt.compare(password, stored);
-    } else {
-      // Plaintext tersisa - bandingkan lalu upgrade ke bcrypt
-      valid = stored === password;
-      if (valid) {
-        const hash = await bcrypt.hash(password, 12);
-        await supabase.from('user_credentials')
-          .update({ password_hash: hash })
-          .eq('user_id', user.id);
-      }
-    }
+    const valid = (stored.startsWith('$2b$') || stored.startsWith('$2a$')) && await bcrypt.compare(password, stored);
 
     if (!valid) {
       await catatPercobaan(supabase, username, ip, false);

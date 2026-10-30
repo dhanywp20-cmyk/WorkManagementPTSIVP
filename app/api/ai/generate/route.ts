@@ -11,6 +11,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { bacaRahasia } from '@/lib/rahasia-server';
+import { pastikanMasuk } from '@/lib/penjaga-admin';
 import { ambilPengaturanAI, ambilPengaturanPenilai } from '@/lib/ai-pengaturan';
 
 const MAX_BODY_BYTES = 4_000_000;
@@ -20,9 +21,12 @@ function errJson(message: string, status: number) {
 }
 
 export async function POST(request: NextRequest) {
+  //  Sesi diverifikasi DI SINI: proxy.ts hanya memeriksa ADA-nya cookie, jadi tanpa ini siapa pun dengan cookie
+  //  palsu (ivp_session=x) bisa memakai token Gemini perusahaan sebagai proxy AI gratis.
+  const jaga = await pastikanMasuk(request);
+  if (!jaga.ok) return errJson(jaga.alasan, jaga.status);
   try {
-    // Batasi ukuran body - endpoint sudah butuh session (middleware), tapi cegah
-    // penyalahgunaan sebagai proxy gratis dengan payload besar.
+    // Batasi ukuran body - cegah penyalahgunaan sebagai proxy dengan payload besar.
     const raw = await request.text();
     if (raw.length > MAX_BODY_BYTES) {
       return errJson(

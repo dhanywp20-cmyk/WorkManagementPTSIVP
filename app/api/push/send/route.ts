@@ -33,14 +33,17 @@ export async function POST(req: NextRequest) {
   try { body = await req.json(); }
   catch { return NextResponse.json({ ok: false, alasan: 'Isi permintaan bukan JSON.' }, { status: 400 }); }
 
-  const userIds = (body.user_ids ?? []).filter((s): s is string => typeof s === 'string' && !!s);
-  const title = (body.title ?? '').trim();
+  const userIds = (body.user_ids ?? []).filter((s): s is string => typeof s === 'string' && !!s).slice(0, 300);
+  const title = (body.title ?? '').trim().slice(0, 120);
+  //  Tujuan klik hanya halaman di aplikasi ini ("/ticketing", ...): push dari akun mana pun yang login tidak boleh
+  //  membawa penerima ke situs luar (phishing atas nama aplikasi).
+  const url = typeof body.url === 'string' && /^\/(?!\/)/.test(body.url) ? body.url.slice(0, 300) : undefined;
   if (!userIds.length || !title) return NextResponse.json({ ok: false, alasan: 'user_ids/title kosong.' });
 
   // Fire-and-forget dari sudut pandang pemanggil - tapi ditunggu di sini
   // (bukan void) supaya serverless function tidak mati sebelum pengiriman
   // selesai. kirimPushKeUser tidak pernah throw, jadi ini tidak memperlambat
   // dengan risiko galat tak tertangani.
-  await kirimPushKeUser(userIds, { title, body: body.body, url: body.url });
+  await kirimPushKeUser(userIds, { title, body: typeof body.body === 'string' ? body.body.slice(0, 400) : undefined, url });
   return NextResponse.json({ ok: true });
 }

@@ -194,8 +194,13 @@ export async function POST(req: NextRequest) {
     return jawab(true);
   }
 
+  //  Pengiriman biasa (router notifikasi di peramban): wajib sesi yang SAH. Dulu tanpa penjaga - proxy.ts hanya
+  //  memeriksa ada-nya cookie, jadi cookie palsu cukup untuk menyuruh bot perusahaan mengirim teks apa pun ke chat
+  //  / grup tim mana pun yang diikuti bot.
+  const jaga = await pastikanMasuk(req);
+  if (!jaga.ok) return NextResponse.json({ ok: false, alasan: jaga.alasan }, { status: jaga.status });
   const chatId = (body.chatId ?? '').trim();
-  const pesan = (body.pesan ?? '').trim();
+  const pesan = (body.pesan ?? '').trim().slice(0, 4000);
   if (!chatId) return jawab(false, 'Chat ID belum diisi.');
   if (!pesan)  return jawab(false, 'Pesan kosong.');
 

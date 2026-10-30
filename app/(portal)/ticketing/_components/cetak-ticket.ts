@@ -1,4 +1,5 @@
 import { Ticket, ringkasPenanganan, formatDateTime } from './shared';
+import { escObjek, urlAman } from '@/lib/lembar-cetak';
 
 /**
  * Laporan cetak satu ticket: menyusun HTML lengkap dengan gaya cetaknya
@@ -8,7 +9,10 @@ import { Ticket, ringkasPenanganan, formatDateTime } from './shared';
  * ticket-nya, dan itulah alasan fungsi sepanjang ini tidak perlu tinggal di
  * dalam komponen halaman.
  */
-export async function cetakTicket(ticket: Ticket): Promise<void> {
+export async function cetakTicket(asli: Ticket): Promise<void> {
+  //  Semua teks ticket & activity log di-escape SEKALI di sini: deskripsi, alamat, catatan, dll. diisi pengguna
+  //  (termasuk akun Sales) dan jendela cetak berjalan di origin aplikasi dengan hak orang yang menekan Cetak.
+  const ticket = escObjek(asli);
   const printDate = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
 
   const statusLabel = ticket.status;
@@ -57,8 +61,8 @@ export async function cetakTicket(ticket: Ticket): Promise<void> {
         <td style="padding:10px 12px;border:1px solid #e2e8f0;vertical-align:top">
           ${log.action_taken ? `<div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:4px">🔧 ${log.action_taken}</div>` : ""}
           ${log.notes ? `<div style="font-size:12px;color:#1e293b;line-height:1.6;white-space:pre-line">${log.notes}</div>` : "<div style=\"color:#94a3b8;font-size:11px;font-style:italic\">—</div>"}
-          ${log.file_url ? `<div style="margin-top:6px"><a href="${log.file_url}" style="font-size:11px;color:#2563eb;font-weight:600">📎 ${log.file_name || "Download"}</a></div>` : ""}
-          ${log.photo_url ? `<div style="margin-top:6px"><img src="${log.photo_url}" style="max-height:100px;border-radius:6px;border:1px solid #e2e8f0" alt="bukti"/></div>` : ""}
+          ${log.file_url ? `<div style="margin-top:6px"><a href="${urlAman(log.file_url)}" style="font-size:11px;color:#2563eb;font-weight:600">📎 ${log.file_name || "Download"}</a></div>` : ""}
+          ${log.photo_url ? `<div style="margin-top:6px"><img src="${urlAman(log.photo_url)}" style="max-height:100px;border-radius:6px;border:1px solid #e2e8f0" alt="bukti"/></div>` : ""}
         </td>
       </tr>`;
     }).join("");
@@ -181,7 +185,7 @@ ${ticket.photo_url ? `
 <div class="section" style="page-break-inside:avoid">
   <div class="section-title">📸 Foto Ticket</div>
   <div style="padding:12px;text-align:center">
-    <img src="${ticket.photo_url}" style="max-height:220px;max-width:100%;border-radius:8px;border:1.5px solid #e2e8f0" alt="foto ticket"/>
+    <img src="${urlAman(ticket.photo_url)}" style="max-height:220px;max-width:100%;border-radius:8px;border:1.5px solid #e2e8f0" alt="foto ticket"/>
   </div>
 </div>` : ""}
 
