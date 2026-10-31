@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { MiniPieChart } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { NETRAL, BAYANG } from '@/lib/desain';
+import { useAngkaNaik } from '@/components/shared/AngkaNaik';
+import { SisiDonat, jalurCincin, geserIrisan } from '@/components/shared/SisiDonat';
 
 /**
  * 3 generic donut cards = thin wrappers di atas shared MiniPieChart.
@@ -90,6 +92,7 @@ export function HandlerDonutCard({
   icon: string;
 }) {
   const [hov, setHov] = useState<number | null>(null);
+  const totalNaik = useAngkaNaik(total);
   let cumAngle = -Math.PI / 2;
   const cx = 60, cy = 60, r = 50, ir = 28;
   const slices = total > 0 ? data.map((d, i) => {
@@ -100,8 +103,10 @@ export function HandlerDonutCard({
     const xi2 = cx + ir * Math.cos(cumAngle + angle), yi2 = cy + ir * Math.sin(cumAngle + angle);
     const large = angle > Math.PI ? 1 : 0;
     const path = `M ${xi1} ${yi1} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${ir} ${ir} 0 ${large} 0 ${xi1} ${yi1} Z`;
+    const tengahSudut = cumAngle + angle / 2;
     cumAngle += angle;
-    return { ...d, path, isFullCircle: false, i };
+    //  Irisan 100% (satu handler): busur awal = busur akhir, path-nya kosong - gambar sebagai cincin utuh.
+    return { ...d, path, isFullCircle: d.value >= total, i, tengahSudut };
   }) : [];
   return (
     <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 flex flex-col gap-1 sm:gap-3" style={{ background: `linear-gradient(180deg, ${NETRAL.permukaan}, #f8fafc)`, border: `1px solid ${NETRAL.garis}`, boxShadow: BAYANG.kartu3d }}>
@@ -123,24 +128,20 @@ export function HandlerDonutCard({
               (1fr = minmax(auto,1fr)) tidak bisa menyusut di bawah lebar
               isinya, sehingga SELURUH halaman ikut melebar dan bisa digeser
               ke samping. */}
-          <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120" className="flex-shrink-0 w-[58px] h-[58px] sm:w-[120px] sm:h-[120px]">
+          <svg aria-hidden="true" focusable="false" width="120" height="120" viewBox="0 0 120 120" className="donat-3d flex-shrink-0 w-[58px] h-[58px] sm:w-[120px] sm:h-[120px]">
+            <SisiDonat irisan={slices.map(s => ({ d: s.isFullCircle ? jalurCincin(cx, cy, r, ir) : s.path, warna: s.color }))} />
             {slices.map((s) =>
               s.isFullCircle ? (
-                <g key={s.i} style={{ cursor: "pointer" }} onClick={() => onSliceClick(s.name)}
-                  onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)}>
-                  <circle cx={60} cy={60} r={50} fill={s.color}
-                    opacity={hov === null || hov === s.i ? 1 : 0.45}
-                    style={{ filter: hov === s.i ? `drop-shadow(0 0 4px ${s.color})` : "none" }} />
-                  <circle cx={60} cy={60} r={28} fill="white" />
-                </g>
+                <path key={s.i} d={jalurCincin(cx, cy, r, ir)} fill={s.color} fillRule="evenodd" style={{ cursor: "pointer" }}
+                  onClick={() => onSliceClick(s.name)} onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} />
               ) : (
-                <path key={s.i} d={s.path} fill={s.color}
+                <path key={s.i} d={s.path} fill={s.color} className="irisan-donat"
                   opacity={hov === null || hov === s.i ? 1 : 0.45}
-                  style={{ cursor: "pointer", transition: "opacity 0.15s", filter: hov === s.i || activeHandler === s.name ? `drop-shadow(0 0 4px ${s.color})` : "none" }}
+                  style={{ cursor: "pointer", transform: hov === s.i || activeHandler === s.name ? geserIrisan(s.tengahSudut) : undefined, filter: hov === s.i || activeHandler === s.name ? `drop-shadow(0 0 4px ${s.color})` : "none" }}
                   onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => onSliceClick(s.name)} />
               )
             )}
-            <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{total}</text>
+            <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{totalNaik}</text>
             <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">TOTAL</text>
           </svg>
           {/*  max-h + overflow-y-auto - HandlerDonutCard dulu satu-satunya

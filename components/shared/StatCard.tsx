@@ -9,6 +9,7 @@
  * deretannya punya hierarki dan angkanya mudah dibandingkan.
  */
 
+import { angkaAtauApaAdanya } from './AngkaNaik';
 import React from 'react';
 import { BAYANG } from '@/lib/desain';
 
@@ -48,8 +49,8 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
       {/* Pita aksen: penanda kategori yang tetap terbaca tanpa mendominasi kartu. */}
       <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent, opacity: active ? 1 : 0.55 }} />
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-lg sm:text-[28px] font-bold tracking-tight leading-none" style={{ color: active ? accent : '#0f172a' }}>
-          {value}
+        <span className="angka-timbul text-lg sm:text-[28px] font-bold tracking-tight leading-none tabular-nums" style={{ color: active ? accent : '#0f172a' }}>
+          {angkaAtauApaAdanya(value)}
         </span>
         {active && (
           <span className="text-[10px] font-bold uppercase tracking-widest whitespace-nowrap" style={{ color: accent }}>

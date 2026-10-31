@@ -497,8 +497,10 @@ html {
 .bilah-pindah-menu { position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 60; overflow: hidden; pointer-events: none; }
 .bilah-pindah-menu::before { content: ''; position: absolute; top: 0; bottom: 0; width: 35%; background: var(--warna-pindah, #e11d48); border-radius: 2px; animation: bilahPindahMenu 0.9s ease-in-out infinite; }
 @keyframes bilahPindahMenu { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
-.isi-sedang-pindah > :not(.bilah-pindah-menu) { animation: redupPindahMenu 0.2s ease 0.15s forwards; }
-@keyframes redupPindahMenu { to { opacity: 0.55; } }
+/* Pindah menu = membalik halaman: isi lama mundur menjauh & sedikit rebah selama halaman baru disiapkan,
+   lalu isi baru maju dari kedalaman (modulMasuk di bawah). Murni CSS di peramban. */
+.isi-sedang-pindah > :not(.bilah-pindah-menu) { transform-origin: 50% 0; animation: mundurPindahMenu .34s cubic-bezier(.4, 0, .2, 1) .06s forwards; }
+@keyframes mundurPindahMenu { to { opacity: .45; transform: perspective(1600px) translateY(10px) rotateX(5deg) scale(.965); filter: blur(.6px); } }
 @media (prefers-reduced-motion: reduce) { .bilah-pindah-menu::before { animation-duration: 2s; } }
 
 /*
@@ -591,8 +593,9 @@ html {
 
 /* Menu lain: isi modul memudar masuk saat dibuka. HANYA opacity - transform di akar modul akan menggeser
    elemen `fixed` milik modul (tombol melayang, bilah bawah) selama animasi. */
-.isi-portal > * { animation: modulMasuk .32s ease-out backwards; }
-@keyframes modulMasuk { from { opacity: 0; } }
+.isi-portal > * { animation: modulMasuk .5s cubic-bezier(.22, 1, .36, 1) backwards; transform-origin: 50% 0; }
+@keyframes modulMasuk { from { opacity: 0; transform: perspective(1600px) translateY(-14px) rotateX(-5deg) scale(1.02); } }
+.dasbor-3d { animation: modulMasuk .5s cubic-bezier(.22, 1, .36, 1) backwards; transform-origin: 50% 0; }
 
 /* Menu lain: blok-blok halaman naik bergantian (judul -> filter -> isi), lalu kartu "berdiri" dari posisi
    rebah (rotateX) saat muncul - termasuk kartu yang baru tampil sesudah data dimuat. fill-mode `backwards`:
@@ -688,7 +691,24 @@ html {
 @keyframes ikonLompat { 0% { transform: translateY(0) scale(.85); } 40% { transform: translateY(-7px) scale(1.12); } 70% { transform: translateY(1px) scale(.97); } 100% { transform: none; } }
 @keyframes garisMelebar { from { width: 0; opacity: 0; } }
 
+/* ── Donat 3D: cincin tebal (components/shared/SisiDonat.tsx) dilihat dari sudut miring; irisan yang
+   disorot keluar dari cincin; donat "berputar jatuh" ke tempatnya saat muncul. */
+.donat-3d {
+  overflow: visible; transform-origin: 50% 55%;
+  transform: perspective(420px) rotateX(28deg);
+  filter: drop-shadow(0 7px 6px rgba(15, 23, 42, .16));
+  transition: transform .5s cubic-bezier(.34, 1.56, .64, 1);
+  animation: donatMasuk .9s cubic-bezier(.22, 1, .36, 1) .1s backwards;
+}
+@media (hover: hover) { .donat-3d:hover { transform: perspective(420px) rotateX(16deg) scale(1.04); } }
+@keyframes donatMasuk { from { opacity: 0; transform: perspective(420px) rotateX(75deg) rotate(-60deg) scale(.6); } }
+.irisan-donat { transition: transform .32s cubic-bezier(.34, 1.56, .64, 1), opacity .15s; }
+/* Angka KPI timbul (StatCard) - huruf berbayang tipis seperti cetak emboss. */
+.angka-timbul { text-shadow: 0 1px 0 #fff, 0 2px 0 rgba(15, 23, 42, .07), 0 6px 10px rgba(15, 23, 42, .12); }
+
 @media (prefers-reduced-motion: reduce) {
+  .donat-3d, .isi-sedang-pindah > *, .dasbor-3d { animation: none !important; transition: none !important; }
+  .irisan-donat { transition: none; }
   .dasbor-3d .rounded-2xl.bg-white, .menu-3d, .menu-3d > :first-child, .tombol-utama { transition: none !important; }
   .dasbor-masuk > *, .isi-portal > *, .isi-portal > * > *, .isi-portal :is(.rounded-2xl.bg-white, [data-kartu3d]),
   .sidebar-3d .space-y-4 > *, .sidebar-3d .space-y-1 > *, .menu-3d > :first-child, .menu-3d::before,
