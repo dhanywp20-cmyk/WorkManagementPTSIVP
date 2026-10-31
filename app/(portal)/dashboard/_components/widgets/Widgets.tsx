@@ -28,6 +28,7 @@ import { isPimpinan } from '@/lib/pimpinan';
 import { ambilPeringkatSaya, type HasilPeringkat } from '@/lib/learning-rank';
 import { PopupJawabanQuiz } from './PopupJawabanQuiz';
 import { SalesAnalyticsWidget, hasSalesAnalyticsData } from './SalesAnalyticsWidget';
+import { MeteranSetengah, TumpukanPeringkat } from './dimensi';
 
 // Kontrak widget + primitif UI - dipindah ke primitives.tsx supaya widget
 // Work Center (../workcenter/) bisa memakainya tanpa circular import (lihat
@@ -40,7 +41,6 @@ import {
 export type { WidgetProps, WidgetSize, WidgetDef };
 export { WidgetCard, EmptyState, Loading };
 import WorkQueueSection from '../workcenter/WorkQueueSection';
-import KonstelasiTim from './KonstelasiTim';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
 
@@ -56,25 +56,6 @@ const todayStr = () => new Date().toISOString().split('T')[0];
  * identitasnya, angkanya sendiri tetap tinta gelap supaya terbaca sebagai
  * bilangan, bukan sebagai status.
  */
-/** Cincin progres "sudah / total" - warna ikut ambang (>=80 hijau, >=50 kuning, sisanya oranye). */
-function CincinProgres({ pct, sudah, total }: { pct: number; sudah: number; total: number }) {
-  const r = 34, k = 2 * Math.PI * r;
-  const warna = pct >= 80 ? '#16a34a' : pct >= 50 ? '#d97706' : '#ea580c';
-  return (
-    <div className="relative w-[88px] h-[88px] flex-shrink-0" role="img" aria-label={`${sudah} dari ${total} sudah isi daily report (${pct}%)`}>
-      <svg viewBox="0 0 80 80" className="w-full h-full -rotate-90" aria-hidden="true">
-        <circle cx="40" cy="40" r={r} fill="none" stroke="#e2e8f0" strokeWidth="8" />
-        {pct > 0 && <circle cx="40" cy="40" r={r} fill="none" stroke={warna} strokeWidth="8" strokeLinecap="round"
-          strokeDasharray={`${(Math.max(0, Math.min(100, pct)) / 100) * k} ${k}`} className="transition-[stroke-dasharray] duration-700" />}
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center leading-none">
-        <span className="text-xl font-extrabold text-slate-900 tabular-nums">{pct}%</span>
-        <span className="text-[11px] font-semibold text-slate-500 mt-1 tabular-nums">{sudah}/{total}</span>
-      </div>
-    </div>
-  );
-}
-
 function StatPills({ items }: { items: { label: string; value: number; color: string }[] }) {
   return (
     <div className="grid grid-cols-3 gap-3 mb-3">
@@ -318,7 +299,8 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
             "berapa dari berapa". */
         <div className="flex flex-col gap-4 h-full">
           <div className="flex items-center gap-4">
-            <CincinProgres pct={pct} sudah={sudah} total={total} />
+            <MeteranSetengah pct={pct} label={`${pct}%`} sub={`${sudah}/${total} sudah isi`}
+              ariaLabel={`${sudah} dari ${total} sudah isi daily report (${pct}%)`} />
             <dl className="grid gap-1.5 text-[12px] flex-1 min-w-0">
               <div className="flex items-center justify-between gap-2"><dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full bg-green-600" />Sudah isi</dt><dd className="font-bold text-slate-900 tabular-nums">{sudah}</dd></div>
               <div className="flex items-center justify-between gap-2"><dt className="flex items-center gap-1.5 text-slate-600"><span className="w-2 h-2 rounded-full" style={{ background: '#ea580c' }} />Belum isi</dt><dd className="font-bold text-slate-900 tabular-nums">{belum}</dd></div>
@@ -331,6 +313,18 @@ const TeamMonitoringWidget: React.FC<WidgetProps> = ({ user, openMenu }) => {
               <div className="text-xs font-semibold text-green-700 flex items-center h-full min-h-[60px]"><IkonTeks nama="🎉" />Semua tim sudah update Daily Report hari ini!</div>
             ) : (
               <>
+                {/*  Tiga teratas yang belum lapor, diurutkan dari jadwal aktif hari ini terbanyak - siapa yang
+                    paling perlu diingatkan lebih dulu - sebagai kartu bertumpuk 3D. Daftar lengkap per atasan
+                    tetap di bawahnya. */}
+                <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-2">Prioritas diingatkan</div>
+                <div className="mb-4">
+                  <TumpukanPeringkat items={belumList.slice(0, 3).map(m => ({
+                    id: m.id, judul: m.name,
+                    ket: m.active > 0 ? `${m.active} jadwal aktif hari ini` : (m.jabatan || 'Belum daily report'),
+                    nilai: m.active > 0 ? `${m.active}` : undefined,
+                    onClick: () => openMenu('daily-report'),
+                  }))} />
+                </div>
                 <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wide mb-1.5">Belum Daily Report ({belumList.length})</div>
                 {/*
                   Ditumpuk vertikal (bukan flex-wrap berdampingan) supaya
@@ -631,9 +625,6 @@ export const WIDGETS: WidgetDef[] = [
   { id: 'sales-analytics', permission: (u) => !canAccessAnalytics(u) && hasSalesAnalyticsData(u), priority: 0.5, size: 'full', Component: SalesAnalyticsWidget },
   // Team Monitoring paling atas utk Admin/Team (full width) - jawab "mana report tim".
   { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
-  //  Konstelasi Tim 3D - akun internal (Team & Admin); sesudah pasangan My Action + Team Monitoring supaya
-  //  keduanya tetap sejajar. Datanya sama dengan lonceng notifikasi (cache, tanpa kueri tambahan).
-  { id: 'konstelasi-tim', permission: (u) => ['team', 'team_pts', 'admin', 'superadmin'].includes((u.role ?? '').toLowerCase()), priority: 1.5, size: 'full', Component: KonstelasiTim },
   // Analytics native (DashboardKPI, tanpa iframe) - tema analytics penuh utk Admin/Team.
   // Sudah memuat Ticket/Reminder/Piket/Unit/Pengguna/Learning  widget di bawah
   // DISEMBUNYIKAN utk role ini (`!canAccessAnalytics`) supaya TIDAK duplikat data.

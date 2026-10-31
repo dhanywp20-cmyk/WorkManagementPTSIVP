@@ -523,7 +523,7 @@ html {
       memanjang. Naiknya lewat `top`, BUKAN transform: transform menjadikan ubin "containing block"
       bagi elemen `fixed` di dalamnya (popup), akar bug modal yang dulu sudah dicabut.
       Hanya ubin beranda (.dasbor-3d), ditandai rounded-2xl + bg-white - isi ubin tidak tersentuh.
-   2) Panel Konstelasi Tim (widgets/KonstelasiTim.tsx): ubin yang sama, dengan "lantai" kisi titik. */
+   */
 .dasbor-3d .rounded-2xl.bg-white {
   position: relative; top: 0;
   background: linear-gradient(180deg, #ffffff 0%, #fcfdff 55%, #f5f7fb 100%);
@@ -543,16 +543,92 @@ html {
       0 30px 52px -20px rgba(15, 23, 42, .3) !important;
   }
 }
-/* "Lantai" panel Konstelasi Tim: kisi titik halus + sorot lembut warna merek di tengah - memberi ruang
-   kedalaman pada latar TERANG (pemilik: bukan mode gelap). */
-.konstelasi-lantai::before {
-  content: ''; position: absolute; inset: 0; pointer-events: none;
+/* Kartu muncul bergantian dari bawah saat beranda dibuka. fill-mode `backwards`: SESUDAH animasi tidak ada
+   transform yang menetap pada ubin (popup `fixed` di dalamnya tetap mengacu ke layar). */
+.dasbor-masuk > * { animation: dasborNaik .62s cubic-bezier(.22, 1, .36, 1) backwards; }
+.dasbor-masuk > *:nth-child(2) { animation-delay: .07s; }
+.dasbor-masuk > *:nth-child(3) { animation-delay: .14s; }
+.dasbor-masuk > *:nth-child(4) { animation-delay: .21s; }
+.dasbor-masuk > *:nth-child(5) { animation-delay: .28s; }
+.dasbor-masuk > *:nth-child(n+6) { animation-delay: .34s; }
+@keyframes dasborNaik { from { opacity: 0; transform: translateY(18px) scale(.985); } }
+
+/* Ikon "tanah liat": gradasi warna modul + kilau atas + bayangan berwarna. */
+.ikon-timbul {
+  border-radius: 28%;
   background:
-    radial-gradient(50% 60% at 50% 55%, color-mix(in srgb, var(--merek-utama, #e11d48) 7%, transparent), transparent 70%),
-    radial-gradient(circle, rgba(148, 163, 184, .28) 1px, transparent 1.2px) 0 0 / 18px 18px;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 86%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+    radial-gradient(120% 90% at 30% 15%, rgba(255, 255, 255, .55), transparent 55%),
+    linear-gradient(160deg, color-mix(in srgb, var(--warna-ikon) 78%, white), var(--warna-ikon) 60%, color-mix(in srgb, var(--warna-ikon) 82%, black));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -2px 3px color-mix(in srgb, var(--warna-ikon) 60%, black),
+    0 6px 14px -6px color-mix(in srgb, var(--warna-ikon) 75%, transparent);
 }
+
+/* Kartu angka timbul (tab Agenda). */
+.kartu-angka-3d {
+  position: relative; min-width: 0; padding: 11px 12px; border-radius: 16px;
+  background: linear-gradient(180deg, #fff, #f8fafc);
+  border: 1px solid rgba(203, 213, 225, .7);
+  box-shadow: inset 0 1px 0 #fff, 0 1px 1px rgba(15, 23, 42, .04), 0 8px 16px -10px rgba(15, 23, 42, .18);
+  transition: transform .25s cubic-bezier(.22, 1, .36, 1), box-shadow .25s, border-color .25s;
+}
+.kartu-angka-3d:hover { transform: translateY(-2px); box-shadow: inset 0 1px 0 #fff, 0 2px 2px rgba(15, 23, 42, .05), 0 14px 24px -12px rgba(15, 23, 42, .25); }
+.kartu-angka-3d.aktif {
+  border-color: color-mix(in srgb, var(--warna-ikon) 55%, white);
+  background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--warna-ikon) 7%, white));
+  box-shadow: inset 0 1px 0 #fff, 0 0 0 3px color-mix(in srgb, var(--warna-ikon) 14%, transparent),
+    0 14px 26px -12px color-mix(in srgb, var(--warna-ikon) 45%, transparent);
+}
+
+/* Kartu tugas (Agenda) & pintasan ber-ikon timbul. */
+.kartu-tugas {
+  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 14px;
+  background: #fff; border: 1px solid rgba(226, 232, 240, .9);
+  box-shadow: inset 0 1px 0 #fff, 0 1px 2px rgba(15, 23, 42, .04);
+  transition: transform .22s cubic-bezier(.22, 1, .36, 1), box-shadow .22s, border-color .22s;
+}
+.kartu-tugas:hover { transform: translateY(-1px); border-color: #cbd5e1; box-shadow: inset 0 1px 0 #fff, 0 10px 20px -12px rgba(15, 23, 42, .25); }
+.pintasan-3d {
+  display: flex; flex-direction: column; align-items: center; gap: 7px; min-width: 84px; padding: 10px 6px 9px; border-radius: 14px;
+  font-size: 11.5px; font-weight: 600; color: #334155; text-align: center; line-height: 1.2;
+  transition: transform .25s cubic-bezier(.22, 1, .36, 1), background .2s;
+}
+.pintasan-3d:hover { background: #f8fafc; transform: translateY(-3px); }
+.pintasan-3d:hover .ikon-timbul { transform: perspective(300px) rotateX(10deg) rotateY(-10deg); }
+.pintasan-3d .ikon-timbul { transition: transform .3s cubic-bezier(.22, 1, .36, 1); }
+
+/* Kartu bertumpuk berperspektif (gaya "Time Sheet"): urutan ke-n makin sempit, redup, dan tertutup. */
+.tumpukan-3d { display: flex; flex-direction: column; }
+.tumpukan-3d > li + li { margin-top: -10px; }
+.tumpukan-3d > li { position: relative; z-index: calc(10 - var(--urut));
+  padding-inline: calc(var(--urut) * 7px); animation: tumpukMasuk .55s cubic-bezier(.22, 1, .36, 1) backwards; animation-delay: calc(.25s + var(--urut) * .08s); }
+.tumpukan-kartu {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border-radius: 14px;
+  color: #0f172a; background: linear-gradient(180deg, #fff, #f6f8fb); border: 1px solid rgba(203, 213, 225, .8);
+  box-shadow: inset 0 1px 0 #fff, 0 10px 18px -12px rgba(15, 23, 42, .28);
+  opacity: calc(1 - var(--urut) * .14);
+  transition: transform .22s cubic-bezier(.22, 1, .36, 1), opacity .22s;
+}
+.tumpukan-kartu:hover { transform: translateY(-2px); opacity: 1; }
+.tumpukan-kartu.utama {
+  color: #fff; border-color: transparent;
+  background: linear-gradient(120deg, var(--merek-utama, #e11d48), var(--merek-utama-2, #be123c));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 14px 26px -12px color-mix(in srgb, var(--merek-utama, #e11d48) 70%, transparent);
+}
+.tumpukan-no { width: 22px; height: 22px; border-radius: 999px; display: grid; place-items: center; flex-shrink: 0;
+  font-size: 11px; font-weight: 800; background: #e2e8f0; color: #475569; }
+.tumpukan-kartu.utama .tumpukan-no { background: #fff; color: var(--merek-utama, #e11d48); }
+.tumpukan-avatar { width: 32px; height: 32px; border-radius: 999px; display: grid; place-items: center; flex-shrink: 0;
+  font-size: 11.5px; font-weight: 800; color: #fff; background: linear-gradient(145deg, #94a3b8, #475569);
+  box-shadow: 0 0 0 2px #fff, 0 4px 8px -3px rgba(15, 23, 42, .35); }
+.tumpukan-kartu.utama .tumpukan-avatar { background: linear-gradient(145deg, rgba(255, 255, 255, .45), rgba(255, 255, 255, .15)); }
+.tumpukan-nilai { flex-shrink: 0; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 999px;
+  background: rgba(220, 38, 38, .1); color: #dc2626; }
+.tumpukan-kartu.utama .tumpukan-nilai { background: rgba(255, 255, 255, .22); color: #fff; }
+@keyframes tumpukMasuk { from { opacity: 0; transform: translateY(-10px); } }
+
 @media (prefers-reduced-motion: reduce) {
   .dasbor-3d .rounded-2xl.bg-white { transition: none; }
+  .dasbor-masuk > *, .tumpukan-3d > li { animation: none; }
+  .kartu-angka-3d, .kartu-tugas, .pintasan-3d, .pintasan-3d .ikon-timbul, .tumpukan-kartu { transition: none; }
 }

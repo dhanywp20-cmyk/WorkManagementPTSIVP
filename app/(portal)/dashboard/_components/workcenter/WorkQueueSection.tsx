@@ -1,30 +1,40 @@
 'use client';
 
 import React from 'react';
-import { type WidgetProps, WidgetCard, EmptyState, Loading, QuickActionChip } from '../widgets/primitives';
+import { type WidgetProps, WidgetCard, EmptyState, Loading } from '../widgets/primitives';
+import { IkonTimbul, KartuAngka3D } from '../widgets/dimensi';
 import { isAdminRole, isTeamMember, hasMenu } from '../widgets/permissions';
 import { useWorkQueue, type ActionItem, type Urgency } from './useWorkQueue';
 import type { User } from '../shared';
 import { Ikon } from '@/components/shared/Ikon';
 
-const URGENCY_DOT: Record<Urgency, string> = { urgent: '#dc2626', pending: '#ea580c', upcoming: '#2563eb' };
+const URGENSI: Record<Urgency, { label: string; warna: string }> = {
+  urgent: { label: 'Mendesak', warna: '#dc2626' },
+  pending: { label: 'Perlu tindakan', warna: '#ea580c' },
+  upcoming: { label: 'Mendatang', warna: '#2563eb' },
+};
 
+/** Satu tugas sebagai kartu: ikon timbul, judul, keterangan, label status (dan tanggal di tab Mendatang). */
 function ActionRow({ item, onClick, showUrgencyDot = true, tanggal }: {
   item: ActionItem; onClick: () => void; showUrgencyDot?: boolean; tanggal?: string;
 }) {
+  const u = URGENSI[item.urgency];
   return (
-    <button onClick={onClick}
-      className="flex items-start gap-2.5 py-2.5 px-1.5 w-full text-left rounded-lg hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
-      {showUrgencyDot && (
-        <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ background: URGENCY_DOT[item.urgency] }}
-          aria-label={item.urgency} title={item.urgency} />
-      )}
-      <span className="text-sm flex-shrink-0 leading-tight" aria-hidden="true"><Ikon nama={item.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /></span>
+    <button onClick={onClick} className="kartu-tugas">
+      <IkonTimbul ikon={item.icon} warna={u.warna} ukuran={34} />
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-semibold text-slate-800 truncate leading-snug">{item.title}</div>
-        <div className="text-[11px] text-slate-500 truncate">{item.subtitle}</div>
+        <div className="text-[11.5px] text-slate-500 truncate mt-0.5">{item.subtitle}</div>
       </div>
-      {tanggal && <span className="text-[11px] font-semibold text-slate-600 flex-shrink-0 mt-0.5 tabular-nums">{tanggal}</span>}
+      {tanggal && (
+        <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 flex-shrink-0 tabular-nums px-2 py-1 rounded-full bg-slate-100">
+          <Ikon nama="🗓️" ukuran={12} />{tanggal}
+        </span>
+      )}
+      {showUrgencyDot && (
+        <span className="hidden sm:inline text-[10.5px] font-bold flex-shrink-0 px-2 py-1 rounded-full"
+          style={{ background: `${u.warna}14`, color: u.warna }}>{u.label}</span>
+      )}
     </button>
   );
 }
@@ -43,16 +53,19 @@ const AKSI_TEAM: AksiDef[] = [
   { key: 'learning-center', label: 'Learning Center', icon: '🎓', warna: '#4338ca', run: (openMenu) => openMenu('learning-center') },
 ];
 
-/** Chip Quick Action Team - dirender DI DALAM kartu My Action, di bawah daftar item. */
+/** Pintasan Team - ikon timbul + label, DI DALAM kartu Agenda, di bawah daftar tugas. */
 function TeamActionChips({ user, openMenu, openUrl }: {
   user: User; openMenu: (k: string) => void; openUrl: (url: string, title: string) => void;
 }) {
   const aksi = AKSI_TEAM.filter(a => hasMenu(user, a.key)).slice(0, 6);
   if (aksi.length === 0) return null;
   return (
-    <div className="flex gap-2 mt-auto pt-3 border-t border-slate-100 overflow-x-auto -mx-1 px-1 pb-0.5 [scrollbar-width:none]">
+    <div className="flex gap-1 mt-auto pt-3 border-t border-slate-100 overflow-x-auto -mx-1 px-1 pb-0.5 [scrollbar-width:none]">
       {aksi.map(a => (
-        <QuickActionChip key={a.key} label={a.label} icon={a.icon} warna={a.warna} onClick={() => a.run(openMenu, openUrl)} />
+        <button key={a.key} type="button" onClick={() => a.run(openMenu, openUrl)} className="pintasan-3d flex-1">
+          <IkonTimbul ikon={a.icon} warna={a.warna} ukuran={40} />
+          <span>{a.label}</span>
+        </button>
       ))}
     </div>
   );
@@ -119,10 +132,10 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
     );
   }
 
-  const TAB: { k: TabAgenda; label: string; pendek: string; n: number; warna: string; items: ActionItem[] }[] = [
-    { k: 'aksi', label: 'Perlu tindakan', pendek: 'Tindakan', n: myAction.length, warna: '#dc2626', items: myAction },
-    { k: 'hari', label: 'Hari ini', pendek: 'Hari ini', n: hariIni.length, warna: '#0e7490', items: hariIni },
-    { k: 'nanti', label: 'Mendatang', pendek: 'Nanti', n: upcoming.length, warna: '#6d28d9', items: upcoming },
+  const TAB: { k: TabAgenda; label: string; n: number; warna: string; ikon: string; items: ActionItem[] }[] = [
+    { k: 'aksi', label: 'Tindakan', n: myAction.length, warna: '#dc2626', ikon: '⚡', items: myAction },
+    { k: 'hari', label: 'Hari ini', n: hariIni.length, warna: '#0e7490', ikon: '📅', items: hariIni },
+    { k: 'nanti', label: 'Mendatang', n: upcoming.length, warna: '#6d28d9', ikon: '🗓️', items: upcoming },
   ];
   const sekarang = TAB.find(t => t.k === aktif)!;
 
@@ -135,22 +148,14 @@ const WorkQueueSection: React.FC<WidgetProps> = ({ user, openMenu, openUrl }) =>
           </div>
         ) : (
           <>
-            {/* Tab bersegmen - jumlah tiap sudut pandang selalu terlihat. */}
-            <div role="tablist" aria-label="Agenda" className="flex gap-1 p-1 rounded-xl bg-slate-100 mb-3">
-              {TAB.map(t => {
-                const on = t.k === aktif;
-                return (
-                  <button key={t.k} type="button" role="tab" aria-selected={on} onClick={() => setTab(t.k)}
-                    className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-[12px] font-semibold transition-colors ${on ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
-                    <span className="truncate sm:hidden">{t.pendek}</span>
-                    <span className="truncate hidden sm:inline">{t.label}</span>
-                    <span className="min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center flex-shrink-0"
-                      style={t.n > 0 ? { background: t.warna, color: '#fff' } : { background: '#e2e8f0', color: '#475569' }}>{t.n}</span>
-                  </button>
-                );
-              })}
+            {/* Tiga kartu angka timbul - sekaligus tab: jumlah tiap sudut pandang selalu terlihat. */}
+            <div role="tablist" aria-label="Agenda" className="grid grid-cols-3 gap-2 sm:gap-3 mb-3">
+              {TAB.map(t => (
+                <KartuAngka3D key={t.k} label={t.label} nilai={t.n} ikon={t.ikon} warna={t.warna}
+                  aktif={t.k === aktif} onClick={() => setTab(t.k)} />
+              ))}
             </div>
-            <div role="tabpanel" className="flex-1 min-h-[88px] sm:min-h-[132px] max-h-[300px] overflow-y-auto overscroll-contain -mx-1.5 px-1.5">
+            <div role="tabpanel" className="flex-1 min-h-[88px] sm:min-h-[132px] max-h-[300px] overflow-y-auto overscroll-contain -mx-1.5 px-1.5 py-0.5 flex flex-col gap-2">
               {sekarang.items.length === 0 ? (
                 <EmptyState
                   judul={aktif === 'aksi' ? 'Tidak ada yang mendesak' : aktif === 'hari' ? 'Hari ini kosong' : 'Belum ada jadwal'}
