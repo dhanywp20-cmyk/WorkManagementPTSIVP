@@ -131,8 +131,11 @@ console.log('\n7. Proyektor tertanam di plafon / dinding (hanya lensa di dalam r
   const mesin = readFileSync(`${D3}/mesin/useMesin.ts`, 'utf8');
   cek('seret (gizmo): proyektor dijepit lewat lensanya, benda lain tetap utuh di dalam ruang',
     /jepitProyektor\(\{ \.\.\.b0, x, z, rot, elev: Math\.max\(0, o\.position\.y\) \}, bt\.x, bt\.z, plafon\)/.test(mesin) && /proyektor \? v : Math\.min\(bt\.x, Math\.max\(0, v\)\)/.test(mesin));
-  cek('geser cepat & input angka (X, Z, Dari lantai) memakai aturan yang sama',
-    /jepitProyektor\(/.test(readFileSync(`${D3}/panel/GeserCepat.tsx`, 'utf8')) && (readFileSync(`${D3}/panel/benda/BagianUmum.tsx`, 'utf8').match(/posisiProyektor\(\{/g) ?? []).length === 3);
+  //  Input angka proyektor kini di ujung lensa + projection distance (panel/benda/PosisiProyektor.tsx) - tetap lewat jepitProyektor.
+  const posisiP = readFileSync(`${D3}/panel/benda/PosisiProyektor.tsx`, 'utf8');
+  cek('geser cepat & input angka (lensa X / Z / Y, projection distance) memakai aturan yang sama',
+    /jepitProyektor\(/.test(readFileSync(`${D3}/panel/GeserCepat.tsx`, 'utf8')) && /jepitProyektor\(\{ \.\.\.b, \.\.\.ubah \}/.test(posisiP)
+    && (posisiP.match(/set\(baru\)/g) ?? []).length === 2 && /proyektor \? <PosisiProyektor/.test(readFileSync(`${D3}/panel/benda/BagianUmum.tsx`, 'utf8')));
   //  Ubah ukuran ruang: proyektor tertanam yang menembak layar tetap tertanam (tidak dipasang ulang ke drop pole).
   const layar = bendaBaru('layar', k3, { diag: 100 });
   const pas = proyektorKeLayar(p0, layar, k3, r3);
