@@ -41,12 +41,13 @@ export interface TicketRingkas {
 }
 export interface RequestRingkas {
   id: string; project_name: string; status: string; requester_name: string;
-  due_date: string | null; assigned_handler: string | null;
+  due_date: string | null; assigned_handler: string | null; created_at?: string | null;
 }
 export interface ReviewRingkas {
   id: string; project_name: string | null; reminder_id: string; review_category: string | null;
   guest_fullname: string; grade_product_knowledge: number | null;
   grade_training_customer: number | null; grade_product_knowledge_bast: number | null;
+  created_at?: string | null;
 }
 
 export interface DetailProject {
@@ -56,6 +57,12 @@ export interface DetailProject {
   reviews: ReviewRingkas[];
   /** `${module}:${record_id}` -> id baris project_source_links (untuk lepas link). */
   linkId: Record<string, string>;
+  /**
+   * Record yang terhubung ke project tapi TIDAK ikut tampil: di luar lingkup akses akun ini (Sales / divisi lain)
+   * atau sudah dihapus di menu asalnya. Ditampilkan sebagai keterangan supaya angka di daftar dan isi linimasa
+   * yang berbeda tidak tampak seperti data hilang.
+   */
+  tidakTampil: number;
 }
 
 /** Satu baris v_project_summary. */
@@ -118,14 +125,17 @@ export async function cariProjectUntukPilih(kata: string, kecuali?: string): Pro
 const KOLOM_DETAIL: Record<SourceModule, string> = {
   reminders: 'id, project_name, category, mode_penyelesaian, due_date, bast_date, status, assign_name, address',
   tickets: 'id, project_name, issue_case, description, status, date, assign_name',
-  project_requests: 'id, project_name, status, requester_name, due_date, assigned_handler',
-  form_reviews: 'id, project_name, reminder_id, review_category, guest_fullname, grade_product_knowledge, grade_training_customer, grade_product_knowledge_bast',
+  project_requests: 'id, project_name, status, requester_name, due_date, assigned_handler, created_at',
+  form_reviews: 'id, project_name, reminder_id, review_category, guest_fullname, grade_product_knowledge, grade_training_customer, grade_product_knowledge_bast, created_at',
 };
 
 /** Seluruh riwayat satu project, dari record yang dipetakan ke project itu. */
 export async function ambilDetailProject(projectId: string, lingkup: LingkupProject): Promise<DetailProject> {
-  const { data: links } = await supabase.from('project_source_links')
+  //  Kueri yang GAGAL dilempar, bukan dianggap kosong: dulu galat jaringan / izin tampil sebagai
+  //  "Belum ada aktivitas tercatat" - menyesatkan untuk project yang sebenarnya punya riwayat.
+  const { data: links, error: galatLink } = await supabase.from('project_source_links')
     .select('id, source_module, source_record_id').eq('project_id', projectId);
+  if (galatLink) throw new Error(galatLink.message);
   const linkId: Record<string, string> = {};
   const ids: Record<SourceModule, string[]> = { reminders: [], tickets: [], project_requests: [], form_reviews: [] };
   for (const l of (links ?? []) as { id: string; source_module: SourceModule; source_record_id: string }[]) {
@@ -138,7 +148,8 @@ export async function ambilDetailProject(projectId: string, lingkup: LingkupProj
     let q = supabase.from(modul).select(KOLOM_DETAIL[modul]).in('id', daftarId);
     if (modul !== 'form_reviews') q = q.or('is_deleted.is.null,is_deleted.eq.false');
     q = pasangLingkup(q, lingkup, 'sales_name');
-    const { data } = await q;
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
     return (data ?? []) as unknown as T[];
   }
 
@@ -155,12 +166,15 @@ export async function ambilDetailProject(projectId: string, lingkup: LingkupProj
     let q = supabase.from('form_reviews').select(KOLOM_DETAIL.form_reviews)
       .in('reminder_id', reminders.map(r => r.id));
     q = pasangLingkup(q, lingkup, 'sales_name');
-    const { data } = await q;
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
     const dikenal = new Set(reviews.map(r => r.id));
     for (const r of (data ?? []) as unknown as ReviewRingkas[]) if (!dikenal.has(r.id)) reviews.push(r);
   }
 
-  return { reminders, tickets, requests, reviews, linkId };
+  const terlihat = reminders.length + tickets.length + requests.length + reviewsLangsung.length;
+  const terhubung = ids.reminders.length + ids.tickets.length + ids.project_requests.length + ids.form_reviews.length;
+  return { reminders, tickets, requests, reviews, linkId, tidakTampil: Math.max(0, terhubung - terlihat) };
 }
 
 // ── Mapping Center (admin) ─────────────────────────────────────────────────

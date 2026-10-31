@@ -1,56 +1,16 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Modal, ConfirmDialog, type ConfirmState } from '@/components/shared';
+import { Modal, ConfirmDialog, ErrorState, type ConfirmState } from '@/components/shared';
 import {
   ambilDetailProject, ubahProject, lepasLink, pindahkanLink, gabungkanProject,
-  type LingkupProject, type RingkasanProject, type DetailProject, type SourceModule,
+  type LingkupProject, type RingkasanProject, type DetailProject,
 } from '@/lib/summary-project';
 import { PilihProject } from './PilihProject';
 import { TIPE_CFG, STATUS_PROJECT, fmtTgl, warnaStatus, type AktivitasTipe } from './tampilan';
+import { bangunLinimasa, diMasaDepan, LABEL_TANGGAL, saringLinimasa, type SaringLinimasa } from './linimasa';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { TombolEkspor } from '@/components/shared/TombolEkspor';
-
-interface Aktivitas {
-  id: string; tipe: AktivitasTipe; tanggal: string | null;
-  judul: string; meta: string; status?: string; href: string;
-  /** Id baris project_source_links bila record ini dipetakan langsung (bukan ikut reminder). */
-  linkId?: string;
-}
-
-/** Gabungkan 4 sumber jadi SATU linimasa kronologis - lebih enak dibaca daripada 4 kotak terpisah. */
-function bangunLinimasa(detail: DetailProject): Aktivitas[] {
-  const list: Aktivitas[] = [];
-  const link = (m: SourceModule, id: string) => detail.linkId[`${m}:${id}`];
-  detail.reminders.forEach(r => list.push({
-    id: `r-${r.id}`, tipe: 'schedule', tanggal: r.due_date,
-    judul: `${r.category} · ${r.mode_penyelesaian === 'remote' ? 'Remote' : 'Onsite'}`,
-    meta: `${r.assign_name}${r.address ? ' · ' + r.address : ''}`,
-    status: r.status, href: `/reminder-schedule?open=${r.id}`, linkId: link('reminders', r.id),
-  }));
-  detail.tickets.forEach(t => list.push({
-    id: `t-${t.id}`, tipe: 'ticket', tanggal: t.date,
-    judul: t.issue_case, meta: t.assign_name,
-    status: t.status, href: `/ticketing?open=${t.id}`, linkId: link('tickets', t.id),
-  }));
-  detail.requests.forEach(r => list.push({
-    id: `p-${r.id}`, tipe: 'design', tanggal: r.due_date,
-    judul: r.requester_name, meta: r.assigned_handler || 'Belum ada handler',
-    status: r.status, href: `/form-require-project?open=${r.id}`, linkId: link('project_requests', r.id),
-  }));
-  detail.reviews.forEach(r => list.push({
-    id: `f-${r.id}`, tipe: 'review', tanggal: null,
-    judul: r.review_category || 'Review', meta: r.guest_fullname,
-    href: `/form-review?open=${r.id}`, linkId: link('form_reviews', r.id),
-  }));
-  // Terbaru dulu. Yang tanpa tanggal (Form Review) diletakkan paling akhir.
-  return list.sort((a, b) => {
-    if (!a.tanggal && !b.tanggal) return 0;
-    if (!a.tanggal) return 1;
-    if (!b.tanggal) return -1;
-    return b.tanggal.localeCompare(a.tanggal);
-  });
-}
 
 const INPUT = 'w-full px-3 py-2 rounded-lg text-sm outline-none bg-white border border-gray-200 focus:ring-2 focus:ring-indigo-400';
 
@@ -65,6 +25,12 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
   beritahu: (type: 'success' | 'error', msg: string) => void;
 }) {
   const [detail, setDetail] = useState<DetailProject | null>(null);
+  /** Pesan galat muat riwayat (kueri gagal) - dulu tampil sebagai "belum ada aktivitas". */
+  const [galat, setGalat] = useState<string | null>(null);
+  /** Kapan riwayat terakhir dimuat - angka & status di sini adalah keadaan saat itu. */
+  const [dimuatPada, setDimuatPada] = useState<Date | null>(null);
+  /** Penyaring linimasa: semua / belum selesai di menu asal / lewat tenggat. */
+  const [saring, setSaring] = useState<SaringLinimasa>('semua');
   const [mode, setMode] = useState<'lihat' | 'edit' | 'gabung'>('lihat');
   const [pindahId, setPindahId] = useState<string | null>(null);
   const [sibuk, setSibuk] = useState(false);
@@ -75,8 +41,14 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
   });
 
   const muat = useCallback(async () => {
-    setDetail(null);
-    setDetail(await ambilDetailProject(project.project_id, lingkup));
+    setDetail(null); setGalat(null);
+    try {
+      setDetail(await ambilDetailProject(project.project_id, lingkup));
+      setDimuatPada(new Date());
+    } catch {
+      //  Pesan teknis (kode PostgREST dsb.) tidak ditampilkan ke pengguna.
+      setGalat('Riwayat project ini gagal dimuat.');
+    }
   }, [project.project_id, lingkup]);
 
   useEffect(() => { muat(); }, [muat]);
@@ -100,6 +72,8 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
   }), 'Project diperbarui.');
 
   const linimasa = detail ? bangunLinimasa(detail) : [];
+  const nTerbuka = linimasa.filter(a => a.terbuka).length, nTerlambat = linimasa.filter(a => a.terlambat).length;
+  const tampil = saringLinimasa(linimasa, saring);
   const jumlah: [AktivitasTipe, number][] = [
     ['schedule', project.schedule_count], ['ticket', project.ticket_count],
     ['design', project.design_count], ['review', project.review_count],
@@ -181,37 +155,78 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
               filter: [['Customer', project.customer], ['Lokasi', project.location], ['Sales', project.sales_name]],
               kolom: [
                 { judul: 'Tanggal', ambil: a => fmtTgl(a.tanggal) }, { judul: 'Jenis', ambil: a => TIPE_CFG[a.tipe].pendek },
-                { judul: 'Aktivitas', ambil: a => a.judul }, { judul: 'Keterangan', ambil: a => a.meta }, { judul: 'Status', ambil: a => a.status },
+                { judul: 'Aktivitas', ambil: a => a.judul }, { judul: 'Keterangan', ambil: a => a.meta }, { judul: 'Status', ambil: a => a.labelStatus },
               ],
             })} />
           </div>
         )}
+        {/* Perlu perhatian: penyaring linimasa menurut status menu asal. */}
+        {detail && linimasa.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Saring aktivitas">
+            {([['semua', `Semua (${linimasa.length})`], ['terbuka', `Belum selesai (${nTerbuka})`], ['terlambat', `Terlambat (${nTerlambat})`]] as [SaringLinimasa, string][]).map(([v, l]) => (
+              <button key={v} type="button" onClick={() => setSaring(v)} aria-pressed={saring === v}
+                className={`px-3 py-1.5 rounded-full text-[11.5px] font-bold border transition-colors ${saring === v
+                  ? (v === 'terlambat' ? 'bg-rose-600 border-rose-600 text-white' : 'bg-slate-900 border-slate-900 text-white')
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}>{l}</button>
+            ))}
+            <span className="text-[11px] text-slate-500 ml-1">
+              Belum selesai = status di menu asalnya belum Completed / Solved / Cancelled / Rejected.
+            </span>
+          </div>
+        )}
+        {detail && detail.tidakTampil > 0 && (
+          <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11.5px] text-slate-600">
+            {detail.tidakTampil} record lain terhubung ke project ini tetapi tidak ditampilkan: di luar akses akun Anda
+            (Sales / divisi lain) atau sudah dihapus di menu asalnya.
+          </p>
+        )}
+
         {/* Linimasa */}
-        {!detail ? (
-          <p className="py-10 text-center text-sm text-gray-500">Memuat riwayat...</p>
+        {galat ? (
+          <ErrorState message={galat} onRetry={() => { void muat(); }} />
+        ) : !detail ? (
+          <p className="py-10 text-center text-sm text-gray-500" role="status">Memuat riwayat...</p>
         ) : linimasa.length === 0 ? (
-          <p className="py-10 text-center text-sm text-gray-500">Belum ada aktivitas tercatat untuk project ini.</p>
+          <div className="py-10 text-center space-y-1">
+            <p className="text-sm font-semibold text-gray-600">Belum ada aktivitas yang bisa ditampilkan.</p>
+            <p className="text-xs text-gray-500 max-w-md mx-auto">
+              Aktivitas muncul di sini setelah Request Schedule, Ticket, atau Design Project dengan nama project ini dihubungkan
+              {isAdmin ? ' - lewat Mapping Center' : ' oleh admin'}. Form Review ikut jadwalnya.
+            </p>
+          </div>
+        ) : tampil.length === 0 ? (
+          <div className="py-8 text-center space-y-2">
+            <p className="text-sm font-semibold text-gray-600">{saring === 'terlambat' ? 'Tidak ada aktivitas yang terlambat.' : 'Semua aktivitas sudah selesai.'}</p>
+            <button type="button" onClick={() => setSaring('semua')} className="text-xs font-bold text-indigo-600 hover:underline">Tampilkan semua aktivitas</button>
+          </div>
         ) : (
           <div className="relative pl-5">
             <div className="absolute left-[5px] top-1.5 bottom-1.5 w-px bg-gray-200" aria-hidden="true" />
             <div className="space-y-5">
-              {linimasa.map(a => {
+              {tampil.map(a => {
                 const cfg = TIPE_CFG[a.tipe];
+                const mendatang = diMasaDepan(a.tanggal);
                 return (
                   <div key={a.id} className="relative">
                     <span className="absolute -left-5 top-1 w-3 h-3 rounded-full border-2 border-white shadow-sm"
                       style={{ background: cfg.color }} aria-hidden="true" />
                     <p className="text-[11px] font-black tracking-wider" style={{ color: cfg.color }}><Ikon nama={cfg.icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {cfg.label}</p>
                     <p className="text-sm font-bold text-gray-800 mt-0.5">{a.judul}</p>
-                    <p className="text-[11px] text-gray-500 mt-0.5">{fmtTgl(a.tanggal)} · {a.meta}</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      <span className="font-semibold text-gray-600">{LABEL_TANGGAL[a.tipe]} {fmtTgl(a.tanggal)}</span>
+                      {mendatang && <span className="ml-1 font-bold text-cyan-700">(akan datang)</span>}
+                      {a.meta && <> · {a.meta}</>}
+                    </p>
                     <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                      {a.status && (
+                      {a.labelStatus && (
                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-full"
-                          style={{ background: `${warnaStatus(a.status)}18`, color: warnaStatus(a.status) }}>
-                          {a.status}
+                          style={{ background: `${warnaStatus(a.status ?? '')}18`, color: warnaStatus(a.status ?? '') }}>
+                          {a.labelStatus}
                         </span>
                       )}
-                      <a href={a.href} className="text-[11px] font-bold hover:underline" style={{ color: cfg.color }}>Buka Detail →</a>
+                      {a.terlambat && <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700">Terlambat</span>}
+                      <a href={a.href} className="text-[11px] font-bold hover:underline" style={{ color: cfg.color }}
+                        title={`Buka record ini di menu ${cfg.pendek}. Tombol Kembali di peramban membawa Anda ke project ini lagi.`}>Buka di {cfg.pendek} →</a>
                       {isAdmin && a.linkId && (
                         <>
                           <button type="button" onClick={() => setPindahId(pindahId === a.linkId ? null : a.linkId!)}
@@ -238,6 +253,11 @@ export function ModalDetailProject({ project, lingkup, isAdmin, currentUserName,
               })}
             </div>
           </div>
+        )}
+        {dimuatPada && !galat && (
+          <p className="text-[11px] text-slate-400 text-right">
+            Sumber: record yang dihubungkan ke project ini · dimuat {dimuatPada.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+          </p>
         )}
       </div>
       <ConfirmDialog state={confirmState} onCancel={() => setConfirmState(null)} />
