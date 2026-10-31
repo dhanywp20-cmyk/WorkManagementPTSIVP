@@ -155,7 +155,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         (bawaan: Netral). Dulu beranda dipaksa netral di sini, sehingga
         pilihan "Gambar" diam-diam tidak berlaku di beranda saja. Ubin
         berlatar putih pekat, jadi teks tetap terbaca di atas foto. */
-    <div className="w-full h-full overflow-y-auto">
+    <div className="dasbor-3d w-full h-full overflow-y-auto">
       {/* ── Header sambutan ──────────────────────────────────────────────────
           Dulu sambutan ini ikut terkurung di dalam kolom max-w-[1600px] yang
           sama dengan isi, jadi ia melayang di atas latar tanpa batas yang

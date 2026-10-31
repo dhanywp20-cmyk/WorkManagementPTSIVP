@@ -40,6 +40,7 @@ import {
 export type { WidgetProps, WidgetSize, WidgetDef };
 export { WidgetCard, EmptyState, Loading };
 import WorkQueueSection from '../workcenter/WorkQueueSection';
+import KonstelasiTim from './KonstelasiTim';
 import { Ikon } from '@/components/shared/Ikon';
 import { IkonTeks } from '@/components/shared/Ikon';
 
@@ -630,6 +631,9 @@ export const WIDGETS: WidgetDef[] = [
   { id: 'sales-analytics', permission: (u) => !canAccessAnalytics(u) && hasSalesAnalyticsData(u), priority: 0.5, size: 'full', Component: SalesAnalyticsWidget },
   // Team Monitoring paling atas utk Admin/Team (full width) - jawab "mana report tim".
   { id: 'team-monitoring', permission: canSeeTeamMonitoring, priority: 1, size: 'full', Component: TeamMonitoringWidget },
+  //  Konstelasi Tim 3D - akun internal (Team & Admin); sesudah pasangan My Action + Team Monitoring supaya
+  //  keduanya tetap sejajar. Datanya sama dengan lonceng notifikasi (cache, tanpa kueri tambahan).
+  { id: 'konstelasi-tim', permission: (u) => ['team', 'team_pts', 'admin', 'superadmin'].includes((u.role ?? '').toLowerCase()), priority: 1.5, size: 'full', Component: KonstelasiTim },
   // Analytics native (DashboardKPI, tanpa iframe) - tema analytics penuh utk Admin/Team.
   // Sudah memuat Ticket/Reminder/Piket/Unit/Pengguna/Learning  widget di bawah
   // DISEMBUNYIKAN utk role ini (`!canAccessAnalytics`) supaya TIDAK duplikat data.
