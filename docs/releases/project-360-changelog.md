@@ -1,5 +1,13 @@
 # Project 360 (Summary Project) — changelog
 
+## Phase 2 — Deep link & lineage (1 Nov 2026)
+**Tanpa perubahan skema / data.** Rollback = revert commit ini.
+- Tautan ticket dari Summary Project / notifikasi (`/ticketing?open=<id>`) kini membuka ticket walau lebih lama dari
+  jendela muat daftar (mis. > 12 bulan), dengan aturan akses yang sama; tautan yang tidak sah memberi pemberitahuan.
+- Dokumentasi alur & lineage data per menu: [docs/alur/project-360-lineage.md](../alur/project-360-lineage.md).
+- Belum: P2-2 (Project Progress & Checklist terhubung ke project) — butuh migrasi basis data, menunggu persetujuan.
+- Uji baru `uji/summary-project-fase2.ts`.
+
 ## Phase 1 — Quick wins (31 Okt 2026)
 Audit, baseline & backlog: [docs/audit/project-summary-current-state.md](../audit/project-summary-current-state.md).
 
