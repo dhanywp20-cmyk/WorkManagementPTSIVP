@@ -1,9 +1,10 @@
 'use client';
 /** Bagian umum panel Atur benda: warna, ukuran produk, posisi, label, konten layar, simpan ke Produk saya. */
 import { Angka, Pilih, Catatan } from '../../../bersama/ui';
-import { type Benda, DISPLAY, jepitProyektor, type KontenLayar, warnaSah } from '../../inti';
+import { type Benda, DISPLAY, type KontenLayar, warnaSah } from '../../inti';
 import { Ikon } from '@/components/shared/Ikon';
 import type { KonteksAtur } from './konteks';
+import { PosisiProyektor } from './PosisiProyektor';
 
 /** Warna bawaan per jenis untuk pemilih warna (hanya titik awal pemilih; model tetap memakai bawaannya bila kosong). */
 const WARNA_AWAL: Partial<Record<Benda['jenis'], string>> = {
@@ -22,12 +23,7 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
   const { UKURAN_DARI_PILIHAN, b, batas, bawaan, bedaBawaan, bundar, formProduk, label, mm, onGambar, onSimpanProduk, plafon, set, setFormProduk, setUkuran } = c;
   //  LED: lebar / tinggi dibulatkan ke kelipatan cabinet utuh (inti/produk.ts susunanLED).
   const setLebarTinggi = b.jenis === 'led' ? setUkuran : set;
-  //  Proyektor boleh tertanam di dinding / plafon (hanya lensa di dalam ruang) - inti/proyektor.ts jepitProyektor.
   const proyektor = b.jenis === 'proyektor';
-  const posisiProyektor = (ubah: Partial<Pick<Benda, 'x' | 'z' | 'elev'>>) => {
-    const j = jepitProyektor({ ...b, ...ubah }, batas.x, batas.z, plafon);
-    return { x: Math.round(j.x * 1000) / 1000, z: Math.round(j.z * 1000) / 1000, elev: Math.round(j.elev * 100) / 100 };
-  };
   return (
     <>
       {b.jenis !== 'model' && b.jenis !== 'teks' && (
@@ -72,15 +68,18 @@ export function BagianUmum({ c }: { c: KonteksAtur }) {
       </div>
       )}
 
+      {/*  Proyektor: posisi di ujung lensa + projection distance (kalkulator Panasonic) - PosisiProyektor. */}
+      {proyektor ? <PosisiProyektor c={c} /> : (
       <div>
         <span className={label}>Posisi</span>
         <div className="grid grid-cols-2 gap-2">
-          <Angka label="X" nilai={b.x} satuan="m" onUbah={v => set(proyektor ? posisiProyektor({ x: v }) : { x: Math.min(batas.x, Math.max(0, v)) })} />
-          <Angka label="Z" nilai={b.z} satuan="m" onUbah={v => set(proyektor ? posisiProyektor({ z: v }) : { z: Math.min(batas.z, Math.max(0, v)) })} />
+          <Angka label="X" nilai={b.x} satuan="m" onUbah={v => set({ x: Math.min(batas.x, Math.max(0, v)) })} />
+          <Angka label="Z" nilai={b.z} satuan="m" onUbah={v => set({ z: Math.min(batas.z, Math.max(0, v)) })} />
           <Angka label="Putar" nilai={b.rot} satuan="°" onUbah={v => set({ rot: ((v % 360) + 360) % 360 })} />
-          <Angka label="Dari lantai" nilai={Math.round(b.elev * 100) / 100} satuan="m" onUbah={v => v >= 0 && set(proyektor ? posisiProyektor({ elev: v }) : { elev: Math.min(Math.max(0, plafon - b.h), v) })} />
+          <Angka label="Dari lantai" nilai={Math.round(b.elev * 100) / 100} satuan="m" onUbah={v => v >= 0 && set({ elev: Math.min(Math.max(0, plafon - b.h), v) })} />
         </div>
       </div>
+      )}
 
       {b.jenis !== 'teks' && <label className="flex items-center gap-2 text-[12.5px] text-slate-700">
         <input type="checkbox" className="w-4 h-4" checked={!b.sembunyiLabel} onChange={e => set({ sembunyiLabel: e.target.checked ? undefined : true })} />
