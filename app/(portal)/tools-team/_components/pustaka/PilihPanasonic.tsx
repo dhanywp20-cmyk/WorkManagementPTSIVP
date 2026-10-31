@@ -6,7 +6,9 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Catatan } from '../bersama/ui';
-import { type KatalogTdc, type LensaTdc, type ModelTdc, muatKatalogPanasonic, type RasioProyektor, rasioUntukLensa } from '../desain3d/inti';
+import {
+  cekDataLensa, KATEGORI_TDC, type KatalogTdc, type LensaTdc, type ModelTdc, muatKatalogPanasonic, type RasioProyektor, rasioUntukLensa,
+} from '../desain3d/inti';
 
 /** `rasio` = rasio sinyal sekarang (dipakai bila lensa mendukungnya), `sumber` = sumber data lensa sekarang. */
 export function PilihPanasonic({ rasio: rasioSekarang, sumber, onPakai }: {
@@ -16,7 +18,8 @@ export function PilihPanasonic({ rasio: rasioSekarang, sumber, onPakai }: {
   const [kat, setKat] = useState<KatalogTdc | null>(null);
   const [galat, setGalat] = useState<string | null>(null);
   const [cari, setCari] = useState('');
-  const [lama, setLama] = useState(false);
+  /** Model type seperti kalkulator Panasonic: 0 = All (semua 290 model, termasuk Previous) - dulu Previous disembunyikan. */
+  const [jenis, setJenis] = useState(0);
   const [model, setModel] = useState('');
   const [lensa, setLensa] = useState('');
   useEffect(() => {
@@ -29,8 +32,8 @@ export function PilihPanasonic({ rasio: rasioSekarang, sumber, onPakai }: {
   const daftar = useMemo(() => {
     if (!kat) return [];
     const q = cari.trim().toUpperCase().replace(/\s+/g, '');
-    return kat.model.filter(m => (lama || m.kat !== 7) && (!q || m.n.toUpperCase().replace(/[\s-]/g, '').includes(q.replace(/-/g, ''))));
-  }, [kat, cari, lama]);
+    return kat.model.filter(m => (!jenis || m.kat === jenis) && (!q || m.n.toUpperCase().replace(/[\s-]/g, '').includes(q.replace(/-/g, ''))));
+  }, [kat, cari, jenis]);
   const m = kat?.model.find(x => x.n === model) ?? null;
   const l = m?.l.find(x => x.n === lensa) ?? m?.l[0] ?? null;
   const rasio = m && l ? rasioUntukLensa(m, l, rasioSekarang) : null;
@@ -56,19 +59,20 @@ export function PilihPanasonic({ rasio: rasioSekarang, sumber, onPakai }: {
           <div className="flex items-center gap-2">
             <input type="search" value={cari} onChange={e => setCari(e.target.value)} placeholder="Cari model, mis. VMZ51" aria-label="Cari model Panasonic"
               className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[12.5px]" />
-            <label className="flex items-center gap-1 text-[11.5px] text-slate-700 whitespace-nowrap">
-              <input type="checkbox" checked={lama} onChange={e => setLama(e.target.checked)} /> model lama
-            </label>
+            <select aria-label="Model type" value={jenis} onChange={e => setJenis(Number(e.target.value))}
+              className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[12.5px]">
+              {KATEGORI_TDC.map(k => <option key={k.v} value={k.v}>{k.l}</option>)}
+            </select>
           </div>
           <select aria-label="Model Panasonic" value={model} onChange={e => { setModel(e.target.value); setLensa(''); }}
             className="block w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[12.5px]">
             <option value="">{daftar.length ? `Pilih model (${daftar.length})` : 'Tidak ada model yang cocok'}</option>
-            {daftar.map(x => <option key={x.n} value={x.n}>{x.n} · {x.lm.toLocaleString('id-ID')} lm · {x.a}{x.kat === 7 ? ' · lama' : ''}</option>)}
+            {daftar.map(x => <option key={x.n} value={x.n}>{x.n} · {x.lm.toLocaleString('id-ID')} lm · {x.a}{x.kat === 7 ? ' · Previous' : ''}</option>)}
           </select>
           {m && (
             <select aria-label="Lensa" value={l?.n ?? ''} onChange={e => setLensa(e.target.value)}
               className="block w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[12.5px]">
-              {m.l.map(x => <option key={x.n} value={x.n}>{x.n}{x.ket ? ` · TR ${x.ket.slice(0, 40)}` : ''}{x.k ? ' · jarak khusus' : ''}</option>)}
+              {m.l.map(x => <option key={x.n} value={x.n}>{x.n}{x.z ? '' : ' (fixed)'}{x.ket ? ` · TR ${x.ket.slice(0, 40)}` : ''}{x.k ? ' · jarak khusus' : ''}</option>)}
             </select>
           )}
           {m && l && rasio && (
@@ -77,6 +81,7 @@ export function PilihPanasonic({ rasio: rasioSekarang, sumber, onPakai }: {
                 Panel {m.a}{m.r ? ` (${m.r})` : ''}, {m.lm.toLocaleString('id-ID')} lm, rasio sinyal {rasio}{rasioSekarang && rasio !== rasioSekarang && !l.ar[rasioSekarang] ? ` (${rasioSekarang} tidak didukung lensa ini)` : ''}.
                 {' '}TR {l.ar[rasio]![0].toFixed(4)}{l.z ? `–${l.ar[rasio]![1].toFixed(4)}` : ''}, b {l.ar[rasio]![2].toFixed(4)} m{l.pg ? '' : ', tanpa lens shift'}.
               </p>
+              {cekDataLensa(l, rasio) && <p className="text-[12px] font-semibold text-amber-700">{cekDataLensa(l, rasio)}</p>}
               {l.k && <p className="text-[12px] font-semibold text-amber-700">Lensa ini diukur khusus di kalkulator Panasonic (ultra short throw / lensa L): jarak L di sini dari muka lensa, bukan L1/L2 Panasonic.</p>}
               <button type="button" onClick={() => { onPakai(m, l, rasio, kat.versi); setBuka(false); }}
                 className="px-2.5 py-1.5 rounded-lg text-[12px] font-bold border border-blue-700 bg-blue-700 text-white hover:bg-blue-800">

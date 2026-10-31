@@ -7,7 +7,7 @@
  */
 import { Angka, Catatan, f, fTetap, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
 import {
-  bagianPanelRasio, type LensaPadaRasio, type LensaTdc, lensaPadaRasio, type ModelTdc, RASIO_PROYEKTOR as RASIO_GAMBAR, type RasioProyektor,
+  BATAS_B, bagianPanelRasio, type LensaPadaRasio, type LensaTdc, lensaPadaRasio, type ModelTdc, RASIO_PROYEKTOR as RASIO_GAMBAR, type RasioProyektor,
   resolusiPanel,
 } from '../desain3d/inti';
 import { aksiLembar, lembarAV } from './lembar';
@@ -201,8 +201,8 @@ export function KalkulatorProyektor() {
             <Angka label="Throw ratio min" nilai={throwMin} step={0.01} onUbah={v => { if (v > 0) { setThrowMin(r6(v)); setPanasonic(null); } }} />
             <Angka label="Throw ratio maks" nilai={throwMax} step={0.01} onUbah={v => { if (v > 0) { setThrowMax(r6(v)); setPanasonic(null); } }} />
             <Angka label="Kontras asli" nilai={kontrasAsli} onUbah={v => v >= 0 && setKontrasAsli(v)} satuan=":1" bantuan="Full on / full off dari datasheet; 0 = abaikan" />
-            <Angka label="Koreksi b wide" nilai={koreksi} min={-1} step={0.001} onUbah={v => { if (v >= -1 && v <= 1) { setKoreksi(r6(v)); setPanasonic(null); } }} satuan="m" bantuan="L = TR terlebar × lebar − b" />
-            <Angka label="Koreksi b tele" nilai={koreksiTele ?? koreksi} min={-1} step={0.001} onUbah={v => { if (v >= -1 && v <= 1) { setKoreksiTele(r6(v)); setPanasonic(null); } }} satuan="m" bantuan="L = TR terpanjang × lebar − b (kalkulator Panasonic menyimpan b wide & tele terpisah)" />
+            <Angka label="Koreksi b wide" nilai={koreksi} min={-BATAS_B} step={0.001} onUbah={v => { if (v >= -BATAS_B && v <= BATAS_B) { setKoreksi(r6(v)); setPanasonic(null); } }} satuan="m" bantuan="L = TR terlebar × lebar − b" />
+            <Angka label="Koreksi b tele" nilai={koreksiTele ?? koreksi} min={-BATAS_B} step={0.001} onUbah={v => { if (v >= -BATAS_B && v <= BATAS_B) { setKoreksiTele(r6(v)); setPanasonic(null); } }} satuan="m" bantuan="L = TR terpanjang × lebar − b (kalkulator Panasonic menyimpan b wide & tele terpisah)" />
             <div className="col-span-2">
               <Segmen label="Pemasangan" nilai={pasang} onUbah={setPasang} opsi={[{ v: 'plafon', l: 'Gantung plafon' }, { v: 'meja', l: 'Meja / lantai' }]} />
             </div>

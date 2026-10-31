@@ -34,6 +34,35 @@ export function muatKatalogPanasonic(): Promise<KatalogTdc> {
   return muat;
 }
 
+/** "Model type" kalkulator Panasonic (ProjectorCategory); 0 = All = semua model, termasuk Previous. */
+export const KATEGORI_TDC: { v: number; l: string }[] = [
+  { v: 0, l: 'All' }, { v: 1, l: 'Large-venue' }, { v: 2, l: 'Installation' }, { v: 3, l: 'Portable' },
+  { v: 4, l: 'Short-throw' }, { v: 8, l: 'Ultra Short Throw' }, { v: 7, l: 'Previous' },
+];
+
+/**
+ * Data lensa Panasonic yang JELAS SALAH antar rasio sinyal: b beda > 30 cm (PT-RW330 16:10 b tele 1,0407 m vs 16:9
+ * 0,0407 m) atau TR beda > 2x (PT-DW830 + ET-DLE030 16:9 TR 0,0101 vs 16:10 0,397). Kalkulator Panasonic memakai angka
+ * itu apa adanya, Desain 3D juga (supaya hasilnya tetap sama) - engineer perlu tahu & cek brosur. Selisih TR yang lebih
+ * kecil tidak ditandai: pola potong panel Panasonic tidak selalu sama dengan rasio AspectRatio[0] (PT-DX610 panel 4:3
+ * tapi rasio pertamanya 16:9). null = tidak ada yang janggal.
+ */
+export function cekDataLensa(l: LensaTdc, rasio: RasioProyektor): string | null {
+  const k = l.ar[rasio];
+  if (!k) return null;
+  for (const [r, j] of Object.entries(l.ar) as [RasioProyektor, [number, number, number, number]][]) {
+    if (r === rasio) continue;
+    const trBeda = [0, 1].some(i => k[i] / j[i] > 2 || j[i] / k[i] > 2);
+    const bBeda = [2, 3].some(i => Math.abs(k[i] - j[i]) > 0.3);
+    if (trBeda || bBeda) {
+      const fm = (v: number) => v.toLocaleString('id-ID', { maximumFractionDigits: 4 });
+      return `Data Panasonic ${rasio} lensa ini janggal dibanding ${r}: TR ${fm(k[0])}–${fm(k[1])}, b ${fm(k[2])}/${fm(k[3])} m vs `
+        + `TR ${fm(j[0])}–${fm(j[1])}, b ${fm(j[2])}/${fm(j[3])} m. Kalkulator Panasonic memakai angka ini apa adanya - cek brosur / datasheet.`;
+    }
+  }
+  return null;
+}
+
 /** Rasio sinyal yang dipakai untuk lensa ini: pilihan bila didukung, selain itu native panel. */
 export function rasioUntukLensa(m: ModelTdc, l: LensaTdc, pilihan?: RasioProyektor): RasioProyektor {
   return pilihan && l.ar[pilihan] ? pilihan : l.ar[m.a] ? m.a : (Object.keys(l.ar)[0] as RasioProyektor);

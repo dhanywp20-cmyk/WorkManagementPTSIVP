@@ -145,6 +145,8 @@ export function jepitProyektor(b: Benda, X: number, Z: number, plafon: number): 
   return { x: b.x + geser(lx, m, X - m), z: b.z + geser(lz, m, Z - m), elev: Math.max(0, b.elev + geser(ly, m, plafon - m)) };
 }
 export const throwRatioDari = (b: Benda) => Math.max(0.1, b.throwRatio ?? 1.5);
+/** Batas koreksi b (m) & throw ratio - mencakup seluruh katalog Panasonic (b ±1,33 m, TR 0,1-20,1). */
+export const BATAS_B = 5, BATAS_TR = 50;
 /** Offset vertikal lensa proyektor (pecahan tinggi gambar). Proyektor tanpa lens shift: offset tetapnya. */
 export const offsetLensaDari = (p: Benda) => Math.min(1.5, Math.max(-0.5, p.offsetTetap ?? p.offsetLensa ?? OFFSET_GAMBAR));
 /**
@@ -152,7 +154,8 @@ export const offsetLensaDari = (p: Benda) => Math.min(1.5, Math.max(-0.5, p.offs
  * menyimpan b di ujung wide & tele dan menginterpolasinya linear ikut zoom - di sini sama.
  */
 export function koreksiJarakDari(p: Benda, tr = throwRatioDari(p)) {
-  const jepit = (v: number) => Math.min(1, Math.max(-1, v));
+  //  ±5 m: katalog Panasonic sampai 1,33 m (ET-C1T800 tele) - dulu dijepit ±1 m, L tele meleset 32,5 cm.
+  const jepit = (v: number) => Math.min(BATAS_B, Math.max(-BATAS_B, v));
   const wide = p.koreksiJarak ?? 0;
   if (p.koreksiJarakTele === undefined) return jepit(wide);
   const [lo, hi] = zoomLensa(p);

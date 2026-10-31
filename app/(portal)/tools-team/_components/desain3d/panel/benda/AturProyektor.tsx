@@ -1,7 +1,7 @@
 'use client';
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
-import { batasShift, bendaBaru, gantiRasioProyektor, isiDariKatalog, geserLensaDari, keteranganPanel, koreksiJarakDari, lumenDari, lumenGambarDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { BATAS_B, BATAS_TR, batasShift, bendaBaru, gantiRasioProyektor, isiDariKatalog, geserLensaDari, keteranganPanel, koreksiJarakDari, lumenDari, lumenGambarDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import { PilihPanasonic } from '../../../pustaka/PilihPanasonic';
 import { RumusLensaPabrikan } from '../../../pustaka/RumusLensaPabrikan';
 import type { KonteksAtur } from './konteks';
@@ -53,9 +53,9 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 <PilihPanasonic rasio={b.rasioProyektor} sumber={b.sumberLensa} onPakai={(m, l, r, v) => set(isiDariKatalog(b, m, l, r, v))} />
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Zoom lensa{b.sumberLensa ? ` · ${b.sumberLensa}` : ''}</p>
                 <div className="grid grid-cols-3 gap-2">
-                  <Angka label="TR terlebar" nilai={zMin} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && set({ ...manual, trMin: r6(v), trMax: Math.max(v, b.trMax ?? zMax), throwRatio: Math.max(v, tr) })} />
-                  <Angka label="TR terpanjang" nilai={zMax} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && set({ ...manual, trMax: r6(v), trMin: Math.min(v, b.trMin ?? zMin), throwRatio: Math.min(v, tr) })} />
-                  <Angka label="TR dipakai" nilai={tr} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && (tetap ? set({ ...manual, throwRatio: r6(v), trMin: r6(v), trMax: r6(v) }) : setZoom(v))} />
+                  <Angka label="TR terlebar" nilai={zMin} step={0.01} onUbah={v => v >= 0.1 && v <= BATAS_TR && set({ ...manual, trMin: r6(v), trMax: Math.max(v, b.trMax ?? zMax), throwRatio: Math.max(v, tr) })} />
+                  <Angka label="TR terpanjang" nilai={zMax} step={0.01} onUbah={v => v >= 0.1 && v <= BATAS_TR && set({ ...manual, trMax: r6(v), trMin: Math.min(v, b.trMin ?? zMin), throwRatio: Math.min(v, tr) })} />
+                  <Angka label="TR dipakai" nilai={tr} step={0.01} onUbah={v => v >= 0.1 && v <= BATAS_TR && (tetap ? set({ ...manual, throwRatio: r6(v), trMin: r6(v), trMax: r6(v) }) : setZoom(v))} />
                 </div>
                 {!tetap && (
                   <div className="flex items-center gap-2">
@@ -73,10 +73,10 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 </Catatan>
                 {/*  Rumus lensa pabrikan: L = a x SW - b. a = TR terlebar / terpanjang di atas, b = koreksi ini. */}
                 <div className="grid grid-cols-2 gap-2">
-                  <Angka label="Koreksi b wide" nilai={b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-1}
-                    onUbah={v => v >= -1 && v <= 1 && set({ ...manual, koreksiJarak: r6(v) || undefined })} />
-                  <Angka label="Koreksi b tele" nilai={b.koreksiJarakTele ?? b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-1}
-                    onUbah={v => v >= -1 && v <= 1 && set({ ...manual, koreksiJarakTele: r6(v) })} />
+                  <Angka label="Koreksi b wide" nilai={b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-BATAS_B}
+                    onUbah={v => v >= -BATAS_B && v <= BATAS_B && set({ ...manual, koreksiJarak: r6(v) || undefined })} />
+                  <Angka label="Koreksi b tele" nilai={b.koreksiJarakTele ?? b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-BATAS_B}
+                    onUbah={v => v >= -BATAS_B && v <= BATAS_B && set({ ...manual, koreksiJarakTele: r6(v) })} />
                 </div>
                 <Catatan>Rumus jarak lempar lensa L = TR × lebar − b, b di ujung wide & tele (kalkulator Panasonic menyimpan keduanya; di antaranya ikut zoom - sekarang {f(koreksiJarakDari(b), 6)} m). Contoh PT-MZ882 lensa standar: TR 1,639 b 0,055 (wide) - TR 2,788 b 0,048 (tele). Kosong / 0 = L = TR × lebar.</Catatan>
                 {/*  Proyektor di luar katalog: TR & b dari dua hasil kalkulator pabrikan (TR brosur tanpa b meleset ±2 cm). */}

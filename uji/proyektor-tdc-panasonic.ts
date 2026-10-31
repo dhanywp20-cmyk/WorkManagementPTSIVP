@@ -14,9 +14,10 @@ import katalog from '../lib/data/panasonic-tdc.json';
 import { readFileSync } from 'node:fs';
 import {
   batasShift, bendaBaru, daftarRuang, gantiRasioProyektor, hasilPadaJarak, hasilPanasonic, isiDariKatalog, jarakProyeksi, type KatalogTdc,
-  aturJarakProyeksi, kontrasProyektor, LENSA_MZ882, lensaPadaRasio, RASIO_PROYEKTOR, resolusiProyektorDari, sinarProyektor, type Benda, type Ruang,
+  aturJarakProyeksi, cekDataLensa, KATEGORI_TDC, kontrasProyektor, LENSA_MZ882, lensaPadaRasio, RASIO_PROYEKTOR, resolusiProyektorDari, sinarProyektor, type Benda, type Ruang,
 } from '../app/(portal)/tools-team/_components/desain3d/inti';
 import { ukuranDariDiagonal } from '../lib/av-hitung';
+import { bersihkanAturProduk } from '../lib/tools-team';
 import { rentangJarakLempar, rumusLensaDariDuaTitik } from '../lib/av-layar-proyektor';
 
 let lulus = 0, gagal = 0;
@@ -119,6 +120,36 @@ cek(`rumus dari 2 hasil kalkulator (angka 3 desimal layar Panasonic): TR ${rumus
   r3(hc.lebar) === 3.646 && r3(hc.tinggi) === 2.051, `${hc.lebar} ${rumus.tr} ${rumus.b}`);
 cek('Desain 3D Atur proyektor & Kalkulator AV memakai alat rumus yang sama (RumusLensaPabrikan)',
   /<RumusLensaPabrikan/.test(readFileSync('app/(portal)/tools-team/_components/desain3d/panel/benda/AturProyektor.tsx', 'utf8')) && /<RumusLensaPabrikan/.test(srcAV));
+
+console.log('\n7. SELURUH katalog (290 model, 1.536 lensa, semua rasio): rumus Panasonic utuh tanpa dijepit');
+//  Dibanding data mentah TDC 2.79 (19.315 kasus): sama < 0,5 mm kecuali PT-DW830 + ET-DLE030 16:9 (data Panasonic
+//  rusak: TR 0,0101). Di sini tanpa data mentah: tiap lensa & rasio, L = TR x W - b di KEDUA ujung zoom harus utuh.
+let kasusK = 0, salahK: string[] = [], tukar = 0;
+for (const m of K.model) for (const l of m.l) for (const [r, [tw, tt, bw, bt]] of Object.entries(l.ar) as [string, [number, number, number, number]][]) {
+  if (tw > tt) tukar++;
+  if (tw < 0.1) continue; // PT-DW830 + ET-DLE030 16:9 - data Panasonic rusak (ditandai cekDataLensa)
+  const pk = { ...dasar, ...isiDariKatalog({ ...dasar, throwRatio: 0 }, m, l, r as '16:9', K.versi) } as Benda;
+  for (const W of [1.5, 4]) {
+    const h = hasilPadaJarak(pk, tw * W - bw); kasusK++;
+    if (Math.abs(h.lebar - W) > 5e-4 || Math.abs(h.rentangL[1] - (tt * W - bt)) > 5e-4) salahK.push(`${m.n} ${l.n} ${r}`);
+  }
+}
+cek(`${kasusK} kasus: lebar & L tele = rumus Panasonic (dulu b dijepit ±1 m: ET-C1T800 tele meleset 32,5 cm)`, salahK.length === 0, salahK.slice(0, 3).join('; '));
+cek('ujung zoom selalu TR kecil -> besar dengan b pasangannya (PT-DZ12000 + ET-D75LE10 16:10 tertukar di data Panasonic)', tukar === 0
+  && JSON.stringify(K.model.find(m => m.n === 'PT-DZ12000')!.l.find(l => l.n === 'ET-D75LE10')!.ar['16:10']) === '[1.120239,1.31904,0.1085,0.0857]');
+const c1t800 = K.model.find(m => m.n === 'PT-REQ15')!.l.find(l => l.n === 'ET-C1T800')!;
+const pC = { ...dasar, ...isiDariKatalog({ ...dasar, throwRatio: 0 }, K.model.find(m => m.n === 'PT-REQ15')!, c1t800, '16:10', K.versi) } as Benda;
+cek(`PT-REQ15 + ET-C1T800 16:10 100": L tele ${r3(hasilPadaJarak(pC, 3.46346 * 2.153917 - 0.35212).rentangL[1])} m (kalkulator Panasonic 14,226)`,
+  r3(hasilPadaJarak(pC, 3.46346 * 2.153917 - 0.35212).rentangL[1]) === 14.226);
+cek('data Panasonic rusak ditandai: PT-RW330 16:10 (b tele 1,0407) & PT-DW830 + ET-DLE030 16:9 (TR 0,0101)',
+  !!cekDataLensa(K.model.find(m => m.n === 'PT-RW330')!.l[0], '16:10') && !!cekDataLensa(K.model.find(m => m.n === 'PT-DW830')!.l.find(l => l.n.startsWith('ET-DLE030'))!, '16:9')
+  && !cekDataLensa(vmz61.l[0], '16:9'));
+cek('Model type "All" = semua 290 model termasuk Previous (dulu Previous disembunyikan, tampil 106)',
+  K.model.length === 290 && K.model.filter(m => m.kat === 7).length > 150 && KATEGORI_TDC[0].v === 0
+  && /!jenis \|\| m\.kat === jenis/.test(readFileSync('app/(portal)/tools-team/_components/pustaka/PilihPanasonic.tsx', 'utf8')));
+const produk = bersihkanAturProduk({ trMin: 13.962339, trMax: 20.105758, throwRatio: 16, koreksiJarak: 0.35212, koreksiJarakTele: 1.325221, koefRasio: { '16:10': [13.962339, 20.105758, 0.3, 1.325221] } });
+cek('Simpan ke Produk saya tidak membuang TR 20,1 & b 1,33 m (lensa tele panjang Panasonic)',
+  produk.trMax === 20.105758 && produk.koreksiJarakTele === 1.325221 && !!(produk.koefRasio as Record<string, unknown>)?.['16:10']);
 
 console.log(`\n${lulus}/${lulus + gagal} lulus`);
 process.exit(gagal ? 1 : 0);

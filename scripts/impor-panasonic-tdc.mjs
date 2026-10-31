@@ -115,7 +115,11 @@ for (const m of model) {
       const Bw = tetap ? nilaiB(c.FixCaluclateValue2, c.FixCaluclateValue3) : nilaiB(c.MinCaluclateValue2, c.MinCaluclateValue3);
       const Bt = tetap ? nilaiB(c.FixCaluclateValue2, c.FixCaluclateValue3) : nilaiB(c.MaxCaluclateValue2, c.MaxCaluclateValue3);
       const [uw, uh] = RASIO[ra], diagPerLebar = Math.hypot(uw, uh) / uw;
-      ar[ra] = [bulat((Aw / 0.0254) * diagPerLebar), bulat((At / 0.0254) * diagPerLebar), bulat(-Bw), bulat(-Bt)];
+      const w = [bulat((Aw / 0.0254) * diagPerLebar), bulat(-Bw)], t = [bulat((At / 0.0254) * diagPerLebar), bulat(-Bt)];
+      //  Beberapa data Panasonic menukar ujung zoom (PT-DZ12000 + ET-D75LE10 16:10: TR "wide" 1,319 > "tele" 1,120) -
+      //  diurutkan TR kecil -> besar dengan b PASANGANNYA, supaya L tiap ujung tetap sama dengan kalkulator Panasonic.
+      const [lo, hi] = w[0] <= t[0] ? [w, t] : [t, w];
+      ar[ra] = [lo[0], hi[0], lo[1], hi[1]];
     });
     if (!ar[native]) continue;
     const a0 = l.AspectRatio[0];
