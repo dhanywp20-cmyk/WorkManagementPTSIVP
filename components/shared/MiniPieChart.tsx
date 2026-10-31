@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Ikon } from './Ikon';
 import { NETRAL, BAYANG } from '@/lib/desain';
 import { useAngkaNaik } from './AngkaNaik';
-import { SisiDonat, jalurCincin, geserIrisan } from './SisiDonat';
 
 /**
  * Shared MiniPieChart - kartu komposisi (bagian dari keseluruhan).
@@ -140,9 +139,8 @@ export function MiniPieChart({
     const xi2 = cx + ir * Math.cos(sudut + a), yi2 = cy + ir * Math.sin(sudut + a);
     const besar = a > Math.PI ? 1 : 0;
     const path = `M ${xi1} ${yi1} L ${x1} ${y1} A ${r} ${r} 0 ${besar} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${ir} ${ir} 0 ${besar} 0 ${xi1} ${yi1} Z`;
-    const tengahSudut = sudut + a / 2;
     sudut += a;
-    return { ...d, path, i, penuh: d.value === total, tengahSudut };
+    return { ...d, path, i, penuh: d.value === total, garis: Math.min(2, a * r / 4) };
   });
 
   const persen = (v: number) => Math.round((v / total) * 100);
@@ -171,19 +169,19 @@ export function MiniPieChart({
            mendorong kolom persen keluar dari kartu (terpotong "20%" / "83%"). */}
       <div className="flex flex-col sm:flex-row sm:flex-wrap items-center sm:items-center justify-center sm:justify-start gap-2 sm:gap-x-4 sm:gap-y-2 min-w-0">
         <svg role="img" aria-label={`${title}: ${ringkasan}`} width="120" height="120" viewBox="0 0 120 120"
-          className="donat-3d flex-shrink-0 w-[64px] h-[64px] sm:w-[104px] sm:h-[104px] xl:w-[116px] xl:h-[116px]">
-          <SisiDonat irisan={slices.map(s => ({ d: s.penuh ? jalurCincin(cx, cy, r, ir) : s.path, warna: s.color }))} />
+          className="flex-shrink-0 w-[64px] h-[64px] sm:w-[104px] sm:h-[104px] xl:w-[116px] xl:h-[116px]">
           {slices.map(s => s.penuh ? (
             <circle key={s.i} cx={cx} cy={cy} r={(r + ir) / 2} fill="none" stroke={s.color} strokeWidth={r - ir}
               opacity={redup(s.i) ? 0.3 : 1}
               onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => klik(s)}
               style={{ cursor: bisaKlik && !s.lipat ? 'pointer' : 'default', transition: 'opacity .15s' }} />
           ) : (
-            <path key={s.i} d={s.path} fill={s.color} stroke={PERMUKAAN} strokeWidth={2} strokeLinejoin="round"
+            //  Garis pemisah putih menipis untuk irisan kecil: dengan ratusan kategori, garis 2px menutupi
+            //  seluruh warna irisan kecil sehingga sebagian cincin tampak putih kosong.
+            <path key={s.i} d={s.path} fill={s.color} stroke={PERMUKAAN} strokeWidth={s.garis} strokeLinejoin="round"
               opacity={redup(s.i) ? 0.3 : 1}
               onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => klik(s)}
-              className="irisan-donat"
-              style={{ cursor: bisaKlik && !s.lipat ? 'pointer' : 'default', transform: sorot === s.i ? geserIrisan(s.tengahSudut) : undefined }} />
+              style={{ cursor: bisaKlik && !s.lipat ? 'pointer' : 'default', transition: 'opacity .15s' }} />
           ))}
           <text x="60" y="61" textAnchor="middle" fontSize="19" fontWeight="700" fill="#0f172a">{tengah.angka}</text>
           <text x="60" y="75" textAnchor="middle" fontSize="7.5" fill="#64748b" fontWeight="500">

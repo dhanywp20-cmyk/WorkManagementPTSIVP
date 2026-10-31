@@ -7,7 +7,7 @@
  */
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
-export function useAngkaNaik(target: number, durasi = 800): number {
+export function useAngkaNaik(target: number, durasi = 1100): number {
   const dari = useRef(0);
   const [nilai, setNilai] = useState(0);
   useEffect(() => {
