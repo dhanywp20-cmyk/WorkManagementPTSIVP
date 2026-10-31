@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { MiniPieChart } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { NETRAL, BAYANG } from '@/lib/desain';
+import { useAngkaNaik } from '@/components/shared/AngkaNaik';
 
 /**
  * 3 generic donut cards = thin wrappers di atas shared MiniPieChart.
@@ -90,6 +91,7 @@ export function HandlerDonutCard({
   icon: string;
 }) {
   const [hov, setHov] = useState<number | null>(null);
+  const totalNaik = useAngkaNaik(total);
   let cumAngle = -Math.PI / 2;
   const cx = 60, cy = 60, r = 50, ir = 28;
   const slices = total > 0 ? data.map((d, i) => {
@@ -101,7 +103,8 @@ export function HandlerDonutCard({
     const large = angle > Math.PI ? 1 : 0;
     const path = `M ${xi1} ${yi1} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${ir} ${ir} 0 ${large} 0 ${xi1} ${yi1} Z`;
     cumAngle += angle;
-    return { ...d, path, isFullCircle: false, i };
+    //  Irisan 100% (satu handler): busur awal = busur akhir, path-nya kosong - gambar sebagai cincin utuh.
+    return { ...d, path, isFullCircle: d.value >= total, i };
   }) : [];
   return (
     <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 flex flex-col gap-1 sm:gap-3" style={{ background: `linear-gradient(180deg, ${NETRAL.permukaan}, #f8fafc)`, border: `1px solid ${NETRAL.garis}`, boxShadow: BAYANG.kartu3d }}>
@@ -140,7 +143,7 @@ export function HandlerDonutCard({
                   onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => onSliceClick(s.name)} />
               )
             )}
-            <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{total}</text>
+            <text x="60" y="57" textAnchor="middle" fontSize="16" fontWeight="800" fill="#1e293b">{totalNaik}</text>
             <text x="60" y="70" textAnchor="middle" fontSize="7" fill="#94a3b8" fontWeight="600">TOTAL</text>
           </svg>
           {/*  max-h + overflow-y-auto - HandlerDonutCard dulu satu-satunya

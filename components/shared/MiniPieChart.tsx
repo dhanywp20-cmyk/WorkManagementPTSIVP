@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Ikon } from './Ikon';
 import { NETRAL, BAYANG } from '@/lib/desain';
+import { useAngkaNaik } from './AngkaNaik';
 
 /**
  * Shared MiniPieChart - kartu komposisi (bagian dari keseluruhan).
@@ -82,6 +83,9 @@ export function MiniPieChart({
 
   const semua: Item[] = data.map(d => ({ label: d.label ?? d.name ?? '', value: d.value, color: d.color }));
   const total = semua.reduce((s, d) => s + d.value, 0);
+  //  Angka tengah menghitung naik (hanya bila angka; teks bebas ditampilkan apa adanya).
+  const tengahAngka = centerValue === undefined || typeof centerValue === 'number';
+  const angkaNaik = useAngkaNaik(tengahAngka ? Number(centerValue ?? total) : 0);
 
   if (total === 0) {
     return (
@@ -136,7 +140,7 @@ export function MiniPieChart({
     const besar = a > Math.PI ? 1 : 0;
     const path = `M ${xi1} ${yi1} L ${x1} ${y1} A ${r} ${r} 0 ${besar} 1 ${x2} ${y2} L ${xi2} ${yi2} A ${ir} ${ir} 0 ${besar} 0 ${xi1} ${yi1} Z`;
     sudut += a;
-    return { ...d, path, i, penuh: d.value === total };
+    return { ...d, path, i, penuh: d.value === total, garis: Math.min(2, a * r / 4) };
   });
 
   const persen = (v: number) => Math.round((v / total) * 100);
@@ -145,7 +149,7 @@ export function MiniPieChart({
   const redup = (i: number) => sorot !== null && sorot !== i;
   const tengah = sorot !== null
     ? { angka: `${slices[sorot].value}`, ket: `${persen(slices[sorot].value)}% · ${slices[sorot].label}` }
-    : { angka: `${centerValue ?? total}`, ket: (centerLabel ?? 'Total').toLowerCase() };
+    : { angka: tengahAngka ? `${angkaNaik}` : `${centerValue}`, ket: (centerLabel ?? 'Total').toLowerCase() };
 
   const klik = (s: { label: string; lipat?: boolean }) => { if (bisaKlik && !s.lipat) onSliceClick!(s.label); };
 
@@ -172,7 +176,9 @@ export function MiniPieChart({
               onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => klik(s)}
               style={{ cursor: bisaKlik && !s.lipat ? 'pointer' : 'default', transition: 'opacity .15s' }} />
           ) : (
-            <path key={s.i} d={s.path} fill={s.color} stroke={PERMUKAAN} strokeWidth={2} strokeLinejoin="round"
+            //  Garis pemisah putih menipis untuk irisan kecil: dengan ratusan kategori, garis 2px menutupi
+            //  seluruh warna irisan kecil sehingga sebagian cincin tampak putih kosong.
+            <path key={s.i} d={s.path} fill={s.color} stroke={PERMUKAAN} strokeWidth={s.garis} strokeLinejoin="round"
               opacity={redup(s.i) ? 0.3 : 1}
               onMouseEnter={() => setHov(s.i)} onMouseLeave={() => setHov(null)} onClick={() => klik(s)}
               style={{ cursor: bisaKlik && !s.lipat ? 'pointer' : 'default', transition: 'opacity .15s' }} />
