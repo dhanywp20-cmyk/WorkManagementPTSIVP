@@ -22,6 +22,7 @@ import { useMerek, latarDasbor } from '@/lib/merek';
 import { LogoMerek, FooterPlatform } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
 import { catatPemakaian } from '@/lib/pemakaian';
+import { pasangMiring3D } from '@/lib/miring3d';
 
 /**
  * KerangkaPortal - layout bersama SEMUA modul (app/(portal)/layout.tsx): sesi & layar masuk, header,
@@ -237,6 +238,9 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
     });
     return () => { batal = true; };
   }, [pathname, sedangPindah, isLoggedIn, sesiBerakhir, router]);
+
+  //  Kartu condong 3D mengikuti kursor di seluruh menu (lib/miring3d.ts) - satu pendengar untuk semua.
+  useEffect(() => pasangMiring3D(document.body), []);
 
   //  Token gagal diperbarui karena cookie sesi tidak sah lagi (401) -> layar masuk.
   useEffect(() => {
@@ -599,7 +603,7 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
   //  dengan nilai sama header modul (lebih belakang di DOM) menutupi panel lonceng / notifikasi.
   //  Tetap di bawah layar penuh modul (z-300) & modal (z-1000).
   const renderHeader = (withBackBtn = false) => (
-    <div className="bg-white/80 backdrop-blur-md shadow-md flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 60 }}>
+    <div className="kepala-3d bg-white/80 backdrop-blur-md shadow-md flex-shrink-0" style={{ borderBottom: '1px solid rgba(0,0,0,0.08)', position: 'relative', zIndex: 60 }}>
       <div className="w-full px-3 md:px-4 py-3 md:py-3.5">
         <div className="flex items-center justify-between gap-2 md:gap-4">
           {/* LEFT: Logo */}

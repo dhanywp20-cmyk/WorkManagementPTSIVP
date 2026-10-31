@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+import { BAYANG } from '@/lib/desain';
 
 /**
  * Campur warna dengan putih dan kembalikan warna SOLID. Latar kartu aktif
@@ -67,7 +68,7 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
     // Selalu warna PEKAT - lihat catatan di campurPutih().
     background: active ? campurPutih(accent, 0.10) : '#ffffff',
     border: `1px solid ${active ? accent : 'rgba(15,23,42,0.10)'}`,
-    boxShadow: active ? `0 0 0 1px ${accent}` : '0 1px 2px rgba(15,23,42,0.06)',
+    boxShadow: active ? `0 0 0 1px ${accent}, ${BAYANG.kartu3d}` : BAYANG.kartu3d,
   };
 
   const kelasDasar = 'relative overflow-hidden rounded-lg sm:rounded-xl px-2.5 py-2 sm:px-4 sm:py-3.5 flex flex-col gap-0.5 sm:gap-1.5';
@@ -76,11 +77,11 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
   // bisa dicapai lewat keyboard dan punya cincin fokus. Kartu yang hanya
   // menampilkan angka tetap <div> supaya tidak masuk urutan Tab tanpa guna.
   if (!bisaDiklik) {
-    return <div className={kelasDasar} style={gaya}>{isi}</div>;
+    return <div data-kartu3d className={kelasDasar} style={gaya}>{isi}</div>;
   }
 
   return (
-    <button type="button" onClick={onClick} aria-pressed={active} title={`Filter: ${label}`}
+    <button type="button" data-kartu3d onClick={onClick} aria-pressed={active} title={`Filter: ${label}`}
       className={`${kelasDasar} text-left cursor-pointer select-none transition-all duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
       style={gaya}>
       {isi}

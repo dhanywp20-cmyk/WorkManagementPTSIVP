@@ -10,13 +10,13 @@
 import { useState } from 'react';
 import { BarChart3, ChevronDown, ListChecks } from 'lucide-react';
 import { MiniPieChart } from '@/components/shared';
-import { NETRAL } from '@/lib/desain';
+import { NETRAL, BAYANG } from '@/lib/desain';
 import type { StatChecklist } from '@/lib/checklist';
 import type { Kontribusi } from '@/lib/checklist-ringkasan';
 import { KepingKendala, TEMA, fontAngka } from '../tampilan';
 import type { Ringkasan, RingkasanChecklist as DataChecklist, RingkasanDaftar, TitikLaju, Waktu } from './hitung';
 
-const kartu = { background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' };
+const kartu = { background: NETRAL.permukaan, border: `1px solid ${NETRAL.garis}`, boxShadow: BAYANG.kartu3d };
 
 function Cincin({ persen }: { persen: number }) {
   const r = 42, k = 2 * Math.PI * r;

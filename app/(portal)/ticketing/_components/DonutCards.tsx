@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { MiniPieChart } from '@/components/shared';
 import { Ikon } from '@/components/shared/Ikon';
+import { NETRAL, BAYANG } from '@/lib/desain';
 
 /**
  * 3 generic donut cards = thin wrappers di atas shared MiniPieChart.
@@ -103,7 +104,7 @@ export function HandlerDonutCard({
     return { ...d, path, isFullCircle: false, i };
   }) : [];
   return (
-    <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 flex flex-col gap-1 sm:gap-3" style={{ background: "rgba(255,255,255,0.95)", border: "1px solid rgba(255,255,255,0.8)", backdropFilter: "blur(10px)" }}>
+    <div className="rounded-xl sm:rounded-2xl p-2 sm:p-4 flex flex-col gap-1 sm:gap-3" style={{ background: `linear-gradient(180deg, ${NETRAL.permukaan}, #f8fafc)`, border: `1px solid ${NETRAL.garis}`, boxShadow: BAYANG.kartu3d }}>
       <div className="flex flex-wrap items-center justify-between gap-1">
         <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest"><Ikon nama={icon} ukuran="1.1em" className="inline-block align-[-0.18em]" /> {title}</p>
         <div className="flex bg-gray-100 rounded-lg p-0.5">

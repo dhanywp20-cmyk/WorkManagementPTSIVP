@@ -516,3 +516,182 @@ html {
 .tombol-bahaya { background: #dc2626; color: #fff; }
 .tombol-bahaya:hover:not(:disabled) { background: #b91c1c; }
 .tombol-utama:disabled, .tombol-kedua:disabled, .tombol-bahaya:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Kedalaman 3D kartu, SELURUH menu (permintaan pemilik: tampilan tetap seperti biasa, cukup ditambah
+   efek 3D) ─────────────────────────────────────────────────────────────────────────────────────────────
+   Kartu = elemen rounded-2xl + bg-white di area modul (.isi-portal) - pola kartu/panel yang dipakai hampir
+   semua menu. Isi, warna, ikon, tata letak TIDAK berubah; yang ditambah hanya kesan benda melayang:
+   permukaan bergradasi sangat tipis, kilau di tepi atas, bayangan berlapis (dekat + jauh).
+   Kartu bersama yang bergaya inline (MiniPieChart, StatCard) memakai token yang sama: BAYANG.kartu3d di
+   lib/desain.ts. Popup dirender di luar .isi-portal (ModalPortal) - tidak ikut.
+   `!important` karena sebagian kartu menulis box-shadow sebagai style inline. */
+/* Lempengan: tepi bawah padat 3px (ketebalan benda) + bayangan kontak + bayangan jauh. */
+.isi-portal .rounded-2xl.bg-white, .dasbor-3d .rounded-2xl.bg-white {
+  background-image: linear-gradient(180deg, #ffffff 0%, #fdfdfe 50%, #f4f6fa 100%);
+  box-shadow:
+    inset 0 1px 0 #fff, inset 0 -2px 0 rgba(15, 23, 42, .035),
+    0 1px 0 #e2e8f0, 0 3px 0 #dfe5ee,
+    0 6px 10px -2px rgba(15, 23, 42, .10), 0 24px 40px -18px rgba(15, 23, 42, .28) !important;
+  transition: transform .4s cubic-bezier(.22, 1, .36, 1), box-shadow .3s ease, top .28s cubic-bezier(.22, 1, .36, 1);
+}
+/* Panel rounded-xl putih bergaris (daftar, tabel, panel samping) - kedalaman sama, sedikit lebih ringan.
+   Tombol / isian / tautan / label dikecualikan: mereka juga sering rounded-xl bg-white border. */
+.isi-portal .rounded-xl.bg-white.border:not(button, input, select, textarea, a, label) {
+  box-shadow:
+    inset 0 1px 0 #fff, 0 2px 0 #e2e8f0,
+    0 5px 9px -3px rgba(15, 23, 42, .09), 0 18px 32px -16px rgba(15, 23, 42, .22) !important;
+  transition: transform .4s cubic-bezier(.22, 1, .36, 1), box-shadow .3s ease;
+}
+/* Kartu condong 3D mengikuti kursor (lib/miring3d.ts menulis --miring-x / --miring-y). Bayangan memanjang
+   ke arah berlawanan supaya benda terasa terangkat. */
+.kartu-miring {
+  transform: perspective(900px) rotateX(var(--miring-x, 0deg)) rotateY(var(--miring-y, 0deg)) translateZ(0) !important;
+  transition: transform .12s ease-out, box-shadow .3s ease !important;
+  box-shadow:
+    inset 0 1px 0 #fff, 0 3px 0 #dfe5ee,
+    calc(var(--bayang-x, 0px) * .5) calc(var(--bayang-y, 14px) * .8) 22px -8px rgba(15, 23, 42, .18),
+    var(--bayang-x, 0px) calc(var(--bayang-y, 14px) * 2.4) 56px -22px rgba(15, 23, 42, .36) !important;
+  z-index: 1;
+}
+/* Sorot cahaya lembut (warna merek) mengikuti kursor di permukaan kartu putih. */
+.isi-portal .kartu-miring.bg-white, .dasbor-3d .kartu-miring.bg-white {
+  background-image:
+    radial-gradient(420px circle at var(--sorot-x, 50%) var(--sorot-y, 0%), color-mix(in srgb, var(--merek-utama, #c8861d) 9%, transparent), transparent 62%),
+    linear-gradient(180deg, #ffffff 0%, #fdfdfe 50%, #f4f6fa 100%);
+}
+[data-kartu3d] { transition: transform .4s cubic-bezier(.22, 1, .36, 1), box-shadow .3s ease; }
+/* HP: kartu yang disentuh tertekan sedikit (umpan balik "benda"). */
+@media (hover: none) {
+  .isi-portal .rounded-2xl.bg-white:active, .dasbor-3d .rounded-2xl.bg-white:active, .isi-portal [data-kartu3d]:active { transform: scale(.985); }
+}
+/* Beranda: ubin juga terangkat saat diarahkan. Naiknya lewat `top`, BUKAN transform - transform menjadikan
+   ubin "containing block" bagi elemen `fixed` di dalamnya (popup), akar bug modal yang dulu sudah dicabut. */
+.dasbor-3d .rounded-2xl.bg-white { position: relative; top: 0; transition: top .28s cubic-bezier(.22, 1, .36, 1), box-shadow .28s cubic-bezier(.22, 1, .36, 1); }
+@media (hover: hover) {
+  .dasbor-3d .rounded-2xl.bg-white:hover {
+    top: -3px;
+    box-shadow:
+      inset 0 1px 0 #fff, inset 0 -1px 0 rgba(15, 23, 42, .04),
+      0 2px 2px rgba(15, 23, 42, .05), 0 10px 18px -6px rgba(15, 23, 42, .1),
+      0 30px 52px -20px rgba(15, 23, 42, .3) !important;
+  }
+}
+/* Beranda: ubin muncul bergantian dari bawah saat dibuka. fill-mode `backwards`: sesudah animasi tidak ada
+   transform yang menetap pada ubin. */
+.dasbor-masuk > * { animation: dasborNaik .8s cubic-bezier(.22, 1, .36, 1) backwards; transform-origin: 50% 100%; }
+.dasbor-masuk > *:nth-child(2) { animation-delay: .09s; }
+.dasbor-masuk > *:nth-child(3) { animation-delay: .18s; }
+.dasbor-masuk > *:nth-child(4) { animation-delay: .27s; }
+.dasbor-masuk > *:nth-child(5) { animation-delay: .36s; }
+.dasbor-masuk > *:nth-child(n+6) { animation-delay: .44s; }
+@keyframes dasborNaik {
+  from { opacity: 0; transform: perspective(1100px) translateY(34px) rotateX(16deg) scale(.96); }
+  60%  { opacity: 1; }
+}
+
+/* Menu lain: isi modul memudar masuk saat dibuka. HANYA opacity - transform di akar modul akan menggeser
+   elemen `fixed` milik modul (tombol melayang, bilah bawah) selama animasi. */
+.isi-portal > * { animation: modulMasuk .32s ease-out backwards; }
+@keyframes modulMasuk { from { opacity: 0; } }
+
+/* Menu lain: blok-blok halaman naik bergantian (judul -> filter -> isi), lalu kartu "berdiri" dari posisi
+   rebah (rotateX) saat muncul - termasuk kartu yang baru tampil sesudah data dimuat. fill-mode `backwards`:
+   tidak ada transform yang menetap, jadi elemen `fixed` di dalamnya hanya ikut bergeser selama < 1 detik. */
+.isi-portal > * > :not(.fixed):nth-child(-n+6) { animation: blokNaik .55s cubic-bezier(.22, 1, .36, 1) backwards; }
+.isi-portal > * > :nth-child(2) { animation-delay: .06s; }
+.isi-portal > * > :nth-child(3) { animation-delay: .12s; }
+.isi-portal > * > :nth-child(4) { animation-delay: .18s; }
+.isi-portal > * > :nth-child(5) { animation-delay: .24s; }
+.isi-portal > * > :nth-child(6) { animation-delay: .30s; }
+@keyframes blokNaik { from { opacity: 0; transform: translateY(22px); } }
+.isi-portal :is(.rounded-2xl.bg-white, [data-kartu3d]) { animation: kartuBerdiri .7s cubic-bezier(.22, 1, .36, 1) backwards; transform-origin: 50% 100%; }
+.isi-portal :is(.rounded-2xl.bg-white, [data-kartu3d]):nth-child(2) { animation-delay: .07s; }
+.isi-portal :is(.rounded-2xl.bg-white, [data-kartu3d]):nth-child(3) { animation-delay: .14s; }
+.isi-portal :is(.rounded-2xl.bg-white, [data-kartu3d]):nth-child(4) { animation-delay: .21s; }
+.isi-portal :is(.rounded-2xl.bg-white, [data-kartu3d]):nth-child(5) { animation-delay: .28s; }
+.isi-portal :is(.rounded-2xl.bg-white, [data-kartu3d]):nth-child(n+6) { animation-delay: .34s; }
+@keyframes kartuBerdiri {
+  from { opacity: 0; transform: perspective(900px) translateY(18px) rotateX(18deg) scale(.97); }
+  55%  { opacity: 1; }
+}
+
+/* Tab bersegmen: tab yang dipilih "meletup" menjadi tombol timbul. */
+:is(.isi-portal, .dasbor-3d) [role="tab"][aria-selected="true"] {
+  box-shadow: inset 0 1px 0 #fff, 0 1px 0 #e2e8f0, 0 2px 0 #e6eaf0, 0 6px 12px -6px rgba(15, 23, 42, .28) !important;
+  animation: tabLetup .42s cubic-bezier(.34, 1.56, .64, 1);
+}
+@keyframes tabLetup { 0% { transform: scale(.9); } 100% { transform: none; } }
+
+/* Tombol utama: tombol fisik bertepi tebal - naik saat diarahkan, amblas saat ditekan. */
+.tombol-utama {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), 0 2px 0 color-mix(in srgb, var(--merek-utama, #c8861d) 72%, #000),
+    0 6px 14px -5px color-mix(in srgb, var(--merek-utama, #c8861d) 60%, transparent);
+  transition: transform .16s cubic-bezier(.34, 1.56, .64, 1), box-shadow .16s ease, opacity .16s ease;
+}
+.tombol-utama:hover:not(:disabled) { opacity: 1; transform: translateY(-1px); filter: brightness(1.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .32), 0 3px 0 color-mix(in srgb, var(--merek-utama, #c8861d) 72%, #000),
+    0 10px 18px -6px color-mix(in srgb, var(--merek-utama, #c8861d) 65%, transparent); }
+.tombol-utama:active:not(:disabled) { transform: translateY(2px);
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, .18), 0 0 0 color-mix(in srgb, var(--merek-utama, #c8861d) 72%, #000); }
+
+/* ── Kerangka 3D: kepala, sidebar, menu bawah HP ───────────────────────────────────────────────────── */
+.kepala-3d { box-shadow: 0 1px 0 #e2e8f0, 0 3px 0 rgba(226, 232, 240, .6), 0 12px 26px -14px rgba(15, 23, 42, .28) !important; }
+/* Sidebar = lempengan: tepi kanan tebal + bayangan jatuh ke area isi. */
+.sidebar-3d {
+  box-shadow: inset -1px 0 0 #fff, 1px 0 0 #e2e8f0, 3px 0 0 #edf0f5,
+    10px 0 22px -10px rgba(15, 23, 42, .18), 28px 0 44px -30px rgba(15, 23, 42, .3) !important;
+}
+.menu-3d {
+  position: relative;
+  transition: transform .38s cubic-bezier(.34, 1.56, .64, 1), box-shadow .25s ease, background-color .2s ease, border-color .2s ease !important;
+}
+.menu-3d > :first-child { transition: transform .45s cubic-bezier(.34, 1.56, .64, 1), box-shadow .25s ease; }
+@media (hover: hover) {
+  /* Diarahkan: menu terangkat menjadi pil timbul & bergeser, ikonnya meloncat miring. */
+  .menu-3d:not([aria-current]):hover {
+    transform: translateX(4px) translateY(-1px);
+    background: #fff !important; border-color: #e2e8f0 !important;
+    box-shadow: inset 0 1px 0 #fff, 0 1px 0 #e2e8f0, 0 3px 0 #e8ecf2, 0 10px 16px -8px rgba(15, 23, 42, .24);
+  }
+  .menu-3d.h-9:not([aria-current]):hover { transform: translateY(-2px) scale(1.08); }
+  .menu-3d:hover > :first-child { transform: translateY(-2px) rotate(-8deg) scale(1.14); }
+  .menu-3d:not(.h-9):hover > :first-child { box-shadow: 0 5px 9px -3px rgba(15, 23, 42, .28), inset 0 1px 0 rgba(255, 255, 255, .8); }
+}
+.menu-3d:active { transform: translateY(1px) scale(.98) !important; box-shadow: inset 0 2px 4px rgba(15, 23, 42, .12) !important; transition-duration: .08s !important; }
+/* Aktif: pil timbul berwarna seksi menu + bilah aksen yang tumbuh + ikon memantul sekali. */
+.menu-3d[aria-current="page"] {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .75), 0 1px 0 color-mix(in srgb, currentColor 20%, transparent),
+    0 3px 0 color-mix(in srgb, currentColor 16%, transparent), 0 10px 18px -10px color-mix(in srgb, currentColor 60%, transparent);
+}
+.menu-3d:not(.h-9)[aria-current="page"]::before {
+  content: ''; position: absolute; left: -9px; top: 18%; bottom: 18%; width: 4px; border-radius: 0 4px 4px 0;
+  background: currentColor; transform-origin: 50% 50%; animation: aksenTumbuh .5s cubic-bezier(.34, 1.56, .64, 1) backwards;
+}
+.menu-3d[aria-current="page"] > :first-child { animation: ikonPantul .7s cubic-bezier(.34, 1.56, .64, 1); }
+@keyframes aksenTumbuh { from { transform: scaleY(0); opacity: 0; } }
+@keyframes ikonPantul {
+  0% { transform: scale(.7) rotate(-14deg); } 45% { transform: scale(1.18) rotate(6deg) translateY(-2px); }
+  70% { transform: scale(.96) rotate(-2deg); } 100% { transform: none; }
+}
+/* Sidebar dibuka: seksi menu meluncur masuk bergantian dari kiri. */
+.sidebar-3d .space-y-4 > *, .sidebar-3d .space-y-1 > * { animation: menuMasuk .5s cubic-bezier(.22, 1, .36, 1) backwards; }
+.sidebar-3d :is(.space-y-4, .space-y-1) > :nth-child(2) { animation-delay: .06s; }
+.sidebar-3d :is(.space-y-4, .space-y-1) > :nth-child(3) { animation-delay: .12s; }
+.sidebar-3d :is(.space-y-4, .space-y-1) > :nth-child(4) { animation-delay: .18s; }
+.sidebar-3d :is(.space-y-4, .space-y-1) > :nth-child(5) { animation-delay: .24s; }
+.sidebar-3d :is(.space-y-4, .space-y-1) > :nth-child(n+6) { animation-delay: .3s; }
+@keyframes menuMasuk { from { opacity: 0; transform: translateX(-16px); } }
+/* HP: menu bawah = lempengan; ikon menu aktif melompat, garis penanda melebar. */
+.nav-bawah-3d { box-shadow: 0 -1px 0 #e2e8f0, 0 -3px 0 rgba(237, 240, 245, .8), 0 -12px 24px -12px rgba(15, 23, 42, .2) !important; }
+.nav-bawah-3d button[aria-current="page"] > span.relative { display: inline-block; animation: ikonLompat .6s cubic-bezier(.34, 1.56, .64, 1); filter: drop-shadow(0 4px 4px rgba(15, 23, 42, .18)); }
+.nav-bawah-3d button[aria-current="page"] > span.absolute:first-child { animation: garisMelebar .45s cubic-bezier(.34, 1.56, .64, 1) backwards; }
+@keyframes ikonLompat { 0% { transform: translateY(0) scale(.85); } 40% { transform: translateY(-7px) scale(1.12); } 70% { transform: translateY(1px) scale(.97); } 100% { transform: none; } }
+@keyframes garisMelebar { from { width: 0; opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .dasbor-3d .rounded-2xl.bg-white, .menu-3d, .menu-3d > :first-child, .tombol-utama { transition: none !important; }
+  .dasbor-masuk > *, .isi-portal > *, .isi-portal > * > *, .isi-portal :is(.rounded-2xl.bg-white, [data-kartu3d]),
+  .sidebar-3d .space-y-4 > *, .sidebar-3d .space-y-1 > *, .menu-3d > :first-child, .menu-3d::before,
+  .nav-bawah-3d button > span, [role="tab"][aria-selected="true"] { animation: none !important; }
+  .menu-3d:hover, .menu-3d:hover > :first-child, .tombol-utama:hover, .tombol-utama:active { transform: none !important; }
+}

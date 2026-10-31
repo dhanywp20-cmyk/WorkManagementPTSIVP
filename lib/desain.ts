@@ -59,6 +59,11 @@ export const RADIUS = {
 export const BAYANG = {
   /** Kartu yang duduk di atas halaman. */
   kartu: '0 4px 24px rgba(0,0,0,0.10)',
+  /**
+   * Kartu 3D (permintaan pemilik: efek 3D di seluruh menu) - kilau tepi atas + bayangan dekat & jauh.
+   * Sama dengan aturan .isi-portal .rounded-2xl.bg-white di app/globals.css, untuk kartu bergaya inline.
+   */
+  kartu3d: 'inset 0 1px 0 #fff, 0 1px 0 #e2e8f0, 0 3px 0 #dfe5ee, 0 6px 10px -2px rgba(15,23,42,0.10), 0 24px 40px -18px rgba(15,23,42,0.28)',
   /** Dropdown & popover yang menempel pada pemicunya. */
   dropdown: '0 8px 32px rgba(0,0,0,0.18)',
   /** Modal yang melayang di atas layar gelap. */

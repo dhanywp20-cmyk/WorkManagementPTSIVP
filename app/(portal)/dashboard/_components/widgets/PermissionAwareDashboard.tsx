@@ -155,7 +155,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         (bawaan: Netral). Dulu beranda dipaksa netral di sini, sehingga
         pilihan "Gambar" diam-diam tidak berlaku di beranda saja. Ubin
         berlatar putih pekat, jadi teks tetap terbaca di atas foto. */
-    <div className="w-full h-full overflow-y-auto">
+    <div className="dasbor-3d w-full h-full overflow-y-auto">
       {/* ── Header sambutan ──────────────────────────────────────────────────
           Dulu sambutan ini ikut terkurung di dalam kolom max-w-[1600px] yang
           sama dengan isi, jadi ia melayang di atas latar tanpa batas yang
@@ -203,7 +203,7 @@ export default function PermissionAwareDashboard({ currentUser, openMenu, openUr
         supaya ubinnya LANGSUNG jadi anggota kisi ini - bukan kisi di dalam
         kisi, yang justru membuat jaraknya tidak pernah sama.
       */}
-      <div className="max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6
+      <div className="dasbor-masuk max-w-[1600px] mx-auto px-3 md:px-8 py-4 md:py-6
                       grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-4 items-stretch">
 
         {ajakTelegram && !tutupAjakan && (
