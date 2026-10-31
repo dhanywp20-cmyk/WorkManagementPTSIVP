@@ -322,12 +322,16 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
             className={`lc-kartu ${
               animKartu === 'masuk' ? 'lc-kartu-masuk'
                 : animKartu === 'tukarKeluar' ? 'lc-tukar-keluar' : 'lc-tukar-masuk'
-            } w-full ${showRegister ? 'max-w-2xl' : 'max-w-md'} bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-6 sm:p-8`}
+            } kaca-login w-full ${showRegister ? 'max-w-2xl' : 'max-w-md'} p-6 pt-8 sm:p-9 sm:pt-11`}
           >
+            {/* Kartu kaca: bingkai + isi kaca + dua serpihan sudut (app/globals.css, "Kartu login kaca"). */}
+            <span aria-hidden="true" className="kaca-latar" />
+            <span aria-hidden="true" className="kaca-serpih kaca-serpih-atas" />
+            <span aria-hidden="true" className="kaca-serpih kaca-serpih-bawah" />
             {/* Berhasil masuk: tanda centang digambar + sapaan, menutupi form di tempat (tinggi kartu tidak
                 berubah, jadi tidak ada loncatan tata letak). */}
             {masukBerhasil && (
-              <div className="lc-sukses absolute inset-0 z-10 rounded-3xl bg-white flex flex-col items-center justify-center text-center px-6" role="status" aria-live="polite">
+              <div className="lc-sukses absolute inset-0 z-10 kaca-isi flex flex-col items-center justify-center text-center px-6" role="status" aria-live="polite">
                 <svg viewBox="0 0 52 52" width="80" height="80" aria-hidden="true" focusable="false">
                   <circle cx="26" cy="26" r="23" fill="none" stroke={merek.warnaUtama} strokeWidth="3" strokeLinecap="round" className="lc-sukses-lingkar" />
                   <path d="M15 27l8 8 14-16" fill="none" stroke={merek.warnaUtama} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className="lc-sukses-centang" />
@@ -344,7 +348,9 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                 <LogoMerek ukuran="lg" />
                 <span className="text-lg font-bold text-slate-800">{merek.namaPlatform} <span className="text-slate-500 font-normal">· {merek.namaPortal}</span></span>
               </div>
-              <h2 className="text-xl sm:text-3xl font-bold text-slate-800 tracking-tight">{showRegister ? 'Buat Akun Baru' : 'Selamat Datang'}</h2>
+              <h2 className="text-xl sm:text-3xl font-bold text-slate-800 tracking-tight">
+                {showRegister ? 'Buat Akun ' : 'Selamat '}<span className="kaca-judul-aksen">{showRegister ? 'Baru' : 'Datang'}</span>
+              </h2>
               <p className="text-slate-500 text-sm mt-1.5">{showRegister ? 'Lengkapi data untuk mendaftar. Akun akan diverifikasi admin.' : 'Masuk ke akun Anda untuk melanjutkan'}</p>
             </div>
 
@@ -383,8 +389,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                     {loginErr}
                   </div>
                 )}
-                <button onClick={handleLogin} disabled={loginLoading || masukBerhasil} className="w-full text-white py-3.5 rounded-xl font-bold shadow-lg transition-all tracking-wide text-sm mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:opacity-90"
-                  style={{ background: `linear-gradient(to right, ${merek.warnaUtama}, ${merek.warnaUtama2})` }}>
+                <button onClick={handleLogin} disabled={loginLoading || masukBerhasil} className="kaca-tombol w-full py-3.5 rounded-xl font-bold transition-all tracking-wide text-sm mt-2 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                   {masukBerhasil ? (
                     <>
                       {/* Kepastian bahwa passwordnya benar — inilah yang orang
@@ -402,7 +407,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                   )}
                 </button>
                 <p className="text-center text-xs text-slate-500 pt-1">
-                  Belum punya akun? <button onClick={() => pindahForm(true)} className="text-indigo-600 font-bold hover:underline">Daftar di sini</button>
+                  Belum punya akun? <button onClick={() => pindahForm(true)} className="font-bold hover:underline" style={{ color: merek.warnaUtama }}>Daftar di sini</button>
                   <span className="mx-2 text-slate-400">|</span>
                   <button onClick={() => { setShowForgot(true); setForgotStep('request'); setForgotMsg(null); }} className="font-bold hover:underline" style={{ color: merek.warnaUtama }}>Lupa Password?</button>
                 </p>
@@ -420,7 +425,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                         ? 'Akun kamu sudah langsung aktif untuk Learning Center - tidak perlu menunggu admin. Silakan login sekarang.'
                         : 'Akun kamu akan diverifikasi oleh admin. Kamu akan dihubungi setelah akun diaktifkan.'}
                     </p>
-                    <button onClick={() => pindahForm(false)} className="text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all hover:opacity-90" style={{ background: merek.warnaUtama }}>Kembali ke Login</button>
+                    <button onClick={() => pindahForm(false)} className="kaca-tombol px-6 py-2.5 rounded-xl font-bold text-sm transition-all">Kembali ke Login</button>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -531,7 +536,7 @@ export function LayarMasuk({ onMasuk, onSelesai }: {
                       <div className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200">{registerErr}</div>
                     )}
                     <button onClick={() => { setRegisterErr(''); handleRegister(); }} disabled={registerLoading}
-                      className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 text-white py-3.5 rounded-xl font-bold shadow-lg transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
+                      className="kaca-tombol w-full py-3.5 rounded-xl font-bold transition-all text-sm disabled:opacity-60 flex items-center justify-center gap-2">
                       {registerLoading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                       <IkonTeks nama="📝" />Daftar Akun
                     </button>

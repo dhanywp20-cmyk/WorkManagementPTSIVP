@@ -322,6 +322,69 @@ html {
 /* ── Kartu login ── */
 .lc-kartu { position: relative; z-index: 5; }
 
+/* ── Kartu login kaca ("Glassy Login Form", permintaan pemilik) ──
+   HANYA kartu form di panel kanan - panel, latar, dan sisi kiri tidak disentuh.
+   Kaca TERANG senada panel kanan, aksen warna MEREK (--merek-utama/-2 dari lib/merek.ts, sama dengan
+   panel kiri) - ikut berubah bila merek diganti di Admin Panel. Dua sudut terpotong miring (kiri-atas
+   & kanan-bawah) dengan serpihan kaca di luar potongannya. Lapisan:
+     .kaca-latar          bingkai 1.5px bercahaya (gradien) - dipotong clip-path;
+     .kaca-latar::before  isi kaca + backdrop blur, ke dalam dengan potongan yang sama;
+     .kaca-serpih         dua segitiga kaca di luar sudut yang terpotong;
+   isi form di atasnya TIDAK ikut dipotong (padding lebih lebar dari potongan). */
+.kaca-login {
+  --potong: 46px; --celah: 10px;
+  --kaca-aksen: var(--merek-utama, #e11d48);
+  --kaca-aksen-2: var(--merek-utama-2, #be123c);
+  isolation: isolate;
+}
+@media (min-width: 640px) { .kaca-login { --potong: 60px; } }
+.kaca-latar, .kaca-latar::before, .kaca-isi {
+  clip-path: polygon(var(--potong) 0, 100% 0, 100% calc(100% - var(--potong)), calc(100% - var(--potong)) 100%, 0 100%, 0 var(--potong));
+}
+.kaca-latar {
+  position: absolute; inset: 0; z-index: -1; border-radius: 20px; pointer-events: none;
+  background: linear-gradient(150deg,
+    color-mix(in srgb, var(--kaca-aksen) 85%, white), rgba(255, 255, 255, .9) 24%,
+    rgba(255, 255, 255, .55) 50%, rgba(255, 255, 255, .9) 76%, color-mix(in srgb, var(--kaca-aksen-2) 85%, white));
+}
+.kaca-latar::before {
+  content: ''; position: absolute; inset: 1.5px; border-radius: 19px;
+  background:
+    radial-gradient(120% 70% at 12% 0%, color-mix(in srgb, var(--kaca-aksen) 10%, transparent), transparent 62%),
+    radial-gradient(90% 60% at 100% 100%, color-mix(in srgb, var(--kaca-aksen-2) 8%, transparent), transparent 65%),
+    linear-gradient(165deg, rgba(255, 255, 255, .86), rgba(255, 255, 255, .74));
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+.kaca-isi { background: linear-gradient(165deg, #fff, #f8fafc); border-radius: 20px; }
+.kaca-serpih {
+  position: absolute; z-index: -1; pointer-events: none;
+  /* Sisi miringnya sejajar potongan kartu, bergeser --celah keluar: ada celah di antaranya. */
+  width: calc(var(--potong) - var(--celah)); height: calc(var(--potong) - var(--celah));
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--kaca-aksen) 70%, white), var(--kaca-aksen) 45%,
+    color-mix(in srgb, var(--kaca-aksen-2) 45%, transparent));
+  opacity: .92;
+}
+.kaca-serpih-atas { left: -2px; top: -2px; clip-path: polygon(0 0, 100% 0, 0 100%); border-top-left-radius: 12px; }
+.kaca-serpih-bawah { right: -2px; bottom: -2px; clip-path: polygon(100% 0, 100% 100%, 0 100%); border-bottom-right-radius: 12px; }
+.kaca-judul-aksen {
+  background: linear-gradient(90deg, var(--kaca-aksen), var(--kaca-aksen-2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.kaca-login input:not([type='checkbox']):not([type='radio']), .kaca-login select {
+  background: rgba(255, 255, 255, .72); border-color: rgba(148, 163, 184, .45);
+}
+.kaca-login input:not([type='checkbox']):not([type='radio']):focus, .kaca-login select:focus {
+  background: #fff; border-color: var(--kaca-aksen);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--kaca-aksen) 16%, transparent);
+}
+.kaca-tombol {
+  background: linear-gradient(90deg, var(--kaca-aksen), var(--kaca-aksen-2)); color: #fff;
+  box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--kaca-aksen) 70%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3);
+}
+.kaca-tombol:hover:not(:disabled) { filter: brightness(1.06); }
+
 /* Kartu login meluncur dari BAWAH viewport ke posisi akhirnya di tengah panel
    — entrance utama halaman login, jelas terlihat sejak bingkai pertama (bukan
    efek halus yang menunggu animasi lain selesai). cubic-bezier di bawah
@@ -341,13 +404,14 @@ html {
    Dua tahap terpisah supaya pergantian isi kartu terjadi saat kartu sedang
    tidak terlihat. Satu animasi bolak-balik tidak bisa: React mengganti isinya
    pada saat diklik, bukan di tengah animasi. */
+/* Kartu berputar seperti dibalik (sumbu tegak): keluar ke 80 deg, isi berganti, masuk dari -80 deg. */
 .lc-tukar-keluar { animation: lcTukarKeluar 240ms cubic-bezier(.4, 0, 1, 1) forwards; }
 @keyframes lcTukarKeluar {
-  to { opacity: 0; transform: scale(.92) translateY(10px); }
+  to { opacity: 0; transform: perspective(1400px) rotateY(80deg) scale(.96); }
 }
-.lc-tukar-masuk { animation: lcTukarMasuk 440ms cubic-bezier(.22, 1, .36, 1) backwards; }
+.lc-tukar-masuk { animation: lcTukarMasuk 480ms cubic-bezier(.22, 1, .36, 1) backwards; }
 @keyframes lcTukarMasuk {
-  from { opacity: 0; transform: scale(.92) translateY(10px); }
+  from { opacity: 0; transform: perspective(1400px) rotateY(-80deg) scale(.96); }
 }
 
 /* ── Login berhasil: tanda centang digambar + sapaan, lalu pudar ke dashboard ──

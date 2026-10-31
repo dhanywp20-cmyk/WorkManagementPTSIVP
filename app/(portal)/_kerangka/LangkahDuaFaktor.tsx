@@ -71,7 +71,7 @@ export function LangkahDuaFaktor({ tahap, tantangan, onBerhasil, onBatal }: {
       <InputKode2FA key={String(pakaiCadangan)} nilai={kode} ubah={setKode} kirim={kirimKode} cadangan={pakaiCadangan} />
       {galat && <div className="px-4 py-2.5 rounded-xl text-sm font-medium text-red-700 bg-red-50 border border-red-200">{galat}</div>}
       <button type="button" onClick={kirimKode} disabled={sibuk}
-        className="w-full text-white py-3.5 rounded-xl font-bold shadow-lg text-sm bg-slate-800 hover:bg-slate-700 disabled:opacity-60">
+        className="kaca-tombol w-full py-3.5 rounded-xl font-bold text-sm disabled:opacity-60">
         {sibuk ? 'Memverifikasi…' : 'Verifikasi'}
       </button>
       <p className="text-center text-xs text-slate-500">
