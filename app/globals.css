@@ -523,7 +523,7 @@ html {
       memanjang. Naiknya lewat `top`, BUKAN transform: transform menjadikan ubin "containing block"
       bagi elemen `fixed` di dalamnya (popup), akar bug modal yang dulu sudah dicabut.
       Hanya ubin beranda (.dasbor-3d), ditandai rounded-2xl + bg-white - isi ubin tidak tersentuh.
-   2) Panel Konstelasi Tim (widgets/KonstelasiTim.tsx): ruang gelap biru-malam dengan kilau tepi. */
+   2) Panel Konstelasi Tim (widgets/KonstelasiTim.tsx): ubin yang sama, dengan "lantai" kisi titik. */
 .dasbor-3d .rounded-2xl.bg-white {
   position: relative; top: 0;
   background: linear-gradient(180deg, #ffffff 0%, #fcfdff 55%, #f5f7fb 100%);
@@ -543,25 +543,16 @@ html {
       0 30px 52px -20px rgba(15, 23, 42, .3) !important;
   }
 }
-.konstelasi-3d {
+/* "Lantai" panel Konstelasi Tim: kisi titik halus + sorot lembut warna merek di tengah - memberi ruang
+   kedalaman pada latar TERANG (pemilik: bukan mode gelap). */
+.konstelasi-lantai::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
   background:
-    radial-gradient(90% 70% at 50% 40%, rgba(59, 130, 246, .28), transparent 70%),
-    radial-gradient(60% 50% at 85% 10%, color-mix(in srgb, var(--merek-utama, #e11d48) 26%, transparent), transparent 70%),
-    linear-gradient(165deg, #0b1636 0%, #0a1230 45%, #070b1f 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, .14), inset 0 0 0 1px rgba(148, 163, 184, .14),
-    0 6px 12px -4px rgba(15, 23, 42, .25), 0 28px 48px -20px rgba(15, 23, 42, .55);
+    radial-gradient(50% 60% at 50% 55%, color-mix(in srgb, var(--merek-utama, #e11d48) 7%, transparent), transparent 70%),
+    radial-gradient(circle, rgba(148, 163, 184, .28) 1px, transparent 1.2px) 0 0 / 18px 18px;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 86%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0, #000 14%, #000 86%, transparent 100%);
 }
-.konstelasi-chip {
-  display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px;
-  font-size: 11.5px; font-weight: 700; color: #cbd5e1;
-  background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .08); transition: background .2s, color .2s, border-color .2s;
-}
-.konstelasi-chip:hover { background: rgba(255, 255, 255, .11); color: #fff; }
-.konstelasi-chip.aktif { background: #fff; color: #0f172a; border-color: #fff; box-shadow: 0 6px 18px -6px rgba(255, 255, 255, .55); }
-.konstelasi-chip i { width: 7px; height: 7px; border-radius: 999px; display: inline-block; }
-.konstelasi-chip span { font-weight: 600; opacity: .6; }
 @media (prefers-reduced-motion: reduce) {
   .dasbor-3d .rounded-2xl.bg-white { transition: none; }
 }

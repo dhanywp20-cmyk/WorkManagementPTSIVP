@@ -5,6 +5,11 @@
  * dikelompokkan per tim (team_type). Seret untuk memutar, arahkan ke titik untuk melihat nama,
  * pilih chip untuk menyorot satu tim. Permintaan pemilik: beranda bergaya "3D dashboard".
  *
+ * Bahasa visual mengikuti ubin beranda yang TERANG (pemilik: bukan mode gelap): permukaan putih
+ * timbul yang sama, kedalaman dibawa cincin orbit tipis, bayangan lembut di bawah tiap titik, dan
+ * titik yang jauh mengecil & memudar ke putih - bukan ruang angkasa gelap bercahaya neon. Pusat
+ * memakai warna merek (--merek-utama), tim memakai palet kalem.
+ *
  * - Data: kueri & kunci cache YANG SAMA dengan lonceng notifikasi (users role team, nama + tim,
  *   cache 5 menit, lib/cache-singkat) - tidak menambah permintaan ke Supabase selama cache berlaku.
  * - Gambar: canvas 2D dengan proyeksi perspektif sederhana (putar sumbu Y lalu X, k = F / (z + KAM)),
@@ -16,15 +21,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ingat } from '@/lib/cache-singkat';
-import type { WidgetProps } from './primitives';
+import { Keterangan } from '@/components/shared';
+import { UBIN, LABEL_UBIN, type WidgetProps } from './primitives';
 
 interface Anggota { full_name: string | null; team_type: string | null }
 interface Titik { x: number; y: number; z: number }
 interface Simpul extends Titik { nama: string; tim: number }
 interface Gugus { nama: string; warna: string; pusat: Titik; anggota: Simpul[] }
 
-const WARNA = ['#60a5fa', '#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#fb7185', '#22d3ee'];
+/** Palet tim kalem (bukan neon) - senada grafik lain di platform. */
+const WARNA = ['#2563eb', '#0d9488', '#d97706', '#7c3aed', '#db2777', '#0891b2', '#64748b'];
 const KAM = 3.4;
+const ORBIT = 1.05;
 
 /** Angka semu tetap dari teks - posisi tiap orang sama di setiap kunjungan. */
 function acakDari(teks: string, garam: number): number {
@@ -35,6 +43,12 @@ function acakDari(teks: string, garam: number): number {
 
 const inisial = (nama: string) => nama.split(/\s+/).filter(Boolean).slice(0, 2).map(s => s[0]!.toUpperCase()).join('');
 const namaTim = (t: string | null) => (t ?? '').replace(/^Team\s+/i, '').trim() || 'Lainnya';
+
+/** Campur warna hex ke putih (0 = warna asli, 1 = putih) - kabut kedalaman pada latar terang. */
+function kePutih(hex: string, t: number): string {
+  const n = parseInt(hex.slice(1), 16), c = (v: number) => Math.round(v + (255 - v) * t);
+  return `rgb(${c(n >> 16)},${c((n >> 8) & 255)},${c(n & 255)})`;
+}
 
 export function susunGugus(data: Anggota[]): Gugus[] {
   const per = new Map<string, string[]>();
@@ -47,7 +61,7 @@ export function susunGugus(data: Anggota[]): Gugus[] {
   const tim = [...per.entries()].sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], 'id'));
   return tim.map(([nama, orang], i) => {
     const sudut = (i / Math.max(1, tim.length)) * Math.PI * 2;
-    const pusat = { x: Math.cos(sudut) * 1.05, y: (i % 2 ? 0.2 : -0.2), z: Math.sin(sudut) * 1.05 };
+    const pusat = { x: Math.cos(sudut) * ORBIT, y: (i % 2 ? 0.2 : -0.2), z: Math.sin(sudut) * ORBIT };
     const anggota = orang.sort((a, b) => a.localeCompare(b, 'id')).map(n => {
       const r = 0.22 + acakDari(n, 1) * 0.3, t = acakDari(n, 2) * Math.PI * 2, p = (acakDari(n, 3) - 0.5) * Math.PI;
       return { nama: n, tim: i, x: pusat.x + r * Math.cos(p) * Math.cos(t), y: pusat.y + r * Math.sin(p), z: pusat.z + r * Math.cos(p) * Math.sin(t) };
@@ -83,10 +97,8 @@ export default function KonstelasiTim(_props: WidgetProps) {
     const ctx = cv.getContext('2d');
     if (!ctx) return;
     const geraKurang = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const bintang: Titik[] = Array.from({ length: 110 }, (_, i) => {
-      const t = acakDari(`b${i}`, 7) * Math.PI * 2, p = Math.acos(2 * acakDari(`b${i}`, 8) - 1), r = 3.2 + acakDari(`b${i}`, 9) * 1.5;
-      return { x: r * Math.sin(p) * Math.cos(t), y: r * Math.cos(p) * 0.6, z: r * Math.sin(p) * Math.sin(t) };
-    });
+    const merek = getComputedStyle(document.documentElement).getPropertyValue('--merek-utama').trim() || '#e11d48';
+    const merekHex = /^#[0-9a-f]{6}$/i.test(merek) ? merek : '#e11d48';
     let w = 0, h = 0, dpr = 1;
     const ukur = () => {
       dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -97,79 +109,99 @@ export default function KonstelasiTim(_props: WidgetProps) {
     ukur();
     const ro = new ResizeObserver(ukur); ro.observe(el);
 
-    let ay = 0.6, ax = -0.2, vy = geraKurang ? 0 : 0.0022, tarik: { x: number; y: number } | null = null;
+    let ay = 0.6, ax = -0.32, vy = geraKurang ? 0 : 0.002, tarik: { x: number; y: number } | null = null;
     let tampak: { s: Simpul; px: number; py: number; r: number }[] = [];
     const proyek = (t: Titik) => {
       const cy = Math.cos(ay), sy = Math.sin(ay), cx = Math.cos(ax), sx = Math.sin(ax);
       const x1 = t.x * cy + t.z * sy, z1 = -t.x * sy + t.z * cy;
       const y2 = t.y * cx - z1 * sx, z2 = t.y * sx + z1 * cx;
-      const F = Math.min(w * 0.9, h * 1.7) * 0.82, k = F / (z2 + KAM);
-      return { px: w / 2 + x1 * k, py: h * 0.54 + y2 * k, z: z2, k: k / F * KAM };
+      const F = Math.min(w * 0.85, h * 1.55) * 0.78, k = F / (z2 + KAM);
+      return { px: w / 2 + x1 * k, py: h * 0.57 + y2 * k, z: z2, k: k / F * KAM };
+    };
+    /** Kedalaman 0 (dekat) .. 1 (jauh) - untuk kabut & ukuran. */
+    const jauh = (z: number) => Math.max(0, Math.min(1, (z + 1.6) / 3.2));
+
+    const cincin = (r: number, y: number, alfa: number) => {
+      ctx.beginPath();
+      for (let i = 0; i <= 72; i++) {
+        const a = (i / 72) * Math.PI * 2, p = proyek({ x: Math.cos(a) * r, y, z: Math.sin(a) * r });
+        if (i) ctx.lineTo(p.px, p.py); else ctx.moveTo(p.px, p.py);
+      }
+      ctx.strokeStyle = `rgba(148,163,184,${alfa})`; ctx.stroke();
+    };
+
+    const pil = (x: number, y: number, teks: string, warna: string) => {
+      ctx.font = '600 11px Inter, system-ui, sans-serif';
+      const lb = ctx.measureText(teks).width + 24;
+      ctx.shadowColor = 'rgba(15,23,42,.10)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 2;
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.roundRect(x - lb / 2, y - 11, lb, 22, 11); ctx.fill();
+      ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+      ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = warna; ctx.beginPath(); ctx.arc(x - lb / 2 + 10, y, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#334155'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(teks, x - lb / 2 + 18, y + 0.5);
+    };
+
+    const bola = (px: number, py: number, r: number, warna: string, kabut: number) => {
+      // Bayangan lembut di "lantai" - memberi kesan melayang tanpa cahaya neon.
+      ctx.fillStyle = `rgba(15,23,42,${0.10 * (1 - kabut)})`;
+      ctx.beginPath(); ctx.ellipse(px, py + r * 1.15, r * 0.9, r * 0.28, 0, 0, Math.PI * 2); ctx.fill();
+      const dasar = kePutih(warna, kabut * 0.75);
+      const gr = ctx.createRadialGradient(px - r * 0.4, py - r * 0.45, r * 0.1, px, py, r);
+      gr.addColorStop(0, kePutih(warna, 0.55 + kabut * 0.35)); gr.addColorStop(1, dasar);
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = '#ffffff'; ctx.stroke();
     };
 
     const gambar = () => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, w, h);
-      for (const b of bintang) {
-        const p = proyek(b);
-        ctx.fillStyle = `rgba(191,219,254,${Math.max(0.08, 0.5 - (p.z + 3) * 0.08)})`;
-        ctx.fillRect(p.px, p.py, 1.3, 1.3);
-      }
+      ctx.lineWidth = 1;
+      cincin(ORBIT, 0, 0.35);
+      cincin(ORBIT * 0.55, 0, 0.22);
       const pusat = proyek({ x: 0, y: 0, z: 0 });
       const sel = pilihRef.current;
-      // Garis: pusat -> tim, tim -> anggota.
-      ctx.lineWidth = 1;
+      // Garis: pusat -> tim, tim -> anggota (makin jauh makin tipis).
       for (const [i, g] of gugus.entries()) {
         const redup = sel !== null && sel !== i;
         const hp = proyek(g.pusat);
-        ctx.strokeStyle = redup ? 'rgba(148,163,184,.08)' : 'rgba(191,219,254,.35)';
-        ctx.beginPath(); ctx.moveTo(pusat.px, pusat.py); ctx.lineTo(hp.px, hp.py); ctx.stroke();
-        ctx.strokeStyle = redup ? 'rgba(148,163,184,.05)' : `${g.warna}40`;
-        for (const a of g.anggota) { const ap = proyek(a); ctx.beginPath(); ctx.moveTo(hp.px, hp.py); ctx.lineTo(ap.px, ap.py); ctx.stroke(); }
+        ctx.strokeStyle = redup ? 'rgba(148,163,184,.12)' : `rgba(100,116,139,${0.45 - jauh(hp.z) * 0.25})`;
+        ctx.setLineDash([3, 4]); ctx.beginPath(); ctx.moveTo(pusat.px, pusat.py); ctx.lineTo(hp.px, hp.py); ctx.stroke();
+        ctx.setLineDash([]);
+        for (const a of g.anggota) {
+          const ap = proyek(a);
+          ctx.strokeStyle = redup ? 'rgba(148,163,184,.08)' : kePutih(g.warna, 0.55 + jauh(ap.z) * 0.3);
+          ctx.beginPath(); ctx.moveTo(hp.px, hp.py); ctx.lineTo(ap.px, ap.py); ctx.stroke();
+        }
       }
       // Simpul diurutkan dari yang terjauh.
       const daftar = gugus.flatMap(g => g.anggota).map(s => ({ s, ...proyek(s) })).sort((a, b) => b.z - a.z);
       tampak = [];
       for (const d of daftar) {
         const g = gugus[d.s.tim], redup = sel !== null && sel !== d.s.tim;
-        const r = Math.max(6, 12.5 * d.k);
-        ctx.globalAlpha = redup ? 0.18 : Math.min(1, 0.55 + d.k * 0.45);
-        ctx.shadowColor = g.warna; ctx.shadowBlur = redup ? 0 : 14;
-        const gr = ctx.createRadialGradient(d.px - r * 0.35, d.py - r * 0.35, r * 0.1, d.px, d.py, r);
-        gr.addColorStop(0, '#ffffff'); gr.addColorStop(0.35, g.warna); gr.addColorStop(1, '#1e293b');
-        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(d.px, d.py, r, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0;
-        if (r >= 9) {
-          ctx.fillStyle = '#0b1220'; ctx.font = `700 ${Math.round(r * 0.72)}px Inter, system-ui, sans-serif`;
+        const kabut = redup ? 0.85 : jauh(d.z) * 0.6;
+        const r = Math.max(7, 13 * d.k);
+        bola(d.px, d.py, r, g.warna, kabut);
+        if (r >= 9 && !redup) {
+          ctx.fillStyle = '#ffffff'; ctx.font = `700 ${Math.round(r * 0.7)}px Inter, system-ui, sans-serif`;
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(inisial(d.s.nama), d.px, d.py + 0.5);
         }
-        ctx.globalAlpha = 1;
         if (!redup) tampak.push({ s: d.s, px: d.px, py: d.py, r });
       }
-      // Label tim.
+      // Pusat: warna merek.
+      const rp = 13 * pusat.k + 5;
+      bola(pusat.px, pusat.py, rp, merekHex, 0);
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(pusat.px, pusat.py, rp * 0.32, 0, Math.PI * 2); ctx.fill();
+      // Label tim di atas segalanya, supaya tidak tertutup titik di depannya.
       for (const [i, g] of gugus.entries()) {
         if (sel !== null && sel !== i) continue;
         const hp = proyek(g.pusat);
-        const teks = `${g.nama} · ${g.anggota.length}`;
-        ctx.font = '700 11px Inter, system-ui, sans-serif';
-        const lb = ctx.measureText(teks).width + 22, ly = hp.py - 46 * hp.k - 10;
-        ctx.fillStyle = 'rgba(15,23,42,.78)'; ctx.strokeStyle = 'rgba(255,255,255,.18)';
-        ctx.beginPath(); ctx.roundRect(hp.px - lb / 2, ly - 10, lb, 20, 10); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = g.warna; ctx.beginPath(); ctx.arc(hp.px - lb / 2 + 9, ly, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#e2e8f0'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(teks, hp.px - lb / 2 + 16, ly + 0.5);
+        pil(hp.px, hp.py - 52 * hp.k - 6, `${g.nama} · ${g.anggota.length}`, g.warna);
       }
-      // Pusat: platform.
-      const rp = 15 * pusat.k + 6;
-      ctx.shadowColor = '#fde68a'; ctx.shadowBlur = 24;
-      const gp = ctx.createRadialGradient(pusat.px - 4, pusat.py - 4, 2, pusat.px, pusat.py, rp);
-      gp.addColorStop(0, '#fffbeb'); gp.addColorStop(1, '#f59e0b');
-      ctx.fillStyle = gp; ctx.beginPath(); ctx.arc(pusat.px, pusat.py, rp, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0;
     };
 
     let raf = 0, jalan = false;
     const putar = () => {
-      if (!tarik) { ay += vy; if (!geraKurang) vy += (0.0022 - vy) * 0.02; }
+      if (!tarik) { ay += vy; if (!geraKurang) vy += (0.002 - vy) * 0.02; }
       gambar();
       raf = requestAnimationFrame(putar);
     };
@@ -188,7 +220,7 @@ export default function KonstelasiTim(_props: WidgetProps) {
       const p = posisi(e);
       if (tarik) {
         const dx = p.x - tarik.x, dy = p.y - tarik.y;
-        ay += dx * 0.008; ax = Math.max(-1, Math.min(0.6, ax + dy * 0.006)); vy = dx * 0.0015; tarik = p;
+        ay += dx * 0.008; ax = Math.max(-1, Math.min(0.4, ax + dy * 0.006)); vy = dx * 0.0015; tarik = p;
         return;
       }
       const kena = tampak.slice().reverse().find(t => (t.px - p.x) ** 2 + (t.py - p.y) ** 2 <= (t.r + 3) ** 2);
@@ -211,41 +243,45 @@ export default function KonstelasiTim(_props: WidgetProps) {
     };
   }, [gugus]);
 
+  const chip = (aktif: boolean) => `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11.5px] font-semibold border transition-colors ${
+    aktif ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`;
+
   return (
-    <section className="konstelasi-3d relative overflow-hidden rounded-2xl text-white">
-      <div className="relative z-10 flex flex-wrap items-start justify-between gap-3 p-4 md:p-5 pb-0 md:pb-0">
+    <section className={`${UBIN} !p-0`}>
+      <div className="flex flex-wrap items-start justify-between gap-3 px-5 pt-5">
         <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.14em] text-sky-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" /> Graf tim 3D
-          </p>
-          <h3 className="text-lg md:text-xl font-bold tracking-tight mt-1">Konstelasi Tim</h3>
-          <p className="text-[12px] text-slate-300/80 mt-0.5">
-            {data === null ? 'Memuat…' : `${total} anggota · ${gugus.length} tim · seret untuk memutar, arahkan ke titik untuk melihat nama`}
+          <h3 className={`${LABEL_UBIN} flex items-center gap-1.5`}>
+            Konstelasi Tim
+            <Keterangan>Graf 3D anggota tim per kelompok. Seret untuk memutar, arahkan ke titik untuk melihat nama, pilih tim untuk menyorot.</Keterangan>
+          </h3>
+          <p className="mt-1.5 text-[22px] leading-none font-bold tracking-tight text-slate-900 tabular-nums">
+            {data === null ? '–' : total}<span className="ml-1.5 text-[13px] font-medium text-slate-500">anggota · {gugus.length} tim</span>
           </p>
         </div>
         {gugus.length > 1 && (
           <div className="flex flex-wrap gap-1.5" role="group" aria-label="Sorot tim">
-            <button type="button" onClick={() => setPilih(null)} aria-pressed={pilih === null}
-              className={`konstelasi-chip ${pilih === null ? 'aktif' : ''}`}>Semua <span>{total}</span></button>
+            <button type="button" onClick={() => setPilih(null)} aria-pressed={pilih === null} className={chip(pilih === null)}>
+              Semua <span className="opacity-60 tabular-nums">{total}</span>
+            </button>
             {gugus.map((g, i) => (
-              <button key={g.nama} type="button" onClick={() => setPilih(p => (p === i ? null : i))} aria-pressed={pilih === i}
-                className={`konstelasi-chip ${pilih === i ? 'aktif' : ''}`}>
-                <i style={{ background: g.warna }} />{g.nama} <span>{g.anggota.length}</span>
+              <button key={g.nama} type="button" onClick={() => setPilih(p => (p === i ? null : i))} aria-pressed={pilih === i} className={chip(pilih === i)}>
+                <i className="w-2 h-2 rounded-full" style={{ background: g.warna }} />{g.nama} <span className="opacity-60 tabular-nums">{g.anggota.length}</span>
               </button>
             ))}
           </div>
         )}
       </div>
-      <div ref={bungkus} className="relative h-[300px] md:h-[380px]">
+      <div ref={bungkus} className="konstelasi-lantai relative h-[300px] md:h-[380px]">
         {data !== null && total === 0 && (
-          <p className="absolute inset-0 grid place-items-center text-sm text-slate-300/80">Belum ada anggota tim.</p>
+          <p className="absolute inset-0 grid place-items-center text-sm text-slate-500">Belum ada anggota tim.</p>
         )}
         <canvas ref={kanvas} className="absolute inset-0 touch-none" style={{ cursor: 'grab' }}
           role="img" aria-label={`Graf 3D ${total} anggota tim dalam ${gugus.length} tim: ${gugus.map(g => `${g.nama} ${g.anggota.length}`).join(', ')}`} />
         {tip && (
-          <div className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-lg px-2.5 py-1.5 text-[12px] font-semibold"
-            style={{ left: tip.x, top: tip.y, background: 'rgba(15,23,42,.92)', border: `1px solid ${tip.warna}66`, boxShadow: `0 8px 24px -6px ${tip.warna}55` }}>
-            {tip.nama} <span className="font-normal text-slate-400">· {tip.tim}</span>
+          <div className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-lg bg-white border border-slate-200 px-2.5 py-1.5 text-[12px] font-semibold text-slate-800 shadow-lg shadow-slate-900/10"
+            style={{ left: tip.x, top: tip.y }}>
+            <span className="inline-block w-2 h-2 rounded-full mr-1.5 align-middle" style={{ background: tip.warna }} />
+            {tip.nama} <span className="font-normal text-slate-500">· {tip.tim}</span>
           </div>
         )}
       </div>
