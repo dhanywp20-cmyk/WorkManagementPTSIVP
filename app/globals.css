@@ -498,9 +498,10 @@ html {
 .bilah-pindah-menu::before { content: ''; position: absolute; top: 0; bottom: 0; width: 35%; background: var(--warna-pindah, #e11d48); border-radius: 2px; animation: bilahPindahMenu 0.9s ease-in-out infinite; }
 @keyframes bilahPindahMenu { from { transform: translateX(-100%); } to { transform: translateX(300%); } }
 /* Pindah menu = membalik halaman: isi lama mundur menjauh & sedikit rebah selama halaman baru disiapkan,
-   lalu isi baru maju dari kedalaman (modulMasuk di bawah). Murni CSS di peramban. */
-.isi-sedang-pindah > :not(.bilah-pindah-menu) { transform-origin: 50% 0; animation: mundurPindahMenu .34s cubic-bezier(.4, 0, .2, 1) .06s forwards; }
-@keyframes mundurPindahMenu { to { opacity: .45; transform: perspective(1600px) translateY(10px) rotateX(5deg) scale(.965); filter: blur(.6px); } }
+   lalu isi baru maju dari kedalaman (modulMasuk di bawah). Ditunda .15s: perpindahan cepat tidak berkedip.
+   Murni CSS di peramban. */
+.isi-sedang-pindah > :not(.bilah-pindah-menu) { transform-origin: 50% 0; animation: redupPindahMenu 0.2s ease 0.15s forwards; }
+@keyframes redupPindahMenu { to { opacity: .45; transform: perspective(1600px) translateY(10px) rotateX(5deg) scale(.965); filter: blur(.6px); } }
 @media (prefers-reduced-motion: reduce) { .bilah-pindah-menu::before { animation-duration: 2s; } }
 
 /*
