@@ -16,6 +16,7 @@ import {
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
 import { buatIcs } from '@/lib/ics';
 import { unduhUrl } from '@/lib/lembar-cetak';
+import { hasFullAccess } from '@/lib/constants';
 
 /**
  * Popup detail reminder (header + info project + timeline + garansi +
@@ -125,6 +126,9 @@ export function ReminderDetailPopup({
   /** Buka panel Mode untuk jadwal yang sudah Completed (status tidak diubah). */
   bukaEditDetailPelaksanaan: (r: Reminder) => void;
 }) {
+  //  Admin / Full Access boleh menyetujui langsung walau request masih menunggu review Sales Internal
+  //  (RLS rm_update: admin_atau_full_access). Bukan jabatan Manager - Manager PTS UMP tidak termasuk.
+  const bolehLewatiReview = isAdmin || hasFullAccess(currentUser as never);
   const router = useRouter();
 
   return (
@@ -192,7 +196,7 @@ export function ReminderDetailPopup({
                   <TombolTolak ukuran="kecil" onClick={() => handleInternalReject(detailReminder)} />
                 </>
               )}
-              {canApproveAssign && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && detailReminder.routing_status !== 'internal_review' && (
+              {canApproveAssign && !detailReminder.assigned_to && detailReminder.notes?.includes('[REQUEST SALES]') && (detailReminder.routing_status !== 'internal_review' || bolehLewatiReview) && (
                 <>
                   <TombolSetujui ukuran="kecil" onClick={() => { setApproveTarget(detailReminder); setApproveBatchSiblings(detailReminder.batch_id ? reminders.filter(gr => gr.id !== detailReminder.id && gr.batch_id === detailReminder.batch_id && !gr.assigned_to) : []); setApproveAssignTo(''); setApproveDate(detailReminder.due_date); setApproveTime(detailReminder.due_time); }}>Setujui &amp; Tugaskan</TombolSetujui>
                   <TombolTolak ukuran="kecil" onClick={() => handleAdminReject(detailReminder)} />
