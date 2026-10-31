@@ -59,7 +59,7 @@ export function NavBawahMobile({ beranda, menu, akun, aksen = '#b45309' }: {
   }, [kunciAktif]);
 
   return (
-    <nav aria-label="Menu utama" className="md:hidden flex-shrink-0 relative"
+    <nav aria-label="Menu utama" className="nav-bawah-3d md:hidden flex-shrink-0 relative"
       style={{
         background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(18px) saturate(170%)', WebkitBackdropFilter: 'blur(18px) saturate(170%)',
         borderTop: '1px solid rgba(15,23,42,0.08)', boxShadow: '0 -4px 18px rgba(15,23,42,0.06)',

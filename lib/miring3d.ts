@@ -8,11 +8,12 @@
  *   tabel tidak dimiringkan supaya isinya tetap tenang dibaca.
  * - `transform` menjadikan kartu "containing block" bagi elemen `fixed` di dalamnya. Karena itu kartu yang
  *   sedang memuat popup / elemen fixed, atau kursor yang berada DI DALAM popup, tidak pernah dimiringkan.
+ * - Bayangan bergeser berlawanan arah condong (--bayang-x/y) & sorot cahaya mengikuti kursor (--sorot-x/y).
  * - Hanya perangkat berkursor (hover: hover) dan bila gerak tidak diminta dikurangi.
  */
 
 const KARTU = '.rounded-2xl.bg-white, .rounded-xl.bg-white.border, [data-kartu3d]';
-const MAKS_DERAJAT = 5;
+const MAKS_DERAJAT = 6;
 
 export function pasangMiring3D(akar: HTMLElement): () => void {
   if (typeof window === 'undefined') return () => {};
@@ -27,6 +28,7 @@ export function pasangMiring3D(akar: HTMLElement): () => void {
     aktif.classList.remove('kartu-miring');
     aktif.style.removeProperty('--miring-x');
     aktif.style.removeProperty('--miring-y');
+    for (const v of ['--bayang-x', '--bayang-y', '--sorot-x', '--sorot-y']) aktif.style.removeProperty(v);
     aktif = null;
   };
 
@@ -45,6 +47,11 @@ export function pasangMiring3D(akar: HTMLElement): () => void {
     raf = requestAnimationFrame(() => {
       kartu.style.setProperty('--miring-x', `${(-y * MAKS_DERAJAT * 2).toFixed(2)}deg`);
       kartu.style.setProperty('--miring-y', `${(x * MAKS_DERAJAT * 2).toFixed(2)}deg`);
+      //  Bayangan jatuh ke arah BERLAWANAN dari sisi yang terangkat; sorot cahaya mengikuti kursor.
+      kartu.style.setProperty('--bayang-x', `${(-x * 18).toFixed(1)}px`);
+      kartu.style.setProperty('--bayang-y', `${(14 - y * 12).toFixed(1)}px`);
+      kartu.style.setProperty('--sorot-x', `${((x + 0.5) * 100).toFixed(1)}%`);
+      kartu.style.setProperty('--sorot-y', `${((y + 0.5) * 100).toFixed(1)}%`);
     });
   };
 

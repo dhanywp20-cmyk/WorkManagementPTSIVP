@@ -37,7 +37,7 @@ export function SidebarPortal({
   return (
         <div
       className={`
-        hidden md:flex flex-col relative transition-all duration-300 ease-in-out flex-shrink-0
+        sidebar-3d hidden md:flex flex-col relative transition-all duration-300 ease-in-out flex-shrink-0
         ${sidebarCollapsed ? 'w-[64px]' : 'w-[272px]'}
       `}
       style={{
@@ -112,7 +112,7 @@ export function SidebarPortal({
               title="Dashboard"
               aria-label="Dashboard"
               aria-current={showDashboardPanel ? 'page' : undefined}
-              className="w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
+              className="menu-3d w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
               style={showDashboardPanel
                 ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
                 : { background: 'transparent', border: '1px solid transparent', color: '#64748b' }}
@@ -126,7 +126,8 @@ export function SidebarPortal({
                       key={itemIndex}
                       onClick={() => onMenu(item, menu.title)}
                       title={`${menu.title} — ${item.name}`}
-                      className="relative w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
+                      aria-current={isActive ? 'page' : undefined}
+                      className="menu-3d relative w-full h-9 rounded-lg flex items-center justify-center text-base transition-all"
                       style={
                         isActive
                           ? { background: 'rgba(200,134,29,0.15)', border: '1px solid rgba(200,134,29,0.35)', color: '#92600a' }
@@ -157,7 +158,8 @@ export function SidebarPortal({
             <div>
               <button
                 onClick={() => onBeranda()}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
+                aria-current={showDashboardPanel ? 'page' : undefined}
+                className="menu-3d w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                 style={showDashboardPanel
                   ? { background: 'rgba(200,134,29,0.12)', border: '1px solid rgba(200,134,29,0.30)', color: '#92600a' }
                   : { background: 'transparent', border: '1px solid transparent', color: '#475569' }}
@@ -189,7 +191,7 @@ export function SidebarPortal({
                           id={`tour-menu-${menu.key}`}
                           onClick={() => onMenu(item, menu.title)}
                           aria-current={isActive ? 'page' : undefined}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
+                          className="menu-3d w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                           style={
                             isTourHL
                               ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 1510 }
@@ -241,7 +243,7 @@ export function SidebarPortal({
                           id={`tour-menu-${menu.key}`}
                           onClick={() => onMenu(item, menu.title)}
                           aria-current={isActive ? 'page' : undefined}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
+                          className="menu-3d w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                           style={
                             isTourHL
                               ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 1510 }
@@ -292,7 +294,7 @@ export function SidebarPortal({
                           id={`tour-menu-${menu.key}`}
                           onClick={() => onMenu(item, menu.title)}
                           aria-current={isActive ? 'page' : undefined}
-                          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
+                          className="menu-3d w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all"
                           style={
                             isTourHL
                               ? { background: 'rgba(250,204,21,0.13)', border: '1.5px solid rgba(250,204,21,0.65)', color: '#334155', animation: 'tourMenuPulse 1.6s ease-in-out infinite', position: 'relative', zIndex: 1510 }
