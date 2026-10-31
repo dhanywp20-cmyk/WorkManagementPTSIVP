@@ -77,11 +77,11 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
   // bisa dicapai lewat keyboard dan punya cincin fokus. Kartu yang hanya
   // menampilkan angka tetap <div> supaya tidak masuk urutan Tab tanpa guna.
   if (!bisaDiklik) {
-    return <div className={kelasDasar} style={gaya}>{isi}</div>;
+    return <div data-kartu3d className={kelasDasar} style={gaya}>{isi}</div>;
   }
 
   return (
-    <button type="button" onClick={onClick} aria-pressed={active} title={`Filter: ${label}`}
+    <button type="button" data-kartu3d onClick={onClick} aria-pressed={active} title={`Filter: ${label}`}
       className={`${kelasDasar} text-left cursor-pointer select-none transition-all duration-200 hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2`}
       style={gaya}>
       {isi}

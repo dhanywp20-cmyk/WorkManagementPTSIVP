@@ -525,19 +525,37 @@ html {
    Kartu bersama yang bergaya inline (MiniPieChart, StatCard) memakai token yang sama: BAYANG.kartu3d di
    lib/desain.ts. Popup dirender di luar .isi-portal (ModalPortal) - tidak ikut.
    `!important` karena sebagian kartu menulis box-shadow sebagai style inline. */
+/* Lempengan: tepi bawah padat 3px (ketebalan benda) + bayangan kontak + bayangan jauh. */
 .isi-portal .rounded-2xl.bg-white, .dasbor-3d .rounded-2xl.bg-white {
-  background-image: linear-gradient(180deg, #ffffff 0%, #fcfdff 55%, #f6f8fb 100%);
+  background-image: linear-gradient(180deg, #ffffff 0%, #fdfdfe 50%, #f4f6fa 100%);
   box-shadow:
-    inset 0 1px 0 #fff, inset 0 -1px 0 rgba(15, 23, 42, .04),
-    0 1px 1px rgba(15, 23, 42, .04), 0 4px 10px -4px rgba(15, 23, 42, .07),
-    0 18px 34px -18px rgba(15, 23, 42, .2) !important;
+    inset 0 1px 0 #fff, inset 0 -2px 0 rgba(15, 23, 42, .035),
+    0 1px 0 #e2e8f0, 0 3px 0 #dfe5ee,
+    0 6px 10px -2px rgba(15, 23, 42, .10), 0 24px 40px -18px rgba(15, 23, 42, .28) !important;
+  transition: transform .4s cubic-bezier(.22, 1, .36, 1), box-shadow .3s ease, top .28s cubic-bezier(.22, 1, .36, 1);
 }
 /* Panel rounded-xl putih bergaris (daftar, tabel, panel samping) - kedalaman sama, sedikit lebih ringan.
    Tombol / isian / tautan / label dikecualikan: mereka juga sering rounded-xl bg-white border. */
 .isi-portal .rounded-xl.bg-white.border:not(button, input, select, textarea, a, label) {
   box-shadow:
-    inset 0 1px 0 #fff, 0 1px 1px rgba(15, 23, 42, .04),
-    0 3px 8px -3px rgba(15, 23, 42, .06), 0 14px 28px -16px rgba(15, 23, 42, .16) !important;
+    inset 0 1px 0 #fff, 0 2px 0 #e2e8f0,
+    0 5px 9px -3px rgba(15, 23, 42, .09), 0 18px 32px -16px rgba(15, 23, 42, .22) !important;
+  transition: transform .4s cubic-bezier(.22, 1, .36, 1), box-shadow .3s ease;
+}
+/* Kartu condong 3D mengikuti kursor (lib/miring3d.ts menulis --miring-x / --miring-y). Bayangan memanjang
+   ke arah berlawanan supaya benda terasa terangkat. */
+.kartu-miring {
+  transform: perspective(900px) rotateX(var(--miring-x, 0deg)) rotateY(var(--miring-y, 0deg)) translateZ(0) !important;
+  transition: transform .12s ease-out, box-shadow .3s ease !important;
+  box-shadow:
+    inset 0 1px 0 #fff, 0 3px 0 #dfe5ee,
+    0 14px 22px -8px rgba(15, 23, 42, .16), 0 34px 56px -22px rgba(15, 23, 42, .34) !important;
+  z-index: 1;
+}
+[data-kartu3d] { transition: transform .4s cubic-bezier(.22, 1, .36, 1), box-shadow .3s ease; }
+/* HP: kartu yang disentuh tertekan sedikit (umpan balik "benda"). */
+@media (hover: none) {
+  .isi-portal .rounded-2xl.bg-white:active, .dasbor-3d .rounded-2xl.bg-white:active, .isi-portal [data-kartu3d]:active { transform: scale(.985); }
 }
 /* Beranda: ubin juga terangkat saat diarahkan. Naiknya lewat `top`, BUKAN transform - transform menjadikan
    ubin "containing block" bagi elemen `fixed` di dalamnya (popup), akar bug modal yang dulu sudah dicabut. */

@@ -39,7 +39,7 @@ type Item = { label: string; value: number; color: string; lipat?: boolean };
 
 function Kartu({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl p-2 sm:p-4 flex flex-col gap-1.5 sm:gap-3 min-w-0"
+    <div data-kartu3d className="rounded-xl p-2 sm:p-4 flex flex-col gap-1.5 sm:gap-3 min-w-0"
       style={{ background: `linear-gradient(180deg, ${NETRAL.permukaan}, #f8fafc)`, border: `1px solid ${NETRAL.garis}`, boxShadow: BAYANG.kartu3d }}>
       <p className="flex items-center gap-1.5 text-[11px] sm:text-[12.5px] font-semibold text-slate-700 leading-tight">
         {icon && <Ikon nama={icon} ukuran={14} className="text-slate-500" />}
