@@ -132,7 +132,7 @@ export default function Desain3D() {
             ) : terpilih && pilihLain.length > 0 ? (
               <PanelBanyak a={a} />
             ) : terpilih && (
-              <PanelBenda b={terpilih} semua={benda} plafon={plafonDi(terpilih.x)} batas={batas} onUbah={gantiBenda}
+              <PanelBenda b={terpilih} semua={benda} ruang={ruang} plafon={plafonDi(terpilih.x)} batas={batas} onUbah={gantiBenda}
                 onGambar={() => inputGambar.current?.click()} onTutup={() => setPanel(false)}
                 ekstra={terpilih.jenis === 'proyektor' ? <InfoProyektor p={terpilih} K={K} /> : undefined}
                 onSimpanProduk={hanyaLihat || produkTim?.bolehTambah === false ? undefined : (label, ket) => simpanProduk(terpilih, label, ket)}

@@ -1,7 +1,7 @@
 'use client';
 /** Keadaan & helper bersama panel Atur benda (dipakai semua bagian per jenis di folder ini). */
 import { type ReactNode, useState } from 'react';
-import { bendaBaru, spekVideowall, terapkanUkuran, type Benda } from '../../inti';
+import { bendaBaru, spekVideowall, terapkanUkuran, type Benda, type Ruang } from '../../inti';
 
 export interface PropsPanelBenda {
   b: Benda; plafon: number; batas: { x: number; z: number };
@@ -14,10 +14,11 @@ export interface PropsPanelBenda {
   /** Simpan benda ini ke "Objek saya" (pribadi per akun). Mengembalikan pesan galat atau null. Tanpa prop = tidak tersedia. */
   onSimpanObjek?: (nama: string, ket: string) => Promise<string | null>;
   /** Semua benda di desain (kabel otomatis: ada rack? ada kamera untuk USB meja?). */ semua?: Benda[];
+  /** Ruangan (projection distance proyektor: layar / bidang di ruang yang sama). */ ruang?: Ruang;
 }
 
 export function useKonteksAtur(p: PropsPanelBenda) {
-  const { b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, onSimpanObjek, adaFoto = false, onGambarObjek, semua = [b] } = p;
+  const { b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, onSimpanObjek, adaFoto = false, onGambarObjek, semua = [b], ruang = null } = p;
   const [formProduk, setFormProduk] = useState<{ label: string; ket: string; status: string; sibuk: boolean } | null>(null);
   const set = (x: Partial<Benda>) => onUbah({ ...b, ...x });
   const setUkuran = (x: Partial<Benda>) => {
@@ -50,7 +51,7 @@ export function useKonteksAtur(p: PropsPanelBenda) {
   const bawaan = ukuranBawaan();
   const bedaBawaan = !!bawaan && (mm(bawaan.w) !== mm(b.w) || mm(bawaan.h) !== mm(b.h) || mm(bawaan.d) !== mm(b.d));
   const UKURAN_DARI_PILIHAN = ['videowall', 'layar', 'ifp', 'tv', 'rak', 'tribun', 'bidang'];
-  return { b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, onSimpanObjek, adaFoto, onGambarObjek, semua, formProduk, setFormProduk, set, setUkuran, label, kosong, mm, bundar, bawaan, bedaBawaan, UKURAN_DARI_PILIHAN };
+  return { b, plafon, batas, onUbah, onGambar, onTutup, ekstra, onSimpanProduk, onSimpanObjek, adaFoto, onGambarObjek, semua, ruang, formProduk, setFormProduk, set, setUkuran, label, kosong, mm, bundar, bawaan, bedaBawaan, UKURAN_DARI_PILIHAN };
 }
 
 export type KonteksAtur = ReturnType<typeof useKonteksAtur>;
