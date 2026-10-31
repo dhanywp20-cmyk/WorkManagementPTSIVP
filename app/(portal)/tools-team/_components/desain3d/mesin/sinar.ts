@@ -15,8 +15,8 @@
  *     proyektor, atau pilihan engineer - bidang gambar, kerucut & cahaya di benda memakai warna itu.
  *   - Area blending: mesin/blending.ts.
  */
-import { f } from '../../bersama/ui';
-import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, keGambar, kontrasProyektor, koreksiJarakDari, lensaDari, type Lensa, lumenDari, offsetLensaDari, permukaanUtama, rasioGambarProyektor, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
+import { f, fTetap } from '../../bersama/ui';
+import { arahProyektor, arahSinar, type Benda, kotakGrid, warnaSah, type Blending, type CahayaDiPermukaan, geserLensaDari, hasilPanasonic, keGambar, kontrasProyektor, koreksiJarakDari, lensaDari, type Lensa, lumenGambarDari, offsetLensaDari, permukaanUtama, rasioGambarProyektor, ronaProyektor, sinarProyektor, throwRatioDari, type Titik, warnaSinarProyektor } from '../inti';
 import type * as T from 'three';
 import type { KeadaanDesain } from '../useKeadaanDesain';
 import { type DataBlend, gambarBlending } from './blending';
@@ -417,10 +417,17 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
       tengah = kt[Math.floor(NY / 2) * NX + Math.floor(NX / 2)] ?? tengah;
     }
     //  Jarak sepanjang sumbu dari PUNCAK sinar (ukuran gambar = jarak x w1); yang ditulis = dari ujung lensa (- b).
-    const jarakSumbu = sn.layar ? sn.jarak + kj : tengah ? tengah.distanceTo(O) : sn.jarak + kj;
+    //  Kedalaman SEPANJANG SUMBU dari puncak ke pusat gambar (dulu jarak MIRING distanceTo: lens shift 50% -> 3,12 m
+    //  padahal L 3 m, ukuran ikut membesar).
+    const jarakSumbu = sn.layar ? sn.jarak + kj : tengah ? Math.max(0, tengah.clone().sub(O).dot(D)) : sn.jarak + kj;
+    //  Angka yang DITULIS = hasil kalkulator Panasonic (L tegak lurus bidang, ukuran, lux) - sama persis dengan panel Atur.
+    const hp = hasilPanasonic(p, benda, ruang);
+    const Ltulis = hp.L ?? Math.max(0, jarakSumbu - kj);
+    const ukurTulis = hp.L !== null ? hp
+      : { lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, diagonalInci: Math.hypot(jarakSumbu * w1, jarakSumbu * h1) / 0.0254, lux: null };
     //  Lux di titik gambar (u, v): fluks lensa merata di bidang tegak lurus sumbu -> E = lumen/(w1·h1) ·
     //  cos(sudut datang) / (cos³(sudut ke sumbu) · jarak²). Di pusat bidang tegak = lumen / luas gambar.
-    const E0 = lumenDari(p) / (w1 * h1);
+    const E0 = lumenGambarDari(p) / (w1 * h1);
     const luxDi = (u: number, v: number) => {
       const r = arahUV(u, v).clone(), t = tembakRinci(O, r, sasaranTeks);
       if (!t) return null;
@@ -429,8 +436,9 @@ export function gambarSinar(m: Mesin, k: KeadaanSinar, labelP: (teks: string, po
     };
     bidangGambar.push({ p, L: lensaDari(p), normal: pusatGambar?.n ?? null, pos, uv, warnaTitik, warna, tepi: warnaTepi, lebar: jarakSumbu * w1, tinggi: jarakSumbu * h1, permukaan: sn.layar ? null : namaPermukaan(kenaId), opasitas: (sn.layar ? 0.26 : 0.34) * (banyak ? 0.6 : 1),
       teks: tulis ? {
-        info: [p.nama, `Jarak lensa → bidang ${f(jarakSumbu - kj)} m`, `Ukuran gambar ±${f(jarakSumbu * w1)} × ${f(jarakSumbu * h1)} m`,
-          `Pusat ${f(luxDi(0, 0) ?? E0 / (jarakSumbu * jarakSumbu), 0)} lx`],
+        info: [p.nama, `L (lensa → ${hp.sasaran?.nama ?? 'bidang'}) ${fTetap(Ltulis)} m`,
+          `Gambar ${fTetap(ukurTulis.lebar)} × ${fTetap(ukurTulis.tinggi)} m (${fTetap(ukurTulis.diagonalInci, 2)}")`,
+          `Pusat ${f(ukurTulis.lux ?? luxDi(0, 0) ?? E0 / (jarakSumbu * jarakSumbu), 0)} lx · ${f(lumenGambarDari(p), 0)} lm`],
         //  Kiri atas, kanan atas, kiri bawah, kanan bawah (sedikit ke dalam dari tepi gambar).
         lux: [luxDi(-0.48, 0.47), luxDi(0.48, 0.47), luxDi(-0.48, -0.47), luxDi(0.48, -0.47)],
         pos: teksPos, uv: teksUv,

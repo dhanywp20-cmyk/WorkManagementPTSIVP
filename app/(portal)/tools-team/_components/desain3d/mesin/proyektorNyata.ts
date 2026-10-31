@@ -20,7 +20,7 @@
 import type * as T from 'three';
 import { teksturKonten } from '../bangun/konten';
 import { teksturPolaUji } from '../bangun/tekstur';
-import { type Benda, koreksiJarakDari, kotakGrid, type Lensa, lumenDari, rasioGambarProyektor } from '../inti';
+import { type Benda, koreksiJarakDari, kotakGrid, type Lensa, lumenGambarDari, rasioGambarProyektor } from '../inti';
 import type { Mesin } from './tipe';
 
 /** Gambar konten per kunci (pola uji / dashboard dibuat sekali, bukan tiap gambar ulang). */
@@ -336,7 +336,7 @@ export function aturLampuProyektor(m: Mesin, daftar: MasukanLampu[]) {
       lampu.tex.needsUpdate = true; lampu.kunci = kunci;
     }
     const n = x.normal ?? new THREE.Vector3(-L.D[0], -L.D[1], -L.D[2]);
-    ukur.push({ light, cd: x.mati ? 0 : (lumenDari(p) / (L.w1 * L.h1)) * pengali, A: ambienAdegan(m, n), lux: Math.max(0.5, x.luxAmbien), luxGambar: x.luxGambar });
+    ukur.push({ light, cd: x.mati ? 0 : (lumenGambarDari(p) / (L.w1 * L.h1)) * pengali, A: ambienAdegan(m, n), lux: Math.max(0.5, x.luxAmbien), luxGambar: x.luxGambar });
   });
   //  Intensitas: candela nyata = lumen / (w1 x h1) (pusat gambar di bidang tegak = lumen / luas) x skala adegan -
   //  terang cahaya ruangan yang dirender di permukaan sasaran (A, diukur) setara dengan lux ruangan yang dihitung,

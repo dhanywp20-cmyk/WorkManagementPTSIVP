@@ -44,6 +44,6 @@ export function lensaMZ882(l: LensaPanasonic, tr: number): Partial<Benda> {
     ...BADAN_MZ882, trMin: l.trMin, trMax: l.trMax, throwRatio: Math.min(l.trMax, Math.max(l.trMin, tr)),
     koreksiJarak: l.koreksiJarak, koreksiJarakTele: l.koreksiJarakTele,
     shiftAtasMaks: l.shiftAtas / 100, shiftBawahMaks: l.shiftBawah / 100, shiftHMaks: l.shiftHorizontal / 100,
-    poligonShift: bacaPoligonShift(l.poligonShift), offsetTetap: undefined,
+    poligonShift: bacaPoligonShift(l.poligonShift), offsetTetap: undefined, koefRasio: undefined, sumberLensa: undefined,
   };
 }

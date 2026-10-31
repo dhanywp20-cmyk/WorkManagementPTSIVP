@@ -170,3 +170,19 @@ export function bacaPoligonShift(v: unknown): number[] | undefined {
   if (!angka.every(x => typeof x === 'number' && Number.isFinite(x) && Math.abs(x) <= 3)) return undefined;
   return angka as number[];
 }
+
+/**
+ * Koefisien lensa per rasio sinyal dari katalog Panasonic ({ '16:9': [TR wide, TR tele, b wide, b tele] }) - disaring:
+ * hanya rasio yang dikenal, TR 0,05..20, b -2..2. undefined bila kosong / rusak.
+ */
+export function bacaKoefRasio(v: unknown): Partial<Record<'16:9' | '16:10' | '17:9' | '4:3' | '21:9', [number, number, number, number]>> | undefined {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+  const hasil: Record<string, [number, number, number, number]> = {};
+  for (const r of ['16:9', '16:10', '17:9', '4:3', '21:9']) {
+    const k = (v as Record<string, unknown>)[r];
+    if (!Array.isArray(k) || k.length !== 4 || !k.every(x => typeof x === 'number' && Number.isFinite(x))) continue;
+    const [trW, trT, bW, bT] = k as number[];
+    if (trW >= 0.05 && trW <= 20 && trT >= trW && trT <= 20 && Math.abs(bW) <= 2 && Math.abs(bT) <= 2) hasil[r] = [trW, trT, bW, bT];
+  }
+  return Object.keys(hasil).length ? hasil : undefined;
+}

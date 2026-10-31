@@ -1,7 +1,9 @@
 'use client';
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
-import { batasShift, bendaBaru, geserLensaDari, koreksiJarakDari, lumenDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { batasShift, bendaBaru, gantiRasioProyektor, isiDariKatalog, geserLensaDari, keteranganPanel, koreksiJarakDari, lumenDari, lumenGambarDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { PilihPanasonic } from '../../../pustaka/PilihPanasonic';
+import { RumusLensaPabrikan } from '../../../pustaka/RumusLensaPabrikan';
 import type { KonteksAtur } from './konteks';
 
 export function AturProyektor({ c }: { c: KonteksAtur }) {
@@ -41,14 +43,19 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
           </div>
           {(() => {
             const [zMin, zMax] = zoomLensa(b), tr = throwRatioDari(b), tetap = zMax - zMin < 0.005;
-            const setZoom = (v: number) => set({ throwRatio: Math.round(Math.min(zMax, Math.max(zMin, v)) * 100) / 100 });
+            //  Presisi 6 desimal: TR rumus kalkulator Panasonic (mis. 1,105112) - dibulatkan 2 desimal jaraknya meleset mm-cm.
+            const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
+            const setZoom = (v: number) => set({ throwRatio: r6(Math.min(zMax, Math.max(zMin, v))) });
+            //  Mengubah data lensa sendiri = bukan lensa katalog lagi.
+            const manual = { koefRasio: undefined, sumberLensa: undefined };
             return (
               <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Zoom lensa</p>
+                <PilihPanasonic rasio={b.rasioProyektor} sumber={b.sumberLensa} onPakai={(m, l, r, v) => set(isiDariKatalog(b, m, l, r, v))} />
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Zoom lensa{b.sumberLensa ? ` · ${b.sumberLensa}` : ''}</p>
                 <div className="grid grid-cols-3 gap-2">
-                  <Angka label="TR terlebar" nilai={zMin} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && set({ trMin: Math.round(v * 100) / 100, trMax: Math.max(v, b.trMax ?? zMax), throwRatio: Math.max(v, tr) })} />
-                  <Angka label="TR terpanjang" nilai={zMax} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && set({ trMax: Math.round(v * 100) / 100, trMin: Math.min(v, b.trMin ?? zMin), throwRatio: Math.min(v, tr) })} />
-                  <Angka label="TR dipakai" nilai={tr} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && (tetap ? set({ throwRatio: v, trMin: v, trMax: v }) : setZoom(v))} />
+                  <Angka label="TR terlebar" nilai={zMin} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && set({ ...manual, trMin: r6(v), trMax: Math.max(v, b.trMax ?? zMax), throwRatio: Math.max(v, tr) })} />
+                  <Angka label="TR terpanjang" nilai={zMax} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && set({ ...manual, trMax: r6(v), trMin: Math.min(v, b.trMin ?? zMin), throwRatio: Math.min(v, tr) })} />
+                  <Angka label="TR dipakai" nilai={tr} step={0.01} onUbah={v => v >= 0.1 && v <= 10 && (tetap ? set({ ...manual, throwRatio: r6(v), trMin: r6(v), trMax: r6(v) }) : setZoom(v))} />
                 </div>
                 {!tetap && (
                   <div className="flex items-center gap-2">
@@ -62,16 +69,20 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
                 )}
                 <Catatan>
                   {tetap ? 'Lensa tetap (tanpa zoom) - isi TR terlebar & terpanjang dari datasheet bila lensanya zoom.'
-                    : `Zoom ${f(zMax / zMin, 2)}× (TR ${f(zMin, 2)} - ${f(zMax, 2)} : 1). − = gambar membesar (wide), + = gambar mengecil (tele).`}
+                    : `Zoom ${f(zMax / zMin, 2)}× (TR ${f(zMin, 6)} - ${f(zMax, 6)} : 1, relatif lebar gambar rasio ${b.rasioProyektor ?? '16:9'}). − = gambar membesar (wide), + = gambar mengecil (tele).`}
                 </Catatan>
                 {/*  Rumus lensa pabrikan: L = a x SW - b. a = TR terlebar / terpanjang di atas, b = koreksi ini. */}
                 <div className="grid grid-cols-2 gap-2">
                   <Angka label="Koreksi b wide" nilai={b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-1}
-                    onUbah={v => v >= -1 && v <= 1 && set({ koreksiJarak: Math.round(v * 1000) / 1000 || undefined })} />
+                    onUbah={v => v >= -1 && v <= 1 && set({ ...manual, koreksiJarak: r6(v) || undefined })} />
                   <Angka label="Koreksi b tele" nilai={b.koreksiJarakTele ?? b.koreksiJarak ?? 0} satuan="m" step={0.001} min={-1}
-                    onUbah={v => v >= -1 && v <= 1 && set({ koreksiJarakTele: Math.round(v * 1000) / 1000 })} />
+                    onUbah={v => v >= -1 && v <= 1 && set({ ...manual, koreksiJarakTele: r6(v) })} />
                 </div>
-                <Catatan>Rumus jarak lempar lensa L = TR × lebar − b, b di ujung wide & tele (kalkulator Panasonic menyimpan keduanya; di antaranya ikut zoom - sekarang {f(koreksiJarakDari(b), 3)} m). Contoh PT-MZ882 lensa standar: TR 1,639 b 0,055 (wide) - TR 2,788 b 0,048 (tele). Kosong / 0 = L = TR × lebar.</Catatan>
+                <Catatan>Rumus jarak lempar lensa L = TR × lebar − b, b di ujung wide & tele (kalkulator Panasonic menyimpan keduanya; di antaranya ikut zoom - sekarang {f(koreksiJarakDari(b), 6)} m). Contoh PT-MZ882 lensa standar: TR 1,639 b 0,055 (wide) - TR 2,788 b 0,048 (tele). Kosong / 0 = L = TR × lebar.</Catatan>
+                {/*  Proyektor di luar katalog: TR & b dari dua hasil kalkulator pabrikan (TR brosur tanpa b meleset ±2 cm). */}
+                <RumusLensaPabrikan onPakai={(ujung, trBaru, bBaru) => set(ujung === 'min'
+                  ? { ...manual, trMin: trBaru, trMax: Math.max(trBaru, b.trMax ?? zMax), throwRatio: Math.max(trBaru, Math.min(tr, b.trMax ?? zMax)), koreksiJarak: bBaru || undefined }
+                  : { ...manual, trMax: trBaru, trMin: Math.min(trBaru, b.trMin ?? zMin), throwRatio: Math.min(trBaru, Math.max(tr, b.trMin ?? zMin)), koreksiJarakTele: bBaru })} />
                 {/*  Sama dengan Kalkulator Proyektor: tanpa b, jarak bisa selisih beberapa cm - puluhan cm dari kalkulator pabrikan. */}
                 {!koreksiJarakDari(b) && (
                   <p className="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11.5px] leading-snug text-amber-800">
@@ -142,12 +153,19 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
             })()}
             {/*  Rasio aspek panel proyektor: ukuran gambar, cakupan layar, lux & piksel blending mengikuti. */}
             {/*  Resolusi panel: piksel area blending = persen x resolusi ini (bukan acuan 1920 px); rasio ikut. */}
-            <Pilih label="Resolusi panel" nilai={b.resolusiProyektor && RESOLUSI_PROYEKTOR[b.resolusiProyektor]?.rasio === (b.rasioProyektor ?? '16:9') ? b.resolusiProyektor : ''}
-              onUbah={(v: string) => { const r = RESOLUSI_PROYEKTOR[v as ResolusiProyektor]; set(r ? { resolusiProyektor: v as ResolusiProyektor, rasioProyektor: r.rasio } : { resolusiProyektor: undefined }); }}
-              opsi={[{ v: '', l: 'Belum diisi (piksel blending acuan 1920 px)' }, ...(Object.keys(RESOLUSI_PROYEKTOR) as ResolusiProyektor[]).map(k => ({ v: k, l: RESOLUSI_PROYEKTOR[k].label }))]} />
-            <Segmen label="Rasio aspek gambar" nilai={b.rasioProyektor ?? '16:9'}
-              onUbah={(v: RasioProyektor) => set({ rasioProyektor: v, ...(b.resolusiProyektor && RESOLUSI_PROYEKTOR[b.resolusiProyektor]?.rasio !== v ? { resolusiProyektor: undefined } : {}) })}
+            {/*  Panel native & rasio SINYAL terpisah, seperti kalkulator Panasonic: 16:9 di panel WUXGA = letterbox, lumen gambar
+                 90%, piksel blending = piksel aktif (1920 × 1080 dari 1920 × 1200). */}
+            <Pilih label="Resolusi panel (native)" nilai={b.resolusiProyektor ?? ''}
+              onUbah={(v: string) => set({ resolusiProyektor: RESOLUSI_PROYEKTOR[v as ResolusiProyektor] ? v as ResolusiProyektor : undefined })}
+              opsi={[{ v: '', l: 'Belum diisi (panel = rasio sinyal, acuan 1920 px)' }, ...(Object.keys(RESOLUSI_PROYEKTOR) as ResolusiProyektor[]).map(k => ({ v: k, l: `${RESOLUSI_PROYEKTOR[k].label} (${RESOLUSI_PROYEKTOR[k].rasio})` }))]} />
+            <Segmen label="Rasio sinyal (aspect ratio)" nilai={b.rasioProyektor ?? '16:9'}
+              onUbah={(v: RasioProyektor) => set(gantiRasioProyektor(b, v))}
               opsi={(Object.keys(RASIO_PROYEKTOR) as RasioProyektor[]).map(k => ({ v: k, l: k }))} />
+            {keteranganPanel(b) && (
+              <p className="text-[12px] text-slate-700 leading-snug">
+                Sinyal {b.rasioProyektor ?? '16:9'} - {keteranganPanel(b)}: lumen gambar {Math.round(lumenGambarDari(b)).toLocaleString('id-ID')} dari {lumenDari(b).toLocaleString('id-ID')} lm.
+              </p>
+            )}
             <Catatan>
               Vertikal = geser pusat gambar dalam % tinggi gambar (relatif proyektor; gantung plafon = terbalik): 0% = tepat di sumbu lensa,
               50% = tepi gambar sejajar lensa (umum pada proyektor tanpa lens shift). Horizontal = % lebar gambar, + ke kanan.

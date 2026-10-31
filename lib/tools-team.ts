@@ -8,7 +8,7 @@
  */
 import type { ModulLED, Hardware, BrandLED } from '@/lib/av-hitung';
 import { bersihkanIsiRak } from '@/app/(portal)/tools-team/_components/desain3d/inti/rak';
-import { bacaPoligonShift } from '@/lib/pustaka';
+import { bacaKoefRasio, bacaPoligonShift } from '@/lib/pustaka';
 
 export interface RefLED { modul: ModulLED[]; kartu: Hardware[]; vp: Hardware[]; /** Daftar brand modul (boleh kosong untuk data lama). */ brand?: BrandLED[] }
 
@@ -275,7 +275,7 @@ const ENUM_PRODUK: Record<string, readonly string[]> = {
   tipeSpeaker: ['kotak', 'dinding6', 'kolom', 'linearray'],
   tipePerangkat: ['pc', 'laptop', 'dongle', 'hp', 'tablet'],
   rasioProyektor: ['16:9', '16:10', '17:9', '4:3', '21:9'],
-  resolusiProyektor: ['XGA', 'WXGA', 'FHD', 'WUXGA', '4K', '4KDCI'],
+  resolusiProyektor: ['XGA', 'SXGAP', 'WXGAH', 'WXGA', 'FHD', 'WUXGA', 'WQXGA', '4K', '4KP', '4KDCI'],
 };
 /** Angka yang boleh ada di template beserta batasnya. */
 const ANGKA_PRODUK: Record<string, [number, number]> = {
@@ -305,6 +305,9 @@ export function bersihkanAturProduk(x: unknown): Record<string, unknown> {
   if (isiRak) hasil.isiRak = isiRak;
   const poligon = bacaPoligonShift(a.poligonShift);
   if (poligon) hasil.poligonShift = poligon;
+  const koef = bacaKoefRasio(a.koefRasio);
+  if (koef) hasil.koefRasio = koef;
+  if (typeof a.sumberLensa === 'string' && a.sumberLensa.trim()) hasil.sumberLensa = a.sumberLensa.trim().slice(0, 60);
   if (a.panel && typeof a.panel === 'object') {
     const p = a.panel as Record<string, unknown>, panel: Record<string, number> = {};
     for (const [k, batas] of Object.entries(ANGKA_PANEL)) { const v = angka(p[k], batas); if (v !== undefined) panel[k] = v; }

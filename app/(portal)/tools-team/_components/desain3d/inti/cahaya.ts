@@ -3,7 +3,7 @@
  * Murni: tanpa three.js / React / DOM (diuji di uji/desain3d.ts).
  */
 import { bendaBaru } from './katalog';
-import { arahProyektor, gainLayarDari, lumenDari, luminanceDari, sinarProyektor } from './proyektor';
+import { arahProyektor, bagianPanel, gainLayarDari, lumenGambarDari, luminanceDari, sinarProyektor } from './proyektor';
 import { bukaanDinding, daftarRuang, ruangDari, sisiLuar } from './ruang';
 import type { Benda, Kotak, Ruang, TipeLampu, Titik } from './tipe';
 
@@ -131,7 +131,8 @@ export function kontrasProyektor(p: Benda, semua: Benda[], r: Ruang, target: num
   if (sn.layar) { const rl = (sn.layar.rot * Math.PI) / 180; n = [Math.sin(rl), 0, Math.cos(rl)]; }
   else { const D = arahProyektor(p); n = [-D[0], -D[1], -D[2]]; }
   const luas = Math.max(0.05, sn.lebar * sn.tinggi);
-  const luxGambar = lumenDari(p) / luas;
+  //  "Screen illuminance" Panasonic: lumen yang jatuh di gambar (lumen x bagian panel - 16:9 di panel 16:10 = 90%) / luas.
+  const luxGambar = lumenGambarDari(p) / luas;
   const cahaya = luxCahayaDi(semua, r, P, n);
   const amb = Math.max(0.5, cahaya.total);
   //  Rumus kalkulator Panasonic: (gambar + ruang) / (gambar / kontras asli + ruang) - di ruang gelap kontras dibatasi
@@ -143,6 +144,6 @@ export function kontrasProyektor(p: Benda, semua: Benda[], r: Ruang, target: num
   //  Luminance di layar (cd/m²) = lux x gain / π - sama dengan kalkulator Panasonic (kontras tidak berubah oleh gain:
   //  gambar & cahaya ruangan sama-sama dipantulkan kain layar yang sama).
   const gain = gainLayarDari(sn.layar);
-  return { luxGambar, cahaya, kontras, cukup: kontras >= target, lumenPerlu: Math.ceil((luxPerlu * luas) / 100) * 100, luas,
+  return { luxGambar, cahaya, kontras, cukup: kontras >= target, lumenPerlu: Math.ceil((luxPerlu * luas) / (bagianPanel(p).lebar * bagianPanel(p).tinggi) / 100) * 100, luas,
     gain, luminance: luminanceDari(luxGambar, gain) };
 }
