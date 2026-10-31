@@ -10,6 +10,7 @@
  */
 
 import React from 'react';
+import { BAYANG } from '@/lib/desain';
 
 /**
  * Campur warna dengan putih dan kembalikan warna SOLID. Latar kartu aktif
@@ -67,7 +68,7 @@ export function StatCard({ label, value, sub, accent, onClick, active = false }:
     // Selalu warna PEKAT - lihat catatan di campurPutih().
     background: active ? campurPutih(accent, 0.10) : '#ffffff',
     border: `1px solid ${active ? accent : 'rgba(15,23,42,0.10)'}`,
-    boxShadow: active ? `0 0 0 1px ${accent}` : '0 1px 2px rgba(15,23,42,0.06)',
+    boxShadow: active ? `0 0 0 1px ${accent}, ${BAYANG.kartu3d}` : BAYANG.kartu3d,
   };
 
   const kelasDasar = 'relative overflow-hidden rounded-lg sm:rounded-xl px-2.5 py-2 sm:px-4 sm:py-3.5 flex flex-col gap-0.5 sm:gap-1.5';
