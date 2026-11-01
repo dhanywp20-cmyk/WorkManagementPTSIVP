@@ -381,6 +381,44 @@ export function tiltKeLayar(p: Benda, l: Benda, ruang: Ruang, dv = 0): Benda {
   }
   return { ...p, tilt: Math.round(((lo + hi) / 2) * 10) / 10 };
 }
+/**
+ * Lens shift otomatis: posisi, pan, tilt & zoom TETAP - shift vertikal & horizontal dihitung supaya pusat gambar tepat
+ * di pusat layar sasaran, lalu dibatasi kemampuan lensa. Daerah poligon pabrikan: vertikal didahulukan (selisih
+ * horizontal masih bisa ditutup pan / geser proyektor), horizontal dikecilkan sampai gambar muat. `sisaV` / `sisaH` =
+ * selisih pusat gambar - pusat layar yang tidak tertutup lens shift (m, + = terlalu tinggi / ke kanan; 0 = tepat).
+ * null = proyektor tanpa lens shift atau tidak ada layar di depan lensa.
+ */
+export function shiftOtomatis(p: Benda, semua: Benda[], ruang: Ruang) {
+  if (p.offsetTetap !== undefined) return null;
+  const s = sinarProyektor(p, semua, ruang);
+  if (!s.layar || s.selisihV === null || s.selisihH === null) return null;
+  //  Pusat gambar naik / turun linear dengan shift (jarak & ukuran gambar tidak berubah), jadi satu langkah tepat.
+  const naikTurun = p.pasangProyektor === 'meja' ? 1 : -1;
+  //  Kanan proyektor . kanan layar (1 = tepat menghadap layar); hampir tegak lurus = shift horizontal tidak berguna.
+  const searah = -Math.cos(((p.rot - s.layar.rot) * Math.PI) / 180);
+  let v = Math.min(1.5, Math.max(-0.5, offsetLensaDari(p) - s.selisihV / (naikTurun * s.tinggi)));
+  let g = Math.abs(searah) < 0.2 ? geserLensaDari(p) : Math.min(0.6, Math.max(-0.6, geserLensaDari(p) - s.selisihH / (s.lebar * searah)));
+  const pg = p.poligonShift && p.poligonShift.length >= 6 ? p.poligonShift : null;
+  if (pg) {
+    const bp = bagianPanel(p), bt = batasPoligonShift(pg, bp);
+    v = Math.min(bt.atas, Math.max(-bt.bawah, v));
+    if (!shiftMuat(pg, g, v, bp)) {
+      let lo = 0, hi = 1;
+      for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (shiftMuat(pg, g * m, v, bp)) lo = m; else hi = m; }
+      g *= lo;
+    }
+  } else {
+    const { atas, bawah, h } = batasShift({ ...p, offsetLensa: 0, geserLensaH: 0 });
+    if (atas !== null) v = Math.min(v, atas);
+    if (bawah !== null) v = Math.max(v, -bawah);
+    if (h !== null) g = Math.max(-h, Math.min(h, g));
+  }
+  //  Dibulatkan ke 0,01% ke arah nol supaya tetap di dalam batas lensa.
+  const bulat = (x: number) => Math.trunc(x * 1e4) / 1e4;
+  const q = { ...p, offsetLensa: bulat(v), geserLensaH: bulat(g) };
+  const s2 = sinarProyektor(q, semua, ruang);
+  return { offsetLensa: q.offsetLensa, geserLensaH: q.geserLensaH, sisaV: s2.selisihV ?? 0, sisaH: s2.selisihH ?? 0 };
+}
 /** Batas lens shift vertikal yang dipakai pemasangan otomatis (pecahan tinggi gambar, umum di proyektor instalasi). */
 export const OFFSET_MAKS_OTOMATIS = 1;
 

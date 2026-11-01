@@ -1,13 +1,16 @@
 'use client';
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
+import { useState } from 'react';
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
-import { BATAS_B, BATAS_TR, batasShift, bendaBaru, gantiRasioProyektor, isiDariKatalog, geserLensaDari, keteranganPanel, koreksiJarakDari, lumenDari, lumenGambarDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { BATAS_B, BATAS_TR, batasShift, bendaBaru, gantiRasioProyektor, isiDariKatalog, geserLensaDari, keteranganPanel, koreksiJarakDari, lumenDari, lumenGambarDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, shiftOtomatis, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import { PilihPanasonic } from '../../../pustaka/PilihPanasonic';
 import { RumusLensaPabrikan } from '../../../pustaka/RumusLensaPabrikan';
 import type { KonteksAtur } from './konteks';
 
 export function AturProyektor({ c }: { c: KonteksAtur }) {
-  const { b, kosong, label, onGambar, onUbah, set, semua } = c;
+  const { b, kosong, label, onGambar, onUbah, ruang, set, semua } = c;
+  //  Hasil "Otomatis ke layar" yang tidak tercapai (batas lensa kurang), per proyektor.
+  const [pesanShift, setPesanShift] = useState<{ id: string; teks: string } | null>(null);
   const proyektor = semua.filter(x => x.jenis === 'proyektor');
   const warnaSinar = warnaSinarProyektor(b, Math.max(0, proyektor.findIndex(x => x.id === b.id)), proyektor.length);
   return (
@@ -95,8 +98,23 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
           <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
             <div className="flex items-center justify-between gap-2">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Lens shift</p>
-              {b.offsetTetap === undefined && (offsetLensaDari(b) !== 0 || geserLensaDari(b) !== 0) && (
-                <button type="button" onClick={() => set({ offsetLensa: 0, geserLensaH: 0 })} className="text-[11.5px] font-bold text-blue-700 hover:underline">Ke tengah (0%)</button>
+              {b.offsetTetap === undefined && (
+                <span className="flex items-center gap-3">
+                  {ruang && semua.some(x => x.jenis === 'layar') && (
+                    <button type="button" title="Posisi, pan, tilt & zoom tetap - lens shift diatur supaya gambar tepat di tengah layar (dalam batas lensa)"
+                      onClick={() => {
+                        const h = shiftOtomatis(b, semua, ruang);
+                        if (!h) { setPesanShift({ id: b.id, teks: 'Tidak ada layar di depan lensa - arahkan proyektor ke layar dulu.' }); return; }
+                        set({ offsetLensa: h.offsetLensa, geserLensaH: h.geserLensaH });
+                        const cm = (m: number) => Math.round(Math.abs(m) * 100);
+                        const sisa = [cm(h.sisaV) >= 1 ? `${cm(h.sisaV)} cm terlalu ${h.sisaV > 0 ? 'tinggi' : 'rendah'}` : '', cm(h.sisaH) >= 1 ? `${cm(h.sisaH)} cm ke ${h.sisaH > 0 ? 'kanan' : 'kiri'}` : ''].filter(Boolean);
+                        setPesanShift({ id: b.id, teks: sisa.length ? `Batas lens shift lensa tidak cukup: gambar masih ${sisa.join(' & ')} dari tengah layar - geser proyektor atau pakai tilt.` : '' });
+                      }} className="text-[11.5px] font-bold text-blue-700 hover:underline">Otomatis ke layar</button>
+                  )}
+                  {(offsetLensaDari(b) !== 0 || geserLensaDari(b) !== 0) && (
+                    <button type="button" onClick={() => set({ offsetLensa: 0, geserLensaH: 0 })} className="text-[11.5px] font-bold text-blue-700 hover:underline">Ke tengah (0%)</button>
+                  )}
+                </span>
               )}
             </div>
             {b.offsetTetap !== undefined ? (
@@ -121,23 +139,31 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
               //  Batas lens shift lensa dari datasheet (Panasonic: VS atas / bawah, HS kiri-kanan, % tinggi / lebar gambar).
               const bs = batasShift(b);
               const persen = (v: number | null) => (v === null ? undefined : Math.round(v * 100));
-              const isi = (k: 'shiftAtasMaks' | 'shiftBawahMaks' | 'shiftHMaks', v: number) => v >= 0 && v <= 150 && set({ [k]: v ? v / 100 : undefined });
               const poligon = !!b.poligonShift?.length;
+              //  Mengubah satu batas: daerah poligon pabrikan diganti batas kotak dengan dua batas lainnya tetap (0 = tidak bisa
+              //  shift ke arah itu, kosong = tidak dibatasi).
+              const isi = (k: 'shiftAtasMaks' | 'shiftBawahMaks' | 'shiftHMaks', v: number | undefined) => {
+                if (v !== undefined && (v < 0 || v > (k === 'shiftHMaks' ? 100 : 150))) return;
+                const kini = { shiftAtasMaks: bs.atas ?? undefined, shiftBawahMaks: bs.bawah ?? undefined, shiftHMaks: bs.h ?? undefined };
+                set({ ...(poligon ? { ...kini, poligonShift: undefined } : {}), [k]: v === undefined ? undefined : v / 100 });
+              };
+              const kotak = (label: string, k: 'shiftAtasMaks' | 'shiftBawahMaks' | 'shiftHMaks', v: number | null) => (
+                <Angka label={label} nilai={persen(v) ?? NaN} satuan="%" step={1} placeholder="bebas" onUbah={x => isi(k, x)} onKosong={() => isi(k, undefined)} />
+              );
               return (
                 <>
-                  {poligon ? (
-                    //  Daerah shift dari pabrikan (segi delapan Panasonic dsb.): batas per sumbu dihitung dari poligonnya.
-                    <p className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[12px] leading-snug text-slate-700">
-                      Daerah lens shift lensa: vertikal +{persen(bs.atas)}/−{persen(bs.bawah)}%, kiri-kanan ±{persen(bs.h)}% - shift vertikal &amp; horizontal penuh tidak bisa bersamaan.{' '}
-                      <button type="button" onClick={() => set({ poligonShift: undefined })} className="font-bold text-blue-700 hover:underline">Pakai batas manual</button>
-                    </p>
-                  ) : (
                   <div className="grid grid-cols-3 gap-2">
-                    <Angka label="Batas atas" nilai={persen(bs.atas) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftAtasMaks', v)} />
-                    <Angka label="Batas bawah" nilai={persen(bs.bawah) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftBawahMaks', v)} />
-                    <Angka label="Batas kiri-kanan" nilai={persen(bs.h) ?? 0} satuan="%" step={1} onUbah={v => isi('shiftHMaks', v)} />
+                    {kotak('Batas atas', 'shiftAtasMaks', bs.atas)}
+                    {kotak('Batas bawah', 'shiftBawahMaks', bs.bawah)}
+                    {kotak('Batas kiri-kanan', 'shiftHMaks', bs.h)}
                   </div>
-                  )}
+                  <Catatan>
+                    {poligon
+                      ? 'Batas dari kalkulator Panasonic (daerah segi delapan lensa): shift vertikal & horizontal penuh tidak bisa bersamaan. Mengubah angka = batas manual.'
+                      : bs.ada ? 'Batas lensa dari datasheet / Pustaka. 0 = tidak bisa shift ke arah itu, kosong = tidak dibatasi.'
+                        : 'Batas lensa belum diisi - pilih model Panasonic / produk Pustaka, atau isi dari datasheet (VS atas / bawah, HS kiri-kanan).'}
+                  </Catatan>
+                  {pesanShift?.id === b.id && pesanShift.teks && <p className="text-[12px] font-semibold text-amber-800">{pesanShift.teks}</p>}
                   {(bs.lewatV || bs.lewatH) && (
                     <p className="text-[12px] font-semibold text-rose-700">
                       Lens shift melebihi kemampuan lensa ({bs.lewatV ? `vertikal ${Math.round(offsetLensaDari(b) * 100)}% di luar +${persen(bs.atas) ?? '∞'}/−${persen(bs.bawah) ?? '∞'}%` : ''}{bs.lewatV && bs.lewatH ? '; ' : ''}{bs.lewatH ? `horizontal ${Math.round(geserLensaDari(b) * 100)}% di luar ±${persen(bs.h)}%` : ''}) - geser proyektor atau pakai tilt.
