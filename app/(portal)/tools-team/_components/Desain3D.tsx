@@ -24,8 +24,6 @@ import { BilahAlat } from './desain3d/panel/BilahAlat';
 import { KontrolKanvas } from './desain3d/panel/KontrolKanvas';
 import { PanelTambah } from './desain3d/panel/PanelTambah';
 import { PanelKategori } from './desain3d/panel/PanelKategori';
-import { DaftarBenda } from './desain3d/panel/DaftarBenda';
-import { BilahTerpilih } from './desain3d/panel/BilahTerpilih';
 import { KartuAnalisis } from './desain3d/panel/KartuAnalisis';
 import { KartuKabel } from './desain3d/panel/KartuKabel';
 import { KartuRuangGerak } from './desain3d/panel/KartuRuangGerak';
@@ -126,7 +124,6 @@ export default function Desain3D() {
                     <PanelRuang ruang={ruang} setRuang={setRuang} ubahUkuran={ubahUkuran} benda={benda} kotakRuang={kotakRuang} tambahBukaan={tambahBukaan} ubahBukaan={ubahBukaan} tambahRuang={tambahRuang} hapusRuangTerakhir={hapusRuangTerakhir} ubahSambungan={ubahSambungan} pasangSambungan={pasangSambungan} gantiIsi={gantiIsi} setGantiIsi={setGantiIsi} salinIsiRuang={salinIsiRuang} duaRuang={duaRuang} peta={K} />
                   )}
                   <PanelKategori a={a} />
-                  <DaftarBenda a={a} />
                 </div>
               </>
             ) : terpilih && pilihLain.length > 0 ? (
@@ -145,7 +142,6 @@ export default function Desain3D() {
         <input ref={inputGambar} type="file" accept="image/*" className="hidden" onChange={e => { unggahGambar(e.target.files?.[0] ?? null); e.target.value = ''; }} />
         <input ref={inputLaptop} type="file" accept=".glb,model/gltf-binary" className="hidden" onChange={e => { void bukaDariLaptop(e.target.files?.[0] ?? null); e.target.value = ''; }} />
 
-        <BilahTerpilih a={a} />
         {galat && <p className="px-3 py-2 text-[12px] font-semibold text-rose-700 border-t border-rose-100 bg-rose-50">{galat}</p>}
       </div>
 
