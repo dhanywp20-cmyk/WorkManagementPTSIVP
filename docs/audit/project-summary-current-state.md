@@ -30,7 +30,7 @@ Tanggal: 31 Okt 2026 · Cabang kerja: `claude/sinkron-main` (= `main` 8d531688) 
 | U10 | Halaman terbuka lewat alamat langsung walau menu tidak diberikan | Verified → layar izin |
 | U11 | Jumlah di daftar ≠ isi detail tanpa penjelasan (record di luar lingkup / terhapus) | Verified → keterangan |
 | D1 | Semua 292 project berstatus "Aktif"; tab Selesai/Diarsipkan selalu kosong | Verified → backlog P3/P4 (closure) |
-| D2 | Deep link Ticketing hanya menemukan ticket ≤ 12 bulan (jendela muat) — saat ini 0 ticket terpeta terdampak | Verified → backlog P2 |
+| D2 | Deep link Ticketing hanya menemukan ticket ≤ 12 bulan (jendela muat) — saat ini 0 ticket terpeta terdampak | Verified → diperbaiki (Phase 2, P2-1) |
 
 ## C. Peta lintas modul (ringkas)
 | Menu | Tabel sumber | Relasi ke project | Catatan |
@@ -49,9 +49,9 @@ Tanggal: 31 Okt 2026 · Cabang kerja: `claude/sinkron-main` (= `main` 8d531688) 
 | ID | Item | Komp. | Risiko | Dependensi / uji |
 |---|---|---|---|---|
 | P1 | U1–U11 di atas | S–M | rendah | **selesai** (lihat bagian F) |
-| P2-1 | Deep link ticket > 12 bulan: muat ticket tunggal bila `?open` tak ada di daftar | S | sedang (Ticketing) | uji deep link |
-| P2-2 | Hubungkan Project Progress & Checklist ke `projects` (kolom relasi additive, review manual) | M | sedang | migrasi + rollback |
-| P2-3 | Dokumentasi alur & lineage per menu | M | rendah | — |
+| P2-1 | Deep link ticket > 12 bulan: muat ticket tunggal bila `?open` tak ada di daftar | S | sedang (Ticketing) | **selesai** (Phase 2) |
+| P2-2 | Hubungkan Project Progress & Checklist ke `projects` (kolom relasi additive, review manual) | M | sedang | migrasi + rollback; **menunggu persetujuan pemilik** (CHECK `source_module` perlu diperluas di basis data produksi) |
+| P2-3 | Dokumentasi alur & lineage per menu | M | rendah | **selesai**: [docs/alur/project-360-lineage.md](../alur/project-360-lineage.md) |
 | P3-1 | Jumlah terbuka/terlambat per project di daftar (view baru / kolom view) | M | sedang | rencana index |
 | P3-2 | Tab Dokumen (lampiran Design) & Pesan | M | sedang (akses berkas) | izin storage |
 | P3-3 | Definisi "aktivitas terakhir" yang memisahkan jadwal mendatang | S | rendah | perubahan view |
@@ -69,3 +69,10 @@ Phase 1: **tidak ada perubahan skema / data**. Rollback = revert berkas yang ber
 - `page.tsx`: layar izin (aturan = sidebar), ErrorState + Coba Lagi, ListEmptyState + Reset filter, chip filter aktif, kartu mengikuti pencarian, penjelasan angka & waktu dimuat, penanda tanggal mendatang, konteks `?project=`.
 - Uji baru `uji/summary-project-linimasa.ts` (24 cek). Learning Center tidak disentuh.
 - Diuji di peramban dengan mock Supabase (data contoh): filter/cari/reset, detail & penyaring, `?project=` (buka, tutup, tautan tidak sah), galat + Coba Lagi, izin (tamu tanpa/dengan menu), lebar HP 375 px tanpa gulir samping.
+
+## G. Phase 2 — yang diubah
+- `app/(portal)/ticketing/page.tsx` (P2-1): `?open=<id>` menunggu daftar selesai dimuat; ticket di luar jendela muat
+  diambil sendiri lewat `ambilTiketTertentu` (aturan tampil sama dengan daftar). Guest tidak lewat jalur tunggal; id
+  tidak sah / tidak ditemukan → pemberitahuan. Sebelumnya tautan diam saja bila daftar kosong / ticket lebih lama.
+- `docs/alur/project-360-lineage.md` (P2-3): alur pemetaan & lineage per menu.
+- Uji baru `uji/summary-project-fase2.ts`. **Tanpa perubahan skema / data.**

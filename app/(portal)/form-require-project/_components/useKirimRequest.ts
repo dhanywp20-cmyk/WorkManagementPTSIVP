@@ -7,6 +7,7 @@ import { idDariNama, tanpaIdentitas, cobaIdentitas } from '@/lib/identitas';
 import { logAudit } from '@/lib/audit';
 import { compressImage } from '@/lib/image-compress';
 import { penerimaAdminBernomor } from '@/lib/penerima-admin';
+import { createNotification, createNotificationForAdmins } from '@/lib/notifications';
 import { appLink } from '@/lib/app-url';
 import { User, RoomDetail, fetchWACCTargets, sendWANotif } from './shared';
 import { InitialFormType } from './Modals';
@@ -77,12 +78,12 @@ export function useKirimRequest(k: KirimRequestKonteks) {
           if (chosenBrand === 'BOTH' && rb.mvi && rb.ivp && rb.mvi.id !== rb.ivp.id) internalSalesId2 = rb.ivp.id;
         }
       }
-      const internalHandlers: { phone_number: string | null; full_name: string }[] = [];
+      const internalHandlers: { id: string; phone_number: string | null; full_name: string }[] = [];
       if (routingStatus === 'internal_review') {
         const ids = [internalSalesId, internalSalesId2].filter(Boolean) as string[];
         if (ids.length) {
-          const { data: hs } = await supabase.from('users').select('full_name, phone_number').in('id', ids);
-          (hs ?? []).forEach((h: any) => internalHandlers.push({ phone_number: h.phone_number, full_name: h.full_name }));
+          const { data: hs } = await supabase.from('users').select('id, full_name, phone_number').in('id', ids);
+          (hs ?? []).forEach((h: any) => internalHandlers.push({ id: h.id, phone_number: h.phone_number, full_name: h.full_name }));
         }
       }
       const payload = {
@@ -220,6 +221,23 @@ export function useKirimRequest(k: KirimRequestKonteks) {
           } catch {
             notify('error', 'Request berhasil dikirim, tapi file BOQ awal gagal diupload. Upload manual lewat detail request setelah ini.');
           }
+        }
+        /*
+          Badge in-app untuk request BARU - dulu tidak ada sama sekali di Design Project (hanya WA),
+          sehingga Manager PTS IVP (Full Access) tidak melihat request baru dari sales di lonceng
+          notifikasi. Sama dengan Request Schedule (useRequestJadwal): createNotificationForAdmins
+          menjangkau admin + pemegang Full Access (lib/penerima-admin.ts) - BUKAN jabatan Manager,
+          jadi Manager PTS UMP (orang luar) tidak ikut. Tidak bergantung pada ada-tidaknya nomor WA.
+        */
+        const notifRef = { type: 'project' as const, action_url: '/form-require-project', ref_id: data.id, created_by: currentUser.full_name };
+        if (routingStatus === 'internal_review') {
+          for (const h of internalHandlers) {
+            void createNotification({ ...notifRef, user_id: h.id, title: '📩 Request design perlu review kamu',
+              body: `${currentUser.full_name} (${currentUser.sales_division || '-'}) — ${form.project_name.trim()}` });
+          }
+        } else {
+          void createNotificationForAdmins({ ...notifRef, title: '🏗️ Request design baru menunggu approval',
+            body: `${currentUser.full_name} — ${form.project_name.trim()}` });
         }
         // Termasuk pemegang Full Access (Manager PTS IVP), bukan hanya
         // role admin - lihat lib/penerima-admin.ts.

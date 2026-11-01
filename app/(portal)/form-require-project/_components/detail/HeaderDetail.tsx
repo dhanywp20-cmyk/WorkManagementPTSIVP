@@ -73,8 +73,9 @@ export function HeaderDetail({ attachments, bisaKelolaRequest, bolehEditRequest,
               <TombolTolak ukuran="kecil" onClick={() => handleReject(selectedRequest)} />
             </>
           )}
-          {/* Setujui/Tolak: hanya admin/superadmin, terkunci selama masih internal_review */}
-          {bisaKelolaRequest && detailIsPending && selectedRequest.routing_status !== 'internal_review' && (
+          {/* Setujui/Tolak: admin/superadmin/Full Access - juga saat masih internal_review (melewati review
+              Sales Internal; basis data mengizinkan hanya admin/Full Access, lihat guard_project_requests_review_columns) */}
+          {bisaKelolaRequest && detailIsPending && (
             <>
               <TombolSetujui ukuran="kecil" onClick={() => { setAssignModal({ open: true, req: selectedRequest, roomIdx: 0 }); }}>Setujui &amp; Tugaskan</TombolSetujui>
               <TombolTolak ukuran="kecil" onClick={() => handleReject(selectedRequest)} />

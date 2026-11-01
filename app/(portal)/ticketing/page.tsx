@@ -178,16 +178,28 @@ function TicketingSystemInner() {
   // sudah menutupnya.
   const sudahBukaDariNotif = useRef(false);
   useEffect(() => {
-    if (sudahBukaDariNotif.current) return;
+    if (sudahBukaDariNotif.current || ticketsLoading || !currentUser) return;
     const openId = searchParams.get('open');
-    if (!openId || tickets.length === 0) return;
+    if (!openId) return;
+    sudahBukaDariNotif.current = true;
+    const buka = (t: Ticket) => { setSelectedTicket(t); setShowTicketDetailPopup(true); };
     const target = tickets.find(t => t.id === openId);
-    if (target) {
-      sudahBukaDariNotif.current = true;
-      setSelectedTicket(target);
-      setShowTicketDetailPopup(true);
+    if (target) { buka(target); return; }
+    /*
+      Ticket di luar jendela muat daftar (mis. > 12 bulan, tautan dari Summary Project / notifikasi
+      lama): ambil ticket itu SAJA, dengan aturan tampil yang sama (ambilTiketTertentu). Guest
+      dibatasi per kepemilikan di ambilTiketUntuk - jalur tunggal tidak memeriksanya, jadi guest
+      tidak dibukakan ticket di luar daftarnya sendiri.
+    */
+    const pesanTidakAda = 'Ticket tidak ditemukan atau di luar akses Anda.';
+    if (!/^[0-9a-f-]{36}$/i.test(openId) || (currentUser.role === 'guest' && !isPimpinan(currentUser))) {
+      notify('error', pesanTidakAda);
+      return;
     }
-  }, [searchParams, tickets]);
+    ambilTiketTertentu(currentUser, [openId])
+      .then(([t]) => (t ? buka(t) : notify('error', pesanTidakAda)))
+      .catch(() => notify('error', 'Gagal membuka ticket. Coba lagi.'));
+  }, [searchParams, tickets, ticketsLoading, currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Ticket[]>([]);
   const [showNotificationPopup, setShowNotificationPopup] = useState(false);

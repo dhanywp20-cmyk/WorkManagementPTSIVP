@@ -424,7 +424,7 @@ function FormRequireProject({ currentUser }: { currentUser: User }) {
           </button>
         </>
       )}
-      {bisaKelolaRequest && req.status === 'pending' && req.routing_status !== 'internal_review' && (
+      {bisaKelolaRequest && req.status === 'pending' && (
         <>
           <button aria-label="Setujui" onClick={() => handleApprove(req)} title="Setujui"
             className="w-8 h-8 shrink-0 bg-emerald-50 hover:bg-emerald-500 text-emerald-700 hover:text-white border border-emerald-200 rounded-lg flex items-center justify-center transition-all">

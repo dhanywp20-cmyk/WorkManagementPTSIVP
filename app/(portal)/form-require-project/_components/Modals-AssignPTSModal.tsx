@@ -191,6 +191,10 @@ export function AssignPTSModal({
       }
       updatePayload = { rooms };
     }
+    //  Admin / Full Access menyetujui langsung tanpa menunggu Sales Internal: tahap review ditutup
+    //  supaya request tidak tertinggal di antrean review Sales Internal.
+    const lewatiReview = req.routing_status === 'internal_review';
+    if (lewatiReview) updatePayload.routing_status = null;
 
     const { error, data } = await cobaIdentitas(async pakaiUuid => await supabase.from('project_requests')
       .update(pakaiUuid ? updatePayload : tanpaIdentitas(updatePayload)).eq('id', req.id).select('id'));
@@ -205,7 +209,7 @@ export function AssignPTSModal({
         sender_id: currentUser.id,
         sender_name: 'System',
         sender_role: 'system',
-        message: `✅ Request diapprove oleh ${currentUser.full_name}. Assigned ke Tim PTS: ${calonHandler.full_name}.`,
+        message: `✅ Request diapprove oleh ${currentUser.full_name}${lewatiReview ? ' (langsung, melewati review Sales Internal)' : ''}. Assigned ke Tim PTS: ${calonHandler.full_name}.`,
       }]);
 
       // WA notif ke PTS. (IVP Sales internal reviewer sudah dinotif via WA saat

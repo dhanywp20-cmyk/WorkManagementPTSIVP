@@ -13,6 +13,7 @@ import {
   formatDatetime, isDueToday, layakIncentive, diluarIncentive,
 } from './shared';
 import { Ikon, IkonTeks } from '@/components/shared/Ikon';
+import { hasFullAccess } from '@/lib/constants';
 
 /**
  * Error/loading/empty state + daftar reminder (kartu mobile & tabel
@@ -90,6 +91,9 @@ export function ReminderListBody({
   toggleSelectAll: () => void;
   guestUsers: GuestUser[];
 }) {
+  //  Admin / Full Access boleh menyetujui langsung walau request masih menunggu review Sales Internal
+  //  (RLS rm_update: admin_atau_full_access). Bukan jabatan Manager - Manager PTS UMP tidak termasuk.
+  const bolehLewatiReview = isAdmin || hasFullAccess(currentUser as never);
   const router = useRouter();
 
   /*
@@ -208,7 +212,7 @@ export function ReminderListBody({
                       </button>
                     </>
                   )}
-                  {canApproveAssign && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && r.routing_status !== 'internal_review' && (
+                  {canApproveAssign && !r.assigned_to && r.notes?.includes('[REQUEST SALES]') && (r.routing_status !== 'internal_review' || bolehLewatiReview) && (
                     <>
                       <ApproveIconBtn onClick={() => { setApproveTarget(r); setApproveBatchSiblings(group.filter(gr => gr.id !== r.id && gr.batch_id === r.batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(r.due_date); setApproveTime(r.due_time); }} title="Setujui & Tugaskan" pulse />
                       <button aria-label="Tolak" onClick={() => handleAdminReject(r)} title="Tolak"
@@ -500,7 +504,7 @@ export function ReminderListBody({
                           </>
                         )}
                         {/* Approve & Assign — admin only, hanya utk request sales yg belum di-assign & sudah lolos review internal */}
-                        {canApproveAssign && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && group[0].routing_status !== 'internal_review' && (
+                        {canApproveAssign && !group[0].assigned_to && group[0].notes?.includes('[REQUEST SALES]') && (group[0].routing_status !== 'internal_review' || bolehLewatiReview) && (
                           <>
                             <ApproveIconBtn onClick={() => { setApproveTarget(group[0]); setApproveBatchSiblings(group.filter(gr => gr.id !== group[0].id && gr.batch_id === group[0].batch_id && !gr.assigned_to)); setApproveAssignTo(''); setApproveDate(group[0].due_date); setApproveTime(group[0].due_time); }} title="Setujui & Tugaskan" pulse />
                             <button aria-label="Tolak" onClick={() => handleAdminReject(group[0])} title="Tolak"

@@ -28,10 +28,22 @@ export function setSession(userData: object): void {
   //  Penanda akun pimpinan (lib/pimpinan.ts) hanya dikirim login/session. Halaman yang memuat
   //  ulang profil dari DB (select kolom tertentu) tidak memuatnya, dan setSession(data) di sini
   //  akan menghapusnya di tengah sesi. Pertahankan dari sesi yang ada - HANYA untuk user yang sama.
-  if (!('pimpinan' in data)) {
+  //  Sama untuk hak akses (access_level = toggle Full Access, piket_akses): banyak halaman menyimpan
+  //  profil hasil select kolom tertentu tanpa kolom ini - tanpa pengaman, Manager Full Access
+  //  diam-diam turun jadi anggota biasa di tengah sesi (KPI hanya menampilkan dirinya sendiri, tombol
+  //  approve hilang). Hanya diisi bila kuncinya TIDAK ada; nilai yang dikirim (mis. hasil muat ulang
+  //  profil) selalu menang, jadi pencabutan Full Access tetap berlaku.
+  const DIPERTAHANKAN = ['pimpinan', 'access_level', 'piket_akses'] as const;
+  if (DIPERTAHANKAN.some(k => !(k in data))) {
     try {
       const lama = JSON.parse(sessionStorage.getItem(SS_USER) ?? 'null') as Record<string, unknown> | null;
-      if (lama && lama.pimpinan === true && lama.id === data.id) data = { ...data, pimpinan: true };
+      if (lama && lama.id === data.id) {
+        const tambahan: Record<string, unknown> = {};
+        for (const k of DIPERTAHANKAN) if (!(k in data) && k in lama) tambahan[k] = lama[k];
+        //  pimpinan hanya dipertahankan bila true (perilaku lama).
+        if ('pimpinan' in tambahan && tambahan.pimpinan !== true) delete tambahan.pimpinan;
+        data = { ...data, ...tambahan };
+      }
     } catch { /* sesi lama rusak: abaikan */ }
   }
   sessionStorage.setItem(SS_USER, JSON.stringify(data));
