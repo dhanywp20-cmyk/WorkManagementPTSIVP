@@ -427,10 +427,16 @@ export function KerangkaPortal({ children }: { children: React.ReactNode }) {
         //  Dua kueri bersamaan. Penanda pimpinan (lib/auth.ts) kueri terpisah & toleran: kolom baru
         //  tidak dimasukkan ke select utama; tanpa ini sesi yang dibuat SEBELUM akun dijadikan
         //  pimpinan tetap "bukan pimpinan" sampai logout - datanya tersaring.
-        const [profil, pim] = await Promise.all([
-          supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').eq('id', parsed.id).single(),
+        //  access_level (toggle Full Access) & piket_akses WAJIB ikut: setSession di bawah menimpa sesi,
+        //  dan tanpa kolom ini Manager Full Access terbaca sebagai anggota biasa di semua menu.
+        //  Jalur mundur tanpa kedua kolom bila basis data belum punya kolomnya (sama dengan /api/auth/session).
+        const [profilPenuh, pim] = await Promise.all([
+          supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled,access_level,piket_akses').eq('id', parsed.id).single(),
           supabase.from('users').select('pimpinan').eq('id', parsed.id).maybeSingle(),
         ]);
+        const profil = profilPenuh.error
+          ? await supabase.from('users').select('id,username,full_name,role,team_type,sales_division,jabatan,phone_number,allowed_menus,kpi_enabled').eq('id', parsed.id).single()
+          : profilPenuh;
         if (batal || profil.error || !profil.data) return;
         const pimpinanDb = !pim.error && pim.data
           ? (pim.data as { pimpinan?: unknown }).pimpinan === true
