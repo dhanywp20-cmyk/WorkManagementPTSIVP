@@ -1,28 +1,27 @@
 'use client';
 /**
  * Kontrol di atas kanvas 3D, tata letak gaya aplikasi CAD - tiap kelompok punya satu tempat tetap:
- *   kiri          rel alat (BilahKiri): Tambah, teks, pilih banyak, penggaris, snap, kelompok, daftar, pusatkan
- *   tengah-atas   benda terpilih: aksi (AksiTerpilih), geser / putar, geser cepat, geser tepat
+ *   kiri          rel alat (BilahKiri): Tambah, teks · pilih banyak, penggaris, snap - di bawahnya kolom benda terpilih
+ *                 (AksiTerpilih, berbingkai biru): Atur, geser / putar, panel Geser, duplikat, menu Lainnya, hapus
+ *   tengah-atas   geser tepat (mm) saja, hanya saat dibuka
  *   kiri-bawah    menu Tampilan (centang dikelompokkan) - dulu deretan chip yang menutupi kanvas
  *   kanan-bawah   navigasi kamera (NavKamera)
- *   kanan-atas    daftar benda (DaftarKanvas)
+ *   kanan-atas    daftar benda (DaftarKanvas, tombol Benda di bilah atas): cari, tampil / sembunyikan, isolasi, pusatkan
  */
 import { useEffect, useState } from 'react';
 import { DISPLAY, nirkabel } from '../inti';
-import { ChevronUp, Layers3, Move3d, Rotate3d } from 'lucide-react';
+import { ChevronUp, Layers3 } from 'lucide-react';
 import { AksiTerpilih } from './AksiTerpilih';
 import { GeserTepat } from './GeserTepat';
-import { GeserCepat } from './GeserCepat';
 import { BilahKiri } from './BilahKiri';
 import { DaftarKanvas } from './DaftarKanvas';
-import { grupNavMendatar, judulMenu, panelKanvas } from './gaya';
-import { TombolNav } from './TombolNav';
+import { judulMenu, panelKanvas } from './gaya';
 import type { AlatDesain } from './alat';
 
 interface Centang { v: boolean; s: (v: boolean) => void; l: string }
 
 export function KontrolKanvas({ a }: { a: AlatDesain }) {
-  const { sinarNyata, setSinarNyata, sembunyiTeks, setSembunyiTeks, jarakDinding, setJarakDinding, teksSinar, setTeksSinar, adaProyektor, bayangan, benda, detailBlending, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, labelProduk, setBayangan, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setSinar, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, alatKanvas, hanyaLihat, modeGizmo, setModeGizmo } = a.K;
+  const { sinarNyata, setSinarNyata, sembunyiTeks, setSembunyiTeks, jarakDinding, setJarakDinding, teksSinar, setTeksSinar, adaProyektor, bayangan, benda, detailBlending, garisUkur, gridSinar, setGridSinar, jangkau, jumlahProyektor, kabel, kabelPower, kerucut, labelProduk, setBayangan, setDetailBlending, setGarisUkur, setJangkau, setKabelPower, setKerucut, setLabelProduk, setSinar, setTampilBlending, setTampilKabel, setUkur, sinar, tampilBlending, tampilKabel, tampilShare, setTampilShare, terpilih, ukur, alatKanvas } = a.K;
   //  Geser tepat terikat ke benda yang terpilih saat dibuka - pilih benda lain = otomatis tertutup.
   const [geser, setGeser] = useState<{ id: string; teks: string } | null>(null);
   const geserAktif = geser && geser.id === terpilih?.id ? geser : null;
@@ -76,25 +75,16 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
 
   return (
     <>
-      {/* Kiri: rel alat. */}
-      <div className="kontrol-kanvas lapis-tembus absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5">
+      {/* Kiri: rel alat, kolom benda terpilih di bawahnya (ponsel: di sebelahnya - kanvas pendek). */}
+      <div className="kontrol-kanvas lapis-tembus absolute left-2 top-2 z-20 flex flex-row sm:flex-col items-start gap-1.5">
         <BilahKiri a={a} />
+        {terpilih && <AksiTerpilih a={a} onGeserTepat={() => terpilih && setGeser({ id: terpilih.id, teks: '' })} />}
       </div>
 
-      {/* Tengah-atas: semua yang berlaku untuk benda terpilih, berkumpul di satu tempat. */}
-      {terpilih && (
-        <div className="kontrol-kanvas lapis-tembus absolute left-1/2 -translate-x-1/2 top-2 z-10 flex flex-col items-center gap-1.5 max-w-[calc(100%-120px)]">
-          <AksiTerpilih a={a} onGeserTepat={() => terpilih && setGeser({ id: terpilih.id, teks: '' })} />
-          {alatKanvas === 'pilih' && !terpilih.terkunci && (
-            <div className="lapis-tembus flex items-center gap-1.5">
-              <div className={grupNavMendatar} role="group" aria-label="Geser atau putar benda">
-                <TombolNav judul="Geser (R)" aktif={modeGizmo === 'translate'} onClick={() => setModeGizmo('translate')}><Move3d size={16} /></TombolNav>
-                <TombolNav judul="Putar (R)" aktif={modeGizmo === 'rotate'} onClick={() => setModeGizmo('rotate')}><Rotate3d size={16} /></TombolNav>
-              </div>
-              {!hanyaLihat && <GeserCepat a={a} />}
-            </div>
-          )}
-          {geserAktif && <GeserTepat a={a} awal={geserAktif.teks} onTutup={() => setGeser(null)} />}
+      {/* Tengah-atas: geser tepat (mm), hanya saat dibuka. */}
+      {geserAktif && (
+        <div className="kontrol-kanvas absolute left-1/2 -translate-x-1/2 top-2 z-10">
+          <GeserTepat a={a} awal={geserAktif.teks} onTutup={() => setGeser(null)} />
         </div>
       )}
 

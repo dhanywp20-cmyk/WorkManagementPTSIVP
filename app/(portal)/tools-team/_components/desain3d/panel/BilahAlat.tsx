@@ -13,7 +13,7 @@ import { ChevronDown, Download, FolderOpen, HelpCircle, LayoutTemplate, Maximize
 import type { AlatDesain } from './alat';
 
 export function BilahAlat({ a }: { a: AlatDesain }) {
-  const { benda, bukaSisi, hanyaLihat, layarPenuh, riwayat, setLayarPenuh, setModal, setPesan, sisi, tampilan } = a.K;
+  const { benda, bukaSisi, daftarKanvas, hanyaLihat, layarPenuh, riwayat, setDaftarKanvas, setLayarPenuh, setModal, setPesan, sisi, tampilan } = a.K;
   const { pilihSudut } = a.kamera;
   const { denahCetak, setDenahCetak, cetak, draftChecklist, jalankanPng, menuPng, pngLembar, ringkasan, setMenuPng, sibukPng, unduhBomExcel, unduhDxf, unduhEmpatTampak, unduhFoto } = a.ekspor;
   const { namaDesain } = a.K;
@@ -55,8 +55,8 @@ export function BilahAlat({ a }: { a: AlatDesain }) {
             title="Template ruangan: meeting, auditorium, smart classroom, mapping, immersive"><LayoutTemplate size={15} /> <span className="hidden lg:inline">Kategori</span></button>
           <button type="button" onClick={() => bukaSisi('ruang')} aria-pressed={sisi === 'ruang'} className={sisi === 'ruang' ? tombolAktif : tombol}
             title="Ukuran ruangan, cahaya, dinding, pintu & jendela"><Ikon nama="🏠" ukuran={15} /> <span className="hidden lg:inline">Ruangan</span></button>
-          <button type="button" onClick={() => bukaSisi('daftar')} aria-pressed={sisi === 'daftar'} className={sisi === 'daftar' ? tombolAktif : tombol}
-            title="Daftar semua benda di desain"><Ikon nama="📋" ukuran={15} /> <span className="hidden lg:inline">Benda</span>
+          <button type="button" onClick={() => setDaftarKanvas(!daftarKanvas)} aria-pressed={daftarKanvas} className={daftarKanvas ? tombolAktif : tombol}
+            title="Daftar benda (L): cari & pilih, tampil / sembunyikan, isolasi kelompok, pusatkan isi"><Ikon nama="📋" ukuran={15} /> <span className="hidden lg:inline">Benda</span>
             <span className="min-w-5 h-5 px-1 rounded-full bg-slate-100 text-[11px] font-bold text-slate-600 grid place-items-center">{benda.length}</span></button>
         </div>
         <span className={pemisah} aria-hidden />

@@ -73,9 +73,9 @@ export function useKeadaanDesain() {
   const [modal, setModal] = useState<'simpan' | 'buka' | null>(null);
   //  Panel kanan (menempel di samping kanvas, tidak menutupi tampilan 3D). Satu panel
   //  pada satu waktu: Tambah / Ruangan / Daftar benda, atau Atur benda terpilih (`panel`).
-  const [sisi, setSisi] = useState<'kategori' | 'tambah' | 'ruang' | 'daftar' | null>(null);
+  const [sisi, setSisi] = useState<'kategori' | 'tambah' | 'ruang' | null>(null);
   const asideRef = useRef<HTMLElement>(null);
-  const bukaSisi = (k: 'kategori' | 'tambah' | 'ruang' | 'daftar') => { setPanel(false); setSisi(v => (v === k ? null : k)); };
+  const bukaSisi = (k: 'kategori' | 'tambah' | 'ruang') => { setPanel(false); setSisi(v => (v === k ? null : k)); };
   const [targetRuang, setTargetRuang] = useState<string>('0');
   const [tampilan, setTampilan] = useState<'3d' | 'atas' | 'kursi'>('3d');
   const [modeGizmo, setModeGizmo] = useState<'translate' | 'rotate'>('translate');

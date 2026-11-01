@@ -26,11 +26,10 @@ export function GambarVersi({ id, versi, className }: { id: string; versi: numbe
  * dengan pratinjau dan riwayat versi - versi lama bisa dibuka; menyimpannya
  * membuat versi baru, riwayat tidak berubah.
  */
-export const JUDUL_SISI: Record<'kategori' | 'tambah' | 'ruang' | 'daftar', { judul: string; ikon: string; ket?: string }> = {
+export const JUDUL_SISI: Record<'kategori' | 'tambah' | 'ruang', { judul: string; ikon: string; ket?: string }> = {
   kategori: { judul: 'Kategori ruangan', ikon: '🏛', ket: 'Mulai dari tata letak siap pakai - semua isi tetap bisa diubah. Isi kanvas sekarang diganti (bisa dikembalikan dengan Undo).' },
   tambah: { judul: 'Tambah benda', ikon: '➕', ket: 'Klik produk untuk menambahkannya; panel tetap terbuka supaya bisa menambah beberapa sekaligus.' },
   ruang: { judul: 'Ruangan', ikon: '🏠', ket: 'Maks 4 ruang berderet ke kanan; sekat terbuka + lebar berbeda = ruang bentuk L. Saat ukuran diubah, isi ruang ikut menyesuaikan.' },
-  daftar: { judul: 'Daftar benda', ikon: '📋', ket: 'Klik nama benda untuk memilihnya di tampilan 3D.' },
 };
 
 export function ModalBukaDesain({ buka, onTutup, aktifId, onBuka, onLaptop }: {

@@ -56,6 +56,9 @@ export function useMesin(K: KeadaanDesain) {
         labelRenderer.domElement.style.position = 'absolute';
         labelRenderer.domElement.style.inset = '0';
         labelRenderer.domElement.style.pointerEvents = 'none';
+        //  Lapisan label sendiri (z 0): CSS2DRenderer memberi tiap label z-index 1..N - tanpa ini label benda tampil DI ATAS
+        //  bilah alat & menu kanvas (z 10-30), menumpuk menutupi tombol.
+        labelRenderer.domElement.style.zIndex = '0';
         wadah.appendChild(labelRenderer.domElement);
 
         const scene = new THREE.Scene();
