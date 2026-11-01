@@ -1,25 +1,31 @@
 'use client';
 /**
- * Bilah benda terpilih - SATU baris di tengah-atas kanvas: nama · Atur · Geser / Putar · Geser ▾ (geser cepat & geser
- * tepat) · Duplikat · Lainnya ▾ · Hapus. Yang jarang dipakai (larik / ratakan, salin ke ruang lain, tempel ke dinding,
- * fokus kamera, kunci, sembunyikan) ada di menu Lainnya. Dulu dua baris tombol melayang (aksi + 9 tombol geser) dan satu
- * bilah lagi di bawah kanvas (tempel ke dinding) - menumpuk menutupi gambar. Aturan tata letak: inti/tata.ts.
+ * Alat benda terpilih - satu kolom ikon di rel kiri, tepat di bawah alat umum (BilahKiri), berbingkai biru supaya
+ * terbedakan: Atur · Geser / Putar · Geser ▾ (geser cepat & geser tepat) · Duplikat · Lainnya ▾ · Hapus. Menu terbuka ke
+ * kanan. Yang jarang dipakai (larik / ratakan, salin ke ruang lain, tempel ke dinding, fokus kamera, kunci, sembunyikan)
+ * ada di menu Lainnya. Dulu bilah melayang di tengah-atas yang menutupi gambar. Aturan tata letak: inti/tata.ts.
  */
 import { type ReactNode, useState } from 'react';
 import {
-  AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignStartHorizontal, AlignStartVertical, ChevronDown,
+  AlignCenterHorizontal, AlignCenterVertical, AlignEndHorizontal, AlignEndVertical, AlignStartHorizontal, AlignStartVertical,
   Copy, CopyPlus, Crosshair, EyeOff, Grid2x2Plus, Lock, LockOpen, MoreHorizontal, Move, Move3d, MoveHorizontal, PanelTop, Rotate3d, Ruler,
   Settings2, StretchHorizontal, StretchVertical, Trash2,
 } from 'lucide-react';
 import { BISA_TEMPEL, duplikatBanyak, kunciSembunyi, larik, MAKS_LARIK, ratakan, ruangDari, sebar } from '../inti';
 import type { Sisi } from '../mesin/tipe';
 import { GeserCepat } from './GeserCepat';
-import { itemMenu, judulMenu, menuMelayang, panelKanvas } from './gaya';
+import { itemMenu, judulMenu, menuMelayang } from './gaya';
 import type { AlatDesain } from './alat';
 
-const kelasAksi = 'inline-flex items-center gap-1.5 h-8 px-2 rounded-lg text-[12px] font-bold whitespace-nowrap';
-const biasa = 'text-slate-700 hover:bg-slate-100';
-const pemisah = <span className="w-px h-5 bg-slate-200 mx-0.5" aria-hidden />;
+const biasa = 'text-slate-700 hover:bg-slate-100 active:bg-slate-200';
+/** Menu yang terbuka ke kanan kolom. */
+const kanan = 'absolute left-full top-0 ml-2 max-w-[calc(100vw-7rem)]';
+
+type AtributAria = { role?: string; 'aria-pressed'?: boolean; 'aria-checked'?: boolean; 'aria-expanded'?: boolean; 'aria-haspopup'?: 'menu' | 'dialog' };
+/** Tombol ikon kolom (ukuran sama dengan rel alat). */
+function Ikon({ judul, onClick, kelas, children, ...aria }: { judul: string; onClick: () => void; kelas: string; children: ReactNode } & AtributAria) {
+  return <button type="button" title={judul} aria-label={judul} onClick={onClick} className={`w-9 h-9 grid place-items-center ${kelas}`} {...aria}>{children}</button>;
+}
 
 /** Baris menu Lainnya: ikon, judul & keterangan pendek. */
 function Baris({ ikon, judul, ket, onClick, aktif, bahaya }: { ikon: ReactNode; judul: string; ket?: string; onClick: () => void; aktif?: boolean; bahaya?: boolean }) {
@@ -64,48 +70,42 @@ export function AksiTerpilih({ a, onGeserTepat }: { a: AlatDesain; onGeserTepat:
   const tutupLatar = <div aria-hidden="true" className="fixed inset-0 z-20" onClick={() => setMenu(null)} />;
 
   return (
-    <div className={`relative flex flex-row items-center gap-0.5 ${panelKanvas} p-1`} role="toolbar" aria-label={`Aksi ${terpilih.nama}`}>
-      <span className="hidden sm:block max-w-[9rem] xl:max-w-[12rem] truncate px-2 text-[12px] font-bold text-slate-900" title={banyak ? `${ids.length} benda terpilih` : terpilih.nama}>
-        {banyak ? <span className="px-2 py-0.5 rounded-full bg-blue-700 text-white text-[11.5px]">{ids.length} benda</span> : terpilih.nama}
-      </span>
-      <span className="hidden sm:block">{pemisah}</span>
-      <button type="button" onClick={() => { setSisi(null); setPanel(p => !p); }} aria-pressed={panel} title="Atur ukuran, posisi & pilihan benda"
-        className={`${kelasAksi} ${panel ? 'bg-blue-700 text-white' : biasa}`}><Settings2 size={15} /> <span className="hidden sm:inline">Atur</span></button>
-      {bisaGeser && (
-        <>
-          <div className="inline-flex rounded-lg bg-slate-100 p-0.5" role="radiogroup" aria-label="Geser atau putar dengan gizmo (R)">
-            {([['translate', 'Geser (R)', Move3d], ['rotate', 'Putar (R)', Rotate3d]] as const).map(([m, l, I]) => (
-              <button key={m} type="button" role="radio" aria-checked={modeGizmo === m} title={l} aria-label={l} onClick={() => setModeGizmo(m)}
-                className={`w-7 h-7 grid place-items-center rounded-md ${modeGizmo === m ? 'bg-white text-blue-800 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}><I size={15} /></button>
+    <div className="relative" role="toolbar" aria-orientation="vertical" aria-label={banyak ? `Aksi ${ids.length} benda terpilih` : `Aksi ${terpilih.nama}`}>
+      <div className="flex flex-col rounded-xl bg-white/95 backdrop-blur border border-blue-300 shadow-md overflow-hidden divide-y divide-slate-100">
+        {banyak && <span className="h-6 grid place-items-center bg-blue-700 text-white text-[11px] font-bold" title={`${ids.length} benda terpilih`}>{ids.length}</span>}
+        <Ikon judul={`Atur ${banyak ? `${ids.length} benda` : terpilih.nama}: ukuran, posisi & pilihan`} aria-pressed={panel} onClick={() => { setSisi(null); setPanel(p => !p); }}
+          kelas={panel ? 'bg-blue-700 text-white' : biasa}><Settings2 size={17} /></Ikon>
+        {bisaGeser && (
+          <div className="flex flex-col divide-y divide-slate-100" role="radiogroup" aria-label="Geser atau putar dengan gizmo (R)">
+            {([['translate', 'Geser dengan gizmo (R)', Move3d], ['rotate', 'Putar dengan gizmo (R)', Rotate3d]] as const).map(([m, l, I]) => (
+              <Ikon key={m} judul={l} role="radio" aria-checked={modeGizmo === m} onClick={() => setModeGizmo(m)}
+                kelas={modeGizmo === m ? 'bg-blue-50 text-blue-800' : biasa}><I size={17} /></Ikon>
             ))}
           </div>
-          {!hanyaLihat && (
-            <button type="button" onClick={() => buka('geser')} aria-expanded={menu === 'geser'} aria-haspopup="dialog" title="Geser cepat (panah keyboard) & geser tepat (mm)"
-              className={`${kelasAksi} ${menu === 'geser' ? 'bg-blue-50 text-blue-800' : biasa}`}><Move size={15} /> <span className="hidden xl:inline">Geser</span><ChevronDown size={13} /></button>
-          )}
-        </>
-      )}
-      <button type="button" onClick={() => {
-        if (!banyak) { duplikat(terpilih); return; }
-        const h = duplikatBanyak(benda, ids, batas.x);
-        setBenda(h.benda); setPilihan(h.baru[0]?.id ?? null, h.baru.slice(1).map(b => b.id));
-      }} title={banyak ? 'Duplikat semua yang terpilih' : 'Duplikat benda ini'} className={`${kelasAksi} ${biasa}`}>
-        <Copy size={15} /> <span className="hidden xl:inline">Duplikat</span>
-      </button>
-      <button type="button" onClick={() => buka('lain')} aria-expanded={menu === 'lain'} aria-haspopup="menu"
-        title="Lainnya: larik / ratakan, salin ke ruang lain, tempel ke dinding, fokus kamera, kunci, sembunyikan"
-        className={`${kelasAksi} ${menu === 'lain' || menu === 'rata' || menu === 'larik' ? 'bg-blue-50 text-blue-800' : kunci ? 'bg-amber-100 text-amber-900' : biasa}`}>
-        {kunci ? <Lock size={15} /> : <MoreHorizontal size={15} />} <span className="hidden xl:inline">{kunci ? 'Terkunci' : 'Lainnya'}</span>
-      </button>
-      {pemisah}
-      <button type="button" onClick={() => { const s = new Set(ids); setBenda(b => b.filter(x => !s.has(x.id))); setPilih(null); }} title={banyak ? 'Hapus semua yang terpilih' : 'Hapus benda ini'}
-        aria-label="Hapus" className={`${kelasAksi} text-rose-700 hover:bg-rose-50`}><Trash2 size={15} /></button>
+        )}
+        {bisaGeser && !hanyaLihat && (
+          <Ikon judul="Geser cepat (panah keyboard) & geser tepat (mm)" aria-expanded={menu === 'geser'} aria-haspopup="dialog" onClick={() => buka('geser')}
+            kelas={menu === 'geser' ? 'bg-blue-50 text-blue-800' : biasa}><Move size={17} /></Ikon>
+        )}
+        <Ikon judul={banyak ? 'Duplikat semua yang terpilih' : 'Duplikat benda ini'} kelas={biasa} onClick={() => {
+          if (!banyak) { duplikat(terpilih); return; }
+          const h = duplikatBanyak(benda, ids, batas.x);
+          setBenda(h.benda); setPilihan(h.baru[0]?.id ?? null, h.baru.slice(1).map(b => b.id));
+        }}><Copy size={17} /></Ikon>
+        <Ikon judul={kunci ? 'Terkunci - menu lainnya' : 'Lainnya: larik / ratakan, salin ke ruang lain, tempel ke dinding, fokus kamera, kunci, sembunyikan'}
+          aria-expanded={menu === 'lain'} aria-haspopup="menu" onClick={() => buka('lain')}
+          kelas={menu === 'lain' || menu === 'rata' || menu === 'larik' ? 'bg-blue-50 text-blue-800' : kunci ? 'bg-amber-100 text-amber-900' : biasa}>
+          {kunci ? <Lock size={17} /> : <MoreHorizontal size={17} />}
+        </Ikon>
+        <Ikon judul={banyak ? 'Hapus semua yang terpilih' : 'Hapus benda ini'} kelas="text-rose-700 hover:bg-rose-50"
+          onClick={() => { const s = new Set(ids); setBenda(b => b.filter(x => !s.has(x.id))); setPilih(null); }}><Trash2 size={17} /></Ikon>
+      </div>
 
       {/*  Geser cepat selalu terpasang: panah keyboard tetap jalan walau panelnya tertutup. */}
       {bisaGeser && !hanyaLihat && (
         <>
           {menu === 'geser' && tutupLatar}
-          <div className={menu === 'geser' ? `absolute left-1/2 -translate-x-1/2 top-full mt-1.5 w-64 ${menuMelayang} space-y-2 p-2.5` : 'hidden'} role="dialog" aria-label="Geser benda">
+          <div className={menu === 'geser' ? `${kanan} w-64 ${menuMelayang} space-y-2 p-2.5` : 'hidden'} role="dialog" aria-label="Geser benda">
             <GeserCepat a={a} />
             <button type="button" onClick={lalu(onGeserTepat)} className="w-full inline-flex items-center justify-center gap-1.5 h-8 rounded-lg border border-slate-200 text-[12.5px] font-semibold text-slate-700 hover:bg-slate-50">
               <Ruler size={14} /> Geser tepat (mm) <span className="text-slate-400 font-normal">· atau ketik angka</span>
@@ -117,7 +117,7 @@ export function AksiTerpilih({ a, onGeserTepat }: { a: AlatDesain; onGeserTepat:
       {menu === 'lain' && (
         <>
           {tutupLatar}
-          <div className={`absolute right-0 top-full mt-1.5 w-72 max-h-[60vh] overflow-y-auto ${menuMelayang}`} role="menu">
+          <div className={`${kanan} w-72 max-h-[min(60vh,440px)] overflow-y-auto ${menuMelayang}`} role="menu">
             {!banyak && <Baris ikon={<Grid2x2Plus size={15} />} judul="Larik" ket="Ulangi benda dalam baris × kolom berjarak tetap" onClick={() => setMenu('larik')} />}
             {banyak && <Baris ikon={<AlignCenterVertical size={15} />} judul="Ratakan & sebar" ket="Sejajarkan / bagi rata benda terpilih" onClick={() => setMenu('rata')} />}
             {duaRuang && <Baris ikon={<CopyPlus size={15} />} judul={`Salin ke Ruang ${ruangLain}`} onClick={lalu(() => salinKeRuangLain(terpilih))} />}
@@ -143,7 +143,7 @@ export function AksiTerpilih({ a, onGeserTepat }: { a: AlatDesain; onGeserTepat:
       {menu === 'rata' && (
         <>
           {tutupLatar}
-          <div className={`absolute right-0 top-full mt-1.5 w-56 ${menuMelayang} p-2 space-y-2`}>
+          <div className={`${kanan} w-56 ${menuMelayang} p-2 space-y-2`}>
             {([['Kiri-kanan', 'x', [AlignStartVertical, AlignCenterVertical, AlignEndVertical]], ['Depan-belakang', 'z', [AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal]]] as const).map(([l, s, ik]) => (
               <div key={s}>
                 <p className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 mb-1">{l}</p>
@@ -166,7 +166,7 @@ export function AksiTerpilih({ a, onGeserTepat }: { a: AlatDesain; onGeserTepat:
       {menu === 'larik' && (
         <>
           {tutupLatar}
-          <div className={`absolute right-0 top-full mt-1.5 w-56 ${menuMelayang} p-2.5 space-y-2`}>
+          <div className={`${kanan} w-56 ${menuMelayang} p-2.5 space-y-2`}>
             <p className="text-[12px] font-bold text-slate-800 flex items-center gap-1.5"><Grid2x2Plus size={14} /> Larik {terpilih.nama}</p>
             <div className="grid grid-cols-2 gap-1.5 text-[11px] font-semibold text-slate-600">
               <label>Kolom (kiri-kanan)<input inputMode="numeric" value={isiLarik.kolom} onChange={e => setIsiLarik({ ...isiLarik, kolom: e.target.value })} className={isian} /></label>

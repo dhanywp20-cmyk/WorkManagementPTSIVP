@@ -36,9 +36,7 @@ export function DaftarKanvas({ a }: { a: AlatDesain }) {
     setPilihan(r.pilih, r.lain);
   };
   return (
-    //  Benda terpilih: turun di bawah bilah benda terpilih (tengah-atas) - saat panel Atur terbuka kanvas menyempit dan
-    //  ujung bilah itu dulu tertutup daftar ini.
-    <div ref={wadah} className={`kontrol-kanvas absolute right-2 ${pilih ? 'top-14 max-h-[calc(100%-7.5rem)]' : 'top-2 max-h-[60%]'} z-10 w-56 sm:w-60 flex flex-col rounded-xl bg-white/95 border border-slate-200 shadow-lg`}
+    <div ref={wadah} className={`kontrol-kanvas absolute right-2 top-2 max-h-[60%] z-10 w-56 sm:w-60 flex flex-col rounded-xl bg-white/95 border border-slate-200 shadow-lg`}
       role="region" aria-label="Daftar benda">
       <div className="flex items-center gap-1 px-2 py-1.5 border-b border-slate-100">
         <Search size={13} className="text-slate-400 shrink-0" />

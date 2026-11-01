@@ -1,8 +1,9 @@
 'use client';
 /**
  * Kontrol di atas kanvas 3D, tata letak gaya aplikasi CAD - tiap kelompok punya satu tempat tetap:
- *   kiri          rel alat (BilahKiri): Tambah, teks · pilih banyak, penggaris, snap
- *   tengah-atas   benda terpilih: SATU baris (AksiTerpilih) - geser / putar, panel Geser, menu Lainnya; geser tepat di bawahnya
+ *   kiri          rel alat (BilahKiri): Tambah, teks · pilih banyak, penggaris, snap - di bawahnya kolom benda terpilih
+ *                 (AksiTerpilih, berbingkai biru): Atur, geser / putar, panel Geser, duplikat, menu Lainnya, hapus
+ *   tengah-atas   geser tepat (mm) saja, hanya saat dibuka
  *   kiri-bawah    menu Tampilan (centang dikelompokkan) - dulu deretan chip yang menutupi kanvas
  *   kanan-bawah   navigasi kamera (NavKamera)
  *   kanan-atas    daftar benda (DaftarKanvas, tombol Benda di bilah atas): cari, tampil / sembunyikan, isolasi, pusatkan
@@ -74,16 +75,16 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
 
   return (
     <>
-      {/* Kiri: rel alat. */}
-      <div className="kontrol-kanvas lapis-tembus absolute left-2 top-2 z-10 flex flex-col items-start gap-1.5">
+      {/* Kiri: rel alat, kolom benda terpilih di bawahnya (ponsel: di sebelahnya - kanvas pendek). */}
+      <div className="kontrol-kanvas lapis-tembus absolute left-2 top-2 z-20 flex flex-row sm:flex-col items-start gap-1.5">
         <BilahKiri a={a} />
+        {terpilih && <AksiTerpilih a={a} onGeserTepat={() => terpilih && setGeser({ id: terpilih.id, teks: '' })} />}
       </div>
 
-      {/* Tengah-atas: semua yang berlaku untuk benda terpilih, berkumpul di satu tempat. */}
-      {terpilih && (
-        <div className="kontrol-kanvas lapis-tembus absolute left-1/2 -translate-x-1/2 top-2 z-10 flex flex-col items-center gap-1.5 max-w-[calc(100%-120px)]">
-          <AksiTerpilih a={a} onGeserTepat={() => terpilih && setGeser({ id: terpilih.id, teks: '' })} />
-          {geserAktif && <GeserTepat a={a} awal={geserAktif.teks} onTutup={() => setGeser(null)} />}
+      {/* Tengah-atas: geser tepat (mm), hanya saat dibuka. */}
+      {geserAktif && (
+        <div className="kontrol-kanvas absolute left-1/2 -translate-x-1/2 top-2 z-10">
+          <GeserTepat a={a} awal={geserAktif.teks} onTutup={() => setGeser(null)} />
         </div>
       )}
 

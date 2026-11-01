@@ -1,7 +1,7 @@
 /**
  * Kelas tombol bersama Desain 3D. Satu bahasa visual untuk seluruh alat: tinggi 32 px, sudut 8 px, ikon 15 px.
- * Tata letak (gaya aplikasi CAD): satu bilah atas, satu rel alat di kiri kanvas, bilah benda terpilih melayang di
- * tengah-atas, menu Tampilan di kiri-bawah, navigasi kamera di kanan-bawah.
+ * Tata letak (gaya aplikasi CAD): satu bilah atas, satu rel alat di kiri kanvas (alat benda terpilih di bawahnya),
+ * menu Tampilan di kiri-bawah, navigasi kamera di kanan-bawah.
  */
 export const tombol = 'inline-flex items-center justify-center gap-1.5 h-8 px-2.5 rounded-lg text-[12.5px] font-semibold border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:border-slate-300 disabled:opacity-40 whitespace-nowrap';
 export const tombolUtama = 'inline-flex items-center justify-center gap-1.5 h-8 px-3 rounded-lg text-[12.5px] font-semibold text-white bg-blue-700 hover:bg-blue-800 whitespace-nowrap';
