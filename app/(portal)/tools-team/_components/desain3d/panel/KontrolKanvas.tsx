@@ -88,8 +88,8 @@ export function KontrolKanvas({ a }: { a: AlatDesain }) {
         </div>
       )}
 
-      {/* Kiri-bawah: menu Tampilan. */}
-      <div className="kontrol-kanvas absolute left-2 bottom-2 z-10">
+      {/* Kiri-bawah: menu Tampilan. Saat terbuka naik di atas rel kiri (z-20) - menunya memanjang ke atas melewati rel. */}
+      <div className={`kontrol-kanvas absolute left-2 bottom-2 ${tampilanBuka ? 'z-30' : 'z-10'}`}>
         <button type="button" onClick={() => setTampilanBuka(v => !v)} aria-expanded={tampilanBuka} aria-haspopup="dialog"
           title="Pilih yang tampil di kanvas: ukuran, label, sinar proyektor, kabel, bayangan"
           className={`inline-flex items-center gap-1.5 h-9 px-3 ${panelKanvas} text-[12.5px] font-semibold ${tampilanBuka ? 'text-blue-800 border-blue-300' : 'text-slate-700 hover:bg-slate-50'}`}>
