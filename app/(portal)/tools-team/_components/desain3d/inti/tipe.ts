@@ -38,7 +38,7 @@ export type PasangProyektor = 'plafon' | 'meja';
 /** Rasio aspek gambar proyektor (panel aslinya) - yang umum saja. */
 export type RasioProyektor = '16:9' | '16:10' | '17:9' | '4:3' | '21:9';
 /** Resolusi native panel proyektor (kunci yang sama dengan Pustaka). */
-export type ResolusiProyektor = 'XGA' | 'WXGA' | 'FHD' | 'WUXGA' | '4K' | '4KDCI';
+export type ResolusiProyektor = 'XGA' | 'SXGAP' | 'WXGAH' | 'WXGA' | 'FHD' | 'WUXGA' | 'WQXGA' | '4K' | '4KP' | '4KDCI';
 /** Speaker: kotak dinding (lama), dinding 6" membulat + bracket putar, portable aktif (kolom + subwoofer), line array. */
 export type TipeSpeaker = 'kotak' | 'dinding6' | 'kolom' | 'linearray';
 export type ModelVW = '55BDL2105X' | '49BDL2105X' | 'custom';
@@ -96,6 +96,12 @@ export interface Benda {
    */ offsetTetap?: number;
   /** Proyektor: kontras asli (full on / full off, x:1) - membatasi kontras gambar di ruang gelap. Kosong = tidak dibatasi. */
   kontrasAsli?: number;
+  /**
+   * Proyektor dari katalog Panasonic TDC: koefisien lensa PER RASIO sinyal [TR wide, TR tele, b wide, b tele]
+   * (TR relatif lebar gambar rasio itu) - persis angka kalkulator Panasonic. Mengganti rasio memakai baris ini.
+   */
+  koefRasio?: Partial<Record<RasioProyektor, [number, number, number, number]>>;
+  /** Proyektor: sumber data lensa (mis. "Panasonic TDC 2.79") - kosong = isian manual / Pustaka. */ sumberLensa?: string;
   /** Proyektor: batas lens shift lensa (pecahan tinggi / lebar gambar, datasheet) - atas, bawah, kiri-kanan. Kosong = tidak dibatasi, 0 = tidak bisa digeser. */
   shiftAtasMaks?: number; shiftBawahMaks?: number; shiftHMaks?: number;
   /**
@@ -119,7 +125,10 @@ export interface Benda {
   /** Proyektor: gantung plafon (bawaan) atau portabel di meja */ pasangProyektor?: PasangProyektor;
   /** Proyektor: throw ratio lensa (jarak lempar : lebar gambar), bawaan 1,5 */ throwRatio?: number;
   /** Proyektor: rasio aspek gambar (bawaan 16:9; 16:10 = WUXGA, umum di proyektor instalasi) */ rasioProyektor?: RasioProyektor;
-  /** Proyektor: resolusi native panel - piksel blending yang diisi di processor. Kosong = acuan 1920 px lebar. */ resolusiProyektor?: ResolusiProyektor;
+  /**
+   * Proyektor: resolusi native PANEL (rasio panel; piksel blending yang diisi di processor). Boleh beda rasio dengan
+   * rasioProyektor (sinyal) - letterbox / pillarbox seperti kalkulator Panasonic. Kosong = panel = rasio gambar, acuan 1920 px.
+   */ resolusiProyektor?: ResolusiProyektor;
   /** Proyektor: tilt (derajat, negatif = menunduk). Pan = rot. */ tilt?: number;
   /** Display: konten di layar ('pola' = pola uji bawaan; 'gambar' = unggahan, tidak disimpan) */ konten?: KontenLayar;
   /** Display: sembunyikan garis ukuran (mm) benda ini walau garis ukuran dinyalakan. */ sembunyiUkur?: boolean;

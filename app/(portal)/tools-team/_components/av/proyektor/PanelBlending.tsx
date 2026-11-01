@@ -17,13 +17,17 @@ const RESOLUSI = [
   { v: 'wqxga', l: 'WQXGA 2560 × 1600', x: 2560, y: 1600 },
   { v: '4k', l: '4K UHD 3840 × 2160', x: 3840, y: 2160 },
   { v: '4kdci', l: '4K DCI 4096 × 2160', x: 4096, y: 2160 },
+  { v: '4kp', l: '4K+ 3840 × 2400', x: 3840, y: 2400 },
   { v: 'sxga', l: 'SXGA+ 1400 × 1050', x: 1400, y: 1050 },
   { v: 'wxga', l: 'WXGA 1280 × 800', x: 1280, y: 800 },
+  { v: 'wxgah', l: 'WXGA 1366 × 768', x: 1366, y: 768 },
   { v: 'xga', l: 'XGA 1024 × 768', x: 1024, y: 768 },
   { v: 'custom', l: 'Custom…', x: 0, y: 0 },
 ];
-/** Resolusi di Pustaka -> pilihan di atas. */
-const DARI_PUSTAKA: Record<string, string> = { XGA: 'xga', WXGA: 'wxga', FHD: 'fhd', WUXGA: 'wuxga', '4K': '4k', '4KDCI': '4kdci' };
+/** Resolusi di Pustaka / katalog Panasonic -> pilihan di atas. */
+const DARI_PUSTAKA: Record<string, string> = {
+  XGA: 'xga', SXGAP: 'sxga', WXGA: 'wxga', WXGAH: 'wxgah', FHD: 'fhd', WUXGA: 'wuxga', WQXGA: 'wqxga', '4K': '4k', '4KP': '4kp', '4KDCI': '4kdci',
+};
 const CATATAN = 'Overlap umum 15-25% lebar gambar satu proyektor (atas-bawah biasanya sama); bisa diisi dalam % atau cm (lebar area blending di layar). Jarak lempar & jarak antar lensa menganggap tiap lensa tepat di depan pusat gambarnya (lens shift kiri-kanan 0, tanpa keystone). Overlap dibulatkan ke piksel utuh seperti di media server. Mode Ukuran target: gambar per proyektor dibesarkan sampai susunan menutup lebar DAN tinggi target; kelebihan di satu arah di-mask (piksel ter-mask). Kanvas = resolusi output media server; konten = resolusi file konten yang perlu dibuat. Gunakan proyektor dengan model, lensa & umur sumber cahaya yang sama.';
 
 const bulat = (n: number, d = 2) => Math.round(n * 10 ** d) / 10 ** d;

@@ -97,6 +97,8 @@ export function Nilai({ label, nilai, satuan, ket, nada }: { label: string; nila
 }
 
 export const f = (n: number, d = 2) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { maximumFractionDigits: d }) : '-');
+/** Angka dengan desimal TETAP (3,000 m - cara kalkulator Panasonic menulis jarak & ukuran). */
+export const fTetap = (n: number, d = 3) => (Number.isFinite(n) ? n.toLocaleString('id-ID', { minimumFractionDigits: d, maximumFractionDigits: d }) : '-');
 
 /** Tombol salin ringkasan hasil (untuk ditempel ke WA / penawaran). */
 export function TombolSalin({ teks, onCetak, onPng, simpan }: {

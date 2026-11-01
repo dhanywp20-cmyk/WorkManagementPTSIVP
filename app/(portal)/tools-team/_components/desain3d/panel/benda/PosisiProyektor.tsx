@@ -4,7 +4,7 @@
  * kalkulator Panasonic - jarak lensa ke layar / bidang yang dituju, bisa diisi langsung. Rumus: inti/jarakProyeksi.ts.
  */
 import { useState } from 'react';
-import { Angka, Catatan, f } from '../../../bersama/ui';
+import { Angka, Catatan, f, fTetap } from '../../../bersama/ui';
 import {
   aturJarakProyeksi, type Benda, jarakProyeksi, jepitProyektor, keDunia, lebarGambarDi, lensaProyektor, posisiDariLensa,
   rasioGambarProyektor, throwRatioDari,
@@ -63,7 +63,7 @@ export function PosisiProyektor({ c }: { c: KonteksAtur }) {
               bantuan="Jarak ujung lensa ke layar / bidang - sama dengan L di kalkulator Panasonic. Mengubahnya menggeser proyektor maju-mundur." />
             <p className="text-[12px] text-slate-700 leading-snug tabular-nums">
               Ke <b>{ke}</b> - {jp.cara === 'tegak' ? 'tegak lurus bidang (L kalkulator Panasonic)' : 'sepanjang sumbu lensa ke titik bidik'}.
-              Gambar <b>{f(lebar)} × {f(tinggi)} m</b> (±{f(Math.hypot(lebar, tinggi) / 0.0254, 0)}&quot;) pada TR {f(tr, 3)}.
+              Gambar <b>{fTetap(lebar)} × {fTetap(tinggi)} m</b> ({fTetap(Math.hypot(lebar, tinggi) / 0.0254, 2)}&quot;) pada TR {f(tr, 6)}.
             </p>
           </>
         ) : (

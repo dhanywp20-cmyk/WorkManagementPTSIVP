@@ -50,11 +50,11 @@ export function isiDariPustaka(b: Benda, e: EntriPustaka): Partial<Benda> | null
     const lensa: Partial<Benda> = {
       koreksiJarak: angka('koreksiJarak'), koreksiJarakTele: angka('koreksiJarakTele'),
       shiftAtasMaks: angka('shiftAtas', 100), shiftBawahMaks: angka('shiftBawah', 100), shiftHMaks: angka('shiftHorizontal', 100),
-      offsetTetap: angka('offsetTetap', 100), kontrasAsli: ada('kontras') ? angkaDari(e, 'kontras') : undefined,
+      offsetTetap: angka('offsetTetap', 100), kontrasAsli: ada('kontras') ? angkaDari(e, 'kontras') : undefined, koefRasio: undefined, sumberLensa: undefined,
       poligonShift: bacaPoligonShift(teksDari(e, 'poligonShift')),
       ...(ada('offsetTetap') ? { offsetLensa: angka('offsetTetap', 100), geserLensaH: 0 } : {}),
     };
-    return { nama, ...(lumen > 0 ? { lumen } : {}), ...(trMin > 0 ? { trMin, trMax, throwRatio: bulat(tr, 2) } : {}), ...(rasioProyektor ? { rasioProyektor, resolusiProyektor } : { resolusiProyektor: undefined }), ...lensa };
+    return { nama, ...(lumen > 0 ? { lumen } : {}), ...(trMin > 0 ? { trMin, trMax, throwRatio: bulat(tr, 6) } : {}), ...(rasioProyektor ? { rasioProyektor, resolusiProyektor } : { resolusiProyektor: undefined }), ...lensa };
   }
   if (b.jenis === 'videowall') {
     const u = ukuranDariDiagonal(angkaDari(e, 'diagonal'));

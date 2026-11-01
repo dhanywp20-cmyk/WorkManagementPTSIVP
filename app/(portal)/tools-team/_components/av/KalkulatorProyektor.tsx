@@ -2,16 +2,22 @@
 /**
  * Kalkulator proyektor: jarak lempar (lensa zoom), tinggi pasang lensa (lens shift), kecerahan menurut
  * kategori kontras ANSI/INFOCOMM 3M-2011 + susut cahaya, dan edge blending (PanelBlending).
- * Rumus: lib/av-layar-proyektor.ts.
+ * Rumus: lib/av-layar-proyektor.ts. Model & lensa Panasonic: katalog resmi Throw Distance Calculator - angka lensa per
+ * rasio sinyal, panel native (letterbox), lumen & lens shift dari fungsi yang sama dengan Desain 3D (lensaPadaRasio).
  */
-import { Angka, Catatan, f, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
-import { RASIO } from './KalkulatorLayar';
+import { Angka, Catatan, f, fTetap, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
+import {
+  BATAS_B, bagianPanelRasio, type LensaPadaRasio, type LensaTdc, lensaPadaRasio, type ModelTdc, RASIO_PROYEKTOR as RASIO_GAMBAR, type RasioProyektor,
+  resolusiPanel,
+} from '../desain3d/inti';
 import { aksiLembar, lembarAV } from './lembar';
 import { PanelBlending } from './proyektor/PanelBlending';
+import { PilihPanasonic } from '../pustaka/PilihPanasonic';
 import { PilihPustaka } from '../pustaka/PilihPustaka';
+import { RumusLensaPabrikan } from '../pustaka/RumusLensaPabrikan';
 import { usePustaka } from '../pustaka/usePustaka';
 import { angkaDari, type EntriPustaka, teksDari } from '@/lib/pustaka';
-import { KONTRAS_ANSI, type KategoriKontras, kontrasDiLayar, lumenSpesifikasi, lumenUntukKontras, luminanceLayar, type Pemasangan, rentangJarakLempar, rentangTinggiLensa, rumusLensaDariDuaTitik, tinggiLensaTetap } from '@/lib/av-layar-proyektor';
+import { KONTRAS_ANSI, type KategoriKontras, kontrasDiLayar, lumenSpesifikasi, lumenUntukKontras, luminanceLayar, type Pemasangan, rentangJarakLempar, rentangTinggiLensa, tinggiLensaTetap } from '@/lib/av-layar-proyektor';
 import { ukuranDariDiagonal } from '@/lib/av-hitung';
 import { useState } from 'react';
 
@@ -24,8 +30,12 @@ const LUX = [
   { v: 50, l: 'Gelap (bioskop) ±50 lux' }, { v: 150, l: 'Redup ±150 lux' },
   { v: 300, l: 'Ruang rapat ±300 lux' }, { v: 500, l: 'Kelas / kantor terang ±500 lux' }, { v: 750, l: 'Sangat terang ±750 lux' },
 ];
-/** Rasio gambar proyektor: rasio layar + 17:9 (Native 4K DCI 4096 x 2160), sama dengan Desain 3D. */
-const RASIO_PROYEKTOR = [...RASIO.slice(0, 2), { v: '17:9', l: '17:9 (Native 4K)', w: 17, h: 9 }, ...RASIO.slice(2)];
+/**
+ * Rasio gambar proyektor = tabel Desain 3D: 17:9 (Native 4K DCI) dan 21:9 = 64:27 (2560 x 1080) seperti kalkulator
+ * Panasonic - dulu 21/9 = 2,333, lebar gambar 21:9 meleset ±0,8%.
+ */
+const RASIO_PROYEKTOR = (Object.keys(RASIO_GAMBAR) as RasioProyektor[]).map(k => ({ v: k, l: RASIO_GAMBAR[k].label, w: RASIO_GAMBAR[k].lebar, h: RASIO_GAMBAR[k].tinggi }));
+const r6 = (v: number) => Math.round(v * 1e6) / 1e6;
 /** Resolusi Pustaka -> rasio panel (sama dengan desain3d/inti/pustaka.ts). */
 const RASIO_DARI_RESOLUSI: Record<string, string> = { XGA: '4:3', FHD: '16:9', '4K': '16:9', WUXGA: '16:10', WXGA: '16:10', '4KDCI': '17:9' };
 const CATATAN = 'Kecerahan dari kategori kontras ANSI/INFOCOMM 3M-2011: kontras = (cahaya proyektor + cahaya ruang di layar) / cahaya ruang di layar - rumus kalkulator Panasonic. Gain layar tidak mengubah kontras (gambar & cahaya ruang sama-sama dipantulkan kain layar), hanya luminance (cd/m² = lux × gain / π). Lux = cahaya ruang yang JATUH DI LAYAR (ukur dengan lux meter menghadap ruangan), bukan di meja. Lumen spesifikasi sudah memperhitungkan susut cahaya sampai akhir umur sumber cahaya.';
@@ -61,18 +71,46 @@ export function KalkulatorProyektor() {
   const [resolusiModel, setResolusiModel] = useState<string | null>(null);
   /** Model dari Pustaka (opsional): lumennya dibandingkan dengan kebutuhan. */
   const [model, setModel] = useState<{ nama: string; lumen: number } | null>(null);
-  /** Dua hasil kalkulator pabrikan (lebar gambar, jarak) pada zoom yang sama -> TR & b (rumusLensaDariDuaTitik). */
-  const [titik, setTitik] = useState({ w1: 2.215, l1: 0, w2: 4.43, l2: 0 });
-  const rumus = rumusLensaDariDuaTitik(titik.w1, titik.l1, titik.w2, titik.l2);
-  const pakaiRumus = (ujung: 'min' | 'maks') => {
-    if (!rumus) return;
-    const tr = Math.round(rumus.tr * 1000) / 1000;
-    const b = Math.round(rumus.b * 1000) / 1000;
+  /**
+   * Rasio PANEL native bila beda dengan rasio sinyal (16:9 di panel WUXGA 16:10 = letterbox, lumen gambar 90%) - null =
+   * panel = rasio sinyal. Diisi dari katalog Panasonic, atau manual.
+   */
+  const [rasioPanel, setRasioPanel] = useState<RasioProyektor | null>(null);
+  /** Lensa dari katalog Panasonic: mengganti rasio sinyal memakai koefisien Panasonic rasio itu. null = isian manual / Pustaka. */
+  const [panasonic, setPanasonic] = useState<{ m: ModelTdc; l: LensaTdc; versi: string } | null>(null);
+  /** Rumus lensa dari dua hasil kalkulator pabrikan (RumusLensaPabrikan) - proyektor di luar katalog. */
+  const pakaiRumus = (ujung: 'min' | 'maks', tr: number, b: number) => {
+    setPanasonic(null);
     if (ujung === 'min') { setThrowMin(tr); setKoreksi(b); } else { setThrowMax(tr); setKoreksiTele(b); }
+  };
+  /** Angka lensa Panasonic pada satu rasio sinyal: TR & b wide / tele, lens shift (poligon) atau offset tetap. */
+  const terapkanLensa = (x: LensaPadaRasio) => {
+    setRasioK(x.rasio); setThrowMin(x.trW); setThrowMax(x.trT); setKoreksi(x.bW); setKoreksiTele(x.bT);
+    const persen = (v: number) => Math.round(v * 1e4) / 100;
+    if (x.shift) { setOffsetTetap(null); setShiftAtas(persen(x.shift.atas)); setShiftBawah(persen(x.shift.bawah)); setShiftH(persen(x.shift.h)); }
+    else setOffsetTetap(persen(x.offset));
+  };
+  const pakaiPanasonic = (m: ModelTdc, l: LensaTdc, rasio: RasioProyektor, versi: string) => {
+    setPanasonic({ m, l, versi }); setRasioPanel(m.a); terapkanLensa(lensaPadaRasio(m, l, rasio));
+    setKontrasAsli(m.c ?? 0); setResolusiModel(resolusiPanel(m) ?? null); setModel({ nama: `Panasonic ${m.n} + ${l.n}`, lumen: m.lm });
+  };
+  /**
+   * Ganti rasio sinyal. TR relatif LEBAR GAMBAR, jadi ikut berubah: lensa Panasonic memakai koefisien rasio itu (persis
+   * kalkulatornya); panel native diisi -> dari geometri potong panel (lebar panel tetap) - sama dengan Desain 3D.
+   */
+  const ubahRasio = (v: string) => {
+    const r = v as RasioProyektor;
+    if (panasonic?.l.ar[r]) { terapkanLensa(lensaPadaRasio(panasonic.m, panasonic.l, r)); return; }
+    if (rasioPanel) {
+      const k = bagianPanelRasio(rasioPanel, rasioK as RasioProyektor).lebar / bagianPanelRasio(rasioPanel, r).lebar;
+      if (Math.abs(k - 1) > 1e-9) { setThrowMin(r6(throwMin * k)); setThrowMax(r6(throwMax * k)); }
+    }
+    setPanasonic(null); setRasioK(v);
   };
   const pakaiModel = (e: EntriPustaka) => {
     const rp = RASIO_DARI_RESOLUSI[teksDari(e, 'resolusi') ?? ''];
     if (rp) setRasioK(rp);
+    setPanasonic(null); setRasioPanel(null);
     //  Data lensa diganti UTUH dari model: nilai model sebelumnya tidak boleh tertinggal.
     const ada = (k: string) => typeof e.data[k] === 'number';
     setThrowMin(angkaDari(e, 'throwMin', throwMin)); setThrowMax(angkaDari(e, 'throwMaks', throwMax)); setKoreksi(angkaDari(e, 'koreksiJarak', 0));
@@ -84,14 +122,20 @@ export function KalkulatorProyektor() {
     const s = teksDari(e, 'sumber'); if (s === 'laser' || s === 'lampu' || s === 'led') setSumber(s);
     setModel({ nama: e.nama, lumen: angkaDari(e, 'lumen') });
   };
-  const r = RASIO_PROYEKTOR.find(x => x.v === rasioK) ?? RASIO_PROYEKTOR[1];
+  const r = RASIO_PROYEKTOR.find(x => x.v === rasioK) ?? RASIO_PROYEKTOR.find(x => x.v === '16:10')!;
   const lebar = modeUkuran === 'diagonal' ? ukuranDariDiagonal(diagonal, r.w, r.h).lebarM : lebarIsi;
   const tinggi = (lebar * r.h) / r.w;
   const luas = lebar * tinggi;
   const diag = (Math.hypot(lebar, tinggi) * 1000) / 25.4;
   const kat = KONTRAS_ANSI.find(k => k.v === kontras)!;
   const sus = SUMBER.find(s => s.v === sumber)!;
-  const perlu = lumenUntukKontras(luas, lux, kat.rasio, kontrasAsli || undefined);
+  /** Bagian panel yang dipakai gambar (letterbox / pillarbox) - "Projector output" Panasonic = lumen x bagian ini. */
+  const bp = bagianPanelRasio(rasioPanel ?? (r.v as RasioProyektor), r.v as RasioProyektor);
+  const bagianLuas = bp.lebar * bp.tinggi;
+  const potong = bagianLuas < 0.9999;
+  //  Lumen yang harus JATUH DI GAMBAR; lumen proyektor (datasheet, panel penuh) = itu / bagian panel.
+  const perluGambar = lumenUntukKontras(luas, lux, kat.rasio, kontrasAsli || undefined);
+  const perlu = perluGambar / bagianLuas;
   const spek = lumenSpesifikasi(perlu, sus.susut);
   /** Kategori kontras melebihi kontras asli proyektor: lumen berapa pun tidak cukup. */
   const takTercapai = !Number.isFinite(perlu);
@@ -101,36 +145,41 @@ export function KalkulatorProyektor() {
   const lensa = offsetTetap !== null ? { terendahM: tetapM, tertinggiM: tetapM } : rentangTinggiLensa(bawah, tinggi, shiftAtas, shiftBawah, pasang);
   const teksPasang = pasang === 'plafon' ? 'gantung plafon' : 'di meja';
   const geserH = offsetTetap === null && shiftH > 0 ? (lebar * shiftH) / 100 : 0;
-  /** Model Pustaka: iluminansi, luminance & kontras gambarnya di ruang ini - keluaran kalkulator Panasonic. */
-  const luxModel = model && model.lumen > 0 ? model.lumen / luas : 0;
-  const kontrasModel = luxModel ? kontrasDiLayar(model!.lumen, luas, lux, kontrasAsli || undefined) : 0;
+  /**
+   * Model: Projector output (lumen di gambar = lumen x bagian panel), Screen illuminance (lux = output / luas), luminance &
+   * kontras di ruang ini - keluaran kalkulator Panasonic. Dulu dari lumen panel penuh: 16:9 di panel 16:10 lux +11%.
+   */
+  const outputModel = model && model.lumen > 0 ? model.lumen * bagianLuas : 0;
+  const luxModel = outputModel ? outputModel / luas : 0;
+  const kontrasModel = luxModel ? kontrasDiLayar(outputModel, luas, lux, kontrasAsli || undefined) : 0;
+  const teksPanel = potong ? `${bp.lebar > 0.9999 ? 'letterbox' : 'pillarbox'} ${f(bagianLuas * 100, 1)}% panel ${rasioPanel}` : '';
   const teksB = koreksi || koreksiTele
     ? `L = TR × lebar − b (b ${f(koreksi, 3)}${koreksiTele !== null && koreksiTele !== koreksi ? ` wide / ${f(koreksiTele, 3)} tele` : ''})`
     : 'TANPA koreksi b lensa - cek datasheet';
   const teksShift = offsetTetap !== null ? `tanpa lens shift, offset tetap ${f(offsetTetap, 1)}%` : `shift +${shiftAtas}% / −${shiftBawah}%`;
   const nadaLumen = spek > 20000 ? 'buruk' : spek > 10000 ? 'awas' : 'baik';
   const ringkas = () => [
-    `*Proyektor - gambar per proyektor ${f(lebar)} × ${f(tinggi)} m (${rasioK}, ±${f(diag, 0)}")*`,
-    `Jarak lensa ke layar ${f(lempar.dekatM, 3)}-${f(lempar.jauhM, 3)} m (throw ${throwMin}-${throwMax}, ${teksB})`,
+    `*Proyektor - gambar per proyektor ${fTetap(lebar)} × ${fTetap(tinggi)} m (${rasioK}${teksPanel ? `, ${teksPanel}` : ''}, ${fTetap(diag, 2)}")*`,
+    `Jarak lensa ke layar ${fTetap(lempar.dekatM)}-${fTetap(lempar.jauhM)} m (throw ${throwMin}-${throwMax}, ${teksB})`,
     `Tinggi pusat lensa tanpa keystone (${teksPasang}): ${offsetTetap !== null ? f(lensa.terendahM) : `${f(lensa.terendahM)}-${f(lensa.tertinggiM)}`} m (${teksShift})`,
     ...(geserH ? [`Lensa boleh bergeser kiri-kanan ±${f(geserH)} m dari tengah gambar (shift ±${shiftH}%)`] : []),
     takTercapai ? `Kontras ${kat.rasio}:1 (${kat.l}) melebihi kontras asli proyektor ${f(kontrasAsli, 0)}:1 - tidak tercapai`
       : `Kontras ${kat.rasio}:1 (${kat.l}) di ${lux} lux: perlu ±${f(perlu, 0)} lm, spesifikasi ${sus.v} ±${f(spek, 0)} lm`,
     ...(model ? [`Model ${model.nama}: ${f(model.lumen, 0)} lm - ${model.lumen >= spek ? 'cukup' : model.lumen >= perlu ? 'cukup saat baru' : 'kurang'}`] : []),
-    ...(luxModel ? [`Di layar: ${f(luxModel, 0)} lux, ${f(luminanceLayar(luxModel, gain), 0)} cd/m² (gain ${f(gain)}), kontras ${f(kontrasModel, 1)} : 1 di ${lux} lux`] : []),
+    ...(luxModel ? [`Projector output ${f(outputModel, 0)} lm, screen illuminance ${f(luxModel, 0)} lux, ${f(luminanceLayar(luxModel, gain), 0)} cd/m² (gain ${f(gain)}), kontras ${f(kontrasModel, 1)} : 1 di ${lux} lux`] : []),
   ].join('\n');
   const lembar = () => lembarAV('Proyektor',
     [['Lebar gambar / proyektor', `${f(lebar)} m (${rasioK})`], ['Throw ratio', `${throwMin} – ${throwMax} (${teksB})`], ['Tepi bawah gambar', `${f(bawah)} m`], ['Pemasangan', teksPasang], ['Lens shift', teksShift],
       ['Cahaya di layar', `±${lux} lux`], ['Gain layar', f(gain)], ['Kategori kontras', `${kat.l} (${kat.rasio}:1)`], ['Sumber cahaya', sus.l]],
-    [['Gambar per proyektor', `${f(lebar)} × ${f(tinggi)} m (±${f(diag, 0)}")`], ['Jarak lempar', `${f(lempar.dekatM, 3)} – ${f(lempar.jauhM, 3)} m`, true],
+    [['Gambar per proyektor', `${fTetap(lebar)} × ${fTetap(tinggi)} m (${fTetap(diag, 2)}")`], ['Jarak lempar', `${fTetap(lempar.dekatM)} – ${fTetap(lempar.jauhM)} m`, true],
       ['Tinggi pusat lensa', offsetTetap !== null ? `${f(lensa.terendahM)} m (tetap)` : `${f(lensa.terendahM)} – ${f(lensa.tertinggiM)} m`, true],
       ...(geserH ? [['Geser lensa kiri-kanan', `±${f(geserH)} m dari tengah gambar`] as [string, string]] : []),
-      ...(luxModel ? [['Model di layar', `${f(luxModel, 0)} lux · ${f(luminanceLayar(luxModel, gain), 0)} cd/m² · kontras ${f(kontrasModel, 1)} : 1`] as [string, string]] : []),
+      ...(luxModel ? [['Model di layar', `${f(outputModel, 0)} lm · ${f(luxModel, 0)} lux · ${f(luminanceLayar(luxModel, gain), 0)} cd/m² · kontras ${f(kontrasModel, 1)} : 1`] as [string, string]] : []),
       ['Lumen perlu', takTercapai ? 'tidak tercapai (melebihi kontras asli)' : `±${f(perlu, 0)} lm`], ['Lumen spesifikasi', takTercapai ? '—' : `±${f(spek, 0)} lm`, true]],
     CATATAN);
   //  Pustaka kosong / gagal dimuat: sel pilihan model tidak dipesan (tidak meninggalkan lubang di baris pertama).
   const adaPustaka = usePustaka('proyektor').entri.length > 0;
-  const teksModel = model ? `${model.nama}${model.lumen ? ` · ${f(model.lumen, 0)} lm` : ''}${resolusiModel ? ` · ${resolusiModel}` : ''}` : '';
+  const teksModel = model ? `${model.nama}${model.lumen ? ` · ${f(model.lumen, 0)} lm` : ''}${resolusiModel ? ` · ${resolusiModel}` : ''}${panasonic ? ` · Panasonic TDC ${panasonic.versi}` : ''}` : '';
   return (
     <div className="space-y-4">
       {/*  Urutan: (1) proyektor & lensa - dipakai keduanya, lebar penuh & berjajar supaya tidak memanjang ke bawah;
@@ -138,6 +187,7 @@ export function KalkulatorProyektor() {
           Dulu semua isian (±15) menumpuk di satu kolom sempit di samping hasil yang pendek, blending di paling bawah. */}
       <Kartu judul="Proyektor & lensa">
         <div className="space-y-3">
+          <PilihPanasonic rasio={rasioK as RasioProyektor} sumber={panasonic ? `${panasonic.m.n} + ${panasonic.l.n}` : undefined} onPakai={pakaiPanasonic} />
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 xl:grid-cols-6 items-end">
             {adaPustaka && (
               <div className="col-span-2">
@@ -145,12 +195,14 @@ export function KalkulatorProyektor() {
                 {teksModel && <p className="mt-1 truncate text-[11.5px] font-semibold text-slate-600" title={teksModel}>Dipakai: {teksModel}</p>}
               </div>
             )}
-            <Pilih label="Rasio proyektor" nilai={rasioK} onUbah={setRasioK} opsi={RASIO_PROYEKTOR.map(x => ({ v: x.v, l: x.l }))} />
-            <Angka label="Throw ratio min" nilai={throwMin} onUbah={v => v > 0 && setThrowMin(v)} />
-            <Angka label="Throw ratio maks" nilai={throwMax} onUbah={v => v > 0 && setThrowMax(v)} />
+            <Pilih label="Rasio sinyal (aspect ratio)" nilai={rasioK} onUbah={ubahRasio} opsi={RASIO_PROYEKTOR.map(x => ({ v: x.v, l: x.l }))} />
+            <Pilih label="Panel native" nilai={rasioPanel ?? ''} onUbah={(v: string) => setRasioPanel(v ? v as RasioProyektor : null)}
+              opsi={[{ v: '', l: 'Sama dengan sinyal' }, ...RASIO_PROYEKTOR.map(x => ({ v: x.v, l: x.v }))]} />
+            <Angka label="Throw ratio min" nilai={throwMin} step={0.01} onUbah={v => { if (v > 0) { setThrowMin(r6(v)); setPanasonic(null); } }} />
+            <Angka label="Throw ratio maks" nilai={throwMax} step={0.01} onUbah={v => { if (v > 0) { setThrowMax(r6(v)); setPanasonic(null); } }} />
             <Angka label="Kontras asli" nilai={kontrasAsli} onUbah={v => v >= 0 && setKontrasAsli(v)} satuan=":1" bantuan="Full on / full off dari datasheet; 0 = abaikan" />
-            <Angka label="Koreksi b wide" nilai={koreksi} min={-1} step={0.001} onUbah={v => v >= -1 && v <= 1 && setKoreksi(v)} satuan="m" bantuan="L = TR terlebar × lebar − b" />
-            <Angka label="Koreksi b tele" nilai={koreksiTele ?? koreksi} min={-1} step={0.001} onUbah={v => v >= -1 && v <= 1 && setKoreksiTele(v)} satuan="m" bantuan="L = TR terpanjang × lebar − b (kalkulator Panasonic menyimpan b wide & tele terpisah)" />
+            <Angka label="Koreksi b wide" nilai={koreksi} min={-BATAS_B} step={0.001} onUbah={v => { if (v >= -BATAS_B && v <= BATAS_B) { setKoreksi(r6(v)); setPanasonic(null); } }} satuan="m" bantuan="L = TR terlebar × lebar − b" />
+            <Angka label="Koreksi b tele" nilai={koreksiTele ?? koreksi} min={-BATAS_B} step={0.001} onUbah={v => { if (v >= -BATAS_B && v <= BATAS_B) { setKoreksiTele(r6(v)); setPanasonic(null); } }} satuan="m" bantuan="L = TR terpanjang × lebar − b (kalkulator Panasonic menyimpan b wide & tele terpisah)" />
             <div className="col-span-2">
               <Segmen label="Pemasangan" nilai={pasang} onUbah={setPasang} opsi={[{ v: 'plafon', l: 'Gantung plafon' }, { v: 'meja', l: 'Meja / lantai' }]} />
             </div>
@@ -166,31 +218,18 @@ export function KalkulatorProyektor() {
               </p>
             )}
           </div>
+          {potong && (
+            <p className="text-[12px] leading-snug text-slate-700">
+              Sinyal {rasioK} di panel {rasioPanel}: {teksPanel} - lumen yang jatuh di gambar {f(bagianLuas * 100, 1)}% lumen proyektor (Projector output kalkulator Panasonic).
+            </p>
+          )}
           {!koreksi && !koreksiTele && (
             <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] leading-relaxed text-amber-800">
               Koreksi jarak b lensa belum diisi - jarak dihitung L = TR × lebar dan bisa selisih beberapa cm hingga puluhan cm dari
               kalkulator pabrikan. Pilih model dari Pustaka, isi b dari rumus lensa di datasheet, atau hitung dari dua hasil kalkulator Panasonic di bawah.
             </p>
           )}
-          <details className="rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2">
-            <summary className="cursor-pointer text-[12.5px] font-semibold text-slate-700">Ambil rumus lensa dari kalkulator pabrikan</summary>
-            <div className="mt-2 space-y-2">
-              <p className="text-[11.5px] text-slate-600">Isi dua ukuran gambar &amp; jarak hasil kalkulator (zoom sama: dua-duanya Min, atau dua-duanya Max).</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                <Angka label="Lebar 1" nilai={titik.w1} onUbah={v => setTitik(t => ({ ...t, w1: v }))} satuan="m" />
-                <Angka label="Jarak 1" nilai={titik.l1} onUbah={v => setTitik(t => ({ ...t, l1: v }))} satuan="m" />
-                <Angka label="Lebar 2" nilai={titik.w2} onUbah={v => setTitik(t => ({ ...t, w2: v }))} satuan="m" />
-                <Angka label="Jarak 2" nilai={titik.l2} onUbah={v => setTitik(t => ({ ...t, l2: v }))} satuan="m" />
-              </div>
-              {rumus ? (
-                <div className="flex flex-wrap items-center gap-2 text-[12px] text-slate-700">
-                  <span className="font-semibold tabular-nums">L = {f(rumus.tr, 3)} × lebar − {f(rumus.b, 3)}</span>
-                  <button type="button" onClick={() => pakaiRumus('min')} className="rounded-lg border border-slate-300 bg-white px-2 py-1 font-semibold hover:bg-slate-100">Pakai sebagai throw min</button>
-                  <button type="button" onClick={() => pakaiRumus('maks')} className="rounded-lg border border-slate-300 bg-white px-2 py-1 font-semibold hover:bg-slate-100">Pakai sebagai throw maks</button>
-                </div>
-              ) : <p className="text-[11.5px] text-slate-500">Isi kedua jarak (lebar harus berbeda).</p>}
-            </div>
-          </details>
+          <RumusLensaPabrikan onPakai={pakaiRumus} />
         </div>
       </Kartu>
 
@@ -217,15 +256,15 @@ export function KalkulatorProyektor() {
         </Kartu>
         <Kartu judul="Hasil satu proyektor" aksi={<TombolSalin teks={ringkas} {...aksiLembar(lembar, 'Proyektor')} />}>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-            <Nilai label="Gambar 1 proyektor" nilai={`${f(lebar)} × ${f(tinggi)}`} satuan="m" ket={`${f(diag, 0)} inci · ${f(luas)} m²`} />
-            <Nilai label="Jarak lempar" nilai={`${f(lempar.dekatM, 3)}-${f(lempar.jauhM, 3)}`} satuan="m" nada={koreksi || koreksiTele ? undefined : 'awas'} ket={koreksi || koreksiTele ? 'ujung lensa ke layar' : 'tanpa koreksi b lensa'} />
+            <Nilai label="Gambar 1 proyektor" nilai={`${fTetap(lebar)} × ${fTetap(tinggi)}`} satuan="m" ket={`${fTetap(diag, 2)} inci · ${f(luas)} m²`} />
+            <Nilai label="Jarak lempar" nilai={`${fTetap(lempar.dekatM)}-${fTetap(lempar.jauhM)}`} satuan="m" nada={koreksi || koreksiTele ? undefined : 'awas'} ket={koreksi || koreksiTele ? 'ujung lensa ke layar' : 'tanpa koreksi b lensa'} />
             <Nilai label="Tinggi pusat lensa" nilai={offsetTetap !== null ? f(lensa.terendahM) : `${f(lensa.terendahM)}-${f(lensa.tertinggiM)}`} satuan="m"
               ket={`${teksPasang} · ${offsetTetap !== null ? 'tetap (tanpa lens shift)' : 'tanpa keystone'}`} />
             {geserH > 0 && (
               <Nilai label="Geser lensa kiri-kanan" nilai={`±${f(geserH)}`} satuan="m" ket={`shift ±${shiftH}% · penuh hanya saat shift vertikal kecil`} />
             )}
             <Nilai label="Lumen perlu" nilai={takTercapai ? 'Tidak tercapai' : f(perlu, 0)} satuan={takTercapai ? undefined : 'lm'} nada={takTercapai ? 'buruk' : undefined}
-              ket={takTercapai ? `kontras asli proyektor ${f(kontrasAsli, 0)}:1` : `kontras ${kat.rasio}:1 di ${lux} lux`} />
+              ket={takTercapai ? `kontras asli proyektor ${f(kontrasAsli, 0)}:1` : `kontras ${kat.rasio}:1 di ${lux} lux${potong ? ` · ${f(perluGambar, 0)} lm di gambar` : ''}`} />
             <Nilai label="Lumen spesifikasi" nilai={takTercapai ? '—' : f(spek, 0)} satuan={takTercapai ? undefined : 'lm'} nada={takTercapai ? 'buruk' : nadaLumen}
               ket={takTercapai ? 'pilih kategori kontras lebih rendah' : spek > 20000 ? 'redupkan ruang / blending 2 proyektor' : spek > 10000 ? 'kelas venue / laser' : `+${sus.susut}% susut ${sus.v}`} />
             {model && (
@@ -234,7 +273,7 @@ export function KalkulatorProyektor() {
             )}
             {luxModel > 0 && (
               <Nilai label="Model di layar" nilai={`${f(kontrasModel, 1)} : 1`} nada={kontrasModel >= kat.rasio ? 'baik' : 'buruk'}
-                ket={`${f(luxModel, 0)} lux · ${f(luminanceLayar(luxModel, gain), 0)} cd/m²`} />
+                ket={`output ${f(outputModel, 0)} lm · ${f(luxModel, 0)} lux · ${f(luminanceLayar(luxModel, gain), 0)} cd/m²`} />
             )}
           </div>
           <Catatan>{CATATAN}</Catatan>

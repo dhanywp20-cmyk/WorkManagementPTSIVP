@@ -160,7 +160,7 @@ console.log('\n9. Rasio aspek proyektor (16:9 / 16:10 / 4:3 / 21:9)');
 {
   const r: Ruang = { p: 8, l: 8, t: 3.2, lantai: 'kayu', r2: null };
   const k = daftarRuang(r)[0];
-  for (const [res, rasio] of [['16:9', 9 / 16], ['16:10', 10 / 16], ['4:3', 3 / 4], ['21:9', 9 / 21]] as const) {
+  for (const [res, rasio] of [['16:9', 9 / 16], ['16:10', 10 / 16], ['4:3', 3 / 4], ['21:9', 27 / 64]] as const) {
     const l = bendaBaru('layar', k, { diag: 100, rasio: '16:10' } as Partial<Benda>);
     const p = proyektorKeLayar({ ...bendaBaru('proyektor', k, { pasangProyektor: 'plafon' }), rasioProyektor: res }, l, k, r);
     const sn = sinarProyektor(p, [l, p], r);
