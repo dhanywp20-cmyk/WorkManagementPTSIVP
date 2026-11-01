@@ -8,8 +8,10 @@ import { SimpanKeProyek } from './SimpanKeProyek';
 
 export const kelasInput = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-base sm:text-sm text-slate-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400';
 
-export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', bantuan }: {
+export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', bantuan, placeholder, onKosong }: {
   label: string; nilai: number; onUbah: (v: number) => void; satuan?: string; min?: number; step?: number | 'any'; bantuan?: string;
+  /** Teks saat nilai NaN (isian kosong). */ placeholder?: string;
+  /** Isian dikosongkan (mis. batas lensa = tidak dibatasi). Tanpa prop = kosong diabaikan. */ onKosong?: () => void;
 }) {
   //  Teks sementara supaya isian kosong / "1." tidak langsung jadi 0 saat diketik.
   const [teks, setTeks] = useState<string | null>(null);
@@ -27,9 +29,13 @@ export function Angka({ label, nilai, onUbah, satuan, min = 0, step = 'any', ban
         {label}{bantuan && <span className="ml-1 normal-case font-semibold text-slate-400 cursor-help" aria-hidden="true">ⓘ</span>}
       </span>
       <span className="relative block">
-        <input type="number" inputMode="decimal" min={min} step={step} title={bantuan}
+        <input type="number" inputMode="decimal" min={min} step={step} title={bantuan} placeholder={placeholder}
           value={teks ?? (Number.isFinite(nilai) ? String(nilai) : '')}
-          onChange={e => { setTeks(e.target.value); const v = parseFloat(e.target.value.replace(',', '.')); if (Number.isFinite(v)) { terkirim.current = v; onUbah(v); } }}
+          onChange={e => {
+            setTeks(e.target.value);
+            const v = parseFloat(e.target.value.replace(',', '.'));
+            if (Number.isFinite(v)) { terkirim.current = v; onUbah(v); } else if (!e.target.value.trim()) onKosong?.();
+          }}
           onBlur={() => setTeks(null)}
           className={`${kelasInput} ${satuan ? (satuan.length <= 2 ? 'pr-7' : 'pr-12') : ''}`} />
         {satuan && <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-500 pointer-events-none">{satuan}</span>}
