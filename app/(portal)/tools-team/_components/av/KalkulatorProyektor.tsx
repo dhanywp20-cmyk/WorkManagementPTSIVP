@@ -4,15 +4,17 @@
  * kategori kontras ANSI/INFOCOMM 3M-2011 + susut cahaya, dan edge blending (PanelBlending).
  * Rumus: lib/av-layar-proyektor.ts. Model & lensa Panasonic: katalog resmi Throw Distance Calculator - angka lensa per
  * rasio sinyal, panel native (letterbox), lumen & lens shift dari fungsi yang sama dengan Desain 3D (lensaPadaRasio).
+ * Merek lain (Epson, Vivitek): katalog terpisah (PilihMerekLain), angka lensanya diterapkan dengan cara yang sama.
  */
 import { Angka, Catatan, f, fTetap, Kartu, Nilai, Pilih, Segmen, TombolSalin } from '../bersama/ui';
 import {
-  BATAS_B, bagianPanelRasio, type LensaPadaRasio, type LensaTdc, lensaPadaRasio, type ModelTdc, RASIO_PROYEKTOR as RASIO_GAMBAR, type RasioProyektor,
-  resolusiPanel,
+  BATAS_B, bagianPanelRasio, type KatalogLain, type LensaLain, type LensaPadaRasio, type LensaTdc, lensaPadaRasio, lensaPadaRasioLain, type ModelLain, type ModelTdc,
+  RASIO_PROYEKTOR as RASIO_GAMBAR, type RasioProyektor, resolusiPanel, SUMBER_LAIN,
 } from '../desain3d/inti';
 import { aksiLembar, lembarAV } from './lembar';
 import { PanelBlending } from './proyektor/PanelBlending';
 import { PilihPanasonic } from '../pustaka/PilihPanasonic';
+import { PilihMerekLain } from '../pustaka/PilihMerekLain';
 import { PilihPustaka } from '../pustaka/PilihPustaka';
 import { RumusLensaPabrikan } from '../pustaka/RumusLensaPabrikan';
 import { usePustaka } from '../pustaka/usePustaka';
@@ -78,9 +80,11 @@ export function KalkulatorProyektor() {
   const [rasioPanel, setRasioPanel] = useState<RasioProyektor | null>(null);
   /** Lensa dari katalog Panasonic: mengganti rasio sinyal memakai koefisien Panasonic rasio itu. null = isian manual / Pustaka. */
   const [panasonic, setPanasonic] = useState<{ m: ModelTdc; l: LensaTdc; versi: string } | null>(null);
+  /** Lensa dari katalog merek lain (Epson, Vivitek) - sama perannya dengan `panasonic`, katalog terpisah. */
+  const [lain, setLain] = useState<{ k: KatalogLain; m: ModelLain; l: LensaLain } | null>(null);
   /** Rumus lensa dari dua hasil kalkulator pabrikan (RumusLensaPabrikan) - proyektor di luar katalog. */
   const pakaiRumus = (ujung: 'min' | 'maks', tr: number, b: number) => {
-    setPanasonic(null);
+    setPanasonic(null); setLain(null);
     if (ujung === 'min') { setThrowMin(tr); setKoreksi(b); } else { setThrowMax(tr); setKoreksiTele(b); }
   };
   /** Angka lensa Panasonic pada satu rasio sinyal: TR & b wide / tele, lens shift (poligon) atau offset tetap. */
@@ -93,6 +97,12 @@ export function KalkulatorProyektor() {
   const pakaiPanasonic = (m: ModelTdc, l: LensaTdc, rasio: RasioProyektor, versi: string) => {
     setPanasonic({ m, l, versi }); setRasioPanel(m.a); terapkanLensa(lensaPadaRasio(m, l, rasio));
     setKontrasAsli(m.c ?? 0); setResolusiModel(resolusiPanel(m) ?? null); setModel({ nama: `Panasonic ${m.n} + ${l.n}`, lumen: m.lm });
+    setLain(null);
+  };
+  /** Model + lensa merek lain: lumen per lensa bila katalog menyebutnya (Epson: lensa UST / long lebih redup). */
+  const pakaiLain = (k: KatalogLain, m: ModelLain, l: LensaLain, rasio: RasioProyektor) => {
+    setPanasonic(null); setLain({ k, m, l }); setRasioPanel(m.a); terapkanLensa(lensaPadaRasioLain(m, l, rasio));
+    setKontrasAsli(m.c ?? 0); setResolusiModel(resolusiPanel(m) ?? null); setModel({ nama: `${k.merek} ${m.n} + ${l.n}`, lumen: l.lm || m.lm });
   };
   /**
    * Ganti rasio sinyal. TR relatif LEBAR GAMBAR, jadi ikut berubah: lensa Panasonic memakai koefisien rasio itu (persis
@@ -101,16 +111,17 @@ export function KalkulatorProyektor() {
   const ubahRasio = (v: string) => {
     const r = v as RasioProyektor;
     if (panasonic?.l.ar[r]) { terapkanLensa(lensaPadaRasio(panasonic.m, panasonic.l, r)); return; }
+    if (lain?.l.ar[r]) { terapkanLensa(lensaPadaRasioLain(lain.m, lain.l, r)); return; }
     if (rasioPanel) {
       const k = bagianPanelRasio(rasioPanel, rasioK as RasioProyektor).lebar / bagianPanelRasio(rasioPanel, r).lebar;
       if (Math.abs(k - 1) > 1e-9) { setThrowMin(r6(throwMin * k)); setThrowMax(r6(throwMax * k)); }
     }
-    setPanasonic(null); setRasioK(v);
+    setPanasonic(null); setLain(null); setRasioK(v);
   };
   const pakaiModel = (e: EntriPustaka) => {
     const rp = RASIO_DARI_RESOLUSI[teksDari(e, 'resolusi') ?? ''];
     if (rp) setRasioK(rp);
-    setPanasonic(null); setRasioPanel(null);
+    setPanasonic(null); setLain(null); setRasioPanel(null);
     //  Data lensa diganti UTUH dari model: nilai model sebelumnya tidak boleh tertinggal.
     const ada = (k: string) => typeof e.data[k] === 'number';
     setThrowMin(angkaDari(e, 'throwMin', throwMin)); setThrowMax(angkaDari(e, 'throwMaks', throwMax)); setKoreksi(angkaDari(e, 'koreksiJarak', 0));
@@ -179,7 +190,7 @@ export function KalkulatorProyektor() {
     CATATAN);
   //  Pustaka kosong / gagal dimuat: sel pilihan model tidak dipesan (tidak meninggalkan lubang di baris pertama).
   const adaPustaka = usePustaka('proyektor').entri.length > 0;
-  const teksModel = model ? `${model.nama}${model.lumen ? ` · ${f(model.lumen, 0)} lm` : ''}${resolusiModel ? ` · ${resolusiModel}` : ''}${panasonic ? ` · Panasonic TDC ${panasonic.versi}` : ''}` : '';
+  const teksModel = model ? `${model.nama}${model.lumen ? ` · ${f(model.lumen, 0)} lm` : ''}${resolusiModel ? ` · ${resolusiModel}` : ''}${panasonic ? ` · Panasonic TDC ${panasonic.versi}` : ''}${lain ? ` · ${SUMBER_LAIN[lain.k.merek].singkat} ${lain.k.versi}` : ''}` : '';
   return (
     <div className="space-y-4">
       {/*  Urutan: (1) proyektor & lensa - dipakai keduanya, lebar penuh & berjajar supaya tidak memanjang ke bawah;
@@ -188,6 +199,7 @@ export function KalkulatorProyektor() {
       <Kartu judul="Proyektor & lensa">
         <div className="space-y-3">
           <PilihPanasonic rasio={rasioK as RasioProyektor} sumber={panasonic ? `${panasonic.m.n} + ${panasonic.l.n}` : undefined} onPakai={pakaiPanasonic} />
+          <PilihMerekLain rasio={rasioK as RasioProyektor} sumber={lain ? `${lain.k.merek} ${lain.m.n} + ${lain.l.n}` : undefined} onPakai={pakaiLain} />
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 xl:grid-cols-6 items-end">
             {adaPustaka && (
               <div className="col-span-2">

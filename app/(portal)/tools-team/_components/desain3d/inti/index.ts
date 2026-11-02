@@ -34,6 +34,7 @@ export * from './lensaPanasonic';
 export * from './jarakProyeksi';
 export * from './hasilPanasonic';
 export * from './katalogPanasonic';
+export * from './katalogLain';
 export * from './kabel';
 export * from './rak';
 export * from './template';
