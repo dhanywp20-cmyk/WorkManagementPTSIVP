@@ -2,8 +2,9 @@
 /** Atur proyektor: pemasangan, throw ratio & zoom lensa, tilt, lens shift, lumen, warna sinar. */
 import { useState } from 'react';
 import { Angka, f, Pilih, Segmen, Catatan } from '../../../bersama/ui';
-import { BATAS_B, BATAS_TR, batasShift, bendaBaru, gantiRasioProyektor, isiDariKatalog, geserLensaDari, keteranganPanel, koreksiJarakDari, lumenDari, lumenGambarDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, shiftOtomatis, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
+import { BATAS_B, BATAS_TR, batasShift, bendaBaru, gantiRasioProyektor, isiDariKatalog, isiDariKatalogLain, geserLensaDari, keteranganPanel, koreksiJarakDari, lumenDari, lumenGambarDari, offsetLensaDari, type KontenLayar, type PasangProyektor, RASIO_PROYEKTOR, RESOLUSI_PROYEKTOR, type RasioProyektor, type ResolusiProyektor, shiftOtomatis, throwRatioDari, warnaSah, warnaSinarProyektor, zoomLensa } from '../../inti';
 import { PilihPanasonic } from '../../../pustaka/PilihPanasonic';
+import { PilihMerekLain } from '../../../pustaka/PilihMerekLain';
 import { RumusLensaPabrikan } from '../../../pustaka/RumusLensaPabrikan';
 import type { KonteksAtur } from './konteks';
 
@@ -54,6 +55,7 @@ export function AturProyektor({ c }: { c: KonteksAtur }) {
             return (
               <div className="rounded-xl border border-slate-200 p-2.5 space-y-2 bg-slate-50/60">
                 <PilihPanasonic rasio={b.rasioProyektor} sumber={b.sumberLensa} onPakai={(m, l, r, v) => set(isiDariKatalog(b, m, l, r, v))} />
+                <PilihMerekLain rasio={b.rasioProyektor} sumber={b.sumberLensa} onPakai={(k, m, l, r) => set(isiDariKatalogLain(b, k, m, l, r))} />
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-600">Zoom lensa{b.sumberLensa ? ` · ${b.sumberLensa}` : ''}</p>
                 <div className="grid grid-cols-3 gap-2">
                   <Angka label="TR terlebar" nilai={zMin} step={0.01} onUbah={v => v >= 0.1 && v <= BATAS_TR && set({ ...manual, trMin: r6(v), trMax: Math.max(v, b.trMax ?? zMax), throwRatio: Math.max(v, tr) })} />

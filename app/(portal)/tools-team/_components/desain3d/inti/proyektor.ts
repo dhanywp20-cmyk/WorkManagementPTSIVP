@@ -215,6 +215,40 @@ export function batasPoligonShift(pg: number[], bp?: { lebar: number; tinggi: nu
   return { atas: shiftTerjauh(pg, 0, 1, bp), bawah: shiftTerjauh(pg, 0, -1, bp), h: Math.min(shiftTerjauh(pg, 1, 0, bp), shiftTerjauh(pg, -1, 0, bp)) };
 }
 /**
+ * batasPoligonShift untuk daerah yang TIDAK memuat posisi tengah (shift satu arah: Epson UST V 0..+67%, Vivitek DU3661Z
+ * offset 117% + shift 0..11,7% -> V 58,5..70,2%): batas = shift vertikal tertinggi (`atas`) & terendah (`bawah` = -V
+ * terendah, NEGATIF bila gambar harus selalu di atas sumbu lensa), kiri-kanan dari titik sah terdekat ke tengah.
+ * Daerah yang memuat tengah = batasPoligonShift persis.
+ */
+export function batasPoligonShiftLuas(pg: number[], bp?: { lebar: number; tinggi: number }) {
+  if (shiftMuat(pg, 0, 0, bp)) return batasPoligonShift(pg, bp);
+  //  Titik sah terdekat ke tengah: kolom h = 0 dulu, lalu melebar ke kiri-kanan.
+  let awal: [number, number] | null = null;
+  for (let dh = 0; dh <= 1.5 && !awal; dh += 0.01) {
+    for (const h of dh ? [dh, -dh] : [0]) {
+      for (let dv = 0; dv <= 2 && !awal; dv += 0.005) for (const v of dv ? [dv, -dv] : [0]) if (!awal && shiftMuat(pg, h, v, bp)) awal = [h, v];
+      if (awal) break;
+    }
+  }
+  if (!awal) return { atas: 0, bawah: 0, h: 0 };
+  const [h0, v0] = awal;
+  /** Bagi dua dari titik awal ke arah (dx, dy) sejauh-jauhnya. */
+  const ujung = (dx: number, dy: number) => {
+    let lo = 0, hi = 3;
+    for (let i = 0; i < 30; i++) { const m = (lo + hi) / 2; if (shiftMuat(pg, h0 + dx * m, v0 + dy * m, bp)) lo = m; else hi = m; }
+    return lo;
+  };
+  const bulat = (x: number) => Math.round(x * 1000) / 1000;
+  const hKanan = h0 + ujung(1, 0), hKiri = h0 - ujung(-1, 0);
+  return { atas: bulat(v0 + ujung(0, 1)), bawah: bulat(-(v0 - ujung(0, -1))), h: hKiri <= 0 && hKanan >= 0 ? bulat(Math.min(hKanan, -hKiri)) : 0 };
+}
+/**
+ * Batas poligon yang dipakai proyektor ini: lensa katalog Panasonic tetap batasPoligonShift (tidak berubah); merek lain,
+ * Pustaka & isian sendiri memakai batasPoligonShiftLuas (daerah shift satu arah ikut terbaca).
+ */
+const batasPoligonUntuk = (p: Benda, pg: number[], bp: { lebar: number; tinggi: number }) =>
+  (/^Panasonic/.test(p.sumberLensa ?? '') ? batasPoligonShift(pg, bp) : batasPoligonShiftLuas(pg, bp));
+/**
  * Batas lens shift lensa (pecahan; null = tidak dibatasi) & apakah posisi sekarang masih di dalamnya. Dengan poligon
  * (poligonShift) batas per sumbu dihitung dari poligon dan kombinasi keduanya ikut diperiksa (`lewatGabungan`).
  */
@@ -225,7 +259,7 @@ export function batasShift(p: Benda) {
   const pg = p.poligonShift && p.poligonShift.length >= 6 ? p.poligonShift : null;
   if (pg) {
     const bp = bagianPanel(p);
-    const { atas, bawah, h } = batasPoligonShift(pg, bp);
+    const { atas, bawah, h } = batasPoligonUntuk(p, pg, bp);
     const lewatV = !shiftMuat(pg, 0, v, bp), lewatH = !shiftMuat(pg, g, 0, bp);
     return { atas, bawah, h, lewatV, lewatH, lewatGabungan: !lewatV && !lewatH && !shiftMuat(pg, g, v, bp), ada: true, tetap: false };
   }
@@ -400,7 +434,7 @@ export function shiftOtomatis(p: Benda, semua: Benda[], ruang: Ruang) {
   let g = Math.abs(searah) < 0.2 ? geserLensaDari(p) : Math.min(0.6, Math.max(-0.6, geserLensaDari(p) - s.selisihH / (s.lebar * searah)));
   const pg = p.poligonShift && p.poligonShift.length >= 6 ? p.poligonShift : null;
   if (pg) {
-    const bp = bagianPanel(p), bt = batasPoligonShift(pg, bp);
+    const bp = bagianPanel(p), bt = batasPoligonUntuk(p, pg, bp);
     v = Math.min(bt.atas, Math.max(-bt.bawah, v));
     if (!shiftMuat(pg, g, v, bp)) {
       let lo = 0, hi = 1;
