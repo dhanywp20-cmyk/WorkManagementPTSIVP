@@ -3,10 +3,14 @@
  * Projection Simulator resmi (https://www.vivitekcorp.com/simulator/), format sama dengan katalog Panasonic
  * (desain3d/inti/katalogPanasonic.ts).
  *
- * Jalankan: node scripts/impor-vivitek-tdc.mjs [url simulator] [versi = tanggal impor]
+ * Jalankan:
+ *   node scripts/impor-vivitek-tdc.mjs arsip/tdc/vivitek-2026-11-02     dari ARSIP lokal (tanpa internet)
+ *   node scripts/impor-vivitek-tdc.mjs [url simulator] [versi]           dari situs Vivitek; data mentahnya sekaligus
+ *                                                                        diarsipkan ke arsip/tdc/vivitek-<versi = tanggal>/
  *
  * Data simulator tertanam di bundel JS sebagai JSON.parse('...') per modul (dataSource/vvkProjectorModels.json,
- * vvkOptionalLens.json, vvkProjectorTypes.json) - hanya teks JSON-nya yang DIBACA, kode Vivitek tidak dijalankan.
+ * vvkOptionalLens.json, vvkProjectorTypes.json) - hanya teks JSON-nya yang DIBACA (dan diarsipkan sebagai berkas JSON
+ * dengan nama yang sama), kode Vivitek tidak dijalankan.
  *
  * Rumus simulator Vivitek: lebar gambar = jarak / throw ratio (rasio panel native, b = 0). Model ultra short throw
  * memakai tabel TR per diagonal (ustTR) - disederhanakan ke L = TR x lebar - b (regresi; selisih < 1 mm di tabelnya).
@@ -17,15 +21,24 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const [halaman = 'https://www.vivitekcorp.com/simulator/', versi] = process.argv.slice(2);
-const html = await (await fetch(halaman)).text();
-const app = html.match(/js\/app\.[0-9a-f]+\.js/)?.[0];
-if (!app) throw new Error('bundel app.*.js tidak ditemukan');
-const js = await (await fetch(new URL(app, halaman))).text();
+const akar = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const NAMA = ['vvkProjectorModels', 'vvkOptionalLens', 'vvkProjectorTypes'];
+const [sumberArg = 'https://www.vivitekcorp.com/simulator/', versiArg] = process.argv.slice(2);
+const lokal = fs.existsSync(sumberArg) && fs.statSync(sumberArg).isDirectory();
+const versi = versiArg ?? (lokal ? path.basename(sumberArg).replace(/^vivitek-/, '') : new Date().toISOString().slice(0, 10));
+const arsip = lokal ? sumberArg : path.join(akar, 'arsip', 'tdc', `vivitek-${versi}`);
 const BS = String.fromCharCode(92), SQ = "'";
+let js = '', app = '';
+if (!lokal) {
+  const html = await (await fetch(sumberArg)).text();
+  app = html.match(/js\/app\.[0-9a-f]+\.js/)?.[0] ?? '';
+  if (!app) throw new Error('bundel app.*.js tidak ditemukan');
+  js = await (await fetch(new URL(app, sumberArg))).text();
+}
 
-/** Isi JSON modul dataSource/<nama>.json: id modul dari peta webpack, lalu literal JSON.parse('...'). */
+/** Isi JSON modul dataSource/<nama>.json: arsip lokal, atau dari bundel (id modul dari peta webpack, lalu literal JSON.parse('...')). */
 function modul(nama) {
+  if (lokal) return JSON.parse(fs.readFileSync(path.join(arsip, `${nama}.json`), 'utf8'));
   const id = js.match(new RegExp(`"\\./dataSource/${nama}\\.json":"([0-9a-f]+)"`))?.[1];
   if (!id) throw new Error(`${nama}: id modul tidak ditemukan`);
   const kepala = `${id}:function(t){t.exports=JSON.parse('`;
@@ -36,11 +49,20 @@ function modul(nama) {
   for (; j < js.length && js[j] !== SQ; j++) {
     if (js[j] === BS) { const n = js[j + 1]; t += n === SQ ? SQ : js[j] + n; j++; } else t += js[j];
   }
+  fs.mkdirSync(arsip, { recursive: true });
+  fs.writeFileSync(path.join(arsip, `${nama}.json`), t);
   return JSON.parse(t);
 }
 const { projectorModels } = modul('vvkProjectorModels');
 const { optionalLens } = modul('vvkOptionalLens');
 const { projectorTypes } = modul('vvkProjectorTypes');
+if (!lokal) {
+  fs.writeFileSync(path.join(arsip, 'SUMBER.md'), [
+    `# Vivitek Projection Simulator ${versi}`, '',
+    `Diambil ${new Date().toISOString().slice(0, 10)} dari ${new URL(app, sumberArg)}: modul data ${NAMA.map(n => `dataSource/${n}.json`).join(', ')} (teks JSON persis dari bundel).`,
+    `Buat ulang katalog tanpa internet: \`node scripts/impor-vivitek-tdc.mjs ${path.relative(akar, arsip).split(path.sep).join('/')}\``, '',
+  ].join('\n'));
+}
 
 const RASIO = { '16:10': [16, 10], '16:9': [16, 9], '4:3': [4, 3] };
 const bulat = (v, d = 6) => Math.round(v * 10 ** d) / 10 ** d;
@@ -128,6 +150,6 @@ for (const p of projectorModels) {
   });
 }
 hasil.sort((x, y) => x.n.localeCompare(y.n));
-const keluar = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'lib', 'data', 'vivitek-tdc.json');
-fs.writeFileSync(keluar, JSON.stringify({ versi: versi ?? new Date().toISOString().slice(0, 10), sumber: 'Vivitek Projection Simulator', merek: 'Vivitek', kategori: KATEGORI, model: hasil }));
-console.log(`${hasil.length} model, ${hasil.reduce((a, h) => a + h.l.length, 0)} lensa -> ${keluar} (${(fs.statSync(keluar).size / 1024).toFixed(0)} KB)`);
+const keluar = path.join(akar, 'lib', 'data', 'vivitek-tdc.json');
+fs.writeFileSync(keluar, JSON.stringify({ versi, sumber: 'Vivitek Projection Simulator', merek: 'Vivitek', kategori: KATEGORI, model: hasil }));
+console.log(`${lokal ? `arsip ${arsip}` : `situs Vivitek -> arsip ${arsip}`}: ${hasil.length} model, ${hasil.reduce((a, h) => a + h.l.length, 0)} lensa -> ${keluar} (${(fs.statSync(keluar).size / 1024).toFixed(0)} KB)`);

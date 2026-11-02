@@ -3,10 +3,13 @@
  * Distance Simulator resmi (https://download.epson.com.sg/tdc/V272/), format sama dengan katalog Panasonic
  * (desain3d/inti/katalogPanasonic.ts) supaya dipilih dengan cara yang sama.
  *
- * Jalankan: node scripts/impor-epson-tdc.mjs [url dasar simulator] [versi]
+ * Jalankan:
+ *   node scripts/impor-epson-tdc.mjs arsip/tdc/epson-2.7.2        dari ARSIP lokal (tanpa internet - situs Epson tutup pun jalan)
+ *   node scripts/impor-epson-tdc.mjs [url dasar simulator] [versi]  dari situs Epson; data mentahnya sekaligus diarsipkan ke
+ *                                                                   arsip/tdc/epson-<versi>/ (bawaan: V272, versi 2.7.2)
  *
  * Data simulator hanya DIBACA sebagai JSON (projectorSpec, projectorLensSpec, optionLensList, optionLensSpec,
- * brightness), tidak ada kode Epson yang dijalankan.
+ * brightness), tidak ada kode Epson yang dijalankan. Arsip menyimpan berkas persis seperti dari Epson (termasuk BOM).
  *
  * Rumus jarak Epson per rasio sinyal, ujung wide & tele: L(cm) = a x diagonal(inci) + b (size2dist), jarak dari ujung
  * lensa ke layar - sama dengan titik ukur Desain 3D. Dikonversi seperti Panasonic:
@@ -19,13 +22,32 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const [dasar = 'https://download.epson.com.sg/tdc/V272/', versi = '2.7.2'] = process.argv.slice(2);
-const ambil = async (f) => {
-  const r = await fetch(new URL(`static/data/${f}.json`, dasar));
+const akar = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+const BERKAS = ['projectorSpec', 'projectorLensSpec', 'optionLensList', 'optionLensSpec', 'brightness'];
+const [sumberArg = 'https://download.epson.com.sg/tdc/V272/', versiArg] = process.argv.slice(2);
+const lokal = fs.existsSync(sumberArg) && fs.statSync(sumberArg).isDirectory();
+/** Versi: argumen, nama folder arsip (epson-2.7.2), atau bawaan. */
+const versi = versiArg ?? (lokal ? path.basename(sumberArg).replace(/^epson-/, '') : '2.7.2');
+const arsip = lokal ? sumberArg : path.join(akar, 'arsip', 'tdc', `epson-${versi}`);
+/** Teks JSON Epson (berkas aslinya ber-BOM). */
+const urai = (t) => JSON.parse(t.replace(/^﻿/, ''));
+async function ambil(f) {
+  if (lokal) return urai(fs.readFileSync(path.join(arsip, `${f}.json`), 'utf8'));
+  const r = await fetch(new URL(`static/data/${f}.json`, sumberArg));
   if (!r.ok) throw new Error(`${f}: HTTP ${r.status}`);
-  return r.json();
-};
-const [ps, pls, oll, ols, br] = await Promise.all(['projectorSpec', 'projectorLensSpec', 'optionLensList', 'optionLensSpec', 'brightness'].map(ambil));
+  const teks = await r.text();
+  fs.mkdirSync(arsip, { recursive: true });
+  fs.writeFileSync(path.join(arsip, `${f}.json`), teks);
+  return urai(teks);
+}
+const [ps, pls, oll, ols, br] = await Promise.all(BERKAS.map(ambil));
+if (!lokal) {
+  fs.writeFileSync(path.join(arsip, 'SUMBER.md'), `# Epson Projector Throw Distance Simulator ${versi}
+
+Diunduh ${new Date().toISOString().slice(0, 10)} dari ${new URL('static/data/', sumberArg)} (${BERKAS.map(f => `${f}.json`).join(', ')}).
+Buat ulang katalog tanpa internet: \`node scripts/impor-epson-tdc.mjs ${path.relative(akar, arsip).split(path.sep).join('/')}\`
+`);
+}
 
 const RASIO = { '16:10': [16, 10], '16:9': [16, 9], '4:3': [4, 3], '17:9': [17, 9], '21:9': [64, 27] };
 const angka = (v) => { const x = Number(String(v ?? '').replace(/[, ]/g, '')); return Number.isFinite(x) ? x : 0; };
@@ -159,6 +181,6 @@ for (const p of ps) {
   });
 }
 hasil.sort((x, y) => x.n.localeCompare(y.n));
-const keluar = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'lib', 'data', 'epson-tdc.json');
+const keluar = path.join(akar, 'lib', 'data', 'epson-tdc.json');
 fs.writeFileSync(keluar, JSON.stringify({ versi, sumber: 'Epson Projector Throw Distance Simulator', merek: 'Epson', kategori: KATEGORI, model: hasil }));
-console.log(`${hasil.length} model, ${hasil.reduce((a, h) => a + h.l.length, 0)} lensa -> ${keluar} (${(fs.statSync(keluar).size / 1024).toFixed(0)} KB)`);
+console.log(`${lokal ? `arsip ${arsip}` : `situs Epson -> arsip ${arsip}`}: ${hasil.length} model, ${hasil.reduce((a, h) => a + h.l.length, 0)} lensa -> ${keluar} (${(fs.statSync(keluar).size / 1024).toFixed(0)} KB)`);
